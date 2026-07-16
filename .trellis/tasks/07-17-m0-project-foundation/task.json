@@ -1,0 +1,34 @@
+{
+  "id": "m0-project-foundation",
+  "name": "m0-project-foundation",
+  "title": "M0 Project Foundation",
+  "description": "Repository, local dependencies, health checks, configuration, baseline CI, and observability foundation",
+  "status": "planning",
+  "dev_type": "fullstack",
+  "scope": "foundation/monorepo/local-infrastructure",
+  "package": null,
+  "priority": "P1",
+  "creator": "developer",
+  "assignee": "developer",
+  "createdAt": "2026-07-17",
+  "completedAt": null,
+  "branch": "feat/m0-project-foundation",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "07-17-enterprise-document-agent-platform",
+  "relatedFiles": [
+    ".trellis/tasks/07-17-enterprise-document-agent-platform/prd.md",
+    ".trellis/tasks/07-17-enterprise-document-agent-platform/design.md",
+    ".trellis/tasks/07-17-enterprise-document-agent-platform/implement.md"
+  ],
+  "notes": "M0 planning is ready for review. Do not run task.py start before explicit user approval.",
+  "meta": {
+    "milestone": "M0",
+    "workflow": "tdd",
+    "approval_required_before_start": true
+  }
+}
