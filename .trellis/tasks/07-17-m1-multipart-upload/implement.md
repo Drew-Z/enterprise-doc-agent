@@ -115,10 +115,12 @@ error before upload initiation.
 **Observable behavior**: The pinned MinIO release enforces checksum-bound multipart PUTs
 and exposes the response headers needed by the browser.
 
-- **Red**: Add adapter protocol tests and a real MinIO feature probe for create,
-  checksum-bound presign, PUT, ListParts pagination/checksum/ETag, complete, head checksum,
-  range read, abort, and incomplete-upload listing. Add Compose contract tests for pinned
-  images and bucket CORS.
+- **Red**: Add adapter protocol tests for all-page ListParts/ListMultipartUploads loops
+  and a real MinIO feature probe for create, checksum-bound presign, PUT, server-side
+  truncation capability, list/checksum/ETag aggregation, complete, head checksum, range
+  read, abort, and incomplete-upload listing. Add Compose contract tests for pinned
+  images and the exact-origin community CORS profile, while recording the lack of
+  `PutBucketCors` support.
 - **Green**: Implement the async boto3 adapter, service/presign endpoints, timeouts,
   SigV4 path-style clients, thread offload, CORS configuration, and compatible pinned
   MinIO/mc images.

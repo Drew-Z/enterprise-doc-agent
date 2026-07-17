@@ -4,15 +4,14 @@ import asyncio
 from dataclasses import dataclass
 from typing import Any
 
-import boto3
 import redis.asyncio as redis
-from botocore.config import Config
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from enterprise_doc_core.config import FoundationSettings
 from enterprise_doc_core.db import create_database_engine
 from enterprise_doc_core.health.models import ComponentStatus, HealthChecker
+from enterprise_doc_core.object_store import Boto3MultipartObjectStore, create_s3_client
 
 
 class DatabaseChecker:
@@ -56,12 +55,13 @@ class FoundationResources:
     database_engine: AsyncEngine
     redis_client: redis.Redis
     object_store_client: Any
+    multipart_object_store: Boto3MultipartObjectStore
     checkers: tuple[HealthChecker, ...]
 
     async def close(self) -> None:
         await self.database_engine.dispose()
         await self.redis_client.aclose()
-        self.object_store_client.close()
+        await self.multipart_object_store.close()
 
 
 def build_foundation_resources(settings: FoundationSettings) -> FoundationResources:
@@ -71,18 +71,18 @@ def build_foundation_resources(settings: FoundationSettings) -> FoundationResour
         socket_connect_timeout=settings.redis.connect_timeout_seconds,
         decode_responses=True,
     )
-    object_store_client = boto3.client(
-        "s3",
+    object_store_client = create_s3_client(
+        settings.object_store,
         endpoint_url=settings.object_store.endpoint,
-        aws_access_key_id=settings.object_store.access_key.get_secret_value(),
-        aws_secret_access_key=settings.object_store.secret_key.get_secret_value(),
-        region_name=settings.object_store.region,
-        use_ssl=settings.object_store.secure,
-        config=Config(
-            connect_timeout=settings.object_store.connect_timeout_seconds,
-            read_timeout=settings.object_store.connect_timeout_seconds,
-            retries={"max_attempts": 0},
-        ),
+    )
+    presign_client = create_s3_client(
+        settings.object_store,
+        endpoint_url=settings.object_store.presign_endpoint,
+    )
+    multipart_object_store = Boto3MultipartObjectStore(
+        settings=settings.object_store,
+        control_client=object_store_client,
+        presign_client=presign_client,
     )
     checkers: tuple[HealthChecker, ...] = (
         DatabaseChecker(database_engine),
@@ -99,5 +99,6 @@ def build_foundation_resources(settings: FoundationSettings) -> FoundationResour
         database_engine=database_engine,
         redis_client=redis_client,
         object_store_client=object_store_client,
+        multipart_object_store=multipart_object_store,
         checkers=checkers,
     )

@@ -29,6 +29,7 @@ class RedisSettings(BaseModel):
 
 class ObjectStoreSettings(BaseModel):
     endpoint: str = "http://127.0.0.1:9000"
+    presign_endpoint: str = "http://127.0.0.1:9000"
     access_key: SecretStr = SecretStr("enterprise_doc_local")
     secret_key: SecretStr = SecretStr("enterprise_doc_local_secret")
     region: str = "us-east-1"
@@ -36,6 +37,9 @@ class ObjectStoreSettings(BaseModel):
     artifacts_bucket: str = "artifacts"
     secure: bool = False
     connect_timeout_seconds: float = Field(default=3.0, gt=0, le=30)
+    read_timeout_seconds: float = Field(default=30.0, gt=0, le=300)
+    max_pool_connections: int = Field(default=32, ge=1, le=256)
+    presign_ttl_seconds: int = Field(default=900, ge=60, le=3600)
 
 
 class UploadSettings(BaseModel):

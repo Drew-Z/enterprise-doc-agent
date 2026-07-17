@@ -78,9 +78,11 @@ durable ingestion jobs, or production-scale capacity already exist.
   ETag, and checksum metadata required to resume. Missing parts can be uploaded in any
   order, while checksum-enabled completion requires a consecutive sequence starting
   at part 1.
-- **R-11**: Local MinIO bucket CORS permits only configured Web origins and required
-  methods/headers, and exposes `ETag` plus required checksum headers so the browser can
-  complete the protocol. Wildcard production CORS is not introduced.
+- **R-11**: The local open-source MinIO profile permits only configured Web origins and
+  exposes `ETag` plus required checksum headers so the browser can complete the
+  protocol. Its community image lacks `PutBucketCors`, so local evidence uses an exact
+  server-level origin list and records that limitation; production S3/AIStor uses
+  per-bucket rules. Wildcard production CORS is not introduced.
 
 ### Completion, integrity, and document state
 
@@ -190,7 +192,8 @@ durable ingestion jobs, or production-scale capacity already exist.
 - [ ] Filename, extension, media type, size, hash, quota, part-count, and path-safety
   policy tests cover allowed TXT/PDF/DOCX plus representative invalid inputs.
 - [ ] A real MinIO integration proves create, checksum-bound presign, direct part PUT,
-  paginated list/resume, complete, head verification, and abort.
+  list/resume aggregation, complete, head verification, and abort; deterministic adapter
+  tests prove all-page pagination behavior.
 - [ ] Refresh/resume uploads only missing parts after the same file is reselected and
   rejects a different file before issuing any new part URL.
 - [ ] Duplicate and concurrent completion return the same `DocumentVersion`; database

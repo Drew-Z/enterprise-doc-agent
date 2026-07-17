@@ -59,12 +59,30 @@ Fetched source:
 
 Relevant verified facts:
 
-- MinIO supports global and per-bucket S3 CORS configuration.
-- Per-bucket rules take precedence.
-- Browser upload rules can allow PUT/HEAD and expose ETag.
+- MinIO AIStor supports global and per-bucket S3 CORS configuration.
+- The pinned open-source MinIO server returns `NotImplemented` for `PutBucketCors` and
+  `mc cors set`; this was reproduced against `RELEASE.2025-09-07T16-13-09Z`.
+- Open-source MinIO supports an exact server-level origin list through
+  `MINIO_API_CORS_ALLOW_ORIGIN`.
+- Browser-visible methods and exposed ETag/checksum headers must be verified from real
+  OPTIONS and UploadPart responses because the community build cannot persist a bucket
+  CORS document.
+- The pinned community server exposes `ETag` explicitly and checksum headers through
+  `X-Amz*`/`*`; the probe also verifies the concrete
+  `x-amz-checksum-sha256` response header before relying on that exposure rule.
 
-Decision: configure per-bucket CORS for exact local Web origins, required methods and
-headers, and exposed ETag/checksum headers. Do not rely on wildcard global CORS.
+Decision: the local open-source MinIO profile uses a server-level exact origin list and
+never the wildcard default. The real feature probe must prove allowed-origin preflight,
+evil-origin rejection, and browser-visible ETag/checksum headers. Production S3 or
+AIStor deployments should use per-bucket rules; the community limitation is explicit
+rather than represented as implemented.
+
+Additional fetched/reproduced evidence:
+
+- https://github.com/minio/minio/issues/15874
+- `smart-search fetch "https://github.com/minio/minio/issues/15874" --format markdown`
+- `mc cors set local/documents ...` and boto3 `put_bucket_cors` both returned
+  `NotImplemented` on the pinned community image.
 
 ### Incomplete multipart cleanup
 
@@ -96,6 +114,19 @@ It does not add a broad bucket expiration rule that could delete completed docum
    metadata/hash; the application does not persist a 1 GiB Blob or signed URLs.
 8. The real MinIO feature probe decides compatibility. No mock-only checksum claim is
    acceptable.
+
+## Pinned Community MinIO Observations
+
+- `ListMultipartUploads(MaxUploads=1)` returned both test uploads with
+  `IsTruncated=false`; this release did not honor the requested small page size. The
+  adapter still implements and unit-tests the required two-marker pagination loop, and
+  the real probe verifies complete aggregation of the server result.
+- A directory-style `Prefix` returned no uploads even when matching incomplete uploads
+  existed; an exact full object key did match. The adapter first issues the standard
+  prefixed request, then falls back on an empty result to fully paginating without a
+  prefix and filtering keys client-side. This preserves cleanup correctness for the
+  pinned community image, but the fallback is not evidence of production-scale listing
+  performance; production S3 or AIStor must use the native prefix path.
 
 ## Research Limitations
 

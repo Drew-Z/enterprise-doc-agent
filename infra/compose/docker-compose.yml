@@ -36,11 +36,12 @@ services:
     restart: unless-stopped
 
   minio:
-    image: minio/minio:latest
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-enterprise_doc_local}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-enterprise_doc_local_secret}
+      MINIO_API_CORS_ALLOW_ORIGIN: ${MINIO_API_CORS_ALLOW_ORIGIN:-http://127.0.0.1:5173,http://localhost:5173}
     ports:
       - "${MINIO_API_PORT:-9000}:9000"
       - "${MINIO_CONSOLE_PORT:-9001}:9001"
@@ -55,7 +56,7 @@ services:
     restart: unless-stopped
 
   minio-init:
-    image: minio/mc:latest
+    image: minio/mc:RELEASE.2025-08-13T08-35-41Z@sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727
     profiles: ["init"]
     depends_on:
       minio:
@@ -70,8 +71,10 @@ services:
         mc alias set local http://minio:9000 "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}"
         mc mb --ignore-existing local/documents
         mc mb --ignore-existing local/artifacts
-        mc anonymous set none local/documents
-        mc anonymous set none local/artifacts
+        mc anonymous set private local/documents
+        mc anonymous set private local/artifacts
+        mc anonymous get local/documents
+        mc anonymous get local/artifacts
     restart: "no"
 
 volumes:
