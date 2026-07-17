@@ -34,6 +34,10 @@ WINDOWS_RESERVED_BASENAMES = {
 }
 WINDOWS_UNSAFE_CHARACTERS = frozenset('<>:"/\\|?*')
 LOWERCASE_SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
+M1_UPLOAD_PREFIX = "m1/uploads/"
+M1_UPLOAD_KEY_PATTERN = re.compile(
+    r"^m1/uploads/(?P<session>[0-9a-f]{32})/(?P<version>[0-9a-f]{32})$"
+)
 
 
 class UploadPolicyViolation(ValueError):
@@ -47,6 +51,12 @@ class UploadPolicyViolation(ValueError):
 class MultipartPlan:
     part_size_bytes: int
     part_count: int
+
+
+@dataclass(frozen=True, slots=True)
+class ParsedUploadObjectKey:
+    session_id: UUID
+    version_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
@@ -163,7 +173,17 @@ def validate_upload_metadata(
 
 
 def build_object_key(*, session_id: UUID, version_id: UUID) -> str:
-    return f"m1/uploads/{session_id.hex}/{version_id.hex}"
+    return f"{M1_UPLOAD_PREFIX}{session_id.hex}/{version_id.hex}"
+
+
+def parse_upload_object_key(key: str) -> ParsedUploadObjectKey | None:
+    match = M1_UPLOAD_KEY_PATTERN.fullmatch(key)
+    if match is None:
+        return None
+    return ParsedUploadObjectKey(
+        session_id=UUID(hex=match.group("session")),
+        version_id=UUID(hex=match.group("version")),
+    )
 
 
 def _validate_filename(filename: str, max_length: int) -> str:

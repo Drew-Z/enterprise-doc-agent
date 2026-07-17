@@ -5,6 +5,7 @@ import logging
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from enum import StrEnum
 from uuid import UUID, uuid4
 
 from sqlalchemy import Select, select
@@ -25,6 +26,7 @@ from enterprise_doc_core.object_store import (
     MultipartObjectStore,
     MultipartUploadNotFound,
     ObjectHead,
+    ObjectStoreNotFound,
     UploadedPart,
 )
 from enterprise_doc_core.uploads.models import (
@@ -100,6 +102,16 @@ class UploadCompletionFailed(UploadSessionError):
     message = "The upload could not be finalized."
 
 
+class UploadAbortConflict(UploadSessionError):
+    code = "upload_abort_conflict"
+    message = "The upload session cannot be aborted in its current state."
+
+
+class UploadAbortFailed(UploadSessionError):
+    code = "upload_abort_failed"
+    message = "The upload session abort could not be finalized."
+
+
 @dataclass(frozen=True, slots=True)
 class PresignUploadPartInput:
     size_bytes: int
@@ -163,6 +175,27 @@ class CompleteUploadSessionResult:
 
 
 @dataclass(frozen=True, slots=True)
+class AbortUploadSessionResult:
+    session_id: UUID
+    status: str
+    replayed: bool
+
+
+class StaleCompletionOutcome(StrEnum):
+    COMPLETED = "completed"
+    FAILED_MISSING = "failed_missing"
+    FAILED_INVALID_OWNED = "failed_invalid_owned"
+    FAILED_AMBIGUOUS = "failed_ambiguous"
+    SKIPPED = "skipped"
+
+
+@dataclass(frozen=True, slots=True)
+class ReconcileStaleCompletionResult:
+    outcome: StaleCompletionOutcome
+    completion: CompleteUploadSessionResult | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class _UploadSessionSnapshot:
     session_id: UUID
     tenant_id: UUID
@@ -183,6 +216,8 @@ class _UploadSessionSnapshot:
     expires_at: datetime
     completion_started_at: datetime | None
     completed_at: datetime | None
+    cleanup_claimed_at: datetime | None
+    cleanup_claim_token: UUID | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -444,18 +479,10 @@ class UploadSessionService:
         )
         identity_verified = _object_identity_matches(snapshot=snapshot, head=head)
         try:
-            transport_checksum = _validate_completed_head(
+            detected_media_type, transport_checksum = await self._validate_completed_object(
                 snapshot=snapshot,
                 head=head,
                 completion_result=completion_result,
-            )
-            envelope = await validate_document_envelope(
-                object_store=self.object_store,
-                bucket=self.documents_bucket,
-                key=snapshot.object_key,
-                size_bytes=head.size_bytes,
-                extension=snapshot.extension,
-                settings=self.settings,
             )
         except (DocumentEnvelopeViolation, UploadCompletionVerificationFailed) as error:
             await self._mark_invalid_completion(
@@ -468,9 +495,371 @@ class UploadSessionService:
         return await self._finalize_completion(
             snapshot=snapshot,
             head=head,
-            detected_media_type=envelope.detected_media_type,
+            detected_media_type=detected_media_type,
             transport_checksum=transport_checksum,
         )
+
+    async def reconcile_stale_completion(
+        self,
+        *,
+        tenant_id: UUID,
+        session_id: UUID,
+        cleanup_claim_token: UUID,
+        stale_before: datetime,
+    ) -> ReconcileStaleCompletionResult:
+        loaded = await self._load_stale_completion_state(
+            tenant_id=tenant_id,
+            session_id=session_id,
+            cleanup_claim_token=cleanup_claim_token,
+            stale_before=stale_before,
+        )
+        if loaded is None:
+            return ReconcileStaleCompletionResult(outcome=StaleCompletionOutcome.SKIPPED)
+        snapshot, expected_parts, completed = loaded
+        if completed is not None:
+            return ReconcileStaleCompletionResult(
+                outcome=StaleCompletionOutcome.COMPLETED,
+                completion=completed,
+            )
+
+        verified_parts = _verified_parts_from_rows(snapshot=snapshot, parts=expected_parts)
+        if len(verified_parts) != snapshot.expected_part_count or tuple(
+            part.part_number for part in verified_parts
+        ) != tuple(range(1, snapshot.expected_part_count + 1)):
+            raise UploadCompletionPartsInvalid()
+        completion_parts = tuple(
+            UploadedPart(
+                part_number=part.part_number,
+                size_bytes=part.size_bytes,
+                etag=part.etag,
+                checksum_sha256_b64=part.checksum_sha256_b64,
+            )
+            for part in verified_parts
+        )
+
+        multipart_missing = False
+        try:
+            listed_parts = await self.object_store.list_parts(
+                bucket=self.documents_bucket,
+                key=snapshot.object_key,
+                upload_id=_required_upload_id(snapshot),
+            )
+        except MultipartUploadNotFound:
+            multipart_missing = True
+            listed_parts = ()
+        if not multipart_missing:
+            completion_parts = _verify_listed_completion_parts(
+                expected=completion_parts,
+                listed=listed_parts,
+            )
+
+        completion_result: CompletedMultipartUpload | None = None
+        if not multipart_missing:
+            try:
+                completion_result = await self.object_store.complete_upload(
+                    bucket=self.documents_bucket,
+                    key=snapshot.object_key,
+                    upload_id=_required_upload_id(snapshot),
+                    parts=completion_parts,
+                )
+            except MultipartUploadNotFound:
+                multipart_missing = True
+
+        try:
+            head = await self.object_store.head_object(
+                bucket=self.documents_bucket,
+                key=snapshot.object_key,
+            )
+        except ObjectStoreNotFound as error:
+            if not multipart_missing:
+                raise
+            marked_failed = await self._mark_completion_failed(
+                snapshot=snapshot,
+                expected_status=UploadSessionStatus.COMPLETING.value,
+                error_code=error.code,
+                cleanup_claim_token=cleanup_claim_token,
+            )
+            return ReconcileStaleCompletionResult(
+                outcome=(
+                    StaleCompletionOutcome.FAILED_MISSING
+                    if marked_failed
+                    else StaleCompletionOutcome.SKIPPED
+                )
+            )
+
+        identity_verified = _object_identity_matches(snapshot=snapshot, head=head)
+        try:
+            detected_media_type, transport_checksum = await self._validate_completed_object(
+                snapshot=snapshot,
+                head=head,
+                completion_result=completion_result,
+            )
+        except (DocumentEnvelopeViolation, UploadCompletionVerificationFailed) as error:
+            marked_failed = await self._mark_invalid_completion(
+                snapshot=snapshot,
+                error_code=error.code,
+                delete_object=identity_verified,
+                cleanup_claim_token=cleanup_claim_token,
+                delete_errors_are_fatal=True,
+            )
+            if not marked_failed:
+                outcome = StaleCompletionOutcome.SKIPPED
+            elif identity_verified:
+                outcome = StaleCompletionOutcome.FAILED_INVALID_OWNED
+            else:
+                outcome = StaleCompletionOutcome.FAILED_AMBIGUOUS
+            return ReconcileStaleCompletionResult(outcome=outcome)
+
+        completed = await self._finalize_completion(
+            snapshot=snapshot,
+            head=head,
+            detected_media_type=detected_media_type,
+            transport_checksum=transport_checksum,
+            cleanup_claim_token=cleanup_claim_token,
+        )
+        return ReconcileStaleCompletionResult(
+            outcome=StaleCompletionOutcome.COMPLETED,
+            completion=completed,
+        )
+
+    async def _load_stale_completion_state(
+        self,
+        *,
+        tenant_id: UUID,
+        session_id: UUID,
+        cleanup_claim_token: UUID,
+        stale_before: datetime,
+    ) -> (
+        tuple[
+            _UploadSessionSnapshot,
+            tuple[UploadPart, ...],
+            CompleteUploadSessionResult | None,
+        ]
+        | None
+    ):
+        session_factory = self._session_factory()
+        async with session_factory() as database:
+            upload_session = await database.scalar(
+                select(UploadSession).where(
+                    UploadSession.id == session_id,
+                    UploadSession.tenant_id == tenant_id,
+                )
+            )
+            if upload_session is None:
+                return None
+            completed = await _completed_result(
+                database,
+                upload_session=upload_session,
+                replayed=True,
+            )
+            if completed is not None:
+                return _snapshot(upload_session), (), completed
+            if (
+                upload_session.status != UploadSessionStatus.COMPLETING.value
+                or upload_session.completion_started_at is None
+                or upload_session.completion_started_at > stale_before
+                or upload_session.cleanup_claim_token != cleanup_claim_token
+            ):
+                return None
+            expected_parts = tuple(
+                (
+                    await database.scalars(
+                        select(UploadPart)
+                        .where(
+                            UploadPart.tenant_id == tenant_id,
+                            UploadPart.upload_session_id == session_id,
+                        )
+                        .order_by(UploadPart.part_number)
+                    )
+                ).all()
+            )
+            return _snapshot(upload_session), expected_parts, None
+
+    async def _validate_completed_object(
+        self,
+        *,
+        snapshot: _UploadSessionSnapshot,
+        head: ObjectHead,
+        completion_result: CompletedMultipartUpload | None,
+    ) -> tuple[str, str]:
+        transport_checksum = _validate_completed_head(
+            snapshot=snapshot,
+            head=head,
+            completion_result=completion_result,
+        )
+        envelope = await validate_document_envelope(
+            object_store=self.object_store,
+            bucket=self.documents_bucket,
+            key=snapshot.object_key,
+            size_bytes=head.size_bytes,
+            extension=snapshot.extension,
+            settings=self.settings,
+        )
+        return envelope.detected_media_type, transport_checksum
+
+    async def abort(
+        self,
+        *,
+        principal: PrincipalContext,
+        session_id: UUID,
+    ) -> AbortUploadSessionResult:
+        tenant_id, actor_id = _principal_ids(principal)
+        snapshot, replayed = await self._claim_abort(
+            session_id=session_id,
+            tenant_id=tenant_id,
+            actor_id=actor_id,
+        )
+        if snapshot.object_store_upload_id is not None:
+            try:
+                await self.object_store.abort_upload(
+                    bucket=self.documents_bucket,
+                    key=snapshot.object_key,
+                    upload_id=snapshot.object_store_upload_id,
+                )
+            except MultipartUploadNotFound:
+                pass
+            await self._clear_aborted_upload_id(snapshot=snapshot)
+        return AbortUploadSessionResult(
+            session_id=snapshot.session_id,
+            status=UploadSessionStatus.ABORTED.value,
+            replayed=replayed,
+        )
+
+    async def _claim_abort(
+        self,
+        *,
+        session_id: UUID,
+        tenant_id: UUID,
+        actor_id: UUID,
+    ) -> tuple[_UploadSessionSnapshot, bool]:
+        session_factory = self._session_factory()
+        snapshot: _UploadSessionSnapshot | None = None
+        replayed = False
+        try:
+            async with session_factory.begin() as database:
+                tenant = await database.scalar(
+                    select(Tenant).where(Tenant.id == tenant_id).with_for_update()
+                )
+                upload_session = await database.scalar(
+                    _owned_session_query(
+                        session_id=session_id,
+                        tenant_id=tenant_id,
+                        actor_id=actor_id,
+                    ).with_for_update()
+                )
+                if tenant is None or upload_session is None:
+                    raise UploadSessionNotFound()
+                if (
+                    upload_session.status
+                    in {
+                        UploadSessionStatus.COMPLETING.value,
+                        UploadSessionStatus.COMPLETED.value,
+                    }
+                    or upload_session.document_version_id is not None
+                ):
+                    raise UploadAbortConflict()
+                if upload_session.status == UploadSessionStatus.ABORTED.value:
+                    replayed = True
+                elif upload_session.status not in {
+                    UploadSessionStatus.INITIALIZING.value,
+                    UploadSessionStatus.ACTIVE.value,
+                }:
+                    raise UploadSessionNotActive()
+                if tenant.reserved_storage_bytes < upload_session.reserved_bytes:
+                    raise UploadCompletionStateInvalid()
+                tenant.reserved_storage_bytes -= upload_session.reserved_bytes
+                upload_session.reserved_bytes = 0
+                upload_session.status = UploadSessionStatus.ABORTED.value
+                upload_session.aborted_at = upload_session.aborted_at or self.clock()
+                upload_session.last_error_code = None
+                upload_session.cleanup_claimed_at = None
+                upload_session.cleanup_claim_token = None
+                snapshot = _snapshot(upload_session)
+        except Exception as error:
+            recovered = await self._read_aborted_state(
+                session_id=session_id,
+                tenant_id=tenant_id,
+                actor_id=actor_id,
+            )
+            if recovered is not None:
+                return recovered, True
+            if isinstance(error, UploadSessionError):
+                raise
+            raise UploadAbortFailed() from error
+        if snapshot is None:
+            raise UploadAbortFailed()
+        return snapshot, replayed
+
+    async def _read_aborted_state(
+        self,
+        *,
+        session_id: UUID,
+        tenant_id: UUID,
+        actor_id: UUID,
+    ) -> _UploadSessionSnapshot | None:
+        session_factory = self._session_factory()
+        try:
+            async with session_factory() as database:
+                upload_session = await database.scalar(
+                    _owned_session_query(
+                        session_id=session_id,
+                        tenant_id=tenant_id,
+                        actor_id=actor_id,
+                    )
+                )
+                if (
+                    upload_session is None
+                    or upload_session.status != UploadSessionStatus.ABORTED.value
+                    or upload_session.reserved_bytes != 0
+                    or upload_session.document_version_id is not None
+                ):
+                    return None
+                return _snapshot(upload_session)
+        except Exception:
+            return None
+
+    async def _clear_aborted_upload_id(self, *, snapshot: _UploadSessionSnapshot) -> None:
+        session_factory = self._session_factory()
+        try:
+            async with session_factory.begin() as database:
+                tenant = await database.scalar(
+                    select(Tenant).where(Tenant.id == snapshot.tenant_id).with_for_update()
+                )
+                upload_session = await database.scalar(
+                    _owned_session_query(
+                        session_id=snapshot.session_id,
+                        tenant_id=snapshot.tenant_id,
+                        actor_id=snapshot.actor_id,
+                    ).with_for_update()
+                )
+                if tenant is None or upload_session is None:
+                    raise UploadAbortFailed()
+                if (
+                    upload_session.status != UploadSessionStatus.ABORTED.value
+                    or upload_session.document_version_id is not None
+                    or not _completion_identity_matches(
+                        upload_session=upload_session,
+                        snapshot=snapshot,
+                    )
+                ):
+                    raise UploadAbortFailed()
+                if upload_session.object_store_upload_id is None:
+                    return
+                if upload_session.object_store_upload_id != snapshot.object_store_upload_id:
+                    raise UploadAbortFailed()
+                upload_session.object_store_upload_id = None
+                upload_session.last_error_code = None
+        except Exception as error:
+            recovered = await self._read_aborted_state(
+                session_id=snapshot.session_id,
+                tenant_id=snapshot.tenant_id,
+                actor_id=snapshot.actor_id,
+            )
+            if recovered is not None and recovered.object_store_upload_id is None:
+                return
+            if isinstance(error, UploadAbortFailed):
+                raise
+            raise UploadAbortFailed() from error
 
     async def _load_completion_state(
         self,
@@ -558,6 +947,8 @@ class UploadSessionService:
                     or upload_session.pending_version_id != snapshot.pending_version_id
                 ):
                     raise UploadCompletionStateInvalid()
+                upload_session.cleanup_claimed_at = None
+                upload_session.cleanup_claim_token = None
                 claimed_snapshot = _snapshot(upload_session)
         if completed is not None:
             return snapshot, completed
@@ -572,6 +963,7 @@ class UploadSessionService:
         head: ObjectHead,
         detected_media_type: str,
         transport_checksum: str,
+        cleanup_claim_token: UUID | None = None,
     ) -> CompleteUploadSessionResult:
         session_factory = self._session_factory()
         result: CompleteUploadSessionResult | None = None
@@ -604,6 +996,10 @@ class UploadSessionService:
                         or upload_session.pending_version_id != snapshot.pending_version_id
                         or upload_session.reserved_bytes != upload_session.size_bytes
                         or tenant.reserved_storage_bytes < upload_session.reserved_bytes
+                        or (
+                            cleanup_claim_token is not None
+                            and upload_session.cleanup_claim_token != cleanup_claim_token
+                        )
                     ):
                         raise UploadCompletionStateInvalid()
                     document = Document(
@@ -641,6 +1037,8 @@ class UploadSessionService:
                     upload_session.status = UploadSessionStatus.COMPLETED.value
                     upload_session.completed_at = self.clock()
                     upload_session.last_error_code = None
+                    upload_session.cleanup_claimed_at = None
+                    upload_session.cleanup_claim_token = None
                     await database.flush()
                     result = _result_from_completed_models(
                         upload_session=upload_session,
@@ -694,26 +1092,32 @@ class UploadSessionService:
         snapshot: _UploadSessionSnapshot,
         error_code: str,
         delete_object: bool,
-    ) -> None:
+        cleanup_claim_token: UUID | None = None,
+        delete_errors_are_fatal: bool = False,
+    ) -> bool:
         marked_failed = await self._mark_completion_failed(
             snapshot=snapshot,
             expected_status=UploadSessionStatus.COMPLETING.value,
             error_code=error_code,
+            cleanup_claim_token=cleanup_claim_token,
         )
         if not marked_failed or not delete_object:
-            return
+            return marked_failed
         try:
             await self.object_store.delete_object(
                 bucket=self.documents_bucket,
                 key=snapshot.object_key,
             )
         except Exception:
+            if delete_errors_are_fatal:
+                raise
             _LOGGER.warning(
                 "invalid completed upload deletion failed",
                 extra={
                     "event_data": {"error_code": "upload_completion_invalid_object_delete_failed"}
                 },
             )
+        return marked_failed
 
     async def _mark_completion_failed(
         self,
@@ -721,6 +1125,7 @@ class UploadSessionService:
         snapshot: _UploadSessionSnapshot,
         expected_status: str,
         error_code: str,
+        cleanup_claim_token: UUID | None = None,
     ) -> bool:
         session_factory = self._session_factory()
         marked_failed = False
@@ -745,6 +1150,10 @@ class UploadSessionService:
                         upload_session=upload_session,
                         snapshot=snapshot,
                     )
+                    or (
+                        cleanup_claim_token is not None
+                        and upload_session.cleanup_claim_token != cleanup_claim_token
+                    )
                 ):
                     return False
                 if tenant.reserved_storage_bytes < upload_session.reserved_bytes:
@@ -753,11 +1162,14 @@ class UploadSessionService:
                 upload_session.reserved_bytes = 0
                 upload_session.status = UploadSessionStatus.FAILED.value
                 upload_session.last_error_code = error_code
+                upload_session.cleanup_claimed_at = None
+                upload_session.cleanup_claim_token = None
                 marked_failed = True
         except Exception:
             marked_failed = await self._completion_failure_persisted(
                 snapshot=snapshot,
                 error_code=error_code,
+                cleanup_claim_token=cleanup_claim_token,
             )
             if not marked_failed:
                 _LOGGER.warning(
@@ -775,6 +1187,7 @@ class UploadSessionService:
         *,
         snapshot: _UploadSessionSnapshot,
         error_code: str,
+        cleanup_claim_token: UUID | None = None,
     ) -> bool:
         session_factory = self._session_factory()
         try:
@@ -792,6 +1205,13 @@ class UploadSessionService:
                     and upload_session.reserved_bytes == 0
                     and upload_session.document_version_id is None
                     and upload_session.last_error_code == error_code
+                    and (
+                        cleanup_claim_token is None
+                        or (
+                            upload_session.cleanup_claimed_at is None
+                            and upload_session.cleanup_claim_token is None
+                        )
+                    )
                     and _completion_identity_matches(
                         upload_session=upload_session,
                         snapshot=snapshot,
@@ -1134,6 +1554,8 @@ def _snapshot(upload_session: UploadSession) -> _UploadSessionSnapshot:
         expires_at=upload_session.expires_at,
         completion_started_at=upload_session.completion_started_at,
         completed_at=upload_session.completed_at,
+        cleanup_claimed_at=upload_session.cleanup_claimed_at,
+        cleanup_claim_token=upload_session.cleanup_claim_token,
     )
 
 

@@ -64,12 +64,13 @@ def test_m1_database_has_required_unique_and_check_constraints() -> None:
     with psycopg.connect(DATABASE_URL) as connection, connection.cursor() as cursor:
         cursor.execute(
             """
-            SELECT conname
+            SELECT conname, pg_get_constraintdef(oid)
             FROM pg_constraint
             WHERE connamespace = 'public'::regnamespace
             """
         )
-        constraints = {row[0] for row in cursor.fetchall()}
+        constraint_definitions = {row[0]: row[1] for row in cursor.fetchall()}
+        constraints = set(constraint_definitions)
         cursor.execute(
             """
             SELECT column_name
@@ -96,12 +97,22 @@ def test_m1_database_has_required_unique_and_check_constraints() -> None:
             """
         )
         sequences = {row[0] for row in cursor.fetchall()}
+        cursor.execute(
+            """
+            SELECT indexname
+            FROM pg_indexes
+            WHERE schemaname = 'public'
+              AND tablename = 'upload_sessions'
+            """
+        )
+        upload_session_indexes = {row[0] for row in cursor.fetchall()}
 
     assert {
         "ck_tenants_quota_bytes_positive",
         "ck_tenants_storage_counters_non_negative",
         "ck_tenants_storage_within_quota",
         "ck_upload_sessions_expected_part_count_range",
+        "ck_upload_sessions_cleanup_claim_pair",
         "ck_upload_sessions_part_size_positive",
         "ck_upload_sessions_reserved_bytes_non_negative",
         "ck_upload_sessions_size_bytes_positive",
@@ -111,6 +122,16 @@ def test_m1_database_has_required_unique_and_check_constraints() -> None:
         "uq_upload_sessions_document_version_id",
         "uq_upload_sessions_tenant_id_idempotency_key",
     } <= constraints
-    assert "document_version_id" in upload_session_columns
+    assert {
+        "cleanup_claim_token",
+        "cleanup_claimed_at",
+        "document_version_id",
+    } <= upload_session_columns
+    cleanup_claim_definition = constraint_definitions["ck_upload_sessions_cleanup_claim_pair"]
+    assert "cleanup_claimed_at IS NULL" in cleanup_claim_definition
+    assert "cleanup_claim_token IS NULL" in cleanup_claim_definition
+    assert "cleanup_claimed_at IS NOT NULL" in cleanup_claim_definition
+    assert "cleanup_claim_token IS NOT NULL" in cleanup_claim_definition
+    assert "ix_upload_sessions_status_cleanup_claimed_at" in upload_session_indexes
     assert {"observation_version", "observed_at"} <= upload_part_columns
     assert "upload_part_observation_version_seq" in sequences

@@ -28,6 +28,7 @@ from enterprise_doc_core.uploads import (
     GetUploadSessionResult,
     PresignUploadPartInput,
     PresignUploadPartResult,
+    UploadAbortConflict,
     UploadCompletionPartsInvalid,
     UploadCompletionVerificationFailed,
     UploadIdempotencyConflict,
@@ -82,6 +83,13 @@ class UploadSessionServiceProtocol(Protocol):
         session_id: UUID,
         request: CompleteUploadSessionInput,
     ) -> CompleteUploadSessionResult: ...
+
+    async def abort(
+        self,
+        *,
+        principal: PrincipalContext,
+        session_id: UUID,
+    ) -> object: ...
 
 
 class UploadSessionCreateRequest(ApiModel):
@@ -316,6 +324,34 @@ async def get_upload_session(
     )
 
 
+@router.delete(
+    "/{session_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
+    responses={
+        401: {"model": ErrorResponse},
+        404: {"model": ErrorResponse},
+        409: {"model": ErrorResponse},
+        500: {"model": ErrorResponse},
+        502: {"model": ErrorResponse},
+        503: {"model": ErrorResponse},
+    },
+)
+async def abort_upload_session(
+    session_id: UUID,
+    request: Request,
+    principal: Annotated[PrincipalContext, Depends(get_current_principal)],
+) -> Response:
+    service = cast(UploadSessionServiceProtocol, request.app.state.upload_session_service)
+    try:
+        await service.abort(principal=principal, session_id=session_id)
+    except UploadSessionError as error:
+        raise _upload_session_api_error(error) from error
+    except ObjectStoreError as error:
+        raise _object_store_api_error(error) from error
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
 @router.post(
     "/{session_id}/parts/{part_number}/presign",
     response_model=PresignUploadPartResponse,
@@ -434,6 +470,7 @@ def _upload_session_api_error(error: UploadSessionError) -> ApiError:
         error,
         (
             UploadSessionNotActive,
+            UploadAbortConflict,
             UploadPartChecksumConflict,
             UploadCompletionPartsInvalid,
             UploadCompletionVerificationFailed,

@@ -17,6 +17,9 @@ def test_nested_environment_values_are_parsed(monkeypatch: pytest.MonkeyPatch) -
     monkeypatch.setenv("UPLOAD__PREFERRED_PART_SIZE_BYTES", "8388608")
     monkeypatch.setenv("UPLOAD__ENVELOPE_SAMPLE_BYTES", "8192")
     monkeypatch.setenv("UPLOAD__MAX_DOCX_ENTRIES", "2048")
+    monkeypatch.setenv("UPLOAD__CLEANUP_BATCH_SIZE", "25")
+    monkeypatch.setenv("UPLOAD__CLEANUP_CLAIM_TTL_SECONDS", "120")
+    monkeypatch.setenv("UPLOAD__CLEANUP_COMPLETING_GRACE_SECONDS", "600")
     monkeypatch.setenv("OTEL__ENABLED", "true")
     monkeypatch.setenv("OTEL__SAMPLE_RATIO", "0.25")
 
@@ -30,6 +33,9 @@ def test_nested_environment_values_are_parsed(monkeypatch: pytest.MonkeyPatch) -
     assert settings.upload.preferred_part_size_bytes == 8 * 1024**2
     assert settings.upload.envelope_sample_bytes == 8192
     assert settings.upload.max_docx_entries == 2048
+    assert settings.upload.cleanup_batch_size == 25
+    assert settings.upload.cleanup_claim_ttl_seconds == 120
+    assert settings.upload.cleanup_completing_grace_seconds == 600
     assert settings.otel.enabled is True
     assert settings.otel.sample_ratio == 0.25
 

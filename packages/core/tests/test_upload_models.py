@@ -38,6 +38,8 @@ def test_m1_models_have_stable_table_ownership() -> None:
     assert UploadSession.__tablename__ == "upload_sessions"
     assert UploadPart.__tablename__ == "upload_parts"
     assert "document_version_id" in Base.metadata.tables["upload_sessions"].columns
+    assert "cleanup_claimed_at" in Base.metadata.tables["upload_sessions"].columns
+    assert "cleanup_claim_token" in Base.metadata.tables["upload_sessions"].columns
     assert "observation_version" in Base.metadata.tables["upload_parts"].columns
     assert "observed_at" in Base.metadata.tables["upload_parts"].columns
 
@@ -73,6 +75,7 @@ def test_quota_and_upload_state_constraints_are_named() -> None:
         "ck_upload_sessions_expected_part_count_range",
         "ck_upload_sessions_part_size_positive",
         "ck_upload_sessions_reserved_bytes_non_negative",
+        "ck_upload_sessions_cleanup_claim_pair",
         "ck_upload_sessions_size_bytes_positive",
         "ck_upload_sessions_status_valid",
     } <= upload_constraints

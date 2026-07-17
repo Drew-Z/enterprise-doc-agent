@@ -14,6 +14,7 @@ from sqlalchemy import (
     Sequence,
     String,
     UniqueConstraint,
+    Uuid,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -55,6 +56,11 @@ class UploadSession(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         ),
         CheckConstraint("reserved_bytes >= 0", name="reserved_bytes_non_negative"),
         CheckConstraint(
+            "(cleanup_claimed_at IS NULL AND cleanup_claim_token IS NULL) OR "
+            "(cleanup_claimed_at IS NOT NULL AND cleanup_claim_token IS NOT NULL)",
+            name="cleanup_claim_pair",
+        ),
+        CheckConstraint(
             "status IN ('initializing', 'active', 'completing', 'completed', "
             "'aborted', 'expired', 'failed')",
             name="status_valid",
@@ -64,6 +70,11 @@ class UploadSession(UUIDPrimaryKeyMixin, TimestampMixin, Base):
             "tenant_id",
             "status",
             "expires_at",
+        ),
+        Index(
+            "ix_upload_sessions_status_cleanup_claimed_at",
+            "status",
+            "cleanup_claimed_at",
         ),
     )
 
@@ -106,6 +117,11 @@ class UploadSession(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     aborted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     last_error_code: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    cleanup_claimed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    cleanup_claim_token: Mapped[UUID | None] = mapped_column(Uuid, nullable=True)
 
 
 class UploadPart(UUIDPrimaryKeyMixin, TimestampMixin, Base):

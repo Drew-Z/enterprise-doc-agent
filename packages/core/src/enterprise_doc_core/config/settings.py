@@ -73,6 +73,19 @@ class UploadSettings(BaseModel):
         ge=1.0,
         le=10_000.0,
     )
+    cleanup_batch_size: int = Field(default=100, ge=1, le=1000)
+    cleanup_expiry_grace_seconds: int = Field(default=60, ge=0, le=24 * 60 * 60)
+    cleanup_completing_grace_seconds: int = Field(
+        default=15 * 60,
+        ge=60,
+        le=7 * 24 * 60 * 60,
+    )
+    cleanup_orphan_grace_seconds: int = Field(
+        default=60 * 60,
+        ge=60,
+        le=30 * 24 * 60 * 60,
+    )
+    cleanup_claim_ttl_seconds: int = Field(default=5 * 60, ge=30, le=60 * 60)
 
 
 class ObservabilitySettings(BaseModel):
