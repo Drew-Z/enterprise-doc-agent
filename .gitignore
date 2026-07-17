@@ -1,0 +1,27 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Node
+node_modules/
+apps/web/dist/
+apps/web/coverage/
+
+# Local environment and runtime
+.env
+.env.*
+!.env.example
+*.log
+tmp/
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/

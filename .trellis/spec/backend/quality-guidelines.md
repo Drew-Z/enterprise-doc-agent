@@ -1,51 +1,41 @@
-# Quality Guidelines
+# Backend Quality Guidelines
 
-> Code quality standards for backend development.
+## Required Gates
 
----
+Run from the repository root:
 
-## Overview
+```powershell
+uv run ruff format --check .
+uv run ruff check .
+uv run mypy packages/core/src apps/api/src apps/worker/src
+uv run pytest -m "not integration"
+```
 
-<!--
-Document your project's quality standards here.
+Ruff excludes generated Trellis/Codex runtime files and checks project Python code.
+Mypy runs in strict mode. Integration tests are marked explicitly and require the
+local Compose stack.
 
-Questions to answer:
-- What patterns are forbidden?
-- What linting rules do you enforce?
-- What are your testing requirements?
-- What code review standards apply?
--->
+## Testing
 
-(To be filled by the team)
+- Unit tests inject health checkers, exporters, and process boundaries.
+- ASGI tests call application factories without opening real infrastructure sockets.
+- Foundation integration tests verify Compose, migration, and runtime readiness.
+- Test filenames are unique across workspace roots.
+- Do not hide failures with skip, xfail, rerun plugins, or allow-failure CI steps.
 
----
+## Review Checklist
+
+Confirm package ownership, typed settings, bounded I/O, deterministic tests, secret
+redaction, stable public schemas, and M0/M1-M7 scope boundaries.
 
 ## Forbidden Patterns
 
-<!-- Patterns that should never be used and why -->
+Do not import API from Worker or Worker from API, construct global network clients at
+module import, log raw exceptions containing secrets, or edit an applied migration.
 
-(To be filled by the team)
+## Proven Examples
 
----
-
-## Required Patterns
-
-<!-- Patterns that must always be used -->
-
-(To be filled by the team)
-
----
-
-## Testing Requirements
-
-<!-- What level of testing is expected -->
-
-(To be filled by the team)
-
----
-
-## Code Review Checklist
-
-<!-- What reviewers should check -->
-
-(To be filled by the team)
+- `pyproject.toml`
+- `.github/workflows/quality.yml`
+- `tests/foundation/test_ci_contract.py`
+- `packages/core/tests/test_health.py`

@@ -1,0 +1,23 @@
+{
+  "name": "enterprise-doc-agent",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.9.0",
+  "engines": {
+    "node": ">=24 <25",
+    "pnpm": ">=11.9 <12"
+  },
+  "scripts": {
+    "backend:format": "uv run ruff format --check .",
+    "backend:lint": "uv run ruff check .",
+    "backend:typecheck": "uv run mypy packages/core/src apps/api/src apps/worker/src",
+    "backend:test": "uv run pytest -m \"not integration\"",
+    "lint": "pnpm --filter web lint",
+    "typecheck": "pnpm --filter web typecheck",
+    "test": "pnpm --filter web test",
+    "build": "pnpm --filter web build",
+    "quality": "pnpm backend:format && pnpm backend:lint && pnpm backend:typecheck && pnpm backend:test && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "smoke:foundation": "uv run python scripts/foundation_smoke.py --run",
+    "dev:web": "pnpm --filter web dev"
+  }
+}

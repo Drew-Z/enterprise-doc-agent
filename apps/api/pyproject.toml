@@ -1,0 +1,24 @@
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "enterprise-doc-api"
+version = "0.1.0"
+description = "FastAPI service for the enterprise document Agent platform"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "enterprise-doc-core",
+  "fastapi>=0.116.1",
+  "opentelemetry-instrumentation-fastapi>=0.57b0",
+  "uvicorn[standard]>=0.35.0",
+]
+
+[project.scripts]
+enterprise-doc-api = "enterprise_doc_api.__main__:main"
+
+[tool.uv.sources]
+enterprise-doc-core = { workspace = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/enterprise_doc_api"]

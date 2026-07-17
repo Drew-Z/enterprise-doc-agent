@@ -1,51 +1,39 @@
-# Quality Guidelines
+# Frontend Quality Guidelines
 
-> Code quality standards for frontend development.
+## Required Gates
 
----
+Run from the repository root:
 
-## Overview
+```powershell
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+```
 
-<!--
-Document your project's quality standards here.
+Dependencies are installed with `pnpm install --frozen-lockfile`. CI runs these
+commands in an independent frontend job.
 
-Questions to answer:
-- What patterns are forbidden?
-- What linting rules do you enforce?
-- What are your testing requirements?
-- What code review standards apply?
--->
+## Testing
 
-(To be filled by the team)
+Use Vitest and Testing Library at the HTTP boundary. Tests cover loading, typed healthy
+200, typed degraded 503, network failure, schema failure, and manual recovery. Query
+retries are disabled so tests and operational behavior expose the first real result.
 
----
+## Review Checklist
+
+Check runtime schema validation, semantic status/alert roles, keyboard-accessible
+actions, stable responsive dimensions, no overlap at desktop/mobile widths, and no
+fake operational data.
 
 ## Forbidden Patterns
 
-<!-- Patterns that should never be used and why -->
+Do not mock TanStack Query internals, use `any`, suppress TypeScript errors, add
+allow-failure CI, or ship an unreviewed loading/error layout.
 
-(To be filled by the team)
+## Proven Examples
 
----
-
-## Required Patterns
-
-<!-- Patterns that must always be used -->
-
-(To be filled by the team)
-
----
-
-## Testing Requirements
-
-<!-- What level of testing is expected -->
-
-(To be filled by the team)
-
----
-
-## Code Review Checklist
-
-<!-- What reviewers should check -->
-
-(To be filled by the team)
+- `apps/web/src/App.test.tsx`
+- `apps/web/src/test/setup.ts`
+- `apps/web/eslint.config.js`
+- `.github/workflows/quality.yml`

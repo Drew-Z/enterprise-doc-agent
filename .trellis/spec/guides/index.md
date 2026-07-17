@@ -26,6 +26,29 @@ These guides help you **ask the right questions before coding**.
 
 ---
 
+## Enterprise Document Agent M0 Triggers
+
+Use the cross-layer guide whenever a health contract changes across Core, API or
+Worker, and Web. The typed 200/503 body, component names, and timeout semantics must
+move together with their backend and frontend tests.
+
+Use the reuse guide before adding settings, dependency checkers, logging fields, or
+telemetry helpers. API and Worker share foundation contracts through
+`packages/core`, while their entry points and process lifecycle remain app-owned.
+
+For every boundary change, check secret handling explicitly. Credentials, signed
+URLs, document bodies, prompt text, and raw query tokens must not enter logs, traces,
+health payloads, or browser configuration.
+
+Proven examples:
+
+- `packages/core/src/enterprise_doc_core/health/models.py`
+- `apps/api/src/enterprise_doc_api/app.py`
+- `apps/web/src/api/health.ts`
+- `packages/core/src/enterprise_doc_core/logging/json.py`
+
+---
+
 ## Quick Reference: Thinking Triggers
 
 ### When to Think About Cross-Layer Issues

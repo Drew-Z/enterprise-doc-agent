@@ -1,38 +1,23 @@
 # Backend Development Guidelines
 
-> Best practices for backend development in this project.
-
----
-
-## Overview
-
-This directory contains guidelines for backend development. Fill in each file with your project's specific conventions.
-
----
+These guidelines record the backend conventions proven by M0.
 
 ## Guidelines Index
 
-| Guide | Description | Status |
-|-------|-------------|--------|
-| [Directory Structure](./directory-structure.md) | Module organization and file layout | To fill |
-| [Database Guidelines](./database-guidelines.md) | ORM patterns, queries, migrations | To fill |
-| [Error Handling](./error-handling.md) | Error types, handling strategies | To fill |
-| [Quality Guidelines](./quality-guidelines.md) | Code standards, forbidden patterns | To fill |
-| [Logging Guidelines](./logging-guidelines.md) | Structured logging, log levels | To fill |
+| Guide | Scope | Status |
+|---|---|---|
+| [Directory Structure](./directory-structure.md) | Python package ownership | Adopted in M0 |
+| [Database Guidelines](./database-guidelines.md) | SQLAlchemy and Alembic | Adopted in M0 |
+| [Error Handling](./error-handling.md) | Health and process failures | Adopted in M0 |
+| [Quality Guidelines](./quality-guidelines.md) | Ruff, mypy, pytest | Adopted in M0 |
+| [Logging Guidelines](./logging-guidelines.md) | Secret-safe JSON logs | Adopted in M0 |
 
----
+Only implemented behavior belongs here. M1-M7 business patterns must be added after
+their code and tests exist.
 
-## How to Fill These Guidelines
+## Proven Examples
 
-For each guideline file:
-
-1. Document your project's **actual conventions** (not ideals)
-2. Include **code examples** from your codebase
-3. List **forbidden patterns** and why
-4. Add **common mistakes** your team has made
-
-The goal is to help AI assistants and new team members understand how YOUR project works.
-
----
-
-**Language**: All documentation should be written in **English**.
+- `apps/api/src/enterprise_doc_api/app.py`
+- `apps/worker/src/enterprise_doc_worker/app.py`
+- `packages/core/src/enterprise_doc_core/health/models.py`
+- `tests/foundation/test_repository_contract.py`

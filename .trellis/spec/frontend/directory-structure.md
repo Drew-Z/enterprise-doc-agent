@@ -1,54 +1,29 @@
-# Directory Structure
+# Frontend Directory Structure
 
-> How frontend code is organized in this project.
+## Layout
 
----
-
-## Overview
-
-<!--
-Document your project's frontend directory structure here.
-
-Questions to answer:
-- Where do components live?
-- How are features/modules organized?
-- Where are shared utilities?
-- How are assets organized?
--->
-
-(To be filled by the team)
-
----
-
-## Directory Layout
-
-```
-<!-- Replace with your actual structure -->
-src/
-├── ...
-└── ...
+```text
+apps/web/src/main.tsx        Application providers and root mounting
+apps/web/src/App.tsx         Current operational overview
+apps/web/src/api/health.ts   Health transport, types, and runtime validation
+apps/web/src/styles.css      Application styles and responsive rules
+apps/web/src/test/setup.ts   Shared Vitest DOM setup
+apps/web/src/App.test.tsx    User-visible state tests
 ```
 
----
+## Organization
 
-## Module Organization
+Keep boundary clients under `src/api`. Keep provider setup in `main.tsx`.
+Feature components stay near the feature until there is repeated, proven reuse.
+Do not create speculative shared folders for M1-M7 features.
 
-<!-- How should new features be organized? -->
+## Naming
 
-(To be filled by the team)
+React component files use PascalCase. Boundary and utility modules use lower-case
+domain names. Tests use `.test.tsx` or `.test.ts`.
 
----
+## Proven Examples
 
-## Naming Conventions
-
-<!-- File and folder naming rules -->
-
-(To be filled by the team)
-
----
-
-## Examples
-
-<!-- Link to well-organized modules as examples -->
-
-(To be filled by the team)
+- `apps/web/src/main.tsx`
+- `apps/web/src/api/health.ts`
+- `apps/web/src/App.test.tsx`

@@ -1,59 +1,35 @@
 # Component Guidelines
 
-> How components are built in this project.
+## Component Shape
 
----
+M0 uses typed function components. `App` derives display states from one TanStack
+Query result and renders compact operational sections. Repeated service metadata is
+a typed array mapped into consistent cards.
 
-## Overview
+## Props and Composition
 
-<!--
-Document your project's component conventions here.
+Define explicit props when extracting a component. Keep data contracts in the
+boundary module that owns them. Pass already validated values to display components;
+do not make leaf components parse network payloads.
 
-Questions to answer:
-- What component patterns do you use?
-- How are props defined?
-- How do you handle composition?
-- What accessibility standards apply?
--->
+## Styling
 
-(To be filled by the team)
-
----
-
-## Component Structure
-
-<!-- Standard structure of a component file -->
-
-(To be filled by the team)
-
----
-
-## Props Conventions
-
-<!-- How props should be defined and typed -->
-
-(To be filled by the team)
-
----
-
-## Styling Patterns
-
-<!-- How styles are applied (CSS modules, styled-components, Tailwind, etc.) -->
-
-(To be filled by the team)
-
----
+Use the application CSS file with stable class names, constrained widths, explicit
+grid tracks, and responsive breakpoints. Cards are reserved for repeated service
+items. Icon-only actions use Lucide icons, an accessible label, and a tooltip title.
 
 ## Accessibility
 
-<!-- A11y requirements and patterns -->
-
-(To be filled by the team)
-
----
+Use semantic headings, `aria-live` for readiness changes, `role="status"` for
+loading, `role="alert"` for unreachable state, and real buttons for actions.
 
 ## Common Mistakes
 
-<!-- Component-related mistakes your team has made -->
+Do not render fake job/document data, place cards inside cards, use text-only refresh
+controls, or let loading/error text resize fixed controls.
 
-(To be filled by the team)
+## Proven Examples
+
+- `apps/web/src/App.tsx`
+- `apps/web/src/styles.css`
+- `apps/web/src/App.test.tsx`

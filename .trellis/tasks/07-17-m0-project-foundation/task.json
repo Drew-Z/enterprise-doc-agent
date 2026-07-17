@@ -3,7 +3,7 @@
   "name": "m0-project-foundation",
   "title": "M0 Project Foundation",
   "description": "Repository, local dependencies, health checks, configuration, baseline CI, and observability foundation",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": "fullstack",
   "scope": "foundation/monorepo/local-infrastructure",
   "package": null,

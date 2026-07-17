@@ -1,54 +1,35 @@
-# Directory Structure
+# Backend Directory Structure
 
-> How backend code is organized in this project.
+## Ownership
 
----
+The backend is a uv workspace with separate src-layout packages.
 
-## Overview
-
-<!--
-Document your project's backend directory structure here.
-
-Questions to answer:
-- How are modules/packages organized?
-- Where does business logic live?
-- Where are API endpoints defined?
-- How are utilities and helpers organized?
--->
-
-(To be filled by the team)
-
----
-
-## Directory Layout
-
-```
-<!-- Replace with your actual structure -->
-src/
-├── ...
-└── ...
+```text
+apps/api/src/enterprise_doc_api/       HTTP application and middleware
+apps/worker/src/enterprise_doc_worker/ Worker lifecycle and probe application
+packages/core/src/enterprise_doc_core/ Shared foundation contracts
+packages/core/src/enterprise_doc_core/db/migrations/ Alembic revisions
+tests/foundation/                      Cross-package executable contracts
 ```
 
----
+API and Worker may import Core. They do not import each other. App-owned settings,
+entry points, and process lifecycle remain inside the owning app.
 
-## Module Organization
+## Module Rules
 
-<!-- How should new features/modules be organized? -->
+- Put reusable settings, health, logging, request context, database, and telemetry
+  infrastructure in `enterprise_doc_core`.
+- Put FastAPI routes and ASGI middleware in `enterprise_doc_api`.
+- Put Worker supervision and internal probes in `enterprise_doc_worker`.
+- Add business modules in later milestones instead of expanding a generic utility file.
 
-(To be filled by the team)
+## Naming
 
----
+Python modules and packages use snake_case. Tests use unique descriptive file names,
+such as `test_api_telemetry.py`, to avoid import collisions across workspace test roots.
 
-## Naming Conventions
+## Proven Examples
 
-<!-- File and folder naming rules -->
-
-(To be filled by the team)
-
----
-
-## Examples
-
-<!-- Link to well-organized modules as examples -->
-
-(To be filled by the team)
+- `apps/api/src/enterprise_doc_api/middleware/request_context.py`
+- `apps/worker/src/enterprise_doc_worker/lifecycle.py`
+- `packages/core/src/enterprise_doc_core/telemetry/runtime.py`

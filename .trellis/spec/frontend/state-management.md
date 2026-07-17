@@ -1,51 +1,30 @@
 # State Management
 
-> How state is managed in this project.
-
----
-
-## Overview
-
-<!--
-Document your project's state management conventions here.
-
-Questions to answer:
-- What state management solution do you use?
-- How is local vs global state decided?
-- How do you handle server state?
-- What are the patterns for derived state?
--->
-
-(To be filled by the team)
-
----
-
 ## State Categories
 
-<!-- Local state, global state, server state, URL state -->
-
-(To be filled by the team)
-
----
-
-## When to Use Global State
-
-<!-- Criteria for promoting state to global -->
-
-(To be filled by the team)
-
----
+- Server state: TanStack Query.
+- Derived display state: booleans derived from the query result.
+- Local UI state: none is required by the M0 dashboard.
+- Global client state: none is introduced in M0.
 
 ## Server State
 
-<!-- How server data is cached and synchronized -->
+The shared `QueryClient` disables retries and focus refetch by default. The readiness
+query sets its own stale time and polling interval. A typed 200 is healthy, a typed
+503 is degraded, and network/schema/unexpected-status failures are unreachable.
 
-(To be filled by the team)
+## Promotion Rule
 
----
+Introduce global state only when multiple unrelated routes require the same mutable
+client-owned value. Server-owned resources remain in TanStack Query.
 
 ## Common Mistakes
 
-<!-- State management mistakes your team has made -->
+Do not copy query data into local state, treat HTTP 503 as a transport exception, or
+invent a fifth backend state for the refresh button.
 
-(To be filled by the team)
+## Proven Examples
+
+- `apps/web/src/main.tsx`
+- `apps/web/src/App.tsx`
+- `apps/web/src/App.test.tsx`

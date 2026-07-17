@@ -1,0 +1,69 @@
+[project]
+name = "enterprise-doc-agent"
+version = "0.1.0"
+description = "Enterprise document Agent platform"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "enterprise-doc-api",
+  "enterprise-doc-core",
+  "enterprise-doc-worker",
+]
+
+[dependency-groups]
+dev = [
+  "mypy>=1.17.1",
+  "pytest>=8.4.2",
+  "pytest-asyncio>=1.1.0",
+  "pytest-cov>=6.2.1",
+  "httpx>=0.28.1",
+  "pyyaml>=6.0.2",
+  "ruff>=0.12.12",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+enterprise-doc-api = { workspace = true }
+enterprise-doc-core = { workspace = true }
+enterprise-doc-worker = { workspace = true }
+
+[tool.uv.workspace]
+members = ["apps/api", "apps/worker", "packages/core"]
+
+[tool.pytest.ini_options]
+addopts = "-ra --strict-markers --import-mode=importlib"
+testpaths = ["apps", "packages", "tests"]
+asyncio_mode = "auto"
+markers = [
+  "integration: requires local infrastructure",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+exclude = [".codex", ".trellis", ".venv", "apps/web"]
+src = [
+  "apps/api/src",
+  "apps/worker/src",
+  "packages/core/src",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC", "RUF"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+show_error_codes = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["boto3.*", "botocore.*"]
+ignore_missing_imports = true

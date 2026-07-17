@@ -1,51 +1,43 @@
 # Database Guidelines
 
-> Database patterns and conventions for this project.
+## Current Contract
 
----
+M0 uses SQLAlchemy 2 async engines for runtime checks and Alembic for schema
+ownership. PostgreSQL is the future business source of truth; Redis and MinIO are
+foundation dependencies, not authoritative business stores.
 
-## Overview
-
-<!--
-Document your project's database conventions here.
-
-Questions to answer:
-- What ORM/query library do you use?
-- How are migrations managed?
-- What are the naming conventions for tables/columns?
-- How do you handle transactions?
--->
-
-(To be filled by the team)
-
----
+`create_database_engine` receives typed `DatabaseSettings`, enables
+`pool_pre_ping`, and applies the configured connection timeout. Windows entry
+points select an asyncio-compatible event loop before psycopg is used.
 
 ## Query Patterns
 
-<!-- How should queries be written? Batch operations? -->
-
-(To be filled by the team)
-
----
+M0 readiness executes only a bounded `SELECT 1` through an injected
+`DatabaseChecker`. New business queries must live in feature-owned modules and
+receive explicit settings/session dependencies.
 
 ## Migrations
 
-<!-- How to create and run migrations -->
+Run migrations from the repository root:
 
-(To be filled by the team)
+```powershell
+uv run alembic upgrade head
+uv run alembic downgrade base
+uv run alembic upgrade head
+```
 
----
+Applied revisions are immutable. The M0 revision creates exactly the `vector`
+extension and no business tables.
 
-## Naming Conventions
+## Naming
 
-<!-- Table names, column names, index names -->
+Alembic revision files use `YYYYMMDD_sequence_description.py`. Future table,
+column, constraint, and index naming must be introduced with the first real
+business schema and then recorded here.
 
-(To be filled by the team)
+## Proven Examples
 
----
-
-## Common Mistakes
-
-<!-- Database-related mistakes your team has made -->
-
-(To be filled by the team)
+- `packages/core/src/enterprise_doc_core/db/engine.py`
+- `packages/core/src/enterprise_doc_core/health/adapters.py`
+- `packages/core/src/enterprise_doc_core/db/migrations/versions/20260717_0001_enable_vector.py`
+- `tests/foundation/test_migration_contract.py`

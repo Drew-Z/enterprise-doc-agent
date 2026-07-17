@@ -1,51 +1,26 @@
 # Hook Guidelines
 
-> How hooks are used in this project.
+## Current Pattern
 
----
-
-## Overview
-
-<!--
-Document your project's hook conventions here.
-
-Questions to answer:
-- What custom hooks do you have?
-- How do you handle data fetching?
-- What are the naming conventions?
-- How do you share stateful logic?
--->
-
-(To be filled by the team)
-
----
-
-## Custom Hook Patterns
-
-<!-- How to create and structure custom hooks -->
-
-(To be filled by the team)
-
----
+M0 does not define a custom hook. The dashboard calls `useQuery` directly because
+there is one small readiness query and no repeated stateful logic.
 
 ## Data Fetching
 
-<!-- How data fetching is handled (React Query, SWR, etc.) -->
+TanStack Query owns remote readiness state. Queries use stable keys, disable retries
+for operational truth, and use explicit stale/refetch intervals. Manual refresh calls
+`refetch`; it is an action rather than a separate server state.
 
-(To be filled by the team)
-
----
-
-## Naming Conventions
-
-<!-- Hook naming rules (use*, etc.) -->
-
-(To be filled by the team)
-
----
+Create a `use*` hook only when the same query configuration or stateful behavior is
+reused by multiple components. Keep transport and runtime validation in `src/api`.
 
 ## Common Mistakes
 
-<!-- Hook-related mistakes your team has made -->
+Do not duplicate fetch logic in components, put server data in local `useState`, or
+hide a failed health response behind automatic retries.
 
-(To be filled by the team)
+## Proven Examples
+
+- `apps/web/src/App.tsx`
+- `apps/web/src/api/health.ts`
+- `apps/web/src/main.tsx`

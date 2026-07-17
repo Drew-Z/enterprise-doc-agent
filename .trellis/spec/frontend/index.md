@@ -1,39 +1,24 @@
 # Frontend Development Guidelines
 
-> Best practices for frontend development in this project.
-
----
-
-## Overview
-
-This directory contains guidelines for frontend development. Fill in each file with your project's specific conventions.
-
----
+These guidelines record the React/Vite conventions proven by the M0 readiness
+dashboard.
 
 ## Guidelines Index
 
-| Guide | Description | Status |
-|-------|-------------|--------|
-| [Directory Structure](./directory-structure.md) | Module organization and file layout | To fill |
-| [Component Guidelines](./component-guidelines.md) | Component patterns, props, composition | To fill |
-| [Hook Guidelines](./hook-guidelines.md) | Custom hooks, data fetching patterns | To fill |
-| [State Management](./state-management.md) | Local state, global state, server state | To fill |
-| [Quality Guidelines](./quality-guidelines.md) | Code standards, forbidden patterns | To fill |
-| [Type Safety](./type-safety.md) | Type patterns, validation | To fill |
+| Guide | Scope | Status |
+|---|---|---|
+| [Directory Structure](./directory-structure.md) | Source ownership | Adopted in M0 |
+| [Component Guidelines](./component-guidelines.md) | Operational UI components | Adopted in M0 |
+| [Hook Guidelines](./hook-guidelines.md) | TanStack Query usage | Adopted in M0 |
+| [State Management](./state-management.md) | Server and local state | Adopted in M0 |
+| [Quality Guidelines](./quality-guidelines.md) | ESLint, TypeScript, tests | Adopted in M0 |
+| [Type Safety](./type-safety.md) | Runtime boundary validation | Adopted in M0 |
 
----
+Future document and Agent interfaces must extend these guidelines only after their
+real code and tests exist.
 
-## How to Fill These Guidelines
+## Proven Examples
 
-For each guideline file:
-
-1. Document your project's **actual conventions** (not ideals)
-2. Include **code examples** from your codebase
-3. List **forbidden patterns** and why
-4. Add **common mistakes** your team has made
-
-The goal is to help AI assistants and new team members understand how YOUR project works.
-
----
-
-**Language**: All documentation should be written in **English**.
+- `apps/web/src/App.tsx`
+- `apps/web/src/api/health.ts`
+- `apps/web/src/App.test.tsx`

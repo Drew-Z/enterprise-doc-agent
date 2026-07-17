@@ -1,51 +1,29 @@
-# Type Safety
+# Frontend Type Safety
 
-> Type safety patterns in this project.
+## Type Ownership
 
----
+The health boundary module owns `ComponentStatus`, `ComponentName`,
+`ComponentHealth`, and `ReadinessResponse`. Component-only metadata remains local
+to `App.tsx`.
 
-## Overview
+## Runtime Validation
 
-<!--
-Document your project's type safety conventions here.
+Fetch results begin as `unknown`. `isReadinessResponse` validates the object,
+overall status, all required component names, and every component status before the
+payload reaches React.
 
-Questions to answer:
-- What type system do you use?
-- How are types organized?
-- What validation library do you use?
-- How do you handle type inference?
--->
+## Patterns
 
-(To be filled by the team)
-
----
-
-## Type Organization
-
-<!-- Where types are defined, shared types vs local types -->
-
-(To be filled by the team)
-
----
-
-## Validation
-
-<!-- Runtime validation patterns (Zod, Yup, io-ts, etc.) -->
-
-(To be filled by the team)
-
----
-
-## Common Patterns
-
-<!-- Type utilities, generics, type guards -->
-
-(To be filled by the team)
-
----
+Use string unions and records for closed contracts. Use small type guards for external
+JSON. Let TypeScript infer local values after a validated boundary.
 
 ## Forbidden Patterns
 
-<!-- any, type assertions, etc. -->
+Do not cast an unvalidated response directly to the target interface, use `any`, or
+accept missing readiness components as healthy.
 
-(To be filled by the team)
+## Proven Examples
+
+- `apps/web/src/api/health.ts`
+- `apps/web/src/App.tsx`
+- `apps/web/tsconfig.app.json`

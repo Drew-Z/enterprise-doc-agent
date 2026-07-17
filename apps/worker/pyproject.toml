@@ -1,0 +1,23 @@
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "enterprise-doc-worker"
+version = "0.1.0"
+description = "Worker process for the enterprise document Agent platform"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "enterprise-doc-core",
+  "fastapi>=0.116.1",
+  "uvicorn[standard]>=0.35.0",
+]
+
+[project.scripts]
+enterprise-doc-worker = "enterprise_doc_worker.__main__:main"
+
+[tool.uv.sources]
+enterprise-doc-core = { workspace = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/enterprise_doc_worker"]

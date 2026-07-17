@@ -1,51 +1,34 @@
 # Logging Guidelines
 
-> How logging is done in this project.
+## Format
 
----
+API and Worker configure the standard Python logging root with `JsonFormatter`.
+Every line is JSON and contains `timestamp`, `level`, `service`,
+`environment`, and `event`. Request-scoped logs also contain `request_id`
+and `correlation_id`.
 
-## Overview
+## Levels
 
-<!--
-Document your project's logging conventions here.
+- `INFO`: process lifecycle and completed requests.
+- `WARNING`: expected dependency timeout or unavailable state.
+- `ERROR` through `logger.exception`: unexpected request/process failure.
 
-Questions to answer:
-- What logging library do you use?
-- What are the log levels and when to use each?
-- What should be logged?
-- What should NOT be logged (PII, secrets)?
--->
+## Required Context
 
-(To be filled by the team)
+Use `extra={"event_data": {...}}` for structured event fields. Log component name,
+status code, duration, and error class where relevant. Optional principal fields are
+emitted only after a real principal resolver enriches the request context.
 
----
+## Secret Safety
 
-## Log Levels
+`sanitize_log_value` recursively redacts secret-aware values and keys containing
+authorization, cookie, DSN, password, secret, signature, or token markers. Never log
+request/response bodies, document text, prompt text, credentials, signed URLs, or raw
+connection strings.
 
-<!-- When to use each level: debug, info, warn, error -->
+## Proven Examples
 
-(To be filled by the team)
-
----
-
-## Structured Logging
-
-<!-- Log format, required fields -->
-
-(To be filled by the team)
-
----
-
-## What to Log
-
-<!-- Important events to log -->
-
-(To be filled by the team)
-
----
-
-## What NOT to Log
-
-<!-- Sensitive data, PII, secrets -->
-
-(To be filled by the team)
+- `packages/core/src/enterprise_doc_core/logging/json.py`
+- `apps/api/src/enterprise_doc_api/middleware/request_context.py`
+- `packages/core/tests/test_logging.py`
+- `apps/api/tests/test_request_context.py`
