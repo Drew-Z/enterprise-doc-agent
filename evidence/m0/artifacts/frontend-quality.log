@@ -1,0 +1,27 @@
+$ pnpm --filter web lint
+$ eslint .
+$ pnpm --filter web typecheck
+$ tsc -b --pretty false
+$ pnpm --filter web test
+$ vitest run
+
+[1m[46m RUN [49m[22m [36mv3.2.7 [39m[90mD:/workspace4Cursor/enterprise-doc-agent/apps/web[39m
+
+ [32m✓[39m src/App.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 458[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m6 passed[39m[22m[90m (6)[39m
+[2m   Start at [22m 10:08:20
+[2m   Duration [22m 3.94s[2m (transform 171ms, setup 299ms, collect 800ms, tests 458ms, environment 1.24s, prepare 492ms)[22m
+
+$ pnpm --filter web build
+$ tsc -b && vite build
+[36mvite v7.3.6 [32mbuilding client environment for production...[36m[39m
+transforming...
+[32m✓[39m 1717 modules transformed.
+rendering chunks...
+computing gzip size...
+[2mdist/[22m[32mindex.html                 [39m[1m[2m  0.41 kB[22m[1m[22m[2m │ gzip:  0.28 kB[22m
+[2mdist/[22m[35massets/index-4roVSvbz.css  [39m[1m[2m  4.05 kB[22m[1m[22m[2m │ gzip:  1.45 kB[22m
+[2mdist/[22m[36massets/index-B3MG44g4.js   [39m[1m[2m234.09 kB[22m[1m[22m[2m │ gzip: 73.46 kB[22m
+[32m✓ built in 5.47s[39m

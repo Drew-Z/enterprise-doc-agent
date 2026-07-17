@@ -1,0 +1,31 @@
+53 files already formatted
+All checks passed!
+Success: no issues found in 28 source files
+============================= test session starts =============================
+platform win32 -- Python 3.12.13, pytest-9.1.1, pluggy-1.6.0
+rootdir: D:\workspace4Cursor\enterprise-doc-agent
+configfile: pyproject.toml
+testpaths: apps, packages, tests
+plugins: anyio-4.14.2, asyncio-1.4.0, cov-7.1.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 43 items / 3 deselected / 40 selected
+
+apps\api\tests\test_api_telemetry.py .                                   [  2%]
+apps\api\tests\test_health.py ...                                        [ 10%]
+apps\api\tests\test_request_context.py ...                               [ 17%]
+apps\api\tests\test_settings.py .                                        [ 20%]
+apps\worker\tests\test_health.py ...                                     [ 27%]
+apps\worker\tests\test_lifecycle.py ..                                   [ 32%]
+apps\worker\tests\test_settings.py .                                     [ 35%]
+apps\worker\tests\test_worker_telemetry.py .                             [ 37%]
+packages\core\tests\test_core_telemetry.py ...                           [ 45%]
+packages\core\tests\test_db.py .                                         [ 47%]
+packages\core\tests\test_health.py ...                                   [ 55%]
+packages\core\tests\test_logging.py ..                                   [ 60%]
+packages\core\tests\test_settings.py .                                   [ 62%]
+tests\foundation\test_ci_contract.py ...                                 [ 70%]
+tests\foundation\test_documentation_contract.py .....                    [ 82%]
+tests\foundation\test_migration_contract.py ...                          [ 90%]
+tests\foundation\test_repository_contract.py ....                        [100%]
+
+====================== 40 passed, 3 deselected in 3.24s =======================

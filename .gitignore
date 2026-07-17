@@ -18,6 +18,7 @@ apps/web/coverage/
 .env.*
 !.env.example
 *.log
+!evidence/**/*.log
 tmp/
 .DS_Store
 Thumbs.db

@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "evidence": [
+    {
+      "milestone": "M0",
+      "status": "passed",
+      "manifest": "evidence/m0/20260717-100654-m0-project-foundation.json"
+    }
+  ]
+}

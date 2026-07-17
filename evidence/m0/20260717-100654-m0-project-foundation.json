@@ -1,0 +1,167 @@
+{
+  "evidence_id": "m0-project-foundation",
+  "milestone": "M0",
+  "requirement_ids": [
+    "R-1",
+    "R-2",
+    "R-3",
+    "R-4",
+    "R-5",
+    "R-6",
+    "R-7",
+    "R-8",
+    "R-9",
+    "R-10",
+    "R-11",
+    "R-12",
+    "R-13",
+    "R-14",
+    "R-15",
+    "R-16",
+    "R-17",
+    "R-18",
+    "R-19",
+    "R-20",
+    "R-21",
+    "R-22"
+  ],
+  "status": "passed",
+  "command_or_procedure": [
+    {
+      "command": "uv sync --frozen",
+      "exit_code": 0,
+      "artifact": "evidence/m0/artifacts/uv-sync-frozen.log"
+    },
+    {
+      "command": "pnpm install --frozen-lockfile",
+      "exit_code": 0,
+      "artifact": "evidence/m0/artifacts/pnpm-install-frozen.log"
+    },
+    {
+      "command": "uv run ruff format --check . && uv run ruff check . && uv run mypy packages/core/src apps/api/src apps/worker/src scripts/foundation_smoke.py && uv run pytest -m \"not integration\" --ignore=tests/foundation/test_evidence_contract.py",
+      "exit_code": 0,
+      "artifact": "evidence/m0/artifacts/backend-quality.log"
+    },
+    {
+      "command": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+      "exit_code": 0,
+      "artifact": "evidence/m0/artifacts/frontend-quality.log"
+    },
+    {
+      "command": "Compose up/init; Alembic upgrade; integration tests; downgrade; re-upgrade; integration tests; Compose down",
+      "exit_code": 0,
+      "artifact": "evidence/m0/artifacts/migration-integration.log"
+    },
+    {
+      "command": "uv run python scripts/foundation_smoke.py --run",
+      "exit_code": 0,
+      "artifact": "evidence/m0/artifacts/foundation-smoke.log"
+    },
+    {
+      "command": "python ./.trellis/scripts/get_context.py --mode packages && python ./.trellis/scripts/task.py validate 07-17-m0-project-foundation",
+      "exit_code": 0,
+      "artifact": "evidence/m0/artifacts/trellis-validation.log"
+    },
+    {
+      "command": "pnpm quality",
+      "exit_code": 0,
+      "artifact": "evidence/m0/artifacts/final-quality.log"
+    }
+  ],
+  "environment": {
+    "operating_system": "Microsoft Windows 11 Home China",
+    "architecture": "AMD64",
+    "workspace": "D:/workspace4Cursor/enterprise-doc-agent",
+    "compose_profile": "local M0 infrastructure"
+  },
+  "tool_versions": {
+    "python": "3.12.13",
+    "uv": "0.11.3",
+    "node": "24.14.0",
+    "pnpm": "11.9.0",
+    "docker": "29.3.1",
+    "docker_compose": "5.1.1"
+  },
+  "commit_sha": "a96f282388243c6145c9559a3195e7e3d9e1f086",
+  "image_digest": "not_applicable",
+  "started_at": "2026-07-17T02:06:54.7543902+00:00",
+  "completed_at": "2026-07-17T02:14:13.8485677+00:00",
+  "result_summary": "M0 locked installs, backend and frontend quality gates, migration lifecycle, real dependency readiness, complete local smoke, Trellis package context, and responsive dashboard review passed for the referenced commit.",
+  "artifacts": [
+    {
+      "path": "evidence/m0/artifacts/uv-sync-frozen.log",
+      "kind": "log",
+      "sha256": "ef94a990b646e582e224b05cb227f6d170e2679d52bc2b201e62c26ba9dc6b78"
+    },
+    {
+      "path": "evidence/m0/artifacts/pnpm-install-frozen.log",
+      "kind": "log",
+      "sha256": "4d99163f07b065a5781d1526b6dcc880d332dc12df27b3bf52b62ca0b73c11cc"
+    },
+    {
+      "path": "evidence/m0/artifacts/backend-quality.log",
+      "kind": "log",
+      "sha256": "d820a89c137a7804cba36bbd4ebb29643eb705046d939ceb6c2e91069c59e8eb"
+    },
+    {
+      "path": "evidence/m0/artifacts/frontend-quality.log",
+      "kind": "log",
+      "sha256": "ddd97d2a6aaaf3636519e82150328fc44fb36a8fcb295a98755a786bc225c0a0"
+    },
+    {
+      "path": "evidence/m0/artifacts/migration-integration.log",
+      "kind": "log",
+      "sha256": "632ceb076bbcceb30c9891c44daac8d19b49562b19b582a2b530a5a0dd52c897"
+    },
+    {
+      "path": "evidence/m0/artifacts/foundation-smoke.log",
+      "kind": "log",
+      "sha256": "8b98fefa9f50da4db9fd0b12db5f052a2709c5ff4a0be9d1bd9888297ef9c686"
+    },
+    {
+      "path": "evidence/m0/artifacts/trellis-validation.log",
+      "kind": "log",
+      "sha256": "c4c4c189dd28d73bb89e5db1d766de11c0bf6121e87356c69619e53c9fafccd3"
+    },
+    {
+      "path": "evidence/m0/artifacts/final-quality.log",
+      "kind": "log",
+      "sha256": "36ef57f3013f1a04af1a04d8e96c3225a42d244787a4f3c7b78153c7a1b40528"
+    },
+    {
+      "path": "evidence/m0/artifacts/dashboard-desktop-1440x900.png",
+      "kind": "screenshot",
+      "sha256": "afb64d35b6d0577bc8077a64abb0f4f6578b0d60e82e65b6f9ac6647a226ef26"
+    },
+    {
+      "path": "evidence/m0/artifacts/dashboard-mobile-390x844.png",
+      "kind": "screenshot",
+      "sha256": "c1b1fdf4c70ce19b0996ecc43998bf72a958edfdc94d5ccdf212fe6ed3b648ec"
+    }
+  ],
+  "visual_gates": [
+    {
+      "gate_id": "dashboard-responsive",
+      "result": "passed",
+      "reviewer": "Codex",
+      "viewports": [
+        {
+          "width": 1440,
+          "height": 900,
+          "screenshot": "evidence/m0/artifacts/dashboard-desktop-1440x900.png"
+        },
+        {
+          "width": 390,
+          "height": 844,
+          "screenshot": "evidence/m0/artifacts/dashboard-mobile-390x844.png"
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "M1-M7 upload, durable jobs, RAG, Agent, MCP, measured reliability, deployment, and model-gateway capabilities are not implemented or claimed by M0.",
+    "OpenTelemetry evidence covers SDK bootstrap and in-process spans only; collector deployment and cross-process propagation remain M5.",
+    "Application image digest is not applicable because image build and publication remain M6."
+  ],
+  "owner": "Codex"
+}

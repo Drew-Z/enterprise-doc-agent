@@ -1,0 +1,42 @@
+## PACKAGES
+
+### api
+Path: apps/api
+Spec layers: backend
+  - .trellis/spec/api/backend/index.md
+
+### worker
+Path: apps/worker
+Spec layers: backend
+  - .trellis/spec/worker/backend/index.md
+
+### web
+Path: apps/web
+Spec layers: frontend
+  - .trellis/spec/web/frontend/index.md
+
+### core (default)
+Path: packages/core
+Spec layers: backend
+  - .trellis/spec/core/backend/index.md
+
+### infrastructure
+Path: infra
+Spec layers: backend
+  - .trellis/spec/infrastructure/backend/index.md
+
+### foundation-tests
+Path: tests
+Spec layers: backend
+  - .trellis/spec/foundation-tests/backend/index.md
+
+### Shared Guides (always included)
+Path: .trellis/spec/guides/index.md
+
+[0;34m=== Validating Context Files ===[0m
+Target dir: D:\workspace4Cursor\enterprise-doc-agent\.trellis\tasks\07-17-m0-project-foundation
+
+  [0;32mimplement.jsonl: ✓ (1 entries)[0m
+  [0;32mcheck.jsonl: ✓ (1 entries)[0m
+
+[0;32m✓ All validations passed[0m

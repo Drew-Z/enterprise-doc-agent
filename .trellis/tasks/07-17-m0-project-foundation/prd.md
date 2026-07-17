@@ -66,22 +66,22 @@ M0 establishes facts that later milestones can build on. It does not claim that 
 
 ## Acceptance Criteria
 
-- [ ] The required monorepo directories, manifests, package boundaries, and lockfiles exist and pass the repository contract test.
-- [ ] `uv sync --frozen` and `pnpm install --frozen-lockfile` succeed from a clean checkout with the documented tool versions.
-- [ ] `docker compose -f infra/compose/docker-compose.yml up -d --wait` starts healthy PostgreSQL/pgvector, Redis, MinIO, and the one-shot bucket initializer succeeds.
-- [ ] Alembic upgrade, downgrade, and re-upgrade succeed against a clean local database; `SELECT extname FROM pg_extension WHERE extname = 'vector'` returns exactly the required M0 extension.
-- [ ] API liveness returns 200 without dependency access; API readiness returns 200 with healthy dependencies and 503 with a required dependency unavailable.
-- [ ] The Worker starts independently, exposes internal live/ready probes, reports 503 when a required dependency is unavailable, and exits cleanly on termination.
-- [ ] The React dashboard renders the real API readiness state and covers loading, healthy, typed-503 degraded, network/schema unreachable, and retry behavior with unit tests.
-- [ ] Request and correlation IDs are generated or propagated, returned in headers, and present in structured request logs.
-- [ ] Configuration tests prove required-value validation, local/non-local default handling, and secret redaction.
-- [ ] An in-memory OpenTelemetry test proves a request and Worker lifecycle span can be emitted when tracing is enabled; tracing-disabled startup and OTLP-exporter construction tests pass without requiring a collector.
-- [ ] Backend lint, type checks, and unit tests pass; frontend lint, type checks, and unit tests pass.
-- [ ] The GitHub Actions workflow invokes the same locked quality commands and contains no allow-failure path.
-- [ ] A documented foundation smoke procedure verifies Compose, migration, API, Worker, and Web startup on a clean local environment.
-- [ ] Real conventions discovered during M0 are captured in `.trellis/spec/`; the bootstrap-guidelines task is archived only after that capture is reviewed.
-- [ ] `tests/foundation/test_evidence_contract.py` validates the immutable M0 evidence manifest and parent evidence index; every referenced command result and artifact exists for the reviewed commit.
-- [ ] No M1-M7 business behavior is represented as implemented or measured.
+- [x] The required monorepo directories, manifests, package boundaries, and lockfiles exist and pass the repository contract test.
+- [x] `uv sync --frozen` and `pnpm install --frozen-lockfile` succeed from a clean checkout with the documented tool versions.
+- [x] `docker compose -f infra/compose/docker-compose.yml up -d --wait` starts healthy PostgreSQL/pgvector, Redis, MinIO, and the one-shot bucket initializer succeeds.
+- [x] Alembic upgrade, downgrade, and re-upgrade succeed against a clean local database; `SELECT extname FROM pg_extension WHERE extname = 'vector'` returns exactly the required M0 extension.
+- [x] API liveness returns 200 without dependency access; API readiness returns 200 with healthy dependencies and 503 with a required dependency unavailable.
+- [x] The Worker starts independently, exposes internal live/ready probes, reports 503 when a required dependency is unavailable, and exits cleanly on termination.
+- [x] The React dashboard renders the real API readiness state and covers loading, healthy, typed-503 degraded, network/schema unreachable, and retry behavior with unit tests.
+- [x] Request and correlation IDs are generated or propagated, returned in headers, and present in structured request logs.
+- [x] Configuration tests prove required-value validation, local/non-local default handling, and secret redaction.
+- [x] An in-memory OpenTelemetry test proves a request and Worker lifecycle span can be emitted when tracing is enabled; tracing-disabled startup and OTLP-exporter construction tests pass without requiring a collector.
+- [x] Backend lint, type checks, and unit tests pass; frontend lint, type checks, and unit tests pass.
+- [x] The GitHub Actions workflow invokes the same locked quality commands and contains no allow-failure path.
+- [x] A documented foundation smoke procedure verifies Compose, migration, API, Worker, and Web startup on a clean local environment.
+- [x] Real conventions discovered during M0 are captured in `.trellis/spec/`; the bootstrap-guidelines task is archived only after that capture is reviewed.
+- [x] `tests/foundation/test_evidence_contract.py` validates the immutable M0 evidence manifest and parent evidence index; every referenced command result and artifact exists for the reviewed commit.
+- [x] No M1-M7 business behavior is represented as implemented or measured.
 
 ## Notes
 

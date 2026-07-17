@@ -1,0 +1,56 @@
+ Network enterprise-doc-agent_default Creating
+ Network enterprise-doc-agent_default Created
+ Container enterprise-doc-agent-postgres-1 Creating
+ Container enterprise-doc-agent-redis-1 Creating
+ Container enterprise-doc-agent-minio-1 Creating
+ Container enterprise-doc-agent-redis-1 Created
+ Container enterprise-doc-agent-postgres-1 Created
+ Container enterprise-doc-agent-minio-1 Created
+ Container enterprise-doc-agent-redis-1 Starting
+ Container enterprise-doc-agent-postgres-1 Starting
+ Container enterprise-doc-agent-minio-1 Starting
+ Container enterprise-doc-agent-redis-1 Started
+ Container enterprise-doc-agent-postgres-1 Started
+ Container enterprise-doc-agent-minio-1 Started
+ Container enterprise-doc-agent-minio-1 Waiting
+ Container enterprise-doc-agent-postgres-1 Waiting
+ Container enterprise-doc-agent-redis-1 Waiting
+ Container enterprise-doc-agent-redis-1 Healthy
+ Container enterprise-doc-agent-postgres-1 Healthy
+ Container enterprise-doc-agent-minio-1 Healthy
+ Container enterprise-doc-agent-minio-1 Running
+ Container enterprise-doc-agent-minio-1 Waiting
+ Container enterprise-doc-agent-minio-1 Healthy
+ Container enterprise-doc-agent-minio-init-run-8a9757250cb3 Creating
+ Container enterprise-doc-agent-minio-init-run-8a9757250cb3 Created
+Added `local` successfully.
+Bucket created successfully `local/documents`.
+Bucket created successfully `local/artifacts`.
+Access permission for `local/documents` is set to `private`
+Access permission for `local/artifacts` is set to `private`
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+...                                                                      [100%]
+3 passed, 3 deselected in 2.61s
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running downgrade 20260717_0001 -> , Enable the pgvector extension.
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260717_0001, Enable the pgvector extension.
+...                                                                      [100%]
+3 passed, 3 deselected in 2.46s
+ Container enterprise-doc-agent-redis-1 Stopping
+ Container enterprise-doc-agent-postgres-1 Stopping
+ Container enterprise-doc-agent-minio-1 Stopping
+ Container enterprise-doc-agent-minio-1 Stopped
+ Container enterprise-doc-agent-minio-1 Removing
+ Container enterprise-doc-agent-minio-1 Removed
+ Container enterprise-doc-agent-redis-1 Stopped
+ Container enterprise-doc-agent-redis-1 Removing
+ Container enterprise-doc-agent-redis-1 Removed
+ Container enterprise-doc-agent-postgres-1 Stopped
+ Container enterprise-doc-agent-postgres-1 Removing
+ Container enterprise-doc-agent-postgres-1 Removed
+ Network enterprise-doc-agent_default Removing
+ Network enterprise-doc-agent_default Removed

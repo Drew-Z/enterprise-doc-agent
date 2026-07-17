@@ -1,0 +1,59 @@
+ Network enterprise-doc-agent_default Creating
+ Network enterprise-doc-agent_default Created
+ Container enterprise-doc-agent-postgres-1 Creating
+ Container enterprise-doc-agent-minio-1 Creating
+ Container enterprise-doc-agent-redis-1 Creating
+ Container enterprise-doc-agent-redis-1 Created
+ Container enterprise-doc-agent-postgres-1 Created
+ Container enterprise-doc-agent-minio-1 Created
+ Container enterprise-doc-agent-postgres-1 Starting
+ Container enterprise-doc-agent-redis-1 Starting
+ Container enterprise-doc-agent-minio-1 Starting
+ Container enterprise-doc-agent-redis-1 Started
+ Container enterprise-doc-agent-postgres-1 Started
+ Container enterprise-doc-agent-minio-1 Started
+ Container enterprise-doc-agent-redis-1 Waiting
+ Container enterprise-doc-agent-minio-1 Waiting
+ Container enterprise-doc-agent-postgres-1 Waiting
+ Container enterprise-doc-agent-redis-1 Healthy
+ Container enterprise-doc-agent-postgres-1 Healthy
+ Container enterprise-doc-agent-minio-1 Healthy
+ Container enterprise-doc-agent-minio-1 Running
+ Container enterprise-doc-agent-minio-1 Waiting
+ Container enterprise-doc-agent-minio-1 Healthy
+ Container enterprise-doc-agent-minio-init-run-06545e1fd1dd Creating
+ Container enterprise-doc-agent-minio-init-run-06545e1fd1dd Created
+Added `local` successfully.
+Bucket created successfully `local/documents`.
+Bucket created successfully `local/artifacts`.
+Access permission for `local/documents` is set to `private`
+Access permission for `local/artifacts` is set to `private`
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+ Container enterprise-doc-agent-minio-1 Stopping
+ Container enterprise-doc-agent-redis-1 Stopping
+ Container enterprise-doc-agent-postgres-1 Stopping
+ Container enterprise-doc-agent-minio-1 Stopped
+ Container enterprise-doc-agent-minio-1 Removing
+ Container enterprise-doc-agent-minio-1 Removed
+ Container enterprise-doc-agent-postgres-1 Stopped
+ Container enterprise-doc-agent-postgres-1 Removing
+ Container enterprise-doc-agent-postgres-1 Removed
+ Container enterprise-doc-agent-redis-1 Stopped
+ Container enterprise-doc-agent-redis-1 Removing
+ Container enterprise-doc-agent-redis-1 Removed
+ Network enterprise-doc-agent_default Removing
+ Network enterprise-doc-agent_default Removed
+Foundation preflight passed
+Running: docker compose -f D:\workspace4Cursor\enterprise-doc-agent\infra\compose\docker-compose.yml up -d --wait
+Running: docker compose -f D:\workspace4Cursor\enterprise-doc-agent\infra\compose\docker-compose.yml --profile init run --rm minio-init
+Running: uv run alembic upgrade head
+Started api with PID 39964
+Started worker with PID 31000
+Started web with PID 29952
+Available: http://127.0.0.1:8000/health/live
+Ready: http://127.0.0.1:8000/health/ready
+Available: http://127.0.0.1:8081/health/live
+Ready: http://127.0.0.1:8081/health/ready
+Available: http://127.0.0.1:5173/
+Foundation smoke passed
