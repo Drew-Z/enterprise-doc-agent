@@ -166,6 +166,13 @@ abort/lifecycle policy. Some simple expiry rules may also affect completed objec
 Decision: M1 implements an ownership-aware database/object-store cleanup command first.
 It does not add a broad bucket expiration rule that could delete completed documents.
 
+Slice 7 uses a short PostgreSQL claim lease rather than holding a row lock across S3
+calls. Eligible rows are selected with `FOR UPDATE SKIP LOCKED`, marked with a random
+claim token, and revalidated under tenant-then-session locking before every terminal
+write. `aborted`, `expired`, or `failed` plus a retained upload ID is a durable external
+cleanup target; `NoSuchUpload` is idempotent success. Stale completion delegates to the
+Slice 6 reconciler, and ambiguous HEAD ownership is never deletion authority.
+
 ## Locked Design Decisions
 
 1. M1 uses signed JWT plus a PostgreSQL membership lookup. Static headers or fabricated

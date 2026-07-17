@@ -210,12 +210,15 @@ duplicates and a process failure after S3 completion reconcile to the same resul
 **Observable behavior**: Abort and cleanup are rerunnable, release quota once, reconcile
 stale completion, and remove only eligible incomplete multipart uploads.
 
-- **Red**: Add state-transition tests for repeated abort, completed conflict, expiration,
-  initialization failure, stale completing with/without object, paginated orphan scan,
-  concurrent cleanup workers, and partial object-store failure.
+- **Red**: Add state-transition tests for first/repeated abort, abort COMMIT uncertainty,
+  completed/completing conflict, expiration, initialization failure, stale completing
+  with valid/invalid/missing object, retained failed-object cleanup, strict orphan-key
+  parsing, paginated orphan scan, claim-lease recovery, concurrent cleanup workers, dry
+  run, and partial object-store failure.
 - **Green**: Implement abort endpoint/service and `scripts/cleanup_uploads.py` with bounded
-  batches, skip-locked rows, grace periods, dry-run output, structured counters, and
-  stable non-zero failures.
+  batches, skip-locked leased claims, tenant-then-session terminal writes, grace periods,
+  dry-run output, structured counters, and stable non-zero failures. Reuse Slice 6
+  completion finalization, HEAD/envelope verification, and ownership-gated deletion.
 - **Refactor**: Share reconciliation primitives with complete; avoid a second state
   machine in the cleanup script.
 - **Validate**:

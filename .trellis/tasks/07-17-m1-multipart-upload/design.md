@@ -415,6 +415,45 @@ than one instance safely. It handles:
 - old object-store multipart uploads with parseable random M1 keys and no live database
   row.
 
+`DELETE /api/upload-sessions/{id}` first locks tenant then session and commits the
+business transition before making the remote abort call. `initializing` and `active`
+become `aborted`, their reservation is released once, and an existing upload ID is kept
+until S3 abort is confirmed. `aborted` is an idempotent replay; `NoSuchUpload` is also a
+successful remote terminal state. A remote failure leaves the aborted row and upload ID
+as a durable retry target. `completing` conflicts with abort, while `completed` always
+conflicts and its object/version are never deleted.
+
+Cleanup claims eligible rows in a short PostgreSQL transaction with
+`FOR UPDATE SKIP LOCKED`, a random claim token, and a bounded claim lease. Network calls
+run after that transaction. Every terminal write locks tenant then session, rechecks the
+claim token and source identity, and clears the claim. A crashed worker is recoverable
+after the lease expires; a concurrent API completion or abort clears the claim and wins.
+
+Expired `initializing`/`active` rows transition to `expired` and release quota before
+remote abort. `aborted`/`expired`/`failed` rows with a retained upload ID are retryable
+cleanup targets. Failed completion rows first attempt multipart abort; when
+`NoSuchUpload` proves the multipart is gone, HEAD metadata must prove exact M1 ownership
+before an invalid completed object may be deleted. Ambiguous ownership keeps the row and
+causes a non-zero cleanup result.
+
+Stale `completing` cleanup uses the same completion reconciler as the API. Durable
+verified part observations are compared with a fresh `ListParts`; a present multipart is
+completed, while a missing multipart permits exact-key HEAD reconciliation. A valid
+owned object uses the existing Document/Version finalization transaction. Multipart and
+object both missing produce a durable failed row and one quota release. Unavailable,
+protocol-invalid, or ambiguous external state remains retryable and is never converted
+into destructive evidence.
+
+The orphan scan accepts only exact `m1/uploads/{32 lowercase hex}/{32 lowercase hex}`
+keys with an aware initiation time older than the configured grace period. It rechecks
+PostgreSQL immediately before abort and skips any key/session with a live row. Malformed,
+young, timestamp-ambiguous, or database-owned uploads are not aborted.
+
+Dry-run performs eligibility and orphan discovery without claims, database mutations,
+abort, completion, or delete calls. The command prints one compact JSON summary with
+structured counters and exception-class counts only. Any processing error or ambiguous
+ownership returns exit code 1; success returns 0 and argparse errors retain exit code 2.
+
 No scheduler is claimed in M1. M2 may invoke this command from durable scheduled work.
 
 ## Frontend Design
