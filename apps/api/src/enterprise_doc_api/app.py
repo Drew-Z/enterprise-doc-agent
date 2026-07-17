@@ -10,9 +10,19 @@ from fastapi.responses import JSONResponse
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.trace import Span
 from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncEngine
 
+from enterprise_doc_api.auth import (
+    DatabasePrincipalResolver,
+    JwtTokenCodec,
+    PrincipalResolver,
+)
 from enterprise_doc_api.config import ApiSettings
-from enterprise_doc_api.middleware import RequestContextMiddleware
+from enterprise_doc_api.errors import register_error_handlers
+from enterprise_doc_api.middleware import ApiAuthenticationMiddleware, RequestContextMiddleware
+from enterprise_doc_api.uploads import router as upload_router
+from enterprise_doc_api.uploads.router import UploadCreationServiceProtocol
+from enterprise_doc_core.db import create_database_engine, create_session_factory
 from enterprise_doc_core.health import (
     ComponentStatus,
     HealthChecker,
@@ -23,6 +33,7 @@ from enterprise_doc_core.health import (
     evaluate_readiness,
 )
 from enterprise_doc_core.telemetry import TelemetryRuntime
+from enterprise_doc_core.uploads import UploadCreationService
 
 
 class LivenessResponse(BaseModel):
@@ -59,14 +70,30 @@ def create_app(
     checkers: Sequence[HealthChecker] | None = None,
     readiness_timeout_seconds: float | None = None,
     telemetry: TelemetryRuntime | None = None,
+    principal_resolver: PrincipalResolver | None = None,
+    upload_creation_service: UploadCreationServiceProtocol | None = None,
 ) -> FastAPI:
-    resolved_settings = settings or ApiSettings()
+    resolved_settings = settings if settings is not None else ApiSettings()
     if checkers is None:
         resources = build_foundation_resources(resolved_settings)
         resolved_checkers = resources.checkers
     else:
         resources = None
         resolved_checkers = tuple(checkers)
+    needs_default_database = principal_resolver is None or upload_creation_service is None
+    owned_database_engine: AsyncEngine | None = None
+    if resources is not None:
+        business_database_engine: AsyncEngine | None = resources.database_engine
+    elif needs_default_database:
+        owned_database_engine = create_database_engine(resolved_settings.database)
+        business_database_engine = owned_database_engine
+    else:
+        business_database_engine = None
+    session_factory = (
+        create_session_factory(business_database_engine)
+        if business_database_engine is not None
+        else None
+    )
     timeout_seconds = readiness_timeout_seconds or max(
         resolved_settings.database.connect_timeout_seconds,
         resolved_settings.redis.connect_timeout_seconds,
@@ -80,20 +107,48 @@ def create_app(
         finally:
             if resources is not None:
                 await resources.close()
+            elif owned_database_engine is not None:
+                await owned_database_engine.dispose()
 
     app = FastAPI(
         title="Enterprise Document Agent API",
         version="0.1.0",
         lifespan=lifespan,
     )
+    app.add_middleware(ApiAuthenticationMiddleware)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=resolved_settings.api.cors_origins,
         allow_credentials=False,
-        allow_methods=["GET"],
-        allow_headers=["X-Request-ID", "X-Correlation-ID"],
+        allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
+        allow_headers=[
+            "Authorization",
+            "Content-Type",
+            "Idempotency-Key",
+            "X-Request-ID",
+            "X-Correlation-ID",
+        ],
+        expose_headers=["X-Request-ID", "X-Correlation-ID"],
     )
     app.add_middleware(RequestContextMiddleware)
+    register_error_handlers(app)
+    app.state.principal_resolver = (
+        principal_resolver
+        if principal_resolver is not None
+        else DatabasePrincipalResolver(
+            session_factory=session_factory,
+            codec=JwtTokenCodec(resolved_settings.auth),
+        )
+    )
+    app.state.upload_creation_service = (
+        upload_creation_service
+        if upload_creation_service is not None
+        else UploadCreationService(
+            session_factory=session_factory,
+            settings=resolved_settings.upload,
+        )
+    )
+    app.include_router(upload_router)
     if telemetry is not None and telemetry.enabled and telemetry.provider is not None:
         FastAPIInstrumentor.instrument_app(
             app,

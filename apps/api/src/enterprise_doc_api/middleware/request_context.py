@@ -61,13 +61,14 @@ class RequestContextMiddleware:
 
         try:
             await self.app(scope, receive, send_with_context)
-        except Exception:
-            _LOGGER.exception(
+        except Exception as error:
+            _LOGGER.error(
                 "request_failed",
                 extra={
                     "event_data": {
                         "method": scope.get("method"),
                         "path": scope.get("path"),
+                        "error_type": type(error).__name__,
                     }
                 },
             )

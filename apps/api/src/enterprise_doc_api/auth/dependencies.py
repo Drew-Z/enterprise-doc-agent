@@ -37,6 +37,16 @@ async def get_current_principal(
     request: Request,
     authorization: Annotated[str | None, Header(alias="Authorization")] = None,
 ) -> PrincipalContext:
+    state_principal = getattr(request.state, "principal", None)
+    if state_principal is not None:
+        return cast(PrincipalContext, state_principal)
+    return await resolve_bearer_principal(request, authorization)
+
+
+async def resolve_bearer_principal(
+    request: Request,
+    authorization: str | None,
+) -> PrincipalContext:
     if authorization is None:
         raise MissingBearerToken()
     scheme, separator, token = authorization.partition(" ")

@@ -38,6 +38,17 @@ class ObjectStoreSettings(BaseModel):
     connect_timeout_seconds: float = Field(default=3.0, gt=0, le=30)
 
 
+class UploadSettings(BaseModel):
+    max_file_size_bytes: int = Field(default=10 * 1024**3, gt=0, le=5 * 1024**4)
+    max_filename_length: int = Field(default=255, ge=1, le=255)
+    preferred_part_size_bytes: int = Field(
+        default=16 * 1024**2,
+        ge=5 * 1024**2,
+        le=5 * 1024**3,
+    )
+    session_ttl_seconds: int = Field(default=24 * 60 * 60, ge=60, le=7 * 24 * 60 * 60)
+
+
 class ObservabilitySettings(BaseModel):
     enabled: bool = False
     exporter_otlp_endpoint: str = "http://127.0.0.1:4318"
@@ -58,6 +69,7 @@ class FoundationSettings(BaseSettings):
     database: DatabaseSettings = Field(default_factory=DatabaseSettings)
     redis: RedisSettings = Field(default_factory=RedisSettings)
     object_store: ObjectStoreSettings = Field(default_factory=ObjectStoreSettings)
+    upload: UploadSettings = Field(default_factory=UploadSettings)
     otel: ObservabilitySettings = Field(default_factory=ObservabilitySettings)
 
     @model_validator(mode="after")

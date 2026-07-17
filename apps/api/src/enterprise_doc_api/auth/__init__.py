@@ -9,6 +9,7 @@ from enterprise_doc_api.auth.bootstrap import (
 from enterprise_doc_api.auth.dependencies import (
     PrincipalResolver,
     get_current_principal,
+    resolve_bearer_principal,
 )
 from enterprise_doc_api.auth.jwt import (
     DatabasePrincipalResolver,
@@ -32,4 +33,5 @@ __all__ = [
     "get_current_principal",
     "normalize_email",
     "normalize_slug",
+    "resolve_bearer_principal",
 ]

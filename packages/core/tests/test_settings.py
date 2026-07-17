@@ -13,6 +13,8 @@ def test_nested_environment_values_are_parsed(monkeypatch: pytest.MonkeyPatch) -
     monkeypatch.setenv("OBJECT_STORE__ACCESS_KEY", "test-access")
     monkeypatch.setenv("OBJECT_STORE__SECRET_KEY", "test-secret")
     monkeypatch.setenv("OBJECT_STORE__ENDPOINT", "http://minio:9000")
+    monkeypatch.setenv("UPLOAD__MAX_FILE_SIZE_BYTES", "2147483648")
+    monkeypatch.setenv("UPLOAD__PREFERRED_PART_SIZE_BYTES", "8388608")
     monkeypatch.setenv("OTEL__ENABLED", "true")
     monkeypatch.setenv("OTEL__SAMPLE_RATIO", "0.25")
 
@@ -22,6 +24,8 @@ def test_nested_environment_values_are_parsed(monkeypatch: pytest.MonkeyPatch) -
     assert settings.database.url.get_secret_value().endswith("@db/test")
     assert settings.redis.url.get_secret_value().endswith("@redis:6379/1")
     assert settings.object_store.secret_key.get_secret_value() == "test-secret"
+    assert settings.upload.max_file_size_bytes == 2 * 1024**3
+    assert settings.upload.preferred_part_size_bytes == 8 * 1024**2
     assert settings.otel.enabled is True
     assert settings.otel.sample_ratio == 0.25
 
