@@ -85,6 +85,38 @@ does not expose a delete-part operation, while compatible stores may briefly ret
 incomplete observation. Session status and upload ID are rechecked after the remote
 call; abort or generation change prevents any stale write.
 
+### Completion reconciliation anchor
+
+Completion commits `active -> completing` before the external complete call. A retry is
+therefore allowed to interpret `NoSuchUpload` only after PostgreSQL confirms the same
+session is already completing. It then verifies the exact random object key through
+HEAD metadata containing the session ID, pending version ID, declared size, and M1
+contract marker. `NoSuchUpload` without this state and identity proof remains an error.
+If PostgreSQL still says `active`, the missing multipart is terminal rather than
+reconcilable. The service locks tenant then session, rechecks the upload identity,
+releases the reservation exactly once, persists `failed`, and returns the stable
+`multipart_upload_not_found` error.
+
+The final transaction inserts the preallocated Document and DocumentVersion IDs, stores
+the object-store transport checksum separately from the unverified declared whole-file
+hash, converts tenant reserved bytes to used bytes, and sets a unique reverse
+`document_version_id` link. The link and `DocumentVersion.upload_session_id` form the
+replay anchors for concurrent requests and COMMIT acknowledgement loss.
+Invalid-envelope failure uses the same acknowledgement rule: after an uncertain COMMIT,
+the service rereads the failed row and deletes the owned object only when the error code,
+zero reservation, absent version link, and upload identity were durably committed.
+
+### Bounded DOCX envelope
+
+Slice 6 does not use `zipfile` against a network-backed seek abstraction. It parses only
+the fixed EOCD and bounded central-directory records already fetched with ranged reads.
+This makes the byte budget explicit and avoids accidental local-header/member reads.
+ZIP64 and multi-disk envelopes are rejected in M1; members are never decompressed.
+ZIP64 checks cover EOCD and size sentinels, the central record's local-header offset, and
+the `0x0001` extra field. Extra fields are parsed as bounded length-prefixed records so a
+truncated field cannot bypass the envelope policy.
+M3 repeats streamed decompression limits while parsing document content.
+
 ### MinIO browser CORS
 
 Fetched source:

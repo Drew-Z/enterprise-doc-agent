@@ -193,6 +193,15 @@ duplicates and a process failure after S3 completion reconcile to the same resul
   uv run mypy packages/core/src apps/api/src
   ```
 
+- **Implemented evidence**: the client/DB/S3 ordered part contract, durable
+  `completing` transition, exact-key HEAD reconciliation, bounded PDF/TXT/DOCX envelope
+  validation, preallocated Document/Version finalization, one-time quota conversion,
+  concurrent replay, post-S3 crash recovery, and final COMMIT acknowledgement recovery
+  have deterministic unit and real PostgreSQL/MinIO coverage. The final review matrix
+  also covers active missing multipart cleanup, strict unknown-field rejection, expiry,
+  client/DB/ListParts field conflicts, identity-gated HEAD cleanup, failure-COMMIT ACK
+  loss, exact Document/Version counts, and ZIP64/malformed central-directory variants.
+
 - **Rollback point**: Delete only invalid M1 test objects after metadata ownership is
   verified; never delete an existing completed version as an abort fallback.
 

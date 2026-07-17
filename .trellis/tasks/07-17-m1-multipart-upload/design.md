@@ -244,10 +244,12 @@ Filename validation rejects path separators, drive/UNC prefixes, control/NUL
 characters, dot-only names, Windows reserved basenames, trailing spaces/dots, and names
 over the configured limit. The original safe basename is stored for display only.
 
-DOCX inspection uses a seekable S3 range-reader with a hard byte budget. Python
-`zipfile` reads the tail and central directory through ranged requests; policy checks
-entry count, total declared uncompressed bytes, maximum member size, compression ratio,
-encryption, duplicate/suspicious names, traversal/absolute paths, and required
+DOCX inspection uses a bounded S3 range reader. A strict stdlib binary parser reads the
+EOCD tail and central directory through two ranged requests; it never reads local member
+data or decompresses entries. Policy checks entry count, total declared uncompressed
+bytes, maximum member size, compression ratio, encryption, compression method,
+ZIP64 EOCD/size/local-offset sentinels and extra fields, duplicate normalized names,
+traversal/absolute paths, and required
 `[Content_Types].xml` plus `word/document.xml`. This is an envelope check, not a parser;
 M3 enforces streamed decompression limits again.
 
@@ -332,6 +334,24 @@ Create returns 201 for a new session and a replay marker for an idempotent exist
 session. Presign returns URL, expiry, and exact required headers. Get returns current
 state and verified uploaded parts. Complete returns the durable document/version IDs.
 Delete returns 204 for first and repeated abort, while a completed session returns 409.
+
+Complete accepts the client-maintained ordered list:
+
+```json
+{
+  "parts": [
+    {
+      "partNumber": 1,
+      "sizeBytes": 5242880,
+      "etag": "\"opaque-etag\"",
+      "checksumSha256": "base64-sha256"
+    }
+  ]
+}
+```
+
+The list is compared byte-for-byte with database expectations and a fresh complete
+`ListParts` result before external completion.
 
 The API CORS configuration adds only required methods and headers (`Authorization`,
 `Content-Type`, `Idempotency-Key`, request/correlation IDs) and exposes request and
