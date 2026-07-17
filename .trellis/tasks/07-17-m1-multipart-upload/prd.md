@@ -71,13 +71,17 @@ durable ingestion jobs, or production-scale capacity already exist.
   credentials.
 - **R-9**: Before a part URL is signed, the client supplies a base64 SHA-256 checksum
   for that exact part. The checksum is signed into the request and recorded as the
-  expected part checksum. A retry for the same part must use the same content checksum
-  unless no uploaded part exists and the earlier expectation is explicitly replaced.
+  expected part checksum. A retry for the same part must use the same content checksum.
+  A different checksum is rejected because an already issued presigned URL remains
+  usable until expiry; changing the expectation requires aborting/restarting the upload
+  generation rather than an unsafe in-place replacement.
 - **R-10**: `GET /api/upload-sessions/{id}` reconciles the tenant-owned database row
   with `ListParts`, paginates correctly, and returns only verified part number, size,
   ETag, and checksum metadata required to resume. Missing parts can be uploaded in any
   order, while checksum-enabled completion requires a consecutive sequence starting
-  at part 1.
+  at part 1. A listed checksum or size mismatch invalidates an earlier observation;
+  absence from one complete listing is not destructive evidence within the same
+  multipart generation, and stale concurrent listings cannot overwrite newer evidence.
 - **R-11**: The local open-source MinIO profile permits only configured Web origins and
   exposes `ETag` plus required checksum headers so the browser can complete the
   protocol. Its community image lacks `PutBucketCors`, so local evidence uses an exact
@@ -143,7 +147,8 @@ durable ingestion jobs, or production-scale capacity already exist.
 - **R-23**: Authenticated request logs and spans include tenant/actor identifiers only
   after successful principal resolution. Logs/traces exclude authorization headers,
   JWTs, signed URLs, object-store upload IDs, object keys, filenames, hashes when they
-  can identify content, request bodies, and raw dependency exceptions.
+  can identify content, request bodies, and raw dependency exceptions. Log messages are
+  stable event names rather than parameterized dependency or document data.
 - **R-24**: Unit, API contract, PostgreSQL/MinIO integration, browser, tenant-isolation,
   idempotency, cleanup, and failure-recovery tests are deterministic and cannot be
   hidden with skip, xfail, rerun-to-green, or allow-failure CI behavior.

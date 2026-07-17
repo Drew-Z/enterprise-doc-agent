@@ -5,3 +5,4 @@
 {"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Check browser workflow coverage, accessibility, and desktop/mobile non-overlap."}
 {"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"Check round-trip consistency among client part lists, S3 observations, database projections, and UI recovery."}
 {"file":".trellis/tasks/07-17-m1-multipart-upload/research/multipart-decisions.md","reason":"Detect unsupported checksum claims, mutable MinIO assumptions, scope creep into M2, and missing real integration evidence."}
+{"file": ".trellis/spec/backend/upload-control-plane.md", "reason": "Review Slice 5 against its executable cross-layer control-plane contract."}

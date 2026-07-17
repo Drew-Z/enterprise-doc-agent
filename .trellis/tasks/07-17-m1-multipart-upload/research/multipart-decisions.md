@@ -49,6 +49,42 @@ Relevant verified facts:
 Decision: M1 requires consecutive parts, preserves the client list, verifies it against
 all ListParts pages, and treats ETag as opaque.
 
+### Amazon S3 presigned URL lifetime
+
+Fetched source:
+
+- https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-presigned-url.html
+- Command used:
+  `smart-search fetch "https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-presigned-url.html" --format markdown --output C:\tmp\smart-search-evidence\slice5-presigned-url-lifecycle.md`
+
+Relevant verified facts:
+
+- Presigned URLs are bearer tokens and can be used multiple times until their expiry or
+  until the signing credentials become invalid.
+- SigV4 presigned uploads can bind SHA-256 through the required checksum header.
+- S3 evaluates expiry when the HTTP request begins, so a database expectation change
+  cannot revoke an already issued URL.
+
+Decision: Slice 5 records one immutable checksum expectation per session part. Repeated
+presign uses the same checksum; a different checksum returns a typed conflict. Safe
+replacement requires aborting the multipart upload and creating a new upload generation
+so old URLs reference an invalid upload ID. M1 does not claim a race-prone in-place
+replacement.
+
+### ListParts observation ordering
+
+`ListParts` is called outside a database transaction, so concurrent GET requests can
+return in a different order than they started. Slice 5 allocates a PostgreSQL sequence
+version before the remote call and applies matching or explicit mismatching observations
+only when that version is newer than the stored value. `observed_at` remains audit
+metadata rather than an ordering authority, so equal timestamps or wall-clock rollback
+cannot suppress a newer request. A listed mismatch clears verification.
+
+Absence is not treated as destructive evidence in the same multipart generation: S3
+does not expose a delete-part operation, while compatible stores may briefly return an
+incomplete observation. Session status and upload ID are rechecked after the remote
+call; abort or generation change prevents any stale write.
+
 ### MinIO browser CORS
 
 Fetched source:
@@ -114,6 +150,11 @@ It does not add a broad bucket expiration rule that could delete completed docum
    metadata/hash; the application does not persist a 1 GiB Blob or signed URLs.
 8. The real MinIO feature probe decides compatibility. No mock-only checksum claim is
    acceptable.
+9. Create-saga compensation rereads PostgreSQL after uncertain COMMIT results. It never
+   aborts a potentially committed active upload, and an abort failure preserves a
+   `failed` row with the upload ID for cleanup instead of deleting the association.
+10. Business authentication accepts exactly one Authorization header. Duplicate values
+    are rejected before token resolution even when one value is otherwise valid.
 
 ## Pinned Community MinIO Observations
 

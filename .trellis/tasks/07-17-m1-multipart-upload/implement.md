@@ -148,8 +148,8 @@ server-observed parts; other actors/tenants cannot use the session ID.
   repeated presign, mismatched checksum, ListParts reconciliation and pagination, typed
   error mapping, and log redaction.
 - **Green**: Add upload router/dependencies, presign and get-session services, UploadPart
-  expectation/upsert logic, S3 reconciliation, CORS methods/headers, and response runtime
-  contracts.
+  expectation/upsert logic, S3 reconciliation, create-saga activation, CORS
+  methods/headers, and response runtime contracts.
 - **Refactor**: Keep database transaction duration separate from object-store I/O and
   reuse one authorization query shape.
 - **Validate**:
@@ -161,6 +161,12 @@ server-observed parts; other actors/tenants cannot use the session ID.
   uv run ruff check packages/core apps/api
   uv run mypy packages/core/src apps/api/src
   ```
+
+- **Implemented evidence**: bounded initializing replay, reservation/activation COMMIT
+  recovery, durable abort-failure state, session-bounded presign TTL, immutable checksum
+  expectations, versioned ListParts reconciliation, exact-one Bearer authentication,
+  typed OpenAPI errors, and upload-secret log redaction have deterministic unit and real
+  PostgreSQL/MinIO coverage.
 
 - **Rollback point**: Abort only M1 test sessions; health/readiness behavior remains
   unchanged.

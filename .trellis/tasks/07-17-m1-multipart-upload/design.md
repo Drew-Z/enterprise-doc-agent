@@ -168,6 +168,8 @@ expected_checksum_sha256 text
 observed_checksum_sha256 nullable text
 etag nullable text
 size_bytes nullable bigint
+observation_version nullable bigint
+observed_at nullable timestamptz
 verified_at nullable timestamptz
 unique(upload_session_id, part_number)
 ```
@@ -348,6 +350,21 @@ correlation response headers.
 A crash between steps 3 and 4 can create an orphan multipart upload. The random object
 key includes the session UUID, so the cleanup command can correlate or abort it after a
 grace period.
+
+An existing `initializing` replay performs a bounded poll and never returns a successful
+`initializing` response. Reservation or activation COMMIT acknowledgement loss is
+resolved by rereading PostgreSQL before deciding whether to continue, return success,
+or compensate. The service never aborts while the activation result is unknown. Once
+PostgreSQL confirms that a newly created upload ID is unclaimed, it is aborted; if that
+abort fails, the row becomes `failed`, retains the upload ID, releases quota once, and
+remains a durable cleanup target.
+
+`GET` allocates a PostgreSQL sequence version before `ListParts` and records the request
+time in `observed_at`. Matching or explicit mismatching observations update a part only
+when that version is newer than the stored value, so equal timestamps, wall-clock
+rollback, and an older slow request cannot overwrite newer evidence. Explicit mismatch
+clears prior verification; absence from one listing does not erase a previously verified
+part in the same multipart generation.
 
 ### Complete reconciliation
 
