@@ -8,6 +8,7 @@ from dataclasses import dataclass
 class PrincipalContext:
     tenant_id: str
     actor_id: str
+    role: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -33,3 +34,16 @@ def reset_request_context(token: Token[RequestContext | None]) -> None:
 
 def get_request_context() -> RequestContext | None:
     return _request_context.get()
+
+
+def enrich_request_principal(principal: PrincipalContext) -> None:
+    context = get_request_context()
+    if context is None:
+        raise RuntimeError("request context is unavailable")
+    _request_context.set(
+        RequestContext(
+            request_id=context.request_id,
+            correlation_id=context.correlation_id,
+            principal=principal,
+        )
+    )

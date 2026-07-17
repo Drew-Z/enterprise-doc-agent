@@ -3,15 +3,16 @@ from __future__ import annotations
 from logging.config import fileConfig
 
 from alembic import context
-from sqlalchemy import MetaData, engine_from_config, pool
+from sqlalchemy import engine_from_config, pool
 
 from enterprise_doc_core.config import FoundationSettings
+from enterprise_doc_core.db.metadata import metadata
 
 config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-target_metadata = MetaData()
+target_metadata = metadata
 
 
 def database_url() -> str:

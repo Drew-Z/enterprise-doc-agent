@@ -1,0 +1,7 @@
+{"file":".trellis/spec/backend/database-guidelines.md","reason":"Check migration immutability, tenant-scoped schema/query ownership, and idempotent transaction behavior."}
+{"file":".trellis/spec/backend/error-handling.md","reason":"Check stable status/error mapping and absence of raw S3, JWT, database, or file data in responses."}
+{"file":".trellis/spec/backend/logging-guidelines.md","reason":"Check that tokens, signed URLs, upload IDs, object keys, filenames, hashes, and bodies are excluded from logs/traces."}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Check strict type/lint/test gates and reject skipped or allow-failure evidence."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Check browser workflow coverage, accessibility, and desktop/mobile non-overlap."}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"Check round-trip consistency among client part lists, S3 observations, database projections, and UI recovery."}
+{"file":".trellis/tasks/07-17-m1-multipart-upload/research/multipart-decisions.md","reason":"Detect unsupported checksum claims, mutable MinIO assumptions, scope creep into M2, and missing real integration evidence."}

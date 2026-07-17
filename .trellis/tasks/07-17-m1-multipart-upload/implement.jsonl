@@ -1,0 +1,9 @@
+{"file":".trellis/spec/backend/database-guidelines.md","reason":"Preserve M0 SQLAlchemy/Alembic ownership, immutable migrations, and explicit session dependencies while adding the first business schema."}
+{"file":".trellis/spec/backend/error-handling.md","reason":"Introduce typed business errors without exposing dependency exceptions, credentials, signed URLs, or document metadata."}
+{"file":".trellis/spec/backend/logging-guidelines.md","reason":"Extend request context with real tenant/actor IDs while preserving secret-safe structured logging."}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Keep strict mypy, deterministic unit/integration tests, and non-hidden failures throughout M1."}
+{"file":".trellis/spec/frontend/state-management.md","reason":"Keep server state in TanStack Query and use feature-local reducer state only for browser-owned upload execution."}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"Validate all upload/auth JSON at the network boundary before it reaches React state."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Preserve accessibility, responsive visual review, and locked frontend quality gates."}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"Keep API, database, S3, browser, and evidence contracts aligned across the complete multipart data flow."}
+{"file":".trellis/tasks/07-17-m1-multipart-upload/research/multipart-decisions.md","reason":"Use the codebase facts, fetched S3/MinIO behavior, checksum limitations, and locked M1/M2 boundary during implementation."}

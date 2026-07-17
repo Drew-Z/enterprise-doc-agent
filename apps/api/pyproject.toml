@@ -11,6 +11,7 @@ dependencies = [
   "enterprise-doc-core",
   "fastapi>=0.116.1",
   "opentelemetry-instrumentation-fastapi>=0.57b0",
+  "PyJWT>=2.10.1",
   "uvicorn[standard]>=0.35.0",
 ]
 
