@@ -51,6 +51,28 @@ class UploadSettings(BaseModel):
         le=5 * 1024**3,
     )
     session_ttl_seconds: int = Field(default=24 * 60 * 60, ge=60, le=7 * 24 * 60 * 60)
+    envelope_sample_bytes: int = Field(default=64 * 1024, ge=4, le=1024 * 1024)
+    max_docx_central_directory_bytes: int = Field(
+        default=4 * 1024**2,
+        ge=46,
+        le=64 * 1024**2,
+    )
+    max_docx_entries: int = Field(default=10_000, ge=2, le=100_000)
+    max_docx_declared_uncompressed_bytes: int = Field(
+        default=2 * 1024**3,
+        gt=0,
+        le=10 * 1024**3,
+    )
+    max_docx_member_uncompressed_bytes: int = Field(
+        default=512 * 1024**2,
+        gt=0,
+        le=2 * 1024**3,
+    )
+    max_docx_member_compression_ratio: float = Field(
+        default=100.0,
+        ge=1.0,
+        le=10_000.0,
+    )
 
 
 class ObservabilitySettings(BaseModel):

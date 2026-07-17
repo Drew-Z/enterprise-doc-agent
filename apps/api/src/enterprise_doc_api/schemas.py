@@ -11,5 +11,6 @@ def to_camel(value: str) -> str:
 class ApiModel(BaseModel):
     model_config = ConfigDict(
         alias_generator=to_camel,
+        extra="forbid",
         populate_by_name=True,
     )

@@ -183,6 +183,7 @@ def create_app(
             session_factory=session_factory,
             object_store=_required_object_store(business_object_store),
             documents_bucket=resolved_settings.object_store.documents_bucket,
+            settings=resolved_settings.upload,
         )
     )
     app.include_router(upload_router)

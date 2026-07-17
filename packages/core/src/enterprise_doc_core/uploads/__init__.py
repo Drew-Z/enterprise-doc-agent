@@ -20,9 +20,16 @@ from enterprise_doc_core.uploads.service import (
     UploadTenantUnavailable,
 )
 from enterprise_doc_core.uploads.session_service import (
+    CompleteUploadPartInput,
+    CompleteUploadSessionInput,
+    CompleteUploadSessionResult,
     GetUploadSessionResult,
     PresignUploadPartInput,
     PresignUploadPartResult,
+    UploadCompletionFailed,
+    UploadCompletionPartsInvalid,
+    UploadCompletionStateInvalid,
+    UploadCompletionVerificationFailed,
     UploadPartChecksumConflict,
     UploadPartChecksumInvalid,
     UploadPartNumberInvalid,
@@ -38,12 +45,19 @@ from enterprise_doc_core.uploads.session_service import (
 )
 
 __all__ = [
+    "CompleteUploadPartInput",
+    "CompleteUploadSessionInput",
+    "CompleteUploadSessionResult",
     "CreateUploadSessionInput",
     "CreateUploadSessionResult",
     "GetUploadSessionResult",
     "MultipartPlan",
     "PresignUploadPartInput",
     "PresignUploadPartResult",
+    "UploadCompletionFailed",
+    "UploadCompletionPartsInvalid",
+    "UploadCompletionStateInvalid",
+    "UploadCompletionVerificationFailed",
     "UploadCreationError",
     "UploadCreationService",
     "UploadIdempotencyConflict",

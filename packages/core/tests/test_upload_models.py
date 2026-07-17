@@ -37,6 +37,7 @@ def test_m1_models_have_stable_table_ownership() -> None:
     assert DocumentVersion.__tablename__ == "document_versions"
     assert UploadSession.__tablename__ == "upload_sessions"
     assert UploadPart.__tablename__ == "upload_parts"
+    assert "document_version_id" in Base.metadata.tables["upload_sessions"].columns
     assert "observation_version" in Base.metadata.tables["upload_parts"].columns
     assert "observed_at" in Base.metadata.tables["upload_parts"].columns
 
@@ -50,6 +51,7 @@ def test_m1_metadata_has_named_idempotency_and_version_constraints() -> None:
     }
 
     assert "uq_upload_sessions_tenant_id_idempotency_key" in upload_constraints
+    assert "uq_upload_sessions_document_version_id" in upload_constraints
     assert "uq_document_versions_upload_session_id" in version_constraints
     assert "uq_document_versions_document_id_version_number" in version_constraints
 

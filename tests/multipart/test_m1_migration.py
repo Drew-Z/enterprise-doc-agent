@@ -81,6 +81,15 @@ def test_m1_database_has_required_unique_and_check_constraints() -> None:
         upload_part_columns = {row[0] for row in cursor.fetchall()}
         cursor.execute(
             """
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = 'upload_sessions'
+            """
+        )
+        upload_session_columns = {row[0] for row in cursor.fetchall()}
+        cursor.execute(
+            """
             SELECT sequencename
             FROM pg_sequences
             WHERE schemaname = 'public'
@@ -99,7 +108,9 @@ def test_m1_database_has_required_unique_and_check_constraints() -> None:
         "ck_upload_sessions_status_valid",
         "uq_document_versions_document_id_version_number",
         "uq_document_versions_upload_session_id",
+        "uq_upload_sessions_document_version_id",
         "uq_upload_sessions_tenant_id_idempotency_key",
     } <= constraints
+    assert "document_version_id" in upload_session_columns
     assert {"observation_version", "observed_at"} <= upload_part_columns
     assert "upload_part_observation_version_seq" in sequences

@@ -5,12 +5,13 @@ from typing import Annotated, Protocol, cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, Request, Response, status
-from pydantic import StrictInt
+from pydantic import Field, StrictInt
 
 from enterprise_doc_api.auth import get_current_principal
 from enterprise_doc_api.errors import ApiError, ErrorResponse
 from enterprise_doc_api.schemas import ApiModel
 from enterprise_doc_core.context import PrincipalContext
+from enterprise_doc_core.documents import DocumentEnvelopeViolation
 from enterprise_doc_core.object_store import (
     MultipartUploadNotFound,
     ObjectStoreError,
@@ -19,11 +20,16 @@ from enterprise_doc_core.object_store import (
     ObjectStoreUnavailable,
 )
 from enterprise_doc_core.uploads import (
+    CompleteUploadPartInput,
+    CompleteUploadSessionInput,
+    CompleteUploadSessionResult,
     CreateUploadSessionInput,
     CreateUploadSessionResult,
     GetUploadSessionResult,
     PresignUploadPartInput,
     PresignUploadPartResult,
+    UploadCompletionPartsInvalid,
+    UploadCompletionVerificationFailed,
     UploadIdempotencyConflict,
     UploadIdempotencyKeyInvalid,
     UploadInitializationFailed,
@@ -68,6 +74,14 @@ class UploadSessionServiceProtocol(Protocol):
         part_number: int,
         request: PresignUploadPartInput,
     ) -> PresignUploadPartResult: ...
+
+    async def complete(
+        self,
+        *,
+        principal: PrincipalContext,
+        session_id: UUID,
+        request: CompleteUploadSessionInput,
+    ) -> CompleteUploadSessionResult: ...
 
 
 class UploadSessionCreateRequest(ApiModel):
@@ -124,6 +138,26 @@ class PresignUploadPartResponse(ApiModel):
     url: str
     headers: dict[str, str]
     expires_in_seconds: int
+
+
+class CompleteUploadPartRequest(ApiModel):
+    part_number: StrictInt
+    size_bytes: StrictInt
+    etag: str
+    checksum_sha256: str
+
+
+class UploadSessionCompleteRequest(ApiModel):
+    parts: list[CompleteUploadPartRequest] = Field(min_length=1, max_length=10_000)
+
+
+class UploadSessionCompleteResponse(ApiModel):
+    session_id: UUID
+    status: str
+    document_id: UUID
+    version_id: UUID
+    completed_at: datetime
+    replayed: bool
 
 
 router = APIRouter(prefix="/api/upload-sessions", tags=["uploads"])
@@ -329,6 +363,63 @@ async def presign_upload_part(
     )
 
 
+@router.post(
+    "/{session_id}/complete",
+    response_model=UploadSessionCompleteResponse,
+    responses={
+        401: {"model": ErrorResponse},
+        404: {"model": ErrorResponse},
+        409: {"model": ErrorResponse},
+        410: {"model": ErrorResponse},
+        422: {"model": ErrorResponse},
+        500: {"model": ErrorResponse},
+        502: {"model": ErrorResponse},
+        503: {"model": ErrorResponse},
+    },
+)
+async def complete_upload_session(
+    session_id: UUID,
+    payload: UploadSessionCompleteRequest,
+    request: Request,
+    principal: Annotated[PrincipalContext, Depends(get_current_principal)],
+) -> UploadSessionCompleteResponse:
+    service = cast(UploadSessionServiceProtocol, request.app.state.upload_session_service)
+    try:
+        result = await service.complete(
+            principal=principal,
+            session_id=session_id,
+            request=CompleteUploadSessionInput(
+                parts=tuple(
+                    CompleteUploadPartInput(
+                        part_number=part.part_number,
+                        size_bytes=part.size_bytes,
+                        etag=part.etag,
+                        checksum_sha256_b64=part.checksum_sha256,
+                    )
+                    for part in payload.parts
+                )
+            ),
+        )
+    except DocumentEnvelopeViolation as error:
+        raise ApiError(
+            status_code=status.HTTP_409_CONFLICT,
+            code=error.code,
+            message=error.message,
+        ) from error
+    except UploadSessionError as error:
+        raise _upload_session_api_error(error) from error
+    except ObjectStoreError as error:
+        raise _object_store_api_error(error) from error
+    return UploadSessionCompleteResponse(
+        session_id=result.session_id,
+        status=result.status,
+        document_id=result.document_id,
+        version_id=result.version_id,
+        completed_at=result.completed_at,
+        replayed=result.replayed,
+    )
+
+
 def _upload_session_api_error(error: UploadSessionError) -> ApiError:
     if isinstance(
         error,
@@ -339,7 +430,15 @@ def _upload_session_api_error(error: UploadSessionError) -> ApiError:
         status_code = status.HTTP_404_NOT_FOUND
     elif isinstance(error, UploadSessionExpired):
         status_code = status.HTTP_410_GONE
-    elif isinstance(error, (UploadSessionNotActive, UploadPartChecksumConflict)):
+    elif isinstance(
+        error,
+        (
+            UploadSessionNotActive,
+            UploadPartChecksumConflict,
+            UploadCompletionPartsInvalid,
+            UploadCompletionVerificationFailed,
+        ),
+    ):
         status_code = status.HTTP_409_CONFLICT
     else:
         status_code = status.HTTP_500_INTERNAL_SERVER_ERROR

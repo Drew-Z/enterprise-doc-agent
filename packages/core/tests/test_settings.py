@@ -15,6 +15,8 @@ def test_nested_environment_values_are_parsed(monkeypatch: pytest.MonkeyPatch) -
     monkeypatch.setenv("OBJECT_STORE__ENDPOINT", "http://minio:9000")
     monkeypatch.setenv("UPLOAD__MAX_FILE_SIZE_BYTES", "2147483648")
     monkeypatch.setenv("UPLOAD__PREFERRED_PART_SIZE_BYTES", "8388608")
+    monkeypatch.setenv("UPLOAD__ENVELOPE_SAMPLE_BYTES", "8192")
+    monkeypatch.setenv("UPLOAD__MAX_DOCX_ENTRIES", "2048")
     monkeypatch.setenv("OTEL__ENABLED", "true")
     monkeypatch.setenv("OTEL__SAMPLE_RATIO", "0.25")
 
@@ -26,6 +28,8 @@ def test_nested_environment_values_are_parsed(monkeypatch: pytest.MonkeyPatch) -
     assert settings.object_store.secret_key.get_secret_value() == "test-secret"
     assert settings.upload.max_file_size_bytes == 2 * 1024**3
     assert settings.upload.preferred_part_size_bytes == 8 * 1024**2
+    assert settings.upload.envelope_sample_bytes == 8192
+    assert settings.upload.max_docx_entries == 2048
     assert settings.otel.enabled is True
     assert settings.otel.sample_ratio == 0.25
 
@@ -56,6 +60,15 @@ def test_secrets_are_redacted_from_repr_and_safe_dump(
 
 def test_invalid_sample_ratio_is_rejected(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("OTEL__SAMPLE_RATIO", "1.1")
+
+    with pytest.raises(ValidationError):
+        FoundationSettings(_env_file=None)
+
+
+def test_invalid_docx_envelope_limits_are_rejected(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("UPLOAD__MAX_DOCX_MEMBER_COMPRESSION_RATIO", "0.5")
 
     with pytest.raises(ValidationError):
         FoundationSettings(_env_file=None)

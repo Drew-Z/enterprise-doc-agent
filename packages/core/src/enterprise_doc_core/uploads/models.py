@@ -43,6 +43,10 @@ class UploadSession(UUIDPrimaryKeyMixin, TimestampMixin, Base):
             "idempotency_key",
             name="uq_upload_sessions_tenant_id_idempotency_key",
         ),
+        UniqueConstraint(
+            "document_version_id",
+            name="uq_upload_sessions_document_version_id",
+        ),
         CheckConstraint("size_bytes > 0", name="size_bytes_positive"),
         CheckConstraint("part_size_bytes > 0", name="part_size_positive"),
         CheckConstraint(
@@ -73,6 +77,14 @@ class UploadSession(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
     pending_document_id: Mapped[UUID] = mapped_column(nullable=False)
     pending_version_id: Mapped[UUID] = mapped_column(nullable=False)
+    document_version_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey(
+            "document_versions.id",
+            name="fk_upload_sessions_document_version_id_document_versions",
+            ondelete="RESTRICT",
+        ),
+        nullable=True,
+    )
     status: Mapped[str] = mapped_column(String(20), nullable=False)
     idempotency_key: Mapped[str] = mapped_column(String(128), nullable=False)
     request_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
