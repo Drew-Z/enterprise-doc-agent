@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from starlette.datastructures import Headers
 from starlette.requests import Request
 from starlette.types import ASGIApp, Receive, Scope, Send
 
-from enterprise_doc_api.auth import resolve_bearer_principal
+from enterprise_doc_api.auth import resolve_request_principal
 from enterprise_doc_api.errors import (
     ApiError,
     api_error_response,
@@ -26,9 +25,8 @@ class ApiAuthenticationMiddleware:
             return
 
         request = Request(scope, receive=receive)
-        authorization = Headers(scope=scope).get("Authorization")
         try:
-            principal = await resolve_bearer_principal(request, authorization)
+            principal = await resolve_request_principal(request)
         except ApiError as error:
             await api_error_response(error)(scope, receive, send)
             return

@@ -14,13 +14,25 @@ REDACTED = "**********"
 _SENSITIVE_KEY_PARTS = (
     "authorization",
     "cookie",
+    "checksum",
     "database_url",
     "dsn",
+    "filename",
+    "object_key",
+    "object_store_upload_id",
+    "upload_id",
     "password",
     "redis_url",
     "secret",
+    "sha256",
     "signature",
     "token",
+)
+_SENSITIVE_STRING_MARKERS = (
+    "awsaccesskeyid=",
+    "x-amz-credential=",
+    "x-amz-security-token=",
+    "x-amz-signature=",
 )
 
 
@@ -41,9 +53,21 @@ def sanitize_log_value(value: Any, *, key: str | None = None) -> Any:
         }
     if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
         return [sanitize_log_value(item) for item in value]
-    if isinstance(value, (str, int, float, bool)) or value is None:
+    if isinstance(value, str):
+        normalized = value.lower()
+        if any(marker in normalized for marker in _SENSITIVE_STRING_MARKERS):
+            return REDACTED
         return value
-    return str(value)
+    if isinstance(value, (int, float, bool)) or value is None:
+        return value
+    return f"<{type(value).__name__}>"
+
+
+def _sanitize_log_event(record: logging.LogRecord) -> str:
+    if not isinstance(record.msg, str) or record.args:
+        return REDACTED
+    sanitized = sanitize_log_value(record.msg)
+    return sanitized if isinstance(sanitized, str) else REDACTED
 
 
 class JsonFormatter(logging.Formatter):
@@ -59,7 +83,7 @@ class JsonFormatter(logging.Formatter):
             "level": record.levelname,
             "service": self.service,
             "environment": self.environment,
-            "event": record.getMessage(),
+            "event": _sanitize_log_event(record),
         }
         if context is not None:
             payload["request_id"] = context.request_id

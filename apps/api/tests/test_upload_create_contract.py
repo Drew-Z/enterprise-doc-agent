@@ -9,11 +9,13 @@ from httpx import ASGITransport, AsyncClient
 from enterprise_doc_api.app import create_app
 from enterprise_doc_api.config import ApiSettings
 from enterprise_doc_core.context import PrincipalContext
+from enterprise_doc_core.object_store import ObjectStoreProtocolError, ObjectStoreUnavailable
 from enterprise_doc_core.uploads.policy import UploadPolicyViolation
 from enterprise_doc_core.uploads.service import (
     CreateUploadSessionInput,
     CreateUploadSessionResult,
     UploadIdempotencyConflict,
+    UploadInitializationInProgress,
 )
 
 
@@ -49,7 +51,7 @@ class StubUploadCreationService:
             raise self.error
         return CreateUploadSessionResult(
             session_id=self.session_id,
-            status="initializing",
+            status="active",
             filename=request.filename,
             extension=".pdf",
             media_type=request.media_type,
@@ -151,7 +153,7 @@ async def test_create_upload_returns_a_camel_case_contract_and_request_id() -> N
     assert response.headers["X-Request-ID"] == "request-create-1"
     assert response.json() == {
         "sessionId": str(service.session_id),
-        "status": "initializing",
+        "status": "active",
         "filename": "contract.pdf",
         "extension": ".pdf",
         "mediaType": "application/pdf",
@@ -292,6 +294,48 @@ async def test_policy_size_limit_maps_to_413_and_unknown_paths_use_the_error_env
     assert missing.json()["error"]["code"] == "http_not_found"
 
 
+async def test_create_maps_object_store_initialization_failure_to_503() -> None:
+    service = StubUploadCreationService()
+    service.error = ObjectStoreUnavailable()
+    app = create_app(
+        settings=ApiSettings(_env_file=None),
+        checkers=[],
+        principal_resolver=StubPrincipalResolver(_principal()),
+        upload_creation_service=service,
+        upload_session_service=StubUploadCreationService(),
+    )
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(
+            "/api/upload-sessions",
+            headers={"Authorization": "Bearer token", "Idempotency-Key": "create-1"},
+            json=_body(),
+        )
+
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "object_store_unavailable"
+
+    service.error = UploadInitializationInProgress()
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(
+            "/api/upload-sessions",
+            headers={"Authorization": "Bearer token", "Idempotency-Key": "create-2"},
+            json=_body(),
+        )
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "upload_initialization_in_progress"
+
+    service.error = ObjectStoreProtocolError()
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(
+            "/api/upload-sessions",
+            headers={"Authorization": "Bearer token", "Idempotency-Key": "create-3"},
+            json=_body(),
+        )
+    assert response.status_code == 502
+    assert response.json()["error"]["code"] == "object_store_protocol_error"
+
+
 def test_openapi_declares_replay_and_component_backed_error_responses() -> None:
     app = create_app(
         settings=ApiSettings(_env_file=None),
@@ -300,10 +344,21 @@ def test_openapi_declares_replay_and_component_backed_error_responses() -> None:
         upload_creation_service=StubUploadCreationService(),
     )
 
-    responses = app.openapi()["paths"]["/api/upload-sessions"]["post"]["responses"]
+    operation = app.openapi()["paths"]["/api/upload-sessions"]["post"]
+    responses = operation["responses"]
 
-    assert {"200", "201", "409", "413", "422"} <= set(responses)
+    assert {"200", "201", "409", "413", "422", "500", "502", "503"} <= set(responses)
+    assert operation["security"] == [{"BearerAuth": []}]
     assert responses["409"]["content"]["application/json"]["schema"] == {
+        "$ref": "#/components/schemas/ErrorResponse"
+    }
+    assert responses["502"]["content"]["application/json"]["schema"] == {
+        "$ref": "#/components/schemas/ErrorResponse"
+    }
+    assert responses["503"]["content"]["application/json"]["schema"] == {
+        "$ref": "#/components/schemas/ErrorResponse"
+    }
+    assert responses["500"]["content"]["application/json"]["schema"] == {
         "$ref": "#/components/schemas/ErrorResponse"
     }
 
@@ -311,12 +366,16 @@ def test_openapi_declares_replay_and_component_backed_error_responses() -> None:
 async def test_checker_override_keeps_default_business_database_dependencies() -> None:
     app = create_app(settings=ApiSettings(_env_file=None), checkers=[])
     resolver = app.state.principal_resolver
-    service = app.state.upload_creation_service
+    creation_service = app.state.upload_creation_service
+    session_service = app.state.upload_session_service
 
-    assert resolver.session_factory is not None
-    assert service.session_factory is not None
-    engine = service.session_factory.kw["bind"]
-    await engine.dispose()
+    async with app.router.lifespan_context(app):
+        assert resolver.session_factory is not None
+        assert creation_service.session_factory is not None
+        assert session_service.session_factory is not None
+        assert creation_service.object_store is session_service.object_store
+
+    assert creation_service.object_store._closed is True
 
 
 async def test_auth_middleware_maps_unexpected_resolver_errors_without_leaking_details(

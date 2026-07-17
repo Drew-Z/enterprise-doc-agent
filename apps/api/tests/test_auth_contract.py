@@ -136,6 +136,20 @@ async def test_auth_dependency_requires_exact_bearer_and_enriches_request_contex
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         missing = await client.get("/protected")
         malformed = await client.get("/protected", headers={"Authorization": "Basic value"})
+        duplicate_valid_first = await client.get(
+            "/protected",
+            headers=[
+                ("Authorization", "Bearer token-value"),
+                ("Authorization", "Bearer second-token"),
+            ],
+        )
+        duplicate_valid_last = await client.get(
+            "/protected",
+            headers=[
+                ("Authorization", "Bearer second-token"),
+                ("Authorization", "Bearer token-value"),
+            ],
+        )
         valid = await client.get("/protected", headers={"Authorization": "Bearer token-value"})
 
     assert missing.status_code == 401
@@ -143,6 +157,10 @@ async def test_auth_dependency_requires_exact_bearer_and_enriches_request_contex
     assert missing.json()["error"]["code"] == "auth_missing"
     assert malformed.status_code == 401
     assert malformed.json()["error"]["code"] == "auth_invalid"
+    assert duplicate_valid_first.status_code == 401
+    assert duplicate_valid_first.json()["error"]["code"] == "auth_invalid"
+    assert duplicate_valid_last.status_code == 401
+    assert duplicate_valid_last.json()["error"]["code"] == "auth_invalid"
     assert valid.status_code == 200
     assert valid.json() == {
         "tenantId": "tenant-1",

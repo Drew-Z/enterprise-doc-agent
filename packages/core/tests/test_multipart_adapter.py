@@ -126,6 +126,7 @@ async def test_adapter_offloads_create_and_checksum_bound_presign() -> None:
         upload_id=upload_id,
         part_number=1,
         checksum_sha256_b64=_checksum(),
+        expires_in_seconds=120,
     )
 
     assert upload_id == "upload-id"
@@ -142,9 +143,42 @@ async def test_adapter_offloads_create_and_checksum_bound_presign() -> None:
     assert presign_call[0] == "generate_presigned_url"
     assert presign_call[1]["ClientMethod"] == "upload_part"
     assert presign_call[1]["Params"]["ChecksumSHA256"] == _checksum()
+    assert presign_call[1]["ExpiresIn"] == 120
     assert presign_call[1]["HttpMethod"] == "PUT"
     assert signed.headers == {"x-amz-checksum-sha256": _checksum()}
-    assert signed.expires_in_seconds == ObjectStoreSettings().presign_ttl_seconds
+    assert signed.expires_in_seconds == 120
+
+
+async def test_adapter_caps_and_validates_requested_presign_ttl() -> None:
+    client = RecordingS3Client()
+    settings = ObjectStoreSettings(presign_ttl_seconds=300)
+    adapter = Boto3MultipartObjectStore(
+        settings=settings,
+        control_client=client,
+        presign_client=client,
+    )
+
+    signed = await adapter.presign_upload_part(
+        bucket="documents",
+        key="m1/uploads/random",
+        upload_id="upload-id",
+        part_number=1,
+        checksum_sha256_b64=_checksum(),
+        expires_in_seconds=900,
+    )
+
+    assert client.calls[0][1]["ExpiresIn"] == 300
+    assert signed.expires_in_seconds == 300
+    for invalid_ttl in (0, True, 1.5, "60", None):
+        with pytest.raises(ObjectStoreProtocolError):
+            await adapter.presign_upload_part(
+                bucket="documents",
+                key="m1/uploads/random",
+                upload_id="upload-id",
+                part_number=1,
+                checksum_sha256_b64=_checksum(),
+                expires_in_seconds=invalid_ttl,
+            )
 
 
 async def test_adapter_collects_all_part_and_incomplete_upload_pages() -> None:

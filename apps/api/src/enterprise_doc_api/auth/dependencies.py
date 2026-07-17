@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from typing import Annotated, Protocol, cast
 
-from fastapi import Header, Request
+from fastapi import Request, Security
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from opentelemetry import trace
 
 from enterprise_doc_api.errors import ApiError
@@ -11,6 +12,9 @@ from enterprise_doc_core.context import PrincipalContext, enrich_request_princip
 
 class PrincipalResolver(Protocol):
     async def resolve(self, token: str) -> PrincipalContext: ...
+
+
+_BEARER_SCHEME = HTTPBearer(auto_error=False, scheme_name="BearerAuth")
 
 
 class MissingBearerToken(ApiError):
@@ -35,12 +39,24 @@ class MalformedBearerToken(ApiError):
 
 async def get_current_principal(
     request: Request,
-    authorization: Annotated[str | None, Header(alias="Authorization")] = None,
+    _credentials: Annotated[
+        HTTPAuthorizationCredentials | None,
+        Security(_BEARER_SCHEME),
+    ],
 ) -> PrincipalContext:
     state_principal = getattr(request.state, "principal", None)
     if state_principal is not None:
         return cast(PrincipalContext, state_principal)
-    return await resolve_bearer_principal(request, authorization)
+    return await resolve_request_principal(request)
+
+
+async def resolve_request_principal(request: Request) -> PrincipalContext:
+    authorization_values = request.headers.getlist("Authorization")
+    if not authorization_values:
+        raise MissingBearerToken()
+    if len(authorization_values) != 1:
+        raise MalformedBearerToken()
+    return await resolve_bearer_principal(request, authorization_values[0])
 
 
 async def resolve_bearer_principal(

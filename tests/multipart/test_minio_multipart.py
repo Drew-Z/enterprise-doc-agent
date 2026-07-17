@@ -45,6 +45,7 @@ async def test_minio_checksum_multipart_round_trip_cors_and_range() -> None:
             upload_id=upload_id,
             part_number=1,
             checksum_sha256_b64=_checksum(first),
+            expires_in_seconds=settings.presign_ttl_seconds,
         )
         async with httpx.AsyncClient(timeout=30, trust_env=False) as client:
             preflight = await client.options(
@@ -102,6 +103,7 @@ async def test_minio_checksum_multipart_round_trip_cors_and_range() -> None:
                 upload_id=upload_id,
                 part_number=2,
                 checksum_sha256_b64=_checksum(second),
+                expires_in_seconds=settings.presign_ttl_seconds,
             )
             second_put = await client.put(
                 second_signed.url,

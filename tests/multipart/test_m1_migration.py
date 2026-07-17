@@ -70,6 +70,23 @@ def test_m1_database_has_required_unique_and_check_constraints() -> None:
             """
         )
         constraints = {row[0] for row in cursor.fetchall()}
+        cursor.execute(
+            """
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = 'upload_parts'
+            """
+        )
+        upload_part_columns = {row[0] for row in cursor.fetchall()}
+        cursor.execute(
+            """
+            SELECT sequencename
+            FROM pg_sequences
+            WHERE schemaname = 'public'
+            """
+        )
+        sequences = {row[0] for row in cursor.fetchall()}
 
     assert {
         "ck_tenants_quota_bytes_positive",
@@ -84,3 +101,5 @@ def test_m1_database_has_required_unique_and_check_constraints() -> None:
         "uq_document_versions_upload_session_id",
         "uq_upload_sessions_tenant_id_idempotency_key",
     } <= constraints
+    assert {"observation_version", "observed_at"} <= upload_part_columns
+    assert "upload_part_observation_version_seq" in sequences

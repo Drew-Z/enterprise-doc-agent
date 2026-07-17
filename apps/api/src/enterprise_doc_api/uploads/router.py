@@ -11,13 +11,33 @@ from enterprise_doc_api.auth import get_current_principal
 from enterprise_doc_api.errors import ApiError, ErrorResponse
 from enterprise_doc_api.schemas import ApiModel
 from enterprise_doc_core.context import PrincipalContext
+from enterprise_doc_core.object_store import (
+    MultipartUploadNotFound,
+    ObjectStoreError,
+    ObjectStoreNotFound,
+    ObjectStoreProtocolError,
+    ObjectStoreUnavailable,
+)
 from enterprise_doc_core.uploads import (
     CreateUploadSessionInput,
     CreateUploadSessionResult,
+    GetUploadSessionResult,
+    PresignUploadPartInput,
+    PresignUploadPartResult,
     UploadIdempotencyConflict,
     UploadIdempotencyKeyInvalid,
+    UploadInitializationFailed,
+    UploadInitializationInProgress,
+    UploadPartChecksumConflict,
+    UploadPartChecksumInvalid,
+    UploadPartNumberInvalid,
+    UploadPartSizeInvalid,
     UploadPolicyViolation,
     UploadQuotaExceeded,
+    UploadSessionError,
+    UploadSessionExpired,
+    UploadSessionNotActive,
+    UploadSessionNotFound,
     UploadTenantUnavailable,
 )
 
@@ -30,6 +50,24 @@ class UploadCreationServiceProtocol(Protocol):
         idempotency_key: str,
         request: CreateUploadSessionInput,
     ) -> CreateUploadSessionResult: ...
+
+
+class UploadSessionServiceProtocol(Protocol):
+    async def get(
+        self,
+        *,
+        principal: PrincipalContext,
+        session_id: UUID,
+    ) -> GetUploadSessionResult: ...
+
+    async def presign_part(
+        self,
+        *,
+        principal: PrincipalContext,
+        session_id: UUID,
+        part_number: int,
+        request: PresignUploadPartInput,
+    ) -> PresignUploadPartResult: ...
 
 
 class UploadSessionCreateRequest(ApiModel):
@@ -53,6 +91,41 @@ class UploadSessionCreateResponse(ApiModel):
     replayed: bool
 
 
+class UploadedPartResponse(ApiModel):
+    part_number: int
+    size_bytes: int
+    etag: str
+    checksum_sha256: str
+
+
+class UploadSessionResponse(ApiModel):
+    session_id: UUID
+    status: str
+    filename: str
+    extension: str
+    media_type: str
+    size_bytes: int
+    declared_sha256: str
+    part_size_bytes: int
+    expected_part_count: int
+    expires_at: datetime
+    uploaded_parts: list[UploadedPartResponse]
+
+
+class PresignUploadPartRequest(ApiModel):
+    size_bytes: StrictInt
+    checksum_sha256: str
+
+
+class PresignUploadPartResponse(ApiModel):
+    part_number: int
+    size_bytes: int
+    checksum_sha256: str
+    url: str
+    headers: dict[str, str]
+    expires_in_seconds: int
+
+
 router = APIRouter(prefix="/api/upload-sessions", tags=["uploads"])
 
 
@@ -71,6 +144,9 @@ router = APIRouter(prefix="/api/upload-sessions", tags=["uploads"])
         409: {"model": ErrorResponse},
         413: {"model": ErrorResponse},
         422: {"model": ErrorResponse},
+        500: {"model": ErrorResponse},
+        502: {"model": ErrorResponse},
+        503: {"model": ErrorResponse},
     },
 )
 async def create_upload_session(
@@ -132,6 +208,14 @@ async def create_upload_session(
             code=error.code,
             message=error.message,
         ) from error
+    except (UploadInitializationFailed, UploadInitializationInProgress) as error:
+        raise ApiError(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            code=error.code,
+            message=error.message,
+        ) from error
+    except ObjectStoreError as error:
+        raise _object_store_api_error(error) from error
 
     if result.replayed:
         response.status_code = status.HTTP_200_OK
@@ -148,3 +232,127 @@ async def create_upload_session(
         expires_at=result.expires_at,
         replayed=result.replayed,
     )
+
+
+@router.get(
+    "/{session_id}",
+    response_model=UploadSessionResponse,
+    responses={
+        401: {"model": ErrorResponse},
+        404: {"model": ErrorResponse},
+        409: {"model": ErrorResponse},
+        410: {"model": ErrorResponse},
+        500: {"model": ErrorResponse},
+        502: {"model": ErrorResponse},
+        503: {"model": ErrorResponse},
+    },
+)
+async def get_upload_session(
+    session_id: UUID,
+    request: Request,
+    principal: Annotated[PrincipalContext, Depends(get_current_principal)],
+) -> UploadSessionResponse:
+    service = cast(UploadSessionServiceProtocol, request.app.state.upload_session_service)
+    try:
+        result = await service.get(principal=principal, session_id=session_id)
+    except UploadSessionError as error:
+        raise _upload_session_api_error(error) from error
+    except ObjectStoreError as error:
+        raise _object_store_api_error(error) from error
+    return UploadSessionResponse(
+        session_id=result.session_id,
+        status=result.status,
+        filename=result.filename,
+        extension=result.extension,
+        media_type=result.media_type,
+        size_bytes=result.size_bytes,
+        declared_sha256=result.declared_sha256,
+        part_size_bytes=result.part_size_bytes,
+        expected_part_count=result.expected_part_count,
+        expires_at=result.expires_at,
+        uploaded_parts=[
+            UploadedPartResponse(
+                part_number=part.part_number,
+                size_bytes=part.size_bytes,
+                etag=part.etag,
+                checksum_sha256=part.checksum_sha256_b64,
+            )
+            for part in result.uploaded_parts
+        ],
+    )
+
+
+@router.post(
+    "/{session_id}/parts/{part_number}/presign",
+    response_model=PresignUploadPartResponse,
+    responses={
+        400: {"model": ErrorResponse},
+        401: {"model": ErrorResponse},
+        404: {"model": ErrorResponse},
+        409: {"model": ErrorResponse},
+        410: {"model": ErrorResponse},
+        422: {"model": ErrorResponse},
+        500: {"model": ErrorResponse},
+        502: {"model": ErrorResponse},
+        503: {"model": ErrorResponse},
+    },
+)
+async def presign_upload_part(
+    session_id: UUID,
+    part_number: int,
+    payload: PresignUploadPartRequest,
+    request: Request,
+    principal: Annotated[PrincipalContext, Depends(get_current_principal)],
+) -> PresignUploadPartResponse:
+    service = cast(UploadSessionServiceProtocol, request.app.state.upload_session_service)
+    try:
+        result = await service.presign_part(
+            principal=principal,
+            session_id=session_id,
+            part_number=part_number,
+            request=PresignUploadPartInput(
+                size_bytes=payload.size_bytes,
+                checksum_sha256_b64=payload.checksum_sha256,
+            ),
+        )
+    except UploadSessionError as error:
+        raise _upload_session_api_error(error) from error
+    except ObjectStoreError as error:
+        raise _object_store_api_error(error) from error
+    return PresignUploadPartResponse(
+        part_number=result.part_number,
+        size_bytes=result.size_bytes,
+        checksum_sha256=result.checksum_sha256_b64,
+        url=result.url,
+        headers=dict(result.headers),
+        expires_in_seconds=result.expires_in_seconds,
+    )
+
+
+def _upload_session_api_error(error: UploadSessionError) -> ApiError:
+    if isinstance(
+        error,
+        (UploadPartNumberInvalid, UploadPartSizeInvalid, UploadPartChecksumInvalid),
+    ):
+        status_code = status.HTTP_400_BAD_REQUEST
+    elif isinstance(error, UploadSessionNotFound):
+        status_code = status.HTTP_404_NOT_FOUND
+    elif isinstance(error, UploadSessionExpired):
+        status_code = status.HTTP_410_GONE
+    elif isinstance(error, (UploadSessionNotActive, UploadPartChecksumConflict)):
+        status_code = status.HTTP_409_CONFLICT
+    else:
+        status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+    return ApiError(status_code=status_code, code=error.code, message=error.message)
+
+
+def _object_store_api_error(error: ObjectStoreError) -> ApiError:
+    if isinstance(error, ObjectStoreUnavailable):
+        status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    elif isinstance(error, (MultipartUploadNotFound, ObjectStoreNotFound)):
+        status_code = status.HTTP_409_CONFLICT
+    elif isinstance(error, ObjectStoreProtocolError):
+        status_code = status.HTTP_502_BAD_GATEWAY
+    else:
+        status_code = status.HTTP_502_BAD_GATEWAY
+    return ApiError(status_code=status_code, code=error.code, message=error.message)

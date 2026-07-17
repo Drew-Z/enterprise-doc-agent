@@ -42,6 +42,7 @@ class MultipartObjectStore(Protocol):
         upload_id: str,
         part_number: int,
         checksum_sha256_b64: str,
+        expires_in_seconds: int,
     ) -> PresignedUploadPart: ...
 
     async def list_parts(
@@ -149,9 +150,12 @@ class Boto3MultipartObjectStore:
         upload_id: str,
         part_number: int,
         checksum_sha256_b64: str,
+        expires_in_seconds: int,
     ) -> PresignedUploadPart:
         _validate_part_number(part_number)
         _validate_sha256_b64(checksum_sha256_b64)
+        _validate_presign_ttl(expires_in_seconds)
+        effective_ttl = min(expires_in_seconds, self.settings.presign_ttl_seconds)
         url = await self._call(
             self.presign_client.generate_presigned_url,
             ClientMethod="upload_part",
@@ -162,7 +166,7 @@ class Boto3MultipartObjectStore:
                 "PartNumber": part_number,
                 "ChecksumSHA256": checksum_sha256_b64,
             },
-            ExpiresIn=self.settings.presign_ttl_seconds,
+            ExpiresIn=effective_ttl,
             HttpMethod="PUT",
         )
         if not isinstance(url, str) or not url:
@@ -170,7 +174,7 @@ class Boto3MultipartObjectStore:
         return PresignedUploadPart(
             url=url,
             headers={"x-amz-checksum-sha256": checksum_sha256_b64},
-            expires_in_seconds=self.settings.presign_ttl_seconds,
+            expires_in_seconds=effective_ttl,
         )
 
     async def list_parts(
@@ -425,6 +429,15 @@ class Boto3MultipartObjectStore:
 
 def _validate_part_number(part_number: int) -> None:
     if not 1 <= part_number <= 10_000:
+        raise ObjectStoreProtocolError()
+
+
+def _validate_presign_ttl(expires_in_seconds: object) -> None:
+    if (
+        isinstance(expires_in_seconds, bool)
+        or not isinstance(expires_in_seconds, int)
+        or expires_in_seconds < 1
+    ):
         raise ObjectStoreProtocolError()
 
 

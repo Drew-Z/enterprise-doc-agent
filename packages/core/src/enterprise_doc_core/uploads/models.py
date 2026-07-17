@@ -11,12 +11,18 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    Sequence,
     String,
     UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
 from enterprise_doc_core.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
+
+UPLOAD_PART_OBSERVATION_VERSION_SEQUENCE = Sequence(
+    "upload_part_observation_version_seq",
+    metadata=Base.metadata,
+)
 
 
 class UploadSessionStatus(StrEnum):
@@ -116,4 +122,6 @@ class UploadPart(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     observed_checksum_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
     etag: Mapped[str | None] = mapped_column(String(256), nullable=True)
     size_bytes: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    observation_version: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    observed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
