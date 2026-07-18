@@ -10,6 +10,16 @@
       "milestone": "M1",
       "status": "passed",
       "manifest": "evidence/m1/20260718-151000-m1-multipart-upload.json"
+    },
+    {
+      "milestone": "M2",
+      "status": "passed",
+      "manifest": "evidence/m2/20260718-173000-m2-durable-job-runtime.json"
+    },
+    {
+      "milestone": "M3",
+      "status": "passed",
+      "manifest": "evidence/m3/20260718-190800-m3-document-rag.json"
     }
   ]
 }

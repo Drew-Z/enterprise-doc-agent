@@ -1,0 +1,59 @@
+{
+  "evidence_id": "m3-document-rag",
+  "milestone": "M3",
+  "requirement_ids": [
+    "M3-R1-schema-and-indexes",
+    "M3-R2-parser-and-bounded-spool",
+    "M3-R3-durable-ingestion-handler",
+    "M3-R4-hybrid-recall",
+    "M3-R5-citation-and-refusal",
+    "M3-R6-evaluation-harness",
+    "M3-R7-regression-gates",
+    "M3-R8-interview-facts"
+  ],
+  "status": "passed",
+  "command_or_procedure": [
+    {"gate_id":"backend-format","command":"uv run ruff format --check .","exit_code":0,"artifact":"evidence/m3/artifacts/backend-format.log"},
+    {"gate_id":"backend-lint","command":"uv run ruff check .","exit_code":0,"artifact":"evidence/m3/artifacts/backend-lint.log"},
+    {"gate_id":"backend-typecheck","command":"uv run mypy packages/core/src apps/api/src apps/worker/src","exit_code":0,"artifact":"evidence/m3/artifacts/backend-typecheck.log"},
+    {"gate_id":"backend-unit","command":"uv run pytest -m \"not integration\" -q","exit_code":0,"artifact":"evidence/m3/artifacts/backend-unit.log"},
+    {"gate_id":"backend-integration","command":"uv run pytest -m integration -q","exit_code":0,"artifact":"evidence/m3/artifacts/backend-integration.log"},
+    {"gate_id":"worker-tests","command":"uv run pytest apps/worker/tests -q","exit_code":0,"artifact":"evidence/m3/artifacts/worker.log"},
+    {"gate_id":"frontend-lint","command":"pnpm lint","exit_code":0,"artifact":"evidence/m3/artifacts/frontend-lint.log"},
+    {"gate_id":"frontend-typecheck","command":"pnpm typecheck","exit_code":0,"artifact":"evidence/m3/artifacts/frontend-typecheck.log"},
+    {"gate_id":"frontend-unit","command":"pnpm test","exit_code":0,"artifact":"evidence/m3/artifacts/frontend-unit.log"},
+    {"gate_id":"frontend-build","command":"pnpm build","exit_code":0,"artifact":"evidence/m3/artifacts/frontend-build.log"},
+    {"gate_id":"retrieval-eval","command":"uv run python scripts/evaluate_m3_retrieval.py","exit_code":0,"artifact":"evidence/m3/artifacts/retrieval-eval.log"},
+    {"gate_id":"trellis-validation","command":"uv run python .trellis/scripts/task.py validate 07-18-m3-document-rag","exit_code":0,"artifact":"evidence/m3/artifacts/trellis-validation.log"}
+  ],
+  "environment": {
+    "operating_system": "Windows workspace with Docker Compose PostgreSQL/Redis/MinIO",
+    "python": "3.12.13",
+    "uv": "0.11.3",
+    "node": "24.14.0",
+    "pnpm": "11.9.0",
+    "postgresql": "pgvector/pgvector:pg16"
+  },
+  "commit_sha": "a6574d2",
+  "started_at": "2026-07-18T18:30:00+08:00",
+  "completed_at": "2026-07-18T19:07:00+08:00",
+  "result_summary": "M3 parser, bounded spool, versioned generation, durable handler, hybrid FTS/vector retrieval, RRF, citation gate, refusal, evaluation harness, and Worker registration passed local quality and integration gates.",
+  "artifacts": [
+    "packages/core/src/enterprise_doc_core/documents/ingestion.py",
+    "packages/core/src/enterprise_doc_core/documents/ingestion_service.py",
+    "packages/core/src/enterprise_doc_core/documents/retrieval.py",
+    "packages/core/src/enterprise_doc_core/documents/retrieval_service.py",
+    "packages/core/src/enterprise_doc_core/db/migrations/versions/20260718_0007_document_rag.py",
+    "tests/jobs/test_m3_ingestion_integration.py",
+    "tests/jobs/test_m3_migration.py",
+    "evaluation/m3_retrieval_eval_v1.json",
+    "scripts/evaluate_m3_retrieval.py"
+  ],
+  "limitations": [
+    "HashEmbeddingProvider and fixed eight-dimensional vectors are deterministic test/local contracts, not semantic quality evidence.",
+    "No public broker, multi-process Worker pool, Kubernetes, CD, production QPS, or remote deployment evidence.",
+    "No full OCR, complex table reconstruction, or malicious archive security certification.",
+    "The evaluation fixture is a reproducible harness, not a production relevance benchmark."
+  ],
+  "owner": "developer"
+}
