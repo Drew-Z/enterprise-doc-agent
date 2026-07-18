@@ -1,0 +1,2 @@
+$ pnpm --filter web typecheck
+$ tsc -b --pretty false

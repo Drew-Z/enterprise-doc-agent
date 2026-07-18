@@ -1,0 +1,19 @@
+{
+  "version": "m3-retrieval-eval-v1",
+  "k": 5,
+  "limitations": "Deterministic evaluator fixture only; it is not evidence of real embedding-model quality.",
+  "cases": [
+    {"case_id":"qa-payment","relevant_chunk_ids":["payment"],"retrieved_chunk_ids":["payment","delivery"],"expected_refusal":false,"predicted_refusal":false,"golden_citation_ids":["payment"],"predicted_citation_ids":["payment"]},
+    {"case_id":"qa-delivery","relevant_chunk_ids":["delivery"],"retrieved_chunk_ids":["delivery","acceptance"],"expected_refusal":false,"predicted_refusal":false,"golden_citation_ids":["delivery"],"predicted_citation_ids":["delivery"]},
+    {"case_id":"qa-acceptance","relevant_chunk_ids":["acceptance"],"retrieved_chunk_ids":["delivery","acceptance"],"expected_refusal":false,"predicted_refusal":false,"golden_citation_ids":["acceptance"],"predicted_citation_ids":["acceptance"]},
+    {"case_id":"qa-breach","relevant_chunk_ids":["breach"],"retrieved_chunk_ids":["breach","termination"],"expected_refusal":false,"predicted_refusal":false,"golden_citation_ids":["breach"],"predicted_citation_ids":["breach"]},
+    {"case_id":"qa-ip","relevant_chunk_ids":["ip"],"retrieved_chunk_ids":["confidentiality","ip"],"expected_refusal":false,"predicted_refusal":false,"golden_citation_ids":["ip"],"predicted_citation_ids":["ip"]},
+    {"case_id":"qa-dispute","relevant_chunk_ids":["dispute"],"retrieved_chunk_ids":["dispute","governing-law"],"expected_refusal":false,"predicted_refusal":false,"golden_citation_ids":["dispute"],"predicted_citation_ids":["dispute"]},
+    {"case_id":"qa-termination","relevant_chunk_ids":["termination"],"retrieved_chunk_ids":["breach","termination"],"expected_refusal":false,"predicted_refusal":false,"golden_citation_ids":["termination"],"predicted_citation_ids":["breach"]},
+    {"case_id":"qa-clause-number","relevant_chunk_ids":["clause-10"],"retrieved_chunk_ids":["clause-10","clause-11"],"expected_refusal":false,"predicted_refusal":false,"golden_citation_ids":["clause-10"],"predicted_citation_ids":["clause-10"]},
+    {"case_id":"refuse-missing-price","relevant_chunk_ids":[],"retrieved_chunk_ids":[],"expected_refusal":true,"predicted_refusal":true,"golden_citation_ids":[],"predicted_citation_ids":[]},
+    {"case_id":"refuse-wrong-version","relevant_chunk_ids":[],"retrieved_chunk_ids":[],"expected_refusal":true,"predicted_refusal":true,"golden_citation_ids":[],"predicted_citation_ids":[]},
+    {"case_id":"refuse-empty-query","relevant_chunk_ids":[],"retrieved_chunk_ids":[],"expected_refusal":true,"predicted_refusal":true,"golden_citation_ids":[],"predicted_citation_ids":[]},
+    {"case_id":"refuse-low-score","relevant_chunk_ids":[],"retrieved_chunk_ids":["unrelated"],"expected_refusal":true,"predicted_refusal":false,"golden_citation_ids":[],"predicted_citation_ids":[]}
+  ]
+}

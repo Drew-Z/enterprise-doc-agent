@@ -1,0 +1,11 @@
+{
+  "case_count": 12,
+  "citation_precision": 0.875,
+  "dataset_version": "m3-retrieval-eval-v1",
+  "limitations": "Deterministic evaluator fixture only; it is not evidence of real embedding-model quality.",
+  "mrr": 0.8125,
+  "ndcg_at_k": 0.8615986575892965,
+  "recall_at_k": 1.0,
+  "refusal_precision": 1.0,
+  "refusal_recall": 0.75
+}

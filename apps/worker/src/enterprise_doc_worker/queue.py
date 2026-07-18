@@ -8,6 +8,7 @@ from uuid import UUID
 from celery import Celery
 from pydantic import BaseModel, ConfigDict
 
+from enterprise_doc_core.documents.ingestion_service import DocumentIngestionError
 from enterprise_doc_core.jobs import ClaimedJob, JobRuntimeService, RetryDisposition
 from enterprise_doc_worker.config import WorkerSettings
 
@@ -78,11 +79,17 @@ class JobDeliveryConsumer:
             )
             raise
         except Exception as error:
+            if isinstance(error, DocumentIngestionError):
+                error_code = error.code
+                error_message = error.message
+            else:
+                error_code = "job_handler_failed"
+                error_message = "The job handler failed."
             await self.runtime.fail(
                 claim,
                 disposition=self.classify_error(error),
-                error_code="job_handler_failed",
-                error_message="The job handler failed.",
+                error_code=error_code,
+                error_message=error_message,
                 error_class=type(error).__name__,
             )
             return "failed"

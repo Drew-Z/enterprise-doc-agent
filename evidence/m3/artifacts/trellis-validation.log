@@ -1,0 +1,7 @@
+[0;34m=== Validating Context Files ===[0m
+Target dir: D:\workspace4Cursor\enterprise-doc-agent\.trellis\tasks\07-18-m3-document-rag
+
+  [0;32mimplement.jsonl: ✓ (5 entries)[0m
+  [0;32mcheck.jsonl: ✓ (3 entries)[0m
+
+[0;32m✓ All validations passed[0m

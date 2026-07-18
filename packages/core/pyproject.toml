@@ -13,9 +13,12 @@ dependencies = [
   "opentelemetry-api>=1.36.0",
   "opentelemetry-exporter-otlp-proto-http>=1.36.0",
   "opentelemetry-sdk>=1.36.0",
+  "pgvector>=0.4.1",
   "psycopg[binary,pool]>=3.2.10",
+  "pypdf>=6.0.0",
   "pydantic>=2.11.7",
   "pydantic-settings>=2.10.1",
+  "python-docx>=1.2.0",
   "redis>=8.0.1,<9",
   "sqlalchemy[asyncio]>=2.0.43",
 ]
