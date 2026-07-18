@@ -11,6 +11,7 @@ from enterprise_doc_core.jobs.service import (
     ClaimedJob,
     ClaimedOutboxEvent,
     JobAttemptResult,
+    JobCancellationResult,
     JobCreateResult,
     JobError,
     JobEventResult,
@@ -24,6 +25,7 @@ from enterprise_doc_core.jobs.service import (
     JobTerminal,
     OutboxService,
     RetryDisposition,
+    cancel_job_records,
     create_job_records,
     request_fingerprint,
 )
@@ -35,6 +37,7 @@ __all__ = [
     "JobAttempt",
     "JobAttemptResult",
     "JobAttemptStatus",
+    "JobCancellationResult",
     "JobCreateResult",
     "JobError",
     "JobEvent",
@@ -52,6 +55,7 @@ __all__ = [
     "OutboxEventStatus",
     "OutboxService",
     "RetryDisposition",
+    "cancel_job_records",
     "create_job_records",
     "request_fingerprint",
 ]

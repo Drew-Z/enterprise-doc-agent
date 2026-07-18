@@ -66,6 +66,13 @@ class JobCreateResult:
 
 
 @dataclass(frozen=True, slots=True)
+class JobCancellationResult:
+    status: str
+    changed: bool
+    cancellation_requested: bool
+
+
+@dataclass(frozen=True, slots=True)
 class ClaimedJob:
     job_id: UUID
     attempt_id: UUID
@@ -315,6 +322,43 @@ async def create_job_records(
         session.add(outbox_event)
         await session.flush()
     return JobCreateResult(job.id, outbox_event.id if outbox_event else None, False)
+
+
+async def cancel_job_records(
+    session: AsyncSession,
+    *,
+    job_id: UUID,
+    tenant_id: UUID,
+    now: datetime,
+    actor_id: UUID | None = None,
+) -> JobCancellationResult:
+    job = await session.scalar(
+        select(Job).where(Job.id == job_id, Job.tenant_id == tenant_id).with_for_update()
+    )
+    if job is None:
+        raise JobNotFound()
+    if job.status in {
+        JobStatus.SUCCEEDED.value,
+        JobStatus.DEAD.value,
+        JobStatus.CANCELLED.value,
+    }:
+        return JobCancellationResult(job.status, False, False)
+    if job.status == JobStatus.RUNNING.value:
+        if job.cancel_requested_at is not None:
+            return JobCancellationResult(job.status, False, True)
+        job.cancel_requested_at = now
+        await _append_job_event(
+            session,
+            job=job,
+            event_type="job.cancel_requested",
+            actor_id=actor_id,
+        )
+        return JobCancellationResult(job.status, True, True)
+    job.status = JobStatus.CANCELLED.value
+    job.finished_at = now
+    job.version += 1
+    await _append_job_event(session, job=job, event_type="job.cancelled", actor_id=actor_id)
+    return JobCancellationResult(job.status, True, False)
 
 
 class JobRuntimeService:
@@ -631,31 +675,14 @@ class JobRuntimeService:
     ) -> str:
         now = self.clock()
         async with self.session_factory.begin() as session:
-            job = await session.scalar(
-                select(Job).where(Job.id == job_id, Job.tenant_id == tenant_id).with_for_update()
+            result = await cancel_job_records(
+                session,
+                job_id=job_id,
+                tenant_id=tenant_id,
+                actor_id=actor_id,
+                now=now,
             )
-            if job is None:
-                raise JobNotFound()
-            if job.status in {
-                JobStatus.SUCCEEDED.value,
-                JobStatus.DEAD.value,
-                JobStatus.CANCELLED.value,
-            }:
-                return job.status
-            if job.status == JobStatus.RUNNING.value:
-                job.cancel_requested_at = job.cancel_requested_at or now
-                await _append_job_event(
-                    session,
-                    job=job,
-                    event_type="job.cancel_requested",
-                    actor_id=actor_id,
-                )
-                return job.status
-            job.status = JobStatus.CANCELLED.value
-            job.finished_at = now
-            job.version += 1
-            await _append_job_event(session, job=job, event_type="job.cancelled", actor_id=actor_id)
-            return job.status
+            return result.status
 
     async def retry_dead(
         self,

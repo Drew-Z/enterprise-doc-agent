@@ -7,6 +7,8 @@ from pathlib import Path
 import psycopg
 import pytest
 
+from enterprise_doc_core.db.metadata import LANGGRAPH_CHECKPOINT_TABLES
+
 ROOT = Path(__file__).resolve().parents[2]
 DATABASE_URL = os.environ.get(
     "FOUNDATION_TEST_DATABASE_URL",
@@ -43,21 +45,24 @@ def _business_tables() -> set[str]:
               AND tablename <> 'alembic_version'
             """
         )
-        return {row[0] for row in cursor.fetchall()}
+        return {row[0] for row in cursor.fetchall()} - LANGGRAPH_CHECKPOINT_TABLES
 
 
 @pytest.mark.integration
 def test_m1_migration_downgrades_to_m0_and_reapplies() -> None:
-    _run_alembic("downgrade", "20260717_0005")
-    _run_alembic("upgrade", "20260717_0005")
-    assert _business_tables() == EXPECTED_TABLES
-    _run_alembic("upgrade", "head")
+    try:
+        _run_alembic("downgrade", "20260717_0005")
+        _run_alembic("upgrade", "20260717_0005")
+        assert _business_tables() == EXPECTED_TABLES
+        _run_alembic("upgrade", "head")
 
-    _run_alembic("downgrade", "20260717_0001")
-    assert _business_tables() == set()
+        _run_alembic("downgrade", "20260717_0001")
+        assert _business_tables() == set()
 
-    _run_alembic("upgrade", "20260717_0005")
-    assert _business_tables() == EXPECTED_TABLES
+        _run_alembic("upgrade", "20260717_0005")
+        assert _business_tables() == EXPECTED_TABLES
+    finally:
+        _run_alembic("upgrade", "head")
 
 
 @pytest.mark.integration

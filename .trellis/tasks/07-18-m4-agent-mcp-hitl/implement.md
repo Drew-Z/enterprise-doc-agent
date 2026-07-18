@@ -79,15 +79,15 @@ Rollback point: schema and transition contracts only; no API or Worker behavior.
 
 ## Slice 2: Run Service, Events, And Fast API Creation
 
-- [ ] Implement canonical run fingerprinting and one-transaction AgentRun + initial
+- [x] Implement canonical run fingerprinting and one-transaction AgentRun + initial
   AgentRunEvent + M2 Job/Outbox + AgentRunExecution creation.
-- [ ] Implement tenant-scoped status, execution/attempt projection, event listing,
+- [x] Implement tenant-scoped status, execution/attempt projection, event listing,
   cancellation, ready-document-version listing, and stable public result models.
-- [ ] Allocate event sequence numbers under an AgentRun row lock and allow only
+- [x] Allocate event sequence numbers under an AgentRun row lock and allow only
   event-type-specific redacted public payload schemas.
-- [ ] Add FastAPI routes for create/status/cancel/document-version listing with typed
+- [x] Add FastAPI routes for create/status/cancel/document-version listing with typed
   202/200/401/404/409/422 responses.
-- [ ] Prove API creation never calls the injected graph/model/tool adapters.
+- [x] Prove API creation never calls the injected graph/model/tool adapters.
 
 Focused commands:
 

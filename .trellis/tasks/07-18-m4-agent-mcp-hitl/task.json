@@ -31,8 +31,8 @@
   "meta": {
     "milestone": "M4",
     "workflow": "tdd",
-    "current_slice": 2,
-    "completed_slices": [0, 1],
+    "current_slice": 3,
+    "completed_slices": [0, 1, 2],
     "approval_required_before_start": true,
     "langgraph_constraint": ">=1.2.9,<2",
     "langgraph_checkpoint_postgres_constraint": ">=3.1,<4",

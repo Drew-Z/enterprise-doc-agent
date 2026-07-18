@@ -10,8 +10,10 @@ from fastapi.responses import JSONResponse
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.trace import Span
 from pydantic import BaseModel
-from sqlalchemy.ext.asyncio import AsyncEngine
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
+from enterprise_doc_api.agents import router as agent_router
+from enterprise_doc_api.agents.router import AgentRunServiceProtocol
 from enterprise_doc_api.auth import (
     DatabasePrincipalResolver,
     JwtTokenCodec,
@@ -26,6 +28,7 @@ from enterprise_doc_api.uploads.router import (
     UploadCreationServiceProtocol,
     UploadSessionServiceProtocol,
 )
+from enterprise_doc_core.agents import AgentRunService
 from enterprise_doc_core.db import create_database_engine, create_session_factory
 from enterprise_doc_core.health import (
     ComponentStatus,
@@ -47,6 +50,14 @@ from enterprise_doc_core.uploads import UploadCreationService, UploadSessionServ
 
 class LivenessResponse(BaseModel):
     status: str = "alive"
+
+
+def _required_session_factory(
+    value: async_sessionmaker[AsyncSession] | None,
+) -> async_sessionmaker[AsyncSession]:
+    if value is None:
+        raise RuntimeError("database session factory is required")
+    return value
 
 
 def _sanitize_request_span(span: Span, scope: dict[str, Any]) -> None:
@@ -82,6 +93,7 @@ def create_app(
     principal_resolver: PrincipalResolver | None = None,
     upload_creation_service: UploadCreationServiceProtocol | None = None,
     upload_session_service: UploadSessionServiceProtocol | None = None,
+    agent_run_service: AgentRunServiceProtocol | None = None,
 ) -> FastAPI:
     resolved_settings = settings if settings is not None else ApiSettings()
     if checkers is None:
@@ -94,6 +106,7 @@ def create_app(
         principal_resolver is None
         or upload_creation_service is None
         or upload_session_service is None
+        or agent_run_service is None
     )
     needs_default_object_store = upload_creation_service is None or upload_session_service is None
     owned_database_engine: AsyncEngine | None = None
@@ -191,8 +204,18 @@ def create_app(
     app.state.job_runtime_service = (
         JobRuntimeService(session_factory=session_factory) if session_factory is not None else None
     )
+    app.state.agent_run_service = (
+        agent_run_service
+        if agent_run_service is not None
+        else AgentRunService(
+            session_factory=_required_session_factory(session_factory),
+            agent_settings=resolved_settings.agent,
+            model_settings=resolved_settings.model,
+        )
+    )
     app.include_router(upload_router)
     app.include_router(jobs_router)
+    app.include_router(agent_router)
     if telemetry is not None and telemetry.enabled and telemetry.provider is not None:
         FastAPIInstrumentor.instrument_app(
             app,
