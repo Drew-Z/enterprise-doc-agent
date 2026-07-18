@@ -13,6 +13,12 @@ class PresignedUploadPart:
 
 
 @dataclass(frozen=True, slots=True)
+class PresignedObjectDownload:
+    url: str
+    expires_in_seconds: int
+
+
+@dataclass(frozen=True, slots=True)
 class UploadedPart:
     part_number: int
     size_bytes: int
@@ -33,6 +39,16 @@ class ObjectHead:
     checksum_sha256_b64: str | None
     content_type: str | None
     metadata: Mapping[str, str]
+
+
+@dataclass(frozen=True, slots=True)
+class ArtifactObject:
+    bucket: str
+    key: str
+    size_bytes: int
+    content_sha256: str
+    content_type: str
+    etag: str
 
 
 @dataclass(frozen=True, slots=True)

@@ -177,6 +177,8 @@ def _enum_value_matches_type(value: JsonValue, schema: JsonSchemaNode) -> bool:
             and (schema.minimum is None or value >= schema.minimum)
             and (schema.maximum is None or value <= schema.maximum)
         )
+
+
 class StructuredExtractionSchema(JsonSchemaNode):
     type: Literal["object"] = "object"
 

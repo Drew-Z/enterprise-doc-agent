@@ -1,0 +1,264 @@
+from __future__ import annotations
+
+import asyncio
+import logging
+import os
+from collections.abc import Awaitable, Callable
+from contextvars import Token
+from dataclasses import dataclass
+from datetime import datetime
+
+from mcp.server.fastmcp import FastMCP
+
+from enterprise_doc_core.agents import (
+    AgentToolService,
+    CreateDraftArtifactInput,
+    CreateDraftArtifactResult,
+    GetArtifactInput,
+    GetArtifactResult,
+    PublishArtifactInput,
+    PublishArtifactResult,
+    ReadChunkInput,
+    ReadChunkResult,
+    SearchDocumentInput,
+    SearchDocumentResult,
+    SignedExecutionContext,
+    ToolExecutionError,
+    verify_execution_context,
+)
+from enterprise_doc_core.config import FoundationSettings
+from enterprise_doc_core.context import (
+    PrincipalContext,
+    RequestContext,
+    reset_request_context,
+    set_request_context,
+)
+from enterprise_doc_core.db import create_database_engine, create_session_factory
+from enterprise_doc_core.documents.ingestion import HashEmbeddingProvider
+from enterprise_doc_core.documents.retrieval_service import HybridRetrievalService
+from enterprise_doc_core.logging import configure_logging
+from enterprise_doc_core.object_store import Boto3ArtifactObjectStore
+
+LOGGER = logging.getLogger(__name__)
+CONTEXT_ENV = "ENTERPRISE_DOC_MCP_CONTEXT"
+
+
+class McpServerError(RuntimeError):
+    code = "mcp_server_error"
+
+    def __init__(self, code: str, message: str | None = None) -> None:
+        self.code = code
+        super().__init__(message or code)
+
+
+@dataclass(slots=True)
+class McpRuntime:
+    service: AgentToolService
+    signing_secret: str
+    request_timeout_seconds: float = 30.0
+    context_token: str | None = None
+    clock: Callable[[], datetime] | None = None
+
+    def load_context(self) -> SignedExecutionContext:
+        token = self.context_token or os.environ.get(CONTEXT_ENV)
+        if not token:
+            raise McpServerError("execution_context_missing")
+        try:
+            context = verify_execution_context(
+                token,
+                self.signing_secret,
+                now=self.clock() if self.clock is not None else None,
+            )
+        except Exception as error:
+            code = getattr(error, "code", "execution_context_invalid")
+            raise McpServerError(str(code)) from None
+        return context
+
+    def bind_request_context(
+        self,
+        context: SignedExecutionContext,
+    ) -> Token[RequestContext | None]:
+        return set_request_context(
+            RequestContext(
+                request_id=str(context.execution_id),
+                correlation_id=str(context.run_id),
+                principal=PrincipalContext(
+                    tenant_id=str(context.tenant_id),
+                    actor_id=str(context.actor_id),
+                    role="worker",
+                ),
+            )
+        )
+
+
+def build_server(runtime: McpRuntime) -> FastMCP:
+    server = FastMCP(
+        name="enterprise-doc-mcp",
+        instructions="Stable v1 enterprise document tools.",
+        log_level="INFO",
+    )
+
+    @server.tool(
+        name="search_document",
+        description="Search the authorized document version and freeze evidence for this run.",
+        structured_output=True,
+    )
+    async def search_document(request: SearchDocumentInput) -> SearchDocumentResult:
+        return await _invoke(runtime, request, runtime.service.search_document)
+
+    @server.tool(
+        name="read_chunk",
+        description="Read one chunk that is already frozen in the run evidence set.",
+        structured_output=True,
+    )
+    async def read_chunk(request: ReadChunkInput) -> ReadChunkResult:
+        return await _invoke(runtime, request, runtime.service.read_chunk)
+
+    @server.tool(
+        name="create_draft_artifact",
+        description="Create a verified draft artifact from a grounded answer for this run.",
+        structured_output=True,
+    )
+    async def create_draft_artifact(
+        request: CreateDraftArtifactInput,
+    ) -> CreateDraftArtifactResult:
+        return await _invoke(runtime, request, runtime.service.create_draft_artifact)
+
+    @server.tool(
+        name="get_artifact",
+        description="Get a short-lived download URL for an authorized artifact.",
+        structured_output=True,
+    )
+    async def get_artifact(request: GetArtifactInput) -> GetArtifactResult:
+        return await _invoke(runtime, request, runtime.service.get_artifact)
+
+    @server.tool(
+        name="publish_artifact",
+        description="Publish an exact artifact target with a server-approved owner decision.",
+        structured_output=True,
+    )
+    async def publish_artifact(request: PublishArtifactInput) -> PublishArtifactResult:
+        return await _invoke(runtime, request, runtime.service.publish_artifact)
+
+    _enforce_strict_tool_arguments(server)
+    return server
+
+
+def _enforce_strict_tool_arguments(server: FastMCP) -> None:
+    """Make FastMCP's generated wrapper model reject unknown top-level fields.
+
+    FastMCP 1.x builds a dynamic argument model around the single ``request``
+    parameter. Its default model config ignores unknown wrapper fields, so keep the
+    compatibility shim local to the five versioned tools and refresh the published
+    schema as well as runtime validation.
+    """
+    tool_manager = getattr(server, "_tool_manager", None)
+    tools = getattr(tool_manager, "_tools", None)
+    if not isinstance(tools, dict):
+        raise RuntimeError("unsupported FastMCP tool manager")
+    for name in (
+        "search_document",
+        "read_chunk",
+        "create_draft_artifact",
+        "get_artifact",
+        "publish_artifact",
+    ):
+        tool = tools.get(name)
+        model = getattr(getattr(tool, "fn_metadata", None), "arg_model", None)
+        if tool is None or model is None:
+            raise RuntimeError(f"missing FastMCP tool argument model: {name}")
+        model.model_config["extra"] = "forbid"
+        model.model_rebuild(force=True)
+        tool.parameters = model.model_json_schema(by_alias=True)
+
+
+async def _invoke[RequestT, ResultT](
+    runtime: McpRuntime,
+    request: RequestT,
+    operation: Callable[[SignedExecutionContext, RequestT], Awaitable[ResultT]],
+) -> ResultT:
+    context = runtime.load_context()
+    context_token = runtime.bind_request_context(context)
+    try:
+        async with asyncio.timeout(runtime.request_timeout_seconds):
+            return await operation(context, request)
+    except TimeoutError:
+        raise McpServerError("mcp_tool_timeout") from None
+    except McpServerError:
+        raise
+    except ToolExecutionError as error:
+        raise McpServerError(error.code) from None
+    except Exception as error:
+        code = getattr(error, "code", "mcp_tool_failed")
+        LOGGER.warning("mcp_tool_failed", extra={"event_data": {"error_code": code}})
+        raise McpServerError(str(code)) from None
+    finally:
+        reset_request_context(context_token)
+
+
+@dataclass(slots=True)
+class RuntimeResources:
+    runtime: McpRuntime
+    engine: object
+    artifact_store: Boto3ArtifactObjectStore
+
+    async def close(self) -> None:
+        await self.artifact_store.close()
+        dispose = getattr(self.engine, "dispose", None)
+        if callable(dispose):
+            await dispose()
+
+
+def build_runtime(settings: FoundationSettings) -> RuntimeResources:
+    engine = create_database_engine(settings.database)
+    session_factory = create_session_factory(engine)
+    retrieval = HybridRetrievalService(
+        session_factory=session_factory,
+        embedding_provider=HashEmbeddingProvider(),
+    )
+    artifact_store = Boto3ArtifactObjectStore(
+        settings=settings.object_store,
+        max_object_bytes=settings.agent.max_artifact_bytes,
+    )
+    service = AgentToolService(
+        session_factory=session_factory,
+        retrieval_service=retrieval,
+        artifact_store=artifact_store,
+        stale_execution_seconds=max(30, int(settings.mcp.request_timeout_seconds)),
+        artifact_bucket=settings.object_store.artifacts_bucket,
+    )
+    return RuntimeResources(
+        runtime=McpRuntime(
+            service=service,
+            signing_secret=settings.mcp.signing_secret.get_secret_value(),
+            request_timeout_seconds=settings.mcp.request_timeout_seconds,
+        ),
+        engine=engine,
+        artifact_store=artifact_store,
+    )
+
+
+async def run_stdio(settings: FoundationSettings | None = None) -> None:
+    resolved = settings or FoundationSettings()
+    configure_logging(
+        service="enterprise-doc-mcp",
+        environment=resolved.app_env.value,
+        level=resolved.log_level,
+    )
+    resources = build_runtime(resolved)
+    server = build_server(resources.runtime)
+    try:
+        await server.run_stdio_async()
+    finally:
+        await resources.close()
+
+
+__all__ = [
+    "CONTEXT_ENV",
+    "McpRuntime",
+    "McpServerError",
+    "RuntimeResources",
+    "build_runtime",
+    "build_server",
+    "run_stdio",
+]

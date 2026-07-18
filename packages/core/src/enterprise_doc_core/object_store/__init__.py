@@ -1,3 +1,7 @@
+from enterprise_doc_core.object_store.artifacts import (
+    ArtifactObjectStore,
+    Boto3ArtifactObjectStore,
+)
 from enterprise_doc_core.object_store.client import create_s3_client
 from enterprise_doc_core.object_store.errors import (
     MultipartUploadNotFound,
@@ -9,9 +13,11 @@ from enterprise_doc_core.object_store.errors import (
     ObjectStoreUnavailable,
 )
 from enterprise_doc_core.object_store.models import (
+    ArtifactObject,
     CompletedMultipartUpload,
     IncompleteUpload,
     ObjectHead,
+    PresignedObjectDownload,
     PresignedUploadPart,
     UploadedPart,
 )
@@ -21,6 +27,9 @@ from enterprise_doc_core.object_store.multipart import (
 )
 
 __all__ = [
+    "ArtifactObject",
+    "ArtifactObjectStore",
+    "Boto3ArtifactObjectStore",
     "Boto3MultipartObjectStore",
     "CompletedMultipartUpload",
     "IncompleteUpload",
@@ -33,6 +42,7 @@ __all__ = [
     "ObjectStoreProtocolError",
     "ObjectStoreRejected",
     "ObjectStoreUnavailable",
+    "PresignedObjectDownload",
     "PresignedUploadPart",
     "UploadedPart",
     "create_s3_client",

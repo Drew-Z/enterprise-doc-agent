@@ -121,18 +121,26 @@ Rollback point: validated model output exists as a Core contract without graph/t
 
 ## Slice 4: Artifact Store, Tool Policy, And MCP Stdio Server
 
-- [ ] Add a bounded artifact object-store adapter for deterministic put, head, delete,
+- [x] Add a bounded artifact object-store adapter for deterministic put, head, delete,
   and short-lived presigned GET without logging keys, filenames, bodies, or signatures.
-- [ ] Implement signed per-run execution context with HMAC, expiry, nonce, capability,
+- [x] Implement signed per-run execution context with HMAC, expiry, nonce, capability,
   document version, and optional approval binding.
-- [ ] Implement server-side policy that reloads membership, run, evidence, artifact,
+- [x] Implement server-side policy that reloads membership, run, evidence, artifact,
   approval, and target version. Owner is required for publish.
-- [ ] Implement idempotent ToolExecution begin/succeed/fail/deny transitions and stable
+- [x] Implement idempotent ToolExecution begin/succeed/fail/deny transitions and stable
   error codes with input hashes only.
-- [ ] Implement the five tools and the stable MCP v1 stdio server. stdout remains
+- [x] Implement the five tools and the stable MCP v1 stdio server. stdout remains
   protocol-only; operational JSON logs use stderr.
-- [ ] Add in-process/stdio protocol tests plus real PostgreSQL/MinIO integration for
+- [x] Add in-process/stdio protocol tests plus real PostgreSQL/MinIO integration for
   read, draft, exact-target publish, duplicate publish, and cross-tenant denial.
+
+Slice 4 verification (2026-07-19): `ruff check .`, `ruff format --check .`, and
+strict mypy passed; non-integration tests passed (371), MCP unit tests passed (8),
+and PostgreSQL/MinIO/stdio MCP integration tests passed (6). Recovery coverage also
+proves that a draft interrupted after object PUT or finalize failure is retried with
+the same artifact and ToolExecution identity. The MCP wrapper schema rejects unknown
+top-level fields at both schema and runtime levels, and old execution contexts are
+denied after the run advances its current execution sequence.
 
 Focused commands:
 

@@ -105,6 +105,7 @@ class AgentSettings(BaseModel):
     tool_schema_version: str = Field(default="m4.v1", min_length=1, max_length=64)
     checkpoint_url: SecretStr | None = None
     checkpoint_timeout_seconds: float = Field(default=15.0, gt=0, le=120)
+    max_artifact_bytes: int = Field(default=16 * 1024 * 1024, ge=1, le=256 * 1024 * 1024)
     strict_msgpack: bool = True
 
     @model_validator(mode="after")
