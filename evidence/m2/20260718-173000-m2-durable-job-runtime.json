@@ -30,7 +30,7 @@
     {
       "command": "uv run pytest -m \"not integration\" -q",
       "result": "passed",
-      "summary": "214 passed, 58 deselected"
+      "summary": "216 passed, 58 deselected"
     },
     {
       "command": "uv run pytest -m integration -q",

@@ -17,7 +17,7 @@
 - `uv run ruff format --check .` — 128 files already formatted.
 - `uv run ruff check .` — passed.
 - `uv run mypy packages/core/src apps/api/src apps/worker/src` — 67 source files passed.
-- `uv run pytest -m "not integration" -q` — 214 passed, 58 deselected.
+- `uv run pytest -m "not integration" -q` — 216 passed, 58 deselected.
 - `uv run pytest -m integration -q` — 58 passed, 214 deselected.
 - `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build` — passed; frontend tests 124.
 - `python .trellis/scripts/task.py validate 07-18-m2-durable-job-runtime` — passed.
