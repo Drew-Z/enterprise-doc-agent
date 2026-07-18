@@ -1,0 +1,37 @@
+{
+  "id": "m1-multipart-upload",
+  "name": "m1-multipart-upload",
+  "title": "M1 Multipart Upload",
+  "description": "Implement tenant-scoped resumable multipart document upload with durable metadata, MinIO/S3 compatibility, frontend recovery controls, and reproducible integration evidence.",
+  "status": "completed",
+  "dev_type": "fullstack",
+  "scope": "packages/core,apps/api,apps/web,infra/compose,scripts,tests,evidence,.github",
+  "package": "api",
+  "priority": "P0",
+  "creator": "developer",
+  "assignee": "developer",
+  "createdAt": "2026-07-17",
+  "completedAt": "2026-07-18",
+  "branch": "feat/m1-multipart-upload",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": "52b3ed3",
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "07-17-enterprise-document-agent-platform",
+  "relatedFiles": [
+    ".trellis/tasks/07-17-enterprise-document-agent-platform/prd.md",
+    ".trellis/tasks/07-17-enterprise-document-agent-platform/design.md",
+    ".trellis/tasks/07-17-enterprise-document-agent-platform/implement.md",
+    "D:/workspace4Cursor/offer/output/企业文档Agent任务平台_实施规划.md"
+  ],
+  "notes": "M1 ends at a durable uploaded DocumentVersion. M2 owns Job/Outbox and the joint atomic completion gate.",
+  "meta": {
+    "milestone": "M1",
+    "workflow": "tdd",
+    "approval_required_before_start": true,
+    "reviewed_implementation_commit": "ca43716265d7057aa79288bae054fc6ae0c5056d",
+    "whole_file_sha256_verified": false
+  }
+}

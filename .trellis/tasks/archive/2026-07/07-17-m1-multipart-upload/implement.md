@@ -379,7 +379,8 @@ an immutable, machine-validated evidence record.
 
 - M1 contains no Job/Outbox/Celery/lease/RAG/Agent/deployment behavior.
 - `DocumentVersion.status` is uploaded, not ready.
-- Whole-file SHA-256 remains explicitly unverified until M3.
+- Whole-file SHA-256 remains explicitly unverified. M3 adds per-chunk hashes and does not
+  retroactively prove a server-side whole-file hash.
 
 ### Gate B: Security
 

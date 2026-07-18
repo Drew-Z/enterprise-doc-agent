@@ -51,23 +51,23 @@ preserving tenant ownership and an append-only execution history.
 
 ## Acceptance Criteria
 
-- [ ] Four durable models are registered in SQLAlchemy metadata and have an Alembic
+- [x] Four durable models are registered in SQLAlchemy metadata and have an Alembic
   migration with tenant ownership, status checks, stable indexes, and downgrade tests.
-- [ ] Unit tests prove idempotent job creation, duplicate delivery with one effective
+- [x] Unit tests prove idempotent job creation, duplicate delivery with one effective
   claim, concurrent claim serialization, lease expiry/reclaim, heartbeat renewal, and
   stale fencing rejection.
-- [ ] Unit tests prove retryable/permanent/cancelled classification, backoff bounds and
+- [x] Unit tests prove retryable/permanent/cancelled classification, backoff bounds and
   jitter injection, dead/manual retry, idempotent cancel, and terminal-state guards.
-- [ ] Outbox tests prove transactional creation, repeat publication, lease recovery, and
+- [x] Outbox tests prove transactional creation, repeat publication, lease recovery, and
   idempotent consumer delivery.
-- [ ] Worker lifecycle tests prove shutdown prevents new claims and an interrupted
+- [x] Worker lifecycle tests prove shutdown prevents new claims and an interrupted
   attempt is reclaimable after its lease expires.
-- [ ] PostgreSQL integration tests prove two concurrent upload completions create one
+- [x] PostgreSQL integration tests prove two concurrent upload completions create one
   `DocumentVersion`, one `Job`, one `OutboxEvent`, and one quota conversion; replay is
   stable.
-- [ ] Existing M1 unit, integration, smoke, evidence-contract, and Trellis validation
+- [x] Existing M1 unit, integration, smoke, evidence-contract, and Trellis validation
   gates remain green; M1 evidence files are unchanged.
-- [ ] The M2 interview document is updated only with code-backed facts and labels
+- [x] The M2 interview document is updated only with code-backed facts and labels
   unimplemented production claims explicitly.
 
 ## Constraints

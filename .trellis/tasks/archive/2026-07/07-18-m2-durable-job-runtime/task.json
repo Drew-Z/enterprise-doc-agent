@@ -1,0 +1,36 @@
+{
+  "id": "m2-durable-job-runtime",
+  "name": "m2-durable-job-runtime",
+  "title": "M2 Durable Job Runtime",
+  "description": "Durable tenant-scoped Job/Attempt/Event/Outbox runtime with retry, cancellation, fencing, Worker adapters, and atomic upload completion integration.",
+  "status": "completed",
+  "dev_type": "backend",
+  "scope": "packages/core jobs runtime, worker Celery/outbox adapter, upload completion atomic integration, M2 tests/evidence",
+  "package": "core",
+  "priority": "P2",
+  "creator": "developer",
+  "assignee": "developer",
+  "createdAt": "2026-07-18",
+  "completedAt": "2026-07-18",
+  "branch": "feat/m2-durable-job-runtime",
+  "base_branch": "feat/m1-multipart-upload",
+  "worktree_path": null,
+  "commit": "d47a1c4",
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "07-17-enterprise-document-agent-platform",
+  "relatedFiles": [],
+  "notes": "Baseline reviewed in d47a1c4; downstream M2/M3 hardening is recorded in evidence/m3/20260718-204755-m2-m3-hardening.json.",
+  "meta": {
+    "milestone": "M2",
+    "workflow": "tdd",
+    "reviewed_commits": [
+      "34712ff",
+      "dce3bfc",
+      "1d2bbc0",
+      "d47a1c4"
+    ],
+    "hardening_commit": "15ee55c5574dbb454ed5ac28827f7a85b63a959f"
+  }
+}

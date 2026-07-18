@@ -30,3 +30,13 @@
   `document.ingest` jobs.
 - No Kubernetes, CD, production traffic, SLO, or capacity claim is made.
 - M1 1 GiB evidence remains immutable and is not relabeled as M2 evidence.
+
+## Post-review hardening
+
+The downstream M3 review identified and fixed M2 runtime gaps without rewriting the
+original M2 evidence. Commit `15ee55c5574dbb454ed5ac28827f7a85b63a959f` and
+`evidence/m3/20260718-204755-m2-m3-hardening.json` add tenant-scoped retry/cancel writes,
+delayed and immediate Outbox wakeups, a running heartbeat/cancellation monitor,
+completion-race protection, and a separate Celery consumer entrypoint. The hardening
+manifest reports the updated 255 unit and 66 integration gates; it still makes no
+remote-broker, multi-process throughput, or production deployment claim.

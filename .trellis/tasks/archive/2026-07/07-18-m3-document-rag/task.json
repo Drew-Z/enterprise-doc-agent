@@ -1,0 +1,31 @@
+{
+  "id": "m3-document-rag",
+  "name": "m3-document-rag",
+  "title": "M3 Document Ingestion and Hybrid RAG",
+  "description": "Deterministic TXT/PDF/DOCX ingestion, resumable embedding checkpoint, tenant/version-scoped PostgreSQL FTS plus pgvector retrieval, citations, refusals, and live evaluation.",
+  "status": "completed",
+  "dev_type": "backend",
+  "scope": "document parser/chunker, embedding protocol, pgvector hybrid retrieval, citation/refusal, M2 ingest handler",
+  "package": "core",
+  "priority": "P2",
+  "creator": "developer",
+  "assignee": "developer",
+  "createdAt": "2026-07-18",
+  "completedAt": "2026-07-18",
+  "branch": "feat/m3-document-rag",
+  "base_branch": "feat/m2-durable-job-runtime",
+  "worktree_path": null,
+  "commit": "753c9a6",
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "07-17-enterprise-document-agent-platform",
+  "relatedFiles": [],
+  "notes": "Baseline M3 evidence is retained; reliability hardening is implemented in 15ee55c and evidenced by evidence/m3/20260718-204755-m2-m3-hardening.json.",
+  "meta": {
+    "milestone": "M3",
+    "workflow": "tdd",
+    "reviewed_implementation_commit": "15ee55c5574dbb454ed5ac28827f7a85b63a959f",
+    "reviewed_evidence_commit": "753c9a6"
+  }
+}

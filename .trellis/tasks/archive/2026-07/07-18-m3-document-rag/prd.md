@@ -28,13 +28,16 @@ version; insufficient evidence must produce a refusal instead of an invented ans
   filters. Vector similarity alone is insufficient for legal terms, identifiers, and
   clause numbers.
 - Run keyword and vector recall independently, deduplicate, combine with deterministic
-  Reciprocal Rank Fusion (RRF), and apply a bounded rerank/relevance threshold.
+  Reciprocal Rank Fusion (RRF), and apply bounded deterministic relevance gates. A
+  learned or cross-encoder reranker is explicitly out of M3 scope.
 - Refuse when the authorized evidence score or candidate count is below threshold.
 - Return citations containing chunk id, document version id, filename, page/offset,
   heading, and a short evidence excerpt. Citation validation must run against the
   authorized candidate set, not merely model-produced ids.
 - Support index-generation metadata so a new embedding model can be built beside the
-  current generation and switched atomically after evaluation.
+  current generation and switched atomically after completeness and embedding
+  integrity checks. Offline quality evaluation is a separate gate and is not yet wired
+  into activation.
 
 ### Security and tenancy
 
@@ -58,8 +61,8 @@ version; insufficient evidence must produce a refusal instead of an invented ans
   ordering, tenant/version isolation, deduplication, and index-generation switching.
 - [x] Citation tests reject unauthorized, wrong-version, missing, and out-of-candidate
   citations; valid citations resolve to stored chunks with stable metadata.
-- [x] Refusal tests cover empty evidence, low score, and conflicting versions; no answer
-  is generated from unsupported context.
+- [x] Refusal tests cover empty evidence, insufficient candidates, low score, and
+  conflicting versions; M3 returns a refusal decision and has no LLM answer path.
 - [x] A versioned live PostgreSQL retrieval set reports Recall@K, MRR/nDCG and refusal
   precision/recall from real service output. A separate deterministic citation-gate
   fixture reports citation precision; M3 does not claim answer-generation quality.
