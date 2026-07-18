@@ -1,3 +1,15 @@
+from collections.abc import MutableMapping
+from typing import Literal
+
+from enterprise_doc_core.agents.models import (
+    AgentArtifact,
+    AgentRun,
+    AgentRunEvent,
+    AgentRunEvidence,
+    AgentRunExecution,
+    ApprovalRequest,
+    ToolExecution,
+)
 from enterprise_doc_core.db.base import Base
 from enterprise_doc_core.documents.models import (
     Document,
@@ -10,6 +22,12 @@ from enterprise_doc_core.jobs.models import Job, JobAttempt, JobEvent, OutboxEve
 from enterprise_doc_core.uploads.models import UploadPart, UploadSession
 
 REGISTERED_MODELS = (
+    AgentArtifact,
+    AgentRun,
+    AgentRunEvent,
+    AgentRunEvidence,
+    AgentRunExecution,
+    ApprovalRequest,
     Document,
     DocumentChunk,
     DocumentIngestionGeneration,
@@ -20,9 +38,38 @@ REGISTERED_MODELS = (
     JobEvent,
     OutboxEvent,
     Tenant,
+    ToolExecution,
     UploadPart,
     UploadSession,
     User,
 )
 
 metadata = Base.metadata
+
+LANGGRAPH_CHECKPOINT_TABLES = frozenset(
+    {
+        "checkpoint_migrations",
+        "checkpoints",
+        "checkpoint_blobs",
+        "checkpoint_writes",
+    }
+)
+
+
+def include_alembic_name(
+    name: str | None,
+    type_: Literal[
+        "schema",
+        "table",
+        "column",
+        "index",
+        "unique_constraint",
+        "foreign_key_constraint",
+    ],
+    _parent_names: MutableMapping[
+        Literal["schema_name", "table_name", "schema_qualified_table_name"],
+        str | None,
+    ],
+) -> bool:
+    """Exclude tables owned by the official LangGraph checkpointer from autogenerate."""
+    return type_ != "table" or name not in LANGGRAPH_CHECKPOINT_TABLES

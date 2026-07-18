@@ -58,13 +58,13 @@ Rollback point: package imports and lockfile are green before any business schem
 
 ## Slice 1: Agent Persistence And Migration
 
-- [ ] Write model metadata tests for AgentRun, AgentRunExecution, AgentRunEvent,
+- [x] Write model metadata tests for AgentRun, AgentRunExecution, AgentRunEvent,
   AgentRunEvidence, ApprovalRequest, ToolExecution, and AgentArtifact.
-- [ ] Add additive Alembic revision `20260718_0009_agent_mcp_hitl.py` with named tenant,
+- [x] Add additive Alembic revision `20260718_0009_agent_mcp_hitl.py` with named tenant,
   status, sequence, idempotency, approval-target, and artifact constraints.
-- [ ] Add migration integration tests for upgrade, indexes/constraints, representative
+- [x] Add migration integration tests for upgrade, indexes/constraints, representative
   valid/invalid rows, and downgrade after cleanup.
-- [ ] Add pure transition tests for run, approval, tool, and artifact status machines.
+- [x] Add pure transition tests for run, approval, tool, and artifact status machines.
 
 Focused commands:
 
