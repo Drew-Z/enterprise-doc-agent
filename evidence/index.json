@@ -20,6 +20,11 @@
       "milestone": "M3",
       "status": "passed",
       "manifest": "evidence/m3/20260718-190800-m3-document-rag.json"
+    },
+    {
+      "milestone": "M2-M3-hardening",
+      "status": "passed",
+      "manifest": "evidence/m3/20260718-204755-m2-m3-hardening.json"
     }
   ]
 }

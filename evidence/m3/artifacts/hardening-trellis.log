@@ -1,0 +1,7 @@
+M2-M3 hardening Trellis validation
+captured_at=2026-07-18T20:47:55+08:00
+implementation_commit=15ee55c5574dbb454ed5ac28827f7a85b63a959f
+
+uv run python .trellis/scripts/task.py validate 07-18-m3-document-rag
+result=passed
+summary=implement.jsonl 5 entries; check.jsonl 3 entries

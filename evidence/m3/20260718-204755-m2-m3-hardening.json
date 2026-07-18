@@ -1,0 +1,70 @@
+{
+  "milestone": "m2-m3-hardening",
+  "result": "passed",
+  "implementation_commit": "15ee55c5574dbb454ed5ac28827f7a85b63a959f",
+  "branch": "feat/m3-document-rag",
+  "captured_at": "2026-07-18T20:47:55+08:00",
+  "environment": {
+    "os": "Windows workspace with Docker Compose PostgreSQL/Redis/MinIO",
+    "python": "3.12.13",
+    "postgresql": "16.14",
+    "pgvector": "0.8.3"
+  },
+  "commands": [
+    {
+      "command": "pnpm quality",
+      "result": "passed",
+      "summary": "149 formatted files, 76 typed source files, 255 backend unit tests, 124 frontend tests, frontend production build"
+    },
+    {
+      "command": "uv run pytest -m integration -q",
+      "result": "passed",
+      "summary": "66 passed, 255 deselected"
+    },
+    {
+      "command": "uv run python scripts/evaluate_m3_retrieval.py",
+      "result": "passed",
+      "summary": "5 live PostgreSQL cases; Recall@K, MRR, nDCG, refusal precision and refusal recall all 1.0"
+    },
+    {
+      "command": "uv run alembic current",
+      "result": "passed",
+      "summary": "20260718_0008 (head)"
+    },
+    {
+      "command": "uv run python .trellis/scripts/task.py validate 07-18-m3-document-rag",
+      "result": "passed",
+      "summary": "implement.jsonl and check.jsonl valid"
+    }
+  ],
+  "artifacts": [
+    "evidence/m3/artifacts/hardening-backend.log",
+    "evidence/m3/artifacts/hardening-frontend.log",
+    "evidence/m3/artifacts/hardening-live-retrieval-eval.json",
+    "evidence/m3/artifacts/hardening-trellis.log",
+    "packages/core/src/enterprise_doc_core/db/migrations/versions/20260718_0008_resumable_embedding_checkpoint.py",
+    "tests/jobs/test_job_runtime_integration.py",
+    "tests/jobs/test_m3_ingestion_integration.py",
+    "tests/jobs/test_m3_retrieval_integration.py"
+  ],
+  "implemented": [
+    "tenant-scoped Job cancel and manual retry writes",
+    "delayed and immediate Outbox retry wakeups",
+    "periodic Worker heartbeat, cooperative cancellation, and completion-race protection",
+    "separate Celery consumer process with one persistent asyncio event loop",
+    "persisted pre-embedding chunks and object-download-free embedding resume",
+    "checkpoint corruption rejection and nullable embedding migration",
+    "vector-distance, candidate-count, RRF-floor, generation-state, and relational-consistency retrieval gates",
+    "real PostgreSQL keyword-only, vector-only, version-isolation, and generation-switch tests",
+    "live HybridRetrievalService evaluation rather than prefilled retrieval predictions"
+  ],
+  "limitations": [
+    "The live evaluation uses controlled eight-dimensional vectors and is not production embedding-quality evidence.",
+    "PostgreSQL simple FTS is not evidence of Chinese tokenization quality.",
+    "RRF is deterministic fusion; no learned or cross-encoder reranker is implemented.",
+    "Citation generation and answer quality are not measured because M4 has not implemented the LLM answer pipeline.",
+    "The Celery solo consumer is a real local consumer entrypoint, not a multi-process throughput or production-capacity claim.",
+    "M4-M7 remain not implemented on this branch."
+  ],
+  "owner": "developer"
+}

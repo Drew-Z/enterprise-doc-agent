@@ -1,0 +1,17 @@
+M2-M3 hardening frontend verification
+captured_at=2026-07-18T20:47:55+08:00
+implementation_commit=15ee55c5574dbb454ed5ac28827f7a85b63a959f
+
+pnpm lint
+result=passed
+
+pnpm typecheck
+result=passed
+
+pnpm test
+result=passed
+summary=14 test files, 124 tests
+
+pnpm build
+result=passed
+summary=1808 modules transformed, production bundle emitted

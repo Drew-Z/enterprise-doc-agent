@@ -1,0 +1,62 @@
+{
+  "case_count": 5,
+  "citation_evaluation": "not measured because M3 has no answer or citation generator",
+  "citation_precision": null,
+  "dataset_sha256": "dbec417c98e03e5eef1b777098e16d6c9cb2463dd786998118d5e6d364347bb3",
+  "dataset_version": "m3-retrieval-live-v2",
+  "limitations": "Live PostgreSQL/pgvector retrieval regression with controlled 8-dimensional vectors. It does not measure production embedding quality, Chinese tokenization, answer quality, or citation generation.",
+  "mrr": 1.0,
+  "ndcg_at_k": 1.0,
+  "recall_at_k": 1.0,
+  "refusal_precision": 1.0,
+  "refusal_recall": 1.0,
+  "runtime": {
+    "alembic_revision": "20260718_0008",
+    "embedding_dimension": 8,
+    "embedding_provider": "dataset-controlled",
+    "max_vector_distance": 0.2,
+    "min_candidates": 1,
+    "min_score": 0.01639344262295082,
+    "pgvector_version": "0.8.3",
+    "postgres_version": "PostgreSQL 16.14",
+    "rrf_k": 60,
+    "top_k": 3
+  },
+  "cases": [
+    {
+      "case_id": "keyword-only-payment",
+      "accepted": true,
+      "refusal_reason": null,
+      "retrieved_chunk_keys": ["payment"],
+      "scores": [0.01639344262295082]
+    },
+    {
+      "case_id": "vector-only-delivery",
+      "accepted": true,
+      "refusal_reason": null,
+      "retrieved_chunk_keys": ["delivery"],
+      "scores": [0.01639344262295082]
+    },
+    {
+      "case_id": "hybrid-confidentiality",
+      "accepted": true,
+      "refusal_reason": null,
+      "retrieved_chunk_keys": ["confidentiality"],
+      "scores": [0.03278688524590164]
+    },
+    {
+      "case_id": "refuse-empty-query",
+      "accepted": false,
+      "refusal_reason": "empty_evidence",
+      "retrieved_chunk_keys": [],
+      "scores": []
+    },
+    {
+      "case_id": "refuse-unsupported-query",
+      "accepted": false,
+      "refusal_reason": "empty_evidence",
+      "retrieved_chunk_keys": [],
+      "scores": []
+    }
+  ]
+}
