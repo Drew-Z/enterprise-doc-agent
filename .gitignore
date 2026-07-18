@@ -12,6 +12,8 @@ htmlcov/
 node_modules/
 apps/web/dist/
 apps/web/coverage/
+apps/web/playwright-report/
+apps/web/test-results/
 
 # Local environment and runtime
 .env
