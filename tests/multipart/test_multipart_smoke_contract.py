@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import socket
 import sys
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
@@ -17,6 +18,8 @@ ApiRssSample = multipart_smoke.ApiRssSample
 build_sanitized_report = multipart_smoke.build_sanitized_report
 deterministic_bytes = multipart_smoke.deterministic_bytes
 sha256_for_generated_content = multipart_smoke.sha256_for_generated_content
+configured_smoke_ports = multipart_smoke.configured_smoke_ports
+host_port_available = multipart_smoke.host_port_available
 
 
 def test_generated_content_is_repeatable_and_matches_streamed_hash() -> None:
@@ -70,3 +73,27 @@ def test_sanitized_report_contains_measurements_without_sensitive_identifiers() 
         "sha256",
     ):
         assert forbidden not in serialized
+
+
+def test_smoke_ports_follow_compose_host_port_overrides(monkeypatch) -> None:
+    monkeypatch.setenv("POSTGRES_PORT", "15432")
+    monkeypatch.setenv("REDIS_PORT", "16379")
+    monkeypatch.setenv("MINIO_API_PORT", "19000")
+    monkeypatch.setenv("MINIO_CONSOLE_PORT", "19001")
+
+    assert {item.name: item.port for item in configured_smoke_ports()} == {
+        "api": 8000,
+        "postgres": 15432,
+        "redis": 16379,
+        "minio-api": 19000,
+        "minio-console": 19001,
+    }
+
+
+def test_preflight_detects_a_bound_but_non_listening_port() -> None:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as occupied:
+        occupied.bind(("127.0.0.1", 0))
+        port = occupied.getsockname()[1]
+        check = multipart_smoke.PortCheck("occupied", "127.0.0.1", port)
+
+        assert host_port_available(check) is False

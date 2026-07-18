@@ -4,6 +4,9 @@
 
 - `scripts/multipart_smoke.py` owns its local Compose and API processes and never
   removes named volumes.
+- Preflight requires each configured host port to be both non-listening and bindable,
+  so Windows `Bound` sockets are not mistaken for free ports. Compose host ports follow
+  their environment overrides; callers must provide the matching application URLs.
 - Generated smoke content is deterministic UTF-8 TXT data. The client computes the
   declared whole-content digest incrementally, retains at most one multipart part in
   memory, and sends the bytes to the presigned object-store URL rather than FastAPI.

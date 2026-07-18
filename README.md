@@ -70,6 +70,10 @@ Check tools, ports, host free space, and Docker availability:
 uv run python scripts/multipart_smoke.py --preflight --size-bytes 1073741824 --interrupt-after-parts 2
 ```
 
+Compose host-port overrides are supported. Override the matching application URL at
+the same time; for example, use `REDIS_PORT=6380` together with
+`REDIS__URL=redis://127.0.0.1:6380/0` when the default host port is occupied.
+
 Run the required 1 GiB evidence path and record sanitized API RSS measurements:
 
 ```powershell

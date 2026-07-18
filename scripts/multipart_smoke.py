@@ -5,8 +5,10 @@ import base64
 import ctypes
 import hashlib
 import json
+import os
 import platform
 import shutil
+import socket
 import subprocess
 import sys
 import tempfile
@@ -39,13 +41,6 @@ API_BASE_URL = "http://127.0.0.1:8000"
 MIB = 1024**2
 GENERATED_BYTE = b"a"
 HASH_CHUNK_SIZE = MIB
-SMOKE_PORTS = (
-    PortCheck("api", "127.0.0.1", 8000),
-    PortCheck("postgres", "127.0.0.1", 5432),
-    PortCheck("redis", "127.0.0.1", 6379),
-    PortCheck("minio-api", "127.0.0.1", 9000),
-    PortCheck("minio-console", "127.0.0.1", 9001),
-)
 
 
 @dataclass(frozen=True, slots=True)
@@ -298,6 +293,44 @@ def build_sanitized_report(
     }
 
 
+def configured_smoke_ports() -> tuple[PortCheck, ...]:
+    return (
+        PortCheck("api", "127.0.0.1", _configured_port("API__PORT", 8000)),
+        PortCheck("postgres", "127.0.0.1", _configured_port("POSTGRES_PORT", 5432)),
+        PortCheck("redis", "127.0.0.1", _configured_port("REDIS_PORT", 6379)),
+        PortCheck("minio-api", "127.0.0.1", _configured_port("MINIO_API_PORT", 9000)),
+        PortCheck(
+            "minio-console",
+            "127.0.0.1",
+            _configured_port("MINIO_CONSOLE_PORT", 9001),
+        ),
+    )
+
+
+def _configured_port(name: str, default: int) -> int:
+    raw_value = os.environ.get(name)
+    if raw_value is None:
+        return default
+    try:
+        port = int(raw_value)
+    except ValueError as exc:
+        raise SmokeFailure(f"{name} must be an integer port.") from exc
+    if not 1 <= port <= 65_535:
+        raise SmokeFailure(f"{name} must be between 1 and 65535.")
+    return port
+
+
+def host_port_available(check: PortCheck) -> bool:
+    if not port_is_free(check):
+        return False
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        try:
+            sock.bind((check.host, check.port))
+        except OSError:
+            return False
+    return True
+
+
 def _preflight(*, size_bytes: int, interrupt_after_parts: int) -> None:
     missing = [command for command in ("docker", "uv") if not command_available(command)]
     if missing:
@@ -316,7 +349,11 @@ def _preflight(*, size_bytes: int, interrupt_after_parts: int) -> None:
     )
     if docker.returncode != 0:
         raise SmokeFailure("Docker daemon is unavailable.")
-    occupied = [f"{item.name}:{item.port}" for item in SMOKE_PORTS if not port_is_free(item)]
+    occupied = [
+        f"{item.name}:{item.port}"
+        for item in configured_smoke_ports()
+        if not host_port_available(item)
+    ]
     if occupied:
         raise SmokeFailure(f"Ports already in use: {', '.join(occupied)}")
 
@@ -553,7 +590,7 @@ def run_smoke(args: argparse.Namespace) -> int:
         )
         run_command([*COMPOSE, "up", "-d", "--wait"])
         compose_started = True
-        wait_for_ports(tuple(check for check in SMOKE_PORTS if check.name != "api"))
+        wait_for_ports(tuple(check for check in configured_smoke_ports() if check.name != "api"))
         run_command([*COMPOSE, "--profile", "init", "run", "--rm", "minio-init"])
         run_command(["uv", "run", "alembic", "upgrade", "head"])
         print("Bootstrapping an isolated local principal")
