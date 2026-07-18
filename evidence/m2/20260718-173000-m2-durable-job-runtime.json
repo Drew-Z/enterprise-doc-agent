@@ -2,7 +2,7 @@
   "milestone": "m2-durable-job-runtime",
   "result": "passed",
   "implementation_commit": "dce3bfc",
-  "reviewed_commits": ["34712ff", "a52617f", "dce3bfc"],
+  "reviewed_commits": ["34712ff", "dce3bfc", "1d2bbc0"],
   "branch": "feat/m2-durable-job-runtime",
   "captured_at": "2026-07-18T17:30:00+08:00",
   "environment": {
@@ -30,7 +30,7 @@
     {
       "command": "uv run pytest -m \"not integration\" -q",
       "result": "passed",
-      "summary": "216 passed, 58 deselected"
+      "summary": "217 passed, 58 deselected"
     },
     {
       "command": "uv run pytest -m integration -q",
