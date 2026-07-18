@@ -41,6 +41,9 @@
   browser, 1 GiB smoke, evidence-contract, and Trellis commands against that commit.
 - Every referenced command log, report, and screenshot must be materialized beneath
   `evidence/m1/` and recorded with its SHA-256 digest. Earlier M0 evidence is immutable.
+- Browser evidence masks the local token field, selected filename, status filename,
+  and durable result identifiers. Evidence logs omit raw WebServer request lines because
+  their route instances contain per-run resource identifiers.
 - One successful local 1 GiB run is not a load test, sustained-throughput result, or
   production capacity claim.
 

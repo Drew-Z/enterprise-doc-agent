@@ -5,6 +5,23 @@ import { parseRuntime, runtimeFile } from "./runtime";
 
 const FILE_SIZE = 17 * 1024 * 1024 + 1024;
 
+async function captureEvidenceScreenshot(
+  page: import("@playwright/test").Page,
+  path: string,
+): Promise<void> {
+  await page.screenshot({
+    path,
+    fullPage: true,
+    mask: [
+      page.locator("#local-api-token"),
+      page.locator("#upload-file"),
+      page.locator(".upload-status p"),
+      page.locator(".completion-result dd"),
+    ],
+    maskColor: "#d7dde0",
+  });
+}
+
 async function expectStableLayout(page: import("@playwright/test").Page): Promise<void> {
   const result = await page.evaluate(() => {
     const selectors = [
@@ -99,7 +116,7 @@ test("interrupts, reloads, rejects a wrong file, resumes missing parts, and comp
   await expect(page.getByText("Upload paused")).toBeVisible();
   releaseUploads();
   await expectStableLayout(page);
-  await page.screenshot({ path: testInfo.outputPath("upload-paused-1440x900.png"), fullPage: true });
+  await captureEvidenceScreenshot(page, testInfo.outputPath("upload-paused-1440x900.png"));
 
   await page.reload();
   await expect(page.getByText("Reselect original file")).toBeVisible();
@@ -111,7 +128,7 @@ test("interrupts, reloads, rejects a wrong file, resumes missing parts, and comp
   });
   await expect(page.getByRole("alert")).toContainText("does not match the upload session");
   await expectStableLayout(page);
-  await page.screenshot({ path: testInfo.outputPath("wrong-file-390x844.png"), fullPage: true });
+  await captureEvidenceScreenshot(page, testInfo.outputPath("wrong-file-390x844.png"));
 
   await page.reload();
   await expect(page.getByText("Reselect original file")).toBeVisible();
@@ -126,5 +143,5 @@ test("interrupts, reloads, rejects a wrong file, resumes missing parts, and comp
   await expect(page.getByText("Document ID")).toBeVisible();
   await expect(page.getByText("Version ID")).toBeVisible();
   await expectStableLayout(page);
-  await page.screenshot({ path: testInfo.outputPath("upload-complete-1440x900.png"), fullPage: true });
+  await captureEvidenceScreenshot(page, testInfo.outputPath("upload-complete-1440x900.png"));
 });
