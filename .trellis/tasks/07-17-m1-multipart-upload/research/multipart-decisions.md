@@ -195,6 +195,51 @@ Slice 6 reconciler, and ambiguous HEAD ownership is never deletion authority.
 10. Business authentication accepts exactly one Authorization header. Duplicate values
     are rejected before token resolution even when one value is otherwise valid.
 
+### Browser hashing and recovery
+
+Slice 8 uses `hash-wasm` rather than a whole-file `crypto.subtle.digest` call. Reads are
+bounded to at most 4 MiB and the hash runner accepts an injected slice reader so chunk,
+part, progress, cancellation, and read-failure behavior is deterministic under Vitest.
+
+The server-selected part size creates an unavoidable sequencing constraint: the first
+pass calculates the whole-file hash required by create; the second initial-upload pass
+uses the returned part size and rechecks the whole hash while calculating part
+checksums. A resumed session already persists its part size, so reselection needs only
+one pass before server reconciliation.
+
+The browser accepts presigned URLs only from an explicit exact HTTP(S) origin allowlist.
+The presign response must echo part number, size, and checksum and expose one matching
+checksum request header. Other signed headers remain opaque and are copied exactly.
+Bearer authentication is reserved for API control-plane calls and is never added to the
+object-store PUT.
+
+Pause and cancel are deliberately different commands. Pause invalidates the current
+generation, clears queued browser work, and aborts XHRs without changing server state.
+Cancel additionally calls DELETE. A create success arriving after cancel is not ignored;
+its session ID is used for a compensating abort so quota cleanup is not deferred solely
+to expiration.
+
+### Operational browser integration
+
+Slice 9 keeps one reducer-owned state machine and adds a React effect interpreter rather
+than mirroring phases in component-local workflow flags. The controller owns only live
+runtime handles: the current Worker job, active XHR abort handles, the scheduler, storage
+adapters, and an API port. Async outcomes re-enter the same reducer as typed actions.
+
+Real Chromium established two integration decisions that jsdom mocks did not expose.
+First, an extracted native fetch must be called as a plain function; invoking it through
+the API-client instance can bind an invalid receiver and fail before a request exists.
+Second, effect setup explicitly resumes the scheduler because React StrictMode performs
+a development cleanup/setup cycle; cleanup still pauses and aborts work for a real
+unmount.
+
+The browser acceptance fixture uses real API/PostgreSQL/MinIO control and data planes.
+Only the timing of initial object-store PUT continuation is held so pause is
+deterministic. Reload recovery, same-name/same-size wrong-content rejection, fresh
+presigns for missing parts, completed object validation, and database finalization all
+remain real. The fixture is moderate-size evidence and is not used to claim 1 GiB memory
+behavior.
+
 ## Pinned Community MinIO Observations
 
 - `ListMultipartUploads(MaxUploads=1)` returned both test uploads with

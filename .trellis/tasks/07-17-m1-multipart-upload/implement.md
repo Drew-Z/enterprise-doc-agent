@@ -253,6 +253,15 @@ uploads, pauses/retries/resumes legally, and persists no secret material.
   pnpm --filter web typecheck
   ```
 
+- **Implemented evidence**: strict camelCase upload/error schemas, fail-closed
+  object-store origins, presign request/response binding, exact signed-header XHR,
+  bounded two-pass initial hashing, one-pass recovery hashing, versioned Worker runtime,
+  typed Worker/XHR/fetch failure handling, four-way generation-aware scheduling, a pure
+  reducer/effect contract, pause/cancel separation, create-cancel compensation, strict
+  recovery persistence, and filename/size/hash rejection before reconciliation are
+  covered by deterministic Vitest tests. The complete Web suite passes 120 tests plus
+  lint, typecheck, production build, and `git diff --check`.
+
 - **Rollback point**: Remove upload feature entry points while preserving the M0
   readiness client and dashboard tests.
 
@@ -280,6 +289,19 @@ reselect, resume missing parts, cancel, and complete from a stable responsive UI
 
 - **Manual visual gate**: Review screenshots at 1440x900 and 390x844 for non-overlap,
   stable controls, visible progress/errors, and a usable resumed state.
+
+- **Implemented evidence**: `UploadWorkspace` interprets reducer effects without adding
+  a second React-owned state machine; local JWT storage, file selection, two-pass create,
+  four-way direct PUT, pause/resume/retry/cancel/complete, recovery reselection, progress,
+  part rows, and readiness coexist in the operational UI. Testing Library covers token,
+  complete upload, StrictMode scheduler activation, and same-name/same-size SHA mismatch.
+  Real Playwright starts PostgreSQL/MinIO/API/Web, uploads a 17 MiB TXT, pauses held PUTs,
+  reloads, rejects different content before reconciliation, reloads again, uploads only
+  missing parts, completes, and captures 1440x900 plus 390x844 screenshots. Horizontal
+  overflow and major vertical band overlap checks pass. Browser execution also proved
+  and fixed unbound native `fetch` invocation and StrictMode cleanup leaving the
+  scheduler paused. The Web suite passes 124 tests plus lint, typecheck, production
+  build, and the real browser test.
 - **Rollback point**: Keep backend upload APIs available while restoring the last green
   Web shell if browser recovery cannot be made deterministic.
 
@@ -320,6 +342,31 @@ an immutable, machine-validated evidence record.
 - **Rollback point**: Keep the last reviewed code commit runnable. Evidence generation
   never mutates or deletes an earlier manifest, and named volumes are not removed
   automatically.
+
+#### Slice 10 implementation status (2026-07-18)
+
+- Added `scripts/multipart_smoke.py` with deterministic generated TXT content,
+  checksum-bound direct PUTs, configured interruption, real API process restart,
+  server reconciliation, missing-part resume, completion replay, and optional sanitized
+  RSS reporting.
+- On Windows the sampler resolves the process that owns port 8000 instead of measuring
+  the small virtual-environment launcher. The corrected 17 MiB diagnostic run observed
+  123,289,600 to 125,161,472 RSS bytes and a 1,638,400-byte maximum within-generation
+  delta. These values are diagnostic only and are not the required 1 GiB evidence.
+- Added the locked `smoke:multipart` root command and a non-allow-failure
+  `m1-integration` GitHub Actions job. CI runs the 49-test PostgreSQL/MinIO integration
+  suite and a separate 17 MiB two-part restart/resume smoke; that small payload does not
+  replace the local 1 GiB gate.
+- Added smoke/CI executable contracts, README operations, and factual backend/frontend
+  Trellis specifications. Current local validation is 196 backend non-integration tests,
+  49 multipart integration tests, 124 Web tests, backend/frontend lint/typecheck, and
+  production Web build. Slice 9's real Playwright workflow remains previously green.
+- Added `research/m1-acceptance-audit.md`. R-1 through R-24 are implemented locally;
+  R-25 is partial until the reviewed-commit 1 GiB run passes; R-26 is pending the
+  reviewed commit, immutable artifacts, manifest/index update, and evidence contract.
+- Do not add a passed M1 manifest from the current dirty tree. The next gate is an
+  intentional implementation commit approved by the user, followed by exact evidence
+  generation against that commit.
 
 ## Review Gates
 

@@ -13,6 +13,7 @@ These guidelines record backend conventions proven by implemented milestones.
 | [Logging Guidelines](./logging-guidelines.md) | Secret-safe JSON logs | Adopted in M0 |
 | [Multipart Upload Control Plane](./upload-control-plane.md) | Create, presign, resume, and reconciliation | Adopted in M1 Slice 5 |
 | [Multipart Upload Completion](./upload-completion.md) | Completion saga, envelope validation, and quota finalization | Adopted in M1 Slice 6 |
+| [Multipart Operations And Evidence](./multipart-operations.md) | Restart/resume smoke, CI, RSS, and immutable evidence boundary | Adopted in M1 Slice 10 |
 
 Only implemented behavior belongs here. M1-M7 business patterns must be added after
 their code and tests exist.

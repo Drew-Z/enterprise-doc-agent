@@ -475,6 +475,60 @@ The existing readiness view remains visible as a compact operational band. The u
 workspace is the primary M1 action area and uses unframed sections plus cards only for
 repeated part/status rows.
 
+### Implemented Slice 8 browser contracts
+
+The initial browser path uses two bounded passes because creation needs a whole-file
+hash before the server returns its selected part size. The first pass hashes the whole
+file without buffering it; after create, the second pass recomputes the whole hash while
+also producing exact server-sized part checksums. Recovery already has the persisted
+part size and therefore performs one pass before fetching server state.
+
+Worker messages use an exact versioned protocol and a per-job Worker. Malformed
+responses, Worker construction/start/runtime failures, and unreadable messages settle
+and terminate the job. The API boundary uses strict Zod schemas, requires an explicit
+HTTP(S) object-store origin allowlist, and binds each presign response to the requested
+part number, size, checksum, and checksum header. XHR copies all returned signed headers
+without adding bearer authentication and requires an exposed opaque ETag.
+
+The reducer is pure and returns typed effects. Generation and attempt fences reject
+late work. Pause clears queued work and aborts browser requests only; cancel also invokes
+server abort. A create response arriving after local cancel becomes a compensating
+abort. The scheduler caps active transfers at four and queues a newer generation of a
+part behind an older aborting generation rather than starting them concurrently.
+
+Recovery persistence is a strict seven-field whitelist plus schema version. Tokens use
+a separate session-storage key; signed URLs, headers, object keys, object-store upload
+IDs, and file bodies are not persisted. Filename and size are checked before hashing;
+the complete hash and server session/part identity are checked before any part is queued.
+
+### Implemented Slice 9 operational UI
+
+`UploadWorkspace` keeps the reducer as the only transition authority. A React controller
+holds the current reducer state in a ref, applies one action at a time, and interprets
+typed effects into Worker jobs, API calls, persistence writes, scheduler commands, and
+XHR handles. The controller does not infer legal transitions from component state.
+
+The local JWT is stored separately in session storage and supplied through a live token
+getter. Native and injected fetchers are invoked without binding `UploadApiClient` as
+their receiver; real Chromium exposed the otherwise mock-hidden `Illegal invocation`
+failure. The controller resumes its scheduler during effect setup so React StrictMode's
+development cleanup/setup cycle cannot leave all future part tasks permanently paused;
+unmount cleanup still cancels hashing/transfers and pauses queued work.
+
+The primary view is the upload workspace, with readiness retained as a lower operational
+section. It provides token, file, pause/resume/retry/cancel, progress, completion IDs, and
+per-part controls without persisting or rendering signed URLs, object keys, upload IDs,
+or checksums. Responsive layout uses full-width operational bands and cards only for
+repeated service/part rows.
+
+Playwright owns a deterministic real-service fixture: Compose starts PostgreSQL, Redis,
+and MinIO; Alembic upgrades; a local principal is bootstrapped; API and Vite are managed
+web servers. A 17 MiB two-part TXT upload is held at the MinIO PUT boundary, paused,
+reloaded, tested with same-name/same-size wrong content, reloaded again, reconciled, and
+completed. Screenshots at 1440x900 and 390x844 are accompanied by horizontal overflow
+and major-section overlap assertions. This proves browser recovery at moderate size; it
+does not replace Slice 10's 1 GiB smoke or memory evidence.
+
 ## Observability And Privacy
 
 - Request/correlation IDs remain the cross-request identifiers.
@@ -501,6 +555,12 @@ repeated part/status rows.
 - MinIO multipart checksum/CORS/list/complete/abort;
 - create/complete concurrency, crash reconciliation, tenant isolation, quota, cleanup;
 - a small CI integration upload and a separate local 1 GiB evidence run.
+
+The generated smoke keeps one server-selected part in client memory and sends it to the
+object store. It stops and restarts the API between the leading and remaining parts,
+then reconstructs completion input from the reconciled server projection. API RSS is
+sampled from the actual listening process, not merely its launcher, and only aggregate
+measurements enter the sanitized report.
 
 ### Browser evidence
 

@@ -20,6 +20,12 @@ Use Vitest and Testing Library at the HTTP boundary. Tests cover loading, typed 
 200, typed degraded 503, network failure, schema failure, and manual recovery. Query
 retries are disabled so tests and operational behavior expose the first real result.
 
+Upload modules add deterministic Vitest coverage for bounded hashing, Worker lifecycle,
+strict API/runtime schemas, XHR setup and event failures, the complete reducer command
+matrix, four-way scheduling, recovery identity, and secret-free persistence. Worker and
+XHR tests use injected narrow fakes; the jsdom suite does not pretend to execute a real
+browser Worker or object-store request.
+
 ## Review Checklist
 
 Check runtime schema validation, semantic status/alert roles, keyboard-accessible
@@ -37,3 +43,4 @@ allow-failure CI, or ship an unreviewed loading/error layout.
 - `apps/web/src/test/setup.ts`
 - `apps/web/eslint.config.js`
 - `.github/workflows/quality.yml`
+- `apps/web/src/upload/**/*.test.ts`
