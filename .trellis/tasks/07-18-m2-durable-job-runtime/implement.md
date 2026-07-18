@@ -35,7 +35,7 @@
 
 - [x] Run formatting, lint, mypy, unit, integration, and existing M1 smoke/evidence
   contracts.
-- [ ] Add an M2 machine-readable evidence manifest with exact commands, environment,
+- [x] Add an M2 machine-readable evidence manifest with exact commands, environment,
   commit SHA, artifact paths, and limitations.
 - [x] Run `task.py validate 07-18-m2-durable-job-runtime`, update the interview Q&A with
   code-backed facts, then commit. Do not archive until all acceptance criteria are

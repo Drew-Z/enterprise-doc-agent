@@ -1,0 +1,77 @@
+{
+  "milestone": "m2-durable-job-runtime",
+  "result": "passed",
+  "implementation_commit": "34712ff",
+  "branch": "feat/m2-durable-job-runtime",
+  "captured_at": "2026-07-18T17:30:00+08:00",
+  "environment": {
+    "os": "Windows workspace with Docker Compose PostgreSQL/Redis/MinIO",
+    "python": "3.12.13",
+    "uv": "0.11.3",
+    "node": "24.14.0",
+    "pnpm": "11.9.0"
+  },
+  "commands": [
+    {
+      "command": "uv run ruff format --check .",
+      "result": "passed",
+      "summary": "128 files already formatted"
+    },
+    {
+      "command": "uv run ruff check .",
+      "result": "passed"
+    },
+    {
+      "command": "uv run mypy packages/core/src apps/api/src apps/worker/src",
+      "result": "passed",
+      "summary": "67 source files"
+    },
+    {
+      "command": "uv run pytest -m \"not integration\" -q",
+      "result": "passed",
+      "summary": "214 passed, 58 deselected"
+    },
+    {
+      "command": "uv run pytest -m integration -q",
+      "result": "passed",
+      "summary": "58 passed, 214 deselected"
+    },
+    {
+      "command": "uv run pytest tests/jobs -m integration -q",
+      "result": "passed",
+      "summary": "6 passed, 1 deselected"
+    },
+    {
+      "command": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+      "result": "passed",
+      "summary": "124 frontend tests passed"
+    },
+    {
+      "command": "python .trellis/scripts/task.py validate 07-18-m2-durable-job-runtime",
+      "result": "passed",
+      "summary": "implement.jsonl and check.jsonl valid"
+    }
+  ],
+  "artifacts": [
+    ".trellis/tasks/07-18-m2-durable-job-runtime/research/m2-acceptance-audit.md",
+    "packages/core/src/enterprise_doc_core/db/migrations/versions/20260718_0006_durable_job_runtime.py",
+    "tests/jobs/test_job_runtime_integration.py",
+    "tests/multipart/test_upload_complete_integration.py"
+  ],
+  "implemented": [
+    "tenant-scoped Job, JobAttempt, JobEvent, OutboxEvent",
+    "atomic claim with lease and fencing token",
+    "heartbeat and stale-write rejection",
+    "retry backoff with injected jitter, dead/manual retry, cancel",
+    "transactional upload completion to Job and Outbox",
+    "Celery stable-id envelope and repeat-safe Outbox publisher",
+    "authenticated tenant-scoped job status, retry, and cancel API"
+  ],
+  "limitations": [
+    "No remote broker or multi-process Worker throughput claim",
+    "M3 document parsing, embedding, and ingestion handler are not implemented",
+    "No Kubernetes, CD, production traffic, SLO, or capacity claim",
+    "M1 1 GiB evidence remains a separate immutable milestone artifact"
+  ],
+  "owner": "developer"
+}
