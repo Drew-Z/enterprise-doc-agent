@@ -100,14 +100,14 @@ Rollback point: runs can be created and inspected but the Worker has no Agent ha
 
 ## Slice 3: Model Gateway And Grounded Answer Contract
 
-- [ ] Define strict request/output schemas for QA, summary, and structured extraction.
-- [ ] Implement DeterministicGroundedGateway using only authorized evidence and stable
+- [x] Define strict request/output schemas for QA, summary, and structured extraction.
+- [x] Implement DeterministicGroundedGateway using only authorized evidence and stable
   citation proposals.
-- [ ] Implement OpenAICompatibleChatGateway with secret-safe HTTP handling, timeout,
+- [x] Implement OpenAICompatibleChatGateway with secret-safe HTTP handling, timeout,
   bounded response size, temperature 0, strict JSON parsing, and one syntactic repair.
-- [ ] Classify timeout/429/5xx as retryable and auth/contract/schema failures as stable
+- [x] Classify timeout/429/5xx as retryable and auth/contract/schema failures as stable
   permanent errors. Never retry citation or authorization failures through the model.
-- [ ] Reuse M3 `validate_citations()` and add tests for cross-tenant/version/candidate,
+- [x] Reuse M3 `validate_citations()` and add tests for cross-tenant/version/candidate,
   excerpt alteration, empty evidence, and unsupported structured fields.
 
 Focused commands:

@@ -14,6 +14,7 @@ def test_sanitize_log_value_redacts_nested_sensitive_fields() -> None:
         "database_url": "postgresql://user:password@db/app",
         "nested": {
             "authorization": "Bearer token",
+            "api_key": "provider-secret",
             "secret_key": SecretStr("object-secret"),
             "safe": "visible",
         },
@@ -25,6 +26,7 @@ def test_sanitize_log_value_redacts_nested_sensitive_fields() -> None:
         "database_url": "**********",
         "nested": {
             "authorization": "**********",
+            "api_key": "**********",
             "secret_key": "**********",
             "safe": "visible",
         },

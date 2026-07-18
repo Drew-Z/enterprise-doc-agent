@@ -13,6 +13,8 @@ from enterprise_doc_core.context import get_request_context
 REDACTED = "**********"
 _SENSITIVE_KEY_PARTS = (
     "authorization",
+    "api_key",
+    "apikey",
     "cookie",
     "checksum",
     "database_url",
