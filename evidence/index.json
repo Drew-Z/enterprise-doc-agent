@@ -5,6 +5,11 @@
       "milestone": "M0",
       "status": "passed",
       "manifest": "evidence/m0/20260717-100654-m0-project-foundation.json"
+    },
+    {
+      "milestone": "M1",
+      "status": "passed",
+      "manifest": "evidence/m1/20260718-151000-m1-multipart-upload.json"
     }
   ]
 }

@@ -1,0 +1,124 @@
+ Network enterprise-doc-agent_default Creating
+ Network enterprise-doc-agent_default Created
+ Container enterprise-doc-agent-postgres-1 Creating
+ Container enterprise-doc-agent-minio-1 Creating
+ Container enterprise-doc-agent-redis-1 Creating
+ Container enterprise-doc-agent-redis-1 Created
+ Container enterprise-doc-agent-postgres-1 Created
+ Container enterprise-doc-agent-minio-1 Created
+ Container enterprise-doc-agent-postgres-1 Starting
+ Container enterprise-doc-agent-redis-1 Starting
+ Container enterprise-doc-agent-minio-1 Starting
+ Container enterprise-doc-agent-redis-1 Started
+ Container enterprise-doc-agent-minio-1 Started
+ Container enterprise-doc-agent-postgres-1 Started
+ Container enterprise-doc-agent-redis-1 Waiting
+ Container enterprise-doc-agent-minio-1 Waiting
+ Container enterprise-doc-agent-postgres-1 Waiting
+ Container enterprise-doc-agent-redis-1 Healthy
+ Container enterprise-doc-agent-minio-1 Healthy
+ Container enterprise-doc-agent-postgres-1 Healthy
+ Container enterprise-doc-agent-minio-1 Running
+ Container enterprise-doc-agent-minio-1 Waiting
+ Container enterprise-doc-agent-minio-1 Healthy
+ Container enterprise-doc-agent-minio-init-run-<run-id> Creating
+ Container enterprise-doc-agent-minio-init-run-<run-id> Created
+Added `local` successfully.
+Bucket created successfully `local/documents`.
+Bucket created successfully `local/artifacts`.
+Access permission for `local/documents` is set to `private`
+Access permission for `local/artifacts` is set to `private`
+Access permission for `local/documents` is `private`
+Access permission for `local/artifacts` is `private`
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+ Container enterprise-doc-agent-postgres-1 Stopping
+ Container enterprise-doc-agent-minio-1 Stopping
+ Container enterprise-doc-agent-redis-1 Stopping
+ Container enterprise-doc-agent-minio-1 Stopped
+ Container enterprise-doc-agent-minio-1 Removing
+ Container enterprise-doc-agent-minio-1 Removed
+ Container enterprise-doc-agent-redis-1 Stopped
+ Container enterprise-doc-agent-redis-1 Removing
+ Container enterprise-doc-agent-redis-1 Removed
+ Container enterprise-doc-agent-postgres-1 Stopped
+ Container enterprise-doc-agent-postgres-1 Removing
+ Container enterprise-doc-agent-postgres-1 Removed
+ Network enterprise-doc-agent_default Removing
+ Network enterprise-doc-agent_default Removed
+Running: docker compose -f <workspace>\infra\compose\docker-compose.yml up -d --wait
+Running: docker compose -f <workspace>\infra\compose\docker-compose.yml --profile init run --rm minio-init
+Running: uv run alembic upgrade head
+Bootstrapping an isolated local principal
+Started api-generation-1 with PID <pid>
+Ready: http://127.0.0.1:8000/health/ready
+Hashing deterministic generated content
+Uploaded pre-interruption part 1/64
+Uploaded pre-interruption part 2/64
+Restarting the API before resume
+Started api-generation-2 with PID <pid>
+Ready: http://127.0.0.1:8000/health/ready
+Uploaded resumed part 3/64
+Uploaded resumed part 4/64
+Uploaded resumed part 5/64
+Uploaded resumed part 6/64
+Uploaded resumed part 7/64
+Uploaded resumed part 8/64
+Uploaded resumed part 9/64
+Uploaded resumed part 10/64
+Uploaded resumed part 11/64
+Uploaded resumed part 12/64
+Uploaded resumed part 13/64
+Uploaded resumed part 14/64
+Uploaded resumed part 15/64
+Uploaded resumed part 16/64
+Uploaded resumed part 17/64
+Uploaded resumed part 18/64
+Uploaded resumed part 19/64
+Uploaded resumed part 20/64
+Uploaded resumed part 21/64
+Uploaded resumed part 22/64
+Uploaded resumed part 23/64
+Uploaded resumed part 24/64
+Uploaded resumed part 25/64
+Uploaded resumed part 26/64
+Uploaded resumed part 27/64
+Uploaded resumed part 28/64
+Uploaded resumed part 29/64
+Uploaded resumed part 30/64
+Uploaded resumed part 31/64
+Uploaded resumed part 32/64
+Uploaded resumed part 33/64
+Uploaded resumed part 34/64
+Uploaded resumed part 35/64
+Uploaded resumed part 36/64
+Uploaded resumed part 37/64
+Uploaded resumed part 38/64
+Uploaded resumed part 39/64
+Uploaded resumed part 40/64
+Uploaded resumed part 41/64
+Uploaded resumed part 42/64
+Uploaded resumed part 43/64
+Uploaded resumed part 44/64
+Uploaded resumed part 45/64
+Uploaded resumed part 46/64
+Uploaded resumed part 47/64
+Uploaded resumed part 48/64
+Uploaded resumed part 49/64
+Uploaded resumed part 50/64
+Uploaded resumed part 51/64
+Uploaded resumed part 52/64
+Uploaded resumed part 53/64
+Uploaded resumed part 54/64
+Uploaded resumed part 55/64
+Uploaded resumed part 56/64
+Uploaded resumed part 57/64
+Uploaded resumed part 58/64
+Uploaded resumed part 59/64
+Uploaded resumed part 60/64
+Uploaded resumed part 61/64
+Uploaded resumed part 62/64
+Uploaded resumed part 63/64
+Uploaded resumed part 64/64
+Wrote sanitized multipart smoke report
+M1 multipart smoke passed

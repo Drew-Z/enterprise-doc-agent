@@ -30,13 +30,15 @@ Statuses distinguish implementation and local testing from reviewed-commit evide
 | R-21 | Implemented | Strict non-secret recovery metadata, explicit reselection, filename/size/digest verification, reconciliation, and wrong-content browser rejection. |
 | R-22 | Implemented | Pure reducer legality, typed failures, generation/attempt fencing, scheduler pause, and server abort only on cancel. |
 | R-23 | Implemented | Principal enrichment occurs after persisted resolution; formatter redaction and auth/request tests exclude sensitive headers and fields. Successful smoke evidence does not retain raw API path logs. |
-| R-24 | Implemented locally | 196 non-integration backend tests, 49 real multipart integration tests, 124 Web tests, lint/typecheck/build, and one real Playwright workflow pass. The new remote `m1-integration` job is defined but cannot be claimed executed until pushed. |
-| R-25 | Partial | Generated 17 MiB restart/resume smoke passed twice. The second run observed API RSS between 123,289,600 and 125,161,472 bytes with a maximum within-generation delta of 1,638,400 bytes. The required reviewed-commit 1 GiB run is pending. |
-| R-26 | Pending reviewed commit | Manifest/index/artifact contract must be added only after the implementation commit exists and exact commands are rerun against it. M0 evidence remains unchanged. |
+| R-24 | Complete locally | Against reviewed commit `ca43716265d7057aa79288bae054fc6ae0c5056d`, 198 non-integration backend tests, 49 real multipart integration tests, 124 Web tests, lint/typecheck/build, and one real Playwright recovery workflow passed. The remote `m1-integration` job is defined but has not been claimed as executed because this repository has no configured remote. |
+| R-25 | Complete | The reviewed-commit 1 GiB smoke uploaded 64 x 16 MiB parts, interrupted after two, restarted the API once, reconciled two existing parts, uploaded only the remaining 62, and replayed completion successfully. Across 64 samples, API RSS was 123,355,136 to 125,722,624 bytes with a maximum within-generation delta of 1,994,752 bytes. See `evidence/m1/artifacts/multipart-smoke-1g-report.json`; this single-machine observation is not a load test or capacity claim. |
+| R-26 | Complete | Immutable manifest `evidence/m1/20260718-151000-m1-multipart-upload.json` records reviewed commit `ca43716265d7057aa79288bae054fc6ae0c5056d`, exact successful commands, source URLs, limitations, visual gates, and SHA-256 digests for every referenced M1 artifact. `evidence/index.json` contains one passed M1 entry; M0 evidence remains unchanged. |
 
 ## Current Gate
 
-The implementation/CI/documentation portion of Slice 10 is ready for commit review.
-M1 cannot be archived and R-25/R-26 cannot be marked complete until the reviewed commit
-exists, the real 1 GiB run passes, all evidence artifacts are digested, and the final
-evidence contract validates that immutable record.
+Local M1 acceptance is locked to reviewed implementation commit
+`ca43716265d7057aa79288bae054fc6ae0c5056d`. The 1 GiB smoke, deterministic quality
+gates, real PostgreSQL/MinIO integration, browser recovery, evidence contract, and
+Trellis validation are represented by the immutable M1 evidence record. The task remains
+unarchived in this change: remote GitHub Actions execution, public deployment, sustained
+load, and production capacity are not claimed.

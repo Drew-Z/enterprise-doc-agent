@@ -1,0 +1,46 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.13, pytest-9.1.1, pluggy-1.6.0
+rootdir: <workspace>
+configfile: pyproject.toml
+testpaths: apps, packages, tests
+plugins: anyio-4.14.2, asyncio-1.4.0, cov-7.1.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 250 items / 52 deselected / 198 selected
+
+apps\api\tests\test_api_telemetry.py .                                   [  0%]
+apps\api\tests\test_auth_contract.py .........                           [  5%]
+apps\api\tests\test_health.py ...                                        [  6%]
+apps\api\tests\test_request_context.py ...                               [  8%]
+apps\api\tests\test_settings.py ..                                       [  9%]
+apps\api\tests\test_upload_abort_contract.py .......                     [ 12%]
+apps\api\tests\test_upload_complete_contract.py ...............          [ 20%]
+apps\api\tests\test_upload_create_contract.py ............               [ 26%]
+apps\api\tests\test_upload_session_contract.py ....                      [ 28%]
+apps\worker\tests\test_health.py ...                                     [ 29%]
+apps\worker\tests\test_lifecycle.py ..                                   [ 30%]
+apps\worker\tests\test_settings.py ..                                    [ 31%]
+apps\worker\tests\test_worker_telemetry.py .                             [ 32%]
+packages\core\tests\test_core_telemetry.py ...                           [ 33%]
+packages\core\tests\test_db.py .                                         [ 34%]
+packages\core\tests\test_document_envelope.py .......................... [ 47%]
+.....                                                                    [ 50%]
+packages\core\tests\test_health.py ...                                   [ 51%]
+packages\core\tests\test_logging.py ....                                 [ 53%]
+packages\core\tests\test_multipart_adapter.py ..........                 [ 58%]
+packages\core\tests\test_principal_context.py ..                         [ 59%]
+packages\core\tests\test_settings.py ..                                  [ 60%]
+packages\core\tests\test_upload_cleanup.py .........                     [ 65%]
+packages\core\tests\test_upload_models.py .....                          [ 67%]
+packages\core\tests\test_upload_policy.py ..........................     [ 80%]
+packages\core\tests\test_upload_session_service.py ..                    [ 81%]
+tests\foundation\test_ci_contract.py ...                                 [ 83%]
+tests\foundation\test_documentation_contract.py .....                    [ 85%]
+tests\foundation\test_evidence_contract.py ...                           [ 87%]
+tests\foundation\test_migration_contract.py ...                          [ 88%]
+tests\foundation\test_object_store_compose_contract.py ..                [ 89%]
+tests\foundation\test_repository_contract.py ....                        [ 91%]
+tests\multipart\test_bootstrap_principal.py .....                        [ 94%]
+tests\multipart\test_multipart_smoke_contract.py ....                    [ 96%]
+tests\test_cleanup_uploads_cli.py .......                                [100%]
+
+===================== 198 passed, 52 deselected in 6.69s ======================

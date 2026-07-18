@@ -1,0 +1,282 @@
+{
+  "evidence_id": "m1-multipart-upload",
+  "milestone": "M1",
+  "requirement_ids": [
+    "R-1",
+    "R-2",
+    "R-3",
+    "R-4",
+    "R-5",
+    "R-6",
+    "R-7",
+    "R-8",
+    "R-9",
+    "R-10",
+    "R-11",
+    "R-12",
+    "R-13",
+    "R-14",
+    "R-15",
+    "R-16",
+    "R-17",
+    "R-18",
+    "R-19",
+    "R-20",
+    "R-21",
+    "R-22",
+    "R-23",
+    "R-24",
+    "R-25",
+    "R-26"
+  ],
+  "status": "passed",
+  "command_or_procedure": [
+    {
+      "gate_id": "uv-sync",
+      "command": "uv sync --frozen",
+      "exit_code": 0,
+      "artifact": "evidence/m1/artifacts/uv-sync-frozen.log"
+    },
+    {
+      "gate_id": "pnpm-install",
+      "command": "pnpm install --frozen-lockfile",
+      "exit_code": 0,
+      "artifact": "evidence/m1/artifacts/pnpm-install-frozen.log"
+    },
+    {
+      "gate_id": "backend-format",
+      "command": "uv run ruff format --check .",
+      "exit_code": 0,
+      "artifact": "evidence/m1/artifacts/backend-format.log"
+    },
+    {
+      "gate_id": "backend-lint",
+      "command": "uv run ruff check .",
+      "exit_code": 0,
+      "artifact": "evidence/m1/artifacts/backend-lint.log"
+    },
+    {
+      "gate_id": "backend-typecheck",
+      "command": "uv run mypy packages/core/src apps/api/src apps/worker/src",
+      "exit_code": 0,
+      "artifact": "evidence/m1/artifacts/backend-typecheck.log"
+    },
+    {
+      "gate_id": "backend-unit",
+      "command": "uv run pytest -m \"not integration\"",
+      "exit_code": 0,
+      "artifact": "evidence/m1/artifacts/backend-unit.log"
+    },
+    {
+      "gate_id": "frontend-lint",
+      "command": "pnpm lint",
+      "exit_code": 0,
+      "artifact": "evidence/m1/artifacts/frontend-lint.log"
+    },
+    {
+      "gate_id": "frontend-typecheck",
+      "command": "pnpm typecheck",
+      "exit_code": 0,
+      "artifact": "evidence/m1/artifacts/frontend-typecheck.log"
+    },
+    {
+      "gate_id": "frontend-unit",
+      "command": "pnpm test",
+      "exit_code": 0,
+      "artifact": "evidence/m1/artifacts/frontend-unit.log"
+    },
+    {
+      "gate_id": "frontend-build",
+      "command": "pnpm build",
+      "exit_code": 0,
+      "artifact": "evidence/m1/artifacts/frontend-build.log"
+    },
+    {
+      "gate_id": "multipart-integration",
+      "command": "PowerShell: $env:REDIS_PORT='6380'; $env:REDIS_URL='redis://127.0.0.1:6380/0'; docker compose -f infra/compose/docker-compose.yml up -d --wait; docker compose -f infra/compose/docker-compose.yml --profile init run --rm minio-init; uv run alembic upgrade head; uv run pytest tests/multipart -m integration; docker compose -f infra/compose/docker-compose.yml down",
+      "exit_code": 0,
+      "artifact": "evidence/m1/artifacts/multipart-integration.log"
+    },
+    {
+      "gate_id": "multipart-smoke-1g",
+      "command": "PowerShell: $env:REDIS_PORT='6381'; $env:REDIS_URL='redis://127.0.0.1:6381/0'; uv run python scripts/multipart_smoke.py --run --size-bytes 1073741824 --interrupt-after-parts 2 --measure-api-rss --report-path evidence/m1/artifacts/multipart-smoke-1g-report.json",
+      "exit_code": 0,
+      "artifact": "evidence/m1/artifacts/multipart-smoke-1g.log"
+    },
+    {
+      "gate_id": "playwright-recovery",
+      "command": "PowerShell: $env:CI='1'; $env:REDIS_PORT='6382'; $env:REDIS_URL='redis://127.0.0.1:6382/0'; pnpm --filter web exec playwright test",
+      "exit_code": 0,
+      "artifact": "evidence/m1/artifacts/playwright.log"
+    },
+    {
+      "gate_id": "trellis-validation",
+      "command": "uv run python .trellis/scripts/task.py validate 07-17-m1-multipart-upload",
+      "exit_code": 0,
+      "artifact": "evidence/m1/artifacts/trellis-validation.log"
+    }
+  ],
+  "environment": {
+    "operating_system": "Windows 11 build 10.0.26200",
+    "architecture": "AMD64",
+    "workspace": "<workspace>",
+    "validation_topology": "Local PostgreSQL, Redis, and MinIO through Docker Compose; API and Web processes launched from the reviewed source tree.",
+    "port_overrides": {
+      "multipart_integration_redis": 6380,
+      "multipart_smoke_redis": 6381,
+      "playwright_redis": 6382
+    }
+  },
+  "tool_versions": {
+    "python": "3.12.13",
+    "uv": "0.11.3",
+    "node": "24.14.0",
+    "pnpm": "11.9.0",
+    "docker": "29.3.1",
+    "docker_compose": "5.1.1",
+    "git": "2.53.0.windows.2"
+  },
+  "commit_sha": "ca43716265d7057aa79288bae054fc6ae0c5056d",
+  "image_digest": "not_applicable",
+  "started_at": "2026-07-18T06:43:11.456991+00:00",
+  "completed_at": "2026-07-18T07:13:55.100664+00:00",
+  "result_summary": "Against reviewed implementation commit ca43716265d7057aa79288bae054fc6ae0c5056d, locked installs, backend and frontend quality gates, 49 real PostgreSQL/MinIO integration tests, the direct-transfer 1 GiB restart/resume smoke, and the Playwright recovery workflow passed. The smoke uploaded 64 parts, resumed only 62 missing parts after one API restart, replayed completion, and observed API RSS from 123355136 to 125722624 bytes across 64 samples.",
+  "artifacts": [
+    {
+      "path": "evidence/m1/artifacts/backend-format.log",
+      "kind": "log",
+      "sha256": "7ea26dcf24cd7c1f9e57df608af570fd7294996eaab13186f23c19d7b566ea0b"
+    },
+    {
+      "path": "evidence/m1/artifacts/backend-lint.log",
+      "kind": "log",
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    },
+    {
+      "path": "evidence/m1/artifacts/backend-typecheck.log",
+      "kind": "log",
+      "sha256": "960745a059df2e6bf5556b518f6404c7707247bf3da084d48c3008145eb95a5d"
+    },
+    {
+      "path": "evidence/m1/artifacts/backend-unit.log",
+      "kind": "log",
+      "sha256": "17e6fb0c98d3b156b57c8cfca5c97aac209667fb782f611870aed2f12a74acd5"
+    },
+    {
+      "path": "evidence/m1/artifacts/frontend-build.log",
+      "kind": "log",
+      "sha256": "50f42c64b6e9c1953ad40eb7eebf1da3777fa83401ffcb193501608758ca5b21"
+    },
+    {
+      "path": "evidence/m1/artifacts/frontend-lint.log",
+      "kind": "log",
+      "sha256": "7067ef146c5ba037884601dffae6a9a5e70c7ecee3b2036ea09a98a6de4d496c"
+    },
+    {
+      "path": "evidence/m1/artifacts/frontend-typecheck.log",
+      "kind": "log",
+      "sha256": "977b82fad67e38d0a5e08f72d10759cdf2f96b2782cf665a03171d88ac05af3d"
+    },
+    {
+      "path": "evidence/m1/artifacts/frontend-unit.log",
+      "kind": "log",
+      "sha256": "4a5d989f12b3d56487fe9bb08423f432f81d266229b6becd7b9764cb49758ec6"
+    },
+    {
+      "path": "evidence/m1/artifacts/multipart-integration.log",
+      "kind": "log",
+      "sha256": "d460b1e49f14997696a0a1cee694e231c46c71dc81e1f33a8505fa90edb61262"
+    },
+    {
+      "path": "evidence/m1/artifacts/multipart-smoke-1g-report.json",
+      "kind": "report",
+      "sha256": "bf6c46004c388056fdc325002d23fdc845987b43498b10aa64d9e19f9f0c9f8c"
+    },
+    {
+      "path": "evidence/m1/artifacts/multipart-smoke-1g.log",
+      "kind": "log",
+      "sha256": "9b3f35d4a854fa5a204f87383241707349dce27de3ce18707003aa440f100f29"
+    },
+    {
+      "path": "evidence/m1/artifacts/playwright.log",
+      "kind": "log",
+      "sha256": "ecefd14e5703742d86464266285ad28b88daa8ffc68d1d876999730feb01b618"
+    },
+    {
+      "path": "evidence/m1/artifacts/pnpm-install-frozen.log",
+      "kind": "log",
+      "sha256": "87d0720c0e8d070e51a884afb641af967ee379bb1ed94926eec7a06c8621218d"
+    },
+    {
+      "path": "evidence/m1/artifacts/trellis-validation.log",
+      "kind": "log",
+      "sha256": "fe54c2ece800d3e1e1c6f547ae74d4b21b9e99de26e7b7544e7903ac680cf55d"
+    },
+    {
+      "path": "evidence/m1/artifacts/uv-sync-frozen.log",
+      "kind": "log",
+      "sha256": "2fd0f81d739c50f881834b5ee9d60c5fa98f8ae18d854f26f26385e295df94c9"
+    },
+    {
+      "path": "evidence/m1/screenshots/upload-complete-1440x900.png",
+      "kind": "screenshot",
+      "sha256": "d6d1cfb5db518f5945315a8f5e06a6567ba523ab4b6f66e39f980e550a7843e9"
+    },
+    {
+      "path": "evidence/m1/screenshots/upload-paused-1440x900.png",
+      "kind": "screenshot",
+      "sha256": "51ed3b2f91a9e064ac52a8157a5b3414274222e438c19f2b23e3d54599a1ac79"
+    },
+    {
+      "path": "evidence/m1/screenshots/wrong-file-390x844.png",
+      "kind": "screenshot",
+      "sha256": "0f6f3bd0dd20043272717b54b2f2ff434931cb0473575304888e0b63ccc26d0a"
+    }
+  ],
+  "source_urls": [
+    "https://docs.aws.amazon.com/AmazonS3/latest/userguide/mpuoverview.html",
+    "https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-presigned-url.html",
+    "https://docs.min.io/aistor/administration/cors-configuration",
+    "https://docs.min.io/aistor/administration/object-lifecycle-management/lifecycle-rule-patterns",
+    "https://github.com/minio/minio/issues/15874"
+  ],
+  "visual_gates": [
+    {
+      "gate_id": "browser-upload-recovery",
+      "result": "passed",
+      "reviewer": "Codex",
+      "viewports": [
+        {
+          "state": "paused",
+          "width": 1440,
+          "height": 900,
+          "screenshot": "evidence/m1/screenshots/upload-paused-1440x900.png"
+        },
+        {
+          "state": "wrong-file",
+          "width": 390,
+          "height": 844,
+          "screenshot": "evidence/m1/screenshots/wrong-file-390x844.png"
+        },
+        {
+          "state": "complete",
+          "width": 1440,
+          "height": 900,
+          "screenshot": "evidence/m1/screenshots/upload-complete-1440x900.png"
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "This is one local 1 GiB execution on one Windows machine, not a load test or a production capacity claim.",
+    "RSS sampling observes the API process working set and does not prove allocator-level absence of every temporary allocation.",
+    "The generated content is deterministic synthetic TXT and does not prove PDF/DOCX parsing, ingestion, RAG, or Agent behavior.",
+    "The open-source MinIO profile uses a server-level exact-origin CORS list because its tested community release does not implement PutBucketCors; production S3 or AIStor requires per-bucket policy.",
+    "The browser-declared whole-file SHA-256 remains an unverified content identity in M1; server-side whole-file verification belongs to M3.",
+    "M1 ends at an uploaded DocumentVersion. M2-M7 jobs, outbox, RAG, Agent, MCP, deployment, and model-gateway behavior are not implemented or measured.",
+    "The remote m1-integration GitHub Actions job is defined but was not executed in this local evidence cycle, and no continuous deployment result is claimed.",
+    "A local sing-box process occupied Redis port 6379, so independent validation runs used ports 6380, 6381, and 6382. One immediate Docker Desktop port-reuse preflight failure preceded the successful 6381 smoke and was an environment limitation, not an upload-protocol failure.",
+    "Application image digest is not applicable because M1 does not build or publish API, Web, or Worker application images."
+  ],
+  "owner": "Codex"
+}

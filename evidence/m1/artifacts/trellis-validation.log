@@ -1,0 +1,9 @@
+Command: uv run python .trellis/scripts/task.py validate 07-17-m1-multipart-upload
+Exit code: 0
+=== Validating Context Files ===
+Target dir: <workspace>/.trellis/tasks/07-17-m1-multipart-upload
+
+  implement.jsonl: passed (11 entries)
+  check.jsonl: passed (9 entries)
+
+All validations passed

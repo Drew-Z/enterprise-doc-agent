@@ -1,0 +1,45 @@
+{
+  "api_rss": {
+    "max_bytes": 125722624,
+    "max_generation_delta_bytes": 1994752,
+    "measured": true,
+    "min_bytes": 123355136,
+    "sample_count": 64,
+    "sampling_interval_seconds": 0.25
+  },
+  "completed_at": "2026-07-18T06:49:23.826905+00:00",
+  "completion_retry_replayed": true,
+  "direct_transfer": {
+    "byte_plane": "client-to-object-store-presigned-put",
+    "control_plane": "FastAPI"
+  },
+  "duration_seconds": 34.656,
+  "environment": {
+    "architecture": "AMD64",
+    "operating_system": "Windows-11-10.0.26200-SP0",
+    "python": "3.12.13"
+  },
+  "first_completion_replayed": false,
+  "generated_content": {
+    "materialized_on_client_disk": false,
+    "media_type": "text/plain",
+    "size_bytes": 1073741824
+  },
+  "limitations": [
+    "This is one local execution on one machine, not a load test or a production capacity claim.",
+    "RSS sampling observes the API process working set and does not prove allocator-level absence of every temporary allocation.",
+    "The generated TXT content is deterministic synthetic data and does not represent document parsing or ingestion behavior."
+  ],
+  "milestone": "M1",
+  "multipart": {
+    "expected_part_count": 64,
+    "interrupted_after_parts": 2,
+    "observed_parts_before_resume": 2,
+    "part_size_bytes": 16777216,
+    "uploaded_parts_after_resume": 62
+  },
+  "restart_count": 1,
+  "result": "passed",
+  "schema_version": 1,
+  "started_at": "2026-07-18T06:48:49.174678+00:00"
+}

@@ -1,0 +1,67 @@
+ Network enterprise-doc-agent_default Creating
+ Network enterprise-doc-agent_default Created
+ Container enterprise-doc-agent-postgres-1 Creating
+ Container enterprise-doc-agent-redis-1 Creating
+ Container enterprise-doc-agent-minio-1 Creating
+ Container enterprise-doc-agent-postgres-1 Created
+ Container enterprise-doc-agent-redis-1 Created
+ Container enterprise-doc-agent-minio-1 Created
+ Container enterprise-doc-agent-redis-1 Starting
+ Container enterprise-doc-agent-minio-1 Starting
+ Container enterprise-doc-agent-postgres-1 Starting
+ Container enterprise-doc-agent-postgres-1 Started
+ Container enterprise-doc-agent-minio-1 Started
+ Container enterprise-doc-agent-redis-1 Started
+ Container enterprise-doc-agent-redis-1 Waiting
+ Container enterprise-doc-agent-minio-1 Waiting
+ Container enterprise-doc-agent-postgres-1 Waiting
+ Container enterprise-doc-agent-postgres-1 Healthy
+ Container enterprise-doc-agent-minio-1 Healthy
+ Container enterprise-doc-agent-redis-1 Healthy
+ Container enterprise-doc-agent-minio-1 Running
+ Container enterprise-doc-agent-minio-1 Waiting
+ Container enterprise-doc-agent-minio-1 Healthy
+ Container enterprise-doc-agent-minio-init-run-<run-id> Creating
+ Container enterprise-doc-agent-minio-init-run-<run-id> Created
+Added `local` successfully.
+Bucket created successfully `local/documents`.
+Bucket created successfully `local/artifacts`.
+Access permission for `local/documents` is set to `private`
+Access permission for `local/artifacts` is set to `private`
+Access permission for `local/documents` is `private`
+Access permission for `local/artifacts` is `private`
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+============================= test session starts =============================
+platform win32 -- Python 3.12.13, pytest-9.1.1, pluggy-1.6.0
+rootdir: <workspace>
+configfile: pyproject.toml
+plugins: anyio-4.14.2, asyncio-1.4.0, cov-7.1.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 58 items / 9 deselected / 49 selected
+
+tests\multipart\test_auth_integration.py .                               [  2%]
+tests\multipart\test_m1_migration.py ..                                  [  6%]
+tests\multipart\test_minio_multipart.py ..                               [ 10%]
+tests\multipart\test_upload_cleanup_integration.py ..................... [ 53%]
+.                                                                        [ 55%]
+tests\multipart\test_upload_complete_integration.py ................     [ 87%]
+tests\multipart\test_upload_create_integration.py ....                   [ 95%]
+tests\multipart\test_upload_reconciliation_integration.py .              [ 97%]
+tests\multipart\test_upload_resume_integration.py .                      [100%]
+
+====================== 49 passed, 9 deselected in 10.93s ======================
+ Container enterprise-doc-agent-postgres-1 Stopping
+ Container enterprise-doc-agent-minio-1 Stopping
+ Container enterprise-doc-agent-redis-1 Stopping
+ Container enterprise-doc-agent-minio-1 Stopped
+ Container enterprise-doc-agent-minio-1 Removing
+ Container enterprise-doc-agent-minio-1 Removed
+ Container enterprise-doc-agent-redis-1 Stopped
+ Container enterprise-doc-agent-redis-1 Removing
+ Container enterprise-doc-agent-redis-1 Removed
+ Container enterprise-doc-agent-postgres-1 Stopped
+ Container enterprise-doc-agent-postgres-1 Removing
+ Container enterprise-doc-agent-postgres-1 Removed
+ Network enterprise-doc-agent_default Removing
+ Network enterprise-doc-agent_default Removed

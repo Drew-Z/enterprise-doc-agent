@@ -189,39 +189,39 @@ durable ingestion jobs, or production-scale capacity already exist.
 
 ## Acceptance Criteria
 
-- [ ] An invalid/missing/expired JWT returns a typed 401; an inactive or mismatched
+- [x] An invalid/missing/expired JWT returns a typed 401; an inactive or mismatched
   persisted membership returns a typed 403/404 boundary response; valid requests add
   the revalidated tenant/actor to request context, logs, and spans without token leaks.
-- [ ] Concurrent create requests with one idempotency key and identical input produce
+- [x] Concurrent create requests with one idempotency key and identical input produce
   one upload session and one quota reservation; a conflicting payload returns 409.
-- [ ] Filename, extension, media type, size, hash, quota, part-count, and path-safety
+- [x] Filename, extension, media type, size, hash, quota, part-count, and path-safety
   policy tests cover allowed TXT/PDF/DOCX plus representative invalid inputs.
-- [ ] A real MinIO integration proves create, checksum-bound presign, direct part PUT,
+- [x] A real MinIO integration proves create, checksum-bound presign, direct part PUT,
   list/resume aggregation, complete, head verification, and abort; deterministic adapter
   tests prove all-page pagination behavior.
-- [ ] Refresh/resume uploads only missing parts after the same file is reselected and
+- [x] Refresh/resume uploads only missing parts after the same file is reselected and
   rejects a different file before issuing any new part URL.
-- [ ] Duplicate and concurrent completion return the same `DocumentVersion`; database
+- [x] Duplicate and concurrent completion return the same `DocumentVersion`; database
   counts and quota counters prove one effective side effect.
-- [ ] A simulated crash after S3 completion but before database finalization is
+- [x] A simulated crash after S3 completion but before database finalization is
   reconciled on retry without creating a duplicate version or losing the object.
-- [ ] PDF/TXT/DOCX envelope tests reject signature mismatch, unsafe ZIP paths, excess
+- [x] PDF/TXT/DOCX envelope tests reject signature mismatch, unsafe ZIP paths, excess
   entries, excess declared expansion, excessive compression ratio, and missing DOCX
   required entries using bounded range reads.
-- [ ] Abort, expiry, stale-completion reconciliation, and unknown multipart cleanup are
+- [x] Abort, expiry, stale-completion reconciliation, and unknown multipart cleanup are
   safe to rerun and release only the correct reservation.
-- [ ] Web unit tests cover legal state transitions, four-way scheduling, pause/resume,
+- [x] Web unit tests cover legal state transitions, four-way scheduling, pause/resume,
   retry, cancellation, worker hashing messages, runtime API validation, and secret-free
   persistence.
-- [ ] Playwright verifies the authenticated upload workflow, interrupted refresh
+- [x] Playwright verifies the authenticated upload workflow, interrupted refresh
   recovery, and stable desktop/mobile layouts without overlap.
-- [ ] The generated 1 GiB smoke completes and records API RSS samples showing that the
+- [x] The generated 1 GiB smoke completes and records API RSS samples showing that the
   file body was not buffered by FastAPI. The report states the observed environment and
   does not claim production capacity.
-- [ ] Backend format/lint/typecheck/unit, frontend lint/typecheck/unit/build,
+- [x] Backend format/lint/typecheck/unit, frontend lint/typecheck/unit/build,
   PostgreSQL/MinIO integration, M1 smoke, evidence contracts, and Trellis validation
   pass from exact recorded commands.
-- [ ] No M2-M7 behavior is represented as implemented or measured.
+- [x] No M2-M7 behavior is represented as implemented or measured.
 
 ## Notes
 
@@ -231,3 +231,5 @@ durable ingestion jobs, or production-scale capacity already exist.
   joint atomicity gate.
 - S3 multipart ETags are not treated as whole-file MD5 values.
 - A 1 GiB local smoke is evidence for one run on one machine, not a load test.
+- The remote `m1-integration` workflow is defined but has not been executed in this
+  local evidence cycle; no remote CI or deployment result is claimed.

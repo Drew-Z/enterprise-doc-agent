@@ -352,21 +352,26 @@ an immutable, machine-validated evidence record.
 - On Windows the sampler resolves the process that owns port 8000 instead of measuring
   the small virtual-environment launcher. The corrected 17 MiB diagnostic run observed
   123,289,600 to 125,161,472 RSS bytes and a 1,638,400-byte maximum within-generation
-  delta. These values are diagnostic only and are not the required 1 GiB evidence.
+  delta. The final reviewed-commit 1 GiB run observed 123,355,136 to 125,722,624 RSS
+  bytes across 64 samples, with a 1,994,752-byte maximum within-generation delta. Both
+  are single-machine observations, not load tests or production capacity claims.
 - Added the locked `smoke:multipart` root command and a non-allow-failure
   `m1-integration` GitHub Actions job. CI runs the 49-test PostgreSQL/MinIO integration
   suite and a separate 17 MiB two-part restart/resume smoke; that small payload does not
   replace the local 1 GiB gate.
 - Added smoke/CI executable contracts, README operations, and factual backend/frontend
-  Trellis specifications. Current local validation is 196 backend non-integration tests,
+  Trellis specifications. Final local validation is 198 backend non-integration tests,
   49 multipart integration tests, 124 Web tests, backend/frontend lint/typecheck, and
-  production Web build. Slice 9's real Playwright workflow remains previously green.
-- Added `research/m1-acceptance-audit.md`. R-1 through R-24 are implemented locally;
-  R-25 is partial until the reviewed-commit 1 GiB run passes; R-26 is pending the
-  reviewed commit, immutable artifacts, manifest/index update, and evidence contract.
-- Do not add a passed M1 manifest from the current dirty tree. The next gate is an
-  intentional implementation commit approved by the user, followed by exact evidence
-  generation against that commit.
+  production Web build. The real Playwright pause/reload/wrong-file/resume workflow also
+  passed against reviewed implementation commit
+  `ca43716265d7057aa79288bae054fc6ae0c5056d`.
+- Added `research/m1-acceptance-audit.md`, the immutable manifest
+  `evidence/m1/20260718-151000-m1-multipart-upload.json`, parent index entry, sanitized
+  artifacts, and executable evidence contract. R-1 through R-26 are complete for the
+  recorded local M1 scope.
+- The remote `m1-integration` workflow is defined but has not been claimed as executed;
+  this repository has no configured remote. The task remains unarchived, and no public
+  deployment, sustained-load result, or production capacity is claimed.
 
 ## Review Gates
 

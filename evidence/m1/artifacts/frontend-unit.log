@@ -1,0 +1,24 @@
+$ pnpm --filter web test
+$ vitest run
+
+[1m[46m RUN [49m[22m [36mv3.2.7 [39m[90m<workspace>/apps/web[39m
+
+ [32m✓[39m src/upload/state/progress.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/upload/fileIdentity.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/upload/state/scheduler.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/upload/hashing/protocol.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/upload/transfer/xhrUploadPart.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m src/upload/state/reducer.test.ts [2m([22m[2m21 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+ [32m✓[39m src/upload/hashing/client.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+ [32m✓[39m src/upload/persistence.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m src/upload/api/schemas.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 30[2mms[22m[39m
+ [32m✓[39m src/upload/api/client.test.ts [2m([22m[2m23 tests[22m[2m)[22m[32m 79[2mms[22m[39m
+ [32m✓[39m src/upload/hashing/runner.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 93[2mms[22m[39m
+ [32m✓[39m src/upload/hashing/runtime.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m src/upload/UploadWorkspace.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 138[2mms[22m[39m
+ [32m✓[39m src/App.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[32m 228[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m14 passed[39m[22m[90m (14)[39m
+[2m      Tests [22m [1m[32m124 passed[39m[22m[90m (124)[39m
+[2m   Start at [22m 14:43:45
+[2m   Duration [22m 28.65s[2m (transform 1.49s, setup 51.91s, collect 16.38s, tests 686ms, environment 223.18s, prepare 17.91s)[22m
