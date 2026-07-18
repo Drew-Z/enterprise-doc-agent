@@ -1,7 +1,8 @@
 {
   "milestone": "m2-durable-job-runtime",
   "result": "passed",
-  "implementation_commit": "34712ff",
+  "implementation_commit": "dce3bfc",
+  "reviewed_commits": ["34712ff", "a52617f", "dce3bfc"],
   "branch": "feat/m2-durable-job-runtime",
   "captured_at": "2026-07-18T17:30:00+08:00",
   "environment": {
@@ -45,6 +46,11 @@
       "command": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
       "result": "passed",
       "summary": "124 frontend tests passed"
+    },
+    {
+      "command": "uv run pytest apps/worker/tests -q",
+      "result": "passed",
+      "summary": "14 Worker tests passed"
     },
     {
       "command": "python .trellis/scripts/task.py validate 07-18-m2-durable-job-runtime",
