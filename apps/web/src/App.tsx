@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import { fetchReadiness, type ComponentName, type ComponentStatus } from "./api/health";
+import { UploadWorkspace } from "./upload/UploadWorkspace";
 import "./styles.css";
 
 const components: Array<{
@@ -60,86 +61,90 @@ export function App() {
       </header>
 
       <main className="workspace">
-        <section className="page-heading" aria-labelledby="overview-title">
-          <div>
-            <p className="eyebrow">Runtime overview</p>
-            <h1 id="overview-title">Platform readiness</h1>
-          </div>
-          <button
-            className="icon-button"
-            type="button"
-            aria-label="Refresh readiness"
-            title="Refresh readiness"
-            disabled={isLoading || readiness.isFetching}
-            onClick={() => void readiness.refetch()}
-          >
-            <RefreshCw aria-hidden="true" className={readiness.isFetching ? "spin" : undefined} />
-          </button>
-        </section>
+        <UploadWorkspace />
 
-        <section className="status-band" aria-live="polite">
-          {isLoading && (
-            <div className="overall-state loading-state" role="status">
-              <LoaderCircle aria-hidden="true" className="spin" />
-              <div>
-                <h2>Checking platform readiness</h2>
-                <p>Contacting the API and required local services.</p>
-              </div>
+        <section className="readiness-section" aria-labelledby="overview-title">
+          <div className="page-heading">
+            <div>
+              <p className="eyebrow">Runtime overview</p>
+              <h2 id="overview-title">Platform readiness</h2>
             </div>
-          )}
-          {isHealthy && (
-            <div className="overall-state healthy-state">
-              <CheckCircle2 aria-hidden="true" />
-              <div>
-                <h2>Platform ready</h2>
-                <p>All required foundation services are accepting work.</p>
-              </div>
-            </div>
-          )}
-          {isDegraded && (
-            <div className="overall-state degraded-state">
-              <TriangleAlert aria-hidden="true" />
-              <div>
-                <h2>Platform degraded</h2>
-                <p>One or more required services are unavailable or timed out.</p>
-              </div>
-            </div>
-          )}
-          {isUnreachable && (
-            <div className="overall-state unreachable-state" role="alert">
-              <CircleX aria-hidden="true" />
-              <div>
-                <h2>API unreachable</h2>
-                <p>The readiness endpoint could not be reached or returned an invalid response.</p>
-              </div>
-            </div>
-          )}
-        </section>
-
-        <section className="component-section" aria-labelledby="components-title">
-          <div className="section-heading">
-            <h2 id="components-title">Required services</h2>
-            <span>{readiness.data ? "Live API result" : "Awaiting API result"}</span>
+            <button
+              className="icon-button"
+              type="button"
+              aria-label="Refresh readiness"
+              title="Refresh readiness"
+              disabled={isLoading || readiness.isFetching}
+              onClick={() => void readiness.refetch()}
+            >
+              <RefreshCw aria-hidden="true" className={readiness.isFetching ? "spin" : undefined} />
+            </button>
           </div>
-          <div className="component-grid">
-            {components.map((component) => {
-              const status = readiness.data?.checks[component.name].status;
-              const Icon = component.icon;
-              return (
-                <article className="component-card" key={component.name}>
-                  <div className="component-icon">
-                    <Icon aria-hidden="true" />
-                  </div>
-                  <div className="component-copy">
-                    <h3>{component.label}</h3>
-                    <p>{component.detail}</p>
-                  </div>
-                  <span className={`component-status ${status ?? "unknown"}`}>
-                    {status ? componentCopy[status] : "Unknown"}
-                  </span>
-                </article>
-              );
-            })}
+
+          <div className="status-band" aria-live="polite">
+            {isLoading && (
+              <div className="overall-state loading-state" role="status">
+                <LoaderCircle aria-hidden="true" className="spin" />
+                <div>
+                  <h2>Checking platform readiness</h2>
+                  <p>Contacting the API and required local services.</p>
+                </div>
+              </div>
+            )}
+            {isHealthy && (
+              <div className="overall-state healthy-state">
+                <CheckCircle2 aria-hidden="true" />
+                <div>
+                  <h2>Platform ready</h2>
+                  <p>All required foundation services are accepting work.</p>
+                </div>
+              </div>
+            )}
+            {isDegraded && (
+              <div className="overall-state degraded-state">
+                <TriangleAlert aria-hidden="true" />
+                <div>
+                  <h2>Platform degraded</h2>
+                  <p>One or more required services are unavailable or timed out.</p>
+                </div>
+              </div>
+            )}
+            {isUnreachable && (
+              <div className="overall-state unreachable-state" role="alert">
+                <CircleX aria-hidden="true" />
+                <div>
+                  <h2>API unreachable</h2>
+                  <p>The readiness endpoint could not be reached or returned an invalid response.</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="component-section" aria-labelledby="components-title">
+            <div className="section-heading">
+              <h2 id="components-title">Required services</h2>
+              <span>{readiness.data ? "Live API result" : "Awaiting API result"}</span>
+            </div>
+            <div className="component-grid">
+              {components.map((component) => {
+                const status = readiness.data?.checks[component.name].status;
+                const Icon = component.icon;
+                return (
+                  <article className="component-card" key={component.name}>
+                    <div className="component-icon">
+                      <Icon aria-hidden="true" />
+                    </div>
+                    <div className="component-copy">
+                      <h3>{component.label}</h3>
+                      <p>{component.detail}</p>
+                    </div>
+                    <span className={`component-status ${status ?? "unknown"}`}>
+                      {status ? componentCopy[status] : "Unknown"}
+                    </span>
+                  </article>
+                );
+              })}
+            </div>
           </div>
         </section>
       </main>

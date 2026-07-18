@@ -11,10 +11,15 @@ export default defineConfig({
         target: "http://127.0.0.1:8000",
         changeOrigin: true,
       },
+      "/api": {
+        target: "http://127.0.0.1:8000",
+        changeOrigin: true,
+      },
     },
   },
   test: {
     environment: "jsdom",
     setupFiles: "./src/test/setup.ts",
+    include: ["src/**/*.test.{ts,tsx}"],
   },
 });
