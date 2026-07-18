@@ -66,7 +66,13 @@ class OutboxPublisher:
 
     async def run(self, stop: asyncio.Event) -> None:
         while not stop.is_set():
-            await self.publish_once()
+            try:
+                await self.publish_once()
+            except Exception as error:
+                _LOGGER.warning(
+                    "outbox_poll_failed",
+                    extra={"event_data": {"error_class": type(error).__name__}},
+                )
             try:
                 await asyncio.wait_for(stop.wait(), timeout=self.poll_interval_seconds)
             except TimeoutError:

@@ -78,3 +78,32 @@ async def test_publisher_loop_stops_without_another_claim() -> None:
     await publisher.run(stop)
 
     assert store.claim_calls == 0
+
+
+class FailingStore:
+    def __init__(self) -> None:
+        self.calls = 0
+
+    async def claim(self, **_: object):
+        self.calls += 1
+        raise ConnectionError("temporary database outage")
+
+    async def mark_published(self, _: ClaimedOutboxEvent) -> None:
+        raise AssertionError("mark must not be called")
+
+
+async def test_publisher_loop_survives_temporary_store_failure() -> None:
+    store = FailingStore()
+    publisher = OutboxPublisher(
+        store=store,  # type: ignore[arg-type]
+        dispatcher=FakeDispatcher(),
+        publisher_id="publisher-a",
+        poll_interval_seconds=0.01,
+    )
+    stop = asyncio.Event()
+    task = asyncio.create_task(publisher.run(stop))
+    await asyncio.sleep(0.03)
+    stop.set()
+    await asyncio.wait_for(task, timeout=0.5)
+
+    assert store.calls >= 1
