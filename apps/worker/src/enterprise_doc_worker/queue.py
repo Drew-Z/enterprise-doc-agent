@@ -1,19 +1,27 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable
-from typing import Any, Protocol
+import threading
+from collections.abc import Callable, Coroutine
+from typing import Any, Protocol, TypeVar
 from uuid import UUID
 
 from celery import Celery
 from pydantic import BaseModel, ConfigDict
 
 from enterprise_doc_core.documents.ingestion_service import DocumentIngestionError
-from enterprise_doc_core.jobs import ClaimedJob, JobRuntimeService, RetryDisposition
+from enterprise_doc_core.jobs import (
+    ClaimedJob,
+    JobLeaseLost,
+    JobRuntimeService,
+    JobStatus,
+    RetryDisposition,
+)
 from enterprise_doc_worker.config import WorkerSettings
 
 JOB_TASK_NAME = "enterprise_doc_worker.execute_job"
 JOB_QUEUE_NAME = "document-ingestion"
+_ResultT = TypeVar("_ResultT")
 
 
 class JobMessage(BaseModel):
@@ -49,6 +57,47 @@ class CeleryTaskDispatcher:
         )
 
 
+class AsyncTaskRunner:
+    """Run Celery's sync task adapter on one persistent asyncio loop."""
+
+    def __init__(
+        self,
+        *,
+        loop_factory: Callable[[], asyncio.AbstractEventLoop] = asyncio.new_event_loop,
+    ) -> None:
+        self._loop = loop_factory()
+        self._started = threading.Event()
+        self._closed = False
+        self._thread = threading.Thread(
+            target=self._serve,
+            name="enterprise-doc-worker-async-loop",
+            daemon=True,
+        )
+        self._thread.start()
+        self._started.wait()
+
+    def _serve(self) -> None:
+        asyncio.set_event_loop(self._loop)
+        self._started.set()
+        try:
+            self._loop.run_forever()
+        finally:
+            self._loop.close()
+
+    def run(self, awaitable: Coroutine[Any, Any, _ResultT]) -> _ResultT:
+        if self._closed:
+            raise RuntimeError("async task runner is closed")
+        future = asyncio.run_coroutine_threadsafe(awaitable, self._loop)
+        return future.result()
+
+    def close(self) -> None:
+        if self._closed:
+            return
+        self._closed = True
+        self._loop.call_soon_threadsafe(self._loop.stop)
+        self._thread.join()
+
+
 class JobDeliveryConsumer:
     def __init__(
         self,
@@ -57,18 +106,94 @@ class JobDeliveryConsumer:
         worker_id: str,
         handler: AsyncJobHandler,
         classify_error: Callable[[Exception], RetryDisposition] | None = None,
+        heartbeat_interval_seconds: float | None = None,
     ) -> None:
         self.runtime = runtime
         self.worker_id = worker_id
         self.handler = handler
         self.classify_error = classify_error or (lambda _: RetryDisposition.RETRYABLE)
+        self.heartbeat_interval_seconds = (
+            heartbeat_interval_seconds
+            if heartbeat_interval_seconds is not None
+            else runtime.lease_seconds / 3
+        )
+        if self.heartbeat_interval_seconds <= 0:
+            raise ValueError("heartbeat interval must be positive")
 
     async def handle(self, message: JobMessage) -> str:
         claim = await self.runtime.claim(job_id=message.job_id, worker_id=self.worker_id)
         if claim is None:
             return "duplicate_or_not_claimable"
+
+        handler_task = asyncio.create_task(self.handler(claim))
+        heartbeat_task = asyncio.create_task(self._heartbeat_until_cancel_requested(claim))
         try:
-            await self.handler(claim)
+            done, _ = await asyncio.wait(
+                {handler_task, heartbeat_task},
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+        except asyncio.CancelledError:
+            handler_task.cancel()
+            heartbeat_task.cancel()
+            await asyncio.gather(handler_task, heartbeat_task, return_exceptions=True)
+            await self.runtime.fail(
+                claim,
+                disposition=RetryDisposition.CANCELLED,
+                error_code="worker_cancelled",
+                error_message="The worker task was cancelled.",
+                error_class="CancelledError",
+            )
+            raise
+
+        if handler_task in done:
+            heartbeat_task.cancel()
+            await asyncio.gather(heartbeat_task, return_exceptions=True)
+            return await self._settle_handler(claim, handler_task)
+
+        try:
+            cancel_requested = heartbeat_task.result()
+        except JobLeaseLost:
+            handler_task.cancel()
+            await asyncio.gather(handler_task, return_exceptions=True)
+            raise
+        except Exception as error:
+            handler_task.cancel()
+            await asyncio.gather(handler_task, return_exceptions=True)
+            await self.runtime.fail(
+                claim,
+                disposition=RetryDisposition.RETRYABLE,
+                error_code="job_heartbeat_failed",
+                error_message="The worker could not renew the job lease.",
+                error_class=type(error).__name__,
+            )
+            return "failed"
+
+        if not cancel_requested:
+            raise RuntimeError("heartbeat monitor stopped without a cancellation request")
+        handler_task.cancel()
+        await asyncio.gather(handler_task, return_exceptions=True)
+        await self.runtime.fail(
+            claim,
+            disposition=RetryDisposition.CANCELLED,
+            error_code="job_cancel_requested",
+            error_message="The job was cancelled by request.",
+            error_class="CancelledError",
+        )
+        return "cancelled"
+
+    async def _heartbeat_until_cancel_requested(self, claim: ClaimedJob) -> bool:
+        while True:
+            await asyncio.sleep(self.heartbeat_interval_seconds)
+            if await self.runtime.heartbeat(claim):
+                return True
+
+    async def _settle_handler(
+        self,
+        claim: ClaimedJob,
+        handler_task: asyncio.Task[None],
+    ) -> str:
+        try:
+            await handler_task
         except asyncio.CancelledError:
             await self.runtime.fail(
                 claim,
@@ -85,16 +210,16 @@ class JobDeliveryConsumer:
             else:
                 error_code = "job_handler_failed"
                 error_message = "The job handler failed."
-            await self.runtime.fail(
+            failure = await self.runtime.fail(
                 claim,
                 disposition=self.classify_error(error),
                 error_code=error_code,
                 error_message=error_message,
                 error_class=type(error).__name__,
             )
-            return "failed"
-        await self.runtime.succeed(claim)
-        return "succeeded"
+            return "cancelled" if failure.status == JobStatus.CANCELLED.value else "failed"
+        final_status = await self.runtime.succeed(claim)
+        return "cancelled" if final_status == JobStatus.CANCELLED.value else "succeeded"
 
 
 def create_celery_app(settings: WorkerSettings | None = None) -> Celery:
@@ -120,6 +245,7 @@ def register_job_task(
     app: Celery,
     *,
     consumer_factory: Callable[[], JobDeliveryConsumer],
+    async_runner: AsyncTaskRunner | None = None,
 ) -> None:
     @app.task(  # type: ignore[untyped-decorator]
         bind=True,
@@ -130,4 +256,7 @@ def register_job_task(
     )
     def execute_job(_: Any, payload: dict[str, Any]) -> str:
         message = JobMessage.model_validate(payload)
-        return asyncio.run(consumer_factory().handle(message))
+        awaitable = consumer_factory().handle(message)
+        if async_runner is not None:
+            return async_runner.run(awaitable)
+        return asyncio.run(awaitable)

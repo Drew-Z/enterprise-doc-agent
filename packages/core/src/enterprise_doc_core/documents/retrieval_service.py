@@ -11,6 +11,8 @@ from enterprise_doc_core.documents.ingestion import EmbeddingProvider
 from enterprise_doc_core.documents.models import (
     DocumentChunk,
     DocumentIngestionGeneration,
+    DocumentIngestionStage,
+    DocumentIngestionStatus,
     DocumentVersion,
 )
 from enterprise_doc_core.documents.retrieval import (
@@ -29,17 +31,28 @@ class HybridRetrievalService:
         embedding_provider: EmbeddingProvider,
         top_k: int = 10,
         rrf_k: int = 60,
-        min_score: float = 0.0,
+        min_score: float | None = None,
+        min_candidates: int = 1,
+        max_vector_distance: float = 0.65,
     ) -> None:
         if top_k <= 0:
             raise ValueError("top_k must be positive")
         if rrf_k <= 0:
             raise ValueError("rrf_k must be positive")
+        resolved_min_score = 1.0 / (rrf_k + 1) if min_score is None else min_score
+        if resolved_min_score < 0:
+            raise ValueError("min_score must be non-negative")
+        if min_candidates <= 0 or min_candidates > top_k:
+            raise ValueError("min_candidates must be in [1, top_k]")
+        if not 0 <= max_vector_distance <= 2:
+            raise ValueError("max_vector_distance must be in [0, 2]")
         self.session_factory = session_factory
         self.embedding_provider = embedding_provider
         self.top_k = top_k
         self.rrf_k = rrf_k
-        self.min_score = min_score
+        self.min_score = resolved_min_score
+        self.min_candidates = min_candidates
+        self.max_vector_distance = max_vector_distance
 
     async def retrieve(
         self,
@@ -50,7 +63,11 @@ class HybridRetrievalService:
     ) -> RetrievalDecision:
         normalized_query = query.strip()
         if not normalized_query:
-            return decide_retrieval((), min_score=self.min_score)
+            return decide_retrieval(
+                (),
+                min_score=self.min_score,
+                min_candidates=self.min_candidates,
+            )
         keyword_candidates = await self._keyword_recall(
             tenant_id=tenant_id,
             document_version_id=document_version_id,
@@ -70,7 +87,11 @@ class HybridRetrievalService:
             rrf_k=self.rrf_k,
             top_k=self.top_k,
         )
-        return decide_retrieval(fused, min_score=self.min_score)
+        return decide_retrieval(
+            fused,
+            min_score=self.min_score,
+            min_candidates=self.min_candidates,
+        )
 
     async def _keyword_recall(
         self, *, tenant_id: UUID, document_version_id: UUID, query: str
@@ -99,7 +120,13 @@ class HybridRetrievalService:
             .where(
                 DocumentChunk.tenant_id == tenant_id,
                 DocumentChunk.document_version_id == document_version_id,
+                DocumentIngestionGeneration.tenant_id == DocumentChunk.tenant_id,
+                DocumentIngestionGeneration.document_version_id
+                == DocumentChunk.document_version_id,
+                DocumentIngestionGeneration.status == DocumentIngestionStatus.SUCCEEDED.value,
+                DocumentIngestionGeneration.stage == DocumentIngestionStage.READY.value,
                 DocumentIngestionGeneration.active.is_(True),
+                DocumentVersion.tenant_id == DocumentChunk.tenant_id,
                 DocumentChunk.search_vector.op("@@")(ts_query),
             )
             .order_by(desc(rank), DocumentChunk.chunk_index)
@@ -139,7 +166,15 @@ class HybridRetrievalService:
             .where(
                 DocumentChunk.tenant_id == tenant_id,
                 DocumentChunk.document_version_id == document_version_id,
+                DocumentChunk.embedding.is_not(None),
+                DocumentIngestionGeneration.tenant_id == DocumentChunk.tenant_id,
+                DocumentIngestionGeneration.document_version_id
+                == DocumentChunk.document_version_id,
+                DocumentIngestionGeneration.status == DocumentIngestionStatus.SUCCEEDED.value,
+                DocumentIngestionGeneration.stage == DocumentIngestionStage.READY.value,
                 DocumentIngestionGeneration.active.is_(True),
+                DocumentVersion.tenant_id == DocumentChunk.tenant_id,
+                distance <= self.max_vector_distance,
             )
             .order_by(distance, DocumentChunk.chunk_index)
             .limit(self.top_k)

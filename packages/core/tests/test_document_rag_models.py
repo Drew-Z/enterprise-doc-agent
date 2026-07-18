@@ -27,6 +27,7 @@ def test_m3_generation_has_version_and_active_constraints() -> None:
     assert "uq_document_ingestion_generations_version_key" in constraints
     assert "ck_document_ingestion_generations_status_valid" in constraints
     assert "ck_document_ingestion_generations_stage_valid" in constraints
+    assert "ck_document_ingestion_generations_embedded_count_within_chunk_count" in constraints
     assert "uq_document_ingestion_generations_active_version" in indexes
 
 
@@ -40,3 +41,4 @@ def test_m3_chunks_have_hybrid_search_indexes_and_fixed_embedding_contract() -> 
     assert "ck_document_chunks_offsets_valid" in constraints
     assert {"ix_document_chunks_fts", "ix_document_chunks_embedding_hnsw"} <= indexes
     assert table.columns.embedding.type.dim == DEFAULT_EMBEDDING_DIMENSION
+    assert table.columns.embedding.nullable is True

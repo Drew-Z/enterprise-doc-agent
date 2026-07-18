@@ -7,6 +7,7 @@ from uuid import UUID
 
 class RefusalReason(StrEnum):
     EMPTY_EVIDENCE = "empty_evidence"
+    INSUFFICIENT_EVIDENCE = "insufficient_evidence"
     LOW_RELEVANCE = "low_relevance"
     CITATION_NOT_AUTHORIZED = "citation_not_authorized"
     CITATION_WRONG_VERSION = "citation_wrong_version"
@@ -104,10 +105,19 @@ def authorize_candidates(
 
 
 def decide_retrieval(
-    candidates: tuple[RetrievalCandidate, ...], *, min_score: float = 0.0
+    candidates: tuple[RetrievalCandidate, ...],
+    *,
+    min_score: float = 0.0,
+    min_candidates: int = 1,
 ) -> RetrievalDecision:
+    if min_score < 0:
+        raise ValueError("min_score must be non-negative")
+    if min_candidates <= 0:
+        raise ValueError("min_candidates must be positive")
     if not candidates:
         return RetrievalDecision(False, (), RefusalReason.EMPTY_EVIDENCE)
+    if len(candidates) < min_candidates:
+        return RetrievalDecision(False, candidates, RefusalReason.INSUFFICIENT_EVIDENCE)
     if candidates[0].score < min_score:
         return RetrievalDecision(False, candidates, RefusalReason.LOW_RELEVANCE)
     return RetrievalDecision(True, candidates)

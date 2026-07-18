@@ -16,6 +16,7 @@ dependencies = [
 
 [project.scripts]
 enterprise-doc-worker = "enterprise_doc_worker.__main__:main"
+enterprise-doc-worker-consumer = "enterprise_doc_worker.consumer_main:main"
 
 [tool.uv.sources]
 enterprise-doc-core = { workspace = true }

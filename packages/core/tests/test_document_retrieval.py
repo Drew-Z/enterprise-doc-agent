@@ -59,9 +59,19 @@ def test_authorization_filters_tenant_and_version_before_model_context() -> None
 def test_refusal_is_returned_for_empty_or_low_evidence() -> None:
     assert decide_retrieval(()).refusal_reason == RefusalReason.EMPTY_EVIDENCE
     assert (
+        decide_retrieval((candidate(1, score=0.2),), min_candidates=2).refusal_reason
+        == RefusalReason.INSUFFICIENT_EVIDENCE
+    )
+    assert (
         decide_retrieval((candidate(1, score=0.1),), min_score=0.2).refusal_reason
         == RefusalReason.LOW_RELEVANCE
     )
+    assert decide_retrieval((candidate(1, score=0.2),), min_score=0.2).accepted is True
+
+    with pytest.raises(ValueError, match="min_score"):
+        decide_retrieval((candidate(1),), min_score=-0.1)
+    with pytest.raises(ValueError, match="min_candidates"):
+        decide_retrieval((candidate(1),), min_candidates=0)
 
 
 def test_citation_gate_requires_authorized_candidate_and_excerpt() -> None:

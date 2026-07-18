@@ -1,7 +1,7 @@
 {
   "version": "m3-retrieval-eval-v1",
   "k": 5,
-  "limitations": "Deterministic evaluator fixture only; it is not evidence of real embedding-model quality.",
+  "limitations": "Metric-calculator fixture with prefilled predictions. It does not execute HybridRetrievalService and is not retrieval-quality evidence. Use m3_retrieval_live_v2.json for the live PostgreSQL regression.",
   "cases": [
     {"case_id":"qa-payment","relevant_chunk_ids":["payment"],"retrieved_chunk_ids":["payment","delivery"],"expected_refusal":false,"predicted_refusal":false,"golden_citation_ids":["payment"],"predicted_citation_ids":["payment"]},
     {"case_id":"qa-delivery","relevant_chunk_ids":["delivery"],"retrieved_chunk_ids":["delivery","acceptance"],"expected_refusal":false,"predicted_refusal":false,"golden_citation_ids":["delivery"],"predicted_citation_ids":["delivery"]},

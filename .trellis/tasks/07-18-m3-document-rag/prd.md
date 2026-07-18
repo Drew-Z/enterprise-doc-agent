@@ -47,20 +47,22 @@ version; insufficient evidence must produce a refusal instead of an invented ans
 ## Acceptance Criteria
 
 - [x] Add chunk, ingestion-generation, and embedding schema with tenant/version foreign
-  keys, deterministic hashes, FTS index, vector index, and migration downgrade tests.
+  keys, deterministic hashes, FTS/vector indexes, nullable pre-embedding checkpoints,
+  count constraints, and migration downgrade tests.
 - [x] Unit tests cover TXT/PDF/DOCX parsing, malformed input, page/heading/offset
   metadata, bounded spool reads, chunk boundaries, and deterministic reruns.
 - [x] M2 integration proves `document.ingest` advances `uploaded -> ready` exactly once,
-  resumes after a failed stage, and records stable failure state without duplicate
-  chunks.
+  resumes an embedding failure from persisted chunks without another object download,
+  rejects corrupt checkpoints, and records stable failure state without duplicate rows.
 - [x] Hybrid retrieval tests prove keyword-only terms, vector-only paraphrases, RRF
   ordering, tenant/version isolation, deduplication, and index-generation switching.
 - [x] Citation tests reject unauthorized, wrong-version, missing, and out-of-candidate
   citations; valid citations resolve to stored chunks with stable metadata.
 - [x] Refusal tests cover empty evidence, low score, and conflicting versions; no answer
   is generated from unsupported context.
-- [x] A small versioned eval set reports Recall@K, MRR/nDCG, citation precision, refusal
-  precision/recall, and field-level extraction metrics where applicable.
+- [x] A versioned live PostgreSQL retrieval set reports Recall@K, MRR/nDCG and refusal
+  precision/recall from real service output. A separate deterministic citation-gate
+  fixture reports citation precision; M3 does not claim answer-generation quality.
 - [x] Existing M0-M2 tests, CI, evidence contracts, and M1 artifacts remain unchanged.
 
 ## Notes

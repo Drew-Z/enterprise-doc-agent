@@ -142,6 +142,10 @@ class DocumentIngestionGeneration(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         CheckConstraint("embedding_dimension > 0", name="embedding_dimension_positive"),
         CheckConstraint("chunk_count >= 0", name="chunk_count_non_negative"),
         CheckConstraint("embedded_count >= 0", name="embedded_count_non_negative"),
+        CheckConstraint(
+            "embedded_count <= chunk_count",
+            name="embedded_count_within_chunk_count",
+        ),
         Index(
             "ix_document_ingestion_generations_tenant_version_status",
             "tenant_id",
@@ -233,6 +237,6 @@ class DocumentChunk(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     normalized_text: Mapped[str] = mapped_column(Text, nullable=False)
     content_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
     search_vector: Mapped[str] = mapped_column(TSVECTOR, nullable=False)
-    embedding: Mapped[list[float]] = mapped_column(
-        Vector(DEFAULT_EMBEDDING_DIMENSION), nullable=False
+    embedding: Mapped[list[float] | None] = mapped_column(
+        Vector(DEFAULT_EMBEDDING_DIMENSION), nullable=True
     )

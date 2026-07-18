@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass, field
 from typing import Any
 from uuid import uuid4
@@ -13,6 +14,7 @@ from enterprise_doc_worker.config import WorkerSettings
 from enterprise_doc_worker.queue import (
     JOB_QUEUE_NAME,
     JOB_TASK_NAME,
+    AsyncTaskRunner,
     CeleryTaskDispatcher,
     JobDeliveryConsumer,
     JobMessage,
@@ -30,17 +32,41 @@ class FakeCelery:
 
 
 class FakeRuntime:
-    def __init__(self, claim: ClaimedJob | None) -> None:
+    lease_seconds = 30.0
+
+    def __init__(
+        self,
+        claim: ClaimedJob | None,
+        *,
+        heartbeat_results: list[bool | Exception] | None = None,
+        succeed_status: str = "succeeded",
+    ) -> None:
         self.claim_result = claim
         self.succeeded: list[ClaimedJob] = []
         self.failed: list[tuple[ClaimedJob, RetryDisposition]] = []
         self.failure_metadata: list[dict[str, Any]] = []
+        self.heartbeats: list[ClaimedJob] = []
+        self.heartbeat_results = heartbeat_results or []
+        self.heartbeat_event: asyncio.Event | None = None
+        self.succeed_status = succeed_status
 
     async def claim(self, *, job_id, worker_id):
         return self.claim_result
 
-    async def succeed(self, claim: ClaimedJob) -> None:
+    async def heartbeat(self, claim: ClaimedJob) -> bool:
+        self.heartbeats.append(claim)
+        if self.heartbeat_event is not None:
+            self.heartbeat_event.set()
+        if not self.heartbeat_results:
+            return False
+        result = self.heartbeat_results.pop(0)
+        if isinstance(result, Exception):
+            raise result
+        return result
+
+    async def succeed(self, claim: ClaimedJob) -> str:
         self.succeeded.append(claim)
+        return self.succeed_status
 
     async def fail(
         self,
@@ -112,6 +138,81 @@ async def test_duplicate_delivery_does_not_call_handler() -> None:
     assert handler_calls == 0
 
 
+async def test_consumer_heartbeats_until_handler_completes() -> None:
+    claim = _claim()
+    runtime = FakeRuntime(claim)
+    heartbeat_event = asyncio.Event()
+    runtime.heartbeat_event = heartbeat_event
+
+    async def handler(_: ClaimedJob) -> None:
+        await heartbeat_event.wait()
+
+    consumer = JobDeliveryConsumer(
+        runtime=runtime,  # type: ignore[arg-type]
+        worker_id="worker-a",
+        handler=handler,
+        heartbeat_interval_seconds=0.001,
+    )
+
+    result = await consumer.handle(
+        JobMessage(job_id=claim.job_id, tenant_id=claim.tenant_id, event_id=uuid4())
+    )
+
+    assert result == "succeeded"
+    assert runtime.heartbeats
+    assert all(heartbeat == claim for heartbeat in runtime.heartbeats)
+    assert runtime.succeeded == [claim]
+
+
+async def test_consumer_cooperatively_cancels_running_handler() -> None:
+    claim = _claim()
+    runtime = FakeRuntime(claim, heartbeat_results=[True])
+    handler_cancelled = asyncio.Event()
+
+    async def handler(_: ClaimedJob) -> None:
+        try:
+            await asyncio.Event().wait()
+        except asyncio.CancelledError:
+            handler_cancelled.set()
+            raise
+
+    consumer = JobDeliveryConsumer(
+        runtime=runtime,  # type: ignore[arg-type]
+        worker_id="worker-a",
+        handler=handler,
+        heartbeat_interval_seconds=0.001,
+    )
+
+    result = await consumer.handle(
+        JobMessage(job_id=claim.job_id, tenant_id=claim.tenant_id, event_id=uuid4())
+    )
+
+    assert result == "cancelled"
+    assert handler_cancelled.is_set()
+    assert runtime.failed == [(claim, RetryDisposition.CANCELLED)]
+    assert runtime.failure_metadata[0]["error_code"] == "job_cancel_requested"
+
+
+async def test_consumer_honors_cancellation_won_by_completion_race() -> None:
+    claim = _claim()
+    runtime = FakeRuntime(claim, succeed_status="cancelled")
+
+    async def handler(_: ClaimedJob) -> None:
+        return None
+
+    consumer = JobDeliveryConsumer(
+        runtime=runtime,  # type: ignore[arg-type]
+        worker_id="worker-a",
+        handler=handler,
+    )
+
+    result = await consumer.handle(
+        JobMessage(job_id=claim.job_id, tenant_id=claim.tenant_id, event_id=uuid4())
+    )
+
+    assert result == "cancelled"
+
+
 async def test_consumer_classifies_handler_failure() -> None:
     claim = _claim()
     runtime = FakeRuntime(claim)
@@ -170,3 +271,16 @@ def test_document_job_task_is_registered_explicitly() -> None:
     register_job_task(app, consumer_factory=lambda: None)  # type: ignore[arg-type]
 
     assert JOB_TASK_NAME in app.tasks
+
+
+def test_async_task_runner_reuses_one_event_loop() -> None:
+    runner = AsyncTaskRunner(loop_factory=asyncio.SelectorEventLoop)
+
+    async def loop_identity() -> int:
+        return id(asyncio.get_running_loop())
+
+    try:
+        assert runner.run(loop_identity()) == runner.run(loop_identity())
+    finally:
+        runner.close()
+        runner.close()

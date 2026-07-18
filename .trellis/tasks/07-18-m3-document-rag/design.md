@@ -8,16 +8,20 @@
 download_spool -> parse -> chunk -> embed -> index -> ready
 ```
 
-Each stage writes a bounded `stage`/`stage_version` marker in the ingestion generation
-row and is safe to repeat. A failed generation remains inspectable; retry reuses already
-committed deterministic stages and only replaces the incomplete generation.
+Each stage writes a bounded `stage` marker in the ingestion generation row. The durable
+resume boundary is `embed`: chunks with NULL embeddings and `stage=embed` are committed
+in one transaction. A retry validates indexes, hashes, counts, and NULL vectors, then
+embeds those rows in place without downloading or parsing the object again. Earlier
+failures restart from `download_spool`; the marker alone is not treated as an artifact
+checkpoint.
 
 ## Storage model
 
 - `document_ingestion_generations`: tenant, document version, parser/chunker/embedding
   versions, status, current stage, counts, error code, timestamps, and an active marker.
 - `document_chunks`: tenant, document version, generation, chunk index, heading, page,
-  start/end offsets, normalized text, SHA-256, `tsvector`, and vector embedding.
+  start/end offsets, normalized text, SHA-256, `tsvector`, and a nullable vector until
+  the embedding checkpoint completes.
 
 The active generation is selected by `(tenant_id, document_version_id, active=true)`;
 an index-generation switch is a single PostgreSQL update after evaluation. Chunks from
@@ -42,11 +46,25 @@ version are stored with the generation and checked before insert.
 ## Hybrid retrieval and citation gate
 
 Keyword recall uses PostgreSQL `websearch_to_tsquery`/`ts_rank_cd`; vector recall uses
-cosine distance with tenant, document-version, and active-generation filters. The two
-ranked lists are deduplicated and combined with `score = sum(1/(rrf_k + rank))`.
-The service applies a deterministic topK/score threshold and validates every citation
-against the final authorized candidate map before returning it. No LLM call is required
-for M3; M4 may pass the validated evidence to a model.
+cosine distance with tenant, document-version, ready/succeeded generation, and active
+generation filters. Vector candidates must also pass an absolute distance ceiling. The
+two ranked lists are deduplicated and combined with
+`score = sum(1/(rrf_k + rank))`. This is deterministic fusion, not a learned reranker.
+The service applies topK, candidate-count, RRF-floor, and vector-distance gates, then
+validates every citation against the final authorized candidate map. PostgreSQL's
+`simple` configuration is only a deterministic baseline and is not evidence of Chinese
+tokenization quality. No LLM call is required for M3; M4 may pass validated evidence to
+a model.
+
+## Evaluation boundary
+
+The default evaluation command seeds an isolated PostgreSQL tenant with deterministic
+chunks and vectors, invokes `HybridRetrievalService`, and records ranked ids, scores,
+refusal reasons, dataset hash, migration revision, PostgreSQL version, and pgvector
+version. It is a retrieval regression for SQL, pgvector, fusion, and refusal behavior.
+It does not measure production embedding semantics, Chinese tokenization, generated
+answers, or citations. Citation precision remains a separate validator fixture until an
+answer/citation generator exists.
 
 ## Failure and security boundaries
 

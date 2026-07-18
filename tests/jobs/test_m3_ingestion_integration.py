@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import hashlib
+from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 from sqlalchemy import delete, func, select
@@ -19,6 +20,8 @@ from enterprise_doc_core.documents.models import (
     Document,
     DocumentChunk,
     DocumentIngestionGeneration,
+    DocumentIngestionStage,
+    DocumentIngestionStatus,
     DocumentVersion,
     DocumentVersionStatus,
 )
@@ -32,12 +35,238 @@ from enterprise_doc_core.uploads.models import UploadSession, UploadSessionStatu
 class FakeObjectStore:
     def __init__(self, content: bytes) -> None:
         self.content = content
+        self.head_calls = 0
+        self.range_calls: list[tuple[int, int]] = []
 
     async def head_object(self, *, bucket: str, key: str) -> ObjectHead:
+        self.head_calls += 1
         return ObjectHead(len(self.content), "etag", None, "text/plain", {})
 
     async def get_range(self, *, bucket: str, key: str, start: int, end_inclusive: int) -> bytes:
+        self.range_calls.append((start, end_inclusive))
         return self.content[start : end_inclusive + 1]
+
+
+class FailOnceEmbeddingProvider:
+    def __init__(self) -> None:
+        self.delegate = HashEmbeddingProvider()
+        self.calls: list[tuple[str, ...]] = []
+
+    async def embed(self, texts: Sequence[str]) -> tuple[tuple[float, ...], ...]:
+        snapshot = tuple(texts)
+        self.calls.append(snapshot)
+        if len(self.calls) == 1:
+            raise RuntimeError("injected embedding failure")
+        return await self.delegate.embed(snapshot)
+
+
+async def _seed_uploaded_document(
+    session_factory,
+    *,
+    content: bytes,
+) -> tuple[UUID, UUID, UUID, ClaimedJob]:
+    tenant_id = uuid4()
+    actor_id = uuid4()
+    document_id = uuid4()
+    version_id = uuid4()
+    upload_id = uuid4()
+    suffix = uuid4().hex
+    object_key = f"{tenant_id}/documents/{version_id}/contract.txt"
+    sha256 = hashlib.sha256(content).hexdigest()
+    now = datetime.now(UTC)
+    async with session_factory.begin() as session:
+        session.add(
+            Tenant(
+                id=tenant_id,
+                name=f"M3 resume tenant {suffix}",
+                slug=f"m3-resume-{suffix}",
+                quota_bytes=1024 * 1024,
+            )
+        )
+        session.add(User(id=actor_id, email=f"m3-resume-{suffix}@example.test"))
+        await session.flush()
+        session.add(
+            UploadSession(
+                id=upload_id,
+                tenant_id=tenant_id,
+                actor_id=actor_id,
+                pending_document_id=document_id,
+                pending_version_id=version_id,
+                status=UploadSessionStatus.COMPLETED.value,
+                idempotency_key=f"upload-resume:{suffix}",
+                request_fingerprint=sha256,
+                object_key=object_key,
+                original_filename="contract.txt",
+                extension=".txt",
+                declared_media_type="text/plain",
+                size_bytes=len(content),
+                declared_sha256=sha256,
+                part_size_bytes=len(content),
+                expected_part_count=1,
+                reserved_bytes=0,
+                expires_at=now + timedelta(hours=1),
+                completed_at=now,
+            )
+        )
+        session.add(
+            Document(
+                id=document_id,
+                tenant_id=tenant_id,
+                created_by=actor_id,
+                title="Resume Contract",
+            )
+        )
+        await session.flush()
+        session.add(
+            DocumentVersion(
+                id=version_id,
+                tenant_id=tenant_id,
+                document_id=document_id,
+                upload_session_id=upload_id,
+                version_number=1,
+                status=DocumentVersionStatus.UPLOADED.value,
+                object_key=object_key,
+                original_filename="contract.txt",
+                declared_media_type="text/plain",
+                detected_media_type="text/plain",
+                size_bytes=len(content),
+                declared_sha256=sha256,
+                created_by=actor_id,
+            )
+        )
+        await session.flush()
+        upload = await session.get(UploadSession, upload_id)
+        assert upload is not None
+        upload.document_version_id = version_id
+    claim = ClaimedJob(
+        job_id=uuid4(),
+        attempt_id=uuid4(),
+        attempt_number=1,
+        tenant_id=tenant_id,
+        actor_id=actor_id,
+        worker_id="worker-test",
+        lease_token=uuid4(),
+        fencing_token=1,
+        payload={"document_version_id": str(version_id)},
+    )
+    return tenant_id, actor_id, version_id, claim
+
+
+@pytest.mark.integration
+async def test_embedding_retry_resumes_without_downloading_the_object_again() -> None:
+    content = b"# Delivery\nAcceptance requires a signed delivery certificate.\n"
+    engine = create_database_engine(DatabaseSettings())
+    session_factory = create_session_factory(engine)
+    tenant_id, _, version_id, claim = await _seed_uploaded_document(
+        session_factory,
+        content=content,
+    )
+    object_store = FakeObjectStore(content)
+    provider = FailOnceEmbeddingProvider()
+    service = DocumentIngestionService(
+        session_factory=session_factory,
+        object_store=object_store,  # type: ignore[arg-type]
+        documents_bucket="documents",
+        embedding_provider=provider,
+    )
+    try:
+        with pytest.raises(DocumentIngestionError) as caught:
+            await service(claim)
+        assert caught.value.code == "ingestion_failed"
+        assert caught.value.retryable is True
+
+        async with session_factory() as session:
+            generation = await session.scalar(
+                select(DocumentIngestionGeneration).where(
+                    DocumentIngestionGeneration.document_version_id == version_id
+                )
+            )
+            persisted_chunks = (
+                await session.scalars(
+                    select(DocumentChunk)
+                    .where(DocumentChunk.document_version_id == version_id)
+                    .order_by(DocumentChunk.chunk_index)
+                )
+            ).all()
+        assert generation is not None
+        assert generation.status == DocumentIngestionStatus.FAILED.value
+        assert generation.stage == DocumentIngestionStage.EMBED.value
+        assert generation.chunk_count == len(persisted_chunks) == 1
+        assert generation.embedded_count == 0
+        assert all(chunk.embedding is None for chunk in persisted_chunks)
+        persisted_ids = [chunk.id for chunk in persisted_chunks]
+        download_counts = (object_store.head_calls, len(object_store.range_calls))
+
+        await service(claim)
+
+        async with session_factory() as session:
+            generation = await session.scalar(
+                select(DocumentIngestionGeneration).where(
+                    DocumentIngestionGeneration.document_version_id == version_id
+                )
+            )
+            resumed_chunks = (
+                await session.scalars(
+                    select(DocumentChunk)
+                    .where(DocumentChunk.document_version_id == version_id)
+                    .order_by(DocumentChunk.chunk_index)
+                )
+            ).all()
+        assert generation is not None
+        assert generation.status == DocumentIngestionStatus.SUCCEEDED.value
+        assert generation.stage == DocumentIngestionStage.READY.value
+        assert generation.active is True
+        assert generation.embedded_count == generation.chunk_count == 1
+        assert [chunk.id for chunk in resumed_chunks] == persisted_ids
+        assert all(chunk.embedding is not None for chunk in resumed_chunks)
+        assert (object_store.head_calls, len(object_store.range_calls)) == download_counts
+        assert provider.calls[0] == provider.calls[1]
+    finally:
+        async with session_factory.begin() as session:
+            await session.execute(delete(Tenant).where(Tenant.id == tenant_id))
+        await engine.dispose()
+
+
+@pytest.mark.integration
+async def test_invalid_embedding_checkpoint_is_rejected_without_redownload() -> None:
+    content = b"# Delivery\nAcceptance requires a signed delivery certificate.\n"
+    engine = create_database_engine(DatabaseSettings())
+    session_factory = create_session_factory(engine)
+    tenant_id, _, version_id, claim = await _seed_uploaded_document(
+        session_factory,
+        content=content,
+    )
+    object_store = FakeObjectStore(content)
+    provider = FailOnceEmbeddingProvider()
+    service = DocumentIngestionService(
+        session_factory=session_factory,
+        object_store=object_store,  # type: ignore[arg-type]
+        documents_bucket="documents",
+        embedding_provider=provider,
+    )
+    try:
+        with pytest.raises(DocumentIngestionError):
+            await service(claim)
+        async with session_factory.begin() as session:
+            generation = await session.scalar(
+                select(DocumentIngestionGeneration).where(
+                    DocumentIngestionGeneration.document_version_id == version_id
+                )
+            )
+            assert generation is not None
+            generation.chunk_count = 2
+        download_counts = (object_store.head_calls, len(object_store.range_calls))
+
+        with pytest.raises(DocumentIngestionError) as caught:
+            await service(claim)
+        assert caught.value.code == "ingestion_checkpoint_invalid"
+        assert caught.value.retryable is False
+        assert len(provider.calls) == 1
+        assert (object_store.head_calls, len(object_store.range_calls)) == download_counts
+    finally:
+        async with session_factory.begin() as session:
+            await session.execute(delete(Tenant).where(Tenant.id == tenant_id))
+        await engine.dispose()
 
 
 @pytest.mark.integration

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass
 from pathlib import Path
 from tempfile import SpooledTemporaryFile
@@ -132,40 +133,52 @@ class DocumentIngestionService:
 
     async def __call__(self, claim: ClaimedJob) -> None:
         document_version_id = self._document_version_id(claim)
-        generation_id, version, already_complete = await self._start_generation(
+        generation_id, version, resume_stage, already_complete = await self._start_generation(
             tenant_id=claim.tenant_id,
             document_version_id=document_version_id,
         )
         if already_complete:
             return
         try:
-            await self._checkpoint(generation_id, DocumentIngestionStage.DOWNLOAD_SPOOL)
-            spool = await spool_object(
-                object_store=self.object_store,
-                bucket=self.documents_bucket,
-                key=version.object_key,
-                limits=self.limits,
-            )
-            try:
-                data = spool.read()
-            finally:
-                spool.close()
+            if resume_stage is DocumentIngestionStage.EMBED:
+                chunks = await self._load_persisted_chunks(
+                    tenant_id=claim.tenant_id,
+                    document_version_id=document_version_id,
+                    generation_id=generation_id,
+                )
+            else:
+                await self._checkpoint(generation_id, DocumentIngestionStage.DOWNLOAD_SPOOL)
+                spool = await spool_object(
+                    object_store=self.object_store,
+                    bucket=self.documents_bucket,
+                    key=version.object_key,
+                    limits=self.limits,
+                )
+                try:
+                    data = spool.read()
+                finally:
+                    spool.close()
 
-            await self._checkpoint(generation_id, DocumentIngestionStage.PARSE)
-            sections = parse_document_bytes(
-                data,
-                extension=Path(version.original_filename).suffix,
-            )
-            await self._checkpoint(generation_id, DocumentIngestionStage.CHUNK)
-            chunks = chunk_sections(
-                sections,
-                max_chars=self.limits.max_chunk_chars,
-                overlap_chars=self.limits.overlap_chars,
-            )
-            await self._checkpoint(generation_id, DocumentIngestionStage.EMBED)
+                await self._checkpoint(generation_id, DocumentIngestionStage.PARSE)
+                sections = parse_document_bytes(
+                    data,
+                    extension=Path(version.original_filename).suffix,
+                )
+                await self._checkpoint(generation_id, DocumentIngestionStage.CHUNK)
+                chunks = chunk_sections(
+                    sections,
+                    max_chars=self.limits.max_chunk_chars,
+                    overlap_chars=self.limits.overlap_chars,
+                )
+                await self._persist_chunks(
+                    tenant_id=claim.tenant_id,
+                    document_version_id=document_version_id,
+                    generation_id=generation_id,
+                    chunks=chunks,
+                )
             embeddings = await self.embedding_provider.embed(tuple(chunk.text for chunk in chunks))
             self._validate_embeddings(chunks, embeddings)
-            await self._commit_index(
+            await self._commit_embeddings_and_activate(
                 tenant_id=claim.tenant_id,
                 document_version_id=document_version_id,
                 generation_id=generation_id,
@@ -228,7 +241,7 @@ class DocumentIngestionService:
 
     async def _start_generation(
         self, *, tenant_id: UUID, document_version_id: UUID
-    ) -> tuple[UUID, DocumentVersion, bool]:
+    ) -> tuple[UUID, DocumentVersion, DocumentIngestionStage, bool]:
         async with self.session_factory() as session, session.begin():
             version = await session.scalar(
                 select(DocumentVersion)
@@ -271,17 +284,27 @@ class DocumentIngestionService:
                 await session.flush()
             elif (
                 generation.status == DocumentIngestionStatus.SUCCEEDED.value
-                and generation.active
+                and generation.stage == DocumentIngestionStage.READY.value
                 and version.status == DocumentVersionStatus.READY.value
             ):
-                return generation.id, version, True
+                return generation.id, version, DocumentIngestionStage.READY, True
             else:
+                resume_stage = DocumentIngestionStage(generation.stage)
+                if resume_stage is not DocumentIngestionStage.EMBED:
+                    await session.execute(
+                        delete(DocumentChunk).where(DocumentChunk.generation_id == generation.id)
+                    )
+                    generation.stage = DocumentIngestionStage.DOWNLOAD_SPOOL.value
+                    generation.chunk_count = 0
+                    generation.embedded_count = 0
+                    resume_stage = DocumentIngestionStage.DOWNLOAD_SPOOL
                 generation.status = DocumentIngestionStatus.RUNNING.value
                 generation.error_code = None
                 generation.error_message = None
                 generation.finished_at = None
                 generation.started_at = func.now()
-            return generation.id, version, False
+                return generation.id, version, resume_stage, False
+            return generation.id, version, DocumentIngestionStage.DOWNLOAD_SPOOL, False
 
     async def _checkpoint(self, generation_id: UUID, stage: DocumentIngestionStage) -> None:
         async with self.session_factory() as session, session.begin():
@@ -315,7 +338,117 @@ class DocumentIngestionService:
                 retryable=False,
             )
 
-    async def _commit_index(
+    async def _persist_chunks(
+        self,
+        *,
+        tenant_id: UUID,
+        document_version_id: UUID,
+        generation_id: UUID,
+        chunks: tuple[ParsedChunk, ...],
+    ) -> None:
+        async with self.session_factory() as session, session.begin():
+            generation = await session.scalar(
+                select(DocumentIngestionGeneration)
+                .where(
+                    DocumentIngestionGeneration.id == generation_id,
+                    DocumentIngestionGeneration.tenant_id == tenant_id,
+                    DocumentIngestionGeneration.document_version_id == document_version_id,
+                )
+                .with_for_update()
+            )
+            if generation is None:
+                raise DocumentIngestionError(
+                    "ingestion_target_missing", "ingestion target was not found", retryable=False
+                )
+            await session.execute(
+                delete(DocumentChunk).where(DocumentChunk.generation_id == generation_id)
+            )
+            for chunk in chunks:
+                search_text = f"{chunk.heading or ''} {chunk.text}".strip()
+                session.add(
+                    DocumentChunk(
+                        tenant_id=tenant_id,
+                        document_version_id=document_version_id,
+                        generation_id=generation_id,
+                        chunk_index=chunk.chunk_index,
+                        heading=chunk.heading,
+                        page_number=chunk.page_number,
+                        start_offset=chunk.start_offset,
+                        end_offset=chunk.end_offset,
+                        normalized_text=chunk.text,
+                        content_sha256=chunk.content_sha256,
+                        search_vector=func.to_tsvector("simple", search_text),
+                        embedding=None,
+                    )
+                )
+            await session.flush()
+            generation.stage = DocumentIngestionStage.EMBED.value
+            generation.status = DocumentIngestionStatus.RUNNING.value
+            generation.chunk_count = len(chunks)
+            generation.embedded_count = 0
+
+    async def _load_persisted_chunks(
+        self,
+        *,
+        tenant_id: UUID,
+        document_version_id: UUID,
+        generation_id: UUID,
+    ) -> tuple[ParsedChunk, ...]:
+        async with self.session_factory() as session:
+            generation = await session.scalar(
+                select(DocumentIngestionGeneration).where(
+                    DocumentIngestionGeneration.id == generation_id,
+                    DocumentIngestionGeneration.tenant_id == tenant_id,
+                    DocumentIngestionGeneration.document_version_id == document_version_id,
+                )
+            )
+            rows = (
+                await session.scalars(
+                    select(DocumentChunk)
+                    .where(
+                        DocumentChunk.generation_id == generation_id,
+                        DocumentChunk.tenant_id == tenant_id,
+                        DocumentChunk.document_version_id == document_version_id,
+                    )
+                    .order_by(DocumentChunk.chunk_index)
+                )
+            ).all()
+        if generation is None or generation.stage != DocumentIngestionStage.EMBED.value:
+            raise DocumentIngestionError(
+                "ingestion_checkpoint_invalid",
+                "persisted ingestion checkpoint is invalid",
+                retryable=False,
+            )
+        expected_indexes = list(range(generation.chunk_count))
+        if (
+            [row.chunk_index for row in rows] != expected_indexes
+            or generation.embedded_count != 0
+            or any(row.embedding is not None for row in rows)
+            or any(
+                hashlib.sha256(row.normalized_text.encode("utf-8")).hexdigest()
+                != row.content_sha256
+                for row in rows
+            )
+        ):
+            raise DocumentIngestionError(
+                "ingestion_checkpoint_invalid",
+                "persisted ingestion checkpoint is invalid",
+                retryable=False,
+            )
+        return tuple(
+            ParsedChunk(
+                chunk_index=row.chunk_index,
+                text=row.normalized_text,
+                start_offset=row.start_offset,
+                end_offset=row.end_offset,
+                content_sha256=row.content_sha256,
+                page_number=row.page_number,
+                heading=row.heading,
+            )
+            for row in rows
+        )
+
+    async def _commit_embeddings_and_activate(
         self,
         *,
         tenant_id: UUID,
@@ -338,34 +471,43 @@ class DocumentIngestionService:
                 .where(
                     DocumentIngestionGeneration.id == generation_id,
                     DocumentIngestionGeneration.tenant_id == tenant_id,
+                    DocumentIngestionGeneration.document_version_id == document_version_id,
                 )
                 .with_for_update()
             )
+            rows = (
+                await session.scalars(
+                    select(DocumentChunk)
+                    .where(
+                        DocumentChunk.generation_id == generation_id,
+                        DocumentChunk.tenant_id == tenant_id,
+                        DocumentChunk.document_version_id == document_version_id,
+                    )
+                    .order_by(DocumentChunk.chunk_index)
+                    .with_for_update()
+                )
+            ).all()
             if version is None or generation is None:
                 raise DocumentIngestionError(
                     "ingestion_target_missing", "ingestion target was not found", retryable=False
                 )
-            await session.execute(
-                delete(DocumentChunk).where(DocumentChunk.generation_id == generation_id)
-            )
-            for chunk, embedding in zip(chunks, embeddings, strict=True):
-                search_text = f"{chunk.heading or ''} {chunk.text}".strip()
-                session.add(
-                    DocumentChunk(
-                        tenant_id=tenant_id,
-                        document_version_id=document_version_id,
-                        generation_id=generation_id,
-                        chunk_index=chunk.chunk_index,
-                        heading=chunk.heading,
-                        page_number=chunk.page_number,
-                        start_offset=chunk.start_offset,
-                        end_offset=chunk.end_offset,
-                        normalized_text=chunk.text,
-                        content_sha256=chunk.content_sha256,
-                        search_vector=func.to_tsvector("simple", search_text),
-                        embedding=list(embedding),
-                    )
+            if (
+                generation.stage != DocumentIngestionStage.EMBED.value
+                or generation.chunk_count != len(chunks)
+                or len(rows) != len(chunks)
+                or any(
+                    row.chunk_index != chunk.chunk_index
+                    for row, chunk in zip(rows, chunks, strict=True)
                 )
+            ):
+                raise DocumentIngestionError(
+                    "ingestion_checkpoint_invalid",
+                    "persisted ingestion checkpoint is invalid",
+                    retryable=False,
+                )
+            generation.stage = DocumentIngestionStage.INDEX.value
+            for row, embedding in zip(rows, embeddings, strict=True):
+                row.embedding = list(embedding)
             await session.flush()
             await session.execute(
                 update(DocumentIngestionGeneration)

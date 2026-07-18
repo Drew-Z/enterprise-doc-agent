@@ -27,9 +27,21 @@ class JobRuntimeServiceProtocol(Protocol):
 
     async def list_events(self, *, job_id: UUID, tenant_id: UUID) -> tuple[JobEventResult, ...]: ...
 
-    async def retry_dead(self, *, job_id: UUID, actor_id: UUID | None = None) -> str: ...
+    async def retry_dead(
+        self,
+        *,
+        job_id: UUID,
+        tenant_id: UUID,
+        actor_id: UUID | None = None,
+    ) -> str: ...
 
-    async def cancel(self, *, job_id: UUID, actor_id: UUID | None = None) -> str: ...
+    async def cancel(
+        self,
+        *,
+        job_id: UUID,
+        tenant_id: UUID,
+        actor_id: UUID | None = None,
+    ) -> str: ...
 
 
 class JobAttemptResponse(ApiModel):
@@ -158,9 +170,13 @@ async def retry_job(
     principal: Annotated[PrincipalContext, Depends(get_current_principal)],
 ) -> JobActionResponse:
     service = _service(request)
-    _, actor_id = _principal_ids(principal)
+    tenant_id, actor_id = _principal_ids(principal)
     try:
-        result = await service.retry_dead(job_id=job_id, actor_id=actor_id)
+        result = await service.retry_dead(
+            job_id=job_id,
+            tenant_id=tenant_id,
+            actor_id=actor_id,
+        )
     except JobNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Job not found."
@@ -179,9 +195,13 @@ async def cancel_job(
     principal: Annotated[PrincipalContext, Depends(get_current_principal)],
 ) -> JobActionResponse:
     service = _service(request)
-    _, actor_id = _principal_ids(principal)
+    tenant_id, actor_id = _principal_ids(principal)
     try:
-        result = await service.cancel(job_id=job_id, actor_id=actor_id)
+        result = await service.cancel(
+            job_id=job_id,
+            tenant_id=tenant_id,
+            actor_id=actor_id,
+        )
     except JobNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Job not found."

@@ -194,6 +194,33 @@ async def _append_job_event(
     return event
 
 
+async def _enqueue_job_wakeup(
+    session: AsyncSession,
+    *,
+    job: Job,
+    event_type: str,
+    available_at: datetime,
+) -> OutboxEvent:
+    event = OutboxEvent(
+        tenant_id=job.tenant_id,
+        aggregate_id=job.id,
+        event_type=event_type,
+        payload={
+            "job_id": str(job.id),
+            "tenant_id": str(job.tenant_id),
+            "document_version_id": (
+                str(job.document_version_id) if job.document_version_id is not None else None
+            ),
+        },
+        payload_version=1,
+        status=OutboxEventStatus.PENDING.value,
+        available_at=available_at,
+    )
+    session.add(event)
+    await session.flush()
+    return event
+
+
 async def create_job_records(
     session: AsyncSession,
     *,
@@ -490,7 +517,7 @@ class JobRuntimeService:
                 payload=dict(job.payload),
             )
 
-    async def heartbeat(self, claim: ClaimedJob) -> None:
+    async def heartbeat(self, claim: ClaimedJob) -> bool:
         now = self.clock()
         async with self.session_factory.begin() as session:
             job = await session.scalar(select(Job).where(Job.id == claim.job_id).with_for_update())
@@ -504,15 +531,17 @@ class JobRuntimeService:
             )
             if attempt is not None:
                 attempt.heartbeat_at = now
+            return job.cancel_requested_at is not None
 
-    async def succeed(self, claim: ClaimedJob) -> None:
+    async def succeed(self, claim: ClaimedJob) -> str:
         now = self.clock()
         async with self.session_factory.begin() as session:
             job = await session.scalar(select(Job).where(Job.id == claim.job_id).with_for_update())
             if not self._owns_lease(job, claim):
                 raise JobLeaseLost()
             assert job is not None
-            job.status = JobStatus.SUCCEEDED.value
+            cancelled = job.cancel_requested_at is not None
+            job.status = JobStatus.CANCELLED.value if cancelled else JobStatus.SUCCEEDED.value
             job.finished_at = now
             self._clear_lease(job)
             job.version += 1
@@ -520,9 +549,18 @@ class JobRuntimeService:
                 select(JobAttempt).where(JobAttempt.id == claim.attempt_id)
             )
             if attempt is not None:
-                attempt.status = JobAttemptStatus.SUCCEEDED.value
+                attempt.status = (
+                    JobAttemptStatus.CANCELLED.value
+                    if cancelled
+                    else JobAttemptStatus.SUCCEEDED.value
+                )
                 attempt.finished_at = now
-            await _append_job_event(session, job=job, event_type="job.succeeded")
+            await _append_job_event(
+                session,
+                job=job,
+                event_type="job.cancelled" if cancelled else "job.succeeded",
+            )
+            return job.status
 
     async def fail(
         self,
@@ -550,7 +588,7 @@ class JobRuntimeService:
             attempt.error_message = error_message[:1000]
             attempt.retryable = disposition is RetryDisposition.RETRYABLE
             retry_at: datetime | None = None
-            if disposition is RetryDisposition.CANCELLED:
+            if disposition is RetryDisposition.CANCELLED or job.cancel_requested_at is not None:
                 attempt.status = JobAttemptStatus.CANCELLED.value
                 job.status = JobStatus.CANCELLED.value
                 job.finished_at = now
@@ -562,6 +600,12 @@ class JobRuntimeService:
                 retry_at = now + timedelta(seconds=self.jitter(cap))
                 job.status = JobStatus.RETRY_WAIT.value
                 job.available_at = retry_at
+                await _enqueue_job_wakeup(
+                    session,
+                    job=job,
+                    event_type="job.retry.requested",
+                    available_at=retry_at,
+                )
             else:
                 attempt.status = JobAttemptStatus.PERMANENT_FAILED.value
                 job.status = JobStatus.DEAD.value
@@ -578,10 +622,18 @@ class JobRuntimeService:
             )
             return JobFailureResult(job.status, retry_at, attempt.id)
 
-    async def cancel(self, *, job_id: UUID, actor_id: UUID | None = None) -> str:
+    async def cancel(
+        self,
+        *,
+        job_id: UUID,
+        tenant_id: UUID,
+        actor_id: UUID | None = None,
+    ) -> str:
         now = self.clock()
         async with self.session_factory.begin() as session:
-            job = await session.scalar(select(Job).where(Job.id == job_id).with_for_update())
+            job = await session.scalar(
+                select(Job).where(Job.id == job_id, Job.tenant_id == tenant_id).with_for_update()
+            )
             if job is None:
                 raise JobNotFound()
             if job.status in {
@@ -605,10 +657,18 @@ class JobRuntimeService:
             await _append_job_event(session, job=job, event_type="job.cancelled", actor_id=actor_id)
             return job.status
 
-    async def retry_dead(self, *, job_id: UUID, actor_id: UUID | None = None) -> str:
+    async def retry_dead(
+        self,
+        *,
+        job_id: UUID,
+        tenant_id: UUID,
+        actor_id: UUID | None = None,
+    ) -> str:
         now = self.clock()
         async with self.session_factory.begin() as session:
-            job = await session.scalar(select(Job).where(Job.id == job_id).with_for_update())
+            job = await session.scalar(
+                select(Job).where(Job.id == job_id, Job.tenant_id == tenant_id).with_for_update()
+            )
             if job is None:
                 raise JobNotFound()
             if job.status != JobStatus.DEAD.value:
@@ -622,6 +682,12 @@ class JobRuntimeService:
             job.version += 1
             await _append_job_event(
                 session, job=job, event_type="job.manual_retry", actor_id=actor_id
+            )
+            await _enqueue_job_wakeup(
+                session,
+                job=job,
+                event_type="job.manual_retry.requested",
+                available_at=now,
             )
             return job.status
 

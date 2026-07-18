@@ -5,10 +5,12 @@ M0 provides the reproducible foundation. M1 adds the first tenant-scoped busines
 workflow: authenticated resumable TXT/PDF/DOCX multipart upload, direct browser-to-
 MinIO transfer, deterministic completion, cleanup, and an operational React workspace.
 
-M1 ends at an uploaded `DocumentVersion`. Durable ingestion jobs, RAG, Agent workflows,
-MCP, and production deployment remain later milestones and are not claimed here.
-In the original M0 baseline, M1-M7 were not implemented. This branch implements M1
-only; M2-M7 remain not implemented and are not represented as measured behavior.
+M1 ends at an uploaded `DocumentVersion`; M2 adds durable jobs and the M3 branch adds
+document ingestion plus deterministic hybrid retrieval. The current branch still uses
+a deterministic hash embedding fixture and does not claim a production LLM Agent,
+MCP, or deployment platform until those milestones are implemented and evidenced.
+The parent roadmap still spans M1-M7; later milestones remain scope, not measured facts.
+M4-M7 are not implemented on this branch.
 
 ## Prerequisites
 
@@ -108,8 +110,15 @@ Run each application in a separate terminal:
 ```powershell
 uv run enterprise-doc-api
 uv run enterprise-doc-worker
+uv run enterprise-doc-worker-consumer
 pnpm dev:web
 ```
+
+`enterprise-doc-worker` owns the probe and Outbox publisher. The separate
+`enterprise-doc-worker-consumer` process is the Celery consumer that executes queued
+jobs; run at least one consumer alongside the publisher. The current consumer uses
+Celery's serialized `solo` pool for the asynchronous handler; scaling out is done by
+starting additional consumer processes.
 
 The local endpoints are:
 

@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from types import SimpleNamespace
 from uuid import uuid4
 
-from enterprise_doc_api.jobs.router import get_job
+from enterprise_doc_api.jobs.router import cancel_job, get_job, retry_job
 from enterprise_doc_core.context import PrincipalContext
 from enterprise_doc_core.jobs import JobEventResult, JobStatusResult
 
@@ -14,6 +14,7 @@ class FakeJobService:
         self.job_id = uuid4()
         self.tenant_id = uuid4()
         self.actor_id = uuid4()
+        self.actions: list[tuple[str, object, object, object]] = []
 
     async def get_status(self, *, job_id, tenant_id):
         assert (job_id, tenant_id) == (self.job_id, self.tenant_id)
@@ -48,6 +49,14 @@ class FakeJobService:
             ),
         )
 
+    async def retry_dead(self, *, job_id, tenant_id, actor_id=None):
+        self.actions.append(("retry", job_id, tenant_id, actor_id))
+        return "pending"
+
+    async def cancel(self, *, job_id, tenant_id, actor_id=None):
+        self.actions.append(("cancel", job_id, tenant_id, actor_id))
+        return "cancelled"
+
 
 async def test_job_status_response_is_tenant_scoped_and_serializable() -> None:
     service = FakeJobService()
@@ -66,3 +75,25 @@ async def test_job_status_response_is_tenant_scoped_and_serializable() -> None:
     assert response.attempt_history == []
     assert response.events[0].event_type == "job.created"
     assert response.model_dump(mode="json")["tenant_id"] == str(service.tenant_id)
+
+
+async def test_job_write_actions_are_tenant_scoped() -> None:
+    service = FakeJobService()
+    request = SimpleNamespace(
+        app=SimpleNamespace(state=SimpleNamespace(job_runtime_service=service))
+    )
+    principal = PrincipalContext(
+        tenant_id=str(service.tenant_id),
+        actor_id=str(service.actor_id),
+        role="owner",
+    )
+
+    retry_response = await retry_job(service.job_id, request, principal)
+    cancel_response = await cancel_job(service.job_id, request, principal)
+
+    assert retry_response.status == "pending"
+    assert cancel_response.status == "cancelled"
+    assert service.actions == [
+        ("retry", service.job_id, service.tenant_id, service.actor_id),
+        ("cancel", service.job_id, service.tenant_id, service.actor_id),
+    ]

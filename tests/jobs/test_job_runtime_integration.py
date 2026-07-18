@@ -19,6 +19,7 @@ from enterprise_doc_core.jobs import (
     JobCreateResult,
     JobIdempotencyConflict,
     JobLeaseLost,
+    JobNotFound,
     JobRuntimeService,
     JobStatus,
     OutboxEvent,
@@ -147,6 +148,35 @@ async def test_duplicate_delivery_has_one_effective_claim() -> None:
 
 
 @pytest.mark.integration
+async def test_heartbeat_observes_cancel_and_completion_race_stays_cancelled() -> None:
+    engine, session_factory, clock, service, tenant_id, actor_id, created = await _runtime()
+    try:
+        claim = await service.claim(job_id=created.job_id, worker_id="worker-a")
+        assert claim is not None
+
+        clock.advance(4)
+        assert await service.heartbeat(claim) is False
+        assert (
+            await service.cancel(
+                job_id=created.job_id,
+                tenant_id=tenant_id,
+                actor_id=actor_id,
+            )
+            == JobStatus.RUNNING.value
+        )
+        assert await service.heartbeat(claim) is True
+        assert await service.succeed(claim) == JobStatus.CANCELLED.value
+
+        async with session_factory() as session:
+            job = await session.get(Job, created.job_id)
+            attempt = await session.get(JobAttempt, claim.attempt_id)
+        assert job is not None and job.status == JobStatus.CANCELLED.value
+        assert attempt is not None and attempt.status == JobAttemptStatus.CANCELLED.value
+    finally:
+        await engine.dispose()
+
+
+@pytest.mark.integration
 async def test_expired_lease_is_reclaimed_and_stale_fencing_is_rejected() -> None:
     engine, session_factory, clock, service, _, _, created = await _runtime()
     try:
@@ -182,7 +212,10 @@ async def test_expired_lease_is_reclaimed_and_stale_fencing_is_rejected() -> Non
 
 @pytest.mark.integration
 async def test_retry_backoff_dead_manual_retry_and_cancel_are_durable() -> None:
-    engine, session_factory, clock, service, _, actor_id, created = await _runtime(max_attempts=2)
+    engine, session_factory, clock, service, tenant_id, actor_id, created = await _runtime(
+        max_attempts=2
+    )
+    outbox = OutboxService(session_factory=session_factory, clock=clock)
     try:
         first = await service.claim(job_id=created.job_id, worker_id="worker-a")
         assert first is not None
@@ -196,7 +229,30 @@ async def test_retry_backoff_dead_manual_retry_and_cancel_are_durable() -> None:
         assert failed.retry_at == clock.value + timedelta(seconds=2)
         assert await service.claim(job_id=created.job_id, worker_id="too-early") is None
 
+        async with session_factory() as session:
+            retry_event = await session.scalar(
+                select(OutboxEvent).where(
+                    OutboxEvent.aggregate_id == created.job_id,
+                    OutboxEvent.event_type == "job.retry.requested",
+                )
+            )
+        assert retry_event is not None
+        assert retry_event.available_at == failed.retry_at
+        assert (
+            await outbox.claim(
+                publisher_id="retry-publisher",
+                event_id=retry_event.id,
+            )
+            == ()
+        )
+
         clock.advance(2)
+        retry_wakeup = await outbox.claim(
+            publisher_id="retry-publisher",
+            event_id=retry_event.id,
+        )
+        assert len(retry_wakeup) == 1
+        await outbox.mark_published(retry_wakeup[0])
         second = await service.claim(job_id=created.job_id, worker_id="worker-b")
         assert second is not None
         exhausted = await service.fail(
@@ -207,10 +263,53 @@ async def test_retry_backoff_dead_manual_retry_and_cancel_are_durable() -> None:
         )
         assert exhausted.status == JobStatus.DEAD.value
 
-        assert await service.retry_dead(job_id=created.job_id, actor_id=actor_id) == "pending"
+        other_tenant_id, _ = await _seed_identity(session_factory)
+        with pytest.raises(JobNotFound):
+            await service.retry_dead(
+                job_id=created.job_id,
+                tenant_id=other_tenant_id,
+                actor_id=actor_id,
+            )
+        with pytest.raises(JobNotFound):
+            await service.cancel(
+                job_id=created.job_id,
+                tenant_id=other_tenant_id,
+                actor_id=actor_id,
+            )
+
+        assert (
+            await service.retry_dead(
+                job_id=created.job_id,
+                tenant_id=tenant_id,
+                actor_id=actor_id,
+            )
+            == "pending"
+        )
+        async with session_factory() as session:
+            manual_retry_event = await session.scalar(
+                select(OutboxEvent).where(
+                    OutboxEvent.aggregate_id == created.job_id,
+                    OutboxEvent.event_type == "job.manual_retry.requested",
+                )
+            )
+        assert manual_retry_event is not None
+        manual_wakeup = await outbox.claim(
+            publisher_id="manual-retry-publisher",
+            event_id=manual_retry_event.id,
+        )
+        assert len(manual_wakeup) == 1
+        await outbox.mark_published(manual_wakeup[0])
+
         third = await service.claim(job_id=created.job_id, worker_id="worker-c")
         assert third is not None and third.attempt_number == 3
-        assert await service.cancel(job_id=created.job_id, actor_id=actor_id) == "running"
+        assert (
+            await service.cancel(
+                job_id=created.job_id,
+                tenant_id=tenant_id,
+                actor_id=actor_id,
+            )
+            == "running"
+        )
         cancelled = await service.fail(
             third,
             disposition=RetryDisposition.CANCELLED,

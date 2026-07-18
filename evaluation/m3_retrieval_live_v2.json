@@ -1,0 +1,70 @@
+{
+  "version": "m3-retrieval-live-v2",
+  "k": 3,
+  "top_k": 3,
+  "rrf_k": 60,
+  "min_candidates": 1,
+  "max_vector_distance": 0.2,
+  "limitations": "Live PostgreSQL/pgvector retrieval regression with controlled 8-dimensional vectors. It does not measure production embedding quality, Chinese tokenization, answer quality, or citation generation.",
+  "corpus": [
+    {
+      "key": "payment",
+      "text": "invoice payment is due within thirty days",
+      "embedding": [1, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "key": "delivery",
+      "text": "signed handover receipt is required",
+      "embedding": [0, 1, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "key": "confidentiality",
+      "text": "confidential material must remain secret",
+      "embedding": [0, 0, 1, 0, 0, 0, 0, 0]
+    }
+  ],
+  "distractors": [
+    {
+      "key": "wrong-version-payment",
+      "text": "invoice payment belongs to a different document version",
+      "embedding": [1, 0, 0, 0, 0, 0, 0, 0]
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "keyword-only-payment",
+      "query": "invoice",
+      "query_embedding": [0, 0, 0, 1, 0, 0, 0, 0],
+      "relevant_chunk_keys": ["payment"],
+      "expected_refusal": false
+    },
+    {
+      "case_id": "vector-only-delivery",
+      "query": "proof of delivery",
+      "query_embedding": [0, 1, 0, 0, 0, 0, 0, 0],
+      "relevant_chunk_keys": ["delivery"],
+      "expected_refusal": false
+    },
+    {
+      "case_id": "hybrid-confidentiality",
+      "query": "confidential secret",
+      "query_embedding": [0, 0, 1, 0, 0, 0, 0, 0],
+      "relevant_chunk_keys": ["confidentiality"],
+      "expected_refusal": false
+    },
+    {
+      "case_id": "refuse-empty-query",
+      "query": " ",
+      "query_embedding": [0, 0, 0, 1, 0, 0, 0, 0],
+      "relevant_chunk_keys": [],
+      "expected_refusal": true
+    },
+    {
+      "case_id": "refuse-unsupported-query",
+      "query": "quantum arbitration",
+      "query_embedding": [0, 0, 0, 1, 0, 0, 0, 0],
+      "relevant_chunk_keys": [],
+      "expected_refusal": true
+    }
+  ]
+}
