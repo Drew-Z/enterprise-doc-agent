@@ -52,3 +52,36 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+
+  m1-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.11.3"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - run: uv sync --frozen
+      - run: docker compose -f infra/compose/docker-compose.yml up -d --wait
+      - run: docker compose -f infra/compose/docker-compose.yml --profile init run --rm minio-init
+      - run: uv run alembic upgrade head
+      - run: uv run pytest tests/multipart -m integration
+      - run: docker compose -f infra/compose/docker-compose.yml down
+      - run: >-
+          uv run python scripts/multipart_smoke.py --run
+          --size-bytes 17825792 --interrupt-after-parts 1 --measure-api-rss
+          --report-path tmp/m1-ci-smoke-report.json
+      - if: always()
+        run: docker compose -f infra/compose/docker-compose.yml down
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m1-integration-report
+          path: tmp/m1-ci-smoke-report.json
+          if-no-files-found: error
+          retention-days: 7

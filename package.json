@@ -18,6 +18,7 @@
     "build": "pnpm --filter web build",
     "quality": "pnpm backend:format && pnpm backend:lint && pnpm backend:typecheck && pnpm backend:test && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "smoke:foundation": "uv run python scripts/foundation_smoke.py --run",
+    "smoke:multipart": "uv run python scripts/multipart_smoke.py --run --size-bytes 1073741824 --interrupt-after-parts 2 --measure-api-rss",
     "dev:web": "pnpm --filter web dev"
   }
 }

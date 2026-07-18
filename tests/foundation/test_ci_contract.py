@@ -45,6 +45,11 @@ def test_root_quality_commands_cover_backend_frontend_and_smoke() -> None:
     assert scripts["backend:typecheck"] == BACKEND_COMMANDS[2]
     assert scripts["backend:test"] == BACKEND_COMMANDS[3]
     assert scripts["smoke:foundation"] == "uv run python scripts/foundation_smoke.py --run"
+    assert (
+        scripts["smoke:multipart"]
+        == "uv run python scripts/multipart_smoke.py --run --size-bytes 1073741824 "
+        "--interrupt-after-parts 2 --measure-api-rss"
+    )
     assert set(scripts) >= {"lint", "typecheck", "test", "build", "quality"}
 
 
@@ -52,7 +57,7 @@ def test_quality_workflow_has_locked_independent_jobs() -> None:
     workflow = _workflow()
     jobs = workflow.get("jobs")
     assert isinstance(jobs, dict)
-    assert set(jobs) >= {"backend", "frontend"}
+    assert set(jobs) >= {"backend", "frontend", "m1-integration"}
 
     backend_commands = _run_commands(jobs["backend"])
     frontend_commands = _run_commands(jobs["frontend"])
@@ -63,6 +68,17 @@ def test_quality_workflow_has_locked_independent_jobs() -> None:
         assert command in backend_commands
     for command in FRONTEND_COMMANDS:
         assert command in frontend_commands
+
+    integration_commands = _run_commands(jobs["m1-integration"])
+    assert "uv sync --frozen" in integration_commands
+    assert "uv run pytest tests/multipart -m integration" in integration_commands
+    assert any(
+        command.startswith("uv run python scripts/multipart_smoke.py --run")
+        and "--size-bytes 17825792" in command
+        and "--interrupt-after-parts 1" in command
+        and "--measure-api-rss" in command
+        for command in integration_commands
+    )
 
 
 def test_quality_workflow_has_no_allow_failure_or_retry_path() -> None:
