@@ -9,7 +9,7 @@ from enterprise_doc_core.uploads.models import UploadPart, UploadSession
 
 
 def test_m1_metadata_contains_tenant_scoped_business_tables() -> None:
-    assert set(Base.metadata.tables) == {
+    assert {
         "document_versions",
         "documents",
         "memberships",
@@ -17,7 +17,7 @@ def test_m1_metadata_contains_tenant_scoped_business_tables() -> None:
         "upload_parts",
         "upload_sessions",
         "users",
-    }
+    } <= set(Base.metadata.tables)
 
     for table_name in (
         "documents",

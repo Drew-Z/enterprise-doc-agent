@@ -48,19 +48,22 @@ def _business_tables() -> set[str]:
 
 @pytest.mark.integration
 def test_m1_migration_downgrades_to_m0_and_reapplies() -> None:
-    _run_alembic("upgrade", "head")
+    _run_alembic("downgrade", "20260717_0005")
+    _run_alembic("upgrade", "20260717_0005")
     assert _business_tables() == EXPECTED_TABLES
+    _run_alembic("upgrade", "head")
 
     _run_alembic("downgrade", "20260717_0001")
     assert _business_tables() == set()
 
-    _run_alembic("upgrade", "head")
+    _run_alembic("upgrade", "20260717_0005")
     assert _business_tables() == EXPECTED_TABLES
 
 
 @pytest.mark.integration
 def test_m1_database_has_required_unique_and_check_constraints() -> None:
-    _run_alembic("upgrade", "head")
+    _run_alembic("downgrade", "20260717_0005")
+    _run_alembic("upgrade", "20260717_0005")
     with psycopg.connect(DATABASE_URL) as connection, connection.cursor() as cursor:
         cursor.execute(
             """
@@ -135,3 +138,4 @@ def test_m1_database_has_required_unique_and_check_constraints() -> None:
     assert "ix_upload_sessions_status_cleanup_claimed_at" in upload_session_indexes
     assert {"observation_version", "observed_at"} <= upload_part_columns
     assert "upload_part_observation_version_seq" in sequences
+    _run_alembic("upgrade", "head")

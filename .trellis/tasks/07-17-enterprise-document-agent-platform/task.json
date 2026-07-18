@@ -20,7 +20,8 @@
   "subtasks": [],
   "children": [
     "07-17-m0-project-foundation",
-    "07-17-m1-multipart-upload"
+    "07-17-m1-multipart-upload",
+    "07-18-m2-durable-job-runtime"
   ],
   "parent": null,
   "relatedFiles": [],

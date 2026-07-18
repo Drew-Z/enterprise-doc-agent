@@ -25,6 +25,7 @@ from enterprise_doc_core.documents import (
     DocumentVersionStatus,
 )
 from enterprise_doc_core.identity import Membership, MembershipRole, Tenant, User
+from enterprise_doc_core.jobs import Job, JobEvent, OutboxEvent
 from enterprise_doc_core.object_store import (
     Boto3MultipartObjectStore,
     CompletedMultipartUpload,
@@ -461,6 +462,26 @@ async def test_real_minio_concurrent_complete_creates_one_uploaded_version() -> 
                 select(DocumentVersion).where(DocumentVersion.upload_session_id == session_id)
             )
             assert upload_session is not None and tenant is not None and version is not None
+            jobs = (
+                await database.scalars(select(Job).where(Job.document_version_id == version.id))
+            ).all()
+            outbox_events = (
+                await database.scalars(
+                    select(OutboxEvent).where(OutboxEvent.aggregate_id == jobs[0].id)
+                )
+            ).all()
+            job_events = (
+                await database.scalars(
+                    select(JobEvent).where(JobEvent.job_id == jobs[0].id).order_by(JobEvent.seq)
+                )
+            ).all()
+            assert len(jobs) == 1
+            assert len(outbox_events) == 1
+            assert len(job_events) == 1
+            assert jobs[0].status == "pending"
+            assert outbox_events[0].status == "pending"
+            assert outbox_events[0].payload["job_id"] == str(jobs[0].id)
+            assert job_events[0].event_type == "job.created"
             document_count = await database.scalar(
                 select(func.count())
                 .select_from(Document)

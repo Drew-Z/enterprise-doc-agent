@@ -12,8 +12,10 @@ async def test_worker_runtime_waits_until_shutdown() -> None:
 
     assert task.done() is False
     assert runtime.is_running is True
+    assert runtime.accepting_claims is True
 
     runtime.request_shutdown()
+    assert runtime.accepting_claims is False
     await asyncio.wait_for(task, timeout=0.5)
 
     assert runtime.is_running is False

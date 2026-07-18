@@ -19,6 +19,7 @@ from enterprise_doc_api.auth import (
 )
 from enterprise_doc_api.config import ApiSettings
 from enterprise_doc_api.errors import register_error_handlers
+from enterprise_doc_api.jobs import router as jobs_router
 from enterprise_doc_api.middleware import ApiAuthenticationMiddleware, RequestContextMiddleware
 from enterprise_doc_api.uploads import router as upload_router
 from enterprise_doc_api.uploads.router import (
@@ -35,6 +36,7 @@ from enterprise_doc_core.health import (
     build_foundation_resources,
     evaluate_readiness,
 )
+from enterprise_doc_core.jobs import JobRuntimeService
 from enterprise_doc_core.object_store import (
     Boto3MultipartObjectStore,
     MultipartObjectStore,
@@ -186,7 +188,11 @@ def create_app(
             settings=resolved_settings.upload,
         )
     )
+    app.state.job_runtime_service = (
+        JobRuntimeService(session_factory=session_factory) if session_factory is not None else None
+    )
     app.include_router(upload_router)
+    app.include_router(jobs_router)
     if telemetry is not None and telemetry.enabled and telemetry.provider is not None:
         FastAPIInstrumentor.instrument_app(
             app,

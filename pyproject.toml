@@ -65,5 +65,5 @@ show_error_codes = true
 plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]
-module = ["boto3.*", "botocore.*"]
+module = ["boto3.*", "botocore.*", "celery.*"]
 ignore_missing_imports = true

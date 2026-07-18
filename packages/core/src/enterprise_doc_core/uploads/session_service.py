@@ -21,6 +21,7 @@ from enterprise_doc_core.documents import (
     validate_document_envelope,
 )
 from enterprise_doc_core.identity import Tenant
+from enterprise_doc_core.jobs import create_job_records
 from enterprise_doc_core.object_store import (
     CompletedMultipartUpload,
     MultipartObjectStore,
@@ -1029,6 +1030,18 @@ class UploadSessionService:
                     )
                     database.add(version)
                     await database.flush()
+                    await create_job_records(
+                        database,
+                        tenant_id=upload_session.tenant_id,
+                        actor_id=upload_session.actor_id,
+                        job_type="document.ingest",
+                        idempotency_key=f"document-version:{version.id}",
+                        payload={"document_version_id": str(version.id)},
+                        document_version_id=version.id,
+                        request_id=None,
+                        correlation_id=None,
+                        outbox_event_type="document.ingest.requested",
+                    )
                     reserved_bytes = upload_session.reserved_bytes
                     tenant.reserved_storage_bytes -= reserved_bytes
                     tenant.used_storage_bytes += head.size_bytes

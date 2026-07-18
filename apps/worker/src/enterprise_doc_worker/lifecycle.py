@@ -14,9 +14,15 @@ class WorkerRuntime:
         self._shutdown = asyncio.Event()
         self._tracer = tracer or trace.get_tracer("enterprise-doc-worker")
         self.is_running = False
+        self.accepting_claims = True
 
     def request_shutdown(self) -> None:
+        self.accepting_claims = False
         self._shutdown.set()
+
+    @property
+    def shutdown_event(self) -> asyncio.Event:
+        return self._shutdown
 
     async def run(self) -> None:
         with self._tracer.start_as_current_span("worker.lifecycle"):
