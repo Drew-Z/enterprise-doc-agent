@@ -1,0 +1,11 @@
+{"file": ".trellis/spec/core/backend/index.md", "reason": "Core owns reusable Agent, model, policy, database, and object-store contracts."}
+{"file": ".trellis/spec/api/backend/index.md", "reason": "API owns authenticated run, SSE, approval, and artifact HTTP adapters."}
+{"file": ".trellis/spec/worker/backend/index.md", "reason": "Worker owns the durable graph handler, process lifecycle, heartbeat, and cancellation adapter."}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "M4 adds additive business migrations and a separate official checkpointer setup contract."}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Model, MCP, SSE, approval, and artifact failures require stable boundary errors."}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Prompt, evidence, model output, tool input, approval context, and signed URLs must remain out of logs."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "The Web run workspace needs reducer and server-state boundaries for replay, approval, and cancellation."}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "HTTP, SSE, persisted cursor, approval, and artifact payloads require strict runtime validation."}
+{"file": ".trellis/tasks/07-18-m4-agent-mcp-hitl/research/repository-audit.md", "reason": "Verified M2/M3 reuse points, missing surfaces, and compatibility risks."}
+{"file": ".trellis/tasks/07-18-m4-agent-mcp-hitl/research/external-contracts.md", "reason": "Verified LangGraph/PostgreSQL/MCP versions and interrupt, checkpoint, and stdio semantics."}
+{"file": ".trellis/tasks/07-18-m4-agent-mcp-hitl/research/test-matrix.md", "reason": "Required unit, integration, security, protocol, Web, and evidence coverage."}

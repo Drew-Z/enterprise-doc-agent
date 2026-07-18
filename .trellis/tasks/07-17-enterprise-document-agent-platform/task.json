@@ -3,9 +3,9 @@
   "name": "enterprise-document-agent-platform",
   "title": "Enterprise Document Agent Platform",
   "description": "",
-  "status": "planning",
-  "dev_type": null,
-  "scope": null,
+  "status": "in_progress",
+  "dev_type": "fullstack",
+  "scope": "M0-M7 milestone integration, evidence review, end-to-end acceptance, release and rollback ownership",
   "package": null,
   "priority": "P2",
   "creator": "developer",
@@ -22,10 +22,14 @@
     "07-17-m0-project-foundation",
     "07-17-m1-multipart-upload",
     "07-18-m2-durable-job-runtime",
-    "07-18-m3-document-rag"
+    "07-18-m3-document-rag",
+    "07-18-m4-agent-mcp-hitl"
   ],
   "parent": null,
   "relatedFiles": [],
-  "notes": "",
-  "meta": {}
+  "notes": "M0-M3 are archived with reviewed local evidence. M4 is the active implementation milestone; M5-M7 remain planned scope.",
+  "meta": {
+    "current_milestone": "M4",
+    "completed_milestones": ["M0", "M1", "M2", "M3"]
+  }
 }

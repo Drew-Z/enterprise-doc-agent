@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Review must preserve strict lint, type, unit, integration, and no-hidden-failure gates."}
+{"file": ".trellis/spec/foundation-tests/backend/index.md", "reason": "Cross-package contracts and real infrastructure integration remain centrally reviewable."}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Review public events, errors, stderr/stdout, and evidence for sensitive data leaks."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Review Web unit, build, browser, and responsive layout gates."}
+{"file": ".trellis/tasks/07-18-m4-agent-mcp-hitl/research/external-contracts.md", "reason": "Detect library-version drift or misuse of interrupt/checkpointer/MCP transport semantics."}
+{"file": ".trellis/tasks/07-18-m4-agent-mcp-hitl/research/test-matrix.md", "reason": "Acceptance requires zero-tolerance security side-effect assertions and replay/recovery evidence."}

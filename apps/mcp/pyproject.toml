@@ -1,0 +1,22 @@
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "enterprise-doc-mcp"
+version = "0.1.0"
+description = "Tenant-aware MCP stdio server for the enterprise document Agent platform"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "enterprise-doc-core",
+  "mcp>=1.28.1,<2",
+]
+
+[project.scripts]
+enterprise-doc-mcp = "enterprise_doc_mcp.__main__:main"
+
+[tool.uv.sources]
+enterprise-doc-core = { workspace = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/enterprise_doc_mcp"]

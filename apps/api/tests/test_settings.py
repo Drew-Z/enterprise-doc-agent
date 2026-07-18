@@ -33,5 +33,10 @@ def test_api_auth_settings_are_secret_aware_and_reject_local_key_outside_local(
     )
     monkeypatch.setenv("OBJECT_STORE__ACCESS_KEY", "staging-access")
     monkeypatch.setenv("OBJECT_STORE__SECRET_KEY", "staging-secret")
+    monkeypatch.setenv("MODEL__PROVIDER", "openai_compatible")
+    monkeypatch.setenv("MODEL__BASE_URL", "https://models.example.test/v1")
+    monkeypatch.setenv("MODEL__API_KEY", "staging-model-api-key")
+    monkeypatch.setenv("MODEL__MODEL_NAME", "staging-model")
+    monkeypatch.setenv("MCP__SIGNING_SECRET", "staging-mcp-signing-secret-at-least-32-bytes")
     with pytest.raises(ValidationError, match="development JWT signing key"):
         ApiSettings(_env_file=None)

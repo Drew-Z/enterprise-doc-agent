@@ -15,6 +15,7 @@ def read_toml(path: Path) -> dict[str, object]:
 def test_required_repository_paths_exist() -> None:
     required = [
         "apps/api/pyproject.toml",
+        "apps/mcp/pyproject.toml",
         "apps/worker/pyproject.toml",
         "apps/web/package.json",
         "packages/core/pyproject.toml",
@@ -41,21 +42,25 @@ def test_python_workspace_and_package_names_are_stable() -> None:
     assert set(project["dependencies"]) == {  # type: ignore[index]
         "enterprise-doc-api",
         "enterprise-doc-core",
+        "enterprise-doc-mcp",
         "enterprise-doc-worker",
     }
     assert workspace["members"] == [  # type: ignore[index]
         "apps/api",
+        "apps/mcp",
         "apps/worker",
         "packages/core",
     ]
     assert set(uv_config["sources"]) == {  # type: ignore[index]
         "enterprise-doc-api",
         "enterprise-doc-core",
+        "enterprise-doc-mcp",
         "enterprise-doc-worker",
     }
 
     packages = {
         "apps/api/pyproject.toml": "enterprise-doc-api",
+        "apps/mcp/pyproject.toml": "enterprise-doc-mcp",
         "apps/worker/pyproject.toml": "enterprise-doc-worker",
         "packages/core/pyproject.toml": "enterprise-doc-core",
     }

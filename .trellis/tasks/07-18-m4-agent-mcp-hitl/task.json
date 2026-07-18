@@ -1,0 +1,41 @@
+{
+  "id": "m4-agent-mcp-hitl",
+  "name": "m4-agent-mcp-hitl",
+  "title": "M4 Agent MCP HITL",
+  "description": "Implement a grounded LangGraph workflow with PostgreSQL checkpointing, ordered SSE replay, server-authorized MCP tools, exact-target human approval, and auditable artifacts.",
+  "status": "in_progress",
+  "dev_type": "fullstack",
+  "scope": "packages/core agent/model/tool domains; apps/api run/SSE/approval/artifact APIs; apps/worker graph handler; apps/mcp stdio server; apps/web run workspace; migrations/tests/evidence/docs",
+  "package": "core",
+  "priority": "P0",
+  "creator": "developer",
+  "assignee": "developer",
+  "createdAt": "2026-07-18",
+  "completedAt": null,
+  "branch": "feat/m4-agent-mcp-hitl",
+  "base_branch": "feat/m3-document-rag",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "07-17-enterprise-document-agent-platform",
+  "relatedFiles": [
+    ".trellis/tasks/07-17-enterprise-document-agent-platform/prd.md",
+    ".trellis/tasks/07-17-enterprise-document-agent-platform/design.md",
+    ".trellis/tasks/07-17-enterprise-document-agent-platform/implement.md",
+    "D:/workspace4Cursor/offer/output/企业文档Agent任务平台_实施规划.md",
+    "D:/workspace4Cursor/offer/output/企业文档Agent平台_深度面试问答.md"
+  ],
+  "notes": "M4 depends on archived M2/M3 contracts. It must deliver a local grounded Agent workflow without claiming production model quality, public deployment, or capacity.",
+  "meta": {
+    "milestone": "M4",
+    "workflow": "tdd",
+    "current_slice": 1,
+    "completed_slices": [0],
+    "approval_required_before_start": true,
+    "langgraph_constraint": ">=1.2.9,<2",
+    "langgraph_checkpoint_postgres_constraint": ">=3.1,<4",
+    "mcp_constraint": ">=1.28.1,<2"
+  }
+}

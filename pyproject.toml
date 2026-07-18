@@ -6,6 +6,7 @@ requires-python = ">=3.12,<3.13"
 dependencies = [
   "enterprise-doc-api",
   "enterprise-doc-core",
+  "enterprise-doc-mcp",
   "enterprise-doc-worker",
 ]
 
@@ -26,10 +27,11 @@ package = false
 [tool.uv.sources]
 enterprise-doc-api = { workspace = true }
 enterprise-doc-core = { workspace = true }
+enterprise-doc-mcp = { workspace = true }
 enterprise-doc-worker = { workspace = true }
 
 [tool.uv.workspace]
-members = ["apps/api", "apps/worker", "packages/core"]
+members = ["apps/api", "apps/mcp", "apps/worker", "packages/core"]
 
 [tool.pytest.ini_options]
 addopts = "-ra --strict-markers --import-mode=importlib"
@@ -45,6 +47,7 @@ line-length = 100
 exclude = [".codex", ".trellis", ".venv", "apps/web"]
 src = [
   "apps/api/src",
+  "apps/mcp/src",
   "apps/worker/src",
   "packages/core/src",
 ]
