@@ -1,0 +1,200 @@
+{
+  "evidence_id": "m6-local-delivery-verification-20260719-235533",
+  "milestone": "M6-local-verification",
+  "requirement_ids": [
+    "DR-1",
+    "DR-2",
+    "DR-3",
+    "DR-6",
+    "DR-7"
+  ],
+  "status": "passed",
+  "scope": "reviewed local quality, image-build, manifest-render, and guarded dry-run contracts",
+  "owner": "Codex",
+  "commit_sha": "1f70cc274becde6533ef80a78d95443386fc9de8",
+  "reviewed_commit": "1f70cc274becde6533ef80a78d95443386fc9de8",
+  "evidence_commit": null,
+  "working_tree_dirty": false,
+  "started_at": "2026-07-19T23:45:00+08:00",
+  "completed_at": "2026-07-19T23:55:33+08:00",
+  "environment": {
+    "operating_system": "Windows",
+    "python": "3.12.13 via uv",
+    "docker_engine": "29.3.1",
+    "docker_desktop": "4.68.0",
+    "kubectl": "v1.34.1",
+    "kustomize": "v5.7.1 embedded in kubectl",
+    "evidence_mode": "reviewed local execution"
+  },
+  "image_digest": "not_applicable_local_image_ids_only",
+  "local_images": [
+    {
+      "name": "enterprise-doc-verify-api:1f70cc2",
+      "image_id": "sha256:caa1841c8dbba66cb33960d82ae1d7f95870d5d5fff64e7a883db6519c718343",
+      "configured_user": "10001:10001",
+      "runtime_identity": "uid=10001(app) gid=10001(app) groups=10001(app)"
+    },
+    {
+      "name": "enterprise-doc-verify-worker:1f70cc2",
+      "image_id": "sha256:ba7d3ebd6ae7a741839c6a7b4de0648d202af73c04003761a8d463b71816416c",
+      "configured_user": "10001:10001",
+      "runtime_identity": "uid=10001(app) gid=10001(app) groups=10001(app)"
+    },
+    {
+      "name": "enterprise-doc-verify-consumer:1f70cc2",
+      "image_id": "sha256:ed77fbd34d1e25d1dea77b15c33c9642a52322552c7df824968baa9b9c5feac3",
+      "configured_user": "10001:10001",
+      "runtime_identity": "uid=10001(app) gid=10001(app) groups=10001(app)"
+    },
+    {
+      "name": "enterprise-doc-verify-web:1f70cc2",
+      "image_id": "sha256:678f79730a9c91c5cae660669d4641c781a2e373a091fa120335ff34bcb9d326",
+      "configured_user": "nginx",
+      "runtime_identity": "uid=101(nginx) gid=101(nginx) groups=101(nginx),101(nginx)"
+    }
+  ],
+  "command_or_procedure": [
+    {
+      "gate_id": "local-quality",
+      "command": "pnpm quality",
+      "exit_code": 0,
+      "result": "Ruff format and lint passed; mypy passed 113 source files; backend non-integration passed 498 tests with 100 deselected; Web lint/typecheck passed; Vitest passed 138 tests in 18 files; Vite production build completed."
+    },
+    {
+      "gate_id": "full-backend",
+      "command": "uv run pytest -q",
+      "exit_code": 0,
+      "result": "598 passed in 103.11s"
+    },
+    {
+      "gate_id": "local-images",
+      "command": "Build all four Dockerfiles with docker build --quiet and run id through an overridden entrypoint",
+      "exit_code": 0,
+      "result": "Four local image IDs were created for commit tag 1f70cc2; API, Worker and consumer run as uid/gid 10001 and Web runs as uid/gid 101."
+    },
+    {
+      "gate_id": "kustomize-render",
+      "command": "kubectl kustomize infra/k8s/base; kubectl kustomize infra/k8s/overlays/staging; kubectl kustomize infra/k8s/overlays/prod",
+      "exit_code": 0,
+      "result": "Base, staging, and prod rendered successfully; each render contained 543 output lines."
+    },
+    {
+      "gate_id": "deployment-guard-tests",
+      "command": "uv run pytest tests/evaluation/test_fault_drill.py tests/deployment/test_release_scripts.py tests/deployment/test_m6_contracts.py -q",
+      "exit_code": 0,
+      "result": "16 passed in 0.08s"
+    },
+    {
+      "gate_id": "rollback-dry-run",
+      "command": "Run scripts/rollback_release.py without --confirm using explicit revisions 1, 2, 3, and 4",
+      "exit_code": 0,
+      "result": "Dry run emitted four explicit rollout undo --to-revision commands and four rollout status commands; no cluster mutation occurred."
+    },
+    {
+      "gate_id": "restore-guard-dry-run",
+      "command": "Run scripts/restore_database.py without --confirm against uv.lock as a non-backup validation fixture with matching SHA-256 and expected host",
+      "exit_code": 0,
+      "result": "Dry-run input, hash, environment, and target-host guards passed; pg_restore was not invoked and no restore was attempted."
+    },
+    {
+      "gate_id": "fault-plan",
+      "command": "Render redis, minio, and worker-lease fault plans without --confirm",
+      "exit_code": 0,
+      "result": "All three plans rendered; no service or process was stopped."
+    },
+    {
+      "gate_id": "workflow-yaml",
+      "command": "Parse .github/workflows/*.yml with yaml.safe_load",
+      "exit_code": 0,
+      "result": "quality.yml, container.yml, deploy-staging.yml, and rollback.yml parsed successfully."
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "package.json",
+      "kind": "quality-contract",
+      "sha256": "fc024cc12fa6e8dacfa521f7371e93b363fffd91a75fa618fa6c427624a6fb5e"
+    },
+    {
+      "path": "infra/docker/Dockerfile.api",
+      "kind": "image-contract",
+      "sha256": "6c46e7a5108e0835c17e58da4736692dd25671b786aaeb2eda50e63e65739270"
+    },
+    {
+      "path": "infra/docker/Dockerfile.worker",
+      "kind": "image-contract",
+      "sha256": "09e4cf8cf8de6bba164a83e8e750bc0accd26db353c17fb110b12f91e7a7953a"
+    },
+    {
+      "path": "infra/docker/Dockerfile.consumer",
+      "kind": "image-contract",
+      "sha256": "2a9119d29d5e72f07c82cce278798106b69acf5113fb63379c9f58aa425f674a"
+    },
+    {
+      "path": "infra/docker/Dockerfile.web",
+      "kind": "image-contract",
+      "sha256": "7a3fe7c6df4d34d0db5cb69004dc711150ae5dfbdb709bea3de5ad42a24758d7"
+    },
+    {
+      "path": "infra/k8s/base/kustomization.yaml",
+      "kind": "kustomize-contract",
+      "sha256": "1e853998cfdd3db42035bf4050eb11bc939a2d2a3e1ebced0c988e25e60ffd0f"
+    },
+    {
+      "path": "infra/k8s/overlays/staging/kustomization.yaml",
+      "kind": "kustomize-contract",
+      "sha256": "9dc953f358d2e8bd7cf003ae3c53883dd4e3144266ba25a683a0ec3a01407e46"
+    },
+    {
+      "path": "infra/k8s/overlays/prod/kustomization.yaml",
+      "kind": "kustomize-contract",
+      "sha256": "cdb221acafe6653d86e1e7d7b08379b5364894b0ce18f99dca40539325871d16"
+    },
+    {
+      "path": ".github/workflows/container.yml",
+      "kind": "workflow-contract",
+      "sha256": "c2db1a770d8a12e4d3f28951f6b077e5f8f5e31ac9f65dab481fd46b44508635"
+    },
+    {
+      "path": ".github/workflows/deploy-staging.yml",
+      "kind": "workflow-contract",
+      "sha256": "f337aa8ffcae99bf4222c20a61a52186ee726f0c4221b027be6dcab864a2fba1"
+    },
+    {
+      "path": ".github/workflows/rollback.yml",
+      "kind": "workflow-contract",
+      "sha256": "5f8a520a2f045d5f1194c8caaf10801a144878231791db3ac01ad2d7622c9e3c"
+    },
+    {
+      "path": "scripts/restore_database.py",
+      "kind": "guarded-operation-contract",
+      "sha256": "3366560ebeea379f2b739fc5fd04a3211fae6e93c1683436437ecc67c171cd14"
+    },
+    {
+      "path": "scripts/rollback_release.py",
+      "kind": "guarded-operation-contract",
+      "sha256": "721b16977502cffc5934a5a40798bd92b18bc6a98d7b87c724997a49b272f3ca"
+    }
+  ],
+  "unavailable_local_tools": [
+    "actionlint",
+    "trivy",
+    "syft",
+    "cosign",
+    "pg_dump",
+    "pg_restore"
+  ],
+  "limitations": [
+    "Local Docker image IDs are not registry digests and were not pushed, scanned, signed, attested, or verified by an admission policy.",
+    "Kustomize render is not a cluster apply, rollout, authenticated staging smoke, TLS, secret-manager, RBAC, NetworkPolicy enforcement, or production deployment result.",
+    "The rollback command was dry-run only. No Kubernetes revision changed, and no database migration was reversed.",
+    "The restore command used uv.lock only as a non-empty guard fixture. No PostgreSQL backup was created, pg_restore is unavailable, and no isolated restore, data validation, application smoke, RTO, or RPO was measured.",
+    "Fault scenarios were rendered as plans only. No Redis, MinIO, or Worker process was stopped, and no Outbox republish, object readability, stale completion, or business recovery was observed.",
+    "GitHub Actions YAML parsed locally, but actionlint and an actual remote Actions run were unavailable. The formal M6 registry, staging-cluster, backup/restore, and rollback gates remain blocked_external."
+  ],
+  "manual_gates": [
+    "evidence/gates/m6-registry-signed-images.json",
+    "evidence/gates/m6-cluster-staging-rollout.json",
+    "evidence/gates/m6-backup-restore-rollback.json"
+  ]
+}

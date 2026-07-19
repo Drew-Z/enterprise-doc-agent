@@ -50,6 +50,11 @@
       "milestone": "M8",
       "status": "passed",
       "manifest": "evidence/m8/20260719-231759-m8-end-to-end-model-deadline.json"
+    },
+    {
+      "milestone": "M6-local-verification",
+      "status": "passed",
+      "manifest": "evidence/m6/20260719-235533-m6-local-delivery-verification.json"
     }
   ],
   "working_tree_captures": [
