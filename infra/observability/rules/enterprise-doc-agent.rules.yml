@@ -1,0 +1,59 @@
+groups:
+  - name: enterprise-doc-agent-recordings
+    interval: 15s
+    rules:
+      - record: enterprise_doc:api_error_ratio5m
+        expr: |
+          sum(rate(enterprise_doc_api_requests_total{status_class=~"5xx"}[5m]))
+          /
+          clamp_min(sum(rate(enterprise_doc_api_requests_total[5m])), 1)
+      - record: enterprise_doc:worker_failure_ratio5m
+        expr: |
+          sum(rate(enterprise_doc_worker_jobs_completed_total{outcome="failed"}[5m]))
+          /
+          clamp_min(sum(rate(enterprise_doc_worker_jobs_completed_total[5m])), 1)
+      - record: enterprise_doc:outbox_error_ratio5m
+        expr: |
+          sum(rate(enterprise_doc_worker_outbox_publish_total{result="error"}[5m]))
+          /
+          clamp_min(sum(rate(enterprise_doc_worker_outbox_publish_total[5m])), 1)
+
+  - name: enterprise-doc-agent-alerts
+    interval: 15s
+    rules:
+      - alert: EnterpriseDocApiHighErrorRate
+        expr: enterprise_doc:api_error_ratio5m > 0.05
+        for: 10m
+        labels:
+          severity: page
+          service: enterprise-doc-api
+        annotations:
+          summary: API 5xx error ratio is above 5 percent
+          runbook: "https://runbooks.example.invalid/enterprise-doc/api-errors"
+      - alert: EnterpriseDocWorkerFailureRate
+        expr: enterprise_doc:worker_failure_ratio5m > 0.1
+        for: 10m
+        labels:
+          severity: ticket
+          service: enterprise-doc-worker
+        annotations:
+          summary: Worker failure ratio is above 10 percent
+          runbook: "https://runbooks.example.invalid/enterprise-doc/worker-failures"
+      - alert: EnterpriseDocOutboxPublishErrors
+        expr: enterprise_doc:outbox_error_ratio5m > 0
+        for: 5m
+        labels:
+          severity: ticket
+          service: enterprise-doc-worker
+        annotations:
+          summary: Outbox publication errors are present
+          runbook: "https://runbooks.example.invalid/enterprise-doc/outbox"
+      - alert: EnterpriseDocDependencyDown
+        expr: enterprise_doc_dependency_up == 0
+        for: 5m
+        labels:
+          severity: page
+          service: enterprise-doc-agent
+        annotations:
+          summary: A required dependency health check is down
+          runbook: "https://runbooks.example.invalid/enterprise-doc/dependencies"

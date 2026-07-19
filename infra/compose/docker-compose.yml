@@ -90,7 +90,20 @@ services:
       - host.docker.internal:host-gateway
     volumes:
       - ../observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../observability/rules:/etc/prometheus/rules:ro
       - prometheus-data:/prometheus
+    restart: unless-stopped
+
+  otel-collector:
+    image: ${OTEL_COLLECTOR_IMAGE:-otel/opentelemetry-collector-contrib:0.130.1}
+    profiles: ["observability"]
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    ports:
+      - "${OTEL_GRPC_PORT:-4317}:4317"
+      - "${OTEL_HTTP_PORT:-4318}:4318"
+      - "${OTEL_HEALTH_PORT:-13133}:13133"
+    volumes:
+      - ../observability/otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
     restart: unless-stopped
 
   grafana:

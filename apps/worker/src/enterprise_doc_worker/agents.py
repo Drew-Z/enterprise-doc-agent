@@ -29,6 +29,7 @@ from enterprise_doc_core.config import (
     ModelProvider,
     ModelSettings,
 )
+from enterprise_doc_core.telemetry import InstrumentedModelGateway, MetricsRuntime
 from enterprise_doc_worker.agent_backend import DurableAgentGraphBackend
 from enterprise_doc_worker.agent_handler import (
     AgentExecutionContext,
@@ -220,6 +221,7 @@ def build_durable_agent_handler(
     gateway: ChatModelGateway | None = None,
     mcp_client: McpClient | None = None,
     fault_injection: FaultInjectionSettings | None = None,
+    metrics: MetricsRuntime | None = None,
 ) -> AgentExecutionHandler:
     if gateway is not None:
         resolved_gateway = gateway
@@ -231,6 +233,11 @@ def build_durable_agent_handler(
     )
     resolved_faults = fault_injection or FaultInjectionSettings()
     resolved_gateway = wrap_model_gateway(resolved_gateway, resolved_faults)
+    if metrics is not None:
+        resolved_gateway = cast(
+            ChatModelGateway,
+            InstrumentedModelGateway(resolved_gateway, metrics),
+        )
     resolved_mcp_client = wrap_mcp_client(resolved_mcp_client, resolved_faults)
 
     def backend_factory(context: AgentExecutionContext) -> AgentGraphBackend:

@@ -4,7 +4,6 @@ from typing import Annotated, Protocol, cast
 
 from fastapi import Request, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from opentelemetry import trace
 
 from enterprise_doc_api.errors import ApiError
 from enterprise_doc_core.context import PrincipalContext, enrich_request_principal
@@ -72,7 +71,4 @@ async def resolve_bearer_principal(
     resolver = cast(PrincipalResolver, request.app.state.principal_resolver)
     principal = await resolver.resolve(token)
     enrich_request_principal(principal)
-    span = trace.get_current_span()
-    span.set_attribute("app.tenant_id", principal.tenant_id)
-    span.set_attribute("app.actor_id", principal.actor_id)
     return principal

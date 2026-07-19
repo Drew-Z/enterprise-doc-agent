@@ -11,7 +11,8 @@ data:
   OBJECT_STORE__DOCUMENTS_BUCKET: documents
   OBJECT_STORE__ARTIFACTS_BUCKET: artifacts
   OBJECT_STORE__SECURE: "false"
-  OTEL__ENABLED: "true"
+  # Enable only after a reviewed collector or managed OTLP endpoint is provisioned.
+  OTEL__ENABLED: "false"
   OTEL__EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
   OTEL__METRICS_ENABLED: "true"
   API__HOST: 0.0.0.0

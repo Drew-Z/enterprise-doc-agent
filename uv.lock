@@ -363,6 +363,7 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "cryptography" },
     { name = "httpx" },
     { name = "mypy" },
     { name = "psutil" },
@@ -383,6 +384,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "cryptography", specifier = ">=45.0.0" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "mypy", specifier = ">=1.17.1" },
     { name = "psutil", specifier = ">=7.0.0" },

@@ -92,13 +92,13 @@ def _passed_capacity(root: Path) -> dict[str, object]:
         "headroom_percent": 35.0,
         "bottleneck": "database connection pool",
         "telemetry": {
-            "cpu": {"peak_percent": 65.0},
-            "memory": {"peak_percent": 58.0},
-            "database_pool": {"peak_percent": 72.0},
-            "queue": {"max_age_seconds": 1.2},
-            "redis": {"peak_connections": 20},
-            "object_store": {"p95_ms": 45.0},
-            "model": {"p95_ms": 110.0},
+            "cpu": {"sample_count": 3, "peak_percent": 65.0},
+            "memory": {"sample_count": 3, "peak_percent": 58.0},
+            "database_pool": {"sample_count": 3, "peak_percent": 72.0},
+            "queue": {"sample_count": 3, "max_age_seconds": 1.2},
+            "redis": {"sample_count": 3, "peak_connections": 20},
+            "object_store": {"sample_count": 3, "p95_ms": 45.0},
+            "model": {"sample_count": 3, "p95_ms": 110.0},
         },
     }
     return report
@@ -124,10 +124,10 @@ def _passed_model_capacity(root: Path) -> dict[str, object]:
         "headroom_percent": 20.0,
         "bottleneck": "KV cache",
         "telemetry": {
-            "gpu": {"utilization_percent": 82.0},
-            "gpu_memory": {"peak_percent": 78.0},
-            "kv_cache": {"peak_percent": 75.0},
-            "queue": {"max_age_seconds": 0.8},
+            "gpu": {"sample_count": 3, "utilization_percent": 82.0},
+            "gpu_memory": {"sample_count": 3, "peak_percent": 78.0},
+            "kv_cache": {"sample_count": 3, "peak_percent": 75.0},
+            "queue": {"sample_count": 3, "max_age_seconds": 0.8},
         },
     }
     return report
@@ -186,6 +186,11 @@ def test_passed_capacity_requires_repeated_phases_and_dependency_telemetry(
     empty_telemetry["measurements"]["telemetry"]["queue"] = None  # type: ignore[index]
     with pytest.raises(EvidenceValidationError, match=r"telemetry\.queue"):
         validate_evidence(empty_telemetry, root=tmp_path)
+
+    zero_samples = deepcopy(report)
+    zero_samples["measurements"]["telemetry"]["queue"]["sample_count"] = 0  # type: ignore[index]
+    with pytest.raises(EvidenceValidationError, match="sample_count"):
+        validate_evidence(zero_samples, root=tmp_path)
 
     single_run = deepcopy(report)
     single_run["workload"]["repetitions"] = 1  # type: ignore[index]

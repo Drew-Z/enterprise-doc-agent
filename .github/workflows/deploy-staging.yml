@@ -55,22 +55,28 @@ jobs:
     environment: staging
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.12"
-      - uses: azure/setup-kubectl@v4
-      - uses: imranismail/setup-kustomize@v2
+      - uses: azure/setup-kubectl@c0c8b32d33a5244f1e5947304550403b63930415 # v4
+      - uses: imranismail/setup-kustomize@2ba527d4d055ab63514ba50a99456fc35684947f # v2
         with:
           kustomize-version: "5.6.0"
       - name: Configure cluster credentials
         env:
           KUBE_CONFIG: ${{ secrets.STAGING_KUBECONFIG }}
+          EXPECTED_CONTEXT: ${{ vars.STAGING_KUBE_CONTEXT }}
         run: |
+          set -euo pipefail
           test -n "$KUBE_CONFIG"
+          test -n "$EXPECTED_CONTEXT"
           mkdir -p "$HOME/.kube"
           printf '%s' "$KUBE_CONFIG" > "$HOME/.kube/config"
           chmod 600 "$HOME/.kube/config"
+          actual_context="$(kubectl config current-context)"
+          test "$actual_context" = "$EXPECTED_CONTEXT"
+          kubectl auth can-i get namespaces | grep -qx 'yes'
       - name: Bind exact image digests
         env:
           REGISTRY_PREFIX: ${{ inputs.registry_prefix }}
@@ -79,6 +85,11 @@ jobs:
           CONSUMER_DIGEST: ${{ inputs.consumer_digest }}
           WEB_DIGEST: ${{ inputs.web_digest }}
         run: |
+          set -euo pipefail
+          printf '%s' "$REGISTRY_PREFIX" | grep -Eq '^[a-z0-9.-]+(:[0-9]{1,5})?(/[a-z0-9][a-z0-9._-]*)+$'
+          case "$REGISTRY_PREFIX" in
+            localhost*|127.*|\[::1\]*) echo 'registry_prefix must not target loopback' >&2; exit 1 ;;
+          esac
           for digest in "$API_DIGEST" "$WORKER_DIGEST" "$CONSUMER_DIGEST" "$WEB_DIGEST"; do
             printf '%s' "$digest" | grep -Eq '^sha256:[0-9a-f]{64}$'
           done
@@ -96,7 +107,8 @@ jobs:
           VITE_OBJECT_STORE_ORIGINS: ${{ vars.VITE_OBJECT_STORE_ORIGINS }}
         run: |
           set -euo pipefail
-          python -m pip install --disable-pip-version-check --no-cache-dir PyYAML==6.0.3
+          python -m pip install --disable-pip-version-check --no-cache-dir \
+            PyYAML==6.0.3 cryptography==49.0.0
           test -n "$VITE_OBJECT_STORE_ORIGINS"
           kustomize build infra/k8s/overlays/staging > "$RUNNER_TEMP/staging-template.yaml"
           python scripts/configure_staging_manifest.py \
@@ -117,31 +129,56 @@ jobs:
           python scripts/render_k8s_phase.py --input "$RUNNER_TEMP/staging.yaml" --phase prerequisites --output "$RUNNER_TEMP/staging-prerequisites.yaml"
           python scripts/render_k8s_phase.py --input "$RUNNER_TEMP/staging.yaml" --phase migration --output "$RUNNER_TEMP/staging-migration.yaml"
           python scripts/render_k8s_phase.py --input "$RUNNER_TEMP/staging.yaml" --phase workloads --output "$RUNNER_TEMP/staging-workloads.yaml"
-      - name: Apply migration job before rollout
+      - name: Apply and validate staging prerequisites
+        id: prerequisites
+        env:
+          STAGING_BASE_URL: ${{ inputs.staging_base_url }}
+          TLS_SECRET_NAME: ${{ inputs.tls_secret_name }}
         run: |
+          set -euo pipefail
+          trap 'rm -f "$RUNNER_TEMP/staging-secrets.json"' EXIT
           kubectl apply -f "$RUNNER_TEMP/staging-prerequisites.yaml"
-          kubectl -n enterprise-doc-agent-staging get secret enterprise-doc-secrets
-          kubectl -n enterprise-doc-agent-staging get secret enterprise-doc-registry
-          kubectl -n enterprise-doc-agent-staging get secret "${{ inputs.tls_secret_name }}"
+          kubectl -n enterprise-doc-agent-staging get secret \
+            enterprise-doc-secrets enterprise-doc-registry "$TLS_SECRET_NAME" \
+            -o json > "$RUNNER_TEMP/staging-secrets.json"
+          staging_host="$(python -c 'import os; from urllib.parse import urlsplit; print(urlsplit(os.environ["STAGING_BASE_URL"]).hostname or "")')"
+          python scripts/validate_staging_secrets.py \
+            --input "$RUNNER_TEMP/staging-secrets.json" \
+            --staging-host "$staging_host" \
+            --tls-secret-name "$TLS_SECRET_NAME" \
+            --output "$RUNNER_TEMP/staging-secret-validation.json"
+          rm -f "$RUNNER_TEMP/staging-secrets.json"
+          kubectl apply --dry-run=server -f "$RUNNER_TEMP/staging-migration.yaml"
+          kubectl apply --dry-run=server -f "$RUNNER_TEMP/staging-workloads.yaml"
+      - name: Apply migration job before rollout
+        id: migration
+        run: |
+          set -euo pipefail
           kubectl -n enterprise-doc-agent-staging delete job enterprise-doc-migrate --ignore-not-found
           kubectl apply -f "$RUNNER_TEMP/staging-migration.yaml"
           kubectl -n enterprise-doc-agent-staging wait --for=condition=complete job/enterprise-doc-migrate --timeout=300s
       - name: Apply workloads after migration
+        id: workloads
         run: |
+          set -euo pipefail
           kubectl apply -f "$RUNNER_TEMP/staging-workloads.yaml"
       - name: Wait for workloads
+        id: rollout
         run: |
+          set -euo pipefail
           kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-api --timeout=300s
           kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-worker --timeout=300s
           kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-consumer --timeout=300s
           kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-web --timeout=300s
       - name: Run in-cluster readiness smoke
+        id: cluster_smoke
         if: inputs.run_smoke
         run: |
           kubectl -n enterprise-doc-agent-staging run m5-staging-smoke --rm --attach --restart=Never \
-            --image=curlimages/curl:8.12.1 -- \
+            --image=curlimages/curl@sha256:94e9e444bcba979c2ea12e27ae39bee4cd10bc7041a472c4727a558e213744e6 -- \
             sh -ec 'curl --fail --silent http://enterprise-doc-api:8000/health/ready'
       - name: Run authenticated upload to Agent smoke
+        id: authenticated_smoke
         if: inputs.run_smoke
         env:
           STAGING_BASE_URL: ${{ inputs.staging_base_url }}
@@ -158,28 +195,80 @@ jobs:
             --allowed-host "$STAGING_ALLOWED_HOST" \
             --allowed-object-store-host "$STAGING_OBJECT_STORE_ALLOWED_HOST" \
             --report-path "tmp/staging-smoke-${GITHUB_SHA}.json"
-      - name: Record release metadata
+      - name: Collect sanitized release evidence
         if: always()
+        env:
+          REGISTRY_PREFIX: ${{ inputs.registry_prefix }}
+          API_DIGEST: ${{ inputs.api_digest }}
+          WORKER_DIGEST: ${{ inputs.worker_digest }}
+          CONSUMER_DIGEST: ${{ inputs.consumer_digest }}
+          WEB_DIGEST: ${{ inputs.web_digest }}
+          RUN_SMOKE: ${{ inputs.run_smoke }}
+          PREREQUISITES_OUTCOME: ${{ steps.prerequisites.outcome }}
+          MIGRATION_OUTCOME: ${{ steps.migration.outcome }}
+          WORKLOADS_OUTCOME: ${{ steps.workloads.outcome }}
+          ROLLOUT_OUTCOME: ${{ steps.rollout.outcome }}
+          CLUSTER_SMOKE_OUTCOME: ${{ steps.cluster_smoke.outcome }}
+          AUTHENTICATED_SMOKE_OUTCOME: ${{ steps.authenticated_smoke.outcome }}
         run: |
+          set -euo pipefail
           mkdir -p tmp
           evidence_id="${GITHUB_SHA}"
+          raw_dir="tmp/staging-raw-${evidence_id}"
+          sanitized_dir="tmp/staging-sanitized-${evidence_id}"
+          mkdir -p "$raw_dir" "$sanitized_dir"
+          trap 'rm -f "$RUNNER_TEMP/staging-secrets.json"; rm -rf "$raw_dir"' EXIT
+          : > "$raw_dir/collection-status.txt"
+          capture() {
+            name="$1"
+            shift
+            set +e
+            "$@" > "$raw_dir/$name" 2>&1
+            status=$?
+            set -e
+            printf '%s=%s\n' "$name" "$status" >> "$raw_dir/collection-status.txt"
+          }
           for manifest in staging.yaml staging-prerequisites.yaml staging-migration.yaml staging-workloads.yaml; do
             if test -f "$RUNNER_TEMP/$manifest"; then
-              cp "$RUNNER_TEMP/$manifest" "tmp/staging-rendered-${evidence_id}-${manifest}"
+              cp "$RUNNER_TEMP/$manifest" "$raw_dir/staging-rendered-${manifest}"
             fi
           done
-          kubectl -n enterprise-doc-agent-staging get deploy -o json > "tmp/staging-release-${evidence_id}.json" 2>&1 || true
-          kubectl -n enterprise-doc-agent-staging logs job/enterprise-doc-migrate > "tmp/staging-migration-${evidence_id}.log" 2>&1 || true
-          kubectl -n enterprise-doc-agent-staging get ingress enterprise-doc-web -o yaml > "tmp/staging-ingress-${evidence_id}.yaml" 2>&1 || true
-          kubectl -n enterprise-doc-agent-staging get networkpolicy -o yaml > "tmp/staging-network-policy-${evidence_id}.yaml" 2>&1 || true
-          kubectl -n enterprise-doc-agent-staging get events --sort-by=.lastTimestamp > "tmp/staging-events-${evidence_id}.txt" 2>&1 || true
-          kubectl -n enterprise-doc-agent-staging get secret enterprise-doc-secrets enterprise-doc-registry "${{ inputs.tls_secret_name }}" \
-            -o name > "tmp/staging-secret-names-${evidence_id}.txt" 2>&1 || true
-          printf '%s\n' '{"status":"staging-rollout-requested","external_gate":"cluster-and-secret-evidence"}' > "tmp/staging-release-${evidence_id}.record.json"
-      - uses: actions/upload-artifact@v4
+          if test -f "$RUNNER_TEMP/staging-secret-validation.json"; then
+            cp "$RUNNER_TEMP/staging-secret-validation.json" "$raw_dir/staging-secret-validation.json"
+          fi
+          if test -f "tmp/staging-smoke-${GITHUB_SHA}.json"; then
+            cp "tmp/staging-smoke-${GITHUB_SHA}.json" "$raw_dir/staging-smoke.json"
+          fi
+          capture deployments.json kubectl -n enterprise-doc-agent-staging get deploy -o json
+          capture migration.log kubectl -n enterprise-doc-agent-staging logs job/enterprise-doc-migrate
+          capture ingress.yaml kubectl -n enterprise-doc-agent-staging get ingress enterprise-doc-web -o yaml
+          capture network-policy.yaml kubectl -n enterprise-doc-agent-staging get networkpolicy -o yaml
+          capture events.txt kubectl -n enterprise-doc-agent-staging get events --sort-by=.lastTimestamp
+          capture secret-names.txt kubectl -n enterprise-doc-agent-staging get secret \
+            enterprise-doc-secrets enterprise-doc-registry "${{ inputs.tls_secret_name }}" -o name
+          python scripts/sanitize_deployment_evidence.py \
+            --input-dir "$raw_dir" \
+            --output-dir "$sanitized_dir" \
+            --manifest "tmp/staging-evidence-${evidence_id}.manifest.json"
+          image_digests_json="$(python -c 'import json, os; print(json.dumps({"api": os.environ["API_DIGEST"], "worker": os.environ["WORKER_DIGEST"], "consumer": os.environ["CONSUMER_DIGEST"], "web": os.environ["WEB_DIGEST"]}))')"
+          outcomes_json="$(python -c 'import json, os; print(json.dumps({"prerequisites": os.environ["PREREQUISITES_OUTCOME"], "migration": os.environ["MIGRATION_OUTCOME"], "workloads": os.environ["WORKLOADS_OUTCOME"], "rollout": os.environ["ROLLOUT_OUTCOME"], "cluster_smoke": os.environ["CLUSTER_SMOKE_OUTCOME"], "authenticated_smoke": os.environ["AUTHENTICATED_SMOKE_OUTCOME"]}))')"
+          python scripts/build_staging_release_record.py \
+            --evidence-manifest "tmp/staging-evidence-${evidence_id}.manifest.json" \
+            --repository "$GITHUB_REPOSITORY" \
+            --commit-sha "$GITHUB_SHA" \
+            --run-id "$GITHUB_RUN_ID" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --registry-prefix "$REGISTRY_PREFIX" \
+            --image-digests-json "$image_digests_json" \
+            --outcomes-json "$outcomes_json" \
+            --smoke-required "$RUN_SMOKE" \
+            --output "tmp/staging-release-${evidence_id}.record.json"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: staging-release-${{ github.sha }}
           path: |
-            tmp/staging-*
-          if-no-files-found: warn
+            tmp/staging-sanitized-${{ github.sha }}/
+            tmp/staging-evidence-${{ github.sha }}.manifest.json
+            tmp/staging-release-${{ github.sha }}.record.json
+          if-no-files-found: error

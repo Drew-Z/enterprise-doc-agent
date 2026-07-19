@@ -207,6 +207,8 @@ uv run python scripts/load_m5.py --scenario health --requests 20 --concurrency 4
 uv run python scripts/load_m5.py --scenario ready --requests 1000 --concurrency 20 --sample-resources --resource-sample-interval-seconds 0.1 --report-path evidence/m5/20260719-m5-local-ready-resource-load.json
 uv run python scripts/benchmark_m7.py --scenario deterministic --iterations 20
 uv run python scripts/benchmark_m7.py --scenario fallback-contract --iterations 20
+uv run python scripts/run_application_capacity.py --config infra/capacity/application-capacity.example.yaml
+uv run python scripts/run_model_capacity.py --config infra/capacity/model-capacity.example.yaml
 ```
 
 Authenticated load scenarios read the bearer token from
@@ -214,6 +216,15 @@ Authenticated load scenarios read the bearer token from
 `agent-create`, `duplicate-agent-create`, and `end-to-end` also require an authorized
 `--document-version-id`. Every report separates targets from measured values and states
 that a bounded local run is not production capacity.
+
+The two capacity-matrix commands are dry-run by default. `--execute` runs all required
+phases and repetitions, stores request samples plus Prometheus query-range snapshots,
+and emits a report accepted by the shared evidence validator. An external capacity
+claim additionally requires `--external-execution --confirm-external`, immutable image
+digests and provider/region/cluster identity. The model runner uses OpenAI-compatible
+streaming usage to measure TTFT and TPOT, saves vLLM `/metrics` and `nvidia-smi`
+samples, and fails an external run when exact token usage or GPU/KV/queue telemetry is
+missing.
 
 Fault injection is disabled by default and rejected outside local/test. It is selected
 only through `FAULT_INJECTION__*` process settings at the Worker composition root; API
@@ -227,9 +238,13 @@ consumer are running on the host:
 docker compose -f infra/compose/docker-compose.yml --profile observability up -d
 ```
 
-Prometheus is available at `http://127.0.0.1:9090` and Grafana at
-`http://127.0.0.1:3000`. The dashboard only uses bounded process metrics; the profile is
-local-only and telemetry failure does not gate business requests.
+Prometheus is available at `http://127.0.0.1:9090`, Grafana at
+`http://127.0.0.1:3000`, and the local OTLP collector at ports `4317`/`4318`. The
+collector deletes principal/request correlation attributes before its local debug
+exporter; Prometheus evaluates repository-owned recording and alert rules. This profile
+is local-only, has no Alertmanager delivery proof, and telemetry failure does not gate
+business requests. Kubernetes keeps OTLP disabled until a reviewed collector or managed
+endpoint is provisioned.
 
 Plan or run a guarded local dependency outage drill. The command refuses staging and
 production environments and requires an explicit confirmation for execution:
@@ -255,12 +270,20 @@ kubectl kustomize infra/k8s/overlays/staging
 uv run python scripts/backup_database.py --help
 uv run python scripts/restore_database.py --help
 uv run python scripts/rollback_release.py --reason validation-only --revision enterprise-doc-api=1
+uv run python scripts/local_recovery_drill.py --help
 ```
 
 Rollback validation requires an explicit positive Deployment revision for each target
 (or a JSON revision map in `ROLLBACK_REVISIONS_JSON`); it does not infer an implicit
 “previous” revision. `--migration-revision` is recorded separately and is not a
 replacement for the Deployment revision.
+
+`local_recovery_drill.py` is also dry-run by default. With `--confirm-local` it creates
+a custom-format PostgreSQL backup, restores only into a database whose name starts with
+`enterprise_doc_restore_`, compares Alembic revisions and all public-table row counts,
+and hashes the backup, inventories and command log. Its report remains
+`blocked_external` because it does not restore object-store versions or execute a real
+Kubernetes rollback and authenticated smoke.
 
 The restore and rollback scripts are dry-run/validation paths unless `--confirm` is
 provided. Actual registry push, digest promotion, cluster apply, TLS/secret-manager

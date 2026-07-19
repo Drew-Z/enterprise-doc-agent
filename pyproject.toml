@@ -12,6 +12,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+  "cryptography>=45.0.0",
   "mypy>=1.17.1",
   "pytest>=8.4.2",
   "pytest-asyncio>=1.1.0",

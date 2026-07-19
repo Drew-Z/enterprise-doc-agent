@@ -35,7 +35,7 @@ def select_phase(documents: list[dict[str, Any]], phase: Phase) -> list[dict[str
         if any(document.get("kind") in WORKLOAD_KINDS for document in selected):
             raise ValueError("prerequisite phase must not contain workloads")
         return selected
-    return [document for document in documents if document not in migration]
+    return [document for document in documents if document.get("kind") in WORKLOAD_KINDS]
 
 
 def render_phase(source: Path, destination: Path, phase: Phase) -> None:

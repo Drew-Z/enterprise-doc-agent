@@ -17,8 +17,14 @@
 - Staging and rollback remain manual environment workflows. Staging owns ingress/TLS,
   private-registry Secret names, migration-before-workload ordering and redacted
   rollout evidence, but never commits Secret values.
+- Release CI aggregates all four immutable image results into one strict manifest;
+  staging validates the exact Kubernetes context, registry prefix, Secret structure and
+  TLS SAN, performs server-side dry-run, and sanitizes raw evidence before hashing it.
 - Restore and rollback commands are dry-run or validation-only without explicit
   `--confirm`.
+- `scripts/local_recovery_drill.py` requires `--confirm-local`, restores only to an
+  `enterprise_doc_restore_` database, compares Alembic/table inventories, and still
+  reports `blocked_external` without object-store restore and Kubernetes rollback.
 - Recovery and capacity evidence is validated by
   `scripts/validate_recovery_capacity_evidence.py`. A `passed` report requires external
   environment and cluster identity, immutable commit/image identity, timezone-aware
@@ -41,6 +47,11 @@
 - `scripts/validate_recovery_capacity_evidence.py` rejects local-only recovery or
   capacity records that claim `passed`, verifies artifact hashes and enforces RPO/RTO,
   smoke, repeated-load, percentile and dependency-telemetry contracts.
+- `scripts/validate_staging_secrets.py` validates required non-empty app keys, Docker
+  registry JSON, TLS certificate validity/key match and exact or single-label wildcard
+  SAN coverage without retaining values.
+- `scripts/sanitize_deployment_evidence.py` structurally redacts JSON/YAML Secret data,
+  credentials, DSN passwords, bearer tokens and signed query parameters.
 - `tests/deployment/` checks digest-pinned bases, non-root runtime contracts,
   migration ordering, smoke redaction, final-digest supply-chain binding, staging host
   configuration and release/evidence safeguards.
@@ -54,4 +65,9 @@
 - `.github/workflows/rollback.yml`
 - `scripts/configure_staging_manifest.py`
 - `scripts/validate_recovery_capacity_evidence.py`
+- `scripts/local_recovery_drill.py`
+- `scripts/build_release_manifest.py`
+- `scripts/build_staging_release_record.py`
+- `scripts/validate_staging_secrets.py`
+- `scripts/sanitize_deployment_evidence.py`
 - `tests/deployment/`

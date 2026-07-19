@@ -23,9 +23,10 @@ def test_compose_keeps_m0_services_and_profiles_optional_stacks() -> None:
         "minio-init",
         "prometheus",
         "grafana",
+        "otel-collector",
     }
     assert compose["services"]["minio-init"]["profiles"] == ["init"]
-    for service in ("prometheus", "grafana"):
+    for service in ("prometheus", "grafana", "otel-collector"):
         assert compose["services"][service]["profiles"] == ["observability"]
 
     assert set(compose["volumes"]) == {

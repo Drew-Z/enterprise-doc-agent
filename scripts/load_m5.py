@@ -537,7 +537,7 @@ def _validate_args(args: argparse.Namespace, token: str | None) -> None:
         raise SystemExit("--document-version-id is required for Agent create scenarios")
 
 
-async def async_main(args: argparse.Namespace) -> LoadReport:
+async def execute_load(args: argparse.Namespace) -> tuple[LoadReport, list[RequestSample]]:
     token = os.environ.get(args.token_env)
     _validate_args(args, token)
     started_at = utc_now()
@@ -581,18 +581,26 @@ async def async_main(args: argparse.Namespace) -> LoadReport:
             stop=resource_stop,
             task=resource_task,
         )
-    return build_report(
-        scenario=args.scenario,
-        requests=args.requests,
-        concurrency=args.concurrency,
-        base_url=args.base_url,
-        samples=samples,
-        duration_seconds=duration,
-        started_at=started_at,
-        completed_at=utc_now(),
-        target_p95_ms=args.target_p95_ms,
-        resource_saturation=resource_saturation,
+    return (
+        build_report(
+            scenario=args.scenario,
+            requests=args.requests,
+            concurrency=args.concurrency,
+            base_url=args.base_url,
+            samples=samples,
+            duration_seconds=duration,
+            started_at=started_at,
+            completed_at=utc_now(),
+            target_p95_ms=args.target_p95_ms,
+            resource_saturation=resource_saturation,
+        ),
+        samples,
     )
+
+
+async def async_main(args: argparse.Namespace) -> LoadReport:
+    report, _ = await execute_load(args)
+    return report
 
 
 def main() -> None:

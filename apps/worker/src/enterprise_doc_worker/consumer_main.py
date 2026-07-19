@@ -114,6 +114,7 @@ def main() -> None:
             checkpointer=checkpointer,
             graph_version=settings.agent.graph_version,
             fault_injection=settings.fault_injection,
+            metrics=metrics,
         )
         app, _, _ = build_consumer_app(
             settings,

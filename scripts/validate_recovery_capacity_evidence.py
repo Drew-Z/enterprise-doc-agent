@@ -145,6 +145,15 @@ def _validate_telemetry(telemetry: Mapping[str, Any], required: set[str]) -> Non
             raise EvidenceValidationError(
                 f"measurements.telemetry.{name} must be a non-empty object"
             )
+        sample_count = value.get("sample_count")
+        if (
+            isinstance(sample_count, bool)
+            or not isinstance(sample_count, (int, float))
+            or sample_count <= 0
+        ):
+            raise EvidenceValidationError(
+                f"measurements.telemetry.{name}.sample_count must be positive"
+            )
         if not _has_numeric_measurement(value):
             raise EvidenceValidationError(
                 f"measurements.telemetry.{name} must contain numeric measured data"

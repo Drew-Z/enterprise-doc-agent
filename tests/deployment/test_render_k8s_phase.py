@@ -38,5 +38,8 @@ def test_rollout_phase_split_places_migration_before_workloads() -> None:
         "Service",
     }
     assert [item["metadata"]["name"] for item in migration] == ["enterprise-doc-migrate"]
-    assert all(item["kind"] != "Job" for item in workloads)
-    assert any(item["kind"] == "Deployment" for item in workloads)
+    assert {item["kind"] for item in workloads} == {"Deployment"}
+    assert {item["metadata"]["name"] for item in workloads} == {
+        "enterprise-doc-api",
+        "enterprise-doc-worker",
+    }

@@ -16,7 +16,7 @@ from enterprise_doc_core.health import (
     build_foundation_resources,
     evaluate_readiness,
 )
-from enterprise_doc_core.telemetry import MetricsRuntime
+from enterprise_doc_core.telemetry import MetricsRuntime, instrument_health_checkers
 from enterprise_doc_worker.config import WorkerSettings
 
 
@@ -47,6 +47,8 @@ def create_probe_app(
     else:
         resources = None
         resolved_checkers = tuple(checkers)
+    if resolved_settings.otel.metrics_enabled:
+        resolved_checkers = instrument_health_checkers(resolved_checkers, resolved_metrics)
     timeout_seconds = readiness_timeout_seconds or max(
         resolved_settings.database.connect_timeout_seconds,
         resolved_settings.redis.connect_timeout_seconds,

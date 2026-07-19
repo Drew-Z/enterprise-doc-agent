@@ -5,7 +5,6 @@ import re
 from time import perf_counter
 from uuid import uuid4
 
-from opentelemetry import trace
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from enterprise_doc_core.context import (
@@ -41,9 +40,6 @@ class RequestContextMiddleware:
         )
         started = perf_counter()
         status_code = 500
-        span = trace.get_current_span()
-        span.set_attribute("app.request_id", request_id)
-        span.set_attribute("app.correlation_id", correlation_id)
 
         async def send_with_context(message: Message) -> None:
             nonlocal status_code
@@ -67,7 +63,7 @@ class RequestContextMiddleware:
                 extra={
                     "event_data": {
                         "method": scope.get("method"),
-                        "path": scope.get("path"),
+                        "route": _safe_route(scope),
                         "error_type": type(error).__name__,
                     }
                 },
@@ -80,7 +76,7 @@ class RequestContextMiddleware:
                 extra={
                     "event_data": {
                         "method": scope.get("method"),
-                        "path": scope.get("path"),
+                        "route": _safe_route(scope),
                         "status_code": status_code,
                         "duration_ms": duration_ms,
                     }
@@ -96,3 +92,9 @@ def _decode_header(value: bytes | None) -> str | None:
         return value.decode("ascii")
     except UnicodeDecodeError:
         return None
+
+
+def _safe_route(scope: Scope) -> str:
+    route = scope.get("route")
+    template = getattr(route, "path", None)
+    return template if isinstance(template, str) and template.startswith("/") else "unmatched"

@@ -53,7 +53,11 @@ from enterprise_doc_core.object_store import (
     Boto3MultipartObjectStore,
     MultipartObjectStore,
 )
-from enterprise_doc_core.telemetry import MetricsRuntime, TelemetryRuntime
+from enterprise_doc_core.telemetry import (
+    MetricsRuntime,
+    TelemetryRuntime,
+    instrument_health_checkers,
+)
 from enterprise_doc_core.uploads import UploadCreationService, UploadSessionService
 
 
@@ -79,8 +83,8 @@ def _sanitize_request_span(span: Span, scope: dict[str, Any]) -> None:
         authority = f"{server[0]}:{server[1]}"
     else:
         authority = "unknown"
-    path = f"{scope.get('root_path', '')}{scope.get('path', '/')}"
-    sanitized_url = f"{scheme}://{authority}{path}"
+    # Keep trace URLs free of document, run, tenant, and user identifiers.
+    sanitized_url = f"{scheme}://{authority}"
     span.set_attribute("http.url", sanitized_url)
     span.set_attribute("url.full", sanitized_url)
 
@@ -115,6 +119,8 @@ def create_app(
     else:
         resources = None
         resolved_checkers = tuple(checkers)
+    if resolved_settings.otel.metrics_enabled:
+        resolved_checkers = instrument_health_checkers(resolved_checkers, resolved_metrics)
     needs_default_database = (
         principal_resolver is None
         or upload_creation_service is None

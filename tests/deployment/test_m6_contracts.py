@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
+ACTION_SHA = re.compile(r"^[^@\s]+@[0-9a-f]{40}$")
 
 
 def _documents(path: Path) -> list[dict[str, object]]:
@@ -88,6 +90,7 @@ def test_migration_job_and_policies_are_present() -> None:
         "upgrade",
         "head",
     ]
+    assert migration["spec"]["activeDeadlineSeconds"] == 300
     policy_docs = _documents(ROOT / "infra/k8s/base/network-policy.yaml")
     assert any(item["metadata"]["name"] == "enterprise-doc-default-deny" for item in policy_docs)
     assert any(item["metadata"]["name"] == "enterprise-doc-runtime-egress" for item in policy_docs)
@@ -183,15 +186,20 @@ def test_ci_workflows_have_no_allow_failure_and_include_release_boundaries() -> 
     assert "scripts/rollback_release.py" in rollback
     assert "revisions_json" in rollback
     assert "configure_staging_manifest.py" in deploy
+    assert "validate_staging_secrets.py" in deploy
+    assert "sanitize_deployment_evidence.py" in deploy
+    assert "build_staging_release_record.py" in deploy
+    assert "--dry-run=server" in deploy
     assert "object_store_endpoint" in deploy
     assert "object_store_presign_endpoint" in deploy
     assert "VITE_OBJECT_STORE_ORIGINS" in deploy
     assert "enterprise-doc-registry" in deploy
     assert 'evidence_id="${GITHUB_SHA}"' in deploy
-    assert "staging-rendered-${evidence_id}-" in deploy
-    assert "staging-migration-${evidence_id}.log" in deploy
-    assert "staging-ingress-${evidence_id}.yaml" in deploy
-    assert "tmp/staging-*" in deploy
+    assert "staging-sanitized-${evidence_id}" in deploy
+    assert "staging-evidence-${evidence_id}.manifest.json" in deploy
+    assert "staging-release-${evidence_id}.record.json" in deploy
+    assert "if-no-files-found: error" in deploy
+    assert "curlimages/curl@sha256:" in deploy
     rollback_script = (ROOT / "scripts/rollback_release.py").read_text(encoding="utf-8")
     assert "--to-revision" in rollback_script
 
@@ -275,3 +283,51 @@ def test_tagged_supply_chain_verifies_the_exact_published_digest() -> None:
         "release-step-outcomes-${{ matrix.name }}.json",
     ):
         assert expected in evidence_paths
+
+
+def test_all_workflow_actions_are_pinned_to_immutable_commits() -> None:
+    for workflow_path in sorted((ROOT / ".github" / "workflows").glob("*.yml")):
+        workflow = yaml.safe_load(workflow_path.read_text(encoding="utf-8"))
+        assert isinstance(workflow, dict)
+        stack: list[object] = [workflow]
+        uses: list[str] = []
+        while stack:
+            value = stack.pop()
+            if isinstance(value, dict):
+                for key, child in value.items():
+                    if key == "uses":
+                        uses.append(str(child))
+                    else:
+                        stack.append(child)
+            elif isinstance(value, list):
+                stack.extend(value)
+        assert uses, workflow_path
+        assert all(ACTION_SHA.fullmatch(item) for item in uses), (workflow_path, uses)
+
+
+def test_release_manifest_strictly_aggregates_all_image_evidence() -> None:
+    workflow = yaml.safe_load(
+        (ROOT / ".github" / "workflows" / "container.yml").read_text(encoding="utf-8")
+    )
+    jobs = workflow["jobs"]
+    release = jobs["release-manifest"]
+    assert release["needs"] == "images"
+    steps = [step for step in release["steps"] if isinstance(step, dict)]
+    download = _named_step(steps, "Download per-image evidence")
+    assert download["with"]["pattern"] == "release-supply-chain-*"
+    assert download["with"]["merge-multiple"] is True
+    manifest = _named_step(steps, "Build strict release manifest")
+    assert "scripts/build_release_manifest.py" in str(manifest["run"])
+    upload = _named_step(steps, "Upload strict release manifest")
+    assert upload["with"]["if-no-files-found"] == "error"
+
+
+def test_release_registry_is_parameterized_but_defaults_to_ghcr() -> None:
+    text = (ROOT / ".github" / "workflows" / "container.yml").read_text(encoding="utf-8")
+    assert "CONTAINER_REGISTRY" in text
+    assert "CONTAINER_REGISTRY_NAMESPACE" in text
+    assert "vars.CONTAINER_REGISTRY" in text
+    assert "vars.CONTAINER_REGISTRY_NAMESPACE" in text
+    assert "secrets.CONTAINER_REGISTRY_USERNAME" in text
+    assert "secrets.CONTAINER_REGISTRY_PASSWORD" in text
+    assert "steps.release_ref.outputs.prefix" in text

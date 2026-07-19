@@ -1,0 +1,48 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 256
+    spike_limit_mib: 64
+  attributes/privacy:
+    actions:
+      - key: app.tenant_id
+        action: delete
+      - key: app.actor_id
+        action: delete
+      - key: app.request_id
+        action: delete
+      - key: app.correlation_id
+        action: delete
+      - key: enduser.id
+        action: delete
+      - key: http.request.header.authorization
+        action: delete
+      - key: http.request.header.cookie
+        action: delete
+  batch:
+    timeout: 5s
+    send_batch_size: 512
+
+exporters:
+  debug:
+    verbosity: basic
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+service:
+  extensions: [health_check]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, attributes/privacy, batch]
+      exporters: [debug]

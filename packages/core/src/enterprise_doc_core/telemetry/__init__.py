@@ -1,4 +1,11 @@
-from enterprise_doc_core.telemetry.metrics import MetricsRuntime, bounded_route, status_class
+from enterprise_doc_core.telemetry.metrics import (
+    InstrumentedHealthChecker,
+    InstrumentedModelGateway,
+    MetricsRuntime,
+    bounded_route,
+    instrument_health_checkers,
+    status_class,
+)
 from enterprise_doc_core.telemetry.runtime import (
     TelemetryManager,
     TelemetryRuntime,
@@ -6,10 +13,13 @@ from enterprise_doc_core.telemetry.runtime import (
 )
 
 __all__ = [
+    "InstrumentedHealthChecker",
+    "InstrumentedModelGateway",
     "MetricsRuntime",
     "TelemetryManager",
     "TelemetryRuntime",
     "bounded_route",
     "build_otlp_exporter",
+    "instrument_health_checkers",
     "status_class",
 ]

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 
+import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
@@ -78,3 +80,23 @@ async def test_concurrent_requests_keep_context_isolated() -> None:
     assert first.json() == {"request_id": "request-a", "correlation_id": "correlation-a"}
     assert second.json() == {"request_id": "request-b", "correlation_id": "correlation-b"}
     assert get_request_context() is None
+
+
+async def test_request_logs_use_route_template_instead_of_resource_identifier(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    app = create_app()
+
+    @app.get("/test/items/{item_id}")
+    async def item(item_id: str) -> dict[str, str]:
+        return {"item_id": item_id}
+
+    with caplog.at_level(logging.INFO, logger="enterprise_doc_api.request"):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.get("/test/items/secret-resource-id")
+
+    assert response.status_code == 200
+    records = [record for record in caplog.records if record.msg == "request_completed"]
+    assert records
+    assert records[-1].event_data["route"] == "/test/items/{item_id}"
+    assert "secret-resource-id" not in str(records[-1].event_data)
