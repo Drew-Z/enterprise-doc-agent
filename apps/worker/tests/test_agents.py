@@ -8,10 +8,13 @@ import pytest
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import Command
 
+from enterprise_doc_core.agents import RoutedChatModelGateway
+from enterprise_doc_core.config import ModelProvider, ModelSettings
 from enterprise_doc_worker.agent_handler import AgentExecutionContext
 from enterprise_doc_worker.agents import (
     AgentGraphExecutionResultInvalid,
     AgentGraphExecutor,
+    _configured_gateway,
 )
 
 
@@ -142,3 +145,28 @@ async def test_graph_executor_rejects_unknown_result_outcome() -> None:
 
     with pytest.raises(AgentGraphExecutionResultInvalid):
         await executor(_context())
+
+
+def test_configured_gateway_uses_explicit_route_deadline() -> None:
+    gateway = _configured_gateway(
+        ModelSettings(
+            fallback_provider=ModelProvider.DETERMINISTIC,
+            route_deadline_seconds=12.5,
+        )
+    )
+
+    assert isinstance(gateway, RoutedChatModelGateway)
+    assert gateway.deadline_seconds == 12.5
+
+
+def test_configured_gateway_uses_compatible_combined_timeout_by_default() -> None:
+    gateway = _configured_gateway(
+        ModelSettings(
+            fallback_provider=ModelProvider.DETERMINISTIC,
+            timeout_seconds=20,
+            fallback_timeout_seconds=7,
+        )
+    )
+
+    assert isinstance(gateway, RoutedChatModelGateway)
+    assert gateway.deadline_seconds == 27

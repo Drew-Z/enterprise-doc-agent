@@ -5,7 +5,7 @@
   "description": "",
   "status": "in_progress",
   "dev_type": "fullstack",
-  "scope": "M0-M7 milestone integration, evidence review, end-to-end acceptance, release and rollback ownership",
+  "scope": "M0-M8 milestone integration, evidence review, end-to-end acceptance, release and rollback ownership",
   "package": null,
   "priority": "P2",
   "creator": "developer",
@@ -26,13 +26,23 @@
     "07-18-m4-agent-mcp-hitl",
     "07-19-m5-observability-eval-load",
     "07-19-m6-cicd-kubernetes",
-    "07-19-m7-local-model-routing"
+    "07-19-m7-local-model-routing",
+    "07-19-m8-end-to-end-model-deadline"
   ],
   "parent": null,
   "relatedFiles": [],
-  "notes": "M0-M3 are archived with reviewed local evidence. M4-M7 implementation currently coexists in one dirty working tree at the user's request; formal summaries are indexed as blocked_external and retain separate raw captures plus manual-gate records. M4 reviewed/evidence commits and all external M5-M7 deployment, capacity, provider, observability, recovery, and hardware gates remain open.",
+  "notes": "M0-M3 are archived with reviewed local evidence. M4-M7 have local implementation and evidence commits, while external deployment, capacity, provider, observability, recovery, and hardware gates remain open. M8 adds a shared primary/fallback route deadline and owns new local contract evidence.",
   "meta": {
-    "current_milestone": "M7",
-    "completed_milestones": ["M0", "M1", "M2", "M3"]
+    "current_milestone": "M8",
+    "completed_milestones": [
+      "M0",
+      "M1",
+      "M2",
+      "M3",
+      "M4",
+      "M5",
+      "M6",
+      "M7"
+    ]
   }
 }

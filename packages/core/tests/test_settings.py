@@ -77,6 +77,15 @@ def test_model_embedding_dimension_matches_the_fixed_vector_index() -> None:
         ModelSettings(embedding_dimension=1536)
 
 
+def test_model_route_deadline_is_optional_and_bounded() -> None:
+    assert ModelSettings().route_deadline_seconds is None
+    assert ModelSettings(route_deadline_seconds=12.5).route_deadline_seconds == 12.5
+    with pytest.raises(ValidationError):
+        ModelSettings(route_deadline_seconds=0)
+    with pytest.raises(ValidationError):
+        ModelSettings(route_deadline_seconds=601)
+
+
 def test_invalid_docx_envelope_limits_are_rejected(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

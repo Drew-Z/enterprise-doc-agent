@@ -217,23 +217,37 @@ class RoutedChatModelGateway:
         fallback: ChatModelGateway | None = None,
         fallback_descriptor: ModelRouteDescriptor | None = None,
         breaker: CircuitBreaker | None = None,
+        deadline_seconds: float | None = None,
     ) -> None:
+        if deadline_seconds is not None and (
+            not math.isfinite(deadline_seconds) or deadline_seconds <= 0
+        ):
+            raise ValueError("route deadline must be a positive finite number")
         self.primary = primary
         self.primary_descriptor = primary_descriptor
         self.fallback = fallback
         self.fallback_descriptor = fallback_descriptor
         self.breaker = breaker or CircuitBreaker()
+        self.deadline_seconds = deadline_seconds
         self.fallback_count = 0
 
     async def generate(self, request: GroundedModelRequest) -> GroundedModelOutput:
+        deadline = (
+            None
+            if self.deadline_seconds is None
+            else asyncio.get_running_loop().time() + self.deadline_seconds
+        )
         permit = await self.breaker.allow_request()
         if permit is None:
             if self.fallback is None:
                 raise ModelCircuitOpenError()
-            self.fallback_count += 1
-            return await self.fallback.generate(request)
+            return await self._generate_fallback(request, deadline=deadline)
         try:
-            output = await self.primary.generate(request)
+            output = await self._generate_before_deadline(
+                self.primary,
+                request,
+                deadline=deadline,
+            )
         except ModelGatewayError as error:
             if not error.retryable:
                 await self.breaker.abort_probe(permit)
@@ -241,14 +255,47 @@ class RoutedChatModelGateway:
             await self.breaker.record_retryable_failure(permit)
             if self.fallback is None:
                 raise
-            self.fallback_count += 1
-            return await self.fallback.generate(request)
+            return await self._generate_fallback(request, deadline=deadline)
         except BaseException:
             await self.breaker.abort_probe(permit)
             raise
         else:
             await self.breaker.record_success(permit)
             return output
+
+    async def _generate_fallback(
+        self,
+        request: GroundedModelRequest,
+        *,
+        deadline: float | None,
+    ) -> GroundedModelOutput:
+        if self.fallback is None:
+            raise ModelCircuitOpenError()
+        if deadline is not None and asyncio.get_running_loop().time() >= deadline:
+            raise ModelTimeoutError()
+        self.fallback_count += 1
+        return await self._generate_before_deadline(
+            self.fallback,
+            request,
+            deadline=deadline,
+        )
+
+    @staticmethod
+    async def _generate_before_deadline(
+        gateway: ChatModelGateway,
+        request: GroundedModelRequest,
+        *,
+        deadline: float | None,
+    ) -> GroundedModelOutput:
+        if deadline is None:
+            return await gateway.generate(request)
+        if asyncio.get_running_loop().time() >= deadline:
+            raise ModelTimeoutError()
+        try:
+            async with asyncio.timeout_at(deadline):
+                return await gateway.generate(request)
+        except TimeoutError as error:
+            raise ModelTimeoutError() from error
 
     async def healthcheck(self) -> dict[str, ModelProviderHealth]:
         return {

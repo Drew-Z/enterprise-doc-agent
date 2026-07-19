@@ -17,7 +17,8 @@ injection, a unified RAG/Agent evaluation report, and a bounded HTTP load runner
 adds non-root service Dockerfiles, Kubernetes base/staging/prod manifests, migration,
 probe, RBAC/NetworkPolicy/PDB contracts, supply-chain workflows, and guarded backup/
 restore/rollback scripts. M7 adds provider route metadata, retryable-only fallback,
-CLOSED/OPEN/HALF_OPEN circuit breaking, embedding-dimension checks, and deterministic
+CLOSED/OPEN/HALF_OPEN circuit breaking, a shared primary/fallback route deadline,
+embedding-dimension checks, and deterministic
 benchmark reports. These are implementation and local-contract facts. Real registry,
 cluster, staging, production-capacity, managed-observability, and GPU/vLLM evidence
 remain open external gates.

@@ -63,6 +63,21 @@ class ScriptedGateway:
         return await self.delegate.generate(request)
 
 
+class DelayedGateway:
+    def __init__(self, *, delay_seconds: float, error: Exception | None = None) -> None:
+        self.delay_seconds = delay_seconds
+        self.error = error
+        self.calls = 0
+        self.delegate = DeterministicGroundedGateway()
+
+    async def generate(self, request: GroundedModelRequest):
+        self.calls += 1
+        await asyncio.sleep(self.delay_seconds)
+        if self.error is not None:
+            raise self.error
+        return await self.delegate.generate(request)
+
+
 def _descriptor(name: str) -> ModelRouteDescriptor:
     return ModelRouteDescriptor(
         route_id=name,
@@ -107,6 +122,53 @@ async def test_permanent_provider_error_does_not_fallback() -> None:
     assert routed.fallback_count == 0
 
 
+async def test_primary_and_fallback_share_one_route_deadline() -> None:
+    primary = DelayedGateway(
+        delay_seconds=0.02,
+        error=ModelTimeoutError("primary provider timeout"),
+    )
+    fallback = DelayedGateway(delay_seconds=1.0)
+    routed = RoutedChatModelGateway(
+        primary=primary,
+        primary_descriptor=_descriptor("primary"),
+        fallback=fallback,
+        fallback_descriptor=_descriptor("fallback"),
+        deadline_seconds=0.06,
+    )
+    started_at = asyncio.get_running_loop().time()
+
+    with pytest.raises(ModelTimeoutError):
+        await routed.generate(_request())
+
+    elapsed = asyncio.get_running_loop().time() - started_at
+    assert elapsed < 0.3
+    assert primary.calls == 1
+    assert fallback.calls == 1
+    assert routed.fallback_count == 1
+
+
+async def test_exhausted_route_budget_does_not_invoke_fallback() -> None:
+    primary = DelayedGateway(delay_seconds=1.0)
+    fallback = ScriptedGateway([None])
+    breaker = CircuitBreaker(failure_threshold=1, cooldown_seconds=60)
+    routed = RoutedChatModelGateway(
+        primary=primary,
+        primary_descriptor=_descriptor("primary"),
+        fallback=fallback,
+        fallback_descriptor=_descriptor("fallback"),
+        breaker=breaker,
+        deadline_seconds=0.03,
+    )
+
+    with pytest.raises(ModelTimeoutError):
+        await routed.generate(_request())
+
+    assert primary.calls == 1
+    assert fallback.calls == 0
+    assert routed.fallback_count == 0
+    assert breaker.state is CircuitState.OPEN
+
+
 async def test_circuit_opens_skips_primary_and_recovers_with_one_probe() -> None:
     now = 0.0
 
@@ -136,6 +198,28 @@ async def test_circuit_opens_skips_primary_and_recovers_with_one_probe() -> None
     await routed.generate(_request())
     assert primary.calls == 3
     assert breaker.state is CircuitState.CLOSED
+
+
+async def test_open_circuit_fallback_uses_route_budget_without_calling_primary() -> None:
+    primary = ScriptedGateway([ModelTimeoutError()])
+    fallback = DelayedGateway(delay_seconds=0.01)
+    breaker = CircuitBreaker(failure_threshold=1, cooldown_seconds=60)
+    routed = RoutedChatModelGateway(
+        primary=primary,
+        primary_descriptor=_descriptor("primary"),
+        fallback=fallback,
+        fallback_descriptor=_descriptor("fallback"),
+        breaker=breaker,
+        deadline_seconds=0.1,
+    )
+
+    await routed.generate(_request())
+    assert breaker.state is CircuitState.OPEN
+    await routed.generate(_request())
+
+    assert primary.calls == 1
+    assert fallback.calls == 2
+    assert routed.fallback_count == 2
 
 
 class ConcurrentPrimaryGateway:
@@ -212,6 +296,88 @@ async def test_half_open_probe_exception_reopens_circuit(probe_error: BaseExcept
     with pytest.raises(type(probe_error)):
         await routed.generate(_request())
     assert breaker.state is CircuitState.OPEN
+
+
+async def test_half_open_probe_route_timeout_reopens_circuit() -> None:
+    now = 0.0
+
+    def clock() -> float:
+        return now
+
+    primary = ScriptedGateway([ModelTimeoutError()])
+    fallback = ScriptedGateway([None])
+    breaker = CircuitBreaker(failure_threshold=1, cooldown_seconds=10, clock=clock)
+    routed = RoutedChatModelGateway(
+        primary=primary,
+        primary_descriptor=_descriptor("primary"),
+        fallback=fallback,
+        fallback_descriptor=_descriptor("fallback"),
+        breaker=breaker,
+        deadline_seconds=0.03,
+    )
+    await routed.generate(_request())
+    assert breaker.state is CircuitState.OPEN
+
+    now = 11.0
+    routed.primary = DelayedGateway(delay_seconds=1.0)
+    with pytest.raises(ModelTimeoutError):
+        await routed.generate(_request())
+
+    assert breaker.state is CircuitState.OPEN
+    assert fallback.calls == 1
+
+
+class CancellableProbeGateway:
+    def __init__(self) -> None:
+        self.calls = 0
+        self.started = asyncio.Event()
+
+    async def generate(self, _: GroundedModelRequest):
+        self.calls += 1
+        if self.calls == 1:
+            raise ModelTimeoutError()
+        self.started.set()
+        await asyncio.Event().wait()
+
+
+async def test_caller_cancellation_is_not_converted_to_route_timeout() -> None:
+    now = 0.0
+
+    def clock() -> float:
+        return now
+
+    primary = CancellableProbeGateway()
+    fallback = ScriptedGateway([None])
+    breaker = CircuitBreaker(failure_threshold=1, cooldown_seconds=10, clock=clock)
+    routed = RoutedChatModelGateway(
+        primary=primary,
+        primary_descriptor=_descriptor("primary"),
+        fallback=fallback,
+        fallback_descriptor=_descriptor("fallback"),
+        breaker=breaker,
+        deadline_seconds=5.0,
+    )
+    await routed.generate(_request())
+    now = 11.0
+    probe = asyncio.create_task(routed.generate(_request()))
+    await primary.started.wait()
+
+    probe.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await probe
+
+    assert breaker.state is CircuitState.OPEN
+    assert fallback.calls == 1
+
+
+def test_route_deadline_must_be_positive_and_finite() -> None:
+    for invalid in (0.0, -1.0, float("inf"), float("nan")):
+        with pytest.raises(ValueError, match="route deadline"):
+            RoutedChatModelGateway(
+                primary=ScriptedGateway([None]),
+                primary_descriptor=_descriptor("primary"),
+                deadline_seconds=invalid,
+            )
 
 
 class WrongDimensionProvider:

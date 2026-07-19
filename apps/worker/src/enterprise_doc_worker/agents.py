@@ -83,18 +83,22 @@ def _configured_gateway(settings: ModelSettings) -> ChatModelGateway:
     primary = _provider_gateway(settings)
     if settings.fallback_provider is None:
         return primary
+    fallback_timeout_seconds = settings.fallback_timeout_seconds or settings.timeout_seconds
     fallback_settings = ModelSettings(
         provider=settings.fallback_provider,
         base_url=settings.fallback_base_url,
         api_key=settings.fallback_api_key,
         model_name=settings.fallback_model_name,
         model_version=settings.fallback_model_version,
-            route_id=f"{settings.route_id}-fallback",
-            embedding_dimension=settings.embedding_dimension,
-            timeout_seconds=settings.fallback_timeout_seconds or settings.timeout_seconds,
+        route_id=f"{settings.route_id}-fallback",
+        embedding_dimension=settings.embedding_dimension,
+        timeout_seconds=fallback_timeout_seconds,
         max_output_bytes=settings.max_output_bytes,
     )
     fallback = _provider_gateway(fallback_settings)
+    route_deadline_seconds = settings.route_deadline_seconds
+    if route_deadline_seconds is None:
+        route_deadline_seconds = settings.timeout_seconds + fallback_timeout_seconds
     return RoutedChatModelGateway(
         primary=primary,
         primary_descriptor=_route_descriptor(settings),
@@ -104,6 +108,7 @@ def _configured_gateway(settings: ModelSettings) -> ChatModelGateway:
             failure_threshold=settings.circuit_failure_threshold,
             cooldown_seconds=settings.circuit_cooldown_seconds,
         ),
+        deadline_seconds=route_deadline_seconds,
     )
 
 

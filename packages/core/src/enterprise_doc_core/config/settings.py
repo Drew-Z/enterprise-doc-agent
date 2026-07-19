@@ -164,6 +164,7 @@ class ModelSettings(BaseModel):
     context_window_tokens: int | None = Field(default=None, ge=1, le=2_000_000)
     embedding_dimension: int = Field(default=8, ge=8, le=8)
     timeout_seconds: float = Field(default=30.0, gt=0, le=300)
+    route_deadline_seconds: float | None = Field(default=None, gt=0, le=600)
     max_output_bytes: int = Field(default=256 * 1024, ge=1024, le=4 * 1024**2)
     fallback_provider: ModelProvider | None = None
     fallback_base_url: str | None = None
