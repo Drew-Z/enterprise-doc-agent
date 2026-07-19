@@ -3,7 +3,7 @@
   "name": "m8-end-to-end-model-deadline",
   "title": "M8 End-to-End Model Deadline",
   "description": "Bound primary and fallback model execution with one monotonic route deadline while preserving cancellation, circuit-breaker, and public gateway contracts.",
-  "status": "in_progress",
+  "status": "completed",
   "dev_type": "backend",
   "scope": "route-level monotonic deadline; primary/fallback remaining-budget enforcement; cancellation propagation; circuit-breaker timeout accounting; configuration and contract tests",
   "package": "core",
@@ -11,7 +11,7 @@
   "creator": "developer",
   "assignee": "developer",
   "createdAt": "2026-07-19",
-  "completedAt": null,
+  "completedAt": "2026-07-19",
   "branch": "feat/m4-agent-mcp-hitl",
   "base_branch": "feat/m4-agent-mcp-hitl",
   "worktree_path": null,
@@ -26,12 +26,12 @@
     "apps/worker/src/enterprise_doc_worker/agents.py",
     "packages/core/tests/test_model_routing.py"
   ],
-  "notes": "M8 closes the explicit M7 production gap where primary and fallback provider calls have independent timeout budgets. It preserves the ChatModelGateway protocol and records local contract evidence only.",
+  "notes": "M8 closes the explicit M7 production gap where primary and fallback provider calls had independent timeout budgets. Commit 9f4d7d9 preserves the ChatModelGateway protocol; evidence/m8/20260719-231759-m8-end-to-end-model-deadline.json records reviewed local contract evidence only.",
   "meta": {
     "milestone": "M8",
     "workflow": "tdd",
-    "current_slice": 0,
-    "completed_slices": [],
+    "current_slice": 3,
+    "completed_slices": [0, 1, 2, 3],
     "approval_required_before_start": false
   }
 }

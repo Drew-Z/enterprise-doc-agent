@@ -45,6 +45,11 @@
       "milestone": "M7",
       "status": "blocked_external",
       "manifest": "evidence/m7/20260719-153217-m7-local-model-routing.json"
+    },
+    {
+      "milestone": "M8",
+      "status": "passed",
+      "manifest": "evidence/m8/20260719-231759-m8-end-to-end-model-deadline.json"
     }
   ],
   "working_tree_captures": [

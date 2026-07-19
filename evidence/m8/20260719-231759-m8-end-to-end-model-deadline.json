@@ -1,0 +1,89 @@
+{
+  "evidence_id": "m8-end-to-end-model-deadline",
+  "milestone": "M8",
+  "requirement_ids": [
+    "M8-R1",
+    "M8-R2",
+    "M8-R3",
+    "M8-R4",
+    "M8-R5",
+    "M8-R6",
+    "M8-R7"
+  ],
+  "status": "passed",
+  "owner": "Codex",
+  "commit_sha": "9f4d7d940fb4224a9133fa78ec07b3c10e5a2ce8",
+  "reviewed_commit": "9f4d7d940fb4224a9133fa78ec07b3c10e5a2ce8",
+  "evidence_commit": null,
+  "working_tree_dirty": false,
+  "started_at": "2026-07-19T23:09:00+08:00",
+  "completed_at": "2026-07-19T23:17:59+08:00",
+  "environment": {
+    "operating_system": "Windows",
+    "python": "3.12.13 via uv",
+    "runtime": "local asyncio deterministic gateways",
+    "evidence_mode": "reviewed local contract"
+  },
+  "image_digest": "not_applicable",
+  "result_summary": "Primary and fallback now consume one monotonic route deadline. Local tests prove remaining-budget enforcement, no fallback invocation after budget exhaustion, retryable circuit accounting, half-open timeout recovery, caller cancellation propagation, configuration assembly, and public ChatModelGateway contract preservation.",
+  "command_or_procedure": [
+    {
+      "gate_id": "m8-focused-regression",
+      "command": "uv run pytest packages/core/tests/test_model_routing.py packages/core/tests/test_settings.py apps/worker/tests/test_agents.py -q",
+      "exit_code": 0,
+      "result": "27 passed in 1.96s"
+    },
+    {
+      "gate_id": "m8-deadline-repeatability",
+      "command": "Run uv run pytest packages/core/tests/test_model_routing.py -q three consecutive times",
+      "exit_code": 0,
+      "result": "13 passed in 1.46s; 13 passed in 1.59s; 13 passed in 1.53s"
+    },
+    {
+      "gate_id": "m8-full-backend-regression",
+      "command": "uv run pytest -q",
+      "exit_code": 0,
+      "result": "596 passed in 83.50s"
+    },
+    {
+      "gate_id": "m8-ruff",
+      "command": "uv run ruff check packages/core/src/enterprise_doc_core/agents/gateway.py packages/core/src/enterprise_doc_core/config/settings.py apps/worker/src/enterprise_doc_worker/agents.py packages/core/tests/test_model_routing.py packages/core/tests/test_settings.py apps/worker/tests/test_agents.py",
+      "exit_code": 0,
+      "result": "All checks passed"
+    },
+    {
+      "gate_id": "m8-mypy",
+      "command": "uv run mypy packages/core/src apps/worker/src",
+      "exit_code": 0,
+      "result": "Success: no issues found in 86 source files"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "packages/core/src/enterprise_doc_core/agents/gateway.py",
+      "kind": "source",
+      "sha256": "92dcc9bd603171e668027a96639efc87aa605ce6bb6843f5221d58b9367fff2e"
+    },
+    {
+      "path": "packages/core/tests/test_model_routing.py",
+      "kind": "test",
+      "sha256": "80905945bc3fde08d8322c17d205998622e8979679ad430c937031a640775506"
+    },
+    {
+      "path": "apps/worker/src/enterprise_doc_worker/agents.py",
+      "kind": "source",
+      "sha256": "4a1ce350ff72a45b10f3fa12c48cf27a5e0efdde9f1a28492d1b8a70b2b5fd12"
+    },
+    {
+      "path": ".trellis/tasks/07-19-m8-end-to-end-model-deadline/prd.md",
+      "kind": "contract",
+      "sha256": "13ca299e3453f11f9283ad3cf1de711fcbb8beccc3ad5ee64f01d8f9fd2420b4"
+    }
+  ],
+  "limitations": [
+    "The tests use local deterministic asyncio gateways and prove orchestration timing contracts, not real-provider latency, network SLOs, model quality, cost, or production capacity.",
+    "The compatibility default equals the primary timeout plus the effective fallback timeout; production deployments should configure a tighter explicit route deadline from measured SLOs.",
+    "No remote CI, registry, staging, GPU, vLLM, or provider benchmark is implied by this local M8 evidence."
+  ],
+  "manual_gates": []
+}

@@ -24,15 +24,15 @@ Bound primary and fallback model execution with one monotonic route deadline whi
 
 ## Acceptance Criteria
 
-- [ ] Primary success, retryable fallback success, permanent error, circuit-open,
+- [x] Primary success, retryable fallback success, permanent error, circuit-open,
   exhausted-budget, half-open timeout, and caller-cancellation paths have tests.
-- [ ] Total primary-plus-fallback wall time is bounded by one route deadline.
-- [ ] An exhausted budget does not call the fallback gateway.
-- [ ] Timeout accounting opens or reopens the circuit according to existing policy.
-- [ ] Worker configuration passes the explicit or compatibility deadline to the routed
+- [x] Total primary-plus-fallback wall time is bounded by one route deadline.
+- [x] An exhausted budget does not call the fallback gateway.
+- [x] Timeout accounting opens or reopens the circuit according to existing policy.
+- [x] Worker configuration passes the explicit or compatibility deadline to the routed
   gateway without changing single-provider behavior.
-- [ ] Ruff, mypy, focused tests, full backend tests, and evidence contracts pass.
-- [ ] Documentation no longer describes the shared deadline as missing.
+- [x] Ruff, mypy, focused tests, full backend tests, and evidence contracts pass.
+- [x] Documentation no longer describes the shared deadline as missing.
 
 ## Notes
 
