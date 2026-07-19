@@ -1,0 +1,89 @@
+{
+  "artifacts": [
+    {
+      "kind": "postgres-custom-backup",
+      "path": "evidence/reviewed/20260720-052740/local-recovery/database.dump",
+      "sha256": "e780e4c4488e1a608b1877511377435d614b6ddc7cec83346ba61ffb82e54923"
+    },
+    {
+      "kind": "source-inventory",
+      "path": "evidence/reviewed/20260720-052740/local-recovery/inventory-before.json",
+      "sha256": "dc6afacf86ac63298543ea9965fde9e799a0f4704552bcc621da35a3b38efe83"
+    },
+    {
+      "kind": "restore-inventory",
+      "path": "evidence/reviewed/20260720-052740/local-recovery/inventory-after.json",
+      "sha256": "249a093aab02ee660cbcd7ac30bfe74240197e5a6e409e6743d24e32e40b6ee6"
+    },
+    {
+      "kind": "command-log",
+      "path": "evidence/reviewed/20260720-052740/local-recovery/commands.log",
+      "sha256": "59b2b410e438d8ae631819efdb27c6e027926b1a73cd6856327b7ce3a3abc5d5"
+    }
+  ],
+  "blocking_reason": "The local database restore passed, but no immutable Kubernetes release rollback or production-like RPO/RTO drill was executed.",
+  "command_or_procedure": [
+    "docker compose -f infra/compose/docker-compose.yml exec -T postgres pg_dump --format=custom --no-owner --no-privileges -U enterprise_doc -d enterprise_doc_fixture_20260720_052740",
+    "docker compose -f infra/compose/docker-compose.yml exec -T postgres dropdb --if-exists -U enterprise_doc enterprise_doc_restore_20260720_052740",
+    "docker compose -f infra/compose/docker-compose.yml exec -T postgres createdb -U enterprise_doc enterprise_doc_restore_20260720_052740",
+    "docker compose -f infra/compose/docker-compose.yml exec -T postgres pg_restore --exit-on-error --single-transaction --no-owner --no-privileges -U enterprise_doc -d enterprise_doc_restore_20260720_052740",
+    "docker compose -f infra/compose/docker-compose.yml exec -T postgres dropdb --if-exists -U enterprise_doc enterprise_doc_restore_20260720_052740"
+  ],
+  "commit_sha": "70f5644b85b8bb5640d10d36c8261bea25f364f2",
+  "completed_at": "2026-07-19T21:32:53.739638+00:00",
+  "environment": {
+    "cluster": null,
+    "external_execution": false,
+    "name": "local-compose-isolated-restore",
+    "provider": null,
+    "region": null
+  },
+  "evidence_id": "local-recovery-20260719T213253Z",
+  "evidence_type": "recovery",
+  "image_digest": null,
+  "limitations": [
+    "This local drill does not restore object-store versions.",
+    "This local drill does not execute Kubernetes rollout rollback or authenticated smoke.",
+    "Local timings are not production RPO or RTO measurements."
+  ],
+  "measurements": {
+    "backup_age_seconds_at_restore": 7.056926727294922,
+    "local_data_inventory_match": true,
+    "restore_duration_seconds": 0.9530000000959262,
+    "source_table_count": 21
+  },
+  "milestone": "M6",
+  "operator": "reviewed-operator",
+  "owner": "platform-engineering",
+  "prerequisites": [
+    "Provide an isolated external restore target and versioned object-store backup.",
+    "Provide immutable deployment digests and a compatible Kubernetes rollback revision.",
+    "Run authenticated application smoke after restore and rollback."
+  ],
+  "requirement_ids": [
+    "M6-R6",
+    "DR-5",
+    "DR-9"
+  ],
+  "schema_version": 1,
+  "smoke_checks": [
+    {
+      "name": "backup_integrity",
+      "status": "passed"
+    },
+    {
+      "name": "data_integrity",
+      "status": "passed"
+    },
+    {
+      "name": "application_readiness",
+      "status": "not_executed"
+    },
+    {
+      "name": "rollback_readiness",
+      "status": "not_executed"
+    }
+  ],
+  "started_at": "2026-07-19T21:32:41.484137+00:00",
+  "status": "blocked_external"
+}

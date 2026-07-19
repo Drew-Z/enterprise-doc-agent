@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-07-20T05:39:00+08:00",
+  "reviewed_commit": "70f5644b85b8bb5640d10d36c8261bea25f364f2",
+  "files": [
+    {
+      "path": "evidence/reviewed/20260720-052740/actionlint.log",
+      "size": 125,
+      "sha256": "728490e5465117ac6c0c1f261089913d959d253de6d99002c767c2fa279c64a6"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/application-capacity-dry-run.log",
+      "size": 99,
+      "sha256": "8e06cef40bc5a3c7f901b5d70f234b57d623f76e7e2106a2e7e67642d92a4461"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/backend-pytest.log",
+      "size": 762,
+      "sha256": "5ee71cad305e11f5d059e620bdd7ea0535ffe0d1db811136774cfd92b98d091a"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/compose-config.log",
+      "size": 13,
+      "sha256": "a9f58776a09b5dac438049683f24bf85764e0ff8e7455952456165c68c158627"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/deployment-pytest.log",
+      "size": 101,
+      "sha256": "c7d3e6844e0e54406551dd972a22a97aacea73bf8cbcdb867f0f2cd50f376a79"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/fixture-alembic-upgrade-head.log",
+      "size": 1324,
+      "sha256": "e7ff667e5149473d05c3ed6a386f97fc54d9063dc04fe72253b80e28b2454b24"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/kustomize-base.yaml",
+      "size": 13959,
+      "sha256": "b545a889136a3700ca7fd00c4b5a8de77f699735709b1cffff73f37ab53f3832"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/kustomize-prod.yaml",
+      "size": 14087,
+      "sha256": "378dd223514ab41a87eb2fe57393982c412788a270c8e86702fbd7691a4c512b"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/kustomize-staging.yaml",
+      "size": 15638,
+      "sha256": "00c22d472e967c2b11e03007dafb59cfc1b241d69efeffd1b1134a487187668d"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/kustomize-validation.log",
+      "size": 82,
+      "sha256": "b3d816701961a69021cf810fe1a4c7c5731b0ac1637601d3405d3638045adaab"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/local-recovery-dry-run.log",
+      "size": 209,
+      "sha256": "1826c57e64197c5a6b9e52360b6a717ea3bcb41af5d7c07cd7b4ca46290ef79c"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/local-recovery-execution.log",
+      "size": 191,
+      "sha256": "18b7047d180ff83c4a8e8d8bbf63585ca4884beedd4f36873e62ce5721616249"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/local-recovery-fixture.log",
+      "size": 195,
+      "sha256": "ec9391abfb1a5320fc794aaae0c2f60c36c552c163583289f9116b52d79951f5"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/local-recovery-validation.log",
+      "size": 130,
+      "sha256": "ef8343d77f9a6f764d5ce551c46a4524277883d81c4a56fe6c2169f12a1348b2"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/local-recovery/commands.log",
+      "size": 809,
+      "sha256": "59b2b410e438d8ae631819efdb27c6e027926b1a73cd6856327b7ce3a3abc5d5"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/local-recovery/database.dump",
+      "size": 93818,
+      "sha256": "e780e4c4488e1a608b1877511377435d614b6ddc7cec83346ba61ffb82e54923"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/local-recovery/inventory-after.json",
+      "size": 679,
+      "sha256": "249a093aab02ee660cbcd7ac30bfe74240197e5a6e409e6743d24e32e40b6ee6"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/local-recovery/inventory-before.json",
+      "size": 679,
+      "sha256": "dc6afacf86ac63298543ea9965fde9e799a0f4704552bcc621da35a3b38efe83"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/local-recovery/report.json",
+      "size": 3687,
+      "sha256": "316a649dbdd08235303bf8827368372ac729096c5508d270859281d60ecf0294"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/m4-agent-mcp-integration.log",
+      "size": 117,
+      "sha256": "4970e3e075ee973bc8bce743df453b00356e14dcb53dc1551a99b014c84f17d8"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/m4-agent-safety-v1.json",
+      "size": 5076,
+      "sha256": "0c831cecfd28d9fe8cfee58b4bbcc0eb0292421978023689f4e9b61ba12cf4a2"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/m4-security-contracts.log",
+      "size": 100,
+      "sha256": "3104473639ec183fc8ce5982a10808fee5f35166da13dc4697b59cc82b222f9a"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/model-capacity-dry-run.log",
+      "size": 202,
+      "sha256": "bd2f5c479d98bc05f2c0d625b7fddf4b943c794b241f3da256f7ed6dd5d0f8e7"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/model-routing-deadline-regression.log",
+      "size": 3512,
+      "sha256": "e5a0cbdfc5c3491365e3bb3082a71119b3546392166426b214930f008a15cb60"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/observability-static-pytest.log",
+      "size": 100,
+      "sha256": "06b748150b9d22ead6e85895503497ac95ec3dd55fa061ce09798c4ded3cb39d"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/playwright-summary.log",
+      "size": 268,
+      "sha256": "c9d9c23e6aee4dbdcabde88a98a252574d2f5bd3315e0b3e268dec24fe600130"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/pnpm-quality.log",
+      "size": 12947,
+      "sha256": "d54f7f8c7681eb4a76fcb4c7b152f14e6a96cb2b28124dcf3e3d05e604e1693f"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/privacy-scan.log",
+      "size": 129,
+      "sha256": "575189793d5bae52bdeb60d3a2214b5a04dfc4923b3d20a5b96f7b567f3da2ad"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/prometheus-config-validation.log",
+      "size": 289,
+      "sha256": "ba0f2d11925d87ab3b6a667bcc3e2817b3ab030e7fe0e472dc3b98d8184a9a61"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/reviewed-commit.log",
+      "size": 42,
+      "sha256": "2ddcece450c52b28795f65e6de265330ffcb735a9a27191b6c26a877744e1eab"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/reviewed-run-summary.json",
+      "size": 2166,
+      "sha256": "76fdfaf83bf81b7dc6212c0d22eee237a2236a9a4fb3471e4799279b6cbf2db1"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/tool-versions.log",
+      "size": 173,
+      "sha256": "9ac453fd147810315efbf7dd77c34526ae80934a9cc817bc8bdfec9d4426c4bc"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/tracked-worktree-status.log",
+      "size": 110,
+      "sha256": "32093809478b5207b5bd1264a2096d2aff484d99532454745ec4b54b3c86471a"
+    }
+  ]
+}

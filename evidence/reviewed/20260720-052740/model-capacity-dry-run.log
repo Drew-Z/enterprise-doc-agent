@@ -1,0 +1,8 @@
+{
+  "dry_run": true,
+  "model": "example/legal-instruct",
+  "model_revision": "0123456789abcdef0123456789abcdef01234567",
+  "phase_count": 4,
+  "repetitions": 2,
+  "external_execution": false
+}

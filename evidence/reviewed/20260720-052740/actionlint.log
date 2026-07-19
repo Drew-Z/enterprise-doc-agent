@@ -1,0 +1,3 @@
+image=rhysd/actionlint:1.7.7
+image_id=sha256:b6d0bc67a629b20d424b3e35964400ec438451f41b95302157868d5e379d5039
+exit_code=0

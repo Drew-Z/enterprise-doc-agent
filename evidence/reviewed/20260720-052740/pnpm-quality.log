@@ -1,0 +1,171 @@
+$ pnpm backend:format && pnpm backend:lint && pnpm backend:typecheck && pnpm backend:test && pnpm lint && pnpm typecheck && pnpm test && pnpm build
+$ uv run ruff format --check .
+271 files already formatted
+$ uv run ruff check .
+All checks passed!
+$ uv run mypy packages/core/src apps/api/src apps/worker/src apps/mcp/src
+Success: no issues found in 113 source files
+$ uv run pytest -m "not integration"
+============================= test session starts =============================
+platform win32 -- Python 3.12.13, pytest-9.1.1, pluggy-1.6.0
+rootdir: D:\workspace4Cursor\enterprise-doc-agent
+configfile: pyproject.toml
+testpaths: apps, packages, tests
+plugins: anyio-4.14.2, langsmith-0.10.6, asyncio-1.4.0, cov-7.1.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 645 items / 100 deselected / 545 selected
+
+apps\api\tests\test_agent_api.py ...                                     [  0%]
+apps\api\tests\test_agent_artifact_api.py ..                             [  0%]
+apps\api\tests\test_agent_sse.py ...                                     [  1%]
+apps\api\tests\test_api_telemetry.py .                                   [  1%]
+apps\api\tests\test_approval_api.py ...                                  [  2%]
+apps\api\tests\test_auth_contract.py .........                           [  3%]
+apps\api\tests\test_health.py ...                                        [  4%]
+apps\api\tests\test_job_router.py ..                                     [  4%]
+apps\api\tests\test_metrics.py .                                         [  4%]
+apps\api\tests\test_request_context.py ....                              [  5%]
+apps\api\tests\test_settings.py ..                                       [  6%]
+apps\api\tests\test_upload_abort_contract.py .......                     [  7%]
+apps\api\tests\test_upload_complete_contract.py ...............          [ 10%]
+apps\api\tests\test_upload_create_contract.py ............               [ 12%]
+apps\api\tests\test_upload_session_contract.py ....                      [ 13%]
+apps\mcp\tests\test_package.py .                                         [ 13%]
+apps\mcp\tests\test_server.py .......                                    [ 14%]
+apps\worker\tests\test_agent_handler.py ..........                       [ 16%]
+apps\worker\tests\test_agents.py ......                                  [ 17%]
+apps\worker\tests\test_consumer_main.py .                                [ 17%]
+apps\worker\tests\test_faults.py .....                                   [ 18%]
+apps\worker\tests\test_handler.py ..                                     [ 18%]
+apps\worker\tests\test_health.py ...                                     [ 19%]
+apps\worker\tests\test_lifecycle.py ..                                   [ 19%]
+apps\worker\tests\test_mcp_client.py .......                             [ 21%]
+apps\worker\tests\test_publisher.py ...                                  [ 21%]
+apps\worker\tests\test_queue.py ............                             [ 23%]
+apps\worker\tests\test_settings.py ..                                    [ 24%]
+apps\worker\tests\test_worker_main.py .                                  [ 24%]
+apps\worker\tests\test_worker_telemetry.py .                             [ 24%]
+packages\core\tests\test_agent_graph.py .....                            [ 25%]
+packages\core\tests\test_agent_models.py .....                           [ 26%]
+packages\core\tests\test_agent_service.py ...                            [ 26%]
+packages\core\tests\test_agent_sse.py ...                                [ 27%]
+packages\core\tests\test_agent_state.py ................................ [ 33%]
+........                                                                 [ 34%]
+packages\core\tests\test_approval_service.py ......                      [ 35%]
+packages\core\tests\test_artifact_object_store.py ......                 [ 37%]
+packages\core\tests\test_checkpoint_runtime.py ...                       [ 37%]
+packages\core\tests\test_core_telemetry.py ...                           [ 38%]
+packages\core\tests\test_db.py .                                         [ 38%]
+packages\core\tests\test_document_envelope.py .......................... [ 43%]
+.....                                                                    [ 44%]
+packages\core\tests\test_document_evaluation.py ..                       [ 44%]
+packages\core\tests\test_document_ingestion.py .................         [ 47%]
+packages\core\tests\test_document_ingestion_service.py ...               [ 48%]
+packages\core\tests\test_document_rag_models.py ...                      [ 48%]
+packages\core\tests\test_document_retrieval.py ....                      [ 49%]
+packages\core\tests\test_evaluation_contracts.py ...                     [ 49%]
+packages\core\tests\test_execution_context.py ........                   [ 51%]
+packages\core\tests\test_grounded_answer.py .............                [ 53%]
+packages\core\tests\test_health.py ...                                   [ 54%]
+packages\core\tests\test_job_models.py ...                               [ 54%]
+packages\core\tests\test_logging.py ....                                 [ 55%]
+packages\core\tests\test_metrics.py .                                    [ 55%]
+packages\core\tests\test_model_gateway.py ....................           [ 59%]
+packages\core\tests\test_model_routing.py .............                  [ 61%]
+packages\core\tests\test_multipart_adapter.py ..........                 [ 63%]
+packages\core\tests\test_principal_context.py ..                         [ 64%]
+packages\core\tests\test_settings.py ..                                  [ 64%]
+packages\core\tests\test_upload_cleanup.py .........                     [ 66%]
+packages\core\tests\test_upload_models.py .....                          [ 66%]
+packages\core\tests\test_upload_policy.py ..........................     [ 71%]
+packages\core\tests\test_upload_session_service.py ..                    [ 72%]
+tests\agent\test_checkpoint_setup.py .....                               [ 73%]
+tests\agent\test_dependency_contract.py ...                              [ 73%]
+tests\agent\test_m4_migration.py .                                       [ 73%]
+tests\agent\test_settings.py .....                                       [ 74%]
+tests\contracts\test_m4_authorization_contracts.py ..                    [ 75%]
+tests\contracts\test_m4_evidence_contract.py ...                         [ 75%]
+tests\deployment\test_build_release_manifest.py ...                      [ 76%]
+tests\deployment\test_build_staging_release_record.py ....               [ 76%]
+tests\deployment\test_configure_staging_manifest.py ..                   [ 77%]
+tests\deployment\test_local_delivery_evidence.py ...                     [ 77%]
+tests\deployment\test_local_recovery_drill.py ..                         [ 78%]
+tests\deployment\test_m6_contracts.py .............                      [ 80%]
+tests\deployment\test_release_scripts.py .....                           [ 81%]
+tests\deployment\test_render_k8s_phase.py .                              [ 81%]
+tests\deployment\test_run_application_capacity.py .....                  [ 82%]
+tests\deployment\test_run_model_capacity.py .....                        [ 83%]
+tests\deployment\test_sanitize_deployment_evidence.py ...                [ 84%]
+tests\deployment\test_staging_smoke.py ...                               [ 84%]
+tests\deployment\test_validate_recovery_capacity_evidence.py .....       [ 85%]
+tests\deployment\test_validate_staging_secrets.py .....                  [ 86%]
+tests\evaluation\test_benchmark_m7.py ..                                 [ 86%]
+tests\evaluation\test_evaluate_m5.py ..                                  [ 87%]
+tests\evaluation\test_fault_drill.py ....                                [ 87%]
+tests\evaluation\test_m5_load.py ........                                [ 89%]
+tests\evaluation\test_m5_m7_evidence_contract.py ...                     [ 89%]
+tests\evaluation\test_m8_evidence_contract.py ..                         [ 90%]
+tests\evaluation\test_observability_stack.py .....                       [ 91%]
+tests\foundation\test_ci_contract.py ...                                 [ 91%]
+tests\foundation\test_documentation_contract.py .....                    [ 92%]
+tests\foundation\test_evidence_contract.py ...                           [ 93%]
+tests\foundation\test_migration_contract.py ...                          [ 93%]
+tests\foundation\test_object_store_compose_contract.py ..                [ 94%]
+tests\foundation\test_repository_contract.py ....                        [ 94%]
+tests\jobs\test_m2_evidence_contract.py .                                [ 95%]
+tests\jobs\test_m2_migration.py .                                        [ 95%]
+tests\jobs\test_m3_hardening_evidence_contract.py .                      [ 95%]
+tests\jobs\test_m3_migration.py ..                                       [ 95%]
+tests\multipart\test_bootstrap_principal.py .....                        [ 96%]
+tests\multipart\test_m1_evidence_contract.py .....                       [ 97%]
+tests\multipart\test_multipart_smoke_contract.py ....                    [ 98%]
+tests\security\test_m4_injection_safety.py ..                            [ 98%]
+tests\test_cleanup_uploads_cli.py .......                                [100%]
+
+==================== 545 passed, 100 deselected in 14.16s =====================
+$ pnpm --filter web lint
+$ eslint .
+$ pnpm --filter web typecheck
+$ tsc -b --pretty false
+$ pnpm --filter web test
+$ vitest run
+
+[1m[46m RUN [49m[22m [36mv3.2.7 [39m[90mD:/workspace4Cursor/enterprise-doc-agent/apps/web[39m
+
+ [32m✓[39m src/upload/hashing/client.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+ [32m✓[39m src/upload/hashing/runner.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 88[2mms[22m[39m
+ [32m✓[39m src/upload/hashing/protocol.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/upload/state/progress.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/upload/state/scheduler.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m src/upload/fileIdentity.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/upload/transfer/xhrUploadPart.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 48[2mms[22m[39m
+ [32m✓[39m src/upload/state/reducer.test.ts [2m([22m[2m21 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m src/upload/hashing/runtime.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 21[2mms[22m[39m
+ [32m✓[39m src/upload/api/schemas.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 25[2mms[22m[39m
+ [32m✓[39m src/agent/sse.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 43[2mms[22m[39m
+ [32m✓[39m src/upload/api/client.test.ts [2m([22m[2m23 tests[22m[2m)[22m[32m 59[2mms[22m[39m
+ [32m✓[39m src/agent/persistence.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m src/upload/persistence.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+ [32m✓[39m src/agent/api/client.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 31[2mms[22m[39m
+ [32m✓[39m src/upload/UploadWorkspace.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 168[2mms[22m[39m
+ [32m✓[39m src/App.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[32m 275[2mms[22m[39m
+ [32m✓[39m src/agent/AgentWorkspace.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 480[2mms[22m[39m
+   [33m[2m✓[22m[39m AgentWorkspace[2m > [22mresumes from the persisted cursor and pages beyond the API event limit [33m 307[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m18 passed[39m[22m[90m (18)[39m
+[2m      Tests [22m [1m[32m138 passed[39m[22m[90m (138)[39m
+[2m   Start at [22m 05:30:43
+[2m   Duration [22m 4.90s[2m (transform 1.59s, setup 9.48s, collect 7.65s, tests 1.37s, environment 34.95s, prepare 7.35s)[22m
+
+$ pnpm --filter web build
+$ tsc -b && vite build
+[36mvite v7.3.6 [32mbuilding client environment for production...[36m[39m
+transforming...
+[32m✓[39m 1814 modules transformed.
+rendering chunks...
+computing gzip size...
+[2mdist/[22m[32mindex.html                      [39m[1m[2m  0.42 kB[22m[1m[22m[2m │ gzip:   0.28 kB[22m
+[2mdist/[22m[32massets/hash.worker-D0FEPUy7.js  [39m[1m[2m 21.86 kB[22m[1m[22m
+[2mdist/[22m[35massets/index-D8nmvTUU.css       [39m[1m[2m 15.11 kB[22m[1m[22m[2m │ gzip:   3.49 kB[22m
+[2mdist/[22m[36massets/index-BbE7R8op.js        [39m[1m[2m373.59 kB[22m[1m[22m[2m │ gzip: 110.06 kB[22m
+[32m✓ built in 2.17s[39m

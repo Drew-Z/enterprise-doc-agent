@@ -1,0 +1,4 @@
+kubectl_version=v1.34.1
+base_exit_code=0
+staging_exit_code=0
+prod_exit_code=0

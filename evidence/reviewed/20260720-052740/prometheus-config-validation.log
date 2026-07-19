@@ -1,0 +1,9 @@
+image=prom/prometheus:v3.5.0
+exit_code=0
+Checking /etc/prometheus/prometheus.yml
+  SUCCESS: 1 rule files found
+ SUCCESS: /etc/prometheus/prometheus.yml is valid prometheus config file syntax
+
+Checking /etc/prometheus/rules/enterprise-doc-agent.rules.yml
+  SUCCESS: 7 rules found
+

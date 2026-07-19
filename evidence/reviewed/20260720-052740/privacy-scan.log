@@ -1,0 +1,5 @@
+uuid_scan=passed
+local_username_scan=passed
+local_password_scan=passed
+authorization_bearer_scan=passed
+api_key_scan=passed

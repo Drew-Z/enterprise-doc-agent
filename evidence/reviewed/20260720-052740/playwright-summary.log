@@ -1,0 +1,8 @@
+command=pnpm --filter web test:e2e
+exit_code=0
+tests=4 passed
+agent_workflow_tests=3 passed
+upload_recovery_tests=1 passed
+duration_seconds=26.6
+raw_runtime_log_committed=false
+redaction_reason=Runtime request, correlation, tenant, and actor identifiers are excluded.

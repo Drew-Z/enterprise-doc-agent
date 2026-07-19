@@ -1,0 +1,5 @@
+docker compose -f infra/compose/docker-compose.yml exec -T postgres pg_dump --format=custom --no-owner --no-privileges -U enterprise_doc -d enterprise_doc_fixture_20260720_052740
+docker compose -f infra/compose/docker-compose.yml exec -T postgres dropdb --if-exists -U enterprise_doc enterprise_doc_restore_20260720_052740
+docker compose -f infra/compose/docker-compose.yml exec -T postgres createdb -U enterprise_doc enterprise_doc_restore_20260720_052740
+docker compose -f infra/compose/docker-compose.yml exec -T postgres pg_restore --exit-on-error --single-transaction --no-owner --no-privileges -U enterprise_doc -d enterprise_doc_restore_20260720_052740
+docker compose -f infra/compose/docker-compose.yml exec -T postgres dropdb --if-exists -U enterprise_doc enterprise_doc_restore_20260720_052740

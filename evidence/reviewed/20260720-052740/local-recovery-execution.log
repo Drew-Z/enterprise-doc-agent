@@ -1,0 +1,2 @@
+NOTICE:  database "enterprise_doc_restore_20260720_052740" does not exist, skipping
+{"status": "blocked_external", "report": "evidence/reviewed/20260720-052740/local-recovery/report.json"}

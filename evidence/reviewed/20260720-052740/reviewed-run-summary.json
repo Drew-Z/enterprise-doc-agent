@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "reviewed_commit": "70f5644b85b8bb5640d10d36c8261bea25f364f2",
+  "tracked_worktree_dirty_at_start": false,
+  "environment": "local Windows, Docker Compose, PostgreSQL, Redis, MinIO",
+  "results": {
+    "backend_full": {
+      "status": "passed",
+      "tests": 645,
+      "duration_seconds": 130.28
+    },
+    "quality": {
+      "status": "passed",
+      "backend_non_integration_tests": 545,
+      "frontend_tests": 138,
+      "frontend_build": "passed",
+      "ruff": "passed",
+      "mypy": "passed"
+    },
+    "m4": {
+      "status": "passed",
+      "agent_mcp_integration_tests": 34,
+      "security_contract_tests": 4,
+      "safety_cases": 13,
+      "playwright_tests": 4
+    },
+    "delivery_static": {
+      "status": "passed",
+      "deployment_tests": 59,
+      "actionlint": "passed",
+      "kustomize_overlays": [
+        "base",
+        "staging",
+        "prod"
+      ],
+      "compose_config": "passed",
+      "prometheus_rules": 7
+    },
+    "application_capacity": {
+      "status": "dry_run_passed",
+      "phases": 4,
+      "repetitions": 2,
+      "external_execution": false
+    },
+    "model_capacity": {
+      "status": "dry_run_passed",
+      "phases": 4,
+      "repetitions": 2,
+      "external_execution": false
+    },
+    "local_recovery": {
+      "status": "blocked_external",
+      "local_inventory_match": true,
+      "source_table_count": 21,
+      "restore_duration_seconds": 0.953,
+      "temporary_database_cleanup_verified": true
+    },
+    "route_deadline_regression": {
+      "status": "passed",
+      "repeated_test_iterations": 30,
+      "routing_suite_tests": 13
+    }
+  },
+  "privacy": {
+    "runtime_identifiers_committed": false,
+    "local_username_committed": false,
+    "secret_values_committed": false
+  },
+  "not_executed_external": [
+    "private registry push and GitHub Actions OIDC signing",
+    "Kubernetes staging apply with TLS and external secret manager",
+    "versioned object-store restore and Kubernetes release rollback",
+    "production-like application capacity",
+    "real-provider quality evaluation",
+    "GPU, vLLM, quantization, and managed observability delivery"
+  ]
+}
