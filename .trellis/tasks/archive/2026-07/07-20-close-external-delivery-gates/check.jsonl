@@ -7,4 +7,4 @@
 {"file": "evidence/m6/20260719-235533-m6-local-delivery-verification.json", "reason": "Reviewed local evidence boundary that must remain distinct from cloud execution."}
 {"file": "evidence/gates/m6-registry-signed-images.json", "reason": "Registry and signing external gate prerequisites."}
 {"file": "evidence/gates/m6-cluster-staging-rollout.json", "reason": "Staging cluster external gate prerequisites."}
-{"file": ".trellis/tasks/07-20-close-external-delivery-gates/external-gate-status-20260720.json", "reason": "Audited local results and explicit blocked_external prerequisites."}
+{"file": ".trellis/tasks/archive/2026-07/07-20-close-external-delivery-gates/external-gate-status-20260720.json", "reason": "Audited local results and explicit blocked_external prerequisites."}
