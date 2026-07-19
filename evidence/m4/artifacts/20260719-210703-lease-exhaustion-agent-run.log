@@ -1,0 +1,4 @@
+command: uv run pytest tests/agent/test_agent_run_integration.py::test_expired_final_agent_lease_projects_run_failed -q
+exit_code: 0
+result: 1 passed in 1.36s
+scope: local working-tree verification; not immutable or production evidence

@@ -1,0 +1,22 @@
+{
+  "gate_id": "m6-backup-restore-rollback",
+  "milestone": "M6",
+  "requirement": "M6-R5",
+  "owner": "database and release owner",
+  "blocking_reason": "The repository contains guarded scripts, but no isolated restore, release rollback, data validation, or measured RPO and RTO drill has executed.",
+  "prerequisites": [
+    "Provide an isolated restore target",
+    "Provide a real backup and object-store version set",
+    "Select a compatible release and rollback target"
+  ],
+  "required_evidence": [
+    "Backup freshness and integrity record",
+    "Restore command and validation results",
+    "Application and data smoke after restore",
+    "Deployment rollback record",
+    "Measured RPO and RTO"
+  ],
+  "state": "open",
+  "status": "blocked_external",
+  "review_date": "2026-07-19"
+}

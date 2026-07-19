@@ -1,0 +1,6 @@
+COMMAND: uv sync --frozen
+Checked 122 packages in 16ms
+COMMAND: pnpm install --frozen-lockfile
+Scope: all 2 workspace projects
+Already up to date
+Done in 347ms using pnpm v11.9.0

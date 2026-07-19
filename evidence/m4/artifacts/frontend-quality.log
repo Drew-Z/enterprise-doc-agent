@@ -1,0 +1,51 @@
+
+COMMAND: pnpm lint
+$ pnpm --filter web lint
+$ eslint .
+COMMAND: pnpm typecheck
+$ pnpm --filter web typecheck
+$ tsc -b --pretty false
+COMMAND: pnpm test
+$ pnpm --filter web test
+$ vitest run
+
+ RUN  v3.2.7 D:/workspace4Cursor/enterprise-doc-agent/apps/web
+
+ ✓ src/agent/api/client.test.ts (5 tests) 20ms
+ ✓ src/upload/transfer/xhrUploadPart.test.ts (13 tests) 25ms
+ ✓ src/upload/state/reducer.test.ts (21 tests) 40ms
+ ✓ src/upload/api/client.test.ts (23 tests) 80ms
+ ✓ src/upload/api/schemas.test.ts (7 tests) 26ms
+ ✓ src/agent/persistence.test.ts (3 tests) 18ms
+ ✓ src/upload/fileIdentity.test.ts (7 tests) 5ms
+ ✓ src/upload/hashing/protocol.test.ts (12 tests) 8ms
+ ✓ src/upload/state/progress.test.ts (2 tests) 10ms
+ ✓ src/upload/hashing/client.test.ts (9 tests) 37ms
+ ✓ src/upload/hashing/runner.test.ts (7 tests) 86ms
+ ✓ src/upload/state/scheduler.test.ts (4 tests) 12ms
+ ✓ src/upload/hashing/runtime.test.ts (3 tests) 24ms
+ ✓ src/upload/persistence.test.ts (7 tests) 22ms
+ ✓ src/agent/sse.test.ts (4 tests) 21ms
+ ✓ src/upload/UploadWorkspace.test.tsx (3 tests) 238ms
+ ✓ src/App.test.tsx (6 tests) 382ms
+ ✓ src/agent/AgentWorkspace.test.tsx (2 tests) 807ms
+   ✓ AgentWorkspace > resumes from the persisted cursor and pages beyond the API event limit  506ms
+
+ Test Files  18 passed (18)
+      Tests  138 passed (138)
+   Start at  07:53:20
+   Duration  5.63s (transform 2.02s, setup 9.85s, collect 7.89s, tests 1.86s, environment 38.06s, prepare 8.69s)
+
+COMMAND: pnpm build
+$ pnpm --filter web build
+$ tsc -b && vite build
+vite v7.3.6 building client environment for production...
+transforming...
+✓ 1814 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                        0.42 kB │ gzip:   0.28 kB
+dist/assets/hash.worker-D0FEPUy7.js   21.86 kB
+dist/assets/index-D8nmvTUU.css        15.11 kB │ gzip:   3.49 kB
+dist/assets/index-BbE7R8op.js        373.59 kB │ gzip: 110.06 kB
+✓ built in 2.24s

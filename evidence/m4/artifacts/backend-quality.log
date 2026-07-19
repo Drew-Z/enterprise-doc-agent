@@ -1,0 +1,15 @@
+
+COMMAND: uv run ruff format --check .
+221 files already formatted
+COMMAND: uv run ruff check .
+All checks passed!
+COMMAND: uv run mypy packages/core/src apps/api/src apps/worker/src apps/mcp/src
+Success: no issues found in 107 source files
+COMMAND: uv run pytest -m "not integration" --ignore tests/contracts/test_m4_evidence_contract.py -q
+........................................................................ [ 16%]
+........................................................................ [ 33%]
+........................................................................ [ 50%]
+........................................................................ [ 67%]
+........................................................................ [ 84%]
+..................................................................       [100%]
+426 passed, 95 deselected in 10.72s

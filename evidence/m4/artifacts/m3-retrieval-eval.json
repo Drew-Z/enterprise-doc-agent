@@ -1,0 +1,85 @@
+{
+  "case_count": 5,
+  "cases": [
+    {
+      "accepted": true,
+      "case_id": "keyword-only-payment",
+      "refusal_reason": null,
+      "retrieved_chunk_ids": [
+        "c3f8bdc7-987a-5e08-b570-98d641d7c7c2"
+      ],
+      "retrieved_chunk_keys": [
+        "payment"
+      ],
+      "scores": [
+        0.01639344262295082
+      ]
+    },
+    {
+      "accepted": true,
+      "case_id": "vector-only-delivery",
+      "refusal_reason": null,
+      "retrieved_chunk_ids": [
+        "c5752515-a9f2-57c2-b29c-0347d7ceb1a1"
+      ],
+      "retrieved_chunk_keys": [
+        "delivery"
+      ],
+      "scores": [
+        0.01639344262295082
+      ]
+    },
+    {
+      "accepted": true,
+      "case_id": "hybrid-confidentiality",
+      "refusal_reason": null,
+      "retrieved_chunk_ids": [
+        "55fe3116-e7da-5be6-a5cf-2aa73d5acc4c"
+      ],
+      "retrieved_chunk_keys": [
+        "confidentiality"
+      ],
+      "scores": [
+        0.03278688524590164
+      ]
+    },
+    {
+      "accepted": false,
+      "case_id": "refuse-empty-query",
+      "refusal_reason": "empty_evidence",
+      "retrieved_chunk_ids": [],
+      "retrieved_chunk_keys": [],
+      "scores": []
+    },
+    {
+      "accepted": false,
+      "case_id": "refuse-unsupported-query",
+      "refusal_reason": "empty_evidence",
+      "retrieved_chunk_ids": [],
+      "retrieved_chunk_keys": [],
+      "scores": []
+    }
+  ],
+  "citation_evaluation": "not measured because M3 has no answer or citation generator",
+  "citation_precision": null,
+  "dataset_sha256": "dbec417c98e03e5eef1b777098e16d6c9cb2463dd786998118d5e6d364347bb3",
+  "dataset_version": "m3-retrieval-live-v2",
+  "limitations": "Live PostgreSQL/pgvector retrieval regression with controlled 8-dimensional vectors. It does not measure production embedding quality, Chinese tokenization, answer quality, or citation generation.",
+  "mrr": 1.0,
+  "ndcg_at_k": 1.0,
+  "recall_at_k": 1.0,
+  "refusal_precision": 1.0,
+  "refusal_recall": 1.0,
+  "runtime": {
+    "alembic_revision": "20260718_0009",
+    "embedding_dimension": 8,
+    "embedding_provider": "dataset-controlled",
+    "max_vector_distance": 0.2,
+    "min_candidates": 1,
+    "min_score": 0.01639344262295082,
+    "pgvector_version": "0.8.3",
+    "postgres_version": "PostgreSQL 16.14 (Debian 16.14-1.pgdg12+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit",
+    "rrf_k": 60,
+    "top_k": 3
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "gate_id": "m5-managed-observability",
+  "milestone": "M5",
+  "requirement": "M5-R4",
+  "owner": "observability owner",
+  "blocking_reason": "The local Prometheus and Grafana profile proves configuration only; managed retention, alert routing, ownership, and incident response are unavailable.",
+  "prerequisites": [
+    "Deploy the services in a managed environment",
+    "Configure scrape discovery, retention, and alert routing",
+    "Assign dashboard and incident ownership"
+  ],
+  "required_evidence": [
+    "Healthy managed scrape targets",
+    "Retention and cardinality review",
+    "Alert delivery test",
+    "Dashboard and incident runbook review"
+  ],
+  "state": "open",
+  "status": "blocked_external",
+  "review_date": "2026-07-19"
+}

@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "scenario": "local-observability-stack",
+  "status": "passed",
+  "environment": "local",
+  "components": {
+    "prometheus": {
+      "ready_http_status": 200,
+      "active_target_count": 3,
+      "targets": [
+        {
+          "job": "enterprise-doc-api",
+          "health": "down"
+        },
+        {
+          "job": "enterprise-doc-worker",
+          "health": "down"
+        },
+        {
+          "job": "enterprise-doc-consumer",
+          "health": "down"
+        }
+      ]
+    },
+    "grafana": {
+      "dashboard_search_count": 2,
+      "dashboard_titles": [
+        "Enterprise Document Agent",
+        "Enterprise Document Agent Local Observability"
+      ]
+    }
+  },
+  "limitations": [
+    "The optional Prometheus/Grafana Compose profile started and served locally.",
+    "Targets were down because API, Worker and consumer host processes were stopped during the profile-only verification.",
+    "This does not prove managed scrape retention, alert routing, or production observability availability."
+  ],
+  "owner": "developer"
+}

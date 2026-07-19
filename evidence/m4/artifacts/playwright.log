@@ -1,0 +1,31 @@
+[WebServer] {"timestamp":"<timestamp>","level":"INFO","service":"api","environment":"local","event":"**********"}
+[WebServer] {"timestamp":"<timestamp>","level":"INFO","service":"api","environment":"local","event":"Waiting for application startup."}
+[WebServer] {"timestamp":"<timestamp>","level":"INFO","service":"api","environment":"local","event":"Application startup complete."}
+[WebServer] {"timestamp":"<timestamp>","level":"INFO","service":"api","environment":"local","event":"**********"}
+[WebServer] {"timestamp":"<timestamp>","level":"INFO","service":"api","environment":"local","event":"**********","request_id":"<uuid>","correlation_id":"<uuid>"}
+[WebServer] {"timestamp":"<timestamp>","level":"INFO","service":"api","environment":"local","event":"request_completed","request_id":"<uuid>","correlation_id":"<uuid>","method":"GET","path":"/health/live","status_code":200,"duration_ms":28.402}
+[WebServer] $ vite --host 127.0.0.1 --port 5173
+ Container enterprise-doc-agent-redis-1 Running 
+ Container enterprise-doc-agent-minio-1 Running 
+ Container enterprise-doc-agent-postgres-1 Running 
+ Container enterprise-doc-agent-postgres-1 Waiting 
+ Container enterprise-doc-agent-redis-1 Waiting 
+ Container enterprise-doc-agent-minio-1 Waiting 
+ Container enterprise-doc-agent-redis-1 Healthy 
+ Container enterprise-doc-agent-minio-1 Healthy 
+ Container enterprise-doc-agent-postgres-1 Healthy 
+ Container enterprise-doc-agent-minio-1 Running 
+ Container enterprise-doc-agent-minio-1 Waiting 
+ Container enterprise-doc-agent-minio-1 Healthy 
+ Container enterprise-doc-agent-minio-init-run-4155046b218f Creating 
+ Container enterprise-doc-agent-minio-init-run-4155046b218f Created 
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+
+Running 3 tests using 1 worker
+
+  ok 1 e2e\agent-workflow.spec.ts:56:1 › Agent workspace reconnects through approval and downloads a verified artifact (1.7s)
+  ok 2 e2e\agent-workflow.spec.ts:265:1 › Agent workspace reports unauthorized run access without exposing approval or artifact data (418ms)
+  ok 3 e2e\agent-workflow.spec.ts:312:1 › Agent workspace shows a server refusal for an injection attempt and fetches no artifacts (625ms)
+
+  3 passed (13.7s)

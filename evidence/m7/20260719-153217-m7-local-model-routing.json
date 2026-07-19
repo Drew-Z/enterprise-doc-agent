@@ -1,0 +1,75 @@
+{
+  "evidence_id": "m7-local-model-routing",
+  "milestone": "M7",
+  "requirement_ids": ["M7-R1", "M7-R2", "M7-R3", "M7-R4", "M7-R5", "M7-R6", "M7-R7"],
+  "status": "blocked_external",
+  "command_or_procedure": [
+    {
+      "gate_id": "m7-local-benchmark-capture",
+      "command": "Use the command_or_procedure recorded in evidence/m7/20260719-m7-local-routing-working-tree.json",
+      "exit_code": 0,
+      "artifact": "evidence/m7/20260719-m7-local-routing-working-tree.json"
+    },
+    {
+      "gate_id": "m7-real-provider-quality",
+      "procedure": "Run the real provider benchmark against the approved golden set",
+      "status": "blocked_external",
+      "artifact": "evidence/gates/m7-real-provider-quality.json"
+    },
+    {
+      "gate_id": "m7-gpu-vllm-capacity",
+      "procedure": "Run the pinned vLLM/GPU/quantization capacity benchmark",
+      "status": "blocked_external",
+      "artifact": "evidence/gates/m7-gpu-vllm-capacity.json"
+    }
+  ],
+  "environment": {
+    "operating_system": "Windows",
+    "runtime": "local Python gateway and deterministic benchmark",
+    "evidence_mode": "blocked external completion boundary over local benchmark captures"
+  },
+  "commit_sha": null,
+  "image_digest": "not_applicable",
+  "reviewed_commit": null,
+  "evidence_commit": null,
+  "working_tree_dirty": true,
+  "started_at": "2026-07-19T15:32:17+08:00",
+  "completed_at": "2026-07-19T15:32:18+08:00",
+  "result_summary": "Deterministic routing, retryable-only fallback, circuit transitions, and embedding dimension contracts are recorded. Real provider quality and GPU/vLLM capacity remain blocked.",
+  "artifacts": [
+    {
+      "path": "evidence/m7/20260719-m7-local-routing-working-tree.json",
+      "kind": "working-tree-capture",
+      "sha256": "0adfb8c149854ee0ef7e442405d22e476e9e93ccc32d0f00493d05bfd7058775"
+    },
+    {
+      "path": "evidence/m7/20260719-m7-deterministic.json",
+      "kind": "report",
+      "sha256": "321860fe985fcf394f639779c437e81cc541540f3b8f1ff5b8afc7257bcbb0e9"
+    },
+    {
+      "path": "evidence/m7/20260719-m7-fallback-contract.json",
+      "kind": "report",
+      "sha256": "a9c932d8e1116b874d5f99424435f45f2af458003ebe9f1841a42613cc374e9a"
+    },
+    {
+      "path": "evidence/gates/m7-real-provider-quality.json",
+      "kind": "manual-gate",
+      "sha256": "4ccb2f276f15e98058835787924bd1a512bf30ce192d4e15f4a89c0a69277d4a"
+    },
+    {
+      "path": "evidence/gates/m7-gpu-vllm-capacity.json",
+      "kind": "manual-gate",
+      "sha256": "c42b99efee6e32be0ed824cf6ce8605600474a06b97c52e96e1e857eef7bf97c"
+    }
+  ],
+  "limitations": [
+    "Synthetic and local gateway benchmarks do not measure real provider quality, network latency, cost, GPU, vLLM, quantization memory, or production capacity.",
+    "No reviewed implementation or evidence commit exists yet."
+  ],
+  "manual_gates": [
+    "evidence/gates/m7-real-provider-quality.json",
+    "evidence/gates/m7-gpu-vllm-capacity.json"
+  ],
+  "owner": "developer"
+}

@@ -1,0 +1,9 @@
+COMMAND: uv run python .trellis/scripts/task.py validate 07-18-m4-agent-mcp-hitl
+=== Validating Context Files ===
+Target dir: <repo>\.trellis\tasks\07-18-m4-agent-mcp-hitl
+
+  implement.jsonl: ✓ (11 entries)
+  check.jsonl: ✓ (6 entries)
+
+✓ All validations passed
+COMMAND: git diff --check

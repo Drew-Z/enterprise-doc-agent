@@ -1,0 +1,54 @@
+COMMAND: pnpm --filter web test:e2e
+$ playwright test
+[WebServer] {"timestamp":"<timestamp>","level":"INFO","service":"api","environment":"local","event":"**********"}
+[WebServer] {"timestamp":"<timestamp>","level":"INFO","service":"api","environment":"local","event":"Waiting for application startup."}
+[WebServer] {"timestamp":"<timestamp>","level":"INFO","service":"api","environment":"local","event":"Application startup complete."}
+[WebServer] {"timestamp":"<timestamp>","level":"INFO","service":"api","environment":"local","event":"**********"}
+[WebServer] {"timestamp":"<timestamp>","level":"INFO","service":"api","environment":"local","event":"**********","request_id":"<uuid>","correlation_id":"<uuid>"}
+[WebServer] {"timestamp":"<timestamp>","level":"INFO","service":"api","environment":"local","event":"request_completed","request_id":"<uuid>","correlation_id":"<uuid>","method":"GET","path":"/health/live","status_code":200,"duration_ms":30.77}
+[WebServer] $ vite --host 127.0.0.1 --port 5173
+ Container enterprise-doc-agent-minio-1 Running 
+ Container enterprise-doc-agent-postgres-1 Running 
+ Container enterprise-doc-agent-redis-1 Running 
+ Container enterprise-doc-agent-postgres-1 Waiting 
+ Container enterprise-doc-agent-redis-1 Waiting 
+ Container enterprise-doc-agent-minio-1 Waiting 
+ Container enterprise-doc-agent-redis-1 Healthy 
+ Container enterprise-doc-agent-postgres-1 Healthy 
+ Container enterprise-doc-agent-minio-1 Healthy 
+ Container enterprise-doc-agent-minio-1 Running 
+ Container enterprise-doc-agent-minio-1 Waiting 
+ Container enterprise-doc-agent-minio-1 Healthy 
+ Container enterprise-doc-agent-minio-init-run-f65a6bc67f3c Creating 
+ Container enterprise-doc-agent-minio-init-run-f65a6bc67f3c Created 
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+
+Running 4 tests using 1 worker
+
+  ok 1 e2e\agent-workflow.spec.ts:56:1 › Agent workspace reconnects through approval and downloads a verified artifact (1.7s)
+  ok 2 e2e\agent-workflow.spec.ts:265:1 › Agent workspace reports unauthorized run access without exposing approval or artifact data (519ms)
+  ok 3 e2e\agent-workflow.spec.ts:312:1 › Agent workspace shows a server refusal for an injection attempt and fetches no artifacts (613ms)
+[WebServer] {"timestamp":"<timestamp>","level":"INFO","service":"api","environment":"local","event":"**********","request_id":"<uuid>","correlation_id":"<uuid>"}
+[WebServer] {"timestamp":"<timestamp>","level":"INFO","service":"api","environment":"local","event":"request_completed","request_id":"<uuid>","correlation_id":"<uuid>","method":"GET","path":"/health/ready","status_code":200,"duration_ms":39.916}
+[WebServer] {"timestamp":"<timestamp>","level":"INFO","service":"api","environment":"local","event":"**********","request_id":"<uuid>","correlation_id":"<uuid>","tenant_id":"<uuid>","actor_id":"<uuid>"}
+[WebServer] {"timestamp":"<timestamp>","level":"INFO","service":"api","environment":"local","event":"request_completed","request_id":"<uuid>","correlation_id":"<uuid>","tenant_id":"<uuid>","actor_id":"<uuid>","method":"POST","path":"/api/upload-sessions","status_code":201,"duration_ms":126.799}
+[WebServer] {"timestamp":"<timestamp>","level":"INFO","service":"api","environment":"local","event":"**********","request_id":"<uuid>","correlation_id":"<uuid>","tenant_id":"<uuid>","actor_id":"<uuid>"}
+[WebServer] {"timestamp":"<timestamp>","level":"INFO","service":"api","environment":"local","event":"request_completed","request_id":"<uuid>","correlation_id":"<uuid>","tenant_id":"<uuid>","actor_id":"<uuid>","method":"POST","path":"/api/upload-sessions/<uuid>/parts/1/presign","status_code":200,"duration_ms":29.723}
+[WebServer] {"timestamp":"<timestamp>","level":"INFO","service":"api","environment":"local","event":"**********","request_id":"<uuid>","correlation_id":"<uuid>","tenant_id":"<uuid>","actor_id":"<uuid>"}
+[WebServer] {"timestamp":"<timestamp>","level":"INFO","service":"api","environment":"local","event":"request_completed","request_id":"<uuid>","correlation_id":"<uuid>","tenant_id":"<uuid>","actor_id":"<uuid>","method":"POST","path":"/api/upload-sessions/<uuid>/parts/2/presign","status_code":200,"duration_ms":39.107}
+[WebServer] {"timestamp":"<timestamp>","level":"INFO","service":"api","environment":"local","event":"**********","request_id":"<uuid>","correlation_id":"<uuid>"}
+[WebServer] {"timestamp":"<timestamp>","level":"INFO","service":"api","environment":"local","event":"request_completed","request_id":"<uuid>","correlation_id":"<uuid>","method":"GET","path":"/health/ready","status_code":200,"duration_ms":7.211}
+[WebServer] {"timestamp":"<timestamp>","level":"INFO","service":"api","environment":"local","event":"**********","request_id":"<uuid>","correlation_id":"<uuid>"}
+[WebServer] {"timestamp":"<timestamp>","level":"INFO","service":"api","environment":"local","event":"request_completed","request_id":"<uuid>","correlation_id":"<uuid>","method":"GET","path":"/health/ready","status_code":200,"duration_ms":5.113}
+[WebServer] {"timestamp":"<timestamp>","level":"INFO","service":"api","environment":"local","event":"**********","request_id":"<uuid>","correlation_id":"<uuid>","tenant_id":"<uuid>","actor_id":"<uuid>"}
+[WebServer] {"timestamp":"<timestamp>","level":"INFO","service":"api","environment":"local","event":"request_completed","request_id":"<uuid>","correlation_id":"<uuid>","tenant_id":"<uuid>","actor_id":"<uuid>","method":"GET","path":"/api/upload-sessions/<uuid>","status_code":200,"duration_ms":22.438}
+[WebServer] {"timestamp":"<timestamp>","level":"INFO","service":"api","environment":"local","event":"**********","request_id":"<uuid>","correlation_id":"<uuid>","tenant_id":"<uuid>","actor_id":"<uuid>"}
+[WebServer] {"timestamp":"<timestamp>","level":"INFO","service":"api","environment":"local","event":"request_completed","request_id":"<uuid>","correlation_id":"<uuid>","tenant_id":"<uuid>","actor_id":"<uuid>","method":"POST","path":"/api/upload-sessions/<uuid>/parts/1/presign","status_code":200,"duration_ms":14.092}
+[WebServer] {"timestamp":"<timestamp>","level":"INFO","service":"api","environment":"local","event":"**********","request_id":"<uuid>","correlation_id":"<uuid>","tenant_id":"<uuid>","actor_id":"<uuid>"}
+[WebServer] {"timestamp":"<timestamp>","level":"INFO","service":"api","environment":"local","event":"request_completed","request_id":"<uuid>","correlation_id":"<uuid>","tenant_id":"<uuid>","actor_id":"<uuid>","method":"POST","path":"/api/upload-sessions/<uuid>/parts/2/presign","status_code":200,"duration_ms":19.447}
+[WebServer] {"timestamp":"<timestamp>","level":"INFO","service":"api","environment":"local","event":"**********","request_id":"<uuid>","correlation_id":"<uuid>","tenant_id":"<uuid>","actor_id":"<uuid>"}
+[WebServer] {"timestamp":"<timestamp>","level":"INFO","service":"api","environment":"local","event":"request_completed","request_id":"<uuid>","correlation_id":"<uuid>","tenant_id":"<uuid>","actor_id":"<uuid>","method":"POST","path":"/api/upload-sessions/<uuid>/complete","status_code":200,"duration_ms":91.662}
+  ok 4 e2e\upload-recovery.spec.ts:62:1 › interrupts, reloads, rejects a wrong file, resumes missing parts, and completes (7.4s)
+
+  4 passed (21.2s)

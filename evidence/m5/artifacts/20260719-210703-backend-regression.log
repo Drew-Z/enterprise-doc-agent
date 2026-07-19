@@ -1,0 +1,4 @@
+command: uv run pytest -q
+exit_code: 0
+result: 588 passed in 125.15s
+scope: local working-tree regression; not production load, SLO, or managed-observability evidence

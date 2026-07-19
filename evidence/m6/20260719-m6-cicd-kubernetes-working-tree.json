@@ -1,0 +1,92 @@
+{
+  "evidence_id": "m6-cicd-kubernetes-working-tree",
+  "milestone": "M6",
+  "status": "working-tree",
+  "working_tree_dirty": true,
+  "commit_sha": null,
+  "reviewed_commit": null,
+  "evidence_commit": null,
+  "base_commit": "4e606f747e0edeaaff8075b219b3c04cfbadae0f",
+  "owner": "developer",
+  "command_or_procedure": [
+    {
+      "gate_id": "m6-kustomize-base",
+      "command": "kubectl kustomize infra/k8s/base",
+      "exit_code": 0,
+      "artifact": "evidence/m6/20260719-kustomize-base.yaml"
+    },
+    {
+      "gate_id": "m6-kustomize-staging",
+      "command": "kubectl kustomize infra/k8s/overlays/staging",
+      "exit_code": 0,
+      "artifact": "evidence/m6/20260719-kustomize-staging.yaml"
+    },
+    {
+      "gate_id": "m6-kustomize-prod",
+      "command": "kubectl kustomize infra/k8s/overlays/prod",
+      "exit_code": 0,
+      "artifact": "evidence/m6/20260719-kustomize-prod.yaml"
+    },
+    {
+      "gate_id": "m6-observability-compose-config",
+      "command": "docker compose -f infra/compose/docker-compose.yml --profile observability config",
+      "exit_code": 0,
+      "artifact": "evidence/m6/20260719-compose-observability-config.yaml"
+    },
+    {
+      "gate_id": "m6-local-image-builds",
+      "command": "docker build -f infra/docker/Dockerfile.{api,worker,consumer,web} -t enterprise-doc-*:local .",
+      "exit_code": 0,
+      "artifact": "evidence/m6/20260719-local-image-builds.json"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "evidence/m6/20260719-kustomize-base.yaml",
+      "kind": "log",
+      "sha256": "40066af03b7166eedfe7f81865a2d1b68bb7bda4a91c9c3754a8d3a7efb0eb13"
+    },
+    {
+      "path": "evidence/m6/20260719-kustomize-staging.yaml",
+      "kind": "log",
+      "sha256": "3c0542522b8948eb8c3f19bc505e3118c80f34664a0f8c01b20bccc68bc91628"
+    },
+    {
+      "path": "evidence/m6/20260719-kustomize-prod.yaml",
+      "kind": "log",
+      "sha256": "e233caf6e63d62b3542b809ad1bb8efc4576d8a72ff969aca71fb658d2c09dd0"
+    },
+    {
+      "path": "evidence/m6/20260719-compose-observability-config.yaml",
+      "kind": "log",
+      "sha256": "1b7290cd59cdf7cb4a680102a66b4bb163544f64a6dfce6b0ab0da9caf1dd1b7"
+    },
+    {
+      "path": "evidence/m6/20260719-local-image-builds.json",
+      "kind": "report",
+      "sha256": "b1dfb8cc916c3a187dbf206d6021cbd4d7d47cc5aaf4bbe60b9eaad4a0e63c75"
+    }
+  ],
+  "limitations": [
+    "These are local image builds, static renders and compose model validation, not a registry push, remote scan/signature run, or cloud cluster apply.",
+    "No remote image digest, signature verification, TLS/secret-manager review, backup restore, rollback, or authenticated staging smoke has run.",
+    "The implementation and evidence are uncommitted working-tree artifacts, not immutable review evidence."
+  ],
+  "manual_gates": [
+    {
+      "gate_id": "m6-registry-signed-images",
+      "status": "blocked_external",
+      "required_evidence": "real registry digests, Trivy/SBOM results, Cosign signature and provenance verification"
+    },
+    {
+      "gate_id": "m6-cluster-staging-rollout",
+      "status": "blocked_external",
+      "required_evidence": "cluster apply, secret and external dependency checks, authenticated upload-to-Agent smoke"
+    },
+    {
+      "gate_id": "m6-backup-restore-rollback",
+      "status": "blocked_external",
+      "required_evidence": "isolated restore and rollback drills with measured RPO/RTO and release records"
+    }
+  ]
+}

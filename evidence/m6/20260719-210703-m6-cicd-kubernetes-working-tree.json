@@ -1,0 +1,92 @@
+{
+  "evidence_id": "m6-cicd-kubernetes-working-tree-20260719-210703",
+  "milestone": "M6",
+  "status": "working-tree",
+  "requirement_ids": [
+    "M6-R1",
+    "M6-R2",
+    "M6-R3",
+    "M6-R4",
+    "M6-R5",
+    "M6-R6",
+    "M6-R7"
+  ],
+  "owner": "Codex",
+  "commit_sha": null,
+  "base_commit": "4e606f747e0edeaaff8075b219b3c04cfbadae0f",
+  "reviewed_commit": null,
+  "evidence_commit": null,
+  "working_tree_dirty": true,
+  "started_at": "2026-07-19T21:04:45.3275722+08:00",
+  "completed_at": "2026-07-19T21:07:03.6399997+08:00",
+  "environment": {
+    "os": "Windows",
+    "kubectl_client": "v1.34.1",
+    "target": "local static render and dry-run validation",
+    "evidence_mode": "working-tree"
+  },
+  "image_digest": "not_applicable",
+  "result_summary": "Kustomize base, staging and production overlays rendered successfully; production contains APP_ENV: production; rollback validation generated an explicit --to-revision command. No registry or cluster operation ran.",
+  "command_or_procedure": [
+    {
+      "gate_id": "kustomize-base",
+      "command": "kubectl kustomize infra/k8s/base",
+      "exit_code": 0,
+      "result": "passed",
+      "artifact": "evidence/m6/20260719-210445-kustomize-base.yaml"
+    },
+    {
+      "gate_id": "kustomize-staging",
+      "command": "kubectl kustomize infra/k8s/overlays/staging",
+      "exit_code": 0,
+      "result": "passed",
+      "artifact": "evidence/m6/20260719-210445-kustomize-staging.yaml"
+    },
+    {
+      "gate_id": "kustomize-production",
+      "command": "kubectl kustomize infra/k8s/overlays/prod",
+      "exit_code": 0,
+      "result": "passed; APP_ENV: production present",
+      "artifact": "evidence/m6/20260719-210445-kustomize-prod.yaml"
+    },
+    {
+      "gate_id": "rollback-explicit-revision-dry-run",
+      "command": "uv run python scripts/rollback_release.py --reason validation-only --revision enterprise-doc-api=1",
+      "exit_code": 0,
+      "result": "dry-run command contains --to-revision=1",
+      "artifact": "evidence/m6/20260719-210445-rollback-validation.json"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "evidence/m6/20260719-210445-kustomize-base.yaml",
+      "kind": "log",
+      "sha256": "30a780702ae93b84b439b7a56278a83b1c6fcef7d0e69add2856f3337c2656a4"
+    },
+    {
+      "path": "evidence/m6/20260719-210445-kustomize-staging.yaml",
+      "kind": "log",
+      "sha256": "521165d97776a4efa59508577f7fc9d3a0a5550092ef7e923110e22f65b0854a"
+    },
+    {
+      "path": "evidence/m6/20260719-210445-kustomize-prod.yaml",
+      "kind": "log",
+      "sha256": "a227fe61acc37b71e5f5e0827cfaf20f7d4112d3d6898eecbe3c74596dd0277d"
+    },
+    {
+      "path": "evidence/m6/20260719-210445-rollback-validation.json",
+      "kind": "report",
+      "sha256": "1ef587bc003e97d577a847c140007b6ec6f9cdb7e98edcf637ffbaba4f0146c0"
+    }
+  ],
+  "limitations": [
+    "This is an uncommitted dirty working-tree capture and is not immutable review evidence.",
+    "The current refresh covers static render and rollback dry-run only; local image builds were not rerun.",
+    "No registry push, Trivy remote run, SBOM/provenance publication, Cosign verification, cluster apply, staging smoke, backup restore, or rollback execution is claimed."
+  ],
+  "manual_gates": [
+    "evidence/gates/m6-registry-signed-images.json",
+    "evidence/gates/m6-cluster-staging-rollout.json",
+    "evidence/gates/m6-backup-restore-rollback.json"
+  ]
+}

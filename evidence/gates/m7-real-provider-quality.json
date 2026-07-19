@@ -1,0 +1,21 @@
+{
+  "gate_id": "m7-real-provider-quality",
+  "milestone": "M7",
+  "requirement": "M7-R6",
+  "owner": "model evaluation owner",
+  "blocking_reason": "The current benchmark uses deterministic and local gateway cases; no approved real provider route or representative golden set is available.",
+  "prerequisites": [
+    "Approve provider, model, revision, and fallback route",
+    "Provide a representative sanitized golden set",
+    "Freeze benchmark and behavior versions"
+  ],
+  "required_evidence": [
+    "Real provider route identity",
+    "Latency, errors, fallback count, breaker state, and cost",
+    "Citation and refusal quality",
+    "Repeatability across multiple runs"
+  ],
+  "state": "open",
+  "status": "blocked_external",
+  "review_date": "2026-07-19"
+}

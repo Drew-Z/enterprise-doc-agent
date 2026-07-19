@@ -1,0 +1,22 @@
+{
+  "gate_id": "m6-registry-signed-images",
+  "milestone": "M6",
+  "requirement": "M6-R2",
+  "owner": "release engineering owner",
+  "blocking_reason": "Local image builds exist, but no remote registry push, immutable digest, vulnerability scan, SBOM, signature, or provenance run has executed.",
+  "prerequisites": [
+    "Provide registry access and GitHub OIDC permissions",
+    "Run the remote container workflow from a reviewed commit",
+    "Define vulnerability and signature admission policy"
+  ],
+  "required_evidence": [
+    "Remote image digests for every service",
+    "Trivy results",
+    "SPDX or CycloneDX SBOM",
+    "Cosign signature verification",
+    "Build provenance attestation"
+  ],
+  "state": "open",
+  "status": "blocked_external",
+  "review_date": "2026-07-19"
+}

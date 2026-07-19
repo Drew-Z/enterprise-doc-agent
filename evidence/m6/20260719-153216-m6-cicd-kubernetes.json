@@ -1,0 +1,98 @@
+{
+  "evidence_id": "m6-cicd-kubernetes",
+  "milestone": "M6",
+  "requirement_ids": ["M6-R1", "M6-R2", "M6-R3", "M6-R4", "M6-R5", "M6-R6", "M6-R7"],
+  "status": "blocked_external",
+  "command_or_procedure": [
+    {
+      "gate_id": "m6-local-static-and-image-capture",
+      "command": "Use the command_or_procedure recorded in evidence/m6/20260719-m6-cicd-kubernetes-working-tree.json",
+      "exit_code": 0,
+      "artifact": "evidence/m6/20260719-m6-cicd-kubernetes-working-tree.json"
+    },
+    {
+      "gate_id": "m6-registry-signed-images",
+      "procedure": "Run the remote build, scan, SBOM, provenance, signature, and digest promotion workflow",
+      "status": "blocked_external",
+      "artifact": "evidence/gates/m6-registry-signed-images.json"
+    },
+    {
+      "gate_id": "m6-cluster-staging-rollout",
+      "procedure": "Apply staging migrations and immutable images, then run authenticated smoke",
+      "status": "blocked_external",
+      "artifact": "evidence/gates/m6-cluster-staging-rollout.json"
+    },
+    {
+      "gate_id": "m6-backup-restore-rollback",
+      "procedure": "Execute isolated backup, restore, release rollback, and RPO/RTO drill",
+      "status": "blocked_external",
+      "artifact": "evidence/gates/m6-backup-restore-rollback.json"
+    }
+  ],
+  "environment": {
+    "operating_system": "Windows",
+    "runtime": "local Docker and kubectl render",
+    "evidence_mode": "blocked external completion boundary over local build and static captures"
+  },
+  "commit_sha": null,
+  "image_digest": "not_applicable",
+  "reviewed_commit": null,
+  "evidence_commit": null,
+  "working_tree_dirty": true,
+  "started_at": "2026-07-19T15:32:16+08:00",
+  "completed_at": "2026-07-19T15:32:17+08:00",
+  "result_summary": "Four local non-root image builds, Kustomize renders, Compose configuration, and static workflow/runbook contracts are recorded. Registry, cluster, staging, backup/restore, rollback, and immutable review evidence remain blocked.",
+  "artifacts": [
+    {
+      "path": "evidence/m6/20260719-m6-cicd-kubernetes-working-tree.json",
+      "kind": "working-tree-capture",
+      "sha256": "52ef3ed63eceb42f06204eae2ab8e319fb1c42eb002699b05332b3df92cb1667"
+    },
+    {
+      "path": "evidence/m6/20260719-local-image-builds.json",
+      "kind": "report",
+      "sha256": "b1dfb8cc916c3a187dbf206d6021cbd4d7d47cc5aaf4bbe60b9eaad4a0e63c75"
+    },
+    {
+      "path": "evidence/m6/20260719-kustomize-base.yaml",
+      "kind": "render",
+      "sha256": "40066af03b7166eedfe7f81865a2d1b68bb7bda4a91c9c3754a8d3a7efb0eb13"
+    },
+    {
+      "path": "evidence/m6/20260719-kustomize-staging.yaml",
+      "kind": "render",
+      "sha256": "3c0542522b8948eb8c3f19bc505e3118c80f34664a0f8c01b20bccc68bc91628"
+    },
+    {
+      "path": "evidence/m6/20260719-kustomize-prod.yaml",
+      "kind": "render",
+      "sha256": "e233caf6e63d62b3542b809ad1bb8efc4576d8a72ff969aca71fb658d2c09dd0"
+    },
+    {
+      "path": "evidence/gates/m6-registry-signed-images.json",
+      "kind": "manual-gate",
+      "sha256": "6a5453f77d607f0d653012b9d4397724ab89d0a288e6d2f2b193cfba1fa7c1e6"
+    },
+    {
+      "path": "evidence/gates/m6-cluster-staging-rollout.json",
+      "kind": "manual-gate",
+      "sha256": "78e6a904887ffa044880c9de2ec7f402f6ac190773e316a1dbcf3aa5b88041ab"
+    },
+    {
+      "path": "evidence/gates/m6-backup-restore-rollback.json",
+      "kind": "manual-gate",
+      "sha256": "594a1f8c704e7ee43e6f052127911b5bacac2982718d7b71dc254d525f3385ea"
+    }
+  ],
+  "limitations": [
+    "Local builds and static renders do not prove registry push, remote scan/signature/provenance, or cloud cluster apply.",
+    "No TLS/secret-manager review, authenticated staging smoke, backup restore, rollback, or measured RPO/RTO exists.",
+    "No reviewed implementation or evidence commit exists yet."
+  ],
+  "manual_gates": [
+    "evidence/gates/m6-registry-signed-images.json",
+    "evidence/gates/m6-cluster-staging-rollout.json",
+    "evidence/gates/m6-backup-restore-rollback.json"
+  ],
+  "owner": "developer"
+}

@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "milestone": "M6",
+  "scenario": "local-docker-build",
+  "status": "passed",
+  "environment": {
+    "docker_server": "29.3.1",
+    "builder": "desktop-linux",
+    "platform": "linux/amd64"
+  },
+  "commands": [
+    "docker build --progress=plain -f infra/docker/Dockerfile.api -t enterprise-doc-api:local .",
+    "docker build --progress=plain -f infra/docker/Dockerfile.worker -t enterprise-doc-worker:local .",
+    "docker build --progress=plain -f infra/docker/Dockerfile.consumer -t enterprise-doc-consumer:local .",
+    "docker build --progress=plain -f infra/docker/Dockerfile.web -t enterprise-doc-web:local ."
+  ],
+  "runtime_user_check": {
+    "command": "docker run --rm --entrypoint id <image>",
+    "observed": [
+      "enterprise-doc-api:local -> uid=10001(app) gid=10001(app)",
+      "enterprise-doc-worker:local -> uid=10001(app) gid=10001(app)",
+      "enterprise-doc-consumer:local -> uid=10001(app) gid=10001(app)",
+      "enterprise-doc-web:local -> uid=101(nginx) gid=101(nginx)"
+    ]
+  },
+  "images": [
+    {
+      "name": "enterprise-doc-api:local",
+      "image_id": "sha256:90ed355132ce4a0268fc266ccc596e9e19128c5dff64bb68fc7d0782327a04da",
+      "runtime_user": "10001:10001",
+      "dockerfile": "infra/docker/Dockerfile.api",
+      "dockerfile_sha256": "6c46e7a5108e0835c17e58da4736692dd25671b786aaeb2eda50e63e65739270"
+    },
+    {
+      "name": "enterprise-doc-worker:local",
+      "image_id": "sha256:aa6c2bc01c7226a039d844fe05a519ace562265e59bce3851ec042fca09e7ae8",
+      "runtime_user": "10001:10001",
+      "dockerfile": "infra/docker/Dockerfile.worker",
+      "dockerfile_sha256": "09e4cf8cf8de6bba164a83e8e750bc0accd26db353c17fb110b12f91e7a7953a"
+    },
+    {
+      "name": "enterprise-doc-consumer:local",
+      "image_id": "sha256:0114835844880a8a569f314c86a3b4f8fd556be562de301ed11fe47425a16329",
+      "runtime_user": "10001:10001",
+      "dockerfile": "infra/docker/Dockerfile.consumer",
+      "dockerfile_sha256": "2a9119d29d5e72f07c82cce278798106b69acf5113fb63379c9f58aa425f674a"
+    },
+    {
+      "name": "enterprise-doc-web:local",
+      "image_id": "sha256:678f79730a9c91c5cae660669d4641c781a2e373a091fa120335ff34bcb9d326",
+      "runtime_user": "nginx",
+      "dockerfile": "infra/docker/Dockerfile.web",
+      "dockerfile_sha256": "7a3fe7c6df4d34d0db5cb69004dc711150ae5dfbdb709bea3de5ad42a24758d7"
+    }
+  ],
+  "limitations": [
+    "These are local image builds only; no registry push, remote digest, vulnerability scan, SBOM, provenance or signature run was performed here.",
+    "The image ids are local builder outputs and are not promotion evidence.",
+    "Runtime integration, cluster scheduling, secrets and network policy still require external gates."
+  ],
+  "owner": "developer"
+}

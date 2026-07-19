@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "milestone": "M5",
+  "scenario": "ready",
+  "status": "passed",
+  "started_at": "2026-07-19T07:02:26.992061+00:00",
+  "completed_at": "2026-07-19T07:02:31.644906+00:00",
+  "duration_seconds": 4.529523,
+  "environment": {
+    "operating_system": "Windows-11-10.0.26200-SP0",
+    "architecture": "AMD64",
+    "python": "3.12.13",
+    "network_scope": "local-or-explicit-base-url"
+  },
+  "workload": {
+    "base_url": "http://127.0.0.1:8000",
+    "configured_requests": 1000,
+    "configured_concurrency": 20,
+    "percentile_method": "nearest-rank"
+  },
+  "completed_requests": 1000,
+  "successful_requests": 1000,
+  "failed_requests": 0,
+  "error_rate": 0.0,
+  "throughput_requests_per_second": 220.773814,
+  "latency_ms": {
+    "sample_count": 1000,
+    "min_ms": 33.25779992155731,
+    "p50_ms": 84.16710002347827,
+    "p95_ms": 147.2135999938473,
+    "p99_ms": 168.76099992077798,
+    "max_ms": 219.3148999940604
+  },
+  "errors_by_status": {},
+  "terminal_status_counts": {},
+  "resource_saturation": {
+    "measured": true,
+    "scope": "load-generator-host-and-selected-process",
+    "sample_interval_seconds": 0.1,
+    "sample_count": 43,
+    "logical_cpu_count": 20,
+    "host_memory_total_bytes": 16962281472,
+    "process": {
+      "pid_recorded": true,
+      "discovery": "local-listener",
+      "sampled": true
+    },
+    "host_cpu_percent": {
+      "sample_count": 43,
+      "min": 14.1,
+      "average": 24.751162790697673,
+      "p95": 34.2,
+      "max": 38.6
+    },
+    "host_memory_percent": {
+      "sample_count": 43,
+      "min": 60.1,
+      "average": 60.41860465116279,
+      "p95": 60.7,
+      "max": 60.7
+    },
+    "process_cpu_percent": {
+      "sample_count": 43,
+      "min": 67.2,
+      "average": 106.86511627906977,
+      "p95": 129.0,
+      "max": 149.6
+    },
+    "process_rss_bytes": {
+      "sample_count": 43,
+      "min": 171589632.0,
+      "average": 172688407.8139535,
+      "p95": 172859392.0,
+      "max": 173031424.0
+    },
+    "process_threads": {
+      "sample_count": 43,
+      "min": 25.0,
+      "average": 31.093023255813954,
+      "p95": 32.0,
+      "max": 32.0
+    }
+  },
+  "bottleneck": "No bottleneck was inferred from latency, errors, or sampled resources.",
+  "capacity_conclusion": "This bounded run completed 1000 requests at 220.774 requests/s in the recorded environment. 43 resource samples, host CPU p95 34.2%, host memory p95 60.7%, selected-process RSS max 173031424 bytes. It is not a production capacity claim.",
+  "targets": {
+    "p95_ms": 250.0,
+    "error_rate": 0.0,
+    "host_cpu_p95_percent": 85.0,
+    "host_memory_p95_percent": 90.0
+  },
+  "measured": {
+    "p95_ms": 147.2135999938473,
+    "error_rate": 0.0,
+    "throughput_requests_per_second": 220.773814,
+    "duplicate_identity_count": 0,
+    "host_cpu_p95_percent": 34.2,
+    "host_memory_p95_percent": 60.7
+  },
+  "limitations": [
+    "This is one bounded execution and does not establish production capacity or an SLO.",
+    "Host and selected-process resources were sampled, but database pool/locks, Redis, queue depth, object-store saturation, and model-provider saturation were not.",
+    "Representative capacity requires repeated runs on an isolated production-like environment with immutable images."
+  ],
+  "owner": "developer"
+}

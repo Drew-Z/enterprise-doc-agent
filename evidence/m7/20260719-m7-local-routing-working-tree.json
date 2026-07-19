@@ -1,0 +1,56 @@
+{
+  "evidence_id": "m7-local-routing-working-tree",
+  "milestone": "M7",
+  "status": "working-tree",
+  "working_tree_dirty": true,
+  "commit_sha": null,
+  "reviewed_commit": null,
+  "evidence_commit": null,
+  "base_commit": "4e606f747e0edeaaff8075b219b3c04cfbadae0f",
+  "started_at": "2026-07-19T02:06:50+00:00",
+  "completed_at": "2026-07-19T02:06:51+00:00",
+  "owner": "developer",
+  "command_or_procedure": [
+    {
+      "gate_id": "m7-deterministic-benchmark",
+      "command": "uv run python scripts/benchmark_m7.py --scenario deterministic --iterations 20 --report-path evidence/m7/20260719-m7-deterministic.json",
+      "exit_code": 0,
+      "artifact": "evidence/m7/20260719-m7-deterministic.json"
+    },
+    {
+      "gate_id": "m7-fallback-contract-benchmark",
+      "command": "uv run python scripts/benchmark_m7.py --scenario fallback-contract --iterations 20 --report-path evidence/m7/20260719-m7-fallback-contract.json",
+      "exit_code": 0,
+      "artifact": "evidence/m7/20260719-m7-fallback-contract.json"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "evidence/m7/20260719-m7-deterministic.json",
+      "kind": "report",
+      "sha256": "321860fe985fcf394f639779c437e81cc541540f3b8f1ff5b8afc7257bcbb0e9"
+    },
+    {
+      "path": "evidence/m7/20260719-m7-fallback-contract.json",
+      "kind": "report",
+      "sha256": "a9c932d8e1116b874d5f99424435f45f2af458003ebe9f1841a42613cc374e9a"
+    }
+  ],
+  "limitations": [
+    "The reports use synthetic deterministic cases and a local Python gateway.",
+    "They do not measure a real provider, network latency, GPU, vLLM, quantization memory, cost, or production capacity.",
+    "The implementation and evidence are uncommitted working-tree artifacts and are not immutable review evidence."
+  ],
+  "manual_gates": [
+    {
+      "gate_id": "m7-real-provider-quality",
+      "status": "blocked_external",
+      "required_evidence": "real provider/model identity, representative golden set, citation and refusal quality, cost and tail latency"
+    },
+    {
+      "gate_id": "m7-gpu-vllm-capacity",
+      "status": "blocked_external",
+      "required_evidence": "GPU hardware run with vLLM/quantization settings, throughput, memory, queueing and repeatability"
+    }
+  ]
+}

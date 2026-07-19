@@ -1,0 +1,21 @@
+{
+  "gate_id": "m5-real-provider-quality",
+  "milestone": "M5",
+  "requirement": "M5-R5",
+  "owner": "model evaluation owner",
+  "blocking_reason": "No approved real provider credentials or representative enterprise corpus are available in the local verification environment.",
+  "prerequisites": [
+    "Approve a provider, model revision, and evaluation budget",
+    "Provide a sanitized representative corpus and golden labels",
+    "Freeze prompt, graph, tool, embedding, and index versions"
+  ],
+  "required_evidence": [
+    "Retrieval, citation, refusal, and Agent quality report",
+    "Provider and model identity",
+    "Cost, token, P95, and P99 latency",
+    "Human-reviewed error taxonomy"
+  ],
+  "state": "open",
+  "status": "blocked_external",
+  "review_date": "2026-07-19"
+}

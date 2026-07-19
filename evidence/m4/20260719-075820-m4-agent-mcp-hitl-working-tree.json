@@ -1,0 +1,244 @@
+{
+  "evidence_id": "m4-agent-mcp-hitl-working-tree",
+  "milestone": "M4",
+  "status": "working-tree",
+  "requirement_ids": [
+    "M4-R15-security-and-authorization",
+    "M4-R16-evaluation-and-evidence",
+    "M4-S8-documentation"
+  ],
+  "owner": "Codex",
+  "commit_sha": null,
+  "base_commit": "4e606f747e0edeaaff8075b219b3c04cfbadae0f",
+  "reviewed_commit": null,
+  "evidence_commit": null,
+  "working_tree_dirty": true,
+  "started_at": "2026-07-19T07:51:09.689669+08:00",
+  "completed_at": "2026-07-19T08:11:14.6285882+08:00",
+  "environment": {
+    "os": "Windows",
+    "runtime": "local Docker Compose",
+    "database_revision": "20260718_0009",
+    "evidence_mode": "working-tree"
+  },
+  "tool_versions": {
+    "python": "Python 3.12.13",
+    "uv": "uv 0.11.3 (45da18ac3 2026-04-01 x86_64-pc-windows-msvc)",
+    "node": "v24.14.0",
+    "pnpm": "11.9.0",
+    "docker": "Docker version 29.3.1, build c2be9cc"
+  },
+  "result_summary": "Local deterministic M4 implementation gates passed in the current uncommitted working tree. This is mutable verification material, not reviewed immutable evidence.",
+  "image_digest": "not_applicable",
+  "command_or_procedure": [
+    {
+      "gate_id": "dependency-lock",
+      "command": "uv sync --frozen && pnpm install --frozen-lockfile",
+      "exit_code": 0,
+      "result": "passed",
+      "artifact": "evidence/m4/artifacts/dependency-lock.log"
+    },
+    {
+      "gate_id": "checkpointer",
+      "command": "uv run python scripts/setup_langgraph_checkpoints.py --check",
+      "exit_code": 0,
+      "result": "passed",
+      "artifact": "evidence/m4/artifacts/checkpointer-setup.log"
+    },
+    {
+      "gate_id": "backend-quality",
+      "command": "uv run ruff format --check .; uv run ruff check .; uv run mypy packages/core/src apps/api/src apps/worker/src apps/mcp/src; uv run pytest -m \"not integration\" --ignore tests/contracts/test_m4_evidence_contract.py -q",
+      "exit_code": 0,
+      "result": "passed",
+      "artifact": "evidence/m4/artifacts/backend-quality.log"
+    },
+    {
+      "gate_id": "frontend-quality",
+      "command": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+      "exit_code": 0,
+      "result": "passed",
+      "artifact": "evidence/m4/artifacts/frontend-quality.log"
+    },
+    {
+      "gate_id": "integration-full",
+      "command": "uv run pytest -m integration -q",
+      "exit_code": 0,
+      "result": "passed",
+      "artifact": "evidence/m4/artifacts/migration-integration.log"
+    },
+    {
+      "gate_id": "integration-agent",
+      "command": "uv run pytest tests/agent tests/mcp -m integration -q",
+      "exit_code": 0,
+      "result": "passed",
+      "artifact": "evidence/m4/artifacts/agent-integration.log"
+    },
+    {
+      "gate_id": "security-contracts",
+      "command": "uv run pytest tests/security/test_m4_injection_safety.py tests/contracts/test_m4_authorization_contracts.py -q",
+      "exit_code": 0,
+      "result": "passed",
+      "artifact": "evidence/m4/artifacts/security-contracts.log"
+    },
+    {
+      "gate_id": "m4-safety-evaluation",
+      "command": "uv run python scripts/evaluate_m4_agent.py",
+      "exit_code": 0,
+      "result": "passed",
+      "artifact": "evidence/m4/artifacts/m4-agent-safety-v1.json"
+    },
+    {
+      "gate_id": "m3-retrieval-evaluation",
+      "command": "uv run python scripts/evaluate_m3_retrieval.py",
+      "exit_code": 0,
+      "result": "passed",
+      "artifact": "evidence/m4/artifacts/m3-retrieval-eval.json"
+    },
+    {
+      "gate_id": "playwright-agent",
+      "command": "pnpm --filter web exec playwright test e2e/agent-workflow.spec.ts",
+      "exit_code": 0,
+      "result": "passed",
+      "artifact": "evidence/m4/artifacts/playwright.log"
+    },
+    {
+      "gate_id": "trellis-and-diff",
+      "command": "Trellis validate and git diff --check",
+      "exit_code": 0,
+      "result": "passed",
+      "artifact": "evidence/m4/artifacts/trellis-validation.log"
+    },
+    {
+      "gate_id": "playwright-full",
+      "command": "pnpm --filter web test:e2e",
+      "exit_code": 0,
+      "result": "passed",
+      "artifact": "evidence/m4/artifacts/playwright-full.log"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "evidence/m4/artifacts/agent-integration.log",
+      "kind": "log",
+      "sha256": "dff0f3f62dba5192e9d8845e66a8b9f56994824f270aad45ef8549bbd707cfde",
+      "generated_at": "2026-07-19T08:08:02.4597595+08:00"
+    },
+    {
+      "path": "evidence/m4/artifacts/agent-workspace-desktop-1440x900.png",
+      "kind": "screenshot",
+      "sha256": "75925325c0c345273bd2d03546d18dcd15c6783cfe7bf5189a26d5cbacdeb4c4",
+      "generated_at": "2026-07-19T07:51:09.689669+08:00"
+    },
+    {
+      "path": "evidence/m4/artifacts/agent-workspace-mobile-390x844.png",
+      "kind": "screenshot",
+      "sha256": "2c0ab8c7ee4f5eaf206965dd3e7d14377bc04e915baaaec2332388d4b247f69f",
+      "generated_at": "2026-07-19T07:51:09.7793245+08:00"
+    },
+    {
+      "path": "evidence/m4/artifacts/backend-quality.log",
+      "kind": "log",
+      "sha256": "928bf8ee561efbd5f32486f399ed987d8eee0842045ce4ab5cf5808e489b300c",
+      "generated_at": "2026-07-19T08:08:02.4597595+08:00"
+    },
+    {
+      "path": "evidence/m4/artifacts/checkpointer-setup.log",
+      "kind": "log",
+      "sha256": "7a24f6f6c2d1de9e890d2e70ae8fef598f92b0ddca51aa18f10d2f78a4242fd0",
+      "generated_at": "2026-07-19T08:08:02.4597595+08:00"
+    },
+    {
+      "path": "evidence/m4/artifacts/dependency-lock.log",
+      "kind": "log",
+      "sha256": "b6ccd1097250a80e506e98beb06c32ae0293932f16b89ec30b773c16b0052026",
+      "generated_at": "2026-07-19T08:08:02.4597595+08:00"
+    },
+    {
+      "path": "evidence/m4/artifacts/frontend-quality.log",
+      "kind": "log",
+      "sha256": "a85e63961df3af6ac1802d08ba0c462c6c0bce99c170a6eabe8771e742fff49a",
+      "generated_at": "2026-07-19T08:08:02.4597595+08:00"
+    },
+    {
+      "path": "evidence/m4/artifacts/local-workflow-report.json",
+      "kind": "report",
+      "sha256": "d37885a8e0b27fe53f74a6c5175d3a3ea15df44b11670e2bc19409eea4ce2f1c",
+      "generated_at": "2026-07-19T08:08:02.4597595+08:00"
+    },
+    {
+      "path": "evidence/m4/artifacts/m3-retrieval-eval.json",
+      "kind": "report",
+      "sha256": "ff824e33150c3b9badd35c39628b8da6937f4e133bee5662cf36662afb16089a",
+      "generated_at": "2026-07-19T08:08:02.4597595+08:00"
+    },
+    {
+      "path": "evidence/m4/artifacts/m4-agent-safety-v1.json",
+      "kind": "report",
+      "sha256": "34fb85477ff5c3c03b93a4e0c1794fa5d7adf1c7de018871b76cd42b7f24958c",
+      "generated_at": "2026-07-19T08:08:02.4597595+08:00"
+    },
+    {
+      "path": "evidence/m4/artifacts/migration-integration.log",
+      "kind": "log",
+      "sha256": "c636d1a4107b6f1a3f12da5dc7548adaaf97d09adee01620873ae2ba18269bba",
+      "generated_at": "2026-07-19T08:08:02.4642207+08:00"
+    },
+    {
+      "path": "evidence/m4/artifacts/playwright-full.log",
+      "kind": "log",
+      "sha256": "eeb4d0aea6f56efff2ea4110d2ed852c078ec27ab1deb0a00db516e63fcb33e8",
+      "generated_at": "2026-07-19T08:11:14.5937812+08:00"
+    },
+    {
+      "path": "evidence/m4/artifacts/playwright.log",
+      "kind": "log",
+      "sha256": "b6b7e9c2cced8ad71c4dddd0b7afe6d8b28eb9e2f2ec07599f5d3a5f8ea96fdf",
+      "generated_at": "2026-07-19T08:08:02.4642207+08:00"
+    },
+    {
+      "path": "evidence/m4/artifacts/security-contracts.log",
+      "kind": "log",
+      "sha256": "7bfb906d5a5ea933ea6f916d9bff4f88954370ad9b6cf0bd1a3a0b7d675388be",
+      "generated_at": "2026-07-19T08:08:02.4642207+08:00"
+    },
+    {
+      "path": "evidence/m4/artifacts/security-side-effects.json",
+      "kind": "report",
+      "sha256": "eaabbef2d4c4d282e71dce352d0361f3abab660da09dc4db7c23e5c4239a2439",
+      "generated_at": "2026-07-19T08:08:02.4642207+08:00"
+    },
+    {
+      "path": "evidence/m4/artifacts/trellis-validation.log",
+      "kind": "log",
+      "sha256": "2e23a942954c7d9e3b87c9ee696f23dcdd29571c8dfff1fb472d7963b631383d",
+      "generated_at": "2026-07-19T08:08:02.4642207+08:00"
+    }
+  ],
+  "limitations": [
+    "This is an uncommitted, dirty working-tree capture and is not immutable reviewed evidence.",
+    "commit_sha, reviewed_commit, and evidence_commit are intentionally null until separate implementation and evidence commits exist.",
+    "The deterministic model and controlled local documents prove orchestration, authorization, policy, replay, and side-effect contracts only.",
+    "No production model quality, throughput, capacity, public MCP, Kubernetes, CD, remote GitHub Actions run, or multi-region claim is supported.",
+    "Tenant membership and role checks are implemented; document-level ACL/ABAC is not implemented."
+  ],
+  "visual_gates": [
+    {
+      "gate_id": "agent-workspace-responsive",
+      "result": "passed",
+      "reviewer": "Codex",
+      "evidence_mode": "mocked-playwright-working-tree",
+      "viewports": [
+        {
+          "width": 1440,
+          "height": 900,
+          "screenshot": "evidence/m4/artifacts/agent-workspace-desktop-1440x900.png"
+        },
+        {
+          "width": 390,
+          "height": 844,
+          "screenshot": "evidence/m4/artifacts/agent-workspace-mobile-390x844.png"
+        }
+      ]
+    }
+  ]
+}

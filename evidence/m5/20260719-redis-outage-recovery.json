@@ -1,0 +1,23 @@
+{
+  "completed_at": "2026-07-19T03:06:33.097096+00:00",
+  "duration_seconds": 7.109000000054948,
+  "environment": "local",
+  "limitations": [
+    "This drill validates dependency readiness loss and recovery on local Compose only.",
+    "It does not prove managed-service failover, production RTO, or zero duplicate side effects.",
+    "Redis Outbox republish may wait for the database publishing lease to expire."
+  ],
+  "recovery_seconds": 0.015000000013969839,
+  "scenario": "redis-outage-recovery",
+  "schema_version": 1,
+  "started_at": "2026-07-19T03:06:25.997968+00:00",
+  "status": "passed",
+  "steps": [
+    "verify API readiness before the outage",
+    "stop the local Redis Compose service",
+    "verify API readiness becomes unavailable",
+    "restart Redis and wait for its health check",
+    "verify API readiness recovers",
+    "allow the Outbox publishing lease to expire before checking republish"
+  ]
+}

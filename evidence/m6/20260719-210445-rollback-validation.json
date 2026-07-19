@@ -1,0 +1,23 @@
+{
+  "dry_run": true,
+  "commands": [
+    [
+      "kubectl",
+      "-n",
+      "enterprise-doc-agent-staging",
+      "rollout",
+      "undo",
+      "deployment/enterprise-doc-api",
+      "--to-revision=1"
+    ],
+    [
+      "kubectl",
+      "-n",
+      "enterprise-doc-agent-staging",
+      "rollout",
+      "status",
+      "deployment/enterprise-doc-api",
+      "--timeout=300s"
+    ]
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "gate_id": "m4-reviewed-immutable-evidence",
+  "milestone": "M4",
+  "requirement": "M4-R16",
+  "owner": "repository reviewer",
+  "blocking_reason": "The implementation and local verification artifacts exist only in a dirty working tree. No reviewed implementation commit or separate evidence commit exists.",
+  "prerequisites": [
+    "Review the M4 implementation and authorization boundaries",
+    "Create an approved implementation commit",
+    "Rerun the full M4 completion matrix from that commit"
+  ],
+  "required_evidence": [
+    "Reviewed implementation commit SHA",
+    "Separate evidence commit SHA",
+    "Immutable M4 manifest with artifact hashes",
+    "Full integration, safety, and Playwright results"
+  ],
+  "state": "open",
+  "status": "blocked_external",
+  "review_date": "2026-07-19"
+}

@@ -1,0 +1,22 @@
+{
+  "gate_id": "m6-cluster-staging-rollout",
+  "milestone": "M6",
+  "requirement": "M6-R4",
+  "owner": "platform owner",
+  "blocking_reason": "No staging cluster, secret manager integration, TLS ingress, externally reachable presigned object endpoint, or authenticated smoke credentials are available.",
+  "prerequisites": [
+    "Provision a staging Kubernetes cluster and namespace",
+    "Configure TLS, secrets, database, Redis, and object storage",
+    "Publish immutable image digests",
+    "Provide a scoped staging smoke token"
+  ],
+  "required_evidence": [
+    "Migration job completion",
+    "Deployment rollout and readiness records",
+    "Authenticated upload to ingestion to Agent smoke result",
+    "TLS, secret handling, RBAC, and NetworkPolicy review"
+  ],
+  "state": "open",
+  "status": "blocked_external",
+  "review_date": "2026-07-19"
+}

@@ -1,0 +1,104 @@
+{
+  "evidence_id": "m5-observability-eval-load-working-tree",
+  "milestone": "M5",
+  "status": "working-tree",
+  "working_tree_dirty": true,
+  "commit_sha": null,
+  "reviewed_commit": null,
+  "evidence_commit": null,
+  "base_commit": "4e606f747e0edeaaff8075b219b3c04cfbadae0f",
+  "owner": "developer",
+  "artifacts": [
+    {
+      "path": "evidence/m5/20260719-m5-unified-evaluation.json",
+      "kind": "report",
+      "sha256": "e677fc79b82dab8d86f96314ff4cba089a565d44d20942143faabc30ffc802af"
+    },
+    {
+      "path": "evidence/m5/20260719-m5-local-health-load.json",
+      "kind": "report",
+      "sha256": "817f81dc25447d6775045eb4d73c089491048bb9842138d50feed487c3edc430"
+    },
+    {
+      "path": "evidence/m5/20260719-redis-outage-recovery.json",
+      "kind": "report",
+      "sha256": "1b32a70c427ec463f9ba31c26b129de2fee24cdae6904a7e4c4bf93c07bc606f"
+    },
+    {
+      "path": "evidence/m5/20260719-minio-outage-recovery.json",
+      "kind": "report",
+      "sha256": "9eba93e3bb8f02af7d23c2c560adcff18f8d880e83cd167801492cd702e14eb4"
+    },
+    {
+      "path": "evidence/m5/20260719-observability-stack-runtime.json",
+      "kind": "report",
+      "sha256": "58ae3954b3565d56aa22ae32b1a1fef0e2bf690cf341381ada5639cfaaf4ec65"
+    },
+    {
+      "path": "evidence/m5/20260719-m5-local-ready-resource-load.json",
+      "kind": "report",
+      "sha256": "d629c8af20db104250f9a53649e5f5382f447d6eec52dc348bab3e9648d20f3e"
+    }
+  ],
+  "command_or_procedure": [
+    {
+      "gate_id": "m5-unified-evaluation",
+      "command": "uv run python scripts/evaluate_m5.py",
+      "exit_code": 0,
+      "artifact": "evidence/m5/20260719-m5-unified-evaluation.json"
+    },
+    {
+      "gate_id": "m5-local-health-load",
+      "command": "uv run python scripts/load_m5.py --scenario health --requests 100 --concurrency 10",
+      "exit_code": 0,
+      "artifact": "evidence/m5/20260719-m5-local-health-load.json"
+    },
+    {
+      "gate_id": "m5-redis-outage-recovery",
+      "command": "uv run python scripts/fault_drill.py --scenario redis --run --environment local --confirm local-fault-drill --timeout-seconds 60 --report-path evidence/m5/20260719-redis-outage-recovery.json",
+      "exit_code": 0,
+      "artifact": "evidence/m5/20260719-redis-outage-recovery.json"
+    },
+    {
+      "gate_id": "m5-minio-outage-recovery",
+      "command": "uv run python scripts/fault_drill.py --scenario minio --run --environment local --confirm local-fault-drill --timeout-seconds 60 --report-path evidence/m5/20260719-minio-outage-recovery.json",
+      "exit_code": 0,
+      "artifact": "evidence/m5/20260719-minio-outage-recovery.json"
+    },
+    {
+      "gate_id": "m5-observability-stack-runtime",
+      "command": "docker compose -f infra/compose/docker-compose.yml --profile observability up -d --wait prometheus grafana; query Prometheus readiness/targets and Grafana dashboard search",
+      "exit_code": 0,
+      "artifact": "evidence/m5/20260719-observability-stack-runtime.json"
+    },
+    {
+      "gate_id": "m5-local-ready-resource-load",
+      "command": "uv run python scripts/load_m5.py --scenario ready --requests 1000 --concurrency 20 --sample-resources --resource-sample-interval-seconds 0.1 --report-path evidence/m5/20260719-m5-local-ready-resource-load.json",
+      "exit_code": 0,
+      "artifact": "evidence/m5/20260719-m5-local-ready-resource-load.json"
+    }
+  ],
+  "limitations": [
+    "Evaluation uses a deterministic gateway and controlled eight-dimensional vectors.",
+    "Load evidence consists of a bounded health baseline and a dependency-inclusive ready run with host/API resource sampling; neither is a production capacity claim.",
+    "Fault drills and observability runtime checks are local Compose evidence; they do not prove managed failover, production RTO, or production telemetry availability.",
+    "Implementation and evidence are uncommitted working-tree artifacts, not immutable review evidence."
+  ],
+  "manual_gates": [
+    {
+      "gate_id": "m5-real-provider-quality",
+      "status": "blocked_external",
+      "required_evidence": "real provider/model quality, representative corpus, cost, citations, refusal and tail latency"
+    },
+    {
+      "gate_id": "m5-representative-capacity",
+      "status": "blocked_external",
+      "required_evidence": "isolated production-like environment, immutable images, repeated workload, resource and queue telemetry"
+    },
+    {
+      "gate_id": "m5-managed-observability",
+      "status": "blocked_external",
+      "required_evidence": "managed scrape, retention, alert routing, dashboard and incident ownership"
+    }
+  ]
+}

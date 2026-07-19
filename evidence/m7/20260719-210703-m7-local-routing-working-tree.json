@@ -1,0 +1,74 @@
+{
+  "evidence_id": "m7-local-routing-working-tree-20260719-210703",
+  "milestone": "M7",
+  "status": "working-tree",
+  "requirement_ids": [
+    "M7-R1",
+    "M7-R2",
+    "M7-R3",
+    "M7-R4",
+    "M7-R5",
+    "M7-R6",
+    "M7-R7"
+  ],
+  "owner": "Codex",
+  "commit_sha": null,
+  "base_commit": "4e606f747e0edeaaff8075b219b3c04cfbadae0f",
+  "reviewed_commit": null,
+  "evidence_commit": null,
+  "working_tree_dirty": true,
+  "started_at": "2026-07-19T21:05:07.128382+08:00",
+  "completed_at": "2026-07-19T21:07:03.6399997+08:00",
+  "environment": {
+    "os": "Windows",
+    "runtime": "local deterministic Python gateway",
+    "python": "3.12.13 via uv",
+    "evidence_mode": "working-tree"
+  },
+  "image_digest": "not_applicable",
+  "result_summary": "Deterministic and fallback-contract benchmarks passed locally. The fallback scenario observed 20 fallbacks, final breaker state open, citation precision 1.0 and valid case rate 1.0.",
+  "command_or_procedure": [
+    {
+      "gate_id": "m7-deterministic-benchmark",
+      "command": "uv run python scripts/benchmark_m7.py --scenario deterministic --iterations 20 --report-path evidence/m7/20260719-210445-m7-deterministic.json",
+      "exit_code": 0,
+      "result": "passed",
+      "artifact": "evidence/m7/20260719-210445-m7-deterministic.json"
+    },
+    {
+      "gate_id": "m7-fallback-contract-benchmark",
+      "command": "uv run python scripts/benchmark_m7.py --scenario fallback-contract --iterations 20 --report-path evidence/m7/20260719-210445-m7-fallback-contract.json",
+      "exit_code": 0,
+      "result": "passed; fallback_count=20; breaker_state=open",
+      "artifact": "evidence/m7/20260719-210445-m7-fallback-contract.json"
+    },
+    {
+      "gate_id": "model-routing-regression",
+      "command": "uv run pytest packages/core/tests/test_model_routing.py -q",
+      "exit_code": 0,
+      "result": "7 passed; also included in the 588-test full regression"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "evidence/m7/20260719-210445-m7-deterministic.json",
+      "kind": "report",
+      "sha256": "44d2f1a02d9fba4f066a1f98f915be4344d5bc2bffcaec2cbbbb19ff8f2b18db"
+    },
+    {
+      "path": "evidence/m7/20260719-210445-m7-fallback-contract.json",
+      "kind": "report",
+      "sha256": "6d9442b06cf71b990160920f5835aa3aa6c6944fad7a09728343ef688ad29e33"
+    }
+  ],
+  "limitations": [
+    "This is an uncommitted dirty working-tree capture and is not immutable review evidence.",
+    "The benchmark uses synthetic deterministic cases and local process latency; it does not measure real-provider quality, cost, network latency, queue contention, GPU, vLLM, or production capacity.",
+    "ModelRouteDescriptor supports model_revision, but the current benchmark report route does not yet enforce complete eight-field route identity.",
+    "The OpenAI-compatible schema repair shares one provider timeout budget, but primary plus fallback do not yet share one end-to-end deadline."
+  ],
+  "manual_gates": [
+    "evidence/gates/m7-real-provider-quality.json",
+    "evidence/gates/m7-gpu-vllm-capacity.json"
+  ]
+}

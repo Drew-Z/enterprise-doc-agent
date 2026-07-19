@@ -1,0 +1,101 @@
+{
+  "evidence_id": "m4-agent-mcp-hitl-working-tree-20260719-210703",
+  "milestone": "M4",
+  "status": "working-tree",
+  "requirement_ids": [
+    "M4-R1",
+    "M4-R2",
+    "M4-R3",
+    "M4-R4",
+    "M4-R5",
+    "M4-R6",
+    "M4-R7",
+    "M4-R8",
+    "M4-R9",
+    "M4-R10",
+    "M4-R11",
+    "M4-R12",
+    "M4-R13",
+    "M4-R14",
+    "M4-R15",
+    "M4-R16"
+  ],
+  "owner": "Codex",
+  "commit_sha": null,
+  "base_commit": "4e606f747e0edeaaff8075b219b3c04cfbadae0f",
+  "reviewed_commit": null,
+  "evidence_commit": null,
+  "working_tree_dirty": true,
+  "started_at": "2026-07-19T20:55:00+08:00",
+  "completed_at": "2026-07-19T21:07:03.6399997+08:00",
+  "environment": {
+    "os": "Windows",
+    "runtime": "local PostgreSQL/Redis/MinIO test environment",
+    "python": "3.12.13 via uv",
+    "evidence_mode": "working-tree"
+  },
+  "image_digest": "not_applicable",
+  "result_summary": "The current dirty working tree passed 588 backend tests, Ruff, mypy, 138 Web tests, Web typecheck/build, and the focused final-lease AgentRun failure projection test. This refresh is unreviewed local evidence only.",
+  "command_or_procedure": [
+    {
+      "gate_id": "backend-full-regression",
+      "command": "uv run pytest -q",
+      "exit_code": 0,
+      "result": "588 passed in 125.15s"
+    },
+    {
+      "gate_id": "agent-final-lease-projection",
+      "command": "uv run pytest tests/agent/test_agent_run_integration.py::test_expired_final_agent_lease_projects_run_failed -q",
+      "exit_code": 0,
+      "result": "1 passed in 1.36s",
+      "artifact": "evidence/m4/artifacts/20260719-210703-lease-exhaustion-agent-run.log"
+    },
+    {
+      "gate_id": "backend-static-quality",
+      "command": "uv run ruff check . && uv run mypy packages/core/src apps/worker/src",
+      "exit_code": 0,
+      "result": "passed"
+    },
+    {
+      "gate_id": "web-quality",
+      "command": "pnpm lint && pnpm test && pnpm typecheck && pnpm build",
+      "exit_code": 0,
+      "result": "138 tests passed; lint, typecheck and build passed"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "evidence/m4/artifacts/20260719-210703-lease-exhaustion-agent-run.log",
+      "kind": "log",
+      "sha256": "242716ff03f930e4f433b7e404511749992bd5b26f5a7328f84a6b35028fd386"
+    }
+  ],
+  "limitations": [
+    "This is an uncommitted dirty working-tree capture, not an immutable reviewed commit or production release record.",
+    "The responsive screenshots are retained from the earlier local capture and were not regenerated in this refresh.",
+    "No production model quality, public MCP, remote CI, cluster deployment, capacity, or multi-region evidence is claimed."
+  ],
+  "manual_gates": [
+    "evidence/gates/m4-reviewed-immutable-evidence.json"
+  ],
+  "visual_gates": [
+    {
+      "gate_id": "agent-workspace-responsive",
+      "result": "passed",
+      "reviewer": "Codex",
+      "evidence_mode": "mocked-playwright-working-tree-previous-capture",
+      "viewports": [
+        {
+          "width": 1440,
+          "height": 900,
+          "screenshot": "evidence/m4/artifacts/agent-workspace-desktop-1440x900.png"
+        },
+        {
+          "width": 390,
+          "height": 844,
+          "screenshot": "evidence/m4/artifacts/agent-workspace-mobile-390x844.png"
+        }
+      ]
+    }
+  ]
+}

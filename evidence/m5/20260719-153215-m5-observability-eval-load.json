@@ -1,0 +1,112 @@
+{
+  "evidence_id": "m5-observability-eval-load",
+  "milestone": "M5",
+  "requirement_ids": [
+    "M5-R1", "M5-R2", "M5-R3", "M5-R4", "M5-R5", "M5-R6", "M5-R7",
+    "M5-R8", "M5-R9", "M5-R10", "M5-R11", "M5-R12", "M5-R13", "M5-R14"
+  ],
+  "status": "blocked_external",
+  "command_or_procedure": [
+    {
+      "gate_id": "m5-local-evidence-capture",
+      "command": "Use the command_or_procedure recorded in evidence/m5/20260719-m5-observability-working-tree.json",
+      "exit_code": 0,
+      "artifact": "evidence/m5/20260719-m5-observability-working-tree.json"
+    },
+    {
+      "gate_id": "m5-real-provider-quality",
+      "procedure": "Run the approved provider and representative corpus evaluation",
+      "status": "blocked_external",
+      "artifact": "evidence/gates/m5-real-provider-quality.json"
+    },
+    {
+      "gate_id": "m5-representative-capacity",
+      "procedure": "Run repeated production-like capacity workloads with dependency telemetry",
+      "status": "blocked_external",
+      "artifact": "evidence/gates/m5-representative-capacity.json"
+    },
+    {
+      "gate_id": "m5-managed-observability",
+      "procedure": "Verify managed scrape, retention, alert routing, and incident ownership",
+      "status": "blocked_external",
+      "artifact": "evidence/gates/m5-managed-observability.json"
+    }
+  ],
+  "environment": {
+    "operating_system": "Windows",
+    "runtime": "local Docker Compose and local HTTP load runner",
+    "evidence_mode": "blocked external completion boundary over local captures"
+  },
+  "commit_sha": null,
+  "image_digest": "not_applicable",
+  "reviewed_commit": null,
+  "evidence_commit": null,
+  "working_tree_dirty": true,
+  "started_at": "2026-07-19T15:32:15+08:00",
+  "completed_at": "2026-07-19T15:32:16+08:00",
+  "result_summary": "Deterministic evaluation, local fault drills, observability profile checks, health baseline, and dependency-inclusive ready load with host/API resource sampling are recorded. Real-provider quality, representative capacity, managed observability, and immutable review remain blocked.",
+  "artifacts": [
+    {
+      "path": "evidence/m5/20260719-m5-observability-working-tree.json",
+      "kind": "working-tree-capture",
+      "sha256": "7665503f595bf5efd7156c637f6de229efe249496e0c7886bbb349703362ea8c"
+    },
+    {
+      "path": "evidence/m5/20260719-m5-unified-evaluation.json",
+      "kind": "report",
+      "sha256": "e677fc79b82dab8d86f96314ff4cba089a565d44d20942143faabc30ffc802af"
+    },
+    {
+      "path": "evidence/m5/20260719-m5-local-health-load.json",
+      "kind": "report",
+      "sha256": "817f81dc25447d6775045eb4d73c089491048bb9842138d50feed487c3edc430"
+    },
+    {
+      "path": "evidence/m5/20260719-m5-local-ready-resource-load.json",
+      "kind": "report",
+      "sha256": "d629c8af20db104250f9a53649e5f5382f447d6eec52dc348bab3e9648d20f3e"
+    },
+    {
+      "path": "evidence/m5/20260719-redis-outage-recovery.json",
+      "kind": "report",
+      "sha256": "1b32a70c427ec463f9ba31c26b129de2fee24cdae6904a7e4c4bf93c07bc606f"
+    },
+    {
+      "path": "evidence/m5/20260719-minio-outage-recovery.json",
+      "kind": "report",
+      "sha256": "9eba93e3bb8f02af7d23c2c560adcff18f8d880e83cd167801492cd702e14eb4"
+    },
+    {
+      "path": "evidence/m5/20260719-observability-stack-runtime.json",
+      "kind": "report",
+      "sha256": "58ae3954b3565d56aa22ae32b1a1fef0e2bf690cf341381ada5639cfaaf4ec65"
+    },
+    {
+      "path": "evidence/gates/m5-real-provider-quality.json",
+      "kind": "manual-gate",
+      "sha256": "0d51c2d207b66a25040f7eb0a21354becc19cff5f05822e3676113bd4b56f1a6"
+    },
+    {
+      "path": "evidence/gates/m5-representative-capacity.json",
+      "kind": "manual-gate",
+      "sha256": "0f7c6189e17f0051865249df1cffab8c1a2e0be69be73ffaef36f61eed60d591"
+    },
+    {
+      "path": "evidence/gates/m5-managed-observability.json",
+      "kind": "manual-gate",
+      "sha256": "ba7d205b1633e351638f2cec085b7bb2d3ab235534c5a1c73c7fd9f8145880fb"
+    }
+  ],
+  "limitations": [
+    "The 100-request health baseline and 1000-request ready resource run are single local bounded samples, not production capacity.",
+    "Host and selected-process resources were sampled, but DB pool/locks, queue depth, Redis, object-store, and provider saturation were not.",
+    "Deterministic evaluation is not real-provider quality, and local Prometheus/Grafana is not managed observability.",
+    "No reviewed implementation or evidence commit exists yet."
+  ],
+  "manual_gates": [
+    "evidence/gates/m5-real-provider-quality.json",
+    "evidence/gates/m5-representative-capacity.json",
+    "evidence/gates/m5-managed-observability.json"
+  ],
+  "owner": "developer"
+}

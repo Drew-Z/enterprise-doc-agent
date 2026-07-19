@@ -1,0 +1,43 @@
+{
+  "report_version": "m4-working-tree-v1",
+  "captured_at": "2026-07-19T07:57:48.9506016+08:00",
+  "evidence_mode": "working-tree",
+  "branch": "feat/m4-agent-mcp-hitl",
+  "base_commit": "4e606f747e0edeaaff8075b219b3c04cfbadae0f",
+  "reviewed_implementation_commit": null,
+  "evidence_commit": null,
+  "working_tree_dirty": true,
+  "database_revision": "20260718_0009",
+  "checkpointer_migration_version": 9,
+  "local_services": [
+    "PostgreSQL 16 via Docker Compose",
+    "Redis via Docker Compose",
+    "MinIO via Docker Compose",
+    "local stdio MCP"
+  ],
+  "tool_versions": {
+    "python": "Python 3.12.13",
+    "uv": "uv 0.11.3 (45da18ac3 2026-04-01 x86_64-pc-windows-msvc)",
+    "node": "v24.14.0",
+    "pnpm": "11.9.0",
+    "docker": "Docker version 29.3.1, build c2be9cc"
+  },
+  "verification": {
+    "backend_non_integration": "429 passed including 3 M4 evidence contract tests",
+    "integration": "95 passed",
+    "focused_agent_integration": "29 passed",
+    "frontend_unit": "138 passed",
+    "playwright": "4 passed; focused Agent workflow 3 passed",
+    "m4_safety": "13 passed, 0 failed",
+    "trellis": "passed",
+    "diff_check": "passed",
+    "security_and_evidence_contracts": "7 passed (4 security/authorization plus 3 evidence contract)"
+  },
+  "limitations": [
+    "This report describes an uncommitted working tree and is not immutable reviewed evidence.",
+    "The deterministic gateway and controlled local documents prove orchestration and policy contracts only.",
+    "No production model quality, throughput, capacity, public MCP, Kubernetes, CD, or multi-region claim is supported.",
+    "Authorization is tenant membership plus role checks; document-level ACL/ABAC is not implemented.",
+    "GitHub Actions configuration was parsed locally, but no remote Actions run or deployment is claimed."
+  ]
+}

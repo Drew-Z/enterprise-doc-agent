@@ -1,0 +1,71 @@
+{
+  "evidence_id": "m4-agent-mcp-hitl",
+  "milestone": "M4",
+  "requirement_ids": [
+    "M4-R1", "M4-R2", "M4-R3", "M4-R4", "M4-R5", "M4-R6", "M4-R7", "M4-R8",
+    "M4-R9", "M4-R10", "M4-R11", "M4-R12", "M4-R13", "M4-R14", "M4-R15", "M4-R16"
+  ],
+  "status": "blocked_external",
+  "command_or_procedure": [
+    {
+      "gate_id": "m4-working-tree-local-matrix",
+      "command": "Use the command_or_procedure recorded in evidence/m4/20260719-075820-m4-agent-mcp-hitl-working-tree.json",
+      "exit_code": 0,
+      "artifact": "evidence/m4/20260719-075820-m4-agent-mcp-hitl-working-tree.json"
+    },
+    {
+      "gate_id": "m4-reviewed-immutable-evidence",
+      "procedure": "Review implementation, create implementation and evidence commits, then rerun the M4 matrix",
+      "status": "blocked_external",
+      "artifact": "evidence/gates/m4-reviewed-immutable-evidence.json"
+    }
+  ],
+  "environment": {
+    "operating_system": "Windows",
+    "runtime": "local Docker Compose",
+    "evidence_mode": "blocked external completion boundary over a working-tree capture"
+  },
+  "commit_sha": null,
+  "image_digest": "not_applicable",
+  "reviewed_commit": null,
+  "evidence_commit": null,
+  "working_tree_dirty": true,
+  "started_at": "2026-07-19T15:32:14+08:00",
+  "completed_at": "2026-07-19T15:32:15+08:00",
+  "result_summary": "The local M4 implementation matrix and safety/browser artifacts passed in the referenced working-tree capture. Formal completion remains blocked until implementation review and immutable evidence commits exist.",
+  "artifacts": [
+    {
+      "path": "evidence/m4/20260719-075820-m4-agent-mcp-hitl-working-tree.json",
+      "kind": "working-tree-capture",
+      "sha256": "5d381af3af1a41ad03f4ebfb420affc8610db58c259f293854c52f7a03ce8232"
+    },
+    {
+      "path": "evidence/m4/artifacts/m4-agent-safety-v1.json",
+      "kind": "report",
+      "sha256": "34fb85477ff5c3c03b93a4e0c1794fa5d7adf1c7de018871b76cd42b7f24958c"
+    },
+    {
+      "path": "evidence/m4/artifacts/agent-integration.log",
+      "kind": "log",
+      "sha256": "dff0f3f62dba5192e9d8845e66a8b9f56994824f270aad45ef8549bbd707cfde"
+    },
+    {
+      "path": "evidence/m4/artifacts/playwright-full.log",
+      "kind": "log",
+      "sha256": "eeb4d0aea6f56efff2ea4110d2ed852c078ec27ab1deb0a00db516e63fcb33e8"
+    },
+    {
+      "path": "evidence/gates/m4-reviewed-immutable-evidence.json",
+      "kind": "manual-gate",
+      "sha256": "71098725179c9b8ef7c7c84cd044d666d975b2b370ed8f1ca089e5e35e769f5a"
+    }
+  ],
+  "limitations": [
+    "No reviewed implementation or evidence commit exists yet.",
+    "Tenant membership and role checks exist; document-level ACL/ABAC is not implemented.",
+    "Deterministic provider and controlled documents prove contracts and policy, not production model quality.",
+    "This status does not claim public MCP, cloud deployment, production capacity, or GPU evidence."
+  ],
+  "manual_gates": ["evidence/gates/m4-reviewed-immutable-evidence.json"],
+  "owner": "developer"
+}

@@ -1,0 +1,22 @@
+{
+  "completed_at": "2026-07-19T03:06:51.357477+00:00",
+  "duration_seconds": 9.5,
+  "environment": "local",
+  "limitations": [
+    "This drill validates dependency readiness loss and recovery on local Compose only.",
+    "It does not prove managed-service failover, production RTO, or zero duplicate side effects.",
+    "MinIO recovery does not replace a separate object read/write reconciliation drill."
+  ],
+  "recovery_seconds": 0.015000000013969839,
+  "scenario": "minio-outage-recovery",
+  "schema_version": 1,
+  "started_at": "2026-07-19T03:06:41.856169+00:00",
+  "status": "passed",
+  "steps": [
+    "verify API readiness before the outage",
+    "stop the local MinIO Compose service",
+    "verify API readiness becomes unavailable",
+    "restart MinIO and wait for its health check",
+    "verify API readiness recovers and existing buckets remain readable"
+  ]
+}

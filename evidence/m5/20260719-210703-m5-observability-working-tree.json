@@ -1,0 +1,69 @@
+{
+  "evidence_id": "m5-observability-working-tree-20260719-210703",
+  "milestone": "M5",
+  "status": "working-tree",
+  "requirement_ids": [
+    "M5-R1",
+    "M5-R2",
+    "M5-R3",
+    "M5-R4",
+    "M5-R5",
+    "M5-R6",
+    "M5-R7",
+    "M5-R8",
+    "M5-R9",
+    "M5-R10",
+    "M5-R11",
+    "M5-R12",
+    "M5-R13",
+    "M5-R14"
+  ],
+  "owner": "Codex",
+  "commit_sha": null,
+  "base_commit": "4e606f747e0edeaaff8075b219b3c04cfbadae0f",
+  "reviewed_commit": null,
+  "evidence_commit": null,
+  "working_tree_dirty": true,
+  "started_at": "2026-07-19T20:55:00+08:00",
+  "completed_at": "2026-07-19T21:07:03.6399997+08:00",
+  "environment": {
+    "os": "Windows",
+    "runtime": "local test environment",
+    "python": "3.12.13 via uv",
+    "evidence_mode": "working-tree"
+  },
+  "image_digest": "not_applicable",
+  "result_summary": "The M5 evaluation, load and fault-drill contracts are covered by the 588-test local regression. This refresh does not rerun representative capacity, managed observability, or dependency outage drills.",
+  "command_or_procedure": [
+    {
+      "gate_id": "backend-full-regression",
+      "command": "uv run pytest -q",
+      "exit_code": 0,
+      "result": "588 passed in 125.15s",
+      "artifact": "evidence/m5/artifacts/20260719-210703-backend-regression.log"
+    },
+    {
+      "gate_id": "evidence-contract-regression",
+      "command": "uv run pytest tests/evaluation/test_m5_m7_evidence_contract.py -q",
+      "exit_code": 0,
+      "result": "included in full regression"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "evidence/m5/artifacts/20260719-210703-backend-regression.log",
+      "kind": "log",
+      "sha256": "c0615e22d4b6d6308db0fac6e9b5d13d3290d8ff205f022f8dd91fbe3ca85ca6"
+    }
+  ],
+  "limitations": [
+    "This is an uncommitted dirty working-tree capture and is not immutable review evidence.",
+    "The Redis and MinIO reports remain readiness-only historical local runs; this refresh did not execute Outbox republish or object-content reconciliation.",
+    "No real-provider quality, representative production capacity, managed observability, production RTO, or production SLO evidence is claimed."
+  ],
+  "manual_gates": [
+    "evidence/gates/m5-real-provider-quality.json",
+    "evidence/gates/m5-representative-capacity.json",
+    "evidence/gates/m5-managed-observability.json"
+  ]
+}

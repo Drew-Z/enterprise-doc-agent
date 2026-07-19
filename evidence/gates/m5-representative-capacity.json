@@ -1,0 +1,22 @@
+{
+  "gate_id": "m5-representative-capacity",
+  "milestone": "M5",
+  "requirement": "M5-R10",
+  "owner": "performance owner",
+  "blocking_reason": "Only bounded workstation runs are available; there is no isolated production-like environment with immutable images and representative traffic.",
+  "prerequisites": [
+    "Provision an isolated production-like environment",
+    "Deploy immutable application images",
+    "Define representative read, write, upload, Agent, and SSE workloads"
+  ],
+  "required_evidence": [
+    "Repeated ramp, steady-state, burst, and recovery runs",
+    "P50, P95, P99, errors, and throughput",
+    "Database pool and lock telemetry",
+    "Queue age, Redis, object-store, model, CPU, memory, and GPU saturation",
+    "Capacity bottleneck and headroom conclusion"
+  ],
+  "state": "open",
+  "status": "blocked_external",
+  "review_date": "2026-07-19"
+}

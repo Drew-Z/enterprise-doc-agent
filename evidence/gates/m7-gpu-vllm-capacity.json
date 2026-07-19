@@ -1,0 +1,21 @@
+{
+  "gate_id": "m7-gpu-vllm-capacity",
+  "milestone": "M7",
+  "requirement": "M7-R7",
+  "owner": "ML infrastructure owner",
+  "blocking_reason": "No suitable GPU environment with vLLM and quantized model artifacts is available to produce real throughput or memory evidence.",
+  "prerequisites": [
+    "Provision documented GPU hardware and driver versions",
+    "Deploy a pinned vLLM and model revision",
+    "Define context length, batch token, concurrency, and quantization scenarios"
+  ],
+  "required_evidence": [
+    "TTFT, TPOT, throughput, and error report",
+    "GPU memory and KV-cache observations",
+    "Queueing and saturation curve",
+    "Warm-up and repeated-run comparison"
+  ],
+  "state": "open",
+  "status": "blocked_external",
+  "review_date": "2026-07-19"
+}

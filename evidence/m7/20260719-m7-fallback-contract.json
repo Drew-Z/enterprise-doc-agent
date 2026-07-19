@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "milestone": "M7",
+  "scenario": "fallback-contract",
+  "status": "passed",
+  "route": {
+    "route_id": "m7-local",
+    "provider": "deterministic",
+    "model_name": "deterministic-grounded",
+    "model_version": "m7.benchmark.v1",
+    "quantization": "none",
+    "context_window_tokens": 8192,
+    "embedding_dimension": 8
+  },
+  "dataset_version": "m7-model-benchmark-v1",
+  "dataset_sha256": "c3a5bd3eff11888d7f88284e37482234b0b3f7b5d11129440458a9e60757ab8c",
+  "sample_count": 20,
+  "latency_ms": {
+    "sample_count": 20,
+    "min_ms": 0.015900004655122757,
+    "p50_ms": 0.01850002445280552,
+    "p95_ms": 0.05089992191642523,
+    "p99_ms": 0.14709995593875647,
+    "max_ms": 0.14709995593875647
+  },
+  "errors_by_code": {},
+  "fallback_count": 20,
+  "breaker_state": "open",
+  "citation_validity": {
+    "valid_cases": 20,
+    "total_cases": 20,
+    "citation_precision": 1.0,
+    "citation_count": 20
+  },
+  "targets": {
+    "citation_precision": 1.0
+  },
+  "measured": {
+    "citation_precision": 1.0,
+    "fallback_count": 20
+  },
+  "limitations": [
+    "Synthetic deterministic cases only; no GPU, vLLM, quantization memory, or production provider measurement.",
+    "Latency is measured in the local Python process and excludes network and queue saturation.",
+    "This benchmark is a local orchestration baseline, not a GPU/vLLM throughput or memory result.",
+    "Real provider quality, cost, network latency and queue contention require a separate manual gate."
+  ],
+  "started_at": "2026-07-19T02:06:51.262658+00:00",
+  "completed_at": "2026-07-19T02:06:51.263835+00:00",
+  "owner": "developer"
+}
