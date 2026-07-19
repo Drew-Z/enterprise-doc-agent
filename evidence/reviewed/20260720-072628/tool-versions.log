@@ -1,0 +1,8 @@
+uv=0.11.3
+docker=29.3.1
+docker_compose=v5.1.1
+kubectl_client=v1.34.1
+kubectl_kustomize=v5.7.1
+actionlint_image=rhysd/actionlint:1.7.7
+actionlint_image_digest=sha256:b6d0bc67a629b20d424b3e35964400ec438451f41b95302157868d5e379d5039
+pnpm=11.9.0

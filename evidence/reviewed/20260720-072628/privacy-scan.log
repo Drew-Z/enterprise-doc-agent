@@ -1,0 +1,4 @@
+status=passed
+forbidden_matches=0
+checks=absolute workspace paths, local username, local development password values, bearer tokens, concrete API key assignments
+allowed=secret reference names and environment variable names without values

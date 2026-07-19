@@ -1,0 +1,57 @@
+{
+  "completed_at": "2026-07-19T23:14:10.030060+00:00",
+  "expected": {
+    "error_code": "object_store_unavailable",
+    "one_shot_delegation": true
+  },
+  "experiment": "object-store-unavailable",
+  "injection": {
+    "mode": "object_store_unavailable",
+    "target": "multipart",
+    "trigger_after": 0,
+    "trigger_every": 0
+  },
+  "limitations": [
+    "This deterministic wrapper drill does not execute Docker, a database, or a remote provider.",
+    "Integration recovery and production failure handling remain separate gates."
+  ],
+  "milestone": "M5",
+  "observed": {
+    "error_code": "object_store_unavailable",
+    "one_shot_delegation": true
+  },
+  "owner": "developer",
+  "provenance": {
+    "command": [
+      "python",
+      "scripts/fault_drill.py",
+      "--scenario",
+      "object-store-unavailable",
+      "--run",
+      "--environment",
+      "test",
+      "--confirm",
+      "local-fault-drill",
+      "--timeout-seconds",
+      "60.0",
+      "--report-path",
+      "<report-path>"
+    ],
+    "commit_sha": "8ea488ecdc243f96bc3fa13f3a0a126693884d65",
+    "environment": {
+      "architecture": "AMD64",
+      "execution_scope": "local-deterministic-fault",
+      "operating_system": "Windows-11-10.0.26200-SP0",
+      "python": "3.12.13"
+    },
+    "input_sha256": null,
+    "payload_sha256": "8b14a23e7437432e114fddbe8cb4c7454ec77bc14f9372415bdab984e3c46746",
+    "working_tree_dirty": false
+  },
+  "schema_version": 1,
+  "side_effects": {
+    "delegated_calls": 1
+  },
+  "started_at": "2026-07-19T23:14:10.030060+00:00",
+  "status": "passed"
+}

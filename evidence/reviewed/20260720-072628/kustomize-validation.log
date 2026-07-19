@@ -1,0 +1,3 @@
+kubectl kustomize infra/k8s/base: exit_code=0
+kubectl kustomize infra/k8s/overlays/staging: exit_code=0
+kubectl kustomize infra/k8s/overlays/prod: exit_code=0

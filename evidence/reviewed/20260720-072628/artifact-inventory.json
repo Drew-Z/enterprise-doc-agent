@@ -1,0 +1,162 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-07-20T07:27:31+08:00",
+  "reviewed_commit": "8ea488ecdc243f96bc3fa13f3a0a126693884d65",
+  "files": [
+    {
+      "path": "evidence/reviewed/20260720-072628/actionlint.log",
+      "size": 13,
+      "sha256": "a9f58776a09b5dac438049683f24bf85764e0ff8e7455952456165c68c158627"
+    },
+    {
+      "path": "evidence/reviewed/20260720-072628/application-capacity-dry-run.log",
+      "size": 130,
+      "sha256": "9b959089fa12ccbb1719bc5bae28396427001612ecea479acbc0ed300a535c39"
+    },
+    {
+      "path": "evidence/reviewed/20260720-072628/application-capacity-plan.json",
+      "size": 99,
+      "sha256": "8e06cef40bc5a3c7f901b5d70f234b57d623f76e7e2106a2e7e67642d92a4461"
+    },
+    {
+      "path": "evidence/reviewed/20260720-072628/backend-pytest.log",
+      "size": 858,
+      "sha256": "cdfb3609e3578ca4f7b00b7eff21a95f83fd13e399f112113f0c7c683f983bc3"
+    },
+    {
+      "path": "evidence/reviewed/20260720-072628/bundle-validation.log",
+      "size": 960,
+      "sha256": "a76f4127f9c4a1e58649cdc74e00d9e0667502f2a5ae478ad5413bdc244caa0d"
+    },
+    {
+      "path": "evidence/reviewed/20260720-072628/compose-config.log",
+      "size": 318,
+      "sha256": "4486f1c8893f6b35aec8940ec09350f0109bc6a114a371a85e0a2cae8624e014"
+    },
+    {
+      "path": "evidence/reviewed/20260720-072628/deployment-pytest.log",
+      "size": 114,
+      "sha256": "b9a3b9964fb1eeaeae5c14072e1fafc31eab0808bf337b6285a8259a7ec1b400"
+    },
+    {
+      "path": "evidence/reviewed/20260720-072628/kustomize-base.yaml",
+      "size": 13395,
+      "sha256": "67f360a9668ae072ff5658c8304f90fb4ba0d3d444cc219dced866e710a625f7"
+    },
+    {
+      "path": "evidence/reviewed/20260720-072628/kustomize-prod.yaml",
+      "size": 13523,
+      "sha256": "59bb4b313f6024d08f977f286a113ff86f905d60f76dfa4ae008f02060aa5391"
+    },
+    {
+      "path": "evidence/reviewed/20260720-072628/kustomize-staging.yaml",
+      "size": 15019,
+      "sha256": "4b1ccb5efe4f510df431bd30f008d4dda377fa2b3e4ba98eb301d74b82316d76"
+    },
+    {
+      "path": "evidence/reviewed/20260720-072628/kustomize-validation.log",
+      "size": 162,
+      "sha256": "24a800c01162c513d8972792d58183fbf164b66a797704a3c8491c86570ca585"
+    },
+    {
+      "path": "evidence/reviewed/20260720-072628/m5-fault-handler-retryable.json",
+      "size": 1595,
+      "sha256": "11049483ce56c7902db0004e11cdfe1d792f51615001ef924c54c9c5e63fb9dd"
+    },
+    {
+      "path": "evidence/reviewed/20260720-072628/m5-fault-mcp-timeout.json",
+      "size": 1576,
+      "sha256": "bd0274fd5f43a9e21198f08313e8db42d1c83aaab7269ae989d8d11c93f29cc4"
+    },
+    {
+      "path": "evidence/reviewed/20260720-072628/m5-fault-model-timeout.json",
+      "size": 1567,
+      "sha256": "1e7b0d79261fd695f7b4966746d8e14e317ea45fe1e83d5c22ccdc77b1772f6d"
+    },
+    {
+      "path": "evidence/reviewed/20260720-072628/m5-fault-object-store-unavailable.json",
+      "size": 1626,
+      "sha256": "79404476d1199b91791344d11fb98ac97510b5013f6501eb69d51d5231be5cdf"
+    },
+    {
+      "path": "evidence/reviewed/20260720-072628/m5-local-health-load.json",
+      "size": 4438,
+      "sha256": "c154decc4c42abce7395e32d603def09b3631599475acf1498597ab786678aa9"
+    },
+    {
+      "path": "evidence/reviewed/20260720-072628/m5-m7-evidence-contract.log",
+      "size": 113,
+      "sha256": "55354d0cc4ba313094c0ace9f8b57ad2032feb36642d0e08756e8f63bad9cf5c"
+    },
+    {
+      "path": "evidence/reviewed/20260720-072628/m5-unified-evaluation.json",
+      "size": 6039,
+      "sha256": "130ecc3d0061b1c37ac9d9299984d2ba66e8c9a864abd08597f178cf45c4f2b7"
+    },
+    {
+      "path": "evidence/reviewed/20260720-072628/m7-deterministic.json",
+      "size": 3286,
+      "sha256": "85c148bed68917bdf8699281e497144d6a466959b9ccf334074c6ef262602e85"
+    },
+    {
+      "path": "evidence/reviewed/20260720-072628/m7-fallback-contract.json",
+      "size": 3960,
+      "sha256": "433c38e0cdaf79e71e225dcaac7bfcfdee3bf4c9f9230cf177c54133a305b147"
+    },
+    {
+      "path": "evidence/reviewed/20260720-072628/model-capacity-dry-run.log",
+      "size": 118,
+      "sha256": "9e3b83d1af44020efd328f1763a17330e8731d9a4e4c40bb902f0c5d5545c06d"
+    },
+    {
+      "path": "evidence/reviewed/20260720-072628/model-capacity-plan.json",
+      "size": 202,
+      "sha256": "bd2f5c479d98bc05f2c0d625b7fddf4b943c794b241f3da256f7ed6dd5d0f8e7"
+    },
+    {
+      "path": "evidence/reviewed/20260720-072628/model-routing-pytest.log",
+      "size": 114,
+      "sha256": "5b460235017bec43fc6f414d3f3094d5dfaf8e0a177f8aee79195213faf7bbc3"
+    },
+    {
+      "path": "evidence/reviewed/20260720-072628/observability-static-pytest.log",
+      "size": 113,
+      "sha256": "f101de1f7d94cd2327af1f536436c2116c6fcc0116e514e7e528fdfcd9690c95"
+    },
+    {
+      "path": "evidence/reviewed/20260720-072628/pnpm-quality.log",
+      "size": 11582,
+      "sha256": "e3c9a3157b314df0f8b4ea709963bc9936d7e39f1fdbb6d59f419dd8e2e1a6eb"
+    },
+    {
+      "path": "evidence/reviewed/20260720-072628/privacy-scan.log",
+      "size": 243,
+      "sha256": "d08f04d5891f48078b567708c26f991a9c429afe7606327a7ac39b5905e19a30"
+    },
+    {
+      "path": "evidence/reviewed/20260720-072628/report-verification.log",
+      "size": 1189,
+      "sha256": "f95bcba21a2343d1a0460fab3567a324cb9aa66fcd41c31c16de45eb2daa80b7"
+    },
+    {
+      "path": "evidence/reviewed/20260720-072628/reviewed-commit.log",
+      "size": 135,
+      "sha256": "10682b80677373b00fd24b56e794e8833eebfc011d70898efcdf6adb617d172d"
+    },
+    {
+      "path": "evidence/reviewed/20260720-072628/reviewed-run-summary.json",
+      "size": 3126,
+      "sha256": "58dc3204b884919f0df839b61def541d516cbc91eb0cf4acd2a091d1a00c00d8"
+    },
+    {
+      "path": "evidence/reviewed/20260720-072628/tool-versions.log",
+      "size": 250,
+      "sha256": "5d38ffd3645c7c8ef7f00b9b5eb10b6b1709f6154b49d0ead8fe6052276ca373"
+    },
+    {
+      "path": "evidence/reviewed/20260720-072628/tracked-worktree-status.log",
+      "size": 135,
+      "sha256": "a42118b0a92cedc7a8f2468091d22fd1858cdb56c4d7af667ed0966c9f6a9d78"
+    }
+  ]
+}

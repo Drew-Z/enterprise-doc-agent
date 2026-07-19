@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "reviewed_commit": "8ea488ecdc243f96bc3fa13f3a0a126693884d65",
+  "tracked_worktree_dirty_at_start": false,
+  "started_at": "2026-07-20T07:12:20+08:00",
+  "completed_at": "2026-07-20T07:27:31+08:00",
+  "environment": "Local Windows 11, Docker Compose, kubectl client, deterministic Python gateways",
+  "results": {
+    "backend_full": {
+      "status": "passed",
+      "tests": 675,
+      "duration_seconds": 103.35
+    },
+    "quality": {
+      "status": "passed",
+      "backend_non_integration_tests": 575,
+      "frontend_tests": 138,
+      "frontend_build": "passed",
+      "ruff": "passed",
+      "mypy": "passed"
+    },
+    "m5": {
+      "status": "passed_local_bounded",
+      "deterministic_agent_cases": 13,
+      "rag_recall_at_k": 1.0,
+      "rag_mrr": 1.0,
+      "fault_drills_passed": 4,
+      "observability_static_tests": 5,
+      "evidence_contract_tests": 3,
+      "local_load_requests": 40,
+      "local_load_successful": 40,
+      "local_load_p95_ms": 11.3919,
+      "local_load_throughput_requests_per_second": 936.564169,
+      "local_load_is_not_production_capacity": true
+    },
+    "m6": {
+      "status": "passed_local_static",
+      "deployment_tests": 63,
+      "actionlint": "passed",
+      "compose_config": "passed",
+      "kustomize_overlays": ["base", "staging", "prod"],
+      "compose_render_sha256_recorded": true
+    },
+    "m7": {
+      "status": "passed_local_deterministic",
+      "routing_tests": 14,
+      "deterministic_samples": 20,
+      "deterministic_valid_citation_rate": 1.0,
+      "fallback_samples": 20,
+      "fallback_breaker_state": "open",
+      "report_payload_hashes_verified": 2
+    },
+    "capacity_plans": {
+      "application": "dry_run_passed",
+      "model": "dry_run_passed",
+      "external_execution": false,
+      "phase_count": 4,
+      "repetitions": 2
+    },
+    "report_integrity": {
+      "canonical_payload_reports_verified": 8,
+      "working_tree_dirty": false
+    }
+  },
+  "privacy": {
+    "runtime_identifiers_committed": false,
+    "local_username_committed": false,
+    "secret_values_committed": false,
+    "absolute_local_paths_committed": false,
+    "compose_render_policy": "render hash and exit status retained; local credentials and bind paths omitted"
+  },
+  "not_executed_external": [
+    "Private registry push and GitHub Actions OIDC signing",
+    "Authenticated Kubernetes staging apply, TLS and external secret manager",
+    "Versioned object-store restore and Kubernetes release rollback",
+    "Representative production-like application capacity",
+    "Real-provider quality evaluation",
+    "GPU, vLLM, quantization and managed observability delivery"
+  ],
+  "limitations": [
+    "Deterministic evaluation and fault drills use local synthetic boundaries and do not establish provider quality or production recovery behavior.",
+    "The 40-request load is a bounded workstation run with selected-process sampling, not a production SLO or capacity result.",
+    "Compose and Kustomize checks are static renders; no external cluster, registry, OIDC, TLS, secrets, or managed alert route was exercised."
+  ]
+}

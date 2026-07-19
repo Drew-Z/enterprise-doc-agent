@@ -1,0 +1,2 @@
+command=uv run python scripts/run_application_capacity.py --config infra/capacity/application-capacity.example.yaml
+exit_code=0

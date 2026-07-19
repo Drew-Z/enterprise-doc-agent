@@ -1,0 +1,5 @@
+command=docker compose -f infra/compose/docker-compose.yml --profile observability config
+exit_code=0
+render_sha256=320098c82cfe48331cc8add37e0350dd321bd317544eb0f2039eb98416efee43
+render_output=not_committed
+redaction=local development credential values and absolute bind paths omitted from the committed bundle

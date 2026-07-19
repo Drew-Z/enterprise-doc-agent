@@ -1,0 +1,174 @@
+$ pnpm backend:format && pnpm backend:lint && pnpm backend:typecheck && pnpm backend:test && pnpm lint && pnpm typecheck && pnpm test && pnpm build
+$ uv run ruff format --check .
+274 files already formatted
+$ uv run ruff check .
+All checks passed!
+$ uv run mypy packages/core/src apps/api/src apps/worker/src apps/mcp/src
+Success: no issues found in 115 source files
+$ uv run pytest -m "not integration"
+============================= test session starts =============================
+platform win32 -- Python 3.12.13, pytest-9.1.1, pluggy-1.6.0
+rootdir: <repo>
+configfile: pyproject.toml
+testpaths: apps, packages, tests
+plugins: anyio-4.14.2, langsmith-0.10.6, asyncio-1.4.0, cov-7.1.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 675 items / 100 deselected / 575 selected
+
+apps\api\tests\test_agent_api.py ...                                     [  0%]
+apps\api\tests\test_agent_artifact_api.py ..                             [  0%]
+apps\api\tests\test_agent_sse.py ...                                     [  1%]
+apps\api\tests\test_api_telemetry.py .                                   [  1%]
+apps\api\tests\test_approval_api.py ...                                  [  2%]
+apps\api\tests\test_auth_contract.py .........                           [  3%]
+apps\api\tests\test_health.py ...                                        [  4%]
+apps\api\tests\test_job_router.py ..                                     [  4%]
+apps\api\tests\test_metrics.py ..                                        [  4%]
+apps\api\tests\test_request_context.py ....                              [  5%]
+apps\api\tests\test_settings.py ..                                       [  5%]
+apps\api\tests\test_upload_abort_contract.py .......                     [  7%]
+apps\api\tests\test_upload_complete_contract.py ...............          [  9%]
+apps\api\tests\test_upload_create_contract.py ............               [ 11%]
+apps\api\tests\test_upload_session_contract.py ....                      [ 12%]
+apps\mcp\tests\test_package.py .                                         [ 12%]
+apps\mcp\tests\test_server.py .........                                  [ 14%]
+apps\worker\tests\test_agent_handler.py ..........                       [ 16%]
+apps\worker\tests\test_agents.py ........                                [ 17%]
+apps\worker\tests\test_consumer_main.py ..                               [ 17%]
+apps\worker\tests\test_faults.py .....                                   [ 18%]
+apps\worker\tests\test_handler.py ..                                     [ 18%]
+apps\worker\tests\test_health.py ...                                     [ 19%]
+apps\worker\tests\test_lifecycle.py ..                                   [ 19%]
+apps\worker\tests\test_mcp_client.py .........                           [ 21%]
+apps\worker\tests\test_publisher.py ...                                  [ 21%]
+apps\worker\tests\test_queue.py ............                             [ 24%]
+apps\worker\tests\test_settings.py ..                                    [ 24%]
+apps\worker\tests\test_worker_main.py ..                                 [ 24%]
+apps\worker\tests\test_worker_telemetry.py .                             [ 24%]
+packages\core\tests\test_agent_artifact_service.py .                     [ 25%]
+packages\core\tests\test_agent_graph.py .....                            [ 25%]
+packages\core\tests\test_agent_models.py .....                           [ 26%]
+packages\core\tests\test_agent_service.py ...                            [ 27%]
+packages\core\tests\test_agent_sse.py ...                                [ 27%]
+packages\core\tests\test_agent_state.py ................................ [ 33%]
+........                                                                 [ 34%]
+packages\core\tests\test_approval_service.py .......                     [ 36%]
+packages\core\tests\test_artifact_object_store.py .......                [ 37%]
+packages\core\tests\test_checkpoint_runtime.py ...                       [ 37%]
+packages\core\tests\test_core_telemetry.py ...                           [ 38%]
+packages\core\tests\test_db.py .                                         [ 38%]
+packages\core\tests\test_document_envelope.py .......................... [ 42%]
+.....                                                                    [ 43%]
+packages\core\tests\test_document_evaluation.py ..                       [ 44%]
+packages\core\tests\test_document_ingestion.py .................         [ 47%]
+packages\core\tests\test_document_ingestion_service.py ...               [ 47%]
+packages\core\tests\test_document_rag_models.py ...                      [ 48%]
+packages\core\tests\test_document_retrieval.py ....                      [ 48%]
+packages\core\tests\test_evaluation_contracts.py ....                    [ 49%]
+packages\core\tests\test_execution_context.py ........                   [ 50%]
+packages\core\tests\test_grounded_answer.py .............                [ 53%]
+packages\core\tests\test_health.py ...                                   [ 53%]
+packages\core\tests\test_job_models.py ...                               [ 54%]
+packages\core\tests\test_logging.py ....                                 [ 54%]
+packages\core\tests\test_metrics.py ..                                   [ 55%]
+packages\core\tests\test_model_gateway.py ....................           [ 58%]
+packages\core\tests\test_model_routing.py ..............                 [ 61%]
+packages\core\tests\test_multipart_adapter.py ...........                [ 63%]
+packages\core\tests\test_principal_context.py ..                         [ 63%]
+packages\core\tests\test_settings.py ..                                  [ 63%]
+packages\core\tests\test_upload_cleanup.py .........                     [ 65%]
+packages\core\tests\test_upload_models.py .....                          [ 66%]
+packages\core\tests\test_upload_policy.py ..........................     [ 70%]
+packages\core\tests\test_upload_session_service.py ..                    [ 71%]
+tests\agent\test_checkpoint_setup.py .....                               [ 72%]
+tests\agent\test_dependency_contract.py ...                              [ 72%]
+tests\agent\test_m4_migration.py .                                       [ 72%]
+tests\agent\test_settings.py .....                                       [ 73%]
+tests\contracts\test_m4_authorization_contracts.py ..                    [ 73%]
+tests\contracts\test_m4_evidence_contract.py ...                         [ 74%]
+tests\deployment\test_build_release_manifest.py ...                      [ 74%]
+tests\deployment\test_build_staging_release_record.py ....               [ 75%]
+tests\deployment\test_configure_staging_manifest.py ..                   [ 76%]
+tests\deployment\test_local_delivery_evidence.py ...                     [ 76%]
+tests\deployment\test_local_recovery_drill.py ..                         [ 76%]
+tests\deployment\test_m6_contracts.py .............                      [ 79%]
+tests\deployment\test_release_scripts.py .........                       [ 80%]
+tests\deployment\test_render_k8s_phase.py .                              [ 80%]
+tests\deployment\test_run_application_capacity.py .....                  [ 81%]
+tests\deployment\test_run_model_capacity.py .....                        [ 82%]
+tests\deployment\test_sanitize_deployment_evidence.py ...                [ 83%]
+tests\deployment\test_staging_smoke.py ...                               [ 83%]
+tests\deployment\test_validate_recovery_capacity_evidence.py .....       [ 84%]
+tests\deployment\test_validate_staging_secrets.py .....                  [ 85%]
+tests\evaluation\test_benchmark_m7.py ....                               [ 86%]
+tests\evaluation\test_evaluate_m5.py ...                                 [ 86%]
+tests\evaluation\test_fault_drill.py .........                           [ 88%]
+tests\evaluation\test_m5_load.py ..........                              [ 89%]
+tests\evaluation\test_m5_m7_evidence_contract.py ...                     [ 90%]
+tests\evaluation\test_m8_evidence_contract.py ..                         [ 90%]
+tests\evaluation\test_observability_stack.py .....                       [ 91%]
+tests\foundation\test_ci_contract.py ...                                 [ 92%]
+tests\foundation\test_documentation_contract.py .....                    [ 93%]
+tests\foundation\test_evidence_contract.py ...                           [ 93%]
+tests\foundation\test_migration_contract.py ...                          [ 94%]
+tests\foundation\test_object_store_compose_contract.py ..                [ 94%]
+tests\foundation\test_repository_contract.py ....                        [ 95%]
+tests\jobs\test_m2_evidence_contract.py .                                [ 95%]
+tests\jobs\test_m2_migration.py .                                        [ 95%]
+tests\jobs\test_m3_hardening_evidence_contract.py .                      [ 95%]
+tests\jobs\test_m3_migration.py ..                                       [ 96%]
+tests\multipart\test_bootstrap_principal.py .....                        [ 96%]
+tests\multipart\test_m1_evidence_contract.py .....                       [ 97%]
+tests\multipart\test_multipart_smoke_contract.py ....                    [ 98%]
+tests\security\test_m4_injection_safety.py ..                            [ 98%]
+tests\test_cleanup_uploads_cli.py .......                                [100%]
+
+==================== 575 passed, 100 deselected in 20.24s =====================
+$ pnpm --filter web lint
+$ eslint .
+$ pnpm --filter web typecheck
+$ tsc -b --pretty false
+$ pnpm --filter web test
+$ vitest run
+
+ RUN  v3.2.7 D:/workspace4Cursor/enterprise-doc-agent/apps/web
+
+ ✓ src/upload/state/reducer.test.ts (21 tests) 31ms
+ ✓ src/upload/hashing/runner.test.ts (7 tests) 82ms
+ ✓ src/agent/api/client.test.ts (5 tests) 35ms
+ ✓ src/upload/api/schemas.test.ts (7 tests) 19ms
+ ✓ src/upload/persistence.test.ts (7 tests) 15ms
+ ✓ src/upload/fileIdentity.test.ts (7 tests) 8ms
+ ✓ src/upload/hashing/protocol.test.ts (12 tests) 14ms
+ ✓ src/upload/state/progress.test.ts (2 tests) 9ms
+ ✓ src/upload/state/scheduler.test.ts (4 tests) 25ms
+ ✓ src/upload/transfer/xhrUploadPart.test.ts (13 tests) 37ms
+ ✓ src/upload/hashing/client.test.ts (9 tests) 36ms
+ ✓ src/agent/persistence.test.ts (3 tests) 18ms
+ ✓ src/upload/hashing/runtime.test.ts (3 tests) 22ms
+ ✓ src/agent/sse.test.ts (4 tests) 36ms
+ ✓ src/upload/api/client.test.ts (23 tests) 97ms
+ ✓ src/upload/UploadWorkspace.test.tsx (3 tests) 209ms
+ ✓ src/App.test.tsx (6 tests) 300ms
+ ✓ src/agent/AgentWorkspace.test.tsx (2 tests) 520ms
+   ✓ AgentWorkspace > resumes from the persisted cursor and pages beyond the API event limit  321ms
+
+ Test Files  18 passed (18)
+      Tests  138 passed (138)
+   Start at  07:16:25
+   Duration  5.81s (transform 1.58s, setup 10.52s, collect 7.73s, tests 1.51s, environment 44.36s, prepare 9.60s)
+
+$ pnpm --filter web build
+$ tsc -b && vite build
+vite v7.3.6 building client environment for production...
+transforming...
+✓ 1814 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                        0.42 kB │ gzip:   0.28 kB
+dist/assets/hash.worker-D0FEPUy7.js   21.86 kB
+dist/assets/index-D8nmvTUU.css        15.11 kB │ gzip:   3.49 kB
+dist/assets/index-BbE7R8op.js        373.59 kB │ gzip: 110.06 kB
+✓ built in 2.25s
+exit_code=0
+

@@ -1,0 +1,2 @@
+command=uv run python scripts/run_model_capacity.py --config infra/capacity/model-capacity.example.yaml
+exit_code=0
