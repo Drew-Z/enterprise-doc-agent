@@ -7,7 +7,7 @@
   "commit_sha": "8ea488ecdc243f96bc3fa13f3a0a126693884d65",
   "reviewed_commit": "8ea488ecdc243f96bc3fa13f3a0a126693884d65",
   "evidence_commit": "c6f9d28acc9b916df032493dd424c451e0be636f",
-  "manifest_commit": null,
+  "manifest_commit": "8983107153b3cd8c3d7c501c9c70dc5d6068c2ae",
   "working_tree_dirty": false,
   "started_at": "2026-07-20T07:12:20+08:00",
   "completed_at": "2026-07-20T07:27:31+08:00",

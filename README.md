@@ -321,33 +321,30 @@ used as formal evidence.
 The commit fields have separate roles. `reviewed_commit` (also recorded as
 `commit_sha`) identifies the reviewed implementation, `evidence_commit` contains the
 sanitized logs and reports whose Git blobs are hashed by the manifests, and
-`manifest_commit` identifies status snapshot `57200dd`, which first published the five
-M4-M8 manifest paths together with `evidence/index.json` and the closed M4 gate. This is
-intentionally a non-self-referential publication pointer: it proves that the path and
-status records existed in that commit, while artifact immutability remains anchored to
-the reviewed and evidence commits.
+`manifest_commit` identifies the status snapshot that first published the manifest
+path and status with a null self-pointer. The later binding commit only writes that
+snapshot SHA back into the manifest and index. This intentionally non-self-referential
+publication pointer proves that the path and status existed in the referenced commit,
+while artifact immutability remains anchored to the reviewed and evidence commits.
 
-The reviewed M5/M6/M7 manifests use those same implementation, evidence and publication
-snapshots, but remain `blocked_external`. Their successful local artifacts do not
-satisfy the individual gate records under `evidence/gates/`:
+M4 and M8 remain anchored to status snapshot `57200dd`. The refreshed M5/M6/M7
+manifests use implementation commit `8ea488e`, evidence commit `c6f9d28`, and status
+snapshot `8983107`; they remain `blocked_external`. Their successful local artifacts do
+not satisfy the individual gate records under `evidence/gates/`:
 
-- `evidence/m5/20260719-m5-unified-evaluation.json` and
-  `evidence/m5/20260719-m5-local-health-load.json` record deterministic evaluation and
-  the earlier 100-request/concurrency-10 health baseline. The newer
-  `evidence/m5/20260719-m5-local-ready-resource-load.json` records a 1000-request,
-  concurrency-20 dependency-inclusive ready run with 43 host/API-process resource
-  samples. Both are single bounded workstation runs, not production capacity or SLO
-  evidence. The M5 manifest also indexes local Redis/MinIO outage-recovery reports and
-  a Prometheus/Grafana profile provisioning check; these are not managed-service
-  failover, production RTO, or production observability evidence.
-- `evidence/m7/` records deterministic and fallback-contract route benchmarks plus a
-  30-iteration shared-deadline regression. These are not real-provider quality, cost,
-  GPU, vLLM, or production-capacity evidence.
-- `evidence/m6/` records local Docker image builds, Actionlint, Kustomize and Compose
-  validation, and an isolated PostgreSQL restore whose Alembic revision and all 21
-  public-table row counts matched. Registry signing, cluster rollout, versioned
-  object-store restore, Kubernetes rollback and production RPO/RTO remain external
-  gates.
+- The latest M5 bundle records 13 deterministic Agent safety cases, controlled RAG
+  recall and ranking checks, four synthetic fault-wrapper drills, and a 40-request
+  bounded health run with p95 11.3919 ms. The canonical report hashes passed, but the
+  results are still local deterministic and workstation evidence, not real-provider
+  quality, production capacity, managed-service failover, or an SLO.
+- The latest M7 bundle records 20 deterministic samples and 20 synthetic timeout-to-
+  fallback samples with explicit primary and fallback identities, plus 14 routing
+  tests. These are not real-provider quality, cost, GPU, vLLM, or production-capacity
+  evidence.
+- The latest M6 bundle records 63 deployment tests, containerized Actionlint, Compose
+  validation, and base/staging/prod Kustomize renders. Registry signing, cluster
+  rollout, external TLS/secrets, versioned object-store restore, Kubernetes rollback
+  and production RPO/RTO remain external gates.
 
 `evidence/m8/20260720-054000-m8-end-to-end-model-deadline.json` supersedes the earlier
 local M8 record. It includes the route-budget boundary fix, the same status-snapshot

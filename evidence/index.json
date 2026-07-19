@@ -36,19 +36,19 @@
       "milestone": "M5",
       "status": "blocked_external",
       "manifest": "evidence/m5/20260720-072628-m5-observability-eval-load.json",
-      "manifest_commit": null
+      "manifest_commit": "8983107153b3cd8c3d7c501c9c70dc5d6068c2ae"
     },
     {
       "milestone": "M6",
       "status": "blocked_external",
       "manifest": "evidence/m6/20260720-072628-m6-cicd-kubernetes.json",
-      "manifest_commit": null
+      "manifest_commit": "8983107153b3cd8c3d7c501c9c70dc5d6068c2ae"
     },
     {
       "milestone": "M7",
       "status": "blocked_external",
       "manifest": "evidence/m7/20260720-072628-m7-local-model-routing.json",
-      "manifest_commit": null
+      "manifest_commit": "8983107153b3cd8c3d7c501c9c70dc5d6068c2ae"
     },
     {
       "milestone": "M8",
