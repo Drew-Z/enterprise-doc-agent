@@ -42,6 +42,10 @@ class ModelTimeoutError(ModelGatewayError):
     default_message = "The model request timed out."
 
 
+class _RouteDeadlineExceeded(Exception):
+    """Marks exhaustion of the shared route budget, not a provider timeout."""
+
+
 class ModelRateLimitedError(ModelGatewayError):
     code = "model_rate_limited"
     retryable = True
@@ -248,6 +252,9 @@ class RoutedChatModelGateway:
                 request,
                 deadline=deadline,
             )
+        except _RouteDeadlineExceeded as error:
+            await self.breaker.record_retryable_failure(permit)
+            raise ModelTimeoutError() from error
         except ModelGatewayError as error:
             if not error.retryable:
                 await self.breaker.abort_probe(permit)
@@ -274,11 +281,14 @@ class RoutedChatModelGateway:
         if deadline is not None and asyncio.get_running_loop().time() >= deadline:
             raise ModelTimeoutError()
         self.fallback_count += 1
-        return await self._generate_before_deadline(
-            self.fallback,
-            request,
-            deadline=deadline,
-        )
+        try:
+            return await self._generate_before_deadline(
+                self.fallback,
+                request,
+                deadline=deadline,
+            )
+        except _RouteDeadlineExceeded as error:
+            raise ModelTimeoutError() from error
 
     @staticmethod
     async def _generate_before_deadline(
@@ -295,7 +305,7 @@ class RoutedChatModelGateway:
             async with asyncio.timeout_at(deadline):
                 return await gateway.generate(request)
         except TimeoutError as error:
-            raise ModelTimeoutError() from error
+            raise _RouteDeadlineExceeded() from error
 
     async def healthcheck(self) -> dict[str, ModelProviderHealth]:
         return {
