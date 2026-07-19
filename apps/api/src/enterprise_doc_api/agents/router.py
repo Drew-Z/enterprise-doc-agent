@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import asyncio
+import time
+from collections.abc import AsyncIterator, Awaitable, Callable
 from datetime import datetime
 from typing import Annotated, Any, Protocol, cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, Query, Request, Response, status
 from pydantic import Field, StrictBool
+from starlette.responses import StreamingResponse
 
 from enterprise_doc_api.auth import get_current_principal
 from enterprise_doc_api.errors import ApiError, ErrorResponse
@@ -23,9 +27,14 @@ from enterprise_doc_core.agents import (
     AgentRunNotFound,
     AgentRunStatusResult,
     AgentRunTaskType,
+    AgentSseCursorInvalid,
     CreateAgentRunInput,
     CreateAgentRunResult,
     ReadyDocumentVersionResult,
+    agent_sse_heartbeat,
+    encode_agent_sse_event,
+    is_terminal_agent_event,
+    parse_last_event_id,
 )
 from enterprise_doc_core.context import PrincipalContext, get_request_context
 
@@ -65,6 +74,19 @@ class AgentRunServiceProtocol(Protocol):
         *,
         tenant_id: UUID,
     ) -> tuple[ReadyDocumentVersionResult, ...]: ...
+
+
+class DisconnectProbe(Protocol):
+    async def is_disconnected(self) -> bool: ...
+
+
+_TERMINAL_RUN_STATUSES = frozenset(
+    {"cancelled", "expired", "failed", "refused", "rejected", "succeeded"}
+)
+_SSE_BATCH_SIZE = 200
+_SSE_INITIAL_POLL_SECONDS = 0.1
+_SSE_MAX_POLL_SECONDS = 2.0
+_SSE_HEARTBEAT_SECONDS = 15.0
 
 
 class AgentRunCreateRequest(ApiModel):
@@ -274,6 +296,57 @@ async def list_agent_run_events(
     return [_event_response(event) for event in events]
 
 
+@router.get(
+    "/{run_id}/events/stream",
+    response_class=StreamingResponse,
+    responses={
+        200: {
+            "content": {"text/event-stream": {}},
+            "description": "Ordered Agent run events with resumable sequence IDs.",
+        },
+        401: {"model": ErrorResponse},
+        404: {"model": ErrorResponse},
+        422: {"model": ErrorResponse},
+        500: {"model": ErrorResponse},
+    },
+)
+async def stream_agent_run_events(
+    run_id: UUID,
+    request: Request,
+    principal: Annotated[PrincipalContext, Depends(get_current_principal)],
+    last_event_id: Annotated[str | None, Header(alias="Last-Event-ID")] = None,
+) -> StreamingResponse:
+    try:
+        cursor = parse_last_event_id(last_event_id)
+    except AgentSseCursorInvalid as error:
+        raise ApiError(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            code="agent_event_cursor_invalid",
+            message="Last-Event-ID must be a non-negative integer sequence.",
+        ) from error
+    service = cast(AgentRunServiceProtocol, request.app.state.agent_run_service)
+    tenant_id = UUID(principal.tenant_id)
+    try:
+        initial_status = await service.get_status(run_id=run_id, tenant_id=tenant_id)
+    except AgentRunError as error:
+        raise _agent_run_api_error(error) from error
+    return StreamingResponse(
+        _stream_agent_run_events(
+            service=service,
+            request=request,
+            run_id=run_id,
+            tenant_id=tenant_id,
+            after_seq=cursor,
+            initial_status=initial_status.status,
+        ),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache, no-transform",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
 @router.post(
     "/{run_id}/cancel",
     response_model=AgentRunStatusResponse,
@@ -299,6 +372,58 @@ async def cancel_agent_run(
     except AgentRunError as error:
         raise _agent_run_api_error(error) from error
     return _status_response(result)
+
+
+async def _stream_agent_run_events(
+    *,
+    service: AgentRunServiceProtocol,
+    request: DisconnectProbe,
+    run_id: UUID,
+    tenant_id: UUID,
+    after_seq: int,
+    initial_status: str,
+    sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
+    monotonic: Callable[[], float] = time.monotonic,
+    initial_poll_seconds: float = _SSE_INITIAL_POLL_SECONDS,
+    max_poll_seconds: float = _SSE_MAX_POLL_SECONDS,
+    heartbeat_seconds: float = _SSE_HEARTBEAT_SECONDS,
+) -> AsyncIterator[str]:
+    cursor = after_seq
+    poll_seconds = initial_poll_seconds
+    next_heartbeat = monotonic() + heartbeat_seconds
+    current_status = initial_status
+    while True:
+        if await request.is_disconnected():
+            return
+        events = await service.list_events(
+            run_id=run_id,
+            tenant_id=tenant_id,
+            after_seq=cursor,
+            limit=_SSE_BATCH_SIZE,
+        )
+        if events:
+            poll_seconds = initial_poll_seconds
+            for event in events:
+                if event.seq <= cursor:
+                    continue
+                yield encode_agent_sse_event(event)
+                cursor = event.seq
+                if is_terminal_agent_event(event):
+                    return
+            continue
+
+        if current_status in _TERMINAL_RUN_STATUSES:
+            return
+        status_result = await service.get_status(run_id=run_id, tenant_id=tenant_id)
+        current_status = status_result.status
+        if current_status in _TERMINAL_RUN_STATUSES:
+            return
+        now = monotonic()
+        if now >= next_heartbeat:
+            yield agent_sse_heartbeat()
+            next_heartbeat = now + heartbeat_seconds
+        await sleep(poll_seconds)
+        poll_seconds = min(max_poll_seconds, poll_seconds * 2)
 
 
 def _attempt_response(attempt: AgentRunAttemptResult) -> AgentRunAttemptResponse:

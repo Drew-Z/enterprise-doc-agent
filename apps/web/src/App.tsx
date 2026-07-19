@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import {
   CheckCircle2,
   CircleX,
@@ -11,6 +12,7 @@ import {
 } from "lucide-react";
 
 import { fetchReadiness, type ComponentName, type ComponentStatus } from "./api/health";
+import { AgentWorkspace } from "./agent";
 import { UploadWorkspace } from "./upload/UploadWorkspace";
 import "./styles.css";
 
@@ -32,6 +34,7 @@ const componentCopy: Record<ComponentStatus, string> = {
 };
 
 export function App() {
+  const [activeView, setActiveView] = useState<"documents" | "agent">("documents");
   const readiness = useQuery({
     queryKey: ["platform-readiness"],
     queryFn: fetchReadiness,
@@ -60,8 +63,27 @@ export function App() {
         <span className="environment-label">Local</span>
       </header>
 
+      <nav className="workspace-tabs" aria-label="Workspace views">
+        <button
+          type="button"
+          className={activeView === "documents" ? "workspace-tab active" : "workspace-tab"}
+          aria-current={activeView === "documents" ? "page" : undefined}
+          onClick={() => setActiveView("documents")}
+        >
+          Documents
+        </button>
+        <button
+          type="button"
+          className={activeView === "agent" ? "workspace-tab active" : "workspace-tab"}
+          aria-current={activeView === "agent" ? "page" : undefined}
+          onClick={() => setActiveView("agent")}
+        >
+          Agent runs
+        </button>
+      </nav>
+
       <main className="workspace">
-        <UploadWorkspace />
+        {activeView === "documents" ? <UploadWorkspace /> : <AgentWorkspace />}
 
         <section className="readiness-section" aria-labelledby="overview-title">
           <div className="page-heading">

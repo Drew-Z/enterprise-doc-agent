@@ -19,8 +19,15 @@ from enterprise_doc_core.agents.models import (
     AgentRunExecutionKind,
     AgentRunStatus,
     AgentRunTaskType,
+    ApprovalRequest,
+    ApprovalRequestStatus,
 )
-from enterprise_doc_core.agents.state import AgentRunTransitionEvent, transition_agent_run
+from enterprise_doc_core.agents.state import (
+    AgentRunTransitionEvent,
+    ApprovalRequestEvent,
+    transition_agent_run,
+    transition_approval_request,
+)
 from enterprise_doc_core.config import AgentSettings, ModelProvider, ModelSettings
 from enterprise_doc_core.context import PrincipalContext
 from enterprise_doc_core.documents.models import (
@@ -30,7 +37,7 @@ from enterprise_doc_core.documents.models import (
     DocumentVersion,
     DocumentVersionStatus,
 )
-from enterprise_doc_core.identity.models import Membership, Tenant, User
+from enterprise_doc_core.identity.models import Membership, MembershipRole, Tenant, User
 from enterprise_doc_core.jobs import cancel_job_records, create_job_records
 from enterprise_doc_core.jobs.models import Job, JobAttempt
 
@@ -60,7 +67,7 @@ class AgentDocumentVersionNotReady(AgentRunError):
 
 class AgentPrincipalForbidden(AgentRunError):
     code = "agent_principal_forbidden"
-    message = "The current principal cannot create Agent runs for this tenant."
+    message = "The current principal cannot manage Agent runs for this tenant."
 
 
 class AgentRunInputInvalid(AgentRunError):
@@ -467,6 +474,10 @@ class AgentRunService:
     ) -> AgentRunStatusResult:
         now = self.clock()
         async with self.session_factory.begin() as session:
+            await session.execute(
+                text("SELECT pg_advisory_xact_lock(hashtextextended(:key, 0))"),
+                {"key": f"agent-run:{tenant_id}:{run_id}"},
+            )
             run = await session.scalar(
                 select(AgentRun)
                 .where(AgentRun.id == run_id, AgentRun.tenant_id == tenant_id)
@@ -474,6 +485,12 @@ class AgentRunService:
             )
             if run is None:
                 raise AgentRunNotFound()
+            await self._require_cancel_permission(
+                session,
+                tenant_id=tenant_id,
+                actor_id=actor_id,
+                run_actor_id=run.actor_id,
+            )
             if run.status in {
                 AgentRunStatus.SUCCEEDED.value,
                 AgentRunStatus.REFUSED.value,
@@ -484,13 +501,35 @@ class AgentRunService:
             }:
                 return await self._status_result(session, run)
             execution = await session.scalar(
-                select(AgentRunExecution).where(
+                select(AgentRunExecution)
+                .where(
                     AgentRunExecution.run_id == run.id,
                     AgentRunExecution.sequence == run.current_execution_seq,
                 )
+                .with_for_update()
             )
             if execution is None:
                 raise AgentRunIntegrityError()
+            approval = await session.scalar(
+                select(ApprovalRequest)
+                .where(
+                    ApprovalRequest.tenant_id == tenant_id,
+                    ApprovalRequest.run_id == run.id,
+                    ApprovalRequest.status.in_(
+                        (
+                            ApprovalRequestStatus.PENDING.value,
+                            ApprovalRequestStatus.APPROVED.value,
+                        )
+                    ),
+                )
+                .with_for_update()
+            )
+            if approval is not None:
+                approval.status = transition_approval_request(
+                    ApprovalRequestStatus(approval.status),
+                    ApprovalRequestEvent.REVOKE,
+                ).value
+                approval.revoked_at = now
             await cancel_job_records(
                 session,
                 job_id=execution.job_id,
@@ -563,6 +602,32 @@ class AgentRunService:
             .with_for_update()
         )
         if membership_id is None:
+            raise AgentPrincipalForbidden()
+
+    @staticmethod
+    async def _require_cancel_permission(
+        session: AsyncSession,
+        *,
+        tenant_id: UUID,
+        actor_id: UUID,
+        run_actor_id: UUID,
+    ) -> None:
+        role = await session.scalar(
+            select(Membership.role)
+            .join(Tenant, Tenant.id == Membership.tenant_id)
+            .join(User, User.id == Membership.user_id)
+            .where(
+                Membership.tenant_id == tenant_id,
+                Membership.user_id == actor_id,
+                Membership.is_active.is_(True),
+                Tenant.is_active.is_(True),
+                User.is_active.is_(True),
+            )
+            .with_for_update()
+        )
+        if role is None or (
+            actor_id != run_actor_id and role != MembershipRole.OWNER.value
+        ):
             raise AgentPrincipalForbidden()
 
     @staticmethod

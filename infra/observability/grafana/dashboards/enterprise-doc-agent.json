@@ -1,0 +1,82 @@
+{
+  "annotations": {"list": []},
+  "editable": false,
+  "graphTooltip": 1,
+  "panels": [
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "reqps"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "id": 1,
+      "targets": [
+        {"expr": "sum(rate(enterprise_doc_api_requests_total[5m]))", "legendFormat": "requests/s", "refId": "A"}
+      ],
+      "title": "API Request Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "percentunit"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "id": 2,
+      "targets": [
+        {"expr": "sum(rate(enterprise_doc_api_requests_total{status_class=~\"4xx|5xx\"}[5m])) / clamp_min(sum(rate(enterprise_doc_api_requests_total[5m])), 1e-9)", "legendFormat": "error ratio", "refId": "A"}
+      ],
+      "title": "API Error Ratio",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+      "id": 3,
+      "targets": [
+        {"expr": "histogram_quantile(0.95, sum by (le) (rate(enterprise_doc_api_request_duration_seconds_bucket[5m])))", "legendFormat": "p95", "refId": "A"}
+      ],
+      "title": "API P95 Latency",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+      "id": 4,
+      "targets": [
+        {"expr": "sum by (job_type, outcome) (increase(enterprise_doc_worker_jobs_completed_total[15m]))", "legendFormat": "{{job_type}} {{outcome}}", "refId": "A"}
+      ],
+      "title": "Worker Outcomes (15m)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+      "id": 5,
+      "targets": [
+        {"expr": "sum by (result) (increase(enterprise_doc_worker_outbox_publish_total[15m]))", "legendFormat": "{{result}}", "refId": "A"}
+      ],
+      "title": "Outbox Publish Results (15m)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+      "id": 6,
+      "targets": [
+        {"expr": "sum by (result) (increase(enterprise_doc_worker_heartbeats_total[15m]))", "legendFormat": "{{result}}", "refId": "A"}
+      ],
+      "title": "Worker Heartbeats (15m)",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 41,
+  "tags": ["enterprise-doc-agent", "local-only"],
+  "templating": {"list": []},
+  "time": {"from": "now-1h", "to": "now"},
+  "timezone": "browser",
+  "title": "Enterprise Document Agent Local Observability",
+  "uid": "enterprise-doc-agent-local",
+  "version": 1
+}

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from enum import StrEnum
-from typing import Any, Self, cast
+from typing import Any, Literal, Self, cast
 
 from pydantic import BaseModel, Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -97,6 +97,43 @@ class ObservabilitySettings(BaseModel):
     enabled: bool = False
     exporter_otlp_endpoint: str = "http://127.0.0.1:4318"
     sample_ratio: float = Field(default=1.0, ge=0, le=1)
+    metrics_enabled: bool = True
+
+
+class FaultInjectionSettings(BaseModel):
+    """Deterministic failure controls, accepted only in local/test environments."""
+
+    enabled: bool = False
+    target: Literal["none", "handler", "model", "mcp", "multipart"] = "none"
+    mode: Literal[
+        "none",
+        "delay",
+        "retryable",
+        "permanent",
+        "cancelled",
+        "model_timeout",
+        "model_rate_limited",
+        "model_server_error",
+        "model_transport_error",
+        "invalid_schema",
+        "mcp_client_timeout",
+        "mcp_client_transport_error",
+        "mcp_tool_returned_error",
+        "mcp_tool_result_invalid",
+        "object_store_unavailable",
+        "object_store_protocol_error",
+        "short_read",
+    ] = "none"
+    trigger_after: int = Field(default=0, ge=0, le=1_000_000)
+    trigger_every: int = Field(default=0, ge=0, le=1_000_000)
+    delay_ms: int = Field(default=0, ge=0, le=300_000)
+    seed: int = Field(default=0, ge=0, le=2**31 - 1)
+
+    @model_validator(mode="after")
+    def require_active_target_and_mode(self) -> Self:
+        if self.enabled and (self.target == "none" or self.mode == "none"):
+            raise ValueError("enabled fault injection requires an explicit target and mode")
+        return self
 
 
 class AgentSettings(BaseModel):
@@ -121,19 +158,43 @@ class ModelSettings(BaseModel):
     api_key: SecretStr | None = None
     model_name: str | None = None
     model_version: str | None = None
+    route_id: str = Field(default="default", min_length=1, max_length=64)
+    model_revision: str | None = Field(default=None, max_length=128)
+    quantization: str | None = Field(default=None, max_length=64)
+    context_window_tokens: int | None = Field(default=None, ge=1, le=2_000_000)
+    embedding_dimension: int = Field(default=8, ge=8, le=8)
     timeout_seconds: float = Field(default=30.0, gt=0, le=300)
     max_output_bytes: int = Field(default=256 * 1024, ge=1024, le=4 * 1024**2)
+    fallback_provider: ModelProvider | None = None
+    fallback_base_url: str | None = None
+    fallback_api_key: SecretStr | None = None
+    fallback_model_name: str | None = None
+    fallback_model_version: str | None = None
+    fallback_timeout_seconds: float | None = Field(default=None, gt=0, le=300)
+    circuit_failure_threshold: int = Field(default=3, ge=1, le=100)
+    circuit_cooldown_seconds: float = Field(default=30.0, gt=0, le=3600)
 
     @model_validator(mode="after")
     def require_openai_compatible_configuration(self) -> Self:
-        if self.provider is ModelProvider.DETERMINISTIC:
-            return self
-        if self.base_url is None or not self.base_url.strip():
-            raise ValueError("OpenAI-compatible model provider requires a base URL")
-        if self.api_key is None or not self.api_key.get_secret_value().strip():
-            raise ValueError("OpenAI-compatible model provider requires an API key")
-        if self.model_name is None or not self.model_name.strip():
-            raise ValueError("OpenAI-compatible model provider requires a model name")
+        if self.provider is ModelProvider.OPENAI_COMPATIBLE:
+            if self.base_url is None or not self.base_url.strip():
+                raise ValueError("OpenAI-compatible model provider requires a base URL")
+            if self.api_key is None or not self.api_key.get_secret_value().strip():
+                raise ValueError("OpenAI-compatible model provider requires an API key")
+            if self.model_name is None or not self.model_name.strip():
+                raise ValueError("OpenAI-compatible model provider requires a model name")
+        if self.fallback_provider is not None:
+            if self.fallback_provider is ModelProvider.OPENAI_COMPATIBLE and (
+                not self.fallback_base_url
+                or not self.fallback_base_url.strip()
+                or self.fallback_api_key is None
+                or not self.fallback_api_key.get_secret_value().strip()
+                or not self.fallback_model_name
+                or not self.fallback_model_name.strip()
+            ):
+                raise ValueError(
+                    "OpenAI-compatible fallback requires a base URL, API key, and model name"
+                )
         return self
 
 
@@ -172,6 +233,7 @@ class FoundationSettings(BaseSettings):
     agent: AgentSettings = Field(default_factory=AgentSettings)
     model: ModelSettings = Field(default_factory=ModelSettings)
     mcp: McpSettings = Field(default_factory=McpSettings)
+    fault_injection: FaultInjectionSettings = Field(default_factory=FaultInjectionSettings)
 
     @model_validator(mode="after")
     def reject_development_credentials_outside_local(self) -> Self:
@@ -187,7 +249,11 @@ class FoundationSettings(BaseSettings):
                 )
         if self.app_env in {AppEnvironment.LOCAL, AppEnvironment.TEST}:
             return self
-        if self.model.provider is ModelProvider.DETERMINISTIC:
+        if self.fault_injection.enabled:
+            raise ValueError("fault injection is forbidden outside local/test")
+        if self.model.provider is ModelProvider.DETERMINISTIC or (
+            self.model.fallback_provider is ModelProvider.DETERMINISTIC
+        ):
             raise ValueError("deterministic model provider is forbidden outside local/test")
         if "enterprise_doc_local" in self.mcp.signing_secret.get_secret_value():
             raise ValueError("development MCP signing secret is forbidden outside local/test")

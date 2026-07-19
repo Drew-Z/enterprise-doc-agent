@@ -43,6 +43,12 @@ from enterprise_doc_core.agents.state import (
         ),
         (AgentRunStatus.RUNNING, AgentRunTransitionEvent.REFUSE, AgentRunStatus.REFUSED),
         (AgentRunStatus.RUNNING, AgentRunTransitionEvent.FAIL, AgentRunStatus.FAILED),
+        (AgentRunStatus.PENDING, AgentRunTransitionEvent.FAIL, AgentRunStatus.FAILED),
+        (
+            AgentRunStatus.WAITING_APPROVAL,
+            AgentRunTransitionEvent.FAIL,
+            AgentRunStatus.FAILED,
+        ),
         (AgentRunStatus.PENDING, AgentRunTransitionEvent.CANCEL, AgentRunStatus.CANCELLED),
         (AgentRunStatus.RUNNING, AgentRunTransitionEvent.CANCEL, AgentRunStatus.CANCELLED),
         (
@@ -92,7 +98,7 @@ def test_agent_run_terminal_states_cannot_reopen(terminal: AgentRunStatus) -> No
     [
         (AgentRunStatus.PENDING, AgentRunTransitionEvent.SUCCEED),
         (AgentRunStatus.RUNNING, AgentRunTransitionEvent.RESUME),
-        (AgentRunStatus.WAITING_APPROVAL, AgentRunTransitionEvent.FAIL),
+        (AgentRunStatus.WAITING_APPROVAL, AgentRunTransitionEvent.SUCCEED),
     ],
 )
 def test_agent_run_rejects_state_skips(

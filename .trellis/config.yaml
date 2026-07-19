@@ -71,6 +71,8 @@ packages:
     path: infra
   foundation-tests:
     path: tests
+  mcp:
+    path: apps/mcp
 
 # Default package used when --package is not specified.
 default_package: core

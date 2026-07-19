@@ -1,0 +1,3 @@
+{"file":".trellis/spec/backend/observability-eval-load.md","reason":"M5 owns bounded metrics, deterministic evaluation, local load reports, and explicit external-gate boundaries."}
+{"file":".trellis/spec/backend/logging-guidelines.md","reason":"M5 reports and telemetry must exclude prompts, bodies, identifiers, secrets, signed URLs, and raw model output."}
+{"file":".trellis/spec/core/backend/index.md","reason":"M5 instrumentation and evaluation contracts are shared Core boundaries used by API, Worker, and Agent code."}

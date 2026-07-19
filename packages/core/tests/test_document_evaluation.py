@@ -42,3 +42,21 @@ def test_retrieval_evaluation_reports_ranking_citation_and_refusal_metrics() -> 
     assert report.citation_precision == 0.5
     assert report.refusal_precision == 1.0
     assert report.refusal_recall == 1.0
+
+
+def test_retrieval_evaluation_does_not_reward_missing_required_citations() -> None:
+    report = evaluate_retrieval_cases(
+        (
+            RetrievalEvalCase(
+                case_id="missing-citation",
+                relevant_chunk_ids=("a",),
+                retrieved_chunk_ids=("a",),
+                expected_refusal=False,
+                predicted_refusal=False,
+                golden_citation_ids=("a",),
+                predicted_citation_ids=(),
+            ),
+        )
+    )
+
+    assert report.citation_precision == 0.0

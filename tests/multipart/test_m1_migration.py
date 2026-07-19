@@ -48,8 +48,17 @@ def _business_tables() -> set[str]:
         return {row[0] for row in cursor.fetchall()} - LANGGRAPH_CHECKPOINT_TABLES
 
 
+def _clear_business_rows_for_historical_downgrade() -> None:
+    with psycopg.connect(DATABASE_URL) as connection, connection.cursor() as cursor:
+        # These tests intentionally remove every post-M0 business table. Clear the
+        # disposable integration data first so newer migrations keep their
+        # production downgrade guards without making the full suite order-dependent.
+        cursor.execute("TRUNCATE tenants, users CASCADE")
+
+
 @pytest.mark.integration
 def test_m1_migration_downgrades_to_m0_and_reapplies() -> None:
+    _clear_business_rows_for_historical_downgrade()
     try:
         _run_alembic("downgrade", "20260717_0005")
         _run_alembic("upgrade", "20260717_0005")
@@ -67,6 +76,7 @@ def test_m1_migration_downgrades_to_m0_and_reapplies() -> None:
 
 @pytest.mark.integration
 def test_m1_database_has_required_unique_and_check_constraints() -> None:
+    _clear_business_rows_for_historical_downgrade()
     _run_alembic("downgrade", "20260717_0005")
     _run_alembic("upgrade", "20260717_0005")
     with psycopg.connect(DATABASE_URL) as connection, connection.cursor() as cursor:

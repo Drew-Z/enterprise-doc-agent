@@ -1,0 +1,28 @@
+{
+  "version": "m7-model-benchmark-v1",
+  "task_type": "question_answer",
+  "limitations": [
+    "Synthetic deterministic cases only; no GPU, vLLM, quantization memory, or production provider measurement.",
+    "Latency is measured in the local Python process and excludes network and queue saturation."
+  ],
+  "cases": [
+    {
+      "case_id": "payment",
+      "input_text": "What are the payment terms?",
+      "chunk_id": "00000000-0000-0000-0000-000000000001",
+      "document_version_id": "00000000-0000-0000-0000-000000000002",
+      "tenant_id": "00000000-0000-0000-0000-000000000003",
+      "generation_id": "00000000-0000-0000-0000-000000000004",
+      "evidence_text": "Payment is due within thirty days after acceptance."
+    },
+    {
+      "case_id": "delivery",
+      "input_text": "What proves delivery?",
+      "chunk_id": "00000000-0000-0000-0000-000000000005",
+      "document_version_id": "00000000-0000-0000-0000-000000000006",
+      "tenant_id": "00000000-0000-0000-0000-000000000007",
+      "generation_id": "00000000-0000-0000-0000-000000000008",
+      "evidence_text": "A signed handover receipt proves delivery."
+    }
+  ]
+}

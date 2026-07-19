@@ -75,7 +75,12 @@ def evaluate_retrieval_cases(
         len(set(case.predicted_citation_ids).intersection(case.golden_citation_ids))
         for case in cases
     )
-    citation_precision = correct_citations / predicted_citations if predicted_citations else 1.0
+    expected_citations = sum(len(case.golden_citation_ids) for case in cases)
+    citation_precision = (
+        correct_citations / predicted_citations
+        if predicted_citations
+        else (0.0 if expected_citations else 1.0)
+    )
 
     true_positive_refusals = sum(case.expected_refusal and case.predicted_refusal for case in cases)
     predicted_refusals = sum(case.predicted_refusal for case in cases)

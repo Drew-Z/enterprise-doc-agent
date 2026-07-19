@@ -10,7 +10,7 @@
   "scripts": {
     "backend:format": "uv run ruff format --check .",
     "backend:lint": "uv run ruff check .",
-    "backend:typecheck": "uv run mypy packages/core/src apps/api/src apps/worker/src",
+    "backend:typecheck": "uv run mypy packages/core/src apps/api/src apps/worker/src apps/mcp/src",
     "backend:test": "uv run pytest -m \"not integration\"",
     "lint": "pnpm --filter web lint",
     "typecheck": "pnpm --filter web typecheck",

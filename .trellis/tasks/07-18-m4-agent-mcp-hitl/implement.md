@@ -154,17 +154,32 @@ Rollback point: MCP tools are independently usable and secure before graph integ
 
 ## Slice 5: LangGraph, PostgreSQL Checkpoint, And Worker Segments
 
-- [ ] Build the fixed graph and JSON-only state with stable graph/prompt/tool versions.
-- [ ] Wire AsyncPostgresSaver through a dedicated lifecycle factory, require strict
+- [x] Build the fixed graph and JSON-only state with stable graph/prompt/tool versions.
+- [x] Wire AsyncPostgresSaver through a dedicated lifecycle factory, require strict
   msgpack, and verify setup tables before Worker readiness becomes healthy.
-- [ ] Implement an MCP stdio client adapter with injected context token, strict tool
+- [x] Implement an MCP stdio client adapter with injected context token, strict tool
   result parsing, timeout, cancellation, and process cleanup.
-- [ ] Register `agent.execute` in the real Celery consumer and reuse M2 heartbeat,
+- [x] Register `agent.execute` in the real Celery consumer and reuse M2 heartbeat,
   cancellation, lease, fencing, retry classification, and persistent event loop.
-- [ ] Implement initial and resume execution payloads. A graph interrupt returns a
+- [x] Implement initial and resume execution payloads. A graph interrupt returns a
   successful segment outcome while AgentRun becomes `waiting_approval`.
-- [ ] Add crash injection at every node boundary and prove checkpoint resume plus one
+- [x] Add crash injection at every node boundary and prove checkpoint resume plus one
   effective retrieval freeze, model output, draft object, and terminal transition.
+- [x] Project final lease exhaustion as one transaction: abandon the stale attempt, mark
+  the Job `DEAD`, and fail the active AgentRun under the run advisory lock.
+
+Slice 5 verification (2026-07-19): `enterprise-doc-checkpointer-setup --setup` and
+`--check` both report migration version 9 with all required tables ready. The real
+PostgreSQL checkpoint recovery suite covers load/authorize/retrieve/generate/validate/
+draft/risk/finalize plus approval/publish crash boundaries and proves one effective
+write per retrieval freeze, model output, draft, approval, publication, and terminal
+transition on the same graph thread. Real Worker integration covers the successful
+`waiting_approval` segment and fencing-aware stdio retrieval. The final expired-lease
+integration case also proves the reclaimer abandons the stale attempt, marks the Job
+`DEAD`, and projects the active AgentRun to `FAILED` while taking the run advisory lock
+before the Job row lock. MCP CLI applies the Windows selector event-loop policy before
+opening psycopg connections; grouped AnyIO cleanup errors preserve stable MCP business
+classifications.
 
 Focused commands:
 
@@ -179,15 +194,24 @@ Rollback point: non-publication runs and approval pause work through the real Wo
 
 ## Slice 6: Approval Resume And Publication
 
-- [ ] Implement idempotent approval request creation before the pure interrupt node.
-- [ ] Add owner-only decision API with exact operation/resource/version/fingerprint,
+- [x] Implement idempotent approval request creation before the pure interrupt node.
+- [x] Add owner-only decision API with exact operation/resource/version/fingerprint,
   expiry/revoke/cancel checks, and stable decision idempotency.
-- [ ] Create one resume Job/Outbox/AgentRunExecution in the approval transaction and
+- [x] Create one resume Job/Outbox/AgentRunExecution in the approval transaction and
   resume with `Command(resume=...)` on the original graph thread.
-- [ ] Implement publish tool consumption of approval and terminal AgentRun/artifact
+- [x] Implement publish tool consumption of approval and terminal AgentRun/artifact
   state with stable lock order and completion-race protection.
-- [ ] Add approve/reject/expire/revoke/cancel and duplicate/concurrent decision tests,
+- [x] Add approve/reject/expire/revoke/cancel and duplicate/concurrent decision tests,
   including authorization revoked or document version changed before resume.
+
+Slice 6 verification (2026-07-19): owner-only API and Core decision service were
+validated with exact target/version/fingerprint checks, stable idempotency, expiry,
+revoke, cancellation, and concurrent winner tests. Real PostgreSQL + Worker coverage
+proves one resume Job/Outbox/AgentRunExecution, original-thread `Command(resume=...)`,
+approved publication, rejected/expired terminal paths, consumed-approval replay,
+completion-race serialization, and zero publication after membership or version
+authorization changes. The publish transaction consumes approval, publishes the
+artifact, and records the terminal AgentRun event atomically.
 
 Focused commands:
 
@@ -200,15 +224,20 @@ Rollback point: full backend upload-ready-version to approved artifact path is c
 
 ## Slice 7: SSE Replay And Web Run Workspace
 
-- [ ] Implement FastAPI StreamingResponse with tenant-scoped `Last-Event-ID`, ordered
+- [x] Implement FastAPI StreamingResponse with tenant-scoped `Last-Event-ID`, ordered
   replay, disconnect handling, polling backoff, and comment heartbeats.
-- [ ] Add SSE unit/integration tests for cursor boundaries, concurrent sequence writes,
+- [x] Add SSE unit/integration tests for cursor boundaries, concurrent sequence writes,
   API restart replay, terminal close behavior, and sensitive-field rejection.
-- [ ] Add strict Zod schemas and authenticated fetch-SSE parser in Web. Persist only
+- [x] Add strict Zod schemas and authenticated fetch-SSE parser in Web. Persist only
   run ID and last sequence, never token, prompt, citation text, or signed URL.
-- [ ] Add an Agent workspace tab with ready-document selection, task controls, stable
+- [x] Add an Agent workspace tab with ready-document selection, task controls, stable
   timeline, refusal, approval, cancel, reconnect, and artifact download states.
-- [ ] Add responsive desktop/mobile tests and Playwright happy/reconnect/approval paths.
+- [x] Add responsive desktop/mobile tests and Playwright happy/reconnect/approval paths.
+
+Slice 7 verification (2026-07-19): Web unit tests (138), lint, typecheck, build,
+real PostgreSQL SSE integration, and both Playwright workflows passed. The browser
+client uses the Vite same-origin proxy in E2E, keeps native `fetch` unbound, resumes
+from the persisted event cursor, and pages histories beyond the 500-event API limit.
 
 Focused commands:
 
@@ -223,14 +252,14 @@ Rollback point: local operator workflow is usable; no production deployment clai
 
 ## Slice 8: Security, Evaluation, Documentation, And Evidence
 
-- [ ] Add direct prompt, retrieved-document, and MCP-result injection corpora. Assert
+- [x] Add direct prompt, retrieved-document, and MCP-result injection corpora. Assert
   zero effective publish/object side effects and no secret/raw-body events or logs.
-- [ ] Add unauthorized tenant/member/owner contract tests for run, SSE, citations,
+- [x] Add unauthorized tenant/member/owner contract tests for run, SSE, citations,
   approval, tool, and artifact APIs.
-- [ ] Add `evaluation/m4_agent_safety_v1.json` and `scripts/evaluate_m4_agent.py` that
+- [x] Add `evaluation/m4_agent_safety_v1.json` and `scripts/evaluate_m4_agent.py` that
   executes deterministic real service paths and reports grounded/refusal/citation,
   approval, tool-policy, replay, and side-effect results.
-- [ ] Update README, factual Trellis specs, the code-backed interview document, and
+- [x] Update README, factual Trellis specs, the code-backed interview document, and
   known limitations. Do not rewrite M0-M3 evidence.
 - [ ] Commit reviewed implementation, run the complete evidence matrix once, save
   sanitized artifacts and SHA-256 values, add the immutable M4 manifest/index entry,

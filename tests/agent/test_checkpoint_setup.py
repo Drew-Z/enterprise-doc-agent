@@ -20,6 +20,12 @@ def test_checkpointer_parser_defaults_to_setup_mode() -> None:
     assert args.command is CheckpointerCommand.SETUP
 
 
+def test_checkpointer_parser_supports_explicit_setup_mode() -> None:
+    args = build_parser().parse_args(["--setup"])
+
+    assert args.command is CheckpointerCommand.SETUP
+
+
 def test_sqlalchemy_psycopg_url_is_normalized_for_official_saver() -> None:
     assert normalize_postgres_dsn("postgresql+psycopg://user:secret@db/app") == (
         "postgresql://user:secret@db/app"

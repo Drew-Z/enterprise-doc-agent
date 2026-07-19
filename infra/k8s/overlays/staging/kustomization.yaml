@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: enterprise-doc-agent-staging
+resources:
+  - ../../base
+patches:
+  - path: replicas-patch.yaml
+images:
+  - name: enterprise-doc/api
+    newName: registry.example.invalid/enterprise-doc/api
+    digest: sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  - name: enterprise-doc/worker
+    newName: registry.example.invalid/enterprise-doc/worker
+    digest: sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+  - name: enterprise-doc/consumer
+    newName: registry.example.invalid/enterprise-doc/consumer
+    digest: sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+  - name: enterprise-doc/web
+    newName: registry.example.invalid/enterprise-doc/web
+    digest: sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd

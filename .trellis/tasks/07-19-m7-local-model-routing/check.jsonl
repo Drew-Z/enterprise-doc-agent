@@ -1,0 +1,3 @@
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Run deterministic route tests, benchmark contracts, typing, and regression gates."}
+{"file":".trellis/spec/backend/model-routing.md","reason":"Review provider identity redaction, breaker state, fallback boundaries, and benchmark limitations."}
+{"file":".trellis/spec/backend/observability-eval-load.md","reason":"Ensure model benchmark reports preserve bounded labels, hashes, targets versus measured values, and external gates."}

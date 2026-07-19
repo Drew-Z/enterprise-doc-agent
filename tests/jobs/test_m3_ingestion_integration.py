@@ -147,6 +147,7 @@ async def _seed_uploaded_document(
         worker_id="worker-test",
         lease_token=uuid4(),
         fencing_token=1,
+        job_type="document.ingest",
         payload={"document_version_id": str(version_id)},
     )
     return tenant_id, actor_id, version_id, claim
@@ -361,6 +362,7 @@ async def test_document_ingestion_is_idempotent_and_hybrid_retrievable() -> None
             worker_id="worker-test",
             lease_token=uuid4(),
             fencing_token=1,
+            job_type="document.ingest",
             payload={"document_version_id": str(version_id)},
         )
 
@@ -496,6 +498,7 @@ async def test_document_ingestion_is_idempotent_and_hybrid_retrievable() -> None
             worker_id="worker-test",
             lease_token=uuid4(),
             fencing_token=1,
+            job_type="document.ingest",
             payload={"document_version_id": str(bad_version_id)},
         )
         with pytest.raises(DocumentIngestionError) as caught:

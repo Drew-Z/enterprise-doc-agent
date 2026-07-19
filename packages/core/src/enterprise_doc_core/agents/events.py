@@ -31,10 +31,32 @@ class _RunCancelledPayload(_PublicPayload):
     status: Literal["cancelled"]
 
 
+class _RunStartedPayload(_PublicPayload):
+    status: Literal["running"]
+
+
+class _RunWaitingApprovalPayload(_PublicPayload):
+    status: Literal["waiting_approval"]
+    approval_id: UUID
+
+
+class _RunResumedPayload(_PublicPayload):
+    status: Literal["running"]
+
+
+class _RunFinishedPayload(_PublicPayload):
+    status: Literal["succeeded", "refused", "failed", "rejected", "expired"]
+    refusal_reason: str | None = None
+
+
 PUBLIC_EVENT_PAYLOAD_MODELS: dict[str, type[_PublicPayload]] = {
     "run.created": _RunCreatedPayload,
     "run.cancel_requested": _RunCancelRequestedPayload,
     "run.cancelled": _RunCancelledPayload,
+    "run.started": _RunStartedPayload,
+    "run.waiting_approval": _RunWaitingApprovalPayload,
+    "run.resumed": _RunResumedPayload,
+    "run.finished": _RunFinishedPayload,
 }
 
 

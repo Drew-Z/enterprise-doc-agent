@@ -1,0 +1,17 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: enterprise-doc-api
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["host.docker.internal:8000"]
+  - job_name: enterprise-doc-worker
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["host.docker.internal:8081"]
+  - job_name: enterprise-doc-consumer
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["host.docker.internal:8082"]

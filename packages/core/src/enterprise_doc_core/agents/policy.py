@@ -31,6 +31,7 @@ from enterprise_doc_core.documents.models import (
     DocumentVersionStatus,
 )
 from enterprise_doc_core.identity.models import Membership, MembershipRole, Tenant, User
+from enterprise_doc_core.jobs.models import Job, JobAttempt, JobAttemptStatus, JobStatus
 
 
 class ToolPolicyError(ValueError):
@@ -156,6 +157,35 @@ async def reload_tool_policy(
     execution = await session.scalar(execution_statement)
     if execution is None:
         raise ToolPolicyNotFound()
+    if context.job_id is not None:
+        if (
+            context.attempt_id is None
+            or context.lease_token is None
+            or context.fencing_token is None
+            or execution.job_id != context.job_id
+        ):
+            raise ToolPolicyNotFound()
+        job = await session.scalar(
+            select(Job).where(
+                Job.id == context.job_id,
+                Job.tenant_id == context.tenant_id,
+                Job.status == JobStatus.RUNNING.value,
+                Job.lease_token == context.lease_token,
+                Job.fencing_token == context.fencing_token,
+            )
+        )
+        attempt = await session.scalar(
+            select(JobAttempt).where(
+                JobAttempt.id == context.attempt_id,
+                JobAttempt.tenant_id == context.tenant_id,
+                JobAttempt.job_id == context.job_id,
+                JobAttempt.status == JobAttemptStatus.RUNNING.value,
+                JobAttempt.lease_token == context.lease_token,
+                JobAttempt.fencing_token == context.fencing_token,
+            )
+        )
+        if job is None or attempt is None:
+            raise ToolPolicyNotFound()
     if capability is ToolCapability.PUBLISH and (
         execution.kind != AgentRunExecutionKind.RESUME.value
         or context.approval_request_id is None

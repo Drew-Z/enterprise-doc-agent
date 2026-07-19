@@ -51,6 +51,7 @@ def test_trellis_package_mappings_match_the_real_monorepo() -> None:
         "core": "packages/core",
         "infrastructure": "infra",
         "foundation-tests": "tests",
+        "mcp": "apps/mcp",
     }
     assert config["default_package"] == "core"
     package_specs = {
@@ -60,6 +61,7 @@ def test_trellis_package_mappings_match_the_real_monorepo() -> None:
         "core": "backend",
         "infrastructure": "backend",
         "foundation-tests": "backend",
+        "mcp": "backend",
     }
     for package, layer in package_specs.items():
         assert (ROOT / f".trellis/spec/{package}/{layer}/index.md").is_file()

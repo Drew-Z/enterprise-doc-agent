@@ -9,10 +9,10 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from enum import StrEnum
-from typing import Any
+from typing import Any, Protocol
 from uuid import UUID, uuid4
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from enterprise_doc_core.jobs.models import (
@@ -26,6 +26,19 @@ from enterprise_doc_core.jobs.models import (
 )
 
 _LOGGER = logging.getLogger("enterprise_doc_core.jobs")
+
+
+class JobFailureProjector(Protocol):
+    async def __call__(
+        self,
+        session: AsyncSession,
+        *,
+        claim: ClaimedJob,
+        status: str,
+        error_code: str,
+        error_message: str,
+        now: datetime,
+    ) -> None: ...
 
 
 class JobError(Exception):
@@ -82,6 +95,7 @@ class ClaimedJob:
     worker_id: str
     lease_token: UUID
     fencing_token: int
+    job_type: str
     payload: dict[str, Any]
 
 
@@ -371,6 +385,8 @@ class JobRuntimeService:
         retry_base_seconds: float = 2.0,
         retry_max_seconds: float = 300.0,
         jitter: Callable[[float], float] = _default_jitter,
+        failure_lock_key: Callable[[ClaimedJob], str | None] | None = None,
+        failure_projector: JobFailureProjector | None = None,
     ) -> None:
         if lease_seconds <= 0 or retry_base_seconds <= 0 or retry_max_seconds <= 0:
             raise ValueError("job timing settings must be positive")
@@ -380,6 +396,8 @@ class JobRuntimeService:
         self.retry_base_seconds = retry_base_seconds
         self.retry_max_seconds = retry_max_seconds
         self.jitter = jitter
+        self.failure_lock_key = failure_lock_key
+        self.failure_projector = failure_projector
 
     async def create_job(self, **kwargs: Any) -> JobCreateResult:
         kwargs.setdefault("available_at", self.clock())
@@ -476,6 +494,21 @@ class JobRuntimeService:
     async def claim(self, *, job_id: UUID, worker_id: str) -> ClaimedJob | None:
         now = self.clock()
         async with self.session_factory.begin() as session:
+            # Agent terminal-failure projection uses the same run advisory lock as
+            # cancel/resume mutations. Acquire it before the Job row lock so the
+            # exhausted-lease path cannot form a job -> run / run -> job cycle.
+            prelock_claim = (
+                await self._expired_claim_candidate(session, job_id=job_id, now=now)
+                if self.failure_lock_key is not None
+                else None
+            )
+            if prelock_claim is not None and self.failure_lock_key is not None:
+                lock_key = self.failure_lock_key(prelock_claim)
+                if lock_key is not None:
+                    await session.execute(
+                        text("SELECT pg_advisory_xact_lock(hashtextextended(:key, 0))"),
+                        {"key": lock_key},
+                    )
             job = await session.scalar(
                 select(Job).where(Job.id == job_id).with_for_update(skip_locked=True)
             )
@@ -485,6 +518,7 @@ class JobRuntimeService:
                 JobStatus.CANCELLED.value,
             }:
                 return None
+            expired_claim: ClaimedJob | None = None
             if job.status == JobStatus.RUNNING.value:
                 if job.lease_expires_at is not None and job.lease_expires_at > now:
                     return None
@@ -498,6 +532,7 @@ class JobRuntimeService:
                     .with_for_update()
                 )
                 if active_attempt is not None:
+                    expired_claim = self._claim_from_attempt(job, active_attempt)
                     active_attempt.status = JobAttemptStatus.ABANDONED.value
                     active_attempt.finished_at = now
                 await _append_job_event(
@@ -516,6 +551,15 @@ class JobRuntimeService:
                 self._clear_lease(job)
                 job.version += 1
                 await _append_job_event(session, job=job, event_type="job.dead")
+                if self.failure_projector is not None and expired_claim is not None:
+                    await self.failure_projector(
+                        session,
+                        claim=expired_claim,
+                        status=job.status,
+                        error_code="max_attempts_exceeded",
+                        error_message="The job exhausted its retry budget.",
+                        now=now,
+                    )
                 return None
 
             lease_token = uuid4()
@@ -558,8 +602,65 @@ class JobRuntimeService:
                 worker_id=worker_id,
                 lease_token=lease_token,
                 fencing_token=fencing_token,
+                job_type=job.type,
                 payload=dict(job.payload),
             )
+
+    async def _expired_claim_candidate(
+        self,
+        session: AsyncSession,
+        *,
+        job_id: UUID,
+        now: datetime,
+    ) -> ClaimedJob | None:
+        """Read enough immutable lease data to establish the run lock first.
+
+        This read is intentionally unlocked. The state is revalidated after the
+        advisory lock and Job row lock are acquired; the candidate is only used
+        to derive a stable lock key before taking the Job lock.
+        """
+        job = await session.scalar(select(Job).where(Job.id == job_id))
+        if (
+            job is None
+            or job.status != JobStatus.RUNNING.value
+            or job.lease_expires_at is None
+            or job.lease_expires_at > now
+            or job.attempts < job.max_attempts
+        ):
+            return None
+        attempt = await session.scalar(
+            select(JobAttempt).where(
+                JobAttempt.job_id == job.id,
+                JobAttempt.tenant_id == job.tenant_id,
+                JobAttempt.attempt_number == job.attempts,
+                JobAttempt.status == JobAttemptStatus.RUNNING.value,
+            )
+        )
+        if attempt is None:
+            return None
+        return self._claim_from_attempt(job, attempt)
+
+    @staticmethod
+    def _claim_from_attempt(job: Job, attempt: JobAttempt) -> ClaimedJob | None:
+        if (
+            job.locked_by != attempt.worker_id
+            or job.lease_token is None
+            or job.lease_token != attempt.lease_token
+            or job.fencing_token != attempt.fencing_token
+        ):
+            return None
+        return ClaimedJob(
+            job_id=job.id,
+            attempt_id=attempt.id,
+            attempt_number=attempt.attempt_number,
+            tenant_id=job.tenant_id,
+            actor_id=job.actor_id,
+            worker_id=attempt.worker_id,
+            lease_token=attempt.lease_token,
+            fencing_token=attempt.fencing_token,
+            job_type=job.type,
+            payload=dict(job.payload),
+        )
 
     async def heartbeat(self, claim: ClaimedJob) -> bool:
         now = self.clock()
@@ -617,6 +718,13 @@ class JobRuntimeService:
     ) -> JobFailureResult:
         now = self.clock()
         async with self.session_factory.begin() as session:
+            if self.failure_lock_key is not None:
+                lock_key = self.failure_lock_key(claim)
+                if lock_key is not None:
+                    await session.execute(
+                        text("SELECT pg_advisory_xact_lock(hashtextextended(:key, 0))"),
+                        {"key": lock_key},
+                    )
             job = await session.scalar(select(Job).where(Job.id == claim.job_id).with_for_update())
             if not self._owns_lease(job, claim):
                 raise JobLeaseLost()
@@ -664,6 +772,15 @@ class JobRuntimeService:
                 event_type=f"job.{job.status}",
                 payload={"error_code": error_code[:100]},
             )
+            if self.failure_projector is not None:
+                await self.failure_projector(
+                    session,
+                    claim=claim,
+                    status=job.status,
+                    error_code=error_code[:100],
+                    error_message=error_message[:1000],
+                    now=now,
+                )
             return JobFailureResult(job.status, retry_at, attempt.id)
 
     async def cancel(

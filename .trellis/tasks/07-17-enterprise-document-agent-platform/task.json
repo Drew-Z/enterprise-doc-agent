@@ -23,13 +23,16 @@
     "07-17-m1-multipart-upload",
     "07-18-m2-durable-job-runtime",
     "07-18-m3-document-rag",
-    "07-18-m4-agent-mcp-hitl"
+    "07-18-m4-agent-mcp-hitl",
+    "07-19-m5-observability-eval-load",
+    "07-19-m6-cicd-kubernetes",
+    "07-19-m7-local-model-routing"
   ],
   "parent": null,
   "relatedFiles": [],
-  "notes": "M0-M3 are archived with reviewed local evidence. M4 is the active implementation milestone; M5-M7 remain planned scope.",
+  "notes": "M0-M3 are archived with reviewed local evidence. M4-M7 implementation currently coexists in one dirty working tree at the user's request; formal summaries are indexed as blocked_external and retain separate raw captures plus manual-gate records. M4 reviewed/evidence commits and all external M5-M7 deployment, capacity, provider, observability, recovery, and hardware gates remain open.",
   "meta": {
-    "current_milestone": "M4",
+    "current_milestone": "M7",
     "completed_milestones": ["M0", "M1", "M2", "M3"]
   }
 }

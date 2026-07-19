@@ -1,0 +1,62 @@
+name: Rollback Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      revisions_json:
+        description: 'JSON deployment-to-revision map, for example {"enterprise-doc-api":42}'
+        required: true
+        type: string
+      reason:
+        description: "Incident or change reason"
+        required: true
+        type: string
+      migration_revision:
+        description: "Migration revision reviewed for compatibility"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-kubectl@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Configure cluster credentials
+        env:
+          KUBE_CONFIG: ${{ secrets.STAGING_KUBECONFIG }}
+        run: |
+          test -n "$KUBE_CONFIG"
+          mkdir -p "$HOME/.kube"
+          printf '%s' "$KUBE_CONFIG" > "$HOME/.kube/config"
+          chmod 600 "$HOME/.kube/config"
+      - name: Roll back and wait
+        env:
+          NAMESPACE: enterprise-doc-agent-staging
+          ROLLBACK_REVISIONS_JSON: ${{ inputs.revisions_json }}
+          ROLLBACK_REASON: ${{ inputs.reason }}
+          MIGRATION_REVISION: ${{ inputs.migration_revision }}
+        run: |
+          mkdir -p tmp
+          python scripts/rollback_release.py \
+            --namespace "$NAMESPACE" \
+            --revisions-json-env ROLLBACK_REVISIONS_JSON \
+            --reason "$ROLLBACK_REASON" \
+            --migration-revision "$MIGRATION_REVISION" \
+            --confirm \
+            --record-path "tmp/rollback-${GITHUB_RUN_ID}.json"
+          kubectl -n "$NAMESPACE" get deploy -o json > "tmp/rollback-${GITHUB_RUN_ID}.deployments.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rollback-${{ github.run_id }}
+          path: tmp/rollback-${{ github.run_id }}.*
+          if-no-files-found: warn

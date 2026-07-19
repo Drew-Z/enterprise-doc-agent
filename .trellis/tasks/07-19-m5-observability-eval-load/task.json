@@ -1,0 +1,39 @@
+{
+  "id": "m5-observability-eval-load",
+  "name": "m5-observability-eval-load",
+  "title": "M5 Observability Evaluation And Load",
+  "description": "Add bounded-cardinality metrics, versioned evaluation contracts, controlled fault injection, and reproducible local load evidence without presenting targets as measured production results.",
+  "status": "in_progress",
+  "dev_type": "fullstack",
+  "scope": "core telemetry and evaluation contracts; API and Worker metrics; local observability stack; deterministic fault injection; load runner and reports; evidence and documentation",
+  "package": "core",
+  "priority": "P0",
+  "creator": "developer",
+  "assignee": "developer",
+  "createdAt": "2026-07-19",
+  "completedAt": null,
+  "branch": "feat/m4-agent-mcp-hitl",
+  "base_branch": "feat/m4-agent-mcp-hitl",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "07-17-enterprise-document-agent-platform",
+  "relatedFiles": [
+    ".trellis/tasks/07-17-enterprise-document-agent-platform/prd.md",
+    ".trellis/tasks/07-17-enterprise-document-agent-platform/design.md",
+    ".trellis/tasks/07-17-enterprise-document-agent-platform/implement.md",
+    "D:/workspace4Cursor/offer/output/企业文档Agent任务平台_实施规划.md",
+    "D:/workspace4Cursor/offer/output/企业文档Agent平台_深度面试问答.md",
+    "D:/workspace4Cursor/offer/output/企业文档Agent平台_M5-M7深度面试问答.md"
+  ],
+  "notes": "M5 local implementation, deterministic evaluation, health and ready resource load reports, Redis/MinIO outage-recovery runs, and local Prometheus/Grafana verification exist in the dirty M4 worktree. The formal status manifest is evidence/m5/20260719-153215-m5-observability-eval-load.json with status blocked_external and links the raw capture plus real-provider, representative-capacity, and managed-observability gates. Production failover/RTO and immutable review commits remain unavailable.",
+  "meta": {
+    "milestone": "M5",
+    "workflow": "tdd",
+    "current_slice": 7,
+    "completed_slices": [0, 1, 2, 3, 4, 5, 6],
+    "approval_required_before_start": true
+  }
+}

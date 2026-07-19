@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import math
+import time
+from dataclasses import dataclass
+from enum import StrEnum
 from typing import Any, Protocol, cast
 
 import httpx
@@ -76,6 +80,221 @@ class ModelOutputSchemaError(ModelGatewayError):
     default_message = "The model output did not match the required schema."
 
 
+class ModelCircuitOpenError(ModelGatewayError):
+    code = "model_circuit_open"
+    retryable = True
+    default_message = "The model provider circuit is open."
+
+
+class CircuitState(StrEnum):
+    CLOSED = "closed"
+    OPEN = "open"
+    HALF_OPEN = "half_open"
+
+
+@dataclass(frozen=True, slots=True)
+class _CircuitPermit:
+    generation: int
+    probe: bool
+
+
+@dataclass(frozen=True, slots=True)
+class ModelRouteDescriptor:
+    route_id: str
+    provider: str
+    model_name: str
+    model_version: str | None = None
+    model_revision: str | None = None
+    quantization: str | None = None
+    context_window_tokens: int | None = None
+    embedding_dimension: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class ModelProviderHealth:
+    available: bool
+    provider: str
+    model_name: str
+    error_code: str | None = None
+
+
+class CircuitBreaker:
+    """Concurrency-safe CLOSED/OPEN/HALF_OPEN state for one provider route."""
+
+    def __init__(
+        self,
+        *,
+        failure_threshold: int = 3,
+        cooldown_seconds: float = 30.0,
+        clock: Any = time.monotonic,
+    ) -> None:
+        if failure_threshold <= 0 or cooldown_seconds <= 0:
+            raise ValueError("circuit breaker thresholds must be positive")
+        self.failure_threshold = failure_threshold
+        self.cooldown_seconds = cooldown_seconds
+        self._clock = clock
+        self._state = CircuitState.CLOSED
+        self._failures = 0
+        self._opened_at = 0.0
+        self._probe_in_flight = False
+        self._generation = 0
+        self._lock = asyncio.Lock()
+
+    @property
+    def state(self) -> CircuitState:
+        return self._state
+
+    @property
+    def failure_count(self) -> int:
+        return self._failures
+
+    async def allow_request(self) -> _CircuitPermit | None:
+        async with self._lock:
+            if self._state is CircuitState.CLOSED:
+                return _CircuitPermit(self._generation, probe=False)
+            if self._state is CircuitState.OPEN:
+                if self._clock() - self._opened_at < self.cooldown_seconds:
+                    return None
+                self._state = CircuitState.HALF_OPEN
+                self._probe_in_flight = True
+                return _CircuitPermit(self._generation, probe=True)
+            if self._probe_in_flight:
+                return None
+            self._probe_in_flight = True
+            return _CircuitPermit(self._generation, probe=True)
+
+    async def record_success(self, permit: _CircuitPermit) -> None:
+        async with self._lock:
+            if permit.generation != self._generation:
+                return
+            if permit.probe and not (
+                self._state is CircuitState.HALF_OPEN and self._probe_in_flight
+            ):
+                return
+            if not permit.probe and self._state is not CircuitState.CLOSED:
+                return
+            self._state = CircuitState.CLOSED
+            self._failures = 0
+            self._opened_at = 0.0
+            self._probe_in_flight = False
+
+    async def record_retryable_failure(self, permit: _CircuitPermit) -> None:
+        async with self._lock:
+            if permit.generation != self._generation:
+                return
+            if permit.probe and self._state is not CircuitState.HALF_OPEN:
+                return
+            if not permit.probe and self._state is not CircuitState.CLOSED:
+                return
+            self._failures += 1
+            self._probe_in_flight = False
+            if self._state is CircuitState.HALF_OPEN or self._failures >= self.failure_threshold:
+                self._state = CircuitState.OPEN
+                self._opened_at = self._clock()
+                self._generation += 1
+
+    async def abort_probe(self, permit: _CircuitPermit) -> None:
+        async with self._lock:
+            if (
+                permit.probe
+                and permit.generation == self._generation
+                and self._state is CircuitState.HALF_OPEN
+            ):
+                self._state = CircuitState.OPEN
+                self._opened_at = self._clock()
+                self._generation += 1
+                self._probe_in_flight = False
+
+
+class RoutedChatModelGateway:
+    """Use a fallback only for retryable provider failures or an open circuit."""
+
+    def __init__(
+        self,
+        *,
+        primary: ChatModelGateway,
+        primary_descriptor: ModelRouteDescriptor,
+        fallback: ChatModelGateway | None = None,
+        fallback_descriptor: ModelRouteDescriptor | None = None,
+        breaker: CircuitBreaker | None = None,
+    ) -> None:
+        self.primary = primary
+        self.primary_descriptor = primary_descriptor
+        self.fallback = fallback
+        self.fallback_descriptor = fallback_descriptor
+        self.breaker = breaker or CircuitBreaker()
+        self.fallback_count = 0
+
+    async def generate(self, request: GroundedModelRequest) -> GroundedModelOutput:
+        permit = await self.breaker.allow_request()
+        if permit is None:
+            if self.fallback is None:
+                raise ModelCircuitOpenError()
+            self.fallback_count += 1
+            return await self.fallback.generate(request)
+        try:
+            output = await self.primary.generate(request)
+        except ModelGatewayError as error:
+            if not error.retryable:
+                await self.breaker.abort_probe(permit)
+                raise
+            await self.breaker.record_retryable_failure(permit)
+            if self.fallback is None:
+                raise
+            self.fallback_count += 1
+            return await self.fallback.generate(request)
+        except BaseException:
+            await self.breaker.abort_probe(permit)
+            raise
+        else:
+            await self.breaker.record_success(permit)
+            return output
+
+    async def healthcheck(self) -> dict[str, ModelProviderHealth]:
+        return {
+            "primary": await _gateway_health(self.primary, self.primary_descriptor),
+            "fallback": (
+                await _gateway_health(self.fallback, self.fallback_descriptor)
+                if self.fallback is not None and self.fallback_descriptor is not None
+                else ModelProviderHealth(
+                    available=False,
+                    provider="none",
+                    model_name="none",
+                    error_code="not_configured",
+                )
+            ),
+        }
+
+
+async def _gateway_health(
+    gateway: ChatModelGateway,
+    descriptor: ModelRouteDescriptor,
+) -> ModelProviderHealth:
+    check = getattr(gateway, "healthcheck", None)
+    if not callable(check):
+        return ModelProviderHealth(
+            available=False,
+            provider=descriptor.provider,
+            model_name=descriptor.model_name,
+            error_code="healthcheck_not_supported",
+        )
+    try:
+        available = bool(await check())
+    except ModelGatewayError as error:
+        return ModelProviderHealth(
+            available=False,
+            provider=descriptor.provider,
+            model_name=descriptor.model_name,
+            error_code=error.code,
+        )
+    return ModelProviderHealth(
+        available=available,
+        provider=descriptor.provider,
+        model_name=descriptor.model_name,
+        error_code=None if available else "provider_unavailable",
+    )
+
+
 class ChatModelGateway(Protocol):
     async def generate(self, request: GroundedModelRequest) -> GroundedModelOutput: ...
 
@@ -132,6 +351,9 @@ class DeterministicGroundedGateway:
                 citations=citations,
             )
         return GroundedModelOutput(payload=payload, identity=self.identity)
+
+    async def healthcheck(self) -> bool:
+        return True
 
     def _excerpt(self, text: str) -> str:
         normalized = text.strip()
@@ -195,6 +417,16 @@ class OpenAICompatibleChatGateway:
         await self.aclose()
 
     async def generate(self, request: GroundedModelRequest) -> GroundedModelOutput:
+        try:
+            async with asyncio.timeout(self.settings.timeout_seconds):
+                return await self._generate_with_repair(request)
+        except TimeoutError as error:
+            raise ModelTimeoutError() from error
+
+    async def _generate_with_repair(
+        self,
+        request: GroundedModelRequest,
+    ) -> GroundedModelOutput:
         first_content, first_model = await self._request_content(request)
         try:
             payload = _parse_model_payload(first_content, expected_task=request.task_type)
@@ -223,6 +455,22 @@ class OpenAICompatibleChatGateway:
             ),
             repaired=repaired,
         )
+
+    async def healthcheck(self) -> bool:
+        assert self.settings.api_key is not None
+        assert self.settings.base_url is not None
+        try:
+            response = await self.client.get(
+                f"{self.settings.base_url.rstrip('/')}/models",
+                headers={"Authorization": f"Bearer {self.settings.api_key.get_secret_value()}"},
+                timeout=httpx.Timeout(self.settings.timeout_seconds),
+            )
+        except httpx.TimeoutException as error:
+            raise ModelTimeoutError() from error
+        except httpx.RequestError as error:
+            raise ModelTransportError() from error
+        _raise_for_provider_status(response.status_code)
+        return True
 
     async def _request_content(
         self,
@@ -404,16 +652,22 @@ def gateway_error_is_retryable(error: BaseException) -> bool:
 
 __all__ = [
     "ChatModelGateway",
+    "CircuitBreaker",
+    "CircuitState",
     "DeterministicGroundedGateway",
     "ModelAuthError",
+    "ModelCircuitOpenError",
     "ModelContractError",
     "ModelGatewayError",
     "ModelOutputSchemaError",
+    "ModelProviderHealth",
     "ModelRateLimitedError",
     "ModelResponseTooLarge",
+    "ModelRouteDescriptor",
     "ModelServerError",
     "ModelTimeoutError",
     "ModelTransportError",
     "OpenAICompatibleChatGateway",
+    "RoutedChatModelGateway",
     "gateway_error_is_retryable",
 ]

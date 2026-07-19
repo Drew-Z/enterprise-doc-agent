@@ -7,7 +7,7 @@ Run from the repository root:
 ```powershell
 uv run ruff format --check .
 uv run ruff check .
-uv run mypy packages/core/src apps/api/src apps/worker/src
+uv run mypy packages/core/src apps/api/src apps/worker/src apps/mcp/src
 uv run pytest -m "not integration"
 ```
 
@@ -20,6 +20,8 @@ local Compose stack.
 - Unit tests inject health checkers, exporters, and process boundaries.
 - ASGI tests call application factories without opening real infrastructure sockets.
 - Foundation integration tests verify Compose, migration, and runtime readiness.
+- Agent/MCP integration tests verify checkpoint recovery, approval, stdio policy, and artifacts.
+- Browser E2E verifies upload recovery and Agent approval/download workflows.
 - Test filenames are unique across workspace roots.
 - Do not hide failures with skip, xfail, rerun plugins, or allow-failure CI steps.
 

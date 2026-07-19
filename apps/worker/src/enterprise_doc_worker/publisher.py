@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from time import perf_counter
 from typing import Protocol
 from uuid import UUID
 
 from enterprise_doc_core.jobs import ClaimedOutboxEvent
+from enterprise_doc_core.telemetry import MetricsRuntime
 from enterprise_doc_worker.queue import JobMessage, TaskDispatcher
 
 _LOGGER = logging.getLogger("enterprise_doc_worker.publisher")
@@ -32,6 +34,7 @@ class OutboxPublisher:
         publisher_id: str,
         batch_size: int = 20,
         poll_interval_seconds: float = 1.0,
+        metrics: MetricsRuntime | None = None,
     ) -> None:
         if batch_size <= 0 or poll_interval_seconds <= 0:
             raise ValueError("publisher batch size and poll interval must be positive")
@@ -40,6 +43,7 @@ class OutboxPublisher:
         self.publisher_id = publisher_id
         self.batch_size = batch_size
         self.poll_interval_seconds = poll_interval_seconds
+        self.metrics = metrics
 
     async def publish_once(self) -> int:
         claimed = await self.store.claim(
@@ -48,6 +52,7 @@ class OutboxPublisher:
         )
         published = 0
         for event in claimed:
+            started = perf_counter()
             message = JobMessage(
                 job_id=event.aggregate_id,
                 tenant_id=event.tenant_id,
@@ -57,7 +62,17 @@ class OutboxPublisher:
                 await self.dispatcher.publish(message, task_id=event.event_id)
                 await self.store.mark_published(event)
                 published += 1
+                if self.metrics is not None:
+                    self.metrics.observe_publish(
+                        result="success",
+                        duration=perf_counter() - started,
+                    )
             except Exception as error:
+                if self.metrics is not None:
+                    self.metrics.observe_publish(
+                        result="error",
+                        duration=perf_counter() - started,
+                    )
                 _LOGGER.warning(
                     "outbox_publish_failed",
                     extra={"event_data": {"error_class": type(error).__name__}},

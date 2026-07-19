@@ -5,8 +5,10 @@ import asyncio
 import json
 import sys
 from collections.abc import Sequence
+from contextlib import AbstractAsyncContextManager
 from dataclasses import asdict, dataclass
 from enum import StrEnum
+from types import TracebackType
 
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
@@ -15,6 +17,7 @@ from psycopg.rows import dict_row
 
 from enterprise_doc_core.config import FoundationSettings
 from enterprise_doc_core.db import ensure_asyncio_compatibility
+from enterprise_doc_core.health import ComponentStatus
 
 
 class CheckpointerCommand(StrEnum):
@@ -34,6 +37,81 @@ class CheckpointerReadiness:
         return asdict(self)
 
 
+class CheckpointSchemaNotReady(RuntimeError):
+    code = "checkpoint_schema_not_ready"
+
+
+class CheckpointRuntime:
+    """Own one official PostgreSQL saver for the Worker process lifetime."""
+
+    def __init__(self, settings: FoundationSettings) -> None:
+        self.settings = settings
+        self._manager: AbstractAsyncContextManager[AsyncPostgresSaver] | None = None
+        self._saver: AsyncPostgresSaver | None = None
+
+    @property
+    def saver(self) -> AsyncPostgresSaver:
+        if self._saver is None:
+            raise RuntimeError("checkpoint runtime is not open")
+        return self._saver
+
+    async def open(self) -> AsyncPostgresSaver:
+        if self._saver is not None:
+            return self._saver
+        readiness = await check_checkpoint_schema(self.settings)
+        if not readiness.ready:
+            raise CheckpointSchemaNotReady()
+        manager = AsyncPostgresSaver.from_conn_string(
+            _checkpoint_dsn(self.settings),
+            serde=_strict_serializer(),
+        )
+        try:
+            async with asyncio.timeout(self.settings.agent.checkpoint_timeout_seconds):
+                saver = await manager.__aenter__()
+        except BaseException:
+            await manager.__aexit__(*sys.exc_info())
+            raise
+        self._manager = manager
+        self._saver = saver
+        return saver
+
+    async def close(
+        self,
+        exc_type: type[BaseException] | None = None,
+        exc: BaseException | None = None,
+        traceback: TracebackType | None = None,
+    ) -> bool:
+        manager = self._manager
+        self._manager = None
+        self._saver = None
+        if manager is None:
+            return False
+        async with asyncio.timeout(self.settings.agent.checkpoint_timeout_seconds):
+            return bool(await manager.__aexit__(exc_type, exc, traceback))
+
+    async def __aenter__(self) -> AsyncPostgresSaver:
+        return await self.open()
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> bool:
+        return await self.close(exc_type, exc, traceback)
+
+
+class CheckpointHealthChecker:
+    name = "langgraph_checkpoint"
+
+    def __init__(self, settings: FoundationSettings) -> None:
+        self.settings = settings
+
+    async def check(self) -> ComponentStatus:
+        readiness = await check_checkpoint_schema(self.settings)
+        return ComponentStatus.UP if readiness.ready else ComponentStatus.DOWN
+
+
 REQUIRED_CHECKPOINT_TABLES = (
     "checkpoint_migrations",
     "checkpoints",
@@ -47,11 +125,19 @@ def build_parser() -> argparse.ArgumentParser:
         prog="enterprise-doc-checkpointer-setup",
         description="Set up or check the official LangGraph PostgreSQL checkpoint schema.",
     )
-    parser.add_argument(
+    parser.set_defaults(command=CheckpointerCommand.SETUP)
+    commands = parser.add_mutually_exclusive_group()
+    commands.add_argument(
+        "--setup",
+        action="store_const",
+        const=CheckpointerCommand.SETUP,
+        dest="command",
+        help="Apply missing official LangGraph checkpoint migrations.",
+    )
+    commands.add_argument(
         "--check",
         action="store_const",
         const=CheckpointerCommand.CHECK,
-        default=CheckpointerCommand.SETUP,
         dest="command",
         help="Run read-only readiness checks without changing the database.",
     )

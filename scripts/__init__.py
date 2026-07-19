@@ -1,1 +1,1 @@
-"""Executable repository workflows with importable test seams."""
+"""Executable maintenance and evaluation scripts."""

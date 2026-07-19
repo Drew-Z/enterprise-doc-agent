@@ -4,7 +4,7 @@ from collections.abc import AsyncIterator, Sequence
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
 
 from enterprise_doc_core.health import (
@@ -16,6 +16,7 @@ from enterprise_doc_core.health import (
     build_foundation_resources,
     evaluate_readiness,
 )
+from enterprise_doc_core.telemetry import MetricsRuntime
 from enterprise_doc_worker.config import WorkerSettings
 
 
@@ -36,8 +37,10 @@ def create_probe_app(
     settings: WorkerSettings | None = None,
     checkers: Sequence[HealthChecker] | None = None,
     readiness_timeout_seconds: float | None = None,
+    metrics: MetricsRuntime | None = None,
 ) -> FastAPI:
     resolved_settings = settings or WorkerSettings()
+    resolved_metrics = metrics if metrics is not None else MetricsRuntime.create()
     if checkers is None:
         resources = build_foundation_resources(resolved_settings)
         resolved_checkers = resources.checkers
@@ -63,6 +66,16 @@ def create_probe_app(
         version="0.1.0",
         lifespan=lifespan,
     )
+    app.state.metrics = resolved_metrics
+
+    if resolved_settings.otel.metrics_enabled:
+
+        @app.get("/metrics", include_in_schema=False)
+        async def metrics_endpoint() -> Response:
+            return Response(
+                content=resolved_metrics.render(),
+                headers={"Content-Type": resolved_metrics.content_type},
+            )
 
     @app.get("/health/live", response_model=LivenessResponse)
     async def live() -> LivenessResponse:

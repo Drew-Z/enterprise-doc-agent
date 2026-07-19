@@ -1,0 +1,203 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: enterprise-doc-api
+  labels: &app-labels
+    app.kubernetes.io/name: enterprise-doc-api
+    app.kubernetes.io/part-of: enterprise-doc-agent
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: enterprise-doc-api
+  template:
+    metadata:
+      labels: *app-labels
+    spec:
+      serviceAccountName: enterprise-doc-runtime
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: api
+          image: enterprise-doc/api@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: enterprise-doc-config
+            - secretRef:
+                name: enterprise-doc-secrets
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          readinessProbe:
+            httpGet: {path: /health/ready, port: http}
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 6
+          livenessProbe:
+            httpGet: {path: /health/live, port: http}
+            periodSeconds: 10
+            timeoutSeconds: 3
+          startupProbe:
+            httpGet: {path: /health/live, port: http}
+            periodSeconds: 5
+            failureThreshold: 30
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {cpu: "1", memory: 1Gi}
+          lifecycle:
+            preStop:
+              exec: {command: ["/bin/sh", "-c", "sleep 5"]}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: enterprise-doc-worker
+  labels: &worker-labels
+    app.kubernetes.io/name: enterprise-doc-worker
+    app.kubernetes.io/part-of: enterprise-doc-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: enterprise-doc-worker
+  template:
+    metadata:
+      labels: *worker-labels
+    spec:
+      serviceAccountName: enterprise-doc-runtime
+      terminationGracePeriodSeconds: 45
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: worker
+          image: enterprise-doc/worker@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+          ports:
+            - {name: probe, containerPort: 8081}
+          envFrom:
+            - configMapRef: {name: enterprise-doc-config}
+            - secretRef: {name: enterprise-doc-secrets}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: ["ALL"]}
+          readinessProbe:
+            httpGet: {path: /health/ready, port: probe}
+            periodSeconds: 5
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet: {path: /health/live, port: probe}
+            periodSeconds: 10
+          startupProbe:
+            httpGet: {path: /health/live, port: probe}
+            periodSeconds: 5
+            failureThreshold: 30
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {cpu: "2", memory: 2Gi}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: enterprise-doc-consumer
+  labels: &consumer-labels
+    app.kubernetes.io/name: enterprise-doc-consumer
+    app.kubernetes.io/part-of: enterprise-doc-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: enterprise-doc-consumer
+  template:
+    metadata:
+      labels: *consumer-labels
+    spec:
+      serviceAccountName: enterprise-doc-runtime
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: consumer
+          image: enterprise-doc/consumer@sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+          ports:
+            - {name: metrics, containerPort: 8082}
+          envFrom:
+            - configMapRef: {name: enterprise-doc-config}
+            - secretRef: {name: enterprise-doc-secrets}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: ["ALL"]}
+          readinessProbe:
+            tcpSocket: {port: metrics}
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket: {port: metrics}
+            periodSeconds: 10
+          startupProbe:
+            tcpSocket: {port: metrics}
+            periodSeconds: 5
+            failureThreshold: 30
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {cpu: "2", memory: 2Gi}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: enterprise-doc-web
+  labels: &web-labels
+    app.kubernetes.io/name: enterprise-doc-web
+    app.kubernetes.io/part-of: enterprise-doc-agent
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: enterprise-doc-web
+  template:
+    metadata:
+      labels: *web-labels
+    spec:
+      serviceAccountName: enterprise-doc-runtime
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: web
+          image: enterprise-doc/web@sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+          ports:
+            - {name: http, containerPort: 8080}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: ["ALL"]}
+          readinessProbe:
+            httpGet: {path: /health/live, port: http}
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: {path: /health/live, port: http}
+            periodSeconds: 10
+          startupProbe:
+            httpGet: {path: /health/live, port: http}
+            periodSeconds: 5
+            failureThreshold: 30
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {cpu: 500m, memory: 256Mi}

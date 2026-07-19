@@ -62,6 +62,11 @@ AGENT_RUN_TRANSITIONS = {
     (AgentRunStatus.RUNNING, AgentRunTransitionEvent.SUCCEED): AgentRunStatus.SUCCEEDED,
     (AgentRunStatus.RUNNING, AgentRunTransitionEvent.REFUSE): AgentRunStatus.REFUSED,
     (AgentRunStatus.RUNNING, AgentRunTransitionEvent.FAIL): AgentRunStatus.FAILED,
+    (AgentRunStatus.PENDING, AgentRunTransitionEvent.FAIL): AgentRunStatus.FAILED,
+    (
+        AgentRunStatus.WAITING_APPROVAL,
+        AgentRunTransitionEvent.FAIL,
+    ): AgentRunStatus.FAILED,
     (AgentRunStatus.PENDING, AgentRunTransitionEvent.CANCEL): AgentRunStatus.CANCELLED,
     (AgentRunStatus.RUNNING, AgentRunTransitionEvent.CANCEL): AgentRunStatus.CANCELLED,
     (

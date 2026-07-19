@@ -11,7 +11,7 @@ WORKFLOW = ROOT / ".github" / "workflows" / "quality.yml"
 BACKEND_COMMANDS = [
     "uv run ruff format --check .",
     "uv run ruff check .",
-    "uv run mypy packages/core/src apps/api/src apps/worker/src",
+    "uv run mypy packages/core/src apps/api/src apps/worker/src apps/mcp/src",
     'uv run pytest -m "not integration"',
 ]
 FRONTEND_COMMANDS = [
@@ -57,7 +57,7 @@ def test_quality_workflow_has_locked_independent_jobs() -> None:
     workflow = _workflow()
     jobs = workflow.get("jobs")
     assert isinstance(jobs, dict)
-    assert set(jobs) >= {"backend", "frontend", "m1-integration"}
+    assert set(jobs) >= {"backend", "frontend", "m1-integration", "m4-integration", "web-e2e"}
 
     backend_commands = _run_commands(jobs["backend"])
     frontend_commands = _run_commands(jobs["frontend"])
@@ -79,6 +79,18 @@ def test_quality_workflow_has_locked_independent_jobs() -> None:
         and "--measure-api-rss" in command
         for command in integration_commands
     )
+
+    m4_commands = _run_commands(jobs["m4-integration"])
+    assert "uv run enterprise-doc-checkpointer-setup --setup" in m4_commands
+    assert "uv run enterprise-doc-checkpointer-setup --check" in m4_commands
+    assert "uv run pytest -m integration -q" in m4_commands
+    assert "uv run python scripts/evaluate_m4_agent.py" in m4_commands
+
+    e2e_commands = _run_commands(jobs["web-e2e"])
+    assert "uv sync --frozen" in e2e_commands
+    assert "pnpm install --frozen-lockfile" in e2e_commands
+    assert "pnpm --filter web exec playwright install --with-deps chromium" in e2e_commands
+    assert "pnpm --filter web test:e2e" in e2e_commands
 
 
 def test_quality_workflow_has_no_allow_failure_or_retry_path() -> None:

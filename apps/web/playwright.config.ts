@@ -37,7 +37,9 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
       env: {
-        VITE_API_BASE_URL: "http://127.0.0.1:8000",
+        // Use the Vite same-origin proxy so browser E2E requests remain mockable
+        // without a cross-origin preflight against the locally running API.
+        VITE_API_BASE_URL: "",
         VITE_OBJECT_STORE_ORIGINS: "http://127.0.0.1:9000",
       },
     },

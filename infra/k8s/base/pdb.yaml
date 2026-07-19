@@ -1,0 +1,35 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: enterprise-doc-api
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: {app.kubernetes.io/name: enterprise-doc-api}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: enterprise-doc-worker
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: {app.kubernetes.io/name: enterprise-doc-worker}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: enterprise-doc-consumer
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: {app.kubernetes.io/name: enterprise-doc-consumer}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: enterprise-doc-web
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: {app.kubernetes.io/name: enterprise-doc-web}

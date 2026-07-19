@@ -6,7 +6,7 @@ from typing import Any
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.trace import Span
 from pydantic import BaseModel
@@ -14,6 +14,10 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from enterprise_doc_api.agents import router as agent_router
 from enterprise_doc_api.agents.router import AgentRunServiceProtocol
+from enterprise_doc_api.approvals import router as approval_router
+from enterprise_doc_api.approvals.router import ApprovalServiceProtocol
+from enterprise_doc_api.artifacts import router as artifact_router
+from enterprise_doc_api.artifacts.router import AgentArtifactServiceProtocol
 from enterprise_doc_api.auth import (
     DatabasePrincipalResolver,
     JwtTokenCodec,
@@ -22,13 +26,17 @@ from enterprise_doc_api.auth import (
 from enterprise_doc_api.config import ApiSettings
 from enterprise_doc_api.errors import register_error_handlers
 from enterprise_doc_api.jobs import router as jobs_router
-from enterprise_doc_api.middleware import ApiAuthenticationMiddleware, RequestContextMiddleware
+from enterprise_doc_api.middleware import (
+    ApiAuthenticationMiddleware,
+    MetricsMiddleware,
+    RequestContextMiddleware,
+)
 from enterprise_doc_api.uploads import router as upload_router
 from enterprise_doc_api.uploads.router import (
     UploadCreationServiceProtocol,
     UploadSessionServiceProtocol,
 )
-from enterprise_doc_core.agents import AgentRunService
+from enterprise_doc_core.agents import AgentArtifactService, AgentRunService, ApprovalService
 from enterprise_doc_core.db import create_database_engine, create_session_factory
 from enterprise_doc_core.health import (
     ComponentStatus,
@@ -41,10 +49,11 @@ from enterprise_doc_core.health import (
 )
 from enterprise_doc_core.jobs import JobRuntimeService
 from enterprise_doc_core.object_store import (
+    Boto3ArtifactObjectStore,
     Boto3MultipartObjectStore,
     MultipartObjectStore,
 )
-from enterprise_doc_core.telemetry import TelemetryRuntime
+from enterprise_doc_core.telemetry import MetricsRuntime, TelemetryRuntime
 from enterprise_doc_core.uploads import UploadCreationService, UploadSessionService
 
 
@@ -94,8 +103,12 @@ def create_app(
     upload_creation_service: UploadCreationServiceProtocol | None = None,
     upload_session_service: UploadSessionServiceProtocol | None = None,
     agent_run_service: AgentRunServiceProtocol | None = None,
+    approval_service: ApprovalServiceProtocol | None = None,
+    agent_artifact_service: AgentArtifactServiceProtocol | None = None,
+    metrics: MetricsRuntime | None = None,
 ) -> FastAPI:
     resolved_settings = settings if settings is not None else ApiSettings()
+    resolved_metrics = metrics if metrics is not None else MetricsRuntime.create()
     if checkers is None:
         resources = build_foundation_resources(resolved_settings)
         resolved_checkers = resources.checkers
@@ -107,10 +120,13 @@ def create_app(
         or upload_creation_service is None
         or upload_session_service is None
         or agent_run_service is None
+        or approval_service is None
+        or agent_artifact_service is None
     )
     needs_default_object_store = upload_creation_service is None or upload_session_service is None
     owned_database_engine: AsyncEngine | None = None
     owned_multipart_object_store: Boto3MultipartObjectStore | None = None
+    owned_artifact_object_store: Boto3ArtifactObjectStore | None = None
     if resources is not None:
         business_database_engine: AsyncEngine | None = resources.database_engine
         business_object_store: MultipartObjectStore | None = resources.multipart_object_store
@@ -150,6 +166,8 @@ def create_app(
                     await owned_database_engine.dispose()
                 if owned_multipart_object_store is not None:
                     await owned_multipart_object_store.close()
+            if owned_artifact_object_store is not None:
+                await owned_artifact_object_store.close()
 
     app = FastAPI(
         title="Enterprise Document Agent API",
@@ -166,12 +184,18 @@ def create_app(
             "Authorization",
             "Content-Type",
             "Idempotency-Key",
+            "Last-Event-ID",
             "X-Request-ID",
             "X-Correlation-ID",
         ],
         expose_headers=["X-Request-ID", "X-Correlation-ID"],
     )
     app.add_middleware(RequestContextMiddleware)
+    app.add_middleware(
+        MetricsMiddleware,
+        metrics=resolved_metrics,
+        enabled=resolved_settings.otel.metrics_enabled,
+    )
     register_error_handlers(app)
     app.state.principal_resolver = (
         principal_resolver
@@ -181,6 +205,7 @@ def create_app(
             codec=JwtTokenCodec(resolved_settings.auth),
         )
     )
+    app.state.metrics = resolved_metrics
     app.state.upload_creation_service = (
         upload_creation_service
         if upload_creation_service is not None
@@ -213,9 +238,35 @@ def create_app(
             model_settings=resolved_settings.model,
         )
     )
+    app.state.approval_service = (
+        approval_service
+        if approval_service is not None
+        else ApprovalService(session_factory=_required_session_factory(session_factory))
+    )
+    if agent_artifact_service is None:
+        owned_artifact_object_store = Boto3ArtifactObjectStore(
+            settings=resolved_settings.object_store
+        )
+        app.state.agent_artifact_service = AgentArtifactService(
+            session_factory=_required_session_factory(session_factory),
+            artifact_store=owned_artifact_object_store,
+        )
+    else:
+        app.state.agent_artifact_service = agent_artifact_service
     app.include_router(upload_router)
     app.include_router(jobs_router)
     app.include_router(agent_router)
+    app.include_router(approval_router)
+    app.include_router(artifact_router)
+    if resolved_settings.otel.metrics_enabled:
+
+        @app.get("/metrics", include_in_schema=False)
+        async def metrics_endpoint() -> Response:
+            return Response(
+                content=resolved_metrics.render(),
+                headers={"Content-Type": resolved_metrics.content_type},
+            )
+
     if telemetry is not None and telemetry.enabled and telemetry.provider is not None:
         FastAPIInstrumentor.instrument_app(
             app,

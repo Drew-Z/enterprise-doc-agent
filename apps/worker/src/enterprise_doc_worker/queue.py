@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import threading
 from collections.abc import Callable, Coroutine
+from time import perf_counter
 from typing import Any, Protocol, TypeVar
 from uuid import UUID
 
@@ -17,6 +18,7 @@ from enterprise_doc_core.jobs import (
     JobStatus,
     RetryDisposition,
 )
+from enterprise_doc_core.telemetry import MetricsRuntime
 from enterprise_doc_worker.config import WorkerSettings
 
 JOB_TASK_NAME = "enterprise_doc_worker.execute_job"
@@ -34,6 +36,16 @@ class JobMessage(BaseModel):
 
 class AsyncJobHandler(Protocol):
     async def __call__(self, claim: ClaimedJob) -> None: ...
+
+
+class JobHandlerError(Exception):
+    code = "job_handler_error"
+    message = "The job handler could not complete the task."
+    retryable = False
+
+    def __init__(self, message: str | None = None) -> None:
+        self.message = message or type(self).message
+        super().__init__(self.message)
 
 
 class TaskDispatcher(Protocol):
@@ -107,11 +119,13 @@ class JobDeliveryConsumer:
         handler: AsyncJobHandler,
         classify_error: Callable[[Exception], RetryDisposition] | None = None,
         heartbeat_interval_seconds: float | None = None,
+        metrics: MetricsRuntime | None = None,
     ) -> None:
         self.runtime = runtime
         self.worker_id = worker_id
         self.handler = handler
         self.classify_error = classify_error or (lambda _: RetryDisposition.RETRYABLE)
+        self.metrics = metrics
         self.heartbeat_interval_seconds = (
             heartbeat_interval_seconds
             if heartbeat_interval_seconds is not None
@@ -121,9 +135,36 @@ class JobDeliveryConsumer:
             raise ValueError("heartbeat interval must be positive")
 
     async def handle(self, message: JobMessage) -> str:
+        started = perf_counter()
         claim = await self.runtime.claim(job_id=message.job_id, worker_id=self.worker_id)
         if claim is None:
+            if self.metrics is not None:
+                self.metrics.observe_job_claim(
+                    job_type="other",
+                    result="duplicate_or_not_claimable",
+                )
+                self.metrics.observe_job(
+                    job_type="other",
+                    outcome="duplicate_or_not_claimable",
+                    duration=perf_counter() - started,
+                )
             return "duplicate_or_not_claimable"
+
+        if self.metrics is not None:
+            self.metrics.observe_job_claim(job_type=claim.job_type, result="claimed")
+
+        try:
+            outcome = await self._handle_claim(claim)
+        except asyncio.CancelledError:
+            self._observe_job(claim, outcome="cancelled", started=started)
+            raise
+        except Exception:
+            self._observe_job(claim, outcome="failed", started=started)
+            raise
+        self._observe_job(claim, outcome=outcome, started=started)
+        return outcome
+
+    async def _handle_claim(self, claim: ClaimedJob) -> str:
 
         handler_task = asyncio.create_task(self.handler(claim))
         heartbeat_task = asyncio.create_task(self._heartbeat_until_cancel_requested(claim))
@@ -184,8 +225,30 @@ class JobDeliveryConsumer:
     async def _heartbeat_until_cancel_requested(self, claim: ClaimedJob) -> bool:
         while True:
             await asyncio.sleep(self.heartbeat_interval_seconds)
-            if await self.runtime.heartbeat(claim):
+            try:
+                cancel_requested = await self.runtime.heartbeat(claim)
+            except JobLeaseLost:
+                if self.metrics is not None:
+                    self.metrics.observe_heartbeat("lease_lost")
+                raise
+            except Exception:
+                if self.metrics is not None:
+                    self.metrics.observe_heartbeat("error")
+                raise
+            if cancel_requested:
+                if self.metrics is not None:
+                    self.metrics.observe_heartbeat("cancel_requested")
                 return True
+            if self.metrics is not None:
+                self.metrics.observe_heartbeat("ok")
+
+    def _observe_job(self, claim: ClaimedJob, *, outcome: str, started: float) -> None:
+        if self.metrics is not None:
+            self.metrics.observe_job(
+                job_type=claim.job_type,
+                outcome=outcome,
+                duration=perf_counter() - started,
+            )
 
     async def _settle_handler(
         self,
@@ -204,7 +267,7 @@ class JobDeliveryConsumer:
             )
             raise
         except Exception as error:
-            if isinstance(error, DocumentIngestionError):
+            if isinstance(error, (DocumentIngestionError, JobHandlerError)):
                 error_code = error.code
                 error_message = error.message
             else:

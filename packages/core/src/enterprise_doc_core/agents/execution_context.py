@@ -65,6 +65,10 @@ class SignedExecutionContext(BaseModel):
     actor_id: UUID
     run_id: UUID
     execution_id: UUID
+    job_id: UUID | None = None
+    attempt_id: UUID | None = None
+    lease_token: UUID | None = None
+    fencing_token: int | None = Field(default=None, ge=1)
     capabilities: tuple[ToolCapability, ...] = Field(min_length=1, max_length=8)
     target_document_version_id: UUID
     approval_request_id: UUID | None = None
@@ -82,6 +86,16 @@ class SignedExecutionContext(BaseModel):
             raise ValueError("expires_at must be after issued_at")
         if ToolCapability.PUBLISH in self.capabilities and self.approval_request_id is None:
             raise ValueError("publish capability requires an approval binding")
+        fencing_fields = (
+            self.job_id,
+            self.attempt_id,
+            self.lease_token,
+            self.fencing_token,
+        )
+        if any(value is not None for value in fencing_fields) and any(
+            value is None for value in fencing_fields
+        ):
+            raise ValueError("job fencing fields must be supplied together")
         return self
 
     def allows(self, capability: ToolCapability) -> bool:

@@ -30,7 +30,7 @@ jobs:
       - run: uv sync --frozen
       - run: uv run ruff format --check .
       - run: uv run ruff check .
-      - run: uv run mypy packages/core/src apps/api/src apps/worker/src
+      - run: uv run mypy packages/core/src apps/api/src apps/worker/src apps/mcp/src
       - run: uv run pytest -m "not integration"
 
   frontend:
@@ -85,3 +85,54 @@ jobs:
           path: tmp/m1-ci-smoke-report.json
           if-no-files-found: error
           retention-days: 7
+
+  m4-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.11.3"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - run: uv sync --frozen
+      - run: docker compose -f infra/compose/docker-compose.yml up -d --wait
+      - run: docker compose -f infra/compose/docker-compose.yml --profile init run --rm minio-init
+      - run: uv run alembic upgrade head
+      - run: uv run enterprise-doc-checkpointer-setup --setup
+      - run: uv run enterprise-doc-checkpointer-setup --check
+      - run: uv run pytest -m integration -q
+      - run: uv run python scripts/evaluate_m4_agent.py
+      - if: always()
+        run: docker compose -f infra/compose/docker-compose.yml down
+
+  web-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.11.3"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.9.0
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - run: uv sync --frozen
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter web exec playwright install --with-deps chromium
+      - run: pnpm --filter web test:e2e

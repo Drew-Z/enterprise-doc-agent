@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 from pydantic import SecretStr, ValidationError
 
-from enterprise_doc_core.config import AppEnvironment, FoundationSettings
+from enterprise_doc_core.config import AppEnvironment, FoundationSettings, ModelSettings
 
 
 def test_nested_environment_values_are_parsed(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -71,6 +71,12 @@ def test_invalid_sample_ratio_is_rejected(monkeypatch: pytest.MonkeyPatch) -> No
         FoundationSettings(_env_file=None)
 
 
+def test_model_embedding_dimension_matches_the_fixed_vector_index() -> None:
+    assert ModelSettings().embedding_dimension == 8
+    with pytest.raises(ValidationError):
+        ModelSettings(embedding_dimension=1536)
+
+
 def test_invalid_docx_envelope_limits_are_rejected(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -78,3 +84,28 @@ def test_invalid_docx_envelope_limits_are_rejected(
 
     with pytest.raises(ValidationError):
         FoundationSettings(_env_file=None)
+
+
+def test_fault_injection_is_rejected_outside_local_test() -> None:
+    with pytest.raises(ValidationError, match="fault injection is forbidden"):
+        FoundationSettings(
+            _env_file=None,
+            app_env="production",
+            database={"url": "postgresql+psycopg://user:password@database/app"},
+            object_store={
+                "access_key": "production-access",
+                "secret_key": "production-secret",
+            },
+            model={
+                "provider": "openai_compatible",
+                "base_url": "https://model.example/v1",
+                "api_key": "model-secret",
+                "model_name": "production-model",
+            },
+            mcp={"signing_secret": "production-signing-secret-at-least-32-bytes"},
+            fault_injection={
+                "enabled": True,
+                "target": "handler",
+                "mode": "retryable",
+            },
+        )

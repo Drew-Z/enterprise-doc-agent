@@ -1,0 +1,141 @@
+name: Deploy Staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      registry_prefix:
+        description: "Registry path prefix, for example ghcr.io/org"
+        required: true
+        type: string
+      staging_base_url:
+        description: "Externally reachable staging API base URL used by the authenticated smoke"
+        required: true
+        type: string
+      api_digest:
+        description: "API sha256 digest"
+        required: true
+        type: string
+      worker_digest:
+        description: "Worker sha256 digest"
+        required: true
+        type: string
+      consumer_digest:
+        description: "Consumer sha256 digest"
+        required: true
+        type: string
+      web_digest:
+        description: "Web sha256 digest"
+        required: true
+        type: string
+      run_smoke:
+        description: "Run the authenticated staging smoke after rollout"
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: azure/setup-kubectl@v4
+      - uses: imranismail/setup-kustomize@v2
+        with:
+          kustomize-version: "5.6.0"
+      - name: Configure cluster credentials
+        env:
+          KUBE_CONFIG: ${{ secrets.STAGING_KUBECONFIG }}
+        run: |
+          test -n "$KUBE_CONFIG"
+          mkdir -p "$HOME/.kube"
+          printf '%s' "$KUBE_CONFIG" > "$HOME/.kube/config"
+          chmod 600 "$HOME/.kube/config"
+      - name: Bind exact image digests
+        env:
+          REGISTRY_PREFIX: ${{ inputs.registry_prefix }}
+          API_DIGEST: ${{ inputs.api_digest }}
+          WORKER_DIGEST: ${{ inputs.worker_digest }}
+          CONSUMER_DIGEST: ${{ inputs.consumer_digest }}
+          WEB_DIGEST: ${{ inputs.web_digest }}
+        run: |
+          for digest in "$API_DIGEST" "$WORKER_DIGEST" "$CONSUMER_DIGEST" "$WEB_DIGEST"; do
+            printf '%s' "$digest" | grep -Eq '^sha256:[0-9a-f]{64}$'
+          done
+          cd infra/k8s/overlays/staging
+          kustomize edit set image enterprise-doc/api="$REGISTRY_PREFIX/enterprise-doc-api@$API_DIGEST"
+          kustomize edit set image enterprise-doc/worker="$REGISTRY_PREFIX/enterprise-doc-worker@$WORKER_DIGEST"
+          kustomize edit set image enterprise-doc/consumer="$REGISTRY_PREFIX/enterprise-doc-consumer@$CONSUMER_DIGEST"
+          kustomize edit set image enterprise-doc/web="$REGISTRY_PREFIX/enterprise-doc-web@$WEB_DIGEST"
+      - name: Render and validate staging manifests
+        run: |
+          python -m pip install --disable-pip-version-check --no-cache-dir PyYAML==6.0.3
+          kustomize build infra/k8s/overlays/staging > "$RUNNER_TEMP/staging.yaml"
+          grep -A4 '^kind: Namespace$' "$RUNNER_TEMP/staging.yaml" | grep -q 'name: enterprise-doc-agent-staging'
+          grep -q 'name: enterprise-doc-migrate' "$RUNNER_TEMP/staging.yaml"
+          if grep -A30 '^kind: ConfigMap$' "$RUNNER_TEMP/staging.yaml" | grep -q 'DATABASE__URL:'; then
+            echo 'DATABASE__URL must come only from enterprise-doc-secrets' >&2
+            exit 1
+          fi
+          python scripts/render_k8s_phase.py --input "$RUNNER_TEMP/staging.yaml" --phase prerequisites --output "$RUNNER_TEMP/staging-prerequisites.yaml"
+          python scripts/render_k8s_phase.py --input "$RUNNER_TEMP/staging.yaml" --phase migration --output "$RUNNER_TEMP/staging-migration.yaml"
+          python scripts/render_k8s_phase.py --input "$RUNNER_TEMP/staging.yaml" --phase workloads --output "$RUNNER_TEMP/staging-workloads.yaml"
+      - name: Apply migration job before rollout
+        run: |
+          kubectl apply -f "$RUNNER_TEMP/staging-prerequisites.yaml"
+          kubectl -n enterprise-doc-agent-staging get secret enterprise-doc-secrets
+          kubectl -n enterprise-doc-agent-staging delete job enterprise-doc-migrate --ignore-not-found
+          kubectl apply -f "$RUNNER_TEMP/staging-migration.yaml"
+          kubectl -n enterprise-doc-agent-staging wait --for=condition=complete job/enterprise-doc-migrate --timeout=300s
+      - name: Apply workloads after migration
+        run: |
+          kubectl apply -f "$RUNNER_TEMP/staging-workloads.yaml"
+      - name: Wait for workloads
+        run: |
+          kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-api --timeout=300s
+          kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-worker --timeout=300s
+          kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-consumer --timeout=300s
+          kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-web --timeout=300s
+      - name: Run in-cluster readiness smoke
+        if: inputs.run_smoke
+        run: |
+          kubectl -n enterprise-doc-agent-staging run m5-staging-smoke --rm --attach --restart=Never \
+            --image=curlimages/curl:8.12.1 -- \
+            sh -ec 'curl --fail --silent http://enterprise-doc-api:8000/health/ready'
+      - name: Run authenticated upload to Agent smoke
+        if: inputs.run_smoke
+        env:
+          STAGING_BASE_URL: ${{ inputs.staging_base_url }}
+          STAGING_ALLOWED_HOST: ${{ vars.STAGING_ALLOWED_HOST }}
+          STAGING_OBJECT_STORE_ALLOWED_HOST: ${{ vars.STAGING_OBJECT_STORE_ALLOWED_HOST }}
+          STAGING_SMOKE_TOKEN: ${{ secrets.STAGING_SMOKE_TOKEN }}
+        run: |
+          test -n "$STAGING_BASE_URL"
+          test -n "$STAGING_ALLOWED_HOST"
+          test -n "$STAGING_OBJECT_STORE_ALLOWED_HOST"
+          test -n "$STAGING_SMOKE_TOKEN"
+          python scripts/staging_smoke.py \
+            --base-url "$STAGING_BASE_URL" \
+            --allowed-host "$STAGING_ALLOWED_HOST" \
+            --allowed-object-store-host "$STAGING_OBJECT_STORE_ALLOWED_HOST" \
+            --report-path "tmp/staging-smoke-${GITHUB_SHA}.json"
+      - name: Record release metadata
+        run: |
+          mkdir -p tmp
+          kubectl -n enterprise-doc-agent-staging get deploy -o json > tmp/staging-release-${GITHUB_SHA}.json
+          printf '%s\n' '{"status":"staging-rollout-requested","external_gate":"cluster-and-secret-evidence"}' > tmp/staging-release-${GITHUB_SHA}.record.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: staging-release-${{ github.sha }}
+          path: |
+            tmp/staging-release-${{ github.sha }}.*
+            tmp/staging-smoke-${{ github.sha }}.json
+          if-no-files-found: warn

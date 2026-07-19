@@ -10,6 +10,7 @@ from pydantic import ValidationError
 
 from enterprise_doc_core.documents.ingestion_service import DocumentIngestionError
 from enterprise_doc_core.jobs import ClaimedJob, JobFailureResult, RetryDisposition
+from enterprise_doc_core.telemetry import MetricsRuntime
 from enterprise_doc_worker.config import WorkerSettings
 from enterprise_doc_worker.queue import (
     JOB_QUEUE_NAME,
@@ -90,6 +91,7 @@ def _claim() -> ClaimedJob:
         worker_id="worker-a",
         lease_token=uuid4(),
         fencing_token=1,
+        job_type="document.ingest",
         payload={},
     )
 
@@ -136,6 +138,33 @@ async def test_duplicate_delivery_does_not_call_handler() -> None:
 
     assert await consumer.handle(message) == "duplicate_or_not_claimable"
     assert handler_calls == 0
+
+
+async def test_consumer_records_bounded_job_metrics() -> None:
+    claim = _claim()
+    runtime = FakeRuntime(claim)
+    metrics = MetricsRuntime.create()
+
+    async def handler(_: ClaimedJob) -> None:
+        return None
+
+    consumer = JobDeliveryConsumer(
+        runtime=runtime,  # type: ignore[arg-type]
+        worker_id="worker-a",
+        handler=handler,
+        metrics=metrics,
+    )
+
+    assert (
+        await consumer.handle(
+            JobMessage(job_id=claim.job_id, tenant_id=claim.tenant_id, event_id=uuid4())
+        )
+        == "succeeded"
+    )
+    rendered = metrics.render().decode("utf-8")
+    assert 'job_type="document.ingest"' in rendered
+    assert 'outcome="succeeded"' in rendered
+    assert str(claim.job_id) not in rendered
 
 
 async def test_consumer_heartbeats_until_handler_completes() -> None:

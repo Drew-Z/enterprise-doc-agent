@@ -13,11 +13,28 @@ MIGRATIONS_PATH = ROOT / "packages/core/src/enterprise_doc_core/db/migrations/ve
 ALEMBIC_ENV_PATH = ROOT / "packages/core/src/enterprise_doc_core/db/migrations/env.py"
 
 
-def test_compose_defines_only_m0_infrastructure_services() -> None:
+def test_compose_keeps_m0_services_and_profiles_optional_stacks() -> None:
     compose = yaml.safe_load(COMPOSE_PATH.read_text(encoding="utf-8"))
 
-    assert set(compose["services"]) == {"postgres", "redis", "minio", "minio-init"}
-    assert set(compose["volumes"]) == {"postgres-data", "redis-data", "minio-data"}
+    assert set(compose["services"]) == {
+        "postgres",
+        "redis",
+        "minio",
+        "minio-init",
+        "prometheus",
+        "grafana",
+    }
+    assert compose["services"]["minio-init"]["profiles"] == ["init"]
+    for service in ("prometheus", "grafana"):
+        assert compose["services"][service]["profiles"] == ["observability"]
+
+    assert set(compose["volumes"]) == {
+        "postgres-data",
+        "redis-data",
+        "minio-data",
+        "prometheus-data",
+        "grafana-data",
+    }
     for service in ("postgres", "redis", "minio"):
         assert "healthcheck" in compose["services"][service]
 

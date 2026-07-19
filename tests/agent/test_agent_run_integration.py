@@ -43,15 +43,22 @@ from enterprise_doc_core.documents import (
     DocumentVersion,
     DocumentVersionStatus,
 )
-from enterprise_doc_core.identity import Membership, Tenant, User
+from enterprise_doc_core.identity import Membership, MembershipRole, Tenant, User
 from enterprise_doc_core.jobs import (
     Job,
+    JobAttempt,
+    JobAttemptStatus,
     JobRuntimeService,
     JobStatus,
     OutboxEvent,
     OutboxEventStatus,
+    RetryDisposition,
 )
 from enterprise_doc_core.uploads import UploadSession, UploadSessionStatus
+from enterprise_doc_worker.agent_handler import (
+    agent_failure_lock_key,
+    project_agent_run_failure,
+)
 
 pytestmark = pytest.mark.integration
 
@@ -73,6 +80,17 @@ class SeededAgentContext:
             actor_id=str(self.actor_id),
             role="owner",
         )
+
+
+@dataclass
+class MutableClock:
+    value: datetime
+
+    def __call__(self) -> datetime:
+        return self.value
+
+    def advance(self, seconds: float) -> None:
+        self.value += timedelta(seconds=seconds)
 
 
 def _service(
@@ -540,6 +558,155 @@ async def test_pending_cancel_is_atomic_idempotent_and_events_are_contiguous() -
             assert job.status == JobStatus.CANCELLED.value
             assert job.finished_at == cancelled_at
             assert await _tenant_count(session, AgentRunEvent, context.tenant_id) == 2
+    finally:
+        await engine.dispose()
+
+
+async def test_member_cannot_cancel_another_actor_run_but_owner_can_override() -> None:
+    engine = create_database_engine(DatabaseSettings())
+    session_factory = create_session_factory(engine)
+    context = await _seed_agent_context(session_factory)
+    other_actor_id = uuid4()
+    other_membership_id = uuid4()
+    try:
+        async with session_factory.begin() as session:
+            session.add(User(id=other_actor_id, email=f"member-{uuid4().hex}@example.test"))
+            await session.flush()
+            session.add(
+                Membership(
+                    id=other_membership_id,
+                    tenant_id=context.tenant_id,
+                    user_id=other_actor_id,
+                    role=MembershipRole.MEMBER.value,
+                    is_active=True,
+                )
+            )
+
+        service = _service(session_factory)
+        created = await service.create(
+            principal=context.principal,
+            idempotency_key=f"member-cancel:{uuid4().hex}",
+            request=_request(context),
+        )
+        with pytest.raises(AgentPrincipalForbidden):
+            await service.cancel(
+                run_id=created.run_id,
+                tenant_id=context.tenant_id,
+                actor_id=other_actor_id,
+            )
+
+        owner_cancelled = await service.cancel(
+            run_id=created.run_id,
+            tenant_id=context.tenant_id,
+            actor_id=context.actor_id,
+        )
+        assert owner_cancelled.status == AgentRunStatus.CANCELLED.value
+    finally:
+        await engine.dispose()
+
+
+async def test_terminal_agent_job_failure_projects_run_failed_atomically() -> None:
+    engine = create_database_engine(DatabaseSettings())
+    session_factory = create_session_factory(engine)
+    context = await _seed_agent_context(session_factory)
+    service = _service(session_factory)
+    runtime = JobRuntimeService(
+        session_factory=session_factory,
+        failure_lock_key=agent_failure_lock_key,
+        failure_projector=project_agent_run_failure,
+    )
+    try:
+        created = await service.create(
+            principal=context.principal,
+            idempotency_key=f"terminal-agent-failure:{uuid4().hex}",
+            request=_request(context),
+        )
+        claim = await runtime.claim(job_id=created.job_id, worker_id="failing-agent-worker")
+        assert claim is not None
+        failure = await runtime.fail(
+            claim,
+            disposition=RetryDisposition.PERMANENT,
+            error_code="agent_graph_result_invalid",
+            error_message="The Agent execution failed.",
+        )
+        assert failure.status == JobStatus.DEAD.value
+
+        async with session_factory() as session:
+            run = await session.get(AgentRun, created.run_id)
+            job = await session.get(Job, created.job_id)
+            events = (
+                await session.scalars(
+                    select(AgentRunEvent)
+                    .where(AgentRunEvent.run_id == created.run_id)
+                    .order_by(AgentRunEvent.seq)
+                )
+            ).all()
+        assert run is not None and run.status == AgentRunStatus.FAILED.value
+        assert run.error_code == "agent_graph_result_invalid"
+        assert run.finished_at is not None
+        assert job is not None and job.status == JobStatus.DEAD.value
+        assert events[-1].event_type == "run.finished"
+        assert events[-1].public_payload == {
+            "status": "failed",
+            "refusal_reason": None,
+        }
+    finally:
+        await engine.dispose()
+
+
+async def test_expired_final_agent_lease_projects_run_failed() -> None:
+    engine = create_database_engine(DatabaseSettings())
+    session_factory = create_session_factory(engine)
+    context = await _seed_agent_context(session_factory)
+    clock = MutableClock(datetime.now(UTC))
+    service = _service(session_factory, clock=clock)
+    runtime = JobRuntimeService(
+        session_factory=session_factory,
+        clock=clock,
+        lease_seconds=10,
+        failure_lock_key=agent_failure_lock_key,
+        failure_projector=project_agent_run_failure,
+    )
+    try:
+        created = await service.create(
+            principal=context.principal,
+            idempotency_key=f"expired-final-agent-lease:{uuid4().hex}",
+            request=_request(context),
+        )
+        # Job creation uses the database clock for availability; move the test
+        # clock past that timestamp before the first claim.
+        clock.advance(2)
+        async with session_factory.begin() as session:
+            job = await session.get(Job, created.job_id)
+            assert job is not None
+            job.max_attempts = 1
+
+        claim = await runtime.claim(job_id=created.job_id, worker_id="crashed-agent-worker")
+        assert claim is not None
+        clock.advance(11)
+        assert await runtime.claim(job_id=created.job_id, worker_id="reclaimer") is None
+
+        async with session_factory() as session:
+            run = await session.get(AgentRun, created.run_id)
+            job = await session.get(Job, created.job_id)
+            attempt = await session.get(JobAttempt, claim.attempt_id)
+            events = (
+                await session.scalars(
+                    select(AgentRunEvent)
+                    .where(AgentRunEvent.run_id == created.run_id)
+                    .order_by(AgentRunEvent.seq)
+                )
+            ).all()
+        assert run is not None and run.status == AgentRunStatus.FAILED.value
+        assert run.error_code == "max_attempts_exceeded"
+        assert run.finished_at == clock.value
+        assert job is not None and job.status == JobStatus.DEAD.value
+        assert attempt is not None and attempt.status == JobAttemptStatus.ABANDONED.value
+        assert events[-1].event_type == "run.finished"
+        assert events[-1].public_payload == {
+            "status": AgentRunStatus.FAILED.value,
+            "refusal_reason": None,
+        }
     finally:
         await engine.dispose()
 

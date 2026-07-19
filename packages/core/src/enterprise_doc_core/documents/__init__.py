@@ -1,3 +1,7 @@
+from enterprise_doc_core.documents.embedding_routing import (
+    DimensionCheckedEmbeddingProvider,
+    EmbeddingDimensionMismatch,
+)
 from enterprise_doc_core.documents.envelope import (
     DocumentEnvelopeViolation,
     ValidatedDocumentEnvelope,
@@ -37,6 +41,7 @@ from enterprise_doc_core.documents.retrieval import (
 __all__ = [
     "DEFAULT_EMBEDDING_DIMENSION",
     "Citation",
+    "DimensionCheckedEmbeddingProvider",
     "Document",
     "DocumentChunk",
     "DocumentEnvelopeViolation",
@@ -46,6 +51,7 @@ __all__ = [
     "DocumentParseViolation",
     "DocumentVersion",
     "DocumentVersionStatus",
+    "EmbeddingDimensionMismatch",
     "EmbeddingProvider",
     "HashEmbeddingProvider",
     "ParsedChunk",

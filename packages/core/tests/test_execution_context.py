@@ -101,3 +101,17 @@ def test_publish_context_requires_approval_binding_and_unique_capabilities() -> 
         _context(capabilities=(ToolCapability.PUBLISH,))
     with pytest.raises(ValidationError):
         _context(capabilities=(ToolCapability.READ_EVIDENCE, ToolCapability.READ_EVIDENCE))
+
+
+def test_fencing_context_fields_must_be_complete_and_round_trip() -> None:
+    with pytest.raises(ValidationError):
+        _context(job_id=UUID("00000000-0000-0000-0000-000000000006"))
+
+    context = _context(
+        job_id=UUID("00000000-0000-0000-0000-000000000006"),
+        attempt_id=UUID("00000000-0000-0000-0000-000000000007"),
+        lease_token=UUID("00000000-0000-0000-0000-000000000008"),
+        fencing_token=3,
+    )
+    token = sign_execution_context(context, SECRET)
+    assert verify_execution_context(token, SECRET, now=NOW) == context

@@ -143,6 +143,7 @@ async def test_duplicate_delivery_has_one_effective_claim() -> None:
         effective = [claim for claim in claims if claim is not None]
         assert len(effective) == 1
         assert effective[0].attempt_number == 1
+        assert effective[0].job_type == "document.ingest"
     finally:
         await engine.dispose()
 

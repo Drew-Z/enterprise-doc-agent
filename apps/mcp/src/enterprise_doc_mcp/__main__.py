@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 
+from enterprise_doc_core.db import ensure_asyncio_compatibility
 from enterprise_doc_mcp.server import run_stdio
 
 
@@ -22,6 +23,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     build_parser().parse_args()
+    ensure_asyncio_compatibility()
     asyncio.run(run_stdio())
 
 

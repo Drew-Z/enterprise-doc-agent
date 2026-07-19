@@ -31,6 +31,11 @@ checksums, and SHA-256 values. Log messages are stable event names: parameterize
 messages are redacted, and arbitrary objects are represented by type only instead of
 calling `str()` on exceptions or dependency responses.
 
+M4 also forbids raw model input/output, retrieved evidence text, tool arguments/results,
+execution-context tokens, approval fingerprints/comments, checkpoint payloads, artifact
+object keys, and download signatures. Agent events use per-event allowlists; tool audit
+rows persist hashes and bounded summaries instead of raw bodies.
+
 ## Proven Examples
 
 - `packages/core/src/enterprise_doc_core/logging/json.py`

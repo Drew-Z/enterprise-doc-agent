@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 from uuid import UUID
 
@@ -185,6 +186,31 @@ async def test_openai_gateway_performs_at_most_one_bounded_schema_repair() -> No
 
     assert calls == 2
     assert output.repaired is True
+
+
+async def test_schema_repair_shares_one_total_timeout_budget() -> None:
+    calls = 0
+
+    async def handler(_: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return httpx.Response(200, json=_completion("not-json"))
+        await asyncio.sleep(0.2)
+        return httpx.Response(200, json=_completion(json.dumps(_valid_payload(_request()))))
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler), trust_env=False)
+    gateway = OpenAICompatibleChatGateway(
+        settings=_settings(timeout_seconds=0.05),
+        client=client,
+    )
+    try:
+        with pytest.raises(ModelTimeoutError):
+            await gateway.generate(_request())
+    finally:
+        await client.aclose()
+
+    assert calls == 2
 
 
 async def test_openai_gateway_schema_repair_failure_is_permanent() -> None:

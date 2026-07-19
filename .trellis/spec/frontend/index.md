@@ -14,9 +14,9 @@ dashboard and the transport-independent M1 browser multipart modules.
 | [Quality Guidelines](./quality-guidelines.md) | ESLint, TypeScript, tests | Adopted in M0 |
 | [Type Safety](./type-safety.md) | Runtime boundary validation | Adopted in M0 |
 | [Browser Multipart Upload](./browser-multipart-upload.md) | Hashing, transfer, state, recovery, operational UI | Adopted in M1 Slices 8-9 |
+| [Agent Run Workspace](./agent-workspace.md) | Typed run form, fetch-SSE, approval, artifact recovery | Adopted in M4 Slice 7 |
 
-Future document and Agent interfaces must extend these guidelines only after their
-real code and tests exist.
+Future interfaces must extend these guidelines only after their real code and tests exist.
 
 ## Proven Examples
 
@@ -24,3 +24,4 @@ real code and tests exist.
 - `apps/web/src/api/health.ts`
 - `apps/web/src/App.test.tsx`
 - `apps/web/src/upload/`
+- `apps/web/src/agent/`

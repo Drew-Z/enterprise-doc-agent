@@ -20,6 +20,7 @@ from enterprise_doc_core.agents.models import (
     AgentArtifactStatus,
     AgentRun,
     AgentRunEvidence,
+    AgentRunStatus,
     AgentRunTaskType,
     ApprovalRequestStatus,
     ToolExecution,
@@ -28,6 +29,7 @@ from enterprise_doc_core.agents.models import (
 from enterprise_doc_core.agents.policy import (
     AuthorizedToolScope,
     TargetResourceType,
+    ToolApprovalError,
     ToolPolicyError,
     artifact_target_fingerprint,
     reload_tool_policy,
@@ -46,11 +48,14 @@ from enterprise_doc_core.agents.schemas import (
     StructuredExtractionSchema,
     SummaryModelOutput,
 )
+from enterprise_doc_core.agents.service import append_agent_run_event
 from enterprise_doc_core.agents.state import (
     AgentArtifactEvent,
+    AgentRunTransitionEvent,
     ApprovalRequestEvent,
     ToolExecutionEvent,
     transition_agent_artifact,
+    transition_agent_run,
     transition_approval_request,
     transition_tool_execution,
 )
@@ -470,6 +475,10 @@ class AgentToolService:
             return await self._replay_publish(context, begin.execution_id, request.artifact_id)
         try:
             async with self.session_factory.begin() as session:
+                await session.execute(
+                    text("SELECT pg_advisory_xact_lock(hashtextextended(:key, 0))"),
+                    {"key": f"agent-run:{context.tenant_id}:{context.run_id}"},
+                )
                 scope = await reload_tool_policy(
                     session,
                     context=context,
@@ -481,6 +490,8 @@ class AgentToolService:
                 )
                 assert scope.artifact is not None
                 assert scope.approval is not None
+                if scope.run.status != AgentRunStatus.RUNNING.value:
+                    raise ToolApprovalError()
                 await self._verify_object_head(scope.artifact)
                 now = self.clock()
                 scope.artifact.status = transition_agent_artifact(
@@ -493,6 +504,22 @@ class AgentToolService:
                     ApprovalRequestEvent.CONSUME,
                 ).value
                 scope.approval.consumed_at = now
+                scope.run.status = transition_agent_run(
+                    AgentRunStatus(scope.run.status),
+                    AgentRunTransitionEvent.SUCCEED,
+                ).value
+                scope.run.finished_at = now
+                await append_agent_run_event(
+                    session,
+                    tenant_id=scope.run.tenant_id,
+                    run_id=scope.run.id,
+                    event_type="run.finished",
+                    payload={
+                        "status": AgentRunStatus.SUCCEEDED.value,
+                        "refusal_reason": None,
+                    },
+                    actor_id=scope.run.actor_id,
+                )
                 execution = await self._lock_execution(
                     session,
                     execution_id=begin.execution_id,

@@ -14,9 +14,13 @@ These guidelines record backend conventions proven by implemented milestones.
 | [Multipart Upload Control Plane](./upload-control-plane.md) | Create, presign, resume, and reconciliation | Adopted in M1 Slice 5 |
 | [Multipart Upload Completion](./upload-completion.md) | Completion saga, envelope validation, and quota finalization | Adopted in M1 Slice 6 |
 | [Multipart Operations And Evidence](./multipart-operations.md) | Restart/resume smoke, CI, RSS, and immutable evidence boundary | Adopted in M1 Slice 10 |
+| [Agent MCP HITL](./agent-mcp-hitl.md) | LangGraph, MCP, approval, SSE and artifact contracts | Adopted in M4 |
+| [Observability Evaluation And Load](./observability-eval-load.md) | Metrics, fault injection, eval and bounded load reports | Adopted in M5 worktree |
+| [CI/CD And Kubernetes](./cicd-kubernetes.md) | Images, manifests, supply chain, backup and rollback | Adopted in M6 worktree |
+| [Model Routing](./model-routing.md) | Fallback, circuit breaking, route identity and embedding dimensions | Adopted in M7 worktree |
 
-Only implemented behavior belongs here. M1-M7 business patterns must be added after
-their code and tests exist.
+Only implemented behavior belongs here. Worktree-adopted M5-M7 patterns are not
+reviewed release or external deployment evidence.
 
 ## Proven Examples
 
