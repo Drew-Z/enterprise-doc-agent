@@ -1,0 +1,13 @@
+{"file":".trellis/spec/backend/cicd-kubernetes.md","reason":"Container, Kustomize, staging and rollback conventions."}
+{"file":".trellis/spec/backend/observability-eval-load.md","reason":"Load, evidence and observability boundaries."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Web build and frontend validation conventions."}
+{"file": ".github/workflows/container.yml", "reason": "Tagged image digest, scan, SBOM, provenance and Cosign evidence contract."}
+{"file": ".github/workflows/deploy-staging.yml", "reason": "Manual staging inputs, ordering and redacted rollout evidence."}
+{"file": "infra/docker/Dockerfile.web", "reason": "Web object-store origin build configuration."}
+{"file": "scripts/configure_staging_manifest.py", "reason": "HTTPS staging host and object-store manifest binding."}
+{"file": "scripts/validate_recovery_capacity_evidence.py", "reason": "Offline recovery and capacity evidence status validator."}
+{"file": "evidence/gates/m5-representative-capacity.json", "reason": "Current application capacity external blocker and required evidence."}
+{"file": "evidence/gates/m6-backup-restore-rollback.json", "reason": "Current recovery external blocker and required evidence."}
+{"file": "evidence/gates/m7-gpu-vllm-capacity.json", "reason": "Current model capacity external blocker and required evidence."}
+{"file": "README.md", "reason": "Operator-facing recovery and capacity evidence validation instructions."}
+{"file": ".trellis/tasks/07-20-close-external-delivery-gates/external-gate-status-20260720.json", "reason": "External gate status record and evidence boundary."}

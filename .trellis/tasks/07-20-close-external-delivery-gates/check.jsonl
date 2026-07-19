@@ -1,0 +1,10 @@
+{"file":".trellis/spec/backend/cicd-kubernetes.md","reason":"Review release workflow, digest identity and deployment safety."}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Review test, lint and typecheck requirements."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Review Web build and test changes."}
+{"file": "tests/deployment/test_m6_contracts.py", "reason": "Supply-chain, staging and Web build contract checks."}
+{"file": "tests/deployment/test_configure_staging_manifest.py", "reason": "HTTPS staging configuration validation."}
+{"file": "tests/deployment/test_validate_recovery_capacity_evidence.py", "reason": "Passed versus blocked_external evidence validation."}
+{"file": "evidence/m6/20260719-235533-m6-local-delivery-verification.json", "reason": "Reviewed local evidence boundary that must remain distinct from cloud execution."}
+{"file": "evidence/gates/m6-registry-signed-images.json", "reason": "Registry and signing external gate prerequisites."}
+{"file": "evidence/gates/m6-cluster-staging-rollout.json", "reason": "Staging cluster external gate prerequisites."}
+{"file": ".trellis/tasks/07-20-close-external-delivery-gates/external-gate-status-20260720.json", "reason": "Audited local results and explicit blocked_external prerequisites."}

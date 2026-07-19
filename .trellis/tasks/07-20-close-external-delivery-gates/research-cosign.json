@@ -1,0 +1,12 @@
+{
+  "ok": true,
+  "library_id": "/sigstore/cosign",
+  "query": "cosign attest --type spdxjson slsaprovenance predicate verify-attestation certificate oidc issuer identity GitHub Actions",
+  "provider": "context7",
+  "code_snippets": [],
+  "info_snippets": [],
+  "results": [],
+  "total": 0,
+  "content": "{\"content\": \"### Verify a container with OIDC\\n\\nSource: https://github.com/sigstore/cosign/blob/main/README.md\\n\\nVerifies an image by specifying the expected certificate identity and OIDC issuer.\\n\\n```shell\\ncosign verify $IMAGE --certificate-identity=$IDENTITY --certificate-oidc-issuer=$OIDC_ISSUER\\n```\\n\\n--------------------------------\\n\\n### Attaching Attestation with Certificate Chain\\n\\nSource: https://github.com/sigstore/cosign/blob/main/doc/cosign_attest.md\\n\\nAttaches an attestation to a container image using a local key pair, including a certificate and certificate chain.\\n\\n```bash\\ncosign attest --predicate <FILE> --type <TYPE> --key cosign.key --cert cosign.crt --cert-chain chain.crt <IMAGE>\\n```\\n\\n### cosign_attest-blob.md\\n\\nSource: https://github.com/sigstore/cosign/blob/main/doc/cosign_attest-blob.md\\n\\nThe `attest-blob` command allows for specifying the predicate type, which can be one of several predefined formats like `slsaprovenance`, `spdx`, `cyclonedx`, or a custom URI. It also supports writing verification materials to a bundle file and can accept attestation data via standard input.\\n\\n--------------------------------\\n\\n### cosign verify-attestation\\n\\nSource: https://github.com/sigstore/cosign/blob/main/doc/cosign_verify-attestation.md\\n\\nFor keyless verification flows, you must specify either `--certificate-identity` or `--certificate-identity-regexp` to define the expected identity in a Fulcio certificate. You also need to specify either `--certificate-oidc-issuer` or `--certificate-oidc-issuer-regexp` to define the expected OIDC issuer.\\n\\n--------------------------------\\n\\n### cosign verify\\n\\nSource: https://github.com/sigstore/cosign/blob/main/doc/cosign_verify.md\\n\\nFor keyless verification flows, you can specify expected certificate identity using `--certificate-identity` or a regular expression with `--certificate-identity-regexp`. Similarly, the OIDC issuer can be specified with `--certificate-oidc-issuer` or `--certificate-oidc-issuer-regexp`.\", \"results\": []}",
+  "elapsed_ms": 5023.24
+}

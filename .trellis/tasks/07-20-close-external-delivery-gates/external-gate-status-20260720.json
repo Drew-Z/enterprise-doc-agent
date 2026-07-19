@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "evidence_id": "close-external-delivery-gates-20260720",
+  "status": "blocked_external",
+  "recorded_at": "2026-07-20T03:59:35.8014348+08:00",
+  "repository": {
+    "branch": "feat/m4-agent-mcp-hitl",
+    "base_commit": "a5c6f7931734d3dd380cdaeb641ed4468100882c",
+    "working_tree_dirty": true,
+    "remote_configured": false
+  },
+  "local_validation": {
+    "backend_full_tests": "611 passed",
+    "backend_quality_and_frontend_quality": "passed",
+    "frontend_tests": "138 passed",
+    "actionlint": "rhysd/actionlint:1.7.7 passed",
+    "kustomize": ["base rendered", "staging rendered", "prod rendered"],
+    "docker_images": [
+      {
+        "name": "enterprise-doc-verify-api:delivery-gates",
+        "local_image_id": "sha256:caa1841c8dbba66cb33960d82ae1d7f95870d5d5fff64e7a883db6519c718343",
+        "runtime_identity": "uid=10001(app) gid=10001(app) groups=10001(app)"
+      },
+      {
+        "name": "enterprise-doc-verify-worker:delivery-gates",
+        "local_image_id": "sha256:ba7d3ebd6ae7a741839c6a7b4de0648d202af73c04003761a8d463b71816416c",
+        "runtime_identity": "uid=10001(app) gid=10001(app) groups=10001(app)"
+      },
+      {
+        "name": "enterprise-doc-verify-consumer:delivery-gates",
+        "local_image_id": "sha256:ed77fbd34d1e25d1dea77b15c33c9642a52322552c7df824968baa9b9c5feac3",
+        "runtime_identity": "uid=10001(app) gid=10001(app) groups=10001(app)"
+      },
+      {
+        "name": "enterprise-doc-verify-web:delivery-gates",
+        "local_image_id": "sha256:ba7534853a4193258b219ee5965cc99c055ec17081139a5b5c9cb009fd604f7c",
+        "runtime_identity": "uid=101(nginx) gid=101(nginx) groups=101(nginx),101(nginx)",
+        "build_origin_check": "https://objects.staging.example.invalid present in compiled assets"
+      }
+    ]
+  },
+  "external_gates": [
+    {
+      "gate_id": "registry-github-actions-cosign-trivy",
+      "status": "blocked_external",
+      "blocking_reason": "No repository remote or target registry is configured; no tagged GitHub Actions run produced a registry digest.",
+      "prerequisites": [
+        "Provide the private GitHub repository target and configure origin",
+        "Enable GHCR package write and GitHub OIDC permissions",
+        "Run a reviewed tag through container.yml and retain digest, Trivy, SPDX, provenance and Cosign artifacts",
+        "Apply an admission policy that verifies the immutable digest and attestations"
+      ]
+    },
+    {
+      "gate_id": "staging-cluster-rollout-and-smoke",
+      "status": "blocked_external",
+      "blocking_reason": "kubectl has no current context; no staging cluster, TLS Secret, registry Secret, object store endpoint or smoke token was available.",
+      "prerequisites": [
+        "Provide a named staging Kubernetes context and namespace access",
+        "Provision enterprise-doc-secrets, enterprise-doc-registry and the configured TLS Secret through a secret manager",
+        "Provide HTTPS staging and presigned object-store endpoints plus VITE_OBJECT_STORE_ORIGINS",
+        "Run deploy-staging.yml and retain migration, rollout, ingress, policy, event and authenticated smoke evidence"
+      ]
+    },
+    {
+      "gate_id": "isolated-recovery-restore-rollback",
+      "status": "blocked_external",
+      "blocking_reason": "No isolated restore target, PostgreSQL backup/restore toolchain, compatible rollback target or measured RPO/RTO run was available.",
+      "prerequisites": [
+        "Provide an isolated database restore target and real versioned backup",
+        "Select a compatible immutable release and rollback revision",
+        "Run restore plus data/application smoke, then guarded rollout rollback",
+        "Record backup freshness, restore and rollback timings, RPO and RTO with hashed command artifacts"
+      ]
+    },
+    {
+      "gate_id": "production-like-capacity-and-gpu",
+      "status": "blocked_external",
+      "blocking_reason": "Only bounded local checks exist; no production-like cluster, managed telemetry, GPU/vLLM environment or representative workload was available.",
+      "prerequisites": [
+        "Provision an isolated production-like environment with immutable images",
+        "Run repeated ramp, steady-state, burst and recovery workloads with dependency telemetry",
+        "For model capacity, provision pinned GPU, vLLM, model and quantization settings",
+        "Record percentiles, errors, throughput, saturation, bottleneck and headroom through the evidence validator"
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "path": ".github/workflows/container.yml",
+      "sha256": "98ddae6a04c2f54b439cd747997dd2ee5282077f9a696aa23dea2a4b45d57d65"
+    },
+    {
+      "path": ".github/workflows/deploy-staging.yml",
+      "sha256": "bbefffd80f92c191bc70d0d313a78cdb8f66cd10fcee9332429199b1192a624f"
+    },
+    {
+      "path": "scripts/configure_staging_manifest.py",
+      "sha256": "f16ffdf4ba4dc94f1ba8c204b3cb4d5801336e827bedbbe664a7a77a85191679"
+    },
+    {
+      "path": "scripts/validate_recovery_capacity_evidence.py",
+      "sha256": "4c86de165f7dc99d0ff4264052eba7a702a9a003ad9fbca51ecdcc743426ce62"
+    },
+    {
+      "path": "tests/deployment/test_m6_contracts.py",
+      "sha256": "e898a06a266820332068f702dbabe4aeb42453efdd30fdf02723989b84456cc5"
+    },
+    {
+      "path": "tests/deployment/test_configure_staging_manifest.py",
+      "sha256": "abb6f37bd4037bd9941b82785929405db9e2c824f8a548177eb2588041b29ea0"
+    },
+    {
+      "path": "tests/deployment/test_validate_recovery_capacity_evidence.py",
+      "sha256": "136839132f59faa8830761ac4844db52655301761a09f56fd0bed3eaa113e343"
+    }
+  ],
+  "limitations": [
+    "Local Docker image IDs are not registry digests and were not pushed, scanned, signed or admitted.",
+    "GitHub Actions and GHCR were not run because no repository remote or target was provided.",
+    "Kustomize rendering is not cluster apply, TLS validation, secret-manager validation or authenticated staging smoke.",
+    "No destructive restore, production rollback or production capacity test was attempted."
+  ]
+}

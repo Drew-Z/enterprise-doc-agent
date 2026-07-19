@@ -270,6 +270,24 @@ upload -> direct object PUT -> ingestion-ready -> Agent run; it requires a dedic
 staging token, an externally reachable API base URL, and a presign endpoint reachable
 from the runner.
 
+Recovery and capacity reports use one deterministic contract before they can be treated
+as gate evidence. Validate a report and its repository-relative artifact hashes with:
+
+```powershell
+uv run python scripts/validate_recovery_capacity_evidence.py --input evidence/delivery/recovery-report.json --root .
+```
+
+Executed reports must identify the external environment and cluster, reviewed commit,
+immutable image digest(s), operator, timezone-aware time bounds, measured results and
+artifact SHA-256 values. Recovery reports additionally require backup/restore/rollback
+timings and data/application smoke checks. Application-capacity reports require
+ramp/steady/burst/recovery repetitions, latency percentiles, errors, throughput and
+dependency telemetry; model-capacity reports require warm-up, TTFT/TPOT, token
+throughput, GPU/KV-cache telemetry and headroom. When the required external target or
+measurements do not exist, the report must be `blocked_external` with a blocking reason
+and prerequisites; a blocked capacity record still names its planned profile, phases
+and repetition count. A local workstation run cannot be promoted to `passed`.
+
 `evidence/m4/20260719-153214-m4-agent-mcp-hitl.json` is the formal M4 status summary and
 is explicitly `blocked_external`. It links the original
 `evidence/m4/20260719-075820-m4-agent-mcp-hitl-working-tree.json` capture and the

@@ -1,0 +1,107 @@
+[Skip to content](#start-of-content)   
+
+
+
+## Navigation Menu
+
+[Sign in](/login?return_to=https%3A%2F%2Fgithub.com%2Fsigstore%2Fcosign%2Fblob%2Fmain%2Fdoc%2Fcosign_verify-attestation.md) 
+
+Appearance settings
+
+# Search code, repositories, users, issues, pull requests...
+
+[Search syntax tips](https://docs.github.com/search-github/github-code-search/understanding-github-code-search-syntax)
+
+[Sign in](/login?return_to=https%3A%2F%2Fgithub.com%2Fsigstore%2Fcosign%2Fblob%2Fmain%2Fdoc%2Fcosign_verify-attestation.md)
+
+ [Sign up](/signup?ref_cta=Sign+up&ref_loc=header+logged+out&ref_page=%2F%3Cuser-name%3E%2F%3Crepo-name%3E%2Fblob%2Fshow&source=header-repo&source_repo=sigstore%2Fcosign) 
+
+Appearance settings
+
+You signed in with another tab or window. Reload to refresh your session. You signed out in another tab or window. Reload to refresh your session. You switched accounts on another tab or window. Reload to refresh your session. Dismiss alert
+
+{{ message }}
+
+### Uh oh!
+
+There was an error while loading. Please reload this page.
+
+[sigstore](/sigstore)   /  **[cosign](/sigstore/cosign)**  Public
+
+* [Notifications](/login?return_to=%2Fsigstore%2Fcosign)  You must be signed in to change notification settings
+* [Fork 770](/login?return_to=%2Fsigstore%2Fcosign)
+* [Star  6.1k](/login?return_to=%2Fsigstore%2Fcosign)
+
+## Expand file tree
+
+/
+
+# cosign\_verify-attestation.md
+
+Copy path
+
+More file actions
+
+More file actions
+
+## Latest commit
+
+## History
+
+[History](/sigstore/cosign/commits/main/doc/cosign_verify-attestation.md)
+
+History
+
+105 lines (80 loc) · 7.54 KB
+
+/
+
+# cosign\_verify-attestation.md
+
+Copy path
+
+## File metadata and controls
+
+105 lines (80 loc) · 7.54 KB
+
+[Raw](https://github.com/sigstore/cosign/raw/refs/heads/main/doc/cosign_verify-attestation.md)
+
+Copy raw file
+
+Download raw file
+
+Outline
+
+Edit and raw actions
+
+## cosign verify-attestation
+
+Verify an attestation on the supplied container image
+
+Verify an attestation on an image by checking the claims against the transparency log.
+
+```
+cosign verify-attestation [flags] 
+```
+
+```
+ cosign verify-attestation --key ||  [ ...] # verify cosign attestations on the image against the transparency log cosign verify-attestation  # verify multiple images cosign verify-attestation   ... # additionally verify specified annotations cosign verify-attestation -a key1=val1 -a key2=val2  # verify image with public key cosign verify-attestation --key cosign.pub  # verify image attestations with an on-disk signed image from 'cosign save' cosign verify-attestation --key cosign.pub --local-image  # verify image with public key provided by URL cosign verify-attestation --key https://host.for/  # verify image with public key stored in Google Cloud KMS cosign verify-attestation --key gcpkms://projects//locations/global/keyRings//cryptoKeys/  # verify image with public key stored in Hashicorp Vault cosign verify-attestation --key hashivault:///  # verify image with public key stored in GitLab with project name cosign verify-attestation --key gitlab://[OWNER]/[PROJECT_NAME]  # verify image with public key stored in GitLab with project id cosign verify-attestation --key gitlab://[PROJECT_ID]  # verify image with public key and validate attestation based on Rego policy cosign verify-attestation --key cosign.pub --type  --policy   # verify image with public key and validate attestation based on CUE policy cosign verify-attestation --key cosign.pub --type  --policy   
+```
+
+```
+ --allow-http-registry whether to allow using HTTP protocol while connecting to registries. Don't use this for anything but testing --allow-insecure-registry whether to allow insecure connections to registries (e.g., with expired or self-signed TLS certificates). Don't use this for anything but testing --certificate-github-workflow-name string contains the workflow claim from the GitHub OIDC Identity token that contains the name of the executed workflow. --certificate-github-workflow-ref string contains the ref claim from the GitHub OIDC Identity token that contains the git ref that the workflow run was based upon. --certificate-github-workflow-repository string contains the repository claim from the GitHub OIDC Identity token that contains the repository that the workflow run was based upon --certificate-github-workflow-sha string contains the sha claim from the GitHub OIDC Identity token that contains the commit SHA that the workflow run was based upon. --certificate-github-workflow-trigger string contains the event_name claim from the GitHub OIDC Identity token that contains the name of the event that triggered the workflow run --certificate-identity string The identity expected in a valid Fulcio certificate. Valid values include email address, DNS names, IP addresses, and URIs. Either --certificate-identity or --certificate-identity-regexp must be set for keyless flows. --certificate-identity-regexp string A regular expression alternative to --certificate-identity. Accepts the Go regular expression syntax described at https://golang.org/s/re2syntax. Either --certificate-identity or --certificate-identity-regexp must be set for keyless flows. --certificate-oidc-issuer string The OIDC issuer expected in a valid Fulcio certificate, e.g. https://token.actions.githubusercontent.com or https://oauth2.sigstore.dev/auth. Either --certificate-oidc-issuer or --certificate-oidc-issuer-regexp must be set for keyless flows. --certificate-oidc-issuer-regexp string A regular expression alternative to --certificate-oidc-issuer. Accepts the Go regular expression syntax described at https://golang.org/s/re2syntax. Either --certificate-oidc-issuer or --certificate-oidc-issuer-regexp must be set for keyless flows. --check-claims whether to check the claims found (default true) -h, --help help for verify-attestation --insecure-ignore-sct when set, verification will not check that a certificate contains an embedded SCT, a proof of inclusion in a certificate transparency log --insecure-ignore-tlog ignore transparency log verification, to be used when an artifact signature has not been uploaded to the transparency log. Artifacts cannot be publicly verified when not included in a log --k8s-keychain whether to use the kubernetes keychain instead of the default keychain (supports workload identity). --key string path to the public key file, KMS URI or Kubernetes Secret --local-image whether the specified image is a path to an image saved locally via 'cosign save' --max-workers int the amount of maximum workers for parallel executions (default 10) -o, --output string output format for the signing image information (json|text) (default "json") --policy strings specify CUE or Rego files with policies to be used for validation --registry-cacert string path to the X.509 CA certificate file in PEM format to be used for the connection to the registry --registry-client-cert string path to the X.509 certificate file in PEM format to be used for the connection to the registry --registry-client-key string path to the X.509 private key file in PEM format to be used, together with the 'registry-client-cert' value, for the connection to the registry --registry-password string registry basic auth password --registry-server-name string SAN name to use as the 'ServerName' tls.Config field to verify the mTLS connection to the registry --registry-token string registry bearer auth token --registry-username string registry basic auth username --sk whether to use a hardware security key --slot string security key slot to use for generated key (default: signature) (authentication|signature|card-authentication|key-management) --trusted-root string Path to a Sigstore TrustedRoot JSON file --type string specify a predicate type (slsaprovenance|slsaprovenance02|slsaprovenance1|link|spdx|spdxjson|cyclonedx|vuln|openvex|custom) or an URI (default "custom") --use-signed-timestamps verify rfc3161 timestamps 
+```
+
+### Options inherited from parent commands
+
+```
+ --output-file string log output to a file -t, --timeout duration timeout for commands (default 3m0s) -d, --verbose log debug output 
+```
+
+### SEE ALSO
+
+* [cosign](/sigstore/cosign/blob/main/doc/cosign.md) - A tool for Container Signing, Verification and Storage in an OCI registry
+
+You can’t perform that action at this time.
+
+ 

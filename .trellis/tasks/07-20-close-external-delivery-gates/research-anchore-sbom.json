@@ -1,0 +1,526 @@
+{
+  "ok": true,
+  "error_type": "",
+  "error": "",
+  "session_id": "48d60a5f4630",
+  "query": "site:github.com/anchore/sbom-action image digest output-file SPDX JSON documentation",
+  "platform": "",
+  "model": "grok-4.20-multi-agent-xhigh",
+  "primary_api_mode": "chat-completions",
+  "content": "**anchore/sbom-action** is a GitHub Action that uses [Syft](https://github.com/anchore/syft) to generate SBOMs (Software Bills of Materials) from source code directories, files, or container images. It supports SPDX and CycloneDX formats (including JSON variants), uploads the SBOM as a workflow artifact by default, and can attach it to GitHub Releases.[[1]](https://github.com/anchore/sbom-action)\n\n### Key Inputs (from action.yml)\nThese are the most relevant parameters for your query (image digest, output file, SPDX JSON):[[2]](https://raw.githubusercontent.com/anchore/sbom-action/main/action.yml)\n\n- **`image`** (optional): Container image to scan (mutually exclusive with `path`/`file`). Accepts a tagged reference (`myimage:tag`) **or digest** (`myimage@sha256:xxxxxxxxxxxxxxxx...`). When a digest is provided, Syft scans the exact immutable image. The generated SBOM includes image metadata (including the digest) for reproducibility. You can also supply `registry-username`/`registry-password` for private registries.[[1]](https://github.com/anchore/sbom-action)\n- **`format`** (optional, default: **`spdx-json`**): Output format. Supported values: `spdx`, `spdx-json`, `cyclonedx`, `cyclonedx-json`. Use `spdx-json` for a standard SPDX 2.3+ JSON document.[[2]](https://raw.githubusercontent.com/anchore/sbom-action/main/action.yml)\n- **`output-file`** (optional): Path where the SBOM file should be written (e.g., `sbom.spdx.json`). If omitted, the action still generates an artifact.[[2]](https://raw.githubusercontent.com/anchore/sbom-action/main/action.yml)\n- **`artifact-name`** (optional): Name of the uploaded GitHub Actions artifact (defaults to something like `sbom-<job>-<step-id>.spdx.json`).[[1]](https://github.com/anchore/sbom-action)\n- Other useful inputs: `path` (default `.`), `upload-artifact` (default `true`), `config` (Syft config file), `syft-version`.\n\n### Recommended Example for Image Digest + SPDX JSON\n```yaml\n- name: Generate SBOM for specific image digest\n  uses: anchore/sbom-action@v0\n  with:\n    image: ghcr.io/example/myapp@sha256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n    format: spdx-json\n    output-file: sbom.spdx.json\n    # artifact-name: my-sbom   # optional\n```\n\nThis:\n- Scans the exact image layer by digest (no tag ambiguity).\n- Produces a valid SPDX JSON file (`sbom.spdx.json`) containing package inventory, relationships, and image metadata (including the digest used).\n- Uploads it as a workflow artifact by default.[[1]](https://github.com/anchore/sbom-action)\n\n### Additional Usage Notes\n- **Directory scan** (instead of image): Use `path: .` or omit it (defaults to workspace).\n- **Output handling**: The `output-file` writes locally; the action can also upload artifacts or publish to Releases via the sub-action `anchore/sbom-action/publish-sbom@v0`.\n- **Syft integration**: The SBOM embeds source information. For container images, it typically records the image ID/digest, layers, and installed packages. You can pass a Syft config file via the `config` input for customization.\n- **GitHub Dependency Submission**: Set `dependency-snapshot: true` to push the SBOM to GitHub’s dependency graph.\n\n### Official Sources\n- Main repository & README: https://github.com/anchore/sbom-action\n- Marketplace page: https://github.com/marketplace/actions/anchore-sbom-action\n- `action.yml` (exact input definitions): https://github.com/anchore/sbom-action/blob/main/action.yml\n\nThe default format is already `spdx-json`, so you often only need to set `image` (by digest) and `output-file` for the most common use case. For advanced Syft options (e.g., source type, relationships, or SPDX-specific fields), provide a `config` file or use Syft directly.",
+  "sources": [
+    {
+      "title": "1",
+      "url": "https://github.com/anchore/sbom-action"
+    },
+    {
+      "title": "2",
+      "url": "https://raw.githubusercontent.com/anchore/sbom-action/main/action.yml"
+    },
+    {
+      "url": "https://github.com/anchore/sbom-action/issues/157",
+      "provider": "tavily",
+      "title": "Problem integrating sbom-action with Grype · Issue #157 · anchore/sbom-action · GitHub",
+      "description": "Problem integrating sbom-action with Grype#157\n\nCopy link\n\n## Description\n\n@patrickdung\n\npatrickdung\n\nopened on Dec 11, 2021\n\nIssue body actions\n\nHello, I am configuring the sbom-action with Grype.\n\nAccording to the readme, supported export format is spdx, spdx-json, cyclondx and the default format is spdx-json.\n\n| format | The SBOM format to export. One of: spdx, spdx-json, cyclonedx | spdx-json |\n --- \n\nGot some problems: [...] Got some problems:\n\n1. Looks like the sbom-action uses Syft 0.26.0 instead of 0.32.0 (the latest one).\n2. I am not sure which format could be read by Grype, I tried spdx-json and Grype can't read it.  \n    The related workflow file for this step is here\n3. I end up installing the Syft 0.32 packages instead of using the GH action. Then I generate JSON format output and then it could read by Grype.\n4. Finally, I also have problem uploading the artifact generated by the sbom-action GH action to the release package, the GH action is \"anchore/sbom-action/publish-sbom@v0\" , the artifact generated by the sbom-action is not uploaded to the release package listing.\n\nThanks.\n\nReactions are currently unavailable\n\n## Metadata\n\n## Metadata\n\n### Assignees\n\nNo one assigned\n\nNo labels\n\nNo labels [...] Skip to content   \n\n## Navigation Menu\n\nSign in \n\nAppearance settings\n\n# Search code, repositories, users, issues, pull requests...\n\nSearch syntax tips\n\nSign in\n\n Sign up \n\nAppearance settings\n\nYou signed in with another tab or window. Reload to refresh your session. You signed out in another tab or window. Reload to refresh your session. You switched accounts on another tab or window. Reload to refresh your session. Dismiss alert\n\n{{ message }}\n\n### Uh oh!\n\nThere was an error while loading. Please reload this page.\n\nanchore   /  sbom-action  Public\n\n Notifications  You must be signed in to change notification settings\n Fork 42\n Star  251\n\n# Problem integrating sbom-action with Grype #157\n\nCopy link\n\nCopy link\n\nClosed\n\nClosed\n\nProblem integrating sbom-action with Grype#157\n\nCopy link"
+    },
+    {
+      "url": "context7:/websites/pkg_go_dev_github_com_git-pkgs_spdx_latest",
+      "title": "SPDX",
+      "description": "SPDX is a Go library for parsing, normalizing, and validating SPDX license expressions, converting informal license strings to standard SPDX identifiers.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/git-pkgs/spdx",
+      "title": "spdx",
+      "description": "A Go library for SPDX license expression parsing, normalization, and validation that converts informal license strings to valid SPDX identifiers.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/microsoft/sbom-tool",
+      "title": "SBOM Tool",
+      "description": "A highly scalable and enterprise-ready tool to create SPDX 2.2 and SPDX 3.0 compatible Software Bill of Materials (SBOMs) for various artifacts, detecting components and populating license information.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/renovatebot/github-action",
+      "title": "GitHub Action Renovate",
+      "description": "A GitHub Action designed to run Renovate in a self-hosted environment, enabling automated dependency updates for repositories.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/expo/expo-github-action",
+      "title": "Expo GitHub Action",
+      "description": "Publish, build or manage your Expo app with GitHub Actions!",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/slackapi/slack-github-action",
+      "title": "Slack GitHub Action",
+      "description": "Slack GitHub Action is the official GitHub Action for sending data to Slack, running commands, and integrating Slack with GitHub workflows.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/blue-build/github-action",
+      "title": "BlueBuild GitHub Action",
+      "description": "BlueBuild GitHub Action is a reusable GitHub Action that builds custom operating system images using BlueBuild tools with support for signing, caching, and multiple container registries.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/wagoid/commitlint-github-action",
+      "title": "Commitlint Github Action",
+      "description": "A GitHub Action that lints pull request commit messages using commitlint to enforce conventional commit standards and maintain consistent commit message formatting.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/openai/codex-action",
+      "title": "Codex GitHub Action",
+      "description": "A GitHub Action that integrates OpenAI Codex into workflows for automated code review and analysis with secure sandboxing.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/terrakube-io/terrakube-action-github",
+      "title": "Terrakube Action GitHub",
+      "description": "A GitHub Action that integrates Terrakube with GitHub Actions to manage infrastructure workspaces and run Terraform plans and applies directly from pull requests and branches.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/cubic-ops/skills-github-action",
+      "title": "Skills GitHub Action",
+      "description": "A GitHub Action for testing and triggering workflows, demonstrating GitHub Actions automation capabilities through workflow execution.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/codecov/codecov-action",
+      "title": "Codecov GitHub Action",
+      "description": "Codecov GitHub Action easily uploads coverage reports to Codecov from GitHub Actions workflows with support for multiple programming languages and upload methods.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/tauri-apps/tauri-action",
+      "title": "Tauri GitHub Action",
+      "description": "Tauri GitHub Action builds Tauri applications into native macOS, Linux, and Windows binaries, can initialize a Tauri project if needed, and can create or upload release artifacts to GitHub Releases with configurable build and release options.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/useblocks/ubc-action",
+      "title": "ubc GitHub Action",
+      "description": "A GitHub Action that downloads and installs the ubc CLI tool, adds it to PATH, and executes ubc commands with support for caching and license configuration.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/unity-technologies/com.unity.multiplayer.docs",
+      "title": "Docusaurus Documentation Site",
+      "description": "A documentation site built with Docusaurus, featuring versioned content for MPPM, Tools, and Transport modules.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/betahuhn/repo-file-sync-action",
+      "title": "Repo File Sync Action",
+      "description": "GitHub Action to keep files like Action workflows or entire directories in sync between multiple repositories.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/websites/spekpy_smile_ki_se_api",
+      "title": "JSON Documentation",
+      "description": "This project provides documentation related to JSON, including its structure, usage, and related concepts.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/crazy-max/ghaction-upx",
+      "title": "UPX GitHub Action",
+      "description": "A GitHub Action that integrates UPX (Ultimate Packer for eXecutables) to compress executable files in CI/CD workflows.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/crazy-max/ghaction-virustotal",
+      "title": "VirusTotal GitHub Action",
+      "description": "A GitHub Action to upload and scan files with VirusTotal, including local files, release assets, and through VirusTotal Monitor.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/sonarsource/sonarcloud-github-action",
+      "title": "SonarSource SonarCloud GitHub Action",
+      "description": "The SonarSource SonarCloud GitHub Action provides a solution for continuous code quality and security inspection by scanning projects with SonarQube Cloud, helping developers detect coding issues across over 30 languages.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/keithweaver/aws-s3-github-action",
+      "title": "AWS S3 GitHub Action",
+      "description": "A Github Action that allows uploading, downloading, or listing files and folders to and from AWS S3 buckets.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/cypress-io/github-action",
+      "title": "Cypress IO GitHub Action",
+      "description": "Cypress IO GitHub Action is a GitHub Action that runs Cypress End-to-End or Component tests in CI workflows, offering features like dependency installation, caching, and optional recording to Cypress Cloud.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/websites/github_en_actions",
+      "title": "GitHub Actions",
+      "description": "GitHub Actions automates, customizes, and executes software development workflows directly in your repository, allowing you to discover, create, and share actions for tasks like CI/CD.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/mongodb/atlas-github-action",
+      "title": "Atlas CLI GitHub Action",
+      "description": "The Atlas CLI GitHub Action allows users to run any MongoDB Atlas CLI command directly within their GitHub workflows, facilitating automation and management of MongoDB Atlas resources.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/calibreapp/image-actions",
+      "title": "Image Actions",
+      "description": "Image Actions is a GitHub Action that automatically compresses JPEGs, PNGs, WebPs, and AVIFs in pull requests using efficient algorithms for optimal web performance.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/growthxai/output",
+      "title": "Output AI",
+      "description": "Output AI is an open-source TypeScript framework for building reliable production-ready large language model (LLM) workflows and agents, designed to integrate best AI engineering practices with orchestration, evaluation, tracing, and credential management.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/rennf93/upsert-context7",
+      "title": "Upsert Context7 GitHub Action",
+      "description": "A GitHub Action to add or update library documentation on Context7.com.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/google-github-actions/setup-gcloud",
+      "title": "Setup Gcloud GitHub Action",
+      "description": "A GitHub Action that configures the Google Cloud SDK, including gcloud and gsutil binaries, within a GitHub Actions environment for streamlined Google Cloud interactions.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/actions/runner-images",
+      "title": "GitHub Actions Runner Images",
+      "description": "GitHub Actions Runner Images provides pre-configured virtual machine images for Ubuntu, macOS, and Windows with pre-installed development tools and software for GitHub Actions and Azure Pipelines.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/mhoc/axios-digest-auth",
+      "title": "Axios Digest Auth",
+      "description": "A library that implements HTTP digest authentication for projects using Axios, providing a familiar interface for authentication.",
+      "provider": "context7"
+    }
+  ],
+  "sources_count": 33,
+  "primary_sources": [
+    {
+      "title": "1",
+      "url": "https://github.com/anchore/sbom-action"
+    },
+    {
+      "title": "2",
+      "url": "https://raw.githubusercontent.com/anchore/sbom-action/main/action.yml"
+    }
+  ],
+  "primary_sources_count": 2,
+  "extra_sources": [
+    {
+      "url": "https://github.com/anchore/sbom-action/issues/157",
+      "provider": "tavily",
+      "title": "Problem integrating sbom-action with Grype · Issue #157 · anchore/sbom-action · GitHub",
+      "description": "Problem integrating sbom-action with Grype#157\n\nCopy link\n\n## Description\n\n@patrickdung\n\npatrickdung\n\nopened on Dec 11, 2021\n\nIssue body actions\n\nHello, I am configuring the sbom-action with Grype.\n\nAccording to the readme, supported export format is spdx, spdx-json, cyclondx and the default format is spdx-json.\n\n| format | The SBOM format to export. One of: spdx, spdx-json, cyclonedx | spdx-json |\n --- \n\nGot some problems: [...] Got some problems:\n\n1. Looks like the sbom-action uses Syft 0.26.0 instead of 0.32.0 (the latest one).\n2. I am not sure which format could be read by Grype, I tried spdx-json and Grype can't read it.  \n    The related workflow file for this step is here\n3. I end up installing the Syft 0.32 packages instead of using the GH action. Then I generate JSON format output and then it could read by Grype.\n4. Finally, I also have problem uploading the artifact generated by the sbom-action GH action to the release package, the GH action is \"anchore/sbom-action/publish-sbom@v0\" , the artifact generated by the sbom-action is not uploaded to the release package listing.\n\nThanks.\n\nReactions are currently unavailable\n\n## Metadata\n\n## Metadata\n\n### Assignees\n\nNo one assigned\n\nNo labels\n\nNo labels [...] Skip to content   \n\n## Navigation Menu\n\nSign in \n\nAppearance settings\n\n# Search code, repositories, users, issues, pull requests...\n\nSearch syntax tips\n\nSign in\n\n Sign up \n\nAppearance settings\n\nYou signed in with another tab or window. Reload to refresh your session. You signed out in another tab or window. Reload to refresh your session. You switched accounts on another tab or window. Reload to refresh your session. Dismiss alert\n\n{{ message }}\n\n### Uh oh!\n\nThere was an error while loading. Please reload this page.\n\nanchore   /  sbom-action  Public\n\n Notifications  You must be signed in to change notification settings\n Fork 42\n Star  251\n\n# Problem integrating sbom-action with Grype #157\n\nCopy link\n\nCopy link\n\nClosed\n\nClosed\n\nProblem integrating sbom-action with Grype#157\n\nCopy link"
+    },
+    {
+      "url": "context7:/websites/pkg_go_dev_github_com_git-pkgs_spdx_latest",
+      "title": "SPDX",
+      "description": "SPDX is a Go library for parsing, normalizing, and validating SPDX license expressions, converting informal license strings to standard SPDX identifiers.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/git-pkgs/spdx",
+      "title": "spdx",
+      "description": "A Go library for SPDX license expression parsing, normalization, and validation that converts informal license strings to valid SPDX identifiers.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/microsoft/sbom-tool",
+      "title": "SBOM Tool",
+      "description": "A highly scalable and enterprise-ready tool to create SPDX 2.2 and SPDX 3.0 compatible Software Bill of Materials (SBOMs) for various artifacts, detecting components and populating license information.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/renovatebot/github-action",
+      "title": "GitHub Action Renovate",
+      "description": "A GitHub Action designed to run Renovate in a self-hosted environment, enabling automated dependency updates for repositories.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/expo/expo-github-action",
+      "title": "Expo GitHub Action",
+      "description": "Publish, build or manage your Expo app with GitHub Actions!",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/slackapi/slack-github-action",
+      "title": "Slack GitHub Action",
+      "description": "Slack GitHub Action is the official GitHub Action for sending data to Slack, running commands, and integrating Slack with GitHub workflows.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/blue-build/github-action",
+      "title": "BlueBuild GitHub Action",
+      "description": "BlueBuild GitHub Action is a reusable GitHub Action that builds custom operating system images using BlueBuild tools with support for signing, caching, and multiple container registries.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/wagoid/commitlint-github-action",
+      "title": "Commitlint Github Action",
+      "description": "A GitHub Action that lints pull request commit messages using commitlint to enforce conventional commit standards and maintain consistent commit message formatting.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/openai/codex-action",
+      "title": "Codex GitHub Action",
+      "description": "A GitHub Action that integrates OpenAI Codex into workflows for automated code review and analysis with secure sandboxing.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/terrakube-io/terrakube-action-github",
+      "title": "Terrakube Action GitHub",
+      "description": "A GitHub Action that integrates Terrakube with GitHub Actions to manage infrastructure workspaces and run Terraform plans and applies directly from pull requests and branches.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/cubic-ops/skills-github-action",
+      "title": "Skills GitHub Action",
+      "description": "A GitHub Action for testing and triggering workflows, demonstrating GitHub Actions automation capabilities through workflow execution.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/codecov/codecov-action",
+      "title": "Codecov GitHub Action",
+      "description": "Codecov GitHub Action easily uploads coverage reports to Codecov from GitHub Actions workflows with support for multiple programming languages and upload methods.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/tauri-apps/tauri-action",
+      "title": "Tauri GitHub Action",
+      "description": "Tauri GitHub Action builds Tauri applications into native macOS, Linux, and Windows binaries, can initialize a Tauri project if needed, and can create or upload release artifacts to GitHub Releases with configurable build and release options.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/useblocks/ubc-action",
+      "title": "ubc GitHub Action",
+      "description": "A GitHub Action that downloads and installs the ubc CLI tool, adds it to PATH, and executes ubc commands with support for caching and license configuration.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/unity-technologies/com.unity.multiplayer.docs",
+      "title": "Docusaurus Documentation Site",
+      "description": "A documentation site built with Docusaurus, featuring versioned content for MPPM, Tools, and Transport modules.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/betahuhn/repo-file-sync-action",
+      "title": "Repo File Sync Action",
+      "description": "GitHub Action to keep files like Action workflows or entire directories in sync between multiple repositories.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/websites/spekpy_smile_ki_se_api",
+      "title": "JSON Documentation",
+      "description": "This project provides documentation related to JSON, including its structure, usage, and related concepts.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/crazy-max/ghaction-upx",
+      "title": "UPX GitHub Action",
+      "description": "A GitHub Action that integrates UPX (Ultimate Packer for eXecutables) to compress executable files in CI/CD workflows.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/crazy-max/ghaction-virustotal",
+      "title": "VirusTotal GitHub Action",
+      "description": "A GitHub Action to upload and scan files with VirusTotal, including local files, release assets, and through VirusTotal Monitor.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/sonarsource/sonarcloud-github-action",
+      "title": "SonarSource SonarCloud GitHub Action",
+      "description": "The SonarSource SonarCloud GitHub Action provides a solution for continuous code quality and security inspection by scanning projects with SonarQube Cloud, helping developers detect coding issues across over 30 languages.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/keithweaver/aws-s3-github-action",
+      "title": "AWS S3 GitHub Action",
+      "description": "A Github Action that allows uploading, downloading, or listing files and folders to and from AWS S3 buckets.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/cypress-io/github-action",
+      "title": "Cypress IO GitHub Action",
+      "description": "Cypress IO GitHub Action is a GitHub Action that runs Cypress End-to-End or Component tests in CI workflows, offering features like dependency installation, caching, and optional recording to Cypress Cloud.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/websites/github_en_actions",
+      "title": "GitHub Actions",
+      "description": "GitHub Actions automates, customizes, and executes software development workflows directly in your repository, allowing you to discover, create, and share actions for tasks like CI/CD.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/mongodb/atlas-github-action",
+      "title": "Atlas CLI GitHub Action",
+      "description": "The Atlas CLI GitHub Action allows users to run any MongoDB Atlas CLI command directly within their GitHub workflows, facilitating automation and management of MongoDB Atlas resources.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/calibreapp/image-actions",
+      "title": "Image Actions",
+      "description": "Image Actions is a GitHub Action that automatically compresses JPEGs, PNGs, WebPs, and AVIFs in pull requests using efficient algorithms for optimal web performance.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/growthxai/output",
+      "title": "Output AI",
+      "description": "Output AI is an open-source TypeScript framework for building reliable production-ready large language model (LLM) workflows and agents, designed to integrate best AI engineering practices with orchestration, evaluation, tracing, and credential management.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/rennf93/upsert-context7",
+      "title": "Upsert Context7 GitHub Action",
+      "description": "A GitHub Action to add or update library documentation on Context7.com.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/google-github-actions/setup-gcloud",
+      "title": "Setup Gcloud GitHub Action",
+      "description": "A GitHub Action that configures the Google Cloud SDK, including gcloud and gsutil binaries, within a GitHub Actions environment for streamlined Google Cloud interactions.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/actions/runner-images",
+      "title": "GitHub Actions Runner Images",
+      "description": "GitHub Actions Runner Images provides pre-configured virtual machine images for Ubuntu, macOS, and Windows with pre-installed development tools and software for GitHub Actions and Azure Pipelines.",
+      "provider": "context7"
+    },
+    {
+      "url": "context7:/mhoc/axios-digest-auth",
+      "title": "Axios Digest Auth",
+      "description": "A library that implements HTTP digest authentication for projects using Axios, providing a familiar interface for authentication.",
+      "provider": "context7"
+    }
+  ],
+  "extra_sources_count": 31,
+  "source_warning": "extra_sources are retrieved in parallel and are not automatically used to verify generated content; use fetch on key URLs for claim-level evidence.",
+  "routing_decision": {
+    "docs_intent": true,
+    "zh_current_intent": false,
+    "web_current_intent": false,
+    "fetch_intent": false,
+    "supplemental_paths": [
+      "docs_search",
+      "web_search"
+    ],
+    "validation_level": "strict",
+    "fallback_mode": "auto",
+    "providers": "auto",
+    "main_search_chain": [
+      "openai-compatible"
+    ],
+    "openai_compatible_stream": true
+  },
+  "providers_used": [
+    "OpenAI-compatible",
+    "tavily",
+    "context7"
+  ],
+  "provider_attempts": [
+    {
+      "capability": "main_search",
+      "provider": "OpenAI-compatible",
+      "status": "ok",
+      "error_type": "",
+      "error": "",
+      "elapsed_ms": 37664.05,
+      "result_count": 1
+    },
+    {
+      "capability": "web_search",
+      "provider": "tavily",
+      "status": "ok",
+      "error_type": "",
+      "error": "",
+      "elapsed_ms": 44004.88,
+      "result_count": 1
+    },
+    {
+      "capability": "docs_search",
+      "provider": "context7",
+      "status": "ok",
+      "error_type": "",
+      "error": "",
+      "elapsed_ms": 1806.32,
+      "result_count": 30
+    },
+    {
+      "capability": "web_search",
+      "provider": "tavily",
+      "status": "ok",
+      "error_type": "",
+      "error": "",
+      "elapsed_ms": 1042.41,
+      "result_count": 1
+    }
+  ],
+  "fallback_used": true,
+  "validation_level": "strict",
+  "minimum_profile_ok": true,
+  "capability_status": {
+    "main_search": {
+      "configured": [
+        "openai-compatible"
+      ],
+      "fallback_chain": [
+        "xai-responses",
+        "openai-compatible"
+      ],
+      "ok": true
+    },
+    "web_search": {
+      "configured": [
+        "tavily",
+        "firecrawl"
+      ],
+      "fallback_chain": [
+        "zhipu",
+        "tavily",
+        "firecrawl"
+      ],
+      "ok": true
+    },
+    "docs_search": {
+      "configured": [
+        "context7"
+      ],
+      "fallback_chain": [
+        "context7",
+        "exa"
+      ],
+      "ok": true
+    },
+    "web_fetch": {
+      "configured": [
+        "tavily",
+        "firecrawl"
+      ],
+      "fallback_chain": [
+        "tavily",
+        "firecrawl"
+      ],
+      "ok": true
+    },
+    "vertical_search": {
+      "configured": [],
+      "fallback_chain": [
+        "anysearch"
+      ],
+      "experimental": true,
+      "ok": false
+    }
+  },
+  "elapsed_ms": 46854.73
+}
