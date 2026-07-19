@@ -1,0 +1,35 @@
+schema_version: 1
+scenario: ready
+base_url: https://staging.example.com
+repetitions: 2
+target_p95_ms: 250
+token_env: ENTERPRISE_DOC_LOAD_TOKEN
+request_timeout_seconds: 30
+terminal_timeout_seconds: 120
+poll_seconds: 0.25
+resource_sample_interval_seconds: 0.25
+phases:
+  - name: ramp
+    requests: 100
+    concurrency: 5
+  - name: steady_state
+    requests: 1000
+    concurrency: 20
+  - name: burst
+    requests: 500
+    concurrency: 50
+  - name: recovery
+    requests: 200
+    concurrency: 10
+prometheus:
+  base_url: https://prometheus.staging.example.com
+  bearer_token_env: ENTERPRISE_DOC_PROMETHEUS_TOKEN
+  step_seconds: 5
+  queries:
+    cpu: 100 * avg(rate(container_cpu_usage_seconds_total{namespace="enterprise-doc-agent-staging"}[1m]))
+    memory: 100 * sum(container_memory_working_set_bytes{namespace="enterprise-doc-agent-staging"}) / sum(kube_pod_container_resource_limits{namespace="enterprise-doc-agent-staging",resource="memory"})
+    database_pool: 100 * max(enterprise_doc_database_pool_checked_out / enterprise_doc_database_pool_size)
+    queue: max(enterprise_doc_queue_oldest_age_seconds)
+    redis: max(enterprise_doc_redis_connections)
+    object_store: histogram_quantile(0.95, sum(rate(enterprise_doc_dependency_duration_seconds_bucket{dependency="object_store"}[5m])) by (le))
+    model: histogram_quantile(0.95, sum(rate(enterprise_doc_dependency_duration_seconds_bucket{dependency="model"}[5m])) by (le))

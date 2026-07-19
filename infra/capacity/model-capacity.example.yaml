@@ -1,0 +1,42 @@
+schema_version: 1
+base_url: https://vllm.staging.example.com
+metrics_url: https://vllm.staging.example.com/metrics
+model: example/legal-instruct
+model_revision: 0123456789abcdef0123456789abcdef01234567
+quantization: awq
+api_key_env: OPENAI_API_KEY
+repetitions: 2
+request_timeout_seconds: 180
+temperature: 0
+prompts:
+  - Summarize the contract clause in three concise bullet points.
+  - Identify the main delivery risk and cite the provided clause only.
+phases:
+  - name: warmup
+    requests: 4
+    concurrency: 1
+    max_tokens: 128
+  - name: steady_state
+    requests: 100
+    concurrency: 8
+    max_tokens: 256
+  - name: burst
+    requests: 50
+    concurrency: 20
+    max_tokens: 256
+  - name: recovery
+    requests: 20
+    concurrency: 4
+    max_tokens: 128
+prometheus:
+  base_url: https://prometheus.staging.example.com
+  bearer_token_env: ENTERPRISE_DOC_PROMETHEUS_TOKEN
+  step_seconds: 5
+  queries:
+    gpu: avg(DCGM_FI_DEV_GPU_UTIL)
+    gpu_memory: 100 * sum(DCGM_FI_DEV_FB_USED) / sum(DCGM_FI_DEV_FB_USED + DCGM_FI_DEV_FB_FREE)
+    kv_cache: 100 * max(vllm:gpu_cache_usage_perc)
+    queue: max(vllm:num_requests_waiting)
+nvidia_smi:
+  enabled: true
+  interval_seconds: 1
