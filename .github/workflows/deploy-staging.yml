@@ -11,6 +11,19 @@ on:
         description: "Externally reachable staging API base URL used by the authenticated smoke"
         required: true
         type: string
+      object_store_endpoint:
+        description: "Private HTTPS object-store API endpoint used by the workloads"
+        required: true
+        type: string
+      object_store_presign_endpoint:
+        description: "Public HTTPS object-store endpoint used by presigned browser uploads"
+        required: true
+        type: string
+      tls_secret_name:
+        description: "Pre-provisioned Kubernetes TLS Secret for the staging Ingress"
+        required: true
+        default: enterprise-doc-staging-tls
+        type: string
       api_digest:
         description: "API sha256 digest"
         required: true
@@ -75,11 +88,28 @@ jobs:
           kustomize edit set image enterprise-doc/consumer="$REGISTRY_PREFIX/enterprise-doc-consumer@$CONSUMER_DIGEST"
           kustomize edit set image enterprise-doc/web="$REGISTRY_PREFIX/enterprise-doc-web@$WEB_DIGEST"
       - name: Render and validate staging manifests
+        env:
+          STAGING_BASE_URL: ${{ inputs.staging_base_url }}
+          OBJECT_STORE_ENDPOINT: ${{ inputs.object_store_endpoint }}
+          OBJECT_STORE_PRESIGN_ENDPOINT: ${{ inputs.object_store_presign_endpoint }}
+          TLS_SECRET_NAME: ${{ inputs.tls_secret_name }}
+          VITE_OBJECT_STORE_ORIGINS: ${{ vars.VITE_OBJECT_STORE_ORIGINS }}
         run: |
+          set -euo pipefail
           python -m pip install --disable-pip-version-check --no-cache-dir PyYAML==6.0.3
-          kustomize build infra/k8s/overlays/staging > "$RUNNER_TEMP/staging.yaml"
+          test -n "$VITE_OBJECT_STORE_ORIGINS"
+          kustomize build infra/k8s/overlays/staging > "$RUNNER_TEMP/staging-template.yaml"
+          python scripts/configure_staging_manifest.py \
+            --input "$RUNNER_TEMP/staging-template.yaml" \
+            --output "$RUNNER_TEMP/staging.yaml" \
+            --staging-base-url "$STAGING_BASE_URL" \
+            --object-store-endpoint "$OBJECT_STORE_ENDPOINT" \
+            --object-store-presign-endpoint "$OBJECT_STORE_PRESIGN_ENDPOINT" \
+            --tls-secret-name "$TLS_SECRET_NAME" \
+            --web-object-store-origins "$VITE_OBJECT_STORE_ORIGINS"
           grep -A4 '^kind: Namespace$' "$RUNNER_TEMP/staging.yaml" | grep -q 'name: enterprise-doc-agent-staging'
           grep -q 'name: enterprise-doc-migrate' "$RUNNER_TEMP/staging.yaml"
+          grep -q 'kind: Ingress' "$RUNNER_TEMP/staging.yaml"
           if grep -A30 '^kind: ConfigMap$' "$RUNNER_TEMP/staging.yaml" | grep -q 'DATABASE__URL:'; then
             echo 'DATABASE__URL must come only from enterprise-doc-secrets' >&2
             exit 1
@@ -91,6 +121,8 @@ jobs:
         run: |
           kubectl apply -f "$RUNNER_TEMP/staging-prerequisites.yaml"
           kubectl -n enterprise-doc-agent-staging get secret enterprise-doc-secrets
+          kubectl -n enterprise-doc-agent-staging get secret enterprise-doc-registry
+          kubectl -n enterprise-doc-agent-staging get secret "${{ inputs.tls_secret_name }}"
           kubectl -n enterprise-doc-agent-staging delete job enterprise-doc-migrate --ignore-not-found
           kubectl apply -f "$RUNNER_TEMP/staging-migration.yaml"
           kubectl -n enterprise-doc-agent-staging wait --for=condition=complete job/enterprise-doc-migrate --timeout=300s
@@ -127,15 +159,27 @@ jobs:
             --allowed-object-store-host "$STAGING_OBJECT_STORE_ALLOWED_HOST" \
             --report-path "tmp/staging-smoke-${GITHUB_SHA}.json"
       - name: Record release metadata
+        if: always()
         run: |
           mkdir -p tmp
-          kubectl -n enterprise-doc-agent-staging get deploy -o json > tmp/staging-release-${GITHUB_SHA}.json
-          printf '%s\n' '{"status":"staging-rollout-requested","external_gate":"cluster-and-secret-evidence"}' > tmp/staging-release-${GITHUB_SHA}.record.json
+          evidence_id="${GITHUB_SHA}"
+          for manifest in staging.yaml staging-prerequisites.yaml staging-migration.yaml staging-workloads.yaml; do
+            if test -f "$RUNNER_TEMP/$manifest"; then
+              cp "$RUNNER_TEMP/$manifest" "tmp/staging-rendered-${evidence_id}-${manifest}"
+            fi
+          done
+          kubectl -n enterprise-doc-agent-staging get deploy -o json > "tmp/staging-release-${evidence_id}.json" 2>&1 || true
+          kubectl -n enterprise-doc-agent-staging logs job/enterprise-doc-migrate > "tmp/staging-migration-${evidence_id}.log" 2>&1 || true
+          kubectl -n enterprise-doc-agent-staging get ingress enterprise-doc-web -o yaml > "tmp/staging-ingress-${evidence_id}.yaml" 2>&1 || true
+          kubectl -n enterprise-doc-agent-staging get networkpolicy -o yaml > "tmp/staging-network-policy-${evidence_id}.yaml" 2>&1 || true
+          kubectl -n enterprise-doc-agent-staging get events --sort-by=.lastTimestamp > "tmp/staging-events-${evidence_id}.txt" 2>&1 || true
+          kubectl -n enterprise-doc-agent-staging get secret enterprise-doc-secrets enterprise-doc-registry "${{ inputs.tls_secret_name }}" \
+            -o name > "tmp/staging-secret-names-${evidence_id}.txt" 2>&1 || true
+          printf '%s\n' '{"status":"staging-rollout-requested","external_gate":"cluster-and-secret-evidence"}' > "tmp/staging-release-${evidence_id}.record.json"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: staging-release-${{ github.sha }}
           path: |
-            tmp/staging-release-${{ github.sha }}.*
-            tmp/staging-smoke-${{ github.sha }}.json
+            tmp/staging-*
           if-no-files-found: warn

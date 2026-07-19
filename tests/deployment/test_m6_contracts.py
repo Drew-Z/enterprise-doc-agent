@@ -12,6 +12,22 @@ def _documents(path: Path) -> list[dict[str, object]]:
     return [item for item in payload if isinstance(item, dict)]
 
 
+def _workflow_steps(name: str) -> tuple[dict[str, object], list[dict[str, object]]]:
+    workflow = yaml.safe_load((ROOT / ".github" / "workflows" / name).read_text(encoding="utf-8"))
+    assert isinstance(workflow, dict)
+    jobs = workflow["jobs"]
+    assert isinstance(jobs, dict)
+    images = jobs["images"]
+    assert isinstance(images, dict)
+    steps = images["steps"]
+    assert isinstance(steps, list)
+    return workflow, [step for step in steps if isinstance(step, dict)]
+
+
+def _named_step(steps: list[dict[str, object]], name: str) -> dict[str, object]:
+    return next(step for step in steps if step.get("name") == name)
+
+
 def test_all_runtime_images_have_non_root_dockerfiles_and_no_floating_latest_tag() -> None:
     docker_dir = ROOT / "infra" / "docker"
     for name in ("api", "worker", "consumer", "web"):
@@ -21,6 +37,24 @@ def test_all_runtime_images_have_non_root_dockerfiles_and_no_floating_latest_tag
         assert ":latest" not in text
         assert "10001" in text or name == "web"
         assert all("@sha256:" in line for line in text.splitlines() if line.startswith("FROM "))
+
+
+def test_web_image_receives_explicit_object_store_origin_build_configuration() -> None:
+    dockerfile = (ROOT / "infra" / "docker" / "Dockerfile.web").read_text(encoding="utf-8")
+    assert "ARG VITE_OBJECT_STORE_ORIGINS=" in dockerfile
+    assert "ENV VITE_OBJECT_STORE_ORIGINS=$VITE_OBJECT_STORE_ORIGINS" in dockerfile
+
+    _, steps = _workflow_steps("container.yml")
+    release_validation = _named_step(steps, "Validate Web release configuration")
+    validation_command = str(release_validation["run"])
+    assert "urlsplit" in validation_command
+    assert "exact HTTPS origin" in validation_command
+    local_build = _named_step(steps, "Build image for contract and scan")
+    release_build = _named_step(steps, "Push immutable release image")
+    for step in (local_build, release_build):
+        settings = step["with"]
+        assert isinstance(settings, dict)
+        assert "VITE_OBJECT_STORE_ORIGINS=" in str(settings["build-args"])
 
 
 def test_kubernetes_deployments_have_probes_resources_and_non_root_security() -> None:
@@ -73,6 +107,41 @@ def test_database_url_has_one_secret_backed_source() -> None:
     assert "DATABASE__URL" in secret
 
 
+def test_staging_overlay_defines_https_ingress_and_private_registry_contract() -> None:
+    overlay = ROOT / "infra" / "k8s" / "overlays" / "staging"
+    kustomization = (overlay / "kustomization.yaml").read_text(encoding="utf-8")
+    assert "ingress.yaml" in kustomization
+    assert "web-ingress-policy.yaml" in kustomization
+    assert "configmap-patch.yaml" in kustomization
+    assert "image-pull-secret-patch.yaml" in kustomization
+
+    ingress = _documents(overlay / "ingress.yaml")[0]
+    assert ingress["kind"] == "Ingress"
+    assert ingress["spec"]["tls"][0]["secretName"] == "enterprise-doc-staging-tls"
+    assert ingress["spec"]["rules"][0]["host"] == "staging.example.invalid"
+
+    pull_patches = _documents(overlay / "image-pull-secret-patch.yaml")
+    assert {(item["kind"], item["metadata"]["name"]) for item in pull_patches} == {
+        ("Job", "enterprise-doc-migrate"),
+        ("Deployment", "enterprise-doc-api"),
+        ("Deployment", "enterprise-doc-worker"),
+        ("Deployment", "enterprise-doc-consumer"),
+        ("Deployment", "enterprise-doc-web"),
+    }
+    assert {item["metadata"]["name"] for item in pull_patches} == {
+        "enterprise-doc-migrate",
+        "enterprise-doc-api",
+        "enterprise-doc-worker",
+        "enterprise-doc-consumer",
+        "enterprise-doc-web",
+    }
+    assert all(
+        item["spec"]["template"]["spec"]["imagePullSecrets"]
+        == [{"name": "enterprise-doc-registry"}]
+        for item in pull_patches
+    )
+
+
 def test_network_policy_and_prod_environment_are_explicit() -> None:
     policies = _documents(ROOT / "infra/k8s/base/network-policy.yaml")
     egress = next(
@@ -113,5 +182,96 @@ def test_ci_workflows_have_no_allow_failure_and_include_release_boundaries() -> 
     assert "rollout status" in deploy
     assert "scripts/rollback_release.py" in rollback
     assert "revisions_json" in rollback
+    assert "configure_staging_manifest.py" in deploy
+    assert "object_store_endpoint" in deploy
+    assert "object_store_presign_endpoint" in deploy
+    assert "VITE_OBJECT_STORE_ORIGINS" in deploy
+    assert "enterprise-doc-registry" in deploy
+    assert 'evidence_id="${GITHUB_SHA}"' in deploy
+    assert "staging-rendered-${evidence_id}-" in deploy
+    assert "staging-migration-${evidence_id}.log" in deploy
+    assert "staging-ingress-${evidence_id}.yaml" in deploy
+    assert "tmp/staging-*" in deploy
     rollback_script = (ROOT / "scripts/rollback_release.py").read_text(encoding="utf-8")
     assert "--to-revision" in rollback_script
+
+
+def test_tagged_supply_chain_verifies_the_exact_published_digest() -> None:
+    _, steps = _workflow_steps("container.yml")
+
+    local_build = _named_step(steps, "Build image for contract and scan")
+    assert "!startsWith(github.ref, 'refs/tags/')" in str(local_build["if"])
+
+    release_build = _named_step(steps, "Push immutable release image")
+    assert release_build["id"] == "push"
+    assert "startsWith(github.ref, 'refs/tags/')" in str(release_build["if"])
+    release_settings = release_build["with"]
+    assert isinstance(release_settings, dict)
+    assert release_settings["push"] is True
+    assert release_settings["provenance"] == "mode=max"
+
+    digest_expression = "steps.push.outputs.digest"
+    release_scan = _named_step(steps, "Scan published image")
+    assert release_scan["id"] == "release_scan"
+    scan_settings = release_scan["with"]
+    assert isinstance(scan_settings, dict)
+    assert digest_expression in str(scan_settings["image-ref"])
+
+    release_sbom = _named_step(steps, "Generate published SBOM")
+    assert release_sbom["id"] == "release_sbom"
+    sbom_settings = release_sbom["with"]
+    assert isinstance(sbom_settings, dict)
+    assert digest_expression in str(sbom_settings["image"])
+
+    provenance = _named_step(steps, "Extract published BuildKit provenance")
+    provenance_command = str(provenance["run"])
+    assert "docker buildx imagetools inspect" in provenance_command
+    assert ".Provenance.SLSA" in provenance_command
+    assert "jq -e" in provenance_command
+    assert 'type == "object"' in provenance_command
+    assert "buildkit-provenance-${{ matrix.name }}.log" in provenance_command
+    assert digest_expression in str(provenance["env"])
+
+    signature = _named_step(steps, "Sign and attest immutable digest")
+    cosign = _named_step(steps, "Install Cosign")
+    assert cosign["id"] == "cosign"
+    assert "steps.cosign.outcome == 'success'" in str(signature["if"])
+    signature_command = str(signature["run"])
+    assert "cosign sign" in signature_command
+    assert "cosign attest" in signature_command
+    assert "spdxjson" in signature_command
+    assert "slsaprovenance" in signature_command
+
+    verification = _named_step(steps, "Verify release attestations")
+    assert "steps.sign.outcome == 'success'" in str(verification["if"])
+    verification_command = str(verification["run"])
+    assert "cosign verify" in verification_command
+    assert "cosign verify-attestation" in verification_command
+    assert "--type spdxjson" in verification_command
+    assert "--type slsaprovenance" in verification_command
+    assert "2> cosign-signature-verify-${{ matrix.name }}.log" in verification_command
+    assert "2> cosign-sbom-attestation-verify-${{ matrix.name }}.log" in verification_command
+    assert "2> cosign-provenance-verify-${{ matrix.name }}.log" in verification_command
+    assert digest_expression in str(verification["env"])
+
+    evidence = _named_step(steps, "Upload release supply-chain evidence")
+    assert "always()" in str(evidence["if"])
+    evidence_settings = evidence["with"]
+    assert isinstance(evidence_settings, dict)
+    evidence_paths = str(evidence_settings["path"])
+    for expected in (
+        "image-${{ matrix.name }}.digest.txt",
+        "trivy-${{ matrix.name }}.sarif",
+        "sbom-${{ matrix.name }}.spdx.json",
+        "buildkit-provenance-${{ matrix.name }}.json",
+        "buildkit-provenance-${{ matrix.name }}.log",
+        "cosign-sign-attest-${{ matrix.name }}.log",
+        "cosign-signature-verify-${{ matrix.name }}.json",
+        "cosign-signature-verify-${{ matrix.name }}.log",
+        "cosign-sbom-attestation-verify-${{ matrix.name }}.json",
+        "cosign-sbom-attestation-verify-${{ matrix.name }}.log",
+        "cosign-provenance-verify-${{ matrix.name }}.json",
+        "cosign-provenance-verify-${{ matrix.name }}.log",
+        "release-step-outcomes-${{ matrix.name }}.json",
+    ):
+        assert expected in evidence_paths

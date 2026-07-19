@@ -11,6 +11,11 @@ permissions:
   packages: write
   id-token: write
 
+env:
+  # PR/manual builds remain usable without repository configuration. A tagged
+  # release validates that a real HTTPS allowlist was configured first.
+  VITE_OBJECT_STORE_ORIGINS: ${{ vars.VITE_OBJECT_STORE_ORIGINS || 'http://127.0.0.1:9000' }}
+
 jobs:
   images:
     runs-on: ubuntu-latest
@@ -30,16 +35,64 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
+
+      - name: Validate Web release configuration
+        if: ${{ startsWith(github.ref, 'refs/tags/') && matrix.name == 'web' }}
+        env:
+          RELEASE_OBJECT_STORE_ORIGINS: ${{ vars.VITE_OBJECT_STORE_ORIGINS }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import ipaddress
+          import os
+          from urllib.parse import urlsplit
+
+          raw = os.environ.get("RELEASE_OBJECT_STORE_ORIGINS", "")
+          origins = [item.strip() for item in raw.split(",") if item.strip()]
+          if not origins:
+              raise SystemExit("Tagged Web releases require VITE_OBJECT_STORE_ORIGINS")
+          for origin in origins:
+              parsed = urlsplit(origin)
+              exact = f"https://{parsed.netloc}"
+              if (
+                  parsed.scheme != "https"
+                  or parsed.hostname is None
+                  or parsed.username is not None
+                  or parsed.password is not None
+                  or parsed.path
+                  or parsed.query
+                  or parsed.fragment
+                  or origin != exact
+              ):
+                  raise SystemExit(f"Web allowlist entry is not an exact HTTPS origin: {origin}")
+              host = parsed.hostname.lower()
+              if host == "localhost":
+                  raise SystemExit("Web allowlist entries must not target localhost")
+              try:
+                  if ipaddress.ip_address(host).is_loopback:
+                      raise SystemExit("Web allowlist entries must not target loopback addresses")
+              except ValueError:
+                  pass
+          PY
+
       - name: Build image for contract and scan
+        id: local_build
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ${{ matrix.file }}
           load: true
           tags: enterprise-doc-${{ matrix.name }}:${{ github.sha }}
+          build-args: |
+            VITE_API_BASE_URL=/api
+            VITE_OBJECT_STORE_ORIGINS=${{ env.VITE_OBJECT_STORE_ORIGINS }}
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
-      - name: Scan image
+
+      - name: Scan local image
+        id: local_scan
+        if: ${{ always() && !startsWith(github.ref, 'refs/tags/') && steps.local_build.outcome == 'success' }}
         uses: aquasecurity/trivy-action@0.28.0
         with:
           image-ref: enterprise-doc-${{ matrix.name }}:${{ github.sha }}
@@ -48,19 +101,26 @@ jobs:
           severity: CRITICAL,HIGH
           ignore-unfixed: true
           exit-code: "1"
-      - name: Generate SBOM
+
+      - name: Generate local SBOM
+        id: local_sbom
+        if: ${{ always() && !startsWith(github.ref, 'refs/tags/') && steps.local_build.outcome == 'success' }}
         uses: anchore/sbom-action@v0.17.0
         with:
           image: enterprise-doc-${{ matrix.name }}:${{ github.sha }}
           artifact-name: sbom-${{ matrix.name }}.spdx.json
           output-file: sbom-${{ matrix.name }}.spdx.json
-      - uses: actions/upload-artifact@v4
+
+      - name: Upload local supply-chain evidence
+        if: ${{ always() && !startsWith(github.ref, 'refs/tags/') }}
+        uses: actions/upload-artifact@v4
         with:
           name: supply-chain-${{ matrix.name }}
           path: |
             trivy-${{ matrix.name }}.sarif
             sbom-${{ matrix.name }}.spdx.json
-          if-no-files-found: error
+          if-no-files-found: warn
+
       - name: Login to GHCR for tagged release
         if: startsWith(github.ref, 'refs/tags/')
         uses: docker/login-action@v3
@@ -68,6 +128,7 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Push immutable release image
         id: push
         if: startsWith(github.ref, 'refs/tags/')
@@ -77,37 +138,168 @@ jobs:
           file: ${{ matrix.file }}
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/enterprise-doc-${{ matrix.name }}:${{ github.ref_name }}
+          build-args: |
+            VITE_API_BASE_URL=/api
+            VITE_OBJECT_STORE_ORIGINS=${{ env.VITE_OBJECT_STORE_ORIGINS }}
           provenance: mode=max
           sbom: true
-      - name: Install Cosign
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: sigstore/cosign-installer@v3.8.2
-      - name: Sign and attest immutable digest
-        if: startsWith(github.ref, 'refs/tags/')
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+      - name: Record immutable image digest
+        id: digest
+        if: ${{ always() && startsWith(github.ref, 'refs/tags/') && steps.push.outcome == 'success' }}
         env:
           IMAGE_REF: ghcr.io/${{ github.repository_owner }}/enterprise-doc-${{ matrix.name }}
           IMAGE_DIGEST: ${{ steps.push.outputs.digest }}
         run: |
+          set -euo pipefail
           test -n "$IMAGE_DIGEST"
           printf '%s\n' "$IMAGE_REF@$IMAGE_DIGEST" > image-${{ matrix.name }}.digest.txt
-          cosign sign --yes "$IMAGE_REF@$IMAGE_DIGEST"
-          cosign attest --yes \
-            --type spdxjson \
-            --predicate sbom-${{ matrix.name }}.spdx.json \
-            "$IMAGE_REF@$IMAGE_DIGEST"
-      - name: Verify keyless signature
-        if: startsWith(github.ref, 'refs/tags/')
+
+      - name: Scan published image
+        id: release_scan
+        if: ${{ always() && startsWith(github.ref, 'refs/tags/') && steps.push.outcome == 'success' }}
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ghcr.io/${{ github.repository_owner }}/enterprise-doc-${{ matrix.name }}@${{ steps.push.outputs.digest }}
+          format: sarif
+          output: trivy-${{ matrix.name }}.sarif
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+
+      - name: Generate published SBOM
+        id: release_sbom
+        if: ${{ always() && startsWith(github.ref, 'refs/tags/') && steps.push.outcome == 'success' }}
+        uses: anchore/sbom-action@v0.17.0
+        with:
+          image: ghcr.io/${{ github.repository_owner }}/enterprise-doc-${{ matrix.name }}@${{ steps.push.outputs.digest }}
+          artifact-name: sbom-${{ matrix.name }}.spdx.json
+          output-file: sbom-${{ matrix.name }}.spdx.json
+
+      - name: Extract published BuildKit provenance
+        id: provenance
+        if: ${{ always() && startsWith(github.ref, 'refs/tags/') && steps.push.outcome == 'success' }}
         env:
           IMAGE_REF: ghcr.io/${{ github.repository_owner }}/enterprise-doc-${{ matrix.name }}
           IMAGE_DIGEST: ${{ steps.push.outputs.digest }}
         run: |
-          cosign verify \
+          set -uo pipefail
+          provenance_status=0
+          docker buildx imagetools inspect "$IMAGE_REF@$IMAGE_DIGEST" \
+            --format '{{ json .Provenance.SLSA }}' \
+            > buildkit-provenance-${{ matrix.name }}.json \
+            2> buildkit-provenance-${{ matrix.name }}.log || provenance_status=$?
+          if test "$provenance_status" -eq 0; then
+            jq -e 'type == "object" and (.buildType | type == "string")' \
+              buildkit-provenance-${{ matrix.name }}.json >/dev/null \
+              2>> buildkit-provenance-${{ matrix.name }}.log || provenance_status=$?
+          fi
+          printf 'exit_code=%s\n' "$provenance_status" \
+            >> buildkit-provenance-${{ matrix.name }}.log
+          exit "$provenance_status"
+
+      - name: Install Cosign
+        id: cosign
+        if: ${{ always() && startsWith(github.ref, 'refs/tags/') && steps.push.outcome == 'success' }}
+        uses: sigstore/cosign-installer@v3.8.2
+
+      - name: Sign and attest immutable digest
+        id: sign
+        if: ${{ always() && startsWith(github.ref, 'refs/tags/') && steps.push.outcome == 'success' && steps.release_scan.outcome == 'success' && steps.release_sbom.outcome == 'success' && steps.provenance.outcome == 'success' && steps.cosign.outcome == 'success' }}
+        env:
+          IMAGE_REF: ghcr.io/${{ github.repository_owner }}/enterprise-doc-${{ matrix.name }}
+          IMAGE_DIGEST: ${{ steps.push.outputs.digest }}
+        run: |
+          set -uo pipefail
+          IMAGE="$IMAGE_REF@$IMAGE_DIGEST"
+          sign_status=0
+          : > cosign-sign-attest-${{ matrix.name }}.log
+          cosign sign --yes "$IMAGE" \
+            >> cosign-sign-attest-${{ matrix.name }}.log 2>&1 || sign_status=1
+          cosign attest --yes --type spdxjson \
+            --predicate sbom-${{ matrix.name }}.spdx.json "$IMAGE" \
+            >> cosign-sign-attest-${{ matrix.name }}.log 2>&1 || sign_status=1
+          cosign attest --yes --type slsaprovenance \
+            --predicate buildkit-provenance-${{ matrix.name }}.json "$IMAGE" \
+            >> cosign-sign-attest-${{ matrix.name }}.log 2>&1 || sign_status=1
+          printf 'exit_code=%s\n' "$sign_status" \
+            >> cosign-sign-attest-${{ matrix.name }}.log
+          exit "$sign_status"
+
+      - name: Verify release attestations
+        id: verify
+        if: ${{ always() && startsWith(github.ref, 'refs/tags/') && steps.sign.outcome == 'success' }}
+        env:
+          IMAGE_REF: ghcr.io/${{ github.repository_owner }}/enterprise-doc-${{ matrix.name }}
+          IMAGE_DIGEST: ${{ steps.push.outputs.digest }}
+        run: |
+          set -uo pipefail
+          IMAGE="$IMAGE_REF@$IMAGE_DIGEST"
+          verification_status=0
+          if cosign verify --output json \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
             --certificate-identity-regexp "https://github.com/${{ github.repository }}/.github/workflows/container.yml@.*" \
-            "$IMAGE_REF@$IMAGE_DIGEST"
-      - uses: actions/upload-artifact@v4
-        if: startsWith(github.ref, 'refs/tags/')
+            "$IMAGE" > cosign-signature-verify-${{ matrix.name }}.json \
+            2> cosign-signature-verify-${{ matrix.name }}.log; then
+            printf 'exit_code=0\n' >> cosign-signature-verify-${{ matrix.name }}.log
+          else
+            verify_exit=$?
+            printf 'exit_code=%s\n' "$verify_exit" \
+              >> cosign-signature-verify-${{ matrix.name }}.log
+            verification_status=1
+          fi
+          if cosign verify-attestation --output json --type spdxjson \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            --certificate-identity-regexp "https://github.com/${{ github.repository }}/.github/workflows/container.yml@.*" \
+            "$IMAGE" > cosign-sbom-attestation-verify-${{ matrix.name }}.json \
+            2> cosign-sbom-attestation-verify-${{ matrix.name }}.log; then
+            printf 'exit_code=0\n' >> cosign-sbom-attestation-verify-${{ matrix.name }}.log
+          else
+            verify_exit=$?
+            printf 'exit_code=%s\n' "$verify_exit" \
+              >> cosign-sbom-attestation-verify-${{ matrix.name }}.log
+            verification_status=1
+          fi
+          if cosign verify-attestation --output json --type slsaprovenance \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            --certificate-identity-regexp "https://github.com/${{ github.repository }}/.github/workflows/container.yml@.*" \
+            "$IMAGE" > cosign-provenance-verify-${{ matrix.name }}.json \
+            2> cosign-provenance-verify-${{ matrix.name }}.log; then
+            printf 'exit_code=0\n' >> cosign-provenance-verify-${{ matrix.name }}.log
+          else
+            verify_exit=$?
+            printf 'exit_code=%s\n' "$verify_exit" \
+              >> cosign-provenance-verify-${{ matrix.name }}.log
+            verification_status=1
+          fi
+          exit "$verification_status"
+
+      - name: Record release step outcomes
+        if: ${{ always() && startsWith(github.ref, 'refs/tags/') }}
+        run: |
+          printf '%s\n' \
+            '{"push":"${{ steps.push.outcome }}","scan":"${{ steps.release_scan.outcome }}","sbom":"${{ steps.release_sbom.outcome }}","provenance":"${{ steps.provenance.outcome }}","sign":"${{ steps.sign.outcome }}","verify":"${{ steps.verify.outcome }}"}' \
+            > release-step-outcomes-${{ matrix.name }}.json
+
+      - name: Upload release supply-chain evidence
+        if: ${{ always() && startsWith(github.ref, 'refs/tags/') }}
+        uses: actions/upload-artifact@v4
         with:
-          name: release-digest-${{ matrix.name }}
-          path: image-${{ matrix.name }}.digest.txt
-          if-no-files-found: error
+          name: release-supply-chain-${{ matrix.name }}
+          path: |
+            image-${{ matrix.name }}.digest.txt
+            trivy-${{ matrix.name }}.sarif
+            sbom-${{ matrix.name }}.spdx.json
+            buildkit-provenance-${{ matrix.name }}.json
+            buildkit-provenance-${{ matrix.name }}.log
+            cosign-sign-attest-${{ matrix.name }}.log
+            cosign-signature-verify-${{ matrix.name }}.json
+            cosign-signature-verify-${{ matrix.name }}.log
+            cosign-sbom-attestation-verify-${{ matrix.name }}.json
+            cosign-sbom-attestation-verify-${{ matrix.name }}.log
+            cosign-provenance-verify-${{ matrix.name }}.json
+            cosign-provenance-verify-${{ matrix.name }}.log
+            release-step-outcomes-${{ matrix.name }}.json
+          if-no-files-found: warn

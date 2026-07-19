@@ -3,8 +3,12 @@ kind: Kustomization
 namespace: enterprise-doc-agent-staging
 resources:
   - ../../base
+  - ingress.yaml
+  - web-ingress-policy.yaml
 patches:
   - path: replicas-patch.yaml
+  - path: configmap-patch.yaml
+  - path: image-pull-secret-patch.yaml
 images:
   - name: enterprise-doc/api
     newName: registry.example.invalid/enterprise-doc/api

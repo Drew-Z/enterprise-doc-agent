@@ -6,7 +6,9 @@ COPY apps/web/package.json ./apps/web/package.json
 RUN pnpm install --frozen-lockfile
 COPY apps/web ./apps/web
 ARG VITE_API_BASE_URL=/api
+ARG VITE_OBJECT_STORE_ORIGINS=http://127.0.0.1:9000
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+ENV VITE_OBJECT_STORE_ORIGINS=$VITE_OBJECT_STORE_ORIGINS
 RUN pnpm --filter web build
 
 FROM nginx:1.27.4-alpine3.21@sha256:4ff102c5d78d254a6f0da062b3cf39eaf07f01eec0927fd21e219d0af8bc0591 AS runtime
