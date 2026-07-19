@@ -17,6 +17,7 @@ from enterprise_doc_core.object_store import (
     UploadedPart,
     create_s3_client,
 )
+from enterprise_doc_core.telemetry import MetricsRuntime
 
 
 class FakeBody:
@@ -361,6 +362,33 @@ async def test_adapter_maps_boto_errors_without_exposing_object_identifiers() ->
     assert exc_info.value.__cause__ is None
     assert exc_info.value.__context__ is None
     assert secret_key not in "".join(traceback.format_exception(exc_info.value))
+
+
+async def test_adapter_records_bounded_operation_results() -> None:
+    control = RecordingS3Client()
+    metrics = MetricsRuntime.create()
+    adapter = Boto3MultipartObjectStore(
+        settings=ObjectStoreSettings(),
+        control_client=control,
+        presign_client=RecordingS3Client(),
+        metrics=metrics,
+    )
+
+    await adapter.create_upload(
+        bucket="documents",
+        key="prefix/object",
+        metadata={},
+    )
+    control.error = ClientError(
+        {"Error": {"Code": "NoSuchKey", "Message": "hidden"}},
+        "HeadObject",
+    )
+    with pytest.raises(ObjectStoreNotFound):
+        await adapter.head_object(bucket="documents", key="prefix/object")
+
+    rendered = metrics.render().decode("utf-8")
+    assert 'boundary="object_store",operation="write",result="success"' in rendered
+    assert 'boundary="object_store",operation="read",result="not_found"' in rendered
 
 
 @pytest.mark.parametrize(

@@ -67,6 +67,7 @@ def build_consumer_factory(
             HashEmbeddingProvider(dimension=embedding_dimension),
             dimension=embedding_dimension,
         ),
+        metrics=metrics,
     )
 
     handlers: dict[str, AsyncJobHandler] = {DOCUMENT_INGEST_JOB_TYPE: service}

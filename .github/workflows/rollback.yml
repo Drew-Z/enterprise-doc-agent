@@ -33,11 +33,28 @@ jobs:
       - name: Configure cluster credentials
         env:
           KUBE_CONFIG: ${{ secrets.STAGING_KUBECONFIG }}
+          EXPECTED_CONTEXT: ${{ vars.STAGING_KUBE_CONTEXT }}
+          EXPECTED_API_SERVER: ${{ vars.STAGING_KUBE_API_SERVER }}
+          EXPECTED_NAMESPACE_UID: ${{ vars.STAGING_NAMESPACE_UID }}
+          NAMESPACE: enterprise-doc-agent-staging
         run: |
+          set -euo pipefail
           test -n "$KUBE_CONFIG"
+          test -n "$EXPECTED_CONTEXT"
+          test -n "$EXPECTED_API_SERVER"
+          test -n "$EXPECTED_NAMESPACE_UID"
           mkdir -p "$HOME/.kube"
           printf '%s' "$KUBE_CONFIG" > "$HOME/.kube/config"
           chmod 600 "$HOME/.kube/config"
+          actual_context="$(kubectl config current-context)"
+          test "$actual_context" = "$EXPECTED_CONTEXT"
+          actual_api_server="$(kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}')"
+          test "$actual_api_server" = "$EXPECTED_API_SERVER"
+          actual_namespace_uid="$(kubectl get namespace "$NAMESPACE" -o jsonpath='{.metadata.uid}')"
+          test "$actual_namespace_uid" = "$EXPECTED_NAMESPACE_UID"
+          kubectl auth can-i get deployments.apps -n "$NAMESPACE" | grep -qx 'yes'
+          kubectl auth can-i patch deployments.apps -n "$NAMESPACE" | grep -qx 'yes'
+          kubectl auth can-i watch deployments.apps -n "$NAMESPACE" | grep -qx 'yes'
       - name: Roll back and wait
         env:
           NAMESPACE: enterprise-doc-agent-staging

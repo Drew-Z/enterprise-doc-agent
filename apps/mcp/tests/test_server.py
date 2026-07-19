@@ -14,8 +14,10 @@ from enterprise_doc_core.agents import (
     SearchDocumentResult,
     SignedExecutionContext,
     ToolCapability,
+    ToolObjectStoreUnavailable,
     sign_execution_context,
 )
+from enterprise_doc_core.config import FoundationSettings
 from enterprise_doc_core.context import (
     PrincipalContext,
     RequestContext,
@@ -24,7 +26,13 @@ from enterprise_doc_core.context import (
     set_request_context,
 )
 from enterprise_doc_core.logging import configure_logging
-from enterprise_doc_mcp.server import McpRuntime, McpServerError, build_server
+from enterprise_doc_core.telemetry import MetricsRuntime
+from enterprise_doc_mcp.server import (
+    McpRuntime,
+    McpServerError,
+    build_runtime,
+    build_server,
+)
 
 SECRET = "m" * 40
 NOW = datetime(2026, 7, 19, 10, 0, tzinfo=UTC)
@@ -146,6 +154,60 @@ async def test_server_uses_signed_out_of_band_context_for_tool_calls() -> None:
     assert isinstance(structured, dict)
     assert structured["accepted"] is False
     assert structured["refusal_reason"] == "empty_evidence"
+
+
+async def test_server_records_tool_boundary_and_runtime_shares_metrics_registry() -> None:
+    metrics = MetricsRuntime.create()
+    runtime = McpRuntime(
+        service=cast(AgentToolService, FakeToolService()),
+        signing_secret=SECRET,
+        context_token=_token(),
+        clock=lambda: NOW,
+        metrics=metrics,
+    )
+    _, structured = await build_server(runtime).call_tool(
+        "search_document",
+        {"request": {"idempotency_key": "search-metrics", "query": "payment"}},
+    )
+    assert isinstance(structured, dict)
+    rendered = metrics.render().decode("utf-8")
+    assert 'boundary="mcp",operation="server_call",result="success"' in rendered
+
+    resources = build_runtime(FoundationSettings(_env_file=None), metrics=metrics)
+    try:
+        assert resources.metrics is metrics
+        assert resources.artifact_store.metrics is metrics
+        assert resources.runtime.service.retrieval_service.metrics is metrics
+    finally:
+        await resources.close()
+
+
+async def test_server_records_retryable_tool_failures() -> None:
+    class UnavailableToolService(FakeToolService):
+        async def search_document(
+            self,
+            context: object,
+            request: object,
+        ) -> SearchDocumentResult:
+            raise ToolObjectStoreUnavailable()
+
+    metrics = MetricsRuntime.create()
+    runtime = McpRuntime(
+        service=cast(AgentToolService, UnavailableToolService()),
+        signing_secret=SECRET,
+        context_token=_token(),
+        clock=lambda: NOW,
+        metrics=metrics,
+    )
+
+    with pytest.raises(ToolError):
+        await build_server(runtime).call_tool(
+            "search_document",
+            {"request": {"idempotency_key": "search-retry", "query": "payment"}},
+        )
+
+    rendered = metrics.render().decode("utf-8")
+    assert 'boundary="mcp",operation="server_call",result="retryable_error"' in rendered
 
 
 async def test_server_resets_request_context_after_tool_call() -> None:

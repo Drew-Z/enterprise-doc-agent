@@ -7,6 +7,7 @@ from collections.abc import Awaitable, Callable
 from contextvars import Token
 from dataclasses import dataclass
 from datetime import datetime
+from time import perf_counter
 
 from mcp.server.fastmcp import FastMCP
 
@@ -38,6 +39,7 @@ from enterprise_doc_core.documents.ingestion import HashEmbeddingProvider
 from enterprise_doc_core.documents.retrieval_service import HybridRetrievalService
 from enterprise_doc_core.logging import configure_logging
 from enterprise_doc_core.object_store import Boto3ArtifactObjectStore
+from enterprise_doc_core.telemetry import MetricsRuntime
 
 LOGGER = logging.getLogger(__name__)
 CONTEXT_ENV = "ENTERPRISE_DOC_MCP_CONTEXT"
@@ -58,6 +60,7 @@ class McpRuntime:
     request_timeout_seconds: float = 30.0
     context_token: str | None = None
     clock: Callable[[], datetime] | None = None
+    metrics: MetricsRuntime | None = None
 
     def load_context(self) -> SignedExecutionContext:
         token = self.context_token or os.environ.get(CONTEXT_ENV)
@@ -177,23 +180,44 @@ async def _invoke[RequestT, ResultT](
     request: RequestT,
     operation: Callable[[SignedExecutionContext, RequestT], Awaitable[ResultT]],
 ) -> ResultT:
-    context = runtime.load_context()
-    context_token = runtime.bind_request_context(context)
+    started = perf_counter()
+    result_label = "error"
+    context_token: Token[RequestContext | None] | None = None
     try:
+        context = runtime.load_context()
+        context_token = runtime.bind_request_context(context)
         async with asyncio.timeout(runtime.request_timeout_seconds):
-            return await operation(context, request)
+            result = await operation(context, request)
+    except asyncio.CancelledError:
+        result_label = "cancelled"
+        raise
     except TimeoutError:
+        result_label = "timeout"
         raise McpServerError("mcp_tool_timeout") from None
     except McpServerError:
+        result_label = "permanent_error"
         raise
     except ToolExecutionError as error:
+        result_label = "retryable_error" if error.retryable else "permanent_error"
         raise McpServerError(error.code) from None
     except Exception as error:
+        result_label = "error"
         code = getattr(error, "code", "mcp_tool_failed")
         LOGGER.warning("mcp_tool_failed", extra={"event_data": {"error_code": code}})
         raise McpServerError(str(code)) from None
+    else:
+        result_label = "success"
+        return result
     finally:
-        reset_request_context(context_token)
+        if context_token is not None:
+            reset_request_context(context_token)
+        if runtime.metrics is not None:
+            runtime.metrics.observe_boundary(
+                boundary="mcp",
+                operation="server_call",
+                result=result_label,
+                duration=perf_counter() - started,
+            )
 
 
 @dataclass(slots=True)
@@ -201,6 +225,7 @@ class RuntimeResources:
     runtime: McpRuntime
     engine: object
     artifact_store: Boto3ArtifactObjectStore
+    metrics: MetricsRuntime
 
     async def close(self) -> None:
         await self.artifact_store.close()
@@ -209,16 +234,23 @@ class RuntimeResources:
             await dispose()
 
 
-def build_runtime(settings: FoundationSettings) -> RuntimeResources:
+def build_runtime(
+    settings: FoundationSettings,
+    *,
+    metrics: MetricsRuntime | None = None,
+) -> RuntimeResources:
+    resolved_metrics = metrics if metrics is not None else MetricsRuntime.create()
     engine = create_database_engine(settings.database)
     session_factory = create_session_factory(engine)
     retrieval = HybridRetrievalService(
         session_factory=session_factory,
         embedding_provider=HashEmbeddingProvider(),
+        metrics=resolved_metrics,
     )
     artifact_store = Boto3ArtifactObjectStore(
         settings=settings.object_store,
         max_object_bytes=settings.agent.max_artifact_bytes,
+        metrics=resolved_metrics,
     )
     service = AgentToolService(
         session_factory=session_factory,
@@ -232,9 +264,11 @@ def build_runtime(settings: FoundationSettings) -> RuntimeResources:
             service=service,
             signing_secret=settings.mcp.signing_secret.get_secret_value(),
             request_timeout_seconds=settings.mcp.request_timeout_seconds,
+            metrics=resolved_metrics,
         ),
         engine=engine,
         artifact_store=artifact_store,
+        metrics=resolved_metrics,
     )
 
 

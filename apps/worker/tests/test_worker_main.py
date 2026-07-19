@@ -1,10 +1,19 @@
 from __future__ import annotations
 
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
 import enterprise_doc_worker.__main__ as worker_main
+from enterprise_doc_core.telemetry import MetricsRuntime
+
+
+def test_worker_main_passes_process_metrics_to_agent_handler() -> None:
+    source = Path(worker_main.__file__).read_text(encoding="utf-8")
+    handler_call = source[source.index("build_durable_agent_handler(") :]
+    handler_call = handler_call[: handler_call.index(")")]
+    assert "metrics=metrics" in handler_call
 
 
 class FakeTelemetry:
@@ -65,6 +74,7 @@ async def test_run_worker_cleans_resources_when_checkpoint_open_fails(
     resources = FakeResources()
     runtime = FakeRuntime()
     checkpoint = FailingCheckpointRuntime(object())
+    foundation_kwargs: dict[str, object] = {}
     settings = SimpleNamespace(
         app_env=SimpleNamespace(value="test"),
         log_level="INFO",
@@ -79,7 +89,12 @@ async def test_run_worker_cleans_resources_when_checkpoint_open_fails(
         lambda: FakeTelemetryManager(telemetry),
     )
     monkeypatch.setattr(worker_main, "WorkerRuntime", lambda **_: runtime)
-    monkeypatch.setattr(worker_main, "build_foundation_resources", lambda _: resources)
+
+    def build_resources(_: object, **kwargs: object) -> FakeResources:
+        foundation_kwargs.update(kwargs)
+        return resources
+
+    monkeypatch.setattr(worker_main, "build_foundation_resources", build_resources)
     monkeypatch.setattr(worker_main, "create_session_factory", lambda _: object())
     monkeypatch.setattr(worker_main, "JobRuntimeService", lambda **_: object())
     monkeypatch.setattr(worker_main, "create_celery_app", lambda _: object())
@@ -92,3 +107,4 @@ async def test_run_worker_cleans_resources_when_checkpoint_open_fails(
     assert checkpoint.close_called is True
     assert resources.close_called is True
     assert telemetry.shutdown_called is True
+    assert isinstance(foundation_kwargs["metrics"], MetricsRuntime)

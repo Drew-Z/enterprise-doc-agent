@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import json
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import StrEnum
+from time import perf_counter
 from uuid import UUID
 
 from sqlalchemy import select, text
@@ -40,6 +42,7 @@ from enterprise_doc_core.identity.models import (
     User,
 )
 from enterprise_doc_core.jobs import cancel_job_records, create_job_records
+from enterprise_doc_core.telemetry import MetricsRuntime
 
 
 class ApprovalDecision(StrEnum):
@@ -180,12 +183,14 @@ class ApprovalService:
         session_factory: async_sessionmaker[AsyncSession],
         clock: Callable[[], datetime] = _utcnow,
         resume_max_attempts: int = 3,
+        metrics: MetricsRuntime | None = None,
     ) -> None:
         if not 1 <= resume_max_attempts <= 100:
             raise ValueError("resume_max_attempts must be between 1 and 100")
         self.session_factory = session_factory
         self.clock = clock
         self.resume_max_attempts = resume_max_attempts
+        self.metrics = metrics
 
     async def get(
         self,
@@ -233,6 +238,56 @@ class ApprovalService:
             )
 
     async def decide(
+        self,
+        *,
+        tenant_id: UUID,
+        actor_id: UUID | None,
+        approval_id: UUID,
+        idempotency_key: str,
+        request: DecideApprovalInput,
+        request_id: str | None = None,
+        correlation_id: str | None = None,
+    ) -> ApprovalDecisionResult:
+        started = perf_counter()
+        result_label = "error"
+        try:
+            result = await self._decide(
+                tenant_id=tenant_id,
+                actor_id=actor_id,
+                approval_id=approval_id,
+                idempotency_key=idempotency_key,
+                request=request,
+                request_id=request_id,
+                correlation_id=correlation_id,
+            )
+        except asyncio.CancelledError:
+            result_label = "cancelled"
+            raise
+        except ApprovalNotFound:
+            result_label = "not_found"
+            raise
+        except ApprovalPrincipalForbidden:
+            result_label = "forbidden"
+            raise
+        except ApprovalError:
+            result_label = "permanent_error"
+            raise
+        except Exception:
+            result_label = "error"
+            raise
+        else:
+            result_label = "success"
+            return result
+        finally:
+            if self.metrics is not None:
+                self.metrics.observe_boundary(
+                    boundary="approval",
+                    operation="decide",
+                    result=result_label,
+                    duration=perf_counter() - started,
+                )
+
+    async def _decide(
         self,
         *,
         tenant_id: UUID,
@@ -399,6 +454,48 @@ class ApprovalService:
             )
 
     async def revoke(
+        self,
+        *,
+        tenant_id: UUID,
+        actor_id: UUID,
+        approval_id: UUID,
+    ) -> ApprovalRevocationResult:
+        started = perf_counter()
+        result_label = "error"
+        try:
+            result = await self._revoke(
+                tenant_id=tenant_id,
+                actor_id=actor_id,
+                approval_id=approval_id,
+            )
+        except asyncio.CancelledError:
+            result_label = "cancelled"
+            raise
+        except ApprovalNotFound:
+            result_label = "not_found"
+            raise
+        except ApprovalPrincipalForbidden:
+            result_label = "forbidden"
+            raise
+        except ApprovalError:
+            result_label = "permanent_error"
+            raise
+        except Exception:
+            result_label = "error"
+            raise
+        else:
+            result_label = "success"
+            return result
+        finally:
+            if self.metrics is not None:
+                self.metrics.observe_boundary(
+                    boundary="approval",
+                    operation="revoke",
+                    result=result_label,
+                    duration=perf_counter() - started,
+                )
+
+    async def _revoke(
         self,
         *,
         tenant_id: UUID,

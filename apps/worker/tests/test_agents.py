@@ -10,6 +10,7 @@ from langgraph.types import Command
 
 from enterprise_doc_core.agents import RoutedChatModelGateway
 from enterprise_doc_core.config import ModelProvider, ModelSettings
+from enterprise_doc_core.telemetry import MetricsRuntime
 from enterprise_doc_worker.agent_handler import AgentExecutionContext
 from enterprise_doc_worker.agents import (
     AgentGraphExecutionResultInvalid,
@@ -136,15 +137,44 @@ async def test_graph_executor_accepts_interrupt_as_successful_segment() -> None:
 @pytest.mark.asyncio
 async def test_graph_executor_rejects_unknown_result_outcome() -> None:
     graph = FakeGraph({"outcome": "unexpected"})
+    metrics = MetricsRuntime.create()
     executor = AgentGraphExecutor(
         backend_factory=lambda _: FakeBackend(),  # type: ignore[arg-type]
         gateway=object(),  # type: ignore[arg-type]
         checkpointer=InMemorySaver(),
         graph_builder=lambda **_: graph,  # type: ignore[arg-type]
+        metrics=metrics,
     )
 
     with pytest.raises(AgentGraphExecutionResultInvalid):
         await executor(_context())
+
+    rendered = metrics.render().decode("utf-8")
+    assert 'boundary="graph",operation="run",result="permanent_error"' in rendered
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("outcome", "expected_result"),
+    [("succeeded", "success"), ("refused", "refused")],
+)
+async def test_graph_executor_records_bounded_outcomes(
+    outcome: str,
+    expected_result: str,
+) -> None:
+    metrics = MetricsRuntime.create()
+    executor = AgentGraphExecutor(
+        backend_factory=lambda _: FakeBackend(),  # type: ignore[arg-type]
+        gateway=object(),  # type: ignore[arg-type]
+        checkpointer=InMemorySaver(),
+        graph_builder=lambda **_: FakeGraph({"outcome": outcome}),  # type: ignore[arg-type]
+        metrics=metrics,
+    )
+
+    await executor(_context())
+
+    rendered = metrics.render().decode("utf-8")
+    assert f'boundary="graph",operation="run",result="{expected_result}"' in rendered
 
 
 def test_configured_gateway_uses_explicit_route_deadline() -> None:

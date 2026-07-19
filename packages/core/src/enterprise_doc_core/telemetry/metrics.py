@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Sequence
 from dataclasses import dataclass
 from time import perf_counter
@@ -44,6 +45,37 @@ _JOB_OUTCOMES: Final = frozenset({"succeeded", "failed", "cancelled", "duplicate
 _PUBLISH_RESULTS: Final = frozenset({"success", "error"})
 _DEPENDENCIES: Final = frozenset({"database", "redis", "object_store", "model"})
 _DEPENDENCY_RESULTS: Final = frozenset({"success", "error"})
+_BOUNDARIES: Final = frozenset(
+    {"ingestion", "retrieval", "graph", "model", "mcp", "approval", "artifact", "object_store"}
+)
+_BOUNDARY_OPERATIONS: Final = frozenset(
+    {
+        "run",
+        "retrieve",
+        "generate",
+        "call",
+        "server_call",
+        "decide",
+        "revoke",
+        "list",
+        "download",
+        "read",
+        "write",
+    }
+)
+_BOUNDARY_RESULTS: Final = frozenset(
+    {
+        "success",
+        "error",
+        "retryable_error",
+        "permanent_error",
+        "refused",
+        "not_found",
+        "forbidden",
+        "timeout",
+        "cancelled",
+    }
+)
 
 
 class _HealthChecker(Protocol):
@@ -90,6 +122,8 @@ class MetricsRuntime:
     outbox_publish_duration_seconds: Histogram
     dependency_duration_seconds: Histogram
     dependency_up: Gauge
+    boundary_operations_total: Counter
+    boundary_operation_duration_seconds: Histogram
     database_pool_utilization_percent: Gauge
     queue_oldest_age_seconds: Gauge
     redis_connections: Gauge
@@ -164,6 +198,19 @@ class MetricsRuntime:
                 ("dependency",),
                 registry=registry,
             ),
+            boundary_operations_total=Counter(
+                "enterprise_doc_boundary_operations_total",
+                "Business boundary operation outcomes with bounded labels.",
+                ("boundary", "operation", "result"),
+                registry=registry,
+            ),
+            boundary_operation_duration_seconds=Histogram(
+                "enterprise_doc_boundary_operation_duration_seconds",
+                "Business boundary operation duration in seconds.",
+                ("boundary", "operation", "result"),
+                buckets=(0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2, 5, 15, 60),
+                registry=registry,
+            ),
             database_pool_utilization_percent=Gauge(
                 "enterprise_doc_database_pool_utilization_percent",
                 "Database connection pool utilization percentage.",
@@ -232,6 +279,25 @@ class MetricsRuntime:
         )
         self.dependency_up.labels(safe_dependency).set(1 if safe_result == "success" else 0)
 
+    def observe_boundary(
+        self,
+        *,
+        boundary: str,
+        operation: str,
+        result: str,
+        duration: float,
+    ) -> None:
+        try:
+            safe_boundary = boundary if boundary in _BOUNDARIES else "other"
+            safe_operation = operation if operation in _BOUNDARY_OPERATIONS else "other"
+            safe_result = result if result in _BOUNDARY_RESULTS else "error"
+            labels = (safe_boundary, safe_operation, safe_result)
+            self.boundary_operations_total.labels(*labels).inc()
+            self.boundary_operation_duration_seconds.labels(*labels).observe(max(duration, 0.0))
+        except Exception:
+            # Metrics must never turn a successful business operation into a failure.
+            return
+
     def set_database_pool_utilization(self, utilization_percent: float) -> None:
         self.database_pool_utilization_percent.set(max(0.0, utilization_percent))
 
@@ -286,17 +352,53 @@ class InstrumentedModelGateway:
         started = perf_counter()
         try:
             result = await self._gateway.generate(request)  # type: ignore[attr-defined]
-        except Exception:
-            self._metrics.observe_dependency(
-                dependency="model",
-                result="error",
+        except asyncio.CancelledError:
+            self._metrics.observe_boundary(
+                boundary="model",
+                operation="generate",
+                result="cancelled",
                 duration=perf_counter() - started,
             )
             raise
+        except Exception as error:
+            duration = perf_counter() - started
+            self._metrics.observe_dependency(
+                dependency="model",
+                result="error",
+                duration=duration,
+            )
+            code = str(getattr(error, "code", ""))
+            if code == "model_timeout":
+                result_label = "timeout"
+            elif code in {
+                "model_rate_limited",
+                "model_server_error",
+                "model_transport_error",
+                "model_circuit_open",
+            }:
+                result_label = "retryable_error"
+            elif code:
+                result_label = "permanent_error"
+            else:
+                result_label = "error"
+            self._metrics.observe_boundary(
+                boundary="model",
+                operation="generate",
+                result=result_label,
+                duration=duration,
+            )
+            raise
+        duration = perf_counter() - started
         self._metrics.observe_dependency(
             dependency="model",
             result="success",
-            duration=perf_counter() - started,
+            duration=duration,
+        )
+        self._metrics.observe_boundary(
+            boundary="model",
+            operation="generate",
+            result="success",
+            duration=duration,
         )
         return result
 

@@ -119,6 +119,11 @@ class ModelProviderHealth:
     available: bool
     provider: str
     model_name: str
+    model_version: str | None = None
+    model_revision: str | None = None
+    quantization: str | None = None
+    context_window_tokens: int | None = None
+    embedding_dimension: int | None = None
     error_code: str | None = None
 
 
@@ -333,6 +338,11 @@ async def _gateway_health(
             available=False,
             provider=descriptor.provider,
             model_name=descriptor.model_name,
+            model_version=descriptor.model_version,
+            model_revision=descriptor.model_revision,
+            quantization=descriptor.quantization,
+            context_window_tokens=descriptor.context_window_tokens,
+            embedding_dimension=descriptor.embedding_dimension,
             error_code="healthcheck_not_supported",
         )
     try:
@@ -342,12 +352,22 @@ async def _gateway_health(
             available=False,
             provider=descriptor.provider,
             model_name=descriptor.model_name,
+            model_version=descriptor.model_version,
+            model_revision=descriptor.model_revision,
+            quantization=descriptor.quantization,
+            context_window_tokens=descriptor.context_window_tokens,
+            embedding_dimension=descriptor.embedding_dimension,
             error_code=error.code,
         )
     return ModelProviderHealth(
         available=available,
         provider=descriptor.provider,
         model_name=descriptor.model_name,
+        model_version=descriptor.model_version,
+        model_revision=descriptor.model_revision,
+        quantization=descriptor.quantization,
+        context_window_tokens=descriptor.context_window_tokens,
+        embedding_dimension=descriptor.embedding_dimension,
         error_code=None if available else "provider_unavailable",
     )
 

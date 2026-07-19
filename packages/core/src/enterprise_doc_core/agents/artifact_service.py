@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from time import perf_counter
 from uuid import UUID
 
 from sqlalchemy import select
@@ -18,6 +20,7 @@ from enterprise_doc_core.object_store import (
     ArtifactObjectStore,
     ObjectStoreError,
 )
+from enterprise_doc_core.telemetry import MetricsRuntime
 
 
 class AgentArtifactError(Exception):
@@ -86,6 +89,7 @@ class AgentArtifactService:
         artifact_store: ArtifactObjectStore,
         clock: Callable[[], datetime] = _utcnow,
         download_ttl_seconds: int = 300,
+        metrics: MetricsRuntime | None = None,
     ) -> None:
         if not 1 <= download_ttl_seconds <= 3600:
             raise ValueError("download_ttl_seconds must be between 1 and 3600")
@@ -93,8 +97,48 @@ class AgentArtifactService:
         self.artifact_store = artifact_store
         self.clock = clock
         self.download_ttl_seconds = download_ttl_seconds
+        self.metrics = metrics
 
     async def list_for_run(
+        self,
+        *,
+        tenant_id: UUID,
+        actor_id: UUID,
+        run_id: UUID,
+    ) -> tuple[AgentArtifactResult, ...]:
+        started = perf_counter()
+        result_label = "error"
+        try:
+            result = await self._list_for_run(
+                tenant_id=tenant_id,
+                actor_id=actor_id,
+                run_id=run_id,
+            )
+        except asyncio.CancelledError:
+            result_label = "cancelled"
+            raise
+        except AgentArtifactNotFound:
+            result_label = "not_found"
+            raise
+        except AgentArtifactPrincipalForbidden:
+            result_label = "forbidden"
+            raise
+        except AgentArtifactError:
+            result_label = "permanent_error"
+            raise
+        else:
+            result_label = "success"
+            return result
+        finally:
+            if self.metrics is not None:
+                self.metrics.observe_boundary(
+                    boundary="artifact",
+                    operation="list",
+                    result=result_label,
+                    duration=perf_counter() - started,
+                )
+
+    async def _list_for_run(
         self,
         *,
         tenant_id: UUID,
@@ -129,6 +173,48 @@ class AgentArtifactService:
             return tuple(self._result(artifact) for artifact in artifacts)
 
     async def get_download(
+        self,
+        *,
+        tenant_id: UUID,
+        actor_id: UUID,
+        artifact_id: UUID,
+    ) -> AgentArtifactDownloadResult:
+        started = perf_counter()
+        result_label = "error"
+        try:
+            result = await self._get_download(
+                tenant_id=tenant_id,
+                actor_id=actor_id,
+                artifact_id=artifact_id,
+            )
+        except asyncio.CancelledError:
+            result_label = "cancelled"
+            raise
+        except AgentArtifactNotFound:
+            result_label = "not_found"
+            raise
+        except AgentArtifactPrincipalForbidden:
+            result_label = "forbidden"
+            raise
+        except AgentArtifactStoreUnavailable:
+            result_label = "retryable_error"
+            raise
+        except AgentArtifactError:
+            result_label = "permanent_error"
+            raise
+        else:
+            result_label = "success"
+            return result
+        finally:
+            if self.metrics is not None:
+                self.metrics.observe_boundary(
+                    boundary="artifact",
+                    operation="download",
+                    result=result_label,
+                    duration=perf_counter() - started,
+                )
+
+    async def _get_download(
         self,
         *,
         tenant_id: UUID,

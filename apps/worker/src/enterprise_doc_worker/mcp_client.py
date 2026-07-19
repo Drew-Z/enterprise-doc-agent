@@ -6,6 +6,7 @@ import os
 from collections.abc import Callable, Sequence
 from contextlib import AbstractAsyncContextManager
 from pathlib import Path
+from time import perf_counter
 from typing import Any, Protocol, TypeVar
 
 from mcp import ClientSession, StdioServerParameters
@@ -24,6 +25,7 @@ from enterprise_doc_core.agents import (
     SearchDocumentInput,
     SearchDocumentResult,
 )
+from enterprise_doc_core.telemetry import MetricsRuntime
 from enterprise_doc_worker.queue import JobHandlerError
 
 CONTEXT_ENV = "ENTERPRISE_DOC_MCP_CONTEXT"
@@ -50,6 +52,12 @@ class McpClientTransportError(McpClientError):
 class McpToolReturnedError(McpClientError):
     code = "mcp_tool_returned_error"
     message = "The MCP tool rejected the request."
+
+
+class McpToolRetryableError(McpToolReturnedError):
+    code = "mcp_tool_retryable_error"
+    message = "The MCP tool reported a retryable failure."
+    retryable = True
 
 
 class McpToolResultInvalid(McpClientError):
@@ -242,6 +250,104 @@ class McpStdioClient:
         )
 
 
+class InstrumentedMcpClient:
+    """Observe MCP calls with bounded labels after fault decoration."""
+
+    def __init__(self, inner: McpClient, metrics: MetricsRuntime) -> None:
+        self.inner = inner
+        self.metrics = metrics
+
+    async def call[ResultT: BaseModel](
+        self,
+        *,
+        tool_name: str,
+        request: BaseModel,
+        result_model: type[ResultT],
+        context_token: SecretStr | str,
+    ) -> ResultT:
+        started = perf_counter()
+        result_label = "error"
+        try:
+            result = await self.inner.call(
+                tool_name=tool_name,
+                request=request,
+                result_model=result_model,
+                context_token=context_token,
+            )
+        except asyncio.CancelledError:
+            result_label = "cancelled"
+            raise
+        except McpClientTimeout:
+            result_label = "timeout"
+            raise
+        except McpClientError as error:
+            result_label = "retryable_error" if error.retryable else "permanent_error"
+            raise
+        except Exception:
+            result_label = "error"
+            raise
+        else:
+            result_label = "success"
+            return result
+        finally:
+            self.metrics.observe_boundary(
+                boundary="mcp",
+                operation="call",
+                result=result_label,
+                duration=perf_counter() - started,
+            )
+
+    async def search_document(
+        self, *, context_token: SecretStr | str, request: SearchDocumentInput
+    ) -> SearchDocumentResult:
+        return await self.call(
+            tool_name="search_document",
+            request=request,
+            result_model=SearchDocumentResult,
+            context_token=context_token,
+        )
+
+    async def read_chunk(
+        self, *, context_token: SecretStr | str, request: ReadChunkInput
+    ) -> ReadChunkResult:
+        return await self.call(
+            tool_name="read_chunk",
+            request=request,
+            result_model=ReadChunkResult,
+            context_token=context_token,
+        )
+
+    async def create_draft_artifact(
+        self, *, context_token: SecretStr | str, request: CreateDraftArtifactInput
+    ) -> CreateDraftArtifactResult:
+        return await self.call(
+            tool_name="create_draft_artifact",
+            request=request,
+            result_model=CreateDraftArtifactResult,
+            context_token=context_token,
+        )
+
+    async def get_artifact(
+        self, *, context_token: SecretStr | str, request: GetArtifactInput
+    ) -> GetArtifactResult:
+        return await self.call(
+            tool_name="get_artifact",
+            request=request,
+            result_model=GetArtifactResult,
+            context_token=context_token,
+        )
+
+    async def publish_artifact(
+        self, *, context_token: SecretStr | str, request: PublishArtifactInput
+    ) -> PublishArtifactResult:
+        return await self.call(
+            tool_name="publish_artifact",
+            request=request,
+            result_model=PublishArtifactResult,
+            context_token=context_token,
+        )
+
+
 def _secret_value(value: SecretStr | str) -> str:
     return value.get_secret_value() if isinstance(value, SecretStr) else value
 
@@ -254,6 +360,18 @@ def _exception_leaves(error: BaseException) -> tuple[BaseException, ...]:
 
 def _parse_result[ResultT: BaseModel](result: Any, result_model: type[ResultT]) -> ResultT:
     if bool(getattr(result, "isError", False)):
+        content = getattr(result, "content", ())
+        retryable_codes = {
+            "mcp_tool_timeout",
+            "tool_execution_in_progress",
+            "tool_object_store_unavailable",
+        }
+        if isinstance(content, list) and any(
+            isinstance(text := getattr(item, "text", None), str)
+            and any(code in text for code in retryable_codes)
+            for item in content
+        ):
+            raise McpToolRetryableError()
         raise McpToolReturnedError()
     structured = getattr(result, "structuredContent", None)
     if not isinstance(structured, dict):
@@ -275,5 +393,6 @@ __all__ = [
     "McpClientTransportError",
     "McpStdioClient",
     "McpToolResultInvalid",
+    "McpToolRetryableError",
     "McpToolReturnedError",
 ]

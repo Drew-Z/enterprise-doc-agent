@@ -17,11 +17,13 @@ from enterprise_doc_core.object_store.errors import (
     ObjectStoreProtocolError,
     normalize_object_store_error,
 )
+from enterprise_doc_core.object_store.metrics import instrument_object_store_operation
 from enterprise_doc_core.object_store.models import (
     ArtifactObject,
     ObjectHead,
     PresignedObjectDownload,
 )
+from enterprise_doc_core.telemetry import MetricsRuntime
 
 
 class ArtifactObjectStore(Protocol):
@@ -60,6 +62,7 @@ class Boto3ArtifactObjectStore:
         max_object_bytes: int = 16 * 1024 * 1024,
         control_client: Any | None = None,
         presign_client: Any | None = None,
+        metrics: MetricsRuntime | None = None,
     ) -> None:
         if not 1 <= max_object_bytes <= 256 * 1024 * 1024:
             raise ValueError("max_object_bytes must be between 1 and 256 MiB")
@@ -76,7 +79,9 @@ class Boto3ArtifactObjectStore:
             else create_s3_client(settings, endpoint_url=settings.presign_endpoint)
         )
         self._closed = False
+        self.metrics = metrics
 
+    @instrument_object_store_operation("write")
     async def put_object(
         self,
         *,
@@ -104,7 +109,7 @@ class Boto3ArtifactObjectStore:
             Metadata=normalized_metadata,
             ChecksumSHA256=checksum_b64,
         )
-        head = await self.head_object(bucket=bucket, key=key)
+        head = await self._head_object(bucket=bucket, key=key)
         if head.size_bytes != len(body):
             raise ObjectStoreChecksumMismatch()
         metadata_sha256 = head.metadata.get("sha256")
@@ -121,7 +126,11 @@ class Boto3ArtifactObjectStore:
             etag=head.etag,
         )
 
+    @instrument_object_store_operation("read")
     async def head_object(self, *, bucket: str, key: str) -> ObjectHead:
+        return await self._head_object(bucket=bucket, key=key)
+
+    async def _head_object(self, *, bucket: str, key: str) -> ObjectHead:
         _validate_location(bucket=bucket, key=key)
         response = _require_mapping(
             await self._call(
@@ -148,10 +157,12 @@ class Boto3ArtifactObjectStore:
             metadata={str(name): str(value) for name, value in metadata.items()},
         )
 
+    @instrument_object_store_operation("write")
     async def delete_object(self, *, bucket: str, key: str) -> None:
         _validate_location(bucket=bucket, key=key)
         await self._call(self.control_client.delete_object, Bucket=bucket, Key=key)
 
+    @instrument_object_store_operation("download")
     async def presign_get(
         self,
         *,

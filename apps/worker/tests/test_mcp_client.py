@@ -5,15 +5,18 @@ from typing import Any
 from uuid import uuid4
 
 import pytest
-from mcp.types import CallToolResult
+from mcp.types import CallToolResult, TextContent
 
 from enterprise_doc_core.agents import SearchDocumentInput, SearchDocumentResult
+from enterprise_doc_core.telemetry import MetricsRuntime
 from enterprise_doc_worker.mcp_client import (
     CONTEXT_ENV,
+    InstrumentedMcpClient,
     McpClientTimeout,
     McpClientTransportError,
     McpStdioClient,
     McpToolResultInvalid,
+    McpToolRetryableError,
     McpToolReturnedError,
 )
 
@@ -230,3 +233,57 @@ async def test_mcp_client_propagates_cancellation_and_closes_resources() -> None
         await task
 
     assert transport.exited and session.exited
+
+
+@pytest.mark.asyncio
+async def test_mcp_client_preserves_known_retryable_tool_errors() -> None:
+    request = SearchDocumentInput(idempotency_key="search-1", query="payment")
+    session = FakeSession(
+        CallToolResult(
+            content=[
+                TextContent(
+                    type="text",
+                    text=("Error executing tool search_document: tool_object_store_unavailable"),
+                )
+            ],
+            isError=True,
+        )
+    )
+    client = _client(FakeTransport(None), session)
+
+    with pytest.raises(McpToolRetryableError) as exc_info:
+        await client.search_document(context_token="secret-context", request=request)
+
+    assert exc_info.value.retryable is True
+
+
+@pytest.mark.asyncio
+async def test_instrumented_mcp_client_records_success_and_timeout() -> None:
+    request = SearchDocumentInput(idempotency_key="search-1", query="payment")
+    metrics = MetricsRuntime.create()
+    success = InstrumentedMcpClient(
+        _client(
+            FakeTransport(None),
+            FakeSession(CallToolResult(content=[], structuredContent=_result())),
+        ),
+        metrics,
+    )
+
+    result = await success.search_document(context_token="secret-context", request=request)
+    assert isinstance(result, SearchDocumentResult)
+
+    class SlowSession(FakeSession):
+        async def call_tool(self, name: str, *, arguments: dict[str, Any]) -> Any:
+            await asyncio.sleep(1)
+            return None
+
+    timeout = InstrumentedMcpClient(
+        _client(FakeTransport(None), SlowSession()),
+        metrics,
+    )
+    with pytest.raises(McpClientTimeout):
+        await timeout.search_document(context_token="secret-context", request=request)
+
+    rendered = metrics.render().decode("utf-8")
+    assert 'boundary="mcp",operation="call",result="success"' in rendered
+    assert 'boundary="mcp",operation="call",result="timeout"' in rendered

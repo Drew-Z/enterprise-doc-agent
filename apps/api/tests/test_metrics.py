@@ -3,6 +3,7 @@ from __future__ import annotations
 from httpx import ASGITransport, AsyncClient
 
 from enterprise_doc_api.app import create_app
+from enterprise_doc_core.telemetry import MetricsRuntime
 
 
 async def test_api_metrics_endpoint_is_prometheus_compatible_and_excludes_itself() -> None:
@@ -20,3 +21,14 @@ async def test_api_metrics_endpoint_is_prometheus_compatible_and_excludes_itself
     assert "/health/live" in body
     assert 'route="/metrics"' not in body
     assert "x-request-id" not in body
+
+
+def test_api_default_services_share_the_process_metrics_registry() -> None:
+    metrics = MetricsRuntime.create()
+    app = create_app(metrics=metrics)
+
+    assert app.state.metrics is metrics
+    assert app.state.approval_service.metrics is metrics
+    assert app.state.agent_artifact_service.metrics is metrics
+    assert app.state.agent_artifact_service.artifact_store.metrics is metrics
+    assert app.state.upload_creation_service.object_store.metrics is metrics

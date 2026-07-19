@@ -12,6 +12,7 @@ from enterprise_doc_core.config import FoundationSettings
 from enterprise_doc_core.db import create_database_engine
 from enterprise_doc_core.health.models import ComponentStatus, HealthChecker
 from enterprise_doc_core.object_store import Boto3MultipartObjectStore, create_s3_client
+from enterprise_doc_core.telemetry import MetricsRuntime
 
 
 class DatabaseChecker:
@@ -64,7 +65,11 @@ class FoundationResources:
         await self.multipart_object_store.close()
 
 
-def build_foundation_resources(settings: FoundationSettings) -> FoundationResources:
+def build_foundation_resources(
+    settings: FoundationSettings,
+    *,
+    metrics: MetricsRuntime | None = None,
+) -> FoundationResources:
     database_engine = create_database_engine(settings.database)
     redis_client = redis.from_url(
         settings.redis.url.get_secret_value(),
@@ -83,6 +88,7 @@ def build_foundation_resources(settings: FoundationSettings) -> FoundationResour
         settings=settings.object_store,
         control_client=object_store_client,
         presign_client=presign_client,
+        metrics=metrics,
     )
     checkers: tuple[HealthChecker, ...] = (
         DatabaseChecker(database_engine),

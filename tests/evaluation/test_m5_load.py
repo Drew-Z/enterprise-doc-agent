@@ -8,6 +8,8 @@ import pytest
 import scripts.load_m5 as load_m5
 from scripts.load_m5 import RequestSample, build_report, run_workload
 
+from enterprise_doc_core.evaluation import verify_report_payload
+
 
 def _async_args(**overrides: object) -> argparse.Namespace:
     values: dict[str, object] = {
@@ -67,6 +69,35 @@ async def test_health_load_runner_records_percentiles_without_resource_claims() 
     assert report.completed_requests == 5
     assert report.resource_saturation["measured"] is False
     assert report.measured["p95_ms"] is not None
+    assert report.provenance.payload_sha256
+    assert verify_report_payload(report.model_dump(mode="json"))
+
+
+async def test_workload_converts_individual_unexpected_errors_to_failed_samples(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def execute(*_: object, **kwargs: object) -> RequestSample:
+        if kwargs["index"] == 1:
+            raise RuntimeError("request failed unexpectedly")
+        return RequestSample(duration_ms=5, success=True, status_code=200)
+
+    monkeypatch.setattr(load_m5, "execute_request", execute)
+    async with httpx.AsyncClient(base_url="http://test") as client:
+        samples, _ = await run_workload(
+            client,
+            scenario="health",
+            requests=2,
+            concurrency=2,
+            token=None,
+            document_version_id=None,
+            run_id=None,
+            terminal_timeout_seconds=1,
+            poll_seconds=0,
+        )
+
+    assert len(samples) == 2
+    assert sum(sample.success for sample in samples) == 1
+    assert samples[1].error_code == "load_runner_error"
 
 
 def test_load_report_uses_measured_host_saturation_in_bottleneck() -> None:
@@ -114,10 +145,12 @@ async def test_async_main_joins_resource_sampler_when_workload_raises(
     monkeypatch.setattr(load_m5, "sample_resources", sampler)
     monkeypatch.setattr(load_m5, "run_workload", failing_workload)
 
-    with pytest.raises(RuntimeError, match="workload failed"):
-        await load_m5.async_main(_async_args())
+    report = await load_m5.async_main(_async_args())
 
     assert sampler_finished.is_set()
+    assert report.status == "failed"
+    assert report.errors_by_status == {"load_runner_error": 1}
+    assert report.provenance.payload_sha256
 
 
 async def test_async_main_stops_sampler_when_client_enter_raises(
@@ -147,10 +180,29 @@ async def test_async_main_stops_sampler_when_client_enter_raises(
     monkeypatch.setattr(load_m5, "sample_resources", sampler)
     monkeypatch.setattr(load_m5.httpx, "AsyncClient", lambda **kwargs: FailingClient())
 
-    with pytest.raises(RuntimeError, match="client enter failed"):
-        await load_m5.async_main(_async_args())
+    report = await load_m5.async_main(_async_args())
 
     assert sampler_finished.is_set()
+    assert report.status == "failed"
+    assert report.errors_by_status == {"load_runner_error": 1}
+
+
+def test_load_provenance_records_behavior_flags_and_hashes_redacted_ids() -> None:
+    args = _async_args(
+        document_version_id="00000000-0000-0000-0000-000000000001",
+        run_id="00000000-0000-0000-0000-000000000002",
+    )
+
+    command = load_m5._report_command(args)
+    encoded = " ".join(command)
+
+    assert "--request-timeout-seconds 1.0" in encoded
+    assert "--terminal-timeout-seconds 1.0" in encoded
+    assert "--poll-seconds 0.0" in encoded
+    assert "--resource-sample-interval-seconds 0.01" in encoded
+    assert "00000000-0000-0000-0000-000000000001" not in encoded
+    assert "00000000-0000-0000-0000-000000000002" not in encoded
+    assert load_m5._provenance_input_sha256(args) is not None
 
 
 async def test_async_main_keeps_workload_result_when_sampler_fails(

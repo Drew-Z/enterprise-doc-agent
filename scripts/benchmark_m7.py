@@ -5,8 +5,9 @@ import asyncio
 import hashlib
 import json
 import time
+from dataclasses import asdict
 from pathlib import Path
-from typing import Any
+from typing import Any, Never
 from uuid import UUID
 
 from enterprise_doc_core.agents import (
@@ -20,12 +21,21 @@ from enterprise_doc_core.agents import (
     RoutedChatModelGateway,
 )
 from enterprise_doc_core.agents.models import AgentRunTaskType
-from enterprise_doc_core.evaluation import ModelBenchmarkReport, build_percentile_summary
+from enterprise_doc_core.evaluation import (
+    ModelBenchmarkReport,
+    ModelCostMetadata,
+    ModelProviderHealthSnapshot,
+    build_percentile_summary,
+    capture_report_provenance,
+    seal_report,
+)
 from enterprise_doc_core.evaluation.contracts import utc_now
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 class TimeoutGateway:
-    async def generate(self, _: GroundedModelRequest):
+    async def generate(self, _: GroundedModelRequest) -> Never:
         raise ModelTimeoutError()
 
 
@@ -64,8 +74,8 @@ def _request(case: dict[str, Any]) -> GroundedModelRequest:
     )
 
 
-def _route(scenario: str) -> RoutedChatModelGateway | DeterministicGroundedGateway:
-    descriptor = ModelRouteDescriptor(
+def _route_descriptor() -> ModelRouteDescriptor:
+    return ModelRouteDescriptor(
         route_id="m7-local",
         provider="deterministic",
         model_name="deterministic-grounded",
@@ -74,15 +84,103 @@ def _route(scenario: str) -> RoutedChatModelGateway | DeterministicGroundedGatew
         context_window_tokens=8192,
         embedding_dimension=8,
     )
+
+
+def _timeout_route_descriptor() -> ModelRouteDescriptor:
+    return ModelRouteDescriptor(
+        route_id="m7-local-timeout",
+        provider="synthetic",
+        model_name="timeout-gateway",
+        model_version="m7.fault.v1",
+    )
+
+
+def _route(
+    scenario: str,
+) -> tuple[RoutedChatModelGateway | DeterministicGroundedGateway, ModelRouteDescriptor]:
+    descriptor = _route_descriptor()
     if scenario == "fallback-contract":
-        return RoutedChatModelGateway(
-            primary=TimeoutGateway(),  # type: ignore[arg-type]
-            primary_descriptor=descriptor,
-            fallback=DeterministicGroundedGateway(),
-            fallback_descriptor=descriptor,
-            breaker=CircuitBreaker(failure_threshold=2, cooldown_seconds=60),
+        primary_descriptor = _timeout_route_descriptor()
+        return (
+            RoutedChatModelGateway(
+                primary=TimeoutGateway(),
+                primary_descriptor=primary_descriptor,
+                fallback=DeterministicGroundedGateway(),
+                fallback_descriptor=descriptor,
+                breaker=CircuitBreaker(failure_threshold=2, cooldown_seconds=60),
+            ),
+            primary_descriptor,
         )
-    return DeterministicGroundedGateway()
+    return DeterministicGroundedGateway(), descriptor
+
+
+def _route_metadata(
+    gateway: RoutedChatModelGateway | DeterministicGroundedGateway,
+    descriptor: ModelRouteDescriptor,
+) -> dict[str, str | int | None]:
+    metadata: dict[str, str | int | None] = {
+        "route_id": descriptor.route_id,
+        "provider": descriptor.provider,
+        "model_name": descriptor.model_name,
+        "model_version": descriptor.model_version,
+        "quantization": descriptor.quantization,
+        "context_window_tokens": descriptor.context_window_tokens,
+        "embedding_dimension": descriptor.embedding_dimension,
+    }
+    if isinstance(gateway, RoutedChatModelGateway):
+        fallback = gateway.fallback_descriptor
+        metadata.update(
+            {
+                "primary_provider": gateway.primary_descriptor.provider,
+                "primary_model_name": gateway.primary_descriptor.model_name,
+                "primary_model_version": gateway.primary_descriptor.model_version,
+                "fallback_provider": fallback.provider if fallback is not None else None,
+                "fallback_model_name": fallback.model_name if fallback is not None else None,
+                "fallback_model_version": fallback.model_version if fallback is not None else None,
+            }
+        )
+    return metadata
+
+
+def _report_command(args: argparse.Namespace) -> list[str]:
+    command = [
+        "python",
+        "scripts/benchmark_m7.py",
+        "--dataset",
+        "<dataset>",
+        "--scenario",
+        str(args.scenario),
+        "--iterations",
+        str(args.iterations),
+    ]
+    if args.report_path is not None:
+        command.extend(["--report-path", "<report-path>"])
+    return command
+
+
+async def _provider_health(
+    gateway: RoutedChatModelGateway | DeterministicGroundedGateway,
+    descriptor: ModelRouteDescriptor,
+) -> dict[str, ModelProviderHealthSnapshot]:
+    if isinstance(gateway, RoutedChatModelGateway):
+        return {
+            name: ModelProviderHealthSnapshot.model_validate(asdict(snapshot))
+            for name, snapshot in (await gateway.healthcheck()).items()
+        }
+    available = await gateway.healthcheck()
+    return {
+        "primary": ModelProviderHealthSnapshot(
+            available=available,
+            provider=descriptor.provider,
+            model_name=descriptor.model_name,
+            model_version=descriptor.model_version,
+            model_revision=descriptor.model_revision,
+            quantization=descriptor.quantization,
+            context_window_tokens=descriptor.context_window_tokens,
+            embedding_dimension=descriptor.embedding_dimension,
+            error_code=None if available else "provider_unavailable",
+        )
+    }
 
 
 async def run_benchmark(
@@ -90,12 +188,13 @@ async def run_benchmark(
     dataset_path: Path,
     scenario: str,
     iterations: int,
+    command: list[str] | None = None,
 ) -> ModelBenchmarkReport:
     payload, dataset_sha256 = _load_dataset(dataset_path)
     cases = payload["cases"]
     if iterations <= 0:
         raise ValueError("iterations must be positive")
-    gateway = _route(scenario)
+    gateway, descriptor = _route(scenario)
     started_at = utc_now()
     latencies: list[float] = []
     errors: dict[str, int] = {}
@@ -132,64 +231,81 @@ async def run_benchmark(
     fallback_contract_passed = scenario != "fallback-contract" or (
         not errors and fallback_count == iterations and breaker_state == "open"
     )
-    report = ModelBenchmarkReport(
-        scenario=scenario,
-        status=(
-            "passed"
-            if not errors and valid_case_rate == 1.0 and fallback_contract_passed
-            else "failed"
-        ),
-        route={
-            "route_id": "m7-local",
-            "provider": "deterministic",
-            "model_name": "deterministic-grounded",
-            "model_version": "m7.benchmark.v1",
-            "quantization": "none",
-            "context_window_tokens": 8192,
-            "embedding_dimension": 8,
-        },
-        dataset_version=str(payload["version"]),
-        dataset_sha256=dataset_sha256,
-        sample_count=iterations,
-        latency_ms=build_percentile_summary(latencies),
-        errors_by_code=errors,
-        fallback_count=fallback_count,
-        breaker_state=breaker_state,
-        citation_validity={
-            "valid_cases": valid_cases,
-            "total_cases": iterations,
-            "valid_citation_count": valid_citation_count,
-            "citation_precision": citation_precision,
-            "valid_case_rate": valid_case_rate,
-            "citation_count": total_citations,
-        },
-        targets=(
-            {
-                "citation_precision": 1.0,
-                "valid_case_rate": 1.0,
-                "fallback_count": iterations,
-                "breaker_state": "open",
-            }
-            if scenario == "fallback-contract"
-            else {"citation_precision": 1.0, "valid_case_rate": 1.0}
-        ),
-        measured={
-            "citation_precision": citation_precision,
-            "valid_case_rate": valid_case_rate,
-            "fallback_count": fallback_count,
-            "successful_requests": successful_requests,
-        },
-        limitations=[
-            *list(payload.get("limitations", [])),
-            "This benchmark is a local orchestration baseline, not a GPU/vLLM throughput "
-            "or memory result.",
-            "Real provider quality, cost, network latency and queue contention require a "
-            "separate manual gate.",
+    provider_health = await _provider_health(gateway, descriptor)
+    provenance = capture_report_provenance(
+        command=command
+        or [
+            "internal",
+            "scripts.benchmark_m7.run_benchmark",
+            "--scenario",
+            scenario,
+            "--iterations",
+            str(iterations),
         ],
-        started_at=started_at,
-        completed_at=utc_now(),
+        root=ROOT,
+        execution_scope="local-model-benchmark",
+        input_sha256=dataset_sha256,
     )
-    return report
+    return seal_report(
+        ModelBenchmarkReport(
+            scenario=scenario,
+            status=(
+                "passed"
+                if not errors and valid_case_rate == 1.0 and fallback_contract_passed
+                else "failed"
+            ),
+            route=_route_metadata(gateway, descriptor),
+            dataset_version=str(payload["version"]),
+            dataset_sha256=dataset_sha256,
+            sample_count=iterations,
+            latency_ms=build_percentile_summary(latencies),
+            errors_by_code=errors,
+            fallback_count=fallback_count,
+            breaker_state=breaker_state,
+            provider_health=provider_health,
+            cost_metadata=ModelCostMetadata(
+                source="not_available",
+                limitation=(
+                    "The deterministic local gateway does not report token usage or provider "
+                    "pricing; no monetary cost is claimed."
+                ),
+            ),
+            citation_validity={
+                "valid_cases": valid_cases,
+                "total_cases": iterations,
+                "valid_citation_count": valid_citation_count,
+                "citation_precision": citation_precision,
+                "valid_case_rate": valid_case_rate,
+                "citation_count": total_citations,
+            },
+            targets=(
+                {
+                    "citation_precision": 1.0,
+                    "valid_case_rate": 1.0,
+                    "fallback_count": iterations,
+                    "breaker_state": "open",
+                }
+                if scenario == "fallback-contract"
+                else {"citation_precision": 1.0, "valid_case_rate": 1.0}
+            ),
+            measured={
+                "citation_precision": citation_precision,
+                "valid_case_rate": valid_case_rate,
+                "fallback_count": fallback_count,
+                "successful_requests": successful_requests,
+            },
+            limitations=[
+                *list(payload.get("limitations", [])),
+                "This benchmark is a local orchestration baseline, not a GPU/vLLM throughput "
+                "or memory result.",
+                "Real provider quality, cost, network latency and queue contention require a "
+                "separate manual gate.",
+            ],
+            provenance=provenance,
+            started_at=started_at,
+            completed_at=utc_now(),
+        )
+    )
 
 
 def main() -> None:
@@ -212,6 +328,7 @@ def main() -> None:
             dataset_path=args.dataset,
             scenario=args.scenario,
             iterations=args.iterations,
+            command=_report_command(args),
         )
     )
     rendered = report.model_dump_json(indent=2)

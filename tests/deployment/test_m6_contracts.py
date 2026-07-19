@@ -185,6 +185,15 @@ def test_ci_workflows_have_no_allow_failure_and_include_release_boundaries() -> 
     assert "rollout status" in deploy
     assert "scripts/rollback_release.py" in rollback
     assert "revisions_json" in rollback
+    assert "EXPECTED_CONTEXT" in rollback
+    assert "current-context" in rollback
+    assert "STAGING_KUBE_API_SERVER" in rollback
+    assert "STAGING_NAMESPACE_UID" in rollback
+    assert "actual_api_server" in rollback
+    assert "actual_namespace_uid" in rollback
+    assert "kubectl auth can-i get deployments.apps" in rollback
+    assert "kubectl auth can-i patch deployments.apps" in rollback
+    assert "kubectl auth can-i watch deployments.apps" in rollback
     assert "configure_staging_manifest.py" in deploy
     assert "validate_staging_secrets.py" in deploy
     assert "sanitize_deployment_evidence.py" in deploy

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import hashlib
 import json
 import os
 import platform
@@ -18,14 +19,18 @@ import psutil
 
 from enterprise_doc_core.evaluation import (
     LoadReport,
+    ReportProvenance,
     build_percentile_summary,
+    capture_report_provenance,
     nearest_rank_percentile,
+    seal_report,
 )
 from enterprise_doc_core.evaluation.contracts import utc_now
 
 _TERMINAL_STATUSES = {"cancelled", "expired", "failed", "refused", "rejected", "succeeded"}
 _HOST_CPU_P95_TARGET = 85.0
 _HOST_MEMORY_P95_TARGET = 90.0
+ROOT = Path(__file__).resolve().parents[1]
 
 
 @dataclass(frozen=True, slots=True)
@@ -35,6 +40,7 @@ class RequestSample:
     status_code: int | None
     terminal_status: str | None = None
     identity: tuple[str, str] | None = None
+    error_code: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -338,8 +344,26 @@ async def run_workload(
             )
 
     started = time.perf_counter()
-    samples = await asyncio.gather(*(bounded(index) for index in range(requests)))
-    return list(samples), time.perf_counter() - started
+    results = await asyncio.gather(
+        *(bounded(index) for index in range(requests)),
+        return_exceptions=True,
+    )
+    samples: list[RequestSample] = []
+    for result in results:
+        if isinstance(result, Exception):
+            samples.append(
+                RequestSample(
+                    duration_ms=0.0,
+                    success=False,
+                    status_code=None,
+                    error_code=_execution_error_code(result),
+                )
+            )
+        elif isinstance(result, BaseException):
+            raise result
+        else:
+            samples.append(result)
+    return samples, time.perf_counter() - started
 
 
 def _resource_value(
@@ -395,6 +419,8 @@ def build_report(
     completed_at: str,
     target_p95_ms: float,
     resource_saturation: dict[str, Any] | None = None,
+    provenance: ReportProvenance | None = None,
+    execution_error_code: str | None = None,
 ) -> LoadReport:
     successful = sum(sample.success for sample in samples)
     failed = len(samples) - successful
@@ -402,10 +428,13 @@ def build_report(
     latency = build_percentile_summary(durations)
     p95 = latency["p95_ms"]
     status_counts = Counter(
-        str(sample.status_code) if sample.status_code is not None else "transport_error"
+        sample.error_code
+        or (str(sample.status_code) if sample.status_code is not None else "transport_error")
         for sample in samples
         if not sample.success
     )
+    if execution_error_code is not None:
+        status_counts[execution_error_code] += 1
     terminal_counts = Counter(
         sample.terminal_status for sample in samples if sample.terminal_status is not None
     )
@@ -428,10 +457,16 @@ def build_report(
         and host_memory_p95 <= _HOST_MEMORY_P95_TARGET
     )
     passed = (
-        failed == 0 and duplicate_consistent and latency_target_passed and resource_targets_passed
+        execution_error_code is None
+        and failed == 0
+        and duplicate_consistent
+        and latency_target_passed
+        and resource_targets_passed
     )
     resource_bottleneck = _resource_bottleneck(resolved_resources)
-    if failed:
+    if execution_error_code is not None:
+        bottleneck = "The load runner failed before the configured workload completed."
+    elif failed:
         bottleneck = "Request failures or terminal timeouts dominate this bounded run."
     elif resources_requested and not resources_measured:
         bottleneck = "Requested resource sampling did not produce usable measurements."
@@ -465,55 +500,156 @@ def build_report(
                 "host_memory_p95_percent": _HOST_MEMORY_P95_TARGET,
             }
         )
-    return LoadReport(
-        scenario=scenario,
-        status="passed" if passed else "failed",
-        started_at=started_at,
-        completed_at=completed_at,
-        duration_seconds=round(duration_seconds, 6),
-        environment={
-            "operating_system": platform.platform(),
-            "architecture": platform.machine(),
-            "python": platform.python_version(),
-            "network_scope": "local-or-explicit-base-url",
-        },
-        workload={
-            "base_url": base_url,
-            "configured_requests": requests,
-            "configured_concurrency": concurrency,
-            "percentile_method": "nearest-rank",
-        },
-        completed_requests=len(samples),
-        successful_requests=successful,
-        failed_requests=failed,
-        error_rate=failed / len(samples) if samples else 0,
-        throughput_requests_per_second=round(throughput, 6),
-        latency_ms=latency,
-        errors_by_status=dict(status_counts),
-        terminal_status_counts=dict(terminal_counts),
-        resource_saturation=resolved_resources,
-        bottleneck=bottleneck,
-        capacity_conclusion=(
-            f"This bounded run completed {len(samples)} requests at {throughput:.3f} requests/s "
-            f"in the recorded environment. {_resource_capacity_clause(resolved_resources)} "
-            "It is not a production capacity claim."
-        ),
-        targets=targets,
-        measured={
-            "p95_ms": p95,
-            "error_rate": failed / len(samples) if samples else 0,
-            "throughput_requests_per_second": round(throughput, 6),
-            "duplicate_identity_count": len(identities),
-            "host_cpu_p95_percent": host_cpu_p95,
-            "host_memory_p95_percent": host_memory_p95,
-        },
-        limitations=[
-            "This is one bounded execution and does not establish production capacity or an SLO.",
-            resource_limitation,
-            "Representative capacity requires repeated runs on an isolated production-like "
-            "environment with immutable images.",
-        ],
+    resolved_provenance = provenance or capture_report_provenance(
+        command=["internal", "scripts.load_m5.build_report"],
+        root=ROOT,
+        execution_scope="local-bounded-load",
     )
+    return seal_report(
+        LoadReport(
+            scenario=scenario,
+            status="passed" if passed else "failed",
+            started_at=started_at,
+            completed_at=completed_at,
+            duration_seconds=round(duration_seconds, 6),
+            environment={
+                "operating_system": platform.platform(),
+                "architecture": platform.machine(),
+                "python": platform.python_version(),
+                "network_scope": "local-or-explicit-base-url",
+            },
+            workload={
+                "base_url": base_url,
+                "configured_requests": requests,
+                "configured_concurrency": concurrency,
+                "percentile_method": "nearest-rank",
+                "execution_error_code": execution_error_code,
+                "sample_collection_complete": execution_error_code is None,
+            },
+            completed_requests=len(samples),
+            successful_requests=successful,
+            failed_requests=failed,
+            error_rate=(
+                1.0 if execution_error_code is not None else failed / len(samples) if samples else 0
+            ),
+            throughput_requests_per_second=round(throughput, 6),
+            latency_ms=latency,
+            errors_by_status=dict(status_counts),
+            terminal_status_counts=dict(terminal_counts),
+            resource_saturation=resolved_resources,
+            bottleneck=bottleneck,
+            capacity_conclusion=(
+                (
+                    "The load runner stopped before a complete sample set was returned; "
+                    f"{len(samples)} completed samples were recorded. "
+                    "No throughput or capacity conclusion is claimed from this failed run."
+                )
+                if execution_error_code is not None
+                else (
+                    f"This bounded run completed {len(samples)} requests at "
+                    f"{throughput:.3f} requests/s in the recorded environment. "
+                    f"{_resource_capacity_clause(resolved_resources)} "
+                    "It is not a production capacity claim."
+                )
+            ),
+            targets=targets,
+            measured={
+                "p95_ms": p95,
+                "error_rate": (
+                    1.0
+                    if execution_error_code is not None
+                    else failed / len(samples)
+                    if samples
+                    else 0
+                ),
+                "throughput_requests_per_second": round(throughput, 6),
+                "duplicate_identity_count": len(identities),
+                "host_cpu_p95_percent": host_cpu_p95,
+                "host_memory_p95_percent": host_memory_p95,
+            },
+            limitations=[
+                *(
+                    [
+                        "The load runner stopped before workload completion; the stable "
+                        f"failure category was {execution_error_code}."
+                    ]
+                    if execution_error_code is not None
+                    else []
+                ),
+                "This is one bounded execution and does not establish production capacity or "
+                "an SLO.",
+                resource_limitation,
+                "Representative capacity requires repeated runs on an isolated production-like "
+                "environment with immutable images.",
+            ],
+            provenance=resolved_provenance,
+        )
+    )
+
+
+def _report_command(args: argparse.Namespace) -> list[str]:
+    command = [
+        "python",
+        "scripts/load_m5.py",
+        "--scenario",
+        str(args.scenario),
+        "--base-url",
+        str(args.base_url),
+        "--requests",
+        str(args.requests),
+        "--concurrency",
+        str(args.concurrency),
+        "--token-env",
+        str(args.token_env),
+        "--request-timeout-seconds",
+        str(args.request_timeout_seconds),
+        "--terminal-timeout-seconds",
+        str(args.terminal_timeout_seconds),
+        "--poll-seconds",
+        str(args.poll_seconds),
+        "--target-p95-ms",
+        str(args.target_p95_ms),
+        "--resource-sample-interval-seconds",
+        str(args.resource_sample_interval_seconds),
+    ]
+    if args.document_version_id:
+        command.extend(["--document-version-id", "<redacted-document-version-id>"])
+    if args.run_id:
+        command.extend(["--run-id", "<redacted-run-id>"])
+    if args.sample_resources:
+        command.append("--sample-resources")
+    if args.resource_process_id is not None:
+        command.extend(["--resource-process-id", str(args.resource_process_id)])
+    report_path = getattr(args, "report_path", None)
+    if report_path is not None:
+        command.extend(["--report-path", "<report-path>"])
+    return command
+
+
+def _provenance_input_sha256(args: argparse.Namespace) -> str | None:
+    sensitive_inputs = {
+        "document_version_id": args.document_version_id,
+        "run_id": args.run_id,
+    }
+    if not any(value is not None for value in sensitive_inputs.values()):
+        return None
+    encoded = json.dumps(
+        sensitive_inputs,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _execution_error_code(error: Exception) -> str:
+    if isinstance(error, httpx.TimeoutException):
+        return "load_http_timeout"
+    if isinstance(error, httpx.HTTPError):
+        return "load_http_error"
+    if isinstance(error, OSError):
+        return "load_os_error"
+    return "load_runner_error"
 
 
 def _validate_args(args: argparse.Namespace, token: str | None) -> None:
@@ -561,6 +697,16 @@ async def execute_load(args: argparse.Namespace) -> tuple[LoadReport, list[Reque
             )
         )
     resource_saturation: dict[str, Any] | None = None
+    provenance = capture_report_provenance(
+        command=_report_command(args),
+        root=ROOT,
+        execution_scope="local-bounded-load",
+        input_sha256=_provenance_input_sha256(args),
+    )
+    samples: list[RequestSample] = []
+    duration = 0.0
+    execution_error_code: str | None = None
+    workload_started = time.perf_counter()
     try:
         async with httpx.AsyncClient(
             base_url=args.base_url, timeout=timeout, trust_env=False
@@ -576,6 +722,11 @@ async def execute_load(args: argparse.Namespace) -> tuple[LoadReport, list[Reque
                 terminal_timeout_seconds=args.terminal_timeout_seconds,
                 poll_seconds=args.poll_seconds,
             )
+    except asyncio.CancelledError:
+        raise
+    except Exception as error:
+        execution_error_code = _execution_error_code(error)
+        duration = time.perf_counter() - workload_started
     finally:
         resource_saturation = await _finish_resource_sampling(
             stop=resource_stop,
@@ -593,6 +744,8 @@ async def execute_load(args: argparse.Namespace) -> tuple[LoadReport, list[Reque
             completed_at=utc_now(),
             target_p95_ms=args.target_p95_ms,
             resource_saturation=resource_saturation,
+            provenance=provenance,
+            execution_error_code=execution_error_code,
         ),
         samples,
     )

@@ -13,6 +13,7 @@ from enterprise_doc_core.object_store import (
     ObjectStoreChecksumMismatch,
     ObjectStoreProtocolError,
 )
+from enterprise_doc_core.telemetry import MetricsRuntime
 
 
 class RecordingArtifactClient:
@@ -158,3 +159,33 @@ async def test_artifact_adapter_rejects_post_write_integrity_mismatch() -> None:
             body=b"{}",
             content_type="application/json",
         )
+
+
+async def test_artifact_adapter_records_public_operations_without_nested_head_count() -> None:
+    control = RecordingArtifactClient()
+    metrics = MetricsRuntime.create()
+    adapter = Boto3ArtifactObjectStore(
+        settings=ObjectStoreSettings(),
+        control_client=control,
+        presign_client=RecordingArtifactClient(),
+        metrics=metrics,
+    )
+
+    await adapter.put_object(
+        bucket="artifacts",
+        key="tenant/run/answer.json",
+        body=b"{}",
+        content_type="application/json",
+    )
+    with pytest.raises(ObjectStoreProtocolError):
+        await adapter.put_object(
+            bucket="",
+            key="tenant/run/answer.json",
+            body=b"{}",
+            content_type="application/json",
+        )
+
+    rendered = metrics.render().decode("utf-8")
+    assert 'boundary="object_store",operation="write",result="success"' in rendered
+    assert 'boundary="object_store",operation="write",result="permanent_error"' in rendered
+    assert rendered.count('boundary="object_store",operation="read"') == 0

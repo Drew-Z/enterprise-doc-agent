@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Callable, Mapping
+from time import perf_counter
 from typing import Any, Protocol, cast
 
 from langgraph.checkpoint.base import BaseCheckpointSaver
@@ -38,7 +40,7 @@ from enterprise_doc_worker.agent_handler import (
     build_agent_execution_handler,
 )
 from enterprise_doc_worker.faults import wrap_mcp_client, wrap_model_gateway
-from enterprise_doc_worker.mcp_client import McpClient, McpStdioClient
+from enterprise_doc_worker.mcp_client import InstrumentedMcpClient, McpClient, McpStdioClient
 
 
 class AgentGraphExecutionResultInvalid(AgentGraphError):
@@ -127,14 +129,36 @@ class AgentGraphExecutor:
         checkpointer: BaseCheckpointSaver[Any],
         graph_version: str = AGENT_GRAPH_VERSION,
         graph_builder: GraphBuilder = build_agent_graph,
+        metrics: MetricsRuntime | None = None,
     ) -> None:
         self.backend_factory = backend_factory
         self.gateway = gateway
         self.checkpointer = checkpointer
         self.graph_version = graph_version
         self.graph_builder = graph_builder
+        self.metrics = metrics
 
     async def __call__(self, context: AgentExecutionContext) -> None:
+        started = perf_counter()
+        result_label = "error"
+        try:
+            result_label = await self._execute(context)
+        except asyncio.CancelledError:
+            result_label = "cancelled"
+            raise
+        except AgentGraphError:
+            result_label = "permanent_error"
+            raise
+        finally:
+            if self.metrics is not None:
+                self.metrics.observe_boundary(
+                    boundary="graph",
+                    operation="run",
+                    result=result_label,
+                    duration=perf_counter() - started,
+                )
+
+    async def _execute(self, context: AgentExecutionContext) -> str:
         if context.graph_version != self.graph_version:
             raise AgentExecutionContractMismatch()
         backend = self.backend_factory(context)
@@ -144,7 +168,7 @@ class AgentGraphExecutor:
         if context.execution_kind == "initial" and context.run_status == "waiting_approval":
             # The checkpoint and business wait projection were committed before
             # this retry was claimed; only settle the durable Job again.
-            return
+            return "success"
         graph = cast(
             CompiledGraph,
             self.graph_builder(
@@ -190,10 +214,11 @@ class AgentGraphExecutor:
             if not callable(mark_waiting):
                 raise AgentGraphExecutionResultInvalid()
             await mark_waiting()
-            return
+            return "success"
         outcome = result.get("outcome")
         if outcome not in {"succeeded", "refused", "rejected", "expired"}:
             raise AgentGraphExecutionResultInvalid()
+        return "success" if outcome == "succeeded" else "refused"
 
 
 def build_agent_graph_executor(
@@ -202,12 +227,14 @@ def build_agent_graph_executor(
     gateway: ChatModelGateway,
     checkpointer: BaseCheckpointSaver[Any],
     graph_version: str = AGENT_GRAPH_VERSION,
+    metrics: MetricsRuntime | None = None,
 ) -> AgentGraphExecutor:
     return AgentGraphExecutor(
         backend_factory=backend_factory,
         gateway=gateway,
         checkpointer=checkpointer,
         graph_version=graph_version,
+        metrics=metrics,
     )
 
 
@@ -239,6 +266,8 @@ def build_durable_agent_handler(
             InstrumentedModelGateway(resolved_gateway, metrics),
         )
     resolved_mcp_client = wrap_mcp_client(resolved_mcp_client, resolved_faults)
+    if metrics is not None:
+        resolved_mcp_client = InstrumentedMcpClient(resolved_mcp_client, metrics)
 
     def backend_factory(context: AgentExecutionContext) -> AgentGraphBackend:
         return DurableAgentGraphBackend(
@@ -254,6 +283,7 @@ def build_durable_agent_handler(
         gateway=resolved_gateway,
         checkpointer=checkpointer,
         graph_version=graph_version,
+        metrics=metrics,
     )
     return build_agent_execution_handler(session_factory=session_factory, executor=executor)
 

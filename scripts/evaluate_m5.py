@@ -8,7 +8,13 @@ from typing import Any
 
 from enterprise_doc_core.config import FoundationSettings
 from enterprise_doc_core.db import ensure_asyncio_compatibility
-from enterprise_doc_core.evaluation import EvaluationCase, EvaluationReport
+from enterprise_doc_core.evaluation import (
+    EvaluationCase,
+    EvaluationReport,
+    ReportProvenance,
+    capture_report_provenance,
+    seal_report,
+)
 from enterprise_doc_core.evaluation.contracts import utc_now
 
 try:
@@ -17,6 +23,8 @@ try:
 except ModuleNotFoundError:
     from evaluate_m3_retrieval import run_live_evaluation
     from evaluate_m4_agent import run_evaluation as run_agent_evaluation
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def _dataset_hash(paths: tuple[Path, ...]) -> str:
@@ -27,6 +35,22 @@ def _dataset_hash(paths: tuple[Path, ...]) -> str:
         digest.update(path.read_bytes())
         digest.update(b"\0")
     return digest.hexdigest()
+
+
+def _report_command(args: argparse.Namespace) -> list[str]:
+    command = [
+        "python",
+        "scripts/evaluate_m5.py",
+        "--rag-dataset",
+        "<rag-dataset>",
+        "--agent-dataset",
+        "<agent-dataset>",
+    ]
+    if args.skip_rag:
+        command.append("--skip-rag")
+    if args.report_path is not None:
+        command.extend(["--report-path", "<report-path>"])
+    return command
 
 
 def _agent_cases(report: dict[str, Any]) -> list[EvaluationCase]:
@@ -55,6 +79,7 @@ async def run_unified_evaluation(
     rag_dataset: Path,
     agent_dataset: Path,
     include_rag: bool = True,
+    provenance: ReportProvenance | None = None,
 ) -> EvaluationReport:
     started_at = utc_now()
     settings = FoundationSettings(_env_file=None)
@@ -114,36 +139,46 @@ async def run_unified_evaluation(
             "The live retrieval suite did not generate answer citations, so citation precision "
             "is reported as unmeasured and is not a passing quality claim."
         )
-    return EvaluationReport(
-        suite="m5-unified-rag-agent-safety",
-        status=("blocked_external" if rag is None else ("passed" if passed else "failed")),
-        dataset_version="+".join(
-            value
-            for value in (
-                str(rag.get("dataset_version")) if rag is not None else None,
-                str(agent.get("dataset_version")),
-            )
-            if value is not None
-        ),
-        dataset_sha256=_dataset_hash(datasets),
-        behavior_versions={
-            "graph": settings.agent.graph_version,
-            "prompt": settings.agent.prompt_version,
-            "tool_schema": settings.agent.tool_schema_version,
-            "model_provider": settings.model.provider.value,
-            "model": settings.model.model_name or "deterministic-grounded",
-        },
-        targets=targets,
-        measured=measured,
-        summary={
-            "passed": passed,
-            "rag_included": rag is not None,
-            "agent_case_count": int(agent.get("summary", {}).get("total", 0)),
-        },
-        cases=_agent_cases(agent),
-        limitations=limitations,
-        started_at=started_at,
-        completed_at=utc_now(),
+    dataset_sha256 = _dataset_hash(datasets)
+    resolved_provenance = provenance or capture_report_provenance(
+        command=["internal", "scripts.evaluate_m5.run_unified_evaluation"],
+        root=ROOT,
+        execution_scope="local-deterministic-evaluation",
+        input_sha256=dataset_sha256,
+    )
+    return seal_report(
+        EvaluationReport(
+            suite="m5-unified-rag-agent-safety",
+            status=("blocked_external" if rag is None else ("passed" if passed else "failed")),
+            dataset_version="+".join(
+                value
+                for value in (
+                    str(rag.get("dataset_version")) if rag is not None else None,
+                    str(agent.get("dataset_version")),
+                )
+                if value is not None
+            ),
+            dataset_sha256=dataset_sha256,
+            behavior_versions={
+                "graph": settings.agent.graph_version,
+                "prompt": settings.agent.prompt_version,
+                "tool_schema": settings.agent.tool_schema_version,
+                "model_provider": settings.model.provider.value,
+                "model": settings.model.model_name or "deterministic-grounded",
+            },
+            targets=targets,
+            measured=measured,
+            summary={
+                "passed": passed,
+                "rag_included": rag is not None,
+                "agent_case_count": int(agent.get("summary", {}).get("total", 0)),
+            },
+            cases=_agent_cases(agent),
+            limitations=limitations,
+            provenance=resolved_provenance,
+            started_at=started_at,
+            completed_at=utc_now(),
+        )
     )
 
 
@@ -162,6 +197,13 @@ def main() -> None:
     parser.add_argument("--skip-rag", action="store_true")
     parser.add_argument("--report-path", type=Path)
     args = parser.parse_args()
+    datasets = (args.agent_dataset,) if args.skip_rag else (args.rag_dataset, args.agent_dataset)
+    provenance = capture_report_provenance(
+        command=_report_command(args),
+        root=ROOT,
+        execution_scope="local-deterministic-evaluation",
+        input_sha256=_dataset_hash(datasets),
+    )
 
     ensure_asyncio_compatibility()
     with asyncio.Runner(loop_factory=asyncio.SelectorEventLoop) as runner:
@@ -170,6 +212,7 @@ def main() -> None:
                 rag_dataset=args.rag_dataset,
                 agent_dataset=args.agent_dataset,
                 include_rag=not args.skip_rag,
+                provenance=provenance,
             )
         )
     rendered = report.model_dump_json(indent=2)

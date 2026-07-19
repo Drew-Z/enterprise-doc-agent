@@ -48,7 +48,7 @@ async def run_worker() -> None:
             service_name="enterprise-doc-worker",
         )
         runtime = WorkerRuntime(tracer=telemetry.tracer)
-        resources = build_foundation_resources(settings)
+        resources = build_foundation_resources(settings, metrics=metrics)
         session_factory = create_session_factory(resources.database_engine)
         job_runtime = JobRuntimeService(
             session_factory=session_factory,
@@ -65,6 +65,7 @@ async def run_worker() -> None:
             checkpointer=checkpointer,
             graph_version=settings.agent.graph_version,
             fault_injection=settings.fault_injection,
+            metrics=metrics,
         )
 
         register_job_task(

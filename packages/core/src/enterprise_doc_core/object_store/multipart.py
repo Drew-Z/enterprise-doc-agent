@@ -16,6 +16,7 @@ from enterprise_doc_core.object_store.errors import (
     ObjectStoreProtocolError,
     normalize_object_store_error,
 )
+from enterprise_doc_core.object_store.metrics import instrument_object_store_operation
 from enterprise_doc_core.object_store.models import (
     CompletedMultipartUpload,
     IncompleteUpload,
@@ -23,6 +24,7 @@ from enterprise_doc_core.object_store.models import (
     PresignedUploadPart,
     UploadedPart,
 )
+from enterprise_doc_core.telemetry import MetricsRuntime
 
 
 class MultipartObjectStore(Protocol):
@@ -106,6 +108,7 @@ class Boto3MultipartObjectStore:
         settings: ObjectStoreSettings,
         control_client: Any | None = None,
         presign_client: Any | None = None,
+        metrics: MetricsRuntime | None = None,
     ) -> None:
         self.settings = settings
         self.control_client = (
@@ -119,7 +122,9 @@ class Boto3MultipartObjectStore:
             else create_s3_client(settings, endpoint_url=settings.presign_endpoint)
         )
         self._closed = False
+        self.metrics = metrics
 
+    @instrument_object_store_operation("write")
     async def create_upload(
         self,
         *,
@@ -142,6 +147,7 @@ class Boto3MultipartObjectStore:
             raise ObjectStoreProtocolError()
         return upload_id
 
+    @instrument_object_store_operation("write")
     async def presign_upload_part(
         self,
         *,
@@ -177,6 +183,7 @@ class Boto3MultipartObjectStore:
             expires_in_seconds=effective_ttl,
         )
 
+    @instrument_object_store_operation("list")
     async def list_parts(
         self,
         *,
@@ -215,6 +222,7 @@ class Boto3MultipartObjectStore:
             marker = next_marker
         return tuple(sorted(parts, key=lambda part: part.part_number))
 
+    @instrument_object_store_operation("write")
     async def complete_upload(
         self,
         *,
@@ -253,6 +261,7 @@ class Boto3MultipartObjectStore:
             checksum_sha256_b64=checksum,
         )
 
+    @instrument_object_store_operation("read")
     async def head_object(self, *, bucket: str, key: str) -> ObjectHead:
         response = _require_mapping(
             await self._call(
@@ -279,6 +288,7 @@ class Boto3MultipartObjectStore:
             metadata={str(name): str(value) for name, value in metadata.items()},
         )
 
+    @instrument_object_store_operation("read")
     async def get_range(
         self,
         *,
@@ -323,6 +333,7 @@ class Boto3MultipartObjectStore:
 
         return cast(bytes, await self._call(read_range))
 
+    @instrument_object_store_operation("write")
     async def abort_upload(
         self,
         *,
@@ -337,9 +348,11 @@ class Boto3MultipartObjectStore:
             UploadId=upload_id,
         )
 
+    @instrument_object_store_operation("write")
     async def delete_object(self, *, bucket: str, key: str) -> None:
         await self._call(self.control_client.delete_object, Bucket=bucket, Key=key)
 
+    @instrument_object_store_operation("list")
     async def list_incomplete_uploads(
         self,
         *,

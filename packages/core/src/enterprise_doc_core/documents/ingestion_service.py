@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import asyncio
 import hashlib
 from dataclasses import dataclass
 from pathlib import Path
 from tempfile import SpooledTemporaryFile
+from time import perf_counter
 from uuid import UUID
 
 from sqlalchemy import delete, func, select, update
@@ -27,6 +29,7 @@ from enterprise_doc_core.documents.models import (
 )
 from enterprise_doc_core.jobs import ClaimedJob
 from enterprise_doc_core.object_store import MultipartObjectStore, ObjectStoreError
+from enterprise_doc_core.telemetry import MetricsRuntime
 
 
 class DocumentIngestionError(RuntimeError):
@@ -116,6 +119,7 @@ class DocumentIngestionService:
         embedding_dimension: int = DEFAULT_EMBEDDING_DIMENSION,
         versions: IngestionVersions | None = None,
         limits: IngestionLimits | None = None,
+        metrics: MetricsRuntime | None = None,
     ) -> None:
         if embedding_dimension != DEFAULT_EMBEDDING_DIMENSION:
             raise ValueError(
@@ -130,8 +134,48 @@ class DocumentIngestionService:
         self.embedding_dimension = embedding_dimension
         self.versions = versions or IngestionVersions()
         self.limits = limits or IngestionLimits()
+        self.metrics = metrics
 
     async def __call__(self, claim: ClaimedJob) -> None:
+        started = perf_counter()
+        try:
+            await self._execute(claim)
+        except asyncio.CancelledError:
+            if self.metrics is not None:
+                self.metrics.observe_boundary(
+                    boundary="ingestion",
+                    operation="run",
+                    result="cancelled",
+                    duration=perf_counter() - started,
+                )
+            raise
+        except DocumentIngestionError as error:
+            if self.metrics is not None:
+                self.metrics.observe_boundary(
+                    boundary="ingestion",
+                    operation="run",
+                    result="retryable_error" if error.retryable else "permanent_error",
+                    duration=perf_counter() - started,
+                )
+            raise
+        except Exception:
+            if self.metrics is not None:
+                self.metrics.observe_boundary(
+                    boundary="ingestion",
+                    operation="run",
+                    result="error",
+                    duration=perf_counter() - started,
+                )
+            raise
+        if self.metrics is not None:
+            self.metrics.observe_boundary(
+                boundary="ingestion",
+                operation="run",
+                result="success",
+                duration=perf_counter() - started,
+            )
+
+    async def _execute(self, claim: ClaimedJob) -> None:
         document_version_id = self._document_version_id(claim)
         generation_id, version, resume_stage, already_complete = await self._start_generation(
             tenant_id=claim.tenant_id,

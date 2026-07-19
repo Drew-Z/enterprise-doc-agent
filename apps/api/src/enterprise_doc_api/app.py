@@ -114,7 +114,7 @@ def create_app(
     resolved_settings = settings if settings is not None else ApiSettings()
     resolved_metrics = metrics if metrics is not None else MetricsRuntime.create()
     if checkers is None:
-        resources = build_foundation_resources(resolved_settings)
+        resources = build_foundation_resources(resolved_settings, metrics=resolved_metrics)
         resolved_checkers = resources.checkers
     else:
         resources = None
@@ -141,7 +141,8 @@ def create_app(
         business_database_engine = owned_database_engine
         if needs_default_object_store:
             owned_multipart_object_store = Boto3MultipartObjectStore(
-                settings=resolved_settings.object_store
+                settings=resolved_settings.object_store,
+                metrics=resolved_metrics,
             )
             business_object_store = owned_multipart_object_store
         else:
@@ -247,15 +248,20 @@ def create_app(
     app.state.approval_service = (
         approval_service
         if approval_service is not None
-        else ApprovalService(session_factory=_required_session_factory(session_factory))
+        else ApprovalService(
+            session_factory=_required_session_factory(session_factory),
+            metrics=resolved_metrics,
+        )
     )
     if agent_artifact_service is None:
         owned_artifact_object_store = Boto3ArtifactObjectStore(
-            settings=resolved_settings.object_store
+            settings=resolved_settings.object_store,
+            metrics=resolved_metrics,
         )
         app.state.agent_artifact_service = AgentArtifactService(
             session_factory=_required_session_factory(session_factory),
             artifact_store=owned_artifact_object_store,
+            metrics=resolved_metrics,
         )
     else:
         app.state.agent_artifact_service = agent_artifact_service

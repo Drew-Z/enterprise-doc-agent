@@ -84,7 +84,28 @@ def _descriptor(name: str) -> ModelRouteDescriptor:
         provider="deterministic",
         model_name=name,
         model_version="v1",
+        model_revision="revision-1",
+        quantization="none",
+        context_window_tokens=8192,
+        embedding_dimension=8,
     )
+
+
+async def test_provider_health_reports_full_route_identity() -> None:
+    routed = RoutedChatModelGateway(
+        primary=DeterministicGroundedGateway(),
+        primary_descriptor=_descriptor("primary"),
+    )
+
+    health = await routed.healthcheck()
+
+    assert health["primary"].available is True
+    assert health["primary"].model_version == "v1"
+    assert health["primary"].model_revision == "revision-1"
+    assert health["primary"].quantization == "none"
+    assert health["primary"].context_window_tokens == 8192
+    assert health["primary"].embedding_dimension == 8
+    assert health["fallback"].error_code == "not_configured"
 
 
 async def test_routed_gateway_uses_fallback_only_for_retryable_errors() -> None:

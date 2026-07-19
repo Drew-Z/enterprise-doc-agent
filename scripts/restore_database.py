@@ -12,9 +12,9 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 try:
-    from scripts.backup_database import normalize_postgres_url
+    from scripts.backup_database import normalize_postgres_url, postgres_process_environment
 except ModuleNotFoundError:
-    from backup_database import normalize_postgres_url
+    from backup_database import normalize_postgres_url, postgres_process_environment
 
 
 PRODUCTION_CONFIRMATION = "restore-production"
@@ -52,6 +52,7 @@ def validate_restore_target(
 
 
 def restore_command(*, database_url: str, backup: Path) -> list[str]:
+    normalize_postgres_url(database_url)
     return [
         "pg_restore",
         "--exit-on-error",
@@ -60,8 +61,6 @@ def restore_command(*, database_url: str, backup: Path) -> list[str]:
         "--if-exists",
         "--no-owner",
         "--no-privileges",
-        "--dbname",
-        normalize_postgres_url(database_url),
         str(backup),
     ]
 
@@ -109,7 +108,11 @@ def main() -> None:
     started_at = datetime.now(UTC).isoformat()
     started = time.monotonic()
     try:
-        subprocess.run(command, check=True)
+        subprocess.run(
+            command,
+            check=True,
+            env=postgres_process_environment(normalized_url),
+        )
     except subprocess.CalledProcessError as error:
         raise SystemExit("database restore failed") from error
     record = {

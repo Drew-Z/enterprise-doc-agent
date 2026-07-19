@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Sequence
+from time import perf_counter
 from typing import Any
 from uuid import UUID
 
@@ -21,6 +23,7 @@ from enterprise_doc_core.documents.retrieval import (
     decide_retrieval,
     reciprocal_rank_fusion,
 )
+from enterprise_doc_core.telemetry import MetricsRuntime
 
 
 class HybridRetrievalService:
@@ -34,6 +37,7 @@ class HybridRetrievalService:
         min_score: float | None = None,
         min_candidates: int = 1,
         max_vector_distance: float = 0.65,
+        metrics: MetricsRuntime | None = None,
     ) -> None:
         if top_k <= 0:
             raise ValueError("top_k must be positive")
@@ -53,8 +57,50 @@ class HybridRetrievalService:
         self.min_score = resolved_min_score
         self.min_candidates = min_candidates
         self.max_vector_distance = max_vector_distance
+        self.metrics = metrics
 
     async def retrieve(
+        self,
+        *,
+        tenant_id: UUID,
+        document_version_id: UUID,
+        query: str,
+    ) -> RetrievalDecision:
+        started = perf_counter()
+        try:
+            decision = await self._retrieve(
+                tenant_id=tenant_id,
+                document_version_id=document_version_id,
+                query=query,
+            )
+        except asyncio.CancelledError:
+            if self.metrics is not None:
+                self.metrics.observe_boundary(
+                    boundary="retrieval",
+                    operation="retrieve",
+                    result="cancelled",
+                    duration=perf_counter() - started,
+                )
+            raise
+        except Exception:
+            if self.metrics is not None:
+                self.metrics.observe_boundary(
+                    boundary="retrieval",
+                    operation="retrieve",
+                    result="error",
+                    duration=perf_counter() - started,
+                )
+            raise
+        if self.metrics is not None:
+            self.metrics.observe_boundary(
+                boundary="retrieval",
+                operation="retrieve",
+                result="success" if decision.accepted else "refused",
+                duration=perf_counter() - started,
+            )
+        return decision
+
+    async def _retrieve(
         self,
         *,
         tenant_id: UUID,

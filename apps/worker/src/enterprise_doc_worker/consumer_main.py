@@ -27,6 +27,19 @@ from enterprise_doc_worker.queue import (
 )
 
 
+def _resolve_process_metrics(
+    resources: FoundationResources | None,
+    metrics: MetricsRuntime | None,
+) -> MetricsRuntime:
+    resource_metrics = resources.multipart_object_store.metrics if resources is not None else None
+    if metrics is not None and resource_metrics is not None and metrics is not resource_metrics:
+        raise ValueError("consumer resources and handlers must share one metrics registry")
+    resolved = metrics or resource_metrics or MetricsRuntime.create()
+    if resources is not None and resource_metrics is None:
+        resources.multipart_object_store.metrics = resolved
+    return resolved
+
+
 def build_consumer_app(
     settings: WorkerSettings,
     *,
@@ -40,7 +53,11 @@ def build_consumer_app(
     The probe/publisher process intentionally remains separate. This entrypoint
     is the actual queue consumer and can be scaled independently.
     """
-    resolved_resources = resources or build_foundation_resources(settings)
+    resolved_metrics = _resolve_process_metrics(resources, metrics)
+    resolved_resources = resources or build_foundation_resources(
+        settings,
+        metrics=resolved_metrics,
+    )
     session_factory = create_session_factory(resolved_resources.database_engine)
     runtime = JobRuntimeService(
         session_factory=session_factory,
@@ -49,7 +66,6 @@ def build_consumer_app(
     )
     app = create_celery_app(settings)
     resolved_runner = async_runner or AsyncTaskRunner(loop_factory=asyncio.SelectorEventLoop)
-    resolved_metrics = metrics if metrics is not None else MetricsRuntime.create()
     register_job_task(
         app,
         consumer_factory=build_consumer_factory(
@@ -92,11 +108,11 @@ def main() -> None:
         environment=settings.app_env.value,
         level=settings.log_level,
     )
-    resources = build_foundation_resources(settings)
+    metrics = MetricsRuntime.create()
+    resources = build_foundation_resources(settings, metrics=metrics)
     session_factory = create_session_factory(resources.database_engine)
     async_runner = AsyncTaskRunner(loop_factory=asyncio.SelectorEventLoop)
     checkpoint_runtime = CheckpointRuntime(settings)
-    metrics = MetricsRuntime.create()
     metrics_server = None
     metrics_thread = None
     try:

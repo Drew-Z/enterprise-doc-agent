@@ -66,6 +66,32 @@ def rollback_commands(*, namespace: str, revisions: Mapping[str, int]) -> list[l
     return commands
 
 
+def execute_rollback(commands: list[list[str]]) -> dict[str, object]:
+    """Run rollback commands and retain enough detail for partial-failure evidence."""
+    completed_commands: list[list[str]] = []
+    for command in commands:
+        try:
+            subprocess.run(command, check=True)
+        except (OSError, subprocess.CalledProcessError) as error:
+            return {
+                "status": "failed",
+                "completed_commands": completed_commands,
+                "failed_command": command,
+                "error": (
+                    f"command exited with status {error.returncode}"
+                    if isinstance(error, subprocess.CalledProcessError)
+                    else str(error)
+                ),
+            }
+        completed_commands.append(command)
+    return {
+        "status": "passed",
+        "completed_commands": completed_commands,
+        "failed_command": None,
+        "error": None,
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Validate or execute a Kubernetes rollout rollback"
@@ -118,18 +144,20 @@ def main() -> None:
     if not args.confirm:
         print(json.dumps({"dry_run": True, "commands": commands}, indent=2))
         return
-    if shutil.which("kubectl") is None:
-        raise SystemExit("kubectl is required")
     started_at = datetime.now(UTC).isoformat()
-    try:
-        for command in commands:
-            subprocess.run(command, check=True)
-    except subprocess.CalledProcessError as error:
-        raise SystemExit("rollout rollback failed") from error
+    if shutil.which("kubectl") is None:
+        execution = {
+            "status": "failed",
+            "completed_commands": [],
+            "failed_command": None,
+            "error": "kubectl is required",
+        }
+    else:
+        execution = execute_rollback(commands)
     record = {
         "schema_version": 1,
         "operation": "kubernetes-rollout-rollback",
-        "status": "passed",
+        "status": execution["status"],
         "namespace": args.namespace,
         "revisions": revisions,
         "reason": args.reason,
@@ -137,6 +165,9 @@ def main() -> None:
         "operator": os.environ.get("GITHUB_ACTOR", "unknown"),
         "started_at": started_at,
         "completed_at": datetime.now(UTC).isoformat(),
+        "completed_commands": execution["completed_commands"],
+        "failed_command": execution["failed_command"],
+        "error": execution["error"],
         "limitations": [
             "A rollout undo does not reverse destructive database migrations; schema "
             "compatibility must be reviewed separately."
@@ -147,6 +178,8 @@ def main() -> None:
         args.record_path.parent.mkdir(parents=True, exist_ok=True)
         args.record_path.write_text(rendered, encoding="utf-8")
     print(rendered, end="")
+    if execution["status"] != "passed":
+        raise SystemExit("rollout rollback failed")
 
 
 if __name__ == "__main__":

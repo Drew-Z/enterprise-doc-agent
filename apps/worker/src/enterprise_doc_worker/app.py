@@ -42,7 +42,7 @@ def create_probe_app(
     resolved_settings = settings or WorkerSettings()
     resolved_metrics = metrics if metrics is not None else MetricsRuntime.create()
     if checkers is None:
-        resources = build_foundation_resources(resolved_settings)
+        resources = build_foundation_resources(resolved_settings, metrics=resolved_metrics)
         resolved_checkers = resources.checkers
     else:
         resources = None

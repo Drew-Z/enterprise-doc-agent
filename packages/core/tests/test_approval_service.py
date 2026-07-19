@@ -6,10 +6,12 @@ import pytest
 
 from enterprise_doc_core.agents import (
     ApprovalInputInvalid,
+    ApprovalPrincipalForbidden,
     ApprovalService,
     DecideApprovalInput,
     approval_decision_fingerprint,
 )
+from enterprise_doc_core.telemetry import MetricsRuntime
 
 
 def _request(**overrides: object) -> DecideApprovalInput:
@@ -76,3 +78,40 @@ async def test_approval_service_rejects_invalid_input_before_database_access(
             idempotency_key=idempotency_key,
             request=decision_input,
         )
+
+
+async def test_approval_service_records_success_and_forbidden_boundaries() -> None:
+    metrics = MetricsRuntime.create()
+    service = ApprovalService(
+        session_factory=None,  # type: ignore[arg-type]
+        metrics=metrics,
+    )
+
+    async def succeed(**_: object) -> object:
+        return object()
+
+    service._decide = succeed  # type: ignore[method-assign]
+    await service.decide(
+        tenant_id=uuid4(),
+        actor_id=uuid4(),
+        approval_id=uuid4(),
+        idempotency_key="decision-1",
+        request=_request(),
+    )
+
+    async def forbid(**_: object) -> object:
+        raise ApprovalPrincipalForbidden()
+
+    service._decide = forbid  # type: ignore[method-assign]
+    with pytest.raises(ApprovalPrincipalForbidden):
+        await service.decide(
+            tenant_id=uuid4(),
+            actor_id=uuid4(),
+            approval_id=uuid4(),
+            idempotency_key="decision-2",
+            request=_request(),
+        )
+
+    rendered = metrics.render().decode("utf-8")
+    assert 'boundary="approval",operation="decide",result="success"' in rendered
+    assert 'boundary="approval",operation="decide",result="forbidden"' in rendered

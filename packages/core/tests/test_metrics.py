@@ -1,7 +1,15 @@
 from __future__ import annotations
 
+import asyncio
+
 import pytest
 
+from enterprise_doc_core.documents.ingestion_service import (
+    DocumentIngestionError,
+    DocumentIngestionService,
+)
+from enterprise_doc_core.documents.retrieval import RetrievalDecision
+from enterprise_doc_core.documents.retrieval_service import HybridRetrievalService
 from enterprise_doc_core.telemetry import (
     InstrumentedHealthChecker,
     InstrumentedModelGateway,
@@ -66,6 +74,28 @@ def test_dependency_and_capacity_metrics_use_bounded_labels() -> None:
     assert "enterprise_doc_redis_connections 8.0" in rendered
 
 
+def test_boundary_metrics_use_finite_labels_and_collapse_unknown_values() -> None:
+    metrics = MetricsRuntime.create()
+    metrics.observe_boundary(
+        boundary="ingestion",
+        operation="run",
+        result="success",
+        duration=0.02,
+    )
+    metrics.observe_boundary(
+        boundary="tenant-secret",
+        operation="raw-id",
+        result="secret-error",
+        duration=-1,
+    )
+
+    rendered = metrics.render().decode("utf-8")
+    assert 'boundary="ingestion",operation="run",result="success"' in rendered
+    assert 'boundary="other",operation="other",result="error"' in rendered
+    assert "tenant-secret" not in rendered
+    assert "secret-error" not in rendered
+
+
 async def test_health_and_model_wrappers_record_success_and_failure() -> None:
     metrics = MetricsRuntime.create()
 
@@ -91,3 +121,69 @@ async def test_health_and_model_wrappers_record_success_and_failure() -> None:
     assert 'dependency="redis",result="success"' in rendered
     assert 'dependency="model",result="success"' in rendered
     assert 'dependency="model",result="error"' in rendered
+
+
+async def test_model_cancellation_does_not_mark_the_dependency_down() -> None:
+    metrics = MetricsRuntime.create()
+
+    class BlockingGateway:
+        async def generate(self, _: object) -> str:
+            await asyncio.Event().wait()
+            return "unreachable"
+
+    task = asyncio.create_task(InstrumentedModelGateway(BlockingGateway(), metrics).generate(None))
+    await asyncio.sleep(0)
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
+    rendered = metrics.render().decode("utf-8")
+    assert 'boundary="model",operation="generate",result="cancelled"' in rendered
+    assert 'dependency="model",result="error"' not in rendered
+
+
+def test_boundary_metrics_fail_open_when_a_collector_rejects_observation() -> None:
+    metrics = MetricsRuntime.create()
+
+    class BrokenCounter:
+        def labels(self, *_: object) -> BrokenCounter:
+            raise RuntimeError("collector unavailable")
+
+    metrics.boundary_operations_total = BrokenCounter()  # type: ignore[assignment]
+    metrics.observe_boundary(
+        boundary="graph",
+        operation="run",
+        result="success",
+        duration=0.01,
+    )
+
+
+async def test_ingestion_and_retrieval_boundaries_record_stable_results() -> None:
+    metrics = MetricsRuntime.create()
+    ingestion = object.__new__(DocumentIngestionService)
+    ingestion.metrics = metrics
+
+    async def fail_ingestion(_: object) -> None:
+        raise DocumentIngestionError("retry", "retry", retryable=True)
+
+    ingestion._execute = fail_ingestion  # type: ignore[method-assign]
+    with pytest.raises(DocumentIngestionError):
+        await ingestion(None)  # type: ignore[arg-type]
+
+    retrieval = object.__new__(HybridRetrievalService)
+    retrieval.metrics = metrics
+
+    async def refuse_retrieval(**_: object) -> RetrievalDecision:
+        return RetrievalDecision(accepted=False, candidates=())
+
+    retrieval._retrieve = refuse_retrieval  # type: ignore[method-assign]
+    decision = await retrieval.retrieve(
+        tenant_id=__import__("uuid").uuid4(),
+        document_version_id=__import__("uuid").uuid4(),
+        query="missing",
+    )
+
+    assert decision.accepted is False
+    rendered = metrics.render().decode("utf-8")
+    assert 'boundary="ingestion",operation="run",result="retryable_error"' in rendered
+    assert 'boundary="retrieval",operation="retrieve",result="refused"' in rendered

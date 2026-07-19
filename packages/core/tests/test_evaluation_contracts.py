@@ -6,9 +6,22 @@ from pydantic import ValidationError
 from enterprise_doc_core.evaluation import (
     EvaluationReport,
     LoadReport,
+    ModelCostMetadata,
+    ModelProviderHealthSnapshot,
+    ReportProvenance,
     build_percentile_summary,
     nearest_rank_percentile,
 )
+
+
+def _provenance() -> ReportProvenance:
+    return ReportProvenance(
+        command=["pytest", "evaluation-contract"],
+        environment={"execution_scope": "test"},
+        commit_sha="a" * 40,
+        working_tree_dirty=False,
+        payload_sha256="b" * 64,
+    )
 
 
 def test_nearest_rank_percentiles_are_stable_for_small_samples() -> None:
@@ -36,6 +49,7 @@ def test_evaluation_report_requires_a_dataset_hash_and_explicit_status() -> None
         status="passed",
         dataset_version="m5-v1",
         dataset_sha256="a" * 64,
+        provenance=_provenance(),
         started_at="2026-07-19T00:00:00+00:00",
         completed_at="2026-07-19T00:00:01+00:00",
     )
@@ -47,6 +61,7 @@ def test_evaluation_report_requires_a_dataset_hash_and_explicit_status() -> None
             status="passed",
             dataset_version="m5-v1",
             dataset_sha256="not-a-hash",
+            provenance=_provenance(),
             started_at="2026-07-19T00:00:00+00:00",
             completed_at="2026-07-19T00:00:01+00:00",
         )
@@ -68,7 +83,36 @@ def test_load_report_keeps_targets_separate_from_measured_results() -> None:
         capacity_conclusion="Local contract baseline only.",
         targets={"p95_ms": 250},
         measured={"p95_ms": 12.5},
+        provenance=_provenance(),
     )
 
     assert report.targets["p95_ms"] == 250
     assert report.measured["p95_ms"] == 12.5
+
+
+def test_model_health_and_cost_metadata_reject_contradictory_states() -> None:
+    with pytest.raises(ValidationError, match="available providers"):
+        ModelProviderHealthSnapshot(
+            available=True,
+            provider="deterministic",
+            model_name="model",
+            error_code="provider_unavailable",
+        )
+
+    with pytest.raises(ValidationError, match="cannot contain measured"):
+        ModelCostMetadata(
+            source="not_available",
+            currency="USD",
+            estimated_cost=1.0,
+            limitation="not measured",
+        )
+
+    with pytest.raises(ValidationError, match="requires currency"):
+        ModelCostMetadata(source="provider_reported", estimated_cost=1.0)
+
+    with pytest.raises(ValidationError, match="pricing_version"):
+        ModelCostMetadata(
+            source="calculated",
+            currency="USD",
+            estimated_cost=1.0,
+        )
