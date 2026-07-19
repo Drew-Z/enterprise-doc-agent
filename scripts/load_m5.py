@@ -428,10 +428,7 @@ def build_report(
         and host_memory_p95 <= _HOST_MEMORY_P95_TARGET
     )
     passed = (
-        failed == 0
-        and duplicate_consistent
-        and latency_target_passed
-        and resource_targets_passed
+        failed == 0 and duplicate_consistent and latency_target_passed and resource_targets_passed
     )
     resource_bottleneck = _resource_bottleneck(resolved_resources)
     if failed:

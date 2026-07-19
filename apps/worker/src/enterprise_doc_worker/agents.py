@@ -140,10 +140,7 @@ class AgentGraphExecutor:
         prepare_segment = getattr(backend, "prepare_segment", None)
         if callable(prepare_segment):
             await prepare_segment()
-        if (
-            context.execution_kind == "initial"
-            and context.run_status == "waiting_approval"
-        ):
+        if context.execution_kind == "initial" and context.run_status == "waiting_approval":
             # The checkpoint and business wait projection were committed before
             # this retry was claimed; only settle the durable Job again.
             return

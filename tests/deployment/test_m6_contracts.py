@@ -76,29 +76,19 @@ def test_database_url_has_one_secret_backed_source() -> None:
 def test_network_policy_and_prod_environment_are_explicit() -> None:
     policies = _documents(ROOT / "infra/k8s/base/network-policy.yaml")
     egress = next(
-        item
-        for item in policies
-        if item["metadata"]["name"] == "enterprise-doc-runtime-egress"
+        item for item in policies if item["metadata"]["name"] == "enterprise-doc-runtime-egress"
     )
-    ports = {
-        port["port"]
-        for rule in egress["spec"]["egress"]
-        for port in rule.get("ports", [])
-    }
+    ports = {port["port"] for rule in egress["spec"]["egress"] for port in rule.get("ports", [])}
     assert 443 in ports
     api_ingress = next(
-        item
-        for item in policies
-        if item["metadata"]["name"] == "enterprise-doc-api-ingress"
+        item for item in policies if item["metadata"]["name"] == "enterprise-doc-api-ingress"
     )
     assert all(
         "namespaceSelector" not in peer
         for rule in api_ingress["spec"]["ingress"]
         for peer in rule["from"]
     )
-    prod_patch = (ROOT / "infra/k8s/overlays/prod/configmap-patch.yaml").read_text(
-        encoding="utf-8"
-    )
+    prod_patch = (ROOT / "infra/k8s/overlays/prod/configmap-patch.yaml").read_text(encoding="utf-8")
     assert "APP_ENV: production" in prod_patch
 
 

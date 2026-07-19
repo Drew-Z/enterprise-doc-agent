@@ -127,17 +127,10 @@ async def run_benchmark(
         if isinstance(gateway, RoutedChatModelGateway)
         else "not_applicable"
     )
-    citation_precision = (
-        valid_citation_count / total_citations if total_citations else 0.0
-    )
+    citation_precision = valid_citation_count / total_citations if total_citations else 0.0
     valid_case_rate = valid_cases / successful_requests if successful_requests else 0.0
-    fallback_contract_passed = (
-        scenario != "fallback-contract"
-        or (
-            not errors
-            and fallback_count == iterations
-            and breaker_state == "open"
-        )
+    fallback_contract_passed = scenario != "fallback-contract" or (
+        not errors and fallback_count == iterations and breaker_state == "open"
     )
     report = ModelBenchmarkReport(
         scenario=scenario,

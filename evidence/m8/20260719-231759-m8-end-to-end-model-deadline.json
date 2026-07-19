@@ -77,7 +77,7 @@
     {
       "path": ".trellis/tasks/07-19-m8-end-to-end-model-deadline/prd.md",
       "kind": "contract",
-      "sha256": "13ca299e3453f11f9283ad3cf1de711fcbb8beccc3ad5ee64f01d8f9fd2420b4"
+      "sha256": "f34b2eefd110cdaff438f2f725a6277281f2d0a1379db79a9a3ced13704bf435"
     }
   ],
   "limitations": [

@@ -625,9 +625,7 @@ class AgentRunService:
             )
             .with_for_update()
         )
-        if role is None or (
-            actor_id != run_actor_id and role != MembershipRole.OWNER.value
-        ):
+        if role is None or (actor_id != run_actor_id and role != MembershipRole.OWNER.value):
             raise AgentPrincipalForbidden()
 
     @staticmethod
