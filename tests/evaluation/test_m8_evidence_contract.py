@@ -42,13 +42,11 @@ def test_m8_reviewed_local_evidence_is_indexed() -> None:
     entries = index["evidence"]
     assert isinstance(entries, list)
     m8_entries = [entry for entry in entries if entry["milestone"] == "M8"]
-    assert m8_entries == [
-        {
-            "milestone": "M8",
-            "status": "passed",
-            "manifest": MANIFEST_PATH,
-        }
-    ]
+    assert len(m8_entries) == 1
+    entry = m8_entries[0]
+    assert entry["milestone"] == "M8"
+    assert entry["status"] == "passed"
+    assert entry["manifest"] == MANIFEST_PATH
 
     manifest = _load(_artifact_path(MANIFEST_PATH))
     assert manifest["status"] == "passed"
@@ -57,10 +55,14 @@ def test_m8_reviewed_local_evidence_is_indexed() -> None:
     assert isinstance(commit_sha, str) and SHA_PATTERN.fullmatch(commit_sha)
     reviewed_commit = manifest["reviewed_commit"]
     evidence_commit = manifest["evidence_commit"]
+    manifest_commit = manifest["manifest_commit"]
     assert isinstance(reviewed_commit, str) and SHA_PATTERN.fullmatch(reviewed_commit)
     assert isinstance(evidence_commit, str) and SHA_PATTERN.fullmatch(evidence_commit)
+    assert isinstance(manifest_commit, str) and SHA_PATTERN.fullmatch(manifest_commit)
     assert commit_sha == reviewed_commit
     assert reviewed_commit != evidence_commit
+    assert manifest_commit not in {reviewed_commit, evidence_commit}
+    assert entry["manifest_commit"] == manifest_commit
     subprocess.run(
         ["git", "cat-file", "-e", f"{commit_sha}^{{commit}}"],
         cwd=ROOT,
@@ -75,6 +77,21 @@ def test_m8_reviewed_local_evidence_is_indexed() -> None:
         capture_output=True,
         text=True,
     )
+    subprocess.run(
+        ["git", "cat-file", "-e", f"{manifest_commit}^{{commit}}"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    for relative_path in (MANIFEST_PATH, "evidence/index.json"):
+        subprocess.run(
+            ["git", "cat-file", "-e", f"{manifest_commit}:{relative_path}"],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
 
     started_at = datetime.fromisoformat(str(manifest["started_at"]))
     completed_at = datetime.fromisoformat(str(manifest["completed_at"]))

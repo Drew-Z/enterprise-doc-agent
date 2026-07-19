@@ -50,16 +50,21 @@ def test_m5_m6_m7_formal_manifests_are_indexed_and_hashed() -> None:
         entry = by_milestone[milestone]
         assert entry["status"] == "blocked_external"
         assert FORMAL_MANIFEST_PATTERNS[milestone].fullmatch(str(entry["manifest"]))
-        manifest_path = ROOT / str(entry["manifest"])
+        manifest_relative_path = str(entry["manifest"])
+        manifest_path = _repo_path(manifest_relative_path)
         manifest = _load(manifest_path)
         assert manifest["status"] == "blocked_external"
         assert manifest["working_tree_dirty"] is False
         reviewed_commit = manifest["reviewed_commit"]
         evidence_commit = manifest["evidence_commit"]
+        manifest_commit = manifest["manifest_commit"]
         assert isinstance(reviewed_commit, str) and SHA_PATTERN.fullmatch(reviewed_commit)
         assert isinstance(evidence_commit, str) and SHA_PATTERN.fullmatch(evidence_commit)
+        assert isinstance(manifest_commit, str) and SHA_PATTERN.fullmatch(manifest_commit)
         assert reviewed_commit != evidence_commit
+        assert manifest_commit not in {reviewed_commit, evidence_commit}
         assert manifest["commit_sha"] == reviewed_commit
+        assert entry["manifest_commit"] == manifest_commit
         for commit_sha in (reviewed_commit, evidence_commit):
             subprocess.run(
                 ["git", "cat-file", "-e", f"{commit_sha}^{{commit}}"],
@@ -67,6 +72,18 @@ def test_m5_m6_m7_formal_manifests_are_indexed_and_hashed() -> None:
                 check=True,
                 capture_output=True,
             )
+        subprocess.run(
+            ["git", "cat-file", "-e", f"{manifest_commit}^{{commit}}"],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "cat-file", "-e", f"{manifest_commit}:{manifest_relative_path}"],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+        )
         required_fields = {
             "evidence_id",
             "milestone",
@@ -84,6 +101,7 @@ def test_m5_m6_m7_formal_manifests_are_indexed_and_hashed() -> None:
             "owner",
             "reviewed_commit",
             "evidence_commit",
+            "manifest_commit",
             "working_tree_dirty",
             "blocking_reason",
             "prerequisites",

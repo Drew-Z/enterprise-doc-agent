@@ -11,6 +11,8 @@ ROOT = Path(__file__).resolve().parents[2]
 INDEX_PATH = ROOT / "evidence" / "index.json"
 MANIFEST_PATTERN = re.compile(r"^evidence/m4/\d{8}-\d{6}-m4-agent-mcp-hitl-working-tree\.json$")
 FORMAL_MANIFEST_PATTERN = re.compile(r"^evidence/m4/\d{8}-\d{6}-m4-agent-mcp-hitl\.json$")
+FORMAL_MANIFEST_PATH = "evidence/m4/20260720-054000-m4-agent-mcp-hitl.json"
+M4_GATE_PATH = "evidence/gates/m4-reviewed-immutable-evidence.json"
 SHA_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 UUID_PATTERN = re.compile(
     r"\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b",
@@ -54,7 +56,10 @@ def _m4_manifest() -> dict[str, object]:
     manifest_path = entry["manifest"]
     assert isinstance(manifest_path, str)
     assert FORMAL_MANIFEST_PATTERN.fullmatch(manifest_path)
-    return _load_json(_artifact_path(manifest_path))
+    manifest = _load_json(_artifact_path(manifest_path))
+    assert manifest_path == FORMAL_MANIFEST_PATH
+    assert entry["manifest_commit"] == manifest["manifest_commit"]
+    return manifest
 
 
 def _m4_capture() -> dict[str, object]:
@@ -77,9 +82,12 @@ def test_m4_formal_manifest_is_reviewed_and_immutable() -> None:
     assert manifest["working_tree_dirty"] is False
     reviewed_commit = manifest["reviewed_commit"]
     evidence_commit = manifest["evidence_commit"]
+    manifest_commit = manifest["manifest_commit"]
     assert isinstance(reviewed_commit, str) and SHA_PATTERN.fullmatch(reviewed_commit)
     assert isinstance(evidence_commit, str) and SHA_PATTERN.fullmatch(evidence_commit)
+    assert isinstance(manifest_commit, str) and SHA_PATTERN.fullmatch(manifest_commit)
     assert reviewed_commit != evidence_commit
+    assert manifest_commit not in {reviewed_commit, evidence_commit}
     assert manifest["commit_sha"] == reviewed_commit
     assert manifest["manual_gates"] == []
     for commit_sha in (reviewed_commit, evidence_commit):
@@ -90,14 +98,23 @@ def test_m4_formal_manifest_is_reviewed_and_immutable() -> None:
             capture_output=True,
             text=True,
         )
+    for relative_path in (FORMAL_MANIFEST_PATH, "evidence/index.json", M4_GATE_PATH):
+        subprocess.run(
+            ["git", "cat-file", "-e", f"{manifest_commit}:{relative_path}"],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
 
-    gate = _load_json(ROOT / "evidence/gates/m4-reviewed-immutable-evidence.json")
+    gate = _load_json(ROOT / M4_GATE_PATH)
     assert gate["state"] == "closed"
     assert gate["status"] == "passed"
     assert gate["resolution"] == {
         "reviewed_commit": reviewed_commit,
         "evidence_commit": evidence_commit,
-        "manifest": "evidence/m4/20260720-054000-m4-agent-mcp-hitl.json",
+        "manifest_commit": manifest_commit,
+        "manifest": FORMAL_MANIFEST_PATH,
     }
 
     capture = _m4_capture()

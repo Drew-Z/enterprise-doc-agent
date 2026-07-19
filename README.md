@@ -318,9 +318,18 @@ Playwright results. M4 is `passed`; the former reviewed-immutable-evidence gate 
 closed. Historical dirty working-tree captures remain indexed separately and are not
 used as formal evidence.
 
-The reviewed M5/M6/M7 manifests point to the same immutable implementation and evidence
-commits, but remain `blocked_external`. Their successful local artifacts do not satisfy
-the individual gate records under `evidence/gates/`:
+The commit fields have separate roles. `reviewed_commit` (also recorded as
+`commit_sha`) identifies the reviewed implementation, `evidence_commit` contains the
+sanitized logs and reports whose Git blobs are hashed by the manifests, and
+`manifest_commit` identifies status snapshot `57200dd`, which first published the five
+M4-M8 manifest paths together with `evidence/index.json` and the closed M4 gate. This is
+intentionally a non-self-referential publication pointer: it proves that the path and
+status records existed in that commit, while artifact immutability remains anchored to
+the reviewed and evidence commits.
+
+The reviewed M5/M6/M7 manifests use those same implementation, evidence and publication
+snapshots, but remain `blocked_external`. Their successful local artifacts do not
+satisfy the individual gate records under `evidence/gates/`:
 
 - `evidence/m5/20260719-m5-unified-evaluation.json` and
   `evidence/m5/20260719-m5-local-health-load.json` record deterministic evaluation and
@@ -341,9 +350,9 @@ the individual gate records under `evidence/gates/`:
   gates.
 
 `evidence/m8/20260720-054000-m8-end-to-end-model-deadline.json` supersedes the earlier
-local M8 record. It includes the route-budget boundary fix and immutable evidence for
-30 repeated exhausted-budget tests, the complete routing suite and the full backend
-regression.
+local M8 record. It includes the route-budget boundary fix, the same status-snapshot
+publication pointer, and immutable artifact evidence for 30 repeated exhausted-budget
+tests, the complete routing suite and the full backend regression.
 
 GitHub Actions runs independent backend and frontend jobs from `uv.lock` and
 `pnpm-lock.yaml`. The `m1-integration` job starts real PostgreSQL and MinIO, runs the
