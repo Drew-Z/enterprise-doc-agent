@@ -31,7 +31,7 @@
   ],
   "parent": null,
   "relatedFiles": [],
-  "notes": "M0-M4 have reviewed local evidence, with M4 now passed at implementation commit 70f5644 and evidence commit 6a53dd9. M5-M7 have reviewed immutable local manifests but remain blocked by real provider, production-like capacity, managed observability, registry/OIDC, staging, recovery, and GPU/vLLM gates. M8 is archived with refreshed shared route-deadline evidence. The parent remains in_progress until required external gates are executed or explicitly removed by an approved scope decision.",
+  "notes": "M0-M4 have reviewed local evidence, with M4 now passed at implementation commit 70f5644 and evidence commit 6a53dd9. M5-M7 have refreshed immutable local manifests against implementation commit 8ea488e and evidence commit c6f9d28, while remaining blocked by real provider, production-like capacity, managed observability, registry/OIDC, staging, recovery and GPU/vLLM gates. M8 is archived with refreshed shared route-deadline evidence. The parent remains in_progress until required external gates are executed or explicitly removed by an approved scope decision.",
   "meta": {
     "current_milestone": "external-delivery-gates",
     "completed_milestones": [

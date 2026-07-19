@@ -1,0 +1,82 @@
+{
+  "evidence_id": "m6-cicd-kubernetes-20260720-072628",
+  "milestone": "M6",
+  "requirement_ids": ["M6-R1", "M6-R2", "M6-R3", "M6-R4", "M6-R5", "M6-R6", "M6-R7"],
+  "status": "blocked_external",
+  "owner": "developer",
+  "commit_sha": "8ea488ecdc243f96bc3fa13f3a0a126693884d65",
+  "reviewed_commit": "8ea488ecdc243f96bc3fa13f3a0a126693884d65",
+  "evidence_commit": "c6f9d28acc9b916df032493dd424c451e0be636f",
+  "manifest_commit": null,
+  "working_tree_dirty": false,
+  "started_at": "2026-07-20T07:12:20+08:00",
+  "completed_at": "2026-07-20T07:27:31+08:00",
+  "environment": {
+    "operating_system": "Windows 11",
+    "runtime": "local Docker, kubectl client and static workflow validation",
+    "evidence_mode": "reviewed local delivery evidence with external gates open"
+  },
+  "image_digest": null,
+  "result_summary": "Deployment tests, containerized Actionlint, Compose validation and base/staging/prod Kustomize renders passed locally. Registry signing, real staging rollout, external secrets/TLS, versioned object-store restore, Kubernetes rollback and production RPO/RTO remain blocked externally.",
+  "blocking_reason": "No writable private registry with GitHub OIDC, approved staging cluster, external TLS and secret manager, versioned object-store backup set, or production recovery environment is available.",
+  "prerequisites": [
+    "Publish and verify immutable image digests through the reviewed GitHub Actions OIDC workflow.",
+    "Apply the exact digests to the approved staging cluster and run authenticated smoke with validated TLS and secrets.",
+    "Execute versioned object-store and PostgreSQL restore plus Kubernetes rollback with measured RPO and RTO."
+  ],
+  "command_or_procedure": [
+    {
+      "gate_id": "deployment-tests",
+      "command": "uv run pytest tests/deployment -q",
+      "exit_code": 0,
+      "result": "63 passed",
+      "artifact": "evidence/reviewed/20260720-072628/deployment-pytest.log"
+    },
+    {
+      "gate_id": "actionlint",
+      "command": "docker run --rm -v <repo>:/repo -w /repo rhysd/actionlint:1.7.7",
+      "exit_code": 0,
+      "result": "passed",
+      "artifact": "evidence/reviewed/20260720-072628/actionlint.log"
+    },
+    {
+      "gate_id": "compose",
+      "command": "docker compose -f infra/compose/docker-compose.yml --profile observability config",
+      "exit_code": 0,
+      "result": "passed; rendered output hash recorded with local credentials and paths omitted",
+      "artifact": "evidence/reviewed/20260720-072628/compose-config.log"
+    },
+    {
+      "gate_id": "kustomize",
+      "command": "kubectl kustomize infra/k8s/base and both overlays",
+      "exit_code": 0,
+      "result": "base, staging and prod rendered",
+      "artifact": "evidence/reviewed/20260720-072628/kustomize-validation.log"
+    }
+  ],
+  "artifacts": [
+    {"path": "evidence/reviewed/20260720-072628/reviewed-run-summary.json", "kind": "report", "commit_sha": "c6f9d28acc9b916df032493dd424c451e0be636f", "sha256": "58dc3204b884919f0df839b61def541d516cbc91eb0cf4acd2a091d1a00c00d8"},
+    {"path": "evidence/reviewed/20260720-072628/deployment-pytest.log", "kind": "log", "commit_sha": "c6f9d28acc9b916df032493dd424c451e0be636f", "sha256": "b9a3b9964fb1eeaeae5c14072e1fafc31eab0808bf337b6285a8259a7ec1b400"},
+    {"path": "evidence/reviewed/20260720-072628/actionlint.log", "kind": "log", "commit_sha": "c6f9d28acc9b916df032493dd424c451e0be636f", "sha256": "a9f58776a09b5dac438049683f24bf85764e0ff8e7455952456165c68c158627"},
+    {"path": "evidence/reviewed/20260720-072628/compose-config.log", "kind": "log", "commit_sha": "c6f9d28acc9b916df032493dd424c451e0be636f", "sha256": "4486f1c8893f6b35aec8940ec09350f0109bc6a114a371a85e0a2cae8624e014"},
+    {"path": "evidence/reviewed/20260720-072628/kustomize-validation.log", "kind": "log", "commit_sha": "c6f9d28acc9b916df032493dd424c451e0be636f", "sha256": "24a800c01162c513d8972792d58183fbf164b66a797704a3c8491c86570ca585"},
+    {"path": "evidence/reviewed/20260720-072628/kustomize-base.yaml", "kind": "render", "commit_sha": "c6f9d28acc9b916df032493dd424c451e0be636f", "sha256": "67f360a9668ae072ff5658c8304f90fb4ba0d3d444cc219dced866e710a625f7"},
+    {"path": "evidence/reviewed/20260720-072628/kustomize-staging.yaml", "kind": "render", "commit_sha": "c6f9d28acc9b916df032493dd424c451e0be636f", "sha256": "4b1ccb5efe4f510df431bd30f008d4dda377fa2b3e4ba98eb301d74b82316d76"},
+    {"path": "evidence/reviewed/20260720-072628/kustomize-prod.yaml", "kind": "render", "commit_sha": "c6f9d28acc9b916df032493dd424c451e0be636f", "sha256": "59bb4b313f6024d08f977f286a113ff86f905d60f76dfa4ae008f02060aa5391"},
+    {"path": "evidence/reviewed/20260720-072628/tool-versions.log", "kind": "metadata", "commit_sha": "c6f9d28acc9b916df032493dd424c451e0be636f", "sha256": "5d38ffd3645c7c8ef7f00b9b5eb10b6b1709f6154b49d0ead8fe6052276ca373"},
+    {"path": "infra/compose/docker-compose.yml", "kind": "source", "commit_sha": "8ea488ecdc243f96bc3fa13f3a0a126693884d65", "sha256": "33615950d065e36f518e06bcd128baac8a8322669aecd9f2b3d9f967c589fe01"},
+    {"path": "scripts/backup_database.py", "kind": "source", "commit_sha": "8ea488ecdc243f96bc3fa13f3a0a126693884d65", "sha256": "5f102bf15fa7169c47be2023f503868f9c004a2f27e1e88b74159cdcb233c329"},
+    {"path": "scripts/restore_database.py", "kind": "source", "commit_sha": "8ea488ecdc243f96bc3fa13f3a0a126693884d65", "sha256": "e4ac2da870f518164d2963e48c466f2355c0e7f5f5696de2672592be1a11fd17"},
+    {"path": "scripts/rollback_release.py", "kind": "source", "commit_sha": "8ea488ecdc243f96bc3fa13f3a0a126693884d65", "sha256": "bee75cec7f85f3334f2f1bd85a2ae852843bff5199fedc477bccd510d469c67b"}
+  ],
+  "limitations": [
+    "Static workflow validation and rendered manifests are not a registry push, GitHub Actions OIDC run or staging cluster apply.",
+    "The Compose render is represented by a hash and exit status because local development credentials and absolute bind paths were excluded from the committed evidence.",
+    "No external object-store restore, Kubernetes rollback or production RPO/RTO measurement was executed in this local run."
+  ],
+  "manual_gates": [
+    "evidence/gates/m6-registry-signed-images.json",
+    "evidence/gates/m6-cluster-staging-rollout.json",
+    "evidence/gates/m6-backup-restore-rollback.json"
+  ]
+}

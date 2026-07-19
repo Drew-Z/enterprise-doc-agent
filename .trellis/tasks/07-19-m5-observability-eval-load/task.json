@@ -15,7 +15,7 @@
   "branch": "feat/m4-agent-mcp-hitl",
   "base_branch": "feat/m4-agent-mcp-hitl",
   "worktree_path": null,
-  "commit": "70f5644b85b8bb5640d10d36c8261bea25f364f2",
+  "commit": "8ea488ecdc243f96bc3fa13f3a0a126693884d65",
   "pr_url": null,
   "subtasks": [],
   "children": [],
@@ -28,7 +28,7 @@
     "D:/workspace4Cursor/offer/output/企业文档Agent平台_深度面试问答.md",
     "D:/workspace4Cursor/offer/output/企业文档Agent平台_M5-M7深度面试问答.md"
   ],
-  "notes": "M5 local implementation and evidence are reviewed at implementation commit 70f5644 and evidence commit 6a53dd9. evidence/m5/20260720-054000-m5-observability-eval-load.json records deterministic evaluation, bounded load and fault reports, Prometheus rules, observability tests, and the application-capacity dry-run. The task remains in_progress because real-provider quality, representative production-like capacity, and managed observability gates are blocked_external.",
+  "notes": "M5 local implementation is reviewed at implementation commit 8ea488e and the sanitized evidence bundle is immutable at evidence commit c6f9d28. evidence/m5/20260720-072628-m5-observability-eval-load.json records deterministic evaluation, four synthetic fault drills, bounded load, report integrity, observability tests and the application-capacity dry-run. The task remains in_progress because real-provider quality, representative production-like capacity and managed observability gates are blocked_external.",
   "meta": {
     "milestone": "M5",
     "workflow": "tdd",

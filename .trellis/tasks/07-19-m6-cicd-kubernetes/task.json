@@ -15,12 +15,12 @@
   "branch": "feat/m4-agent-mcp-hitl",
   "base_branch": "feat/m4-agent-mcp-hitl",
   "worktree_path": null,
-  "commit": "70f5644b85b8bb5640d10d36c8261bea25f364f2",
+  "commit": "8ea488ecdc243f96bc3fa13f3a0a126693884d65",
   "pr_url": null,
   "subtasks": [],
   "children": [],
   "parent": "07-17-enterprise-document-agent-platform",
   "relatedFiles": [".trellis/tasks/07-17-enterprise-document-agent-platform/prd.md", ".trellis/tasks/07-17-enterprise-document-agent-platform/design.md", ".trellis/tasks/07-17-enterprise-document-agent-platform/implement.md", "D:/workspace4Cursor/offer/output/企业文档Agent平台_深度面试问答.md", "D:/workspace4Cursor/offer/output/企业文档Agent平台_M5-M7深度面试问答.md"],
-  "notes": "M6 local delivery implementation is reviewed at implementation commit 70f5644 and evidence commit 6a53dd9. evidence/m6/20260720-054000-m6-cicd-kubernetes.json records 59 deployment tests, Actionlint, Compose and three Kustomize renders, local image evidence, and an isolated PostgreSQL restore with 21 matching table inventories. The task remains in_progress because private-registry OIDC signing, real staging TLS/secrets and rollout, versioned object-store restore, Kubernetes rollback, and production RPO/RTO gates are blocked_external.",
+  "notes": "M6 local delivery implementation is reviewed at implementation commit 8ea488e and the sanitized evidence bundle is immutable at evidence commit c6f9d28. evidence/m6/20260720-072628-m6-cicd-kubernetes.json records 63 deployment tests, containerized Actionlint, Compose and three Kustomize renders. The task remains in_progress because private-registry OIDC signing, real staging TLS/secrets and rollout, versioned object-store restore, Kubernetes rollback and production RPO/RTO gates are blocked_external.",
   "meta": {"milestone": "M6", "workflow": "tdd", "current_slice": 5, "completed_slices": [0, 1, 2, 3, 4, 5], "approval_required_before_start": true}
 }

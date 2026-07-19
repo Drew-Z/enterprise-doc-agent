@@ -1,0 +1,114 @@
+{
+  "evidence_id": "m5-observability-eval-load-20260720-072628",
+  "milestone": "M5",
+  "requirement_ids": [
+    "M5-R1",
+    "M5-R2",
+    "M5-R3",
+    "M5-R4",
+    "M5-R5",
+    "M5-R6",
+    "M5-R7",
+    "M5-R8",
+    "M5-R9",
+    "M5-R10",
+    "M5-R11",
+    "M5-R12",
+    "M5-R13",
+    "M5-R14"
+  ],
+  "status": "blocked_external",
+  "owner": "developer",
+  "commit_sha": "8ea488ecdc243f96bc3fa13f3a0a126693884d65",
+  "reviewed_commit": "8ea488ecdc243f96bc3fa13f3a0a126693884d65",
+  "evidence_commit": "c6f9d28acc9b916df032493dd424c451e0be636f",
+  "manifest_commit": null,
+  "working_tree_dirty": false,
+  "started_at": "2026-07-20T07:12:20+08:00",
+  "completed_at": "2026-07-20T07:27:31+08:00",
+  "environment": {
+    "operating_system": "Windows 11",
+    "runtime": "local Python, Docker Compose and bounded local runners",
+    "evidence_mode": "reviewed local evidence with external gates open"
+  },
+  "image_digest": null,
+  "result_summary": "Deterministic RAG and Agent safety evaluation, four synthetic fault drills, bounded health load, observability tests, report integrity checks and the application capacity dry-run passed locally. Real-provider quality, representative production-like capacity and managed observability remain blocked externally.",
+  "blocking_reason": "Required provider credentials and corpus, representative production-like dependencies, and managed observability ownership and alert routing are not available locally.",
+  "prerequisites": [
+    "Run the approved real provider against the versioned evaluation corpus.",
+    "Run repeated ramp, steady-state, burst and recovery workloads in an isolated production-like environment with dependency telemetry.",
+    "Verify managed scrape, retention, alert delivery, ownership and incident runbooks."
+  ],
+  "command_or_procedure": [
+    {
+      "gate_id": "quality",
+      "command": "pnpm quality",
+      "exit_code": 0,
+      "result": "575 backend non-integration tests, 138 frontend tests and production build passed",
+      "artifact": "evidence/reviewed/20260720-072628/pnpm-quality.log"
+    },
+    {
+      "gate_id": "deterministic-evaluation",
+      "command": "python scripts/evaluate_m5.py --rag-dataset <rag-dataset> --agent-dataset <agent-dataset> --report-path <report-path>",
+      "exit_code": 0,
+      "result": "13 Agent safety cases passed; RAG recall@k and MRR were 1.0 on the controlled corpus",
+      "artifact": "evidence/reviewed/20260720-072628/m5-unified-evaluation.json"
+    },
+    {
+      "gate_id": "fault-drills",
+      "command": "Run handler-retryable, model-timeout, mcp-timeout and object-store-unavailable local fault scenarios",
+      "exit_code": 0,
+      "result": "4 of 4 synthetic wrapper drills passed; these are not external dependency recovery tests",
+      "artifact": "evidence/reviewed/20260720-072628/m5-fault-handler-retryable.json"
+    },
+    {
+      "gate_id": "bounded-load",
+      "command": "python scripts/load_m5.py --scenario health --base-url http://127.0.0.1:18765 --requests 40 --concurrency 8 --sample-resources --report-path <report-path>",
+      "exit_code": 0,
+      "result": "40/40 successful; p95 11.3919 ms; 936.564169 requests/s; explicitly bounded local run",
+      "artifact": "evidence/reviewed/20260720-072628/m5-local-health-load.json"
+    },
+    {
+      "gate_id": "observability-static",
+      "command": "uv run pytest tests/evaluation/test_observability_stack.py -q",
+      "exit_code": 0,
+      "result": "5 passed",
+      "artifact": "evidence/reviewed/20260720-072628/observability-static-pytest.log"
+    },
+    {
+      "gate_id": "application-capacity-plan",
+      "command": "uv run python scripts/run_application_capacity.py --config infra/capacity/application-capacity.example.yaml",
+      "exit_code": 0,
+      "result": "dry_run=true; 4 phases; 2 repetitions; external_execution=false",
+      "artifact": "evidence/reviewed/20260720-072628/application-capacity-plan.json"
+    }
+  ],
+  "artifacts": [
+    {"path": "evidence/reviewed/20260720-072628/reviewed-run-summary.json", "kind": "report", "commit_sha": "c6f9d28acc9b916df032493dd424c451e0be636f", "sha256": "58dc3204b884919f0df839b61def541d516cbc91eb0cf4acd2a091d1a00c00d8"},
+    {"path": "evidence/reviewed/20260720-072628/m5-unified-evaluation.json", "kind": "report", "commit_sha": "c6f9d28acc9b916df032493dd424c451e0be636f", "sha256": "130ecc3d0061b1c37ac9d9299984d2ba66e8c9a864abd08597f178cf45c4f2b7"},
+    {"path": "evidence/reviewed/20260720-072628/m5-local-health-load.json", "kind": "report", "commit_sha": "c6f9d28acc9b916df032493dd424c451e0be636f", "sha256": "c154decc4c42abce7395e32d603def09b3631599475acf1498597ab786678aa9"},
+    {"path": "evidence/reviewed/20260720-072628/m5-fault-handler-retryable.json", "kind": "report", "commit_sha": "c6f9d28acc9b916df032493dd424c451e0be636f", "sha256": "11049483ce56c7902db0004e11cdfe1d792f51615001ef924c54c9c5e63fb9dd"},
+    {"path": "evidence/reviewed/20260720-072628/m5-fault-model-timeout.json", "kind": "report", "commit_sha": "c6f9d28acc9b916df032493dd424c451e0be636f", "sha256": "1e7b0d79261fd695f7b4966746d8e14e317ea45fe1e83d5c22ccdc77b1772f6d"},
+    {"path": "evidence/reviewed/20260720-072628/m5-fault-mcp-timeout.json", "kind": "report", "commit_sha": "c6f9d28acc9b916df032493dd424c451e0be636f", "sha256": "bd0274fd5f43a9e21198f08313e8db42d1c83aaab7269ae989d8d11c93f29cc4"},
+    {"path": "evidence/reviewed/20260720-072628/m5-fault-object-store-unavailable.json", "kind": "report", "commit_sha": "c6f9d28acc9b916df032493dd424c451e0be636f", "sha256": "79404476d1199b91791344d11fb98ac97510b5013f6501eb69d51d5231be5cdf"},
+    {"path": "evidence/reviewed/20260720-072628/application-capacity-plan.json", "kind": "report", "commit_sha": "c6f9d28acc9b916df032493dd424c451e0be636f", "sha256": "8e06cef40bc5a3c7f901b5d70f234b57d623f76e7e2106a2e7e67642d92a4461"},
+    {"path": "evidence/reviewed/20260720-072628/application-capacity-dry-run.log", "kind": "log", "commit_sha": "c6f9d28acc9b916df032493dd424c451e0be636f", "sha256": "9b959089fa12ccbb1719bc5bae28396427001612ecea479acbc0ed300a535c39"},
+    {"path": "evidence/reviewed/20260720-072628/observability-static-pytest.log", "kind": "log", "commit_sha": "c6f9d28acc9b916df032493dd424c451e0be636f", "sha256": "f101de1f7d94cd2327af1f536436c2116c6fcc0116e514e7e528fdfcd9690c95"},
+    {"path": "evidence/reviewed/20260720-072628/m5-m7-evidence-contract.log", "kind": "log", "commit_sha": "c6f9d28acc9b916df032493dd424c451e0be636f", "sha256": "55354d0cc4ba313094c0ace9f8b57ad2032feb36642d0e08756e8f63bad9cf5c"},
+    {"path": "evidence/reviewed/20260720-072628/backend-pytest.log", "kind": "log", "commit_sha": "c6f9d28acc9b916df032493dd424c451e0be636f", "sha256": "cdfb3609e3578ca4f7b00b7eff21a95f83fd13e399f112113f0c7c683f983bc3"},
+    {"path": "evidence/reviewed/20260720-072628/pnpm-quality.log", "kind": "log", "commit_sha": "c6f9d28acc9b916df032493dd424c451e0be636f", "sha256": "e3c9a3157b314df0f8b4ea709963bc9936d7e39f1fdbb6d59f419dd8e2e1a6eb"},
+    {"path": "scripts/evaluate_m5.py", "kind": "source", "commit_sha": "8ea488ecdc243f96bc3fa13f3a0a126693884d65", "sha256": "7e67ec012068925a72f4899d9c1deec67648fd341709b6e95089143cd759af46"},
+    {"path": "scripts/load_m5.py", "kind": "source", "commit_sha": "8ea488ecdc243f96bc3fa13f3a0a126693884d65", "sha256": "11896bf5b66ee6f89411098e3e74f42f42429971d8c3826f322cdfb2f1d51daf"},
+    {"path": "scripts/fault_drill.py", "kind": "source", "commit_sha": "8ea488ecdc243f96bc3fa13f3a0a126693884d65", "sha256": "16827ec44e4033f79ac4fcd40a534b6b16eba787e9569ce6160cb34cc013c7fd"}
+  ],
+  "limitations": [
+    "The deterministic suite and fault drills use synthetic local boundaries and do not establish real-provider quality or external dependency recovery.",
+    "The 40-request run is a bounded workstation sample and does not establish production capacity or an SLO.",
+    "The capacity runner was validated only in dry-run mode; dependency saturation and managed observability were not exercised."
+  ],
+  "manual_gates": [
+    "evidence/gates/m5-real-provider-quality.json",
+    "evidence/gates/m5-representative-capacity.json",
+    "evidence/gates/m5-managed-observability.json"
+  ]
+}

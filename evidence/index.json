@@ -35,20 +35,20 @@
     {
       "milestone": "M5",
       "status": "blocked_external",
-      "manifest": "evidence/m5/20260720-054000-m5-observability-eval-load.json",
-      "manifest_commit": "57200ddbca003549ba7db8592cdee04ad2668704"
+      "manifest": "evidence/m5/20260720-072628-m5-observability-eval-load.json",
+      "manifest_commit": null
     },
     {
       "milestone": "M6",
       "status": "blocked_external",
-      "manifest": "evidence/m6/20260720-054000-m6-cicd-kubernetes.json",
-      "manifest_commit": "57200ddbca003549ba7db8592cdee04ad2668704"
+      "manifest": "evidence/m6/20260720-072628-m6-cicd-kubernetes.json",
+      "manifest_commit": null
     },
     {
       "milestone": "M7",
       "status": "blocked_external",
-      "manifest": "evidence/m7/20260720-054000-m7-local-model-routing.json",
-      "manifest_commit": "57200ddbca003549ba7db8592cdee04ad2668704"
+      "manifest": "evidence/m7/20260720-072628-m7-local-model-routing.json",
+      "manifest_commit": null
     },
     {
       "milestone": "M8",
