@@ -1,0 +1,174 @@
+{
+  "evidence_id": "m6-cicd-kubernetes",
+  "milestone": "M6",
+  "requirement_ids": [
+    "M6-R1",
+    "M6-R2",
+    "M6-R3",
+    "M6-R4",
+    "M6-R5",
+    "M6-R6",
+    "M6-R7"
+  ],
+  "status": "blocked_external",
+  "owner": "developer",
+  "commit_sha": "70f5644b85b8bb5640d10d36c8261bea25f364f2",
+  "reviewed_commit": "70f5644b85b8bb5640d10d36c8261bea25f364f2",
+  "evidence_commit": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+  "manifest_commit": null,
+  "working_tree_dirty": false,
+  "started_at": "2026-07-20T05:27:40+08:00",
+  "completed_at": "2026-07-20T05:39:00+08:00",
+  "environment": {
+    "operating_system": "Windows",
+    "runtime": "local Docker, kubectl, PostgreSQL fixture, and static workflow validation",
+    "evidence_mode": "reviewed local delivery evidence with external gates open"
+  },
+  "image_digest": null,
+  "result_summary": "Deployment tests, Actionlint, Compose validation, base/staging/prod Kustomize renders, local image records, and an isolated PostgreSQL backup and restore drill are immutable and passed locally. Registry signing, real staging rollout, versioned object-store restore, Kubernetes rollback, and production RPO/RTO remain blocked externally.",
+  "blocking_reason": "No writable private registry with GitHub OIDC, staging Kubernetes target, external TLS and secret manager, versioned object-store backup set, or production recovery environment is available.",
+  "prerequisites": [
+    "Publish and verify all four immutable image digests through the reviewed GitHub Actions OIDC workflow.",
+    "Apply the exact digests to the approved staging cluster and run authenticated smoke with validated TLS and secrets.",
+    "Execute versioned object-store and PostgreSQL restore plus Kubernetes rollback with measured RPO and RTO."
+  ],
+  "command_or_procedure": [
+    {
+      "gate_id": "deployment-tests",
+      "command": "uv run pytest tests/deployment -q",
+      "exit_code": 0,
+      "result": "59 passed",
+      "artifact": "evidence/reviewed/20260720-052740/deployment-pytest.log"
+    },
+    {
+      "gate_id": "actionlint",
+      "command": "docker run --rm rhysd/actionlint:1.7.7",
+      "exit_code": 0,
+      "result": "passed",
+      "artifact": "evidence/reviewed/20260720-052740/actionlint.log"
+    },
+    {
+      "gate_id": "kustomize",
+      "command": "kubectl kustomize base, staging, and prod",
+      "exit_code": 0,
+      "result": "all overlays rendered",
+      "artifact": "evidence/reviewed/20260720-052740/kustomize-validation.log"
+    },
+    {
+      "gate_id": "compose",
+      "command": "docker compose --profile observability config --quiet",
+      "exit_code": 0,
+      "result": "passed",
+      "artifact": "evidence/reviewed/20260720-052740/compose-config.log"
+    },
+    {
+      "gate_id": "local-recovery",
+      "command": "Run isolated PostgreSQL fixture backup and restore, compare Alembic revision and all public table row counts, then validate report",
+      "exit_code": 0,
+      "result": "21 tables matched; restore database cleaned up; status correctly blocked_external",
+      "artifact": "evidence/reviewed/20260720-052740/local-recovery/report.json"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "evidence/reviewed/20260720-052740/reviewed-run-summary.json",
+      "kind": "report",
+      "commit_sha": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+      "sha256": "76fdfaf83bf81b7dc6212c0d22eee237a2236a9a4fb3471e4799279b6cbf2db1"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/deployment-pytest.log",
+      "kind": "log",
+      "commit_sha": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+      "sha256": "c7d3e6844e0e54406551dd972a22a97aacea73bf8cbcdb867f0f2cd50f376a79"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/actionlint.log",
+      "kind": "log",
+      "commit_sha": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+      "sha256": "728490e5465117ac6c0c1f261089913d959d253de6d99002c767c2fa279c64a6"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/kustomize-validation.log",
+      "kind": "log",
+      "commit_sha": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+      "sha256": "b3d816701961a69021cf810fe1a4c7c5731b0ac1637601d3405d3638045adaab"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/kustomize-base.yaml",
+      "kind": "render",
+      "commit_sha": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+      "sha256": "b545a889136a3700ca7fd00c4b5a8de77f699735709b1cffff73f37ab53f3832"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/kustomize-staging.yaml",
+      "kind": "render",
+      "commit_sha": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+      "sha256": "00c22d472e967c2b11e03007dafb59cfc1b241d69efeffd1b1134a487187668d"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/kustomize-prod.yaml",
+      "kind": "render",
+      "commit_sha": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+      "sha256": "378dd223514ab41a87eb2fe57393982c412788a270c8e86702fbd7691a4c512b"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/compose-config.log",
+      "kind": "log",
+      "commit_sha": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+      "sha256": "a9f58776a09b5dac438049683f24bf85764e0ff8e7455952456165c68c158627"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/local-recovery/report.json",
+      "kind": "report",
+      "commit_sha": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+      "sha256": "316a649dbdd08235303bf8827368372ac729096c5508d270859281d60ecf0294"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/local-recovery/database.dump",
+      "kind": "postgres-custom-backup",
+      "commit_sha": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+      "sha256": "e780e4c4488e1a608b1877511377435d614b6ddc7cec83346ba61ffb82e54923"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/local-recovery/inventory-before.json",
+      "kind": "report",
+      "commit_sha": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+      "sha256": "dc6afacf86ac63298543ea9965fde9e799a0f4704552bcc621da35a3b38efe83"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/local-recovery/inventory-after.json",
+      "kind": "report",
+      "commit_sha": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+      "sha256": "249a093aab02ee660cbcd7ac30bfe74240197e5a6e409e6743d24e32e40b6ee6"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/local-recovery-validation.log",
+      "kind": "log",
+      "commit_sha": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+      "sha256": "ef8343d77f9a6f764d5ce551c46a4524277883d81c4a56fe6c2169f12a1348b2"
+    },
+    {
+      "path": "evidence/m6/20260719-local-image-builds.json",
+      "kind": "report",
+      "commit_sha": "70f5644b85b8bb5640d10d36c8261bea25f364f2",
+      "sha256": "b1dfb8cc916c3a187dbf206d6021cbd4d7d47cc5aaf4bbe60b9eaad4a0e63c75"
+    },
+    {
+      "path": "evidence/m6/20260719-235533-m6-local-delivery-verification.json",
+      "kind": "report",
+      "commit_sha": "70f5644b85b8bb5640d10d36c8261bea25f364f2",
+      "sha256": "cb33008402f22c46aaa2e6cfda0e6aa4481559868758be387a80065687fb5a93"
+    }
+  ],
+  "limitations": [
+    "Local image IDs and static workflow checks are not registry digests or a real GitHub Actions OIDC run.",
+    "Kustomize rendering is not a staging cluster apply, TLS review, or authenticated deployment smoke.",
+    "The local restore does not restore object-store versions, execute Kubernetes rollback, or measure production RPO or RTO."
+  ],
+  "manual_gates": [
+    "evidence/gates/m6-registry-signed-images.json",
+    "evidence/gates/m6-cluster-staging-rollout.json",
+    "evidence/gates/m6-backup-restore-rollback.json"
+  ]
+}

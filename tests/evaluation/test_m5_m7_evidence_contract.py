@@ -3,8 +3,9 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import subprocess
 from datetime import date, datetime
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 ROOT = Path(__file__).resolve().parents[2]
 FORMAL_MANIFEST_PATTERNS = {
@@ -12,12 +13,31 @@ FORMAL_MANIFEST_PATTERNS = {
     "M6": re.compile(r"^evidence/m6/\d{8}-\d{6}-m6-cicd-kubernetes\.json$"),
     "M7": re.compile(r"^evidence/m7/\d{8}-\d{6}-m7-local-model-routing\.json$"),
 }
+SHA_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 
 
 def _load(path: Path) -> dict[str, object]:
     value = json.loads(path.read_text(encoding="utf-8"))
     assert isinstance(value, dict)
     return value
+
+
+def _repo_path(relative_path: str) -> Path:
+    pure = PurePosixPath(relative_path)
+    assert not pure.is_absolute()
+    assert ".." not in pure.parts
+    path = ROOT.joinpath(*pure.parts)
+    assert path.is_file(), relative_path
+    return path
+
+
+def _git_blob(commit_sha: str, relative_path: str) -> bytes:
+    return subprocess.run(
+        ["git", "show", f"{commit_sha}:{relative_path}"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+    ).stdout
 
 
 def test_m5_m6_m7_formal_manifests_are_indexed_and_hashed() -> None:
@@ -33,10 +53,20 @@ def test_m5_m6_m7_formal_manifests_are_indexed_and_hashed() -> None:
         manifest_path = ROOT / str(entry["manifest"])
         manifest = _load(manifest_path)
         assert manifest["status"] == "blocked_external"
-        assert manifest["working_tree_dirty"] is True
-        assert manifest["commit_sha"] is None
-        assert manifest["reviewed_commit"] is None
-        assert manifest["evidence_commit"] is None
+        assert manifest["working_tree_dirty"] is False
+        reviewed_commit = manifest["reviewed_commit"]
+        evidence_commit = manifest["evidence_commit"]
+        assert isinstance(reviewed_commit, str) and SHA_PATTERN.fullmatch(reviewed_commit)
+        assert isinstance(evidence_commit, str) and SHA_PATTERN.fullmatch(evidence_commit)
+        assert reviewed_commit != evidence_commit
+        assert manifest["commit_sha"] == reviewed_commit
+        for commit_sha in (reviewed_commit, evidence_commit):
+            subprocess.run(
+                ["git", "cat-file", "-e", f"{commit_sha}^{{commit}}"],
+                cwd=ROOT,
+                check=True,
+                capture_output=True,
+            )
         required_fields = {
             "evidence_id",
             "milestone",
@@ -52,6 +82,11 @@ def test_m5_m6_m7_formal_manifests_are_indexed_and_hashed() -> None:
             "artifacts",
             "limitations",
             "owner",
+            "reviewed_commit",
+            "evidence_commit",
+            "working_tree_dirty",
+            "blocking_reason",
+            "prerequisites",
         }
         assert required_fields <= set(manifest)
         started = datetime.fromisoformat(str(manifest["started_at"]))
@@ -60,12 +95,20 @@ def test_m5_m6_m7_formal_manifests_are_indexed_and_hashed() -> None:
         assert completed >= started
         limitations = " ".join(str(item) for item in manifest["limitations"])
         assert "not" in limitations.lower()
+        assert manifest["blocking_reason"]
+        assert manifest["prerequisites"]
         artifacts = manifest["artifacts"]
         assert isinstance(artifacts, list) and artifacts
         for artifact in artifacts:
-            path = ROOT / str(artifact["path"])
-            assert path.is_file() and path.stat().st_size > 0
-            assert artifact["sha256"] == hashlib.sha256(path.read_bytes()).hexdigest()
+            relative_path = str(artifact["path"])
+            path = _repo_path(relative_path)
+            assert path.stat().st_size > 0
+            artifact_commit = str(artifact["commit_sha"])
+            assert artifact_commit in {reviewed_commit, evidence_commit}
+            assert (
+                artifact["sha256"]
+                == hashlib.sha256(_git_blob(artifact_commit, relative_path)).hexdigest()
+            )
 
 
 def test_working_tree_captures_are_separate_from_formal_evidence() -> None:

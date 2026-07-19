@@ -311,18 +311,16 @@ measurements do not exist, the report must be `blocked_external` with a blocking
 and prerequisites; a blocked capacity record still names its planned profile, phases
 and repetition count. A local workstation run cannot be promoted to `passed`.
 
-`evidence/m4/20260719-153214-m4-agent-mcp-hitl.json` is the formal M4 status summary and
-is explicitly `blocked_external`. It links the original
-`evidence/m4/20260719-075820-m4-agent-mcp-hitl-working-tree.json` capture and the
-`m4-reviewed-immutable-evidence` gate. The capture records sanitized local verification
-and SHA-256 values, but its reviewed implementation commit and evidence commit are
-intentionally null; it must not be promoted to `passed` until the gate is closed. The
-separate `evidence/index.json` working-tree entry points to the latest unreviewed refresh
-without rewriting that historical formal manifest.
+`evidence/m4/20260720-054000-m4-agent-mcp-hitl.json` is the reviewed M4 manifest. It
+records implementation commit `70f5644`, evidence commit `6a53dd9`, Git-blob SHA-256
+values, the full local quality matrix, Agent/MCP integration, safety evaluation and
+Playwright results. M4 is `passed`; the former reviewed-immutable-evidence gate is
+closed. Historical dirty working-tree captures remain indexed separately and are not
+used as formal evidence.
 
-M5/M6/M7 local-only evidence is kept separate from reviewed evidence. Their formal
-summaries are `blocked_external` and link the raw working-tree captures plus individual
-gate records under `evidence/gates/`:
+The reviewed M5/M6/M7 manifests point to the same immutable implementation and evidence
+commits, but remain `blocked_external`. Their successful local artifacts do not satisfy
+the individual gate records under `evidence/gates/`:
 
 - `evidence/m5/20260719-m5-unified-evaluation.json` and
   `evidence/m5/20260719-m5-local-health-load.json` record deterministic evaluation and
@@ -333,12 +331,19 @@ gate records under `evidence/gates/`:
   evidence. The M5 manifest also indexes local Redis/MinIO outage-recovery reports and
   a Prometheus/Grafana profile provisioning check; these are not managed-service
   failover, production RTO, or production observability evidence.
-- `evidence/m7/` records deterministic and fallback-contract route benchmarks. The
-  fallback contract checks retryable routing, fallback count, breaker state and local
-  citation validity; it is not real-provider quality, cost, GPU, vLLM, or
-  production-capacity evidence.
-- `evidence/m6/` records local Docker image builds plus Docker/Kubernetes/workflow contracts; registry signing,
-  cluster rollout, staging smoke, backup/restore, and rollback remain external gates.
+- `evidence/m7/` records deterministic and fallback-contract route benchmarks plus a
+  30-iteration shared-deadline regression. These are not real-provider quality, cost,
+  GPU, vLLM, or production-capacity evidence.
+- `evidence/m6/` records local Docker image builds, Actionlint, Kustomize and Compose
+  validation, and an isolated PostgreSQL restore whose Alembic revision and all 21
+  public-table row counts matched. Registry signing, cluster rollout, versioned
+  object-store restore, Kubernetes rollback and production RPO/RTO remain external
+  gates.
+
+`evidence/m8/20260720-054000-m8-end-to-end-model-deadline.json` supersedes the earlier
+local M8 record. It includes the route-budget boundary fix and immutable evidence for
+30 repeated exhausted-budget tests, the complete routing suite and the full backend
+regression.
 
 GitHub Actions runs independent backend and frontend jobs from `uv.lock` and
 `pnpm-lock.yaml`. The `m1-integration` job starts real PostgreSQL and MinIO, runs the

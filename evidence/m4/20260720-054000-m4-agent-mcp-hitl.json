@@ -1,0 +1,183 @@
+{
+  "evidence_id": "m4-agent-mcp-hitl",
+  "milestone": "M4",
+  "requirement_ids": [
+    "M4-R1",
+    "M4-R2",
+    "M4-R3",
+    "M4-R4",
+    "M4-R5",
+    "M4-R6",
+    "M4-R7",
+    "M4-R8",
+    "M4-R9",
+    "M4-R10",
+    "M4-R11",
+    "M4-R12",
+    "M4-R13",
+    "M4-R14",
+    "M4-R15",
+    "M4-R16"
+  ],
+  "status": "passed",
+  "owner": "developer",
+  "commit_sha": "70f5644b85b8bb5640d10d36c8261bea25f364f2",
+  "reviewed_commit": "70f5644b85b8bb5640d10d36c8261bea25f364f2",
+  "evidence_commit": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+  "manifest_commit": null,
+  "working_tree_dirty": false,
+  "started_at": "2026-07-20T05:27:40+08:00",
+  "completed_at": "2026-07-20T05:39:00+08:00",
+  "environment": {
+    "operating_system": "Windows",
+    "runtime": "local Docker Compose with PostgreSQL, Redis, and MinIO",
+    "evidence_mode": "reviewed immutable local contract evidence"
+  },
+  "image_digest": "not_applicable",
+  "result_summary": "The reviewed M4 implementation passed the full backend and frontend quality matrix, Agent/MCP integration, authorization and injection contracts, deterministic safety evaluation, responsive UI evidence, and four Playwright end-to-end tests. The reviewed implementation and evidence bundles are separate immutable commits.",
+  "command_or_procedure": [
+    {
+      "gate_id": "backend-full",
+      "command": "uv run pytest -q",
+      "exit_code": 0,
+      "result": "645 passed",
+      "artifact": "evidence/reviewed/20260720-052740/backend-pytest.log"
+    },
+    {
+      "gate_id": "quality",
+      "command": "pnpm quality",
+      "exit_code": 0,
+      "result": "545 backend tests, 138 frontend tests, lint, typecheck, and build passed",
+      "artifact": "evidence/reviewed/20260720-052740/pnpm-quality.log"
+    },
+    {
+      "gate_id": "agent-mcp-integration",
+      "command": "uv run pytest tests/agent tests/mcp -m integration -q",
+      "exit_code": 0,
+      "result": "34 passed, 14 deselected",
+      "artifact": "evidence/reviewed/20260720-052740/m4-agent-mcp-integration.log"
+    },
+    {
+      "gate_id": "security-contracts",
+      "command": "uv run pytest tests/security/test_m4_injection_safety.py tests/contracts/test_m4_authorization_contracts.py -q",
+      "exit_code": 0,
+      "result": "4 passed",
+      "artifact": "evidence/reviewed/20260720-052740/m4-security-contracts.log"
+    },
+    {
+      "gate_id": "safety-evaluation",
+      "command": "uv run python scripts/evaluate_m4_agent.py",
+      "exit_code": 0,
+      "result": "13 of 13 cases passed",
+      "artifact": "evidence/reviewed/20260720-052740/m4-agent-safety-v1.json"
+    },
+    {
+      "gate_id": "playwright-e2e",
+      "command": "pnpm --filter web test:e2e",
+      "exit_code": 0,
+      "result": "4 passed",
+      "artifact": "evidence/reviewed/20260720-052740/playwright-summary.log"
+    },
+    {
+      "gate_id": "privacy-scan",
+      "command": "Scan reviewed evidence for runtime UUIDs, local username, passwords, bearer values, and API keys",
+      "exit_code": 0,
+      "result": "passed",
+      "artifact": "evidence/reviewed/20260720-052740/privacy-scan.log"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "evidence/reviewed/20260720-052740/reviewed-run-summary.json",
+      "kind": "report",
+      "commit_sha": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+      "sha256": "76fdfaf83bf81b7dc6212c0d22eee237a2236a9a4fb3471e4799279b6cbf2db1"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/backend-pytest.log",
+      "kind": "log",
+      "commit_sha": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+      "sha256": "5ee71cad305e11f5d059e620bdd7ea0535ffe0d1db811136774cfd92b98d091a"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/pnpm-quality.log",
+      "kind": "log",
+      "commit_sha": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+      "sha256": "d54f7f8c7681eb4a76fcb4c7b152f14e6a96cb2b28124dcf3e3d05e604e1693f"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/m4-agent-mcp-integration.log",
+      "kind": "log",
+      "commit_sha": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+      "sha256": "4970e3e075ee973bc8bce743df453b00356e14dcb53dc1551a99b014c84f17d8"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/m4-security-contracts.log",
+      "kind": "log",
+      "commit_sha": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+      "sha256": "3104473639ec183fc8ce5982a10808fee5f35166da13dc4697b59cc82b222f9a"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/m4-agent-safety-v1.json",
+      "kind": "report",
+      "commit_sha": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+      "sha256": "0c831cecfd28d9fe8cfee58b4bbcc0eb0292421978023689f4e9b61ba12cf4a2"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/playwright-summary.log",
+      "kind": "log",
+      "commit_sha": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+      "sha256": "c9d9c23e6aee4dbdcabde88a98a252574d2f5bd3315e0b3e268dec24fe600130"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/privacy-scan.log",
+      "kind": "log",
+      "commit_sha": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+      "sha256": "575189793d5bae52bdeb60d3a2214b5a04dfc4923b3d20a5b96f7b567f3da2ad"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/artifact-inventory.json",
+      "kind": "report",
+      "commit_sha": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+      "sha256": "405dc9a5ae3d19a968394b615411c9d589772c44ae93e2f9d9793399db35dae0"
+    },
+    {
+      "path": "evidence/m4/artifacts/agent-workspace-desktop-1440x900.png",
+      "kind": "screenshot",
+      "commit_sha": "70f5644b85b8bb5640d10d36c8261bea25f364f2",
+      "sha256": "75925325c0c345273bd2d03546d18dcd15c6783cfe7bf5189a26d5cbacdeb4c4"
+    },
+    {
+      "path": "evidence/m4/artifacts/agent-workspace-mobile-390x844.png",
+      "kind": "screenshot",
+      "commit_sha": "70f5644b85b8bb5640d10d36c8261bea25f364f2",
+      "sha256": "2c0ab8c7ee4f5eaf206965dd3e7d14377bc04e915baaaec2332388d4b247f69f"
+    }
+  ],
+  "limitations": [
+    "The deterministic local gateway proves orchestration and safety contracts, not production model quality or provider latency.",
+    "Tenant membership and role checks are implemented; document-level ACL or ABAC is not implemented.",
+    "This evidence does not claim public MCP exposure, production capacity, Kubernetes delivery, or multi-region operation."
+  ],
+  "manual_gates": [],
+  "visual_gates": [
+    {
+      "gate_id": "agent-workspace-responsive",
+      "result": "passed",
+      "reviewer": "Codex",
+      "evidence_mode": "reviewed local Playwright and retained deterministic screenshots",
+      "viewports": [
+        {
+          "width": 1440,
+          "height": 900,
+          "screenshot": "evidence/m4/artifacts/agent-workspace-desktop-1440x900.png"
+        },
+        {
+          "width": 390,
+          "height": 844,
+          "screenshot": "evidence/m4/artifacts/agent-workspace-mobile-390x844.png"
+        }
+      ]
+    }
+  ]
+}

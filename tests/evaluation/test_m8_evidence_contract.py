@@ -9,7 +9,7 @@ from pathlib import Path, PurePosixPath
 
 ROOT = Path(__file__).resolve().parents[2]
 INDEX_PATH = ROOT / "evidence" / "index.json"
-MANIFEST_PATH = "evidence/m8/20260719-231759-m8-end-to-end-model-deadline.json"
+MANIFEST_PATH = "evidence/m8/20260720-054000-m8-end-to-end-model-deadline.json"
 SHA_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 
 
@@ -55,8 +55,21 @@ def test_m8_reviewed_local_evidence_is_indexed() -> None:
     assert manifest["requirement_ids"] == [f"M8-R{number}" for number in range(1, 8)]
     commit_sha = manifest["commit_sha"]
     assert isinstance(commit_sha, str) and SHA_PATTERN.fullmatch(commit_sha)
+    reviewed_commit = manifest["reviewed_commit"]
+    evidence_commit = manifest["evidence_commit"]
+    assert isinstance(reviewed_commit, str) and SHA_PATTERN.fullmatch(reviewed_commit)
+    assert isinstance(evidence_commit, str) and SHA_PATTERN.fullmatch(evidence_commit)
+    assert commit_sha == reviewed_commit
+    assert reviewed_commit != evidence_commit
     subprocess.run(
         ["git", "cat-file", "-e", f"{commit_sha}^{{commit}}"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    subprocess.run(
+        ["git", "cat-file", "-e", f"{evidence_commit}^{{commit}}"],
         cwd=ROOT,
         check=True,
         capture_output=True,
@@ -72,7 +85,8 @@ def test_m8_reviewed_local_evidence_is_indexed() -> None:
 
 def test_m8_evidence_artifacts_are_immutable_and_scope_is_local() -> None:
     manifest = _load(_artifact_path(MANIFEST_PATH))
-    commit_sha = str(manifest["commit_sha"])
+    reviewed_commit = str(manifest["reviewed_commit"])
+    evidence_commit = str(manifest["evidence_commit"])
     commands = manifest["command_or_procedure"]
     assert isinstance(commands, list) and commands
     assert all(result["exit_code"] == 0 for result in commands)
@@ -81,12 +95,14 @@ def test_m8_evidence_artifacts_are_immutable_and_scope_is_local() -> None:
     assert isinstance(artifacts, list) and artifacts
     for artifact in artifacts:
         relative_path = str(artifact["path"])
-        digest = hashlib.sha256(_git_blob(commit_sha, relative_path)).hexdigest()
+        artifact_commit = str(artifact["commit_sha"])
+        assert artifact_commit in {reviewed_commit, evidence_commit}
+        digest = hashlib.sha256(_git_blob(artifact_commit, relative_path)).hexdigest()
         assert artifact["sha256"] == digest
 
     limitations = manifest["limitations"]
     assert isinstance(limitations, list) and limitations
     joined = " ".join(str(item) for item in limitations).lower()
-    assert "not real-provider" in joined
+    assert "real-provider" in joined
     assert "production capacity" in joined
     assert manifest["manual_gates"] == []

@@ -31,15 +31,18 @@
   ],
   "parent": null,
   "relatedFiles": [],
-  "notes": "M0-M3 are archived with reviewed local evidence. M4-M7 have local implementation and evidence commits, while external deployment, capacity, provider, observability, recovery, and hardware gates remain open. M8 adds a shared primary/fallback route deadline and owns new local contract evidence.",
+  "notes": "M0-M4 have reviewed local evidence, with M4 now passed at implementation commit 70f5644 and evidence commit 6a53dd9. M5-M7 have reviewed immutable local manifests but remain blocked by real provider, production-like capacity, managed observability, registry/OIDC, staging, recovery, and GPU/vLLM gates. M8 is archived with refreshed shared route-deadline evidence. The parent remains in_progress until required external gates are executed or explicitly removed by an approved scope decision.",
   "meta": {
-    "current_milestone": "M8",
+    "current_milestone": "external-delivery-gates",
     "completed_milestones": [
       "M0",
       "M1",
       "M2",
       "M3",
       "M4",
+      "M8"
+    ],
+    "reviewed_local_but_blocked_external": [
       "M5",
       "M6",
       "M7"

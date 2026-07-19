@@ -82,7 +82,7 @@ Rollback point: observability services are optional and independent of readiness
 - [x] Save sanitized artifacts and SHA-256 hashes under `evidence/m5/`.
 - [x] Add working-tree manifests, manual gates, evidence index entries, README/spec updates,
   and code-backed interview Q&A.
-- [ ] Separate reviewed implementation and evidence commits when the user approves the
+- [x] Separate reviewed implementation and evidence commits when the user approves the
   commit boundary.
 
 ## Full Completion Gate

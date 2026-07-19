@@ -15,7 +15,7 @@
   "branch": "feat/m4-agent-mcp-hitl",
   "base_branch": "feat/m4-agent-mcp-hitl",
   "worktree_path": null,
-  "commit": null,
+  "commit": "70f5644b85b8bb5640d10d36c8261bea25f364f2",
   "pr_url": null,
   "subtasks": [],
   "children": [],
@@ -28,12 +28,12 @@
     "D:/workspace4Cursor/offer/output/企业文档Agent平台_深度面试问答.md",
     "D:/workspace4Cursor/offer/output/企业文档Agent平台_M5-M7深度面试问答.md"
   ],
-  "notes": "M5 local implementation, deterministic evaluation, health and ready resource load reports, Redis/MinIO outage-recovery runs, and local Prometheus/Grafana verification exist in the dirty M4 worktree. The formal status manifest is evidence/m5/20260719-153215-m5-observability-eval-load.json with status blocked_external and links the raw capture plus real-provider, representative-capacity, and managed-observability gates. Production failover/RTO and immutable review commits remain unavailable.",
+  "notes": "M5 local implementation and evidence are reviewed at implementation commit 70f5644 and evidence commit 6a53dd9. evidence/m5/20260720-054000-m5-observability-eval-load.json records deterministic evaluation, bounded load and fault reports, Prometheus rules, observability tests, and the application-capacity dry-run. The task remains in_progress because real-provider quality, representative production-like capacity, and managed observability gates are blocked_external.",
   "meta": {
     "milestone": "M5",
     "workflow": "tdd",
     "current_slice": 7,
-    "completed_slices": [0, 1, 2, 3, 4, 5, 6],
+    "completed_slices": [0, 1, 2, 3, 4, 5, 6, 7],
     "approval_required_before_start": true
   }
 }

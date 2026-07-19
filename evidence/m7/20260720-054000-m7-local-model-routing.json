@@ -1,0 +1,117 @@
+{
+  "evidence_id": "m7-local-model-routing",
+  "milestone": "M7",
+  "requirement_ids": [
+    "M7-R1",
+    "M7-R2",
+    "M7-R3",
+    "M7-R4",
+    "M7-R5",
+    "M7-R6",
+    "M7-R7"
+  ],
+  "status": "blocked_external",
+  "owner": "developer",
+  "commit_sha": "70f5644b85b8bb5640d10d36c8261bea25f364f2",
+  "reviewed_commit": "70f5644b85b8bb5640d10d36c8261bea25f364f2",
+  "evidence_commit": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+  "manifest_commit": null,
+  "working_tree_dirty": false,
+  "started_at": "2026-07-20T05:27:40+08:00",
+  "completed_at": "2026-07-20T05:39:00+08:00",
+  "environment": {
+    "operating_system": "Windows",
+    "runtime": "local deterministic Python gateways",
+    "evidence_mode": "reviewed local routing evidence with external gates open"
+  },
+  "image_digest": null,
+  "result_summary": "Reviewed routing, retryable fallback, circuit-breaker, embedding-dimension, and shared route-deadline contracts are immutable. The exhausted-budget regression passed 30 consecutive iterations and the full routing suite passed. Real-provider quality and GPU or vLLM capacity remain blocked externally.",
+  "blocking_reason": "No approved real-provider credentials and corpus, pinned GPU environment, vLLM deployment, model revision, or quantization matrix is available.",
+  "prerequisites": [
+    "Run the approved provider against the versioned golden set with cost and latency metadata.",
+    "Run repeated warm-up, steady-state, burst, and recovery scenarios on a pinned GPU and vLLM stack.",
+    "Capture TTFT, TPOT, token throughput, errors, GPU memory, KV cache, queue saturation, and headroom."
+  ],
+  "command_or_procedure": [
+    {
+      "gate_id": "backend-full",
+      "command": "uv run pytest -q",
+      "exit_code": 0,
+      "result": "645 passed",
+      "artifact": "evidence/reviewed/20260720-052740/backend-pytest.log"
+    },
+    {
+      "gate_id": "route-deadline-repeatability",
+      "command": "Run test_exhausted_route_budget_does_not_invoke_fallback 30 times, then run the full routing suite",
+      "exit_code": 0,
+      "result": "30 of 30 repeated tests and 13 routing tests passed",
+      "artifact": "evidence/reviewed/20260720-052740/model-routing-deadline-regression.log"
+    },
+    {
+      "gate_id": "model-capacity-dry-run",
+      "command": "uv run python scripts/run_model_capacity.py --config infra/capacity/model-capacity.example.yaml",
+      "exit_code": 0,
+      "result": "4 phases, 2 repetitions, external_execution=false",
+      "artifact": "evidence/reviewed/20260720-052740/model-capacity-dry-run.log"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "evidence/reviewed/20260720-052740/reviewed-run-summary.json",
+      "kind": "report",
+      "commit_sha": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+      "sha256": "76fdfaf83bf81b7dc6212c0d22eee237a2236a9a4fb3471e4799279b6cbf2db1"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/backend-pytest.log",
+      "kind": "log",
+      "commit_sha": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+      "sha256": "5ee71cad305e11f5d059e620bdd7ea0535ffe0d1db811136774cfd92b98d091a"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/model-routing-deadline-regression.log",
+      "kind": "log",
+      "commit_sha": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+      "sha256": "e5a0cbdfc5c3491365e3bb3082a71119b3546392166426b214930f008a15cb60"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/model-capacity-dry-run.log",
+      "kind": "log",
+      "commit_sha": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+      "sha256": "bd2f5c479d98bc05f2c0d625b7fddf4b943c794b241f3da256f7ed6dd5d0f8e7"
+    },
+    {
+      "path": "evidence/m7/20260719-m7-deterministic.json",
+      "kind": "report",
+      "commit_sha": "70f5644b85b8bb5640d10d36c8261bea25f364f2",
+      "sha256": "321860fe985fcf394f639779c437e81cc541540f3b8f1ff5b8afc7257bcbb0e9"
+    },
+    {
+      "path": "evidence/m7/20260719-m7-fallback-contract.json",
+      "kind": "report",
+      "commit_sha": "70f5644b85b8bb5640d10d36c8261bea25f364f2",
+      "sha256": "a9c932d8e1116b874d5f99424435f45f2af458003ebe9f1841a42613cc374e9a"
+    },
+    {
+      "path": "packages/core/src/enterprise_doc_core/agents/gateway.py",
+      "kind": "source",
+      "commit_sha": "70f5644b85b8bb5640d10d36c8261bea25f364f2",
+      "sha256": "003150c5af5a70b0cabbaf7051edda0929404b0e5d599738be32495b9d38883b"
+    },
+    {
+      "path": "packages/core/tests/test_model_routing.py",
+      "kind": "test",
+      "commit_sha": "70f5644b85b8bb5640d10d36c8261bea25f364f2",
+      "sha256": "80905945bc3fde08d8322c17d205998622e8979679ad430c937031a640775506"
+    }
+  ],
+  "limitations": [
+    "Synthetic local gateway benchmarks are not real-provider quality or network latency evidence.",
+    "The capacity runner was validated in dry-run mode and did not collect GPU, vLLM, KV-cache, or queue telemetry.",
+    "No production cost, throughput, context-length, batching, or quantization conclusion is claimed."
+  ],
+  "manual_gates": [
+    "evidence/gates/m7-real-provider-quality.json",
+    "evidence/gates/m7-gpu-vllm-capacity.json"
+  ]
+}

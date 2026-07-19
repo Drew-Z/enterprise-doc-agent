@@ -99,41 +99,41 @@ choose a tenant, broaden a document scope, or bypass an approval.
 
 ## Acceptance Criteria
 
-- [ ] API create/status/cancel/approval/artifact contracts are typed, tenant-scoped,
+- [x] API create/status/cancel/approval/artifact contracts are typed, tenant-scoped,
   idempotent, and return quickly; API tests prove no model or tool work runs inline.
-- [ ] AgentRun, AgentRunEvent, AgentRunExecution, AgentRunEvidence, ApprovalRequest,
+- [x] AgentRun, AgentRunEvent, AgentRunExecution, AgentRunEvidence, ApprovalRequest,
   ToolExecution, and AgentArtifact persistence is covered by an additive Alembic
   migration with tenant ownership, unique/idempotency constraints, status checks, and
   downgrade tests.
-- [ ] The fixed graph runs with the deterministic local gateway and PostgreSQL
+- [x] The fixed graph runs with the deterministic local gateway and PostgreSQL
   checkpointer; crash injection at load, retrieve, generate, draft, approval, and
   publish boundaries resumes from persisted state without duplicate effective writes.
-- [ ] OpenAI-compatible gateway tests cover timeout, HTTP 4xx/5xx classification,
+- [x] OpenAI-compatible gateway tests cover timeout, HTTP 4xx/5xx classification,
   malformed JSON, schema mismatch, bounded repair, model/version recording, and
   secret-free logs. No live provider key is required for the deterministic gate.
-- [ ] Real PostgreSQL retrieval integration proves tenant/version/generation filters
+- [x] Real PostgreSQL retrieval integration proves tenant/version/generation filters
   are applied before answer generation and every returned citation resolves through
   the M3 validator.
-- [ ] SSE integration proves monotonic sequence allocation, reconnect using
+- [x] SSE integration proves monotonic sequence allocation, reconnect using
   `Last-Event-ID`, replay after API restart, no duplicates, bounded heartbeats, and
   redaction of prompt/document/tool/model payloads.
-- [ ] MCP contract and integration tests prove all five tools reject missing or forged
+- [x] MCP contract and integration tests prove all five tools reject missing or forged
   context, cross-tenant resources, extra schema fields, expired timeouts, missing
   idempotency keys, and unapproved publication; approved exact-version publication
   creates one visible artifact.
-- [ ] Approval tests cover approve/reject/expiry/revoke/cancel races, duplicate
+- [x] Approval tests cover approve/reject/expiry/revoke/cancel races, duplicate
   decisions, target-version replacement, authorization revocation, and resume after
   Worker crash. A run-level blanket approval is impossible.
-- [ ] Prompt-injection tests cover user text, retrieved document text, and MCP result
+- [x] Prompt-injection tests cover user text, retrieved document text, and MCP result
   text attempting to call publish, reveal secrets, or change tenant. All write
   attempts have zero effective publish/tool side effects.
-- [ ] Playwright covers upload-ready document selection, run submission, reconnectable
+- [x] Playwright covers upload-ready document selection, run submission, reconnectable
   event timeline, approval and artifact download, plus unauthorized and injection
   negative paths.
-- [ ] Existing M0-M3 quality, integration, evidence, and archived artifacts remain
+- [x] Existing M0-M3 quality, integration, evidence, and archived artifacts remain
   green and unchanged. M4 evidence is additive and explicitly labels deterministic
   provider results as local contract evidence, not production model quality.
-- [ ] `README.md` documents dependency installation, checkpointer setup, API/Web/
+- [x] `README.md` documents dependency installation, checkpointer setup, API/Web/
   Worker/MCP local commands, SSE/auth behavior, test/evidence commands, and known
   production gaps.
 

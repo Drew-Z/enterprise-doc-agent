@@ -261,7 +261,7 @@ Rollback point: local operator workflow is usable; no production deployment clai
   approval, tool-policy, replay, and side-effect results.
 - [x] Update README, factual Trellis specs, the code-backed interview document, and
   known limitations. Do not rewrite M0-M3 evidence.
-- [ ] Commit reviewed implementation, run the complete evidence matrix once, save
+- [x] Commit reviewed implementation, run the complete evidence matrix once, save
   sanitized artifacts and SHA-256 values, add the immutable M4 manifest/index entry,
   validate Trellis, and commit evidence separately.
 

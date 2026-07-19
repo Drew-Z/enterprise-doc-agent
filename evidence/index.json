@@ -28,28 +28,28 @@
     },
     {
       "milestone": "M4",
-      "status": "blocked_external",
-      "manifest": "evidence/m4/20260719-153214-m4-agent-mcp-hitl.json"
+      "status": "passed",
+      "manifest": "evidence/m4/20260720-054000-m4-agent-mcp-hitl.json"
     },
     {
       "milestone": "M5",
       "status": "blocked_external",
-      "manifest": "evidence/m5/20260719-153215-m5-observability-eval-load.json"
+      "manifest": "evidence/m5/20260720-054000-m5-observability-eval-load.json"
     },
     {
       "milestone": "M6",
       "status": "blocked_external",
-      "manifest": "evidence/m6/20260719-153216-m6-cicd-kubernetes.json"
+      "manifest": "evidence/m6/20260720-054000-m6-cicd-kubernetes.json"
     },
     {
       "milestone": "M7",
       "status": "blocked_external",
-      "manifest": "evidence/m7/20260719-153217-m7-local-model-routing.json"
+      "manifest": "evidence/m7/20260720-054000-m7-local-model-routing.json"
     },
     {
       "milestone": "M8",
       "status": "passed",
-      "manifest": "evidence/m8/20260719-231759-m8-end-to-end-model-deadline.json"
+      "manifest": "evidence/m8/20260720-054000-m8-end-to-end-model-deadline.json"
     },
     {
       "milestone": "M6-local-verification",
@@ -80,7 +80,6 @@
     }
   ],
   "manual_gates": [
-    "evidence/gates/m4-reviewed-immutable-evidence.json",
     "evidence/gates/m5-real-provider-quality.json",
     "evidence/gates/m5-representative-capacity.json",
     "evidence/gates/m5-managed-observability.json",

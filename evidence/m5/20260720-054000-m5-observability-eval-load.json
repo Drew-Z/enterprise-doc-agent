@@ -1,0 +1,144 @@
+{
+  "evidence_id": "m5-observability-eval-load",
+  "milestone": "M5",
+  "requirement_ids": [
+    "M5-R1",
+    "M5-R2",
+    "M5-R3",
+    "M5-R4",
+    "M5-R5",
+    "M5-R6",
+    "M5-R7",
+    "M5-R8",
+    "M5-R9",
+    "M5-R10",
+    "M5-R11",
+    "M5-R12",
+    "M5-R13",
+    "M5-R14"
+  ],
+  "status": "blocked_external",
+  "owner": "developer",
+  "commit_sha": "70f5644b85b8bb5640d10d36c8261bea25f364f2",
+  "reviewed_commit": "70f5644b85b8bb5640d10d36c8261bea25f364f2",
+  "evidence_commit": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+  "manifest_commit": null,
+  "working_tree_dirty": false,
+  "started_at": "2026-07-20T05:27:40+08:00",
+  "completed_at": "2026-07-20T05:39:00+08:00",
+  "environment": {
+    "operating_system": "Windows",
+    "runtime": "local Docker Compose and bounded local runners",
+    "evidence_mode": "reviewed local evidence with external gates open"
+  },
+  "image_digest": null,
+  "result_summary": "Reviewed deterministic evaluation, local load and fault reports, static observability tests, Prometheus configuration and alert rules, and the application-capacity execution plan are immutable. Real-provider quality, representative production-like capacity, and managed observability delivery remain blocked externally.",
+  "blocking_reason": "The required provider credentials, representative production-like environment, and managed observability ownership and routing are not available locally.",
+  "prerequisites": [
+    "Run the approved real provider against the representative evaluation corpus.",
+    "Run repeated ramp, steady-state, burst, and recovery workloads in an isolated production-like environment with dependency telemetry.",
+    "Verify managed scrape, retention, alert delivery, ownership, and incident runbooks."
+  ],
+  "command_or_procedure": [
+    {
+      "gate_id": "quality",
+      "command": "pnpm quality",
+      "exit_code": 0,
+      "result": "passed",
+      "artifact": "evidence/reviewed/20260720-052740/pnpm-quality.log"
+    },
+    {
+      "gate_id": "observability-static",
+      "command": "uv run pytest tests/evaluation/test_observability_stack.py -q",
+      "exit_code": 0,
+      "result": "5 passed",
+      "artifact": "evidence/reviewed/20260720-052740/observability-static-pytest.log"
+    },
+    {
+      "gate_id": "prometheus-config",
+      "command": "promtool check config /etc/prometheus/prometheus.yml",
+      "exit_code": 0,
+      "result": "config valid; 7 rules found",
+      "artifact": "evidence/reviewed/20260720-052740/prometheus-config-validation.log"
+    },
+    {
+      "gate_id": "application-capacity-dry-run",
+      "command": "uv run python scripts/run_application_capacity.py --config infra/capacity/application-capacity.example.yaml",
+      "exit_code": 0,
+      "result": "4 phases, 2 repetitions, external_execution=false",
+      "artifact": "evidence/reviewed/20260720-052740/application-capacity-dry-run.log"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "evidence/reviewed/20260720-052740/reviewed-run-summary.json",
+      "kind": "report",
+      "commit_sha": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+      "sha256": "76fdfaf83bf81b7dc6212c0d22eee237a2236a9a4fb3471e4799279b6cbf2db1"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/pnpm-quality.log",
+      "kind": "log",
+      "commit_sha": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+      "sha256": "d54f7f8c7681eb4a76fcb4c7b152f14e6a96cb2b28124dcf3e3d05e604e1693f"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/observability-static-pytest.log",
+      "kind": "log",
+      "commit_sha": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+      "sha256": "06b748150b9d22ead6e85895503497ac95ec3dd55fa061ce09798c4ded3cb39d"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/prometheus-config-validation.log",
+      "kind": "log",
+      "commit_sha": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+      "sha256": "ba0f2d11925d87ab3b6a667bcc3e2817b3ab030e7fe0e472dc3b98d8184a9a61"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/application-capacity-dry-run.log",
+      "kind": "log",
+      "commit_sha": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+      "sha256": "8e06cef40bc5a3c7f901b5d70f234b57d623f76e7e2106a2e7e67642d92a4461"
+    },
+    {
+      "path": "evidence/m5/20260719-m5-unified-evaluation.json",
+      "kind": "report",
+      "commit_sha": "70f5644b85b8bb5640d10d36c8261bea25f364f2",
+      "sha256": "e677fc79b82dab8d86f96314ff4cba089a565d44d20942143faabc30ffc802af"
+    },
+    {
+      "path": "evidence/m5/20260719-m5-local-health-load.json",
+      "kind": "report",
+      "commit_sha": "70f5644b85b8bb5640d10d36c8261bea25f364f2",
+      "sha256": "817f81dc25447d6775045eb4d73c089491048bb9842138d50feed487c3edc430"
+    },
+    {
+      "path": "evidence/m5/20260719-m5-local-ready-resource-load.json",
+      "kind": "report",
+      "commit_sha": "70f5644b85b8bb5640d10d36c8261bea25f364f2",
+      "sha256": "d629c8af20db104250f9a53649e5f5382f447d6eec52dc348bab3e9648d20f3e"
+    },
+    {
+      "path": "evidence/m5/20260719-redis-outage-recovery.json",
+      "kind": "report",
+      "commit_sha": "70f5644b85b8bb5640d10d36c8261bea25f364f2",
+      "sha256": "1b32a70c427ec463f9ba31c26b129de2fee24cdae6904a7e4c4bf93c07bc606f"
+    },
+    {
+      "path": "evidence/m5/20260719-minio-outage-recovery.json",
+      "kind": "report",
+      "commit_sha": "70f5644b85b8bb5640d10d36c8261bea25f364f2",
+      "sha256": "9eba93e3bb8f02af7d23c2c560adcff18f8d880e83cd167801492cd702e14eb4"
+    }
+  ],
+  "limitations": [
+    "The local load reports are bounded workstation samples, not production capacity evidence.",
+    "The capacity runner was validated in dry-run mode and did not execute against a production-like target.",
+    "Deterministic evaluation is not real-provider quality, and local Prometheus is not managed observability."
+  ],
+  "manual_gates": [
+    "evidence/gates/m5-real-provider-quality.json",
+    "evidence/gates/m5-representative-capacity.json",
+    "evidence/gates/m5-managed-observability.json"
+  ]
+}

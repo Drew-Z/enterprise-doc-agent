@@ -103,18 +103,18 @@ Dependencies are specified in each child's `implement.md`; tree order alone is n
 ## Acceptance Criteria
 
 - [ ] All required M0-M7 child-task acceptance criteria are complete. Externally blocked work has a manual-gate record and remains open rather than being counted as complete; an optional milestone may be removed only by an explicit approved scope decision.
-- [ ] A new environment can run the local stack and primary workflow from the README.
-- [ ] The upload→ingestion→Agent→approval→artifact path passes E2E tests.
-- [ ] Duplicate delivery, worker crash, stale lease, and expired fencing-token tests pass.
-- [ ] Tenant leakage, prompt-injection write attempts, and unapproved publication tests are zero-tolerance gates.
-- [ ] RAG and Agent eval datasets have versioned baseline results.
-- [ ] A load report documents workload, P50/P95/P99, errors, resource saturation, bottleneck, and capacity conclusion.
+- [x] A new environment can run the local stack and primary workflow from the README.
+- [x] The upload→ingestion→Agent→approval→artifact path passes E2E tests.
+- [x] Duplicate delivery, worker crash, stale lease, and expired fencing-token tests pass.
+- [x] Tenant leakage, prompt-injection write attempts, and unapproved publication tests are zero-tolerance gates.
+- [x] RAG and Agent eval datasets have versioned baseline results.
+- [x] A load report documents workload, P50/P95/P99, errors, resource saturation, bottleneck, and capacity conclusion.
 - [ ] Pull-request CI blocks known failures and does not hide them through repeated reruns or allow-failure.
 - [ ] Kubernetes staging completes the primary smoke path.
 - [ ] At least one deployment and one rollback drill are recorded with immutable image digests.
-- [ ] Each M0-M7 milestone has a reviewed evidence manifest; every required external gate is either satisfied with evidence or remains explicitly open and blocking.
+- [x] Each M0-M7 milestone has a reviewed evidence manifest; every required external gate is either satisfied with evidence or remains explicitly open and blocking.
 - [ ] Production-readiness evidence covers secrets, TLS/network boundaries, service identity, migration compatibility, database backup/restore, image supply chain, audit access, monitoring/alerting, incident response, and rollback operations.
-- [ ] Final documentation separates implemented facts, measured results, targets, known limitations, and future work.
+- [x] Final documentation separates implemented facts, measured results, targets, known limitations, and future work.
 
 ## Notes
 

@@ -1,0 +1,51 @@
+{
+  "id": "m4-agent-mcp-hitl",
+  "name": "m4-agent-mcp-hitl",
+  "title": "M4 Agent MCP HITL",
+  "description": "Implement a grounded LangGraph workflow with PostgreSQL checkpointing, ordered SSE replay, server-authorized MCP tools, exact-target human approval, and auditable artifacts.",
+  "status": "completed",
+  "dev_type": "fullstack",
+  "scope": "packages/core agent/model/tool domains; apps/api run/SSE/approval/artifact APIs; apps/worker graph handler; apps/mcp stdio server; apps/web run workspace; migrations/tests/evidence/docs",
+  "package": "core",
+  "priority": "P0",
+  "creator": "developer",
+  "assignee": "developer",
+  "createdAt": "2026-07-18",
+  "completedAt": "2026-07-20",
+  "branch": "feat/m4-agent-mcp-hitl",
+  "base_branch": "feat/m3-document-rag",
+  "worktree_path": null,
+  "commit": "70f5644b85b8bb5640d10d36c8261bea25f364f2",
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "07-17-enterprise-document-agent-platform",
+  "relatedFiles": [
+    ".trellis/tasks/07-17-enterprise-document-agent-platform/prd.md",
+    ".trellis/tasks/07-17-enterprise-document-agent-platform/design.md",
+    ".trellis/tasks/07-17-enterprise-document-agent-platform/implement.md",
+    "D:/workspace4Cursor/offer/output/企业文档Agent任务平台_实施规划.md",
+    "D:/workspace4Cursor/offer/output/企业文档Agent平台_深度面试问答.md"
+  ],
+  "notes": "M4 is reviewed and locally complete. Implementation commit 70f5644 and evidence commit 6a53dd9 are recorded by evidence/m4/20260720-054000-m4-agent-mcp-hitl.json with status passed. Full backend/frontend quality, Agent/MCP integration, security evaluation, privacy scan, responsive evidence, and Playwright passed. Production model quality, public deployment, capacity, and Kubernetes delivery are explicitly outside M4 and remain unclaimed.",
+  "meta": {
+    "milestone": "M4",
+    "workflow": "tdd",
+    "current_slice": 8,
+    "completed_slices": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "approval_required_before_start": true,
+    "langgraph_constraint": ">=1.2.9,<2",
+    "langgraph_checkpoint_postgres_constraint": ">=3.1,<4",
+    "mcp_constraint": ">=1.28.1,<2"
+  }
+}

@@ -3,7 +3,7 @@
   "milestone": "M4",
   "requirement": "M4-R16",
   "owner": "repository reviewer",
-  "blocking_reason": "The implementation and local verification artifacts exist only in a dirty working tree. No reviewed implementation commit or separate evidence commit exists.",
+  "blocking_reason": "Resolved: the reviewed implementation and sanitized local evidence now exist in separate immutable commits.",
   "prerequisites": [
     "Review the M4 implementation and authorization boundaries",
     "Create an approved implementation commit",
@@ -15,7 +15,13 @@
     "Immutable M4 manifest with artifact hashes",
     "Full integration, safety, and Playwright results"
   ],
-  "state": "open",
-  "status": "blocked_external",
-  "review_date": "2026-07-19"
+  "state": "closed",
+  "status": "passed",
+  "review_date": "2026-07-20",
+  "resolution": {
+    "reviewed_commit": "70f5644b85b8bb5640d10d36c8261bea25f364f2",
+    "evidence_commit": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+    "manifest_commit": null,
+    "manifest": "evidence/m4/20260720-054000-m4-agent-mcp-hitl.json"
+  }
 }

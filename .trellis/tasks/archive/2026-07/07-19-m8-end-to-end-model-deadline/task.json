@@ -11,11 +11,11 @@
   "creator": "developer",
   "assignee": "developer",
   "createdAt": "2026-07-19",
-  "completedAt": "2026-07-19",
+  "completedAt": "2026-07-20",
   "branch": "feat/m4-agent-mcp-hitl",
   "base_branch": "feat/m4-agent-mcp-hitl",
   "worktree_path": null,
-  "commit": null,
+  "commit": "70f5644b85b8bb5640d10d36c8261bea25f364f2",
   "pr_url": null,
   "subtasks": [],
   "children": [],
@@ -26,12 +26,17 @@
     "apps/worker/src/enterprise_doc_worker/agents.py",
     "packages/core/tests/test_model_routing.py"
   ],
-  "notes": "M8 closes the explicit M7 production gap where primary and fallback provider calls had independent timeout budgets. Commit 9f4d7d9 preserves the ChatModelGateway protocol; evidence/m8/20260719-231759-m8-end-to-end-model-deadline.json records reviewed local contract evidence only.",
+  "notes": "M8 closes the independent primary/fallback timeout gap and the Windows boundary race that could enter fallback after route-budget exhaustion. Reviewed implementation commit 70f5644 and evidence commit 6a53dd9 are recorded by evidence/m8/20260720-054000-m8-end-to-end-model-deadline.json; 30 repeated exhausted-budget tests, the routing suite, and the full backend regression passed.",
   "meta": {
     "milestone": "M8",
     "workflow": "tdd",
     "current_slice": 3,
-    "completed_slices": [0, 1, 2, 3],
+    "completed_slices": [
+      0,
+      1,
+      2,
+      3
+    ],
     "approval_required_before_start": false
   }
 }

@@ -1,0 +1,82 @@
+{
+  "evidence_id": "m8-end-to-end-model-deadline",
+  "milestone": "M8",
+  "requirement_ids": [
+    "M8-R1",
+    "M8-R2",
+    "M8-R3",
+    "M8-R4",
+    "M8-R5",
+    "M8-R6",
+    "M8-R7"
+  ],
+  "status": "passed",
+  "owner": "developer",
+  "commit_sha": "70f5644b85b8bb5640d10d36c8261bea25f364f2",
+  "reviewed_commit": "70f5644b85b8bb5640d10d36c8261bea25f364f2",
+  "evidence_commit": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+  "manifest_commit": null,
+  "working_tree_dirty": false,
+  "started_at": "2026-07-20T05:27:40+08:00",
+  "completed_at": "2026-07-20T05:39:00+08:00",
+  "environment": {
+    "operating_system": "Windows",
+    "runtime": "local asyncio deterministic gateways",
+    "evidence_mode": "reviewed immutable local contract evidence"
+  },
+  "image_digest": "not_applicable",
+  "result_summary": "The shared primary and fallback route deadline is immutable and now distinguishes route-budget exhaustion from provider timeouts. A route deadline ends the request without a boundary race into fallback, while retryable provider timeouts can still fall back within remaining budget. The regression passed 30 consecutive iterations and all backend tests passed.",
+  "command_or_procedure": [
+    {
+      "gate_id": "route-deadline-repeatability",
+      "command": "Run test_exhausted_route_budget_does_not_invoke_fallback 30 times, then run the full routing suite",
+      "exit_code": 0,
+      "result": "30 of 30 repeated tests and 13 routing tests passed",
+      "artifact": "evidence/reviewed/20260720-052740/model-routing-deadline-regression.log"
+    },
+    {
+      "gate_id": "backend-full",
+      "command": "uv run pytest -q",
+      "exit_code": 0,
+      "result": "645 passed",
+      "artifact": "evidence/reviewed/20260720-052740/backend-pytest.log"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "evidence/reviewed/20260720-052740/reviewed-run-summary.json",
+      "kind": "report",
+      "commit_sha": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+      "sha256": "76fdfaf83bf81b7dc6212c0d22eee237a2236a9a4fb3471e4799279b6cbf2db1"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/backend-pytest.log",
+      "kind": "log",
+      "commit_sha": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+      "sha256": "5ee71cad305e11f5d059e620bdd7ea0535ffe0d1db811136774cfd92b98d091a"
+    },
+    {
+      "path": "evidence/reviewed/20260720-052740/model-routing-deadline-regression.log",
+      "kind": "log",
+      "commit_sha": "6a53dd9ce1ccebcc3232a67881ae715f9410303c",
+      "sha256": "e5a0cbdfc5c3491365e3bb3082a71119b3546392166426b214930f008a15cb60"
+    },
+    {
+      "path": "packages/core/src/enterprise_doc_core/agents/gateway.py",
+      "kind": "source",
+      "commit_sha": "70f5644b85b8bb5640d10d36c8261bea25f364f2",
+      "sha256": "003150c5af5a70b0cabbaf7051edda0929404b0e5d599738be32495b9d38883b"
+    },
+    {
+      "path": "packages/core/tests/test_model_routing.py",
+      "kind": "test",
+      "commit_sha": "70f5644b85b8bb5640d10d36c8261bea25f364f2",
+      "sha256": "80905945bc3fde08d8322c17d205998622e8979679ad430c937031a640775506"
+    }
+  ],
+  "limitations": [
+    "The tests use deterministic local asyncio gateways and do not measure real-provider latency, quality, cost, or production capacity.",
+    "Production deployments still require an explicit route deadline chosen from measured service objectives."
+  ],
+  "manual_gates": []
+}

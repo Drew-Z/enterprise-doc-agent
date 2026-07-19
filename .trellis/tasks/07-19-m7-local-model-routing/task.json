@@ -15,12 +15,12 @@
   "branch": "feat/m4-agent-mcp-hitl",
   "base_branch": "feat/m4-agent-mcp-hitl",
   "worktree_path": null,
-  "commit": null,
+  "commit": "70f5644b85b8bb5640d10d36c8261bea25f364f2",
   "pr_url": null,
   "subtasks": [],
   "children": [],
   "parent": "07-17-enterprise-document-agent-platform",
   "relatedFiles": ["packages/core/src/enterprise_doc_core/agents/gateway.py", "packages/core/src/enterprise_doc_core/config/settings.py", ".trellis/tasks/07-17-enterprise-document-agent-platform/prd.md"],
-  "notes": "Provider routing, retryable-only fallback, circuit breaker, embedding dimension checks, and deterministic benchmark reports exist in the dirty working tree. The formal status manifest is evidence/m7/20260719-153217-m7-local-model-routing.json with status blocked_external and links the raw capture plus real-provider-quality and GPU/vLLM-capacity gates. Current benchmarks remain local contract evidence only.",
+  "notes": "M7 local routing implementation is reviewed at implementation commit 70f5644 and evidence commit 6a53dd9. evidence/m7/20260720-054000-m7-local-model-routing.json records deterministic and fallback reports, the model-capacity dry-run, 30 repeated exhausted-budget regressions, and the full routing suite. The task remains in_progress because real-provider quality and pinned GPU/vLLM capacity gates are blocked_external.",
   "meta": {"milestone": "M7", "workflow": "tdd", "current_slice": 3, "completed_slices": [0, 1, 2, 3], "approval_required_before_start": true}
 }
