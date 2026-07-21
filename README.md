@@ -267,6 +267,7 @@ Render the Kubernetes contracts and inspect safe release tooling:
 ```powershell
 kubectl kustomize infra/k8s/base
 kubectl kustomize infra/k8s/overlays/staging
+kubectl kustomize infra/k8s/overlays/tiny-single-node
 uv run python scripts/backup_database.py --help
 uv run python scripts/restore_database.py --help
 uv run python scripts/rollback_release.py --reason validation-only --revision enterprise-doc-api=1
@@ -277,6 +278,25 @@ Rollback validation requires an explicit positive Deployment revision for each t
 (or a JSON revision map in `ROLLBACK_REVISIONS_JSON`); it does not infer an implicit
 “previous” revision. `--migration-revision` is recorded separately and is not a
 replacement for the Deployment revision.
+
+`tiny-single-node` is the reviewed 2-vCPU/2-GiB K3s staging profile. It keeps one
+replica of each application process, removes single-node PDBs, selects Traefik,
+and adds a bounded ephemeral Redis delivery layer. Its application-container
+peak is 928 MiB when the migration Job overlaps the existing workloads, and
+application rollouts use `maxSurge: 0`. PostgreSQL/pgvector, object storage,
+model providers, and retained observability stay external. This profile is for
+staging evidence and recovery drills; it is not an HA or production topology.
+
+The staging environment requires `STAGING_DEPLOYMENT_PROFILE` (default
+`tiny-single-node`) and `STAGING_DATABASE_EGRESS_CIDR`. The database value must be
+one public global-unicast host CIDR: IPv4 `/32` or IPv6 `/128`. Resolve and review
+the managed database address immediately before deployment; private, loopback,
+documentation, and broad CIDRs are rejected. The selected profile is recorded on
+the Namespace as `enterprise-doc-agent/deployment-profile`. An existing unannotated
+Namespace or a Namespace owned by another profile is rejected before any apply;
+adopt an old environment only after manually confirming and removing incompatible
+workloads. CI and deploy both use standalone Kustomize 5.7.1 because 5.6.0 panics on
+the tiny overlay's multi-document delete patch.
 
 `local_recovery_drill.py` is also dry-run by default. With `--confirm-local` it creates
 a custom-format PostgreSQL backup, restores only into a database whose name starts with
@@ -341,8 +361,11 @@ not satisfy the individual gate records under `evidence/gates/`:
   fallback samples with explicit primary and fallback identities, plus 14 routing
   tests. These are not real-provider quality, cost, GPU, vLLM, or production-capacity
   evidence.
-- The latest M6 bundle records 63 deployment tests, containerized Actionlint, Compose
-  validation, and base/staging/prod Kustomize renders. Registry signing, cluster
+- The latest immutable M6 bundle records 63 deployment tests, containerized Actionlint,
+  Compose validation, and base/staging/prod Kustomize renders. The subsequent reviewed
+  tiny-single-node implementation adds a bounded K3s profile, profile ownership guard,
+  host-scoped database egress, and deployment-profile release metadata; it does not
+  replace the immutable bundle until committed and re-recorded. Registry signing, cluster
   rollout, external TLS/secrets, versioned object-store restore, Kubernetes rollback
   and production RPO/RTO remain external gates.
 

@@ -40,3 +40,23 @@
 
 No M6 task is archived from static files alone when the parent requires staging,
 immutable image or rollback evidence. Those remain open manual gates.
+
+## Slice 6: Tiny Single-Node K3s Staging
+
+- [x] Add a rendered-contract test for final resources, Traefik ingress, external
+  durable dependencies, Redis policy, and the 2C2G resource ceiling.
+- [x] Add the `tiny-single-node` overlay with one replica per service, no PDBs, a
+  bounded ephemeral Redis delivery layer, and explicit network boundaries.
+- [x] Parameterize staging deployment over a strict profile allowlist and persist the
+  selected profile in the release record.
+- [x] Run the full deployment test suite and Kustomize/workflow validation locally;
+  keep registry, cluster apply, smoke, rollback and recovery evidence external.
+
+## Slice 7: Independent Review Hardening
+
+- [x] Give the smoke Pod a staging-only NetworkPolicy identity and final-render test.
+- [x] Include migration overlap in the 1 GiB budget and disable rollout surge.
+- [x] Guard Namespace profile ownership before apply and hash profile evidence.
+- [x] Restrict PostgreSQL egress to database-using Pods and one validated host CIDR.
+- [x] Edit image digests in the staging parent overlay and regression-test the final tiny
+  images with Kustomize 5.7.1.
