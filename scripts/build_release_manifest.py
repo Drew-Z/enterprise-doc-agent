@@ -16,6 +16,7 @@ REQUIRED_FILES = {
     "sbom": "sbom-{service}.spdx.json",
     "provenance": "buildkit-provenance-{service}.json",
     "provenance_log": "buildkit-provenance-{service}.log",
+    "provenance_type": "buildkit-provenance-{service}.type.txt",
     "sign_log": "cosign-sign-attest-{service}.log",
     "signature": "cosign-signature-verify-{service}.json",
     "signature_log": "cosign-signature-verify-{service}.log",
@@ -26,6 +27,7 @@ REQUIRED_FILES = {
     "outcomes": "release-step-outcomes-{service}.json",
 }
 SUCCESS_STEPS = ("push", "scan", "sbom", "provenance", "sign", "verify")
+PROVENANCE_TYPES = {"slsaprovenance02", "slsaprovenance1"}
 
 
 class ReleaseManifestError(ValueError):
@@ -71,6 +73,13 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _read_provenance_type(path: Path) -> str:
+    value = _non_empty_file(path, "provenance type evidence").read_text(encoding="utf-8").strip()
+    if value not in PROVENANCE_TYPES:
+        raise ReleaseManifestError(f"unsupported provenance predicate type in {path}: {value!r}")
+    return value
+
+
 def build_manifest(
     evidence_root: Path,
     *,
@@ -94,6 +103,7 @@ def build_manifest(
         }
         image, digest = _read_digest(files["digest"])
         outcomes = _read_outcomes(files["outcomes"])
+        provenance_type = _read_provenance_type(files["provenance_type"])
         evidence: dict[str, dict[str, str]] = {}
         for key, path in files.items():
             _non_empty_file(path, f"{service} {key} evidence")
@@ -102,6 +112,7 @@ def build_manifest(
             "image": image,
             "digest": digest,
             "steps": outcomes,
+            "provenance_predicate_type": provenance_type,
             "evidence": evidence,
         }
 

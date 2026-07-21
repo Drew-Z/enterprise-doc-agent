@@ -32,6 +32,7 @@ def _write_fixture(root: Path, *, failed_service: str | None = None) -> None:
             f"sbom-{service}.spdx.json",
             f"buildkit-provenance-{service}.json",
             f"buildkit-provenance-{service}.log",
+            f"buildkit-provenance-{service}.type.txt",
             f"cosign-sign-attest-{service}.log",
             f"cosign-signature-verify-{service}.json",
             f"cosign-signature-verify-{service}.log",
@@ -41,7 +42,8 @@ def _write_fixture(root: Path, *, failed_service: str | None = None) -> None:
             f"cosign-provenance-verify-{service}.log",
         )
         for name in names:
-            (root / name).write_text(f"fixture:{name}\n", encoding="utf-8")
+            value = "slsaprovenance1\n" if name.endswith(".type.txt") else f"fixture:{name}\n"
+            (root / name).write_text(value, encoding="utf-8")
 
 
 def test_build_manifest_requires_all_four_successful_images(tmp_path: Path) -> None:
@@ -60,7 +62,7 @@ def test_build_manifest_requires_all_four_successful_images(tmp_path: Path) -> N
     assert manifest["status"] == "passed"
     assert set(manifest["images"]) == set(SERVICES)
     assert output.is_file()
-    assert len(manifest["images"]["api"]["evidence"]) == 13
+    assert len(manifest["images"]["api"]["evidence"]) == 14
 
 
 def test_build_manifest_rejects_failed_step(tmp_path: Path) -> None:
