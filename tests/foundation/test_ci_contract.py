@@ -116,3 +116,9 @@ def test_quality_workflow_has_no_allow_failure_or_retry_path() -> None:
     ]
 
     assert [token for token in forbidden if token in text] == []
+
+
+def test_vite_prebundles_the_lazy_upload_worker_dependency() -> None:
+    vite_config = (ROOT / "apps" / "web" / "vite.config.ts").read_text(encoding="utf-8")
+    assert "optimizeDeps" in vite_config
+    assert 'include: ["hash-wasm"]' in vite_config
