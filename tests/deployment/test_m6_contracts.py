@@ -513,8 +513,8 @@ def test_tagged_supply_chain_verifies_the_exact_published_digest() -> None:
     provenance_command = str(provenance["run"])
     assert "docker buildx imagetools inspect" in provenance_command
     assert ".Provenance.SLSA" in provenance_command
-    assert "jq -e" in provenance_command
-    assert 'type == "object"' in provenance_command
+    assert "validate_buildkit_provenance.py" in provenance_command
+    assert "predicate_type=" in provenance_command
     assert "buildkit-provenance-${{ matrix.name }}.log" in provenance_command
     assert digest_expression in str(provenance["env"])
 
@@ -526,7 +526,8 @@ def test_tagged_supply_chain_verifies_the_exact_published_digest() -> None:
     assert "cosign sign" in signature_command
     assert "cosign attest" in signature_command
     assert "spdxjson" in signature_command
-    assert "slsaprovenance" in signature_command
+    assert '--type "$PROVENANCE_PREDICATE_TYPE"' in signature_command
+    assert "steps.provenance.outputs.predicate_type" in str(signature["env"])
 
     verification = _named_step(steps, "Verify release attestations")
     assert "steps.sign.outcome == 'success'" in str(verification["if"])
@@ -534,7 +535,8 @@ def test_tagged_supply_chain_verifies_the_exact_published_digest() -> None:
     assert "cosign verify" in verification_command
     assert "cosign verify-attestation" in verification_command
     assert "--type spdxjson" in verification_command
-    assert "--type slsaprovenance" in verification_command
+    assert '--type "$PROVENANCE_PREDICATE_TYPE"' in verification_command
+    assert "steps.provenance.outputs.predicate_type" in str(verification["env"])
     assert "2> cosign-signature-verify-${{ matrix.name }}.log" in verification_command
     assert "2> cosign-sbom-attestation-verify-${{ matrix.name }}.log" in verification_command
     assert "2> cosign-provenance-verify-${{ matrix.name }}.log" in verification_command
@@ -560,6 +562,7 @@ def test_tagged_supply_chain_verifies_the_exact_published_digest() -> None:
         "sbom-${{ matrix.name }}.spdx.json",
         "buildkit-provenance-${{ matrix.name }}.json",
         "buildkit-provenance-${{ matrix.name }}.log",
+        "buildkit-provenance-${{ matrix.name }}.type.txt",
         "cosign-sign-attest-${{ matrix.name }}.log",
         "cosign-signature-verify-${{ matrix.name }}.json",
         "cosign-signature-verify-${{ matrix.name }}.log",

@@ -240,9 +240,16 @@ jobs:
             > buildkit-provenance-${{ matrix.name }}.json \
             2> buildkit-provenance-${{ matrix.name }}.log || provenance_status=$?
           if test "$provenance_status" -eq 0; then
-            jq -e 'type == "object" and (.buildType | type == "string")' \
-              buildkit-provenance-${{ matrix.name }}.json >/dev/null \
-              2>> buildkit-provenance-${{ matrix.name }}.log || provenance_status=$?
+            predicate_type="$(
+              python scripts/validate_buildkit_provenance.py \
+                --input buildkit-provenance-${{ matrix.name }}.json \
+                2>> buildkit-provenance-${{ matrix.name }}.log
+            )" || provenance_status=$?
+          fi
+          if test "$provenance_status" -eq 0; then
+            printf '%s\n' "$predicate_type" \
+              > buildkit-provenance-${{ matrix.name }}.type.txt
+            printf 'predicate_type=%s\n' "$predicate_type" >> "$GITHUB_OUTPUT"
           fi
           printf 'exit_code=%s\n' "$provenance_status" \
             >> buildkit-provenance-${{ matrix.name }}.log
@@ -252,6 +259,8 @@ jobs:
         id: cosign
         if: ${{ always() && startsWith(github.ref, 'refs/tags/') && steps.push.outcome == 'success' }}
         uses: sigstore/cosign-installer@3454372f43399081ed03b604cb2d021dabca52bb # v3.8.2
+        with:
+          cosign-release: v2.4.3
 
       - name: Sign and attest immutable digest
         id: sign
@@ -259,17 +268,23 @@ jobs:
         env:
           IMAGE_REF: ${{ steps.release_ref.outputs.prefix }}/enterprise-doc-${{ matrix.name }}
           IMAGE_DIGEST: ${{ steps.push.outputs.digest }}
+          PROVENANCE_PREDICATE_TYPE: ${{ steps.provenance.outputs.predicate_type }}
         run: |
           set -uo pipefail
           IMAGE="$IMAGE_REF@$IMAGE_DIGEST"
           sign_status=0
           : > cosign-sign-attest-${{ matrix.name }}.log
+          case "$PROVENANCE_PREDICATE_TYPE" in
+            slsaprovenance02|slsaprovenance1) ;;
+            *) printf 'unsupported provenance predicate type\n' \
+                 >> cosign-sign-attest-${{ matrix.name }}.log; exit 1 ;;
+          esac
           cosign sign --yes "$IMAGE" \
             >> cosign-sign-attest-${{ matrix.name }}.log 2>&1 || sign_status=1
           cosign attest --yes --type spdxjson \
             --predicate sbom-${{ matrix.name }}.spdx.json "$IMAGE" \
             >> cosign-sign-attest-${{ matrix.name }}.log 2>&1 || sign_status=1
-          cosign attest --yes --type slsaprovenance \
+          cosign attest --yes --type "$PROVENANCE_PREDICATE_TYPE" \
             --predicate buildkit-provenance-${{ matrix.name }}.json "$IMAGE" \
             >> cosign-sign-attest-${{ matrix.name }}.log 2>&1 || sign_status=1
           printf 'exit_code=%s\n' "$sign_status" \
@@ -282,10 +297,15 @@ jobs:
         env:
           IMAGE_REF: ${{ steps.release_ref.outputs.prefix }}/enterprise-doc-${{ matrix.name }}
           IMAGE_DIGEST: ${{ steps.push.outputs.digest }}
+          PROVENANCE_PREDICATE_TYPE: ${{ steps.provenance.outputs.predicate_type }}
         run: |
           set -uo pipefail
           IMAGE="$IMAGE_REF@$IMAGE_DIGEST"
           verification_status=0
+          case "$PROVENANCE_PREDICATE_TYPE" in
+            slsaprovenance02|slsaprovenance1) ;;
+            *) echo 'unsupported provenance predicate type' >&2; exit 1 ;;
+          esac
           if cosign verify --output json \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
             --certificate-identity-regexp "https://github.com/${{ github.repository }}/.github/workflows/container.yml@.*" \
@@ -310,7 +330,7 @@ jobs:
               >> cosign-sbom-attestation-verify-${{ matrix.name }}.log
             verification_status=1
           fi
-          if cosign verify-attestation --output json --type slsaprovenance \
+          if cosign verify-attestation --output json --type "$PROVENANCE_PREDICATE_TYPE" \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
             --certificate-identity-regexp "https://github.com/${{ github.repository }}/.github/workflows/container.yml@.*" \
             "$IMAGE" > cosign-provenance-verify-${{ matrix.name }}.json \
@@ -342,6 +362,7 @@ jobs:
             sbom-${{ matrix.name }}.spdx.json
             buildkit-provenance-${{ matrix.name }}.json
             buildkit-provenance-${{ matrix.name }}.log
+            buildkit-provenance-${{ matrix.name }}.type.txt
             cosign-sign-attest-${{ matrix.name }}.log
             cosign-signature-verify-${{ matrix.name }}.json
             cosign-signature-verify-${{ matrix.name }}.log

@@ -17,6 +17,10 @@
 - Pull-request images are built locally for contract checks. Tagged releases use one
   push build, then bind Trivy, SPDX SBOM, BuildKit provenance, Cosign signature and
   attestation verification to the returned immutable `image@sha256:digest`.
+- BuildKit provenance is schema-validated before signing. Legacy SLSA v0.2 predicates
+  use `slsaprovenance02`; current SLSA v1 predicates require both `buildDefinition` and
+  `runDetails` and use `slsaprovenance1`. The detected type is recorded as evidence and
+  reused for Cosign attest and verify so a valid predicate is never mislabeled.
 - Release workflow diagnostics and step outcomes are uploaded with `always()`; the
   scan/sign/verification steps still fail the job and are not hidden by allow-failure.
 - Trivy uses `trivy-action` v0.36.0 by immutable commit with scanner version v0.70.0
@@ -71,6 +75,8 @@
 - `scripts/configure_staging_manifest.py` binds one rendered staging manifest to the
   reviewed HTTPS hosts, TLS Secret name, Web origin allowlist, and single-host database
   egress CIDR without writing credential data.
+- `scripts/validate_buildkit_provenance.py` fail-closes on incomplete, ambiguous or
+  unknown BuildKit predicate shapes and returns only Cosign's reviewed v0.2/v1 type.
 - `scripts/validate_recovery_capacity_evidence.py` rejects local-only recovery or
   capacity records that claim `passed`, verifies artifact hashes and enforces RPO/RTO,
   smoke, repeated-load, percentile and dependency-telemetry contracts.
@@ -94,6 +100,7 @@
 - `scripts/validate_recovery_capacity_evidence.py`
 - `scripts/local_recovery_drill.py`
 - `scripts/build_release_manifest.py`
+- `scripts/validate_buildkit_provenance.py`
 - `scripts/build_staging_release_record.py`
 - `scripts/validate_staging_secrets.py`
 - `scripts/sanitize_deployment_evidence.py`
