@@ -27,6 +27,10 @@ cloud deployment or production release without an external gate record.
   confirmation, redact credentials, and record RPO/RTO observations.
 - **M6-R7**: Missing cloud registry, cluster, TLS, secret manager or production backup
   access is represented as `blocked_external`, never as a passed deployment result.
+- **M6-R8**: The reviewed 2-vCPU/2-GiB staging profile keeps durable business state
+  external, provides a bounded Redis delivery layer, targets K3s Traefik, removes
+  misleading single-node PDBs, keeps migration-overlap memory within 1 GiB, and records
+  the selected profile in both Namespace ownership and hashed release evidence.
 
 ## Acceptance Criteria
 
@@ -41,6 +45,11 @@ cloud deployment or production release without an external gate record.
   explicit confirmation for destructive actions.
 - [x] Real registry/cluster/staging/production evidence is either present or linked to
   an open external manual gate.
+- [x] The tiny single-node overlay renders to one replica per process, no PDBs, no
+  in-cluster PostgreSQL/MinIO, zero-surge application rollouts, and at most 1 GiB of
+  memory limits when existing workloads overlap the migration Job.
+- [x] Staging smoke identity, profile ownership, exact digest binding, and public
+  single-host PostgreSQL egress are final-render and workflow contract tested.
 
 ## Out Of Scope
 

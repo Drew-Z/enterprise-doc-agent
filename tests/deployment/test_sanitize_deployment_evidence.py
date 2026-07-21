@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -53,11 +54,21 @@ def test_sanitize_directory_writes_hashed_inventory_without_source_values(tmp_pa
         "Authorization: Bearer canary-token\npassword=canary-password\n",
         encoding="utf-8",
     )
+    (source / "deployment-profile.txt").write_text(
+        "tiny-single-node\n",
+        encoding="utf-8",
+    )
     manifest = tmp_path / "manifest.json"
 
     entries = sanitize_directory(source, destination, manifest)
 
-    assert len(entries) == 1
+    assert len(entries) == 2
     assert "canary" not in (destination / "events.txt").read_text(encoding="utf-8")
+    profile = destination / "deployment-profile.txt"
+    assert profile.read_text(encoding="utf-8") == "tiny-single-node\n"
     saved = json.loads(manifest.read_text(encoding="utf-8"))
-    assert saved["files"][0]["sha256"] == entries[0]["sha256"]
+    profile_entry = next(
+        entry for entry in saved["files"] if entry["path"].endswith("deployment-profile.txt")
+    )
+    assert profile_entry["sha256"] == hashlib.sha256(profile.read_bytes()).hexdigest()
+    assert {entry["sha256"] for entry in saved["files"]} == {entry["sha256"] for entry in entries}

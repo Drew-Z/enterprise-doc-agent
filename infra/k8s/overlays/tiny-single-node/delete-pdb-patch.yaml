@@ -1,0 +1,23 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: enterprise-doc-api
+$patch: delete
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: enterprise-doc-worker
+$patch: delete
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: enterprise-doc-consumer
+$patch: delete
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: enterprise-doc-web
+$patch: delete

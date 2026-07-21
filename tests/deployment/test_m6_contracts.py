@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import re
+import shutil
+import subprocess
 from pathlib import Path
 
 import yaml
@@ -12,6 +14,37 @@ ACTION_SHA = re.compile(r"^[^@\s]+@[0-9a-f]{40}$")
 def _documents(path: Path) -> list[dict[str, object]]:
     payload = list(yaml.safe_load_all(path.read_text(encoding="utf-8")))
     return [item for item in payload if isinstance(item, dict)]
+
+
+def _render_kustomization(path: Path) -> list[dict[str, object]]:
+    kustomize = shutil.which("kustomize")
+    assert kustomize is not None, "standalone kustomize is required to validate overlays"
+    completed = subprocess.run(
+        [kustomize, "build", str(path)],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    payload = list(yaml.safe_load_all(completed.stdout))
+    return [item for item in payload if isinstance(item, dict)]
+
+
+def _named_resource(documents: list[dict[str, object]], kind: str, name: str) -> dict[str, object]:
+    return next(
+        item for item in documents if item.get("kind") == kind and item["metadata"]["name"] == name
+    )
+
+
+def _memory_mib(value: str) -> int:
+    assert value.endswith("Mi"), value
+    return int(value.removesuffix("Mi"))
+
+
+def _cpu_millicores(value: str) -> int:
+    if value.endswith("m"):
+        return int(value.removesuffix("m"))
+    return int(value) * 1000
 
 
 def _workflow_steps(name: str) -> tuple[dict[str, object], list[dict[str, object]]]:
@@ -39,6 +72,13 @@ def test_all_runtime_images_have_non_root_dockerfiles_and_no_floating_latest_tag
         assert ":latest" not in text
         assert "10001" in text or name == "web"
         assert all("@sha256:" in line for line in text.splitlines() if line.startswith("FROM "))
+
+
+def test_web_runtime_prepares_nginx_pid_before_dropping_privileges() -> None:
+    dockerfile = (ROOT / "infra" / "docker" / "Dockerfile.web").read_text(encoding="utf-8")
+    privileged_build = dockerfile.split("USER nginx", maxsplit=1)[0]
+    assert "touch /run/nginx.pid" in privileged_build
+    assert re.search(r"chown [^\n]*/run/nginx\.pid", privileged_build)
 
 
 def test_web_image_receives_explicit_object_store_origin_build_configuration() -> None:
@@ -115,6 +155,7 @@ def test_staging_overlay_defines_https_ingress_and_private_registry_contract() -
     kustomization = (overlay / "kustomization.yaml").read_text(encoding="utf-8")
     assert "ingress.yaml" in kustomization
     assert "web-ingress-policy.yaml" in kustomization
+    assert "smoke-api-ingress-policy.yaml" in kustomization
     assert "configmap-patch.yaml" in kustomization
     assert "image-pull-secret-patch.yaml" in kustomization
 
@@ -143,6 +184,228 @@ def test_staging_overlay_defines_https_ingress_and_private_registry_contract() -
         == [{"name": "enterprise-doc-registry"}]
         for item in pull_patches
     )
+
+    documents = _render_kustomization(overlay)
+    smoke_ingress = _named_resource(
+        documents,
+        "NetworkPolicy",
+        "enterprise-doc-staging-smoke-api-ingress",
+    )
+    assert smoke_ingress["spec"] == {
+        "podSelector": {
+            "matchLabels": {"app.kubernetes.io/name": "enterprise-doc-api"},
+        },
+        "policyTypes": ["Ingress"],
+        "ingress": [
+            {
+                "from": [
+                    {
+                        "podSelector": {
+                            "matchLabels": {
+                                "app.kubernetes.io/name": "m5-staging-smoke",
+                            },
+                        },
+                    },
+                ],
+                "ports": [{"protocol": "TCP", "port": 8000}],
+            },
+        ],
+    }
+
+
+def test_tiny_single_node_overlay_renders_with_a_bounded_k3s_runtime() -> None:
+    overlay = ROOT / "infra" / "k8s" / "overlays" / "tiny-single-node"
+    documents = _render_kustomization(overlay)
+
+    deployments = [item for item in documents if item.get("kind") == "Deployment"]
+    deployment_names = {item["metadata"]["name"] for item in deployments}
+    assert deployment_names == {
+        "enterprise-doc-api",
+        "enterprise-doc-worker",
+        "enterprise-doc-consumer",
+        "enterprise-doc-web",
+        "enterprise-doc-redis",
+    }
+    assert all(item["spec"]["replicas"] == 1 for item in deployments)
+    assert not [item for item in documents if item.get("kind") == "PodDisruptionBudget"]
+
+    workload_containers = [
+        item["spec"]["template"]["spec"]["containers"][0] for item in deployments
+    ]
+    migration = _named_resource(documents, "Job", "enterprise-doc-migrate")
+    migration_container = migration["spec"]["template"]["spec"]["containers"][0]
+    peak_containers = [*workload_containers, migration_container]
+    total_memory_limit = sum(
+        _memory_mib(str(container["resources"]["limits"]["memory"]))
+        for container in peak_containers
+    )
+    total_cpu_limit = sum(
+        _cpu_millicores(str(container["resources"]["limits"]["cpu"]))
+        for container in peak_containers
+    )
+    assert total_memory_limit <= 1024
+    assert total_cpu_limit <= 1750
+    for deployment in deployments:
+        if deployment["metadata"]["name"] == "enterprise-doc-redis":
+            assert deployment["spec"]["strategy"]["type"] == "Recreate"
+        else:
+            assert deployment["spec"]["strategy"] == {
+                "type": "RollingUpdate",
+                "rollingUpdate": {"maxSurge": 0, "maxUnavailable": 1},
+            }
+
+    ingress = _named_resource(documents, "Ingress", "enterprise-doc-web")
+    assert ingress["spec"]["ingressClassName"] == "traefik"
+    assert "nginx.ingress.kubernetes.io/force-ssl-redirect" not in ingress["metadata"].get(
+        "annotations", {}
+    )
+
+    config = _named_resource(documents, "ConfigMap", "enterprise-doc-config")
+    assert config["data"]["REDIS__URL"] == "redis://enterprise-doc-redis:6379/0"
+    assert str(config["data"]["OBJECT_STORE__ENDPOINT"]).startswith("https://")
+    assert not [
+        item
+        for item in documents
+        if item.get("kind") in {"Deployment", "StatefulSet"}
+        and item["metadata"]["name"] in {"postgres", "minio"}
+    ]
+
+
+def test_tiny_single_node_redis_and_network_boundaries_are_explicit() -> None:
+    documents = _render_kustomization(ROOT / "infra" / "k8s" / "overlays" / "tiny-single-node")
+    redis = _named_resource(documents, "Deployment", "enterprise-doc-redis")
+    pod = redis["spec"]["template"]["spec"]
+    container = pod["containers"][0]
+    assert "@sha256:" in container["image"]
+    assert pod["securityContext"]["runAsNonRoot"] is True
+    assert container["securityContext"]["allowPrivilegeEscalation"] is False
+    assert container["securityContext"]["readOnlyRootFilesystem"] is True
+    assert "--maxmemory-policy" in container["args"]
+    assert "noeviction" in container["args"]
+    assert "readinessProbe" in container
+    assert "livenessProbe" in container
+    assert container["resources"]["limits"]["memory"] == "96Mi"
+    assert pod["volumes"] == [{"name": "data", "emptyDir": {}}]
+
+    redis_ingress = _named_resource(documents, "NetworkPolicy", "enterprise-doc-redis-ingress")
+    allowed_names = {
+        peer["podSelector"]["matchLabels"]["app.kubernetes.io/name"]
+        for rule in redis_ingress["spec"]["ingress"]
+        for peer in rule["from"]
+    }
+    assert allowed_names == {
+        "enterprise-doc-api",
+        "enterprise-doc-worker",
+        "enterprise-doc-consumer",
+    }
+    external_db = _named_resource(
+        documents, "NetworkPolicy", "enterprise-doc-external-postgres-egress"
+    )
+    assert external_db["spec"]["podSelector"] == {
+        "matchExpressions": [
+            {
+                "key": "app.kubernetes.io/name",
+                "operator": "In",
+                "values": [
+                    "enterprise-doc-api",
+                    "enterprise-doc-worker",
+                    "enterprise-doc-consumer",
+                    "enterprise-doc-migrate",
+                ],
+            },
+        ],
+    }
+    assert external_db["spec"]["egress"] == [
+        {
+            "to": [{"ipBlock": {"cidr": "192.0.2.1/32"}}],
+            "ports": [{"protocol": "TCP", "port": 5432}],
+        },
+    ]
+
+    web_ingress = _named_resource(documents, "NetworkPolicy", "enterprise-doc-web-ingress")
+    namespaces = {
+        peer["namespaceSelector"]["matchLabels"]["kubernetes.io/metadata.name"]
+        for rule in web_ingress["spec"]["ingress"]
+        for peer in rule["from"]
+    }
+    assert namespaces == {"kube-system"}
+
+
+def test_staging_deploy_workflow_can_select_the_reviewed_tiny_overlay() -> None:
+    deploy = (ROOT / ".github/workflows/deploy-staging.yml").read_text(encoding="utf-8")
+    assert "STAGING_DEPLOYMENT_PROFILE" in deploy
+    assert "vars.STAGING_DEPLOYMENT_PROFILE" in deploy
+    assert "tiny-single-node" in deploy
+    assert 'OVERLAY_DIR="infra/k8s/overlays/${DEPLOYMENT_PROFILE}"' in deploy
+    assert 'case "$DEPLOYMENT_PROFILE" in' in deploy
+    annotation = "enterprise-doc-agent/deployment-profile"
+    for profile in ("staging", "tiny-single-node"):
+        documents = _render_kustomization(ROOT / "infra" / "k8s" / "overlays" / profile)
+        namespace = _named_resource(documents, "Namespace", "enterprise-doc-agent-staging")
+        assert namespace["metadata"]["annotations"][annotation] == profile
+
+    guard = deploy.index("Validate deployment profile ownership")
+    prerequisites = deploy.index("Apply and validate staging prerequisites")
+    assert guard < prerequisites
+    assert "kubectl get namespace enterprise-doc-agent-staging --ignore-not-found -o json" in deploy
+    assert annotation in deploy
+    assert "existing namespace is missing its deployment profile annotation" in deploy
+    assert "existing namespace belongs to deployment profile" in deploy
+
+
+def test_tiny_overlay_binds_exact_images_through_the_staging_parent(tmp_path: Path) -> None:
+    kustomize = shutil.which("kustomize")
+    assert kustomize is not None, "standalone kustomize is required to validate image binding"
+    k8s = tmp_path / "k8s"
+    shutil.copytree(ROOT / "infra" / "k8s", k8s)
+    staging = k8s / "overlays" / "staging"
+    tiny = k8s / "overlays" / "tiny-single-node"
+    registry = "ghcr.io/example"
+    digests = {
+        "api": "sha256:" + "1" * 64,
+        "worker": "sha256:" + "2" * 64,
+        "consumer": "sha256:" + "3" * 64,
+        "web": "sha256:" + "4" * 64,
+    }
+    for name, digest in digests.items():
+        subprocess.run(
+            [
+                kustomize,
+                "edit",
+                "set",
+                "image",
+                f"enterprise-doc/{name}={registry}/enterprise-doc-{name}@{digest}",
+            ],
+            cwd=staging,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    rendered = subprocess.run(
+        [kustomize, "build", str(tiny)],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    documents = [item for item in yaml.safe_load_all(rendered.stdout) if isinstance(item, dict)]
+    expected = {
+        f"enterprise-doc-{name}": f"{registry}/enterprise-doc-{name}@{digest}"
+        for name, digest in digests.items()
+    }
+    for name, image in expected.items():
+        deployment = _named_resource(documents, "Deployment", name)
+        assert deployment["spec"]["template"]["spec"]["containers"][0]["image"] == image
+    migration = _named_resource(documents, "Job", "enterprise-doc-migrate")
+    assert (
+        migration["spec"]["template"]["spec"]["containers"][0]["image"]
+        == expected["enterprise-doc-api"]
+    )
+    assert "registry.example.invalid" not in rendered.stdout
+
+    deploy = (ROOT / ".github/workflows/deploy-staging.yml").read_text(encoding="utf-8")
+    assert 'IMAGE_BINDING_OVERLAY="infra/k8s/overlays/staging"' in deploy
+    assert 'cd "$IMAGE_BINDING_OVERLAY"' in deploy
 
 
 def test_network_policy_and_prod_environment_are_explicit() -> None:
@@ -202,6 +465,8 @@ def test_ci_workflows_have_no_allow_failure_and_include_release_boundaries() -> 
     assert "object_store_endpoint" in deploy
     assert "object_store_presign_endpoint" in deploy
     assert "VITE_OBJECT_STORE_ORIGINS" in deploy
+    assert "STAGING_DATABASE_EGRESS_CIDR" in deploy
+    assert "--database-egress-cidr" in deploy
     assert "enterprise-doc-registry" in deploy
     assert 'evidence_id="${GITHUB_SHA}"' in deploy
     assert "staging-sanitized-${evidence_id}" in deploy
@@ -209,6 +474,10 @@ def test_ci_workflows_have_no_allow_failure_and_include_release_boundaries() -> 
     assert "staging-release-${evidence_id}.record.json" in deploy
     assert "if-no-files-found: error" in deploy
     assert "curlimages/curl@sha256:" in deploy
+    assert "--labels=app.kubernetes.io/name=m5-staging-smoke" in deploy
+    profile_evidence = 'printf \'%s\\n\' "$DEPLOYMENT_PROFILE" > "$raw_dir/deployment-profile.txt"'
+    assert profile_evidence in deploy
+    assert deploy.index(profile_evidence) < deploy.index("scripts/sanitize_deployment_evidence.py")
     rollback_script = (ROOT / "scripts/rollback_release.py").read_text(encoding="utf-8")
     assert "--to-revision" in rollback_script
 
@@ -270,6 +539,15 @@ def test_tagged_supply_chain_verifies_the_exact_published_digest() -> None:
     assert "2> cosign-sbom-attestation-verify-${{ matrix.name }}.log" in verification_command
     assert "2> cosign-provenance-verify-${{ matrix.name }}.log" in verification_command
     assert digest_expression in str(verification["env"])
+
+    for step_name in ("Scan local image", "Scan published image"):
+        trivy = _named_step(steps, step_name)
+        assert trivy["uses"] == (
+            "aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25"
+        )
+        assert trivy["with"]["version"] == "v0.70.0"
+        assert trivy["with"]["severity"] == "CRITICAL,HIGH"
+        assert trivy["with"]["limit-severities-for-sarif"] is True
 
     evidence = _named_step(steps, "Upload release supply-chain evidence")
     assert "always()" in str(evidence["if"])

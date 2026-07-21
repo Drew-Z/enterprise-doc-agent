@@ -13,6 +13,7 @@ SERVICES = {"api", "worker", "consumer", "web"}
 ROLLOUT_STEPS = ("prerequisites", "migration", "workloads", "rollout")
 SMOKE_STEPS = ("cluster_smoke", "authenticated_smoke")
 OUTCOME_VALUES = {"success", "failure", "cancelled", "skipped"}
+DEPLOYMENT_PROFILES = {"staging", "tiny-single-node"}
 
 
 class StagingReleaseRecordError(ValueError):
@@ -22,6 +23,7 @@ class StagingReleaseRecordError(ValueError):
 def build_record(
     evidence_manifest: Path,
     *,
+    deployment_profile: str,
     repository: str,
     commit_sha: str,
     run_id: str,
@@ -32,6 +34,8 @@ def build_record(
     smoke_required: bool,
     output: Path,
 ) -> dict[str, Any]:
+    if deployment_profile not in DEPLOYMENT_PROFILES:
+        raise StagingReleaseRecordError("deployment profile is not reviewed")
     if not evidence_manifest.is_file():
         raise StagingReleaseRecordError("sanitized evidence manifest does not exist")
     try:
@@ -66,6 +70,7 @@ def build_record(
         "schema_version": 1,
         "status": status,
         "blocking_reason": blocking_reason,
+        "deployment_profile": deployment_profile,
         "repository": repository,
         "commit_sha": commit_sha,
         "run_id": run_id,
@@ -87,6 +92,7 @@ def build_record(
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build a staging rollout evidence record")
     parser.add_argument("--evidence-manifest", type=Path, required=True)
+    parser.add_argument("--deployment-profile", choices=sorted(DEPLOYMENT_PROFILES), required=True)
     parser.add_argument("--repository", required=True)
     parser.add_argument("--commit-sha", required=True)
     parser.add_argument("--run-id", required=True)
@@ -104,6 +110,7 @@ def main() -> None:
             raise StagingReleaseRecordError("digest and outcome inputs must be JSON objects")
         record = build_record(
             args.evidence_manifest,
+            deployment_profile=args.deployment_profile,
             repository=args.repository,
             commit_sha=args.commit_sha,
             run_id=args.run_id,

@@ -88,9 +88,20 @@ def test_every_evidence_command_and_artifact_is_materialized() -> None:
     assert isinstance(artifacts, list) and artifacts
     for item in artifacts:
         path = _artifact_path(item["path"])
-        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        artifact_bytes = path.read_bytes()
+        digest = hashlib.sha256(artifact_bytes).hexdigest()
         assert item["sha256"] == digest
         assert item["kind"] in {"log", "screenshot", "report"}
+        if item["kind"] == "log":
+            assert b"\r" not in artifact_bytes
+            eol_attribute = subprocess.run(
+                ["git", "check-attr", "eol", "--", item["path"]],
+                cwd=ROOT,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            assert eol_attribute == f"{item['path']}: eol: lf"
 
     limitations = manifest["limitations"]
     assert isinstance(limitations, list) and limitations

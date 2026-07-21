@@ -62,7 +62,7 @@ jobs:
       - uses: azure/setup-kubectl@c0c8b32d33a5244f1e5947304550403b63930415 # v4
       - uses: imranismail/setup-kustomize@2ba527d4d055ab63514ba50a99456fc35684947f # v2
         with:
-          kustomize-version: "5.6.0"
+          kustomize-version: "5.7.1"
       - name: Configure cluster credentials
         env:
           KUBE_CONFIG: ${{ secrets.STAGING_KUBECONFIG }}
@@ -77,8 +77,36 @@ jobs:
           actual_context="$(kubectl config current-context)"
           test "$actual_context" = "$EXPECTED_CONTEXT"
           kubectl auth can-i get namespaces | grep -qx 'yes'
+      - name: Validate deployment profile ownership
+        env:
+          DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'tiny-single-node' }}
+        run: |
+          set -euo pipefail
+          case "$DEPLOYMENT_PROFILE" in
+            tiny-single-node|staging) ;;
+            *) echo 'unsupported deployment profile' >&2; exit 1 ;;
+          esac
+          namespace_json="$(
+            kubectl get namespace enterprise-doc-agent-staging --ignore-not-found -o json
+          )"
+          if test -z "$namespace_json"; then
+            exit 0
+          fi
+          actual_profile="$(
+            printf '%s' "$namespace_json" | python -c \
+              'import json, sys; print(json.load(sys.stdin).get("metadata", {}).get("annotations", {}).get("enterprise-doc-agent/deployment-profile", ""))'
+          )"
+          if test -z "$actual_profile"; then
+            echo 'existing namespace is missing its deployment profile annotation' >&2
+            exit 1
+          fi
+          if test "$actual_profile" != "$DEPLOYMENT_PROFILE"; then
+            echo "existing namespace belongs to deployment profile: $actual_profile" >&2
+            exit 1
+          fi
       - name: Bind exact image digests
         env:
+          DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'tiny-single-node' }}
           REGISTRY_PREFIX: ${{ inputs.registry_prefix }}
           API_DIGEST: ${{ inputs.api_digest }}
           WORKER_DIGEST: ${{ inputs.worker_digest }}
@@ -86,6 +114,11 @@ jobs:
           WEB_DIGEST: ${{ inputs.web_digest }}
         run: |
           set -euo pipefail
+          case "$DEPLOYMENT_PROFILE" in
+            tiny-single-node|staging) ;;
+            *) echo 'unsupported deployment profile' >&2; exit 1 ;;
+          esac
+          IMAGE_BINDING_OVERLAY="infra/k8s/overlays/staging"
           printf '%s' "$REGISTRY_PREFIX" | grep -Eq '^[a-z0-9.-]+(:[0-9]{1,5})?(/[a-z0-9][a-z0-9._-]*)+$'
           case "$REGISTRY_PREFIX" in
             localhost*|127.*|\[::1\]*) echo 'registry_prefix must not target loopback' >&2; exit 1 ;;
@@ -93,24 +126,31 @@ jobs:
           for digest in "$API_DIGEST" "$WORKER_DIGEST" "$CONSUMER_DIGEST" "$WEB_DIGEST"; do
             printf '%s' "$digest" | grep -Eq '^sha256:[0-9a-f]{64}$'
           done
-          cd infra/k8s/overlays/staging
+          cd "$IMAGE_BINDING_OVERLAY"
           kustomize edit set image enterprise-doc/api="$REGISTRY_PREFIX/enterprise-doc-api@$API_DIGEST"
           kustomize edit set image enterprise-doc/worker="$REGISTRY_PREFIX/enterprise-doc-worker@$WORKER_DIGEST"
           kustomize edit set image enterprise-doc/consumer="$REGISTRY_PREFIX/enterprise-doc-consumer@$CONSUMER_DIGEST"
           kustomize edit set image enterprise-doc/web="$REGISTRY_PREFIX/enterprise-doc-web@$WEB_DIGEST"
       - name: Render and validate staging manifests
         env:
+          DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'tiny-single-node' }}
           STAGING_BASE_URL: ${{ inputs.staging_base_url }}
           OBJECT_STORE_ENDPOINT: ${{ inputs.object_store_endpoint }}
           OBJECT_STORE_PRESIGN_ENDPOINT: ${{ inputs.object_store_presign_endpoint }}
           TLS_SECRET_NAME: ${{ inputs.tls_secret_name }}
           VITE_OBJECT_STORE_ORIGINS: ${{ vars.VITE_OBJECT_STORE_ORIGINS }}
+          DATABASE_EGRESS_CIDR: ${{ vars.STAGING_DATABASE_EGRESS_CIDR }}
         run: |
           set -euo pipefail
+          case "$DEPLOYMENT_PROFILE" in
+            tiny-single-node|staging) ;;
+            *) echo 'unsupported deployment profile' >&2; exit 1 ;;
+          esac
+          OVERLAY_DIR="infra/k8s/overlays/${DEPLOYMENT_PROFILE}"
           python -m pip install --disable-pip-version-check --no-cache-dir \
             PyYAML==6.0.3 cryptography==49.0.0
           test -n "$VITE_OBJECT_STORE_ORIGINS"
-          kustomize build infra/k8s/overlays/staging > "$RUNNER_TEMP/staging-template.yaml"
+          kustomize build "$OVERLAY_DIR" > "$RUNNER_TEMP/staging-template.yaml"
           python scripts/configure_staging_manifest.py \
             --input "$RUNNER_TEMP/staging-template.yaml" \
             --output "$RUNNER_TEMP/staging.yaml" \
@@ -118,7 +158,8 @@ jobs:
             --object-store-endpoint "$OBJECT_STORE_ENDPOINT" \
             --object-store-presign-endpoint "$OBJECT_STORE_PRESIGN_ENDPOINT" \
             --tls-secret-name "$TLS_SECRET_NAME" \
-            --web-object-store-origins "$VITE_OBJECT_STORE_ORIGINS"
+            --web-object-store-origins "$VITE_OBJECT_STORE_ORIGINS" \
+            --database-egress-cidr "$DATABASE_EGRESS_CIDR"
           grep -A4 '^kind: Namespace$' "$RUNNER_TEMP/staging.yaml" | grep -q 'name: enterprise-doc-agent-staging'
           grep -q 'name: enterprise-doc-migrate' "$RUNNER_TEMP/staging.yaml"
           grep -q 'kind: Ingress' "$RUNNER_TEMP/staging.yaml"
@@ -170,12 +211,16 @@ jobs:
           kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-worker --timeout=300s
           kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-consumer --timeout=300s
           kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-web --timeout=300s
+          if kubectl -n enterprise-doc-agent-staging get deployment enterprise-doc-redis >/dev/null 2>&1; then
+            kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-redis --timeout=180s
+          fi
       - name: Run in-cluster readiness smoke
         id: cluster_smoke
         if: inputs.run_smoke
         run: |
           kubectl -n enterprise-doc-agent-staging run m5-staging-smoke --rm --attach --restart=Never \
-            --image=curlimages/curl@sha256:94e9e444bcba979c2ea12e27ae39bee4cd10bc7041a472c4727a558e213744e6 -- \
+            --image=curlimages/curl@sha256:94e9e444bcba979c2ea12e27ae39bee4cd10bc7041a472c4727a558e213744e6 \
+            --labels=app.kubernetes.io/name=m5-staging-smoke -- \
             sh -ec 'curl --fail --silent http://enterprise-doc-api:8000/health/ready'
       - name: Run authenticated upload to Agent smoke
         id: authenticated_smoke
@@ -204,6 +249,7 @@ jobs:
           CONSUMER_DIGEST: ${{ inputs.consumer_digest }}
           WEB_DIGEST: ${{ inputs.web_digest }}
           RUN_SMOKE: ${{ inputs.run_smoke }}
+          DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'tiny-single-node' }}
           PREREQUISITES_OUTCOME: ${{ steps.prerequisites.outcome }}
           MIGRATION_OUTCOME: ${{ steps.migration.outcome }}
           WORKLOADS_OUTCOME: ${{ steps.workloads.outcome }}
@@ -239,6 +285,7 @@ jobs:
           if test -f "tmp/staging-smoke-${GITHUB_SHA}.json"; then
             cp "tmp/staging-smoke-${GITHUB_SHA}.json" "$raw_dir/staging-smoke.json"
           fi
+          printf '%s\n' "$DEPLOYMENT_PROFILE" > "$raw_dir/deployment-profile.txt"
           capture deployments.json kubectl -n enterprise-doc-agent-staging get deploy -o json
           capture migration.log kubectl -n enterprise-doc-agent-staging logs job/enterprise-doc-migrate
           capture ingress.yaml kubectl -n enterprise-doc-agent-staging get ingress enterprise-doc-web -o yaml
@@ -254,6 +301,7 @@ jobs:
           outcomes_json="$(python -c 'import json, os; print(json.dumps({"prerequisites": os.environ["PREREQUISITES_OUTCOME"], "migration": os.environ["MIGRATION_OUTCOME"], "workloads": os.environ["WORKLOADS_OUTCOME"], "rollout": os.environ["ROLLOUT_OUTCOME"], "cluster_smoke": os.environ["CLUSTER_SMOKE_OUTCOME"], "authenticated_smoke": os.environ["AUTHENTICATED_SMOKE_OUTCOME"]}))')"
           python scripts/build_staging_release_record.py \
             --evidence-manifest "tmp/staging-evidence-${evidence_id}.manifest.json" \
+            --deployment-profile "$DEPLOYMENT_PROFILE" \
             --repository "$GITHUB_REPOSITORY" \
             --commit-sha "$GITHUB_SHA" \
             --run-id "$GITHUB_RUN_ID" \

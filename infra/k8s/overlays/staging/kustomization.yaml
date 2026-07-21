@@ -5,10 +5,13 @@ resources:
   - ../../base
   - ingress.yaml
   - web-ingress-policy.yaml
+  - smoke-api-ingress-policy.yaml
+  - external-postgres-egress.yaml
 patches:
   - path: replicas-patch.yaml
   - path: configmap-patch.yaml
   - path: image-pull-secret-patch.yaml
+  - path: namespace-profile-patch.yaml
 images:
   - name: enterprise-doc/api
     newName: registry.example.invalid/enterprise-doc/api

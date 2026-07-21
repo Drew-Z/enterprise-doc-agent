@@ -33,6 +33,7 @@ def _outcomes(value: str = "success") -> dict[str, str]:
 def _build(tmp_path: Path, *, outcomes: dict[str, str], smoke_required: bool) -> dict[str, object]:
     return build_record(
         _manifest(tmp_path / "evidence.json"),
+        deployment_profile="tiny-single-node",
         repository="example/repo",
         commit_sha="a" * 40,
         run_id="42",
@@ -46,7 +47,9 @@ def _build(tmp_path: Path, *, outcomes: dict[str, str], smoke_required: bool) ->
 
 
 def test_staging_record_passes_only_with_rollout_and_smoke(tmp_path: Path) -> None:
-    assert _build(tmp_path, outcomes=_outcomes(), smoke_required=True)["status"] == "passed"
+    record = _build(tmp_path, outcomes=_outcomes(), smoke_required=True)
+    assert record["status"] == "passed"
+    assert record["deployment_profile"] == "tiny-single-node"
 
 
 def test_staging_record_marks_skipped_smoke_blocked_external(tmp_path: Path) -> None:
@@ -70,12 +73,30 @@ def test_staging_record_rejects_missing_digest(tmp_path: Path) -> None:
     with pytest.raises(StagingReleaseRecordError, match="digests"):
         build_record(
             _manifest(tmp_path / "evidence.json"),
+            deployment_profile="tiny-single-node",
             repository="example/repo",
             commit_sha="a" * 40,
             run_id="42",
             run_attempt="1",
             registry_prefix="registry.example/team",
             image_digests=digests,
+            outcomes=_outcomes(),
+            smoke_required=True,
+            output=tmp_path / "record.json",
+        )
+
+
+def test_staging_record_rejects_unreviewed_deployment_profile(tmp_path: Path) -> None:
+    with pytest.raises(StagingReleaseRecordError, match="deployment profile"):
+        build_record(
+            _manifest(tmp_path / "evidence.json"),
+            deployment_profile="arbitrary-overlay",
+            repository="example/repo",
+            commit_sha="a" * 40,
+            run_id="42",
+            run_attempt="1",
+            registry_prefix="registry.example/team",
+            image_digests=_digests(),
             outcomes=_outcomes(),
             smoke_required=True,
             output=tmp_path / "record.json",
