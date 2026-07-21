@@ -19,6 +19,9 @@
   attestation verification to the returned immutable `image@sha256:digest`.
 - Release workflow diagnostics and step outcomes are uploaded with `always()`; the
   scan/sign/verification steps still fail the job and are not hidden by allow-failure.
+- Trivy uses `trivy-action` v0.36.0 by immutable commit with scanner version v0.70.0
+  explicit. Pinning only an outer composite action is insufficient when that revision
+  still references mutable or deleted nested action tags.
 - Web images receive `VITE_OBJECT_STORE_ORIGINS` at build time. Staging configuration
   accepts only HTTPS public/object-store endpoints and verifies that the presign origin
   is present in that Web allowlist.

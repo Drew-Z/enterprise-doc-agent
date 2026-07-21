@@ -533,6 +533,13 @@ def test_tagged_supply_chain_verifies_the_exact_published_digest() -> None:
     assert "2> cosign-provenance-verify-${{ matrix.name }}.log" in verification_command
     assert digest_expression in str(verification["env"])
 
+    for step_name in ("Scan local image", "Scan published image"):
+        trivy = _named_step(steps, step_name)
+        assert trivy["uses"] == (
+            "aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25"
+        )
+        assert trivy["with"]["version"] == "v0.70.0"
+
     evidence = _named_step(steps, "Upload release supply-chain evidence")
     assert "always()" in str(evidence["if"])
     evidence_settings = evidence["with"]

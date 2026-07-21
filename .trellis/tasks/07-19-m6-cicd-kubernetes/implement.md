@@ -60,3 +60,5 @@ immutable image or rollback evidence. Those remain open manual gates.
 - [x] Restrict PostgreSQL egress to database-using Pods and one validated host CIDR.
 - [x] Edit image digests in the staging parent overlay and regression-test the final tiny
   images with Kustomize 5.7.1.
+- [x] Replace the remotely broken Trivy composite action with a revision whose nested
+  setup/cache actions are SHA-pinned, and lock the scanner version explicitly.
