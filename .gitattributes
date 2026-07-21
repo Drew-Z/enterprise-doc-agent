@@ -1,0 +1,2 @@
+evidence/**/*.log text eol=lf
+evidence/**/*.json text eol=lf

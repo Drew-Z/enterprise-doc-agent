@@ -74,6 +74,13 @@ def test_all_runtime_images_have_non_root_dockerfiles_and_no_floating_latest_tag
         assert all("@sha256:" in line for line in text.splitlines() if line.startswith("FROM "))
 
 
+def test_web_runtime_prepares_nginx_pid_before_dropping_privileges() -> None:
+    dockerfile = (ROOT / "infra" / "docker" / "Dockerfile.web").read_text(encoding="utf-8")
+    privileged_build = dockerfile.split("USER nginx", maxsplit=1)[0]
+    assert "touch /run/nginx.pid" in privileged_build
+    assert re.search(r"chown [^\n]*/run/nginx\.pid", privileged_build)
+
+
 def test_web_image_receives_explicit_object_store_origin_build_configuration() -> None:
     dockerfile = (ROOT / "infra" / "docker" / "Dockerfile.web").read_text(encoding="utf-8")
     assert "ARG VITE_OBJECT_STORE_ORIGINS=" in dockerfile

@@ -250,8 +250,9 @@ test("Agent workspace reconnects through approval and downloads a verified artif
   await page.getByLabel("Request publication after approval").check();
   await page.getByRole("button", { name: "Create run" }).click();
 
-  await expect(page.getByText("Approval request")).toBeVisible();
-  await page.getByRole("button", { name: "Approve" }).click();
+  const approvalPanel = page.getByRole("region", { name: "Approval request", exact: true });
+  await expect(approvalPanel).toBeVisible();
+  await approvalPanel.getByRole("button", { name: "Approve", exact: true }).click();
   await expect(page.getByText("Run succeeded")).toBeVisible();
   await expect(page.getByText("Verified artifacts")).toBeVisible();
   await captureEvidenceScreenshot(page, "agent-workspace-desktop-1440x900.png");
@@ -305,7 +306,7 @@ test("Agent workspace reports unauthorized run access without exposing approval 
   await page.getByRole("button", { name: "Agent runs" }).click();
 
   await expect(page.getByRole("alert")).toContainText("agent_principal_forbidden");
-  await expect(page.getByText("Approval request")).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Approval request", exact: true })).toHaveCount(0);
   await expect(page.getByText("Verified artifacts")).toHaveCount(0);
 });
 

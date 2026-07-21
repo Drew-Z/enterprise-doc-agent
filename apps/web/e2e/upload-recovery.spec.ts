@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 
 import { parseRuntime, runtimeFile } from "./runtime";
 
-const FILE_SIZE = 17 * 1024 * 1024 + 1024;
+const FILE_SIZE = 16 * 1024 * 1024 + 1024;
 
 async function captureEvidenceScreenshot(
   page: import("@playwright/test").Page,
@@ -67,10 +67,6 @@ test("interrupts, reloads, rejects a wrong file, resumes missing parts, and comp
   const filename = `playwright-${suffix}.txt`;
   const original = Buffer.alloc(FILE_SIZE, 0x61);
   const wrong = Buffer.alloc(FILE_SIZE, 0x62);
-  const failedRequests: string[] = [];
-  page.on("requestfailed", (request) => {
-    failedRequests.push(`${request.method()} ${request.url()}: ${request.failure()?.errorText ?? "unknown"}`);
-  });
   let releaseUploads = (): void => undefined;
   let interceptedPuts = 0;
   const uploadGate = new Promise<void>((resolve) => {
@@ -94,23 +90,17 @@ test("interrupts, reloads, rejects a wrong file, resumes missing parts, and comp
   await page.getByRole("button", { name: "Save token" }).click();
   const fileInput = page.locator("#upload-file");
   await expect(fileInput).toBeEnabled();
+  const firstPartPut = page.waitForRequest(
+    (request) => request.method() === "PUT" && request.url().startsWith("http://127.0.0.1:9000/"),
+    { timeout: 120_000 },
+  );
   await fileInput.setInputFiles({
     name: filename,
     mimeType: "text/plain",
     buffer: original,
   });
-
-  await expect
-    .poll(async () => {
-      if (await page.getByRole("button", { name: "Pause upload" }).isVisible()) {
-        return "uploading";
-      }
-      if (await page.getByRole("alert").isVisible()) {
-        return `failed: ${await page.getByRole("alert").innerText()} ${failedRequests.join(" | ")}`;
-      }
-      return "waiting";
-    })
-    .toBe("uploading");
+  await firstPartPut;
+  await expect(page.getByRole("button", { name: "Pause upload" })).toBeVisible();
   await expect.poll(() => interceptedPuts).toBeGreaterThan(0);
   await page.getByRole("button", { name: "Pause upload" }).click();
   await expect(page.getByText("Upload paused")).toBeVisible();

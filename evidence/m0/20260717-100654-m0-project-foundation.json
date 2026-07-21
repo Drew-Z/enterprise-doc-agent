@@ -91,42 +91,42 @@
     {
       "path": "evidence/m0/artifacts/uv-sync-frozen.log",
       "kind": "log",
-      "sha256": "ef94a990b646e582e224b05cb227f6d170e2679d52bc2b201e62c26ba9dc6b78"
+      "sha256": "36637241078fd9ff2f12c8d0b7eb715b44d0462b6517725fb517b264bb2f531c"
     },
     {
       "path": "evidence/m0/artifacts/pnpm-install-frozen.log",
       "kind": "log",
-      "sha256": "4d99163f07b065a5781d1526b6dcc880d332dc12df27b3bf52b62ca0b73c11cc"
+      "sha256": "e63558516cc2cd899c8bf0b7293937ef186d7e362f5c96bfcb5b4d610e095802"
     },
     {
       "path": "evidence/m0/artifacts/backend-quality.log",
       "kind": "log",
-      "sha256": "d820a89c137a7804cba36bbd4ebb29643eb705046d939ceb6c2e91069c59e8eb"
+      "sha256": "9a4c5adc18db65c27f5544a5f17e9d0711ade8b57365c851beb9d99bb0b91c47"
     },
     {
       "path": "evidence/m0/artifacts/frontend-quality.log",
       "kind": "log",
-      "sha256": "ddd97d2a6aaaf3636519e82150328fc44fb36a8fcb295a98755a786bc225c0a0"
+      "sha256": "db42b755e240f75d855d182fec17da9487cfe4d2b604b2aee28f2b65da0b6506"
     },
     {
       "path": "evidence/m0/artifacts/migration-integration.log",
       "kind": "log",
-      "sha256": "632ceb076bbcceb30c9891c44daac8d19b49562b19b582a2b530a5a0dd52c897"
+      "sha256": "1c5fa96345961d0fe16ac5042571c7a45914e102f98c19c60ed79272e5baa7bf"
     },
     {
       "path": "evidence/m0/artifacts/foundation-smoke.log",
       "kind": "log",
-      "sha256": "8b98fefa9f50da4db9fd0b12db5f052a2709c5ff4a0be9d1bd9888297ef9c686"
+      "sha256": "3d20dc4eed8887db223c37436be63d2805aac556f98190040a751e49e07c0594"
     },
     {
       "path": "evidence/m0/artifacts/trellis-validation.log",
       "kind": "log",
-      "sha256": "c4c4c189dd28d73bb89e5db1d766de11c0bf6121e87356c69619e53c9fafccd3"
+      "sha256": "44fad9ee5d764ad42e8d0d63461f00e8947a7b6d0ddb2371d48faeb7f15d0537"
     },
     {
       "path": "evidence/m0/artifacts/final-quality.log",
       "kind": "log",
-      "sha256": "36ef57f3013f1a04af1a04d8e96c3225a42d244787a4f3c7b78153c7a1b40528"
+      "sha256": "62ebceb38768c1f5914d20fdaafa691b19c9641ba9cc721cde8a87ffed5ad313"
     },
     {
       "path": "evidence/m0/artifacts/dashboard-desktop-1440x900.png",
