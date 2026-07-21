@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
-import { readFileSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import path from "node:path";
 
 import { parseRuntime, runtimeFile } from "./runtime";
 
@@ -68,8 +69,12 @@ test("interrupts, reloads, rejects a wrong file, resumes missing parts, and comp
   const runtime = parseRuntime(JSON.parse(readFileSync(runtimeFile, "utf8")) as unknown);
   const suffix = Date.now().toString(36);
   const filename = `playwright-${suffix}.txt`;
-  const original = Buffer.alloc(FILE_SIZE, 0x61);
-  const wrong = Buffer.alloc(FILE_SIZE, 0x62);
+  const originalPath = testInfo.outputPath("original", filename);
+  const wrongPath = testInfo.outputPath("wrong", filename);
+  mkdirSync(path.dirname(originalPath), { recursive: true });
+  mkdirSync(path.dirname(wrongPath), { recursive: true });
+  writeFileSync(originalPath, Buffer.alloc(FILE_SIZE, 0x61));
+  writeFileSync(wrongPath, Buffer.alloc(FILE_SIZE, 0x62));
   let releaseUploads = (): void => undefined;
   let interceptedPuts = 0;
   const uploadGate = new Promise<void>((resolve) => {
@@ -97,11 +102,7 @@ test("interrupts, reloads, rejects a wrong file, resumes missing parts, and comp
     (request) => request.method() === "PUT" && request.url().startsWith("http://127.0.0.1:9000/"),
     { timeout: 120_000 },
   );
-  await fileInput.setInputFiles({
-    name: filename,
-    mimeType: "text/plain",
-    buffer: original,
-  });
+  await fileInput.setInputFiles(originalPath);
   await firstPartPut;
   await expect(page.getByRole("button", { name: "Pause upload" })).toBeVisible();
   await expect.poll(() => interceptedPuts).toBeGreaterThan(0);
@@ -114,11 +115,7 @@ test("interrupts, reloads, rejects a wrong file, resumes missing parts, and comp
   await page.reload();
   await expect(page.getByText("Reselect original file")).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.locator("#upload-file").setInputFiles({
-    name: filename,
-    mimeType: "text/plain",
-    buffer: wrong,
-  });
+  await page.locator("#upload-file").setInputFiles(wrongPath);
   await expect(page.getByRole("alert")).toContainText("does not match the upload session");
   await expectStableLayout(page);
   await captureEvidenceScreenshot(page, testInfo.outputPath("wrong-file-390x844.png"));
@@ -126,15 +123,13 @@ test("interrupts, reloads, rejects a wrong file, resumes missing parts, and comp
   await page.reload();
   await expect(page.getByText("Reselect original file")).toBeVisible();
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.locator("#upload-file").setInputFiles({
-    name: filename,
-    mimeType: "text/plain",
-    buffer: original,
-  });
+  await page.locator("#upload-file").setInputFiles(originalPath);
 
   await expect(page.getByText("Upload complete")).toBeVisible({ timeout: 120_000 });
   await expect(page.getByText("Document ID")).toBeVisible();
   await expect(page.getByText("Version ID")).toBeVisible();
   await expectStableLayout(page);
   await captureEvidenceScreenshot(page, testInfo.outputPath("upload-complete-1440x900.png"));
+  rmSync(originalPath, { force: true });
+  rmSync(wrongPath, { force: true });
 });

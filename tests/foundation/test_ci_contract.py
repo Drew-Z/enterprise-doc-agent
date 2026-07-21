@@ -92,6 +92,16 @@ def test_quality_workflow_has_locked_independent_jobs() -> None:
     assert "pnpm --filter web exec playwright install --with-deps chromium" in e2e_commands
     assert "pnpm --filter web test:e2e" in e2e_commands
 
+    e2e_steps = jobs["web-e2e"]["steps"]
+    assert isinstance(e2e_steps, list)
+    evidence = next(
+        step
+        for step in e2e_steps
+        if isinstance(step, dict) and step.get("uses") == "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"
+    )
+    assert "always()" in str(evidence["if"])
+    assert evidence["with"]["path"] == "apps/web/test-results"
+
 
 def test_quality_workflow_has_no_allow_failure_or_retry_path() -> None:
     text = WORKFLOW.read_text(encoding="utf-8").lower()
