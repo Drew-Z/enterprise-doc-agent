@@ -46,6 +46,34 @@ def _write_template(path: Path) -> None:
                 ],
             },
         },
+        {
+            "apiVersion": "networking.k8s.io/v1",
+            "kind": "NetworkPolicy",
+            "metadata": {"name": "enterprise-doc-external-postgres-egress"},
+            "spec": {
+                "podSelector": {
+                    "matchExpressions": [
+                        {
+                            "key": "app.kubernetes.io/name",
+                            "operator": "In",
+                            "values": [
+                                "enterprise-doc-api",
+                                "enterprise-doc-worker",
+                                "enterprise-doc-consumer",
+                                "enterprise-doc-migrate",
+                            ],
+                        },
+                    ],
+                },
+                "policyTypes": ["Egress"],
+                "egress": [
+                    {
+                        "to": [{"ipBlock": {"cidr": "192.0.2.1/32"}}],
+                        "ports": [{"protocol": "TCP", "port": 5432}],
+                    },
+                ],
+            },
+        },
     ]
     path.write_text(yaml.safe_dump_all(documents, sort_keys=False), encoding="utf-8")
 
@@ -63,6 +91,7 @@ def test_configure_manifest_binds_https_hosts_without_secret_data(tmp_path: Path
         object_store_presign_endpoint="https://objects.example.com",
         tls_secret_name="enterprise-doc-staging-tls",
         web_object_store_origins="https://objects.example.com,https://cdn.example.com",
+        database_egress_cidr="8.8.8.8/32",
     )
 
     documents = [
@@ -83,6 +112,18 @@ def test_configure_manifest_binds_https_hosts_without_secret_data(tmp_path: Path
         }
     ]
     assert all(item["kind"] != "Secret" for item in documents)
+    database_policy = next(
+        item
+        for item in documents
+        if item["kind"] == "NetworkPolicy"
+        and item["metadata"]["name"] == "enterprise-doc-external-postgres-egress"
+    )
+    assert database_policy["spec"]["egress"] == [
+        {
+            "to": [{"ipBlock": {"cidr": "8.8.8.8/32"}}],
+            "ports": [{"protocol": "TCP", "port": 5432}],
+        },
+    ]
 
 
 def test_configure_manifest_rejects_unlisted_or_plaintext_origins(tmp_path: Path) -> None:
@@ -98,6 +139,7 @@ def test_configure_manifest_rejects_unlisted_or_plaintext_origins(tmp_path: Path
             object_store_presign_endpoint="https://objects.example.com",
             tls_secret_name="enterprise-doc-staging-tls",
             web_object_store_origins="https://objects.example.com",
+            database_egress_cidr="8.8.8.8/32",
         )
 
     with pytest.raises(ValueError, match="Web image allowlist"):
@@ -109,6 +151,7 @@ def test_configure_manifest_rejects_unlisted_or_plaintext_origins(tmp_path: Path
             object_store_presign_endpoint="https://objects.example.com",
             tls_secret_name="enterprise-doc-staging-tls",
             web_object_store_origins="https://other.example.com",
+            database_egress_cidr="8.8.8.8/32",
         )
 
     with pytest.raises(ValueError, match="exact HTTPS origin"):
@@ -120,6 +163,7 @@ def test_configure_manifest_rejects_unlisted_or_plaintext_origins(tmp_path: Path
             object_store_presign_endpoint="https://objects.example.com",
             tls_secret_name="enterprise-doc-staging-tls",
             web_object_store_origins="https://objects.example.com/uploads",
+            database_egress_cidr="8.8.8.8/32",
         )
 
     with pytest.raises(ValueError, match="63 characters"):
@@ -131,6 +175,7 @@ def test_configure_manifest_rejects_unlisted_or_plaintext_origins(tmp_path: Path
             object_store_presign_endpoint="https://objects.example.com",
             tls_secret_name="a" * 64,
             web_object_store_origins="https://objects.example.com",
+            database_egress_cidr="8.8.8.8/32",
         )
 
     with pytest.raises(ValueError, match="DNS hostname"):
@@ -142,4 +187,35 @@ def test_configure_manifest_rejects_unlisted_or_plaintext_origins(tmp_path: Path
             object_store_presign_endpoint="https://objects.example.com",
             tls_secret_name="enterprise-doc-staging-tls",
             web_object_store_origins="https://objects.example.com",
+            database_egress_cidr="8.8.8.8/32",
+        )
+
+
+@pytest.mark.parametrize(
+    "cidr",
+    [
+        "",
+        "8.8.8.0/24",
+        "10.0.0.1/32",
+        "127.0.0.1/32",
+        "::1/128",
+        "not-a-cidr",
+    ],
+)
+def test_configure_manifest_rejects_non_global_single_host_database_egress(
+    tmp_path: Path, cidr: str
+) -> None:
+    source = tmp_path / "template.yaml"
+    _write_template(source)
+
+    with pytest.raises(ValueError, match="database egress CIDR"):
+        configure_staging_manifest.configure_manifest(
+            source,
+            tmp_path / "invalid-database-egress.yaml",
+            staging_base_url="https://staging.example.com",
+            object_store_endpoint="https://objects.internal.example.com",
+            object_store_presign_endpoint="https://objects.example.com",
+            tls_secret_name="enterprise-doc-staging-tls",
+            web_object_store_origins="https://objects.example.com",
+            database_egress_cidr=cidr,
         )

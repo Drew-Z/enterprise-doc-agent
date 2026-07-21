@@ -11,6 +11,7 @@ import yaml  # type: ignore[import-untyped]
 
 CONFIG_NAME = "enterprise-doc-config"
 INGRESS_NAME = "enterprise-doc-web"
+DATABASE_EGRESS_POLICY_NAME = "enterprise-doc-external-postgres-egress"
 DNS_LABEL = re.compile(r"^[a-z0-9](?:[-a-z0-9]*[a-z0-9])?$")
 
 
@@ -63,6 +64,18 @@ def _dns_hostname(value: str, *, description: str) -> str:
     return value
 
 
+def _global_host_cidr(value: str, *, description: str) -> str:
+    try:
+        network = ipaddress.ip_network(value, strict=True)
+    except ValueError as exc:
+        raise ValueError(f"{description} must be a valid IP CIDR") from exc
+    if network.prefixlen != network.max_prefixlen:
+        raise ValueError(f"{description} must contain exactly one IP address")
+    if not network.network_address.is_global:
+        raise ValueError(f"{description} must contain a global unicast IP address")
+    return str(network)
+
+
 def _single_document(documents: list[dict[str, Any]], *, kind: str, name: str) -> dict[str, Any]:
     matches = [
         document
@@ -85,6 +98,7 @@ def configure_manifest(
     object_store_presign_endpoint: str,
     tls_secret_name: str,
     web_object_store_origins: str,
+    database_egress_cidr: str,
 ) -> None:
     staging = _https_url(staging_base_url, description="staging base URL")
     staging_hostname = _dns_hostname(staging.hostname or "", description="staging host")
@@ -103,6 +117,10 @@ def configure_manifest(
             "Web image allowlist must include the object-store presign endpoint origin"
         )
     _dns_label(tls_secret_name, description="TLS secret name")
+    database_cidr = _global_host_cidr(
+        database_egress_cidr,
+        description="database egress CIDR",
+    )
 
     documents = [
         document
@@ -131,6 +149,21 @@ def configure_manifest(
     tls[0]["hosts"] = [staging_hostname]
     tls[0]["secretName"] = tls_secret_name
 
+    database_policy = _single_document(
+        documents,
+        kind="NetworkPolicy",
+        name=DATABASE_EGRESS_POLICY_NAME,
+    )
+    policy_spec = database_policy.get("spec")
+    if not isinstance(policy_spec, dict):
+        raise ValueError(f"NetworkPolicy/{DATABASE_EGRESS_POLICY_NAME} spec must be a mapping")
+    egress = policy_spec.get("egress")
+    if not isinstance(egress, list) or len(egress) != 1 or not isinstance(egress[0], dict):
+        raise ValueError(
+            f"NetworkPolicy/{DATABASE_EGRESS_POLICY_NAME} must contain exactly one egress rule"
+        )
+    egress[0]["to"] = [{"ipBlock": {"cidr": database_cidr}}]
+
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(
         yaml.safe_dump_all(documents, sort_keys=False, explicit_start=True),
@@ -149,6 +182,7 @@ def main() -> None:
     parser.add_argument("--object-store-presign-endpoint", required=True)
     parser.add_argument("--tls-secret-name", required=True)
     parser.add_argument("--web-object-store-origins", required=True)
+    parser.add_argument("--database-egress-cidr", required=True)
     args = parser.parse_args()
     configure_manifest(
         args.input,
@@ -158,6 +192,7 @@ def main() -> None:
         object_store_presign_endpoint=args.object_store_presign_endpoint,
         tls_secret_name=args.tls_secret_name,
         web_object_store_origins=args.web_object_store_origins,
+        database_egress_cidr=args.database_egress_cidr,
     )
 
 

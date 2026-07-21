@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: enterprise-doc-agent-staging
+resources:
+  - ../staging
+  - redis.yaml
+  - redis-network-policy.yaml
+patches:
+  - path: resources-patch.yaml
+  - path: configmap-patch.yaml
+  - path: ingress-patch.yaml
+  - path: web-ingress-policy-patch.yaml
+  - path: delete-pdb-patch.yaml
+  - path: namespace-profile-patch.yaml
