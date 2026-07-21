@@ -4,6 +4,16 @@ import path from "node:path";
 
 const webDirectory = path.dirname(fileURLToPath(import.meta.url));
 const rootDirectory = path.resolve(webDirectory, "../..");
+const apiEnvironment = process.env.CI
+  ? {
+      ...Object.fromEntries(
+        Object.entries(process.env).filter(
+          (entry): entry is [string, string] => typeof entry[1] === "string",
+        ),
+      ),
+      UPLOAD__PREFERRED_PART_SIZE_BYTES: "5242880",
+    }
+  : undefined;
 
 export default defineConfig({
   testDir: "./e2e",
@@ -29,6 +39,7 @@ export default defineConfig({
       url: "http://127.0.0.1:8000/health/live",
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
+      env: apiEnvironment,
     },
     {
       command: "pnpm --filter web dev",

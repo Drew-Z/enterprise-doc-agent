@@ -3,7 +3,10 @@ import { readFileSync } from "node:fs";
 
 import { parseRuntime, runtimeFile } from "./runtime";
 
-const FILE_SIZE = 16 * 1024 * 1024 + 1024;
+// CI starts an isolated API with the S3-minimum 5 MiB part size so this
+// scenario still exercises multipart recovery without spending two minutes
+// hashing a 16 MiB browser fixture on a shared runner.
+const FILE_SIZE = (process.env.CI ? 5 : 16) * 1024 * 1024 + 1024;
 
 async function captureEvidenceScreenshot(
   page: import("@playwright/test").Page,

@@ -546,6 +546,8 @@ def test_tagged_supply_chain_verifies_the_exact_published_digest() -> None:
             "aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25"
         )
         assert trivy["with"]["version"] == "v0.70.0"
+        assert trivy["with"]["severity"] == "CRITICAL,HIGH"
+        assert trivy["with"]["limit-severities-for-sarif"] is True
 
     evidence = _named_step(steps, "Upload release supply-chain evidence")
     assert "always()" in str(evidence["if"])
