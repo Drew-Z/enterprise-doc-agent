@@ -97,7 +97,8 @@ def test_quality_workflow_has_locked_independent_jobs() -> None:
     evidence = next(
         step
         for step in e2e_steps
-        if isinstance(step, dict) and step.get("uses") == "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"
+        if isinstance(step, dict)
+        and step.get("uses") == "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"
     )
     assert "always()" in str(evidence["if"])
     assert evidence["with"]["path"] == "apps/web/test-results"
