@@ -23,7 +23,7 @@ class UploadedPart:
     part_number: int
     size_bytes: int
     etag: str
-    checksum_sha256_b64: str
+    checksum_sha256_b64: str | None
 
 
 @dataclass(frozen=True, slots=True)

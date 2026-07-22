@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import hashlib
 import logging
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
@@ -11,7 +12,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import Select, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from enterprise_doc_core.config import UploadSettings
+from enterprise_doc_core.config import ObjectStoreChecksumMode, UploadSettings
 from enterprise_doc_core.context import PrincipalContext
 from enterprise_doc_core.documents import (
     Document,
@@ -38,6 +39,7 @@ from enterprise_doc_core.uploads.models import (
 )
 
 _LOGGER = logging.getLogger("enterprise_doc_core.uploads")
+READBACK_HASH_CHUNK_BYTES = 8 * 1024 * 1024
 
 
 class UploadSessionError(Exception):
@@ -226,7 +228,7 @@ class _UploadPartObservation:
     part_number: int
     size_bytes: int
     etag: str
-    checksum_sha256_b64: str
+    checksum_sha256_b64: str | None
     matches_expectation: bool
 
 
@@ -239,12 +241,18 @@ class UploadSessionService:
         documents_bucket: str,
         settings: UploadSettings | None = None,
         clock: Callable[[], datetime] | None = None,
+        checksum_mode: ObjectStoreChecksumMode = ObjectStoreChecksumMode.NATIVE_SHA256,
     ) -> None:
         self.session_factory = session_factory
         self.object_store = object_store
         self.documents_bucket = documents_bucket
         self.settings = settings if settings is not None else UploadSettings()
         self.clock = clock if clock is not None else _utc_now
+        self.checksum_mode = checksum_mode
+
+    @property
+    def uses_readback_checksum_verification(self) -> bool:
+        return self.checksum_mode is ObjectStoreChecksumMode.READBACK_SHA256
 
     async def presign_part(
         self,
@@ -382,6 +390,9 @@ class UploadSessionService:
             raise UploadSessionNotActive()
         if observation_version is None:
             raise RuntimeError("upload part observation version is unavailable")
+        if self.uses_readback_checksum_verification:
+            # R2 does not expose a trusted per-part SHA-256 before completion.
+            return _get_result(snapshot, uploaded_parts=())
 
         listed_parts = await self.object_store.list_parts(
             bucket=self.documents_bucket,
@@ -456,6 +467,7 @@ class UploadSessionService:
             completion_parts = _verify_listed_completion_parts(
                 expected=completion_parts,
                 listed=listed_parts,
+                checksum_mode=self.checksum_mode,
             )
 
         snapshot, completed = await self._claim_completion(snapshot=snapshot)
@@ -480,10 +492,15 @@ class UploadSessionService:
         )
         identity_verified = _object_identity_matches(snapshot=snapshot, head=head)
         try:
-            detected_media_type, transport_checksum = await self._validate_completed_object(
+            (
+                detected_media_type,
+                transport_checksum,
+                content_sha256_verified_at,
+            ) = await self._validate_completed_object(
                 snapshot=snapshot,
                 head=head,
                 completion_result=completion_result,
+                expected_parts=expected_parts,
             )
         except (DocumentEnvelopeViolation, UploadCompletionVerificationFailed) as error:
             await self._mark_invalid_completion(
@@ -498,6 +515,7 @@ class UploadSessionService:
             head=head,
             detected_media_type=detected_media_type,
             transport_checksum=transport_checksum,
+            content_sha256_verified_at=content_sha256_verified_at,
         )
 
     async def reconcile_stale_completion(
@@ -523,20 +541,22 @@ class UploadSessionService:
                 completion=completed,
             )
 
-        verified_parts = _verified_parts_from_rows(snapshot=snapshot, parts=expected_parts)
-        if len(verified_parts) != snapshot.expected_part_count or tuple(
-            part.part_number for part in verified_parts
-        ) != tuple(range(1, snapshot.expected_part_count + 1)):
-            raise UploadCompletionPartsInvalid()
-        completion_parts = tuple(
-            UploadedPart(
-                part_number=part.part_number,
-                size_bytes=part.size_bytes,
-                etag=part.etag,
-                checksum_sha256_b64=part.checksum_sha256_b64,
+        completion_parts: tuple[UploadedPart, ...] = ()
+        if not self.uses_readback_checksum_verification:
+            verified_parts = _verified_parts_from_rows(snapshot=snapshot, parts=expected_parts)
+            if len(verified_parts) != snapshot.expected_part_count or tuple(
+                part.part_number for part in verified_parts
+            ) != tuple(range(1, snapshot.expected_part_count + 1)):
+                raise UploadCompletionPartsInvalid()
+            completion_parts = tuple(
+                UploadedPart(
+                    part_number=part.part_number,
+                    size_bytes=part.size_bytes,
+                    etag=part.etag,
+                    checksum_sha256_b64=part.checksum_sha256_b64,
+                )
+                for part in verified_parts
             )
-            for part in verified_parts
-        )
 
         multipart_missing = False
         try:
@@ -549,10 +569,18 @@ class UploadSessionService:
             multipart_missing = True
             listed_parts = ()
         if not multipart_missing:
-            completion_parts = _verify_listed_completion_parts(
-                expected=completion_parts,
-                listed=listed_parts,
-            )
+            if self.uses_readback_checksum_verification:
+                completion_parts = _prepare_readback_completion_parts(
+                    snapshot=snapshot,
+                    expected_parts=expected_parts,
+                    listed_parts=listed_parts,
+                )
+            else:
+                completion_parts = _verify_listed_completion_parts(
+                    expected=completion_parts,
+                    listed=listed_parts,
+                    checksum_mode=self.checksum_mode,
+                )
 
         completion_result: CompletedMultipartUpload | None = None
         if not multipart_missing:
@@ -590,10 +618,15 @@ class UploadSessionService:
 
         identity_verified = _object_identity_matches(snapshot=snapshot, head=head)
         try:
-            detected_media_type, transport_checksum = await self._validate_completed_object(
+            (
+                detected_media_type,
+                transport_checksum,
+                content_sha256_verified_at,
+            ) = await self._validate_completed_object(
                 snapshot=snapshot,
                 head=head,
                 completion_result=completion_result,
+                expected_parts=expected_parts,
             )
         except (DocumentEnvelopeViolation, UploadCompletionVerificationFailed) as error:
             marked_failed = await self._mark_invalid_completion(
@@ -616,6 +649,7 @@ class UploadSessionService:
             head=head,
             detected_media_type=detected_media_type,
             transport_checksum=transport_checksum,
+            content_sha256_verified_at=content_sha256_verified_at,
             cleanup_claim_token=cleanup_claim_token,
         )
         return ReconcileStaleCompletionResult(
@@ -682,12 +716,23 @@ class UploadSessionService:
         snapshot: _UploadSessionSnapshot,
         head: ObjectHead,
         completion_result: CompletedMultipartUpload | None,
-    ) -> tuple[str, str]:
-        transport_checksum = _validate_completed_head(
-            snapshot=snapshot,
-            head=head,
-            completion_result=completion_result,
-        )
+        expected_parts: Sequence[UploadPart],
+    ) -> tuple[str, str | None, datetime | None]:
+        content_sha256_verified_at: datetime | None = None
+        if self.uses_readback_checksum_verification:
+            await self._verify_readback_content(
+                snapshot=snapshot,
+                head=head,
+                expected_parts=expected_parts,
+            )
+            transport_checksum = None
+            content_sha256_verified_at = self.clock()
+        else:
+            transport_checksum = _validate_completed_head(
+                snapshot=snapshot,
+                head=head,
+                completion_result=completion_result,
+            )
         envelope = await validate_document_envelope(
             object_store=self.object_store,
             bucket=self.documents_bucket,
@@ -696,7 +741,57 @@ class UploadSessionService:
             extension=snapshot.extension,
             settings=self.settings,
         )
-        return envelope.detected_media_type, transport_checksum
+        return envelope.detected_media_type, transport_checksum, content_sha256_verified_at
+
+    async def _verify_readback_content(
+        self,
+        *,
+        snapshot: _UploadSessionSnapshot,
+        head: ObjectHead,
+        expected_parts: Sequence[UploadPart],
+    ) -> None:
+        if (
+            head.size_bytes != snapshot.size_bytes
+            or not _object_identity_matches(snapshot=snapshot, head=head)
+            or len(expected_parts) != snapshot.expected_part_count
+        ):
+            raise UploadCompletionVerificationFailed()
+
+        whole_hasher = hashlib.sha256()
+        expected_numbers = list(range(1, snapshot.expected_part_count + 1))
+        if [part.part_number for part in expected_parts] != expected_numbers:
+            raise UploadCompletionVerificationFailed()
+        for expected_part in expected_parts:
+            expected_size = calculate_expected_part_size(
+                size_bytes=snapshot.size_bytes,
+                part_size_bytes=snapshot.part_size_bytes,
+                expected_part_count=snapshot.expected_part_count,
+                part_number=expected_part.part_number,
+            )
+            part_hasher = hashlib.sha256()
+            part_start = snapshot.part_size_bytes * (expected_part.part_number - 1)
+            remaining = expected_size
+            offset = part_start
+            while remaining:
+                length = min(READBACK_HASH_CHUNK_BYTES, remaining)
+                chunk = await self.object_store.get_range(
+                    bucket=self.documents_bucket,
+                    key=snapshot.object_key,
+                    start=offset,
+                    end_inclusive=offset + length - 1,
+                )
+                if len(chunk) != length:
+                    raise UploadCompletionVerificationFailed()
+                part_hasher.update(chunk)
+                whole_hasher.update(chunk)
+                offset += length
+                remaining -= length
+            actual_part_checksum = base64.b64encode(part_hasher.digest()).decode("ascii")
+            if actual_part_checksum != expected_part.expected_checksum_sha256:
+                raise UploadCompletionVerificationFailed()
+
+        if whole_hasher.hexdigest() != snapshot.declared_sha256:
+            raise UploadCompletionVerificationFailed()
 
     async def abort(
         self,
@@ -963,7 +1058,8 @@ class UploadSessionService:
         snapshot: _UploadSessionSnapshot,
         head: ObjectHead,
         detected_media_type: str,
-        transport_checksum: str,
+        transport_checksum: str | None,
+        content_sha256_verified_at: datetime | None,
         cleanup_claim_token: UUID | None = None,
     ) -> CompleteUploadSessionResult:
         session_factory = self._session_factory()
@@ -1024,7 +1120,7 @@ class UploadSessionService:
                         detected_media_type=detected_media_type,
                         size_bytes=head.size_bytes,
                         declared_sha256=upload_session.declared_sha256,
-                        content_sha256_verified_at=None,
+                        content_sha256_verified_at=content_sha256_verified_at,
                         transport_checksum_sha256=transport_checksum,
                         created_by=upload_session.actor_id,
                     )
@@ -1393,6 +1489,7 @@ def _verify_listed_completion_parts(
     *,
     expected: Sequence[UploadedPart],
     listed: Sequence[UploadedPart],
+    checksum_mode: ObjectStoreChecksumMode,
 ) -> tuple[UploadedPart, ...]:
     if len(listed) != len(expected):
         raise UploadCompletionVerificationFailed()
@@ -1401,10 +1498,69 @@ def _verify_listed_completion_parts(
             listed_part.part_number != expected_part.part_number
             or listed_part.size_bytes != expected_part.size_bytes
             or listed_part.etag != expected_part.etag
-            or listed_part.checksum_sha256_b64 != expected_part.checksum_sha256_b64
+            or (
+                listed_part.checksum_sha256_b64 is None
+                and checksum_mode is ObjectStoreChecksumMode.NATIVE_SHA256
+            )
+            or (
+                listed_part.checksum_sha256_b64 is not None
+                and listed_part.checksum_sha256_b64 != expected_part.checksum_sha256_b64
+            )
         ):
             raise UploadCompletionVerificationFailed()
+    if checksum_mode is ObjectStoreChecksumMode.READBACK_SHA256:
+        return tuple(
+            UploadedPart(
+                part_number=part.part_number,
+                size_bytes=part.size_bytes,
+                etag=part.etag,
+                checksum_sha256_b64=None,
+            )
+            for part in expected
+        )
     return tuple(listed)
+
+
+def _prepare_readback_completion_parts(
+    *,
+    snapshot: _UploadSessionSnapshot,
+    expected_parts: Sequence[UploadPart],
+    listed_parts: Sequence[UploadedPart],
+) -> tuple[UploadedPart, ...]:
+    expected_numbers = list(range(1, snapshot.expected_part_count + 1))
+    if (
+        len(expected_parts) != snapshot.expected_part_count
+        or [part.part_number for part in expected_parts] != expected_numbers
+        or len(listed_parts) != snapshot.expected_part_count
+        or [part.part_number for part in listed_parts] != expected_numbers
+    ):
+        raise UploadCompletionVerificationFailed()
+    completed: list[UploadedPart] = []
+    for expected_part, listed_part in zip(expected_parts, listed_parts, strict=True):
+        expected_size = calculate_expected_part_size(
+            size_bytes=snapshot.size_bytes,
+            part_size_bytes=snapshot.part_size_bytes,
+            expected_part_count=snapshot.expected_part_count,
+            part_number=listed_part.part_number,
+        )
+        if (
+            listed_part.size_bytes != expected_size
+            or not listed_part.etag
+            or (
+                listed_part.checksum_sha256_b64 is not None
+                and listed_part.checksum_sha256_b64 != expected_part.expected_checksum_sha256
+            )
+        ):
+            raise UploadCompletionVerificationFailed()
+        completed.append(
+            UploadedPart(
+                part_number=listed_part.part_number,
+                size_bytes=listed_part.size_bytes,
+                etag=listed_part.etag,
+                checksum_sha256_b64=None,
+            )
+        )
+    return tuple(completed)
 
 
 def _required_upload_id(snapshot: _UploadSessionSnapshot) -> str:

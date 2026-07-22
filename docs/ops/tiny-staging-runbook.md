@@ -127,6 +127,16 @@ make the hostname resolve. Verify a real multipart PUT and follow-up HEAD with
 scoped credentials before dispatching staging. Workload access remains blocked
 until a separately scoped R2 API token is created for these buckets.
 
+R2 staging must use `OBJECT_STORE__MULTIPART_CHECKSUM_MODE=readback_sha256`.
+Cloudflare R2 currently rejects the SHA-256 transport checksum fields on
+`UploadPart`/`CompleteMultipartUpload` (HTTP 501). In readback mode the client
+still submits the expected SHA-256 values to the API, while the service completes
+the ordinary S3 multipart request and reads each completed range back before it
+creates a `DocumentVersion`. This adds one bounded read per part and deliberately
+does not claim a provider transport checksum. Native S3/MinIO deployments may
+continue using `native_sha256`. Never treat an incomplete R2 multipart ETag as a
+verified SHA-256 value.
+
 ## GitHub configuration
 
 The private `staging` Environment now exists. Its deployment profile, public
@@ -162,8 +172,9 @@ VITE_OBJECT_STORE_ORIGINS=https://2741446a7478f2d8a5ff31df7e077f17.r2.cloudflare
 The deploy workflow fixes `MODEL__PROVIDER=openai_compatible`; the deterministic
 test provider is intentionally forbidden in staging. It reads
 `STAGING_MODEL_BASE_URL` and `STAGING_MODEL_NAME` from the protected `staging`
-Environment rather than adding more manual inputs, because the workflow
-already uses GitHub's ten-input `workflow_dispatch` limit. Configure them only
+Environment rather than adding more manual inputs. The checksum mode is an
+explicit additional dispatch input, so the workflow currently has eleven inputs.
+Configure them only
 after the gateway contract is known:
 
 ```bash
@@ -348,6 +359,7 @@ WEB_DIGEST=sha256:<64-hex>
 STAGING_BASE_URL=https://agent.playlab.eu.cc
 OBJECT_STORE_ENDPOINT=https://<account>.r2.cloudflarestorage.com
 OBJECT_STORE_PRESIGN_ENDPOINT="$OBJECT_STORE_ENDPOINT"
+OBJECT_STORE_CHECKSUM_MODE=readback_sha256
 TLS_SECRET_NAME=enterprise-doc-staging-tls
 WEB_OBJECT_STORE_ORIGINS="$OBJECT_STORE_PRESIGN_ENDPOINT"
 DATABASE_EGRESS_CIDR=<comma-separated-reviewed-public-db-/32-list>
@@ -358,7 +370,7 @@ ROLLBACK_WORKER_IMAGE=${ROLLBACK_WORKER_IMAGE:-}
 ROLLBACK_CONSUMER_IMAGE=${ROLLBACK_CONSUMER_IMAGE:-}
 ROLLBACK_WEB_IMAGE=${ROLLBACK_WEB_IMAGE:-}
 
-pushd infra/k8s/overlays/staging
+pushd "infra/k8s/overlays/$PROFILE"
 kustomize edit set image enterprise-doc/api="$REGISTRY_PREFIX/enterprise-doc-api@$API_DIGEST"
 kustomize edit set image enterprise-doc/worker="$REGISTRY_PREFIX/enterprise-doc-worker@$WORKER_DIGEST"
 kustomize edit set image enterprise-doc/consumer="$REGISTRY_PREFIX/enterprise-doc-consumer@$CONSUMER_DIGEST"
@@ -374,6 +386,7 @@ python scripts/configure_staging_manifest.py \
   --staging-base-url "$STAGING_BASE_URL" \
   --object-store-endpoint "$OBJECT_STORE_ENDPOINT" \
   --object-store-presign-endpoint "$OBJECT_STORE_PRESIGN_ENDPOINT" \
+  --object-store-checksum-mode "$OBJECT_STORE_CHECKSUM_MODE" \
   --tls-secret-name "$TLS_SECRET_NAME" \
   --web-object-store-origins "$WEB_OBJECT_STORE_ORIGINS" \
   --database-egress-cidr "$DATABASE_EGRESS_CIDR" \

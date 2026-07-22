@@ -7,7 +7,7 @@ from typing import Any
 
 import pytest
 
-from enterprise_doc_core.config import ObjectStoreSettings
+from enterprise_doc_core.config import ObjectStoreChecksumMode, ObjectStoreSettings
 from enterprise_doc_core.object_store import (
     Boto3ArtifactObjectStore,
     ObjectStoreChecksumMismatch,
@@ -17,11 +17,12 @@ from enterprise_doc_core.telemetry import MetricsRuntime
 
 
 class RecordingArtifactClient:
-    def __init__(self) -> None:
+    def __init__(self, *, include_checksum: bool = True) -> None:
         self.calls: list[tuple[str, dict[str, Any], int]] = []
         self.body = b""
         self.metadata: dict[str, str] = {}
         self.content_type = "application/json"
+        self.include_checksum = include_checksum
         self.closed = 0
 
     def _record(self, name: str, kwargs: dict[str, Any]) -> None:
@@ -37,12 +38,21 @@ class RecordingArtifactClient:
     def head_object(self, **kwargs: Any) -> dict[str, Any]:
         self._record("head_object", kwargs)
         checksum = base64.b64encode(hashlib.sha256(self.body).digest()).decode("ascii")
-        return {
+        response = {
             "ContentLength": len(self.body),
             "ETag": '"artifact"',
-            "ChecksumSHA256": checksum,
             "ContentType": self.content_type,
             "Metadata": self.metadata,
+        }
+        if self.include_checksum:
+            response["ChecksumSHA256"] = checksum
+        return response
+
+    def get_object(self, **kwargs: Any) -> dict[str, Any]:
+        self._record("get_object", kwargs)
+        return {
+            "Body": _ArtifactBody(self.body),
+            "ContentLength": len(self.body),
         }
 
     def delete_object(self, **kwargs: Any) -> dict[str, Any]:
@@ -55,6 +65,18 @@ class RecordingArtifactClient:
 
     def close(self) -> None:
         self.closed += 1
+
+
+class _ArtifactBody:
+    def __init__(self, content: bytes) -> None:
+        self.content = content
+        self.closed = False
+
+    def read(self, _: int) -> bytes:
+        return self.content
+
+    def close(self) -> None:
+        self.closed = True
 
 
 async def test_artifact_adapter_puts_with_checksum_and_heads_after_write() -> None:
@@ -84,6 +106,31 @@ async def test_artifact_adapter_puts_with_checksum_and_heads_after_write() -> No
     assert control.calls[0][1]["Metadata"]["sha256"] == result.content_sha256
     assert control.calls[0][2] != event_loop_thread
     assert control.calls[1][0] == "head_object"
+
+
+async def test_artifact_readback_mode_avoids_transport_checksum_and_hashes_body() -> None:
+    control = RecordingArtifactClient(include_checksum=False)
+    adapter = Boto3ArtifactObjectStore(
+        settings=ObjectStoreSettings(
+            multipart_checksum_mode=ObjectStoreChecksumMode.READBACK_SHA256
+        ),
+        control_client=control,
+        presign_client=RecordingArtifactClient(),
+    )
+
+    await adapter.put_object(
+        bucket="artifacts",
+        key="tenant/run/answer.json",
+        body=b"{}",
+        content_type="application/json",
+    )
+
+    put_call = next(call for call in control.calls if call[0] == "put_object")
+    head_call = next(call for call in control.calls if call[0] == "head_object")
+    read_call = next(call for call in control.calls if call[0] == "get_object")
+    assert "ChecksumSHA256" not in put_call[1]
+    assert "ChecksumMode" not in head_call[1]
+    assert read_call[1] == {"Bucket": "artifacts", "Key": "tenant/run/answer.json"}
 
 
 async def test_artifact_adapter_caps_get_ttl_and_deletes_without_logging_body() -> None:

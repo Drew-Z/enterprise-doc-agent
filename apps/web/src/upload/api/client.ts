@@ -182,7 +182,11 @@ export class UploadApiClient {
     const checksumHeaders = Object.entries(response.headers).filter(
       ([name]) => name.toLowerCase() === "x-amz-checksum-sha256",
     );
-    if (checksumHeaders.length !== 1 || checksumHeaders[0]?.[1] !== request.checksumSha256) {
+    const usesReadbackVerification = checksumHeaders.length === 0 && Object.keys(response.headers).length === 0;
+    if (
+      !usesReadbackVerification &&
+      (checksumHeaders.length !== 1 || checksumHeaders[0]?.[1] !== request.checksumSha256)
+    ) {
       throw new UploadApiProtocolError("Presigned upload response has invalid checksum headers.");
     }
     return response;

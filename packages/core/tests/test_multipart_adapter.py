@@ -9,7 +9,7 @@ from typing import Any
 import pytest
 from botocore.exceptions import ClientError
 
-from enterprise_doc_core.config import ObjectStoreSettings
+from enterprise_doc_core.config import ObjectStoreChecksumMode, ObjectStoreSettings
 from enterprise_doc_core.object_store import (
     Boto3MultipartObjectStore,
     ObjectStoreNotFound,
@@ -148,6 +148,70 @@ async def test_adapter_offloads_create_and_checksum_bound_presign() -> None:
     assert presign_call[1]["HttpMethod"] == "PUT"
     assert signed.headers == {"x-amz-checksum-sha256": _checksum()}
     assert signed.expires_in_seconds == 120
+
+
+async def test_readback_adapter_omits_unsupported_r2_checksum_fields() -> None:
+    control = RecordingS3Client()
+    presign = RecordingS3Client()
+    control.list_part_pages = [
+        {
+            "IsTruncated": False,
+            "Parts": [
+                {"PartNumber": 1, "Size": 5, "ETag": '"one"'},
+                {"PartNumber": 2, "Size": 3, "ETag": '"two"'},
+            ],
+        }
+    ]
+    adapter = Boto3MultipartObjectStore(
+        settings=ObjectStoreSettings(
+            multipart_checksum_mode=ObjectStoreChecksumMode.READBACK_SHA256
+        ),
+        control_client=control,
+        presign_client=presign,
+    )
+
+    upload_id = await adapter.create_upload(
+        bucket="documents",
+        key="m1/uploads/random",
+        metadata={"contract": "m1"},
+    )
+    signed = await adapter.presign_upload_part(
+        bucket="documents",
+        key="m1/uploads/random",
+        upload_id=upload_id,
+        part_number=1,
+        checksum_sha256_b64=_checksum(),
+        expires_in_seconds=120,
+    )
+    parts = await adapter.list_parts(
+        bucket="documents",
+        key="m1/uploads/random",
+        upload_id=upload_id,
+    )
+    await adapter.complete_upload(
+        bucket="documents",
+        key="m1/uploads/random",
+        upload_id=upload_id,
+        parts=(
+            UploadedPart(1, 5, '"one"', _checksum(b"one")),
+            UploadedPart(2, 3, '"two"', _checksum(b"two")),
+        ),
+    )
+    await adapter.head_object(bucket="documents", key="m1/uploads/random")
+
+    create_call = next(call for call in control.calls if call[0] == "create_multipart_upload")
+    assert "ChecksumAlgorithm" not in create_call[1]
+    presign_call = next(call for call in presign.calls if call[0] == "generate_presigned_url")
+    assert "ChecksumSHA256" not in presign_call[1]["Params"]
+    assert signed.headers == {}
+    assert [part.checksum_sha256_b64 for part in parts] == [None, None]
+    complete_call = next(call for call in control.calls if call[0] == "complete_multipart_upload")
+    assert complete_call[1]["MultipartUpload"]["Parts"] == [
+        {"PartNumber": 1, "ETag": '"one"'},
+        {"PartNumber": 2, "ETag": '"two"'},
+    ]
+    head_call = next(call for call in control.calls if call[0] == "head_object")
+    assert "ChecksumMode" not in head_call[1]
 
 
 async def test_adapter_caps_and_validates_requested_presign_ttl() -> None:

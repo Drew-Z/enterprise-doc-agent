@@ -23,6 +23,8 @@ def create_s3_client(
         config=Config(
             signature_version="s3v4",
             s3={"addressing_style": "path"},
+            request_checksum_calculation="when_required",
+            response_checksum_validation="when_required",
             connect_timeout=settings.connect_timeout_seconds,
             read_timeout=settings.read_timeout_seconds,
             max_pool_connections=settings.max_pool_connections,

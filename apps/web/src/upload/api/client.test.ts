@@ -189,11 +189,28 @@ describe("UploadApiClient", () => {
     ).resolves.toMatchObject({ headers: { "x-extra-signed": "value" } });
   });
 
+  it("accepts an empty header set for server-side readback verification", async () => {
+    const fetcher = vi.fn().mockResolvedValue(
+      jsonResponse(200, {
+        partNumber: 1,
+        sizeBytes: 5,
+        checksumSha256: checksum,
+        url: "http://127.0.0.1:9000/bucket/key?signature=secret",
+        headers: {},
+        expiresInSeconds: 300,
+      }),
+    );
+    const client = new UploadApiClient({ ...objectStoreOptions, getToken: () => "token", fetcher });
+    await expect(
+      client.presignPart(sessionId, 1, { sizeBytes: 5, checksumSha256: checksum }),
+    ).resolves.toMatchObject({ headers: {} });
+  });
+
   it.each([
     ["part number", { partNumber: 2 }],
     ["size", { sizeBytes: 4 }],
     ["checksum", { checksumSha256: btoa(String.fromCharCode(...new Uint8Array(32).fill(1))) }],
-    ["missing checksum header", { headers: {} }],
+    ["non-checksum header without checksum mode", { headers: { "x-extra-signed": "value" } }],
     ["wrong checksum header", { headers: { "x-amz-checksum-sha256": "wrong" } }],
     [
       "duplicate checksum header",

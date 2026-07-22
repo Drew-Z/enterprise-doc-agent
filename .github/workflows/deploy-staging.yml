@@ -19,6 +19,14 @@ on:
         description: "Public HTTPS object-store endpoint used by presigned browser uploads"
         required: true
         type: string
+      object_store_checksum_mode:
+        description: "Multipart integrity mode supported by the selected object store"
+        required: true
+        default: native_sha256
+        type: choice
+        options:
+          - native_sha256
+          - readback_sha256
       tls_secret_name:
         description: "Pre-provisioned Kubernetes TLS Secret for the staging Ingress"
         required: true
@@ -211,7 +219,7 @@ jobs:
             tiny-single-node|staging) ;;
             *) echo 'unsupported deployment profile' >&2; exit 1 ;;
           esac
-          IMAGE_BINDING_OVERLAY="infra/k8s/overlays/staging"
+          IMAGE_BINDING_OVERLAY="infra/k8s/overlays/${DEPLOYMENT_PROFILE}"
           printf '%s' "$REGISTRY_PREFIX" | grep -Eq '^[a-z0-9.-]+(:[0-9]{1,5})?(/[a-z0-9][a-z0-9._-]*)+$'
           case "$REGISTRY_PREFIX" in
             localhost*|127.*|\[::1\]*) echo 'registry_prefix must not target loopback' >&2; exit 1 ;;
@@ -230,6 +238,7 @@ jobs:
           STAGING_BASE_URL: ${{ inputs.staging_base_url }}
           OBJECT_STORE_ENDPOINT: ${{ inputs.object_store_endpoint }}
           OBJECT_STORE_PRESIGN_ENDPOINT: ${{ inputs.object_store_presign_endpoint }}
+          OBJECT_STORE_CHECKSUM_MODE: ${{ inputs.object_store_checksum_mode }}
           TLS_SECRET_NAME: ${{ inputs.tls_secret_name }}
           VITE_OBJECT_STORE_ORIGINS: ${{ vars.VITE_OBJECT_STORE_ORIGINS }}
           DATABASE_EGRESS_CIDR: ${{ vars.STAGING_DATABASE_EGRESS_CIDRS || vars.STAGING_DATABASE_EGRESS_CIDR }}
@@ -257,6 +266,7 @@ jobs:
             --staging-base-url "$STAGING_BASE_URL" \
             --object-store-endpoint "$OBJECT_STORE_ENDPOINT" \
             --object-store-presign-endpoint "$OBJECT_STORE_PRESIGN_ENDPOINT" \
+            --object-store-checksum-mode "$OBJECT_STORE_CHECKSUM_MODE" \
             --tls-secret-name "$TLS_SECRET_NAME" \
             --web-object-store-origins "$VITE_OBJECT_STORE_ORIGINS" \
             --database-egress-cidr "$DATABASE_EGRESS_CIDR" \

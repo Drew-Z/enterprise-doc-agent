@@ -5,11 +5,11 @@ import base64
 import hashlib
 import re
 from collections.abc import Mapping
-from typing import Any, Protocol
+from typing import Any, Protocol, cast
 
 from botocore.exceptions import BotoCoreError, ClientError
 
-from enterprise_doc_core.config import ObjectStoreSettings
+from enterprise_doc_core.config import ObjectStoreChecksumMode, ObjectStoreSettings
 from enterprise_doc_core.object_store.client import create_s3_client
 from enterprise_doc_core.object_store.errors import (
     ObjectStoreChecksumMismatch,
@@ -24,6 +24,12 @@ from enterprise_doc_core.object_store.models import (
     PresignedObjectDownload,
 )
 from enterprise_doc_core.telemetry import MetricsRuntime
+
+
+class _ReadableBody(Protocol):
+    def read(self, amount: int) -> bytes: ...
+
+    def close(self) -> None: ...
 
 
 class ArtifactObjectStore(Protocol):
@@ -100,15 +106,16 @@ class Boto3ArtifactObjectStore:
         if "sha256" in normalized_metadata:
             raise ObjectStoreProtocolError()
         normalized_metadata = {"sha256": content_sha256, **normalized_metadata}
-        await self._call(
-            self.control_client.put_object,
-            Bucket=bucket,
-            Key=key,
-            Body=body,
-            ContentType=content_type,
-            Metadata=normalized_metadata,
-            ChecksumSHA256=checksum_b64,
-        )
+        parameters: dict[str, Any] = {
+            "Bucket": bucket,
+            "Key": key,
+            "Body": body,
+            "ContentType": content_type,
+            "Metadata": normalized_metadata,
+        }
+        if self.settings.multipart_checksum_mode is ObjectStoreChecksumMode.NATIVE_SHA256:
+            parameters["ChecksumSHA256"] = checksum_b64
+        await self._call(self.control_client.put_object, **parameters)
         head = await self._head_object(bucket=bucket, key=key)
         if head.size_bytes != len(body):
             raise ObjectStoreChecksumMismatch()
@@ -117,6 +124,14 @@ class Boto3ArtifactObjectStore:
             raise ObjectStoreChecksumMismatch()
         if head.checksum_sha256_b64 is not None and head.checksum_sha256_b64 != checksum_b64:
             raise ObjectStoreChecksumMismatch()
+        if self.settings.multipart_checksum_mode is ObjectStoreChecksumMode.READBACK_SHA256:
+            actual_body = await self._read_object_body(
+                bucket=bucket,
+                key=key,
+                expected_size=len(body),
+            )
+            if hashlib.sha256(actual_body).hexdigest() != content_sha256:
+                raise ObjectStoreChecksumMismatch()
         return ArtifactObject(
             bucket=bucket,
             key=key,
@@ -132,12 +147,13 @@ class Boto3ArtifactObjectStore:
 
     async def _head_object(self, *, bucket: str, key: str) -> ObjectHead:
         _validate_location(bucket=bucket, key=key)
+        parameters: dict[str, Any] = {"Bucket": bucket, "Key": key}
+        if self.settings.multipart_checksum_mode is ObjectStoreChecksumMode.NATIVE_SHA256:
+            parameters["ChecksumMode"] = "ENABLED"
         response = _require_mapping(
             await self._call(
                 self.control_client.head_object,
-                Bucket=bucket,
-                Key=key,
-                ChecksumMode="ENABLED",
+                **parameters,
             )
         )
         checksum = response.get("ChecksumSHA256")
@@ -156,6 +172,27 @@ class Boto3ArtifactObjectStore:
             content_type=content_type,
             metadata={str(name): str(value) for name, value in metadata.items()},
         )
+
+    async def _read_object_body(self, *, bucket: str, key: str, expected_size: int) -> bytes:
+        def read_body() -> bytes:
+            response = _require_mapping(self.control_client.get_object(Bucket=bucket, Key=key))
+            raw_body = response.get("Body")
+            if not callable(getattr(raw_body, "read", None)) or not callable(
+                getattr(raw_body, "close", None)
+            ):
+                raise ObjectStoreProtocolError()
+            body = cast(_ReadableBody, raw_body)
+            try:
+                if _require_int(response, "ContentLength") != expected_size:
+                    raise ObjectStoreChecksumMismatch()
+                content = body.read(expected_size + 1)
+            finally:
+                body.close()
+            if not isinstance(content, bytes) or len(content) != expected_size:
+                raise ObjectStoreChecksumMismatch()
+            return content
+
+        return cast(bytes, await self._call(read_body))
 
     @instrument_object_store_operation("write")
     async def delete_object(self, *, bucket: str, key: str) -> None:

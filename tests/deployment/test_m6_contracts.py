@@ -625,7 +625,14 @@ def test_staging_model_routing_uses_environment_variables_within_dispatch_limit(
     assert isinstance(dispatch, dict)
     inputs = dispatch["inputs"]
     assert isinstance(inputs, dict)
-    assert len(inputs) == 10
+    assert len(inputs) == 11
+    assert inputs["object_store_checksum_mode"] == {
+        "description": "Multipart integrity mode supported by the selected object store",
+        "required": True,
+        "default": "native_sha256",
+        "type": "choice",
+        "options": ["native_sha256", "readback_sha256"],
+    }
     assert not {"model_provider", "model_base_url", "model_name"} & inputs.keys()
 
     expected_env = {
@@ -660,6 +667,9 @@ def test_tiny_staging_runbook_keeps_r2_presign_on_the_s3_api_surface() -> None:
     assert "use the account S3 endpoint for both" in runbook
     assert "public object-access surface" in runbook
     assert "not a substitute for the S3" in runbook
+    assert "OBJECT_STORE__MULTIPART_CHECKSUM_MODE=readback_sha256" in runbook
+    assert "HTTP 501" in runbook
+    assert 'pushd "infra/k8s/overlays/$PROFILE"' in runbook
     assert "Do not dispatch with the `v0.1.1` Web digest" in runbook
 
 
@@ -754,7 +764,7 @@ def test_tiny_overlay_binds_exact_images_through_the_staging_parent(tmp_path: Pa
     assert "registry.example.invalid" not in rendered.stdout
 
     deploy = (ROOT / ".github/workflows/deploy-staging.yml").read_text(encoding="utf-8")
-    assert 'IMAGE_BINDING_OVERLAY="infra/k8s/overlays/staging"' in deploy
+    assert 'IMAGE_BINDING_OVERLAY="infra/k8s/overlays/${DEPLOYMENT_PROFILE}"' in deploy
     assert 'cd "$IMAGE_BINDING_OVERLAY"' in deploy
 
 

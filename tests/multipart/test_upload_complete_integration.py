@@ -16,6 +16,7 @@ from sqlalchemy import delete, func, select, update
 
 from enterprise_doc_api.app import create_app
 from enterprise_doc_api.config import ApiSettings
+from enterprise_doc_core.config import ObjectStoreChecksumMode
 from enterprise_doc_core.context import PrincipalContext
 from enterprise_doc_core.db import create_database_engine, create_session_factory
 from enterprise_doc_core.documents import (
@@ -105,6 +106,8 @@ class CompletionObjectStore:
         self.head_size_bytes = len(seeded.content)
         self.head_etag = self.object_etag
         self.head_checksum: str | None = self.transport_checksum
+        self.readback_content = seeded.content
+        self.completed_parts: tuple[UploadedPart, ...] | None = None
 
     async def list_parts(self, **_: object) -> tuple[UploadedPart, ...]:
         self.list_calls += 1
@@ -112,8 +115,11 @@ class CompletionObjectStore:
             raise MultipartUploadNotFound()
         return self.listed_parts
 
-    async def complete_upload(self, **_: object) -> CompletedMultipartUpload:
+    async def complete_upload(self, **kwargs: object) -> CompletedMultipartUpload:
         self.complete_calls += 1
+        parts = kwargs.get("parts")
+        assert isinstance(parts, tuple)
+        self.completed_parts = parts
         if not self.multipart_exists:
             raise MultipartUploadNotFound()
         self.multipart_exists = False
@@ -142,7 +148,7 @@ class CompletionObjectStore:
         end_inclusive: int,
         **_: object,
     ) -> bytes:
-        return self.seeded.content[start : end_inclusive + 1]
+        return self.readback_content[start : end_inclusive + 1]
 
     async def delete_object(self, **_: object) -> None:
         self.delete_calls += 1
@@ -654,6 +660,96 @@ async def test_completion_validates_ordered_parts_before_completing() -> None:
             assert upload_session.reserved_bytes == len(seeded.content)
             assert tenant.reserved_storage_bytes == len(seeded.content)
             assert tenant.used_storage_bytes == 0
+    finally:
+        await _cleanup_seeded(session_factory, seeded)
+        await engine.dispose()
+
+
+@pytest.mark.integration
+async def test_readback_completion_verifies_parts_and_persists_content_hash_timestamp() -> None:
+    settings = ApiSettings(_env_file=None)
+    engine = create_database_engine(settings.database)
+    session_factory = create_session_factory(engine)
+    seeded = await _seed_upload(session_factory, content=b"%PDF-1.7")
+    store = CompletionObjectStore(seeded)
+    store.listed_parts = tuple(
+        UploadedPart(part.part_number, part.size_bytes, part.etag, None) for part in seeded.parts
+    )
+    store.head_checksum = None
+    store.transport_checksum = None
+    service = UploadSessionService(
+        session_factory=session_factory,
+        object_store=store,
+        documents_bucket=settings.object_store.documents_bucket,
+        settings=settings.upload,
+        checksum_mode=ObjectStoreChecksumMode.READBACK_SHA256,
+    )
+
+    try:
+        result = await service.complete(
+            principal=seeded.principal.context,
+            session_id=seeded.session_id,
+            request=_completion_request(seeded.parts),
+        )
+
+        assert result.replayed is False
+        assert store.completed_parts is not None
+        assert all(part.checksum_sha256_b64 is None for part in store.completed_parts)
+        assert store.head_checksum is None
+        async with session_factory() as database:
+            version = await database.get(DocumentVersion, seeded.pending_version_id)
+            assert version is not None
+            assert version.content_sha256_verified_at is not None
+            assert version.transport_checksum_sha256 is None
+            assert version.status == DocumentVersionStatus.UPLOADED.value
+    finally:
+        await _cleanup_seeded(session_factory, seeded)
+        await engine.dispose()
+
+
+@pytest.mark.integration
+async def test_readback_completion_rejects_changed_object_and_deletes_it() -> None:
+    settings = ApiSettings(_env_file=None)
+    engine = create_database_engine(settings.database)
+    session_factory = create_session_factory(engine)
+    seeded = await _seed_upload(session_factory, content=b"%PDF-1.7")
+    store = CompletionObjectStore(seeded)
+    store.listed_parts = tuple(
+        UploadedPart(part.part_number, part.size_bytes, part.etag, None) for part in seeded.parts
+    )
+    store.head_checksum = None
+    store.transport_checksum = None
+    store.readback_content = b"%PDF-1.8"
+    service = UploadSessionService(
+        session_factory=session_factory,
+        object_store=store,
+        documents_bucket=settings.object_store.documents_bucket,
+        settings=settings.upload,
+        checksum_mode=ObjectStoreChecksumMode.READBACK_SHA256,
+    )
+
+    try:
+        with pytest.raises(UploadCompletionVerificationFailed):
+            await service.complete(
+                principal=seeded.principal.context,
+                session_id=seeded.session_id,
+                request=_completion_request(seeded.parts),
+            )
+
+        assert store.delete_calls == 1
+        async with session_factory() as database:
+            upload_session = await database.get(UploadSession, seeded.session_id)
+            assert upload_session is not None
+            assert upload_session.status == UploadSessionStatus.FAILED.value
+            assert upload_session.reserved_bytes == 0
+            assert (
+                await database.scalar(
+                    select(func.count(DocumentVersion.id)).where(
+                        DocumentVersion.upload_session_id == seeded.session_id
+                    )
+                )
+                == 0
+            )
     finally:
         await _cleanup_seeded(session_factory, seeded)
         await engine.dispose()

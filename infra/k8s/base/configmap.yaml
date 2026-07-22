@@ -11,6 +11,7 @@ data:
   OBJECT_STORE__DOCUMENTS_BUCKET: documents
   OBJECT_STORE__ARTIFACTS_BUCKET: artifacts
   OBJECT_STORE__SECURE: "false"
+  OBJECT_STORE__MULTIPART_CHECKSUM_MODE: native_sha256
   # Enable only after a reviewed collector or managed OTLP endpoint is provisioned.
   OTEL__ENABLED: "false"
   OTEL__EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318

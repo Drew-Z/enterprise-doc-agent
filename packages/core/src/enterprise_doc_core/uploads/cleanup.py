@@ -10,7 +10,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import Select, and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from enterprise_doc_core.config import UploadSettings
+from enterprise_doc_core.config import ObjectStoreChecksumMode, UploadSettings
 from enterprise_doc_core.documents import DocumentVersion
 from enterprise_doc_core.identity import Tenant
 from enterprise_doc_core.object_store import (
@@ -167,6 +167,7 @@ class UploadCleanupService:
         documents_bucket: str,
         settings: UploadSettings | None = None,
         clock: Callable[[], datetime] | None = None,
+        checksum_mode: ObjectStoreChecksumMode = ObjectStoreChecksumMode.NATIVE_SHA256,
     ) -> None:
         self.session_factory = session_factory
         self.object_store = object_store
@@ -179,6 +180,7 @@ class UploadCleanupService:
             documents_bucket=documents_bucket,
             settings=self.settings,
             clock=self.clock,
+            checksum_mode=checksum_mode,
         )
 
     async def run(self, *, dry_run: bool = False) -> UploadCleanupReport:

@@ -20,6 +20,11 @@ class ModelProvider(StrEnum):
     OPENAI_COMPATIBLE = "openai_compatible"
 
 
+class ObjectStoreChecksumMode(StrEnum):
+    NATIVE_SHA256 = "native_sha256"
+    READBACK_SHA256 = "readback_sha256"
+
+
 class DatabaseSettings(BaseModel):
     url: SecretStr = SecretStr(
         "postgresql+psycopg://enterprise_doc:enterprise_doc_local@127.0.0.1:5432/enterprise_doc"
@@ -45,6 +50,7 @@ class ObjectStoreSettings(BaseModel):
     read_timeout_seconds: float = Field(default=30.0, gt=0, le=300)
     max_pool_connections: int = Field(default=32, ge=1, le=256)
     presign_ttl_seconds: int = Field(default=900, ge=60, le=3600)
+    multipart_checksum_mode: ObjectStoreChecksumMode = ObjectStoreChecksumMode.NATIVE_SHA256
 
 
 class UploadSettings(BaseModel):

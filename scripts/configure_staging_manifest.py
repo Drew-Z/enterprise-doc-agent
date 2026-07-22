@@ -17,6 +17,7 @@ NAMESPACE_NAME = "enterprise-doc-agent-staging"
 INGRESS_NAME = "enterprise-doc-web"
 DATABASE_EGRESS_POLICY_NAME = "enterprise-doc-external-postgres-egress"
 MODEL_PROVIDER = "openai_compatible"
+OBJECT_STORE_CHECKSUM_MODES = {"native_sha256", "readback_sha256"}
 CONFIG_HASH_ANNOTATION = "enterprise-doc-agent/config-sha256"
 PREREQUISITE_HASH_ANNOTATION = "enterprise-doc-agent/prerequisites-sha256"
 APPROVAL_ANNOTATION_PREFIX = "enterprise-doc-agent/approved-"
@@ -101,6 +102,13 @@ def _model_name(value: str) -> str:
     normalized = value.strip()
     if not normalized or len(normalized) > 200:
         raise ValueError("model name must contain 1-200 characters")
+    return normalized
+
+
+def _object_store_checksum_mode(value: str) -> str:
+    normalized = value.strip()
+    if normalized not in OBJECT_STORE_CHECKSUM_MODES:
+        raise ValueError("object-store checksum mode is unsupported")
     return normalized
 
 
@@ -218,6 +226,7 @@ def configure_manifest(
     model_provider: str,
     model_base_url: str,
     model_name: str,
+    object_store_checksum_mode: str = "native_sha256",
     rollback_api_image: str | None = None,
     rollback_worker_image: str | None = None,
     rollback_consumer_image: str | None = None,
@@ -250,6 +259,7 @@ def configure_manifest(
         raise ValueError(f"model provider must be {MODEL_PROVIDER}")
     normalized_model_base_url = _model_base_url(model_base_url)
     normalized_model_name = _model_name(model_name)
+    normalized_checksum_mode = _object_store_checksum_mode(object_store_checksum_mode)
 
     documents = [
         document
@@ -265,6 +275,7 @@ def configure_manifest(
     data["OBJECT_STORE__ENDPOINT"] = object_store_endpoint
     data["OBJECT_STORE__PRESIGN_ENDPOINT"] = object_store_presign_endpoint
     data["OBJECT_STORE__SECURE"] = "true"
+    data["OBJECT_STORE__MULTIPART_CHECKSUM_MODE"] = normalized_checksum_mode
     data["MODEL__PROVIDER"] = MODEL_PROVIDER
     data["MODEL__BASE_URL"] = normalized_model_base_url
     data["MODEL__MODEL_NAME"] = normalized_model_name
@@ -399,6 +410,11 @@ def main() -> None:
     parser.add_argument("--staging-base-url", required=True)
     parser.add_argument("--object-store-endpoint", required=True)
     parser.add_argument("--object-store-presign-endpoint", required=True)
+    parser.add_argument(
+        "--object-store-checksum-mode",
+        choices=sorted(OBJECT_STORE_CHECKSUM_MODES),
+        default="native_sha256",
+    )
     parser.add_argument("--tls-secret-name", required=True)
     parser.add_argument("--web-object-store-origins", required=True)
     parser.add_argument("--database-egress-cidr", required=True)
@@ -416,6 +432,7 @@ def main() -> None:
         staging_base_url=args.staging_base_url,
         object_store_endpoint=args.object_store_endpoint,
         object_store_presign_endpoint=args.object_store_presign_endpoint,
+        object_store_checksum_mode=args.object_store_checksum_mode,
         tls_secret_name=args.tls_secret_name,
         web_object_store_origins=args.web_object_store_origins,
         database_egress_cidr=args.database_egress_cidr,

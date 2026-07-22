@@ -3,7 +3,12 @@ from __future__ import annotations
 import pytest
 from pydantic import SecretStr, ValidationError
 
-from enterprise_doc_core.config import AppEnvironment, FoundationSettings, ModelSettings
+from enterprise_doc_core.config import (
+    AppEnvironment,
+    FoundationSettings,
+    ModelSettings,
+    ObjectStoreChecksumMode,
+)
 
 
 def test_nested_environment_values_are_parsed(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -13,6 +18,7 @@ def test_nested_environment_values_are_parsed(monkeypatch: pytest.MonkeyPatch) -
     monkeypatch.setenv("OBJECT_STORE__ACCESS_KEY", "test-access")
     monkeypatch.setenv("OBJECT_STORE__SECRET_KEY", "test-secret")
     monkeypatch.setenv("OBJECT_STORE__ENDPOINT", "http://minio:9000")
+    monkeypatch.setenv("OBJECT_STORE__MULTIPART_CHECKSUM_MODE", "readback_sha256")
     monkeypatch.setenv("UPLOAD__MAX_FILE_SIZE_BYTES", "2147483648")
     monkeypatch.setenv("UPLOAD__PREFERRED_PART_SIZE_BYTES", "8388608")
     monkeypatch.setenv("UPLOAD__ENVELOPE_SAMPLE_BYTES", "8192")
@@ -29,6 +35,7 @@ def test_nested_environment_values_are_parsed(monkeypatch: pytest.MonkeyPatch) -
     assert settings.database.url.get_secret_value().endswith("@db/test")
     assert settings.redis.url.get_secret_value().endswith("@redis:6379/1")
     assert settings.object_store.secret_key.get_secret_value() == "test-secret"
+    assert settings.object_store.multipart_checksum_mode is ObjectStoreChecksumMode.READBACK_SHA256
     assert settings.upload.max_file_size_bytes == 2 * 1024**3
     assert settings.upload.preferred_part_size_bytes == 8 * 1024**2
     assert settings.upload.envelope_sample_bytes == 8192

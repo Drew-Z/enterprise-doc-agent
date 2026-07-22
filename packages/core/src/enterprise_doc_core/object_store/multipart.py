@@ -9,7 +9,7 @@ from typing import Any, Protocol, cast
 
 from botocore.exceptions import BotoCoreError, ClientError
 
-from enterprise_doc_core.config import ObjectStoreSettings
+from enterprise_doc_core.config import ObjectStoreChecksumMode, ObjectStoreSettings
 from enterprise_doc_core.object_store.client import create_s3_client
 from enterprise_doc_core.object_store.errors import (
     ObjectStoreError,
@@ -136,10 +136,17 @@ class Boto3MultipartObjectStore:
             dict[str, Any],
             await self._call(
                 self.control_client.create_multipart_upload,
-                Bucket=bucket,
-                Key=key,
-                ChecksumAlgorithm="SHA256",
-                Metadata=dict(metadata),
+                **{
+                    "Bucket": bucket,
+                    "Key": key,
+                    "Metadata": dict(metadata),
+                    **(
+                        {"ChecksumAlgorithm": "SHA256"}
+                        if self.settings.multipart_checksum_mode
+                        is ObjectStoreChecksumMode.NATIVE_SHA256
+                        else {}
+                    ),
+                },
             ),
         )
         upload_id = response.get("UploadId")
@@ -162,16 +169,20 @@ class Boto3MultipartObjectStore:
         _validate_sha256_b64(checksum_sha256_b64)
         _validate_presign_ttl(expires_in_seconds)
         effective_ttl = min(expires_in_seconds, self.settings.presign_ttl_seconds)
+        params: dict[str, Any] = {
+            "Bucket": bucket,
+            "Key": key,
+            "UploadId": upload_id,
+            "PartNumber": part_number,
+        }
+        headers: dict[str, str] = {}
+        if self.settings.multipart_checksum_mode is ObjectStoreChecksumMode.NATIVE_SHA256:
+            params["ChecksumSHA256"] = checksum_sha256_b64
+            headers["x-amz-checksum-sha256"] = checksum_sha256_b64
         url = await self._call(
             self.presign_client.generate_presigned_url,
             ClientMethod="upload_part",
-            Params={
-                "Bucket": bucket,
-                "Key": key,
-                "UploadId": upload_id,
-                "PartNumber": part_number,
-                "ChecksumSHA256": checksum_sha256_b64,
-            },
+            Params=params,
             ExpiresIn=effective_ttl,
             HttpMethod="PUT",
         )
@@ -179,7 +190,7 @@ class Boto3MultipartObjectStore:
             raise ObjectStoreProtocolError()
         return PresignedUploadPart(
             url=url,
-            headers={"x-amz-checksum-sha256": checksum_sha256_b64},
+            headers=headers,
             expires_in_seconds=effective_ttl,
         )
 
@@ -206,12 +217,21 @@ class Boto3MultipartObjectStore:
                 await self._call(self.control_client.list_parts, **parameters)
             )
             for item in _require_items(response, "Parts"):
+                checksum = item.get("ChecksumSHA256")
+                if checksum is not None and not isinstance(checksum, str):
+                    raise ObjectStoreProtocolError()
+                if (
+                    checksum is None
+                    and self.settings.multipart_checksum_mode
+                    is ObjectStoreChecksumMode.NATIVE_SHA256
+                ):
+                    raise ObjectStoreProtocolError()
                 parts.append(
                     UploadedPart(
                         part_number=_require_int(item, "PartNumber", minimum=1),
                         size_bytes=_require_int(item, "Size", minimum=0),
                         etag=_require_str(item, "ETag"),
-                        checksum_sha256_b64=_require_str(item, "ChecksumSHA256"),
+                        checksum_sha256_b64=checksum,
                     )
                 )
             if not _require_truncation_flag(response):
@@ -234,22 +254,34 @@ class Boto3MultipartObjectStore:
         expected_numbers = list(range(1, len(parts) + 1))
         if not parts or [part.part_number for part in parts] != expected_numbers:
             raise ObjectStoreProtocolError()
+        serialized_parts: list[dict[str, Any]] = []
+        for part in parts:
+            if (
+                self.settings.multipart_checksum_mode is ObjectStoreChecksumMode.NATIVE_SHA256
+                and part.checksum_sha256_b64 is None
+            ):
+                raise ObjectStoreProtocolError()
+            serialized_part: dict[str, Any] = {
+                "PartNumber": part.part_number,
+                "ETag": part.etag,
+            }
+            # R2 accepts the ordinary S3 completion shape but rejects the
+            # x-amz-checksum-sha256 transport fields.  Readback mode keeps the
+            # client-provided checksum in the database and verifies the object
+            # after completion, so it must never leak it into this payload.
+            if (
+                self.settings.multipart_checksum_mode is ObjectStoreChecksumMode.NATIVE_SHA256
+                and part.checksum_sha256_b64 is not None
+            ):
+                serialized_part["ChecksumSHA256"] = part.checksum_sha256_b64
+            serialized_parts.append(serialized_part)
         response = _require_mapping(
             await self._call(
                 self.control_client.complete_multipart_upload,
                 Bucket=bucket,
                 Key=key,
                 UploadId=upload_id,
-                MultipartUpload={
-                    "Parts": [
-                        {
-                            "PartNumber": part.part_number,
-                            "ETag": part.etag,
-                            "ChecksumSHA256": part.checksum_sha256_b64,
-                        }
-                        for part in parts
-                    ]
-                },
+                MultipartUpload={"Parts": serialized_parts},
             ),
         )
         etag = _require_str(response, "ETag")
@@ -263,12 +295,13 @@ class Boto3MultipartObjectStore:
 
     @instrument_object_store_operation("read")
     async def head_object(self, *, bucket: str, key: str) -> ObjectHead:
+        parameters: dict[str, Any] = {"Bucket": bucket, "Key": key}
+        if self.settings.multipart_checksum_mode is ObjectStoreChecksumMode.NATIVE_SHA256:
+            parameters["ChecksumMode"] = "ENABLED"
         response = _require_mapping(
             await self._call(
                 self.control_client.head_object,
-                Bucket=bucket,
-                Key=key,
-                ChecksumMode="ENABLED",
+                **parameters,
             ),
         )
         checksum = response.get("ChecksumSHA256")

@@ -160,6 +160,7 @@ def test_configure_manifest_binds_https_hosts_without_secret_data(tmp_path: Path
     assert config["data"]["OBJECT_STORE__ENDPOINT"] == "https://objects.internal.example.com"
     assert config["data"]["OBJECT_STORE__PRESIGN_ENDPOINT"] == "https://objects.example.com"
     assert config["data"]["OBJECT_STORE__SECURE"] == "true"
+    assert config["data"]["OBJECT_STORE__MULTIPART_CHECKSUM_MODE"] == "native_sha256"
     assert config["data"]["MODEL__PROVIDER"] == "openai_compatible"
     assert config["data"]["MODEL__BASE_URL"] == "https://model.example.com/v1"
     assert config["data"]["MODEL__MODEL_NAME"] == "staging-model"
@@ -548,3 +549,49 @@ def test_configure_manifest_normalizes_model_values_and_rotates_config_hash(
             "enterprise-doc-agent/config-sha256"
         ]
     )
+
+
+def test_configure_manifest_supports_r2_readback_checksum_mode(tmp_path: Path) -> None:
+    source = tmp_path / "template.yaml"
+    destination = tmp_path / "readback.yaml"
+    _write_template(source)
+
+    configure_staging_manifest.configure_manifest(
+        source,
+        destination,
+        staging_base_url="https://staging.example.com",
+        object_store_endpoint="https://objects.internal.example.com",
+        object_store_presign_endpoint="https://objects.example.com",
+        tls_secret_name="enterprise-doc-staging-tls",
+        web_object_store_origins="https://objects.example.com",
+        database_egress_cidr="8.8.8.8/32",
+        model_provider="openai_compatible",
+        model_base_url="https://model.example.com/v1",
+        model_name="staging-model",
+        object_store_checksum_mode="readback_sha256",
+    )
+
+    documents = [item for item in yaml.safe_load_all(destination.read_text()) if item]
+    config = next(item for item in documents if item["kind"] == "ConfigMap")
+    assert config["data"]["OBJECT_STORE__MULTIPART_CHECKSUM_MODE"] == "readback_sha256"
+
+
+def test_configure_manifest_rejects_unknown_checksum_mode(tmp_path: Path) -> None:
+    source = tmp_path / "template.yaml"
+    _write_template(source)
+
+    with pytest.raises(ValueError, match="checksum mode"):
+        configure_staging_manifest.configure_manifest(
+            source,
+            tmp_path / "invalid.yaml",
+            staging_base_url="https://staging.example.com",
+            object_store_endpoint="https://objects.internal.example.com",
+            object_store_presign_endpoint="https://objects.example.com",
+            tls_secret_name="enterprise-doc-staging-tls",
+            web_object_store_origins="https://objects.example.com",
+            database_egress_cidr="8.8.8.8/32",
+            model_provider="openai_compatible",
+            model_base_url="https://model.example.com/v1",
+            model_name="staging-model",
+            object_store_checksum_mode="unsupported",
+        )

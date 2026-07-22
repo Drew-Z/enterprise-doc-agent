@@ -75,6 +75,7 @@ async def _run(args: argparse.Namespace) -> UploadCleanupReport:
             object_store=object_store,
             documents_bucket=settings.object_store.documents_bucket,
             settings=upload_settings,
+            checksum_mode=settings.object_store.multipart_checksum_mode,
         )
         report = await service.run(dry_run=args.dry_run)
     except Exception as error:
