@@ -24,7 +24,13 @@ spec:
       containers:
         - name: migrate
           image: enterprise-doc/api@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-          command: ["alembic", "upgrade", "head"]
+          command:
+            - sh
+            - -ec
+            - |
+              alembic upgrade head
+              enterprise-doc-checkpointer-setup --setup
+              enterprise-doc-checkpointer-setup --check
           envFrom:
             - configMapRef: {name: enterprise-doc-config}
             - secretRef: {name: enterprise-doc-secrets}

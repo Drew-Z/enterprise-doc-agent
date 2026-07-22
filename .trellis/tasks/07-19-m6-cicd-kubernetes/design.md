@@ -76,9 +76,10 @@ Redis Deployment, and no PDB. PostgreSQL/pgvector, S3-compatible object storage,
 providers, and retained telemetry remain external. Redis is a delivery layer only;
 PostgreSQL remains the source of truth and Outbox replay recovers lost Redis state.
 
-The summed application-container memory limits stay at or below 1 GiB so K3s, the host,
-and cloud management agents retain headroom. The 928 MiB ceiling includes simultaneous
-existing workloads and migration, and application Deployments use `maxSurge: 0`. This is
+The summed application-container memory limits stay at or below 1 GiB so K3s, the runner,
+the tunnel, and required host daemons retain headroom. The 992 MiB ceiling includes
+simultaneous existing workloads and migration, and application Deployments use
+`maxSurge: 0`. This is
 a constrained staging and drill profile, not a production or high-availability topology.
 A repository variable selects only reviewed profile names; the workflow checks Namespace
 ownership before apply and writes the profile into the sanitized evidence manifest and
@@ -93,3 +94,11 @@ during render and recorded in the administrator-owned prerequisite approval. A h
 resulting ConfigMap is placed on API, Worker, consumer and migration Pod templates so a
 routing change triggers replacement. The sanitized release record retains only provider,
 URL and model name for reproducibility.
+
+## Measured Tiny-Staging Dependency Budgets
+
+The real 2-vCPU/2-GiB staging node uses external PostgreSQL and R2, so the staging overlay
+sets 15-second database/object-store connection budgets and a 60-second checkpointer
+budget without changing production defaults. Worker readiness includes the checkpointer
+budget, while the tiny probe timeout exceeds it. The migration Job runs Alembic, official
+LangGraph setup, and a read-only schema check in that order before workloads roll out.

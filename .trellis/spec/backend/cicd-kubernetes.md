@@ -6,15 +6,20 @@
 - Kubernetes base defines migration, startup/readiness/liveness probes, resource bounds,
   ServiceAccount, PDB and NetworkPolicy. Scoped deployer RBAC and admission policies live
   in the administrator-applied `infra/k8s/bootstrap/` bundle.
+- The reviewed migration Job runs Alembic, idempotent official LangGraph checkpointer
+  setup, and an explicit read-only check before any application rollout.
 - Staging/prod Kustomize overlays use digest-form image identities.
 - The `tiny-single-node` staging overlay is the reviewed 2-vCPU/2-GiB K3s profile. It
   selects Traefik, removes PDBs that cannot provide single-node availability, keeps the
-  existing workloads plus migration Job at 928 MiB of memory limits, and uses zero-surge
+  existing workloads plus migration Job at 992 MiB of memory limits, and uses zero-surge
   application rollouts so rollout overlap cannot exceed that budget.
 - Tiny staging runs an ephemeral, bounded Redis delivery layer with `noeviction` and
   explicit ingress policy. PostgreSQL/pgvector, object storage, model providers, and
   retained observability remain external; Redis loss is recovered from PostgreSQL and
   the transactional Outbox rather than treated as durable business state.
+- Measured tiny staging uses 15-second database/object-store connection budgets, a
+  60-second checkpointer budget, and a Worker readiness probe that can cover that budget.
+  Production defaults remain unchanged.
 - Pull-request images are built locally for contract checks. Tagged releases use one
   push build, then bind Trivy, SPDX SBOM, BuildKit provenance, Cosign signature and
   attestation verification to the returned immutable `image@sha256:digest`.

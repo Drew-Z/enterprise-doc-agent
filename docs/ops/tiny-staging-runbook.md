@@ -52,7 +52,7 @@ only after a node replacement or an explicit rebuild decision.
    ```
 
    A 2C/2G node is only the K3s baseline; the profile keeps application
-   memory limits bounded at 928 MiB and uses one replica per process.
+   memory limits bounded at 992 MiB and uses one replica per process.
 4. Create a dedicated non-root account for the Actions runner. Register it at
    the private repository's **Settings → Actions → Runners** page with the
    custom label `enterprise-doc-staging`; install it as a systemd service and
@@ -447,6 +447,13 @@ Namespace UID, validates workload updates, replaces the completed fixed-name mig
 Job with a server-side create dry-run, waits for completion, applies workloads,
 performs in-cluster readiness and authenticated upload → ingestion → Agent
 smoke, and uploads sanitized evidence.
+
+The reviewed migration command runs `alembic upgrade head`,
+`enterprise-doc-checkpointer-setup --setup`, and then `--check`. Tiny staging uses
+15-second database/object-store connection budgets, a 60-second checkpointer
+budget, and a 70-second Worker readiness probe timeout based on measured external
+dependency latency. These values are staging-specific and do not redefine the
+production defaults.
 
 The first digest-pinned release may need to cold-pull images over a constrained
 route. Kubernetes counts that download time against a Job's active deadline, so

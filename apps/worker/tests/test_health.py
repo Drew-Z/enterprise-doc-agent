@@ -7,6 +7,7 @@ from httpx import ASGITransport, AsyncClient
 
 from enterprise_doc_core.health import ComponentStatus
 from enterprise_doc_worker.app import create_probe_app
+from enterprise_doc_worker.config import WorkerSettings
 
 
 @dataclass
@@ -56,4 +57,27 @@ async def test_worker_readiness_matches_api_contract() -> None:
             "redis": {"status": "down"},
             "object_store": {"status": "timeout"},
         },
+    }
+
+
+async def test_worker_readiness_budget_includes_checkpoint_checker() -> None:
+    settings = WorkerSettings(
+        app_env="local",
+        database={"connect_timeout_seconds": 0.01},
+        redis={"connect_timeout_seconds": 0.01},
+        object_store={"connect_timeout_seconds": 0.01},
+        agent={"checkpoint_timeout_seconds": 0.05},
+    )
+    app = create_probe_app(
+        settings=settings,
+        checkers=[FakeChecker("langgraph_checkpoint", delay=0.02)],
+    )
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://worker") as client:
+        response = await client.get("/health/ready")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "status": "ready",
+        "checks": {"langgraph_checkpoint": {"status": "up"}},
     }

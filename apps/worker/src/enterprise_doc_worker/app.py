@@ -53,6 +53,7 @@ def create_probe_app(
         resolved_settings.database.connect_timeout_seconds,
         resolved_settings.redis.connect_timeout_seconds,
         resolved_settings.object_store.connect_timeout_seconds,
+        resolved_settings.agent.checkpoint_timeout_seconds,
     )
 
     @asynccontextmanager

@@ -88,3 +88,14 @@ immutable image or rollback evidence. Those remain open manual gates.
   requests, then wait for every Deployment and retain structured failure evidence.
 - [x] Update deployment contracts, runbook/spec/evidence, full tests, lint, actionlint and
   final independent security review while keeping external deployment gates blocked.
+
+## Slice 10: Real Tiny-Staging Stabilization
+
+- [ ] Make the reviewed migration Job run Alembic followed by idempotent LangGraph
+  checkpointer setup and verification before any application rollout.
+- [ ] Give the tiny single-node profile bounded external-dependency and startup probe
+  budgets that match measured Supabase/R2 latency without changing production defaults.
+- [ ] Keep the tiny overlap budget at or below 1 GiB while allowing the Worker enough
+  CPU, memory and startup time to become ready on the 2-vCPU/2-GiB K3s node.
+- [ ] Emit immediate non-secret migration Job status and describe diagnostics when the
+  pre-rollout wait fails, then verify the change against the real staging cluster.

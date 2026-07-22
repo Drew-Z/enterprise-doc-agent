@@ -333,7 +333,14 @@ jobs:
           kubectl -n enterprise-doc-agent-staging delete job enterprise-doc-migrate --ignore-not-found
           kubectl apply --dry-run=server -f "$RUNNER_TEMP/staging-migration.yaml"
           kubectl apply -f "$RUNNER_TEMP/staging-migration.yaml"
-          kubectl -n enterprise-doc-agent-staging wait --for=condition=complete job/enterprise-doc-migrate --timeout=900s
+          if ! kubectl -n enterprise-doc-agent-staging wait --for=condition=complete \
+            job/enterprise-doc-migrate --timeout=900s; then
+            kubectl -n enterprise-doc-agent-staging get job/enterprise-doc-migrate -o wide || true
+            kubectl -n enterprise-doc-agent-staging get pods \
+              -l job-name=enterprise-doc-migrate -o wide || true
+            kubectl -n enterprise-doc-agent-staging describe job/enterprise-doc-migrate || true
+            exit 1
+          fi
       - name: Apply workloads after migration
         id: workloads
         run: |

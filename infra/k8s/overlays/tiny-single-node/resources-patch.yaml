@@ -12,6 +12,9 @@ spec:
     spec:
       containers:
         - name: api
+          readinessProbe:
+            periodSeconds: 20
+            timeoutSeconds: 20
           resources:
             requests: {cpu: 75m, memory: 128Mi}
             limits: {cpu: 400m, memory: 224Mi}
@@ -30,9 +33,14 @@ spec:
     spec:
       containers:
         - name: worker
+          readinessProbe:
+            periodSeconds: 30
+            timeoutSeconds: 70
+          startupProbe:
+            failureThreshold: 60
           resources:
             requests: {cpu: 50m, memory: 128Mi}
-            limits: {cpu: 300m, memory: 192Mi}
+            limits: {cpu: 400m, memory: 256Mi}
 ---
 apiVersion: apps/v1
 kind: Deployment

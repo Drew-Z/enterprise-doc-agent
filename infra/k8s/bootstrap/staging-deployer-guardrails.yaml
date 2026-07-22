@@ -328,7 +328,10 @@ spec:
             'enterprise-doc-agent/approved-api-images'
           ].split(',').exists(image,
             image == variables.container.image) &&
-          variables.container.command == ['alembic', 'upgrade', 'head'] &&
+          variables.container.command == [
+            'sh', '-ec',
+            'alembic upgrade head\nenterprise-doc-checkpointer-setup --setup\nenterprise-doc-checkpointer-setup --check\n'
+          ] &&
           !has(variables.container.args) && !has(variables.container.env) &&
           size(variables.container.envFrom) == 2 &&
           variables.container.envFrom[0].configMapRef.name == 'enterprise-doc-config' &&

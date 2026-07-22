@@ -3,6 +3,9 @@ kind: ConfigMap
 metadata:
   name: enterprise-doc-config
 data:
+  DATABASE__CONNECT_TIMEOUT_SECONDS: "15"
+  OBJECT_STORE__CONNECT_TIMEOUT_SECONDS: "15"
+  AGENT__CHECKPOINT_TIMEOUT_SECONDS: "60"
   OBJECT_STORE__ENDPOINT: https://objects.example.invalid
   OBJECT_STORE__PRESIGN_ENDPOINT: https://objects.example.invalid
   OBJECT_STORE__SECURE: "true"

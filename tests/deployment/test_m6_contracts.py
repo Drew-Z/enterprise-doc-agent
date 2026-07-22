@@ -145,12 +145,26 @@ def test_kubernetes_deployments_have_probes_resources_and_non_root_security() ->
 def test_migration_job_and_policies_are_present() -> None:
     migration = _documents(ROOT / "infra/k8s/base/migration-job.yaml")[0]
     assert migration["kind"] == "Job"
-    assert migration["spec"]["template"]["spec"]["containers"][0]["command"] == [
-        "alembic",
-        "upgrade",
-        "head",
-    ]
+    command = migration["spec"]["template"]["spec"]["containers"][0]["command"]
+    assert command[:2] == ["sh", "-ec"]
+    expected_script = (
+        "alembic upgrade head\n"
+        "enterprise-doc-checkpointer-setup --setup\n"
+        "enterprise-doc-checkpointer-setup --check\n"
+    )
+    assert command[2] == expected_script
     assert migration["spec"]["activeDeadlineSeconds"] == 900
+
+    guardrails = _documents(ROOT / "infra/k8s/bootstrap/staging-deployer-guardrails.yaml")
+    job_guard = _named_resource(
+        guardrails,
+        "ValidatingAdmissionPolicy",
+        "enterprise-doc-staging-job-guard",
+    )
+    migration_validation = str(job_guard["spec"]["validations"][2]["expression"])
+    expected_cel_script = expected_script.replace("\n", "\\n")
+    assert f"'{expected_cel_script}'" in migration_validation
+
     policy_docs = _documents(ROOT / "infra/k8s/base/network-policy.yaml")
     assert any(item["metadata"]["name"] == "enterprise-doc-default-deny" for item in policy_docs)
     assert any(item["metadata"]["name"] == "enterprise-doc-runtime-egress" for item in policy_docs)
@@ -441,10 +455,25 @@ def test_tiny_single_node_overlay_renders_with_a_bounded_k3s_runtime() -> None:
 
     config = _named_resource(documents, "ConfigMap", "enterprise-doc-config")
     assert config["data"]["REDIS__URL"] == "redis://enterprise-doc-redis:6379/0"
+    assert config["data"]["DATABASE__CONNECT_TIMEOUT_SECONDS"] == "15"
+    assert config["data"]["OBJECT_STORE__CONNECT_TIMEOUT_SECONDS"] == "15"
+    assert config["data"]["AGENT__CHECKPOINT_TIMEOUT_SECONDS"] == "60"
     assert str(config["data"]["OBJECT_STORE__ENDPOINT"]).startswith("https://")
     assert config["data"]["MODEL__PROVIDER"] == "openai_compatible"
     assert str(config["data"]["MODEL__BASE_URL"]).endswith("/v1")
     assert config["data"]["MODEL__MODEL_NAME"] == "replace-with-reviewed-model"
+
+    api = _named_resource(documents, "Deployment", "enterprise-doc-api")
+    api_container = api["spec"]["template"]["spec"]["containers"][0]
+    assert api_container["readinessProbe"]["timeoutSeconds"] == 20
+    assert api_container["readinessProbe"]["periodSeconds"] == 20
+
+    worker = _named_resource(documents, "Deployment", "enterprise-doc-worker")
+    worker_container = worker["spec"]["template"]["spec"]["containers"][0]
+    assert worker_container["startupProbe"]["failureThreshold"] == 60
+    assert worker_container["readinessProbe"]["timeoutSeconds"] == 70
+    assert worker_container["readinessProbe"]["periodSeconds"] == 30
+    assert worker_container["resources"]["limits"] == {"cpu": "400m", "memory": "256Mi"}
     assert not [
         item
         for item in documents
@@ -863,6 +892,22 @@ def test_staging_workflows_preserve_admin_boundary_and_clean_credentials() -> No
         'kubectl apply -f "$RUNNER_TEMP/staging-migration.yaml"'
     )
     assert "job/enterprise-doc-migrate --timeout=900s" in migration_run
+    assert "kubectl -n enterprise-doc-agent-staging get job/enterprise-doc-migrate" in (
+        migration_run
+    )
+    assert "kubectl -n enterprise-doc-agent-staging describe job/enterprise-doc-migrate" in (
+        migration_run
+    )
+    assert migration_run.endswith(
+        "if ! kubectl -n enterprise-doc-agent-staging wait --for=condition=complete \\\n"
+        "  job/enterprise-doc-migrate --timeout=900s; then\n"
+        "  kubectl -n enterprise-doc-agent-staging get job/enterprise-doc-migrate -o wide || true\n"
+        "  kubectl -n enterprise-doc-agent-staging get pods \\\n"
+        "    -l job-name=enterprise-doc-migrate -o wide || true\n"
+        "  kubectl -n enterprise-doc-agent-staging describe job/enterprise-doc-migrate || true\n"
+        "  exit 1\n"
+        "fi\n"
+    )
 
     rollout = _named_step(deploy_steps, "Wait for workloads")
     rollout_run = str(rollout["run"])

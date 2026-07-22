@@ -282,10 +282,12 @@ replacement for the Deployment revision.
 `tiny-single-node` is the reviewed 2-vCPU/2-GiB K3s staging profile. It keeps one
 replica of each application process, removes single-node PDBs, selects Traefik,
 and adds a bounded ephemeral Redis delivery layer. Its application-container
-peak is 928 MiB when the migration Job overlaps the existing workloads, and
+peak is 992 MiB when the migration Job overlaps the existing workloads, and
 application rollouts use `maxSurge: 0`. PostgreSQL/pgvector, object storage,
 model providers, and retained observability stay external. This profile is for
 staging evidence and recovery drills; it is not an HA or production topology.
+The migration Job runs Alembic, LangGraph checkpointer setup, and a schema check
+before rollout; measured external-dependency budgets are isolated to staging.
 
 The staging environment requires `STAGING_DEPLOYMENT_PROFILE` (default
 `tiny-single-node`) and `STAGING_DATABASE_EGRESS_CIDRS` (with the singular
