@@ -145,7 +145,7 @@ def test_configure_manifest_binds_https_hosts_without_secret_data(tmp_path: Path
         object_store_presign_endpoint="https://objects.example.com",
         tls_secret_name="enterprise-doc-staging-tls",
         web_object_store_origins="https://objects.example.com,https://cdn.example.com",
-        database_egress_cidr="8.8.8.8/32",
+        database_egress_cidr="1.1.1.1/32,8.8.8.8/32,1.1.1.1/32",
         model_provider="openai_compatible",
         model_base_url="https://model.example.com/v1",
         model_name="staging-model",
@@ -216,7 +216,10 @@ def test_configure_manifest_binds_https_hosts_without_secret_data(tmp_path: Path
     )
     assert database_policy["spec"]["egress"] == [
         {
-            "to": [{"ipBlock": {"cidr": "8.8.8.8/32"}}],
+            "to": [
+                {"ipBlock": {"cidr": "1.1.1.1/32"}},
+                {"ipBlock": {"cidr": "8.8.8.8/32"}},
+            ],
             "ports": [{"protocol": "TCP", "port": 5432}],
         },
     ]
@@ -237,7 +240,7 @@ def test_configure_manifest_records_admin_owned_prerequisite_approval(
         object_store_presign_endpoint="https://objects.example.com",
         tls_secret_name="enterprise-doc-staging-tls",
         web_object_store_origins="https://objects.example.com,https://cdn.example.com",
-        database_egress_cidr="8.8.8.8/32",
+        database_egress_cidr="8.8.8.8/32,1.1.1.1/32",
         model_provider="openai_compatible",
         model_base_url="https://model.example.com/v1",
         model_name="staging-model",
@@ -268,7 +271,9 @@ def test_configure_manifest_records_admin_owned_prerequisite_approval(
     assert annotations["enterprise-doc-agent/approved-web-images"] == ",".join(
         [_image("enterprise-doc-web"), _image("enterprise-doc-web", "4" * 64)]
     )
-    assert annotations["enterprise-doc-agent/approved-database-egress-cidr"] == "8.8.8.8/32"
+    assert annotations["enterprise-doc-agent/approved-database-egress-cidr"] == (
+        "1.1.1.1/32,8.8.8.8/32"
+    )
     assert annotations["enterprise-doc-agent/approved-staging-host"] == "staging.example.com"
     assert annotations["enterprise-doc-agent/approved-tls-secret-name"] == (
         "enterprise-doc-staging-tls"
@@ -391,7 +396,7 @@ def test_configure_manifest_rejects_unlisted_or_plaintext_origins(tmp_path: Path
 
 
 @pytest.mark.parametrize(
-    "cidr",
+    "cidrs",
     [
         "",
         "8.8.8.0/24",
@@ -399,15 +404,16 @@ def test_configure_manifest_rejects_unlisted_or_plaintext_origins(tmp_path: Path
         "127.0.0.1/32",
         "::1/128",
         "not-a-cidr",
+        "8.8.8.8/32,10.0.0.1/32",
     ],
 )
 def test_configure_manifest_rejects_non_global_single_host_database_egress(
-    tmp_path: Path, cidr: str
+    tmp_path: Path, cidrs: str
 ) -> None:
     source = tmp_path / "template.yaml"
     _write_template(source)
 
-    with pytest.raises(ValueError, match="database egress CIDR"):
+    with pytest.raises(ValueError, match="database egress CIDRs"):
         configure_staging_manifest.configure_manifest(
             source,
             tmp_path / "invalid-database-egress.yaml",
@@ -416,7 +422,7 @@ def test_configure_manifest_rejects_non_global_single_host_database_egress(
             object_store_presign_endpoint="https://objects.example.com",
             tls_secret_name="enterprise-doc-staging-tls",
             web_object_store_origins="https://objects.example.com",
-            database_egress_cidr=cidr,
+            database_egress_cidr=cidrs,
             model_provider="openai_compatible",
             model_base_url="https://model.example.com/v1",
             model_name="staging-model",

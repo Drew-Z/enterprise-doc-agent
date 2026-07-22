@@ -187,7 +187,7 @@ jobs:
           OBJECT_STORE_PRESIGN_ENDPOINT: ${{ inputs.object_store_presign_endpoint }}
           TLS_SECRET_NAME: ${{ inputs.tls_secret_name }}
           VITE_OBJECT_STORE_ORIGINS: ${{ vars.VITE_OBJECT_STORE_ORIGINS }}
-          DATABASE_EGRESS_CIDR: ${{ vars.STAGING_DATABASE_EGRESS_CIDR }}
+          DATABASE_EGRESS_CIDR: ${{ vars.STAGING_DATABASE_EGRESS_CIDRS || vars.STAGING_DATABASE_EGRESS_CIDR }}
           MODEL_PROVIDER: openai_compatible
           MODEL_BASE_URL: ${{ vars.STAGING_MODEL_BASE_URL }}
           MODEL_NAME: ${{ vars.STAGING_MODEL_NAME }}
@@ -240,6 +240,7 @@ jobs:
           set -euo pipefail
           kubectl get namespace enterprise-doc-agent-staging -o yaml \
             > "$RUNNER_TEMP/staging-prerequisites-live.yaml"
+          printf '\n---\n' >> "$RUNNER_TEMP/staging-prerequisites-live.yaml"
           kubectl -n enterprise-doc-agent-staging get \
             configmaps,serviceaccounts,services,poddisruptionbudgets.policy,ingresses.networking.k8s.io,networkpolicies.networking.k8s.io \
             -o yaml >> "$RUNNER_TEMP/staging-prerequisites-live.yaml"

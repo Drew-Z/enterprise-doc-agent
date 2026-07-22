@@ -84,8 +84,8 @@ Create these before the first workflow dispatch:
 
 - the dedicated R2/S3 staging buckets (`documents` and `artifacts`) and an R2
   API token with the minimum bucket permissions;
-- an external PostgreSQL/pgvector database and its public egress `/32` (or
-  `/128`) for `STAGING_DATABASE_EGRESS_CIDR`;
+- an external PostgreSQL/pgvector database and every currently resolved public
+  egress `/32` (or `/128`) in the comma-separated `STAGING_DATABASE_EGRESS_CIDRS`;
 - a certificate covering the staging hostname, or a Cloudflare-managed origin
   TLS arrangement that produces the Kubernetes Secret
   `enterprise-doc-staging-tls`;
@@ -140,7 +140,7 @@ Missing secret:    STAGING_SMOKE_TOKEN
 Configured vars:   STAGING_KUBE_CONTEXT=enterprise-doc-staging
                    STAGING_KUBE_API_SERVER=https://127.0.0.1:6443
                    STAGING_NAMESPACE_UID=<current namespace UID>
-Missing var:       STAGING_DATABASE_EGRESS_CIDR=<reviewed-public-db-/32>
+Missing var:       STAGING_DATABASE_EGRESS_CIDRS=<reviewed-public-db-/32-list>
                    STAGING_MODEL_BASE_URL=https://<gateway-host>/v1
                    STAGING_MODEL_NAME=<exact-model-id>
                    STAGING_CONTROL_PLANE_APPROVED=true
@@ -333,7 +333,7 @@ OBJECT_STORE_ENDPOINT=https://<account>.r2.cloudflarestorage.com
 OBJECT_STORE_PRESIGN_ENDPOINT="$OBJECT_STORE_ENDPOINT"
 TLS_SECRET_NAME=enterprise-doc-staging-tls
 WEB_OBJECT_STORE_ORIGINS="$OBJECT_STORE_PRESIGN_ENDPOINT"
-DATABASE_EGRESS_CIDR=<reviewed-public-db-/32>
+DATABASE_EGRESS_CIDR=<comma-separated-reviewed-public-db-/32-list>
 MODEL_BASE_URL=https://<gateway-host>/v1
 MODEL_NAME=<exact-model-id>
 ROLLBACK_API_IMAGE=${ROLLBACK_API_IMAGE:-}

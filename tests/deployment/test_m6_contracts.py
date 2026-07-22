@@ -741,6 +741,7 @@ def test_ci_workflows_have_no_allow_failure_and_include_release_boundaries() -> 
     assert "object_store_endpoint" in deploy
     assert "object_store_presign_endpoint" in deploy
     assert "VITE_OBJECT_STORE_ORIGINS" in deploy
+    assert "STAGING_DATABASE_EGRESS_CIDRS" in deploy
     assert "STAGING_DATABASE_EGRESS_CIDR" in deploy
     assert "--database-egress-cidr" in deploy
     assert "enterprise-doc-registry" in (
@@ -795,6 +796,7 @@ def test_staging_workflows_preserve_admin_boundary_and_clean_credentials() -> No
     assert "configmaps,serviceaccounts,services,poddisruptionbudgets.policy" in prerequisite_run
     assert "networkpolicies.networking.k8s.io" in prerequisite_run
     assert "staging-prerequisites-live.yaml" in prerequisite_run
+    assert "printf '\\n---\\n'" in prerequisite_run
     assert "--live-manifest" in prerequisite_run
     assert "validate_staging_prerequisites.py" in prerequisite_run
     assert 'kubectl apply -f "$RUNNER_TEMP/staging-prerequisites.yaml"' not in prerequisite_run

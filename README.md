@@ -288,10 +288,12 @@ model providers, and retained observability stay external. This profile is for
 staging evidence and recovery drills; it is not an HA or production topology.
 
 The staging environment requires `STAGING_DEPLOYMENT_PROFILE` (default
-`tiny-single-node`) and `STAGING_DATABASE_EGRESS_CIDR`. The database value must be
-one public global-unicast host CIDR: IPv4 `/32` or IPv6 `/128`. Resolve and review
-the managed database address immediately before deployment; private, loopback,
-documentation, and broad CIDRs are rejected. The selected profile is recorded on
+`tiny-single-node`) and `STAGING_DATABASE_EGRESS_CIDRS` (with the singular
+`STAGING_DATABASE_EGRESS_CIDR` retained as a compatibility fallback). The database
+value is a comma-separated allowlist of public global-unicast host CIDRs: IPv4 `/32`
+or IPv6 `/128`. Resolve and review every managed database address immediately before
+deployment; duplicates are removed, while private, loopback, documentation, and broad
+CIDRs are rejected. The selected profile is recorded on
 the Namespace as `enterprise-doc-agent/deployment-profile`. An existing unannotated
 Namespace or a Namespace owned by another profile is rejected before any apply;
 adopt an old environment only after manually confirming and removing incompatible

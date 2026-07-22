@@ -131,6 +131,14 @@ def _global_host_cidr(value: str, *, description: str) -> str:
     return str(network)
 
 
+def _global_host_cidrs(value: str, *, description: str) -> list[str]:
+    candidates = [item.strip() for item in value.split(",") if item.strip()]
+    if not candidates:
+        raise ValueError(f"{description} must contain at least one IP CIDR")
+    cidrs = {_global_host_cidr(candidate, description=description) for candidate in candidates}
+    return sorted(cidrs, key=lambda item: (ipaddress.ip_network(item).version, item))
+
+
 def _single_document(documents: list[dict[str, Any]], *, kind: str, name: str) -> dict[str, Any]:
     matches = [
         document
@@ -234,9 +242,9 @@ def configure_manifest(
             "Web image allowlist must include the object-store presign endpoint origin"
         )
     _dns_label(tls_secret_name, description="TLS secret name")
-    database_cidr = _global_host_cidr(
+    database_cidrs = _global_host_cidrs(
         database_egress_cidr,
-        description="database egress CIDR",
+        description="database egress CIDRs",
     )
     if model_provider != MODEL_PROVIDER:
         raise ValueError(f"model provider must be {MODEL_PROVIDER}")
@@ -318,7 +326,7 @@ def configure_manifest(
         raise ValueError(
             f"NetworkPolicy/{DATABASE_EGRESS_POLICY_NAME} must contain exactly one egress rule"
         )
-    egress[0]["to"] = [{"ipBlock": {"cidr": database_cidr}}]
+    egress[0]["to"] = [{"ipBlock": {"cidr": cidr}} for cidr in database_cidrs]
 
     current_images: dict[str, str] = {}
     for service, deployment_name in SERVICE_DEPLOYMENTS.items():
@@ -355,7 +363,7 @@ def configure_manifest(
     approval_annotations = {
         f"{APPROVAL_ANNOTATION_PREFIX}staging-host": staging_hostname,
         f"{APPROVAL_ANNOTATION_PREFIX}tls-secret-name": tls_secret_name,
-        f"{APPROVAL_ANNOTATION_PREFIX}database-egress-cidr": database_cidr,
+        f"{APPROVAL_ANNOTATION_PREFIX}database-egress-cidr": ",".join(database_cidrs),
         f"{APPROVAL_ANNOTATION_PREFIX}object-store-endpoint": object_store_endpoint,
         f"{APPROVAL_ANNOTATION_PREFIX}object-store-presign-endpoint": (
             object_store_presign_endpoint
