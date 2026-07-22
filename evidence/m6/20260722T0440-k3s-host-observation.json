@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "evidence_type": "k3s-host-observation",
+  "status": "blocked_external",
+  "captured_at": "2026-07-22T04:40:00+08:00",
+  "host_alias": "openclaw-baidu-alma",
+  "cluster": {
+    "node_status": "Ready",
+    "k3s_version": "v1.36.2+k3s1",
+    "container_runtime": "containerd://2.3.2-k3s2",
+    "system_pods": [
+      "coredns 1/1 Running",
+      "local-path-provisioner 1/1 Running",
+      "metrics-server 1/1 Running",
+      "traefik 1/1 Running"
+    ],
+    "registry_mirror": "docker.io -> https://dockerproxy.net"
+  },
+  "resources": {
+    "node_top": "343m CPU, 1171Mi memory",
+    "host_free": "1.8Gi total, approximately 519Mi available",
+    "swap": "795Mi used of 2Gi",
+    "disk": "19G available of 40G",
+    "interpretation": "staging/drill only; no application workload applied"
+  },
+  "security": {
+    "ufw": "inactive",
+    "public_bindings": [
+      "0.0.0.0:6443 Kubernetes API",
+      "*:10250 kubelet",
+      "0.0.0.0:8472 Flannel VXLAN"
+    ],
+    "ssh_operator_endpoint": "183.30.222.203:10330",
+    "required": "Apply provider security-group and host firewall rules with verified SSH allowlist before runner or public ingress",
+    "risk": "Do not change firewall over the current SSH session without out-of-band console or a tested rollback"
+  },
+  "retired_services": {
+    "fantasy_pet_api": "inactive disabled",
+    "fantasy_pet_worker": "inactive disabled",
+    "xrdp": "inactive disabled",
+    "ports_closed": [
+      8765,
+      14200,
+      9090,
+      3389
+    ]
+  },
+  "limitations": [
+    "No application workloads, external PostgreSQL, R2 credentials, Tunnel, runner, TLS, or smoke executed."
+  ],
+  "source_commands": [
+    "kubectl get nodes -o wide",
+    "kubectl get pods -A -o wide",
+    "kubectl top node",
+    "free -h",
+    "ss -lntup",
+    "systemctl is-active/is-enabled"
+  ]
+}

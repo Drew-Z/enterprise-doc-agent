@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "evidence_type": "pre-reset-host-audit",
+  "status": "passed",
+  "captured_at": "2026-07-21T18:45:00Z",
+  "host_alias": "openclaw-baidu-alma",
+  "platform": "Ubuntu 24.04.1 LTS",
+  "resources": {
+    "cpu_cores": 2,
+    "memory_gib": 1.8,
+    "swap_gib": 2.0,
+    "disk_gib": 40,
+    "disk_used_percent": 47
+  },
+  "active_workloads": [
+    {"name": "fantasy-pet-app-api.service", "port": 8765, "source": "fantasy-pet-rule"},
+    {"name": "fantasy-pet-worker-daemon.service", "source": "fantasy-pet-rule"},
+    {"name": "desktop-pet-prometheus", "port": 9090, "storage_mib": 2.8},
+    {"name": "gamer-admin-review", "port": 14200, "source": "gamer"},
+    {"name": "tmwd-browser-bridge", "ports": [18765, 18766], "source": "GenericAgent"}
+  ],
+  "non_application_services": ["docker", "containerd", "xrdp", "bcm-agent", "bsm-agent", "heyeAgent", "has-agent"],
+  "public_dns_observation": {
+    "agent.playlab.eu.cc": "Cloudflare 530/no origin",
+    "objects.agent.playlab.eu.cc": "DNS/TLS endpoint not ready",
+    "pet.playlab.eu.cc": "Cloudflare endpoint responds 401"
+  },
+  "reset_ready": false,
+  "blocking_reasons": [
+    "gamer admin-review retirement has not been explicitly confirmed",
+    "external staging database, object store, TLS and GHCR pull Secret are not provisioned"
+  ],
+  "backup": {
+    "status": "passed",
+    "path": "tmp/server-backups/enterprise-doc-server-backup-final-20260722T034951Z.tar.gz",
+    "sha256": "cb492c6c87e0fd6317eedd56ce7d4594669e1b759d8cddb6b6387135a65bca2a",
+    "size_bytes": 48565353,
+    "entry_count": 1407,
+    "sensitive_filename_matches": 0,
+    "remote_and_local_hash_match": true
+  },
+  "limitations": [
+    "This record contains no credential values and does not prove backup, restore or deployment success."
+  ]
+}

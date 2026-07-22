@@ -1,0 +1,283 @@
+{
+  "schema_version": 1,
+  "evidence_id": "m6-current-status-20260722",
+  "milestone": "M6",
+  "status": "blocked_external",
+  "owner": "developer",
+  "captured_at": "2026-07-22T11:48:11+08:00",
+  "base_commit": "e485c0b74a8d89ae9c58593aa57221fd4dd51baf",
+  "working_tree_dirty_at_capture": true,
+  "capture_scope": "Pre-commit working-tree status relative to base_commit; this is not an immutable reviewed manifest.",
+  "release": {
+    "tag": "v0.1.1",
+    "run_id": "29857576680",
+    "manifest": "tmp/release-v0.1.1/release-manifest.json",
+    "manifest_sha256": "17f3ba61775d98ab9830e32c8f4d13a2f48ed937245b062f906d6785021574da",
+    "images": {
+      "api": "ghcr.io/drew-z/enterprise-doc-api@sha256:35b457cc93435beb6494a7c20e368d9246fadcb03968cdb6ee45ad248c7b6562",
+      "worker": "ghcr.io/drew-z/enterprise-doc-worker@sha256:e16ccf920ebc12850a314e6600f1b4f676eba22ee9d7cccae42f9e65e8a9e311",
+      "consumer": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:8cfc8c52d87184757d00c607e4357b6a58291ff69fd3f1984fd9115af4bccbd3",
+      "web": "ghcr.io/drew-z/enterprise-doc-web@sha256:295b59c8b183265d7641392af5cd9f6d67746588fe3699b6f476a0a5b5e3a207"
+    },
+    "supply_chain": [
+      "GHCR push completed",
+      "Trivy scan completed",
+      "SPDX SBOM generated and verified",
+      "BuildKit provenance generated and verified",
+      "Cosign OIDC signature verified"
+    ]
+  },
+  "local_verification": {
+    "kustomize": "v5.7.1 standalone",
+    "command": "uv run pytest tests/deployment -q",
+    "result": "145 passed",
+    "evidence_contracts": "5 passed for M5/M7 and M8 cross-milestone evidence contracts",
+    "ruff": "format check and lint passed",
+    "actionlint": "rhysd/actionlint:1.7.7 passed with .github/actionlint.yaml custom runner label configuration"
+  },
+  "external_gates": {
+    "staging_cluster_tls_secrets_smoke": {
+      "status": "blocked_external",
+      "reason": "K3s control plane, namespace, scoped kubeconfig, non-root runner, scoped RBAC and admission guardrails are ready. Administrator prerequisite approvals, the host firewall, Cloudflare Tunnel/TLS, R2 workload credentials, external PostgreSQL, real model gateway routing, application secrets, rebuilt Web image and authenticated smoke token are not complete."
+    },
+    "backup_restore_rollback": {
+      "status": "blocked_external",
+      "reason": "No isolated PostgreSQL/object-store restore target or measured RPO/RTO drill has executed."
+    }
+  },
+  "host_reset": {
+    "status": "blocked_external",
+    "audit": "evidence/m6/20260722-pre-reset-host-audit.json",
+    "reset_ready": false,
+    "backup": {
+      "path": "tmp/server-backups/enterprise-doc-server-backup-final-20260722T034951Z.tar.gz",
+      "sha256": "cb492c6c87e0fd6317eedd56ce7d4594669e1b759d8cddb6b6387135a65bca2a",
+      "size_bytes": 48565353,
+      "entry_count": 1407,
+      "sensitive_filename_matches": 0,
+      "remote_and_local_hash_match": true
+    },
+    "reason": "Sanitized backup is verified, retired application services are stopped, and the scoped non-root runner is online. The K3s node still needs private control-plane firewall rules, external database/object-store/TLS/model credentials, and authenticated smoke before deployment is considered ready."
+  },
+  "cloudflare_inventory": {
+    "zone": "playlab.eu.cc",
+    "zone_account_id": "2741446a7478f2d8a5ff31df7e077f17",
+    "existing_enterprise_hostnames": [],
+    "tunnels": [],
+    "r2_buckets": [
+      "playlab-web",
+      "documents",
+      "artifacts"
+    ],
+    "enterprise_r2_cors_origin": "https://agent.playlab.eu.cc",
+    "mutations_performed": true,
+    "mutations": [
+      "Created dedicated documents bucket",
+      "Created dedicated artifacts bucket",
+      "Applied least-privilege browser CORS policy to both buckets"
+    ],
+    "s3_api_endpoint": "https://2741446a7478f2d8a5ff31df7e077f17.r2.cloudflarestorage.com",
+    "credentials_status": "blocked_external",
+    "connector_host": {
+      "cloudflared_version": "2026.7.2",
+      "service_status": "not_configured",
+      "tunnel_token_status": "blocked_external"
+    },
+    "note": "Dedicated documents/artifacts buckets and CORS remain. A temporary documents custom domain was removed because it is not a substitute for the S3 presign endpoint. Repository Web build variable now targets the R2 S3 endpoint; a new tagged image is required.",
+    "temporary_mutation": {
+      "action": "Attached then removed R2 custom domain objects.agent.playlab.eu.cc on documents bucket",
+      "result": "removed",
+      "reason": "R2 custom domain is public object access and not a verified writable SigV4 presign endpoint; avoid exposing documents bucket"
+    }
+  },
+  "github_staging_environment": {
+    "status": "partial",
+    "environment_created": true,
+    "variables": {
+      "STAGING_DEPLOYMENT_PROFILE": "tiny-single-node",
+      "STAGING_ALLOWED_HOST": "agent.playlab.eu.cc",
+      "STAGING_OBJECT_STORE_ALLOWED_HOST": "2741446a7478f2d8a5ff31df7e077f17.r2.cloudflarestorage.com",
+      "VITE_OBJECT_STORE_ORIGINS": "https://2741446a7478f2d8a5ff31df7e077f17.r2.cloudflarestorage.com",
+      "STAGING_KUBE_CONTEXT": "enterprise-doc-staging",
+      "STAGING_KUBE_API_SERVER": "https://127.0.0.1:6443",
+      "STAGING_NAMESPACE_UID": "b4cba754-dc9e-4fa0-a384-5df135ce8066"
+    },
+    "configured_secrets": [
+      "STAGING_KUBECONFIG"
+    ],
+    "missing_secrets": [
+      "STAGING_SMOKE_TOKEN"
+    ],
+    "missing_variables": [
+      "STAGING_DATABASE_EGRESS_CIDR",
+      "STAGING_MODEL_BASE_URL",
+      "STAGING_MODEL_NAME",
+      "STAGING_CONTROL_PLANE_APPROVED"
+    ],
+    "dispatch_gate": {
+      "status": "blocked_external",
+      "environment_variable": "STAGING_CONTROL_PLANE_APPROVED",
+      "required_value": "true",
+      "checked_before_checkout_or_kubeconfig_access": true,
+      "reason": "The marker remains unset until out-of-band firewall verification."
+    }
+  },
+  "model_gateway_contract": {
+    "status": "blocked_external",
+    "provider": "openai_compatible",
+    "required_environment_variables": [
+      "STAGING_MODEL_BASE_URL",
+      "STAGING_MODEL_NAME"
+    ],
+    "required_kubernetes_secret_key": "enterprise-doc-secrets.MODEL__API_KEY",
+    "base_url_contract": "public non-loopback HTTPS URL ending in /v1 without credentials, query or fragment",
+    "config_rollout_annotation": "enterprise-doc-agent/config-sha256",
+    "reason": "No real staging model gateway URL, exact model identifier or scoped API key has been provisioned. The deterministic provider is forbidden outside local/test, so every staging process that loads full settings would otherwise fail startup."
+  },
+  "scoped_runner": {
+    "status": "online",
+    "dispatch_status": "blocked_external_until_control_plane_firewall_is_verified",
+    "name": "redacted-repository-scoped-runner",
+    "name_redacted": true,
+    "service_user": "gha-staging",
+    "label": "enterprise-doc-staging",
+    "runner_version": "2.336.0",
+    "github_repository": "Drew-Z/enterprise-doc-agent",
+    "kube_context": "enterprise-doc-staging",
+    "kube_api_server": "https://127.0.0.1:6443",
+    "rbac_scope": "namespace deployer with no Secret read, Namespace get-only, administrator prerequisites read-only, reviewed Deployment/Job mutation constrained by admission, and delete limited to the migration/readiness Jobs",
+    "bootstrap_manifest": "infra/k8s/bootstrap/staging-deployer-rbac.yaml",
+    "bootstrap_manifest_sha256": "26c16cc9864364a90fbd1cd6a709b149b82a0675ae34ea8ea54d0614dd537859",
+    "guardrails_manifest": "infra/k8s/bootstrap/staging-deployer-guardrails.yaml",
+    "guardrails_manifest_sha256": "cabf8a131dfcc0d70315c9c292358071b6ab45bad41f014ebd1e21acb3b8f74d",
+    "verified_at": "2026-07-22T10:31:32+08:00"
+  },
+  "admission_guardrails": {
+    "status": "passed",
+    "cluster": "K3s v1.36.2+k3s1",
+    "installed": {
+      "status": "applied",
+      "policy_count": 4,
+      "binding_count": 4,
+      "names": [
+        "enterprise-doc-staging-namespace-guard",
+        "enterprise-doc-staging-prerequisite-guard",
+        "enterprise-doc-staging-deployment-guard",
+        "enterprise-doc-staging-job-guard"
+      ]
+    },
+    "approval_source": "administrator-owned Namespace annotations read through namespaceObject",
+    "parameter_objects": "none; paramKind and paramRef were removed",
+    "real_api_verification": {
+      "status": "passed",
+      "verified_at": "2026-07-22T10:31:32+08:00",
+      "command": "python scripts/verify_staging_admission.py --bootstrap-dir <bootstrap> --rendered-manifest <rendered> --smoke-job <readiness-job>",
+      "allowed_server_dry_runs": [
+        "Deployment/enterprise-doc-api",
+        "Job/enterprise-doc-migrate",
+        "Job/m5-staging-smoke"
+      ],
+      "denied_rbac": [
+        "get secrets",
+        "create pods",
+        "update configmaps",
+        "patch networkpolicies.networking.k8s.io"
+      ],
+      "allowed_rbac": [
+        "create jobs.batch",
+        "patch deployments.apps",
+        "delete job/enterprise-doc-migrate",
+        "delete job/m5-staging-smoke"
+      ],
+      "denied_named_rbac": [
+        "delete job/unreviewed-maintenance"
+      ],
+      "denied_server_dry_runs": [
+        "administrator-owned ConfigMap mutation",
+        "unapproved Secret reference",
+        "attacker-controlled immutable image"
+      ]
+    },
+    "cleanup_verification": {
+      "temporary_verify_policies_or_bindings": 0,
+      "temporary_approval_annotations": 0,
+      "test_configmaps": 0,
+      "permanent_guardrails_retained": true
+    },
+    "kubernetes_136_parameter_cache_race": {
+      "upstream_issue": "https://github.com/kubernetes/kubernetes/issues/133827",
+      "upstream_fix": "https://github.com/kubernetes/kubernetes/pull/134423",
+      "fix_commit": "400e80fa208a705167672ca09ca5793f36dae1ea",
+      "fix_milestone": "v1.37",
+      "repository_decision": "Use parameter-free namespaceObject rules on Kubernetes 1.36 instead of relying on informer convergence."
+    },
+    "live_namespace_approval": {
+      "status": "blocked_external",
+      "reason": "Approval annotations are not applied until external endpoints, Secrets and release images are reviewed."
+    },
+    "live_prerequisite_content_validation": {
+      "status": "passed_local_contract",
+      "behavior": "The workflow enumerates all managed prerequisite kinds in the dedicated Namespace, ignores only three Kubernetes/bootstrap identities, and compares normalized inventory/specs with the approved render without exposing drifted values.",
+      "real_staging_result": "blocked_external until administrator prerequisites exist"
+    }
+  },
+  "limitations": [
+    "This record does not claim a Kubernetes apply, public HTTPS smoke, rollback, restore, production capacity, or production availability.",
+    "The immutable image evidence is linked to the release manifest; the cluster gates remain separate manual gates.",
+    "Real API admission verification used isolated server-side dry-runs and does not claim application workloads were applied.",
+    "This current-status record describes a dirty working tree; immutable reproduction requires a later reviewed commit-bound evidence publication."
+  ],
+  "k3s_inventory": {
+    "status": "ready",
+    "version": "v1.36.2+k3s1",
+    "node": "instance-zy2d1hd5",
+    "system_pods": [
+      "coredns 1/1 Running",
+      "local-path-provisioner 1/1 Running",
+      "metrics-server 1/1 Running",
+      "traefik 1/1 Running"
+    ],
+    "container_runtime": "containerd://2.3.2-k3s2",
+    "image_mirror": "docker.io -> https://dockerproxy.net",
+    "namespace": "enterprise-doc-agent-staging",
+    "namespace_uid": "b4cba754-dc9e-4fa0-a384-5df135ce8066",
+    "deployment_profile": "tiny-single-node",
+    "captured_at": "2026-07-22T06:20:00+08:00",
+    "limitations": [
+      "K3s control plane and staging namespace are ready, but application workloads have not been applied."
+    ]
+  },
+  "host_security": {
+    "status": "blocked_external",
+    "firewall": "inactive",
+    "public_listeners": [
+      "6443/tcp Kubernetes API",
+      "10250/tcp kubelet",
+      "8472/udp Flannel VXLAN"
+    ],
+    "required_action": "Do not dispatch the online runner; restrict 6443, 10250 and 8472 to private/provider security-group paths before any workflow or public rollout",
+    "ssh_preservation": "Do not change firewall without an out-of-band console or verified operator allowlist",
+    "captured_at": "2026-07-22T04:31:00+08:00"
+  },
+  "resource_observation": {
+    "status": "warning",
+    "node_memory": "1171Mi / 1.8Gi used with system pods",
+    "available_memory": "approximately 519Mi from free -h before application workloads",
+    "swap": "795Mi / 2Gi used",
+    "cpu": "343m / 2 CPU at capture",
+    "disk": "19G available of 40G",
+    "implication": "tiny-single-node remains staging/drill only; stop rollout on memory pressure and move to larger node",
+    "captured_at": "2026-07-22T04:25:00+08:00"
+  },
+  "web_image_contract": {
+    "status": "rebuild_required",
+    "release_tag": "v0.1.1",
+    "image_digest": "sha256:295b59c8b183265d7641392af5cd9f6d67746588fe3699b6f476a0a5b5e3a207",
+    "baked_object_store_origin": "https://objects.agent.playlab.eu.cc",
+    "source": "GitHub Actions run 29857576680 log",
+    "runtime_variable_note": "VITE_OBJECT_STORE_ORIGINS is build-time for the Vite Web bundle; staging variables cannot change this image after build",
+    "current_dns": "objects.agent.playlab.eu.cc removed/not provisioned",
+    "action": "Repository VITE_OBJECT_STORE_ORIGINS variable updated to the R2 S3 endpoint; publish a new tagged Web image before staging because Vite origin is build-time",
+    "target_object_store_origin": "https://2741446a7478f2d8a5ff31df7e077f17.r2.cloudflarestorage.com"
+  }
+}
