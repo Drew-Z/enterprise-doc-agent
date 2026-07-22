@@ -370,7 +370,9 @@ ROLLBACK_WORKER_IMAGE=${ROLLBACK_WORKER_IMAGE:-}
 ROLLBACK_CONSUMER_IMAGE=${ROLLBACK_CONSUMER_IMAGE:-}
 ROLLBACK_WEB_IMAGE=${ROLLBACK_WEB_IMAGE:-}
 
-pushd "infra/k8s/overlays/$PROFILE"
+# tiny-single-node inherits staging; bind logical image names in the parent
+# before rendering the selected profile.
+pushd infra/k8s/overlays/staging
 kustomize edit set image enterprise-doc/api="$REGISTRY_PREFIX/enterprise-doc-api@$API_DIGEST"
 kustomize edit set image enterprise-doc/worker="$REGISTRY_PREFIX/enterprise-doc-worker@$WORKER_DIGEST"
 kustomize edit set image enterprise-doc/consumer="$REGISTRY_PREFIX/enterprise-doc-consumer@$CONSUMER_DIGEST"

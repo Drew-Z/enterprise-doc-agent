@@ -669,7 +669,7 @@ def test_tiny_staging_runbook_keeps_r2_presign_on_the_s3_api_surface() -> None:
     assert "not a substitute for the S3" in runbook
     assert "OBJECT_STORE__MULTIPART_CHECKSUM_MODE=readback_sha256" in runbook
     assert "HTTP 501" in runbook
-    assert 'pushd "infra/k8s/overlays/$PROFILE"' in runbook
+    assert "pushd infra/k8s/overlays/staging" in runbook
     assert "Do not dispatch with the `v0.1.1` Web digest" in runbook
 
 
@@ -764,7 +764,7 @@ def test_tiny_overlay_binds_exact_images_through_the_staging_parent(tmp_path: Pa
     assert "registry.example.invalid" not in rendered.stdout
 
     deploy = (ROOT / ".github/workflows/deploy-staging.yml").read_text(encoding="utf-8")
-    assert 'IMAGE_BINDING_OVERLAY="infra/k8s/overlays/${DEPLOYMENT_PROFILE}"' in deploy
+    assert 'IMAGE_BINDING_OVERLAY="infra/k8s/overlays/staging"' in deploy
     assert 'cd "$IMAGE_BINDING_OVERLAY"' in deploy
 
 

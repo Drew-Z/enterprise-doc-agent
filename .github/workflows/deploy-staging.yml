@@ -219,7 +219,10 @@ jobs:
             tiny-single-node|staging) ;;
             *) echo 'unsupported deployment profile' >&2; exit 1 ;;
           esac
-          IMAGE_BINDING_OVERLAY="infra/k8s/overlays/${DEPLOYMENT_PROFILE}"
+          # tiny-single-node inherits the staging overlay. Bind images in that
+          # parent before the child render so Kustomize still matches the
+          # logical enterprise-doc/* image names.
+          IMAGE_BINDING_OVERLAY="infra/k8s/overlays/staging"
           printf '%s' "$REGISTRY_PREFIX" | grep -Eq '^[a-z0-9.-]+(:[0-9]{1,5})?(/[a-z0-9][a-z0-9._-]*)+$'
           case "$REGISTRY_PREFIX" in
             localhost*|127.*|\[::1\]*) echo 'registry_prefix must not target loopback' >&2; exit 1 ;;
