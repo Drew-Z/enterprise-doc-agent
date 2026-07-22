@@ -545,6 +545,27 @@ def test_cluster_mutating_workflows_use_the_dedicated_private_runner() -> None:
     assert "runs-on: ubuntu-latest" not in rollback
 
 
+def test_cluster_mutating_workflows_use_the_pre_provisioned_runner_toolchain() -> None:
+    workflow_dir = ROOT / ".github" / "workflows"
+    for name, job_name in (("deploy-staging.yml", "deploy"), ("rollback.yml", "rollback")):
+        workflow = yaml.safe_load((workflow_dir / name).read_text(encoding="utf-8"))
+        job = workflow["jobs"][job_name]
+        assert job["env"]["RUNNER_PYTHON"] == "/opt/enterprise-doc-toolchain/python/bin/python"
+        steps = [step for step in job["steps"] if isinstance(step, dict)]
+        toolchain = _named_step(steps, "Validate pre-provisioned runner toolchain")
+        command = str(toolchain["run"])
+        assert 'test -x "$RUNNER_PYTHON"' in command
+        assert '" = "3.12"' in command
+        assert 'cryptography.__version__ == "49.0.0"' in command
+        assert 'yaml.__version__ == "6.0.3"' in command
+        assert "kubectl version --client" in command
+        assert 'test "$(kustomize version)" = "v5.7.1"' in command
+        serialized = str(workflow)
+        assert "actions/setup-python" not in serialized
+        assert "azure/setup-kubectl" not in serialized
+        assert "setup-kustomize" not in serialized
+
+
 def test_staging_model_routing_uses_environment_variables_within_dispatch_limit() -> None:
     workflow, steps = _deploy_workflow()
     trigger = workflow.get("on", workflow.get(True))

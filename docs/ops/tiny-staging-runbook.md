@@ -195,6 +195,15 @@ an `always()` step. An abrupt host or runner failure can still bypass process cl
 the runner's temporary-directory cleanup is a second layer, and the ServiceAccount
 token must be rotated after any abnormal termination where residue cannot be ruled out.
 
+The isolated runner uses a pre-provisioned toolchain instead of downloading
+Python, kubectl and Kustomize during every release. Provision Python 3.12 at
+`/opt/enterprise-doc-toolchain/python/bin/python`, install exactly `PyYAML==6.0.3`
+and `cryptography==49.0.0` into that virtual environment, install Kustomize
+`v5.7.1` on `PATH`, and provide a working kubectl client. Both workflows fail
+before kubeconfig creation if this contract drifts. Keep the toolchain root-owned
+and non-writable by the runner account; upgrades require a reviewed repository
+change and an administrator-side toolchain update.
+
 ## Runner registration (repository-scoped)
 
 Run these commands as a dedicated non-root account on the node after the
