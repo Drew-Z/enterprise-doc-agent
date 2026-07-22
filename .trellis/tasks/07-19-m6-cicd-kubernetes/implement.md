@@ -62,3 +62,29 @@ immutable image or rollback evidence. Those remain open manual gates.
   images with Kustomize 5.7.1.
 - [x] Replace the remotely broken Trivy composite action with a revision whose nested
   setup/cache actions are SHA-pinned, and lock the scanner version explicitly.
+
+## Slice 8: Real Staging Model Routing
+
+- [x] Fail closed unless staging uses a reviewed OpenAI-compatible HTTPS `/v1` route and
+  exact model identifier, with the API key kept only in the Kubernetes Secret.
+- [x] Keep workflow dispatch within GitHub's ten-input limit by sourcing non-secret model
+  routing from protected staging Environment variables.
+- [x] Hash model configuration into every backend and migration Pod template and retain
+  the sanitized route metadata in the release record.
+
+## Slice 9: Scoped Staging Bootstrap And Atomic Rollback Preflight
+
+- [x] Move Namespace, ConfigMap, ServiceAccount, Service, Ingress, NetworkPolicy and PDB
+  mutation behind an administrator prerequisite boundary; keep the deployer to reviewed
+  Deployments, Jobs and read-only diagnostics.
+- [x] Record approved endpoints, model routing, prerequisite fingerprint and current plus
+  one rollback image per service in administrator-owned Namespace annotations.
+- [x] Replace ConfigMap-parameterized admission rules with `namespaceObject` rules and
+  verify allow/deny behavior against the real Kubernetes 1.36 API server without leaving
+  temporary cluster-scoped resources.
+- [x] Make deploy and rollback workflows assert the scoped RBAC contract, clean credentials
+  with `always()`, and clean the readiness Job on failed smoke execution.
+- [x] Preflight every rollback revision with `--dry-run=server` before all actual undo
+  requests, then wait for every Deployment and retain structured failure evidence.
+- [x] Update deployment contracts, runbook/spec/evidence, full tests, lint, actionlint and
+  final independent security review while keeping external deployment gates blocked.

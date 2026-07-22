@@ -17,7 +17,8 @@ cloud deployment or production release without an external gate record.
   checks; promotion uses immutable image digests and never `latest`.
 - **M6-R3**: Kubernetes base manifests define Deployments/Services, migration Job,
   ConfigMap/secret references, startup/liveness/readiness probes, resources,
-  graceful termination, PDB, ServiceAccount/RBAC and NetworkPolicy.
+  graceful termination, PDB, ServiceAccount and NetworkPolicy. Administrator bootstrap
+  manifests define the scoped deployer RBAC and admission guardrails separately.
 - **M6-R4**: Staging overlays can apply with environment-specific images and replicas;
   migrations run before rollout and the upload -> ingestion -> Agent smoke is explicit.
 - **M6-R5**: Release promotion and rollback workflows record image digest, migration
@@ -31,6 +32,15 @@ cloud deployment or production release without an external gate record.
   external, provides a bounded Redis delivery layer, targets K3s Traefik, removes
   misleading single-node PDBs, keeps migration-overlap memory within 1 GiB, and records
   the selected profile in both Namespace ownership and hashed release evidence.
+- **M6-R9**: Staging infrastructure prerequisites remain administrator-owned. The scoped
+  deployer can mutate only reviewed Deployments and Jobs, cannot read Kubernetes Secrets,
+  can delete only the migration and readiness Jobs, and is constrained by admission rules
+  whose approved endpoints and immutable image set come from administrator-owned Namespace
+  annotations rather than eventually consistent admission parameter caches. Deployment
+  also verifies the live prerequisite inventory and normalized specs against that approval.
+- **M6-R10**: Rollback preflights every requested Deployment revision through the API
+  server before mutating any Deployment, then submits all rollback specs before waiting
+  for health so an admission or revision error cannot create an avoidable mixed release.
 
 ## Acceptance Criteria
 
@@ -50,6 +60,10 @@ cloud deployment or production release without an external gate record.
   memory limits when existing workloads overlap the migration Job.
 - [x] Staging smoke identity, profile ownership, exact digest binding, and public
   single-host PostgreSQL egress are final-render and workflow contract tested.
+- [x] Admin-owned staging prerequisites, deployer RBAC denials, and parameter-free
+  admission allow/deny behavior are contract tested and verified against a real API server.
+- [x] Rollback performs all server-side dry-run preflights before any rollout undo and
+  keeps structured partial-failure evidence for rollout health failures.
 
 ## Out Of Scope
 

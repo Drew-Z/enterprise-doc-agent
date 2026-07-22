@@ -12,11 +12,17 @@ expand/migrate/contract database lifecycle.
 1. Build, scan, generate SBOM and record digest.
 2. Reject an existing unannotated or mismatched deployment-profile Namespace.
 3. Bind exact digests in the staging parent overlay, then render the selected profile.
-4. Apply compatible prerequisites and run the migration Job.
+4. Verify the administrator-applied prerequisite fingerprint, then run the migration Job.
 5. Wait for migration Job success and required checkpointer setup.
 6. Roll out API/Worker/consumer/Web with startup, readiness and liveness checks.
 7. Run staging smoke and publish a release record.
 8. Promote the exact digest or run a documented rollback. Never rebuild during promote.
+
+The migration Job has a fixed reviewed name and an immutable Pod template. On repeated
+releases, the workflow verifies prerequisites and workload updates first, deletes the
+completed old migration Job, then performs a server-side create dry-run before applying
+the new Job. Dry-running an update against the old Job would fail on immutable template
+fields even when the new migration is valid.
 
 ## Security Boundaries
 
@@ -26,6 +32,34 @@ Redis, object-store, API and DNS flows. Secrets are referenced, not committed.
 External PostgreSQL egress is limited to the four database-using Pod identities and one
 reviewed public `/32` or `/128`; the staging smoke has a dedicated label and API ingress
 rule rather than receiving a general namespace exception.
+
+Staging prerequisites are an administrator boundary: Namespace metadata, ConfigMap,
+ServiceAccount, Service, Ingress, NetworkPolicy and PDB objects are readable but immutable
+to the release deployer. Administrator-approved endpoints, model routing and current plus
+one rollback image per service are recorded as Namespace annotations. Deployment and Job
+admission policies read those immutable annotations through `namespaceObject`; they do not
+use `paramKind` because Kubernetes 1.36 can miss newly recreated parameter objects in its
+admission informer cache before evaluating match conditions. Admission is defense in depth
+for the scoped deployer, not isolation from cluster administrators or from credentials that
+an approved workload is intentionally allowed to consume.
+
+The staging workflow renders the expected prerequisite approval fingerprint, verifies the
+live administrator-owned Namespace record, and compares the live prerequisite inventory
+and normalized specs with the approved render, then applies only migration and workload
+phases. Kubernetes Secret content is validated in a separate administrator-side preflight
+and never read by the scoped deployer workflow. Job deletion is limited by resource name to
+the migration and readiness Jobs. Kubeconfig is written only to a job-unique temporary path
+with signal/error and final-step cleanup.
+
+Rollback first submits a server-side dry-run undo for every target revision. Only when all
+preflights pass does it submit all actual undo requests, followed by rollout health waits.
+The Namespace allowlist retains the current and immediately previous immutable image for
+each application service so reviewed rollback remains possible without allowing arbitrary
+repositories or tags.
+
+This ordering is an all-target preflight, not a Kubernetes transaction. A failure during
+actual undo can still leave mixed revisions; the structured command record identifies the
+last completed mutation for explicit operator reconciliation.
 
 ## Evidence And Gates
 
@@ -49,3 +83,13 @@ a constrained staging and drill profile, not a production or high-availability t
 A repository variable selects only reviewed profile names; the workflow checks Namespace
 ownership before apply and writes the profile into the sanitized evidence manifest and
 release record without exceeding GitHub's ten-input workflow dispatch limit.
+
+## Staging Model Contract
+
+Staging fixes the provider to `openai_compatible`. The protected GitHub Environment
+supplies the non-secret HTTPS `/v1` gateway URL and exact model identifier, while the
+Kubernetes application Secret supplies only `MODEL__API_KEY`. These values are validated
+during render and recorded in the administrator-owned prerequisite approval. A hash of the
+resulting ConfigMap is placed on API, Worker, consumer and migration Pod templates so a
+routing change triggers replacement. The sanitized release record retains only provider,
+URL and model name for reproducibility.
