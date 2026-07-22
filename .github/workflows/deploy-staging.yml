@@ -59,7 +59,7 @@ jobs:
     concurrency:
       group: enterprise-doc-agent-staging
       cancel-in-progress: false
-    timeout-minutes: 30
+    timeout-minutes: 45
     env:
       RUNNER_PYTHON: /opt/enterprise-doc-toolchain/python/bin/python
     defaults:
@@ -333,7 +333,7 @@ jobs:
           kubectl -n enterprise-doc-agent-staging delete job enterprise-doc-migrate --ignore-not-found
           kubectl apply --dry-run=server -f "$RUNNER_TEMP/staging-migration.yaml"
           kubectl apply -f "$RUNNER_TEMP/staging-migration.yaml"
-          kubectl -n enterprise-doc-agent-staging wait --for=condition=complete job/enterprise-doc-migrate --timeout=300s
+          kubectl -n enterprise-doc-agent-staging wait --for=condition=complete job/enterprise-doc-migrate --timeout=900s
       - name: Apply workloads after migration
         id: workloads
         run: |
@@ -343,10 +343,10 @@ jobs:
         id: rollout
         run: |
           set -euo pipefail
-          kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-api --timeout=300s
-          kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-worker --timeout=300s
-          kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-consumer --timeout=300s
-          kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-web --timeout=300s
+          kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-api --timeout=600s
+          kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-worker --timeout=600s
+          kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-consumer --timeout=600s
+          kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-web --timeout=600s
           if kubectl -n enterprise-doc-agent-staging get deployment enterprise-doc-redis >/dev/null 2>&1; then
             kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-redis --timeout=180s
           fi

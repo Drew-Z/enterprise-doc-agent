@@ -448,6 +448,15 @@ Job with a server-side create dry-run, waits for completion, applies workloads,
 performs in-cluster readiness and authenticated upload → ingestion → Agent
 smoke, and uploads sanitized evidence.
 
+The first digest-pinned release may need to cold-pull images over a constrained
+route. Kubernetes counts that download time against a Job's active deadline, so
+the migration Job has a 900-second total budget and application rollouts have a
+600-second budget each; the enclosing deploy job is capped at 45 minutes. A
+timeout while the migration Pod is still `ContainerCreating` means Alembic never
+started. Preserve the failed Job and events for review, confirm that state, then
+delete it explicitly before retrying; never treat an image-pull timeout as a
+completed migration.
+
 Before dispatch, confirm `STAGING_MODEL_BASE_URL`, `STAGING_MODEL_NAME` and the
 `MODEL__API_KEY` Secret value all refer to the same gateway account and model.
 The API, Worker, consumer and migration processes all load the staging model

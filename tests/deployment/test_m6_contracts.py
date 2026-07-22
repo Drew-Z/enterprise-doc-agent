@@ -150,7 +150,7 @@ def test_migration_job_and_policies_are_present() -> None:
         "upgrade",
         "head",
     ]
-    assert migration["spec"]["activeDeadlineSeconds"] == 300
+    assert migration["spec"]["activeDeadlineSeconds"] == 900
     policy_docs = _documents(ROOT / "infra/k8s/base/network-policy.yaml")
     assert any(item["metadata"]["name"] == "enterprise-doc-default-deny" for item in policy_docs)
     assert any(item["metadata"]["name"] == "enterprise-doc-runtime-egress" for item in policy_docs)
@@ -862,6 +862,12 @@ def test_staging_workflows_preserve_admin_boundary_and_clean_credentials() -> No
     assert migration_run.index("apply --dry-run=server") < migration_run.index(
         'kubectl apply -f "$RUNNER_TEMP/staging-migration.yaml"'
     )
+    assert "job/enterprise-doc-migrate --timeout=900s" in migration_run
+
+    rollout = _named_step(deploy_steps, "Wait for workloads")
+    rollout_run = str(rollout["run"])
+    for deployment in ("api", "worker", "consumer", "web"):
+        assert f"deployment/enterprise-doc-{deployment} --timeout=600s" in rollout_run
 
     smoke_cleanup = _named_step(deploy_steps, "Clean up readiness smoke")
     assert "always()" in str(smoke_cleanup["if"])
