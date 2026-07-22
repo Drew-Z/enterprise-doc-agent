@@ -22,6 +22,9 @@ class StagingSmokeFailure(RuntimeError):
     pass
 
 
+_STAGING_SMOKE_USER_AGENT = "enterprise-doc-staging-smoke/1.0"
+
+
 def validate_https_endpoint(
     value: str,
     *,
@@ -96,6 +99,7 @@ class UrlLibSmokeClient:
             headers={
                 "Accept": "application/json",
                 "Authorization": f"Bearer {self.token}",
+                "User-Agent": _STAGING_SMOKE_USER_AGENT,
                 **({"Content-Type": "application/json"} if body is not None else {}),
                 **(headers or {}),
             },
@@ -129,7 +133,11 @@ class UrlLibSmokeClient:
             validated_url,
             data=content,
             method="PUT",
-            headers={**headers, "Content-Length": str(len(content))},
+            headers={
+                **headers,
+                "Content-Length": str(len(content)),
+                "User-Agent": _STAGING_SMOKE_USER_AGENT,
+            },
         )
         try:
             with urlopen(request, timeout=self.timeout_seconds) as response:

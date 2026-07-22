@@ -492,6 +492,13 @@ Before dispatch, confirm `STAGING_MODEL_BASE_URL`, `STAGING_MODEL_NAME` and the
 The API, Worker, consumer and migration processes all load the staging model
 settings, so an incomplete model contract blocks startup before smoke testing.
 
+The authenticated smoke client identifies itself as
+`enterprise-doc-staging-smoke/1.0`. The staging hostname must allow this API
+automation User-Agent through the Cloudflare security layer; a Browser Integrity
+Check block returns Cloudflare error 1010 before the request reaches the API and
+must be diagnosed at the correct Cloudflare account, not treated as a JWT or
+database authorization failure.
+
 Do not mark the gate passed if a step is skipped, the smoke is disabled, or the
 workflow ran on a different runner. Record the run URL, commit, profile,
 digests, migration revision, smoke result, and evidence artifact hashes.

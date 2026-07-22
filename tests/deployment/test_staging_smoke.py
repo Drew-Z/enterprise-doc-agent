@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import sys
 from importlib.util import module_from_spec, spec_from_file_location
+from io import BytesIO
 from pathlib import Path
 from typing import Any
+from urllib.request import Request
+from urllib.response import addinfourl
 
 import pytest
 
@@ -82,6 +85,30 @@ def test_staging_smoke_source_never_logs_or_accepts_token_as_cli_argument() -> N
     assert 'add_argument("--token"' not in source
     assert 'os.environ.get("STAGING_SMOKE_TOKEN"' in source
     assert "print(token" not in source
+
+
+def test_url_lib_client_sets_explicit_automation_user_agent(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: list[Request] = []
+
+    def fake_urlopen(request: Request, *, timeout: float) -> addinfourl:
+        del timeout
+        captured.append(request)
+        response = addinfourl(BytesIO(b"{}"), {}, "https://staging.example/api", 200)
+        response.msg = "OK"
+        return response
+
+    monkeypatch.setattr(staging_smoke, "urlopen", fake_urlopen)
+    client = staging_smoke.UrlLibSmokeClient(
+        base_url="https://staging.example",
+        token="redacted",
+        allowed_control_plane_hosts=("staging.example",),
+    )
+    assert client.request_json("POST", "/api/test", payload={}) == {}
+    assert len(captured) == 1
+    request = captured[0]
+    assert request.headers["User-agent"] == "enterprise-doc-staging-smoke/1.0"
 
 
 def test_staging_smoke_rejects_plaintext_or_unallowlisted_endpoints() -> None:
