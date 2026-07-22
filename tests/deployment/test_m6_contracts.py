@@ -153,7 +153,7 @@ def test_migration_job_and_policies_are_present() -> None:
         "enterprise-doc-checkpointer-setup --check\n"
     )
     assert command[2] == expected_script
-    assert migration["spec"]["activeDeadlineSeconds"] == 900
+    assert migration["spec"]["activeDeadlineSeconds"] == 2700
 
     guardrails = _documents(ROOT / "infra/k8s/bootstrap/staging-deployer-guardrails.yaml")
     job_guard = _named_resource(
@@ -844,8 +844,22 @@ def test_ci_workflows_have_no_allow_failure_and_include_release_boundaries() -> 
     assert "--dry-run=server" in rollback_script
 
 
+def test_tiny_staging_runbook_separates_live_yaml_documents() -> None:
+    runbook = (ROOT / "docs/ops/tiny-staging-runbook.md").read_text(encoding="utf-8")
+    namespace_export = (
+        "kubectl get namespace enterprise-doc-agent-staging -o yaml \\\n"
+        '  > "$workdir/live-prerequisites.yaml"'
+    )
+    separator = "printf '\\n---\\n' >> \"$workdir/live-prerequisites.yaml\""
+    inventory_export = "kubectl -n enterprise-doc-agent-staging get \\\n"
+
+    assert runbook.index(namespace_export) < runbook.index(separator)
+    assert runbook.index(separator) < runbook.index(inventory_export, runbook.index(separator))
+
+
 def test_staging_workflows_preserve_admin_boundary_and_clean_credentials() -> None:
     deploy_workflow, deploy_steps = _deploy_workflow()
+    assert deploy_workflow["jobs"]["deploy"]["timeout-minutes"] == 90
     assert "$HOME/.kube/config" not in str(deploy_workflow)
     assert deploy_steps[0]["name"] == "Validate staging dispatch gate"
     assert "STAGING_CONTROL_PLANE_APPROVED" in str(deploy_steps[0]["env"])
@@ -891,7 +905,7 @@ def test_staging_workflows_preserve_admin_boundary_and_clean_credentials() -> No
     assert migration_run.index("apply --dry-run=server") < migration_run.index(
         'kubectl apply -f "$RUNNER_TEMP/staging-migration.yaml"'
     )
-    assert "job/enterprise-doc-migrate --timeout=900s" in migration_run
+    assert "job/enterprise-doc-migrate --timeout=2760s" in migration_run
     assert "kubectl -n enterprise-doc-agent-staging get job/enterprise-doc-migrate" in (
         migration_run
     )
@@ -900,11 +914,13 @@ def test_staging_workflows_preserve_admin_boundary_and_clean_credentials() -> No
     )
     assert migration_run.endswith(
         "if ! kubectl -n enterprise-doc-agent-staging wait --for=condition=complete \\\n"
-        "  job/enterprise-doc-migrate --timeout=900s; then\n"
+        "  job/enterprise-doc-migrate --timeout=2760s; then\n"
         "  kubectl -n enterprise-doc-agent-staging get job/enterprise-doc-migrate -o wide || true\n"
         "  kubectl -n enterprise-doc-agent-staging get pods \\\n"
         "    -l job-name=enterprise-doc-migrate -o wide || true\n"
         "  kubectl -n enterprise-doc-agent-staging describe job/enterprise-doc-migrate || true\n"
+        "  kubectl -n enterprise-doc-agent-staging describe pods \\\n"
+        "    -l job-name=enterprise-doc-migrate || true\n"
         "  exit 1\n"
         "fi\n"
     )

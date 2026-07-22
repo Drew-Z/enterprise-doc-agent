@@ -391,6 +391,7 @@ kubectl apply --dry-run=server -f "$workdir/staging-prerequisites.yaml"
 kubectl apply -f "$workdir/staging-prerequisites.yaml"
 kubectl get namespace enterprise-doc-agent-staging -o yaml \
   > "$workdir/live-prerequisites.yaml"
+printf '\n---\n' >> "$workdir/live-prerequisites.yaml"
 kubectl -n enterprise-doc-agent-staging get \
   configmaps,serviceaccounts,services,poddisruptionbudgets.policy,ingresses.networking.k8s.io,networkpolicies.networking.k8s.io \
   -o yaml >> "$workdir/live-prerequisites.yaml"
@@ -472,12 +473,19 @@ production defaults.
 
 The first digest-pinned release may need to cold-pull images over a constrained
 route. Kubernetes counts that download time against a Job's active deadline, so
-the migration Job has a 900-second total budget and application rollouts have a
-600-second budget each; the enclosing deploy job is capped at 45 minutes. A
+the migration Job has a 2,700-second total budget, the workflow waits up to
+2,760 seconds for its terminal condition, and application rollouts have a
+600-second budget each; the enclosing deploy job is capped at 90 minutes. A
 timeout while the migration Pod is still `ContainerCreating` means Alembic never
 started. Preserve the failed Job and events for review, confirm that state, then
 delete it explicitly before retrying; never treat an image-pull timeout as a
 completed migration.
+
+The `v0.1.4` attempt on 2026-07-22 measured the original bound rather than a
+migration defect: one 78,160,987-byte API layer had downloaded only about 36 MiB
+when the 900-second Job deadline terminated the still-creating Pod. The failed
+run retained sanitized evidence and did not roll out any new workloads. That
+measurement is the basis for the bounded cold-pull budget above.
 
 Before dispatch, confirm `STAGING_MODEL_BASE_URL`, `STAGING_MODEL_NAME` and the
 `MODEL__API_KEY` Secret value all refer to the same gateway account and model.

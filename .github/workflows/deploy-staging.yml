@@ -59,7 +59,7 @@ jobs:
     concurrency:
       group: enterprise-doc-agent-staging
       cancel-in-progress: false
-    timeout-minutes: 45
+    timeout-minutes: 90
     env:
       RUNNER_PYTHON: /opt/enterprise-doc-toolchain/python/bin/python
     defaults:
@@ -334,11 +334,13 @@ jobs:
           kubectl apply --dry-run=server -f "$RUNNER_TEMP/staging-migration.yaml"
           kubectl apply -f "$RUNNER_TEMP/staging-migration.yaml"
           if ! kubectl -n enterprise-doc-agent-staging wait --for=condition=complete \
-            job/enterprise-doc-migrate --timeout=900s; then
+            job/enterprise-doc-migrate --timeout=2760s; then
             kubectl -n enterprise-doc-agent-staging get job/enterprise-doc-migrate -o wide || true
             kubectl -n enterprise-doc-agent-staging get pods \
               -l job-name=enterprise-doc-migrate -o wide || true
             kubectl -n enterprise-doc-agent-staging describe job/enterprise-doc-migrate || true
+            kubectl -n enterprise-doc-agent-staging describe pods \
+              -l job-name=enterprise-doc-migrate || true
             exit 1
           fi
       - name: Apply workloads after migration
