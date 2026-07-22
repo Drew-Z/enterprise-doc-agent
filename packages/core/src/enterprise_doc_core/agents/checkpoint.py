@@ -65,12 +65,8 @@ class CheckpointRuntime:
             _checkpoint_dsn(self.settings),
             serde=_strict_serializer(),
         )
-        try:
-            async with asyncio.timeout(self.settings.agent.checkpoint_timeout_seconds):
-                saver = await manager.__aenter__()
-        except BaseException:
-            await manager.__aexit__(*sys.exc_info())
-            raise
+        async with asyncio.timeout(self.settings.agent.checkpoint_timeout_seconds):
+            saver = await manager.__aenter__()
         self._manager = manager
         self._saver = saver
         return saver

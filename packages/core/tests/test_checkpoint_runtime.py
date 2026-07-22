@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from types import SimpleNamespace
 
 import pytest
@@ -89,6 +90,44 @@ async def test_checkpoint_runtime_refuses_to_open_when_schema_is_not_ready(
     with pytest.raises(CheckpointSchemaNotReady):
         await CheckpointRuntime(_settings()).open()  # type: ignore[arg-type]
     assert not called
+
+
+@pytest.mark.asyncio
+async def test_checkpoint_runtime_preserves_timeout_when_manager_entry_stalls(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import enterprise_doc_core.agents.checkpoint as module
+
+    readiness = CheckpointerReadiness(
+        command=CheckpointerCommand.CHECK,
+        ready=True,
+        migration_version=7,
+        expected_migration_version=7,
+    )
+    exited = False
+
+    class Manager:
+        async def __aenter__(self) -> object:
+            await asyncio.sleep(60)
+            return object()
+
+        async def __aexit__(self, *_: object) -> bool:
+            nonlocal exited
+            exited = True
+            return False
+
+    settings = _settings()
+    settings.agent.checkpoint_timeout_seconds = 0.01
+    monkeypatch.setattr(module, "check_checkpoint_schema", lambda _: _ready(readiness))
+    monkeypatch.setattr(
+        module.AsyncPostgresSaver,
+        "from_conn_string",
+        lambda *_args, **_kwargs: Manager(),
+    )
+
+    with pytest.raises(TimeoutError):
+        await CheckpointRuntime(settings).open()  # type: ignore[arg-type]
+    assert not exited
 
 
 @pytest.mark.asyncio
