@@ -1,0 +1,119 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: enterprise-doc-agent-staging
+  labels:
+    app.kubernetes.io/part-of: enterprise-doc-agent
+    environment: staging
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/audit-version: latest
+  annotations:
+    enterprise-doc-agent/deployment-profile: tiny-single-node
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: enterprise-doc-staging-deployer
+  namespace: enterprise-doc-agent-staging
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: enterprise-doc-staging-deployer-token
+  namespace: enterprise-doc-agent-staging
+  annotations:
+    kubernetes.io/service-account.name: enterprise-doc-staging-deployer
+type: kubernetes.io/service-account-token
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: enterprise-doc-staging-namespace-manager
+rules:
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    resourceNames: ["enterprise-doc-agent-staging"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: enterprise-doc-staging-namespace-manager
+subjects:
+  - kind: ServiceAccount
+    name: enterprise-doc-staging-deployer
+    namespace: enterprise-doc-agent-staging
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: enterprise-doc-staging-namespace-manager
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: enterprise-doc-runtime
+  namespace: enterprise-doc-agent-staging
+rules: []
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: enterprise-doc-runtime
+  namespace: enterprise-doc-agent-staging
+subjects:
+  - kind: ServiceAccount
+    name: enterprise-doc-runtime
+    namespace: enterprise-doc-agent-staging
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: enterprise-doc-runtime
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: enterprise-doc-staging-deployer
+  namespace: enterprise-doc-agent-staging
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps", "serviceaccounts", "services"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods", "pods/log"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    resourceNames: ["enterprise-doc-migrate", "m5-staging-smoke"]
+    verbs: ["delete"]
+  - apiGroups: ["policy"]
+    resources: ["poddisruptionbudgets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses", "networkpolicies"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: enterprise-doc-staging-deployer
+  namespace: enterprise-doc-agent-staging
+subjects:
+  - kind: ServiceAccount
+    name: enterprise-doc-staging-deployer
+    namespace: enterprise-doc-agent-staging
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: enterprise-doc-staging-deployer

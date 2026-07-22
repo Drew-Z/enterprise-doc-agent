@@ -51,10 +51,25 @@ permissions:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    # The Kubernetes API is intentionally private. This job must run only on the
+    # dedicated, repository-scoped staging runner installed on the cluster node;
+    # a generic self-hosted label would allow unrelated jobs onto that host.
+    runs-on: [self-hosted, linux, x64, enterprise-doc-staging]
     environment: staging
+    concurrency:
+      group: enterprise-doc-agent-staging
+      cancel-in-progress: false
     timeout-minutes: 30
     steps:
+      - name: Validate staging dispatch gate
+        env:
+          CONTROL_PLANE_APPROVED: ${{ vars.STAGING_CONTROL_PLANE_APPROVED }}
+        run: |
+          set -euo pipefail
+          if test "$CONTROL_PLANE_APPROVED" != "true"; then
+            echo 'staging control-plane firewall requires out-of-band approval' >&2
+            exit 1
+          fi
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
@@ -65,18 +80,51 @@ jobs:
           kustomize-version: "5.7.1"
       - name: Configure cluster credentials
         env:
-          KUBE_CONFIG: ${{ secrets.STAGING_KUBECONFIG }}
+          KUBECONFIG_SECRET: ${{ secrets.STAGING_KUBECONFIG }}
           EXPECTED_CONTEXT: ${{ vars.STAGING_KUBE_CONTEXT }}
+          EXPECTED_API_SERVER: ${{ vars.STAGING_KUBE_API_SERVER }}
+          EXPECTED_NAMESPACE_UID: ${{ vars.STAGING_NAMESPACE_UID }}
+          NAMESPACE: enterprise-doc-agent-staging
         run: |
           set -euo pipefail
-          test -n "$KUBE_CONFIG"
+          umask 077
+          kubeconfig_path="$RUNNER_TEMP/enterprise-doc-kubeconfig-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          printf 'KUBECONFIG=%s\n' "$kubeconfig_path" >> "$GITHUB_ENV"
+          export KUBECONFIG="$kubeconfig_path"
+          trap 'rm -f "$KUBECONFIG"' ERR INT TERM
+          test -n "$KUBECONFIG_SECRET"
           test -n "$EXPECTED_CONTEXT"
-          mkdir -p "$HOME/.kube"
-          printf '%s' "$KUBE_CONFIG" > "$HOME/.kube/config"
-          chmod 600 "$HOME/.kube/config"
+          test -n "$EXPECTED_API_SERVER"
+          test -n "$EXPECTED_NAMESPACE_UID"
+          printf '%s' "$KUBECONFIG_SECRET" > "$KUBECONFIG"
+          chmod 600 "$KUBECONFIG"
           actual_context="$(kubectl config current-context)"
           test "$actual_context" = "$EXPECTED_CONTEXT"
+          actual_api_server="$(kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}')"
+          test "$actual_api_server" = "$EXPECTED_API_SERVER"
+          actual_namespace_uid="$(kubectl get namespace "$NAMESPACE" -o jsonpath='{.metadata.uid}')"
+          test "$actual_namespace_uid" = "$EXPECTED_NAMESPACE_UID"
           kubectl auth can-i get namespaces | grep -qx 'yes'
+          if kubectl auth can-i get secrets -n enterprise-doc-agent-staging; then
+            echo 'staging deployer must not read Kubernetes Secrets' >&2
+            exit 1
+          fi
+          if kubectl auth can-i create pods -n enterprise-doc-agent-staging; then
+            echo 'staging deployer must not create arbitrary Pods' >&2
+            exit 1
+          fi
+          if kubectl auth can-i update configmaps -n enterprise-doc-agent-staging; then
+            echo 'staging prerequisites must remain administrator-owned' >&2
+            exit 1
+          fi
+          if kubectl auth can-i patch networkpolicies.networking.k8s.io \
+            -n enterprise-doc-agent-staging; then
+            echo 'staging deployer must not change NetworkPolicy' >&2
+            exit 1
+          fi
+          kubectl auth can-i create jobs.batch -n enterprise-doc-agent-staging | grep -qx 'yes'
+          kubectl auth can-i patch deployments.apps -n enterprise-doc-agent-staging | grep -qx 'yes'
+          trap - ERR INT TERM
       - name: Validate deployment profile ownership
         env:
           DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'tiny-single-node' }}
@@ -140,6 +188,13 @@ jobs:
           TLS_SECRET_NAME: ${{ inputs.tls_secret_name }}
           VITE_OBJECT_STORE_ORIGINS: ${{ vars.VITE_OBJECT_STORE_ORIGINS }}
           DATABASE_EGRESS_CIDR: ${{ vars.STAGING_DATABASE_EGRESS_CIDR }}
+          MODEL_PROVIDER: openai_compatible
+          MODEL_BASE_URL: ${{ vars.STAGING_MODEL_BASE_URL }}
+          MODEL_NAME: ${{ vars.STAGING_MODEL_NAME }}
+          ROLLBACK_API_IMAGE: ${{ vars.STAGING_ROLLBACK_API_IMAGE }}
+          ROLLBACK_WORKER_IMAGE: ${{ vars.STAGING_ROLLBACK_WORKER_IMAGE }}
+          ROLLBACK_CONSUMER_IMAGE: ${{ vars.STAGING_ROLLBACK_CONSUMER_IMAGE }}
+          ROLLBACK_WEB_IMAGE: ${{ vars.STAGING_ROLLBACK_WEB_IMAGE }}
         run: |
           set -euo pipefail
           case "$DEPLOYMENT_PROFILE" in
@@ -150,6 +205,8 @@ jobs:
           python -m pip install --disable-pip-version-check --no-cache-dir \
             PyYAML==6.0.3 cryptography==49.0.0
           test -n "$VITE_OBJECT_STORE_ORIGINS"
+          test -n "$MODEL_BASE_URL"
+          test -n "$MODEL_NAME"
           kustomize build "$OVERLAY_DIR" > "$RUNNER_TEMP/staging-template.yaml"
           python scripts/configure_staging_manifest.py \
             --input "$RUNNER_TEMP/staging-template.yaml" \
@@ -159,7 +216,14 @@ jobs:
             --object-store-presign-endpoint "$OBJECT_STORE_PRESIGN_ENDPOINT" \
             --tls-secret-name "$TLS_SECRET_NAME" \
             --web-object-store-origins "$VITE_OBJECT_STORE_ORIGINS" \
-            --database-egress-cidr "$DATABASE_EGRESS_CIDR"
+            --database-egress-cidr "$DATABASE_EGRESS_CIDR" \
+            --model-provider "$MODEL_PROVIDER" \
+            --model-base-url "$MODEL_BASE_URL" \
+            --model-name "$MODEL_NAME" \
+            --rollback-api-image "$ROLLBACK_API_IMAGE" \
+            --rollback-worker-image "$ROLLBACK_WORKER_IMAGE" \
+            --rollback-consumer-image "$ROLLBACK_CONSUMER_IMAGE" \
+            --rollback-web-image "$ROLLBACK_WEB_IMAGE"
           grep -A4 '^kind: Namespace$' "$RUNNER_TEMP/staging.yaml" | grep -q 'name: enterprise-doc-agent-staging'
           grep -q 'name: enterprise-doc-migrate' "$RUNNER_TEMP/staging.yaml"
           grep -q 'kind: Ingress' "$RUNNER_TEMP/staging.yaml"
@@ -170,32 +234,36 @@ jobs:
           python scripts/render_k8s_phase.py --input "$RUNNER_TEMP/staging.yaml" --phase prerequisites --output "$RUNNER_TEMP/staging-prerequisites.yaml"
           python scripts/render_k8s_phase.py --input "$RUNNER_TEMP/staging.yaml" --phase migration --output "$RUNNER_TEMP/staging-migration.yaml"
           python scripts/render_k8s_phase.py --input "$RUNNER_TEMP/staging.yaml" --phase workloads --output "$RUNNER_TEMP/staging-workloads.yaml"
-      - name: Apply and validate staging prerequisites
+      - name: Verify administrator-owned staging prerequisites
         id: prerequisites
-        env:
-          STAGING_BASE_URL: ${{ inputs.staging_base_url }}
-          TLS_SECRET_NAME: ${{ inputs.tls_secret_name }}
         run: |
           set -euo pipefail
-          trap 'rm -f "$RUNNER_TEMP/staging-secrets.json"' EXIT
-          kubectl apply -f "$RUNNER_TEMP/staging-prerequisites.yaml"
-          kubectl -n enterprise-doc-agent-staging get secret \
-            enterprise-doc-secrets enterprise-doc-registry "$TLS_SECRET_NAME" \
-            -o json > "$RUNNER_TEMP/staging-secrets.json"
-          staging_host="$(python -c 'import os; from urllib.parse import urlsplit; print(urlsplit(os.environ["STAGING_BASE_URL"]).hostname or "")')"
-          python scripts/validate_staging_secrets.py \
-            --input "$RUNNER_TEMP/staging-secrets.json" \
-            --staging-host "$staging_host" \
-            --tls-secret-name "$TLS_SECRET_NAME" \
-            --output "$RUNNER_TEMP/staging-secret-validation.json"
-          rm -f "$RUNNER_TEMP/staging-secrets.json"
-          kubectl apply --dry-run=server -f "$RUNNER_TEMP/staging-migration.yaml"
+          kubectl get namespace enterprise-doc-agent-staging -o yaml \
+            > "$RUNNER_TEMP/staging-prerequisites-live.yaml"
+          kubectl -n enterprise-doc-agent-staging get \
+            configmaps,serviceaccounts,services,poddisruptionbudgets.policy,ingresses.networking.k8s.io,networkpolicies.networking.k8s.io \
+            -o yaml >> "$RUNNER_TEMP/staging-prerequisites-live.yaml"
+          kubectl get namespace enterprise-doc-agent-staging -o json \
+            > "$RUNNER_TEMP/staging-namespace.json"
+          python scripts/validate_staging_prerequisites.py \
+            --expected-manifest "$RUNNER_TEMP/staging-prerequisites.yaml" \
+            --live-manifest "$RUNNER_TEMP/staging-prerequisites-live.yaml" \
+            --live-namespace-json "$RUNNER_TEMP/staging-namespace.json"
           kubectl apply --dry-run=server -f "$RUNNER_TEMP/staging-workloads.yaml"
       - name: Apply migration job before rollout
         id: migration
         run: |
           set -euo pipefail
+          if kubectl -n enterprise-doc-agent-staging get job enterprise-doc-migrate >/dev/null 2>&1; then
+            previous_complete="$(kubectl -n enterprise-doc-agent-staging get job enterprise-doc-migrate \
+              -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')"
+            if test "$previous_complete" != "True"; then
+              echo 'previous migration Job is not complete; preserve it for operator review' >&2
+              exit 1
+            fi
+          fi
           kubectl -n enterprise-doc-agent-staging delete job enterprise-doc-migrate --ignore-not-found
+          kubectl apply --dry-run=server -f "$RUNNER_TEMP/staging-migration.yaml"
           kubectl apply -f "$RUNNER_TEMP/staging-migration.yaml"
           kubectl -n enterprise-doc-agent-staging wait --for=condition=complete job/enterprise-doc-migrate --timeout=300s
       - name: Apply workloads after migration
@@ -218,10 +286,17 @@ jobs:
         id: cluster_smoke
         if: inputs.run_smoke
         run: |
-          kubectl -n enterprise-doc-agent-staging run m5-staging-smoke --rm --attach --restart=Never \
-            --image=curlimages/curl@sha256:94e9e444bcba979c2ea12e27ae39bee4cd10bc7041a472c4727a558e213744e6 \
-            --labels=app.kubernetes.io/name=m5-staging-smoke -- \
-            sh -ec 'curl --fail --silent http://enterprise-doc-api:8000/health/ready'
+          set -euo pipefail
+          kubectl -n enterprise-doc-agent-staging delete job m5-staging-smoke --ignore-not-found
+          kubectl apply -f infra/k8s/smoke/readiness-job.yaml
+          kubectl -n enterprise-doc-agent-staging wait \
+            --for=condition=complete job/m5-staging-smoke --timeout=120s
+          kubectl -n enterprise-doc-agent-staging logs job/m5-staging-smoke
+      - name: Clean up readiness smoke
+        if: always() && inputs.run_smoke
+        run: |
+          kubectl -n enterprise-doc-agent-staging delete job m5-staging-smoke \
+            --ignore-not-found --wait=true
       - name: Run authenticated upload to Agent smoke
         id: authenticated_smoke
         if: inputs.run_smoke
@@ -249,6 +324,9 @@ jobs:
           CONSUMER_DIGEST: ${{ inputs.consumer_digest }}
           WEB_DIGEST: ${{ inputs.web_digest }}
           RUN_SMOKE: ${{ inputs.run_smoke }}
+          MODEL_PROVIDER: openai_compatible
+          MODEL_BASE_URL: ${{ vars.STAGING_MODEL_BASE_URL }}
+          MODEL_NAME: ${{ vars.STAGING_MODEL_NAME }}
           DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'tiny-single-node' }}
           PREREQUISITES_OUTCOME: ${{ steps.prerequisites.outcome }}
           MIGRATION_OUTCOME: ${{ steps.migration.outcome }}
@@ -263,7 +341,7 @@ jobs:
           raw_dir="tmp/staging-raw-${evidence_id}"
           sanitized_dir="tmp/staging-sanitized-${evidence_id}"
           mkdir -p "$raw_dir" "$sanitized_dir"
-          trap 'rm -f "$RUNNER_TEMP/staging-secrets.json"; rm -rf "$raw_dir"' EXIT
+          trap 'rm -rf "$raw_dir"' EXIT
           : > "$raw_dir/collection-status.txt"
           capture() {
             name="$1"
@@ -279,9 +357,6 @@ jobs:
               cp "$RUNNER_TEMP/$manifest" "$raw_dir/staging-rendered-${manifest}"
             fi
           done
-          if test -f "$RUNNER_TEMP/staging-secret-validation.json"; then
-            cp "$RUNNER_TEMP/staging-secret-validation.json" "$raw_dir/staging-secret-validation.json"
-          fi
           if test -f "tmp/staging-smoke-${GITHUB_SHA}.json"; then
             cp "tmp/staging-smoke-${GITHUB_SHA}.json" "$raw_dir/staging-smoke.json"
           fi
@@ -291,8 +366,6 @@ jobs:
           capture ingress.yaml kubectl -n enterprise-doc-agent-staging get ingress enterprise-doc-web -o yaml
           capture network-policy.yaml kubectl -n enterprise-doc-agent-staging get networkpolicy -o yaml
           capture events.txt kubectl -n enterprise-doc-agent-staging get events --sort-by=.lastTimestamp
-          capture secret-names.txt kubectl -n enterprise-doc-agent-staging get secret \
-            enterprise-doc-secrets enterprise-doc-registry "${{ inputs.tls_secret_name }}" -o name
           python scripts/sanitize_deployment_evidence.py \
             --input-dir "$raw_dir" \
             --output-dir "$sanitized_dir" \
@@ -309,6 +382,9 @@ jobs:
             --registry-prefix "$REGISTRY_PREFIX" \
             --image-digests-json "$image_digests_json" \
             --outcomes-json "$outcomes_json" \
+            --model-provider "$MODEL_PROVIDER" \
+            --model-base-url "$MODEL_BASE_URL" \
+            --model-name "$MODEL_NAME" \
             --smoke-required "$RUN_SMOKE" \
             --output "tmp/staging-release-${evidence_id}.record.json"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -320,3 +396,6 @@ jobs:
             tmp/staging-evidence-${{ github.sha }}.manifest.json
             tmp/staging-release-${{ github.sha }}.record.json
           if-no-files-found: error
+      - name: Clean up cluster credentials
+        if: always()
+        run: rm -f "${KUBECONFIG:-$RUNNER_TEMP/enterprise-doc-kubeconfig-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}}"

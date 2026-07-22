@@ -89,15 +89,8 @@ def test_rollback_commands_are_explicit_and_ordered() -> None:
             "undo",
             "deployment/enterprise-doc-api",
             "--to-revision=42",
-        ],
-        [
-            "kubectl",
-            "-n",
-            "enterprise-doc-agent-staging",
-            "rollout",
-            "status",
-            "deployment/enterprise-doc-api",
-            "--timeout=300s",
+            "--dry-run=server",
+            "--output=name",
         ],
         [
             "kubectl",
@@ -107,6 +100,35 @@ def test_rollback_commands_are_explicit_and_ordered() -> None:
             "undo",
             "deployment/enterprise-doc-worker",
             "--to-revision=7",
+            "--dry-run=server",
+            "--output=name",
+        ],
+        [
+            "kubectl",
+            "-n",
+            "enterprise-doc-agent-staging",
+            "rollout",
+            "undo",
+            "deployment/enterprise-doc-api",
+            "--to-revision=42",
+        ],
+        [
+            "kubectl",
+            "-n",
+            "enterprise-doc-agent-staging",
+            "rollout",
+            "undo",
+            "deployment/enterprise-doc-worker",
+            "--to-revision=7",
+        ],
+        [
+            "kubectl",
+            "-n",
+            "enterprise-doc-agent-staging",
+            "rollout",
+            "status",
+            "deployment/enterprise-doc-api",
+            "--timeout=300s",
         ],
         [
             "kubectl",
@@ -150,8 +172,8 @@ def test_rollback_execution_records_partial_failure(monkeypatch: pytest.MonkeyPa
     result = execute_rollback(commands)
 
     assert result["status"] == "failed"
-    assert result["completed_commands"] == [commands[0]]
-    assert result["failed_command"] == commands[1]
+    assert result["completed_commands"] == commands[:2]
+    assert result["failed_command"] == commands[2]
     assert result["error"] == "command exited with status 17"
     assert calls == commands
 
@@ -191,7 +213,7 @@ def test_rollback_cli_writes_structured_failure_record(
     record = json.loads(record_path.read_text(encoding="utf-8"))
     assert record["status"] == "failed"
     assert record["completed_commands"] == []
-    assert record["failed_command"][-1] == "--to-revision=42"
+    assert record["failed_command"][-2:] == ["--dry-run=server", "--output=name"]
     assert record["error"] == "command exited with status 23"
 
 

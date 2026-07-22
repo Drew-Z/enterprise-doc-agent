@@ -5,7 +5,6 @@ resources:
   - namespace.yaml
   - configmap.yaml
   - serviceaccount.yaml
-  - rbac.yaml
   - deployments.yaml
   - services.yaml
   - migration-job.yaml

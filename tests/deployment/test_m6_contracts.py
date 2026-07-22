@@ -18,9 +18,15 @@ def _documents(path: Path) -> list[dict[str, object]]:
 
 def _render_kustomization(path: Path) -> list[dict[str, object]]:
     kustomize = shutil.which("kustomize")
-    assert kustomize is not None, "standalone kustomize is required to validate overlays"
+    command: list[str]
+    if kustomize is not None:
+        command = [kustomize, "build", str(path)]
+    else:
+        kubectl = shutil.which("kubectl")
+        assert kubectl is not None, "kustomize or kubectl is required to validate overlays"
+        command = [kubectl, "kustomize", str(path)]
     completed = subprocess.run(
-        [kustomize, "build", str(path)],
+        command,
         cwd=ROOT,
         check=True,
         capture_output=True,
@@ -61,6 +67,20 @@ def _workflow_steps(name: str) -> tuple[dict[str, object], list[dict[str, object
 
 def _named_step(steps: list[dict[str, object]], name: str) -> dict[str, object]:
     return next(step for step in steps if step.get("name") == name)
+
+
+def _deploy_workflow() -> tuple[dict[str, object], list[dict[str, object]]]:
+    workflow = yaml.safe_load(
+        (ROOT / ".github" / "workflows" / "deploy-staging.yml").read_text(encoding="utf-8")
+    )
+    assert isinstance(workflow, dict)
+    jobs = workflow["jobs"]
+    assert isinstance(jobs, dict)
+    deploy = jobs["deploy"]
+    assert isinstance(deploy, dict)
+    steps = deploy["steps"]
+    assert isinstance(steps, list)
+    return workflow, [step for step in steps if isinstance(step, dict)]
 
 
 def test_all_runtime_images_have_non_root_dockerfiles_and_no_floating_latest_tag() -> None:
@@ -141,6 +161,165 @@ def test_secret_example_is_not_referenced_as_a_real_secret() -> None:
     assert "secret.example.yaml" not in base
     secret = (ROOT / "infra/k8s/base/secret.example.yaml").read_text(encoding="utf-8")
     assert "replace-with-secret-manager-reference" in secret
+
+
+def test_staging_deployer_bootstrap_cannot_read_or_mount_unreviewed_secrets() -> None:
+    bootstrap = ROOT / "infra" / "k8s" / "bootstrap"
+    documents = [
+        document
+        for name in ("staging-deployer-rbac.yaml", "staging-deployer-guardrails.yaml")
+        for document in _documents(bootstrap / name)
+    ]
+    assert {item["kind"] for item in documents} == {
+        "Namespace",
+        "ServiceAccount",
+        "Secret",
+        "ClusterRole",
+        "ClusterRoleBinding",
+        "Role",
+        "RoleBinding",
+        "ValidatingAdmissionPolicy",
+        "ValidatingAdmissionPolicyBinding",
+    }
+
+    namespace = _named_resource(documents, "Namespace", "enterprise-doc-agent-staging")
+    assert namespace["metadata"]["annotations"]["enterprise-doc-agent/deployment-profile"] == (
+        "tiny-single-node"
+    )
+    assert (
+        namespace["metadata"]["labels"]
+        | {
+            "pod-security.kubernetes.io/enforce": "restricted",
+            "pod-security.kubernetes.io/enforce-version": "latest",
+            "pod-security.kubernetes.io/audit": "restricted",
+            "pod-security.kubernetes.io/audit-version": "latest",
+        }
+        == namespace["metadata"]["labels"]
+    )
+    service_account = _named_resource(
+        documents,
+        "ServiceAccount",
+        "enterprise-doc-staging-deployer",
+    )
+    assert service_account["automountServiceAccountToken"] is False
+
+    token_secret = _named_resource(
+        documents,
+        "Secret",
+        "enterprise-doc-staging-deployer-token",
+    )
+    assert token_secret["type"] == "kubernetes.io/service-account-token"
+    assert token_secret["metadata"]["annotations"] == {
+        "kubernetes.io/service-account.name": "enterprise-doc-staging-deployer"
+    }
+
+    namespace_role = _named_resource(
+        documents,
+        "ClusterRole",
+        "enterprise-doc-staging-namespace-manager",
+    )
+    namespace_rules = namespace_role["rules"]
+    assert namespace_rules == [
+        {
+            "apiGroups": [""],
+            "resources": ["namespaces"],
+            "resourceNames": ["enterprise-doc-agent-staging"],
+            "verbs": ["get"],
+        }
+    ]
+
+    namespaced_role = _named_resource(documents, "Role", "enterprise-doc-staging-deployer")
+    rules = namespaced_role["rules"]
+    assert all("secrets" not in rule["resources"] for rule in rules)
+    assert all(rule["apiGroups"] != ["rbac.authorization.k8s.io"] for rule in rules)
+    resource_verbs = {
+        (api_group, resource): set(rule["verbs"])
+        for rule in rules
+        for api_group in rule["apiGroups"]
+        for resource in rule["resources"]
+    }
+    read_only = {"get", "list", "watch"}
+    for identity in (
+        ("", "configmaps"),
+        ("", "serviceaccounts"),
+        ("", "services"),
+        ("", "pods"),
+        ("", "pods/log"),
+        ("", "events"),
+        ("policy", "poddisruptionbudgets"),
+        ("networking.k8s.io", "ingresses"),
+        ("networking.k8s.io", "networkpolicies"),
+    ):
+        assert resource_verbs[identity] == read_only
+    assert ("", "pods/attach") not in resource_verbs
+    assert "create" in resource_verbs[("apps", "deployments")]
+    assert "patch" in resource_verbs[("apps", "deployments")]
+    job_rules = [
+        rule for rule in rules if rule["apiGroups"] == ["batch"] and rule["resources"] == ["jobs"]
+    ]
+    assert {tuple(rule.get("resourceNames", [])): set(rule["verbs"]) for rule in job_rules} == {
+        (): {"get", "list", "watch", "create", "update", "patch"},
+        ("enterprise-doc-migrate", "m5-staging-smoke"): {"delete"},
+    }
+
+    runtime_role = _named_resource(documents, "Role", "enterprise-doc-runtime")
+    runtime_binding = _named_resource(documents, "RoleBinding", "enterprise-doc-runtime")
+    assert runtime_role["rules"] == []
+    assert runtime_binding["roleRef"]["name"] == "enterprise-doc-runtime"
+
+    policies = [item for item in documents if item["kind"] == "ValidatingAdmissionPolicy"]
+    bindings = [item for item in documents if item["kind"] == "ValidatingAdmissionPolicyBinding"]
+    assert len(policies) == 4
+    assert {item["metadata"]["name"] for item in bindings} == {
+        item["metadata"]["name"] for item in policies
+    }
+    policy_text = (bootstrap / "staging-deployer-guardrails.yaml").read_text(encoding="utf-8")
+    assert "system:serviceaccount:enterprise-doc-agent-staging:enterprise-doc-staging-deployer" in (
+        policy_text
+    )
+    assert "enterprise-doc-secrets" in policy_text
+    assert "enterprise-doc-registry" in policy_text
+    assert "enterprise-doc-staging-deployer-token" not in policy_text
+    assert "paramKind" not in policy_text
+    assert "paramRef" not in policy_text
+    assert "namespaceObject.metadata.annotations" in policy_text
+    assert "enterprise-doc-agent/approved-api-images" in policy_text
+    assert "enterprise-doc-agent/approved-worker-images" in policy_text
+    assert "enterprise-doc-agent/approved-consumer-images" in policy_text
+    assert "enterprise-doc-agent/approved-web-images" in policy_text
+    assert "automountServiceAccountToken" in policy_text
+    assert "serviceAccountToken" in policy_text
+    assert "pod-security.kubernetes.io/enforce" in policy_text
+
+    prerequisite_guard = _named_resource(
+        policies,
+        "ValidatingAdmissionPolicy",
+        "enterprise-doc-staging-prerequisite-guard",
+    )
+    guarded_resources = {
+        resource
+        for rule in prerequisite_guard["spec"]["matchConstraints"]["resourceRules"]
+        for resource in rule["resources"]
+    }
+    assert guarded_resources == {
+        "configmaps",
+        "serviceaccounts",
+        "services",
+        "poddisruptionbudgets",
+        "ingresses",
+        "networkpolicies",
+    }
+    assert prerequisite_guard["spec"]["validations"] == [
+        {
+            "expression": "false",
+            "message": "Staging prerequisites are administrator-owned.",
+            "reason": "Forbidden",
+        }
+    ]
+
+    deploy = (ROOT / ".github/workflows/deploy-staging.yml").read_text(encoding="utf-8")
+    assert not re.search(r"kubectl(?!\s+auth\s+can-i)[^\n]*\bget\s+secrets?\b", deploy)
+    assert "staging-secrets.json" not in deploy
 
 
 def test_database_url_has_one_secret_backed_source() -> None:
@@ -263,6 +442,9 @@ def test_tiny_single_node_overlay_renders_with_a_bounded_k3s_runtime() -> None:
     config = _named_resource(documents, "ConfigMap", "enterprise-doc-config")
     assert config["data"]["REDIS__URL"] == "redis://enterprise-doc-redis:6379/0"
     assert str(config["data"]["OBJECT_STORE__ENDPOINT"]).startswith("https://")
+    assert config["data"]["MODEL__PROVIDER"] == "openai_compatible"
+    assert str(config["data"]["MODEL__BASE_URL"]).endswith("/v1")
+    assert config["data"]["MODEL__MODEL_NAME"] == "replace-with-reviewed-model"
     assert not [
         item
         for item in documents
@@ -345,7 +527,7 @@ def test_staging_deploy_workflow_can_select_the_reviewed_tiny_overlay() -> None:
         assert namespace["metadata"]["annotations"][annotation] == profile
 
     guard = deploy.index("Validate deployment profile ownership")
-    prerequisites = deploy.index("Apply and validate staging prerequisites")
+    prerequisites = deploy.index("Verify administrator-owned staging prerequisites")
     assert guard < prerequisites
     assert "kubectl get namespace enterprise-doc-agent-staging --ignore-not-found -o json" in deploy
     assert annotation in deploy
@@ -353,9 +535,83 @@ def test_staging_deploy_workflow_can_select_the_reviewed_tiny_overlay() -> None:
     assert "existing namespace belongs to deployment profile" in deploy
 
 
+def test_cluster_mutating_workflows_use_the_dedicated_private_runner() -> None:
+    expected = "runs-on: [self-hosted, linux, x64, enterprise-doc-staging]"
+    deploy = (ROOT / ".github/workflows/deploy-staging.yml").read_text(encoding="utf-8")
+    rollback = (ROOT / ".github/workflows/rollback.yml").read_text(encoding="utf-8")
+    assert expected in deploy
+    assert expected in rollback
+    assert "runs-on: ubuntu-latest" not in deploy
+    assert "runs-on: ubuntu-latest" not in rollback
+
+
+def test_staging_model_routing_uses_environment_variables_within_dispatch_limit() -> None:
+    workflow, steps = _deploy_workflow()
+    trigger = workflow.get("on", workflow.get(True))
+    assert isinstance(trigger, dict)
+    dispatch = trigger["workflow_dispatch"]
+    assert isinstance(dispatch, dict)
+    inputs = dispatch["inputs"]
+    assert isinstance(inputs, dict)
+    assert len(inputs) == 10
+    assert not {"model_provider", "model_base_url", "model_name"} & inputs.keys()
+
+    expected_env = {
+        "MODEL_PROVIDER": "openai_compatible",
+        "MODEL_BASE_URL": "${{ vars.STAGING_MODEL_BASE_URL }}",
+        "MODEL_NAME": "${{ vars.STAGING_MODEL_NAME }}",
+    }
+    for step_name in (
+        "Render and validate staging manifests",
+        "Collect sanitized release evidence",
+    ):
+        step = _named_step(steps, step_name)
+        assert {key: step["env"][key] for key in expected_env} == expected_env
+        command = str(step["run"])
+        assert '--model-provider "$MODEL_PROVIDER"' in command
+        assert '--model-base-url "$MODEL_BASE_URL"' in command
+        assert '--model-name "$MODEL_NAME"' in command
+
+    render = _named_step(steps, "Render and validate staging manifests")
+    assert 'test -n "$MODEL_BASE_URL"' in str(render["run"])
+    assert 'test -n "$MODEL_NAME"' in str(render["run"])
+
+
+def test_tiny_staging_runbook_keeps_r2_presign_on_the_s3_api_surface() -> None:
+    runbook = (ROOT / "docs/ops/tiny-staging-runbook.md").read_text(encoding="utf-8")
+    assert "r2.cloudflarestorage.com" in runbook
+    assert "use the account S3 endpoint for both" in runbook
+    assert "public object-access surface" in runbook
+    assert "not a substitute for the S3" in runbook
+    assert "Do not dispatch with the `v0.1.1` Web digest" in runbook
+
+
+def test_tiny_staging_runbook_requires_private_control_plane_and_scoped_runner() -> None:
+    runbook = (ROOT / "docs/ops/tiny-staging-runbook.md").read_text(encoding="utf-8")
+    for private_port in ("6443/tcp", "10250/tcp", "8472/udp"):
+        assert private_port in runbook
+    assert "out-of-band console" in runbook
+    assert "--labels enterprise-doc-staging" in runbook
+    assert "repository-scoped" in runbook
+    assert "infra/k8s/bootstrap/staging-deployer-rbac.yaml" in runbook
+    assert "STAGING_KUBE_API_SERVER=https://127.0.0.1:6443" in runbook
+    assert "cannot read its own long-lived token Secret" in runbook
+    assert "STAGING_MODEL_BASE_URL=https://" in runbook
+    assert "STAGING_MODEL_NAME=<exact-model-id>" in runbook
+    assert "MODEL__API_KEY" in runbook
+    assert "OpenAI-compatible `/v1` endpoint" in runbook
+
+
 def test_tiny_overlay_binds_exact_images_through_the_staging_parent(tmp_path: Path) -> None:
     kustomize = shutil.which("kustomize")
-    assert kustomize is not None, "standalone kustomize is required to validate image binding"
+    if kustomize is None:
+        kustomize = shutil.which("kubectl")
+        assert kustomize is not None, "kustomize or kubectl is required to validate image binding"
+        kustomize_command = [kustomize, "kustomize"]
+        edit_supported = False
+    else:
+        kustomize_command = [kustomize]
+        edit_supported = True
     k8s = tmp_path / "k8s"
     shutil.copytree(ROOT / "infra" / "k8s", k8s)
     staging = k8s / "overlays" / "staging"
@@ -367,22 +623,39 @@ def test_tiny_overlay_binds_exact_images_through_the_staging_parent(tmp_path: Pa
         "consumer": "sha256:" + "3" * 64,
         "web": "sha256:" + "4" * 64,
     }
-    for name, digest in digests.items():
-        subprocess.run(
-            [
-                kustomize,
-                "edit",
-                "set",
-                "image",
-                f"enterprise-doc/{name}={registry}/enterprise-doc-{name}@{digest}",
-            ],
-            cwd=staging,
-            check=True,
-            capture_output=True,
-            text=True,
+    if edit_supported:
+        for name, digest in digests.items():
+            subprocess.run(
+                [
+                    kustomize,
+                    "edit",
+                    "set",
+                    "image",
+                    f"enterprise-doc/{name}={registry}/enterprise-doc-{name}@{digest}",
+                ],
+                cwd=staging,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+    else:
+        kustomization_path = staging / "kustomization.yaml"
+        kustomization = yaml.safe_load(kustomization_path.read_text(encoding="utf-8"))
+        for image in kustomization["images"]:
+            name = image["name"].removeprefix("enterprise-doc/")
+            image["newName"] = f"{registry}/enterprise-doc-{name}"
+            image["digest"] = digests[name]
+        kustomization_path.write_text(
+            yaml.safe_dump(kustomization, sort_keys=False),
+            encoding="utf-8",
         )
+    render_command = (
+        [*kustomize_command, "build", str(tiny)]
+        if edit_supported
+        else [*kustomize_command, str(tiny)]
+    )
     rendered = subprocess.run(
-        [kustomize, "build", str(tiny)],
+        render_command,
         cwd=ROOT,
         check=True,
         capture_output=True,
@@ -457,8 +730,11 @@ def test_ci_workflows_have_no_allow_failure_and_include_release_boundaries() -> 
     assert "kubectl auth can-i get deployments.apps" in rollback
     assert "kubectl auth can-i patch deployments.apps" in rollback
     assert "kubectl auth can-i watch deployments.apps" in rollback
+    assert "STAGING_KUBE_API_SERVER" in deploy
+    assert "STAGING_NAMESPACE_UID" in deploy
+    assert "actual_api_server" in deploy
+    assert "actual_namespace_uid" in deploy
     assert "configure_staging_manifest.py" in deploy
-    assert "validate_staging_secrets.py" in deploy
     assert "sanitize_deployment_evidence.py" in deploy
     assert "build_staging_release_record.py" in deploy
     assert "--dry-run=server" in deploy
@@ -467,19 +743,103 @@ def test_ci_workflows_have_no_allow_failure_and_include_release_boundaries() -> 
     assert "VITE_OBJECT_STORE_ORIGINS" in deploy
     assert "STAGING_DATABASE_EGRESS_CIDR" in deploy
     assert "--database-egress-cidr" in deploy
-    assert "enterprise-doc-registry" in deploy
+    assert "enterprise-doc-registry" in (
+        (ROOT / "infra/k8s/overlays/staging/image-pull-secret-patch.yaml").read_text(
+            encoding="utf-8"
+        )
+    )
     assert 'evidence_id="${GITHUB_SHA}"' in deploy
     assert "staging-sanitized-${evidence_id}" in deploy
     assert "staging-evidence-${evidence_id}.manifest.json" in deploy
     assert "staging-release-${evidence_id}.record.json" in deploy
     assert "if-no-files-found: error" in deploy
-    assert "curlimages/curl@sha256:" in deploy
-    assert "--labels=app.kubernetes.io/name=m5-staging-smoke" in deploy
+    assert "infra/k8s/smoke/readiness-job.yaml" in deploy
+    assert "kubectl run" not in deploy
+    smoke = (ROOT / "infra/k8s/smoke/readiness-job.yaml").read_text(encoding="utf-8")
+    assert "curlimages/curl@sha256:" in smoke
+    assert "app.kubernetes.io/name: m5-staging-smoke" in smoke
     profile_evidence = 'printf \'%s\\n\' "$DEPLOYMENT_PROFILE" > "$raw_dir/deployment-profile.txt"'
     assert profile_evidence in deploy
     assert deploy.index(profile_evidence) < deploy.index("scripts/sanitize_deployment_evidence.py")
     rollback_script = (ROOT / "scripts/rollback_release.py").read_text(encoding="utf-8")
     assert "--to-revision" in rollback_script
+    assert "--dry-run=server" in rollback_script
+
+
+def test_staging_workflows_preserve_admin_boundary_and_clean_credentials() -> None:
+    deploy_workflow, deploy_steps = _deploy_workflow()
+    assert "$HOME/.kube/config" not in str(deploy_workflow)
+    assert deploy_steps[0]["name"] == "Validate staging dispatch gate"
+    assert "STAGING_CONTROL_PLANE_APPROVED" in str(deploy_steps[0]["env"])
+    assert '!= "true"' in str(deploy_steps[0]["run"])
+    configure = _named_step(deploy_steps, "Configure cluster credentials")
+    configure_run = str(configure["run"])
+    assert "umask 077" in configure_run
+    assert "$RUNNER_TEMP/enterprise-doc-kubeconfig-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" in (
+        configure_run
+    )
+    assert '>> "$GITHUB_ENV"' in configure_run
+    assert "trap 'rm -f \"$KUBECONFIG\"' ERR INT TERM" in configure_run
+    assert "if kubectl auth can-i get secrets" in configure_run
+    assert "if kubectl auth can-i create pods" in configure_run
+    assert "if kubectl auth can-i update configmaps" in configure_run
+    assert "if kubectl auth can-i patch networkpolicies.networking.k8s.io" in configure_run
+    assert "kubectl auth can-i create jobs.batch" in configure_run
+    assert "kubectl auth can-i patch deployments.apps" in configure_run
+
+    prerequisites = _named_step(
+        deploy_steps,
+        "Verify administrator-owned staging prerequisites",
+    )
+    prerequisite_run = str(prerequisites["run"])
+    assert "configmaps,serviceaccounts,services,poddisruptionbudgets.policy" in prerequisite_run
+    assert "networkpolicies.networking.k8s.io" in prerequisite_run
+    assert "staging-prerequisites-live.yaml" in prerequisite_run
+    assert "--live-manifest" in prerequisite_run
+    assert "validate_staging_prerequisites.py" in prerequisite_run
+    assert 'kubectl apply -f "$RUNNER_TEMP/staging-prerequisites.yaml"' not in prerequisite_run
+    assert 'staging-migration.yaml"' not in prerequisite_run
+
+    migration = _named_step(deploy_steps, "Apply migration job before rollout")
+    migration_run = str(migration["run"])
+    assert "previous migration Job is not complete" in migration_run
+    assert '@.type=="Complete"' in migration_run
+    assert migration_run.index("delete job enterprise-doc-migrate") < migration_run.index(
+        "apply --dry-run=server"
+    )
+    assert migration_run.index("apply --dry-run=server") < migration_run.index(
+        'kubectl apply -f "$RUNNER_TEMP/staging-migration.yaml"'
+    )
+
+    smoke_cleanup = _named_step(deploy_steps, "Clean up readiness smoke")
+    assert "always()" in str(smoke_cleanup["if"])
+    assert "delete job m5-staging-smoke" in str(smoke_cleanup["run"])
+
+    deploy_cleanup = _named_step(deploy_steps, "Clean up cluster credentials")
+    assert str(deploy_cleanup["if"]) == "always()"
+    assert "RUNNER_TEMP/enterprise-doc-kubeconfig" in str(deploy_cleanup["run"])
+
+    rollback_workflow = yaml.safe_load(
+        (ROOT / ".github/workflows/rollback.yml").read_text(encoding="utf-8")
+    )
+    assert "$HOME/.kube/config" not in str(rollback_workflow)
+    rollback_steps = rollback_workflow["jobs"]["rollback"]["steps"]
+    assert rollback_steps[0]["name"] == "Validate staging dispatch gate"
+    assert "STAGING_CONTROL_PLANE_APPROVED" in str(rollback_steps[0]["env"])
+    assert '!= "true"' in str(rollback_steps[0]["run"])
+    rollback_configure = _named_step(rollback_steps, "Configure cluster credentials")
+    rollback_configure_run = str(rollback_configure["run"])
+    assert "umask 077" in rollback_configure_run
+    assert "$RUNNER_TEMP/enterprise-doc-kubeconfig-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" in (
+        rollback_configure_run
+    )
+    assert '>> "$GITHUB_ENV"' in rollback_configure_run
+    assert "trap 'rm -f \"$KUBECONFIG\"' ERR INT TERM" in rollback_configure_run
+    assert "if kubectl auth can-i get secrets" in rollback_configure_run
+    assert "if kubectl auth can-i create pods" in rollback_configure_run
+    rollback_cleanup = _named_step(rollback_steps, "Clean up cluster credentials")
+    assert str(rollback_cleanup["if"]) == "always()"
+    assert "RUNNER_TEMP/enterprise-doc-kubeconfig" in str(rollback_cleanup["run"])
 
 
 def test_tagged_supply_chain_verifies_the_exact_published_digest() -> None:

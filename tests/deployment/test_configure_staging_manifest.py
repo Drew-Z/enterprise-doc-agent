@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import sys
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
@@ -14,9 +15,29 @@ configure_staging_manifest = module_from_spec(SPEC)
 sys.modules[SPEC.name] = configure_staging_manifest
 SPEC.loader.exec_module(configure_staging_manifest)
 
+IMAGE_DIGESTS = {
+    "enterprise-doc-api": "a" * 64,
+    "enterprise-doc-worker": "b" * 64,
+    "enterprise-doc-consumer": "c" * 64,
+    "enterprise-doc-web": "d" * 64,
+}
+
+
+def _image(name: str, digest: str | None = None) -> str:
+    service = name.removeprefix("enterprise-doc-")
+    return f"registry.example.com/enterprise-doc-{service}@sha256:{digest or IMAGE_DIGESTS[name]}"
+
 
 def _write_template(path: Path) -> None:
     documents = [
+        {
+            "apiVersion": "v1",
+            "kind": "Namespace",
+            "metadata": {
+                "name": "enterprise-doc-agent-staging",
+                "annotations": {"enterprise-doc-agent/deployment-profile": "tiny-single-node"},
+            },
+        },
         {
             "apiVersion": "v1",
             "kind": "ConfigMap",
@@ -25,6 +46,39 @@ def _write_template(path: Path) -> None:
                 "OBJECT_STORE__ENDPOINT": "https://objects.example.invalid",
                 "OBJECT_STORE__PRESIGN_ENDPOINT": "https://objects.example.invalid",
                 "OBJECT_STORE__SECURE": "true",
+            },
+        },
+        *[
+            {
+                "apiVersion": "apps/v1",
+                "kind": "Deployment",
+                "metadata": {"name": name},
+                "spec": {
+                    "template": {"spec": {"containers": [{"name": name, "image": _image(name)}]}}
+                },
+            }
+            for name in (
+                "enterprise-doc-api",
+                "enterprise-doc-worker",
+                "enterprise-doc-consumer",
+                "enterprise-doc-web",
+            )
+        ],
+        {
+            "apiVersion": "batch/v1",
+            "kind": "Job",
+            "metadata": {"name": "enterprise-doc-migrate"},
+            "spec": {
+                "template": {
+                    "spec": {
+                        "containers": [
+                            {
+                                "name": "migrate",
+                                "image": _image("enterprise-doc-api"),
+                            }
+                        ]
+                    }
+                }
             },
         },
         {
@@ -92,6 +146,9 @@ def test_configure_manifest_binds_https_hosts_without_secret_data(tmp_path: Path
         tls_secret_name="enterprise-doc-staging-tls",
         web_object_store_origins="https://objects.example.com,https://cdn.example.com",
         database_egress_cidr="8.8.8.8/32",
+        model_provider="openai_compatible",
+        model_base_url="https://model.example.com/v1",
+        model_name="staging-model",
     )
 
     documents = [
@@ -103,6 +160,45 @@ def test_configure_manifest_binds_https_hosts_without_secret_data(tmp_path: Path
     assert config["data"]["OBJECT_STORE__ENDPOINT"] == "https://objects.internal.example.com"
     assert config["data"]["OBJECT_STORE__PRESIGN_ENDPOINT"] == "https://objects.example.com"
     assert config["data"]["OBJECT_STORE__SECURE"] == "true"
+    assert config["data"]["MODEL__PROVIDER"] == "openai_compatible"
+    assert config["data"]["MODEL__BASE_URL"] == "https://model.example.com/v1"
+    assert config["data"]["MODEL__MODEL_NAME"] == "staging-model"
+    api_deployment = next(
+        item
+        for item in documents
+        if item["kind"] == "Deployment" and item["metadata"]["name"] == "enterprise-doc-api"
+    )
+    for name in ("enterprise-doc-api", "enterprise-doc-worker", "enterprise-doc-consumer"):
+        deployment = next(
+            item
+            for item in documents
+            if item["kind"] == "Deployment" and item["metadata"]["name"] == name
+        )
+        assert re.fullmatch(
+            r"[0-9a-f]{64}",
+            deployment["spec"]["template"]["metadata"]["annotations"][
+                "enterprise-doc-agent/config-sha256"
+            ],
+        )
+    migration = next(
+        item
+        for item in documents
+        if item["kind"] == "Job" and item["metadata"]["name"] == "enterprise-doc-migrate"
+    )
+    assert (
+        migration["spec"]["template"]["metadata"]["annotations"][
+            "enterprise-doc-agent/config-sha256"
+        ]
+        == api_deployment["spec"]["template"]["metadata"]["annotations"][
+            "enterprise-doc-agent/config-sha256"
+        ]
+    )
+    web = next(
+        item
+        for item in documents
+        if item["kind"] == "Deployment" and item["metadata"]["name"] == "enterprise-doc-web"
+    )
+    assert "annotations" not in web["spec"]["template"].get("metadata", {})
     ingress = next(item for item in documents if item["kind"] == "Ingress")
     assert ingress["spec"]["rules"][0]["host"] == "staging.example.com"
     assert ingress["spec"]["tls"] == [
@@ -126,6 +222,94 @@ def test_configure_manifest_binds_https_hosts_without_secret_data(tmp_path: Path
     ]
 
 
+def test_configure_manifest_records_admin_owned_prerequisite_approval(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "template.yaml"
+    destination = tmp_path / "staging.yaml"
+    _write_template(source)
+
+    configure_staging_manifest.configure_manifest(
+        source,
+        destination,
+        staging_base_url="https://staging.example.com",
+        object_store_endpoint="https://objects.internal.example.com",
+        object_store_presign_endpoint="https://objects.example.com",
+        tls_secret_name="enterprise-doc-staging-tls",
+        web_object_store_origins="https://objects.example.com,https://cdn.example.com",
+        database_egress_cidr="8.8.8.8/32",
+        model_provider="openai_compatible",
+        model_base_url="https://model.example.com/v1",
+        model_name="staging-model",
+        rollback_api_image=_image("enterprise-doc-api", "1" * 64),
+        rollback_worker_image=_image("enterprise-doc-worker", "2" * 64),
+        rollback_consumer_image=_image("enterprise-doc-consumer", "3" * 64),
+        rollback_web_image=_image("enterprise-doc-web", "4" * 64),
+    )
+
+    documents = [item for item in yaml.safe_load_all(destination.read_text()) if item]
+    namespace = next(item for item in documents if item["kind"] == "Namespace")
+    annotations = namespace["metadata"]["annotations"]
+    assert annotations["enterprise-doc-agent/approved-object-store-endpoint"] == (
+        "https://objects.internal.example.com"
+    )
+    assert annotations["enterprise-doc-agent/approved-model-base-url"] == (
+        "https://model.example.com/v1"
+    )
+    assert annotations["enterprise-doc-agent/approved-api-images"] == ",".join(
+        [_image("enterprise-doc-api"), _image("enterprise-doc-api", "1" * 64)]
+    )
+    assert annotations["enterprise-doc-agent/approved-worker-images"] == ",".join(
+        [_image("enterprise-doc-worker"), _image("enterprise-doc-worker", "2" * 64)]
+    )
+    assert annotations["enterprise-doc-agent/approved-consumer-images"] == ",".join(
+        [_image("enterprise-doc-consumer"), _image("enterprise-doc-consumer", "3" * 64)]
+    )
+    assert annotations["enterprise-doc-agent/approved-web-images"] == ",".join(
+        [_image("enterprise-doc-web"), _image("enterprise-doc-web", "4" * 64)]
+    )
+    assert annotations["enterprise-doc-agent/approved-database-egress-cidr"] == "8.8.8.8/32"
+    assert annotations["enterprise-doc-agent/approved-staging-host"] == "staging.example.com"
+    assert annotations["enterprise-doc-agent/approved-tls-secret-name"] == (
+        "enterprise-doc-staging-tls"
+    )
+    assert re.fullmatch(
+        r"[0-9a-f]{64}",
+        annotations["enterprise-doc-agent/prerequisites-sha256"],
+    )
+
+
+@pytest.mark.parametrize(
+    "rollback_image",
+    [
+        "registry.example.com/enterprise-doc-api:latest",
+        "registry.example.com/other@sha256:" + "1" * 64,
+    ],
+)
+def test_configure_manifest_rejects_unreviewed_rollback_image(
+    tmp_path: Path,
+    rollback_image: str,
+) -> None:
+    source = tmp_path / "template.yaml"
+    _write_template(source)
+
+    with pytest.raises(ValueError, match="rollback image"):
+        configure_staging_manifest.configure_manifest(
+            source,
+            tmp_path / "invalid-rollback.yaml",
+            staging_base_url="https://staging.example.com",
+            object_store_endpoint="https://objects.internal.example.com",
+            object_store_presign_endpoint="https://objects.example.com",
+            tls_secret_name="enterprise-doc-staging-tls",
+            web_object_store_origins="https://objects.example.com",
+            database_egress_cidr="8.8.8.8/32",
+            model_provider="openai_compatible",
+            model_base_url="https://model.example.com/v1",
+            model_name="staging-model",
+            rollback_api_image=rollback_image,
+        )
+
+
 def test_configure_manifest_rejects_unlisted_or_plaintext_origins(tmp_path: Path) -> None:
     source = tmp_path / "template.yaml"
     _write_template(source)
@@ -140,6 +324,9 @@ def test_configure_manifest_rejects_unlisted_or_plaintext_origins(tmp_path: Path
             tls_secret_name="enterprise-doc-staging-tls",
             web_object_store_origins="https://objects.example.com",
             database_egress_cidr="8.8.8.8/32",
+            model_provider="openai_compatible",
+            model_base_url="https://model.example.com/v1",
+            model_name="staging-model",
         )
 
     with pytest.raises(ValueError, match="Web image allowlist"):
@@ -152,6 +339,9 @@ def test_configure_manifest_rejects_unlisted_or_plaintext_origins(tmp_path: Path
             tls_secret_name="enterprise-doc-staging-tls",
             web_object_store_origins="https://other.example.com",
             database_egress_cidr="8.8.8.8/32",
+            model_provider="openai_compatible",
+            model_base_url="https://model.example.com/v1",
+            model_name="staging-model",
         )
 
     with pytest.raises(ValueError, match="exact HTTPS origin"):
@@ -164,6 +354,9 @@ def test_configure_manifest_rejects_unlisted_or_plaintext_origins(tmp_path: Path
             tls_secret_name="enterprise-doc-staging-tls",
             web_object_store_origins="https://objects.example.com/uploads",
             database_egress_cidr="8.8.8.8/32",
+            model_provider="openai_compatible",
+            model_base_url="https://model.example.com/v1",
+            model_name="staging-model",
         )
 
     with pytest.raises(ValueError, match="63 characters"):
@@ -176,6 +369,9 @@ def test_configure_manifest_rejects_unlisted_or_plaintext_origins(tmp_path: Path
             tls_secret_name="a" * 64,
             web_object_store_origins="https://objects.example.com",
             database_egress_cidr="8.8.8.8/32",
+            model_provider="openai_compatible",
+            model_base_url="https://model.example.com/v1",
+            model_name="staging-model",
         )
 
     with pytest.raises(ValueError, match="DNS hostname"):
@@ -188,6 +384,9 @@ def test_configure_manifest_rejects_unlisted_or_plaintext_origins(tmp_path: Path
             tls_secret_name="enterprise-doc-staging-tls",
             web_object_store_origins="https://objects.example.com",
             database_egress_cidr="8.8.8.8/32",
+            model_provider="openai_compatible",
+            model_base_url="https://model.example.com/v1",
+            model_name="staging-model",
         )
 
 
@@ -218,4 +417,128 @@ def test_configure_manifest_rejects_non_global_single_host_database_egress(
             tls_secret_name="enterprise-doc-staging-tls",
             web_object_store_origins="https://objects.example.com",
             database_egress_cidr=cidr,
+            model_provider="openai_compatible",
+            model_base_url="https://model.example.com/v1",
+            model_name="staging-model",
         )
+
+
+def _configure_model(
+    source: Path,
+    destination: Path,
+    *,
+    model_provider: str = "openai_compatible",
+    model_base_url: str = "https://model.example.com/v1",
+    model_name: str = "staging-model",
+) -> None:
+    configure_staging_manifest.configure_manifest(
+        source,
+        destination,
+        staging_base_url="https://staging.example.com",
+        object_store_endpoint="https://objects.internal.example.com",
+        object_store_presign_endpoint="https://objects.example.com",
+        tls_secret_name="enterprise-doc-staging-tls",
+        web_object_store_origins="https://objects.example.com",
+        database_egress_cidr="8.8.8.8/32",
+        model_provider=model_provider,
+        model_base_url=model_base_url,
+        model_name=model_name,
+    )
+
+
+def test_configure_manifest_rejects_unreviewed_model_provider(tmp_path: Path) -> None:
+    source = tmp_path / "template.yaml"
+    _write_template(source)
+
+    with pytest.raises(ValueError, match="model provider"):
+        _configure_model(
+            source,
+            tmp_path / "bad-provider.yaml",
+            model_provider="deterministic",
+        )
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "http://model.example.com/v1",
+        "https://user:password@model.example.com/v1",
+        "https://model.example.com/v1?key=value",
+        "https://model.example.com/v1#fragment",
+        "https://localhost/v1",
+        "https://api.localhost/v1",
+        "https://127.0.0.1/v1",
+        "https://10.0.0.1/v1",
+        "https://192.168.1.1/v1",
+        "https://169.254.169.254/v1",
+        "https://192.0.2.1/v1",
+        "https://[fe80::1]/v1",
+        "https://model.example.com:not-a-port/v1",
+        "https://model.example.com/api",
+        "https://model.example.com/v1\nignored",
+    ],
+)
+def test_configure_manifest_rejects_unsafe_model_base_url(tmp_path: Path, value: str) -> None:
+    source = tmp_path / "template.yaml"
+    _write_template(source)
+
+    with pytest.raises(ValueError, match="model base URL"):
+        _configure_model(
+            source,
+            tmp_path / "bad-model-url.yaml",
+            model_base_url=value,
+        )
+
+
+@pytest.mark.parametrize("value", [" ", "bad\nname", "x" * 201])
+def test_configure_manifest_rejects_invalid_model_name(tmp_path: Path, value: str) -> None:
+    source = tmp_path / "template.yaml"
+    _write_template(source)
+
+    with pytest.raises(ValueError, match="model name"):
+        _configure_model(
+            source,
+            tmp_path / "bad-model-name.yaml",
+            model_name=value,
+        )
+
+
+def test_configure_manifest_normalizes_model_values_and_rotates_config_hash(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "template.yaml"
+    first = tmp_path / "first.yaml"
+    second = tmp_path / "second.yaml"
+    _write_template(source)
+
+    _configure_model(
+        source,
+        first,
+        model_base_url=" https://model.example.com/v1/ ",
+        model_name=" " + "x" * 200 + " ",
+    )
+    _configure_model(source, second, model_name="different-model")
+
+    first_documents = [item for item in yaml.safe_load_all(first.read_text()) if item]
+    second_documents = [item for item in yaml.safe_load_all(second.read_text()) if item]
+    first_config = next(item for item in first_documents if item["kind"] == "ConfigMap")
+    assert first_config["data"]["MODEL__BASE_URL"] == "https://model.example.com/v1"
+    assert first_config["data"]["MODEL__MODEL_NAME"] == "x" * 200
+    first_api = next(
+        item
+        for item in first_documents
+        if item["kind"] == "Deployment" and item["metadata"]["name"] == "enterprise-doc-api"
+    )
+    second_api = next(
+        item
+        for item in second_documents
+        if item["kind"] == "Deployment" and item["metadata"]["name"] == "enterprise-doc-api"
+    )
+    assert (
+        first_api["spec"]["template"]["metadata"]["annotations"][
+            "enterprise-doc-agent/config-sha256"
+        ]
+        != second_api["spec"]["template"]["metadata"]["annotations"][
+            "enterprise-doc-agent/config-sha256"
+        ]
+    )

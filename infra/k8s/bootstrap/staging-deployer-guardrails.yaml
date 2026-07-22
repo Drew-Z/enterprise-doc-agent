@@ -1,0 +1,381 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: enterprise-doc-staging-namespace-guard
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["UPDATE"]
+        resources: ["namespaces"]
+  matchConditions:
+    - name: staging-deployer
+      expression: >-
+        request.userInfo.username ==
+        'system:serviceaccount:enterprise-doc-agent-staging:enterprise-doc-staging-deployer'
+    - name: staging-namespace
+      expression: object.metadata.name == 'enterprise-doc-agent-staging'
+  validations:
+    - expression: >-
+        object.metadata.labels['pod-security.kubernetes.io/enforce'] == 'restricted' &&
+        object.metadata.labels['pod-security.kubernetes.io/enforce-version'] == 'latest' &&
+        object.metadata.labels['pod-security.kubernetes.io/audit'] == 'restricted' &&
+        object.metadata.labels['pod-security.kubernetes.io/audit-version'] == 'latest'
+      message: The staging deployer cannot weaken Pod Security Admission labels.
+      reason: Forbidden
+    - expression: >-
+        object.metadata.annotations['enterprise-doc-agent/deployment-profile'] ==
+          oldObject.metadata.annotations['enterprise-doc-agent/deployment-profile']
+      message: The staging deployer cannot change deployment-profile ownership.
+      reason: Forbidden
+    - expression: >-
+        [
+          'enterprise-doc-agent/prerequisites-sha256',
+          'enterprise-doc-agent/approved-staging-host',
+          'enterprise-doc-agent/approved-tls-secret-name',
+          'enterprise-doc-agent/approved-database-egress-cidr',
+          'enterprise-doc-agent/approved-object-store-endpoint',
+          'enterprise-doc-agent/approved-object-store-presign-endpoint',
+          'enterprise-doc-agent/approved-web-object-store-origins',
+          'enterprise-doc-agent/approved-model-provider',
+          'enterprise-doc-agent/approved-model-base-url',
+          'enterprise-doc-agent/approved-model-name',
+          'enterprise-doc-agent/approved-config-sha256',
+          'enterprise-doc-agent/approved-api-images',
+          'enterprise-doc-agent/approved-worker-images',
+          'enterprise-doc-agent/approved-consumer-images',
+          'enterprise-doc-agent/approved-web-images'
+        ].all(key,
+          key in object.metadata.annotations &&
+          key in oldObject.metadata.annotations &&
+          object.metadata.annotations[key] == oldObject.metadata.annotations[key])
+      message: The staging deployer cannot change administrator approval annotations.
+      reason: Forbidden
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: enterprise-doc-staging-namespace-guard
+spec:
+  policyName: enterprise-doc-staging-namespace-guard
+  validationActions: [Deny]
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: enterprise-doc-staging-prerequisite-guard
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["configmaps", "serviceaccounts", "services"]
+      - apiGroups: ["policy"]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["poddisruptionbudgets"]
+      - apiGroups: ["networking.k8s.io"]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["ingresses", "networkpolicies"]
+  matchConditions:
+    - name: staging-deployer
+      expression: >-
+        request.userInfo.username ==
+        'system:serviceaccount:enterprise-doc-agent-staging:enterprise-doc-staging-deployer'
+    - name: staging-namespace
+      expression: request.namespace == 'enterprise-doc-agent-staging'
+  validations:
+    - expression: "false"
+      message: Staging prerequisites are administrator-owned.
+      reason: Forbidden
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: enterprise-doc-staging-prerequisite-guard
+spec:
+  policyName: enterprise-doc-staging-prerequisite-guard
+  validationActions: [Deny]
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: enterprise-doc-staging-deployment-guard
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ["apps"]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["deployments"]
+  matchConditions:
+    - name: staging-deployer
+      expression: >-
+        request.userInfo.username ==
+        'system:serviceaccount:enterprise-doc-agent-staging:enterprise-doc-staging-deployer'
+    - name: staging-namespace
+      expression: request.namespace == 'enterprise-doc-agent-staging'
+  variables:
+    - name: podSpec
+      expression: object.spec.template.spec
+    - name: allContainers
+      expression: >-
+        variables.podSpec.containers +
+        (has(variables.podSpec.initContainers) ? variables.podSpec.initContainers : [])
+    - name: container
+      expression: variables.podSpec.containers[0]
+  validations:
+    - expression: >-
+        object.metadata.name in [
+          'enterprise-doc-api',
+          'enterprise-doc-worker',
+          'enterprise-doc-consumer',
+          'enterprise-doc-web',
+          'enterprise-doc-redis'
+        ]
+      message: The staging deployer can manage only reviewed Deployments.
+      reason: Forbidden
+    - expression: >-
+        size(variables.podSpec.containers) == 1 &&
+        (!has(variables.podSpec.initContainers) ||
+          size(variables.podSpec.initContainers) == 0)
+      message: Reviewed Deployments must contain exactly one container and no init containers.
+      reason: Forbidden
+    - expression: >-
+        (object.metadata.name == 'enterprise-doc-api' &&
+          variables.container.name == 'api' &&
+          namespaceObject.metadata.annotations[
+            'enterprise-doc-agent/approved-api-images'
+          ].split(',').exists(image,
+            image == variables.container.image)) ||
+        (object.metadata.name == 'enterprise-doc-worker' &&
+          variables.container.name == 'worker' &&
+          namespaceObject.metadata.annotations[
+            'enterprise-doc-agent/approved-worker-images'
+          ].split(',').exists(image,
+            image == variables.container.image)) ||
+        (object.metadata.name == 'enterprise-doc-consumer' &&
+          variables.container.name == 'consumer' &&
+          namespaceObject.metadata.annotations[
+            'enterprise-doc-agent/approved-consumer-images'
+          ].split(',').exists(image,
+            image == variables.container.image)) ||
+        (object.metadata.name == 'enterprise-doc-web' &&
+          variables.container.name == 'web' &&
+          namespaceObject.metadata.annotations[
+            'enterprise-doc-agent/approved-web-images'
+          ].split(',').exists(image,
+            image == variables.container.image)) ||
+        (object.metadata.name == 'enterprise-doc-redis' &&
+          variables.container.name == 'redis' &&
+          variables.container.image ==
+            'redis@sha256:6ab0b6e7381779332f97b8ca76193e45b0756f38d4c0dcda72dbb3c32061ab99')
+      message: Deployment images must match the administrator-approved immutable list.
+      reason: Forbidden
+    - expression: >-
+        (object.metadata.name != 'enterprise-doc-redis' &&
+          !has(variables.container.command) && !has(variables.container.args)) ||
+        (object.metadata.name == 'enterprise-doc-redis' &&
+          !has(variables.container.command) &&
+          variables.container.args == [
+            'redis-server', '--save', '', '--appendonly', 'no', '--maxmemory',
+            '48mb', '--maxmemory-policy', 'noeviction'
+          ])
+      message: Deployment entrypoints and arguments must match the reviewed runtime.
+      reason: Forbidden
+    - expression: >-
+        (object.metadata.name == 'enterprise-doc-redis' &&
+          (!has(variables.podSpec.serviceAccountName) || variables.podSpec.serviceAccountName == '') &&
+          has(variables.podSpec.automountServiceAccountToken) &&
+          variables.podSpec.automountServiceAccountToken == false) ||
+        (object.metadata.name != 'enterprise-doc-redis' &&
+          variables.podSpec.serviceAccountName == 'enterprise-doc-runtime' &&
+          (!has(variables.podSpec.automountServiceAccountToken) ||
+            variables.podSpec.automountServiceAccountToken == false))
+      message: Deployments must use the tokenless reviewed runtime identity.
+      reason: Forbidden
+    - expression: >-
+        (object.metadata.name in [
+          'enterprise-doc-api', 'enterprise-doc-worker', 'enterprise-doc-consumer'
+        ] &&
+          !has(variables.container.env) &&
+          size(variables.container.envFrom) == 2 &&
+          variables.container.envFrom[0].configMapRef.name == 'enterprise-doc-config' &&
+          variables.container.envFrom[1].secretRef.name == 'enterprise-doc-secrets') ||
+        (object.metadata.name in ['enterprise-doc-web', 'enterprise-doc-redis'] &&
+          !has(variables.container.env) && !has(variables.container.envFrom))
+      message: Deployment environment sources must match the reviewed ConfigMap and Secret.
+      reason: Forbidden
+    - expression: >-
+        ((object.metadata.name == 'enterprise-doc-api' &&
+          variables.container.lifecycle.preStop.exec.command ==
+            ['/bin/sh', '-c', 'sleep 5']) ||
+        (object.metadata.name != 'enterprise-doc-api' &&
+          !has(variables.container.lifecycle))) &&
+        ((object.metadata.name == 'enterprise-doc-redis' &&
+          size(variables.podSpec.volumes) == 1 &&
+          variables.podSpec.volumes[0].name == 'data' &&
+          has(variables.podSpec.volumes[0].emptyDir)) ||
+        (object.metadata.name != 'enterprise-doc-redis' &&
+          (!has(variables.podSpec.volumes) || size(variables.podSpec.volumes) == 0)))
+      message: Deployment lifecycle hooks and volumes must match the reviewed runtime.
+      reason: Forbidden
+    - expression: >-
+        (!has(variables.podSpec.hostAliases) ||
+          size(variables.podSpec.hostAliases) == 0) &&
+        (!has(variables.podSpec.dnsPolicy) ||
+          variables.podSpec.dnsPolicy == 'ClusterFirst') &&
+        !has(variables.podSpec.dnsConfig)
+      message: Deployments must use cluster DNS without host overrides.
+      reason: Forbidden
+    - expression: >-
+        (object.metadata.name == 'enterprise-doc-api' &&
+          has(variables.container.startupProbe.httpGet) &&
+          has(variables.container.readinessProbe.httpGet) &&
+          has(variables.container.livenessProbe.httpGet)) ||
+        (object.metadata.name == 'enterprise-doc-worker' &&
+          has(variables.container.startupProbe.httpGet) &&
+          has(variables.container.readinessProbe.httpGet) &&
+          has(variables.container.livenessProbe.httpGet)) ||
+        (object.metadata.name == 'enterprise-doc-consumer' &&
+          has(variables.container.startupProbe.tcpSocket) &&
+          has(variables.container.readinessProbe.tcpSocket) &&
+          has(variables.container.livenessProbe.tcpSocket)) ||
+        (object.metadata.name == 'enterprise-doc-web' &&
+          has(variables.container.startupProbe.httpGet) &&
+          has(variables.container.readinessProbe.httpGet) &&
+          has(variables.container.livenessProbe.httpGet)) ||
+        (object.metadata.name == 'enterprise-doc-redis' &&
+          variables.container.startupProbe.exec.command == ['redis-cli', 'ping'] &&
+          variables.container.readinessProbe.exec.command == ['redis-cli', 'ping'] &&
+          variables.container.livenessProbe.exec.command == ['redis-cli', 'ping'])
+      message: Deployment probes must use the reviewed non-secret health checks.
+      reason: Forbidden
+    - expression: >-
+        (!has(variables.podSpec.imagePullSecrets) ||
+          variables.podSpec.imagePullSecrets.all(reference,
+            reference.name == 'enterprise-doc-registry')) &&
+        (!has(variables.podSpec.volumes) || variables.podSpec.volumes.all(volume,
+          !has(volume.secret) &&
+          (!has(volume.projected) || volume.projected.sources.all(source,
+            !has(source.secret) && !has(source.serviceAccountToken))) &&
+          !has(volume.csi))) &&
+        variables.allContainers.all(container,
+          (!has(container.envFrom) || container.envFrom.all(source,
+            !has(source.secretRef) || source.secretRef.name == 'enterprise-doc-secrets')) &&
+          (!has(container.env) || container.env.all(environment,
+            !has(environment.valueFrom) || !has(environment.valueFrom.secretKeyRef) ||
+            environment.valueFrom.secretKeyRef.name == 'enterprise-doc-secrets')))
+      message: Deployments may reference only the reviewed application and registry Secrets.
+      reason: Forbidden
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: enterprise-doc-staging-deployment-guard
+spec:
+  policyName: enterprise-doc-staging-deployment-guard
+  validationActions: [Deny]
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: enterprise-doc-staging-job-guard
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ["batch"]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["jobs"]
+  matchConditions:
+    - name: staging-deployer
+      expression: >-
+        request.userInfo.username ==
+        'system:serviceaccount:enterprise-doc-agent-staging:enterprise-doc-staging-deployer'
+    - name: staging-namespace
+      expression: request.namespace == 'enterprise-doc-agent-staging'
+  variables:
+    - name: podSpec
+      expression: object.spec.template.spec
+    - name: allContainers
+      expression: >-
+        variables.podSpec.containers +
+        (has(variables.podSpec.initContainers) ? variables.podSpec.initContainers : [])
+    - name: container
+      expression: variables.podSpec.containers[0]
+  validations:
+    - expression: object.metadata.name in ['enterprise-doc-migrate', 'm5-staging-smoke']
+      message: The staging deployer can manage only reviewed staging Jobs.
+      reason: Forbidden
+    - expression: >-
+        size(variables.podSpec.containers) == 1 &&
+        (!has(variables.podSpec.initContainers) ||
+          size(variables.podSpec.initContainers) == 0)
+      message: Reviewed Jobs must contain exactly one container and no init containers.
+      reason: Forbidden
+    - expression: >-
+        (object.metadata.name == 'enterprise-doc-migrate' &&
+          variables.container.name == 'migrate' &&
+          namespaceObject.metadata.annotations[
+            'enterprise-doc-agent/approved-api-images'
+          ].split(',').exists(image,
+            image == variables.container.image) &&
+          variables.container.command == ['alembic', 'upgrade', 'head'] &&
+          !has(variables.container.args) && !has(variables.container.env) &&
+          size(variables.container.envFrom) == 2 &&
+          variables.container.envFrom[0].configMapRef.name == 'enterprise-doc-config' &&
+          variables.container.envFrom[1].secretRef.name == 'enterprise-doc-secrets' &&
+          variables.podSpec.serviceAccountName == 'enterprise-doc-runtime' &&
+          (!has(variables.podSpec.automountServiceAccountToken) ||
+            variables.podSpec.automountServiceAccountToken == false) &&
+          size(variables.podSpec.imagePullSecrets) == 1 &&
+          variables.podSpec.imagePullSecrets[0].name == 'enterprise-doc-registry') ||
+        (object.metadata.name == 'm5-staging-smoke' &&
+          variables.container.name == 'readiness' &&
+          variables.container.image ==
+            'curlimages/curl@sha256:94e9e444bcba979c2ea12e27ae39bee4cd10bc7041a472c4727a558e213744e6' &&
+          variables.container.command == [
+            'sh', '-ec',
+            'curl --fail --silent http://enterprise-doc-api:8000/health/ready'
+          ] &&
+          !has(variables.container.args) && !has(variables.container.env) &&
+          !has(variables.container.envFrom) &&
+          has(variables.podSpec.automountServiceAccountToken) &&
+          variables.podSpec.automountServiceAccountToken == false &&
+          (!has(variables.podSpec.serviceAccountName) ||
+            variables.podSpec.serviceAccountName in ['', 'default']) &&
+          (!has(variables.podSpec.imagePullSecrets) ||
+            size(variables.podSpec.imagePullSecrets) == 0))
+      message: Job identity, image, command and environment must match the reviewed contract.
+      reason: Forbidden
+    - expression: >-
+        !has(variables.container.lifecycle) && !has(variables.podSpec.volumes)
+      message: Reviewed Jobs must not use lifecycle hooks or volumes.
+      reason: Forbidden
+    - expression: >-
+        !has(variables.container.startupProbe) &&
+        !has(variables.container.readinessProbe) &&
+        !has(variables.container.livenessProbe) &&
+        (!has(variables.podSpec.hostAliases) ||
+          size(variables.podSpec.hostAliases) == 0) &&
+        (!has(variables.podSpec.dnsPolicy) ||
+          variables.podSpec.dnsPolicy == 'ClusterFirst') &&
+        !has(variables.podSpec.dnsConfig)
+      message: Reviewed Jobs must use cluster DNS and cannot execute probes.
+      reason: Forbidden
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: enterprise-doc-staging-job-guard
+spec:
+  policyName: enterprise-doc-staging-job-guard
+  validationActions: [Deny]

@@ -39,20 +39,22 @@ def validate_rollback_target(*, namespace: str, revisions: Mapping[str, int]) ->
 
 def rollback_commands(*, namespace: str, revisions: Mapping[str, int]) -> list[list[str]]:
     validate_rollback_target(namespace=namespace, revisions=revisions)
-    commands: list[list[str]] = []
+    preflight: list[list[str]] = []
+    mutations: list[list[str]] = []
+    health_checks: list[list[str]] = []
     for deployment, revision in revisions.items():
-        commands.append(
-            [
-                "kubectl",
-                "-n",
-                namespace,
-                "rollout",
-                "undo",
-                f"deployment/{deployment}",
-                f"--to-revision={revision}",
-            ]
-        )
-        commands.append(
+        undo = [
+            "kubectl",
+            "-n",
+            namespace,
+            "rollout",
+            "undo",
+            f"deployment/{deployment}",
+            f"--to-revision={revision}",
+        ]
+        preflight.append([*undo, "--dry-run=server", "--output=name"])
+        mutations.append(undo)
+        health_checks.append(
             [
                 "kubectl",
                 "-n",
@@ -63,7 +65,7 @@ def rollback_commands(*, namespace: str, revisions: Mapping[str, int]) -> list[l
                 "--timeout=300s",
             ]
         )
-    return commands
+    return [*preflight, *mutations, *health_checks]
 
 
 def execute_rollback(commands: list[list[str]]) -> dict[str, object]:
@@ -170,7 +172,9 @@ def main() -> None:
         "error": execution["error"],
         "limitations": [
             "A rollout undo does not reverse destructive database migrations; schema "
-            "compatibility must be reviewed separately."
+            "compatibility must be reviewed separately.",
+            "All target revisions are server-side dry-run preflighted before mutation; "
+            "runtime health can still fail after every rollback spec is submitted.",
         ],
     }
     rendered = json.dumps(record, indent=2, sort_keys=True) + "\n"

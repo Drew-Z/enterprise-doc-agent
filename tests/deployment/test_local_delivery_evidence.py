@@ -69,6 +69,26 @@ def test_reviewed_local_delivery_verification_is_additive() -> None:
     assert completed_at >= started_at
 
 
+def test_current_m6_status_links_the_real_k3s_observation_without_claiming_rollout() -> None:
+    index = _load(INDEX_PATH)
+    formal_m6 = next(item for item in index["evidence"] if item["milestone"] == "M6")
+    current = _load(_repo_path(str(formal_m6["current_status"])))
+    host = _load(_repo_path(str(formal_m6["host_observation"])))
+
+    assert current["status"] == "blocked_external"
+    assert current["k3s_inventory"]["status"] == "ready"
+    assert current["web_image_contract"]["status"] == "rebuild_required"
+    assert current["host_security"]["firewall"] == "inactive"
+    assert current["model_gateway_contract"]["status"] == "blocked_external"
+    assert set(current["github_staging_environment"]["missing_variables"]) >= {
+        "STAGING_MODEL_BASE_URL",
+        "STAGING_MODEL_NAME",
+    }
+    assert host["status"] == "blocked_external"
+    assert host["cluster"]["node_status"] == "Ready"
+    assert "no application workload applied" in str(host["resources"]["interpretation"])
+
+
 def test_local_delivery_artifacts_match_reviewed_commit() -> None:
     manifest = _load(_repo_path(MANIFEST_PATH))
     commit_sha = str(manifest["commit_sha"])
