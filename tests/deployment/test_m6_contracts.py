@@ -349,6 +349,7 @@ def test_staging_overlay_defines_https_ingress_and_private_registry_contract() -
     assert "ingress.yaml" in kustomization
     assert "web-ingress-policy.yaml" in kustomization
     assert "smoke-api-ingress-policy.yaml" in kustomization
+    assert "smoke-api-egress-policy.yaml" in kustomization
     assert "configmap-patch.yaml" in kustomization
     assert "image-pull-secret-patch.yaml" in kustomization
 
@@ -396,6 +397,32 @@ def test_staging_overlay_defines_https_ingress_and_private_registry_contract() -
                         "podSelector": {
                             "matchLabels": {
                                 "app.kubernetes.io/name": "m5-staging-smoke",
+                            },
+                        },
+                    },
+                ],
+                "ports": [{"protocol": "TCP", "port": 8000}],
+            },
+        ],
+    }
+
+    smoke_egress = _named_resource(
+        documents,
+        "NetworkPolicy",
+        "enterprise-doc-staging-smoke-api-egress",
+    )
+    assert smoke_egress["spec"] == {
+        "podSelector": {
+            "matchLabels": {"app.kubernetes.io/name": "m5-staging-smoke"},
+        },
+        "policyTypes": ["Egress"],
+        "egress": [
+            {
+                "to": [
+                    {
+                        "podSelector": {
+                            "matchLabels": {
+                                "app.kubernetes.io/name": "enterprise-doc-api",
                             },
                         },
                     },
