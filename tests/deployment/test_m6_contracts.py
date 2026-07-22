@@ -616,8 +616,13 @@ def test_staging_model_routing_uses_environment_variables_within_dispatch_limit(
         assert '--model-name "$MODEL_NAME"' in command
 
     render = _named_step(steps, "Render and validate staging manifests")
-    assert 'test -n "$MODEL_BASE_URL"' in str(render["run"])
-    assert 'test -n "$MODEL_NAME"' in str(render["run"])
+    render_command = str(render["run"])
+    assert 'test -n "$MODEL_BASE_URL"' in render_command
+    assert 'test -n "$MODEL_NAME"' in render_command
+    assert "yaml.safe_load_all" in render_command
+    assert '("Namespace", "enterprise-doc-agent-staging")' in render_command
+    assert '("Job", "enterprise-doc-migrate")' in render_command
+    assert "grep -A4 '^kind: Namespace$'" not in render_command
 
 
 def test_tiny_staging_runbook_keeps_r2_presign_on_the_s3_api_surface() -> None:

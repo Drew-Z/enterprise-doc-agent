@@ -267,13 +267,37 @@ jobs:
             --rollback-worker-image "$ROLLBACK_WORKER_IMAGE" \
             --rollback-consumer-image "$ROLLBACK_CONSUMER_IMAGE" \
             --rollback-web-image "$ROLLBACK_WEB_IMAGE"
-          grep -A4 '^kind: Namespace$' "$RUNNER_TEMP/staging.yaml" | grep -q 'name: enterprise-doc-agent-staging'
-          grep -q 'name: enterprise-doc-migrate' "$RUNNER_TEMP/staging.yaml"
-          grep -q 'kind: Ingress' "$RUNNER_TEMP/staging.yaml"
-          if grep -A30 '^kind: ConfigMap$' "$RUNNER_TEMP/staging.yaml" | grep -q 'DATABASE__URL:'; then
-            echo 'DATABASE__URL must come only from enterprise-doc-secrets' >&2
-            exit 1
-          fi
+          "$RUNNER_PYTHON" - "$RUNNER_TEMP/staging.yaml" <<'PY'
+          from pathlib import Path
+          import sys
+
+          import yaml
+
+          documents = [
+              item
+              for item in yaml.safe_load_all(Path(sys.argv[1]).read_text(encoding="utf-8"))
+              if isinstance(item, dict)
+          ]
+
+          def has_resource(kind: str, name: str | None = None) -> bool:
+              return any(
+                  item.get("kind") == kind
+                  and (name is None or item.get("metadata", {}).get("name") == name)
+                  for item in documents
+              )
+
+          required = (
+              ("Namespace", "enterprise-doc-agent-staging"),
+              ("Job", "enterprise-doc-migrate"),
+              ("Ingress", None),
+          )
+          for kind, name in required:
+              if not has_resource(kind, name):
+                  raise SystemExit(f"rendered manifest is missing required {kind}: {name or '*'}")
+          for item in documents:
+              if item.get("kind") == "ConfigMap" and "DATABASE__URL" in item.get("data", {}):
+                  raise SystemExit("DATABASE__URL must come only from enterprise-doc-secrets")
+          PY
           "$RUNNER_PYTHON" scripts/render_k8s_phase.py --input "$RUNNER_TEMP/staging.yaml" --phase prerequisites --output "$RUNNER_TEMP/staging-prerequisites.yaml"
           "$RUNNER_PYTHON" scripts/render_k8s_phase.py --input "$RUNNER_TEMP/staging.yaml" --phase migration --output "$RUNNER_TEMP/staging-migration.yaml"
           "$RUNNER_PYTHON" scripts/render_k8s_phase.py --input "$RUNNER_TEMP/staging.yaml" --phase workloads --output "$RUNNER_TEMP/staging-workloads.yaml"
