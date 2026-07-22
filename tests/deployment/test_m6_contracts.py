@@ -824,6 +824,8 @@ def test_staging_workflows_preserve_admin_boundary_and_clean_credentials() -> No
     )
     assert '>> "$GITHUB_ENV"' in configure_run
     assert "trap 'rm -f \"$KUBECONFIG\"' ERR INT TERM" in configure_run
+    assert "kubectl auth can-i get namespace/enterprise-doc-agent-staging" in configure_run
+    assert "kubectl auth can-i get namespaces | grep -qx 'yes'" not in configure_run
     assert "if kubectl auth can-i get secrets" in configure_run
     assert "if kubectl auth can-i create pods" in configure_run
     assert "if kubectl auth can-i update configmaps" in configure_run

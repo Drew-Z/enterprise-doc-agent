@@ -149,7 +149,7 @@ jobs:
           test "$actual_api_server" = "$EXPECTED_API_SERVER"
           actual_namespace_uid="$(kubectl get namespace "$NAMESPACE" -o jsonpath='{.metadata.uid}')"
           test "$actual_namespace_uid" = "$EXPECTED_NAMESPACE_UID"
-          kubectl auth can-i get namespaces | grep -qx 'yes'
+          kubectl auth can-i get namespace/enterprise-doc-agent-staging | grep -qx 'yes'
           if kubectl auth can-i get secrets -n enterprise-doc-agent-staging; then
             echo 'staging deployer must not read Kubernetes Secrets' >&2
             exit 1
