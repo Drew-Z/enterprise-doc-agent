@@ -426,6 +426,17 @@ The verifier uses unique temporary policy names and restores Namespace annotatio
 `finally`; it does not create workloads because every apply is server-side dry-run:
 
 ```bash
+if kubectl -n enterprise-doc-agent-staging get job enterprise-doc-migrate >/dev/null 2>&1; then
+  previous_complete="$(kubectl -n enterprise-doc-agent-staging get job enterprise-doc-migrate \
+    -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')"
+  test "$previous_complete" = True
+  backup_dir="$(mktemp -d)"
+  kubectl -n enterprise-doc-agent-staging get job enterprise-doc-migrate -o yaml \
+    > "$backup_dir/enterprise-doc-migrate.yaml"
+  kubectl -n enterprise-doc-agent-staging logs job/enterprise-doc-migrate \
+    > "$backup_dir/enterprise-doc-migrate.log" 2>&1 || true
+  kubectl -n enterprise-doc-agent-staging delete job enterprise-doc-migrate --wait=true
+fi
 python scripts/verify_staging_admission.py \
   --bootstrap-dir infra/k8s/bootstrap \
   --rendered-manifest "$workdir/staging.yaml" \
@@ -433,6 +444,10 @@ python scripts/verify_staging_admission.py \
 test -z "$(kubectl get validatingadmissionpolicy -o name | grep -- '-verify-' || true)"
 test -z "$(kubectl get validatingadmissionpolicybinding -o name | grep -- '-verify-' || true)"
 ```
+
+The completed fixed-name migration Job must be absent when its Pod template changes.
+Kubernetes immutable-field validation runs before the admission dry-run can prove the
+new command allowlist; retain its YAML and logs before deletion.
 
 ## First rollout
 

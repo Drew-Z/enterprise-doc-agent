@@ -91,3 +91,17 @@ def test_namespace_approval_patch_requires_fingerprint() -> None:
 
     with pytest.raises(ValueError, match="prerequisites-sha256"):
         verify_staging_admission._namespace_approval_patch(namespace)
+
+
+def test_runtime_config_probe_forces_an_unreviewed_update() -> None:
+    runtime_config = {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {"name": "enterprise-doc-config"},
+        "data": {"LOG_LEVEL": "INFO"},
+    }
+
+    probe = verify_staging_admission._runtime_config_update_probe(runtime_config)
+
+    assert probe["data"]["ADMISSION_VERIFICATION_PROBE"] == "unreviewed"
+    assert "ADMISSION_VERIFICATION_PROBE" not in runtime_config["data"]

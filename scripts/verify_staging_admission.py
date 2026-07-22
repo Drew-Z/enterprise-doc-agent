@@ -153,6 +153,18 @@ def _namespace_approval_patch(namespace: dict[str, Any]) -> dict[str, Any]:
     return {"metadata": {"annotations": managed}}
 
 
+def _runtime_config_update_probe(runtime_config: dict[str, Any]) -> dict[str, Any]:
+    probe = copy.deepcopy(runtime_config)
+    data = probe.get("data")
+    if not isinstance(data, dict):
+        raise ValueError("rendered runtime ConfigMap must contain data")
+    marker = "unreviewed"
+    if data.get("ADMISSION_VERIFICATION_PROBE") == marker:
+        marker = "unreviewed-change"
+    data["ADMISSION_VERIFICATION_PROBE"] = marker
+    return probe
+
+
 def _assert_auth(*, verb: str, resource: str, expected: str) -> None:
     completed = subprocess.run(
         [
@@ -246,7 +258,7 @@ def verify(*, bootstrap_dir: Path, rendered_manifest: Path, smoke_job: Path) -> 
         for document in (api, migration, readiness):
             _dry_run(document, expect_success=True)
 
-        _dry_run(runtime_config, expect_success=False)
+        _dry_run(_runtime_config_update_probe(runtime_config), expect_success=False)
 
         unreviewed_secret = copy.deepcopy(api)
         unreviewed_secret["spec"]["template"]["spec"]["containers"][0]["envFrom"][1]["secretRef"][

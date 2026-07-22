@@ -20,6 +20,9 @@
 - Measured tiny staging uses 15-second database/object-store connection budgets, a
   60-second checkpointer budget, and a Worker readiness probe that can cover that budget.
   Production defaults remain unchanged.
+- Real admission verification of a changed fixed-name migration Job requires the previous
+  completed Job to be backed up and deleted first. Kubernetes immutable-field validation
+  otherwise fails before the new Job command can reach the admission allow/deny matrix.
 - Pull-request images are built locally for contract checks. Tagged releases use one
   push build, then bind Trivy, SPDX SBOM, BuildKit provenance, Cosign signature and
   attestation verification to the returned immutable `image@sha256:digest`.
