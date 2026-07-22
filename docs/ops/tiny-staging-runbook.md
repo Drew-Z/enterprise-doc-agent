@@ -204,6 +204,14 @@ before kubeconfig creation if this contract drifts. Keep the toolchain root-owne
 and non-writable by the runner account; upgrades require a reviewed repository
 change and an administrator-side toolchain update.
 
+The node's direct Git HTTPS route can be unreliable even while GitHub's API and
+source archive service remain reachable. Deploy and rollback therefore download
+the exact `GITHUB_SHA` through the authenticated GitHub REST tarball endpoint,
+with HTTPS-only redirects, bounded connection/runtime limits and retries. The
+short-lived job token is written only to a mode-`600` curl configuration under
+`runner.temp` and deleted by a trap. Extraction replaces only the guarded
+`$GITHUB_WORKSPACE/repository` subdirectory; shell steps run from that directory.
+
 ## Runner registration (repository-scoped)
 
 Run these commands as a dedicated non-root account on the node after the

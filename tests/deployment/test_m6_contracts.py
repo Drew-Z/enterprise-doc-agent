@@ -566,6 +566,28 @@ def test_cluster_mutating_workflows_use_the_pre_provisioned_runner_toolchain() -
         assert "setup-kustomize" not in serialized
 
 
+def test_cluster_mutating_workflows_download_the_exact_source_archive() -> None:
+    workflow_dir = ROOT / ".github" / "workflows"
+    for name, job_name in (("deploy-staging.yml", "deploy"), ("rollback.yml", "rollback")):
+        workflow = yaml.safe_load((workflow_dir / name).read_text(encoding="utf-8"))
+        job = workflow["jobs"][job_name]
+        assert job["defaults"]["run"]["working-directory"] == "repository"
+        steps = [step for step in job["steps"] if isinstance(step, dict)]
+        download = _named_step(steps, "Download exact source archive")
+        assert download["working-directory"] == "${{ github.workspace }}"
+        assert download["env"]["GH_TOKEN"] == "${{ github.token }}"
+        command = str(download["run"])
+        assert "tarball/${GITHUB_SHA}" in command
+        assert "Authorization: Bearer %s" in command
+        assert 'chmod 600 "$curl_config"' in command
+        assert "--proto '=https' --proto-redir '=https'" in command
+        assert "--connect-timeout 15 --max-time 240" in command
+        assert "--retry 4 --retry-delay 3 --retry-all-errors" in command
+        assert 'case "$repo_dir" in' in command
+        assert 'rm -rf -- "$repo_dir" "$staging_dir"' in command
+        assert "actions/checkout" not in str(workflow)
+
+
 def test_staging_model_routing_uses_environment_variables_within_dispatch_limit() -> None:
     workflow, steps = _deploy_workflow()
     trigger = workflow.get("on", workflow.get(True))
