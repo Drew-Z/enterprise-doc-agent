@@ -154,7 +154,9 @@ async def _seed_uploaded_document(
 
 
 @pytest.mark.integration
-async def test_embedding_retry_resumes_without_downloading_the_object_again() -> None:
+async def test_embedding_retry_resumes_without_downloading_the_object_again(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     content = b"# Delivery\nAcceptance requires a signed delivery certificate.\n"
     engine = create_database_engine(DatabaseSettings())
     session_factory = create_session_factory(engine)
@@ -175,6 +177,15 @@ async def test_embedding_retry_resumes_without_downloading_the_object_again() ->
             await service(claim)
         assert caught.value.code == "ingestion_failed"
         assert caught.value.retryable is True
+        unhandled_records = [
+            record for record in caplog.records if record.msg == "document_ingestion_unhandled"
+        ]
+        assert unhandled_records
+        assert unhandled_records[-1].event_data == {
+            "error_type": "RuntimeError",
+            "stage": "embed",
+        }
+        assert "injected embedding failure" not in caplog.text
 
         async with session_factory() as session:
             generation = await session.scalar(

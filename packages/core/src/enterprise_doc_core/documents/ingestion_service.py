@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from tempfile import SpooledTemporaryFile
@@ -30,6 +31,8 @@ from enterprise_doc_core.documents.models import (
 from enterprise_doc_core.jobs import ClaimedJob
 from enterprise_doc_core.object_store import MultipartObjectStore, ObjectStoreError
 from enterprise_doc_core.telemetry import MetricsRuntime
+
+_LOGGER = logging.getLogger("enterprise_doc_core.documents.ingestion")
 
 
 class DocumentIngestionError(RuntimeError):
@@ -183,6 +186,7 @@ class DocumentIngestionService:
         )
         if already_complete:
             return
+        current_stage = resume_stage
         try:
             if resume_stage is DocumentIngestionStage.EMBED:
                 chunks = await self._load_persisted_chunks(
@@ -191,6 +195,7 @@ class DocumentIngestionService:
                     generation_id=generation_id,
                 )
             else:
+                current_stage = DocumentIngestionStage.DOWNLOAD_SPOOL
                 await self._checkpoint(generation_id, DocumentIngestionStage.DOWNLOAD_SPOOL)
                 spool = await spool_object(
                     object_store=self.object_store,
@@ -203,11 +208,13 @@ class DocumentIngestionService:
                 finally:
                     spool.close()
 
+                current_stage = DocumentIngestionStage.PARSE
                 await self._checkpoint(generation_id, DocumentIngestionStage.PARSE)
                 sections = parse_document_bytes(
                     data,
                     extension=Path(version.original_filename).suffix,
                 )
+                current_stage = DocumentIngestionStage.CHUNK
                 await self._checkpoint(generation_id, DocumentIngestionStage.CHUNK)
                 chunks = chunk_sections(
                     sections,
@@ -220,6 +227,7 @@ class DocumentIngestionService:
                     generation_id=generation_id,
                     chunks=chunks,
                 )
+            current_stage = DocumentIngestionStage.EMBED
             embeddings = await self.embedding_provider.embed(tuple(chunk.text for chunk in chunks))
             self._validate_embeddings(chunks, embeddings)
             await self._commit_embeddings_and_activate(
@@ -261,6 +269,15 @@ class DocumentIngestionService:
                 retryable=True,
             ) from error
         except Exception as error:
+            _LOGGER.error(
+                "document_ingestion_unhandled",
+                extra={
+                    "event_data": {
+                        "error_type": type(error).__name__,
+                        "stage": current_stage.value,
+                    }
+                },
+            )
             await self._mark_failed(
                 document_version_id=document_version_id,
                 generation_id=generation_id,
