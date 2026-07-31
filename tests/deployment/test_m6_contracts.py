@@ -198,7 +198,7 @@ def test_staging_deployer_bootstrap_cannot_read_or_mount_unreviewed_secrets() ->
 
     namespace = _named_resource(documents, "Namespace", "enterprise-doc-agent-staging")
     assert namespace["metadata"]["annotations"]["enterprise-doc-agent/deployment-profile"] == (
-        "tiny-single-node"
+        "single-node-4c8g"
     )
     assert (
         namespace["metadata"]["labels"]

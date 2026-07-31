@@ -10,7 +10,7 @@ metadata:
     pod-security.kubernetes.io/audit: restricted
     pod-security.kubernetes.io/audit-version: latest
   annotations:
-    enterprise-doc-agent/deployment-profile: tiny-single-node
+    enterprise-doc-agent/deployment-profile: single-node-4c8g
 ---
 apiVersion: v1
 kind: ServiceAccount
