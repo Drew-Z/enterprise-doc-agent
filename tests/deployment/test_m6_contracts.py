@@ -305,6 +305,24 @@ def test_staging_deployer_bootstrap_cannot_read_or_mount_unreviewed_secrets() ->
     assert "serviceAccountToken" in policy_text
     assert "pod-security.kubernetes.io/enforce" in policy_text
 
+    deployment_guard = _named_resource(
+        policies,
+        "ValidatingAdmissionPolicy",
+        "enterprise-doc-staging-deployment-guard",
+    )
+    entrypoint_validation = next(
+        validation
+        for validation in deployment_guard["spec"]["validations"]
+        if validation["message"]
+        == "Deployment entrypoints and arguments must match the reviewed runtime."
+    )
+    entrypoint_expression = str(entrypoint_validation["expression"])
+    assert "enterprise-doc-agent/deployment-profile" in entrypoint_expression
+    assert "'single-node-4c8g'" in entrypoint_expression
+    assert "['tiny-single-node', 'staging']" in entrypoint_expression
+    assert "'128mb'" in entrypoint_expression
+    assert "'48mb'" in entrypoint_expression
+
     prerequisite_guard = _named_resource(
         policies,
         "ValidatingAdmissionPolicy",

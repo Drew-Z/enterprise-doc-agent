@@ -183,10 +183,20 @@ spec:
           !has(variables.container.command) && !has(variables.container.args)) ||
         (object.metadata.name == 'enterprise-doc-redis' &&
           !has(variables.container.command) &&
-          variables.container.args == [
-            'redis-server', '--save', '', '--appendonly', 'no', '--maxmemory',
-            '48mb', '--maxmemory-policy', 'noeviction'
-          ])
+          ((namespaceObject.metadata.annotations[
+              'enterprise-doc-agent/deployment-profile'
+            ] == 'single-node-4c8g' &&
+            variables.container.args == [
+              'redis-server', '--save', '', '--appendonly', 'no', '--maxmemory',
+              '128mb', '--maxmemory-policy', 'noeviction'
+            ]) ||
+          (namespaceObject.metadata.annotations[
+              'enterprise-doc-agent/deployment-profile'
+            ] in ['tiny-single-node', 'staging'] &&
+            variables.container.args == [
+              'redis-server', '--save', '', '--appendonly', 'no', '--maxmemory',
+              '48mb', '--maxmemory-policy', 'noeviction'
+            ])))
       message: Deployment entrypoints and arguments must match the reviewed runtime.
       reason: Forbidden
     - expression: >-
