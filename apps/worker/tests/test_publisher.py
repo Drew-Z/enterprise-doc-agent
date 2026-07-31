@@ -4,6 +4,8 @@ import asyncio
 from dataclasses import dataclass, field
 from uuid import uuid4
 
+import pytest
+
 from enterprise_doc_core.jobs import ClaimedOutboxEvent
 from enterprise_doc_worker.publisher import OutboxPublisher
 from enterprise_doc_worker.queue import JobMessage
@@ -107,3 +109,44 @@ async def test_publisher_loop_survives_temporary_store_failure() -> None:
     await asyncio.wait_for(task, timeout=0.5)
 
     assert store.calls >= 1
+
+
+class HangingStore:
+    def __init__(self) -> None:
+        self.calls = 0
+
+    async def claim(self, **_: object) -> tuple[ClaimedOutboxEvent, ...]:
+        self.calls += 1
+        await asyncio.Event().wait()
+        raise AssertionError("unreachable")
+
+    async def mark_published(self, _: ClaimedOutboxEvent) -> None:
+        raise AssertionError("mark must not be called")
+
+
+async def test_publisher_cycle_timeout_cancels_hang_and_retries() -> None:
+    store = HangingStore()
+    publisher = OutboxPublisher(
+        store=store,  # type: ignore[arg-type]
+        dispatcher=FakeDispatcher(),
+        publisher_id="publisher-a",
+        poll_interval_seconds=0.005,
+        cycle_timeout_seconds=0.01,
+    )
+    stop = asyncio.Event()
+    task = asyncio.create_task(publisher.run(stop))
+    await asyncio.sleep(0.04)
+    stop.set()
+    await asyncio.wait_for(task, timeout=0.5)
+
+    assert store.calls >= 2
+
+
+def test_publisher_rejects_non_positive_cycle_timeout() -> None:
+    with pytest.raises(ValueError, match="cycle timeout"):
+        OutboxPublisher(
+            store=FakeStore(()),  # type: ignore[arg-type]
+            dispatcher=FakeDispatcher(),
+            publisher_id="publisher-a",
+            cycle_timeout_seconds=0,
+        )

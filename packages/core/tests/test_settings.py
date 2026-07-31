@@ -14,6 +14,10 @@ from enterprise_doc_core.config import (
 def test_nested_environment_values_are_parsed(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("APP_ENV", "test")
     monkeypatch.setenv("DATABASE__URL", "postgresql+psycopg://user:password@db/test")
+    monkeypatch.setenv("DATABASE__POOL_SIZE", "4")
+    monkeypatch.setenv("DATABASE__MAX_OVERFLOW", "1")
+    monkeypatch.setenv("DATABASE__POOL_TIMEOUT_SECONDS", "7")
+    monkeypatch.setenv("DATABASE__POOL_RECYCLE_SECONDS", "480")
     monkeypatch.setenv("REDIS__URL", "redis://:password@redis:6379/1")
     monkeypatch.setenv("OBJECT_STORE__ACCESS_KEY", "test-access")
     monkeypatch.setenv("OBJECT_STORE__SECRET_KEY", "test-secret")
@@ -33,6 +37,10 @@ def test_nested_environment_values_are_parsed(monkeypatch: pytest.MonkeyPatch) -
 
     assert settings.app_env is AppEnvironment.TEST
     assert settings.database.url.get_secret_value().endswith("@db/test")
+    assert settings.database.pool_size == 4
+    assert settings.database.max_overflow == 1
+    assert settings.database.pool_timeout_seconds == 7
+    assert settings.database.pool_recycle_seconds == 480
     assert settings.redis.url.get_secret_value().endswith("@redis:6379/1")
     assert settings.object_store.secret_key.get_secret_value() == "test-secret"
     assert settings.object_store.multipart_checksum_mode is ObjectStoreChecksumMode.READBACK_SHA256

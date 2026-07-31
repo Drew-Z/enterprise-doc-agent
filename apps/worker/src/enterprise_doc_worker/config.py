@@ -12,6 +12,7 @@ class WorkerServerSettings(BaseModel):
     worker_id: str = Field(default="worker-local", min_length=1, max_length=200)
     publisher_batch_size: int = Field(default=20, ge=1, le=100)
     publisher_poll_interval_seconds: float = Field(default=1.0, gt=0, le=60)
+    publisher_cycle_timeout_seconds: float = Field(default=30.0, gt=0, le=300)
 
 
 class WorkerSettings(FoundationSettings):

@@ -126,6 +126,27 @@ def test_staging_record_rejects_unreviewed_deployment_profile(tmp_path: Path) ->
         )
 
 
+def test_staging_record_accepts_reviewed_single_node_4c8g_profile(tmp_path: Path) -> None:
+    record = build_record(
+        _manifest(tmp_path / "evidence.json"),
+        deployment_profile="single-node-4c8g",
+        repository="example/repo",
+        commit_sha="a" * 40,
+        run_id="42",
+        run_attempt="1",
+        registry_prefix="registry.example/team",
+        image_digests=_digests(),
+        outcomes=_outcomes(),
+        model_provider="openai_compatible",
+        model_base_url="https://model.example.com/v1",
+        model_name="staging-model",
+        smoke_required=True,
+        output=tmp_path / "record.json",
+    )
+    assert record["deployment_profile"] == "single-node-4c8g"
+    assert record["status"] == "passed"
+
+
 def test_staging_record_normalizes_non_secret_model_metadata(tmp_path: Path) -> None:
     record = _build(
         tmp_path,

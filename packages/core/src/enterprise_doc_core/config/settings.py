@@ -30,6 +30,10 @@ class DatabaseSettings(BaseModel):
         "postgresql+psycopg://enterprise_doc:enterprise_doc_local@127.0.0.1:5432/enterprise_doc"
     )
     connect_timeout_seconds: float = Field(default=3.0, gt=0, le=30)
+    pool_size: int = Field(default=3, ge=1, le=20)
+    max_overflow: int = Field(default=2, ge=0, le=20)
+    pool_timeout_seconds: float = Field(default=10.0, gt=0, le=60)
+    pool_recycle_seconds: int = Field(default=600, ge=30, le=3600)
 
 
 class RedisSettings(BaseModel):

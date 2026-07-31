@@ -19,14 +19,6 @@ on:
         description: "Public HTTPS object-store endpoint used by presigned browser uploads"
         required: true
         type: string
-      object_store_checksum_mode:
-        description: "Multipart integrity mode supported by the selected object store"
-        required: true
-        default: native_sha256
-        type: choice
-        options:
-          - native_sha256
-          - readback_sha256
       tls_secret_name:
         description: "Pre-provisioned Kubernetes TLS Secret for the staging Ingress"
         required: true
@@ -184,7 +176,7 @@ jobs:
         run: |
           set -euo pipefail
           case "$DEPLOYMENT_PROFILE" in
-            tiny-single-node|staging) ;;
+            tiny-single-node|single-node-4c8g|staging) ;;
             *) echo 'unsupported deployment profile' >&2; exit 1 ;;
           esac
           namespace_json="$(
@@ -216,12 +208,12 @@ jobs:
         run: |
           set -euo pipefail
           case "$DEPLOYMENT_PROFILE" in
-            tiny-single-node|staging) ;;
+            tiny-single-node|single-node-4c8g|staging) ;;
             *) echo 'unsupported deployment profile' >&2; exit 1 ;;
           esac
-          # tiny-single-node inherits the staging overlay. Bind images in that
-          # parent before the child render so Kustomize still matches the
-          # logical enterprise-doc/* image names.
+          # Reviewed single-node profiles inherit the staging image transformer.
+          # Bind the parent before rendering a child profile so Kustomize still
+          # matches the logical enterprise-doc/* image names.
           IMAGE_BINDING_OVERLAY="infra/k8s/overlays/staging"
           printf '%s' "$REGISTRY_PREFIX" | grep -Eq '^[a-z0-9.-]+(:[0-9]{1,5})?(/[a-z0-9][a-z0-9._-]*)+$'
           case "$REGISTRY_PREFIX" in
@@ -241,7 +233,7 @@ jobs:
           STAGING_BASE_URL: ${{ inputs.staging_base_url }}
           OBJECT_STORE_ENDPOINT: ${{ inputs.object_store_endpoint }}
           OBJECT_STORE_PRESIGN_ENDPOINT: ${{ inputs.object_store_presign_endpoint }}
-          OBJECT_STORE_CHECKSUM_MODE: ${{ inputs.object_store_checksum_mode }}
+          OBJECT_STORE_CHECKSUM_MODE: ${{ vars.STAGING_OBJECT_STORE_CHECKSUM_MODE }}
           TLS_SECRET_NAME: ${{ inputs.tls_secret_name }}
           VITE_OBJECT_STORE_ORIGINS: ${{ vars.VITE_OBJECT_STORE_ORIGINS }}
           DATABASE_EGRESS_CIDR: ${{ vars.STAGING_DATABASE_EGRESS_CIDRS || vars.STAGING_DATABASE_EGRESS_CIDR }}
@@ -255,11 +247,12 @@ jobs:
         run: |
           set -euo pipefail
           case "$DEPLOYMENT_PROFILE" in
-            tiny-single-node|staging) ;;
+            tiny-single-node|single-node-4c8g|staging) ;;
             *) echo 'unsupported deployment profile' >&2; exit 1 ;;
           esac
           OVERLAY_DIR="infra/k8s/overlays/${DEPLOYMENT_PROFILE}"
           test -n "$VITE_OBJECT_STORE_ORIGINS"
+          test -n "$OBJECT_STORE_CHECKSUM_MODE"
           test -n "$MODEL_BASE_URL"
           test -n "$MODEL_NAME"
           kustomize build "$OVERLAY_DIR" > "$RUNNER_TEMP/staging-template.yaml"
@@ -453,6 +446,18 @@ jobs:
           printf '%s\n' "$DEPLOYMENT_PROFILE" > "$raw_dir/deployment-profile.txt"
           capture deployments.json kubectl -n enterprise-doc-agent-staging get deploy -o json
           capture migration.log kubectl -n enterprise-doc-agent-staging logs job/enterprise-doc-migrate
+          capture worker-current.log kubectl -n enterprise-doc-agent-staging logs \
+            -l app.kubernetes.io/name=enterprise-doc-worker \
+            --all-containers=true --prefix=true --tail=500
+          capture worker-previous.log kubectl -n enterprise-doc-agent-staging logs \
+            -l app.kubernetes.io/name=enterprise-doc-worker \
+            --all-containers=true --prefix=true --tail=500 --previous=true
+          capture consumer-current.log kubectl -n enterprise-doc-agent-staging logs \
+            -l app.kubernetes.io/name=enterprise-doc-consumer \
+            --all-containers=true --prefix=true --tail=500
+          capture consumer-previous.log kubectl -n enterprise-doc-agent-staging logs \
+            -l app.kubernetes.io/name=enterprise-doc-consumer \
+            --all-containers=true --prefix=true --tail=500 --previous=true
           capture ingress.yaml kubectl -n enterprise-doc-agent-staging get ingress enterprise-doc-web -o yaml
           capture network-policy.yaml kubectl -n enterprise-doc-agent-staging get networkpolicy -o yaml
           capture events.txt kubectl -n enterprise-doc-agent-staging get events --sort-by=.lastTimestamp

@@ -41,6 +41,20 @@ cloud deployment or production release without an external gate record.
 - **M6-R10**: Rollback preflights every requested Deployment revision through the API
   server before mutating any Deployment, then submits all rollback specs before waiting
   for health so an admission or revision error cannot create an avoidable mixed release.
+- **M6-R11**: A reviewed 4-vCPU/8-GiB single-node staging profile preserves the same
+  external-state and administrator-owned prerequisite boundaries, runs two API and Web
+  replicas for concurrency drills, keeps Worker/consumer/Redis singletons, removes PDBs,
+  uses zero-surge rollout, and leaves at least 2 GiB of node memory outside declared
+  application plus migration limits for K3s, the runner, tunnel and host daemons.
+- **M6-R12**: Ubuntu 24.04 host preparation is repository-owned and reproducible. It
+  fail-closes without an explicit operator SSH CIDR, hardens SSH only after key access is
+  verified, enables a host firewall without exposing K3s control-plane ports, disables
+  swap, configures required kernel modules/sysctls and bounded logs, and separates the
+  pinned K3s installation from the baseline step so every mutation is reviewable.
+- **M6-R13**: K3s, Kustomize and the deployment-runner toolchain use reviewed exact
+  versions. The host keeps the GitHub runner repository-scoped and non-root, keeps the
+  Kubernetes API on loopback for deployment jobs, and does not install application
+  secrets, tunnel credentials or runner registration tokens from repository files.
 
 ## Acceptance Criteria
 
@@ -64,6 +78,15 @@ cloud deployment or production release without an external gate record.
   admission allow/deny behavior are contract tested and verified against a real API server.
 - [x] Rollback performs all server-side dry-run preflights before any rollout undo and
   keeps structured partial-failure evidence for rollout health failures.
+- [x] The 4C8G profile renders with the reviewed replica/resource shape, ephemeral Redis,
+  no PDB, zero-surge updates, external durable dependencies and a peak application plus
+  migration memory ceiling of 6 GiB.
+- [x] Host baseline assets have contract tests for Ubuntu 24.04, explicit SSH allowlist,
+  SSH hardening, UFW/CNI safety, swap removal, kernel/sysctl readiness, bounded journald,
+  and a non-mutating check mode.
+- [x] The K3s installer pins `v1.36.2+k3s1`, retains packaged Traefik, reserves node
+  resources, never exposes the API through Cloudflare Tunnel, and verifies Ready system
+  Pods before bootstrap manifests are applied.
 
 ## Out Of Scope
 

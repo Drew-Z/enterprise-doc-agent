@@ -476,6 +476,20 @@ def test_tiny_single_node_overlay_renders_with_a_bounded_k3s_runtime() -> None:
 
     ingress = _named_resource(documents, "Ingress", "enterprise-doc-web")
     assert ingress["spec"]["ingressClassName"] == "traefik"
+    config = _named_resource(documents, "ConfigMap", "enterprise-doc-config")
+    assert config["data"]["DATABASE__POOL_SIZE"] == "3"
+    assert config["data"]["DATABASE__MAX_OVERFLOW"] == "2"
+    assert config["data"]["DATABASE__POOL_TIMEOUT_SECONDS"] == "10"
+    assert config["data"]["DATABASE__POOL_RECYCLE_SECONDS"] == "600"
+    database_processes_during_migration = 2 + 1 + 1 + 1
+    assert (
+        database_processes_during_migration
+        * (
+            int(config["data"]["DATABASE__POOL_SIZE"])
+            + int(config["data"]["DATABASE__MAX_OVERFLOW"])
+        )
+        <= 25
+    )
     assert "nginx.ingress.kubernetes.io/force-ssl-redirect" not in ingress["metadata"].get(
         "annotations", {}
     )
@@ -569,6 +583,97 @@ def test_tiny_single_node_redis_and_network_boundaries_are_explicit() -> None:
     assert namespaces == {"kube-system"}
 
 
+def test_single_node_4c8g_overlay_renders_reviewed_capacity_shape() -> None:
+    overlay = ROOT / "infra" / "k8s" / "overlays" / "single-node-4c8g"
+    documents = _render_kustomization(overlay)
+    deployments = {
+        item["metadata"]["name"]: item for item in documents if item.get("kind") == "Deployment"
+    }
+    assert set(deployments) == {
+        "enterprise-doc-api",
+        "enterprise-doc-worker",
+        "enterprise-doc-consumer",
+        "enterprise-doc-web",
+        "enterprise-doc-redis",
+    }
+    assert {name: item["spec"]["replicas"] for name, item in deployments.items()} == {
+        "enterprise-doc-api": 2,
+        "enterprise-doc-worker": 1,
+        "enterprise-doc-consumer": 1,
+        "enterprise-doc-web": 2,
+        "enterprise-doc-redis": 1,
+    }
+    assert not [item for item in documents if item.get("kind") == "PodDisruptionBudget"]
+
+    expected_resources = {
+        "enterprise-doc-api": (
+            {"cpu": "250m", "memory": "384Mi"},
+            {"cpu": "750m", "memory": "768Mi"},
+        ),
+        "enterprise-doc-worker": (
+            {"cpu": "300m", "memory": "512Mi"},
+            {"cpu": "1000m", "memory": "1Gi"},
+        ),
+        "enterprise-doc-consumer": (
+            {"cpu": "250m", "memory": "384Mi"},
+            {"cpu": "750m", "memory": "768Mi"},
+        ),
+        "enterprise-doc-web": (
+            {"cpu": "50m", "memory": "64Mi"},
+            {"cpu": "250m", "memory": "256Mi"},
+        ),
+        "enterprise-doc-redis": (
+            {"cpu": "100m", "memory": "128Mi"},
+            {"cpu": "250m", "memory": "256Mi"},
+        ),
+    }
+    total_request_memory = 0
+    total_limit_memory = 0
+    total_request_cpu = 0
+    for name, deployment in deployments.items():
+        container = deployment["spec"]["template"]["spec"]["containers"][0]
+        requests, limits = expected_resources[name]
+        assert container["resources"] == {"requests": requests, "limits": limits}
+        replicas = deployment["spec"]["replicas"]
+        total_request_memory += replicas * _memory_mib(str(requests["memory"]))
+        total_limit_memory += replicas * _memory_mib(str(limits["memory"]).replace("1Gi", "1024Mi"))
+        total_request_cpu += replicas * _cpu_millicores(str(requests["cpu"]))
+        if name == "enterprise-doc-redis":
+            assert "128mb" in container["args"]
+            assert "noeviction" in container["args"]
+        else:
+            assert deployment["spec"]["strategy"] == {
+                "type": "RollingUpdate",
+                "rollingUpdate": {"maxSurge": 0, "maxUnavailable": 1},
+            }
+
+    migration = _named_resource(documents, "Job", "enterprise-doc-migrate")
+    migration_resources = migration["spec"]["template"]["spec"]["containers"][0]["resources"]
+    assert migration_resources == {
+        "requests": {"cpu": "150m", "memory": "256Mi"},
+        "limits": {"cpu": "750m", "memory": "512Mi"},
+    }
+    total_request_memory += _memory_mib(migration_resources["requests"]["memory"])
+    total_limit_memory += _memory_mib(migration_resources["limits"]["memory"])
+    total_request_cpu += _cpu_millicores(migration_resources["requests"]["cpu"])
+    assert total_request_memory <= 3072
+    assert total_request_cpu <= 3000
+    assert total_limit_memory <= 6144
+
+    namespace = _named_resource(documents, "Namespace", "enterprise-doc-agent-staging")
+    assert namespace["metadata"]["annotations"]["enterprise-doc-agent/deployment-profile"] == (
+        "single-node-4c8g"
+    )
+    ingress = _named_resource(documents, "Ingress", "enterprise-doc-web")
+    assert ingress["spec"]["ingressClassName"] == "traefik"
+    assert not [
+        item
+        for item in documents
+        if item.get("kind") in {"Deployment", "StatefulSet"}
+        and item["metadata"]["name"] in {"postgres", "minio"}
+    ]
+
+
 def test_staging_deploy_workflow_can_select_the_reviewed_tiny_overlay() -> None:
     deploy = (ROOT / ".github/workflows/deploy-staging.yml").read_text(encoding="utf-8")
     assert "STAGING_DEPLOYMENT_PROFILE" in deploy
@@ -577,7 +682,7 @@ def test_staging_deploy_workflow_can_select_the_reviewed_tiny_overlay() -> None:
     assert 'OVERLAY_DIR="infra/k8s/overlays/${DEPLOYMENT_PROFILE}"' in deploy
     assert 'case "$DEPLOYMENT_PROFILE" in' in deploy
     annotation = "enterprise-doc-agent/deployment-profile"
-    for profile in ("staging", "tiny-single-node"):
+    for profile in ("staging", "tiny-single-node", "single-node-4c8g"):
         documents = _render_kustomization(ROOT / "infra" / "k8s" / "overlays" / profile)
         namespace = _named_resource(documents, "Namespace", "enterprise-doc-agent-staging")
         assert namespace["metadata"]["annotations"][annotation] == profile
@@ -652,14 +757,8 @@ def test_staging_model_routing_uses_environment_variables_within_dispatch_limit(
     assert isinstance(dispatch, dict)
     inputs = dispatch["inputs"]
     assert isinstance(inputs, dict)
-    assert len(inputs) == 11
-    assert inputs["object_store_checksum_mode"] == {
-        "description": "Multipart integrity mode supported by the selected object store",
-        "required": True,
-        "default": "native_sha256",
-        "type": "choice",
-        "options": ["native_sha256", "readback_sha256"],
-    }
+    assert len(inputs) == 10
+    assert "object_store_checksum_mode" not in inputs
     assert not {"model_provider", "model_base_url", "model_name"} & inputs.keys()
 
     expected_env = {
@@ -679,9 +778,13 @@ def test_staging_model_routing_uses_environment_variables_within_dispatch_limit(
         assert '--model-name "$MODEL_NAME"' in command
 
     render = _named_step(steps, "Render and validate staging manifests")
+    assert render["env"]["OBJECT_STORE_CHECKSUM_MODE"] == (
+        "${{ vars.STAGING_OBJECT_STORE_CHECKSUM_MODE }}"
+    )
     render_command = str(render["run"])
     assert 'test -n "$MODEL_BASE_URL"' in render_command
     assert 'test -n "$MODEL_NAME"' in render_command
+    assert 'test -n "$OBJECT_STORE_CHECKSUM_MODE"' in render_command
     assert "yaml.safe_load_all" in render_command
     assert '("Namespace", "enterprise-doc-agent-staging")' in render_command
     assert '("Job", "enterprise-doc-migrate")' in render_command
@@ -892,6 +995,33 @@ def test_tiny_staging_runbook_separates_live_yaml_documents() -> None:
 
     assert runbook.index(namespace_export) < runbook.index(separator)
     assert runbook.index(separator) < runbook.index(inventory_export, runbook.index(separator))
+
+
+def test_staging_failure_evidence_collects_worker_logs_before_sanitizing() -> None:
+    deploy = (ROOT / ".github/workflows/deploy-staging.yml").read_text(encoding="utf-8")
+    expected = (
+        ("worker-current.log", "enterprise-doc-worker", ""),
+        ("worker-previous.log", "enterprise-doc-worker", "--previous=true"),
+        ("consumer-current.log", "enterprise-doc-consumer", ""),
+        ("consumer-previous.log", "enterprise-doc-consumer", "--previous=true"),
+    )
+    sanitizer = deploy.index("scripts/sanitize_deployment_evidence.py")
+    upload = deploy.index("actions/upload-artifact@")
+    for filename, label, extra in expected:
+        command = f"capture {filename} kubectl -n enterprise-doc-agent-staging logs"
+        position = deploy.index(command)
+        assert position < sanitizer < upload
+        snippet = deploy[position:sanitizer]
+        assert f"app.kubernetes.io/name={label}" in snippet
+        assert "--all-containers=true" in snippet
+        assert "--prefix=true" in snippet
+        assert "--tail=500" in snippet
+        if extra:
+            assert extra in snippet
+    assert "trap 'rm -rf \"$raw_dir\"' EXIT" in deploy
+    uploaded = deploy[upload:]
+    assert "staging-sanitized-${{ github.sha }}" in uploaded
+    assert "staging-raw-${{ github.sha }}" not in uploaded
 
 
 def test_staging_workflows_preserve_admin_boundary_and_clean_credentials() -> None:

@@ -70,7 +70,7 @@ def build_foundation_resources(
     *,
     metrics: MetricsRuntime | None = None,
 ) -> FoundationResources:
-    database_engine = create_database_engine(settings.database)
+    database_engine = create_database_engine(settings.database, metrics=metrics)
     redis_client = redis.from_url(
         settings.redis.url.get_secret_value(),
         socket_connect_timeout=settings.redis.connect_timeout_seconds,

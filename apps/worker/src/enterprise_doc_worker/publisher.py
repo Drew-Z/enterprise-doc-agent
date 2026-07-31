@@ -34,15 +34,19 @@ class OutboxPublisher:
         publisher_id: str,
         batch_size: int = 20,
         poll_interval_seconds: float = 1.0,
+        cycle_timeout_seconds: float = 30.0,
         metrics: MetricsRuntime | None = None,
     ) -> None:
         if batch_size <= 0 or poll_interval_seconds <= 0:
             raise ValueError("publisher batch size and poll interval must be positive")
+        if cycle_timeout_seconds <= 0:
+            raise ValueError("publisher cycle timeout must be positive")
         self.store = store
         self.dispatcher = dispatcher
         self.publisher_id = publisher_id
         self.batch_size = batch_size
         self.poll_interval_seconds = poll_interval_seconds
+        self.cycle_timeout_seconds = cycle_timeout_seconds
         self.metrics = metrics
 
     async def publish_once(self) -> int:
@@ -82,7 +86,10 @@ class OutboxPublisher:
     async def run(self, stop: asyncio.Event) -> None:
         while not stop.is_set():
             try:
-                await self.publish_once()
+                async with asyncio.timeout(self.cycle_timeout_seconds):
+                    await self.publish_once()
+            except TimeoutError:
+                _LOGGER.warning("outbox_poll_timeout")
             except Exception as error:
                 _LOGGER.warning(
                     "outbox_poll_failed",

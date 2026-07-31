@@ -72,6 +72,10 @@
   mismatched Namespaces before applying migration or workloads.
 - Model base URL and name are also Environment variables rather than dispatch inputs;
   adding them as inputs would exceed the same ten-input platform limit.
+- The R2 multipart checksum mode is the protected Environment variable
+  `STAGING_OBJECT_STORE_CHECKSUM_MODE`, not a dispatch input. This keeps the workflow at
+  ten inputs and makes the provider-specific `readback_sha256` contract part of the
+  reviewed environment rather than an operator choice on every release.
 - Tiny inherits the staging image transformer, so immutable image edits occur in the
   staging parent overlay before rendering either profile. CI and deploy pin Kustomize
   5.7.1; 5.6.0 panics on the tiny multi-document delete patch.
@@ -158,3 +162,61 @@
 - `scripts/verify_staging_admission.py`
 - `scripts/sanitize_deployment_evidence.py`
 - `tests/deployment/`
+
+## Scenario: Rebuild A 4C8G Single-Node Staging Host
+
+### 1. Scope / Trigger
+
+- Trigger: a clean Ubuntu 24.04 node replaces the tiny host or the selected deployment
+  profile changes to `single-node-4c8g`.
+
+### 2. Signatures
+
+- Read-only audit: `bootstrap-host.sh --check`.
+- Mutating baseline: `bootstrap-host.sh --apply --operator-ssh-cidr <CIDR>
+  --confirm-console-access`.
+- K3s: `install-k3s.sh --check|--apply`.
+- Toolchain: `provision-runner-toolchain.sh --check|--apply`.
+- Profile: `STAGING_DEPLOYMENT_PROFILE=single-node-4c8g`.
+
+### 3. Contracts
+
+- Host is Ubuntu 24.04 with at least four CPUs and 7.5 GiB RAM.
+- K3s is exactly `v1.36.2+k3s1`; Kustomize is exactly `v5.7.1`.
+- `STAGING_OBJECT_STORE_CHECKSUM_MODE=readback_sha256` for Cloudflare R2.
+- Durable database/object state, model routes and retained telemetry remain external.
+- Repository automation never receives registration, tunnel, database, R2 or model tokens.
+
+### 4. Validation & Error Matrix
+
+- Missing explicit operator CIDR -> baseline refuses mutation.
+- Missing console/TAT acknowledgement -> baseline refuses mutation.
+- Active K3s during baseline -> baseline refuses mutation.
+- Wrong OS/capacity or artifact checksum -> relevant script exits non-zero.
+- Public control-plane reachability -> keep `STAGING_CONTROL_PLANE_APPROVED` false.
+- Existing Namespace profile mismatch -> deploy exits before prerequisites or workloads.
+
+### 5. Good/Base/Bad Cases
+
+- Good: exact host, explicit `/32` or `/128`, verified key plus console, green local tests,
+  private control plane and a final `single-node-4c8g` render.
+- Base: `--check` records facts without changing packages, SSH, firewall or services.
+- Bad: opening K3s ports publicly, treating two replicas on one node as HA, or claiming a
+  production RAG rollout while embeddings are still deterministic.
+
+### 6. Tests Required
+
+- `tests/deployment/test_staging_host_baseline.py` asserts CLI, safety gates, kernel,
+  firewall, SSH, exact versions and absence of token-bearing runner registration.
+- `test_single_node_4c8g_overlay_renders_reviewed_capacity_shape` asserts final replicas,
+  no PDB, zero surge, total CPU/memory, external state and Namespace profile.
+- Actionlint must accept exactly ten workflow dispatch inputs.
+- Real evidence must include rebooted-host checks, Ready system Pods, external port probes,
+  authenticated smoke, rollback and recovery observations.
+
+### 7. Wrong vs Correct
+
+Wrong: run a mutable `curl | sh`, leave SSH/6443 open to the Internet, and call the Ready
+node production. Correct: verify repository-pinned artifact hashes, apply the explicit
+operator allowlist with console recovery, keep cluster ports private, and record every
+remaining external gate separately.

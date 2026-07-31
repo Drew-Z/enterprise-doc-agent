@@ -1,4 +1,6 @@
 import asyncio
+from collections.abc import Coroutine
+from typing import Any
 
 import uvicorn
 
@@ -28,14 +30,43 @@ from enterprise_doc_worker.queue import (
 )
 
 
+async def supervise_worker_tasks(
+    *,
+    server: Coroutine[Any, Any, None],
+    runtime: Coroutine[Any, Any, None],
+    publisher: Coroutine[Any, Any, None],
+) -> None:
+    tasks = {
+        "server": asyncio.create_task(server),
+        "runtime": asyncio.create_task(runtime),
+        "publisher": asyncio.create_task(publisher),
+    }
+    try:
+        done, _ = await asyncio.wait(tasks.values(), return_when=asyncio.FIRST_COMPLETED)
+        for role in ("runtime", "publisher"):
+            task = tasks[role]
+            if task not in done:
+                continue
+            if task.cancelled():
+                raise RuntimeError(f"{role} was cancelled unexpectedly")
+            error = task.exception()
+            if error is not None:
+                raise RuntimeError(f"{role} failed") from error
+            raise RuntimeError(f"{role} stopped unexpectedly")
+        await tasks["server"]
+    finally:
+        for task in tasks.values():
+            if not task.done():
+                task.cancel()
+        await asyncio.gather(*tasks.values(), return_exceptions=True)
+
+
 async def run_worker() -> None:
     settings = WorkerSettings()
     telemetry: TelemetryRuntime | None = None
     runtime: WorkerRuntime | None = None
     resources: FoundationResources | None = None
     checkpoint_runtime: CheckpointRuntime | None = None
-    runtime_task: asyncio.Task[None] | None = None
-    publisher_task: asyncio.Task[None] | None = None
     metrics = MetricsRuntime.create()
     try:
         configure_logging(
@@ -88,6 +119,7 @@ async def run_worker() -> None:
             publisher_id=settings.worker.worker_id,
             batch_size=settings.worker.publisher_batch_size,
             poll_interval_seconds=settings.worker.publisher_poll_interval_seconds,
+            cycle_timeout_seconds=settings.worker.publisher_cycle_timeout_seconds,
             metrics=metrics,
         )
         server = uvicorn.Server(
@@ -103,17 +135,14 @@ async def run_worker() -> None:
                 log_config=None,
             )
         )
-        runtime_task = asyncio.create_task(runtime.run())
-        publisher_task = asyncio.create_task(publisher.run(runtime.shutdown_event))
-        await server.serve()
+        await supervise_worker_tasks(
+            server=server.serve(),
+            runtime=runtime.run(),
+            publisher=publisher.run(runtime.shutdown_event),
+        )
     finally:
         if runtime is not None:
             runtime.request_shutdown()
-        if publisher_task is not None and not publisher_task.done():
-            publisher_task.cancel()
-        tasks = tuple(task for task in (runtime_task, publisher_task) if task is not None)
-        if tasks:
-            await asyncio.gather(*tasks, return_exceptions=True)
         if checkpoint_runtime is not None:
             await checkpoint_runtime.close()
         if resources is not None:

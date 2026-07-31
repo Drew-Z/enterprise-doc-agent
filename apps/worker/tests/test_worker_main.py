@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -7,6 +8,7 @@ import pytest
 
 import enterprise_doc_worker.__main__ as worker_main
 from enterprise_doc_core.telemetry import MetricsRuntime
+from enterprise_doc_worker.__main__ import supervise_worker_tasks
 
 
 def test_worker_main_passes_process_metrics_to_agent_handler() -> None:
@@ -108,3 +110,36 @@ async def test_run_worker_cleans_resources_when_checkpoint_open_fails(
     assert resources.close_called is True
     assert telemetry.shutdown_called is True
     assert isinstance(foundation_kwargs["metrics"], MetricsRuntime)
+
+
+@pytest.mark.asyncio
+async def test_worker_supervision_fails_when_publisher_stops_unexpectedly() -> None:
+    cancelled = asyncio.Event()
+
+    async def pending() -> None:
+        try:
+            await asyncio.Event().wait()
+        finally:
+            cancelled.set()
+
+    async def stopped() -> None:
+        return None
+
+    with pytest.raises(RuntimeError, match="publisher stopped unexpectedly"):
+        await supervise_worker_tasks(
+            server=pending(),
+            runtime=pending(),
+            publisher=stopped(),
+        )
+    assert cancelled.is_set()
+
+
+@pytest.mark.asyncio
+async def test_worker_supervision_allows_normal_server_shutdown() -> None:
+    async def stopped() -> None:
+        return None
+
+    async def pending() -> None:
+        await asyncio.Event().wait()
+
+    await supervise_worker_tasks(server=stopped(), runtime=pending(), publisher=pending())

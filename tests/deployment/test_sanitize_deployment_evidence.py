@@ -72,3 +72,22 @@ def test_sanitize_directory_writes_hashed_inventory_without_source_values(tmp_pa
     )
     assert profile_entry["sha256"] == hashlib.sha256(profile.read_bytes()).hexdigest()
     assert {entry["sha256"] for entry in saved["files"]} == {entry["sha256"] for entry in entries}
+
+
+def test_sanitize_structured_worker_failure_log_keeps_diagnostics_not_secrets() -> None:
+    payload = {
+        "event": "document_ingestion_unhandled",
+        "event_data": {
+            "error_type": "RuntimeError",
+            "stage": "embed",
+            "message": "api_key=canary-key Authorization: Bearer canary-token",
+        },
+    }
+
+    result = sanitize_bytes((json.dumps(payload) + "\n").encode(), suffix=".log").decode()
+
+    assert "canary" not in result
+    assert "document_ingestion_unhandled" in result
+    assert "RuntimeError" in result
+    assert "embed" in result
+    assert result.count("[REDACTED]") >= 2

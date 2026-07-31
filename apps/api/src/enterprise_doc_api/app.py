@@ -137,7 +137,10 @@ def create_app(
         business_database_engine: AsyncEngine | None = resources.database_engine
         business_object_store: MultipartObjectStore | None = resources.multipart_object_store
     elif needs_default_database:
-        owned_database_engine = create_database_engine(resolved_settings.database)
+        owned_database_engine = create_database_engine(
+            resolved_settings.database,
+            metrics=resolved_metrics,
+        )
         business_database_engine = owned_database_engine
         if needs_default_object_store:
             owned_multipart_object_store = Boto3MultipartObjectStore(

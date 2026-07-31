@@ -151,6 +151,7 @@ Configured vars:   STAGING_KUBE_CONTEXT=enterprise-doc-staging
                    STAGING_KUBE_API_SERVER=https://127.0.0.1:6443
                    STAGING_NAMESPACE_UID=<current namespace UID>
 Missing var:       STAGING_DATABASE_EGRESS_CIDRS=<reviewed-public-db-/32-list>
+                   STAGING_OBJECT_STORE_CHECKSUM_MODE=readback_sha256
                    STAGING_MODEL_BASE_URL=https://<gateway-host>/v1
                    STAGING_MODEL_NAME=<exact-model-id>
                    STAGING_CONTROL_PLANE_APPROVED=true
@@ -171,10 +172,9 @@ VITE_OBJECT_STORE_ORIGINS=https://2741446a7478f2d8a5ff31df7e077f17.r2.cloudflare
 
 The deploy workflow fixes `MODEL__PROVIDER=openai_compatible`; the deterministic
 test provider is intentionally forbidden in staging. It reads
-`STAGING_MODEL_BASE_URL` and `STAGING_MODEL_NAME` from the protected `staging`
-Environment rather than adding more manual inputs. The checksum mode is an
-explicit additional dispatch input, so the workflow currently has eleven inputs.
-Configure them only
+`STAGING_MODEL_BASE_URL`, `STAGING_MODEL_NAME` and
+`STAGING_OBJECT_STORE_CHECKSUM_MODE` from the protected `staging` Environment rather
+than exceeding GitHub's ten-input `workflow_dispatch` limit. Configure them only
 after the gateway contract is known:
 
 ```bash
@@ -182,6 +182,8 @@ gh variable set STAGING_MODEL_BASE_URL --env staging \
   --repo Drew-Z/enterprise-doc-agent --body 'https://<gateway-host>/v1'
 gh variable set STAGING_MODEL_NAME --env staging \
   --repo Drew-Z/enterprise-doc-agent --body '<exact-model-id>'
+gh variable set STAGING_OBJECT_STORE_CHECKSUM_MODE --env staging \
+  --repo Drew-Z/enterprise-doc-agent --body 'readback_sha256'
 ```
 
 Keep `STAGING_CONTROL_PLANE_APPROVED` unset until an out-of-band probe confirms the

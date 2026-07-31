@@ -99,3 +99,34 @@ immutable image or rollback evidence. Those remain open manual gates.
   CPU, memory and startup time to become ready on the 2-vCPU/2-GiB K3s node.
 - [ ] Emit immediate non-secret migration Job status and describe diagnostics when the
   pre-rollout wait fails, then verify the change against the real staging cluster.
+
+## Slice 11: Rebuilt 4C8G Staging Host And Profile
+
+- [x] Add red contract tests for the host baseline CLI, explicit SSH CIDR gate, SSH/UFW
+  safety, swap/modules/sysctls/journald configuration, exact K3s version and root-owned
+  deployment toolchain.
+- [x] Add red render/workflow tests for `single-node-4c8g`, including exact replicas,
+  no PDB, zero-surge rollout, external durable dependencies, resource ceilings and
+  Namespace profile ownership.
+- [x] Implement idempotent Ubuntu 24.04 check/apply automation and a separately pinned
+  K3s install/verify path; keep runner/tunnel/app secrets out of repository automation.
+- [x] Implement the 4C8G Kustomize overlay and add it to the strict deploy allowlist while
+  continuing to bind image digests through the staging parent overlay.
+- [x] Run deployment tests, Kustomize renders, shell syntax/static checks, backend lint,
+  Actionlint and Trellis validation before any server mutation.
+- [ ] Apply the baseline to the rebuilt Tencent host, reboot, re-verify SSH/TAT/firewall,
+  install K3s and capture a sanitized host/cluster observation.
+- [ ] Apply bootstrap RBAC/admission, provision admin-owned prerequisites and Secrets,
+  register the repository-scoped runner, configure Cloudflare Tunnel, publish immutable
+  images, dispatch staging, and collect smoke/rollback/recovery evidence.
+
+## Slice 12: Runtime Blockers Before Real Rollout
+
+- [x] Reproduce and fix production-path SQLAlchemy model registration so an isolated
+  ingestion consumer cannot raise `NoReferencedTableError` during flush.
+- [x] Add bounded publisher-cycle timeout and task supervision so a hung or failed Outbox
+  publisher cannot leave a healthy-looking Worker process.
+- [x] Add explicit database pool capacity/wait/recycle settings and contract tests against
+  the total 4C8G replica connection budget.
+- [x] Collect current and previous Worker/consumer logs only into the raw evidence area,
+  pass them through the existing sanitizer, and upload only sanitized output.

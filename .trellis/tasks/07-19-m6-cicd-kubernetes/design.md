@@ -102,3 +102,44 @@ sets 15-second database/object-store connection budgets and a 60-second checkpoi
 budget without changing production defaults. Worker readiness includes the checkpointer
 budget, while the tiny probe timeout exceeds it. The migration Job runs Alembic, official
 LangGraph setup, and a read-only schema check in that order before workloads roll out.
+
+## Four-Core Single-Node Staging
+
+`single-node-4c8g` is a separate reviewed profile rather than a renamed tiny profile. It
+inherits the staging routing, immutable-image, secret, NetworkPolicy and administrator
+prerequisite contracts. It uses two API replicas and two Web replicas to exercise request
+distribution, while Worker, consumer and the ephemeral Redis delivery layer remain one
+replica because the node is still a single failure domain. PDBs remain absent and all
+application Deployments use `maxSurge: 0`; replica count does not imply host availability.
+
+The final render may declare at most 6 GiB of memory limits across simultaneously running
+application containers plus the migration Job. Requests must fit below 3 GiB and 3 CPU so
+the scheduler retains room for K3s system Pods. This leaves at least 2 GiB of physical
+memory outside the declared peak for the kernel, K3s, runner, tunnel, telemetry and image
+pull/decompression bursts. PostgreSQL/pgvector, R2, chat/embedding providers and retained
+telemetry stay external. The first release remains a platform/orchestration drill with a
+real chat route and deterministic 8-dimensional embeddings until the separately reviewed
+embedding schema/reindex milestone is complete.
+
+## Reproducible Ubuntu Host Boundary
+
+Host preparation is split into reviewable stages:
+
+1. `bootstrap-host.sh --check` performs a read-only Ubuntu/version/capacity/access audit.
+2. `bootstrap-host.sh --apply --operator-ssh-cidr <CIDR>` upgrades the OS, installs only
+   baseline utilities, configures modules/sysctls/journald, disables swap, hardens SSH and
+   enables UFW after the explicit operator allow rule exists. It preserves Tencent TAT as
+   break-glass access and does not install application credentials.
+3. `install-k3s.sh` installs exactly `v1.36.2+k3s1`, writes a root-only K3s config with
+   kube/system reservations, retains packaged Traefik and verifies the node/system Pods.
+4. `provision-runner-toolchain.sh` installs the exact kubectl/Kustomize/Python dependency
+   contract under root-owned paths. Runner registration and Cloudflare Tunnel enrollment
+   remain explicit token-bearing operator steps outside Git.
+
+The host firewall permits SSH only from the supplied operator CIDR, permits local CNI
+interfaces and Pod/Service CIDRs required by K3s, and denies public ingress to 80, 443,
+6443, 10250 and 8472. ServiceLB is disabled because its hostPort path can bypass ordinary
+UFW input filtering. Packaged Traefik remains enabled as a ClusterIP Service and binds
+only `127.0.0.1:8080` and `127.0.0.1:8443`; the host cloudflared connector uses the TLS
+loopback endpoint. SSH hardening is loaded through a drop-in and validated with `sshd -t`
+before reload; the active key session and provider console are mandatory rollback paths.

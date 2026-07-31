@@ -15,7 +15,7 @@ SERVICES = {"api", "worker", "consumer", "web"}
 ROLLOUT_STEPS = ("prerequisites", "migration", "workloads", "rollout")
 SMOKE_STEPS = ("cluster_smoke", "authenticated_smoke")
 OUTCOME_VALUES = {"success", "failure", "cancelled", "skipped"}
-DEPLOYMENT_PROFILES = {"staging", "tiny-single-node"}
+DEPLOYMENT_PROFILES = {"staging", "tiny-single-node", "single-node-4c8g"}
 MODEL_PROVIDER = "openai_compatible"
 
 

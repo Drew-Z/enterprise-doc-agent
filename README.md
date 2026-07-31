@@ -268,6 +268,7 @@ Render the Kubernetes contracts and inspect safe release tooling:
 kubectl kustomize infra/k8s/base
 kubectl kustomize infra/k8s/overlays/staging
 kubectl kustomize infra/k8s/overlays/tiny-single-node
+kubectl kustomize infra/k8s/overlays/single-node-4c8g
 uv run python scripts/backup_database.py --help
 uv run python scripts/restore_database.py --help
 uv run python scripts/rollback_release.py --reason validation-only --revision enterprise-doc-api=1
@@ -288,6 +289,13 @@ model providers, and retained observability stay external. This profile is for
 staging evidence and recovery drills; it is not an HA or production topology.
 The migration Job runs Alembic, LangGraph checkpointer setup, and a schema check
 before rollout; measured external-dependency budgets are isolated to staging.
+
+`single-node-4c8g` is the reviewed 4-vCPU/8-GiB successor for the rebuilt staging host.
+It inherits the same external-state, Traefik, Redis, NetworkPolicy and zero-surge
+contracts, adds two API and two Web replicas for concurrency drills, and keeps Worker,
+consumer and Redis singletons. It remains a single failure domain with no PDB. Application
+plus migration limits stay below 6 GiB so K3s, the runner, cloudflared and host daemons
+retain headroom. See `docs/ops/single-node-4c8g-staging-runbook.md`.
 
 The staging environment requires `STAGING_DEPLOYMENT_PROFILE` (default
 `tiny-single-node`) and `STAGING_DATABASE_EGRESS_CIDRS` (with the singular
