@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import re
 from collections.abc import Sequence
 from time import perf_counter
 from typing import Any
@@ -27,6 +28,38 @@ from enterprise_doc_core.telemetry import MetricsRuntime
 
 
 class HybridRetrievalService:
+    _QUERY_STOPWORDS = frozenset(
+        {
+            "a",
+            "about",
+            "according",
+            "an",
+            "and",
+            "are",
+            "can",
+            "could",
+            "do",
+            "does",
+            "for",
+            "from",
+            "how",
+            "in",
+            "is",
+            "me",
+            "of",
+            "on",
+            "please",
+            "tell",
+            "the",
+            "to",
+            "what",
+            "which",
+            "where",
+            "who",
+            "why",
+        }
+    )
+
     def __init__(
         self,
         *,
@@ -144,6 +177,38 @@ class HybridRetrievalService:
     ) -> tuple[RetrievalCandidate, ...]:
         ts_query = func.websearch_to_tsquery("simple", query)
         rank = func.ts_rank_cd(DocumentChunk.search_vector, ts_query)
+        candidates = await self._execute_keyword_recall(
+            tenant_id=tenant_id,
+            document_version_id=document_version_id,
+            ts_query=ts_query,
+            rank=rank,
+        )
+        if candidates:
+            return candidates
+
+        # Natural-language questions often contain words absent from the
+        # document. Retry with meaningful terms so exact lexical overlap can
+        # still complement semantic/vector recall.
+        fallback_query = self._keyword_fallback_query(query)
+        if fallback_query is None:
+            return ()
+        fallback_ts_query = func.websearch_to_tsquery("simple", fallback_query)
+        fallback_rank = func.ts_rank_cd(DocumentChunk.search_vector, fallback_ts_query)
+        return await self._execute_keyword_recall(
+            tenant_id=tenant_id,
+            document_version_id=document_version_id,
+            ts_query=fallback_ts_query,
+            rank=fallback_rank,
+        )
+
+    async def _execute_keyword_recall(
+        self,
+        *,
+        tenant_id: UUID,
+        document_version_id: UUID,
+        ts_query: Any,
+        rank: Any,
+    ) -> tuple[RetrievalCandidate, ...]:
         statement = (
             select(
                 DocumentChunk.id,
@@ -181,6 +246,16 @@ class HybridRetrievalService:
         async with self.session_factory() as session:
             rows = (await session.execute(statement)).all()
         return tuple(self._candidate_from_row(row, score=float(row.rank_score)) for row in rows)
+
+    @classmethod
+    def _keyword_fallback_query(cls, query: str) -> str | None:
+        terms = re.findall(r"[^\W_]+", query.casefold(), flags=re.UNICODE)
+        meaningful_terms = tuple(
+            term for term in terms if len(term) > 1 and term not in cls._QUERY_STOPWORDS
+        )
+        if not meaningful_terms:
+            return None
+        return " OR ".join(meaningful_terms)
 
     async def _vector_recall(
         self,

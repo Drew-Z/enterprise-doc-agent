@@ -277,6 +277,43 @@ async def test_keyword_and_vector_recall_work_independently() -> None:
 
 
 @pytest.mark.integration
+async def test_natural_language_question_recalls_single_ready_active_chunk() -> None:
+    engine = create_database_engine(DatabaseSettings())
+    session_factory = create_session_factory(engine)
+    tenant_id, actor_id = await _seed_identity(session_factory)
+    version = await _seed_version(
+        session_factory,
+        tenant_id=tenant_id,
+        actor_id=actor_id,
+        filename="smoke.txt",
+    )
+    _, chunk_id = await _add_generation(
+        session_factory,
+        version=version,
+        text="Staging smoke contract. The evidence retention period is thirty days.",
+        embedding=VECTOR_A,
+    )
+    query = "According to the document, what is the evidence retention period?"
+    service = HybridRetrievalService(
+        session_factory=session_factory,
+        embedding_provider=ControlledEmbeddingProvider({query: VECTOR_B}),
+        top_k=5,
+    )
+    try:
+        decision = await service.retrieve(
+            tenant_id=tenant_id,
+            document_version_id=version.document_version_id,
+            query=query,
+        )
+        assert decision.accepted is True
+        assert [candidate.chunk_id for candidate in decision.candidates] == [chunk_id]
+    finally:
+        async with session_factory.begin() as session:
+            await session.execute(delete(Tenant).where(Tenant.id == tenant_id))
+        await engine.dispose()
+
+
+@pytest.mark.integration
 async def test_retrieval_rejects_mismatched_version_generation_links() -> None:
     engine = create_database_engine(DatabaseSettings())
     session_factory = create_session_factory(engine)
