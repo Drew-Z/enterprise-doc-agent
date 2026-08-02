@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import os
 from collections.abc import Awaitable, Callable
@@ -8,6 +9,7 @@ from contextvars import Token
 from dataclasses import dataclass
 from datetime import datetime
 from time import perf_counter
+from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
@@ -172,7 +174,21 @@ def _enforce_strict_tool_arguments(server: FastMCP) -> None:
             raise RuntimeError(f"missing FastMCP tool argument model: {name}")
         model.model_config["extra"] = "forbid"
         model.model_rebuild(force=True)
+        # FastMCP validates an already decoded JSON object with model_validate().
+        # Re-enter through Pydantic's strict JSON path so canonical UUID strings
+        # remain valid without enabling Python-side coercion.
+        model.model_validate = classmethod(_validate_wire_arguments)
         tool.parameters = model.model_json_schema(by_alias=True)
+
+
+def _validate_wire_arguments(
+    model: type[Any],
+    value: Any,
+    /,
+    **_: Any,
+) -> Any:
+    encoded = json.dumps(value, ensure_ascii=True, separators=(",", ":"))
+    return model.model_validate_json(encoded, strict=True)
 
 
 async def _invoke[RequestT, ResultT](

@@ -252,6 +252,51 @@ def test_runtime_rejects_missing_or_tampered_context_without_echoing_token() -> 
     assert token not in str(tampered.value)
 
 
+def test_server_argument_models_accept_canonical_json_uuid_strings() -> None:
+    runtime = McpRuntime(
+        service=cast(AgentToolService, FakeToolService()),
+        signing_secret=SECRET,
+        context_token=_token(),
+        clock=lambda: NOW,
+    )
+    server = build_server(runtime)
+    resource_id = UUID("00000000-0000-0000-0000-000000000006")
+
+    for tool_name, field_name in (
+        ("read_chunk", "chunk_id"),
+        ("get_artifact", "artifact_id"),
+        ("publish_artifact", "artifact_id"),
+    ):
+        request = {
+            "idempotency_key": f"{tool_name}-wire-uuid",
+            field_name: str(resource_id),
+        }
+        if tool_name == "publish_artifact":
+            request["target_fingerprint"] = "a" * 64
+        arg_model = server._tool_manager._tools[tool_name].fn_metadata.arg_model
+        parsed = arg_model.model_validate({"request": request})
+        assert getattr(parsed.request, field_name) == resource_id
+
+    draft_model = server._tool_manager._tools["create_draft_artifact"].fn_metadata.arg_model
+    parsed_draft = draft_model.model_validate(
+        {
+            "request": {
+                "idempotency_key": "create-draft-wire-uuid",
+                "answer_text": "The evidence retention period is thirty days.",
+                "citations": [
+                    {
+                        "chunk_id": str(resource_id),
+                        "document_version_id": str(resource_id),
+                        "excerpt": "evidence retention period is thirty days",
+                    }
+                ],
+            }
+        }
+    )
+    assert parsed_draft.request.citations[0].chunk_id == resource_id
+    assert parsed_draft.request.citations[0].document_version_id == resource_id
+
+
 def test_mcp_json_logging_writes_to_stderr_only(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
