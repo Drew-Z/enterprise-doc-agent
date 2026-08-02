@@ -188,6 +188,47 @@ async def test_openai_gateway_performs_at_most_one_bounded_schema_repair() -> No
     assert output.repaired is True
 
 
+async def test_schema_repair_receives_exact_contract_and_safe_validation_issues() -> None:
+    requests: list[httpx.Request] = []
+    invalid_payload = _valid_payload(_request())
+    invalid_payload["structured_fields"] = {"payment_term": "30 days"}
+    invalid_payload["risk_hint"] = "No customer data"
+    citation = invalid_payload["citations"][0]
+    assert isinstance(citation, dict)
+    citation.pop("excerpt")
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        content = (
+            json.dumps(invalid_payload)
+            if len(requests) == 1
+            else json.dumps(_valid_payload(_request()))
+        )
+        return httpx.Response(200, json=_completion(content))
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler), trust_env=False)
+    gateway = OpenAICompatibleChatGateway(settings=_settings(), client=client)
+    try:
+        output = await gateway.generate(_request())
+    finally:
+        await client.aclose()
+
+    assert output.repaired is True
+    assert len(requests) == 2
+    initial_messages = json.loads(requests[0].content)["messages"]
+    assert "structured_fields must be JSON null" in initial_messages[0]["content"]
+    assert (
+        'risk_hint must be JSON null or exactly one of "low", "medium", or "high"'
+        in (initial_messages[0]["content"])
+    )
+    repair_messages = json.loads(requests[1].content)["messages"]
+    repair_instruction = repair_messages[-1]["content"]
+    assert "question_answer.citations.0.excerpt:missing" in repair_instruction
+    assert "question_answer.risk_hint:enum" in repair_instruction
+    assert "question_answer.structured_fields:none_required" in repair_instruction
+    assert "No customer data" not in repair_instruction
+
+
 async def test_schema_repair_shares_one_total_timeout_budget() -> None:
     calls = 0
 

@@ -16,3 +16,4 @@ data:
   MODEL__PROVIDER: openai_compatible
   MODEL__BASE_URL: https://model.example.invalid/v1
   MODEL__MODEL_NAME: replace-with-reviewed-model
+  MODEL__TIMEOUT_SECONDS: "60"
