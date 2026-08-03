@@ -8,14 +8,15 @@ backups remain external.
 ## Safety boundary
 
 - Keep provider console or Tencent TAT access working before changing SSH or UFW.
-- Verify key-based SSH in a second terminal before applying the baseline.
+- Install and enroll Tailscale, then verify key-based OpenSSH over the Tailnet in a second
+  terminal before applying the baseline.
 - Never allow public `6443/tcp`, `10250/tcp` or `8472/udp`.
 - Cloudflare Tunnel routes only the application hostname to loopback Traefik. It never
   routes the Kubernetes API.
 - K3s ServiceLB is disabled. Packaged Traefik is a ClusterIP Service with loopback-only
   host ports `127.0.0.1:8080` and `127.0.0.1:8443` for the host tunnel connector.
-- Repository scripts do not accept GitHub runner, Cloudflare, database, R2 or model
-  credentials. Those remain explicit operator-owned steps.
+- Repository scripts do not accept Tailscale auth keys, GitHub runner, Cloudflare,
+  database, R2 or model credentials. Those remain explicit operator-owned steps.
 - Do not apply the baseline over an active K3s installation. The script fails closed in
   that state.
 
@@ -50,8 +51,8 @@ The command must report Ubuntu `24.04`, at least four CPUs, at least 7.5 GiB RAM
 expected public interface. Record only sanitized facts; do not capture environment files,
 shell history, authorized keys or provider tokens.
 
-Obtain the client address seen by the active SSH session and convert it to a single-host
-CIDR. Review it before use:
+Only when a temporary public SSH fallback is required, obtain the client address seen by
+the initial public SSH session and convert it to a single-host CIDR. Review it before use:
 
 ```bash
 operator_ip="$(printf '%s\n' "$SSH_CONNECTION" | awk '{print $1}')"
@@ -59,29 +60,76 @@ printf 'operator_ip=%s\n' "$operator_ip"
 ```
 
 Use `<operator-ip>/32` for IPv4 or `<operator-ip>/128` for IPv6. Do not use `0.0.0.0/0`
-or `::/0`. Restrict the provider security group to the same CIDR before or immediately
-after host UFW validation, while retaining TAT/console recovery.
+or `::/0`. A dynamic client address is not a durable operator boundary, so omit this
+fallback after Tailnet access and provider console/TAT recovery are both verified.
+
+## Enroll and verify Tailscale
+
+Install Tailscale from its official Ubuntu 24.04 repository while the provider console and
+the initial key-based SSH session are still available:
+
+```bash
+curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/noble.noarmor.gpg \
+  | sudo tee /usr/share/keyrings/tailscale-archive-keyring.gpg >/dev/null
+curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/noble.tailscale-keyring.list \
+  | sudo tee /etc/apt/sources.list.d/tailscale.list >/dev/null
+sudo apt-get update
+sudo apt-get install -y tailscale
+sudo systemctl enable --now tailscaled
+sudo tailscale up
+tailscale status
+tailscale ip -4
+```
+
+`tailscale up` is an operator-owned enrollment step. Do not put its auth key in the
+repository, command history, script arguments, CI logs or evidence files. Prefer the
+interactive login URL; if an ephemeral/pre-authorized key is operationally required,
+provide it outside the repository and revoke or expire it immediately after enrollment.
+
+From a second Tailnet-connected terminal, connect to the Tailscale address with the normal
+OpenSSH key and keep that session open:
+
+```powershell
+ssh enterprise-server
+```
+
+On the host, confirm that the active SSH client is a known Tailnet peer:
+
+```bash
+client_ip="$(printf '%s\n' "$SSH_CONNECTION" | awk '{print $1}')"
+sudo tailscale whois "$client_ip"
+ip link show tailscale0
+```
 
 ## Apply baseline and reboot
 
-After the second key-login terminal and provider console are both verified:
+After the second Tailnet key-login terminal and provider console are both verified, run
+the baseline from that Tailnet SSH session:
 
 ```bash
 cd /tmp/enterprise-doc-host
 sudo bash ./bootstrap-host.sh --apply \
-  --operator-ssh-cidr '<reviewed-single-host-cidr>' \
   --confirm-console-access \
-  --confirm-key-session
+  --confirm-key-session \
+  --confirm-tailnet-session
 sudo reboot
 ```
 
+Add `--operator-ssh-cidr '<reviewed-single-host-cidr>'` only when a temporary public SSH
+fallback is explicitly required. The script validates it as one unicast host and never
+accepts a broad network.
+
 The baseline upgrades the OS, disables swap, loads K3s kernel modules, applies bounded
 sysctls/journald retention, validates an SSH hardening drop-in, and enables UFW only after
-the explicit SSH allow rule exists. Reconnect after reboot and verify:
+the explicit `tailscale0` SSH allow rule exists. Reconnect over the Tailnet after reboot
+and verify:
 
 ```bash
 sudo sshd -t
 sudo ufw status verbose
+systemctl is-active tailscaled
+tailscale status --peers=false
+tailscale ip -4
 swapon --show
 sysctl net.ipv4.ip_forward net.bridge.bridge-nf-call-iptables
 systemctl is-active chrony apparmor
@@ -137,9 +185,11 @@ sudo ss -lntup
 curl --connect-timeout 3 --insecure --head https://127.0.0.1:8443
 ```
 
-From an external machine, `80`, `443`, `6443` and `10250` must not be reachable directly.
-Only SSH from the approved operator CIDR remains public. UDP `8472` must also remain
-blocked by the provider security group and UFW.
+From an external machine, `22`, `80`, `443`, `6443` and `10250` must not be reachable
+directly when no temporary public SSH fallback was requested. OpenSSH remains available
+through `tailscale0`; UDP `8472` must remain blocked by the provider security group and
+UFW. Remove any temporary provider TCP/22 rule after Tailnet and console/TAT recovery have
+both passed their post-reboot checks.
 
 ## Application profile
 

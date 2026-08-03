@@ -8,16 +8,18 @@ MODE=""
 OPERATOR_SSH_CIDR=""
 CONSOLE_CONFIRMED=false
 KEY_SESSION_CONFIRMED=false
+TAILNET_SESSION_CONFIRMED=false
 
 usage() {
   cat <<'EOF'
 Usage:
   bootstrap-host.sh --check
-  sudo bootstrap-host.sh --apply --operator-ssh-cidr <IPv4-or-IPv6-host-CIDR> \
-    --confirm-console-access --confirm-key-session
+  sudo bootstrap-host.sh --apply --confirm-console-access --confirm-key-session \
+    --confirm-tailnet-session [--operator-ssh-cidr <IPv4-or-IPv6-host-CIDR>]
 
 --check is read-only. --apply upgrades and hardens a clean Ubuntu 24.04 host.
-Run --apply only while provider console/TAT access and SSH key login are verified.
+Run --apply from a verified Tailscale SSH key session while provider console/TAT
+access remains available. The optional operator CIDR retains a public SSH fallback.
 EOF
 }
 
@@ -44,6 +46,10 @@ while (($#)); do
       ;;
     --confirm-key-session)
       KEY_SESSION_CONFIRMED=true
+      shift
+      ;;
+    --confirm-tailnet-session)
+      TAILNET_SESSION_CONFIRMED=true
       shift
       ;;
     --help | -h)
@@ -79,7 +85,7 @@ read_host_facts() {
 }
 
 validate_operator_cidr() {
-  test -n "$OPERATOR_SSH_CIDR" || die "operator SSH CIDR is required"
+  test -n "$OPERATOR_SSH_CIDR" || return 0
   python3 "$SCRIPT_DIR/validate_operator_cidr.py" "$OPERATOR_SSH_CIDR"
 }
 
@@ -92,6 +98,23 @@ verify_key_access() {
   test -n "${SSH_CONNECTION:-}" || die "apply must run from a verified SSH key session"
 }
 
+verify_tailnet_access() {
+  local ssh_client_ip
+
+  command -v tailscale >/dev/null 2>&1 \
+    || die "Tailscale must be installed and enrolled before applying the baseline"
+  systemctl is-active --quiet tailscaled \
+    || die "tailscaled must be active before applying the baseline"
+  ip link show tailscale0 >/dev/null 2>&1 \
+    || die "tailscale0 must exist before applying the baseline"
+  tailscale status --peers=false >/dev/null 2>&1 \
+    || die "Tailscale must report a healthy local connection"
+
+  ssh_client_ip="${SSH_CONNECTION%% *}"
+  tailscale whois "$ssh_client_ip" >/dev/null 2>&1 \
+    || die "apply must run through a verified Tailscale peer"
+}
+
 case "$MODE" in
   check)
     read_host_facts
@@ -101,6 +124,13 @@ case "$MODE" in
       printf 'k3s_state=active\n'
     else
       printf 'k3s_state=absent_or_inactive\n'
+    fi
+    if command -v tailscale >/dev/null 2>&1 \
+      && systemctl is-active --quiet tailscaled 2>/dev/null \
+      && ip link show tailscale0 >/dev/null 2>&1; then
+      printf 'tailscale_state=active\n'
+    else
+      printf 'tailscale_state=absent_or_inactive\n'
     fi
     exit 0
     ;;
@@ -117,7 +147,10 @@ validate_operator_cidr
 test "$CONSOLE_CONFIRMED" = true || die "provider console/TAT access must be confirmed"
 test "$KEY_SESSION_CONFIRMED" = true \
   || die "a separate SSH public-key login must be confirmed"
+test "$TAILNET_SESSION_CONFIRMED" = true \
+  || die "a separate OpenSSH-over-Tailnet key session must be confirmed"
 verify_key_access
+verify_tailnet_access
 if systemctl is-active --quiet k3s 2>/dev/null; then
   die "refusing to rewrite the host baseline while k3s is active"
 fi
@@ -128,7 +161,7 @@ apt-get -y dist-upgrade
 apt-get install -y --no-install-recommends \
   apparmor ca-certificates chrony curl jq openssh-server python3 python3.12 \
   python3.12-venv tar gzip unzip ufw
-systemctl enable --now apparmor chrony
+systemctl enable --now apparmor chrony tailscaled
 
 install -d -m 0755 /etc/modules-load.d /etc/sysctl.d /etc/systemd/journald.conf.d
 cat >/etc/modules-load.d/99-enterprise-doc-k3s.conf <<'EOF'
@@ -193,7 +226,10 @@ ufw --force reset
 ufw default deny incoming
 ufw default allow outgoing
 ufw allow in on lo
-ufw allow in from "$OPERATOR_SSH_CIDR" to any port 22 proto tcp
+ufw allow in on tailscale0 to any port 22 proto tcp
+if test -n "$OPERATOR_SSH_CIDR"; then
+  ufw allow in from "$OPERATOR_SSH_CIDR" to any port 22 proto tcp
+fi
 ufw allow in on cni0 from 10.42.0.0/16
 ufw allow in on cni0 from 10.43.0.0/16
 ufw allow in on flannel.1 from 10.42.0.0/16
@@ -206,4 +242,4 @@ ufw deny in on "$PUBLIC_INTERFACE" to any port 8472 proto udp
 ufw --force enable
 
 systemctl reload ssh
-printf 'host baseline applied; reboot before installing k3s\n'
+printf 'host baseline applied with Tailnet SSH preserved; reboot before installing k3s\n'

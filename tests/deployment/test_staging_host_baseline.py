@@ -8,6 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 HOST = ROOT / "infra" / "host" / "ubuntu-24.04"
+RUNBOOK = ROOT / "docs" / "ops" / "single-node-4c8g-staging-runbook.md"
 
 
 def _script(name: str) -> str:
@@ -39,9 +40,10 @@ def test_host_baseline_fails_closed_and_keeps_check_mode_non_mutating() -> None:
     assert "--check" in script
     assert "--apply" in script
     assert "--operator-ssh-cidr" in script
-    assert "operator SSH CIDR is required" in script
     assert "--confirm-key-session" in script
     assert "a separate SSH public-key login must be confirmed" in script
+    assert "--confirm-tailnet-session" in script
+    assert "a separate OpenSSH-over-Tailnet key session must be confirmed" in script
     assert 'VERSION_ID" != "24.04"' in script
     assert "MIN_CPU_COUNT=4" in script
     assert "MIN_MEMORY_KIB=7864320" in script
@@ -90,6 +92,8 @@ def test_host_baseline_hardens_ssh_and_preserves_k3s_networking() -> None:
 
     assert "ufw default deny incoming" in script
     assert "ufw default allow outgoing" in script
+    assert "ufw allow in on tailscale0 to any port 22 proto tcp" in script
+    assert 'if test -n "$OPERATOR_SSH_CIDR"; then' in script
     assert 'from "$OPERATOR_SSH_CIDR" to any port 22 proto tcp' in script
     for interface in ("cni0", "flannel.1"):
         assert interface in script
@@ -98,6 +102,37 @@ def test_host_baseline_hardens_ssh_and_preserves_k3s_networking() -> None:
     assert "for port in 80 443 6443 10250" in script
     assert 'port "$port" proto tcp' in script
     assert "port 8472 proto udp" in script
+
+
+def test_host_baseline_requires_live_tailnet_ssh_before_resetting_ufw() -> None:
+    script = _script("bootstrap-host.sh")
+    for contract in (
+        "command -v tailscale",
+        "systemctl is-active --quiet tailscaled",
+        "ip link show tailscale0",
+        "tailscale status --peers=false",
+        'tailscale whois "$ssh_client_ip"',
+        "systemctl enable --now apparmor chrony tailscaled",
+    ):
+        assert contract in script
+
+    assert "--auth-key" not in script
+    assert "tailscale up" not in script
+    assert script.rindex("verify_tailnet_access") < script.index("ufw --force reset")
+    assert script.index("ufw allow in on tailscale0") < script.index("ufw --force enable")
+
+
+def test_host_runbook_keeps_tailscale_enrollment_operator_owned() -> None:
+    runbook = RUNBOOK.read_text(encoding="utf-8")
+    for contract in (
+        "sudo tailscale up",
+        "sudo tailscale whois",
+        "--confirm-tailnet-session",
+        "ufw status verbose",
+        "Remove any temporary provider TCP/22 rule",
+    ):
+        assert contract in runbook
+    assert "Do not put its auth key" in runbook
 
 
 def test_host_baseline_configures_swap_kernel_and_bounded_logs() -> None:
