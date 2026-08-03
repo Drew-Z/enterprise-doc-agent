@@ -8,7 +8,7 @@ import json
 import re
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import ParseResult, urlparse
 
 import yaml  # type: ignore[import-untyped]
 
@@ -17,6 +17,12 @@ NAMESPACE_NAME = "enterprise-doc-agent-staging"
 INGRESS_NAME = "enterprise-doc-web"
 DATABASE_EGRESS_POLICY_NAME = "enterprise-doc-external-postgres-egress"
 MODEL_PROVIDER = "openai_compatible"
+EMBEDDING_DIMENSION = "1024"
+EMBEDDING_VERSION = "2"
+EMBEDDING_QUERY_INSTRUCTION = (
+    "Given a user question about enterprise documents, retrieve relevant passages "
+    "that answer the question"
+)
 OBJECT_STORE_CHECKSUM_MODES = {"native_sha256", "readback_sha256"}
 CONFIG_HASH_ANNOTATION = "enterprise-doc-agent/config-sha256"
 PREREQUISITE_HASH_ANNOTATION = "enterprise-doc-agent/prerequisites-sha256"
@@ -51,7 +57,7 @@ def _contains_control_character(value: str) -> bool:
     return any(ord(character) < 32 or ord(character) == 127 for character in value)
 
 
-def _https_url(value: str, *, description: str):
+def _https_url(value: str, *, description: str) -> ParseResult:
     if _contains_control_character(value):
         raise ValueError(f"{description} must not contain control characters")
     parsed = urlparse(value)
@@ -103,6 +109,18 @@ def _model_name(value: str) -> str:
     if not normalized or len(normalized) > 200:
         raise ValueError("model name must contain 1-200 characters")
     return normalized
+
+
+def _embedding_base_url(value: str) -> str:
+    if _contains_control_character(value):
+        raise ValueError("embedding base URL must not contain control characters")
+    normalized = value.strip()
+    parsed = _https_url(normalized, description="embedding base URL")
+    if parsed.query or parsed.fragment:
+        raise ValueError("embedding base URL must not contain a query or fragment")
+    if not parsed.path.rstrip("/").endswith("/v1"):
+        raise ValueError("embedding base URL must identify an OpenAI-compatible /v1 endpoint")
+    return normalized.rstrip("/")
 
 
 def _object_store_checksum_mode(value: str) -> str:
@@ -226,6 +244,8 @@ def configure_manifest(
     model_provider: str,
     model_base_url: str,
     model_name: str,
+    embedding_base_url: str = "https://embedding.example.invalid/v1",
+    embedding_model_name: str = "staging-embedding",
     object_store_checksum_mode: str = "native_sha256",
     rollback_api_image: str | None = None,
     rollback_worker_image: str | None = None,
@@ -259,6 +279,8 @@ def configure_manifest(
         raise ValueError(f"model provider must be {MODEL_PROVIDER}")
     normalized_model_base_url = _model_base_url(model_base_url)
     normalized_model_name = _model_name(model_name)
+    normalized_embedding_base_url = _embedding_base_url(embedding_base_url)
+    normalized_embedding_model_name = _model_name(embedding_model_name)
     normalized_checksum_mode = _object_store_checksum_mode(object_store_checksum_mode)
 
     documents = [
@@ -279,6 +301,13 @@ def configure_manifest(
     data["MODEL__PROVIDER"] = MODEL_PROVIDER
     data["MODEL__BASE_URL"] = normalized_model_base_url
     data["MODEL__MODEL_NAME"] = normalized_model_name
+    data["EMBEDDING__PROVIDER"] = "openai_compatible"
+    data["EMBEDDING__BASE_URL"] = normalized_embedding_base_url
+    data["EMBEDDING__MODEL_NAME"] = normalized_embedding_model_name
+    data["EMBEDDING__DIMENSION"] = EMBEDDING_DIMENSION
+    data["EMBEDDING__VERSION"] = EMBEDDING_VERSION
+    data["EMBEDDING__SEND_DIMENSIONS"] = "true"
+    data["EMBEDDING__QUERY_INSTRUCTION"] = EMBEDDING_QUERY_INSTRUCTION
 
     config_digest = hashlib.sha256(
         json.dumps(data, sort_keys=True, separators=(",", ":")).encode("utf-8")
@@ -383,6 +412,9 @@ def configure_manifest(
         f"{APPROVAL_ANNOTATION_PREFIX}model-provider": MODEL_PROVIDER,
         f"{APPROVAL_ANNOTATION_PREFIX}model-base-url": normalized_model_base_url,
         f"{APPROVAL_ANNOTATION_PREFIX}model-name": normalized_model_name,
+        f"{APPROVAL_ANNOTATION_PREFIX}embedding-base-url": normalized_embedding_base_url,
+        f"{APPROVAL_ANNOTATION_PREFIX}embedding-model-name": normalized_embedding_model_name,
+        f"{APPROVAL_ANNOTATION_PREFIX}embedding-dimension": EMBEDDING_DIMENSION,
         f"{APPROVAL_ANNOTATION_PREFIX}config-sha256": config_digest,
     }
     for service, image in current_images.items():
@@ -421,6 +453,8 @@ def main() -> None:
     parser.add_argument("--model-provider", required=True)
     parser.add_argument("--model-base-url", required=True)
     parser.add_argument("--model-name", required=True)
+    parser.add_argument("--embedding-base-url", required=True)
+    parser.add_argument("--embedding-model-name", required=True)
     parser.add_argument("--rollback-api-image")
     parser.add_argument("--rollback-worker-image")
     parser.add_argument("--rollback-consumer-image")
@@ -439,6 +473,8 @@ def main() -> None:
         model_provider=args.model_provider,
         model_base_url=args.model_base_url,
         model_name=args.model_name,
+        embedding_base_url=args.embedding_base_url,
+        embedding_model_name=args.embedding_model_name,
         rollback_api_image=args.rollback_api_image,
         rollback_worker_image=args.rollback_worker_image,
         rollback_consumer_image=args.rollback_consumer_image,

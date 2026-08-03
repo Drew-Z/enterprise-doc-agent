@@ -521,6 +521,17 @@ def test_tiny_single_node_overlay_renders_with_a_bounded_k3s_runtime() -> None:
     assert config["data"]["MODEL__PROVIDER"] == "openai_compatible"
     assert str(config["data"]["MODEL__BASE_URL"]).endswith("/v1")
     assert config["data"]["MODEL__MODEL_NAME"] == "replace-with-reviewed-model"
+    assert config["data"]["EMBEDDING__PROVIDER"] == "openai_compatible"
+    assert str(config["data"]["EMBEDDING__BASE_URL"]).endswith("/v1")
+    assert config["data"]["EMBEDDING__MODEL_NAME"] == (
+        "replace-with-reviewed-embedding-model"
+    )
+    assert config["data"]["EMBEDDING__DIMENSION"] == "1024"
+    assert config["data"]["EMBEDDING__VERSION"] == "2"
+    assert config["data"]["EMBEDDING__SEND_DIMENSIONS"] == "true"
+    assert config["data"]["EMBEDDING__QUERY_INSTRUCTION"].startswith(
+        "Given a user question"
+    )
 
     api = _named_resource(documents, "Deployment", "enterprise-doc-api")
     api_container = api["spec"]["template"]["spec"]["containers"][0]
@@ -783,6 +794,8 @@ def test_staging_model_routing_uses_environment_variables_within_dispatch_limit(
         "MODEL_PROVIDER": "openai_compatible",
         "MODEL_BASE_URL": "${{ vars.STAGING_MODEL_BASE_URL }}",
         "MODEL_NAME": "${{ vars.STAGING_MODEL_NAME }}",
+        "EMBEDDING_BASE_URL": "${{ vars.STAGING_EMBEDDING_BASE_URL }}",
+        "EMBEDDING_MODEL_NAME": "${{ vars.STAGING_EMBEDDING_MODEL_NAME }}",
     }
     for step_name in (
         "Render and validate staging manifests",
@@ -794,6 +807,8 @@ def test_staging_model_routing_uses_environment_variables_within_dispatch_limit(
         assert '--model-provider "$MODEL_PROVIDER"' in command
         assert '--model-base-url "$MODEL_BASE_URL"' in command
         assert '--model-name "$MODEL_NAME"' in command
+        assert '--embedding-base-url "$EMBEDDING_BASE_URL"' in command
+        assert '--embedding-model-name "$EMBEDDING_MODEL_NAME"' in command
 
     render = _named_step(steps, "Render and validate staging manifests")
     assert render["env"]["OBJECT_STORE_CHECKSUM_MODE"] == (
@@ -802,6 +817,8 @@ def test_staging_model_routing_uses_environment_variables_within_dispatch_limit(
     render_command = str(render["run"])
     assert 'test -n "$MODEL_BASE_URL"' in render_command
     assert 'test -n "$MODEL_NAME"' in render_command
+    assert 'test -n "$EMBEDDING_BASE_URL"' in render_command
+    assert 'test -n "$EMBEDDING_MODEL_NAME"' in render_command
     assert 'test -n "$OBJECT_STORE_CHECKSUM_MODE"' in render_command
     assert "yaml.safe_load_all" in render_command
     assert '("Namespace", "enterprise-doc-agent-staging")' in render_command

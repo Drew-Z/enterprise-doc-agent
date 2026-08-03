@@ -4,11 +4,12 @@ from collections.abc import Callable, Mapping
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from enterprise_doc_core.config import FaultInjectionSettings
-from enterprise_doc_core.documents import DimensionCheckedEmbeddingProvider, HashEmbeddingProvider
+from enterprise_doc_core.config import EmbeddingSettings, FaultInjectionSettings
+from enterprise_doc_core.documents import build_embedding_provider
 from enterprise_doc_core.documents.ingestion_service import (
     DocumentIngestionError,
     DocumentIngestionService,
+    IngestionVersions,
 )
 from enterprise_doc_core.jobs import ClaimedJob, JobRuntimeService, RetryDisposition
 from enterprise_doc_core.object_store import MultipartObjectStore
@@ -56,17 +57,21 @@ def build_consumer_factory(
     agent_handler: AsyncJobHandler | None = None,
     metrics: MetricsRuntime | None = None,
     fault_injection: FaultInjectionSettings | None = None,
-    embedding_dimension: int = 8,
+    embedding_settings: EmbeddingSettings | None = None,
 ) -> Callable[[], JobDeliveryConsumer]:
     resolved_faults = fault_injection or FaultInjectionSettings()
+    resolved_embedding = embedding_settings or EmbeddingSettings()
+    embedding_provider, embedding_model, embedding_dimension = build_embedding_provider(
+        resolved_embedding
+    )
     service = DocumentIngestionService(
         session_factory=session_factory,
         object_store=wrap_multipart_store(object_store, resolved_faults),
         documents_bucket=documents_bucket,
-        embedding_provider=DimensionCheckedEmbeddingProvider(
-            HashEmbeddingProvider(dimension=embedding_dimension),
-            dimension=embedding_dimension,
-        ),
+        embedding_provider=embedding_provider,
+        embedding_model=embedding_model,
+        embedding_dimension=embedding_dimension,
+        versions=IngestionVersions(embedding=resolved_embedding.version),
         metrics=metrics,
     )
 

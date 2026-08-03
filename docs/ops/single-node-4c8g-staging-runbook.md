@@ -205,9 +205,10 @@ STAGING_DEPLOYMENT_PROFILE=single-node-4c8g
 STAGING_OBJECT_STORE_CHECKSUM_MODE=readback_sha256
 ```
 
-The initial rollout uses a real OpenAI-compatible chat route but still uses the current
-deterministic 8-dimensional embedding implementation. It is valid platform and Agent
-orchestration evidence, not evidence of a production embedding migration.
+Release `v0.1.12` used the deterministic 8-dimensional embedding fixture. Follow
+`docs/ops/real-embedding-rollout.md` before claiming semantic RAG: the new route requires
+an independently configured embedding endpoint and Secret, a destructive 1024-dimensional
+pgvector migration, provider probe, reindex, and retrieval-quality evidence.
 
 ## Remaining operator gates
 

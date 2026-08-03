@@ -32,6 +32,7 @@ def test_nested_environment_values_are_parsed(monkeypatch: pytest.MonkeyPatch) -
     monkeypatch.setenv("UPLOAD__CLEANUP_COMPLETING_GRACE_SECONDS", "600")
     monkeypatch.setenv("OTEL__ENABLED", "true")
     monkeypatch.setenv("OTEL__SAMPLE_RATIO", "0.25")
+    monkeypatch.setenv("EMBEDDING__QUERY_INSTRUCTION", "Retrieve enterprise evidence")
 
     settings = FoundationSettings(_env_file=None)
 
@@ -53,6 +54,7 @@ def test_nested_environment_values_are_parsed(monkeypatch: pytest.MonkeyPatch) -
     assert settings.upload.cleanup_completing_grace_seconds == 600
     assert settings.otel.enabled is True
     assert settings.otel.sample_ratio == 0.25
+    assert settings.embedding.query_instruction == "Retrieve enterprise evidence"
 
 
 def test_non_local_environment_rejects_local_defaults(
@@ -86,10 +88,22 @@ def test_invalid_sample_ratio_is_rejected(monkeypatch: pytest.MonkeyPatch) -> No
         FoundationSettings(_env_file=None)
 
 
-def test_model_embedding_dimension_matches_the_fixed_vector_index() -> None:
-    assert ModelSettings().embedding_dimension == 8
+def test_embedding_dimensions_match_the_fixed_vector_index() -> None:
+    assert ModelSettings().embedding_dimension == 1024
+    assert FoundationSettings(_env_file=None).embedding.dimension == 1024
     with pytest.raises(ValidationError):
         ModelSettings(embedding_dimension=1536)
+
+
+def test_embedding_query_instruction_is_bounded() -> None:
+    assert FoundationSettings(_env_file=None).embedding.query_instruction.startswith(
+        "Given a user question"
+    )
+    with pytest.raises(ValidationError):
+        FoundationSettings(
+            _env_file=None,
+            embedding={"query_instruction": "x" * 501},
+        )
 
 
 def test_model_route_deadline_is_optional_and_bounded() -> None:
@@ -125,6 +139,12 @@ def test_fault_injection_is_rejected_outside_local_test() -> None:
                 "base_url": "https://model.example/v1",
                 "api_key": "model-secret",
                 "model_name": "production-model",
+            },
+            embedding={
+                "provider": "openai_compatible",
+                "base_url": "https://embedding.example/v1",
+                "api_key": "embedding-secret",
+                "model_name": "Qwen/Qwen3-Embedding-4B",
             },
             mcp={"signing_secret": "production-signing-secret-at-least-32-bytes"},
             fault_injection={

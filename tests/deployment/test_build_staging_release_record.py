@@ -67,6 +67,15 @@ def test_staging_record_passes_only_with_rollout_and_smoke(tmp_path: Path) -> No
         "base_url": "https://model.example.com/v1",
         "name": "staging-model",
     }
+    assert record["embedding"] == {
+        "status": "validated",
+        "provider": "openai_compatible",
+        "base_url": "https://embedding.example.invalid/v1",
+        "name": "staging-embedding",
+        "kind": "embedding",
+        "dimension": 1024,
+        "version": 2,
+    }
 
 
 def test_staging_record_marks_skipped_smoke_blocked_external(tmp_path: Path) -> None:

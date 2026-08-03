@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from enterprise_doc_core.config import DatabaseSettings
 from enterprise_doc_core.db import create_database_engine, create_session_factory
 from enterprise_doc_core.documents.models import (
+    DEFAULT_EMBEDDING_DIMENSION,
     Document,
     DocumentChunk,
     DocumentIngestionGeneration,
@@ -25,8 +26,8 @@ from enterprise_doc_core.documents.retrieval_service import HybridRetrievalServi
 from enterprise_doc_core.identity import Tenant, User
 from enterprise_doc_core.uploads.models import UploadSession, UploadSessionStatus
 
-VECTOR_A = (1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
-VECTOR_B = (0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+VECTOR_A = (1.0,) + (0.0,) * (DEFAULT_EMBEDDING_DIMENSION - 1)
+VECTOR_B = (0.0, 1.0) + (0.0,) * (DEFAULT_EMBEDDING_DIMENSION - 2)
 
 
 class ControlledEmbeddingProvider:
@@ -159,7 +160,7 @@ async def _add_generation(
                 chunker_version=1,
                 embedding_version=embedding_version,
                 embedding_model="controlled",
-                embedding_dimension=8,
+                embedding_dimension=DEFAULT_EMBEDDING_DIMENSION,
                 status=status.value,
                 stage=stage.value,
                 chunk_count=1,

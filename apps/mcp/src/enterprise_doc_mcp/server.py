@@ -37,7 +37,7 @@ from enterprise_doc_core.context import (
     set_request_context,
 )
 from enterprise_doc_core.db import create_database_engine, create_session_factory
-from enterprise_doc_core.documents.ingestion import HashEmbeddingProvider
+from enterprise_doc_core.documents import build_embedding_provider
 from enterprise_doc_core.documents.retrieval_service import HybridRetrievalService
 from enterprise_doc_core.logging import configure_logging
 from enterprise_doc_core.object_store import Boto3ArtifactObjectStore
@@ -258,9 +258,19 @@ def build_runtime(
     resolved_metrics = metrics if metrics is not None else MetricsRuntime.create()
     engine = create_database_engine(settings.database)
     session_factory = create_session_factory(engine)
+    embedding_provider, embedding_model, embedding_dimension = build_embedding_provider(
+        settings.embedding
+    )
     retrieval = HybridRetrievalService(
         session_factory=session_factory,
-        embedding_provider=HashEmbeddingProvider(),
+        embedding_provider=embedding_provider,
+        embedding_model=embedding_model,
+        embedding_dimension=embedding_dimension,
+        query_instruction=(
+            settings.embedding.query_instruction
+            if settings.embedding.provider.value == "openai_compatible"
+            else None
+        ),
         metrics=resolved_metrics,
     )
     artifact_store = Boto3ArtifactObjectStore(

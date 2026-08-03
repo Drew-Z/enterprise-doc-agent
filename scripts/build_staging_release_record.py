@@ -106,6 +106,23 @@ def _model_metadata(
     )
 
 
+def _embedding_metadata(
+    *,
+    embedding_base_url: str = "https://embedding.example.invalid/v1",
+    embedding_model_name: str = "staging-embedding",
+) -> tuple[dict[str, Any], str | None]:
+    metadata, error = _model_metadata(
+        model_provider=MODEL_PROVIDER,
+        model_base_url=embedding_base_url,
+        model_name=embedding_model_name,
+    )
+    if error is not None:
+        metadata["kind"] = "embedding"
+    else:
+        metadata.update({"kind": "embedding", "dimension": 1024, "version": 2})
+    return metadata, error
+
+
 def build_record(
     evidence_manifest: Path,
     *,
@@ -120,6 +137,8 @@ def build_record(
     model_provider: str,
     model_base_url: str,
     model_name: str,
+    embedding_base_url: str = "https://embedding.example.invalid/v1",
+    embedding_model_name: str = "staging-embedding",
     smoke_required: bool,
     output: Path,
 ) -> dict[str, Any]:
@@ -147,10 +166,14 @@ def build_record(
         model_base_url=model_base_url,
         model_name=model_name,
     )
+    embedding, embedding_error = _embedding_metadata(
+        embedding_base_url=embedding_base_url,
+        embedding_model_name=embedding_model_name,
+    )
 
     rollout_ok = all(outcomes[name] == "success" for name in ROLLOUT_STEPS)
     smoke_ok = all(outcomes[name] == "success" for name in SMOKE_STEPS)
-    if model_error is not None:
+    if model_error is not None or embedding_error is not None:
         status = "failed"
         blocking_reason = None
         failure_reason = "Model routing validation failed before staging rollout."
@@ -180,6 +203,7 @@ def build_record(
         "generated_at": datetime.now(UTC).isoformat(),
         "registry_prefix": registry_prefix,
         "model": model,
+        "embedding": embedding,
         "image_digests": image_digests,
         "outcomes": outcomes,
         "evidence_manifest": {
@@ -206,6 +230,8 @@ def main() -> None:
     parser.add_argument("--model-provider", required=True)
     parser.add_argument("--model-base-url", required=True)
     parser.add_argument("--model-name", required=True)
+    parser.add_argument("--embedding-base-url", required=True)
+    parser.add_argument("--embedding-model-name", required=True)
     parser.add_argument("--smoke-required", choices=("true", "false"), required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
@@ -227,6 +253,8 @@ def main() -> None:
             model_provider=args.model_provider,
             model_base_url=args.model_base_url,
             model_name=args.model_name,
+            embedding_base_url=args.embedding_base_url,
+            embedding_model_name=args.embedding_model_name,
             smoke_required=args.smoke_required == "true",
             output=args.output,
         )

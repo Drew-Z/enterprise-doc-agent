@@ -214,7 +214,7 @@ def chunk_sections(
 class HashEmbeddingProvider:
     """A deterministic, local provider for tests and reproducible fixtures."""
 
-    def __init__(self, *, dimension: int = 8) -> None:
+    def __init__(self, *, dimension: int = 1024) -> None:
         if dimension <= 0:
             raise ValueError("dimension must be positive")
         self.dimension = dimension

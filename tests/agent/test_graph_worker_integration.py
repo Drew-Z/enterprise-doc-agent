@@ -35,7 +35,11 @@ from enterprise_doc_core.agents import (
 )
 from enterprise_doc_core.config import DatabaseSettings, McpSettings
 from enterprise_doc_core.db import create_database_engine, create_session_factory
-from enterprise_doc_core.documents import DocumentChunk, DocumentIngestionGeneration
+from enterprise_doc_core.documents import (
+    DEFAULT_EMBEDDING_DIMENSION,
+    DocumentChunk,
+    DocumentIngestionGeneration,
+)
 from enterprise_doc_core.jobs import JobRuntimeService, JobStatus
 from enterprise_doc_worker.agent_backend import DurableAgentGraphBackend
 from enterprise_doc_worker.agent_handler import (
@@ -201,7 +205,7 @@ async def test_worker_executes_non_publication_graph_to_terminal_artifact() -> N
                     normalized_text=text,
                     content_sha256=hashlib.sha256(text.encode()).hexdigest(),
                     search_vector="'payment':1",
-                    embedding=[0.1] * 8,
+                    embedding=[0.1] * DEFAULT_EMBEDDING_DIMENSION,
                 )
             )
 
@@ -304,7 +308,7 @@ async def test_worker_pauses_publication_segment_as_successful_waiting_approval(
                     normalized_text=text,
                     content_sha256=hashlib.sha256(text.encode()).hexdigest(),
                     search_vector="'payment':1",
-                    embedding=[0.1] * 8,
+                    embedding=[0.1] * DEFAULT_EMBEDDING_DIMENSION,
                 )
             )
 
@@ -383,6 +387,7 @@ async def test_real_stdio_client_freezes_evidence_with_fencing_context() -> None
         async with session_factory.begin() as session:
             generation = await session.get(DocumentIngestionGeneration, context.generation_id)
             assert generation is not None
+            generation.embedding_model = "hash-sha256-v1"
             generation.chunk_count = 1
             generation.embedded_count = 1
             session.add(
@@ -399,7 +404,7 @@ async def test_real_stdio_client_freezes_evidence_with_fencing_context() -> None
                     normalized_text=text,
                     content_sha256=hashlib.sha256(text.encode()).hexdigest(),
                     search_vector="'payment':1",
-                    embedding=[0.1] * 8,
+                    embedding=[0.1] * DEFAULT_EMBEDDING_DIMENSION,
                 )
             )
 

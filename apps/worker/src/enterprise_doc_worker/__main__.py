@@ -110,7 +110,7 @@ async def run_worker() -> None:
                 agent_handler=agent_handler,
                 metrics=metrics,
                 fault_injection=settings.fault_injection,
-                embedding_dimension=settings.model.embedding_dimension,
+                embedding_settings=settings.embedding,
             ),
         )
         publisher = OutboxPublisher(

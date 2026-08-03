@@ -115,7 +115,7 @@ class DocumentVersion(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
 
 
-DEFAULT_EMBEDDING_DIMENSION = 8
+DEFAULT_EMBEDDING_DIMENSION = 1024
 
 
 class DocumentIngestionGeneration(UUIDPrimaryKeyMixin, TimestampMixin, Base):

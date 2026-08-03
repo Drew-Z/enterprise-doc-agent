@@ -33,7 +33,11 @@ from enterprise_doc_core.agents import (
 from enterprise_doc_core.agents.models import AgentRunExecutionKind
 from enterprise_doc_core.config import DatabaseSettings
 from enterprise_doc_core.db import create_database_engine, create_session_factory
-from enterprise_doc_core.documents import DocumentChunk, DocumentIngestionGeneration
+from enterprise_doc_core.documents import (
+    DEFAULT_EMBEDDING_DIMENSION,
+    DocumentChunk,
+    DocumentIngestionGeneration,
+)
 from enterprise_doc_core.documents.retrieval import RetrievalCandidate, RetrievalDecision
 from enterprise_doc_core.identity import Membership
 from enterprise_doc_core.jobs import create_job_records
@@ -236,7 +240,7 @@ async def _seed_running_tool_run(
                 normalized_text=chunk_text,
                 content_sha256=hashlib.sha256(chunk_text.encode()).hexdigest(),
                 search_vector="'payment':1",
-                embedding=[0.1] * 8,
+                embedding=[0.1] * DEFAULT_EMBEDDING_DIMENSION,
             )
         )
         execution_id = execution.id
@@ -293,7 +297,7 @@ async def test_tool_service_freezes_evidence_and_replays_artifact_reads() -> Non
                     normalized_text=text,
                     content_sha256=hashlib.sha256(text.encode()).hexdigest(),
                     search_vector="'payment':1",
-                    embedding=[0.1] * 8,
+                    embedding=[0.1] * DEFAULT_EMBEDDING_DIMENSION,
                 )
             )
             execution_id = execution.id
@@ -582,7 +586,7 @@ async def test_publish_requires_owner_exact_approval_and_replays_once() -> None:
                     normalized_text=chunk_text,
                     content_sha256=hashlib.sha256(chunk_text.encode()).hexdigest(),
                     search_vector="'payment':1",
-                    embedding=[0.1] * 8,
+                    embedding=[0.1] * DEFAULT_EMBEDDING_DIMENSION,
                 )
             )
             execution_id = execution.id

@@ -149,6 +149,8 @@ def test_configure_manifest_binds_https_hosts_without_secret_data(tmp_path: Path
         model_provider="openai_compatible",
         model_base_url="https://model.example.com/v1",
         model_name="staging-model",
+        embedding_base_url="https://embedding.example.com/v1",
+        embedding_model_name="Qwen/Qwen3-Embedding-4B",
     )
 
     documents = [
@@ -164,6 +166,15 @@ def test_configure_manifest_binds_https_hosts_without_secret_data(tmp_path: Path
     assert config["data"]["MODEL__PROVIDER"] == "openai_compatible"
     assert config["data"]["MODEL__BASE_URL"] == "https://model.example.com/v1"
     assert config["data"]["MODEL__MODEL_NAME"] == "staging-model"
+    assert config["data"]["EMBEDDING__PROVIDER"] == "openai_compatible"
+    assert config["data"]["EMBEDDING__BASE_URL"] == "https://embedding.example.com/v1"
+    assert config["data"]["EMBEDDING__MODEL_NAME"] == "Qwen/Qwen3-Embedding-4B"
+    assert config["data"]["EMBEDDING__DIMENSION"] == "1024"
+    assert config["data"]["EMBEDDING__SEND_DIMENSIONS"] == "true"
+    assert config["data"]["EMBEDDING__QUERY_INSTRUCTION"].startswith(
+        "Given a user question"
+    )
+    assert config["data"]["EMBEDDING__VERSION"] == "2"
     api_deployment = next(
         item
         for item in documents

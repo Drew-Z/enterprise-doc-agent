@@ -423,7 +423,7 @@ async def test_document_ingestion_is_idempotent_and_hybrid_retrievable() -> None
             object_store=FakeObjectStore(content),  # type: ignore[arg-type]
             documents_bucket="documents",
             embedding_provider=provider,
-            versions=IngestionVersions(embedding=2),
+            versions=IngestionVersions(embedding=3),
         )
         await upgraded_service(claim)
 

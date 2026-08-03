@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from collections.abc import Sequence
 
 from enterprise_doc_core.documents.ingestion import EmbeddingProvider
@@ -26,6 +27,14 @@ class DimensionCheckedEmbeddingProvider:
             raise EmbeddingDimensionMismatch(
                 f"embedding provider returned vectors outside dimension {self.dimension}"
             )
+        if any(
+            not isinstance(value, (int, float))
+            or isinstance(value, bool)
+            or not math.isfinite(float(value))
+            for vector in vectors
+            for value in vector
+        ):
+            raise EmbeddingDimensionMismatch("embedding provider returned non-finite values")
         return vectors
 
 

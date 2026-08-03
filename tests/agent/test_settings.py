@@ -12,6 +12,10 @@ def _set_non_local_foundation(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("OBJECT_STORE__ACCESS_KEY", "production-access")
     monkeypatch.setenv("OBJECT_STORE__SECRET_KEY", "production-secret")
     monkeypatch.setenv("MCP__SIGNING_SECRET", "mcp-production-signing-secret-at-least-32-bytes")
+    monkeypatch.setenv("EMBEDDING__PROVIDER", "openai_compatible")
+    monkeypatch.setenv("EMBEDDING__BASE_URL", "https://embedding.example.test/v1")
+    monkeypatch.setenv("EMBEDDING__API_KEY", "production-embedding-api-key")
+    monkeypatch.setenv("EMBEDDING__MODEL_NAME", "Qwen/Qwen3-Embedding-4B")
 
 
 def test_local_and_test_may_use_deterministic_model_provider(

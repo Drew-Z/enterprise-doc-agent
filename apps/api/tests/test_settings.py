@@ -37,6 +37,10 @@ def test_api_auth_settings_are_secret_aware_and_reject_local_key_outside_local(
     monkeypatch.setenv("MODEL__BASE_URL", "https://models.example.test/v1")
     monkeypatch.setenv("MODEL__API_KEY", "staging-model-api-key")
     monkeypatch.setenv("MODEL__MODEL_NAME", "staging-model")
+    monkeypatch.setenv("EMBEDDING__PROVIDER", "openai_compatible")
+    monkeypatch.setenv("EMBEDDING__BASE_URL", "https://embedding.example.test/v1")
+    monkeypatch.setenv("EMBEDDING__API_KEY", "staging-embedding-api-key")
+    monkeypatch.setenv("EMBEDDING__MODEL_NAME", "Qwen/Qwen3-Embedding-4B")
     monkeypatch.setenv("MCP__SIGNING_SECRET", "staging-mcp-signing-secret-at-least-32-bytes")
     with pytest.raises(ValidationError, match="development JWT signing key"):
         ApiSettings(_env_file=None)

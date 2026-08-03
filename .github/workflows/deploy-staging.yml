@@ -240,6 +240,8 @@ jobs:
           MODEL_PROVIDER: openai_compatible
           MODEL_BASE_URL: ${{ vars.STAGING_MODEL_BASE_URL }}
           MODEL_NAME: ${{ vars.STAGING_MODEL_NAME }}
+          EMBEDDING_BASE_URL: ${{ vars.STAGING_EMBEDDING_BASE_URL }}
+          EMBEDDING_MODEL_NAME: ${{ vars.STAGING_EMBEDDING_MODEL_NAME }}
           ROLLBACK_API_IMAGE: ${{ vars.STAGING_ROLLBACK_API_IMAGE }}
           ROLLBACK_WORKER_IMAGE: ${{ vars.STAGING_ROLLBACK_WORKER_IMAGE }}
           ROLLBACK_CONSUMER_IMAGE: ${{ vars.STAGING_ROLLBACK_CONSUMER_IMAGE }}
@@ -255,6 +257,8 @@ jobs:
           test -n "$OBJECT_STORE_CHECKSUM_MODE"
           test -n "$MODEL_BASE_URL"
           test -n "$MODEL_NAME"
+          test -n "$EMBEDDING_BASE_URL"
+          test -n "$EMBEDDING_MODEL_NAME"
           kustomize build "$OVERLAY_DIR" > "$RUNNER_TEMP/staging-template.yaml"
           "$RUNNER_PYTHON" scripts/configure_staging_manifest.py \
             --input "$RUNNER_TEMP/staging-template.yaml" \
@@ -269,6 +273,8 @@ jobs:
             --model-provider "$MODEL_PROVIDER" \
             --model-base-url "$MODEL_BASE_URL" \
             --model-name "$MODEL_NAME" \
+            --embedding-base-url "$EMBEDDING_BASE_URL" \
+            --embedding-model-name "$EMBEDDING_MODEL_NAME" \
             --rollback-api-image "$ROLLBACK_API_IMAGE" \
             --rollback-worker-image "$ROLLBACK_WORKER_IMAGE" \
             --rollback-consumer-image "$ROLLBACK_CONSUMER_IMAGE" \
@@ -410,6 +416,8 @@ jobs:
           MODEL_PROVIDER: openai_compatible
           MODEL_BASE_URL: ${{ vars.STAGING_MODEL_BASE_URL }}
           MODEL_NAME: ${{ vars.STAGING_MODEL_NAME }}
+          EMBEDDING_BASE_URL: ${{ vars.STAGING_EMBEDDING_BASE_URL }}
+          EMBEDDING_MODEL_NAME: ${{ vars.STAGING_EMBEDDING_MODEL_NAME }}
           DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'tiny-single-node' }}
           PREREQUISITES_OUTCOME: ${{ steps.prerequisites.outcome }}
           MIGRATION_OUTCOME: ${{ steps.migration.outcome }}
@@ -480,6 +488,8 @@ jobs:
             --model-provider "$MODEL_PROVIDER" \
             --model-base-url "$MODEL_BASE_URL" \
             --model-name "$MODEL_NAME" \
+            --embedding-base-url "$EMBEDDING_BASE_URL" \
+            --embedding-model-name "$EMBEDDING_MODEL_NAME" \
             --smoke-required "$RUN_SMOKE" \
             --output "tmp/staging-release-${evidence_id}.record.json"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

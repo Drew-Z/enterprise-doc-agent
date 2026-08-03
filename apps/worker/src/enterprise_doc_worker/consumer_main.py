@@ -77,7 +77,7 @@ def build_consumer_app(
             agent_handler=agent_handler,
             metrics=resolved_metrics,
             fault_injection=settings.fault_injection,
-            embedding_dimension=settings.model.embedding_dimension,
+            embedding_settings=settings.embedding,
         ),
         async_runner=resolved_runner,
     )

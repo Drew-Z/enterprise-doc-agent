@@ -25,6 +25,7 @@ from enterprise_doc_core.documents.evaluation import (
     evaluate_retrieval_cases,
 )
 from enterprise_doc_core.documents.models import (
+    DEFAULT_EMBEDDING_DIMENSION,
     Document,
     DocumentChunk,
     DocumentIngestionGeneration,
@@ -83,7 +84,7 @@ def _vector(raw: Any) -> tuple[float, ...]:
     vector = tuple(float(value) for value in raw)
     if len(vector) != 8:
         raise ValueError("evaluation embeddings must have dimension 8")
-    return vector
+    return vector + (0.0,) * (DEFAULT_EMBEDDING_DIMENSION - len(vector))
 
 
 def _item(raw: dict[str, Any]) -> CorpusItem:
@@ -239,7 +240,7 @@ async def _seed_corpus_version(
                 chunker_version=1,
                 embedding_version=1,
                 embedding_model="evaluation-controlled",
-                embedding_dimension=8,
+                embedding_dimension=DEFAULT_EMBEDDING_DIMENSION,
                 status=DocumentIngestionStatus.SUCCEEDED.value,
                 stage=DocumentIngestionStage.READY.value,
                 chunk_count=len(items),
@@ -362,7 +363,7 @@ async def run_live_evaluation(dataset_path: Path) -> dict[str, Any]:
                 "postgres_version": postgres_version,
                 "pgvector_version": pgvector_version,
                 "embedding_provider": "dataset-controlled",
-                "embedding_dimension": 8,
+                "embedding_dimension": DEFAULT_EMBEDDING_DIMENSION,
                 "top_k": dataset.top_k,
                 "rrf_k": dataset.rrf_k,
                 "min_score": service.min_score,

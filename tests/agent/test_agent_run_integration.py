@@ -36,6 +36,7 @@ from enterprise_doc_core.config import (
 from enterprise_doc_core.context import PrincipalContext
 from enterprise_doc_core.db import create_database_engine, create_session_factory
 from enterprise_doc_core.documents import (
+    DEFAULT_EMBEDDING_DIMENSION,
     Document,
     DocumentIngestionGeneration,
     DocumentIngestionStage,
@@ -225,7 +226,7 @@ async def _seed_agent_context(
                 chunker_version=1,
                 embedding_version=1,
                 embedding_model="controlled",
-                embedding_dimension=8,
+                embedding_dimension=DEFAULT_EMBEDDING_DIMENSION,
                 status=generation_status.value,
                 stage=generation_stage.value,
                 chunk_count=0,

@@ -18,6 +18,11 @@ HARDENING_MIGRATION = (
     / "packages/core/src/enterprise_doc_core/db/migrations/versions"
     / "20260718_0008_resumable_embedding_checkpoint.py"
 )
+SEMANTIC_EMBEDDING_MIGRATION = (
+    ROOT
+    / "packages/core/src/enterprise_doc_core/db/migrations/versions"
+    / "20260803_0010_semantic_embeddings.py"
+)
 DATABASE_URL = os.environ.get(
     "FOUNDATION_TEST_DATABASE_URL",
     "postgresql://enterprise_doc:enterprise_doc_local@127.0.0.1:5432/enterprise_doc",
@@ -27,6 +32,23 @@ DATABASE_URL = os.environ.get(
 def _run_alembic(*arguments: str) -> None:
     subprocess.run(
         ["uv", "run", "alembic", *arguments],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+
+def _reset_test_schema() -> None:
+    with psycopg.connect(DATABASE_URL, autocommit=True) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute("DROP SCHEMA public CASCADE")
+            cursor.execute("CREATE SCHEMA public")
+
+
+def _restore_checkpoint_schema() -> None:
+    subprocess.run(
+        ["uv", "run", "enterprise-doc-checkpointer-setup", "--setup"],
         cwd=ROOT,
         check=True,
         capture_output=True,
@@ -54,9 +76,20 @@ def test_m3_hardening_migration_is_additive_after_document_rag() -> None:
     assert "embedded_count <= chunk_count" in source
 
 
+def test_semantic_embedding_migration_replaces_the_fixture_vector_index() -> None:
+    source = SEMANTIC_EMBEDDING_MIGRATION.read_text(encoding="utf-8")
+
+    assert 'revision = "20260803_0010"' in source
+    assert 'down_revision = "20260718_0009"' in source
+    assert "OLD_DIMENSION = 8" in source
+    assert "NEW_DIMENSION = 1024" in source
+    assert "UPDATE document_chunks SET embedding = NULL" in source
+
+
 @pytest.mark.integration
 def test_m3_migration_creates_hybrid_rag_schema_and_downgrades() -> None:
-    _run_alembic("upgrade", "head")
+    _reset_test_schema()
+    _run_alembic("upgrade", "20260718_0008")
     with psycopg.connect(DATABASE_URL) as connection, connection.cursor() as cursor:
         cursor.execute(
             """
@@ -95,6 +128,16 @@ def test_m3_migration_creates_hybrid_rag_schema_and_downgrades() -> None:
         assert cursor.fetchone() == ("YES",)
         cursor.execute(
             """
+            SELECT format_type(a.atttypid, a.atttypmod)
+            FROM pg_attribute AS a
+            WHERE a.attrelid = 'document_chunks'::regclass
+              AND a.attname = 'embedding'
+              AND NOT a.attisdropped
+            """
+        )
+        assert cursor.fetchone() == ("vector(8)",)
+        cursor.execute(
+            """
             SELECT conname
             FROM pg_constraint
             WHERE conrelid = 'document_ingestion_generations'::regclass
@@ -116,3 +159,15 @@ def test_m3_migration_creates_hybrid_rag_schema_and_downgrades() -> None:
         assert cursor.fetchall() == []
 
     _run_alembic("upgrade", "head")
+    _restore_checkpoint_schema()
+    with psycopg.connect(DATABASE_URL) as connection, connection.cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT format_type(a.atttypid, a.atttypmod)
+            FROM pg_attribute AS a
+            WHERE a.attrelid = 'document_chunks'::regclass
+              AND a.attname = 'embedding'
+              AND NOT a.attisdropped
+            """
+        )
+        assert cursor.fetchone() == ("vector(1024)",)

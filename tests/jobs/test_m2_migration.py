@@ -29,6 +29,23 @@ def _run_alembic(*arguments: str) -> None:
     )
 
 
+def _reset_test_schema() -> None:
+    with psycopg.connect(DATABASE_URL, autocommit=True) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute("DROP SCHEMA public CASCADE")
+            cursor.execute("CREATE SCHEMA public")
+
+
+def _restore_checkpoint_schema() -> None:
+    subprocess.run(
+        ["uv", "run", "enterprise-doc-checkpointer-setup", "--setup"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+
 def test_m2_migration_is_additive_after_m1_head() -> None:
     source = MIGRATION.read_text(encoding="utf-8")
 
@@ -40,7 +57,8 @@ def test_m2_migration_is_additive_after_m1_head() -> None:
 
 @pytest.mark.integration
 def test_m2_migration_creates_and_removes_durable_job_tables() -> None:
-    _run_alembic("upgrade", "head")
+    _reset_test_schema()
+    _run_alembic("upgrade", "20260718_0006")
     with psycopg.connect(DATABASE_URL) as connection, connection.cursor() as cursor:
         cursor.execute(
             """
@@ -70,3 +88,4 @@ def test_m2_migration_creates_and_removes_durable_job_tables() -> None:
         assert cursor.fetchall() == []
 
     _run_alembic("upgrade", "head")
+    _restore_checkpoint_schema()

@@ -49,6 +49,7 @@ from enterprise_doc_core.agents import (
 from enterprise_doc_core.config import DatabaseSettings, McpSettings
 from enterprise_doc_core.db import create_database_engine, create_session_factory
 from enterprise_doc_core.documents import (
+    DEFAULT_EMBEDDING_DIMENSION,
     DocumentChunk,
     DocumentIngestionGeneration,
     DocumentVersion,
@@ -231,7 +232,7 @@ async def _prepare_waiting_run() -> PreparedRun:
                 normalized_text=text,
                 content_sha256=hashlib.sha256(text.encode()).hexdigest(),
                 search_vector="'payment':1",
-                embedding=[0.1] * 8,
+                embedding=[0.1] * DEFAULT_EMBEDDING_DIMENSION,
             )
         )
 

@@ -21,3 +21,14 @@ data:
   WORKER__HOST: 0.0.0.0
   WORKER__PROBE_PORT: "8081"
   WORKER__CONSUMER_METRICS_PORT: "8082"
+  EMBEDDING__PROVIDER: openai_compatible
+  EMBEDDING__BASE_URL: https://embedding.example.invalid/v1
+  EMBEDDING__MODEL_NAME: replace-with-reviewed-embedding-model
+  EMBEDDING__DIMENSION: "1024"
+  EMBEDDING__VERSION: "2"
+  EMBEDDING__BATCH_SIZE: "8"
+  EMBEDDING__TIMEOUT_SECONDS: "20"
+  EMBEDDING__MAX_RETRIES: "2"
+  EMBEDDING__SEND_DIMENSIONS: "true"
+  EMBEDDING__QUERY_INSTRUCTION: >-
+    Given a user question about enterprise documents, retrieve relevant passages that answer the question

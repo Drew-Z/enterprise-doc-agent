@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from enterprise_doc_core.documents.ingestion import EmbeddingProvider
 from enterprise_doc_core.documents.models import (
+    DEFAULT_EMBEDDING_DIMENSION,
     DocumentChunk,
     DocumentIngestionGeneration,
     DocumentIngestionStage,
@@ -25,6 +26,13 @@ from enterprise_doc_core.documents.retrieval import (
     reciprocal_rank_fusion,
 )
 from enterprise_doc_core.telemetry import MetricsRuntime
+
+
+def format_embedding_query(query: str, instruction: str | None) -> str:
+    normalized_instruction = instruction.strip() if instruction else ""
+    if not normalized_instruction:
+        return query
+    return f"Instruct: {normalized_instruction}\nQuery:{query}"
 
 
 class HybridRetrievalService:
@@ -65,6 +73,9 @@ class HybridRetrievalService:
         *,
         session_factory: async_sessionmaker[AsyncSession],
         embedding_provider: EmbeddingProvider,
+        embedding_model: str | None = None,
+        embedding_dimension: int = DEFAULT_EMBEDDING_DIMENSION,
+        query_instruction: str | None = None,
         top_k: int = 10,
         rrf_k: int = 60,
         min_score: float | None = None,
@@ -83,8 +94,16 @@ class HybridRetrievalService:
             raise ValueError("min_candidates must be in [1, top_k]")
         if not 0 <= max_vector_distance <= 2:
             raise ValueError("max_vector_distance must be in [0, 2]")
+        if embedding_dimension != DEFAULT_EMBEDDING_DIMENSION:
+            raise ValueError(
+                "current storage contract requires "
+                f"{DEFAULT_EMBEDDING_DIMENSION}-dimensional embeddings"
+            )
         self.session_factory = session_factory
         self.embedding_provider = embedding_provider
+        self.embedding_model = embedding_model
+        self.embedding_dimension = embedding_dimension
+        self.query_instruction = query_instruction.strip() if query_instruction else None
         self.top_k = top_k
         self.rrf_k = rrf_k
         self.min_score = resolved_min_score
@@ -152,7 +171,8 @@ class HybridRetrievalService:
             document_version_id=document_version_id,
             query=normalized_query,
         )
-        vectors = await self.embedding_provider.embed((normalized_query,))
+        embedding_query = format_embedding_query(normalized_query, self.query_instruction)
+        vectors = await self.embedding_provider.embed((embedding_query,))
         if len(vectors) != 1:
             raise ValueError("embedding provider returned an invalid query batch")
         vector_candidates = await self._vector_recall(
@@ -237,12 +257,17 @@ class HybridRetrievalService:
                 DocumentIngestionGeneration.status == DocumentIngestionStatus.SUCCEEDED.value,
                 DocumentIngestionGeneration.stage == DocumentIngestionStage.READY.value,
                 DocumentIngestionGeneration.active.is_(True),
+                DocumentIngestionGeneration.embedding_dimension == self.embedding_dimension,
                 DocumentVersion.tenant_id == DocumentChunk.tenant_id,
                 DocumentChunk.search_vector.op("@@")(ts_query),
             )
             .order_by(desc(rank), DocumentChunk.chunk_index)
             .limit(self.top_k)
         )
+        if self.embedding_model is not None:
+            statement = statement.where(
+                DocumentIngestionGeneration.embedding_model == self.embedding_model
+            )
         async with self.session_factory() as session:
             rows = (await session.execute(statement)).all()
         return tuple(self._candidate_from_row(row, score=float(row.rank_score)) for row in rows)
@@ -294,12 +319,17 @@ class HybridRetrievalService:
                 DocumentIngestionGeneration.status == DocumentIngestionStatus.SUCCEEDED.value,
                 DocumentIngestionGeneration.stage == DocumentIngestionStage.READY.value,
                 DocumentIngestionGeneration.active.is_(True),
+                DocumentIngestionGeneration.embedding_dimension == self.embedding_dimension,
                 DocumentVersion.tenant_id == DocumentChunk.tenant_id,
                 distance <= self.max_vector_distance,
             )
             .order_by(distance, DocumentChunk.chunk_index)
             .limit(self.top_k)
         )
+        if self.embedding_model is not None:
+            statement = statement.where(
+                DocumentIngestionGeneration.embedding_model == self.embedding_model
+            )
         async with self.session_factory() as session:
             rows = (await session.execute(statement)).all()
         return tuple(self._candidate_from_row(row, score=1.0 - float(row.distance)) for row in rows)

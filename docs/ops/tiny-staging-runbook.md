@@ -97,7 +97,10 @@ Create these before the first workflow dispatch:
   public HTTPS, an exact model identifier available from that endpoint, and a
   scoped API key. Store only `MODEL__API_KEY` in `enterprise-doc-secrets`;
   keep the non-secret endpoint and model identifier in GitHub Environment
-  variables.
+  variables;
+- a real OpenAI-compatible embedding endpoint and reviewed 1024-dimensional model.
+  Store only `EMBEDDING__API_KEY` in `enterprise-doc-secrets`; follow
+  `docs/ops/real-embedding-rollout.md` without modifying the blog vector store.
 
 ## Cloudflare account boundary
 
@@ -154,6 +157,8 @@ Missing var:       STAGING_DATABASE_EGRESS_CIDRS=<reviewed-public-db-/32-list>
                    STAGING_OBJECT_STORE_CHECKSUM_MODE=readback_sha256
                    STAGING_MODEL_BASE_URL=https://<gateway-host>/v1
                    STAGING_MODEL_NAME=<exact-model-id>
+                   STAGING_EMBEDDING_BASE_URL=https://<embedding-host>/v1
+                   STAGING_EMBEDDING_MODEL_NAME=Qwen/Qwen3-Embedding-4B
                    STAGING_CONTROL_PLANE_APPROVED=true
 Optional var:      STAGING_ROLLBACK_API_IMAGE=<previous-api-image@sha256:...>
                    STAGING_ROLLBACK_WORKER_IMAGE=<previous-worker-image@sha256:...>
@@ -172,7 +177,8 @@ VITE_OBJECT_STORE_ORIGINS=https://2741446a7478f2d8a5ff31df7e077f17.r2.cloudflare
 
 The deploy workflow fixes `MODEL__PROVIDER=openai_compatible`; the deterministic
 test provider is intentionally forbidden in staging. It reads
-`STAGING_MODEL_BASE_URL`, `STAGING_MODEL_NAME` and
+`STAGING_MODEL_BASE_URL`, `STAGING_MODEL_NAME`, `STAGING_EMBEDDING_BASE_URL`,
+`STAGING_EMBEDDING_MODEL_NAME` and
 `STAGING_OBJECT_STORE_CHECKSUM_MODE` from the protected `staging` Environment rather
 than exceeding GitHub's ten-input `workflow_dispatch` limit. Configure them only
 after the gateway contract is known:
@@ -182,6 +188,10 @@ gh variable set STAGING_MODEL_BASE_URL --env staging \
   --repo Drew-Z/enterprise-doc-agent --body 'https://<gateway-host>/v1'
 gh variable set STAGING_MODEL_NAME --env staging \
   --repo Drew-Z/enterprise-doc-agent --body '<exact-model-id>'
+gh variable set STAGING_EMBEDDING_BASE_URL --env staging \
+  --repo Drew-Z/enterprise-doc-agent --body 'https://<embedding-host>/v1'
+gh variable set STAGING_EMBEDDING_MODEL_NAME --env staging \
+  --repo Drew-Z/enterprise-doc-agent --body 'Qwen/Qwen3-Embedding-4B'
 gh variable set STAGING_OBJECT_STORE_CHECKSUM_MODE --env staging \
   --repo Drew-Z/enterprise-doc-agent --body 'readback_sha256'
 ```
@@ -505,7 +515,9 @@ run retained sanitized evidence and did not roll out any new workloads. That
 measurement is the basis for the bounded cold-pull budget above.
 
 Before dispatch, confirm `STAGING_MODEL_BASE_URL`, `STAGING_MODEL_NAME` and the
-`MODEL__API_KEY` Secret value all refer to the same gateway account and model.
+`MODEL__API_KEY` Secret value all refer to the same gateway account and model. Also
+confirm `STAGING_EMBEDDING_BASE_URL`, `STAGING_EMBEDDING_MODEL_NAME` and
+`EMBEDDING__API_KEY` identify the reviewed embedding route.
 The API, Worker, consumer and migration processes all load the staging model
 settings, so an incomplete model contract blocks startup before smoke testing.
 

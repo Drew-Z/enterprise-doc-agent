@@ -20,6 +20,11 @@ class ModelProvider(StrEnum):
     OPENAI_COMPATIBLE = "openai_compatible"
 
 
+class EmbeddingProviderKind(StrEnum):
+    HASH = "hash"
+    OPENAI_COMPATIBLE = "openai_compatible"
+
+
 class ObjectStoreChecksumMode(StrEnum):
     NATIVE_SHA256 = "native_sha256"
     READBACK_SHA256 = "readback_sha256"
@@ -172,7 +177,9 @@ class ModelSettings(BaseModel):
     model_revision: str | None = Field(default=None, max_length=128)
     quantization: str | None = Field(default=None, max_length=64)
     context_window_tokens: int | None = Field(default=None, ge=1, le=2_000_000)
-    embedding_dimension: int = Field(default=8, ge=8, le=8)
+    # Kept in the model health contract for compatibility. Embedding routing
+    # uses the independent EmbeddingSettings below.
+    embedding_dimension: int = Field(default=1024, ge=1024, le=1024)
     timeout_seconds: float = Field(default=30.0, gt=0, le=300)
     route_deadline_seconds: float | None = Field(default=None, gt=0, le=600)
     max_output_bytes: int = Field(default=256 * 1024, ge=1024, le=4 * 1024**2)
@@ -206,6 +213,45 @@ class ModelSettings(BaseModel):
                 raise ValueError(
                     "OpenAI-compatible fallback requires a base URL, API key, and model name"
                 )
+        return self
+
+
+class EmbeddingSettings(BaseModel):
+    provider: EmbeddingProviderKind = EmbeddingProviderKind.HASH
+    base_url: str | None = None
+    api_key: SecretStr | None = None
+    model_name: str = Field(default="hash-sha256-v1", min_length=1, max_length=200)
+    model_revision: str | None = Field(default=None, max_length=128)
+    dimension: int = Field(default=1024, ge=1024, le=1024)
+    version: int = Field(default=2, ge=1, le=1000)
+    batch_size: int = Field(default=8, ge=1, le=128)
+    timeout_seconds: float = Field(default=20.0, gt=0, le=300)
+    max_retries: int = Field(default=2, ge=0, le=5)
+    retry_base_seconds: float = Field(default=1.5, gt=0, le=30)
+    send_dimensions: bool = True
+    query_instruction: str = Field(
+        default=(
+            "Given a user question about enterprise documents, retrieve relevant passages "
+            "that answer the question"
+        ),
+        min_length=1,
+        max_length=500,
+    )
+
+    @model_validator(mode="after")
+    def require_provider_configuration(self) -> Self:
+        if self.model_revision and len(self.model_name) + len(self.model_revision) + 1 > 200:
+            raise ValueError("embedding model identity must contain at most 200 characters")
+        if self.provider is EmbeddingProviderKind.HASH:
+            if self.model_name != "hash-sha256-v1":
+                raise ValueError("hash embedding provider requires model_name=hash-sha256-v1")
+            return self
+        if self.base_url is None or not self.base_url.strip():
+            raise ValueError("OpenAI-compatible embedding provider requires a base URL")
+        if self.api_key is None or not self.api_key.get_secret_value().strip():
+            raise ValueError("OpenAI-compatible embedding provider requires an API key")
+        if self.version < 2:
+            raise ValueError("OpenAI-compatible embedding provider requires version >= 2")
         return self
 
 
@@ -243,6 +289,7 @@ class FoundationSettings(BaseSettings):
     otel: ObservabilitySettings = Field(default_factory=ObservabilitySettings)
     agent: AgentSettings = Field(default_factory=AgentSettings)
     model: ModelSettings = Field(default_factory=ModelSettings)
+    embedding: EmbeddingSettings = Field(default_factory=EmbeddingSettings)
     mcp: McpSettings = Field(default_factory=McpSettings)
     fault_injection: FaultInjectionSettings = Field(default_factory=FaultInjectionSettings)
 
@@ -266,6 +313,8 @@ class FoundationSettings(BaseSettings):
             self.model.fallback_provider is ModelProvider.DETERMINISTIC
         ):
             raise ValueError("deterministic model provider is forbidden outside local/test")
+        if self.embedding.provider is EmbeddingProviderKind.HASH:
+            raise ValueError("hash embedding provider is forbidden outside local/test")
         if "enterprise_doc_local" in self.mcp.signing_secret.get_secret_value():
             raise ValueError("development MCP signing secret is forbidden outside local/test")
         return self

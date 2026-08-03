@@ -47,7 +47,7 @@ class DocumentIngestionError(RuntimeError):
 class IngestionVersions:
     parser: int = 1
     chunker: int = 1
-    embedding: int = 1
+    embedding: int = 2
 
 
 @dataclass(frozen=True, slots=True)
@@ -343,6 +343,15 @@ class DocumentIngestionService:
                 )
                 session.add(generation)
                 await session.flush()
+            elif (
+                generation.embedding_model != self.embedding_model
+                or generation.embedding_dimension != self.embedding_dimension
+            ):
+                raise DocumentIngestionError(
+                    "embedding_configuration_changed",
+                    "embedding generation identity changed; increment embedding version",
+                    retryable=False,
+                )
             elif (
                 generation.status == DocumentIngestionStatus.SUCCEEDED.value
                 and generation.stage == DocumentIngestionStage.READY.value

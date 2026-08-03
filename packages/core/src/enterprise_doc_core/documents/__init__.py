@@ -1,3 +1,9 @@
+from enterprise_doc_core.documents.embedding_provider import (
+    EmbeddingProviderError,
+    OpenAICompatibleEmbeddingProvider,
+    build_embedding_provider,
+    embedding_model_identity,
+)
 from enterprise_doc_core.documents.embedding_routing import (
     DimensionCheckedEmbeddingProvider,
     EmbeddingDimensionMismatch,
@@ -53,7 +59,9 @@ __all__ = [
     "DocumentVersionStatus",
     "EmbeddingDimensionMismatch",
     "EmbeddingProvider",
+    "EmbeddingProviderError",
     "HashEmbeddingProvider",
+    "OpenAICompatibleEmbeddingProvider",
     "ParsedChunk",
     "ParsedSection",
     "RefusalReason",
@@ -62,8 +70,10 @@ __all__ = [
     "RetrievalDecision",
     "ValidatedDocumentEnvelope",
     "authorize_candidates",
+    "build_embedding_provider",
     "chunk_sections",
     "decide_retrieval",
+    "embedding_model_identity",
     "parse_document_bytes",
     "reciprocal_rank_fusion",
     "validate_citations",

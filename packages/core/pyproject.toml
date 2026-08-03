@@ -29,6 +29,8 @@ dependencies = [
 
 [project.scripts]
 enterprise-doc-checkpointer-setup = "enterprise_doc_core.agents.checkpoint:main"
+enterprise-doc-embedding-probe = "enterprise_doc_core.documents.embedding_probe:main"
+enterprise-doc-reindex-embeddings = "enterprise_doc_core.documents.reindex:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/enterprise_doc_core"]

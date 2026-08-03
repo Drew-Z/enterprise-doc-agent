@@ -13,6 +13,7 @@ from enterprise_doc_core.documents.retrieval import (
     reciprocal_rank_fusion,
     validate_citations,
 )
+from enterprise_doc_core.documents.retrieval_service import format_embedding_query
 
 TENANT = UUID("00000000-0000-0000-0000-000000000001")
 OTHER_TENANT = UUID("00000000-0000-0000-0000-000000000002")
@@ -44,6 +45,16 @@ def test_rrf_deduplicates_and_is_deterministic() -> None:
         candidate(3).chunk_id,
     ]
     assert output[0].score > output[1].score
+
+
+def test_qwen_query_instruction_is_not_applied_to_unconfigured_routes() -> None:
+    query = "What are the payment terms?"
+
+    assert format_embedding_query(query, None) == query
+    assert format_embedding_query(query, "  Retrieve relevant contract passages  ") == (
+        "Instruct: Retrieve relevant contract passages\n"
+        "Query:What are the payment terms?"
+    )
 
 
 def test_authorization_filters_tenant_and_version_before_model_context() -> None:
