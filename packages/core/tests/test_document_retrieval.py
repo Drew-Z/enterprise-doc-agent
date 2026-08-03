@@ -52,8 +52,7 @@ def test_qwen_query_instruction_is_not_applied_to_unconfigured_routes() -> None:
 
     assert format_embedding_query(query, None) == query
     assert format_embedding_query(query, "  Retrieve relevant contract passages  ") == (
-        "Instruct: Retrieve relevant contract passages\n"
-        "Query:What are the payment terms?"
+        "Instruct: Retrieve relevant contract passages\nQuery:What are the payment terms?"
     )
 
 

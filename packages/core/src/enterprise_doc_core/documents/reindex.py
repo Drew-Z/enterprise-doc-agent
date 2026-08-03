@@ -71,9 +71,7 @@ async def enqueue_reindex(
                         tenant_id=version.tenant_id,
                         actor_id=version.created_by,
                         job_type="document.ingest",
-                        idempotency_key=(
-                            f"embedding-v{settings.embedding.version}:{version.id}"
-                        ),
+                        idempotency_key=(f"embedding-v{settings.embedding.version}:{version.id}"),
                         payload={"document_version_id": str(version.id)},
                         document_version_id=version.id,
                         outbox_event_type="document.ingest.requested",

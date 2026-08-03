@@ -523,15 +523,11 @@ def test_tiny_single_node_overlay_renders_with_a_bounded_k3s_runtime() -> None:
     assert config["data"]["MODEL__MODEL_NAME"] == "replace-with-reviewed-model"
     assert config["data"]["EMBEDDING__PROVIDER"] == "openai_compatible"
     assert str(config["data"]["EMBEDDING__BASE_URL"]).endswith("/v1")
-    assert config["data"]["EMBEDDING__MODEL_NAME"] == (
-        "replace-with-reviewed-embedding-model"
-    )
+    assert config["data"]["EMBEDDING__MODEL_NAME"] == ("replace-with-reviewed-embedding-model")
     assert config["data"]["EMBEDDING__DIMENSION"] == "1024"
     assert config["data"]["EMBEDDING__VERSION"] == "2"
     assert config["data"]["EMBEDDING__SEND_DIMENSIONS"] == "true"
-    assert config["data"]["EMBEDDING__QUERY_INSTRUCTION"].startswith(
-        "Given a user question"
-    )
+    assert config["data"]["EMBEDDING__QUERY_INSTRUCTION"].startswith("Given a user question")
 
     api = _named_resource(documents, "Deployment", "enterprise-doc-api")
     api_container = api["spec"]["template"]["spec"]["containers"][0]

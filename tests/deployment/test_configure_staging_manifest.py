@@ -171,9 +171,7 @@ def test_configure_manifest_binds_https_hosts_without_secret_data(tmp_path: Path
     assert config["data"]["EMBEDDING__MODEL_NAME"] == "Qwen/Qwen3-Embedding-4B"
     assert config["data"]["EMBEDDING__DIMENSION"] == "1024"
     assert config["data"]["EMBEDDING__SEND_DIMENSIONS"] == "true"
-    assert config["data"]["EMBEDDING__QUERY_INSTRUCTION"].startswith(
-        "Given a user question"
-    )
+    assert config["data"]["EMBEDDING__QUERY_INSTRUCTION"].startswith("Given a user question")
     assert config["data"]["EMBEDDING__VERSION"] == "2"
     api_deployment = next(
         item

@@ -32,10 +32,7 @@ def _response(request: httpx.Request, vectors: list[list[float]]) -> httpx.Respo
         request=request,
         json={
             "model": "Qwen/Qwen3-Embedding-4B",
-            "data": [
-                {"index": index, "embedding": vector}
-                for index, vector in enumerate(vectors)
-            ],
+            "data": [{"index": index, "embedding": vector} for index, vector in enumerate(vectors)],
         },
     )
 
