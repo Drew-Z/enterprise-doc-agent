@@ -27,7 +27,7 @@ from enterprise_doc_core.documents.models import (
 )
 from enterprise_doc_core.documents.retrieval_service import HybridRetrievalService
 from enterprise_doc_core.identity import Tenant, User
-from enterprise_doc_core.jobs import ClaimedJob
+from enterprise_doc_core.jobs import ClaimedJob, create_job_records
 from enterprise_doc_core.object_store.models import ObjectHead
 from enterprise_doc_core.uploads.models import UploadSession, UploadSessionStatus
 
@@ -151,6 +151,46 @@ async def _seed_uploaded_document(
         payload={"document_version_id": str(version_id)},
     )
     return tenant_id, actor_id, version_id, claim
+
+
+@pytest.mark.integration
+async def test_document_version_can_enqueue_a_new_embedding_generation_job() -> None:
+    engine = create_database_engine(DatabaseSettings())
+    session_factory = create_session_factory(engine)
+    tenant_id, actor_id, version_id, _ = await _seed_uploaded_document(
+        session_factory,
+        content=b"A document that will be reindexed.",
+    )
+    try:
+        async with session_factory.begin() as session:
+            initial = await create_job_records(
+                session,
+                tenant_id=tenant_id,
+                actor_id=actor_id,
+                job_type="document.ingest",
+                idempotency_key=f"embedding-v1:{version_id}",
+                payload={"document_version_id": str(version_id)},
+                document_version_id=version_id,
+                outbox_event_type="document.ingest.requested",
+            )
+            reindex = await create_job_records(
+                session,
+                tenant_id=tenant_id,
+                actor_id=actor_id,
+                job_type="document.ingest",
+                idempotency_key=f"embedding-v2:{version_id}",
+                payload={"document_version_id": str(version_id)},
+                document_version_id=version_id,
+                outbox_event_type="document.ingest.requested",
+            )
+
+        assert initial.job_id != reindex.job_id
+        assert initial.replayed is False
+        assert reindex.replayed is False
+    finally:
+        async with session_factory.begin() as session:
+            await session.execute(delete(Tenant).where(Tenant.id == tenant_id))
+        await engine.dispose()
 
 
 @pytest.mark.integration

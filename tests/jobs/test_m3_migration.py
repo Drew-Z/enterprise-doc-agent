@@ -23,6 +23,11 @@ SEMANTIC_EMBEDDING_MIGRATION = (
     / "packages/core/src/enterprise_doc_core/db/migrations/versions"
     / "20260803_0010_semantic_embeddings.py"
 )
+REINDEXABLE_JOBS_MIGRATION = (
+    ROOT
+    / "packages/core/src/enterprise_doc_core/db/migrations/versions"
+    / "20260804_0011_reindexable_jobs.py"
+)
 DATABASE_URL = os.environ.get(
     "FOUNDATION_TEST_DATABASE_URL",
     "postgresql://enterprise_doc:enterprise_doc_local@127.0.0.1:5432/enterprise_doc",
@@ -84,6 +89,15 @@ def test_semantic_embedding_migration_replaces_the_fixture_vector_index() -> Non
     assert "OLD_DIMENSION = 8" in source
     assert "NEW_DIMENSION = 1024" in source
     assert "UPDATE document_chunks SET embedding = NULL" in source
+
+
+def test_reindexable_jobs_migration_removes_the_one_job_per_version_constraint() -> None:
+    source = REINDEXABLE_JOBS_MIGRATION.read_text(encoding="utf-8")
+
+    assert 'revision = "20260804_0011"' in source
+    assert 'down_revision = "20260803_0010"' in source
+    assert 'UNIQUE_CONSTRAINT = "uq_jobs_document_version_id"' in source
+    assert 'LOOKUP_INDEX = "ix_jobs_document_version_id_created_at"' in source
 
 
 @pytest.mark.integration
@@ -171,3 +185,22 @@ def test_m3_migration_creates_hybrid_rag_schema_and_downgrades() -> None:
             """
         )
         assert cursor.fetchone() == ("vector(1024)",)
+        cursor.execute(
+            """
+            SELECT conname
+            FROM pg_constraint
+            WHERE conrelid = 'jobs'::regclass
+              AND conname = 'uq_jobs_document_version_id'
+            """
+        )
+        assert cursor.fetchone() is None
+        cursor.execute(
+            """
+            SELECT indexname
+            FROM pg_indexes
+            WHERE schemaname = 'public'
+              AND tablename = 'jobs'
+              AND indexname = 'ix_jobs_document_version_id_created_at'
+            """
+        )
+        assert cursor.fetchone() == ("ix_jobs_document_version_id_created_at",)

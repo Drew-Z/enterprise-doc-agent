@@ -23,6 +23,11 @@ Migration `20260803_0010` clears existing deterministic vectors, changes
 HNSW index. The original uploaded objects, document/version records, chunks, FTS data,
 jobs, Agent runs, and blog vector data are not deleted.
 
+Migration `20260804_0011` removes the legacy one-job-per-document-version constraint and
+replaces its unique index with a normal lookup index. This migration is required before
+reindexing: the tenant-scoped idempotency key still prevents duplicate requests, while a
+new embedding generation can create a new ingestion job for the same document version.
+
 Embedding generation version `2` prevents a completed version-1 Hash generation from
 being reused. Existing ready enterprise documents must be reindexed after deployment.
 The migration intentionally does not preserve the old 8-dimensional vector values.

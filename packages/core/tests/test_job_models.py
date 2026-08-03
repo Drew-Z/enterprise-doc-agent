@@ -35,6 +35,7 @@ def test_m2_status_contracts_and_constraints_are_explicit() -> None:
 
     job_constraints = {constraint.name for constraint in Job.__table__.constraints}
     assert "uq_jobs_tenant_id_idempotency_key" in job_constraints
+    assert "uq_jobs_document_version_id" not in job_constraints
     assert "ck_jobs_status_valid" in job_constraints
     assert "ck_jobs_lease_pair" in job_constraints
     assert "ck_jobs_attempts_valid" in job_constraints
@@ -46,6 +47,7 @@ def test_m2_status_contracts_and_constraints_are_explicit() -> None:
 def test_m2_claim_indexes_are_stable() -> None:
     assert {
         "ix_jobs_claimable",
+        "ix_jobs_document_version_id_created_at",
         "ix_jobs_lease_expiry",
         "ix_jobs_tenant_id_status_created_at",
     } <= {index.name for index in Job.__table__.indexes}

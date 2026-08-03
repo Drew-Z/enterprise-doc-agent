@@ -58,10 +58,6 @@ class Job(UUIDPrimaryKeyMixin, TimestampMixin, Base):
             "idempotency_key",
             name="uq_jobs_tenant_id_idempotency_key",
         ),
-        UniqueConstraint(
-            "document_version_id",
-            name="uq_jobs_document_version_id",
-        ),
         CheckConstraint(
             "status IN ('pending', 'running', 'retry_wait', 'succeeded', 'dead', 'cancelled')",
             name="status_valid",
@@ -91,6 +87,11 @@ class Job(UUIDPrimaryKeyMixin, TimestampMixin, Base):
             "ix_jobs_tenant_id_status_created_at",
             "tenant_id",
             "status",
+            "created_at",
+        ),
+        Index(
+            "ix_jobs_document_version_id_created_at",
+            "document_version_id",
             "created_at",
         ),
     )
