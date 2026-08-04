@@ -77,6 +77,19 @@ jobs:
       - run: uv run alembic upgrade head
       - run: uv run pytest tests/multipart -m integration
       - run: docker compose -f infra/compose/docker-compose.yml down
+      - name: Wait for multipart smoke ports to be released
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 45); do
+            if uv run python scripts/multipart_smoke.py --preflight \
+              --size-bytes 17825792 --interrupt-after-parts 1; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo 'multipart smoke ports were not released within 90 seconds' >&2
+          ss -ltnp
+          exit 1
       - run: >-
           uv run python scripts/multipart_smoke.py --run
           --size-bytes 17825792 --interrupt-after-parts 1 --measure-api-rss

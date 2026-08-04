@@ -72,6 +72,12 @@ def test_quality_workflow_has_locked_independent_jobs() -> None:
     integration_commands = _run_commands(jobs["m1-integration"])
     assert "uv sync --frozen" in integration_commands
     assert "uv run pytest tests/multipart -m integration" in integration_commands
+    port_release_gate = next(
+        command for command in integration_commands if "--preflight" in command
+    )
+    assert "for attempt in $(seq 1 45)" in port_release_gate
+    assert "sleep 2" in port_release_gate
+    assert "ports were not released within 90 seconds" in port_release_gate
     assert any(
         command.startswith("uv run python scripts/multipart_smoke.py --run")
         and "--size-bytes 17825792" in command
@@ -79,6 +85,16 @@ def test_quality_workflow_has_locked_independent_jobs() -> None:
         and "--measure-api-rss" in command
         for command in integration_commands
     )
+    compose_down = integration_commands.index(
+        "docker compose -f infra/compose/docker-compose.yml down"
+    )
+    port_release = integration_commands.index(port_release_gate)
+    smoke = next(
+        index
+        for index, command in enumerate(integration_commands)
+        if command.startswith("uv run python scripts/multipart_smoke.py --run")
+    )
+    assert compose_down < port_release < smoke
 
     m4_commands = _run_commands(jobs["m4-integration"])
     assert "uv run enterprise-doc-checkpointer-setup --setup" in m4_commands
