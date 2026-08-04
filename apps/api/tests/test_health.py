@@ -62,6 +62,21 @@ async def test_readiness_returns_typed_success_response() -> None:
     }
 
 
+async def test_readiness_uses_a_short_cache_to_avoid_probe_fanout() -> None:
+    checker = FakeChecker("database")
+    app = create_app(
+        checkers=[checker],
+        readiness_cache_ttl_seconds=10,
+    )
+
+    first_status, first_body = await request(app, "/health/ready")
+    second_status, second_body = await request(app, "/health/ready")
+
+    assert first_status == second_status == 200
+    assert first_body == second_body
+    assert checker.calls == 1
+
+
 async def test_readiness_returns_typed_503_for_failure_and_timeout() -> None:
     app = create_app(
         checkers=[

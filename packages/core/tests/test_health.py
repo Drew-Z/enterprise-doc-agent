@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from enterprise_doc_core.health import (
     ComponentStatus,
     OverallStatus,
+    ReadinessCache,
     evaluate_readiness,
 )
 
@@ -64,3 +65,38 @@ async def test_readiness_runs_checkers_concurrently() -> None:
     await evaluate_readiness(checkers, timeout_seconds=0.1)
 
     assert loop.time() - started < 0.055
+
+
+async def test_readiness_cache_reuses_a_recent_result() -> None:
+    checker = FakeChecker("database")
+    cache = ReadinessCache(
+        [checker],
+        timeout_seconds=0.1,
+        ttl_seconds=10,
+    )
+
+    first = await cache.get()
+    second = await cache.get()
+
+    assert first == second
+    assert checker.calls == 1
+
+
+async def test_readiness_cache_returns_stale_result_during_refresh() -> None:
+    checker = FakeChecker("database", delay=0.02)
+    cache = ReadinessCache(
+        [checker],
+        timeout_seconds=0.1,
+        ttl_seconds=0.001,
+    )
+
+    first = await cache.get()
+    await asyncio.sleep(0.01)
+    refresh = asyncio.create_task(cache.get())
+    await asyncio.sleep(0)
+    stale = await cache.get()
+    refreshed = await refresh
+
+    assert stale == first
+    assert refreshed.status is OverallStatus.READY
+    assert checker.calls == 2

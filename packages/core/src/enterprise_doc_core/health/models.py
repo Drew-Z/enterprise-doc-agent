@@ -46,6 +46,54 @@ class StaticChecker:
         return self.status
 
 
+class ReadinessCache:
+    """Bound readiness probes while preserving a short stale-while-refresh window."""
+
+    def __init__(
+        self,
+        checkers: Sequence[HealthChecker],
+        *,
+        timeout_seconds: float,
+        ttl_seconds: float,
+    ) -> None:
+        if ttl_seconds < 0:
+            raise ValueError("readiness cache TTL must not be negative")
+        self._checkers = tuple(checkers)
+        self._timeout_seconds = timeout_seconds
+        self._ttl_seconds = ttl_seconds
+        self._refresh_lock = asyncio.Lock()
+        self._cached: tuple[float, ReadinessResponse] | None = None
+
+    async def get(self) -> ReadinessResponse:
+        if self._ttl_seconds == 0:
+            return await evaluate_readiness(
+                self._checkers,
+                timeout_seconds=self._timeout_seconds,
+            )
+
+        loop = asyncio.get_running_loop()
+        cached = self._cached
+        if cached is not None and loop.time() - cached[0] < self._ttl_seconds:
+            return cached[1]
+
+        # Once a value exists, do not make a burst of callers queue behind the
+        # dependency checks. One caller refreshes; concurrent callers receive the
+        # last bounded result. A failed refresh is still cached as not_ready.
+        if cached is not None and self._refresh_lock.locked():
+            return cached[1]
+
+        async with self._refresh_lock:
+            cached = self._cached
+            if cached is not None and loop.time() - cached[0] < self._ttl_seconds:
+                return cached[1]
+            result = await evaluate_readiness(
+                self._checkers,
+                timeout_seconds=self._timeout_seconds,
+            )
+            self._cached = (loop.time(), result)
+            return result
+
+
 async def _run_checker(
     checker: HealthChecker,
     timeout_seconds: float,

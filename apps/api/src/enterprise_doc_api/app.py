@@ -42,10 +42,10 @@ from enterprise_doc_core.health import (
     ComponentStatus,
     HealthChecker,
     OverallStatus,
+    ReadinessCache,
     ReadinessResponse,
     StaticChecker,
     build_foundation_resources,
-    evaluate_readiness,
 )
 from enterprise_doc_core.jobs import JobRuntimeService
 from enterprise_doc_core.object_store import (
@@ -102,6 +102,7 @@ def create_app(
     settings: ApiSettings | None = None,
     checkers: Sequence[HealthChecker] | None = None,
     readiness_timeout_seconds: float | None = None,
+    readiness_cache_ttl_seconds: float | None = None,
     telemetry: TelemetryRuntime | None = None,
     principal_resolver: PrincipalResolver | None = None,
     upload_creation_service: UploadCreationServiceProtocol | None = None,
@@ -163,6 +164,15 @@ def create_app(
         resolved_settings.redis.connect_timeout_seconds,
         resolved_settings.object_store.connect_timeout_seconds,
     )
+    readiness_cache = ReadinessCache(
+        resolved_checkers,
+        timeout_seconds=timeout_seconds,
+        ttl_seconds=(
+            resolved_settings.api.readiness_cache_ttl_seconds
+            if readiness_cache_ttl_seconds is None
+            else readiness_cache_ttl_seconds
+        ),
+    )
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
@@ -216,6 +226,7 @@ def create_app(
         )
     )
     app.state.metrics = resolved_metrics
+    app.state.readiness_cache = readiness_cache
     app.state.upload_creation_service = (
         upload_creation_service
         if upload_creation_service is not None
@@ -300,10 +311,7 @@ def create_app(
         responses={503: {"model": ReadinessResponse}},
     )
     async def ready() -> ReadinessResponse | JSONResponse:
-        result = await evaluate_readiness(
-            resolved_checkers,
-            timeout_seconds=timeout_seconds,
-        )
+        result = await readiness_cache.get()
         if result.status is OverallStatus.NOT_READY:
             return JSONResponse(status_code=503, content=result.model_dump(mode="json"))
         return result

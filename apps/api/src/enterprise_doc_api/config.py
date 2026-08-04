@@ -10,6 +10,7 @@ from enterprise_doc_core.config import AppEnvironment, FoundationSettings
 class ApiServerSettings(BaseModel):
     host: str = "127.0.0.1"
     port: int = Field(default=8000, ge=1, le=65535)
+    readiness_cache_ttl_seconds: float = Field(default=2.0, ge=0, le=60)
     cors_origins: list[str] = Field(
         default_factory=lambda: ["http://127.0.0.1:5173", "http://localhost:5173"]
     )
