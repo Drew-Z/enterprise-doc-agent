@@ -19,12 +19,57 @@ def _digests() -> dict[str, str]:
     }
 
 
+def _rollout_report(path: Path, *, final_selected: int = 0) -> Path:
+    plan = {
+        "status": "planned",
+        "selected": 0,
+        "created": 0,
+        "replayed": 0,
+        "embedding_model": "staging-embedding",
+        "embedding_dimension": 1024,
+        "embedding_version": 2,
+        "values_redacted": True,
+    }
+    final = {**plan, "selected": final_selected}
+    path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "status": "passed",
+                "failed_stage": None,
+                "error_code": None,
+                "probe": {
+                    "status": "passed",
+                    "provider": "openai_compatible",
+                    "model": "staging-embedding",
+                    "dimension": 1024,
+                    "version": 2,
+                    "item_count": 2,
+                    "finite": True,
+                    "nonzero_norms": True,
+                    "values_redacted": True,
+                },
+                "reindex": {
+                    "status": "completed",
+                    "initial_plan": plan,
+                    "attempts": [],
+                    "final_plan": final,
+                },
+                "values_redacted": True,
+            }
+        ),
+        encoding="utf-8",
+    )
+    return path
+
+
 def _outcomes(value: str = "success") -> dict[str, str]:
     return {
         "prerequisites": value,
         "migration": value,
         "workloads": value,
         "rollout": value,
+        "embedding_rollout": value,
         "cluster_smoke": value,
         "authenticated_smoke": value,
     }
@@ -52,6 +97,7 @@ def _build(
         model_provider=model_provider,
         model_base_url=model_base_url,
         model_name=model_name,
+        embedding_rollout_report=_rollout_report(tmp_path / "embedding-rollout.json"),
         smoke_required=smoke_required,
         output=tmp_path / "record.json",
     )
@@ -67,15 +113,12 @@ def test_staging_record_passes_only_with_rollout_and_smoke(tmp_path: Path) -> No
         "base_url": "https://model.example.com/v1",
         "name": "staging-model",
     }
-    assert record["embedding"] == {
-        "status": "validated",
-        "provider": "openai_compatible",
-        "base_url": "https://embedding.example.invalid/v1",
-        "name": "staging-embedding",
-        "kind": "embedding",
-        "dimension": 1024,
-        "version": 2,
-    }
+    assert record["schema_version"] == 2
+    assert record["embedding"]["status"] == "validated"
+    assert record["embedding"]["dimension"] == 1024
+    assert record["embedding"]["version"] == 2
+    assert record["embedding"]["rollout"]["reindex"]["final_selected"] == 0
+    assert record["embedding"]["rollout_report"]["sha256"]
 
 
 def test_staging_record_marks_skipped_smoke_blocked_external(tmp_path: Path) -> None:
@@ -91,6 +134,65 @@ def test_staging_record_marks_rollout_failure_failed(tmp_path: Path) -> None:
     outcomes = _outcomes()
     outcomes["migration"] = "failure"
     assert _build(tmp_path, outcomes=outcomes, smoke_required=True)["status"] == "failed"
+
+
+def test_staging_record_marks_embedding_gate_failure_failed(tmp_path: Path) -> None:
+    outcomes = _outcomes()
+    outcomes["embedding_rollout"] = "failure"
+    assert _build(tmp_path, outcomes=outcomes, smoke_required=True)["status"] == "failed"
+
+
+def test_staging_record_rejects_nonconverged_embedding_report(tmp_path: Path) -> None:
+    report = _rollout_report(tmp_path / "nonconverged.json", final_selected=1)
+    record = build_record(
+        _manifest(tmp_path / "evidence.json"),
+        deployment_profile="tiny-single-node",
+        repository="example/repo",
+        commit_sha="a" * 40,
+        run_id="42",
+        run_attempt="1",
+        registry_prefix="registry.example/team",
+        image_digests=_digests(),
+        outcomes=_outcomes(),
+        model_provider="openai_compatible",
+        model_base_url="https://model.example.com/v1",
+        model_name="staging-model",
+        embedding_rollout_report=report,
+        smoke_required=True,
+        output=tmp_path / "record.json",
+    )
+    assert record["status"] == "failed"
+    assert record["embedding"]["status"] == "invalid"
+    assert record["embedding"]["validation_error"] == "embedding reindex did not converge"
+
+
+def test_staging_record_preserves_missing_embedding_report_as_failed_evidence(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "record.json"
+    outcomes = _outcomes()
+    outcomes["embedding_rollout"] = "failure"
+    record = build_record(
+        _manifest(tmp_path / "evidence.json"),
+        deployment_profile="tiny-single-node",
+        repository="example/repo",
+        commit_sha="a" * 40,
+        run_id="42",
+        run_attempt="1",
+        registry_prefix="registry.example/team",
+        image_digests=_digests(),
+        outcomes=outcomes,
+        model_provider="openai_compatible",
+        model_base_url="https://model.example.com/v1",
+        model_name="staging-model",
+        embedding_rollout_report=tmp_path / "missing.json",
+        smoke_required=True,
+        output=output,
+    )
+    assert record["status"] == "failed"
+    assert record["embedding"]["status"] == "invalid"
+    assert record["embedding"]["validation_error"] == ("embedding rollout report does not exist")
+    assert output.is_file()
 
 
 def test_staging_record_rejects_missing_digest(tmp_path: Path) -> None:
@@ -110,6 +212,7 @@ def test_staging_record_rejects_missing_digest(tmp_path: Path) -> None:
             model_provider="openai_compatible",
             model_base_url="https://model.example.com/v1",
             model_name="staging-model",
+            embedding_rollout_report=_rollout_report(tmp_path / "embedding-rollout.json"),
             smoke_required=True,
             output=tmp_path / "record.json",
         )
@@ -130,6 +233,7 @@ def test_staging_record_rejects_unreviewed_deployment_profile(tmp_path: Path) ->
             model_provider="openai_compatible",
             model_base_url="https://model.example.com/v1",
             model_name="staging-model",
+            embedding_rollout_report=_rollout_report(tmp_path / "embedding-rollout.json"),
             smoke_required=True,
             output=tmp_path / "record.json",
         )
@@ -149,6 +253,7 @@ def test_staging_record_accepts_reviewed_single_node_4c8g_profile(tmp_path: Path
         model_provider="openai_compatible",
         model_base_url="https://model.example.com/v1",
         model_name="staging-model",
+        embedding_rollout_report=_rollout_report(tmp_path / "embedding-rollout.json"),
         smoke_required=True,
         output=tmp_path / "record.json",
     )

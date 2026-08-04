@@ -8,6 +8,7 @@ resources:
   - smoke-api-ingress-policy.yaml
   - smoke-api-egress-policy.yaml
   - external-postgres-egress.yaml
+  - embedding-rollout-job.yaml
 patches:
   - path: replicas-patch.yaml
   - path: configmap-patch.yaml

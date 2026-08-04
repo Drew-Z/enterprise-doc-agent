@@ -99,8 +99,10 @@ sudo kubectl -n enterprise-doc-agent-staging get secret enterprise-doc-secrets \
 2. Run the normal quality workflow and publish immutable API, Worker, Consumer, and Web
    images.
 3. Approve the new image digests and rendered prerequisite hash.
-4. Dispatch staging. The migration job must finish before workload rollout.
-5. Stop if the migration, embedding probe, reindex, or authenticated smoke fails.
+4. Dispatch staging. The migration Job must finish before workload rollout.
+5. After the new workloads are Ready, require the restricted embedding rollout Job to
+   finish before either smoke test starts.
+6. Stop if migration, rollout, embedding convergence, or either smoke fails.
 
 The staging deploy validates that the ConfigMap contains the provider, endpoint, model,
 dimension `1024`, and generation version `2`; prerequisite validation also requires the
@@ -108,38 +110,42 @@ new Secret key.
 
 ## Probe and reindex
 
-After rollout, run the provider probe inside the worker. It sends only two fixed,
-non-sensitive strings and prints no vectors or credentials:
+The deploy workflow runs `Job/enterprise-doc-embedding-rollout` after all workloads are
+Ready and before readiness or authenticated smoke. The staging deployer cannot use
+`pods/exec`; admission permits only this fixed Job name, the approved API digest, command
+`enterprise-doc-embedding-rollout`, fixed bounded arguments, the runtime ServiceAccount,
+and the reviewed ConfigMap and Secret references. The Pod is non-root, has a read-only
+root filesystem, drops all capabilities, and does not mount a ServiceAccount token.
 
-```bash
-sudo kubectl -n enterprise-doc-agent-staging exec deploy/enterprise-doc-worker -- \
-  enterprise-doc-embedding-probe
-```
+The CLI first embeds two fixed non-sensitive strings. It then plans at most 1,000 ready
+document versions per batch, enqueues normal `document.ingest` jobs and outbox events,
+and polls the same target-generation predicate while the publisher, consumer and Worker
+drain the queue. Repeated apply attempts are idempotent and may report `replayed`; a batch
+must always satisfy `selected == created + replayed`. The gate succeeds only when the
+final plan reports `selected=0`.
 
-The report must show `status=passed`, `dimension=1024`, `item_count=2`, finite vectors,
-non-zero norms, and `values_redacted=true`.
+The CLI deadline is 1,200 seconds, the Job deadline is 1,260 seconds, and the workflow
+wait is 1,320 seconds. Provider, database, report-contract, count, or convergence failure
+returns a non-zero exit. A failed or incomplete fixed-name Job is preserved for operator
+review; collect its JSON report, Job object, Pod state, events and logs before explicitly
+deleting it for a retry.
 
-Plan the existing-document reindex first:
+The final single-line report must have `status=passed`, `values_redacted=true`, a probe
+with the approved provider/model, dimension `1024`, version `2`, two finite non-zero
+vectors, and a completed reindex section whose final selected count is zero. The workflow
+validates this JSON before smoke and adds the sanitized report and SHA-256 to the release
+record. Vector values, API keys and database credentials are never report fields.
 
-```bash
-sudo kubectl -n enterprise-doc-agent-staging exec deploy/enterprise-doc-worker -- \
-  enterprise-doc-reindex-embeddings --limit 1000
-```
-
-Apply only after reviewing the selected count:
-
-```bash
-sudo kubectl -n enterprise-doc-agent-staging exec deploy/enterprise-doc-worker -- \
-  enterprise-doc-reindex-embeddings --apply --limit 1000
-```
-
-The command creates normal `document.ingest` jobs and outbox events. The existing
-publisher and consumer process them with leases, retry limits, and heartbeat behavior.
-Run the plan again after the consumer drains; `selected` must reach zero.
+Changing the model or revision without incrementing `EMBEDDING__VERSION` is invalid: the
+stable idempotency key could otherwise replay the prior generation's job. Increment the
+version, render a new administrator prerequisite approval, publish immutable images, and
+let the gate converge the new identity before promotion.
 
 ## Acceptance
 
 - The embedding probe passes without exposing vector values or secrets.
+- The restricted rollout Job completes within its deadline; every apply batch satisfies
+  `selected == created + replayed` and the final plan reports `selected=0`.
 - PostgreSQL reports `document_chunks.embedding` as `vector(1024)` and the HNSW index is
   valid.
 - Every ready enterprise document has one active, succeeded, ready generation with the

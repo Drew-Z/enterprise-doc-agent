@@ -488,8 +488,9 @@ manifest. The workflow renders the selected profile, verifies every administrato
 prerequisite and Namespace approval, binds the context to the expected API server and
 Namespace UID, validates workload updates, replaces the completed fixed-name migration
 Job with a server-side create dry-run, waits for completion, applies workloads,
-performs in-cluster readiness and authenticated upload → ingestion → Agent
-smoke, and uploads sanitized evidence.
+runs the restricted `enterprise-doc-embedding-rollout` Job to probe the provider and
+converge ready documents to the approved generation, performs in-cluster readiness and
+authenticated upload → ingestion → Agent smoke, and uploads sanitized evidence.
 
 The reviewed migration command runs `alembic upgrade head`,
 `enterprise-doc-checkpointer-setup --setup`, and then `--check`. Tiny staging uses
@@ -497,6 +498,14 @@ The reviewed migration command runs `alembic upgrade head`,
 budget, and a 70-second Worker readiness probe timeout based on measured external
 dependency latency. These values are staging-specific and do not redefine the
 production defaults.
+
+The embedding rollout CLI has a 1,200-second convergence deadline, its Job has a
+1,260-second active deadline, and the workflow waits 1,320 seconds. It emits one
+redacted JSON report and succeeds only when the probe contract passes and the final
+reindex plan reports `selected=0`. Admission fixes the Job name, current approved API
+digest, command, arguments, environment sources, runtime identity and security context;
+the deployer still has no `pods/exec` or Secret read permission. Preserve an incomplete
+or failed Job for operator review, then delete it explicitly before retrying.
 
 The first digest-pinned release may need to cold-pull images over a constrained
 route. Kubernetes counts that download time against a Job's active deadline, so
@@ -518,8 +527,9 @@ Before dispatch, confirm `STAGING_MODEL_BASE_URL`, `STAGING_MODEL_NAME` and the
 `MODEL__API_KEY` Secret value all refer to the same gateway account and model. Also
 confirm `STAGING_EMBEDDING_BASE_URL`, `STAGING_EMBEDDING_MODEL_NAME` and
 `EMBEDDING__API_KEY` identify the reviewed embedding route.
-The API, Worker, consumer and migration processes all load the staging model
-settings, so an incomplete model contract blocks startup before smoke testing.
+The API, Worker, consumer, migration and embedding rollout processes all load the
+staging model settings, so an incomplete model contract blocks startup before smoke
+testing.
 
 The authenticated smoke client identifies itself as
 `enterprise-doc-staging-smoke/1.0`. The staging hostname must allow this API
@@ -528,9 +538,10 @@ Check block returns Cloudflare error 1010 before the request reaches the API and
 must be diagnosed at the correct Cloudflare account, not treated as a JWT or
 database authorization failure.
 
-Do not mark the gate passed if a step is skipped, the smoke is disabled, or the
-workflow ran on a different runner. Record the run URL, commit, profile,
-digests, migration revision, smoke result, and evidence artifact hashes.
+Do not mark the gate passed if a step is skipped, the smoke is disabled, the embedding
+report is absent or invalid, or the workflow ran on a different runner. Record the run
+URL, commit, profile, digests, migration revision, embedding identity and convergence
+summary, smoke result, and evidence artifact hashes.
 
 ## Rollback and recovery
 

@@ -12,6 +12,7 @@ spec:
           - enterprise-doc-worker
           - enterprise-doc-consumer
           - enterprise-doc-migrate
+          - enterprise-doc-embedding-rollout
   policyTypes: [Egress]
   egress:
     - to:

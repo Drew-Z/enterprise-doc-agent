@@ -95,7 +95,10 @@ rules:
     verbs: ["get", "list", "watch", "create", "update", "patch"]
   - apiGroups: ["batch"]
     resources: ["jobs"]
-    resourceNames: ["enterprise-doc-migrate", "m5-staging-smoke"]
+    resourceNames:
+      - enterprise-doc-migrate
+      - enterprise-doc-embedding-rollout
+      - m5-staging-smoke
     verbs: ["delete"]
   - apiGroups: ["policy"]
     resources: ["poddisruptionbudgets"]

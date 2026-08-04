@@ -10,9 +10,26 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
 
+try:
+    from scripts.validate_embedding_rollout_report import (
+        EmbeddingRolloutReportError,
+        validate_embedding_rollout_report,
+    )
+except ModuleNotFoundError:
+    from validate_embedding_rollout_report import (  # type: ignore[import-not-found,no-redef]
+        EmbeddingRolloutReportError,
+        validate_embedding_rollout_report,
+    )
+
 DIGEST_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
 SERVICES = {"api", "worker", "consumer", "web"}
-ROLLOUT_STEPS = ("prerequisites", "migration", "workloads", "rollout")
+ROLLOUT_STEPS = (
+    "prerequisites",
+    "migration",
+    "workloads",
+    "rollout",
+    "embedding_rollout",
+)
 SMOKE_STEPS = ("cluster_smoke", "authenticated_smoke")
 OUTCOME_VALUES = {"success", "failure", "cancelled", "skipped"}
 DEPLOYMENT_PROFILES = {"staging", "tiny-single-node", "single-node-4c8g"}
@@ -108,6 +125,7 @@ def _model_metadata(
 
 def _embedding_metadata(
     *,
+    rollout_report: Path,
     embedding_base_url: str = "https://embedding.example.invalid/v1",
     embedding_model_name: str = "staging-embedding",
 ) -> tuple[dict[str, Any], str | None]:
@@ -116,11 +134,36 @@ def _embedding_metadata(
         model_base_url=embedding_base_url,
         model_name=embedding_model_name,
     )
+    metadata["kind"] = "embedding"
     if error is not None:
-        metadata["kind"] = "embedding"
-    else:
-        metadata.update({"kind": "embedding", "dimension": 1024, "version": 2})
-    return metadata, error
+        return metadata, error
+    try:
+        rollout = validate_embedding_rollout_report(
+            rollout_report,
+            expected_model=metadata["name"],
+        )
+    except EmbeddingRolloutReportError as report_error:
+        metadata.update(
+            {
+                "status": "invalid",
+                "dimension": None,
+                "version": None,
+                "validation_error": str(report_error),
+            }
+        )
+        return metadata, str(report_error)
+    metadata.update(
+        {
+            "dimension": rollout["dimension"],
+            "version": rollout["version"],
+            "rollout": rollout,
+            "rollout_report": {
+                "path": rollout_report.as_posix(),
+                "sha256": hashlib.sha256(rollout_report.read_bytes()).hexdigest(),
+            },
+        }
+    )
+    return metadata, None
 
 
 def build_record(
@@ -137,6 +180,7 @@ def build_record(
     model_provider: str,
     model_base_url: str,
     model_name: str,
+    embedding_rollout_report: Path,
     embedding_base_url: str = "https://embedding.example.invalid/v1",
     embedding_model_name: str = "staging-embedding",
     smoke_required: bool,
@@ -167,6 +211,7 @@ def build_record(
         model_name=model_name,
     )
     embedding, embedding_error = _embedding_metadata(
+        rollout_report=embedding_rollout_report,
         embedding_base_url=embedding_base_url,
         embedding_model_name=embedding_model_name,
     )
@@ -191,7 +236,7 @@ def build_record(
         failure_reason = "One or more staging rollout or smoke steps did not succeed."
 
     record: dict[str, Any] = {
-        "schema_version": 1,
+        "schema_version": 2,
         "status": status,
         "blocking_reason": blocking_reason,
         "failure_reason": failure_reason,
@@ -232,6 +277,7 @@ def main() -> None:
     parser.add_argument("--model-name", required=True)
     parser.add_argument("--embedding-base-url", required=True)
     parser.add_argument("--embedding-model-name", required=True)
+    parser.add_argument("--embedding-rollout-report", type=Path, required=True)
     parser.add_argument("--smoke-required", choices=("true", "false"), required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
@@ -253,6 +299,7 @@ def main() -> None:
             model_provider=args.model_provider,
             model_base_url=args.model_base_url,
             model_name=args.model_name,
+            embedding_rollout_report=args.embedding_rollout_report,
             embedding_base_url=args.embedding_base_url,
             embedding_model_name=args.embedding_model_name,
             smoke_required=args.smoke_required == "true",

@@ -165,6 +165,37 @@ def test_migration_job_and_policies_are_present() -> None:
     expected_cel_script = expected_script.replace("\n", "\\n")
     assert f"'{expected_cel_script}'" in migration_validation
 
+    embedding_rollout = _documents(ROOT / "infra/k8s/overlays/staging/embedding-rollout-job.yaml")[
+        0
+    ]
+    rollout_pod = embedding_rollout["spec"]["template"]["spec"]
+    rollout_container = rollout_pod["containers"][0]
+    assert embedding_rollout["spec"]["activeDeadlineSeconds"] == 1260
+    assert embedding_rollout["spec"]["backoffLimit"] == 0
+    assert rollout_pod["automountServiceAccountToken"] is False
+    assert rollout_pod["serviceAccountName"] == "enterprise-doc-runtime"
+    assert rollout_pod["securityContext"]["runAsNonRoot"] is True
+    assert rollout_container["command"] == ["enterprise-doc-embedding-rollout"]
+    assert rollout_container["args"] == [
+        "--limit",
+        "1000",
+        "--deadline-seconds",
+        "1200",
+        "--poll-seconds",
+        "5",
+    ]
+    assert rollout_container["envFrom"] == [
+        {"configMapRef": {"name": "enterprise-doc-config"}},
+        {"secretRef": {"name": "enterprise-doc-secrets"}},
+    ]
+    assert rollout_container["securityContext"] == {
+        "allowPrivilegeEscalation": False,
+        "readOnlyRootFilesystem": True,
+        "capabilities": {"drop": ["ALL"]},
+    }
+    assert "enterprise-doc-embedding-rollout" in migration_validation
+    assert "['enterprise-doc-embedding-rollout']" in migration_validation
+
     policy_docs = _documents(ROOT / "infra/k8s/base/network-policy.yaml")
     assert any(item["metadata"]["name"] == "enterprise-doc-default-deny" for item in policy_docs)
     assert any(item["metadata"]["name"] == "enterprise-doc-runtime-egress" for item in policy_docs)
@@ -273,7 +304,11 @@ def test_staging_deployer_bootstrap_cannot_read_or_mount_unreviewed_secrets() ->
     ]
     assert {tuple(rule.get("resourceNames", [])): set(rule["verbs"]) for rule in job_rules} == {
         (): {"get", "list", "watch", "create", "update", "patch"},
-        ("enterprise-doc-migrate", "m5-staging-smoke"): {"delete"},
+        (
+            "enterprise-doc-migrate",
+            "enterprise-doc-embedding-rollout",
+            "m5-staging-smoke",
+        ): {"delete"},
     }
 
     runtime_role = _named_resource(documents, "Role", "enterprise-doc-runtime")
@@ -379,6 +414,7 @@ def test_staging_overlay_defines_https_ingress_and_private_registry_contract() -
     pull_patches = _documents(overlay / "image-pull-secret-patch.yaml")
     assert {(item["kind"], item["metadata"]["name"]) for item in pull_patches} == {
         ("Job", "enterprise-doc-migrate"),
+        ("Job", "enterprise-doc-embedding-rollout"),
         ("Deployment", "enterprise-doc-api"),
         ("Deployment", "enterprise-doc-worker"),
         ("Deployment", "enterprise-doc-consumer"),
@@ -386,6 +422,7 @@ def test_staging_overlay_defines_https_ingress_and_private_registry_contract() -
     }
     assert {item["metadata"]["name"] for item in pull_patches} == {
         "enterprise-doc-migrate",
+        "enterprise-doc-embedding-rollout",
         "enterprise-doc-api",
         "enterprise-doc-worker",
         "enterprise-doc-consumer",
@@ -588,6 +625,7 @@ def test_tiny_single_node_redis_and_network_boundaries_are_explicit() -> None:
                     "enterprise-doc-worker",
                     "enterprise-doc-consumer",
                     "enterprise-doc-migrate",
+                    "enterprise-doc-embedding-rollout",
                 ],
             },
         ],
@@ -962,6 +1000,7 @@ def test_ci_workflows_have_no_allow_failure_and_include_release_boundaries() -> 
     assert "render_k8s_phase.py" in deploy
     assert "staging-prerequisites.yaml" in deploy
     assert "staging-migration.yaml" in deploy
+    assert "staging-embedding-rollout.yaml" in deploy
     assert "staging-workloads.yaml" in deploy
     assert deploy.index("wait --for=condition=complete") < deploy.index(
         "Apply workloads after migration"
@@ -1004,6 +1043,9 @@ def test_ci_workflows_have_no_allow_failure_and_include_release_boundaries() -> 
     assert "if-no-files-found: error" in deploy
     assert "infra/k8s/smoke/readiness-job.yaml" in deploy
     assert "kubectl run" not in deploy
+    assert "kubectl exec" not in deploy
+    assert "validate_embedding_rollout_report.py" in deploy
+    assert "--embedding-rollout-report" in deploy
     smoke = (ROOT / "infra/k8s/smoke/readiness-job.yaml").read_text(encoding="utf-8")
     assert "curlimages/curl@sha256:" in smoke
     assert "app.kubernetes.io/name: m5-staging-smoke" in smoke
@@ -1050,6 +1092,9 @@ def test_staging_failure_evidence_collects_worker_logs_before_sanitizing() -> No
         if extra:
             assert extra in snippet
     assert "trap 'rm -rf \"$raw_dir\"' EXIT" in deploy
+    assert deploy.index("capture embedding-rollout-job.json") < sanitizer
+    assert deploy.index("capture embedding-rollout.log") < sanitizer
+    assert "staging-embedding-rollout.json" in deploy[:sanitizer]
     uploaded = deploy[upload:]
     assert "staging-sanitized-${{ github.sha }}" in uploaded
     assert "staging-raw-${{ github.sha }}" not in uploaded
@@ -1127,6 +1172,24 @@ def test_staging_workflows_preserve_admin_boundary_and_clean_credentials() -> No
     rollout_run = str(rollout["run"])
     for deployment in ("api", "worker", "consumer", "web"):
         assert f"deployment/enterprise-doc-{deployment} --timeout=600s" in rollout_run
+
+    embedding = _named_step(deploy_steps, "Run embedding provider and reindex gate")
+    embedding_run = str(embedding["run"])
+    step_names = [str(step.get("name", "")) for step in deploy_steps]
+    assert (
+        step_names.index("Wait for workloads")
+        < step_names.index("Run embedding provider and reindex gate")
+        < step_names.index("Run in-cluster readiness smoke")
+    )
+    assert "previous embedding rollout Job is not complete" in embedding_run
+    assert "staging-embedding-rollout.yaml" in embedding_run
+    assert "apply --dry-run=server" in embedding_run
+    assert "attempt < 264" in embedding_run
+    assert '@.type=="Complete"' in embedding_run
+    assert '@.type=="Failed"' in embedding_run
+    assert 'if test "$job_result" != "complete"' in embedding_run
+    assert "validate_embedding_rollout_report.py" in embedding_run
+    assert "kubectl exec" not in embedding_run
 
     smoke_cleanup = _named_step(deploy_steps, "Clean up readiness smoke")
     assert "always()" in str(smoke_cleanup["if"])

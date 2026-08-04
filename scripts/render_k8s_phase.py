@@ -6,8 +6,9 @@ from typing import Any, Literal
 
 import yaml  # type: ignore[import-untyped]
 
-Phase = Literal["prerequisites", "migration", "workloads"]
+Phase = Literal["prerequisites", "migration", "embedding-rollout", "workloads"]
 MIGRATION_NAME = "enterprise-doc-migrate"
+EMBEDDING_ROLLOUT_NAME = "enterprise-doc-embedding-rollout"
 WORKLOAD_KINDS = {"Deployment", "StatefulSet", "DaemonSet"}
 
 
@@ -24,8 +25,18 @@ def select_phase(documents: list[dict[str, Any]], phase: Phase) -> list[dict[str
     ]
     if len(migration) != 1:
         raise ValueError("rendered manifests must contain exactly one migration Job")
+    embedding_rollout = [
+        document
+        for document in documents
+        if document.get("kind") == "Job"
+        and _metadata(document).get("name") == EMBEDDING_ROLLOUT_NAME
+    ]
+    if len(embedding_rollout) != 1:
+        raise ValueError("rendered manifests must contain exactly one embedding rollout Job")
     if phase == "migration":
         return migration
+    if phase == "embedding-rollout":
+        return embedding_rollout
     if phase == "prerequisites":
         selected = [
             document
@@ -62,7 +73,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument(
         "--phase",
-        choices=("prerequisites", "migration", "workloads"),
+        choices=("prerequisites", "migration", "embedding-rollout", "workloads"),
         required=True,
     )
     args = parser.parse_args()

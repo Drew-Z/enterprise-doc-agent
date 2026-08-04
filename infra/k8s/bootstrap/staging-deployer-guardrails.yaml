@@ -322,7 +322,12 @@ spec:
     - name: container
       expression: variables.podSpec.containers[0]
   validations:
-    - expression: object.metadata.name in ['enterprise-doc-migrate', 'm5-staging-smoke']
+    - expression: >-
+        object.metadata.name in [
+          'enterprise-doc-migrate',
+          'enterprise-doc-embedding-rollout',
+          'm5-staging-smoke'
+        ]
       message: The staging deployer can manage only reviewed staging Jobs.
       reason: Forbidden
     - expression: >-
@@ -349,6 +354,27 @@ spec:
           variables.podSpec.serviceAccountName == 'enterprise-doc-runtime' &&
           (!has(variables.podSpec.automountServiceAccountToken) ||
             variables.podSpec.automountServiceAccountToken == false) &&
+          size(variables.podSpec.imagePullSecrets) == 1 &&
+          variables.podSpec.imagePullSecrets[0].name == 'enterprise-doc-registry') ||
+        (object.metadata.name == 'enterprise-doc-embedding-rollout' &&
+          variables.container.name == 'embedding-rollout' &&
+          namespaceObject.metadata.annotations[
+            'enterprise-doc-agent/approved-api-images'
+          ].split(',').exists(image,
+            image == variables.container.image) &&
+          variables.container.command == ['enterprise-doc-embedding-rollout'] &&
+          variables.container.args == [
+            '--limit', '1000',
+            '--deadline-seconds', '1200',
+            '--poll-seconds', '5'
+          ] &&
+          !has(variables.container.env) &&
+          size(variables.container.envFrom) == 2 &&
+          variables.container.envFrom[0].configMapRef.name == 'enterprise-doc-config' &&
+          variables.container.envFrom[1].secretRef.name == 'enterprise-doc-secrets' &&
+          variables.podSpec.serviceAccountName == 'enterprise-doc-runtime' &&
+          has(variables.podSpec.automountServiceAccountToken) &&
+          variables.podSpec.automountServiceAccountToken == false &&
           size(variables.podSpec.imagePullSecrets) == 1 &&
           variables.podSpec.imagePullSecrets[0].name == 'enterprise-doc-registry') ||
         (object.metadata.name == 'm5-staging-smoke' &&

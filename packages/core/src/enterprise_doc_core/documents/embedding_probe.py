@@ -23,15 +23,17 @@ async def probe(settings: FoundationSettings) -> dict[str, object]:
         )
     )
     norms = [math.sqrt(sum(value * value for value in vector)) for vector in vectors]
+    finite = all(math.isfinite(value) for vector in vectors for value in vector)
+    nonzero_norms = len(vectors) == 2 and all(norm > 0 for norm in norms)
     return {
-        "status": "passed",
+        "status": "passed" if finite and nonzero_norms else "failed",
         "provider": settings.embedding.provider.value,
         "model": embedding_model_identity(settings.embedding),
         "dimension": dimension,
         "version": settings.embedding.version,
         "item_count": len(vectors),
-        "finite": all(math.isfinite(value) for vector in vectors for value in vector),
-        "nonzero_norms": all(norm > 0 for norm in norms),
+        "finite": finite,
+        "nonzero_norms": nonzero_norms,
         "elapsed_ms": round((perf_counter() - started) * 1000, 2),
         "values_redacted": True,
     }
@@ -42,6 +44,8 @@ def main() -> None:
     with asyncio.Runner(loop_factory=asyncio.SelectorEventLoop) as runner:
         report = runner.run(probe(FoundationSettings()))
     print(json.dumps(report, sort_keys=True))
+    if report["status"] != "passed":
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

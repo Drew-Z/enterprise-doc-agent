@@ -82,6 +82,23 @@ def _write_template(path: Path) -> None:
             },
         },
         {
+            "apiVersion": "batch/v1",
+            "kind": "Job",
+            "metadata": {"name": "enterprise-doc-embedding-rollout"},
+            "spec": {
+                "template": {
+                    "spec": {
+                        "containers": [
+                            {
+                                "name": "embedding-rollout",
+                                "image": _image("enterprise-doc-api"),
+                            }
+                        ]
+                    }
+                }
+            },
+        },
+        {
             "apiVersion": "networking.k8s.io/v1",
             "kind": "Ingress",
             "metadata": {"name": "enterprise-doc-web"},
@@ -115,6 +132,7 @@ def _write_template(path: Path) -> None:
                                 "enterprise-doc-worker",
                                 "enterprise-doc-consumer",
                                 "enterprise-doc-migrate",
+                                "enterprise-doc-embedding-rollout",
                             ],
                         },
                     ],

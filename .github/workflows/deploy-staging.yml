@@ -301,6 +301,7 @@ jobs:
           required = (
               ("Namespace", "enterprise-doc-agent-staging"),
               ("Job", "enterprise-doc-migrate"),
+              ("Job", "enterprise-doc-embedding-rollout"),
               ("Ingress", None),
           )
           for kind, name in required:
@@ -312,6 +313,7 @@ jobs:
           PY
           "$RUNNER_PYTHON" scripts/render_k8s_phase.py --input "$RUNNER_TEMP/staging.yaml" --phase prerequisites --output "$RUNNER_TEMP/staging-prerequisites.yaml"
           "$RUNNER_PYTHON" scripts/render_k8s_phase.py --input "$RUNNER_TEMP/staging.yaml" --phase migration --output "$RUNNER_TEMP/staging-migration.yaml"
+          "$RUNNER_PYTHON" scripts/render_k8s_phase.py --input "$RUNNER_TEMP/staging.yaml" --phase embedding-rollout --output "$RUNNER_TEMP/staging-embedding-rollout.yaml"
           "$RUNNER_PYTHON" scripts/render_k8s_phase.py --input "$RUNNER_TEMP/staging.yaml" --phase workloads --output "$RUNNER_TEMP/staging-workloads.yaml"
       - name: Verify administrator-owned staging prerequisites
         id: prerequisites
@@ -371,6 +373,61 @@ jobs:
           if kubectl -n enterprise-doc-agent-staging get deployment enterprise-doc-redis >/dev/null 2>&1; then
             kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-redis --timeout=180s
           fi
+      - name: Run embedding provider and reindex gate
+        id: embedding_rollout
+        env:
+          EXPECTED_EMBEDDING_MODEL: ${{ vars.STAGING_EMBEDDING_MODEL_NAME }}
+        run: |
+          set -euo pipefail
+          report="$RUNNER_TEMP/staging-embedding-rollout.json"
+          if kubectl -n enterprise-doc-agent-staging get job enterprise-doc-embedding-rollout >/dev/null 2>&1; then
+            previous_complete="$(kubectl -n enterprise-doc-agent-staging get job enterprise-doc-embedding-rollout \
+              -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')"
+            if test "$previous_complete" != "True"; then
+              echo 'previous embedding rollout Job is not complete; preserve it for operator review' >&2
+              exit 1
+            fi
+          fi
+          kubectl -n enterprise-doc-agent-staging delete job enterprise-doc-embedding-rollout \
+            --ignore-not-found --wait=true
+          kubectl apply --dry-run=server -f "$RUNNER_TEMP/staging-embedding-rollout.yaml"
+          kubectl apply -f "$RUNNER_TEMP/staging-embedding-rollout.yaml"
+          job_result=""
+          for ((attempt = 0; attempt < 264; attempt += 1)); do
+            complete="$(kubectl -n enterprise-doc-agent-staging get \
+              job/enterprise-doc-embedding-rollout \
+              -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')"
+            failed="$(kubectl -n enterprise-doc-agent-staging get \
+              job/enterprise-doc-embedding-rollout \
+              -o jsonpath='{.status.conditions[?(@.type=="Failed")].status}')"
+            if test "$complete" = "True"; then
+              job_result="complete"
+              break
+            fi
+            if test "$failed" = "True"; then
+              job_result="failed"
+              break
+            fi
+            sleep 5
+          done
+          if test "$job_result" != "complete"; then
+            kubectl -n enterprise-doc-agent-staging logs job/enterprise-doc-embedding-rollout \
+              > "$report" 2>/dev/null || true
+            kubectl -n enterprise-doc-agent-staging get job/enterprise-doc-embedding-rollout \
+              -o wide || true
+            kubectl -n enterprise-doc-agent-staging get pods \
+              -l job-name=enterprise-doc-embedding-rollout -o wide || true
+            kubectl -n enterprise-doc-agent-staging describe \
+              job/enterprise-doc-embedding-rollout || true
+            kubectl -n enterprise-doc-agent-staging describe pods \
+              -l job-name=enterprise-doc-embedding-rollout || true
+            exit 1
+          fi
+          kubectl -n enterprise-doc-agent-staging logs job/enterprise-doc-embedding-rollout \
+            > "$report"
+          "$RUNNER_PYTHON" scripts/validate_embedding_rollout_report.py \
+            --input "$report" \
+            --expected-model "$EXPECTED_EMBEDDING_MODEL"
       - name: Run in-cluster readiness smoke
         id: cluster_smoke
         if: inputs.run_smoke
@@ -423,6 +480,7 @@ jobs:
           MIGRATION_OUTCOME: ${{ steps.migration.outcome }}
           WORKLOADS_OUTCOME: ${{ steps.workloads.outcome }}
           ROLLOUT_OUTCOME: ${{ steps.rollout.outcome }}
+          EMBEDDING_ROLLOUT_OUTCOME: ${{ steps.embedding_rollout.outcome }}
           CLUSTER_SMOKE_OUTCOME: ${{ steps.cluster_smoke.outcome }}
           AUTHENTICATED_SMOKE_OUTCOME: ${{ steps.authenticated_smoke.outcome }}
         run: |
@@ -443,7 +501,7 @@ jobs:
             set -e
             printf '%s=%s\n' "$name" "$status" >> "$raw_dir/collection-status.txt"
           }
-          for manifest in staging.yaml staging-prerequisites.yaml staging-migration.yaml staging-workloads.yaml; do
+          for manifest in staging.yaml staging-prerequisites.yaml staging-migration.yaml staging-embedding-rollout.yaml staging-workloads.yaml; do
             if test -f "$RUNNER_TEMP/$manifest"; then
               cp "$RUNNER_TEMP/$manifest" "$raw_dir/staging-rendered-${manifest}"
             fi
@@ -451,9 +509,17 @@ jobs:
           if test -f "tmp/staging-smoke-${GITHUB_SHA}.json"; then
             cp "tmp/staging-smoke-${GITHUB_SHA}.json" "$raw_dir/staging-smoke.json"
           fi
+          if test -f "$RUNNER_TEMP/staging-embedding-rollout.json"; then
+            cp "$RUNNER_TEMP/staging-embedding-rollout.json" \
+              "$raw_dir/staging-embedding-rollout.json"
+          fi
           printf '%s\n' "$DEPLOYMENT_PROFILE" > "$raw_dir/deployment-profile.txt"
           capture deployments.json kubectl -n enterprise-doc-agent-staging get deploy -o json
           capture migration.log kubectl -n enterprise-doc-agent-staging logs job/enterprise-doc-migrate
+          capture embedding-rollout-job.json kubectl -n enterprise-doc-agent-staging get \
+            job/enterprise-doc-embedding-rollout -o json
+          capture embedding-rollout.log kubectl -n enterprise-doc-agent-staging logs \
+            job/enterprise-doc-embedding-rollout
           capture worker-current.log kubectl -n enterprise-doc-agent-staging logs \
             -l app.kubernetes.io/name=enterprise-doc-worker \
             --all-containers=true --prefix=true --tail=500
@@ -474,7 +540,7 @@ jobs:
             --output-dir "$sanitized_dir" \
             --manifest "tmp/staging-evidence-${evidence_id}.manifest.json"
           image_digests_json="$("$RUNNER_PYTHON" -c 'import json, os; print(json.dumps({"api": os.environ["API_DIGEST"], "worker": os.environ["WORKER_DIGEST"], "consumer": os.environ["CONSUMER_DIGEST"], "web": os.environ["WEB_DIGEST"]}))')"
-          outcomes_json="$("$RUNNER_PYTHON" -c 'import json, os; print(json.dumps({"prerequisites": os.environ["PREREQUISITES_OUTCOME"], "migration": os.environ["MIGRATION_OUTCOME"], "workloads": os.environ["WORKLOADS_OUTCOME"], "rollout": os.environ["ROLLOUT_OUTCOME"], "cluster_smoke": os.environ["CLUSTER_SMOKE_OUTCOME"], "authenticated_smoke": os.environ["AUTHENTICATED_SMOKE_OUTCOME"]}))')"
+          outcomes_json="$("$RUNNER_PYTHON" -c 'import json, os; print(json.dumps({"prerequisites": os.environ["PREREQUISITES_OUTCOME"], "migration": os.environ["MIGRATION_OUTCOME"], "workloads": os.environ["WORKLOADS_OUTCOME"], "rollout": os.environ["ROLLOUT_OUTCOME"], "embedding_rollout": os.environ["EMBEDDING_ROLLOUT_OUTCOME"], "cluster_smoke": os.environ["CLUSTER_SMOKE_OUTCOME"], "authenticated_smoke": os.environ["AUTHENTICATED_SMOKE_OUTCOME"]}))')"
           "$RUNNER_PYTHON" scripts/build_staging_release_record.py \
             --evidence-manifest "tmp/staging-evidence-${evidence_id}.manifest.json" \
             --deployment-profile "$DEPLOYMENT_PROFILE" \
@@ -490,6 +556,7 @@ jobs:
             --model-name "$MODEL_NAME" \
             --embedding-base-url "$EMBEDDING_BASE_URL" \
             --embedding-model-name "$EMBEDDING_MODEL_NAME" \
+            --embedding-rollout-report "$sanitized_dir/staging-embedding-rollout.json" \
             --smoke-required "$RUN_SMOKE" \
             --output "tmp/staging-release-${evidence_id}.record.json"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

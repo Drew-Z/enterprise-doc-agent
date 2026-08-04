@@ -208,7 +208,7 @@ STAGING_OBJECT_STORE_CHECKSUM_MODE=readback_sha256
 Release `v0.1.12` used the deterministic 8-dimensional embedding fixture. Follow
 `docs/ops/real-embedding-rollout.md` before claiming semantic RAG: the new route requires
 an independently configured embedding endpoint and Secret, a destructive 1024-dimensional
-pgvector migration, provider probe, reindex, and retrieval-quality evidence.
+pgvector migration, the restricted embedding rollout Job, and retrieval-quality evidence.
 
 ## Remaining operator gates
 
@@ -221,6 +221,9 @@ After host and K3s verification, continue in this order:
 5. Enroll Cloudflare Tunnel and route the application hostname to
    `https://127.0.0.1:8443`, with the origin server name set to the staging hostname.
 6. Publish and verify signed immutable images.
-7. Dispatch staging, run authenticated smoke, then perform rollback and recovery drills.
+7. Dispatch staging. Require migration, workload rollout, the bounded embedding
+   probe/reindex Job, readiness smoke and authenticated smoke to pass in that order.
+8. Perform rollback and recovery drills only after the sanitized rollout report and
+   release-record hashes have been retained.
 
 Stop at any failed gate. A Ready K3s node alone is not a successful staging deployment.

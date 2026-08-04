@@ -22,6 +22,7 @@ def test_rollout_phase_split_places_migration_before_workloads() -> None:
         _document("ConfigMap", "enterprise-doc-config"),
         _document("ServiceAccount", "enterprise-doc-runtime"),
         _document("Job", "enterprise-doc-migrate"),
+        _document("Job", "enterprise-doc-embedding-rollout"),
         _document("Deployment", "enterprise-doc-api"),
         _document("Deployment", "enterprise-doc-worker"),
         _document("Service", "enterprise-doc-api"),
@@ -29,6 +30,7 @@ def test_rollout_phase_split_places_migration_before_workloads() -> None:
 
     prerequisites = render_k8s_phase.select_phase(documents, "prerequisites")
     migration = render_k8s_phase.select_phase(documents, "migration")
+    embedding_rollout = render_k8s_phase.select_phase(documents, "embedding-rollout")
     workloads = render_k8s_phase.select_phase(documents, "workloads")
 
     assert {item["kind"] for item in prerequisites} == {
@@ -38,6 +40,9 @@ def test_rollout_phase_split_places_migration_before_workloads() -> None:
         "Service",
     }
     assert [item["metadata"]["name"] for item in migration] == ["enterprise-doc-migrate"]
+    assert [item["metadata"]["name"] for item in embedding_rollout] == [
+        "enterprise-doc-embedding-rollout"
+    ]
     assert {item["kind"] for item in workloads} == {"Deployment"}
     assert {item["metadata"]["name"] for item in workloads} == {
         "enterprise-doc-api",

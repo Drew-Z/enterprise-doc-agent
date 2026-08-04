@@ -38,6 +38,7 @@ CONFIG_CONSUMERS = {
     ("Deployment", "enterprise-doc-worker"),
     ("Deployment", "enterprise-doc-consumer"),
     ("Job", "enterprise-doc-migrate"),
+    ("Job", "enterprise-doc-embedding-rollout"),
 }
 DNS_LABEL = re.compile(r"^[a-z0-9](?:[-a-z0-9]*[a-z0-9])?$")
 IMMUTABLE_IMAGE = re.compile(
@@ -386,6 +387,17 @@ def configure_manifest(
     )
     if migration_image != current_images["api"]:
         raise ValueError("migration Job must use the current API image")
+    embedding_rollout = _single_document(
+        documents,
+        kind="Job",
+        name="enterprise-doc-embedding-rollout",
+    )
+    embedding_rollout_image = _container_image(
+        embedding_rollout,
+        description="Job/enterprise-doc-embedding-rollout",
+    )
+    if embedding_rollout_image != current_images["api"]:
+        raise ValueError("embedding rollout Job must use the current API image")
 
     namespace = _single_document(documents, kind="Namespace", name=NAMESPACE_NAME)
     namespace_metadata = namespace.setdefault("metadata", {})
@@ -415,6 +427,7 @@ def configure_manifest(
         f"{APPROVAL_ANNOTATION_PREFIX}embedding-base-url": normalized_embedding_base_url,
         f"{APPROVAL_ANNOTATION_PREFIX}embedding-model-name": normalized_embedding_model_name,
         f"{APPROVAL_ANNOTATION_PREFIX}embedding-dimension": EMBEDDING_DIMENSION,
+        f"{APPROVAL_ANNOTATION_PREFIX}embedding-version": EMBEDDING_VERSION,
         f"{APPROVAL_ANNOTATION_PREFIX}config-sha256": config_digest,
     }
     for service, image in current_images.items():
