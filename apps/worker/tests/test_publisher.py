@@ -114,9 +114,12 @@ async def test_publisher_loop_survives_temporary_store_failure() -> None:
 class HangingStore:
     def __init__(self) -> None:
         self.calls = 0
+        self.retried = asyncio.Event()
 
     async def claim(self, **_: object) -> tuple[ClaimedOutboxEvent, ...]:
         self.calls += 1
+        if self.calls >= 2:
+            self.retried.set()
         await asyncio.Event().wait()
         raise AssertionError("unreachable")
 
@@ -135,7 +138,7 @@ async def test_publisher_cycle_timeout_cancels_hang_and_retries() -> None:
     )
     stop = asyncio.Event()
     task = asyncio.create_task(publisher.run(stop))
-    await asyncio.sleep(0.04)
+    await asyncio.wait_for(store.retried.wait(), timeout=0.5)
     stop.set()
     await asyncio.wait_for(task, timeout=0.5)
 

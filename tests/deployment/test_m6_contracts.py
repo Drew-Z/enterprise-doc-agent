@@ -780,7 +780,7 @@ def test_cluster_mutating_workflows_use_the_pre_provisioned_runner_toolchain() -
         command = str(toolchain["run"])
         assert 'test -x "$RUNNER_PYTHON"' in command
         assert '" = "3.12"' in command
-        assert 'cryptography.__version__ == "49.0.0"' in command
+        assert 'cryptography.__version__ == "50.0.0"' in command
         assert 'yaml.__version__ == "6.0.3"' in command
         assert "kubectl version --client" in command
         assert 'test "$(kustomize version)" = "v5.7.1"' in command

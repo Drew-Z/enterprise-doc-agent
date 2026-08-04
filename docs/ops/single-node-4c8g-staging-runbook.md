@@ -154,7 +154,7 @@ sudo bash ./provision-runner-toolchain.sh --check
 
 The scripts verify SHA-256 for the K3s, Kustomize and Actions runner artifacts. K3s is
 fixed to `v1.36.2+k3s1`; packaged Traefik remains enabled. The deployment toolchain is
-Python 3.12 with `PyYAML==6.0.3`, `cryptography==49.0.0`, and Kustomize `v5.7.1`.
+Python 3.12 with `PyYAML==6.0.3`, `cryptography==50.0.0`, and Kustomize `v5.7.1`.
 The runner archive is unpacked for `gha-staging`, but registration remains a separate
 repository-scoped token-bearing operation.
 

@@ -221,7 +221,7 @@ token must be rotated after any abnormal termination where residue cannot be rul
 The isolated runner uses a pre-provisioned toolchain instead of downloading
 Python, kubectl and Kustomize during every release. Provision Python 3.12 at
 `/opt/enterprise-doc-toolchain/python/bin/python`, install exactly `PyYAML==6.0.3`
-and `cryptography==49.0.0` into that virtual environment, install Kustomize
+and `cryptography==50.0.0` into that virtual environment, install Kustomize
 `v5.7.1` on `PATH`, and provide a working kubectl client. Both workflows fail
 before kubeconfig creation if this contract drifts. Keep the toolchain root-owned
 and non-writable by the runner account; upgrades require a reviewed repository

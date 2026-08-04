@@ -89,7 +89,7 @@ jobs:
           set -euo pipefail
           test -x "$RUNNER_PYTHON"
           test "$("$RUNNER_PYTHON" -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')" = "3.12"
-          "$RUNNER_PYTHON" -c 'import cryptography, yaml; assert cryptography.__version__ == "49.0.0"; assert yaml.__version__ == "6.0.3"'
+          "$RUNNER_PYTHON" -c 'import cryptography, yaml; assert cryptography.__version__ == "50.0.0"; assert yaml.__version__ == "6.0.3"'
           kubectl version --client
           test "$(kustomize version)" = "v5.7.1"
       - name: Configure cluster credentials

@@ -159,7 +159,7 @@ def test_k3s_and_runner_toolchain_versions_are_exact() -> None:
         "KUSTOMIZE_VERSION=v5.7.1",
         "PYTHON_MINOR=3.12",
         "PYYAML_VERSION=6.0.3",
-        "CRYPTOGRAPHY_VERSION=49.0.0",
+        "CRYPTOGRAPHY_VERSION=50.0.0",
     }
     assert expected <= set(versions.splitlines())
 
