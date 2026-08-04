@@ -5,7 +5,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/web/package.json ./apps/web/package.json
 RUN pnpm install --frozen-lockfile
 COPY apps/web ./apps/web
-ARG VITE_API_BASE_URL=/api
+ARG VITE_API_BASE_URL
 ARG VITE_OBJECT_STORE_ORIGINS=http://127.0.0.1:9000
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 ENV VITE_OBJECT_STORE_ORIGINS=$VITE_OBJECT_STORE_ORIGINS

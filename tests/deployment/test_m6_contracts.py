@@ -101,6 +101,24 @@ def test_web_runtime_prepares_nginx_pid_before_dropping_privileges() -> None:
     assert re.search(r"chown [^\n]*/run/nginx\.pid", privileged_build)
 
 
+def test_web_runtime_uses_origin_base_and_proxies_api_readiness() -> None:
+    dockerfile = (ROOT / "infra" / "docker" / "Dockerfile.web").read_text(encoding="utf-8")
+    assert "ARG VITE_API_BASE_URL\n" in dockerfile
+    assert "ARG VITE_API_BASE_URL=/api" not in dockerfile
+
+    nginx = (ROOT / "infra" / "docker" / "nginx.conf").read_text(encoding="utf-8")
+    readiness = nginx.split("location = /health/ready", maxsplit=1)[1].split("}", maxsplit=1)[0]
+    assert "proxy_pass http://enterprise-doc-api:8000;" in readiness
+
+    _, steps = _workflow_steps("container.yml")
+    local_build = _named_step(steps, "Build image for contract and scan")
+    release_build = _named_step(steps, "Push immutable release image")
+    for step in (local_build, release_build):
+        build_args = str(step["with"]["build-args"])
+        assert "VITE_API_BASE_URL=" in build_args
+        assert "VITE_API_BASE_URL=/api" not in build_args
+
+
 def test_web_image_receives_explicit_object_store_origin_build_configuration() -> None:
     dockerfile = (ROOT / "infra" / "docker" / "Dockerfile.web").read_text(encoding="utf-8")
     assert "ARG VITE_OBJECT_STORE_ORIGINS=" in dockerfile

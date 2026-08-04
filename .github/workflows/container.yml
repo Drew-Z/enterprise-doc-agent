@@ -129,7 +129,7 @@ jobs:
           load: true
           tags: enterprise-doc-${{ matrix.name }}:${{ github.sha }}
           build-args: |
-            VITE_API_BASE_URL=/api
+            VITE_API_BASE_URL=
             VITE_OBJECT_STORE_ORIGINS=${{ env.VITE_OBJECT_STORE_ORIGINS }}
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
@@ -185,7 +185,7 @@ jobs:
           push: true
           tags: ${{ steps.release_ref.outputs.prefix }}/enterprise-doc-${{ matrix.name }}:${{ github.ref_name }}
           build-args: |
-            VITE_API_BASE_URL=/api
+            VITE_API_BASE_URL=
             VITE_OBJECT_STORE_ORIGINS=${{ env.VITE_OBJECT_STORE_ORIGINS }}
           provenance: mode=max
           sbom: true
