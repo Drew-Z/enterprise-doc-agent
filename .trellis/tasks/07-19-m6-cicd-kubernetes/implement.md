@@ -130,3 +130,16 @@ immutable image or rollback evidence. Those remain open manual gates.
   the total 4C8G replica connection budget.
 - [x] Collect current and previous Worker/consumer logs only into the raw evidence area,
   pass them through the existing sanitizer, and upload only sanitized output.
+
+## Slice 13: R2 Immutable Snapshot And Isolated Restore
+
+- [x] Add a deployable Core CLI that enumerates document and Agent artifact references,
+  validates source size/SHA-256, and creates an immutable R2 snapshot manifest only after
+  confirmed copies pass readback validation.
+- [x] Add a dry-run-first restore CLI that validates endpoint, bucket, manifest digest and
+  isolated database identity before copying to a dedicated restore prefix.
+- [x] Cover missing objects, checksum mismatches, target conflicts, partial-copy recovery,
+  idempotent reruns, secret redaction and DB/manifest/restored-inventory equality.
+- [ ] Run local quality, publish an immutable image, execute the staging R2 drill against
+  the retained restore database, and record cross-system evidence without closing the
+  production RPO/RTO gate prematurely.

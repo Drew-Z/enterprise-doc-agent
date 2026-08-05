@@ -32,6 +32,8 @@ enterprise-doc-checkpointer-setup = "enterprise_doc_core.agents.checkpoint:main"
 enterprise-doc-embedding-probe = "enterprise_doc_core.documents.embedding_probe:main"
 enterprise-doc-embedding-rollout = "enterprise_doc_core.documents.embedding_rollout:main"
 enterprise-doc-reindex-embeddings = "enterprise_doc_core.documents.reindex:main"
+enterprise-doc-object-snapshot = "enterprise_doc_core.recovery.snapshot_cli:main"
+enterprise-doc-object-restore = "enterprise_doc_core.recovery.restore_cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/enterprise_doc_core"]

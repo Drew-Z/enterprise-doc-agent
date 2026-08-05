@@ -68,6 +68,23 @@ Registry push, image signature verification, cluster apply, TLS/ingress, backup/
 and staging smoke are separate manual gates. An unavailable cluster is not a successful
 deployment result.
 
+## R2 Recovery Boundary
+
+Cloudflare R2 does not provide the S3 bucket-versioning APIs required for a native
+`VersionId` restore workflow. Recovery therefore uses an application-owned immutable
+snapshot namespace. The snapshot command reads object references from the reviewed
+database schema, verifies every source object by size and streamed SHA-256, conditionally
+copies it below `enterprise-doc-recovery/snapshots/<drill-id>/`, and writes a digested
+manifest only after every copy has been read back successfully.
+
+Restore is dry-run by default and accepts only a manifest whose digest, endpoint host,
+bucket allowlist and snapshot prefix match the operator's explicit expectations. A
+confirmed restore is additionally restricted to an `enterprise_doc_restore_` database and
+copies objects below `enterprise-doc-recovery/restores/<restore-id>/`; it never overwrites
+application keys. The final check compares database references, manifest entries and the
+listed restored object set in both directions. Credentials remain environment-only, while
+manifests containing object keys are private artifacts written with owner-only permissions.
+
 ## Tiny Single-Node Staging
 
 The `tiny-single-node` overlay inherits the ordinary staging contract but targets one

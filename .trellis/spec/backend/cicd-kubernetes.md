@@ -84,6 +84,20 @@
   so its sanitized copy is included in the evidence manifest hash chain.
 - Restore and rollback commands are dry-run or validation-only without explicit
   `--confirm`.
+- R2 recovery uses an application-level manifest because R2 does not implement S3 bucket
+  versioning. Snapshot and restore commands validate the expected endpoint host, an
+  explicit bucket allowlist, database reference size/SHA-256 and readback integrity; the
+  restore command additionally requires an `enterprise_doc_restore_` database and writes
+  only below `enterprise-doc-recovery/restores/<restore-id>/`.
+- R2 snapshot keys live below `enterprise-doc-recovery/snapshots/<drill-id>/` and require
+  matching Cloudflare Bucket Lock rules as an operator prerequisite. Manifests contain
+  private object keys and reference IDs, stay out of ordinary deployment evidence, and are
+  written locally with owner-only permissions. Public records contain only aggregate
+  counts, endpoint host, prefixes, timing and hashes.
+- R2 objects above the 4.995 GiB single-request limit use `UploadPartCopy`; multipart copy
+  rechecks the source ETag after completion and every destination is streamed back through
+  SHA-256 validation. The restored inventory must equal the isolated database and manifest
+  reference set in both directions.
 - `scripts/local_recovery_drill.py` requires `--confirm-local`, restores only to an
   `enterprise_doc_restore_` database, compares Alembic/table inventories, and still
   reports `blocked_external` without object-store restore and Kubernetes rollback.
@@ -141,6 +155,8 @@
 - `tests/deployment/` checks digest-pinned bases, non-root runtime contracts,
   migration ordering, smoke redaction, final-digest supply-chain binding, staging host
   configuration and release/evidence safeguards.
+- `enterprise-doc-object-snapshot` and `enterprise-doc-object-restore` are deployable Core
+  console commands for the R2 snapshot and isolated-prefix restore contract.
 
 ## Proven Files
 

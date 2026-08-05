@@ -724,6 +724,120 @@ production RPO/RTO gate. The 2026-08-05 external drill passed with 25 exact tabl
 Alembic revision `20260804_0011`, and application checkpoint readiness; its sanitized
 record is `evidence/m6/20260805-staging-postgres-restore.json`.
 
+### R2 immutable snapshot and isolated-prefix restore drill
+
+R2 does not implement S3 bucket versioning, so there is no `VersionId` recovery path.
+Use the repository-owned application snapshot instead. It enumerates `DocumentVersion`
+and durable `AgentArtifact` references from PostgreSQL, checks source size and streamed
+SHA-256, copies every object into a drill-specific namespace, and uploads the manifest
+only after readback succeeds. Objects larger than R2's 4.995 GiB single-request limit use
+multipart copy. The manifest contains private object keys and reference IDs; retain it
+off-repository with mode `0600` and never upload it as ordinary deployment evidence.
+
+Before the confirmed snapshot, add a **Bucket lock rule** in the Cloudflare dashboard to
+both the documents and artifacts buckets. Use the exact prefix
+`enterprise-doc-recovery/snapshots/<drill-id>/` and a reviewed retention period. Bucket
+Lock is a Cloudflare control-plane feature; S3 Object Lock and bucket-versioning APIs are
+not substitutes. Record the rule names, prefixes and retention end without retaining the
+Cloudflare token. See the official [Bucket locks documentation](https://developers.cloudflare.com/r2/buckets/bucket-locks/)
+and [R2 limits](https://developers.cloudflare.com/r2/platform/limits/).
+
+Run the command from the deployed API image so it uses the same database schema, object
+store client and environment-only credentials as staging. `/dev/shm` is used because the
+container root filesystem is read-only. The CLI is dry-run by default and stdout contains
+only aggregate counts and hashes:
+
+```bash
+set -euo pipefail
+namespace=enterprise-doc-agent-staging
+pod=$(kubectl -n "$namespace" get pod \
+  -l app.kubernetes.io/name=enterprise-doc-api \
+  -o jsonpath='{.items[0].metadata.name}')
+drill_id=<reviewed-lowercase-drill-id>
+endpoint_host=<reviewed-account-id>.r2.cloudflarestorage.com
+documents_bucket=<reviewed-private-documents-bucket>
+artifacts_bucket=<reviewed-private-artifacts-bucket>
+remote_manifest=/dev/shm/${drill_id}-r2-snapshot.json
+remote_record=/dev/shm/${drill_id}-r2-snapshot-record.json
+local_manifest=/secure/off-repo/path/${drill_id}-r2-snapshot.json
+local_record=/secure/off-repo/path/${drill_id}-r2-snapshot-record.json
+
+snapshot_args=(
+  --drill-id "$drill_id"
+  --expected-endpoint-host "$endpoint_host"
+  --allowed-bucket "$documents_bucket"
+  --allowed-bucket "$artifacts_bucket"
+  --manifest-bucket "$documents_bucket"
+  --manifest-path "$remote_manifest"
+  --record-path "$remote_record"
+)
+
+kubectl -n "$namespace" exec "$pod" -c api -- \
+  enterprise-doc-object-snapshot "${snapshot_args[@]}"
+
+# Review the dry-run counts and both Cloudflare Bucket Lock rules first.
+kubectl -n "$namespace" exec "$pod" -c api -- \
+  enterprise-doc-object-snapshot "${snapshot_args[@]}" --confirm
+
+umask 077
+kubectl -n "$namespace" exec "$pod" -c api -- cat "$remote_manifest" > "$local_manifest"
+kubectl -n "$namespace" exec "$pod" -c api -- cat "$remote_record" > "$local_record"
+manifest_sha256=$(python -c \
+  'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["manifest_sha256"])' \
+  "$local_manifest")
+```
+
+Restore only while `DATABASE__URL` points at the retained
+`enterprise_doc_restore_...` database. Transfer the reviewed manifest over stdin, then
+provide the isolated URL over stdin as well; neither credential nor URL belongs in argv,
+the manifest, the sanitized record or shell history:
+
+```bash
+restore_id=<reviewed-lowercase-restore-id>
+restore_database=enterprise_doc_restore_20260805t094423z
+remote_restore_record=/dev/shm/${restore_id}-r2-restore-record.json
+local_restore_record=/secure/off-repo/path/${restore_id}-r2-restore-record.json
+
+kubectl -n "$namespace" exec -i "$pod" -c api -- \
+  sh -c 'umask 077; cat > /dev/shm/reviewed-r2-snapshot.json' < "$local_manifest"
+
+restore_args=(
+  --manifest-path /dev/shm/reviewed-r2-snapshot.json
+  --expected-manifest-sha256 "$manifest_sha256"
+  --restore-id "$restore_id"
+  --expected-database-name "$restore_database"
+  --expected-endpoint-host "$endpoint_host"
+  --allowed-bucket "$documents_bucket"
+  --allowed-bucket "$artifacts_bucket"
+  --record-path "$remote_restore_record"
+)
+
+read -rsp 'Isolated restore DATABASE URL: ' RESTORE_DATABASE_URL
+printf '\n'
+run_restore() {
+  printf '%s\n' "$RESTORE_DATABASE_URL" | kubectl -n "$namespace" exec -i "$pod" -c api -- \
+    sh -c 'IFS= read -r DATABASE__URL; export DATABASE__URL; exec "$@"' \
+    sh enterprise-doc-object-restore "${restore_args[@]}" "$@"
+}
+
+run_restore
+# Review endpoint, database, prefix, manifest digest and planned counts first.
+run_restore --confirm
+unset RESTORE_DATABASE_URL
+
+umask 077
+kubectl -n "$namespace" exec "$pod" -c api -- cat "$remote_restore_record" \
+  > "$local_restore_record"
+```
+
+The confirmed restore verifies that isolated-database references, manifest entries and
+the listed restored object set are equal in both directions. It never overwrites live
+application keys. This proves the R2 snapshot/restore and DB/R2 integrity sub-gate only;
+it does not make the application read from the isolated prefix. A separate temporary
+application configuration and authenticated upload/ingestion/Agent smoke are still
+required before claiming complete cross-system recovery, and a staging drill alone does
+not establish a production RPO/RTO objective.
+
 ## Resource guardrails
 
 ```bash

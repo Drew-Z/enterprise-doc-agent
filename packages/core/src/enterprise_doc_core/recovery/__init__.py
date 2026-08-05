@@ -1,0 +1,31 @@
+from enterprise_doc_core.recovery.object_store import (
+    ObjectReference,
+    ObjectReferenceIdentity,
+    ObjectStoreRecoveryError,
+    RestoreResult,
+    SnapshotManifest,
+    SnapshotObject,
+    SnapshotResult,
+    create_snapshot,
+    database_name_from_url,
+    endpoint_host_from_url,
+    load_object_references,
+    parse_snapshot_manifest,
+    restore_snapshot,
+)
+
+__all__ = [
+    "ObjectReference",
+    "ObjectReferenceIdentity",
+    "ObjectStoreRecoveryError",
+    "RestoreResult",
+    "SnapshotManifest",
+    "SnapshotObject",
+    "SnapshotResult",
+    "create_snapshot",
+    "database_name_from_url",
+    "endpoint_host_from_url",
+    "load_object_references",
+    "parse_snapshot_manifest",
+    "restore_snapshot",
+]
