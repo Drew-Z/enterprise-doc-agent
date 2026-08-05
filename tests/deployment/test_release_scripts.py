@@ -15,6 +15,7 @@ from scripts.backup_database import (
     run_backup,
 )
 from scripts.restore_database import (
+    build_archive_selection,
     inspect_restore_preflight,
     restore_command,
     validate_restore_target,
@@ -43,6 +44,13 @@ def test_restore_command_is_single_transaction_and_targets_database_without_cred
     assert "--if-exists" not in command
     assert database_url not in command
     assert "super-secret" not in " ".join(command)
+
+    selected_command = restore_command(
+        database_url=database_url,
+        backup=Path("backup.dump"),
+        archive_selection=Path("selection.list"),
+    )
+    assert selected_command[-3:] == ["--use-list", "selection.list", "backup.dump"]
 
 
 def test_database_credentials_are_transferred_through_libpq_environment() -> None:
@@ -167,6 +175,45 @@ def test_restore_preflight_rejects_unsafe_connected_target(
             expected_server_address="10.0.0.17",
             require_empty=True,
         )
+
+
+def test_archive_selection_skips_only_reviewed_schema_create(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    archive = tmp_path / "backup.dump"
+    archive.write_bytes(b"archive")
+    listing = """;
+18; 2615 2200 SCHEMA - public pg_database_owner
+291; 1259 18341 TABLE public documents postgres
+4374; 0 18341 TABLE DATA public documents postgres
+"""
+
+    def fake_run(
+        command: list[str],
+        *,
+        check: bool,
+        capture_output: bool,
+        text: bool,
+    ) -> subprocess.CompletedProcess[str]:
+        assert command == ["pg_restore", "--list", str(archive)]
+        assert check is True
+        assert capture_output is True
+        assert text is True
+        return subprocess.CompletedProcess(command, 0, stdout=listing)
+
+    monkeypatch.setattr("scripts.restore_database.subprocess.run", fake_run)
+    selected, metadata = build_archive_selection(archive, ("public",))
+
+    assert "SCHEMA - public" not in selected
+    assert "TABLE public documents" in selected
+    assert metadata["archive_total_entry_count"] == 3
+    assert metadata["archive_entry_count"] == 2
+    assert metadata["skipped_archive_entries"] == ["SCHEMA public"]
+    assert metadata["archive_selection_sha256"] == hashlib.sha256(selected.encode()).hexdigest()
+
+    with pytest.raises(ValueError, match="exactly one CREATE SCHEMA"):
+        build_archive_selection(archive, ("missing",))
 
 
 def test_rollback_commands_are_explicit_and_ordered() -> None:
@@ -434,6 +481,10 @@ def test_confirmed_restore_records_the_isolated_database_boundary(
         "scripts.restore_database.inspect_restore_preflight",
         lambda **_: {
             "archive_entry_count": 42,
+            "archive_total_entry_count": 42,
+            "archive_selection_sha256": None,
+            "preexisting_schemas": [],
+            "skipped_archive_entries": [],
             "pg_restore_client_major": 17,
             "current_database": "enterprise_doc_restore_drill",
             "current_user": "restore_operator",

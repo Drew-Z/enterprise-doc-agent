@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
 import shutil
 import subprocess
+import tempfile
 import time
 from datetime import UTC, datetime
 from pathlib import Path
@@ -28,6 +30,7 @@ except ModuleNotFoundError:
 PRODUCTION_CONFIRMATION = "restore-production"
 ALLOWED_ENVIRONMENTS = {"local", "test", "staging", "production"}
 STAGING_RESTORE_PREFIX = "enterprise_doc_restore_"
+POSTGRES_IDENTIFIER = re.compile(r"^[a-z_][a-z0-9_]{0,62}$")
 
 
 def database_name_from_url(database_url: str) -> str:
@@ -65,6 +68,47 @@ def inspect_archive(backup: Path) -> int:
     if not entries:
         raise RuntimeError("PostgreSQL archive contains no restore entries")
     return len(entries)
+
+
+def build_archive_selection(
+    backup: Path,
+    preexisting_schemas: tuple[str, ...],
+) -> tuple[str, dict[str, object]]:
+    if any(POSTGRES_IDENTIFIER.fullmatch(schema) is None for schema in preexisting_schemas):
+        raise ValueError("preexisting schema names must be simple PostgreSQL identifiers")
+    if len(set(preexisting_schemas)) != len(preexisting_schemas):
+        raise ValueError("preexisting schema names must be unique")
+    completed = subprocess.run(
+        ["pg_restore", "--list", str(backup)],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    lines = completed.stdout.splitlines()
+    selected_lines = lines.copy()
+    skipped_entries: list[str] = []
+    for schema in preexisting_schemas:
+        matches = [
+            line
+            for line in selected_lines
+            if len(parts := line.split()) >= 7 and parts[3] == "SCHEMA" and parts[5] == schema
+        ]
+        if len(matches) != 1:
+            raise ValueError(f"archive must contain exactly one CREATE SCHEMA entry for {schema}")
+        selected_lines.remove(matches[0])
+        skipped_entries.append(f"SCHEMA {schema}")
+    selected = "\n".join(selected_lines) + "\n"
+    selected_entry_count = sum(
+        1 for line in selected_lines if line.strip() and not line.lstrip().startswith(";")
+    )
+    if selected_entry_count <= 0:
+        raise RuntimeError("PostgreSQL archive selection contains no restore entries")
+    return selected, {
+        "archive_total_entry_count": selected_entry_count + len(skipped_entries),
+        "archive_entry_count": selected_entry_count,
+        "archive_selection_sha256": hashlib.sha256(selected.encode()).hexdigest(),
+        "skipped_archive_entries": skipped_entries,
+    }
 
 
 def inspect_database_identity(database_url: str) -> dict[str, object]:
@@ -117,8 +161,18 @@ def inspect_restore_preflight(
     expected_database: str,
     expected_server_address: str | None,
     require_empty: bool,
+    preexisting_schemas: tuple[str, ...] = (),
 ) -> dict[str, object]:
-    archive_entry_count = inspect_archive(backup)
+    if preexisting_schemas:
+        _, archive_metadata = build_archive_selection(backup, preexisting_schemas)
+    else:
+        archive_entry_count = inspect_archive(backup)
+        archive_metadata = {
+            "archive_total_entry_count": archive_entry_count,
+            "archive_entry_count": archive_entry_count,
+            "archive_selection_sha256": None,
+            "skipped_archive_entries": [],
+        }
     client_major = postgres_client_major("pg_restore")
     identity = inspect_database_identity(database_url)
     if identity.get("current_database") != expected_database:
@@ -141,8 +195,9 @@ def inspect_restore_preflight(
     if require_empty and connection_count != 0:
         raise ValueError("confirmed restore target has other active connections")
     return {
-        "archive_entry_count": archive_entry_count,
         "pg_restore_client_major": client_major,
+        "preexisting_schemas": list(preexisting_schemas),
+        **archive_metadata,
         **identity,
     }
 
@@ -183,9 +238,14 @@ def validate_restore_target(
     return normalized
 
 
-def restore_command(*, database_url: str, backup: Path) -> list[str]:
+def restore_command(
+    *,
+    database_url: str,
+    backup: Path,
+    archive_selection: Path | None = None,
+) -> list[str]:
     database = database_name_from_url(database_url)
-    return [
+    command = [
         "pg_restore",
         "--dbname",
         database,
@@ -193,8 +253,11 @@ def restore_command(*, database_url: str, backup: Path) -> list[str]:
         "--single-transaction",
         "--no-owner",
         "--no-privileges",
-        str(backup),
     ]
+    if archive_selection is not None:
+        command.extend(("--use-list", str(archive_selection)))
+    command.append(str(backup))
+    return command
 
 
 def main() -> None:
@@ -207,6 +270,7 @@ def main() -> None:
     parser.add_argument("--expected-host", required=True)
     parser.add_argument("--expected-database", required=True)
     parser.add_argument("--expected-server-address")
+    parser.add_argument("--preexisting-schema", action="append", default=[])
     parser.add_argument("--source-database")
     parser.add_argument("--expected-sha256")
     parser.add_argument("--confirm", action="store_true")
@@ -234,7 +298,6 @@ def main() -> None:
         )
     except ValueError as error:
         raise SystemExit(str(error)) from error
-    command = restore_command(database_url=normalized_url, backup=args.input)
     if shutil.which("pg_restore") is None:
         raise SystemExit("pg_restore is required")
     if shutil.which("psql") is None:
@@ -248,6 +311,7 @@ def main() -> None:
             expected_database=args.expected_database,
             expected_server_address=args.expected_server_address,
             require_empty=args.confirm,
+            preexisting_schemas=tuple(args.preexisting_schema),
         )
     except (ValueError, RuntimeError, subprocess.CalledProcessError) as error:
         raise SystemExit(str(error)) from error
@@ -271,7 +335,27 @@ def main() -> None:
         raise SystemExit("confirmed restore requires --expected-sha256")
     started_at = datetime.now(UTC).isoformat()
     started = time.monotonic()
+    selection_path: Path | None = None
     try:
+        if args.preexisting_schema:
+            selection, selection_metadata = build_archive_selection(
+                args.input, tuple(args.preexisting_schema)
+            )
+            if (
+                selection_metadata["archive_selection_sha256"]
+                != preflight["archive_selection_sha256"]
+            ):
+                raise RuntimeError("archive selection changed after preflight")
+            fd, selection_name = tempfile.mkstemp(prefix="pg-restore-selection-", suffix=".list")
+            os.close(fd)
+            selection_path = Path(selection_name)
+            selection_path.write_text(selection, encoding="utf-8")
+            selection_path.chmod(0o600)
+        command = restore_command(
+            database_url=normalized_url,
+            backup=args.input,
+            archive_selection=selection_path,
+        )
         subprocess.run(
             command,
             check=True,
@@ -279,6 +363,11 @@ def main() -> None:
         )
     except subprocess.CalledProcessError as error:
         raise SystemExit("database restore failed") from error
+    except (RuntimeError, ValueError) as error:
+        raise SystemExit(str(error)) from error
+    finally:
+        if selection_path is not None:
+            selection_path.unlink(missing_ok=True)
     try:
         restored_identity = inspect_database_identity(normalized_url)
     except (RuntimeError, subprocess.CalledProcessError) as error:
@@ -304,6 +393,10 @@ def main() -> None:
         "server_version_num": preflight["server_version_num"],
         "pg_restore_client_major": preflight["pg_restore_client_major"],
         "archive_entry_count": preflight["archive_entry_count"],
+        "archive_total_entry_count": preflight["archive_total_entry_count"],
+        "archive_selection_sha256": preflight["archive_selection_sha256"],
+        "preexisting_schemas": preflight["preexisting_schemas"],
+        "skipped_archive_entries": preflight["skipped_archive_entries"],
         "target_user_relation_count_before": preflight["user_relation_count"],
         "target_other_connection_count_before": preflight["other_connection_count"],
         "target_user_relation_count_after": restored_relations,
