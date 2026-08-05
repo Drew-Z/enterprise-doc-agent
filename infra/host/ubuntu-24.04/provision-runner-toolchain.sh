@@ -131,7 +131,7 @@ EOF
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
 candidate="$(apt-cache policy "postgresql-client-$POSTGRES_CLIENT_MAJOR" \
-  | awk '/Candidate:/ { print $2; exit }')"
+  | awk '/Candidate:/ { candidate=$2 } END { if (!candidate) exit 1; print candidate }')"
 test "$candidate" = "$POSTGRES_CLIENT_PACKAGE_VERSION" \
   || die "reviewed PostgreSQL client package is unavailable: $POSTGRES_CLIENT_PACKAGE_VERSION"
 apt-get install -y --no-install-recommends --allow-downgrades \

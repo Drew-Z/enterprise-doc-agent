@@ -230,6 +230,7 @@ def test_k3s_and_runner_toolchain_versions_are_exact() -> None:
     package_contract = '"postgresql-client-$POSTGRES_CLIENT_MAJOR=$POSTGRES_CLIENT_PACKAGE_VERSION"'
     assert package_contract in toolchain
     assert "dpkg-query --show" in toolchain
+    assert "END { if (!candidate) exit 1; print candidate }" in toolchain
     assert "pg_dump --version" in toolchain
     assert "pg_restore --version" in toolchain
     assert "Runner.Listener --version" in toolchain
