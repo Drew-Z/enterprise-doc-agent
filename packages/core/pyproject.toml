@@ -34,6 +34,7 @@ enterprise-doc-embedding-rollout = "enterprise_doc_core.documents.embedding_roll
 enterprise-doc-reindex-embeddings = "enterprise_doc_core.documents.reindex:main"
 enterprise-doc-object-snapshot = "enterprise_doc_core.recovery.snapshot_cli:main"
 enterprise-doc-object-restore = "enterprise_doc_core.recovery.restore_cli:main"
+enterprise-doc-object-remap = "enterprise_doc_core.recovery.remap_cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/enterprise_doc_core"]

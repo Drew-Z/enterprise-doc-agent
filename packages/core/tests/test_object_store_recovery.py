@@ -4,6 +4,8 @@ import hashlib
 import json
 from dataclasses import replace
 from io import BytesIO
+from types import SimpleNamespace
+from typing import Any
 from uuid import UUID
 
 import pytest
@@ -13,6 +15,7 @@ from enterprise_doc_core.recovery.object_store import (
     ObjectStoreRecoveryError,
     create_snapshot,
     parse_snapshot_manifest,
+    remap_restore_references,
     restore_snapshot,
 )
 
@@ -101,6 +104,81 @@ class FakeS3Client:
 
     def abort_multipart_upload(self, **kwargs: object) -> None:
         self.multipart_uploads.pop(str(kwargs["UploadId"]), None)
+
+
+class FakeScalarResult:
+    def __init__(self, rows: list[Any]) -> None:
+        self._rows = rows
+
+    def all(self) -> list[Any]:
+        return self._rows
+
+
+class FakeTransaction:
+    def __init__(self, session: FakeSession) -> None:
+        self._session = session
+        self._keys: list[tuple[Any, str]] = []
+
+    async def __aenter__(self) -> FakeTransaction:
+        self._keys = [(row, row.object_key) for rows in self._session.row_groups for row in rows]
+        return self
+
+    async def __aexit__(
+        self,
+        error_type: type[BaseException] | None,
+        error: BaseException | None,
+        traceback: object,
+    ) -> None:
+        if error_type is not None:
+            for row, object_key in self._keys:
+                row.object_key = object_key
+
+
+class FakeSession:
+    def __init__(
+        self,
+        document_versions: list[Any],
+        artifacts: list[Any],
+        upload_sessions: list[Any],
+        *,
+        fail_flush: bool = False,
+    ) -> None:
+        self.row_groups = [document_versions, artifacts, upload_sessions]
+        self._scalar_index = 0
+        self.fail_flush = fail_flush
+        self.flush_count = 0
+
+    async def __aenter__(self) -> FakeSession:
+        return self
+
+    async def __aexit__(
+        self,
+        error_type: type[BaseException] | None,
+        error: BaseException | None,
+        traceback: object,
+    ) -> None:
+        return None
+
+    def begin(self) -> FakeTransaction:
+        return FakeTransaction(self)
+
+    async def scalars(self, _: object) -> FakeScalarResult:
+        result = FakeScalarResult(self.row_groups[self._scalar_index])
+        self._scalar_index += 1
+        return result
+
+    async def flush(self) -> None:
+        self.flush_count += 1
+        if self.fail_flush:
+            raise RuntimeError("super-secret database flush failure")
+
+
+class FakeSessionFactory:
+    def __init__(self, session: FakeSession) -> None:
+        self.session = session
+
+    def __call__(self) -> FakeSession:
+        return self.session
 
 
 def _sha256(body: bytes) -> str:
@@ -425,3 +503,209 @@ def test_snapshot_uses_multipart_copy_above_the_single_copy_limit() -> None:
     assert client.copy_calls == []
     assert len(client.multipart_create_calls) == 2
     assert len(client.multipart_complete_calls) == 2
+
+
+def _remap_fixture() -> tuple[
+    FakeS3Client,
+    object,
+    SimpleNamespace,
+    SimpleNamespace,
+    SimpleNamespace,
+]:
+    client, references = _source_fixture()
+    snapshot = _snapshot(client, references, confirm=True)
+    _restore(client, references, snapshot.manifest, confirm=True)
+    upload_session_id = UUID("00000000-0000-0000-0000-000000000003")
+    document = SimpleNamespace(
+        id=references[0].reference_id,
+        upload_session_id=upload_session_id,
+        object_key=references[0].key,
+        size_bytes=references[0].size_bytes,
+        declared_sha256=references[0].sha256,
+    )
+    upload = SimpleNamespace(
+        id=upload_session_id,
+        object_key=references[0].key,
+    )
+    artifact = SimpleNamespace(
+        id=references[1].reference_id,
+        object_bucket=references[1].bucket,
+        object_key=references[1].key,
+        size_bytes=references[1].size_bytes,
+        content_sha256=references[1].sha256,
+    )
+    return client, snapshot.manifest, document, upload, artifact
+
+
+async def _run_remap(
+    client: FakeS3Client,
+    manifest: Any,
+    document: SimpleNamespace,
+    upload: SimpleNamespace,
+    artifact: SimpleNamespace,
+    *,
+    confirm: bool,
+    fail_flush: bool = False,
+):
+    session = FakeSession(
+        [document],
+        [artifact],
+        [upload],
+        fail_flush=fail_flush,
+    )
+    result = await remap_restore_references(
+        FakeSessionFactory(session),  # type: ignore[arg-type]
+        client=client,
+        manifest=manifest,
+        expected_manifest_sha256=manifest.manifest_sha256,
+        endpoint_host="account.r2.cloudflarestorage.com",
+        expected_endpoint_host="account.r2.cloudflarestorage.com",
+        allowed_buckets=frozenset({"documents", "artifacts"}),
+        documents_bucket="documents",
+        database_name="enterprise_doc_restore_20260805t094423z",
+        expected_database_name="enterprise_doc_restore_20260805t094423z",
+        restore_id="20260805-staging",
+        confirm=confirm,
+    )
+    return result, session
+
+
+@pytest.mark.asyncio
+async def test_restore_reference_remap_is_dry_run_transactional_and_idempotent() -> None:
+    client, manifest, document, upload, artifact = _remap_fixture()
+
+    planned, dry_session = await _run_remap(
+        client,
+        manifest,
+        document,
+        upload,
+        artifact,
+        confirm=False,
+    )
+
+    assert planned.status == "planned"
+    assert planned.initial_state == "source"
+    assert planned.final_state == "source"
+    assert planned.updated_reference_count == 0
+    assert dry_session.flush_count == 0
+    assert document.object_key == "tenant/document.txt"
+    assert upload.object_key == "tenant/document.txt"
+    assert artifact.object_key == "tenant/answer.json"
+
+    confirmed, confirmed_session = await _run_remap(
+        client,
+        manifest,
+        document,
+        upload,
+        artifact,
+        confirm=True,
+    )
+
+    assert confirmed.status == "passed"
+    assert confirmed.initial_state == "source"
+    assert confirmed.final_state == "restored"
+    assert confirmed.updated_reference_count == 3
+    assert confirmed_session.flush_count == 1
+    assert document.object_key.startswith(confirmed.restore_prefix)
+    assert upload.object_key == document.object_key
+    assert artifact.object_key.startswith(confirmed.restore_prefix)
+
+    rerun, rerun_session = await _run_remap(
+        client,
+        manifest,
+        document,
+        upload,
+        artifact,
+        confirm=True,
+    )
+
+    assert rerun.initial_state == "restored"
+    assert rerun.final_state == "restored"
+    assert rerun.updated_reference_count == 0
+    assert rerun_session.flush_count == 0
+
+
+@pytest.mark.asyncio
+async def test_restore_reference_remap_rejects_mixed_or_unverified_state() -> None:
+    client, manifest, document, upload, artifact = _remap_fixture()
+    first_document = next(
+        item
+        for item in manifest.objects
+        if any(reference.reference_type == "document_version" for reference in item.references)
+    )
+    document.object_key = (
+        "enterprise-doc-recovery/restores/20260805-staging/objects/"
+        f"{first_document.snapshot_key.rsplit('/', 1)[-1]}"
+    )
+
+    with pytest.raises(ObjectStoreRecoveryError, match="different states"):
+        await _run_remap(
+            client,
+            manifest,
+            document,
+            upload,
+            artifact,
+            confirm=True,
+        )
+
+    document.object_key = "tenant/document.txt"
+    restored_key = (
+        "enterprise-doc-recovery/restores/20260805-staging/objects/"
+        f"{first_document.snapshot_key.rsplit('/', 1)[-1]}"
+    )
+    del client.objects[("documents", restored_key)]
+
+    with pytest.raises(ObjectStoreRecoveryError, match="head failed"):
+        await _run_remap(
+            client,
+            manifest,
+            document,
+            upload,
+            artifact,
+            confirm=True,
+        )
+    assert document.object_key == "tenant/document.txt"
+    assert upload.object_key == "tenant/document.txt"
+    assert artifact.object_key == "tenant/answer.json"
+
+
+@pytest.mark.asyncio
+async def test_restore_reference_remap_rolls_back_when_database_flush_fails() -> None:
+    client, manifest, document, upload, artifact = _remap_fixture()
+
+    with pytest.raises(RuntimeError, match="database flush failure"):
+        await _run_remap(
+            client,
+            manifest,
+            document,
+            upload,
+            artifact,
+            confirm=True,
+            fail_flush=True,
+        )
+
+    assert document.object_key == "tenant/document.txt"
+    assert upload.object_key == "tenant/document.txt"
+    assert artifact.object_key == "tenant/answer.json"
+
+
+@pytest.mark.asyncio
+async def test_restore_reference_remap_public_record_redacts_keys_and_ids() -> None:
+    client, manifest, document, upload, artifact = _remap_fixture()
+    result, _ = await _run_remap(
+        client,
+        manifest,
+        document,
+        upload,
+        artifact,
+        confirm=True,
+    )
+
+    rendered = json.dumps(result.to_record())
+    for sensitive_value in (
+        "tenant/document.txt",
+        "tenant/answer.json",
+        "00000000-0000-0000-0000-000000000001",
+        "00000000-0000-0000-0000-000000000002",
+    ):
+        assert sensitive_value not in rendered

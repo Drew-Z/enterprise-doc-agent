@@ -7,6 +7,7 @@ from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 
+import enterprise_doc_core.recovery.remap_cli as remap_cli
 import enterprise_doc_core.recovery.restore_cli as restore_cli
 import enterprise_doc_core.recovery.snapshot_cli as snapshot_cli
 from enterprise_doc_core.recovery.object_store import SnapshotManifest, SnapshotResult
@@ -80,6 +81,42 @@ def test_restore_cli_is_dry_run_by_default_and_redacts_failures(
     assert json.loads(output) == {
         "error_class": "RuntimeError",
         "operation": "r2-object-restore",
+        "status": "failed",
+    }
+
+
+def test_remap_cli_is_dry_run_by_default_and_redacts_failures(
+    monkeypatch: object,
+    capsys: object,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(remap_cli, "_execute", _raise_secret_error)
+
+    exit_code = remap_cli.main(
+        [
+            "--manifest-path",
+            str(tmp_path / "manifest.json"),
+            "--expected-manifest-sha256",
+            "0" * 64,
+            "--restore-id",
+            "20260806-staging",
+            "--expected-database-name",
+            "enterprise_doc_restore_20260805t094423z",
+            "--expected-endpoint-host",
+            "account.r2.cloudflarestorage.com",
+            "--allowed-bucket",
+            "documents",
+            "--allowed-bucket",
+            "artifacts",
+        ]
+    )
+
+    output = capsys.readouterr().out
+    assert exit_code == 1
+    assert "super-secret" not in output
+    assert json.loads(output) == {
+        "error_class": "RuntimeError",
+        "operation": "r2-object-reference-remap",
         "status": "failed",
     }
 

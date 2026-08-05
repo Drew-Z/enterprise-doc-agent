@@ -874,11 +874,57 @@ kubectl -n "$namespace" exec "$pod" -c api -- cat "$remote_restore_record" \
 
 The confirmed restore verifies that isolated-database references, manifest entries and
 the listed restored object set are equal in both directions. It never overwrites live
-application keys. This proves the R2 snapshot/restore and DB/R2 integrity sub-gate only;
-it does not make the application read from the isolated prefix. A separate temporary
-application configuration and authenticated upload/ingestion/Agent smoke are still
-required before claiming complete cross-system recovery, and a staging drill alone does
-not establish a production RPO/RTO objective.
+application keys. After reviewing that record, remap only the isolated database to the
+verified restore prefix. The remap CLI locks all durable object-reference rows, requires
+the database and manifest to be entirely in either the source or restored state, verifies
+every restored object's size and streamed SHA-256 again, and updates `document_versions`,
+their linked `upload_sessions`, and durable `agent_artifacts` in one transaction. It is
+dry-run by default, redacts keys and reference IDs from stdout, and recognizes a repeated
+confirmed run as an idempotent zero-update result:
+
+```bash
+remote_remap_record=/dev/shm/${restore_id}-r2-remap-record.json
+local_remap_record=/secure/off-repo/path/${restore_id}-r2-remap-record.json
+remap_args=(
+  --manifest-path /dev/shm/reviewed-r2-snapshot.json
+  --expected-manifest-sha256 "$manifest_sha256"
+  --restore-id "$restore_id"
+  --expected-database-name "$restore_database"
+  --expected-endpoint-host "$endpoint_host"
+  --allowed-bucket "$documents_bucket"
+  --allowed-bucket "$artifacts_bucket"
+  --record-path "$remote_remap_record"
+)
+
+read -rsp 'Isolated restore DATABASE URL: ' RESTORE_DATABASE_URL
+printf '\n'
+run_remap() {
+  printf '%s\n' "$RESTORE_DATABASE_URL" | kubectl -n "$namespace" exec -i "$pod" -c api -- \
+    sh -c 'IFS= read -r DATABASE__URL; export DATABASE__URL; exec "$@"' \
+    sh enterprise-doc-object-remap "${remap_args[@]}" "$@"
+}
+
+run_remap
+# Require initial_state=source, final_state=source and updated_reference_count=0.
+run_remap --confirm
+# Require initial_state=restored, final_state=restored and updated_reference_count=0.
+run_remap --confirm
+unset RESTORE_DATABASE_URL
+
+umask 077
+kubectl -n "$namespace" exec "$pod" -c api -- cat "$remote_remap_record" \
+  > "$local_remap_record"
+```
+
+Do not run `enterprise-doc-object-restore` against that database after the confirmed
+remap: the restore command intentionally requires original source references. Deploy a
+temporary API/worker with no public ingress and with `DATABASE__URL` set to the isolated
+database. Existing artifact rows retain their reviewed bucket and now read from the
+restore prefix. Configure a separate temporary artifacts bucket for newly generated
+Agent output so the smoke cannot write into the live artifact namespace. A separate
+authenticated retrieval/citation/Agent/download smoke is still required before claiming
+complete cross-system recovery, and a staging drill alone does not establish a production
+RPO/RTO objective.
 
 The 2026-08-06 external drill configured reviewed Bucket Lock rules on both buckets,
 copied and readback-verified 27 immutable snapshot objects, restored a fresh 25-relation

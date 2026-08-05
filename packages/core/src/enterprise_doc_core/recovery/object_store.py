@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from enterprise_doc_core.agents.models import AgentArtifact
 from enterprise_doc_core.documents.models import DocumentVersion
+from enterprise_doc_core.uploads.models import UploadSession
 
 SNAPSHOT_ROOT = "enterprise-doc-recovery/snapshots"
 RESTORE_ROOT = "enterprise-doc-recovery/restores"
@@ -152,6 +153,69 @@ class RestoreResult:
             "restore_prefix": self.restore_prefix,
             "schema_version": 1,
             "status": self.status,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class RestoreReferenceLocation:
+    reference_type: Literal["document_version", "agent_artifact"]
+    reference_id: str
+    bucket: str
+    source_key: str
+    restore_key: str
+    size_bytes: int
+    sha256: str
+
+
+@dataclass(frozen=True, slots=True)
+class RestoreRemapPlan:
+    state: Literal["source", "restored"]
+    restore_prefix: str
+    locations: dict[tuple[str, str], RestoreReferenceLocation]
+    upload_session_locations: dict[str, RestoreReferenceLocation]
+    manifest_object_count: int
+    document_version_count: int
+    upload_session_count: int
+    agent_artifact_count: int
+
+    @property
+    def object_count(self) -> int:
+        return self.manifest_object_count
+
+    @property
+    def reference_count(self) -> int:
+        return self.document_version_count + self.upload_session_count + self.agent_artifact_count
+
+
+@dataclass(frozen=True, slots=True)
+class RestoreRemapResult:
+    status: Literal["planned", "passed"]
+    initial_state: Literal["source", "restored"]
+    final_state: Literal["source", "restored"]
+    database_name: str
+    restore_prefix: str
+    manifest_sha256: str
+    object_count: int
+    document_version_count: int
+    upload_session_count: int
+    agent_artifact_count: int
+    updated_reference_count: int
+
+    def to_record(self) -> dict[str, object]:
+        return {
+            "agent_artifact_count": self.agent_artifact_count,
+            "database_name": self.database_name,
+            "document_version_count": self.document_version_count,
+            "final_state": self.final_state,
+            "initial_state": self.initial_state,
+            "manifest_sha256": self.manifest_sha256,
+            "object_count": self.object_count,
+            "operation": "r2-object-reference-remap",
+            "restore_prefix": self.restore_prefix,
+            "schema_version": 1,
+            "status": self.status,
+            "updated_reference_count": self.updated_reference_count,
+            "upload_session_count": self.upload_session_count,
         }
 
 
@@ -743,6 +807,264 @@ def _validate_restore_database(database_name: str, expected_database_name: str) 
         raise ObjectStoreRecoveryError("restore database name does not match expectation")
     if not database_name.startswith("enterprise_doc_restore_"):
         raise ObjectStoreRecoveryError("object restore requires an isolated restore database")
+
+
+def _manifest_remap_locations(
+    manifest: SnapshotManifest,
+    *,
+    restore_id: str,
+    allowed_buckets: frozenset[str],
+) -> tuple[str, dict[tuple[str, str], RestoreReferenceLocation]]:
+    if not allowed_buckets:
+        raise ObjectStoreRecoveryError("bucket allowlist must not be empty")
+    restore_prefix = _restore_prefix(restore_id)
+    locations: dict[tuple[str, str], RestoreReferenceLocation] = {}
+    for item in manifest.objects:
+        if item.bucket not in allowed_buckets:
+            raise ObjectStoreRecoveryError("snapshot manifest uses a bucket outside the allowlist")
+        restore_key = f"{restore_prefix}/objects/{_object_identity(item.bucket, item.source_key)}"
+        for reference in item.references:
+            identity = (reference.reference_type, reference.reference_id)
+            if identity in locations:
+                raise ObjectStoreRecoveryError("snapshot manifest contains duplicate references")
+            locations[identity] = RestoreReferenceLocation(
+                reference_type=reference.reference_type,
+                reference_id=reference.reference_id,
+                bucket=item.bucket,
+                source_key=item.source_key,
+                restore_key=restore_key,
+                size_bytes=item.size_bytes,
+                sha256=item.sha256,
+            )
+    return restore_prefix, locations
+
+
+def _key_state(
+    current_key: str,
+    location: RestoreReferenceLocation,
+) -> Literal["source", "restored"]:
+    if current_key == location.source_key:
+        return "source"
+    if current_key == location.restore_key:
+        return "restored"
+    raise ObjectStoreRecoveryError(
+        "database object reference is outside the reviewed restore mapping"
+    )
+
+
+def _build_remap_plan(
+    manifest: SnapshotManifest,
+    *,
+    restore_id: str,
+    expected_manifest_sha256: str,
+    database_name: str,
+    expected_database_name: str,
+    documents_bucket: str,
+    allowed_buckets: frozenset[str],
+    document_versions: Iterable[Any],
+    upload_sessions: Iterable[Any],
+    artifacts: Iterable[Any],
+) -> RestoreRemapPlan:
+    if (
+        SHA256_PATTERN.fullmatch(expected_manifest_sha256) is None
+        or expected_manifest_sha256 != manifest.manifest_sha256
+        or _payload_sha256(manifest.payload_dict()) != manifest.manifest_sha256
+    ):
+        raise ObjectStoreRecoveryError("snapshot manifest digest does not match expectation")
+    _validate_restore_database(database_name, expected_database_name)
+    if documents_bucket not in allowed_buckets:
+        raise ObjectStoreRecoveryError("documents bucket must be in the bucket allowlist")
+
+    restore_prefix, locations = _manifest_remap_locations(
+        manifest,
+        restore_id=restore_id,
+        allowed_buckets=allowed_buckets,
+    )
+    document_rows = tuple(document_versions)
+    upload_rows = tuple(upload_sessions)
+    artifact_rows = tuple(artifacts)
+    expected_reference_count = len(document_rows) + len(artifact_rows)
+    if len(locations) != expected_reference_count:
+        raise ObjectStoreRecoveryError("snapshot manifest does not match database references")
+
+    states: set[Literal["source", "restored"]] = set()
+    document_locations: dict[str, RestoreReferenceLocation] = {}
+    for version in document_rows:
+        identity = ("document_version", str(version.id))
+        location = locations.get(identity)
+        if location is None or location.bucket != documents_bucket:
+            raise ObjectStoreRecoveryError("snapshot manifest does not match database references")
+        if version.size_bytes != location.size_bytes or version.declared_sha256 != location.sha256:
+            raise ObjectStoreRecoveryError("snapshot manifest does not match database references")
+        document_locations[str(version.id)] = location
+        states.add(_key_state(version.object_key, location))
+
+    for artifact in artifact_rows:
+        identity = ("agent_artifact", str(artifact.id))
+        location = locations.get(identity)
+        if location is None or location.bucket != artifact.object_bucket:
+            raise ObjectStoreRecoveryError("snapshot manifest does not match database references")
+        if artifact.size_bytes != location.size_bytes or artifact.content_sha256 != location.sha256:
+            raise ObjectStoreRecoveryError("snapshot manifest does not match database references")
+        states.add(_key_state(artifact.object_key, location))
+
+    sessions_by_id = {str(session.id): session for session in upload_rows}
+    if len(sessions_by_id) != len(upload_rows):
+        raise ObjectStoreRecoveryError("database contains duplicate upload session rows")
+    upload_session_locations: dict[str, RestoreReferenceLocation] = {}
+    for version in document_rows:
+        session = sessions_by_id.get(str(version.upload_session_id))
+        if session is None:
+            raise ObjectStoreRecoveryError("document version is missing its upload session")
+        location = document_locations[str(version.id)]
+        session_state = _key_state(session.object_key, location)
+        if session_state != _key_state(version.object_key, location):
+            raise ObjectStoreRecoveryError("document and upload references are in different states")
+        upload_session_locations[str(session.id)] = location
+        states.add(session_state)
+
+    if len(states) > 1:
+        raise ObjectStoreRecoveryError("database object references are in a mixed remap state")
+    state: Literal["source", "restored"] = next(iter(states), "source")
+    return RestoreRemapPlan(
+        state=state,
+        restore_prefix=restore_prefix,
+        locations=locations,
+        upload_session_locations=upload_session_locations,
+        manifest_object_count=len(manifest.objects),
+        document_version_count=len(document_rows),
+        upload_session_count=len(upload_rows),
+        agent_artifact_count=len(artifact_rows),
+    )
+
+
+def _verify_restored_inventory(
+    client: Any,
+    *,
+    manifest: SnapshotManifest,
+    restore_prefix: str,
+) -> None:
+    expected_by_bucket: dict[str, set[str]] = {}
+    for item in manifest.objects:
+        restore_key = f"{restore_prefix}/objects/{_object_identity(item.bucket, item.source_key)}"
+        _verify_object(
+            client,
+            bucket=item.bucket,
+            key=restore_key,
+            expected_size=item.size_bytes,
+            expected_sha256=item.sha256,
+        )
+        expected_by_bucket.setdefault(item.bucket, set()).add(restore_key)
+    for bucket, expected_keys in expected_by_bucket.items():
+        observed_keys = _list_object_keys(
+            client,
+            bucket=bucket,
+            prefix=f"{restore_prefix}/",
+        )
+        if observed_keys != expected_keys:
+            raise ObjectStoreRecoveryError(
+                "restored object inventory does not match the remap manifest"
+            )
+
+
+def _apply_remap(
+    plan: RestoreRemapPlan,
+    *,
+    document_versions: Iterable[Any],
+    upload_sessions: Iterable[Any],
+    artifacts: Iterable[Any],
+) -> None:
+    for version in document_versions:
+        version.object_key = plan.locations[("document_version", str(version.id))].restore_key
+    for session in upload_sessions:
+        session.object_key = plan.upload_session_locations[str(session.id)].restore_key
+    for artifact in artifacts:
+        artifact.object_key = plan.locations[("agent_artifact", str(artifact.id))].restore_key
+
+
+async def remap_restore_references(
+    session_factory: async_sessionmaker[AsyncSession],
+    *,
+    client: Any,
+    manifest: SnapshotManifest,
+    expected_manifest_sha256: str,
+    endpoint_host: str,
+    expected_endpoint_host: str,
+    allowed_buckets: frozenset[str],
+    documents_bucket: str,
+    database_name: str,
+    expected_database_name: str,
+    restore_id: str,
+    confirm: bool,
+) -> RestoreRemapResult:
+    endpoint_host = _normalized_host(endpoint_host)
+    if endpoint_host != _normalized_host(expected_endpoint_host):
+        raise ObjectStoreRecoveryError("object-store endpoint host does not match expectation")
+
+    async with session_factory() as session:
+        async with session.begin():
+            document_versions = (
+                await session.scalars(select(DocumentVersion).with_for_update())
+            ).all()
+            artifacts = (
+                await session.scalars(
+                    select(AgentArtifact)
+                    .where(AgentArtifact.status.in_(("draft_ready", "published", "revoked")))
+                    .with_for_update()
+                )
+            ).all()
+            upload_ids = [version.upload_session_id for version in document_versions]
+            upload_sessions = (
+                (
+                    await session.scalars(
+                        select(UploadSession)
+                        .where(UploadSession.id.in_(upload_ids))
+                        .with_for_update()
+                    )
+                ).all()
+                if upload_ids
+                else []
+            )
+            plan = _build_remap_plan(
+                manifest,
+                restore_id=restore_id,
+                expected_manifest_sha256=expected_manifest_sha256,
+                database_name=database_name,
+                expected_database_name=expected_database_name,
+                documents_bucket=documents_bucket,
+                allowed_buckets=allowed_buckets,
+                document_versions=document_versions,
+                upload_sessions=upload_sessions,
+                artifacts=artifacts,
+            )
+            _verify_restored_inventory(
+                client,
+                manifest=manifest,
+                restore_prefix=plan.restore_prefix,
+            )
+            if confirm and plan.state == "source":
+                _apply_remap(
+                    plan,
+                    document_versions=document_versions,
+                    upload_sessions=upload_sessions,
+                    artifacts=artifacts,
+                )
+                await session.flush()
+            return RestoreRemapResult(
+                status="passed" if confirm else "planned",
+                initial_state=plan.state,
+                final_state="restored" if confirm else plan.state,
+                database_name=database_name,
+                restore_prefix=plan.restore_prefix,
+                manifest_sha256=manifest.manifest_sha256,
+                object_count=plan.object_count,
+                document_version_count=plan.document_version_count,
+                upload_session_count=plan.upload_session_count,
+                agent_artifact_count=plan.agent_artifact_count,
+                updated_reference_count=(
+                    plan.reference_count if confirm and plan.state == "source" else 0
+                ),
+            )
 
 
 def create_snapshot(

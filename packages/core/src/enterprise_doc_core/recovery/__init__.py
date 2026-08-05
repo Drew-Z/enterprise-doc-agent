@@ -2,6 +2,7 @@ from enterprise_doc_core.recovery.object_store import (
     ObjectReference,
     ObjectReferenceIdentity,
     ObjectStoreRecoveryError,
+    RestoreRemapResult,
     RestoreResult,
     SnapshotManifest,
     SnapshotObject,
@@ -11,6 +12,7 @@ from enterprise_doc_core.recovery.object_store import (
     endpoint_host_from_url,
     load_object_references,
     parse_snapshot_manifest,
+    remap_restore_references,
     restore_snapshot,
 )
 
@@ -18,6 +20,7 @@ __all__ = [
     "ObjectReference",
     "ObjectReferenceIdentity",
     "ObjectStoreRecoveryError",
+    "RestoreRemapResult",
     "RestoreResult",
     "SnapshotManifest",
     "SnapshotObject",
@@ -27,5 +30,6 @@ __all__ = [
     "endpoint_host_from_url",
     "load_object_references",
     "parse_snapshot_manifest",
+    "remap_restore_references",
     "restore_snapshot",
 ]
