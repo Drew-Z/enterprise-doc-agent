@@ -75,6 +75,7 @@ def test_backup_process_keeps_database_credentials_out_of_argv(
         database_url="postgresql://user:super-secret@db:5432/app",
         output=output,
         overwrite=False,
+        schemas=("public",),
     )
 
     command = captured["command"]
@@ -83,10 +84,24 @@ def test_backup_process_keeps_database_credentials_out_of_argv(
     assert isinstance(environment, dict)
     assert "super-secret" not in " ".join(command)
     assert environment["PGPASSWORD"] == "super-secret"
+    assert command[command.index("--schema") + 1] == "public"
+    assert "--strict-names" in command
     assert output.read_bytes() == b"backup"
     assert record["sha256"] == hashlib.sha256(b"backup").hexdigest()
+    assert record["schemas"] == ["public"]
     if os.name != "nt":
         assert stat.S_IMODE(output.stat().st_mode) == 0o600
+
+
+def test_backup_rejects_schema_patterns_and_duplicates(tmp_path: Path) -> None:
+    for schemas in (("public*",), ("public", "public")):
+        with pytest.raises(ValueError):
+            run_backup(
+                database_url="postgresql://user:pass@db/app",
+                output=tmp_path / f"backup-{len(schemas)}.dump",
+                overwrite=False,
+                schemas=schemas,
+            )
 
 
 def test_restore_preflight_rejects_unsafe_connected_target(

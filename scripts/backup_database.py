@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -27,6 +28,7 @@ POSTGRES_CONNECTION_ENV_KEYS = frozenset(
         "PGUSER",
     }
 )
+POSTGRES_IDENTIFIER = re.compile(r"^[a-z_][a-z0-9_]{0,62}$")
 
 
 def normalize_postgres_url(value: str) -> str:
@@ -77,7 +79,17 @@ def file_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def run_backup(*, database_url: str, output: Path, overwrite: bool) -> dict[str, object]:
+def run_backup(
+    *,
+    database_url: str,
+    output: Path,
+    overwrite: bool,
+    schemas: tuple[str, ...] = (),
+) -> dict[str, object]:
+    if any(POSTGRES_IDENTIFIER.fullmatch(schema) is None for schema in schemas):
+        raise ValueError("backup schema names must be simple PostgreSQL identifiers")
+    if len(set(schemas)) != len(schemas):
+        raise ValueError("backup schema names must be unique")
     if shutil.which("pg_dump") is None:
         raise RuntimeError("pg_dump is required")
     if output.exists() and not overwrite:
@@ -91,15 +103,19 @@ def run_backup(*, database_url: str, output: Path, overwrite: bool) -> dict[str,
     temporary = Path(temporary_name)
     temporary.chmod(0o600)
     try:
+        command = [
+            "pg_dump",
+            "--format=custom",
+            "--no-owner",
+            "--no-privileges",
+        ]
+        if schemas:
+            command.append("--strict-names")
+            for schema in schemas:
+                command.extend(("--schema", schema))
+        command.extend(("--file", str(temporary)))
         subprocess.run(
-            [
-                "pg_dump",
-                "--format=custom",
-                "--no-owner",
-                "--no-privileges",
-                "--file",
-                str(temporary),
-            ],
+            command,
             check=True,
             env=postgres_process_environment(database_url),
         )
@@ -128,6 +144,7 @@ def run_backup(*, database_url: str, output: Path, overwrite: bool) -> dict[str,
         "output": output.name,
         "size_bytes": output.stat().st_size,
         "sha256": digest,
+        "schemas": list(schemas),
         "limitations": [
             "Backup creation alone does not prove restore success or an RPO/RTO objective."
         ],
@@ -139,6 +156,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--database-url-env", default="DATABASE__URL")
     parser.add_argument("--overwrite", action="store_true")
+    parser.add_argument("--schema", action="append", default=[])
     parser.add_argument("--record-path", type=Path)
     args = parser.parse_args()
     database_url = os.environ.get(args.database_url_env)
@@ -149,8 +167,15 @@ def main() -> None:
             database_url=database_url,
             output=args.output,
             overwrite=args.overwrite,
+            schemas=tuple(args.schema),
         )
-    except (FileExistsError, OSError, RuntimeError, subprocess.CalledProcessError) as error:
+    except (
+        FileExistsError,
+        OSError,
+        RuntimeError,
+        ValueError,
+        subprocess.CalledProcessError,
+    ) as error:
         raise SystemExit(str(error)) from error
     rendered = json.dumps(record, indent=2, sort_keys=True) + "\n"
     if args.record_path is not None:
