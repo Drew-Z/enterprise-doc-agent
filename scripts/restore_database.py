@@ -9,7 +9,7 @@ import subprocess
 import time
 from datetime import UTC, datetime
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 try:
     from scripts.backup_database import normalize_postgres_url, postgres_process_environment
@@ -19,6 +19,7 @@ except ModuleNotFoundError:
 
 PRODUCTION_CONFIRMATION = "restore-production"
 ALLOWED_ENVIRONMENTS = {"local", "test", "staging", "production"}
+STAGING_RESTORE_PREFIX = "enterprise_doc_restore_"
 
 
 def file_sha256(path: Path) -> str:
@@ -33,6 +34,8 @@ def validate_restore_target(
     *,
     database_url: str,
     expected_host: str,
+    expected_database: str,
+    source_database: str | None,
     environment: str,
     production_confirmation: str | None,
 ) -> str:
@@ -44,6 +47,18 @@ def validate_restore_target(
         raise ValueError("database URL must identify a PostgreSQL host")
     if parsed.hostname.lower() != expected_host.strip().lower():
         raise ValueError("database URL host does not match --expected-host")
+    database = unquote(parsed.path.lstrip("/"))
+    if not database:
+        raise ValueError("database URL must identify a PostgreSQL database")
+    if database != expected_database.strip():
+        raise ValueError("database URL database does not match --expected-database")
+    if environment == "staging":
+        if not source_database:
+            raise ValueError("staging restore requires --source-database")
+        if database == source_database.strip():
+            raise ValueError("staging restore database must differ from source database")
+        if not database.startswith(STAGING_RESTORE_PREFIX):
+            raise ValueError(f"staging restore database must start with {STAGING_RESTORE_PREFIX}")
     if environment == "production" and production_confirmation != PRODUCTION_CONFIRMATION:
         raise ValueError(
             f"production restore requires --confirm-production {PRODUCTION_CONFIRMATION}"
@@ -73,6 +88,8 @@ def main() -> None:
     parser.add_argument("--database-url-env", default="DATABASE__URL")
     parser.add_argument("--environment", choices=sorted(ALLOWED_ENVIRONMENTS), required=True)
     parser.add_argument("--expected-host", required=True)
+    parser.add_argument("--expected-database", required=True)
+    parser.add_argument("--source-database")
     parser.add_argument("--expected-sha256")
     parser.add_argument("--confirm", action="store_true")
     parser.add_argument("--confirm-production")
@@ -92,6 +109,8 @@ def main() -> None:
         normalized_url = validate_restore_target(
             database_url=database_url,
             expected_host=args.expected_host,
+            expected_database=args.expected_database,
+            source_database=args.source_database,
             environment=args.environment,
             production_confirmation=args.confirm_production,
         )
@@ -121,6 +140,8 @@ def main() -> None:
         "status": "passed",
         "environment": args.environment,
         "target_host": args.expected_host.lower(),
+        "source_database": args.source_database,
+        "target_database": args.expected_database,
         "started_at": started_at,
         "completed_at": datetime.now(UTC).isoformat(),
         "input_sha256": backup_sha256,
@@ -128,7 +149,8 @@ def main() -> None:
         "restore_duration_seconds": max(0.0, time.monotonic() - started),
         "limitations": [
             "This record reports command completion; application smoke and measured RTO "
-            "are separate gates."
+            "are separate gates.",
+            "Object-store versions are not restored or validated by this database command.",
         ],
     }
     rendered = json.dumps(record, indent=2, sort_keys=True) + "\n"

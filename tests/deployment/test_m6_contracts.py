@@ -310,6 +310,7 @@ def test_staging_deployer_bootstrap_cannot_read_or_mount_unreviewed_secrets() ->
         ("", "pods"),
         ("", "pods/log"),
         ("", "events"),
+        ("apps", "replicasets"),
         ("policy", "poddisruptionbudgets"),
         ("networking.k8s.io", "ingresses"),
         ("networking.k8s.io", "networkpolicies"),
@@ -928,6 +929,18 @@ def test_tiny_staging_runbook_keeps_r2_presign_on_the_s3_api_surface() -> None:
     assert "Do not dispatch with the `v0.1.1` Web digest" in runbook
 
 
+def test_tiny_staging_runbook_requires_isolated_restore_and_coherent_rollback() -> None:
+    runbook = (ROOT / "docs/ops/tiny-staging-runbook.md").read_text(encoding="utf-8")
+
+    assert "--expected-database" in runbook
+    assert "--source-database" in runbook
+    assert "enterprise_doc_restore_" in runbook
+    assert "does not restore or" in runbook
+    assert "validate R2 object versions" in runbook
+    assert "same passed release record" in runbook
+    assert "list replicasets.apps" in runbook
+
+
 def test_tiny_staging_runbook_requires_private_control_plane_and_scoped_runner() -> None:
     runbook = (ROOT / "docs/ops/tiny-staging-runbook.md").read_text(encoding="utf-8")
     for private_port in ("6443/tcp", "10250/tcp", "8472/udp"):
@@ -1073,6 +1086,7 @@ def test_ci_workflows_have_no_allow_failure_and_include_release_boundaries() -> 
     assert "kubectl auth can-i get deployments.apps" in rollback
     assert "kubectl auth can-i patch deployments.apps" in rollback
     assert "kubectl auth can-i watch deployments.apps" in rollback
+    assert "kubectl auth can-i list replicasets.apps" in rollback
     assert "STAGING_KUBE_API_SERVER" in deploy
     assert "STAGING_NAMESPACE_UID" in deploy
     assert "actual_api_server" in deploy

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 import sys
@@ -11,6 +12,7 @@ from scripts.backup_database import (
     postgres_process_environment,
     run_backup,
 )
+from scripts.restore_database import main as restore_main
 from scripts.restore_database import restore_command, validate_restore_target
 from scripts.rollback_release import execute_rollback, rollback_commands
 from scripts.rollback_release import main as rollback_main
@@ -217,27 +219,154 @@ def test_rollback_cli_writes_structured_failure_record(
     assert record["error"] == "command exited with status 23"
 
 
-def test_restore_target_requires_matching_host_and_production_confirmation() -> None:
+def test_restore_target_requires_an_isolated_named_staging_database() -> None:
     assert (
         validate_restore_target(
-            database_url="postgresql+psycopg://user:pass@staging-db:5432/app",
+            database_url=(
+                "postgresql+psycopg://user:pass@staging-db:5432/enterprise_doc_restore_drill"
+            ),
             expected_host="staging-db",
+            expected_database="enterprise_doc_restore_drill",
+            source_database="enterprise_doc",
             environment="staging",
             production_confirmation=None,
         )
-        == "postgresql://user:pass@staging-db:5432/app"
+        == "postgresql://user:pass@staging-db:5432/enterprise_doc_restore_drill"
     )
-    with pytest.raises(ValueError):
+
+    with pytest.raises(ValueError, match="does not match --expected-database"):
+        validate_restore_target(
+            database_url="postgresql://user:pass@staging-db:5432/enterprise_doc",
+            expected_host="staging-db",
+            expected_database="enterprise_doc_restore_drill",
+            source_database="enterprise_doc",
+            environment="staging",
+            production_confirmation=None,
+        )
+
+    with pytest.raises(ValueError, match="must differ from source"):
+        validate_restore_target(
+            database_url="postgresql://user:pass@staging-db:5432/enterprise_doc",
+            expected_host="staging-db",
+            expected_database="enterprise_doc",
+            source_database="enterprise_doc",
+            environment="staging",
+            production_confirmation=None,
+        )
+
+    with pytest.raises(ValueError, match="must start with enterprise_doc_restore_"):
+        validate_restore_target(
+            database_url="postgresql://user:pass@staging-db:5432/unrelated",
+            expected_host="staging-db",
+            expected_database="unrelated",
+            source_database="enterprise_doc",
+            environment="staging",
+            production_confirmation=None,
+        )
+
+
+def test_restore_target_requires_matching_host_and_production_confirmation() -> None:
+    with pytest.raises(ValueError, match="does not match --expected-host"):
         validate_restore_target(
             database_url="postgresql://user:pass@other-db:5432/app",
             expected_host="staging-db",
-            environment="staging",
+            expected_database="app",
+            source_database=None,
+            environment="test",
             production_confirmation=None,
         )
-    with pytest.raises(ValueError):
+
+    with pytest.raises(ValueError, match="requires --confirm-production"):
         validate_restore_target(
             database_url="postgresql://user:pass@prod-db:5432/app",
             expected_host="prod-db",
+            expected_database="app",
+            source_database=None,
             environment="production",
             production_confirmation=None,
         )
+
+
+def test_restore_cli_rejects_staging_source_database_before_execution(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    backup = tmp_path / "backup.dump"
+    backup.write_bytes(b"not-executed")
+    monkeypatch.setenv(
+        "DATABASE__URL",
+        "postgresql://user:pass@staging-db:5432/enterprise_doc",
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "restore_database.py",
+            "--input",
+            str(backup),
+            "--environment",
+            "staging",
+            "--expected-host",
+            "staging-db",
+            "--expected-database",
+            "enterprise_doc",
+            "--source-database",
+            "enterprise_doc",
+            "--confirm",
+        ],
+    )
+
+    with pytest.raises(SystemExit, match="must differ from source"):
+        restore_main()
+
+
+def test_confirmed_restore_records_the_isolated_database_boundary(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    backup = tmp_path / "backup.dump"
+    backup.write_bytes(b"isolated-restore-fixture")
+    backup_sha256 = hashlib.sha256(backup.read_bytes()).hexdigest()
+    record_path = tmp_path / "restore.json"
+    captured: dict[str, object] = {}
+
+    def fake_run(command: list[str], *, check: bool, env: dict[str, str]) -> None:
+        captured.update(command=command, check=check, env=env)
+
+    monkeypatch.setenv(
+        "DATABASE__URL",
+        ("postgresql://user:super-secret@staging-db:5432/enterprise_doc_restore_drill"),
+    )
+    monkeypatch.setattr("scripts.restore_database.shutil.which", lambda _: "pg_restore")
+    monkeypatch.setattr("scripts.restore_database.subprocess.run", fake_run)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "restore_database.py",
+            "--input",
+            str(backup),
+            "--environment",
+            "staging",
+            "--expected-host",
+            "staging-db",
+            "--expected-database",
+            "enterprise_doc_restore_drill",
+            "--source-database",
+            "enterprise_doc",
+            "--expected-sha256",
+            backup_sha256,
+            "--confirm",
+            "--record-path",
+            str(record_path),
+        ],
+    )
+
+    restore_main()
+
+    record = json.loads(record_path.read_text(encoding="utf-8"))
+    assert record["source_database"] == "enterprise_doc"
+    assert record["target_database"] == "enterprise_doc_restore_drill"
+    command = captured["command"]
+    assert isinstance(command, list)
+    assert "super-secret" not in " ".join(command)

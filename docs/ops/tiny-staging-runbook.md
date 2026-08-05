@@ -281,11 +281,12 @@ kubectl get validatingadmissionpolicy,validatingadmissionpolicybinding \
 
 It creates the staging namespace, a non-root deployer ServiceAccount and a short,
 explicit RBAC surface. The deployment identity can read administrator-owned
-prerequisites and diagnostics, create/update reviewed Deployments and Jobs, and get
-only the staging Namespace. It cannot read any Kubernetes Secret, create arbitrary
-Pods, change ConfigMaps/PVCs/Services/Ingress/NetworkPolicy/PDB objects, or patch Namespace
-approvals; in particular, it cannot read its own long-lived token Secret. Admission
-further restricts Deployment and Job names, immutable images,
+prerequisites, diagnostics and ReplicaSet rollout history, create/update reviewed
+Deployments and Jobs, and get only the staging Namespace. ReplicaSets remain read-only.
+It cannot read any Kubernetes Secret, create arbitrary Pods, change
+ConfigMaps/PVCs/Services/Ingress/NetworkPolicy/PDB objects, or patch Namespace approvals;
+in particular, it cannot read its own long-lived token Secret. Admission further
+restricts Deployment and Job names, immutable images,
 entrypoints, environment sources, identities, probes and volumes. The identity has no
 `cluster-admin` binding.
 
@@ -302,6 +303,8 @@ test "$(kubectl auth can-i patch persistentvolumeclaims \
   -n enterprise-doc-agent-staging --as "$deployer")" = no
 test "$(kubectl auth can-i create jobs.batch -n enterprise-doc-agent-staging --as "$deployer")" = yes
 test "$(kubectl auth can-i patch deployments.apps -n enterprise-doc-agent-staging \
+  --as "$deployer")" = yes
+test "$(kubectl auth can-i list replicasets.apps -n enterprise-doc-agent-staging \
   --as "$deployer")" = yes
 ```
 
@@ -606,6 +609,69 @@ revision errors from causing an avoidable split, but a runtime/API failure durin
 actual mutations can still leave mixed revisions. Use the uploaded structured command
 record to identify completed and failed mutations, stop further promotion, and reconcile
 all Deployments explicitly; do not describe this as an atomic application rollback.
+
+Before dispatching rollback, map every requested Deployment revision to its immutable
+image and compare all four images with the same passed release record. The same images
+must also appear in the administrator-owned Namespace approval annotations. Do not build a
+rollback target by combining API, Worker, Consumer or Web revisions from different runs,
+even if each image was previously healthy by itself. The 2026-08-05 preflight found an
+incoherent live allowlist; it was replaced with the four images from passed Deploy Staging
+run `30939628894`, which maps all four Deployments to revision 8. Administrator server-side
+rollback dry-runs for revisions 8 and 9 then passed. The first workflow attempt, Rollback
+Release run `30976323048`, failed before mutation because the scoped deployer could not list
+ReplicaSets. Apply the committed read-only ReplicaSet RBAC addition before retrying. A
+successful revision 9 to 8 to 9 drill with authenticated smoke at both stages is still
+required before the rollback gate can close.
+
+### Isolated staging database restore drill
+
+Never point `restore_database.py` at the live staging database. Provision a separately
+named database beginning with `enterprise_doc_restore_`, keep every application workload
+on the source database, and use a PostgreSQL client whose major version is at least the
+server major version. The 2026-08-05 preflight observed PostgreSQL 17.6 and confirmed that
+the staging database role can create an isolated database, but the host did not yet have
+compatible `pg_dump` and `pg_restore` clients. Install that pinned tool boundary before
+executing the drill.
+
+Keep the target URL out of shell history and process arguments. From the repository root,
+run the validation pass first and add `--confirm` only after reviewing the target host,
+source database, target database and backup digest:
+
+```bash
+set -euo pipefail
+source_database=postgres
+restore_database=enterprise_doc_restore_$(date -u +%Y%m%dT%H%M%SZ)
+expected_host=<reviewed-postgresql-host>
+backup_path=/secure/off-repo/path/staging.dump
+backup_sha256=<reviewed-64-hex-sha256>
+record_path=/secure/off-repo/path/staging-restore-record.json
+
+restore_args=(
+  --input "$backup_path"
+  --database-url-env RESTORE_DATABASE_URL
+  --environment staging
+  --expected-host "$expected_host"
+  --expected-database "$restore_database"
+  --source-database "$source_database"
+  --expected-sha256 "$backup_sha256"
+  --record-path "$record_path"
+)
+
+read -rsp 'Isolated restore DATABASE URL: ' RESTORE_DATABASE_URL
+printf '\n'
+export RESTORE_DATABASE_URL
+python scripts/restore_database.py "${restore_args[@]}"
+
+# After reviewing the dry run, execute the exact same boundary with confirmation.
+python scripts/restore_database.py "${restore_args[@]}" --confirm
+unset RESTORE_DATABASE_URL
+```
+
+After restore, compare migration revisions and bounded table counts, then run read-only
+application validation against the isolated target before deleting it. Retain only the
+sanitized restore record and aggregate validation results. The command does not restore or
+validate R2 object versions, so a database-only drill cannot close the cross-system
+recovery or production RPO/RTO gate.
 
 ## Resource guardrails
 
