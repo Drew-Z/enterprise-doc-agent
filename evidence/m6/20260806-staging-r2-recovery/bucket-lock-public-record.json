@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "account_id": "2741446a7478f2d8a5ff31df7e077f17",
+  "checked_at": "2026-08-05T20:19:00.320383+00:00",
+  "prefix": "enterprise-doc-recovery/snapshots/20260806-staging-r2/",
+  "minimum_retention_until": "2026-08-20T00:00:00+00:00",
+  "rules": [
+    {
+      "bucket": "documents",
+      "rule_id": "enterprise-doc-20260806-staging-r2",
+      "enabled": true,
+      "condition_type": "Date",
+      "retention_end": "2026-08-20T00:00:00+00:00"
+    },
+    {
+      "bucket": "artifacts",
+      "rule_id": "enterprise-doc-20260806-staging-r2",
+      "enabled": true,
+      "condition_type": "Date",
+      "retention_end": "2026-08-20T00:00:00+00:00"
+    }
+  ],
+  "token_redacted": true
+}

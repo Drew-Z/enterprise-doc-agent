@@ -827,14 +827,16 @@ manifest_sha256=$(python -c \
   "$local_manifest")
 ```
 
-Restore only while `DATABASE__URL` points at the retained
-`enterprise_doc_restore_...` database. Transfer the reviewed manifest over stdin, then
-provide the isolated URL over stdin as well; neither credential nor URL belongs in argv,
-the manifest, the sanitized record or shell history:
+Restore only while `DATABASE__URL` points at a fresh `enterprise_doc_restore_...`
+database whose object-reference set matches the reviewed manifest. A database retained
+from an earlier backup must be rejected before object mutation if later staging smoke has
+changed those references. Transfer the reviewed manifest over stdin, then provide the
+isolated URL over stdin as well; neither credential nor URL belongs in argv, the manifest,
+the sanitized record or shell history:
 
 ```bash
 restore_id=<reviewed-lowercase-restore-id>
-restore_database=enterprise_doc_restore_20260805t094423z
+restore_database="${RESTORE_DATABASE:?set RESTORE_DATABASE to the fresh isolated database}"
 remote_restore_record=/dev/shm/${restore_id}-r2-restore-record.json
 local_restore_record=/secure/off-repo/path/${restore_id}-r2-restore-record.json
 
@@ -877,6 +879,15 @@ it does not make the application read from the isolated prefix. A separate tempo
 application configuration and authenticated upload/ingestion/Agent smoke are still
 required before claiming complete cross-system recovery, and a staging drill alone does
 not establish a production RPO/RTO objective.
+
+The 2026-08-06 external drill configured reviewed Bucket Lock rules on both buckets,
+copied and readback-verified 27 immutable snapshot objects, restored a fresh 25-relation
+database backup, and copied and readback-verified 27 isolated restore objects. The first
+restore dry run against the older retained database failed before mutation because its
+reference set no longer matched the manifest. The fresh database, manifest and restored
+inventory then matched in both directions. Sanitized evidence is retained in
+`evidence/m6/20260806-staging-r2-recovery.json`; application remapping smoke and production
+RPO/RTO remain open.
 
 ## Resource guardrails
 

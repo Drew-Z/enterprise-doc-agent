@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "operation": "r2-object-snapshot",
+  "status": "passed",
+  "confirmed": true,
+  "endpoint_host": "2741446a7478f2d8a5ff31df7e077f17.r2.cloudflarestorage.com",
+  "snapshot_prefix": "enterprise-doc-recovery/snapshots/20260806-staging-r2",
+  "manifest_bucket": "documents",
+  "manifest_sha256": "f508ad46159512f8ef57a0b028cc7e58780e2bfdb9d972b318e0cb9c720f4894",
+  "object_count": 27,
+  "existing_count": 0,
+  "copied_count": 27,
+  "started_at": "2026-08-05T20:20:39.200105+00:00",
+  "completed_at": "2026-08-05T20:22:04.747788+00:00",
+  "duration_seconds": 85.54768756299745,
+  "private_manifest_retained_off_repository": true
+}

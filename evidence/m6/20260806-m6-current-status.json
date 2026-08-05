@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "evidence_id": "m6-current-status-20260806",
+  "milestone": "M6",
+  "status": "blocked_external",
+  "owner": "database and release owner",
+  "captured_at": "2026-08-06T04:38:00+08:00",
+  "source_commit": "72831ed093f403760b20ca92a98e91e037cbf7ff",
+  "deployment": {
+    "status": "passed",
+    "tag": "v0.1.19",
+    "deploy_run_id": "31035272327",
+    "quality_run_id": "31043302769",
+    "authenticated_smoke": "passed",
+    "images": {
+      "api": "sha256:9e005990b7a956c3b852a0f9a0073d663470d72dff4be31ceaedbc1d4321d80e",
+      "worker": "sha256:99efcc0496eaecaa7635101e44bcffa96498de895b3471676d1e222e47cb205d",
+      "consumer": "sha256:c16fcd14a5ba377fa09674c51d8e04bd2546ba3293f49f7aaf7e2a9d91305b6c",
+      "web": "sha256:6c1e4e34ccde22b66cbed2c579c9fcd47867a4b75baaab9cc1ff59d455db8532"
+    }
+  },
+  "host": {
+    "status": "passed_staging_host",
+    "profile": "single-node-4c8g",
+    "node_status": "Ready",
+    "firewall": "active",
+    "workloads_ready": true,
+    "observation": "evidence/m6/20260806-k3s-host-observation.json"
+  },
+  "recovery": {
+    "release_rollback": "passed",
+    "isolated_postgres_restore": "passed",
+    "bucket_lock": "passed",
+    "immutable_r2_snapshot": "passed",
+    "isolated_r2_restore": "passed",
+    "database_r2_bidirectional_validation": "passed",
+    "isolated_application_recovery_smoke": "blocked_external",
+    "production_rpo_rto": "blocked_external",
+    "latest_evidence": "evidence/m6/20260806-staging-r2-recovery.json"
+  },
+  "remaining_work": [
+    "Implement an isolated object-key mapping or temporary recovery buckets that preserve application lookup semantics.",
+    "Deploy a temporary application profile against the isolated database and recovered objects.",
+    "Run authenticated retrieval, citation, Agent, and integrity smoke against the recovered system.",
+    "Execute a reviewed production-like drill before claiming production RPO and RTO."
+  ],
+  "limitations": [
+    "The M6 delivery and DB/R2 recovery sub-gates are passed, but the overall recovery gate remains open.",
+    "The current cluster is intentionally single-node and does not prove production availability."
+  ]
+}

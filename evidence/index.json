@@ -43,12 +43,13 @@
       "status": "blocked_external",
       "manifest": "evidence/m6/20260720-072628-m6-cicd-kubernetes.json",
       "manifest_commit": "8983107153b3cd8c3d7c501c9c70dc5d6068c2ae",
-      "current_status": "evidence/m6/20260722-m6-current-status.json",
-      "host_observation": "evidence/m6/20260722T0440-k3s-host-observation.json",
+      "current_status": "evidence/m6/20260806-m6-current-status.json",
+      "host_observation": "evidence/m6/20260806-k3s-host-observation.json",
       "rollback_drill": "evidence/m6/20260805-staging-bidirectional-rollback.json",
       "postgres_restore_drill": "evidence/m6/20260805-staging-postgres-restore.json",
       "latest_staging_release": "evidence/m6/20260806-v0.1.19-staging-r2-preflight.json",
-      "r2_snapshot_preflight": "evidence/m6/20260806-v0.1.19-staging-r2-preflight.json"
+      "r2_snapshot_preflight": "evidence/m6/20260806-v0.1.19-staging-r2-preflight.json",
+      "r2_recovery_drill": "evidence/m6/20260806-staging-r2-recovery.json"
     },
     {
       "milestone": "M7",

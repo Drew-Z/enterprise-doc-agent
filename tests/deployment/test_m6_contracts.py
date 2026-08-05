@@ -943,15 +943,21 @@ def test_tiny_staging_runbook_requires_isolated_restore_and_coherent_rollback() 
     assert "list replicasets.apps" in runbook
     assert "immediately reapply the generated administrator" in runbook
     assert "20260805-staging-bidirectional-rollback.json" in runbook
+    assert "verify_r2_bucket_lock.py" in runbook
+    assert "Workers R2 Storage Write" in runbook
+    assert "fresh isolated database" in runbook
+    assert "20260806-staging-r2-recovery.json" in runbook
 
 
-def test_database_restore_rollback_and_r2_preflight_keep_confirmed_r2_gate_open() -> None:
+def test_database_r2_recovery_closes_cross_system_subgate_but_keeps_rpo_rto_open() -> None:
     evidence_path = "evidence/m6/20260805-staging-bidirectional-rollback.json"
     evidence = json.loads((ROOT / evidence_path).read_text(encoding="utf-8"))
     database_evidence_path = "evidence/m6/20260805-staging-postgres-restore.json"
     database_evidence = json.loads((ROOT / database_evidence_path).read_text(encoding="utf-8"))
     preflight_evidence_path = "evidence/m6/20260806-v0.1.19-staging-r2-preflight.json"
     preflight_evidence = json.loads((ROOT / preflight_evidence_path).read_text(encoding="utf-8"))
+    r2_evidence_path = "evidence/m6/20260806-staging-r2-recovery.json"
+    r2_evidence = json.loads((ROOT / r2_evidence_path).read_text(encoding="utf-8"))
     gate = json.loads(
         (ROOT / "evidence/gates/m6-backup-restore-rollback.json").read_text(encoding="utf-8")
     )
@@ -971,9 +977,10 @@ def test_database_restore_rollback_and_r2_preflight_keep_confirmed_r2_gate_open(
         evidence_path,
         database_evidence_path,
         preflight_evidence_path,
+        r2_evidence_path,
     ]
-    assert "Bucket Lock" in gate["blocking_reason"]
-    assert "confirmed immutable R2 snapshot" in gate["blocking_reason"]
+    assert "application cannot yet remap" in gate["blocking_reason"]
+    assert "production RPO/RTO" in gate["blocking_reason"]
     assert database_evidence["status"] == "passed_database_subgate"
     assert database_evidence["restore"]["relations_before"] == 0
     assert database_evidence["restore"]["relations_after"] == 25
@@ -992,11 +999,47 @@ def test_database_restore_rollback_and_r2_preflight_keep_confirmed_r2_gate_open(
     assert preflight_evidence["r2_snapshot_preflight"]["remote_mutations"] == 0
     assert preflight_evidence["recovery_gate"]["bucket_lock_configured"] is False
     assert preflight_evidence["recovery_gate"]["confirmed_snapshot_executed"] is False
+    assert r2_evidence["status"] == "passed_r2_cross_system_subgate"
+    assert r2_evidence["bucket_lock"]["verified_before_snapshot"] is True
+    assert r2_evidence["database_recovery"]["relations_before"] == 0
+    assert r2_evidence["database_recovery"]["relations_after"] == 25
+    assert r2_evidence["object_snapshot"]["object_count"] == 27
+    assert r2_evidence["object_snapshot"]["copied_count"] == 27
+    assert r2_evidence["object_restore"]["object_count"] == 27
+    assert r2_evidence["object_restore"]["copied_count"] == 27
+    validation = r2_evidence["cross_system_validation"]
+    assert validation["status"] == "passed"
+    assert validation["database_reference_count"] == 27
+    assert validation["manifest_object_count"] == 27
+    assert validation["snapshot_object_count"] == 27
+    assert validation["restored_object_count"] == 27
+    assert validation["database_manifest_bidirectional_match"] is True
+    assert validation["manifest_restore_bidirectional_match"] is True
+    assert validation["database_restore_bidirectional_match"] is True
+    assert r2_evidence["secret_handling"] == {
+        "cloudflare_token_in_argv": False,
+        "database_urls_in_argv": False,
+        "database_urls_persisted": False,
+        "private_manifest_in_git": False,
+        "private_object_keys_in_public_evidence": False,
+        "private_records_retained_off_repository": True,
+    }
+    assert any("application" in item.lower() for item in r2_evidence["limitations"])
+    for artifact in r2_evidence["artifacts"]:
+        artifact_path = ROOT / artifact["path"]
+        assert artifact_path.is_file()
+        body = artifact_path.read_bytes()
+        assert hashlib.sha256(body).hexdigest() == artifact["sha256"]
+        rendered = body.decode("utf-8").lower()
+        assert "database__url" not in rendered
+        assert "secret_access_key" not in rendered
+        assert "cloudflare_api_token" not in rendered
     m6 = next(item for item in index["evidence"] if item["milestone"] == "M6")
     assert m6["rollback_drill"] == evidence_path
     assert m6["postgres_restore_drill"] == database_evidence_path
     assert m6["latest_staging_release"] == preflight_evidence_path
     assert m6["r2_snapshot_preflight"] == preflight_evidence_path
+    assert m6["r2_recovery_drill"] == r2_evidence_path
 
 
 def test_signed_release_and_authenticated_staging_evidence_close_delivery_gates() -> None:

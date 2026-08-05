@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "operation": "r2-object-restore",
+  "status": "passed",
+  "confirmed": true,
+  "endpoint_host": "2741446a7478f2d8a5ff31df7e077f17.r2.cloudflarestorage.com",
+  "database_name": "enterprise_doc_restore_20260805t203144z",
+  "restore_prefix": "enterprise-doc-recovery/restores/20260806-staging-r2-restore",
+  "manifest_sha256": "f508ad46159512f8ef57a0b028cc7e58780e2bfdb9d972b318e0cb9c720f4894",
+  "object_count": 27,
+  "existing_count": 0,
+  "copied_count": 27,
+  "started_at": "2026-08-05T20:33:35.034627+00:00",
+  "completed_at": "2026-08-05T20:34:53.140372+00:00",
+  "duration_seconds": 78.10574943898246
+}

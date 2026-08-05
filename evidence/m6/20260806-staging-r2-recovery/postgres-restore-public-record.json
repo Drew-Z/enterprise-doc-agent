@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "operation": "postgres-restore",
+  "status": "passed",
+  "environment": "staging",
+  "source_database": "postgres",
+  "target_database": "enterprise_doc_restore_20260805t203144z",
+  "target_host": "aws-0-ap-southeast-1.pooler.supabase.com",
+  "target_server_address": "2406:da18:167b:f902:fb4c:3efe:7daa:e198/128",
+  "target_server_port": 5432,
+  "server_version_num": 170006,
+  "pg_restore_client_major": 17,
+  "archive_entry_count": 194,
+  "archive_total_entry_count": 195,
+  "archive_selection_sha256": "ec1ab345c2ae59b980b907972f42b53bc30924e3272577191d17054be07503d6",
+  "preexisting_schemas": [
+    "public"
+  ],
+  "skipped_archive_entries": [
+    "SCHEMA public"
+  ],
+  "target_user_relation_count_before": 0,
+  "target_other_connection_count_before": 0,
+  "target_user_relation_count_after": 25,
+  "started_at": "2026-08-05T20:31:53.903350+00:00",
+  "completed_at": "2026-08-05T20:32:06.680805+00:00",
+  "input_sha256": "13707f58c021abbdde430e93efc0fc7f4a46c2f572eeff0821e33b34b89806c4",
+  "backup_age_seconds_at_restore": 15.546361446380615,
+  "restore_duration_seconds": 12.777466706000268,
+  "limitations": [
+    "This record reports database restore completion; isolated-prefix application smoke is separate.",
+    "This staging timing is not a production RPO/RTO claim."
+  ]
+}

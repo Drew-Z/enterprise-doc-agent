@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "evidence_type": "staging-k3s-host-observation",
+  "status": "passed_staging_host",
+  "captured_at": "2026-08-06T04:37:22+08:00",
+  "host": {
+    "operating_system": "Ubuntu 24.04.4 LTS",
+    "kernel": "6.8.0-136-generic",
+    "cpu_capacity": "4",
+    "memory_capacity_kib": 7869640,
+    "disk_capacity_bytes": 190109507584,
+    "disk_available_bytes": 158148591616,
+    "swap_bytes": 0
+  },
+  "cluster": {
+    "distribution": "K3s",
+    "version": "v1.36.2+k3s1",
+    "container_runtime": "containerd://2.3.2-k3s2",
+    "node": "vm-0-2-ubuntu",
+    "node_uid": "d8e3d531-c782-4517-9c57-7bfb8e2b530f",
+    "node_status": "Ready",
+    "profile": "single-node-4c8g",
+    "allocatable_cpu": "3400m",
+    "allocatable_memory_kib": 6104264,
+    "memory_pressure": false,
+    "disk_pressure": false,
+    "pid_pressure": false
+  },
+  "resource_observation": {
+    "node_cpu_millicores": 126,
+    "node_cpu_percent": 3,
+    "node_memory_mib": 3914,
+    "node_memory_percent": 65,
+    "host_memory_available_bytes": 5724557312,
+    "application_pod_memory_mib": {
+      "api_replica_1": 146,
+      "api_replica_2": 144,
+      "consumer": 162,
+      "prometheus": 31,
+      "redis": 4,
+      "web_replica_1": 5,
+      "web_replica_2": 4,
+      "worker": 156
+    }
+  },
+  "workloads": {
+    "namespace": "enterprise-doc-agent-staging",
+    "api_ready": "2/2",
+    "worker_ready": "1/1",
+    "consumer_ready": "1/1",
+    "web_ready": "2/2",
+    "prometheus_ready": "1/1",
+    "redis_ready": "1/1",
+    "restart_count": 0
+  },
+  "network_boundary": {
+    "ufw_status": "active",
+    "default_incoming": "deny",
+    "default_outgoing": "allow",
+    "public_interface_denied_ports": [
+      "80/tcp",
+      "443/tcp",
+      "6443/tcp",
+      "10250/tcp",
+      "8472/udp"
+    ],
+    "ssh_allowed_interface": "tailscale0",
+    "cloudflare_tunnel_origin": "127.0.0.1:20241"
+  },
+  "limitations": [
+    "This is a single-node staging and recovery-drill environment, not a highly available production cluster.",
+    "Resource observations are point-in-time measurements and are not capacity-test evidence.",
+    "K3s control-plane and kubelet listeners remain bound on the host; UFW denies their public-interface ingress."
+  ]
+}

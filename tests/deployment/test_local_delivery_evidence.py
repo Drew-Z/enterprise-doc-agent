@@ -69,24 +69,26 @@ def test_reviewed_local_delivery_verification_is_additive() -> None:
     assert completed_at >= started_at
 
 
-def test_current_m6_status_links_the_real_k3s_observation_without_claiming_rollout() -> None:
+def test_current_m6_status_links_live_staging_and_keeps_remaining_recovery_open() -> None:
     index = _load(INDEX_PATH)
     formal_m6 = next(item for item in index["evidence"] if item["milestone"] == "M6")
     current = _load(_repo_path(str(formal_m6["current_status"])))
     host = _load(_repo_path(str(formal_m6["host_observation"])))
 
     assert current["status"] == "blocked_external"
-    assert current["k3s_inventory"]["status"] == "ready"
-    assert current["web_image_contract"]["status"] == "rebuild_required"
-    assert current["host_security"]["firewall"] == "inactive"
-    assert current["model_gateway_contract"]["status"] == "blocked_external"
-    assert set(current["github_staging_environment"]["missing_variables"]) >= {
-        "STAGING_MODEL_BASE_URL",
-        "STAGING_MODEL_NAME",
-    }
-    assert host["status"] == "blocked_external"
+    assert current["deployment"]["status"] == "passed"
+    assert current["deployment"]["authenticated_smoke"] == "passed"
+    assert current["host"]["workloads_ready"] is True
+    assert current["host"]["firewall"] == "active"
+    assert current["recovery"]["database_r2_bidirectional_validation"] == "passed"
+    assert current["recovery"]["isolated_application_recovery_smoke"] == "blocked_external"
+    assert current["recovery"]["production_rpo_rto"] == "blocked_external"
+    assert host["status"] == "passed_staging_host"
     assert host["cluster"]["node_status"] == "Ready"
-    assert "no application workload applied" in str(host["resources"]["interpretation"])
+    assert host["cluster"]["profile"] == "single-node-4c8g"
+    assert host["workloads"]["api_ready"] == "2/2"
+    assert host["network_boundary"]["ufw_status"] == "active"
+    assert "not a highly available production cluster" in host["limitations"][0]
 
 
 def test_local_delivery_artifacts_match_reviewed_commit() -> None:

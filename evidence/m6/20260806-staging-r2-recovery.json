@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "evidence_type": "staging-r2-immutable-snapshot-restore-drill",
+  "status": "passed_r2_cross_system_subgate",
+  "captured_at": "2026-08-06T04:35:00+08:00",
+  "source_commits": {
+    "object_store_recovery": "2ff44015d456f1fbbbdf43a02203924a0c6acd75",
+    "bucket_lock_verifier": "72831ed093f403760b20ca92a98e91e037cbf7ff"
+  },
+  "environment": {
+    "external_execution": true,
+    "cluster_profile": "single-node-4c8g",
+    "namespace": "enterprise-doc-agent-staging",
+    "cloudflare_account_id": "2741446a7478f2d8a5ff31df7e077f17",
+    "object_store_endpoint_host": "2741446a7478f2d8a5ff31df7e077f17.r2.cloudflarestorage.com",
+    "database_provider": "Supabase PostgreSQL",
+    "database_endpoint_host": "aws-0-ap-southeast-1.pooler.supabase.com"
+  },
+  "bucket_lock": {
+    "status": "passed",
+    "rule_id": "enterprise-doc-20260806-staging-r2",
+    "prefix": "enterprise-doc-recovery/snapshots/20260806-staging-r2/",
+    "buckets": [
+      "documents",
+      "artifacts"
+    ],
+    "retention_end": "2026-08-20T00:00:00+00:00",
+    "verified_before_snapshot": true
+  },
+  "database_recovery": {
+    "status": "passed",
+    "source_database": "postgres",
+    "target_database": "enterprise_doc_restore_20260805t203144z",
+    "backup_sha256": "13707f58c021abbdde430e93efc0fc7f4a46c2f572eeff0821e33b34b89806c4",
+    "backup_size_bytes": 213102,
+    "backup_age_seconds_at_restore": 15.546361446380615,
+    "restore_duration_seconds": 12.777466706000268,
+    "relations_before": 0,
+    "relations_after": 25
+  },
+  "object_snapshot": {
+    "status": "passed",
+    "snapshot_prefix": "enterprise-doc-recovery/snapshots/20260806-staging-r2",
+    "manifest_sha256": "f508ad46159512f8ef57a0b028cc7e58780e2bfdb9d972b318e0cb9c720f4894",
+    "object_count": 27,
+    "copied_count": 27,
+    "duration_seconds": 85.54768756299745,
+    "private_manifest_retained_off_repository": true
+  },
+  "object_restore": {
+    "status": "passed",
+    "restore_prefix": "enterprise-doc-recovery/restores/20260806-staging-r2-restore",
+    "object_count": 27,
+    "copied_count": 27,
+    "duration_seconds": 78.10574943898246
+  },
+  "cross_system_validation": {
+    "status": "passed",
+    "database_reference_count": 27,
+    "manifest_object_count": 27,
+    "snapshot_object_count": 27,
+    "restored_object_count": 27,
+    "database_manifest_bidirectional_match": true,
+    "manifest_restore_bidirectional_match": true,
+    "database_restore_bidirectional_match": true,
+    "source_size_and_streamed_sha256_verified": true,
+    "snapshot_readback_sha256_verified": true,
+    "restore_readback_sha256_verified": true
+  },
+  "safe_failures": [
+    {
+      "stage": "R2 restore against retained 2026-08-05 database",
+      "reason": "The retained database predated the authenticated staging smoke and no longer matched the immutable manifest reference set.",
+      "result": "The deterministic contract rejected the restore before object mutation; a fresh public-schema backup was restored into a new isolated database."
+    }
+  ],
+  "secret_handling": {
+    "cloudflare_token_in_argv": false,
+    "database_urls_in_argv": false,
+    "database_urls_persisted": false,
+    "private_manifest_in_git": false,
+    "private_object_keys_in_public_evidence": false,
+    "private_records_retained_off_repository": true
+  },
+  "artifacts": [
+    {
+      "path": "evidence/m6/20260806-staging-r2-recovery/bucket-lock-public-record.json",
+      "kind": "r2-bucket-lock-verification",
+      "sha256": "63405e707157a29f18295e89ebf25389073f9328b3c819ee323be7e04f365aa5"
+    },
+    {
+      "path": "evidence/m6/20260806-staging-r2-recovery/postgres-backup-public-record.json",
+      "kind": "postgres-backup-record",
+      "sha256": "d86334906d183756a1b53ea07c32938013475f235cb1b4d039b036f0be22dd21"
+    },
+    {
+      "path": "evidence/m6/20260806-staging-r2-recovery/postgres-restore-public-record.json",
+      "kind": "postgres-restore-record",
+      "sha256": "00a7adc435d26ef6f133262b404fd1c5863a7137e8a93b642cf792db721d822b"
+    },
+    {
+      "path": "evidence/m6/20260806-staging-r2-recovery/r2-snapshot-public-record.json",
+      "kind": "r2-snapshot-record",
+      "sha256": "4d9ab53c865f21f9ee95010b3df958804c9a89545f4f73709c2e9bdb4075e394"
+    },
+    {
+      "path": "evidence/m6/20260806-staging-r2-recovery/r2-restore-public-record.json",
+      "kind": "r2-restore-record",
+      "sha256": "738251835d8127aa09f5559c37595b16c83241fefe3cfb8ff3c80c7dbee83333"
+    },
+    {
+      "path": "evidence/m6/20260806-staging-r2-recovery/cross-system-validation.json",
+      "kind": "database-r2-bidirectional-validation",
+      "sha256": "7cff64188cc2c1f5026c5620ec69f606acfa418566f1030cfeb623d2e4d37bba"
+    }
+  ],
+  "limitations": [
+    "The restored object inventory uses an isolated hashed recovery prefix; the current application does not remap original database object references to those keys.",
+    "No temporary application deployment has consumed the isolated database and restored object set, so application-level recovery smoke remains open.",
+    "The measured staging backup and restore timings do not establish a production RPO or RTO objective.",
+    "The isolated databases and recovery prefixes require an explicit retention and cleanup decision after the drill."
+  ]
+}

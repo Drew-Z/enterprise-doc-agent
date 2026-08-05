@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "status": "passed_r2_cross_system_subgate",
+  "database_name": "enterprise_doc_restore_20260805t203144z",
+  "database_relation_count": 25,
+  "manifest_sha256": "f508ad46159512f8ef57a0b028cc7e58780e2bfdb9d972b318e0cb9c720f4894",
+  "database_reference_count": 27,
+  "manifest_object_count": 27,
+  "snapshot_object_count": 27,
+  "restored_object_count": 27,
+  "manifest_matches_database_references": true,
+  "restored_inventory_matches_manifest": true,
+  "restored_inventory_matches_database_references": true,
+  "source_objects_verified_by_size_and_streamed_sha256": true,
+  "snapshot_objects_verified_by_readback_sha256": true,
+  "restored_objects_verified_by_readback_sha256": true,
+  "safe_failures": [
+    {
+      "stage": "restore against retained 2026-08-05 database",
+      "result": "rejected before object mutation",
+      "reason": "The retained database predated the authenticated staging smoke and its reference set did not match the immutable snapshot manifest."
+    }
+  ],
+  "credentials_and_private_object_keys_redacted": true
+}

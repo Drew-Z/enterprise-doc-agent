@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "operation": "postgres-backup",
+  "status": "passed",
+  "schemas": [
+    "public"
+  ],
+  "started_at": "2026-08-05T20:31:45.258560+00:00",
+  "completed_at": "2026-08-05T20:31:51.140422+00:00",
+  "size_bytes": 213102,
+  "sha256": "13707f58c021abbdde430e93efc0fc7f4a46c2f572eeff0821e33b34b89806c4",
+  "limitations": [
+    "Backup creation alone does not prove restore success or a production RPO/RTO objective."
+  ]
+}
