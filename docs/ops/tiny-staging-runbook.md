@@ -734,13 +734,53 @@ only after readback succeeds. Objects larger than R2's 4.995 GiB single-request 
 multipart copy. The manifest contains private object keys and reference IDs; retain it
 off-repository with mode `0600` and never upload it as ordinary deployment evidence.
 
-Before the confirmed snapshot, add a **Bucket lock rule** in the Cloudflare dashboard to
-both the documents and artifacts buckets. Use the exact prefix
-`enterprise-doc-recovery/snapshots/<drill-id>/` and a reviewed retention period. Bucket
-Lock is a Cloudflare control-plane feature; S3 Object Lock and bucket-versioning APIs are
-not substitutes. Record the rule names, prefixes and retention end without retaining the
-Cloudflare token. See the official [Bucket locks documentation](https://developers.cloudflare.com/r2/buckets/bucket-locks/)
+Before the confirmed snapshot, add a **Bucket lock rule** to both the documents and
+artifacts buckets. Use the exact prefix `enterprise-doc-recovery/snapshots/<drill-id>/`
+and a reviewed retention period. Bucket Lock is a Cloudflare control-plane feature; the
+S3 access key, S3 Object Lock and bucket-versioning APIs are not substitutes. Use a
+Cloudflare API token through the `CLOUDFLARE_API_TOKEN` environment variable, never argv,
+and pin Wrangler for repeatability. The token requires account-level
+`Workers R2 Storage Write`; bucket-item-only or S3 credentials cannot edit bucket
+configuration. Record the rule names, prefixes and retention end without retaining the
+token. See the official [Bucket locks documentation](https://developers.cloudflare.com/r2/buckets/bucket-locks/),
+[Wrangler environment variables](https://developers.cloudflare.com/workers/wrangler/system-environment-variables/)
 and [R2 limits](https://developers.cloudflare.com/r2/platform/limits/).
+
+```bash
+set -euo pipefail
+wrangler_version=4.119.0
+account_id=2741446a7478f2d8a5ff31df7e077f17
+drill_id=20260806-staging-r2
+snapshot_prefix="enterprise-doc-recovery/snapshots/${drill_id}/"
+lock_rule_id="enterprise-doc-${drill_id}"
+lock_retention_date=$(date -u -d '+14 days' +%F)
+documents_bucket=documents
+artifacts_bucket=artifacts
+lock_record=/secure/off-repo/path/${drill_id}-bucket-lock.json
+
+read -rsp 'Cloudflare control-plane API token: ' CLOUDFLARE_API_TOKEN
+printf '\n'
+export CLOUDFLARE_API_TOKEN
+export CLOUDFLARE_ACCOUNT_ID="$account_id"
+
+npx --yes "wrangler@${wrangler_version}" r2 bucket lock add \
+  "$documents_bucket" "$lock_rule_id" "$snapshot_prefix" \
+  --retention-date "$lock_retention_date" --force
+npx --yes "wrangler@${wrangler_version}" r2 bucket lock add \
+  "$artifacts_bucket" "$lock_rule_id" "$snapshot_prefix" \
+  --retention-date "$lock_retention_date" --force
+
+uv run python scripts/verify_r2_bucket_lock.py \
+  --account-id "$account_id" \
+  --bucket "$documents_bucket" \
+  --bucket "$artifacts_bucket" \
+  --prefix "$snapshot_prefix" \
+  --rule-id "$lock_rule_id" \
+  --minimum-retention-until "${lock_retention_date}T00:00:00Z" \
+  --output "$lock_record"
+
+unset CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID
+```
 
 Run the command from the deployed API image so it uses the same database schema, object
 store client and environment-only credentials as staging. `/dev/shm` is used because the
