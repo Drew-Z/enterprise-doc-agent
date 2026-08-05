@@ -227,6 +227,14 @@ def test_k3s_and_runner_toolchain_versions_are_exact() -> None:
     assert '"$KUSTOMIZE_LINUX_AMD64_SHA256" "$kustomize_asset_path"' in toolchain
     assert '"$RUNNER_SHA256" "$runner_asset_path"' in toolchain
     assert '"$POSTGRES_PGDG_KEY_SHA256" "$postgres_key_asset_path"' in toolchain
+    assert 'if test "$observed_kustomize_version" != "$KUSTOMIZE_VERSION"; then' in toolchain
+    assert toolchain.index('observed_kustomize_version=""') < toolchain.index(
+        "https://github.com/kubernetes-sigs/kustomize/releases/download/"
+    )
+    assert 'if test "$observed_runner_version" != "$RUNNER_VERSION"; then' in toolchain
+    assert toolchain.index('observed_runner_version=""') < toolchain.index(
+        "https://github.com/actions/runner/releases/download/"
+    )
     package_contract = '"postgresql-client-$POSTGRES_CLIENT_MAJOR=$POSTGRES_CLIENT_PACKAGE_VERSION"'
     assert package_contract in toolchain
     assert "dpkg-query --show" in toolchain

@@ -68,7 +68,7 @@ if test "$MODE" != apply && {
 fi
 
 check_toolchain() {
-  test "$(kustomize version)" = "$KUSTOMIZE_VERSION"
+  test "$(/usr/local/bin/kustomize version)" = "$KUSTOMIZE_VERSION"
   test "$(/opt/enterprise-doc-toolchain/python/bin/python -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')" = "$PYTHON_MINOR"
   /opt/enterprise-doc-toolchain/python/bin/python - <<PY
 import cryptography
@@ -137,21 +137,27 @@ test "$candidate" = "$POSTGRES_CLIENT_PACKAGE_VERSION" \
 apt-get install -y --no-install-recommends --allow-downgrades \
   "postgresql-client-$POSTGRES_CLIENT_MAJOR=$POSTGRES_CLIENT_PACKAGE_VERSION"
 
-kustomize_asset="kustomize_${KUSTOMIZE_VERSION}_linux_amd64.tar.gz"
-if test -n "$KUSTOMIZE_ASSET_PATH"; then
-  test -f "$KUSTOMIZE_ASSET_PATH" || die "Kustomize asset does not exist: $KUSTOMIZE_ASSET_PATH"
-  kustomize_asset_path="$KUSTOMIZE_ASSET_PATH"
-else
-  kustomize_asset_path="$tmp_dir/$kustomize_asset"
-  curl --fail --location --proto '=https' --proto-redir '=https' \
-    --connect-timeout 15 --max-time 300 --retry 4 --retry-all-errors \
-    --output "$kustomize_asset_path" \
-    "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2F${KUSTOMIZE_VERSION}/${kustomize_asset}"
+observed_kustomize_version=""
+if test -x /usr/local/bin/kustomize; then
+  observed_kustomize_version="$(/usr/local/bin/kustomize version)"
 fi
-printf '%s  %s\n' "$KUSTOMIZE_LINUX_AMD64_SHA256" "$kustomize_asset_path" \
-  | sha256sum --check --status || die "Kustomize asset SHA-256 mismatch"
-tar -xzf "$kustomize_asset_path" -C "$tmp_dir" kustomize
-install -o root -g root -m 0755 "$tmp_dir/kustomize" /usr/local/bin/kustomize
+if test "$observed_kustomize_version" != "$KUSTOMIZE_VERSION"; then
+  kustomize_asset="kustomize_${KUSTOMIZE_VERSION}_linux_amd64.tar.gz"
+  if test -n "$KUSTOMIZE_ASSET_PATH"; then
+    test -f "$KUSTOMIZE_ASSET_PATH" || die "Kustomize asset does not exist: $KUSTOMIZE_ASSET_PATH"
+    kustomize_asset_path="$KUSTOMIZE_ASSET_PATH"
+  else
+    kustomize_asset_path="$tmp_dir/$kustomize_asset"
+    curl --fail --location --proto '=https' --proto-redir '=https' \
+      --connect-timeout 15 --max-time 300 --retry 4 --retry-all-errors \
+      --output "$kustomize_asset_path" \
+      "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2F${KUSTOMIZE_VERSION}/${kustomize_asset}"
+  fi
+  printf '%s  %s\n' "$KUSTOMIZE_LINUX_AMD64_SHA256" "$kustomize_asset_path" \
+    | sha256sum --check --status || die "Kustomize asset SHA-256 mismatch"
+  tar -xzf "$kustomize_asset_path" -C "$tmp_dir" kustomize
+  install -o root -g root -m 0755 "$tmp_dir/kustomize" /usr/local/bin/kustomize
+fi
 
 install -d -o root -g root -m 0755 /opt/enterprise-doc-toolchain
 python3.12 -m venv /opt/enterprise-doc-toolchain/python
@@ -160,25 +166,25 @@ python3.12 -m venv /opt/enterprise-doc-toolchain/python
 chown -R root:root /opt/enterprise-doc-toolchain
 chmod -R go-w /opt/enterprise-doc-toolchain
 
-runner_asset="actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz"
-if test -n "$RUNNER_ASSET_PATH"; then
-  test -f "$RUNNER_ASSET_PATH" || die "Actions runner asset does not exist: $RUNNER_ASSET_PATH"
-  runner_asset_path="$RUNNER_ASSET_PATH"
-else
-  runner_asset_path="$tmp_dir/$runner_asset"
-  curl --fail --location --proto '=https' --proto-redir '=https' \
-    --connect-timeout 15 --max-time 900 --retry 4 --retry-all-errors \
-    --output "$runner_asset_path" \
-    "https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/${runner_asset}"
-fi
-printf '%s  %s\n' "$RUNNER_SHA256" "$runner_asset_path" \
-  | sha256sum --check --status || die "Actions runner asset SHA-256 mismatch"
 install -d -o "$RUNNER_USER" -g "$RUNNER_USER" -m 0750 /opt/actions-runner
 observed_runner_version=""
 if test -x /opt/actions-runner/bin/Runner.Listener; then
   observed_runner_version="$(/opt/actions-runner/bin/Runner.Listener --version)"
 fi
 if test "$observed_runner_version" != "$RUNNER_VERSION"; then
+  runner_asset="actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz"
+  if test -n "$RUNNER_ASSET_PATH"; then
+    test -f "$RUNNER_ASSET_PATH" || die "Actions runner asset does not exist: $RUNNER_ASSET_PATH"
+    runner_asset_path="$RUNNER_ASSET_PATH"
+  else
+    runner_asset_path="$tmp_dir/$runner_asset"
+    curl --fail --location --proto '=https' --proto-redir '=https' \
+      --connect-timeout 15 --max-time 900 --retry 4 --retry-all-errors \
+      --output "$runner_asset_path" \
+      "https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/${runner_asset}"
+  fi
+  printf '%s  %s\n' "$RUNNER_SHA256" "$runner_asset_path" \
+    | sha256sum --check --status || die "Actions runner asset SHA-256 mismatch"
   test ! -e /opt/actions-runner/.runner \
     || die "refusing to replace a registered Actions runner; unregister it first"
   runner_staging="/opt/actions-runner.new.$$"
