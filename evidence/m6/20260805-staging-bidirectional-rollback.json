@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "evidence_type": "staging-bidirectional-rollback-drill",
+  "status": "passed_with_restore_gate_open",
+  "captured_at": "2026-08-05T14:05:07+08:00",
+  "source_commit": "8c2145a0aeb471eaefc66bfa83b3944d41156194",
+  "quality_run": {
+    "run_id": "30978342996",
+    "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/30978342996",
+    "status": "passed"
+  },
+  "cluster": {
+    "profile": "single-node-4c8g",
+    "namespace": "enterprise-doc-agent-staging",
+    "migration_revision": "20260804_0011",
+    "prerequisites_sha256": "052310d2916a014ed6063e4c626f7c734981a86c7419ea3aa5b2f76358d094eb",
+    "prerequisite_validation": {
+      "status": "passed",
+      "approval_keys_checked": 17,
+      "live_objects_checked": 25
+    },
+    "replicaset_rbac": {
+      "list": "allowed",
+      "patch": "denied",
+      "update": "denied"
+    }
+  },
+  "safe_preflight_failures": [
+    {
+      "run_id": "30976323048",
+      "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/30976323048",
+      "reason": "The scoped deployer could not list ReplicaSet rollout history.",
+      "rollback_mutation_count": 0
+    },
+    {
+      "run_id": "30979001847",
+      "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/30979001847",
+      "reason": "A bootstrap reapply restored the stable Namespace baseline and removed release-specific image approvals; admission failed closed until the reviewed prerequisites were reapplied.",
+      "rollback_mutation_count": 0
+    }
+  ],
+  "legs": [
+    {
+      "name": "historical_release",
+      "run_id": "30979462976",
+      "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/30979462976",
+      "requested_revisions": {
+        "enterprise-doc-api": 8,
+        "enterprise-doc-worker": 8,
+        "enterprise-doc-consumer": 8,
+        "enterprise-doc-web": 8
+      },
+      "resulting_revision": 10,
+      "images": {
+        "api": "ghcr.io/drew-z/enterprise-doc-api@sha256:4f1dc81936f141acf0e5414a073aab0541a3518dc99d022584fe6335c45eb5a1",
+        "worker": "ghcr.io/drew-z/enterprise-doc-worker@sha256:ab9903cafaf8b71b519bf10b781f157f8088f6e524d184fb66c780b90f9048f6",
+        "consumer": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:cd700c8366426531e4707e2008e2f3536c4b7c5c4a30e331851705e247297425",
+        "web": "ghcr.io/drew-z/enterprise-doc-web@sha256:188e69e02af2581d3ed8e3331b0c2d94d46589d065d1a6ef368d471ba9105186"
+      },
+      "rollback_command_seconds": 20.575,
+      "workflow_job_seconds": 143.0,
+      "authenticated_smoke": {
+        "status": "passed",
+        "duration_seconds": 69.219,
+        "steps": [
+          "upload_session_created",
+          "object_uploaded",
+          "upload_completed",
+          "document_ready",
+          "agent_run_created",
+          "agent_run_succeeded"
+        ]
+      },
+      "operator_drill_seconds": 311.699
+    },
+    {
+      "name": "original_release",
+      "run_id": "30979754380",
+      "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/30979754380",
+      "requested_revisions": {
+        "enterprise-doc-api": 9,
+        "enterprise-doc-worker": 9,
+        "enterprise-doc-consumer": 9,
+        "enterprise-doc-web": 9
+      },
+      "resulting_revision": 11,
+      "images": {
+        "api": "ghcr.io/drew-z/enterprise-doc-api@sha256:33c9d21cc3a7706a34edf57625f8c940a58f458038b9b9e126f1fc862158d3db",
+        "worker": "ghcr.io/drew-z/enterprise-doc-worker@sha256:ec7c726200bf2ba40ae0534f6dbc62556f6e5e22a1b47253f51001963abbfd03",
+        "consumer": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:0ca9ebca41cc03baa8096c0ac495add3418456e7408fbc2d655f6a26831d44eb",
+        "web": "ghcr.io/drew-z/enterprise-doc-web@sha256:939eba4b52f896aafe9e8860f676b4c443c30c997c2bd57a67ecc468fcdf26ad"
+      },
+      "rollback_command_seconds": 15.35,
+      "workflow_job_seconds": 119.0,
+      "authenticated_smoke": {
+        "status": "passed",
+        "duration_seconds": 72.187,
+        "steps": [
+          "upload_session_created",
+          "object_uploaded",
+          "upload_completed",
+          "document_ready",
+          "agent_run_created",
+          "agent_run_succeeded"
+        ]
+      },
+      "operator_drill_seconds": 429.846
+    }
+  ],
+  "secret_handling": {
+    "smoke_principal": "dedicated synthetic staging membership",
+    "token": "short-lived, rotated immediately before smoke, not retained",
+    "identifiers_retained": false
+  },
+  "limitations": [
+    "Kubernetes rollout undo is not transactional across Deployments.",
+    "Rollback does not reverse a destructive database migration.",
+    "Operator drill time includes manual orchestration and is not a production RTO claim.",
+    "The smoke covers one authenticated main path, not capacity, failover, model quality, or production availability.",
+    "No isolated PostgreSQL restore or versioned R2 restore executed, so the backup/restore/RPO/RTO gate remains open."
+  ]
+}

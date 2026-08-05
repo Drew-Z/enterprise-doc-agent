@@ -3,7 +3,7 @@
   "milestone": "M6",
   "requirement": "M6-R5",
   "owner": "database and release owner",
-  "blocking_reason": "The repository contains guarded scripts, but no isolated restore, release rollback, data validation, or measured RPO and RTO drill has executed.",
+  "blocking_reason": "The 2026-08-05 staging bidirectional release rollback and authenticated application smoke passed. No isolated PostgreSQL restore, versioned R2 restore, cross-system data validation, or defensible production RPO/RTO drill has executed.",
   "prerequisites": [
     "Provide an isolated restore target",
     "Provide a real backup and object-store version set",
@@ -16,7 +16,10 @@
     "Deployment rollback record",
     "Measured RPO and RTO"
   ],
+  "completed_evidence": [
+    "evidence/m6/20260805-staging-bidirectional-rollback.json"
+  ],
   "state": "open",
   "status": "blocked_external",
-  "review_date": "2026-07-19"
+  "review_date": "2026-08-05"
 }

@@ -279,6 +279,14 @@ kubectl get validatingadmissionpolicy,validatingadmissionpolicybinding \
   | grep enterprise-doc-staging
 ```
 
+The bootstrap Namespace contains only the stable profile and Pod Security baseline; the
+generated administrator prerequisites add release-specific approval annotations. A later
+client-side bootstrap apply therefore restores that baseline and removes those approvals.
+After every bootstrap update, immediately reapply the generated administrator
+prerequisites and rerun `validate_staging_prerequisites.py` before dispatching deploy or
+rollback. Admission fails closed while the approval annotations are absent; do not leave
+the cluster in that intermediate state.
+
 It creates the staging namespace, a non-root deployer ServiceAccount and a short,
 explicit RBAC surface. The deployment identity can read administrator-owned
 prerequisites, diagnostics and ReplicaSet rollout history, create/update reviewed
@@ -616,12 +624,21 @@ must also appear in the administrator-owned Namespace approval annotations. Do n
 rollback target by combining API, Worker, Consumer or Web revisions from different runs,
 even if each image was previously healthy by itself. The 2026-08-05 preflight found an
 incoherent live allowlist; it was replaced with the four images from passed Deploy Staging
-run `30939628894`, which maps all four Deployments to revision 8. Administrator server-side
-rollback dry-runs for revisions 8 and 9 then passed. The first workflow attempt, Rollback
-Release run `30976323048`, failed before mutation because the scoped deployer could not list
-ReplicaSets. Apply the committed read-only ReplicaSet RBAC addition before retrying. A
-successful revision 9 to 8 to 9 drill with authenticated smoke at both stages is still
-required before the rollback gate can close.
+run `30939628894`, which maps all four Deployments to revision 8. Rollback Release run
+`30976323048` then failed before mutation because the scoped deployer could not list
+ReplicaSets. Run `30979001847` also failed before mutation when a bootstrap update removed
+the release-specific Namespace approvals; the exact reviewed prerequisite manifest was
+reapplied and its SHA-256 `052310d2916a014ed6063e4c626f7c734981a86c7419ea3aa5b2f76358d094eb`
+passed all 17 approval-key and 25 live-object checks.
+
+The bidirectional drill then passed. Run `30979462976` rolled all four Deployments from
+revision 9 images to the coherent revision 8 images, which Kubernetes recorded as revision
+10; authenticated upload, ingestion and Agent smoke passed in 69.219 seconds. Run
+`30979754380` restored the original revision 9 images as revision 11; the same smoke passed
+in 72.187 seconds. The sanitized command timings, exact images, safe preflight failures and
+limitations are retained in
+`evidence/m6/20260805-staging-bidirectional-rollback.json`. This closes the staging release
+rollback sub-gate, but it does not close database/object recovery or production RPO/RTO.
 
 ### Isolated staging database restore drill
 

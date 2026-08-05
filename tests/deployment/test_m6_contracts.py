@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 import shutil
 import subprocess
@@ -939,6 +940,32 @@ def test_tiny_staging_runbook_requires_isolated_restore_and_coherent_rollback() 
     assert "validate R2 object versions" in runbook
     assert "same passed release record" in runbook
     assert "list replicasets.apps" in runbook
+    assert "immediately reapply the generated administrator" in runbook
+    assert "20260805-staging-bidirectional-rollback.json" in runbook
+
+
+def test_bidirectional_rollback_evidence_keeps_the_restore_gate_open() -> None:
+    evidence_path = "evidence/m6/20260805-staging-bidirectional-rollback.json"
+    evidence = json.loads((ROOT / evidence_path).read_text(encoding="utf-8"))
+    gate = json.loads(
+        (ROOT / "evidence/gates/m6-backup-restore-rollback.json").read_text(encoding="utf-8")
+    )
+    index = json.loads((ROOT / "evidence/index.json").read_text(encoding="utf-8"))
+
+    assert evidence["status"] == "passed_with_restore_gate_open"
+    assert all(item["rollback_mutation_count"] == 0 for item in evidence["safe_preflight_failures"])
+    legs = {item["name"]: item for item in evidence["legs"]}
+    assert set(legs) == {"historical_release", "original_release"}
+    for leg in legs.values():
+        assert leg["authenticated_smoke"]["status"] == "passed"
+        assert len(set(leg["requested_revisions"].values())) == 1
+        assert len(leg["images"]) == 4
+    assert gate["state"] == "open"
+    assert gate["status"] == "blocked_external"
+    assert gate["completed_evidence"] == [evidence_path]
+    assert "R2 restore" in gate["blocking_reason"]
+    m6 = next(item for item in index["evidence"] if item["milestone"] == "M6")
+    assert m6["rollback_drill"] == evidence_path
 
 
 def test_tiny_staging_runbook_requires_private_control_plane_and_scoped_runner() -> None:
