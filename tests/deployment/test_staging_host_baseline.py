@@ -184,6 +184,9 @@ def test_k3s_and_runner_toolchain_versions_are_exact() -> None:
         "PYTHON_MINOR=3.12",
         "PYYAML_VERSION=6.0.3",
         "CRYPTOGRAPHY_VERSION=50.0.0",
+        "POSTGRES_CLIENT_MAJOR=17",
+        "POSTGRES_CLIENT_PACKAGE_VERSION=17.10-1.pgdg24.04+1",
+        "POSTGRES_PGDG_KEY_SHA256=0144068502a1eddd2a0280ede10ef607d1ec592ce819940991203941564e8e76",
     }
     assert expected <= set(versions.splitlines())
 
@@ -220,8 +223,15 @@ def test_k3s_and_runner_toolchain_versions_are_exact() -> None:
     assert "useradd" in toolchain
     assert "--kustomize-asset" in toolchain
     assert "--runner-asset" in toolchain
+    assert "--postgres-key-asset" in toolchain
     assert '"$KUSTOMIZE_LINUX_AMD64_SHA256" "$kustomize_asset_path"' in toolchain
     assert '"$RUNNER_SHA256" "$runner_asset_path"' in toolchain
+    assert '"$POSTGRES_PGDG_KEY_SHA256" "$postgres_key_asset_path"' in toolchain
+    package_contract = '"postgresql-client-$POSTGRES_CLIENT_MAJOR=$POSTGRES_CLIENT_PACKAGE_VERSION"'
+    assert package_contract in toolchain
+    assert "dpkg-query --show" in toolchain
+    assert "pg_dump --version" in toolchain
+    assert "pg_restore --version" in toolchain
     assert "Runner.Listener --version" in toolchain
     assert "refusing to replace a registered Actions runner" in toolchain
     assert "./config.sh" not in toolchain

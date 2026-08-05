@@ -7,6 +7,7 @@ source "$SCRIPT_DIR/versions.env"
 MODE=""
 KUSTOMIZE_ASSET_PATH=""
 RUNNER_ASSET_PATH=""
+POSTGRES_KEY_ASSET_PATH=""
 
 usage() {
   cat <<'EOF'
@@ -14,7 +15,8 @@ Usage:
   provision-runner-toolchain.sh --check
   sudo provision-runner-toolchain.sh --apply \
     [--kustomize-asset /path/to/kustomize.tar.gz] \
-    [--runner-asset /path/to/actions-runner.tar.gz]
+    [--runner-asset /path/to/actions-runner.tar.gz] \
+    [--postgres-key-asset /path/to/apt.postgresql.org.asc]
 
 Installs the pinned root-owned deployment toolchain and unpacked repository runner.
 It does not register the runner and accepts no GitHub token.
@@ -38,14 +40,16 @@ while (($#)); do
       usage
       exit 0
       ;;
-    --kustomize-asset | --runner-asset)
+    --kustomize-asset | --runner-asset | --postgres-key-asset)
       option="$1"
       shift
       (($#)) || die "$option requires a path"
       if test "$option" = --kustomize-asset; then
         KUSTOMIZE_ASSET_PATH="$1"
-      else
+      elif test "$option" = --runner-asset; then
         RUNNER_ASSET_PATH="$1"
+      else
+        POSTGRES_KEY_ASSET_PATH="$1"
       fi
       shift
       ;;
@@ -55,7 +59,11 @@ while (($#)); do
   esac
 done
 test -n "$MODE" || { usage >&2; exit 2; }
-if test "$MODE" != apply && { test -n "$KUSTOMIZE_ASSET_PATH" || test -n "$RUNNER_ASSET_PATH"; }; then
+if test "$MODE" != apply && {
+  test -n "$KUSTOMIZE_ASSET_PATH" \
+    || test -n "$RUNNER_ASSET_PATH" \
+    || test -n "$POSTGRES_KEY_ASSET_PATH"
+}; then
   die "asset paths are valid only with --apply"
 fi
 
@@ -71,13 +79,19 @@ PY
   test -x /opt/actions-runner/run.sh
   test "$(stat -c '%U' /opt/actions-runner)" = "$RUNNER_USER"
   test "$(/opt/actions-runner/bin/Runner.Listener --version)" = "$RUNNER_VERSION"
+  test "$(dpkg-query --show --showformat='${Version}' \
+    "postgresql-client-$POSTGRES_CLIENT_MAJOR")" = "$POSTGRES_CLIENT_PACKAGE_VERSION"
+  test "$(pg_dump --version | sed -E 's/^pg_dump \(PostgreSQL\) ([0-9]+).*/\1/')" \
+    = "$POSTGRES_CLIENT_MAJOR"
+  test "$(pg_restore --version | sed -E 's/^pg_restore \(PostgreSQL\) ([0-9]+).*/\1/')" \
+    = "$POSTGRES_CLIENT_MAJOR"
 }
 
 if test "$MODE" = check; then
   check_toolchain
-  printf 'runner_version=%s\nrunner_label=%s\nkustomize_version=%s\n' \
+  printf 'runner_version=%s\nrunner_label=%s\nkustomize_version=%s\npostgres_client_package=%s\n' \
     "$(/opt/actions-runner/bin/Runner.Listener --version)" "$RUNNER_LABEL" \
-    "$KUSTOMIZE_VERSION"
+    "$KUSTOMIZE_VERSION" "$POSTGRES_CLIENT_PACKAGE_VERSION"
   exit 0
 fi
 
@@ -88,6 +102,40 @@ fi
 
 tmp_dir="$(mktemp -d)"
 trap 'rm -rf "$tmp_dir"' EXIT
+
+postgres_key_asset="apt.postgresql.org.asc"
+if test -n "$POSTGRES_KEY_ASSET_PATH"; then
+  test -f "$POSTGRES_KEY_ASSET_PATH" \
+    || die "PostgreSQL repository key does not exist: $POSTGRES_KEY_ASSET_PATH"
+  postgres_key_asset_path="$POSTGRES_KEY_ASSET_PATH"
+else
+  postgres_key_asset_path="$tmp_dir/$postgres_key_asset"
+  curl --fail --location --proto '=https' --proto-redir '=https' \
+    --connect-timeout 15 --max-time 300 --retry 4 --retry-all-errors \
+    --output "$postgres_key_asset_path" \
+    "https://www.postgresql.org/media/keys/ACCC4CF8.asc"
+fi
+printf '%s  %s\n' "$POSTGRES_PGDG_KEY_SHA256" "$postgres_key_asset_path" \
+  | sha256sum --check --status || die "PostgreSQL repository key SHA-256 mismatch"
+install -d -o root -g root -m 0755 /usr/share/postgresql-common/pgdg
+install -o root -g root -m 0644 "$postgres_key_asset_path" \
+  /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+cat >/etc/apt/sources.list.d/pgdg.sources <<'EOF'
+Types: deb
+URIs: https://apt.postgresql.org/pub/repos/apt
+Suites: noble-pgdg
+Architectures: amd64
+Components: main
+Signed-By: /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+EOF
+export DEBIAN_FRONTEND=noninteractive
+apt-get update
+candidate="$(apt-cache policy "postgresql-client-$POSTGRES_CLIENT_MAJOR" \
+  | awk '/Candidate:/ { print $2; exit }')"
+test "$candidate" = "$POSTGRES_CLIENT_PACKAGE_VERSION" \
+  || die "reviewed PostgreSQL client package is unavailable: $POSTGRES_CLIENT_PACKAGE_VERSION"
+apt-get install -y --no-install-recommends --allow-downgrades \
+  "postgresql-client-$POSTGRES_CLIENT_MAJOR=$POSTGRES_CLIENT_PACKAGE_VERSION"
 
 kustomize_asset="kustomize_${KUSTOMIZE_VERSION}_linux_amd64.tar.gz"
 if test -n "$KUSTOMIZE_ASSET_PATH"; then

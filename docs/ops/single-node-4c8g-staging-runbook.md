@@ -155,8 +155,11 @@ sudo bash ./provision-runner-toolchain.sh --check
 The scripts verify SHA-256 for the K3s, Kustomize and Actions runner artifacts. K3s is
 fixed to `v1.36.2+k3s1`; packaged Traefik remains enabled. The deployment toolchain is
 Python 3.12 with `PyYAML==6.0.3`, `cryptography==50.0.0`, and Kustomize `v5.7.1`.
-The runner archive is unpacked for `gha-staging`, but registration remains a separate
-repository-scoped token-bearing operation.
+It also installs the reviewed PGDG package
+`postgresql-client-17=17.10-1.pgdg24.04+1`; `--check` validates the exact package and
+the `pg_dump`/`pg_restore` major version. The runner archive is unpacked for
+`gha-staging`, but registration remains a separate repository-scoped token-bearing
+operation.
 
 If GitHub Releases is too slow from the host, transfer the reviewed binary out of band and
 run `sudo bash ./install-k3s.sh --apply --asset /tmp/k3s`. The script still rejects any
@@ -172,7 +175,8 @@ The same restricted-network path is available for the deployment toolchain:
 ```bash
 sudo bash ./provision-runner-toolchain.sh --apply \
   --kustomize-asset /tmp/kustomize_v5.7.1_linux_amd64.tar.gz \
-  --runner-asset /tmp/actions-runner-linux-x64-2.336.0.tar.gz
+  --runner-asset /tmp/actions-runner-linux-x64-2.336.0.tar.gz \
+  --postgres-key-asset /tmp/apt.postgresql.org.asc
 ```
 
 Verify the cluster locally on the node:

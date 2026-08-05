@@ -222,7 +222,10 @@ The isolated runner uses a pre-provisioned toolchain instead of downloading
 Python, kubectl and Kustomize during every release. Provision Python 3.12 at
 `/opt/enterprise-doc-toolchain/python/bin/python`, install exactly `PyYAML==6.0.3`
 and `cryptography==50.0.0` into that virtual environment, install Kustomize
-`v5.7.1` on `PATH`, and provide a working kubectl client. Both workflows fail
+`v5.7.1` on `PATH`, install the reviewed
+`postgresql-client-17=17.10-1.pgdg24.04+1`, and provide a working kubectl client. The
+host toolchain check verifies the exact PostgreSQL package plus the
+`pg_dump`/`pg_restore` major. Both workflows fail
 before kubeconfig creation if this contract drifts. Keep the toolchain root-owned
 and non-writable by the runner account; upgrades require a reviewed repository
 change and an administrator-side toolchain update.
@@ -647,8 +650,9 @@ named database beginning with `enterprise_doc_restore_`, keep every application 
 on the source database, and use a PostgreSQL client whose major version is at least the
 server major version. The 2026-08-05 preflight observed PostgreSQL 17.6 and confirmed that
 the staging database role can create an isolated database, but the host did not yet have
-compatible `pg_dump` and `pg_restore` clients. Install that pinned tool boundary before
-executing the drill.
+compatible `pg_dump` and `pg_restore` clients. Install that pinned tool boundary by
+applying and checking `infra/host/ubuntu-24.04/provision-runner-toolchain.sh`; do not
+install an unpinned `postgresql-client` package by hand before executing the drill.
 
 Keep the target URL out of shell history and process arguments. From the repository root,
 run the validation pass first and add `--confirm` only after reviewing the target host,
