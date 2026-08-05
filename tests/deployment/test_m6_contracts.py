@@ -304,6 +304,7 @@ def test_staging_deployer_bootstrap_cannot_read_or_mount_unreviewed_secrets() ->
     read_only = {"get", "list", "watch"}
     for identity in (
         ("", "configmaps"),
+        ("", "persistentvolumeclaims"),
         ("", "serviceaccounts"),
         ("", "services"),
         ("", "pods"),
@@ -354,6 +355,7 @@ def test_staging_deployer_bootstrap_cannot_read_or_mount_unreviewed_secrets() ->
     assert "enterprise-doc-agent/approved-worker-images" in policy_text
     assert "enterprise-doc-agent/approved-consumer-images" in policy_text
     assert "enterprise-doc-agent/approved-web-images" in policy_text
+    assert "enterprise-doc-agent/approved-prometheus-images" in policy_text
     assert "automountServiceAccountToken" in policy_text
     assert "serviceAccountToken" in policy_text
     assert "pod-security.kubernetes.io/enforce" in policy_text
@@ -388,6 +390,7 @@ def test_staging_deployer_bootstrap_cannot_read_or_mount_unreviewed_secrets() ->
     }
     assert guarded_resources == {
         "configmaps",
+        "persistentvolumeclaims",
         "serviceaccounts",
         "services",
         "poddisruptionbudgets",
@@ -676,6 +679,7 @@ def test_single_node_4c8g_overlay_renders_reviewed_capacity_shape() -> None:
         "enterprise-doc-consumer",
         "enterprise-doc-web",
         "enterprise-doc-redis",
+        "enterprise-doc-prometheus",
     }
     assert {name: item["spec"]["replicas"] for name, item in deployments.items()} == {
         "enterprise-doc-api": 2,
@@ -683,6 +687,7 @@ def test_single_node_4c8g_overlay_renders_reviewed_capacity_shape() -> None:
         "enterprise-doc-consumer": 1,
         "enterprise-doc-web": 2,
         "enterprise-doc-redis": 1,
+        "enterprise-doc-prometheus": 1,
     }
     assert not [item for item in documents if item.get("kind") == "PodDisruptionBudget"]
 
@@ -707,6 +712,10 @@ def test_single_node_4c8g_overlay_renders_reviewed_capacity_shape() -> None:
             {"cpu": "100m", "memory": "128Mi"},
             {"cpu": "250m", "memory": "256Mi"},
         ),
+        "enterprise-doc-prometheus": (
+            {"cpu": "100m", "memory": "256Mi"},
+            {"cpu": "300m", "memory": "512Mi"},
+        ),
     }
     total_request_memory = 0
     total_limit_memory = 0
@@ -722,6 +731,14 @@ def test_single_node_4c8g_overlay_renders_reviewed_capacity_shape() -> None:
         if name == "enterprise-doc-redis":
             assert "128mb" in container["args"]
             assert "noeviction" in container["args"]
+        elif name == "enterprise-doc-prometheus":
+            assert deployment["spec"]["strategy"] == {"type": "Recreate"}
+            pod = deployment["spec"]["template"]["spec"]
+            assert pod["automountServiceAccountToken"] is False
+            assert pod["securityContext"]["runAsUser"] == 65534
+            assert pod["securityContext"]["fsGroup"] == 65534
+            assert container["args"][-1] == "--web.listen-address=0.0.0.0:9090"
+            assert {volume["name"] for volume in pod["volumes"]} == {"config", "storage"}
         else:
             assert deployment["spec"]["strategy"] == {
                 "type": "RollingUpdate",
@@ -753,6 +770,27 @@ def test_single_node_4c8g_overlay_renders_reviewed_capacity_shape() -> None:
         if item.get("kind") in {"Deployment", "StatefulSet"}
         and item["metadata"]["name"] in {"postgres", "minio"}
     ]
+    prometheus_service = _named_resource(documents, "Service", "enterprise-doc-prometheus")
+    assert prometheus_service["spec"]["type"] == "ClusterIP"
+    assert not [
+        item
+        for item in documents
+        if item.get("kind") == "Service"
+        and item["spec"].get("type") in {"NodePort", "LoadBalancer"}
+    ]
+    prometheus_pvc = _named_resource(
+        documents, "PersistentVolumeClaim", "enterprise-doc-prometheus-data"
+    )
+    assert prometheus_pvc["spec"]["storageClassName"] == "local-path"
+    assert prometheus_pvc["spec"]["resources"]["requests"]["storage"] == "5Gi"
+    assert {
+        item["metadata"]["name"] for item in documents if item.get("kind") == "NetworkPolicy"
+    } >= {
+        "enterprise-doc-prometheus-egress",
+        "enterprise-doc-api-metrics-ingress",
+        "enterprise-doc-worker-metrics-ingress",
+        "enterprise-doc-consumer-metrics-ingress",
+    }
 
 
 def test_staging_deploy_workflow_can_select_the_reviewed_tiny_overlay() -> None:
@@ -1139,6 +1177,7 @@ def test_staging_workflows_preserve_admin_boundary_and_clean_credentials() -> No
     assert "if kubectl auth can-i create pods" in configure_run
     assert "if kubectl auth can-i update configmaps" in configure_run
     assert "if kubectl auth can-i patch networkpolicies.networking.k8s.io" in configure_run
+    assert "kubectl auth can-i patch persistentvolumeclaims" in configure_run
     assert "kubectl auth can-i create jobs.batch" in configure_run
     assert "kubectl auth can-i patch deployments.apps" in configure_run
 
@@ -1147,7 +1186,10 @@ def test_staging_workflows_preserve_admin_boundary_and_clean_credentials() -> No
         "Verify administrator-owned staging prerequisites",
     )
     prerequisite_run = str(prerequisites["run"])
-    assert "configmaps,serviceaccounts,services,poddisruptionbudgets.policy" in prerequisite_run
+    assert (
+        "configmaps,persistentvolumeclaims,serviceaccounts,services,poddisruptionbudgets.policy"
+        in prerequisite_run
+    )
     assert "networkpolicies.networking.k8s.io" in prerequisite_run
     assert "staging-prerequisites-live.yaml" in prerequisite_run
     assert "printf '\\n---\\n'" in prerequisite_run

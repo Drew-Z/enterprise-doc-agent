@@ -167,6 +167,11 @@ jobs:
             echo 'staging deployer must not change NetworkPolicy' >&2
             exit 1
           fi
+          if kubectl auth can-i patch persistentvolumeclaims \
+            -n enterprise-doc-agent-staging; then
+            echo 'staging deployer must not change persistent storage' >&2
+            exit 1
+          fi
           kubectl auth can-i create jobs.batch -n enterprise-doc-agent-staging | grep -qx 'yes'
           kubectl auth can-i patch deployments.apps -n enterprise-doc-agent-staging | grep -qx 'yes'
           trap - ERR INT TERM
@@ -323,7 +328,7 @@ jobs:
             > "$RUNNER_TEMP/staging-prerequisites-live.yaml"
           printf '\n---\n' >> "$RUNNER_TEMP/staging-prerequisites-live.yaml"
           kubectl -n enterprise-doc-agent-staging get \
-            configmaps,serviceaccounts,services,poddisruptionbudgets.policy,ingresses.networking.k8s.io,networkpolicies.networking.k8s.io \
+            configmaps,persistentvolumeclaims,serviceaccounts,services,poddisruptionbudgets.policy,ingresses.networking.k8s.io,networkpolicies.networking.k8s.io \
             -o yaml >> "$RUNNER_TEMP/staging-prerequisites-live.yaml"
           kubectl get namespace enterprise-doc-agent-staging -o json \
             > "$RUNNER_TEMP/staging-namespace.json"
@@ -372,6 +377,9 @@ jobs:
           kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-web --timeout=600s
           if kubectl -n enterprise-doc-agent-staging get deployment enterprise-doc-redis >/dev/null 2>&1; then
             kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-redis --timeout=180s
+          fi
+          if kubectl -n enterprise-doc-agent-staging get deployment enterprise-doc-prometheus >/dev/null 2>&1; then
+            kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-prometheus --timeout=300s
           fi
       - name: Run embedding provider and reindex gate
         id: embedding_rollout

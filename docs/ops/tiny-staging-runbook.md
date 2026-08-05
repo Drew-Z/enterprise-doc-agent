@@ -283,7 +283,7 @@ It creates the staging namespace, a non-root deployer ServiceAccount and a short
 explicit RBAC surface. The deployment identity can read administrator-owned
 prerequisites and diagnostics, create/update reviewed Deployments and Jobs, and get
 only the staging Namespace. It cannot read any Kubernetes Secret, create arbitrary
-Pods, change ConfigMaps/Services/Ingress/NetworkPolicy/PDB objects, or patch Namespace
+Pods, change ConfigMaps/PVCs/Services/Ingress/NetworkPolicy/PDB objects, or patch Namespace
 approvals; in particular, it cannot read its own long-lived token Secret. Admission
 further restricts Deployment and Job names, immutable images,
 entrypoints, environment sources, identities, probes and volumes. The identity has no
@@ -297,6 +297,8 @@ test "$(kubectl auth can-i get secrets -n enterprise-doc-agent-staging --as "$de
 test "$(kubectl auth can-i create pods -n enterprise-doc-agent-staging --as "$deployer")" = no
 test "$(kubectl auth can-i update configmaps -n enterprise-doc-agent-staging --as "$deployer")" = no
 test "$(kubectl auth can-i patch networkpolicies.networking.k8s.io \
+  -n enterprise-doc-agent-staging --as "$deployer")" = no
+test "$(kubectl auth can-i patch persistentvolumeclaims \
   -n enterprise-doc-agent-staging --as "$deployer")" = no
 test "$(kubectl auth can-i create jobs.batch -n enterprise-doc-agent-staging --as "$deployer")" = yes
 test "$(kubectl auth can-i patch deployments.apps -n enterprise-doc-agent-staging \
@@ -351,7 +353,7 @@ after operator access changes.
 
 ## Administrator prerequisite approval
 
-The deploy workflow never applies Namespace, ConfigMap, ServiceAccount, Service,
+The deploy workflow never applies Namespace, ConfigMap, PVC, ServiceAccount, Service,
 Ingress, NetworkPolicy or PDB objects. Before the first rollout, and whenever an
 endpoint, model route, image allowlist or prerequisite manifest changes, an
 administrator must generate the exact same render in a disposable checkout of the
@@ -420,7 +422,7 @@ kubectl get namespace enterprise-doc-agent-staging -o yaml \
   > "$workdir/live-prerequisites.yaml"
 printf '\n---\n' >> "$workdir/live-prerequisites.yaml"
 kubectl -n enterprise-doc-agent-staging get \
-  configmaps,serviceaccounts,services,poddisruptionbudgets.policy,ingresses.networking.k8s.io,networkpolicies.networking.k8s.io \
+  configmaps,persistentvolumeclaims,serviceaccounts,services,poddisruptionbudgets.policy,ingresses.networking.k8s.io,networkpolicies.networking.k8s.io \
   -o yaml >> "$workdir/live-prerequisites.yaml"
 kubectl get namespace enterprise-doc-agent-staging -o json > "$workdir/live-namespace.json"
 python scripts/validate_staging_prerequisites.py \
@@ -488,6 +490,8 @@ manifest. The workflow renders the selected profile, verifies every administrato
 prerequisite and Namespace approval, binds the context to the expected API server and
 Namespace UID, validates workload updates, replaces the completed fixed-name migration
 Job with a server-side create dry-run, waits for completion, applies workloads,
+runs and waits for the internal Prometheus Deployment when the `single-node-4c8g`
+profile is selected,
 runs the restricted `enterprise-doc-embedding-rollout` Job to probe the provider and
 converge ready documents to the approved generation, performs in-cluster readiness and
 authenticated upload → ingestion → Agent smoke, and uploads sanitized evidence.

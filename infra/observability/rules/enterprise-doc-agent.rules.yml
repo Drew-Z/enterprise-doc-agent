@@ -6,17 +6,17 @@ groups:
         expr: |
           sum(rate(enterprise_doc_api_requests_total{status_class=~"5xx"}[5m]))
           /
-          clamp_min(sum(rate(enterprise_doc_api_requests_total[5m])), 1)
+          clamp_min(sum(rate(enterprise_doc_api_requests_total[5m])), 1e-9)
       - record: enterprise_doc:worker_failure_ratio5m
         expr: |
           sum(rate(enterprise_doc_worker_jobs_completed_total{outcome="failed"}[5m]))
           /
-          clamp_min(sum(rate(enterprise_doc_worker_jobs_completed_total[5m])), 1)
+          clamp_min(sum(rate(enterprise_doc_worker_jobs_completed_total[5m])), 1e-9)
       - record: enterprise_doc:outbox_error_ratio5m
         expr: |
           sum(rate(enterprise_doc_worker_outbox_publish_total{result="error"}[5m]))
           /
-          clamp_min(sum(rate(enterprise_doc_worker_outbox_publish_total[5m])), 1)
+          clamp_min(sum(rate(enterprise_doc_worker_outbox_publish_total[5m])), 1e-9)
 
   - name: enterprise-doc-agent-alerts
     interval: 15s
@@ -29,7 +29,7 @@ groups:
           service: enterprise-doc-api
         annotations:
           summary: API 5xx error ratio is above 5 percent
-          runbook: "https://runbooks.example.invalid/enterprise-doc/api-errors"
+          runbook: "https://github.com/Drew-Z/enterprise-doc-agent/blob/main/docs/ops/staging-observability-and-capacity.md#alert-response"
       - alert: EnterpriseDocWorkerFailureRate
         expr: enterprise_doc:worker_failure_ratio5m > 0.1
         for: 10m
@@ -38,7 +38,7 @@ groups:
           service: enterprise-doc-worker
         annotations:
           summary: Worker failure ratio is above 10 percent
-          runbook: "https://runbooks.example.invalid/enterprise-doc/worker-failures"
+          runbook: "https://github.com/Drew-Z/enterprise-doc-agent/blob/main/docs/ops/staging-observability-and-capacity.md#alert-response"
       - alert: EnterpriseDocOutboxPublishErrors
         expr: enterprise_doc:outbox_error_ratio5m > 0
         for: 5m
@@ -47,7 +47,7 @@ groups:
           service: enterprise-doc-worker
         annotations:
           summary: Outbox publication errors are present
-          runbook: "https://runbooks.example.invalid/enterprise-doc/outbox"
+          runbook: "https://github.com/Drew-Z/enterprise-doc-agent/blob/main/docs/ops/staging-observability-and-capacity.md#alert-response"
       - alert: EnterpriseDocDependencyDown
         expr: enterprise_doc_dependency_up == 0
         for: 5m
@@ -56,4 +56,25 @@ groups:
           service: enterprise-doc-agent
         annotations:
           summary: A required dependency health check is down
-          runbook: "https://runbooks.example.invalid/enterprise-doc/dependencies"
+          runbook: "https://github.com/Drew-Z/enterprise-doc-agent/blob/main/docs/ops/staging-observability-and-capacity.md#alert-response"
+      - alert: EnterpriseDocMetricsTargetDown
+        expr: up{job=~"enterprise-doc-(api|worker|consumer)"} == 0
+        for: 5m
+        labels:
+          severity: page
+          service: enterprise-doc-prometheus
+        annotations:
+          summary: An enterprise document metrics target is down
+          runbook: "https://github.com/Drew-Z/enterprise-doc-agent/blob/main/docs/ops/staging-observability-and-capacity.md#alert-response"
+      - alert: EnterpriseDocMetricsTargetAbsent
+        expr: |
+          absent(up{job="enterprise-doc-api"})
+          or absent(up{job="enterprise-doc-worker"})
+          or absent(up{job="enterprise-doc-consumer"})
+        for: 5m
+        labels:
+          severity: page
+          service: enterprise-doc-prometheus
+        annotations:
+          summary: An expected enterprise document metrics target is absent
+          runbook: "https://github.com/Drew-Z/enterprise-doc-agent/blob/main/docs/ops/staging-observability-and-capacity.md#alert-response"

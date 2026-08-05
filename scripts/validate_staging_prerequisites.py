@@ -29,6 +29,7 @@ REQUIRED_APPROVAL_ANNOTATIONS = frozenset(
         "enterprise-doc-agent/approved-worker-images",
         "enterprise-doc-agent/approved-consumer-images",
         "enterprise-doc-agent/approved-web-images",
+        "enterprise-doc-agent/approved-prometheus-images",
     }
 )
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
@@ -170,6 +171,34 @@ def _without_server_defaults(
             and live_spec.get("unhealthyPodEvictionPolicy") == "IfHealthyBudget"
         ):
             live_spec.pop("unhealthyPodEvictionPolicy")
+
+    if kind == "PersistentVolumeClaim":
+        live_metadata = _mapping(live.get("metadata"), description="live PVC metadata")
+        expected_metadata = _mapping(expected.get("metadata"), description="expected PVC metadata")
+        live_annotations = live_metadata.get("annotations")
+        expected_annotations = expected_metadata.get("annotations")
+        if isinstance(live_annotations, dict):
+            controller_annotations = {
+                "pv.kubernetes.io/bind-completed",
+                "pv.kubernetes.io/bound-by-controller",
+                "volume.beta.kubernetes.io/storage-provisioner",
+                "volume.kubernetes.io/selected-node",
+                "volume.kubernetes.io/storage-provisioner",
+            }
+            for key in controller_annotations:
+                if not isinstance(expected_annotations, dict) or key not in expected_annotations:
+                    live_annotations.pop(key, None)
+            if not live_annotations:
+                live_metadata.pop("annotations", None)
+        if "finalizers" not in expected_metadata and live_metadata.get("finalizers") == [
+            "kubernetes.io/pvc-protection"
+        ]:
+            live_metadata.pop("finalizers")
+        live_spec = _mapping(live.get("spec"), description="live PVC spec")
+        expected_spec = _mapping(expected.get("spec"), description="expected PVC spec")
+        for key in ("volumeName", "dataSource", "dataSourceRef"):
+            if key not in expected_spec:
+                live_spec.pop(key, None)
 
     return live, expected
 

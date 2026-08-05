@@ -46,6 +46,10 @@ def _approval_annotations() -> dict[str, str]:
         "enterprise-doc-agent/approved-web-images": (
             "registry.example.com/enterprise-doc-web@sha256:" + "4" * 64
         ),
+        "enterprise-doc-agent/approved-prometheus-images": (
+            "quay.io/prometheus/prometheus@sha256:"
+            "63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996"
+        ),
     }
 
 
@@ -69,6 +73,20 @@ def _write_expected(path: Path) -> None:
                         "namespace": "enterprise-doc-agent-staging",
                     },
                     "data": {"MODEL__PROVIDER": "openai_compatible"},
+                },
+                {
+                    "apiVersion": "v1",
+                    "kind": "PersistentVolumeClaim",
+                    "metadata": {
+                        "name": "enterprise-doc-prometheus-data",
+                        "namespace": "enterprise-doc-agent-staging",
+                    },
+                    "spec": {
+                        "accessModes": ["ReadWriteOnce"],
+                        "storageClassName": "local-path",
+                        "volumeMode": "Filesystem",
+                        "resources": {"requests": {"storage": "5Gi"}},
+                    },
                 },
             ],
             sort_keys=False,
@@ -96,6 +114,15 @@ def _write_live_manifest(path: Path, expected: Path, *, config_value: str | None
             document["spec"] = {"finalizers": ["kubernetes"]}
         if document["kind"] == "ConfigMap" and config_value is not None:
             document["data"]["MODEL__PROVIDER"] = config_value
+        if document["kind"] == "PersistentVolumeClaim":
+            metadata["annotations"].update(
+                {
+                    "pv.kubernetes.io/bind-completed": "yes",
+                    "volume.kubernetes.io/storage-provisioner": "rancher.io/local-path",
+                }
+            )
+            metadata["finalizers"] = ["kubernetes.io/pvc-protection"]
+            document["spec"]["volumeName"] = "pvc-runtime-generated"
     path.write_text(
         yaml.safe_dump(
             {
@@ -142,8 +169,8 @@ def test_validate_prerequisites_accepts_matching_admin_approval(tmp_path: Path) 
     assert report == {
         "status": "passed",
         "namespace": "enterprise-doc-agent-staging",
-        "approval_keys_checked": 16,
-        "live_objects_checked": 2,
+        "approval_keys_checked": 17,
+        "live_objects_checked": 3,
         "prerequisites_sha256": "a" * 64,
     }
 

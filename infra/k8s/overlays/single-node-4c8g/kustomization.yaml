@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: enterprise-doc-agent-staging
 resources:
   - ../tiny-single-node
+  - ../../../observability
 patches:
   - path: resources-patch.yaml
   - path: replicas-patch.yaml

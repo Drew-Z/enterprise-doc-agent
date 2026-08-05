@@ -43,6 +43,64 @@ The bounded labels include API route templates/status classes, known job types,
 dependency names, queue/publish results, and business boundary outcomes. Tenant,
 document, run, user, object-key, prompt, and error text are not metric labels.
 
+The `single-node-4c8g` profile also runs a digest-pinned Prometheus behind an internal
+ClusterIP. It scrapes only those three Services every 15 seconds. A `local-path` PVC is
+bounded to 5 GiB and Prometheus independently enforces both seven-day and 4 GB TSDB
+retention. This preserves samples across Pod replacement, but not node or disk loss.
+There is deliberately no public Ingress, NodePort, Grafana or Alertmanager.
+
+Use an operator-only port forward to inspect the retained view:
+
+```bash
+kubectl -n enterprise-doc-agent-staging port-forward \
+  svc/enterprise-doc-prometheus 19090:9090
+curl --fail http://127.0.0.1:19090/-/ready
+curl --fail --get http://127.0.0.1:19090/api/v1/query \
+  --data-urlencode 'query=up{job=~"enterprise-doc-(api|worker|consumer)"}'
+curl --fail http://127.0.0.1:19090/api/v1/targets
+curl --fail http://127.0.0.1:19090/api/v1/rules
+```
+
+All three targets must be present with `health: up`; recording and alert rules must be
+loaded without evaluation errors. Stop the forward after inspection. Retain only the
+target names, aggregate status, image digest and rule counts as evidence, not a raw TSDB
+or unbounded metric dump.
+
+To prove that Pod replacement keeps the PVC-backed history, record a restart epoch,
+replace the Prometheus Pod, wait for rollout, and query a range spanning that epoch:
+
+```bash
+restart_epoch="$(date +%s)"
+kubectl -n enterprise-doc-agent-staging delete pod \
+  -l app.kubernetes.io/name=enterprise-doc-prometheus
+kubectl -n enterprise-doc-agent-staging rollout status \
+  deployment/enterprise-doc-prometheus --timeout=300s
+kubectl -n enterprise-doc-agent-staging get pvc enterprise-doc-prometheus-data
+curl --fail --get http://127.0.0.1:19090/api/v1/query_range \
+  --data-urlencode 'query=up{job="enterprise-doc-api"}' \
+  --data-urlencode "start=$((restart_epoch - 120))" \
+  --data-urlencode "end=$((restart_epoch + 120))" \
+  --data-urlencode 'step=15'
+```
+
+The same result series must contain successful samples from before and after the restart.
+A Bound PVC alone does not prove history was reopened.
+
+## Alert response
+
+- `EnterpriseDocMetricsTargetDown` means Prometheus discovered a target but cannot scrape
+  it. Check the target error, Service endpoints, Pod readiness and the metric-only
+  NetworkPolicies before restarting anything.
+- `EnterpriseDocMetricsTargetAbsent` means an expected scrape job was not loaded. Check
+  the mounted ConfigMap, Prometheus startup log and `/api/v1/status/config`.
+- API, Worker, outbox or dependency alerts require the corresponding application logs,
+  queue state and dependency health to be correlated. Do not infer a root cause from one
+  ratio.
+- The ratio recording rules use an epsilon denominator so low staging traffic retains
+  its real error ratio; a denominator of one request per second would hide failures.
+- There is no Alertmanager in this profile. Rules are evaluated and inspectable, but no
+  page or ticket is delivered until a separately reviewed receiver is connected.
+
 ## Bounded staging load
 
 The following command exercises only the public readiness endpoint and is useful for
@@ -116,4 +174,5 @@ raw reports remain outside the repository under the operator's temporary evidenc
 - Real upload -> ingestion -> retrieval -> Agent validation remains the authoritative
   business-path smoke; the readiness load does not replace it.
 - Managed retention, alert routing, backup/restore, and representative capacity remain
-  external gates and are not claimed by this document.
+  external gates. The local PVC is a staging diagnostic aid, not a managed telemetry or
+  disaster-recovery claim.

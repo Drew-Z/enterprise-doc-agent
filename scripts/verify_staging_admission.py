@@ -45,6 +45,24 @@ def _resource(
     return matches[0]
 
 
+def _optional_resource(
+    documents: list[dict[str, Any]],
+    *,
+    kind: str,
+    name: str,
+) -> dict[str, Any] | None:
+    matches = [
+        document
+        for document in documents
+        if document.get("kind") == kind
+        and isinstance(document.get("metadata"), dict)
+        and document["metadata"].get("name") == name
+    ]
+    if len(matches) > 1:
+        raise ValueError(f"expected at most one {kind}/{name}")
+    return matches[0] if matches else None
+
+
 def _run_kubectl(
     args: list[str],
     *,
@@ -195,6 +213,11 @@ def verify(*, bootstrap_dir: Path, rendered_manifest: Path, smoke_job: Path) -> 
     namespace = _resource(rendered, kind="Namespace", name=NAMESPACE)
     runtime_config = _resource(rendered, kind="ConfigMap", name="enterprise-doc-config")
     api = _resource(rendered, kind="Deployment", name="enterprise-doc-api")
+    prometheus = _optional_resource(
+        rendered,
+        kind="Deployment",
+        name="enterprise-doc-prometheus",
+    )
     migration = _resource(rendered, kind="Job", name="enterprise-doc-migrate")
     readiness = _resource(smoke, kind="Job", name="m5-staging-smoke")
 
@@ -247,6 +270,7 @@ def verify(*, bootstrap_dir: Path, rendered_manifest: Path, smoke_job: Path) -> 
             ("create", "pods", "no"),
             ("update", "configmaps", "no"),
             ("patch", "networkpolicies.networking.k8s.io", "no"),
+            ("patch", "persistentvolumeclaims", "no"),
             ("create", "jobs.batch", "yes"),
             ("patch", "deployments.apps", "yes"),
             ("delete", "job/enterprise-doc-migrate", "yes"),
@@ -255,7 +279,10 @@ def verify(*, bootstrap_dir: Path, rendered_manifest: Path, smoke_job: Path) -> 
         ):
             _assert_auth(verb=verb, resource=resource, expected=expected)
 
-        for document in (api, migration, readiness):
+        reviewed = [api, migration, readiness]
+        if prometheus is not None:
+            reviewed.append(prometheus)
+        for document in reviewed:
             _dry_run(document, expect_success=True)
 
         _dry_run(_runtime_config_update_probe(runtime_config), expect_success=False)

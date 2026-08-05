@@ -2,8 +2,8 @@
 
 This runbook provisions the reviewed `single-node-4c8g` profile on a clean Ubuntu
 24.04 host. It is a production-like staging and recovery-drill environment, not HA
-production. PostgreSQL/pgvector, R2, chat/embedding providers, retained telemetry and
-backups remain external.
+production. PostgreSQL/pgvector, R2, chat/embedding providers, alert delivery and
+backups remain external. Prometheus keeps only bounded single-node staging telemetry.
 
 ## Safety boundary
 
@@ -194,9 +194,12 @@ both passed their post-reboot checks.
 ## Application profile
 
 `single-node-4c8g` runs two API and two Web replicas for request-distribution drills, one
-Worker, one consumer and one ephemeral Redis. It has no PDB because every Pod still shares
-one host. Zero-surge rollouts bound overlap. Application plus migration memory limits stay
-below 6 GiB and requests stay below 3 GiB/3 CPU, leaving host and K3s headroom.
+Worker, one consumer, one ephemeral Redis and one internal Prometheus. Prometheus retains
+at most seven days or 4 GB on a 5 GiB `local-path` PVC. It has no Ingress or NodePort and
+NetworkPolicy permits it to scrape only API `8000`, Worker `8081` and consumer `8082`.
+The profile has no PDB because every Pod still shares one host. Zero-surge rollouts bound
+overlap. Application, Prometheus and migration memory limits stay below 6 GiB and requests
+stay below 3 GiB/3 CPU, leaving host and K3s headroom.
 
 Set the protected staging Environment before administrator prerequisites are rendered:
 
@@ -265,14 +268,15 @@ curl --fail --silent --show-error https://agent.playlab.eu.cc/health/ready
 After host and K3s verification, continue in this order:
 
 1. Apply `infra/k8s/bootstrap` with the administrative kubeconfig.
-2. Render and apply administrator-owned `single-node-4c8g` prerequisites.
+2. Render and apply administrator-owned `single-node-4c8g` prerequisites, including the
+   Prometheus ConfigMap, ClusterIP Service, `local-path` PVC and metric-only NetworkPolicies.
 3. Validate application, GHCR pull and TLS Secrets without retaining raw values.
 4. Register the repository-scoped `enterprise-doc-staging` runner.
 5. Enroll Cloudflare Tunnel, route the application hostname to
    `https://127.0.0.1:8443` with the origin server name set to the staging hostname, then
    apply and verify the reviewed transport drop-in above.
 6. Publish and verify signed immutable images.
-7. Dispatch staging. Require migration, workload rollout, the bounded embedding
+7. Dispatch staging. Require migration, application and Prometheus rollout, the bounded embedding
    probe/reindex Job, readiness smoke and authenticated smoke to pass in that order.
 8. Perform rollback and recovery drills only after the sanitized rollout report and
    release-record hashes have been retained.

@@ -299,6 +299,9 @@ def test_configure_manifest_records_admin_owned_prerequisite_approval(
     assert annotations["enterprise-doc-agent/approved-web-images"] == ",".join(
         [_image("enterprise-doc-web"), _image("enterprise-doc-web", "4" * 64)]
     )
+    assert annotations["enterprise-doc-agent/approved-prometheus-images"] == (
+        configure_staging_manifest.PROMETHEUS_IMAGE
+    )
     assert annotations["enterprise-doc-agent/approved-database-egress-cidr"] == (
         "1.1.1.1/32,8.8.8.8/32"
     )
@@ -310,6 +313,66 @@ def test_configure_manifest_records_admin_owned_prerequisite_approval(
         r"[0-9a-f]{64}",
         annotations["enterprise-doc-agent/prerequisites-sha256"],
     )
+
+
+def test_configure_manifest_hashes_reviewed_prometheus_config(tmp_path: Path) -> None:
+    source = tmp_path / "template.yaml"
+    destination = tmp_path / "staging.yaml"
+    _write_template(source)
+    documents = [item for item in yaml.safe_load_all(source.read_text()) if item]
+    documents.extend(
+        [
+            {
+                "apiVersion": "v1",
+                "kind": "ConfigMap",
+                "metadata": {"name": "enterprise-doc-prometheus-config"},
+                "data": {"prometheus.yml": "global:\n  scrape_interval: 15s\n"},
+            },
+            {
+                "apiVersion": "apps/v1",
+                "kind": "Deployment",
+                "metadata": {"name": "enterprise-doc-prometheus"},
+                "spec": {
+                    "template": {
+                        "spec": {
+                            "containers": [
+                                {
+                                    "name": "prometheus",
+                                    "image": configure_staging_manifest.PROMETHEUS_IMAGE,
+                                }
+                            ]
+                        }
+                    }
+                },
+            },
+        ]
+    )
+    source.write_text(yaml.safe_dump_all(documents, sort_keys=False), encoding="utf-8")
+
+    configure_staging_manifest.configure_manifest(
+        source,
+        destination,
+        staging_base_url="https://staging.example.com",
+        object_store_endpoint="https://objects.internal.example.com",
+        object_store_presign_endpoint="https://objects.example.com",
+        tls_secret_name="enterprise-doc-staging-tls",
+        web_object_store_origins="https://objects.example.com",
+        database_egress_cidr="8.8.8.8/32",
+        model_provider="openai_compatible",
+        model_base_url="https://model.example.com/v1",
+        model_name="staging-model",
+    )
+
+    configured = [item for item in yaml.safe_load_all(destination.read_text()) if item]
+    prometheus = next(
+        item
+        for item in configured
+        if item["kind"] == "Deployment" and item["metadata"]["name"] == "enterprise-doc-prometheus"
+    )
+    config_hash = prometheus["spec"]["template"]["metadata"]["annotations"][
+        "enterprise-doc-agent/prometheus-config-sha256"
+    ]
+    assert re.fullmatch(r"[0-9a-f]{64}", config_hash)
 
 
 @pytest.mark.parametrize(

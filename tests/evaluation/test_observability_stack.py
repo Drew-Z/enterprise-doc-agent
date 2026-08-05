@@ -69,7 +69,45 @@ def test_prometheus_recording_and_alert_rules_are_structured() -> None:
         "EnterpriseDocWorkerFailureRate",
         "EnterpriseDocOutboxPublishErrors",
         "EnterpriseDocDependencyDown",
+        "EnterpriseDocMetricsTargetDown",
+        "EnterpriseDocMetricsTargetAbsent",
     } <= alerts
+    rendered_rules = yaml.safe_dump(rules)
+    assert "clamp_min(sum(rate(enterprise_doc_api_requests_total[5m])), 1e-9)" in rendered_rules
+    assert "runbooks.example.invalid" not in rendered_rules
+
+
+def test_kubernetes_prometheus_is_internal_and_bounded() -> None:
+    prometheus = yaml.safe_load(
+        (ROOT / "infra/observability/prometheus-kubernetes.yml").read_text(encoding="utf-8")
+    )
+    targets = {
+        target
+        for job in prometheus["scrape_configs"]
+        for config in job["static_configs"]
+        for target in config["targets"]
+    }
+    assert targets == {
+        "enterprise-doc-api:8000",
+        "enterprise-doc-worker:8081",
+        "enterprise-doc-consumer:8082",
+    }
+    documents = list(
+        yaml.safe_load_all(
+            (ROOT / "infra/observability/prometheus-kubernetes.yaml").read_text(encoding="utf-8")
+        )
+    )
+    service = next(item for item in documents if item["kind"] == "Service")
+    assert service["spec"]["type"] == "ClusterIP"
+    pvc = next(item for item in documents if item["kind"] == "PersistentVolumeClaim")
+    assert pvc["spec"]["storageClassName"] == "local-path"
+    deployment = next(item for item in documents if item["kind"] == "Deployment")
+    container = deployment["spec"]["template"]["spec"]["containers"][0]
+    assert "@sha256:" in container["image"]
+    assert container["args"][-2:] == [
+        "--storage.tsdb.retention.size=4GB",
+        "--web.listen-address=0.0.0.0:9090",
+    ]
 
 
 def test_kubernetes_defaults_to_fail_closed_when_no_managed_collector_exists() -> None:

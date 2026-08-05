@@ -105,3 +105,28 @@ def test_runtime_config_probe_forces_an_unreviewed_update() -> None:
 
     assert probe["data"]["ADMISSION_VERIFICATION_PROBE"] == "unreviewed"
     assert "ADMISSION_VERIFICATION_PROBE" not in runtime_config["data"]
+
+
+def test_optional_resource_accepts_profile_specific_prometheus() -> None:
+    prometheus = {
+        "apiVersion": "apps/v1",
+        "kind": "Deployment",
+        "metadata": {"name": "enterprise-doc-prometheus"},
+    }
+
+    assert (
+        verify_staging_admission._optional_resource(
+            [prometheus],
+            kind="Deployment",
+            name="enterprise-doc-prometheus",
+        )
+        is prometheus
+    )
+    assert (
+        verify_staging_admission._optional_resource(
+            [],
+            kind="Deployment",
+            name="enterprise-doc-prometheus",
+        )
+        is None
+    )

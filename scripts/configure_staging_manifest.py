@@ -25,8 +25,15 @@ EMBEDDING_QUERY_INSTRUCTION = (
 )
 OBJECT_STORE_CHECKSUM_MODES = {"native_sha256", "readback_sha256"}
 CONFIG_HASH_ANNOTATION = "enterprise-doc-agent/config-sha256"
+PROMETHEUS_CONFIG_HASH_ANNOTATION = "enterprise-doc-agent/prometheus-config-sha256"
 PREREQUISITE_HASH_ANNOTATION = "enterprise-doc-agent/prerequisites-sha256"
 APPROVAL_ANNOTATION_PREFIX = "enterprise-doc-agent/approved-"
+PROMETHEUS_CONFIG_NAME = "enterprise-doc-prometheus-config"
+PROMETHEUS_DEPLOYMENT_NAME = "enterprise-doc-prometheus"
+PROMETHEUS_IMAGE = (
+    "quay.io/prometheus/prometheus@sha256:"
+    "63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996"
+)
 SERVICE_DEPLOYMENTS = {
     "api": "enterprise-doc-api",
     "worker": "enterprise-doc-worker",
@@ -177,6 +184,21 @@ def _single_document(documents: list[dict[str, Any]], *, kind: str, name: str) -
     if len(matches) != 1:
         raise ValueError(f"rendered manifests must contain exactly one {kind}/{name}")
     return matches[0]
+
+
+def _optional_document(
+    documents: list[dict[str, Any]], *, kind: str, name: str
+) -> dict[str, Any] | None:
+    matches = [
+        document
+        for document in documents
+        if document.get("kind") == kind
+        and isinstance(document.get("metadata"), dict)
+        and document["metadata"].get("name") == name
+    ]
+    if len(matches) > 1:
+        raise ValueError(f"rendered manifests must contain at most one {kind}/{name}")
+    return matches[0] if matches else None
 
 
 def _container_image(document: dict[str, Any], *, description: str) -> str:
@@ -340,6 +362,41 @@ def configure_manifest(
         rendered = ", ".join(f"{kind}/{name}" for kind, name in sorted(missing_consumers))
         raise ValueError(f"rendered manifests are missing config consumer(s): {rendered}")
 
+    prometheus_config = _optional_document(
+        documents,
+        kind="ConfigMap",
+        name=PROMETHEUS_CONFIG_NAME,
+    )
+    prometheus_deployment = _optional_document(
+        documents,
+        kind="Deployment",
+        name=PROMETHEUS_DEPLOYMENT_NAME,
+    )
+    if (prometheus_config is None) != (prometheus_deployment is None):
+        raise ValueError("Prometheus ConfigMap and Deployment must be rendered together")
+    if prometheus_config is not None and prometheus_deployment is not None:
+        prometheus_data = prometheus_config.get("data")
+        if not isinstance(prometheus_data, dict) or not prometheus_data:
+            raise ValueError(f"ConfigMap/{PROMETHEUS_CONFIG_NAME} data must be a mapping")
+        prometheus_digest = hashlib.sha256(
+            json.dumps(prometheus_data, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        ).hexdigest()
+        prometheus_template = prometheus_deployment["spec"]["template"]
+        prometheus_annotations = prometheus_template.setdefault("metadata", {}).setdefault(
+            "annotations", {}
+        )
+        if not isinstance(prometheus_annotations, dict):
+            raise ValueError(
+                f"Deployment/{PROMETHEUS_DEPLOYMENT_NAME} annotations must be a mapping"
+            )
+        prometheus_annotations[PROMETHEUS_CONFIG_HASH_ANNOTATION] = prometheus_digest
+        prometheus_image = _container_image(
+            prometheus_deployment,
+            description=f"Deployment/{PROMETHEUS_DEPLOYMENT_NAME}",
+        )
+        if prometheus_image != PROMETHEUS_IMAGE:
+            raise ValueError("Prometheus Deployment must use the reviewed immutable image")
+
     ingress = _single_document(documents, kind="Ingress", name=INGRESS_NAME)
     spec = ingress.get("spec")
     if not isinstance(spec, dict):
@@ -429,6 +486,7 @@ def configure_manifest(
         f"{APPROVAL_ANNOTATION_PREFIX}embedding-dimension": EMBEDDING_DIMENSION,
         f"{APPROVAL_ANNOTATION_PREFIX}embedding-version": EMBEDDING_VERSION,
         f"{APPROVAL_ANNOTATION_PREFIX}config-sha256": config_digest,
+        f"{APPROVAL_ANNOTATION_PREFIX}prometheus-images": PROMETHEUS_IMAGE,
     }
     for service, image in current_images.items():
         approval_annotations[f"{APPROVAL_ANNOTATION_PREFIX}{service}-images"] = _approved_images(

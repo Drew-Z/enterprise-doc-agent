@@ -79,7 +79,7 @@ metadata:
   namespace: enterprise-doc-agent-staging
 rules:
   - apiGroups: [""]
-    resources: ["configmaps", "serviceaccounts", "services"]
+    resources: ["configmaps", "persistentvolumeclaims", "serviceaccounts", "services"]
     verbs: ["get", "list", "watch"]
   - apiGroups: [""]
     resources: ["pods", "pods/log"]

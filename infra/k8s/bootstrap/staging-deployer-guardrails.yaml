@@ -46,7 +46,8 @@ spec:
           'enterprise-doc-agent/approved-api-images',
           'enterprise-doc-agent/approved-worker-images',
           'enterprise-doc-agent/approved-consumer-images',
-          'enterprise-doc-agent/approved-web-images'
+          'enterprise-doc-agent/approved-web-images',
+          'enterprise-doc-agent/approved-prometheus-images'
         ].all(key,
           key in object.metadata.annotations &&
           key in oldObject.metadata.annotations &&
@@ -73,7 +74,7 @@ spec:
       - apiGroups: [""]
         apiVersions: ["v1"]
         operations: ["CREATE", "UPDATE"]
-        resources: ["configmaps", "serviceaccounts", "services"]
+        resources: ["configmaps", "persistentvolumeclaims", "serviceaccounts", "services"]
       - apiGroups: ["policy"]
         apiVersions: ["v1"]
         operations: ["CREATE", "UPDATE"]
@@ -137,7 +138,8 @@ spec:
           'enterprise-doc-worker',
           'enterprise-doc-consumer',
           'enterprise-doc-web',
-          'enterprise-doc-redis'
+          'enterprise-doc-redis',
+          'enterprise-doc-prometheus'
         ]
       message: The staging deployer can manage only reviewed Deployments.
       reason: Forbidden
@@ -176,10 +178,20 @@ spec:
           variables.container.name == 'redis' &&
           variables.container.image ==
             'redis@sha256:6ab0b6e7381779332f97b8ca76193e45b0756f38d4c0dcda72dbb3c32061ab99')
+        ||
+        (object.metadata.name == 'enterprise-doc-prometheus' &&
+          namespaceObject.metadata.annotations[
+            'enterprise-doc-agent/deployment-profile'
+          ] == 'single-node-4c8g' &&
+          variables.container.name == 'prometheus' &&
+          namespaceObject.metadata.annotations[
+            'enterprise-doc-agent/approved-prometheus-images'
+          ].split(',').exists(image,
+            image == variables.container.image))
       message: Deployment images must match the administrator-approved immutable list.
       reason: Forbidden
     - expression: >-
-        (object.metadata.name != 'enterprise-doc-redis' &&
+        (!(object.metadata.name in ['enterprise-doc-redis', 'enterprise-doc-prometheus']) &&
           !has(variables.container.command) && !has(variables.container.args)) ||
         (object.metadata.name == 'enterprise-doc-redis' &&
           !has(variables.container.command) &&
@@ -196,15 +208,24 @@ spec:
             variables.container.args == [
               'redis-server', '--save', '', '--appendonly', 'no', '--maxmemory',
               '48mb', '--maxmemory-policy', 'noeviction'
-            ])))
+            ]))) ||
+        (object.metadata.name == 'enterprise-doc-prometheus' &&
+          !has(variables.container.command) &&
+          variables.container.args == [
+            '--config.file=/etc/prometheus/prometheus.yml',
+            '--storage.tsdb.path=/prometheus',
+            '--storage.tsdb.retention.time=7d',
+            '--storage.tsdb.retention.size=4GB',
+            '--web.listen-address=0.0.0.0:9090'
+          ])
       message: Deployment entrypoints and arguments must match the reviewed runtime.
       reason: Forbidden
     - expression: >-
-        (object.metadata.name == 'enterprise-doc-redis' &&
+        (object.metadata.name in ['enterprise-doc-redis', 'enterprise-doc-prometheus'] &&
           (!has(variables.podSpec.serviceAccountName) || variables.podSpec.serviceAccountName == '') &&
           has(variables.podSpec.automountServiceAccountToken) &&
           variables.podSpec.automountServiceAccountToken == false) ||
-        (object.metadata.name != 'enterprise-doc-redis' &&
+        (!(object.metadata.name in ['enterprise-doc-redis', 'enterprise-doc-prometheus']) &&
           variables.podSpec.serviceAccountName == 'enterprise-doc-runtime' &&
           (!has(variables.podSpec.automountServiceAccountToken) ||
             variables.podSpec.automountServiceAccountToken == false))
@@ -218,7 +239,9 @@ spec:
           size(variables.container.envFrom) == 2 &&
           variables.container.envFrom[0].configMapRef.name == 'enterprise-doc-config' &&
           variables.container.envFrom[1].secretRef.name == 'enterprise-doc-secrets') ||
-        (object.metadata.name in ['enterprise-doc-web', 'enterprise-doc-redis'] &&
+        (object.metadata.name in [
+          'enterprise-doc-web', 'enterprise-doc-redis', 'enterprise-doc-prometheus'
+        ] &&
           !has(variables.container.env) && !has(variables.container.envFrom))
       message: Deployment environment sources must match the reviewed ConfigMap and Secret.
       reason: Forbidden
@@ -232,7 +255,21 @@ spec:
           size(variables.podSpec.volumes) == 1 &&
           variables.podSpec.volumes[0].name == 'data' &&
           has(variables.podSpec.volumes[0].emptyDir)) ||
-        (object.metadata.name != 'enterprise-doc-redis' &&
+        (object.metadata.name == 'enterprise-doc-prometheus' &&
+          size(variables.podSpec.volumes) == 2 &&
+          variables.podSpec.volumes.exists(volume,
+            volume.name == 'config' &&
+            volume.configMap.name == 'enterprise-doc-prometheus-config') &&
+          variables.podSpec.volumes.exists(volume,
+            volume.name == 'storage' &&
+            volume.persistentVolumeClaim.claimName == 'enterprise-doc-prometheus-data') &&
+          size(variables.container.volumeMounts) == 2 &&
+          variables.container.volumeMounts.exists(mount,
+            mount.name == 'config' && mount.mountPath == '/etc/prometheus' &&
+            mount.readOnly == true) &&
+          variables.container.volumeMounts.exists(mount,
+            mount.name == 'storage' && mount.mountPath == '/prometheus')) ||
+        (!(object.metadata.name in ['enterprise-doc-redis', 'enterprise-doc-prometheus']) &&
           (!has(variables.podSpec.volumes) || size(variables.podSpec.volumes) == 0)))
       message: Deployment lifecycle hooks and volumes must match the reviewed runtime.
       reason: Forbidden
@@ -264,7 +301,11 @@ spec:
         (object.metadata.name == 'enterprise-doc-redis' &&
           variables.container.startupProbe.exec.command == ['redis-cli', 'ping'] &&
           variables.container.readinessProbe.exec.command == ['redis-cli', 'ping'] &&
-          variables.container.livenessProbe.exec.command == ['redis-cli', 'ping'])
+          variables.container.livenessProbe.exec.command == ['redis-cli', 'ping']) ||
+        (object.metadata.name == 'enterprise-doc-prometheus' &&
+          variables.container.startupProbe.httpGet.path == '/-/ready' &&
+          variables.container.readinessProbe.httpGet.path == '/-/ready' &&
+          variables.container.livenessProbe.httpGet.path == '/-/healthy')
       message: Deployment probes must use the reviewed non-secret health checks.
       reason: Forbidden
     - expression: >-
