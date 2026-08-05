@@ -6,6 +6,7 @@ import json
 import os
 import shutil
 import subprocess
+import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlsplit, urlunsplit
@@ -68,6 +69,14 @@ def postgres_process_environment(database_url: str) -> dict[str, str]:
     return environment
 
 
+def file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
 def run_backup(*, database_url: str, output: Path, overwrite: bool) -> dict[str, object]:
     if shutil.which("pg_dump") is None:
         raise RuntimeError("pg_dump is required")
@@ -75,19 +84,41 @@ def run_backup(*, database_url: str, output: Path, overwrite: bool) -> dict[str,
         raise FileExistsError("backup output already exists; use --overwrite explicitly")
     output.parent.mkdir(parents=True, exist_ok=True)
     started_at = datetime.now(UTC).isoformat()
-    subprocess.run(
-        [
-            "pg_dump",
-            "--format=custom",
-            "--no-owner",
-            "--no-privileges",
-            "--file",
-            str(output),
-        ],
-        check=True,
-        env=postgres_process_environment(database_url),
+    fd, temporary_name = tempfile.mkstemp(
+        prefix=f".{output.name}.", suffix=".tmp", dir=output.parent
     )
-    digest = hashlib.sha256(output.read_bytes()).hexdigest()
+    os.close(fd)
+    temporary = Path(temporary_name)
+    temporary.chmod(0o600)
+    try:
+        subprocess.run(
+            [
+                "pg_dump",
+                "--format=custom",
+                "--no-owner",
+                "--no-privileges",
+                "--file",
+                str(temporary),
+            ],
+            check=True,
+            env=postgres_process_environment(database_url),
+        )
+        if temporary.stat().st_size <= 0:
+            raise RuntimeError("pg_dump produced an empty backup")
+        digest = file_sha256(temporary)
+        if overwrite:
+            os.replace(temporary, output)
+        else:
+            try:
+                os.link(temporary, output)
+            except FileExistsError as error:
+                raise FileExistsError(
+                    "backup output already exists; use --overwrite explicitly"
+                ) from error
+            temporary.unlink()
+        output.chmod(0o600)
+    finally:
+        temporary.unlink(missing_ok=True)
     return {
         "schema_version": 1,
         "operation": "postgres-backup",

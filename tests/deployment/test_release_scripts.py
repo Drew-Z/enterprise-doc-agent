@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import stat
 import subprocess
 import sys
 from pathlib import Path
@@ -12,8 +14,12 @@ from scripts.backup_database import (
     postgres_process_environment,
     run_backup,
 )
+from scripts.restore_database import (
+    inspect_restore_preflight,
+    restore_command,
+    validate_restore_target,
+)
 from scripts.restore_database import main as restore_main
-from scripts.restore_database import restore_command, validate_restore_target
 from scripts.rollback_release import execute_rollback, rollback_commands
 from scripts.rollback_release import main as rollback_main
 
@@ -25,15 +31,16 @@ def test_database_url_normalization_removes_driver_suffix() -> None:
     )
 
 
-def test_restore_command_is_single_transaction_and_explicitly_destructive() -> None:
+def test_restore_command_is_single_transaction_and_targets_database_without_credentials() -> None:
     database_url = "postgresql+psycopg://user:super-secret@db:5432/app"
     command = restore_command(
         database_url=database_url,
         backup=Path("backup.dump"),
     )
+    assert command[1:3] == ["--dbname", "app"]
     assert "--single-transaction" in command
-    assert "--clean" in command
-    assert "--if-exists" in command
+    assert "--clean" not in command
+    assert "--if-exists" not in command
     assert database_url not in command
     assert "super-secret" not in " ".join(command)
 
@@ -58,12 +65,13 @@ def test_backup_process_keeps_database_credentials_out_of_argv(
 
     def fake_run(command: list[str], *, check: bool, env: dict[str, str]) -> None:
         captured.update(command=command, check=check, env=env)
-        output.write_bytes(b"backup")
+        temporary_output = Path(command[command.index("--file") + 1])
+        temporary_output.write_bytes(b"backup")
 
     monkeypatch.setattr("scripts.backup_database.shutil.which", lambda _: "pg_dump")
     monkeypatch.setattr("scripts.backup_database.subprocess.run", fake_run)
 
-    run_backup(
+    record = run_backup(
         database_url="postgresql://user:super-secret@db:5432/app",
         output=output,
         overwrite=False,
@@ -75,6 +83,75 @@ def test_backup_process_keeps_database_credentials_out_of_argv(
     assert isinstance(environment, dict)
     assert "super-secret" not in " ".join(command)
     assert environment["PGPASSWORD"] == "super-secret"
+    assert output.read_bytes() == b"backup"
+    assert record["sha256"] == hashlib.sha256(b"backup").hexdigest()
+    if os.name != "nt":
+        assert stat.S_IMODE(output.stat().st_mode) == 0o600
+
+
+def test_restore_preflight_rejects_unsafe_connected_target(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    backup = tmp_path / "backup.dump"
+    backup.write_bytes(b"archive")
+    identity: dict[str, object] = {
+        "current_database": "enterprise_doc_restore_drill",
+        "current_user": "restore_operator",
+        "server_addr": "10.0.0.17",
+        "server_port": 5432,
+        "server_version_num": 170006,
+        "user_relation_count": 0,
+        "other_connection_count": 0,
+    }
+    monkeypatch.setattr("scripts.restore_database.inspect_archive", lambda _: 42)
+    monkeypatch.setattr("scripts.restore_database.postgres_client_major", lambda _: 17)
+    monkeypatch.setattr(
+        "scripts.restore_database.inspect_database_identity",
+        lambda _: identity.copy(),
+    )
+
+    preflight = inspect_restore_preflight(
+        database_url=("postgresql://user:pass@staging-db:5432/enterprise_doc_restore_drill"),
+        backup=backup,
+        expected_database="enterprise_doc_restore_drill",
+        expected_server_address="10.0.0.17",
+        require_empty=True,
+    )
+    assert preflight["archive_entry_count"] == 42
+    assert preflight["pg_restore_client_major"] == 17
+
+    identity["user_relation_count"] = 1
+    with pytest.raises(ValueError, match="must not contain user relations"):
+        inspect_restore_preflight(
+            database_url="postgresql://user:pass@staging-db/enterprise_doc_restore_drill",
+            backup=backup,
+            expected_database="enterprise_doc_restore_drill",
+            expected_server_address="10.0.0.17",
+            require_empty=True,
+        )
+
+    identity["user_relation_count"] = 0
+    identity["other_connection_count"] = 1
+    with pytest.raises(ValueError, match="other active connections"):
+        inspect_restore_preflight(
+            database_url="postgresql://user:pass@staging-db/enterprise_doc_restore_drill",
+            backup=backup,
+            expected_database="enterprise_doc_restore_drill",
+            expected_server_address="10.0.0.17",
+            require_empty=True,
+        )
+
+    identity["other_connection_count"] = 0
+    monkeypatch.setattr("scripts.restore_database.postgres_client_major", lambda _: 16)
+    with pytest.raises(RuntimeError, match="older than the PostgreSQL server"):
+        inspect_restore_preflight(
+            database_url="postgresql://user:pass@staging-db/enterprise_doc_restore_drill",
+            backup=backup,
+            expected_database="enterprise_doc_restore_drill",
+            expected_server_address="10.0.0.17",
+            require_empty=True,
+        )
 
 
 def test_rollback_commands_are_explicit_and_ordered() -> None:
@@ -337,7 +414,29 @@ def test_confirmed_restore_records_the_isolated_database_boundary(
         "DATABASE__URL",
         ("postgresql://user:super-secret@staging-db:5432/enterprise_doc_restore_drill"),
     )
-    monkeypatch.setattr("scripts.restore_database.shutil.which", lambda _: "pg_restore")
+    monkeypatch.setattr("scripts.restore_database.shutil.which", lambda executable: executable)
+    monkeypatch.setattr(
+        "scripts.restore_database.inspect_restore_preflight",
+        lambda **_: {
+            "archive_entry_count": 42,
+            "pg_restore_client_major": 17,
+            "current_database": "enterprise_doc_restore_drill",
+            "current_user": "restore_operator",
+            "server_addr": "10.0.0.17",
+            "server_port": 5432,
+            "server_version_num": 170006,
+            "user_relation_count": 0,
+            "other_connection_count": 0,
+        },
+    )
+    monkeypatch.setattr(
+        "scripts.restore_database.inspect_database_identity",
+        lambda _: {
+            "current_database": "enterprise_doc_restore_drill",
+            "server_addr": "10.0.0.17",
+            "user_relation_count": 23,
+        },
+    )
     monkeypatch.setattr("scripts.restore_database.subprocess.run", fake_run)
     monkeypatch.setattr(
         sys,
@@ -352,6 +451,8 @@ def test_confirmed_restore_records_the_isolated_database_boundary(
             "staging-db",
             "--expected-database",
             "enterprise_doc_restore_drill",
+            "--expected-server-address",
+            "10.0.0.17",
             "--source-database",
             "enterprise_doc",
             "--expected-sha256",
@@ -367,6 +468,10 @@ def test_confirmed_restore_records_the_isolated_database_boundary(
     record = json.loads(record_path.read_text(encoding="utf-8"))
     assert record["source_database"] == "enterprise_doc"
     assert record["target_database"] == "enterprise_doc_restore_drill"
+    assert record["target_server_address"] == "10.0.0.17"
+    assert record["target_user_relation_count_before"] == 0
+    assert record["target_user_relation_count_after"] == 23
     command = captured["command"]
     assert isinstance(command, list)
+    assert command[1:3] == ["--dbname", "enterprise_doc_restore_drill"]
     assert "super-secret" not in " ".join(command)

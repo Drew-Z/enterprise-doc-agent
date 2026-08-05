@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import time
@@ -12,9 +12,17 @@ from pathlib import Path
 from urllib.parse import unquote, urlparse
 
 try:
-    from scripts.backup_database import normalize_postgres_url, postgres_process_environment
+    from scripts.backup_database import (
+        file_sha256,
+        normalize_postgres_url,
+        postgres_process_environment,
+    )
 except ModuleNotFoundError:
-    from backup_database import normalize_postgres_url, postgres_process_environment
+    from backup_database import (  # type: ignore[import-not-found,no-redef]
+        file_sha256,
+        normalize_postgres_url,
+        postgres_process_environment,
+    )
 
 
 PRODUCTION_CONFIRMATION = "restore-production"
@@ -22,12 +30,121 @@ ALLOWED_ENVIRONMENTS = {"local", "test", "staging", "production"}
 STAGING_RESTORE_PREFIX = "enterprise_doc_restore_"
 
 
-def file_sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
+def database_name_from_url(database_url: str) -> str:
+    database = unquote(urlparse(normalize_postgres_url(database_url)).path.lstrip("/"))
+    if not database:
+        raise ValueError("database URL must identify a PostgreSQL database")
+    return database
+
+
+def postgres_client_major(executable: str) -> int:
+    completed = subprocess.run(
+        [executable, "--version"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    match = re.search(r"PostgreSQL\)\s+(\d+)", completed.stdout)
+    if match is None:
+        raise RuntimeError(f"could not parse {executable} version")
+    return int(match.group(1))
+
+
+def inspect_archive(backup: Path) -> int:
+    completed = subprocess.run(
+        ["pg_restore", "--list", str(backup)],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    entries = [
+        line
+        for line in completed.stdout.splitlines()
+        if line.strip() and not line.lstrip().startswith(";")
+    ]
+    if not entries:
+        raise RuntimeError("PostgreSQL archive contains no restore entries")
+    return len(entries)
+
+
+def inspect_database_identity(database_url: str) -> dict[str, object]:
+    query = (
+        "SELECT json_build_object("
+        "'current_database', current_database(), "
+        "'current_user', current_user, "
+        "'server_addr', inet_server_addr()::text, "
+        "'server_port', inet_server_port(), "
+        "'server_version_num', current_setting('server_version_num')::integer, "
+        "'user_relation_count', ("
+        "SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
+        "WHERE n.nspname NOT IN ('pg_catalog', 'information_schema') "
+        "AND n.nspname !~ '^pg_toast' AND c.relkind IN ('r', 'p', 'v', 'm', 'f')"
+        "), "
+        "'other_connection_count', ("
+        "SELECT count(*) FROM pg_stat_activity "
+        "WHERE datname = current_database() AND pid <> pg_backend_pid()"
+        ")"
+        ")::text;"
+    )
+    completed = subprocess.run(
+        [
+            "psql",
+            "--no-psqlrc",
+            "--tuples-only",
+            "--no-align",
+            "--set=ON_ERROR_STOP=1",
+            "--command",
+            query,
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+        env=postgres_process_environment(database_url),
+    )
+    try:
+        identity = json.loads(completed.stdout.strip())
+    except json.JSONDecodeError as error:
+        raise RuntimeError("database identity query did not return JSON") from error
+    if not isinstance(identity, dict):
+        raise RuntimeError("database identity query returned an invalid payload")
+    return identity
+
+
+def inspect_restore_preflight(
+    *,
+    database_url: str,
+    backup: Path,
+    expected_database: str,
+    expected_server_address: str | None,
+    require_empty: bool,
+) -> dict[str, object]:
+    archive_entry_count = inspect_archive(backup)
+    client_major = postgres_client_major("pg_restore")
+    identity = inspect_database_identity(database_url)
+    if identity.get("current_database") != expected_database:
+        raise ValueError("connected database does not match --expected-database")
+    server_address = identity.get("server_addr")
+    if expected_server_address is not None and server_address != expected_server_address:
+        raise ValueError("connected server does not match --expected-server-address")
+    server_version_num = identity.get("server_version_num")
+    if not isinstance(server_version_num, int):
+        raise RuntimeError("database identity is missing server_version_num")
+    server_major = server_version_num // 10000
+    if client_major < server_major:
+        raise RuntimeError("pg_restore major version is older than the PostgreSQL server")
+    relation_count = identity.get("user_relation_count")
+    connection_count = identity.get("other_connection_count")
+    if not isinstance(relation_count, int) or not isinstance(connection_count, int):
+        raise RuntimeError("database identity is missing restore safety counters")
+    if require_empty and relation_count != 0:
+        raise ValueError("confirmed restore target must not contain user relations")
+    if require_empty and connection_count != 0:
+        raise ValueError("confirmed restore target has other active connections")
+    return {
+        "archive_entry_count": archive_entry_count,
+        "pg_restore_client_major": client_major,
+        **identity,
+    }
 
 
 def validate_restore_target(
@@ -67,13 +184,13 @@ def validate_restore_target(
 
 
 def restore_command(*, database_url: str, backup: Path) -> list[str]:
-    normalize_postgres_url(database_url)
+    database = database_name_from_url(database_url)
     return [
         "pg_restore",
+        "--dbname",
+        database,
         "--exit-on-error",
         "--single-transaction",
-        "--clean",
-        "--if-exists",
         "--no-owner",
         "--no-privileges",
         str(backup),
@@ -89,6 +206,7 @@ def main() -> None:
     parser.add_argument("--environment", choices=sorted(ALLOWED_ENVIRONMENTS), required=True)
     parser.add_argument("--expected-host", required=True)
     parser.add_argument("--expected-database", required=True)
+    parser.add_argument("--expected-server-address")
     parser.add_argument("--source-database")
     parser.add_argument("--expected-sha256")
     parser.add_argument("--confirm", action="store_true")
@@ -117,13 +235,40 @@ def main() -> None:
     except ValueError as error:
         raise SystemExit(str(error)) from error
     command = restore_command(database_url=normalized_url, backup=args.input)
+    if shutil.which("pg_restore") is None:
+        raise SystemExit("pg_restore is required")
+    if shutil.which("psql") is None:
+        raise SystemExit("psql is required")
+    if args.confirm and args.expected_server_address is None:
+        raise SystemExit("confirmed restore requires --expected-server-address")
+    try:
+        preflight = inspect_restore_preflight(
+            database_url=normalized_url,
+            backup=args.input,
+            expected_database=args.expected_database,
+            expected_server_address=args.expected_server_address,
+            require_empty=args.confirm,
+        )
+    except (ValueError, RuntimeError, subprocess.CalledProcessError) as error:
+        raise SystemExit(str(error)) from error
     if not args.confirm:
-        print("Dry run: restore command validated. Re-run with --confirm to execute.")
+        print(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "operation": "postgres-restore-preflight",
+                    "status": "validated",
+                    "target_host": args.expected_host.lower(),
+                    "target_database": args.expected_database,
+                    **preflight,
+                },
+                indent=2,
+                sort_keys=True,
+            )
+        )
         return
     if args.expected_sha256 is None:
         raise SystemExit("confirmed restore requires --expected-sha256")
-    if shutil.which("pg_restore") is None:
-        raise SystemExit("pg_restore is required")
     started_at = datetime.now(UTC).isoformat()
     started = time.monotonic()
     try:
@@ -134,14 +279,34 @@ def main() -> None:
         )
     except subprocess.CalledProcessError as error:
         raise SystemExit("database restore failed") from error
+    try:
+        restored_identity = inspect_database_identity(normalized_url)
+    except (RuntimeError, subprocess.CalledProcessError) as error:
+        raise SystemExit("database restore completed but post-restore identity failed") from error
+    if restored_identity.get("current_database") != args.expected_database:
+        raise SystemExit("post-restore database identity does not match target")
+    if restored_identity.get("server_addr") != args.expected_server_address:
+        raise SystemExit("post-restore server identity does not match target")
+    restored_relations = restored_identity.get("user_relation_count")
+    if not isinstance(restored_relations, int) or restored_relations <= 0:
+        raise SystemExit("database restore completed without restored user relations")
     record = {
         "schema_version": 1,
         "operation": "postgres-restore",
         "status": "passed",
         "environment": args.environment,
         "target_host": args.expected_host.lower(),
+        "target_server_address": preflight["server_addr"],
+        "target_server_port": preflight["server_port"],
+        "target_user": preflight["current_user"],
         "source_database": args.source_database,
         "target_database": args.expected_database,
+        "server_version_num": preflight["server_version_num"],
+        "pg_restore_client_major": preflight["pg_restore_client_major"],
+        "archive_entry_count": preflight["archive_entry_count"],
+        "target_user_relation_count_before": preflight["user_relation_count"],
+        "target_other_connection_count_before": preflight["other_connection_count"],
+        "target_user_relation_count_after": restored_relations,
         "started_at": started_at,
         "completed_at": datetime.now(UTC).isoformat(),
         "input_sha256": backup_sha256,
