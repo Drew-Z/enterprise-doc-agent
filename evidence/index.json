@@ -45,7 +45,8 @@
       "manifest_commit": "8983107153b3cd8c3d7c501c9c70dc5d6068c2ae",
       "current_status": "evidence/m6/20260722-m6-current-status.json",
       "host_observation": "evidence/m6/20260722T0440-k3s-host-observation.json",
-      "rollback_drill": "evidence/m6/20260805-staging-bidirectional-rollback.json"
+      "rollback_drill": "evidence/m6/20260805-staging-bidirectional-rollback.json",
+      "postgres_restore_drill": "evidence/m6/20260805-staging-postgres-restore.json"
     },
     {
       "milestone": "M7",

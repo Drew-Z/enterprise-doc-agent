@@ -1,0 +1,16 @@
+{
+  "completed_at": "2026-08-05T11:52:04.977679+00:00",
+  "limitations": [
+    "Backup creation alone does not prove restore success or an RPO/RTO objective."
+  ],
+  "operation": "postgres-backup",
+  "output": "staging-public.dump",
+  "schema_version": 1,
+  "schemas": [
+    "public"
+  ],
+  "sha256": "f3bd278bcabdf448c0da2369f2b0918e5575c7b44542b1536a97b2689febb8dc",
+  "size_bytes": 207818,
+  "started_at": "2026-08-05T11:51:59.062006+00:00",
+  "status": "passed"
+}

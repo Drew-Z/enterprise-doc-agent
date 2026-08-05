@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import shutil
@@ -937,16 +938,18 @@ def test_tiny_staging_runbook_requires_isolated_restore_and_coherent_rollback() 
     assert "--source-database" in runbook
     assert "enterprise_doc_restore_" in runbook
     assert "does not restore or" in runbook
-    assert "validate R2 object versions" in runbook
+    assert "validate R2 objects" in runbook
     assert "same passed release record" in runbook
     assert "list replicasets.apps" in runbook
     assert "immediately reapply the generated administrator" in runbook
     assert "20260805-staging-bidirectional-rollback.json" in runbook
 
 
-def test_bidirectional_rollback_evidence_keeps_the_restore_gate_open() -> None:
+def test_database_restore_and_bidirectional_rollback_evidence_keep_r2_gate_open() -> None:
     evidence_path = "evidence/m6/20260805-staging-bidirectional-rollback.json"
     evidence = json.loads((ROOT / evidence_path).read_text(encoding="utf-8"))
+    database_evidence_path = "evidence/m6/20260805-staging-postgres-restore.json"
+    database_evidence = json.loads((ROOT / database_evidence_path).read_text(encoding="utf-8"))
     gate = json.loads(
         (ROOT / "evidence/gates/m6-backup-restore-rollback.json").read_text(encoding="utf-8")
     )
@@ -962,10 +965,20 @@ def test_bidirectional_rollback_evidence_keeps_the_restore_gate_open() -> None:
         assert len(leg["images"]) == 4
     assert gate["state"] == "open"
     assert gate["status"] == "blocked_external"
-    assert gate["completed_evidence"] == [evidence_path]
-    assert "R2 restore" in gate["blocking_reason"]
+    assert gate["completed_evidence"] == [evidence_path, database_evidence_path]
+    assert "R2 snapshot restore" in gate["blocking_reason"]
+    assert database_evidence["status"] == "passed_database_subgate"
+    assert database_evidence["restore"]["relations_before"] == 0
+    assert database_evidence["restore"]["relations_after"] == 25
+    assert database_evidence["data_validation"]["exact_table_counts_match"] is True
+    assert database_evidence["application_readiness"]["status"] == "passed"
+    for artifact in database_evidence["artifacts"]:
+        artifact_path = ROOT / artifact["path"]
+        assert artifact_path.is_file()
+        assert hashlib.sha256(artifact_path.read_bytes()).hexdigest() == artifact["sha256"]
     m6 = next(item for item in index["evidence"] if item["milestone"] == "M6")
     assert m6["rollback_drill"] == evidence_path
+    assert m6["postgres_restore_drill"] == database_evidence_path
 
 
 def test_tiny_staging_runbook_requires_private_control_plane_and_scoped_runner() -> None:

@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "evidence_type": "staging-postgres-isolated-restore-drill",
+  "status": "passed_database_subgate",
+  "captured_at": "2026-08-05T21:46:34+08:00",
+  "source_commits": {
+    "schema_scoped_backup": "9d118d6a6a2c14419f246b16560cff047ccb1dd5",
+    "guarded_restore": "adb0437660aa25f5a9a29f18d02c9e76b2ca24db",
+    "inventory_compare": "b32e5d16f566784a12f19ef38cac0418103be9f4"
+  },
+  "quality_run": {
+    "run_id": "31011287538",
+    "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/31011287538",
+    "status": "passed"
+  },
+  "environment": {
+    "external_execution": true,
+    "database_provider": "Supabase PostgreSQL",
+    "database_region": "ap-southeast-1",
+    "database_endpoint_host": "aws-0-ap-southeast-1.pooler.supabase.com",
+    "database_server_version_num": 170006,
+    "cluster_profile": "single-node-4c8g",
+    "namespace": "enterprise-doc-agent-staging"
+  },
+  "backup": {
+    "source_database": "postgres",
+    "schemas": [
+      "public"
+    ],
+    "started_at": "2026-08-05T11:51:59.062006+00:00",
+    "completed_at": "2026-08-05T11:52:04.977679+00:00",
+    "size_bytes": 207818,
+    "sha256": "f3bd278bcabdf448c0da2369f2b0918e5575c7b44542b1536a97b2689febb8dc",
+    "file_mode": "0600",
+    "format": "PostgreSQL custom archive"
+  },
+  "restore": {
+    "target_database": "enterprise_doc_restore_20260805t094423z",
+    "started_at": "2026-08-05T13:27:23.144047+00:00",
+    "completed_at": "2026-08-05T13:27:36.757810+00:00",
+    "duration_seconds": 13.613776861981023,
+    "backup_age_seconds_at_restore": 5731.787547588348,
+    "pg_restore_client_major": 17,
+    "archive_total_entry_count": 195,
+    "archive_selected_entry_count": 194,
+    "archive_selection_sha256": "3e5b61ea77a5b1147795d2c3a198ab6dbafad04d148e9b6dc0e8e449c3156cf1",
+    "preexisting_schemas": [
+      "public"
+    ],
+    "skipped_archive_entries": [
+      "SCHEMA public"
+    ],
+    "relations_before": 0,
+    "other_connections_before": 0,
+    "relations_after": 25
+  },
+  "data_validation": {
+    "status": "passed",
+    "alembic_revisions": [
+      "20260804_0011"
+    ],
+    "table_count": 25,
+    "exact_table_counts_match": true,
+    "values_redacted": true
+  },
+  "application_readiness": {
+    "status": "passed",
+    "procedure": "enterprise-doc-checkpointer-setup --check in the deployed API image against the isolated database",
+    "migration_version": 9,
+    "expected_migration_version": 9,
+    "missing_tables": [],
+    "api_pod": "enterprise-doc-api-6564d67b99-564k5",
+    "api_image": "ghcr.io/drew-z/enterprise-doc-api@sha256:33c9d21cc3a7706a34edf57625f8c940a58f458038b9b9e126f1fc862158d3db"
+  },
+  "safe_failures": [
+    {
+      "stage": "unscoped archive restore",
+      "reason": "The full database archive included Supabase realtime/auth/storage platform objects that the application role must not recreate.",
+      "result": "pg_restore failed inside a single transaction; the isolated target remained at zero user relations."
+    },
+    {
+      "stage": "public schema archive restore",
+      "reason": "The target already contained the reviewed public schema needed by the vector extension.",
+      "result": "pg_restore failed inside a single transaction; the isolated target remained at zero user relations."
+    }
+  ],
+  "secret_handling": {
+    "source": "Kubernetes Secret enterprise-doc-secrets",
+    "database_urls_in_argv": false,
+    "database_urls_persisted": false,
+    "application_probe_injection": "stdin to a new process in the deployed API container",
+    "backup_retained_in_git": false
+  },
+  "artifacts": [
+    {
+      "path": "evidence/m6/20260805-staging-postgres-restore/backup-public-record.json",
+      "kind": "postgres-backup-record",
+      "sha256": "da102ee674438ce6adab78ad05cf7d90d2c61cafa80cd3ad4151ab89e50aa2f4"
+    },
+    {
+      "path": "evidence/m6/20260805-staging-postgres-restore/restore-public-record.json",
+      "kind": "postgres-restore-record",
+      "sha256": "666a88cd42d605fea4b98cdb5a217810ab51f6e85ebec0aef54c6d86931f7340"
+    },
+    {
+      "path": "evidence/m6/20260805-staging-postgres-restore/inventory-compare.json",
+      "kind": "postgres-inventory-compare",
+      "sha256": "83b9672ebf9e8d70dfe13f6ce157a74640b46a7750e3f8e0ea259301203d7320"
+    },
+    {
+      "path": "evidence/m6/20260805-staging-postgres-restore/application-readiness.json",
+      "kind": "application-database-readiness",
+      "sha256": "d241c2bd3cfd90d9043ab8a47a7c3c2168ee6de94806eef35e5df6781f678365"
+    }
+  ],
+  "limitations": [
+    "The exact source/target table-count comparison ran after restore rather than at the backup timestamp; pg_dump itself provided the transactional backup snapshot.",
+    "The isolated database is temporarily retained for the upcoming database/R2 cross-system validation and must be removed afterward.",
+    "No R2 immutable snapshot or isolated object restore has executed yet, so the cross-system recovery gate remains open.",
+    "The measured database restore duration and backup age are not a production RTO or RPO claim."
+  ]
+}

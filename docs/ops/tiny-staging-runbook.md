@@ -648,23 +648,49 @@ rollback sub-gate, but it does not close database/object recovery or production 
 Never point `restore_database.py` at the live staging database. Provision a separately
 named database beginning with `enterprise_doc_restore_`, keep every application workload
 on the source database, and use a PostgreSQL client whose major version is at least the
-server major version. The 2026-08-05 preflight observed PostgreSQL 17.6 and confirmed that
-the staging database role can create an isolated database, but the host did not yet have
-compatible `pg_dump` and `pg_restore` clients. Install that pinned tool boundary by
-applying and checking `infra/host/ubuntu-24.04/provision-runner-toolchain.sh`; do not
-install an unpinned `postgresql-client` package by hand before executing the drill.
+server major version. Install and verify that pinned boundary with
+`infra/host/ubuntu-24.04/provision-runner-toolchain.sh`; do not install an unpinned
+`postgresql-client` package by hand.
+
+Supabase application backups must be scoped to the reviewed application schema. A full
+database dump includes provider-owned `auth`, `realtime`, `storage` and `vault` objects
+that the application role must not recreate. Create the custom archive with the secure
+backup helper and retain its digest:
+
+```bash
+install -d -m 0700 /secure/off-repo/path
+python scripts/backup_database.py \
+  --output /secure/off-repo/path/staging-public.dump \
+  --schema public \
+  --record-path /secure/off-repo/path/backup-record.json
+```
+
+Create the isolated target from `template0` and install only the extension required by
+the repository migrations before restore:
+
+```bash
+restore_database=enterprise_doc_restore_$(date -u +%Y%m%dT%H%M%SZ | tr '[:upper:]' '[:lower:]')
+createdb --maintenance-db=postgres --template=template0 "$restore_database"
+psql --dbname "$restore_database" --set=ON_ERROR_STOP=1 \
+  --command 'CREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA public'
+```
+
+These commands rely on reviewed libpq environment variables. Do not put a database URL
+or password in an argument. Resolve the connected server address with the read-only dry
+run and pin that observed address during confirmation.
 
 Keep the target URL out of shell history and process arguments. From the repository root,
 run the validation pass first and add `--confirm` only after reviewing the target host,
-source database, target database and backup digest:
+server address, source database, target database, backup digest and archive selection:
 
 ```bash
 set -euo pipefail
 source_database=postgres
 restore_database=enterprise_doc_restore_$(date -u +%Y%m%dT%H%M%SZ)
 expected_host=<reviewed-postgresql-host>
-backup_path=/secure/off-repo/path/staging.dump
+backup_path=/secure/off-repo/path/staging-public.dump
 backup_sha256=<reviewed-64-hex-sha256>
+expected_server_address=<reviewed-inet-server-address>
 record_path=/secure/off-repo/path/staging-restore-record.json
 
 restore_args=(
@@ -672,7 +698,9 @@ restore_args=(
   --database-url-env RESTORE_DATABASE_URL
   --environment staging
   --expected-host "$expected_host"
+  --expected-server-address "$expected_server_address"
   --expected-database "$restore_database"
+  --preexisting-schema public
   --source-database "$source_database"
   --expected-sha256 "$backup_sha256"
   --record-path "$record_path"
@@ -691,8 +719,10 @@ unset RESTORE_DATABASE_URL
 After restore, compare migration revisions and bounded table counts, then run read-only
 application validation against the isolated target before deleting it. Retain only the
 sanitized restore record and aggregate validation results. The command does not restore or
-validate R2 object versions, so a database-only drill cannot close the cross-system
-recovery or production RPO/RTO gate.
+validate R2 objects, so a database-only drill cannot close the cross-system recovery or
+production RPO/RTO gate. The 2026-08-05 external drill passed with 25 exact table counts,
+Alembic revision `20260804_0011`, and application checkpoint readiness; its sanitized
+record is `evidence/m6/20260805-staging-postgres-restore.json`.
 
 ## Resource guardrails
 
