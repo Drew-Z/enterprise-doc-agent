@@ -141,7 +141,7 @@ def test_working_tree_captures_are_separate_from_formal_evidence() -> None:
         assert capture["working_tree_dirty"] is True
 
 
-def test_external_gates_have_complete_open_records() -> None:
+def test_manual_gates_have_complete_state_records() -> None:
     index = _load(ROOT / "evidence/index.json")
     paths = index["manual_gates"]
     assert isinstance(paths, list) and paths
@@ -154,6 +154,7 @@ def test_external_gates_have_complete_open_records() -> None:
         "prerequisites",
         "required_evidence",
         "state",
+        "status",
         "review_date",
     }
     for relative in paths:
@@ -162,11 +163,22 @@ def test_external_gates_have_complete_open_records() -> None:
         gate_id = str(gate["gate_id"])
         assert gate_id not in gate_ids
         gate_ids.add(gate_id)
-        assert gate["state"] == "open"
-        assert gate["status"] == "blocked_external"
         date.fromisoformat(str(gate["review_date"]))
-        assert gate["prerequisites"]
         assert gate["required_evidence"]
+        match gate["state"]:
+            case "open":
+                assert gate["status"] == "blocked_external"
+                assert gate["blocking_reason"]
+                assert gate["prerequisites"]
+            case "closed":
+                assert gate["status"] == "passed"
+                assert gate["blocking_reason"] is None
+                completed_evidence = gate.get("completed_evidence")
+                assert isinstance(completed_evidence, list) and completed_evidence
+                for completed_relative in completed_evidence:
+                    _repo_path(str(completed_relative))
+            case state:
+                raise AssertionError(f"unsupported manual gate state: {state!r}")
 
     for milestone in ("M5", "M6", "M7"):
         manifest = _load(
