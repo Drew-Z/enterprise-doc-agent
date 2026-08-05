@@ -14,6 +14,7 @@ from scripts.backup_database import (
     postgres_process_environment,
     run_backup,
 )
+from scripts.compare_database_inventory import database_inventory
 from scripts.restore_database import (
     build_archive_selection,
     inspect_restore_preflight,
@@ -62,6 +63,32 @@ def test_database_credentials_are_transferred_through_libpq_environment() -> Non
     assert environment["PGPASSWORD"] == "super-secret"
     assert environment["PGDATABASE"] == "app"
     assert environment["PGSSLMODE"] == "require"
+
+
+def test_database_inventory_uses_bounded_exact_counts(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    queries: list[str] = []
+
+    def fake_query(_: str, sql: str) -> str:
+        queries.append(sql)
+        if "information_schema.tables" in sql:
+            return "alembic_version\ndocuments\n"
+        return json.dumps(
+            {
+                "schema": "public",
+                "alembic_revisions": ["20260803_0010"],
+                "table_counts": {"alembic_version": 1, "documents": 4},
+            }
+        )
+
+    monkeypatch.setattr("scripts.compare_database_inventory._run_query", fake_query)
+    inventory = database_inventory("postgresql://user:secret@db/app", "public")
+
+    assert inventory["alembic_revisions"] == ["20260803_0010"]
+    assert inventory["table_counts"] == {"alembic_version": 1, "documents": 4}
+    assert 'SELECT count(*) FROM "public"."documents"' in queries[1]
+    assert "secret" not in queries[1]
 
 
 def test_backup_process_keeps_database_credentials_out_of_argv(
