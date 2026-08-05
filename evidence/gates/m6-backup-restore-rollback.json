@@ -3,11 +3,12 @@
   "milestone": "M6",
   "requirement": "M6-R5",
   "owner": "database and release owner",
-  "blocking_reason": "The 2026-08-05 staging bidirectional release rollback and isolated PostgreSQL restore passed. No immutable R2 snapshot restore, restored DB/R2 cross-system validation, or defensible production RPO/RTO drill has executed.",
+  "blocking_reason": "The staging bidirectional release rollback, isolated PostgreSQL restore, v0.1.19 authenticated rollout, and 27-object R2 snapshot preflight passed. The target Cloudflare account still lacks reviewed Bucket Lock control-plane access, so no confirmed immutable R2 snapshot, isolated object restore, DB/R2 cross-system validation, or defensible production RPO/RTO drill has executed.",
   "prerequisites": [
-    "Provide an isolated R2 restore prefix or bucket",
-    "Provide an immutable R2 snapshot manifest and restored object set",
-    "Select a compatible release and rollback target"
+    "Configure Bucket Lock for the reviewed snapshot prefix in both R2 buckets",
+    "Execute the confirmed immutable snapshot and retain its private manifest off-repository",
+    "Restore the manifest into the isolated R2 prefix against the retained restore database",
+    "Run DB/R2 bidirectional validation and a production RPO/RTO drill"
   ],
   "required_evidence": [
     "Backup freshness and integrity record",
@@ -18,9 +19,10 @@
   ],
   "completed_evidence": [
     "evidence/m6/20260805-staging-bidirectional-rollback.json",
-    "evidence/m6/20260805-staging-postgres-restore.json"
+    "evidence/m6/20260805-staging-postgres-restore.json",
+    "evidence/m6/20260806-v0.1.19-staging-r2-preflight.json"
   ],
   "state": "open",
   "status": "blocked_external",
-  "review_date": "2026-08-05"
+  "review_date": "2026-08-06"
 }

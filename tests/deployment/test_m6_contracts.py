@@ -945,11 +945,13 @@ def test_tiny_staging_runbook_requires_isolated_restore_and_coherent_rollback() 
     assert "20260805-staging-bidirectional-rollback.json" in runbook
 
 
-def test_database_restore_and_bidirectional_rollback_evidence_keep_r2_gate_open() -> None:
+def test_database_restore_rollback_and_r2_preflight_keep_confirmed_r2_gate_open() -> None:
     evidence_path = "evidence/m6/20260805-staging-bidirectional-rollback.json"
     evidence = json.loads((ROOT / evidence_path).read_text(encoding="utf-8"))
     database_evidence_path = "evidence/m6/20260805-staging-postgres-restore.json"
     database_evidence = json.loads((ROOT / database_evidence_path).read_text(encoding="utf-8"))
+    preflight_evidence_path = "evidence/m6/20260806-v0.1.19-staging-r2-preflight.json"
+    preflight_evidence = json.loads((ROOT / preflight_evidence_path).read_text(encoding="utf-8"))
     gate = json.loads(
         (ROOT / "evidence/gates/m6-backup-restore-rollback.json").read_text(encoding="utf-8")
     )
@@ -965,8 +967,13 @@ def test_database_restore_and_bidirectional_rollback_evidence_keep_r2_gate_open(
         assert len(leg["images"]) == 4
     assert gate["state"] == "open"
     assert gate["status"] == "blocked_external"
-    assert gate["completed_evidence"] == [evidence_path, database_evidence_path]
-    assert "R2 snapshot restore" in gate["blocking_reason"]
+    assert gate["completed_evidence"] == [
+        evidence_path,
+        database_evidence_path,
+        preflight_evidence_path,
+    ]
+    assert "Bucket Lock" in gate["blocking_reason"]
+    assert "confirmed immutable R2 snapshot" in gate["blocking_reason"]
     assert database_evidence["status"] == "passed_database_subgate"
     assert database_evidence["restore"]["relations_before"] == 0
     assert database_evidence["restore"]["relations_after"] == 25
@@ -976,9 +983,43 @@ def test_database_restore_and_bidirectional_rollback_evidence_keep_r2_gate_open(
         artifact_path = ROOT / artifact["path"]
         assert artifact_path.is_file()
         assert hashlib.sha256(artifact_path.read_bytes()).hexdigest() == artifact["sha256"]
+    assert preflight_evidence["status"] == "passed_with_recovery_gate_open"
+    assert preflight_evidence["release"]["supply_chain_run"]["status"] == "passed"
+    assert preflight_evidence["staging_rollout"]["status"] == "passed"
+    assert set(preflight_evidence["staging_rollout"]["outcomes"].values()) == {"success"}
+    assert preflight_evidence["staging_rollout"]["authenticated_smoke"]["status"] == "passed"
+    assert preflight_evidence["r2_snapshot_preflight"]["object_count"] == 27
+    assert preflight_evidence["r2_snapshot_preflight"]["remote_mutations"] == 0
+    assert preflight_evidence["recovery_gate"]["bucket_lock_configured"] is False
+    assert preflight_evidence["recovery_gate"]["confirmed_snapshot_executed"] is False
     m6 = next(item for item in index["evidence"] if item["milestone"] == "M6")
     assert m6["rollback_drill"] == evidence_path
     assert m6["postgres_restore_drill"] == database_evidence_path
+    assert m6["latest_staging_release"] == preflight_evidence_path
+    assert m6["r2_snapshot_preflight"] == preflight_evidence_path
+
+
+def test_signed_release_and_authenticated_staging_evidence_close_delivery_gates() -> None:
+    evidence_path = "evidence/m6/20260806-v0.1.19-staging-r2-preflight.json"
+    evidence = json.loads((ROOT / evidence_path).read_text(encoding="utf-8"))
+
+    for gate_name in (
+        "m6-registry-signed-images.json",
+        "m6-cluster-staging-rollout.json",
+    ):
+        gate = json.loads((ROOT / "evidence/gates" / gate_name).read_text(encoding="utf-8"))
+        assert gate["state"] == "closed"
+        assert gate["status"] == "passed"
+        assert gate["blocking_reason"] is None
+        assert gate["completed_evidence"] == [evidence_path]
+
+    images = evidence["release"]["images"]
+    assert set(images) == {"api", "worker", "consumer", "web"}
+    assert all("@sha256:" in image for image in images.values())
+    assert evidence["release"]["quality_run"]["status"] == "passed"
+    assert evidence["release"]["supply_chain_run"]["status"] == "passed"
+    assert evidence["staging_rollout"]["run_attempt"] == 3
+    assert evidence["staging_rollout"]["status"] == "passed"
 
 
 def test_tiny_staging_runbook_requires_private_control_plane_and_scoped_runner() -> None:

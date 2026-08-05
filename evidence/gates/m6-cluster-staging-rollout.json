@@ -3,7 +3,7 @@
   "milestone": "M6",
   "requirement": "M6-R4",
   "owner": "platform owner",
-  "blocking_reason": "No staging cluster, secret manager integration, TLS ingress, externally reachable presigned object endpoint, or authenticated smoke credentials are available.",
+  "blocking_reason": null,
   "prerequisites": [
     "Provision a staging Kubernetes cluster and namespace",
     "Configure TLS, secrets, database, Redis, and object storage",
@@ -16,7 +16,10 @@
     "Authenticated upload to ingestion to Agent smoke result",
     "TLS, secret handling, RBAC, and NetworkPolicy review"
   ],
-  "state": "open",
-  "status": "blocked_external",
-  "review_date": "2026-07-19"
+  "completed_evidence": [
+    "evidence/m6/20260806-v0.1.19-staging-r2-preflight.json"
+  ],
+  "state": "closed",
+  "status": "passed",
+  "review_date": "2026-08-06"
 }

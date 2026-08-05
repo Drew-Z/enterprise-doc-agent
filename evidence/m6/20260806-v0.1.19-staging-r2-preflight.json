@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "evidence_type": "signed-release-staging-rollout-r2-preflight",
+  "status": "passed_with_recovery_gate_open",
+  "captured_at": "2026-08-06T03:36:46+08:00",
+  "source_commit": "2ff44015d456f1fbbbdf43a02203924a0c6acd75",
+  "release": {
+    "tag": "v0.1.19",
+    "quality_run": {
+      "run_id": "31034403912",
+      "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/31034403912",
+      "status": "passed"
+    },
+    "supply_chain_run": {
+      "run_id": "31034701135",
+      "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/31034701135",
+      "status": "passed"
+    },
+    "release_manifest_sha256": "9ace8b3c50d52bb471a4790657fe6b5bb5b4151b6ad8c4b9f19b519b891cac9a",
+    "images": {
+      "api": "ghcr.io/drew-z/enterprise-doc-api@sha256:9e005990b7a956c3b852a0f9a0073d663470d72dff4be31ceaedbc1d4321d80e",
+      "worker": "ghcr.io/drew-z/enterprise-doc-worker@sha256:99efcc0496eaecaa7635101e44bcffa96498de895b3471676d1e222e47cb205d",
+      "consumer": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:c16fcd14a5ba377fa09674c51d8e04bd2546ba3293f49f7aaf7e2a9d91305b6c",
+      "web": "ghcr.io/drew-z/enterprise-doc-web@sha256:6c1e4e34ccde22b66cbed2c579c9fcd47867a4b75baaab9cc1ff59d455db8532"
+    },
+    "verified_controls": [
+      "GHCR digest publication",
+      "Trivy scan",
+      "SPDX SBOM",
+      "BuildKit provenance attestation",
+      "Cosign OIDC signature verification"
+    ]
+  },
+  "staging_rollout": {
+    "run_id": "31035272327",
+    "run_attempt": 3,
+    "job_id": "92420934119",
+    "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/31035272327",
+    "status": "passed",
+    "duration_seconds": 112,
+    "deployment_profile": "single-node-4c8g",
+    "namespace": "enterprise-doc-agent-staging",
+    "prerequisites_sha256": "ff11d3439dd02e6a062a08c91ff9432ae521e23ce4a4b59567aa73227eb55c22",
+    "migration": {
+      "status": "passed",
+      "checkpointer_migration_version": 9,
+      "expected_checkpointer_migration_version": 9,
+      "missing_tables": []
+    },
+    "embedding": {
+      "status": "validated",
+      "provider": "openai_compatible",
+      "model": "Qwen/Qwen3-Embedding-4B",
+      "dimension": 1024,
+      "reindex_status": "completed"
+    },
+    "model": {
+      "status": "validated",
+      "provider": "openai_compatible",
+      "model": "grok-4.5"
+    },
+    "outcomes": {
+      "prerequisites": "success",
+      "migration": "success",
+      "workloads": "success",
+      "rollout": "success",
+      "embedding_rollout": "success",
+      "cluster_smoke": "success",
+      "authenticated_smoke": "success"
+    },
+    "authenticated_smoke": {
+      "status": "passed",
+      "duration_seconds": 59.265081733989064,
+      "sample_count": 1,
+      "steps": [
+        "upload_session_created",
+        "object_uploaded",
+        "upload_completed",
+        "document_ready",
+        "agent_run_created",
+        "agent_run_succeeded"
+      ]
+    },
+    "artifact": {
+      "artifact_id": "8944119873",
+      "artifact_name": "staging-release-2ff44015d456f1fbbbdf43a02203924a0c6acd75",
+      "archive_sha256": "2d27cbfd79aad9c79267993824caf64ccd3b9cc66ffc0f54c024c55c0d357bd7",
+      "evidence_manifest_sha256": "7bfd08176ef349448262dda2802c25ce0a4b5aa4d7733892dc06db0a2861d46f",
+      "smoke_report_sha256": "00b222af83bc8efa4c79b87b306ce42fc91bb92ca24166ff7231045fbcabfede"
+    }
+  },
+  "r2_snapshot_preflight": {
+    "status": "planned",
+    "confirmed": false,
+    "operation": "r2-object-snapshot",
+    "drill_id": "20260806-staging-r2",
+    "snapshot_prefix": "enterprise-doc-recovery/snapshots/20260806-staging-r2",
+    "endpoint_account_id": "2741446a7478f2d8a5ff31df7e077f17",
+    "endpoint_host": "2741446a7478f2d8a5ff31df7e077f17.r2.cloudflarestorage.com",
+    "allowed_buckets": [
+      "documents",
+      "artifacts"
+    ],
+    "manifest_bucket": "documents",
+    "object_count": 27,
+    "copied_count": 0,
+    "existing_count": 0,
+    "duration_seconds": 20.474701630009804,
+    "manifest_sha256": "8b25b292cfb3277ee841e791f380b8fee09ca87c26427824fef059a50915b1f7",
+    "source_validation": "All database references were matched to source objects and verified by size and streaming SHA-256.",
+    "remote_mutations": 0
+  },
+  "recovery_gate": {
+    "status": "blocked_external",
+    "bucket_lock_required": true,
+    "bucket_lock_configured": false,
+    "control_plane_target_account_id": "2741446a7478f2d8a5ff31df7e077f17",
+    "connected_control_plane_account_id": "f04d5c8ecf3260827f1ea87b22454ae8",
+    "control_plane_probe_result": "Cloudflare API authentication error 10000 for the target account",
+    "confirmed_snapshot_executed": false,
+    "isolated_object_restore_executed": false,
+    "production_rpo_rto_proven": false
+  },
+  "secret_handling": {
+    "smoke_principal": "dedicated synthetic active staging membership",
+    "smoke_token": "rotated from the live API Pod and transferred directly to the GitHub Environment secret through stdin",
+    "token_or_principal_ids_retained": false,
+    "object_keys_retained": false,
+    "snapshot_manifest_retained": false
+  },
+  "limitations": [
+    "The authenticated smoke proves one real main-path execution, not capacity, failover, model quality, or production availability.",
+    "Attempt 3 reused locally cached immutable layers after a slow GHCR cold pull; its duration is not cold-pull capacity evidence.",
+    "The R2 preflight performed no remote writes and does not prove immutable retention or restore.",
+    "Bucket Lock must be configured in the target Cloudflare account before a confirmed snapshot can be called immutable.",
+    "No confirmed R2 restore or production RPO/RTO drill has executed, so the overall recovery gate remains open."
+  ]
+}
