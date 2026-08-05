@@ -9,6 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 HOST = ROOT / "infra" / "host" / "ubuntu-24.04"
 RUNBOOK = ROOT / "docs" / "ops" / "single-node-4c8g-staging-runbook.md"
+CLOUDFLARED_TRANSPORT = HOST / "systemd" / "cloudflared.service.d" / "transport.conf"
 
 
 def _script(name: str) -> str:
@@ -133,6 +134,29 @@ def test_host_runbook_keeps_tailscale_enrollment_operator_owned() -> None:
     ):
         assert contract in runbook
     assert "Do not put its auth key" in runbook
+
+
+def test_cloudflared_transport_is_non_secret_reviewed_and_reversible() -> None:
+    assert CLOUDFLARED_TRANSPORT.read_text(encoding="utf-8") == (
+        "[Service]\nEnvironment=TUNNEL_TRANSPORT_PROTOCOL=http2\n"
+    )
+    transport = CLOUDFLARED_TRANSPORT.read_text(encoding="utf-8").lower()
+    assert "token" not in transport
+    assert "credential" not in transport
+
+    runbook = RUNBOOK.read_text(encoding="utf-8")
+    for contract in (
+        "systemd/cloudflared.service.d/transport.conf",
+        "/etc/systemd/system/cloudflared.service.d/transport.conf",
+        "enterprise-doc-before-http2",
+        "systemctl daemon-reload",
+        "systemctl restart cloudflared",
+        "protocol=http2",
+        "cloudflared_tunnel_ha_connections 4",
+        'sudo rm -f "$target"',
+    ):
+        assert contract in runbook
+    assert "Do not print `systemctl cat cloudflared`" in runbook
 
 
 def test_host_baseline_configures_swap_kernel_and_bounded_logs() -> None:

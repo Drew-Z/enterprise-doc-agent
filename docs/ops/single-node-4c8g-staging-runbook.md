@@ -210,6 +210,56 @@ Release `v0.1.12` used the deterministic 8-dimensional embedding fixture. Follow
 an independently configured embedding endpoint and Secret, a destructive 1024-dimensional
 pgvector migration, the restricted embedding rollout Job, and retrieval-quality evidence.
 
+## Cloudflare Tunnel transport
+
+Tunnel enrollment and credentials remain operator-owned. After the named tunnel routes
+the staging hostname to `https://127.0.0.1:8443`, install the reviewed non-secret transport
+drop-in separately. This host uses HTTP/2 because bounded staging measurements showed
+high-loss QUIC connections to the available edge locations. Re-evaluate the choice after
+changing the host network or provider; it is not a universal Cloudflare recommendation.
+
+```bash
+cd /tmp/enterprise-doc-host
+source_path=systemd/cloudflared.service.d/transport.conf
+target=/etc/systemd/system/cloudflared.service.d/transport.conf
+backup=${target}.enterprise-doc-before-http2
+
+test -f "$source_path"
+if sudo test -e "$target" && ! sudo test -e "$backup"; then
+  sudo cp -a "$target" "$backup"
+fi
+sudo install -d -o root -g root -m 0755 "$(dirname "$target")"
+sudo install -o root -g root -m 0644 "$source_path" "$target"
+sudo systemctl daemon-reload
+sudo systemctl restart cloudflared
+systemctl is-active cloudflared
+sudo journalctl -u cloudflared --since '2 minutes ago' --no-pager \
+  | grep 'Registered tunnel connection' \
+  | grep 'protocol=http2'
+curl --fail --silent http://127.0.0.1:20241/metrics \
+  | grep '^cloudflared_tunnel_ha_connections 4$'
+curl --fail --silent --show-error https://agent.playlab.eu.cc/health/ready
+```
+
+Do not print `systemctl cat cloudflared` or the full process command into logs because a
+remotely managed service can contain the tunnel token. If HTTP/2 fails the health or HA
+connection checks, restore the previous file when one existed, otherwise remove the new
+drop-in, then reload and restart:
+
+```bash
+target=/etc/systemd/system/cloudflared.service.d/transport.conf
+backup=${target}.enterprise-doc-before-http2
+if sudo test -e "$backup"; then
+  sudo install -o root -g root -m 0644 "$backup" "$target"
+else
+  sudo rm -f "$target"
+fi
+sudo systemctl daemon-reload
+sudo systemctl restart cloudflared
+systemctl is-active cloudflared
+curl --fail --silent --show-error https://agent.playlab.eu.cc/health/ready
+```
+
 ## Remaining operator gates
 
 After host and K3s verification, continue in this order:
@@ -218,8 +268,9 @@ After host and K3s verification, continue in this order:
 2. Render and apply administrator-owned `single-node-4c8g` prerequisites.
 3. Validate application, GHCR pull and TLS Secrets without retaining raw values.
 4. Register the repository-scoped `enterprise-doc-staging` runner.
-5. Enroll Cloudflare Tunnel and route the application hostname to
-   `https://127.0.0.1:8443`, with the origin server name set to the staging hostname.
+5. Enroll Cloudflare Tunnel, route the application hostname to
+   `https://127.0.0.1:8443` with the origin server name set to the staging hostname, then
+   apply and verify the reviewed transport drop-in above.
 6. Publish and verify signed immutable images.
 7. Dispatch staging. Require migration, workload rollout, the bounded embedding
    probe/reindex Job, readiness smoke and authenticated smoke to pass in that order.
