@@ -542,10 +542,55 @@ Check block returns Cloudflare error 1010 before the request reaches the API and
 must be diagnosed at the correct Cloudflare account, not treated as a JWT or
 database authorization failure.
 
+`STAGING_SMOKE_TOKEN` is intentionally short-lived. Rotate it immediately before a
+deployment window with the administrative kubeconfig and the dedicated, already active
+smoke membership. The script refuses non-staging environments, verifies the exact
+tenant/user membership against PostgreSQL, and emits only the JWT. It uses the Pod's
+existing authentication configuration in-process, but never prints or exports signing-key
+or database credentials. Run this from the repository root with the reviewed
+administrative kubeconfig. Do not enable shell xtrace or terminal recording:
+
+```bash
+set -euo pipefail
+namespace=enterprise-doc-agent-staging
+STAGING_SMOKE_TENANT_ID=<reviewed-smoke-tenant-uuid>
+STAGING_SMOKE_ACTOR_ID=<reviewed-smoke-user-uuid>
+kubectl -n "$namespace" rollout status \
+  deployment/enterprise-doc-api --timeout=300s
+pod="$(kubectl -n "$namespace" get pod \
+  -l app.kubernetes.io/name=enterprise-doc-api \
+  --field-selector=status.phase=Running \
+  -o jsonpath='{.items[0].metadata.name}')"
+test -n "$pod"
+kubectl -n "$namespace" wait --for=condition=Ready \
+  "pod/$pod" --timeout=60s
+trap 'unset token' EXIT
+token="$(kubectl -n "$namespace" exec -i "$pod" -c api -- \
+  python - \
+  --tenant-id "$STAGING_SMOKE_TENANT_ID" \
+  --actor-id "$STAGING_SMOKE_ACTOR_ID" \
+  < scripts/issue_staging_smoke_token.py)"
+printf '%s' "$token" | gh secret set STAGING_SMOKE_TOKEN \
+  --env staging --repo Drew-Z/enterprise-doc-agent
+unset token
+trap - EXIT
+```
+
+Do not select an arbitrary active membership or store the token in a file. A smoke HTTP
+401 means the release gate failed; rotate the reviewed token and rerun the entire deploy
+workflow so migration, rollout and both smoke layers are evidenced together.
+
 Do not mark the gate passed if a step is skipped, the smoke is disabled, the embedding
 report is absent or invalid, or the workflow ran on a different runner. Record the run
 URL, commit, profile, digests, migration revision, embedding identity and convergence
 summary, smoke result, and evidence artifact hashes.
+
+The first retained-observability rollout for `single-node-4c8g` completed in
+[Deploy Staging run 30970431550](https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/30970431550)
+at commit `2b33f7c`. The operator-only drill verified the 5 GiB PVC, all three scrape
+targets, all nine rules and retained samples across Prometheus Pod replacement. The
+query scope, observed counts and limitations are recorded in
+`docs/ops/staging-observability-and-capacity.md`.
 
 ## Rollback and recovery
 

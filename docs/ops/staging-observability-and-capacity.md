@@ -86,6 +86,27 @@ curl --fail --get http://127.0.0.1:19090/api/v1/query_range \
 The same result series must contain successful samples from before and after the restart.
 A Bound PVC alone does not prove history was reopened.
 
+## Retained-observability deployment observation
+
+[Deploy Staging run 30970431550](https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/30970431550)
+completed successfully at commit `2b33f7caf4fb54ba69b3cb03b2a973ae6adeebcd`.
+The workflow rolled out Prometheus with the release; a separate operator-only drill then
+verified the retained state rather than treating workflow success as storage evidence:
+
+- `enterprise-doc-prometheus-data` was `Bound` at its requested `5Gi` capacity;
+- API, Worker and Consumer targets were all present and `up`;
+- all nine loaded recording and alert rules were healthy, with no evaluation errors;
+- `/api/v1/series` inventories using one exact job matcher at a time returned 238 API,
+  97 Worker and 161 Consumer series at the observation time;
+- Prometheus Pod replacement completed while reusing the same PVC; and
+- the API `up` range query contained eight successful pre-replacement samples and seven
+  successful post-replacement samples.
+
+These counts are point-in-time staging observations, not cardinality budgets. The drill
+proves that the current Prometheus Pod reopened PVC-backed history after Pod replacement.
+It does not prove recovery from node or disk loss, high availability, managed retention,
+alert delivery or production capacity.
+
 ## Alert response
 
 - `EnterpriseDocMetricsTargetDown` means Prometheus discovered a target but cannot scrape
