@@ -1,0 +1,183 @@
+{
+  "schema_version": 1,
+  "evidence_type": "recovery",
+  "evidence_id": "m6-production-rpo-rto-drill-20260806",
+  "milestone": "M6",
+  "requirement_ids": [
+    "M6-R6",
+    "M6-R7"
+  ],
+  "status": "failed",
+  "environment": {
+    "name": "staging-source-plus-isolated-local-recovery",
+    "provider": "remote-staging-source-and-local-docker-recovery",
+    "region": "local",
+    "cluster": "single-node-staging-source-and-local-recovery",
+    "external_execution": true
+  },
+  "commit_sha": "ba15eaf5682a0cd308e6231c28dcba6a90eafb64",
+  "image_digest": {
+    "api": "sha256:9e005990b7a956c3b852a0f9a0073d663470d72dff4be31ceaedbc1d4321d80e",
+    "worker": "sha256:99efcc0496eaecaa7635101e44bcffa96498de895b3471676d1e222e47cb205d",
+    "consumer": "sha256:c16fcd14a5ba377fa09674c51d8e04bd2546ba3293f49f7aaf7e2a9d91305b6c",
+    "web": "sha256:6c1e4e34ccde22b66cbed2c579c9fcd47867a4b75baaab9cc1ff59d455db8532"
+  },
+  "operator": "database and release owner",
+  "started_at": "2026-08-06T12:00:25.751753+00:00",
+  "completed_at": "2026-08-06T12:36:59.058839+00:00",
+  "command_or_procedure": [
+    "Capture a public-schema PostgreSQL custom backup from the staging source.",
+    "Declare the simulated failure boundary and record the latest recoverable data time.",
+    "Restore PostgreSQL into an isolated local recovery database using the reviewed TOC list and SHA-256 check.",
+    "Restore the immutable object snapshot into an isolated logical prefix and validate all 29 objects by read-back hash.",
+    "Remap the isolated database object references and execute the same remap a second time to verify idempotency.",
+    "Start the isolated API, worker, and consumer and run the authenticated upload, ingestion, Agent, citation, and artifact-integrity smoke."
+  ],
+  "measurements": {
+    "rpo_seconds": 212.2147351,
+    "rto_seconds": 1981.0923509,
+    "rpo_objective_seconds": 300,
+    "rto_objective_seconds": 1800,
+    "rpo_slo_status": "passed",
+    "rto_slo_status": "failed",
+    "rto_excess_seconds": 181.0923509,
+    "backup_age_seconds_at_restore": 212.2147351,
+    "restore_duration_seconds": 1981.0923509,
+    "rollback_duration_seconds": null
+  },
+  "recovery_timeline": {
+    "latest_recoverable_data_at": "2026-08-06T12:00:25.751753+00:00",
+    "failure_declared_at": "2026-08-06T12:03:57.9664881+00:00",
+    "application_restored_at": "2026-08-06T12:36:59.058839+00:00",
+    "rpo_calculation": "failure_declared_at - latest_recoverable_data_at",
+    "rto_calculation": "application_restored_at - failure_declared_at"
+  },
+  "recovery_scope": {
+    "source_environment": "enterprise-doc-agent-staging",
+    "recovery_environment": "local-docker-recovery",
+    "fault_domain_isolation_verified": false,
+    "live_environment_mutated": false,
+    "source_identity": {
+      "namespace": "enterprise-doc-agent-staging",
+      "cluster_profile": "single-node-4c8g",
+      "workloads": ["api", "worker", "consumer", "web"]
+    },
+    "recovery_identity": {
+      "database": "isolated PostgreSQL restore target retained off repository",
+      "object_store": "isolated R2 logical restore prefix",
+      "application": "local API, worker, and consumer processes",
+      "public_ingress": false
+    }
+  },
+  "cross_store_validation": {
+    "snapshot_object_count": 29,
+    "restored_object_count": 29,
+    "read_back_hash_verified": true,
+    "database_document_version_count": 18,
+    "database_agent_artifact_count": 11,
+    "first_remap": {
+      "initial_state": "source",
+      "final_state": "restored",
+      "updated_reference_count": 47
+    },
+    "second_remap": {
+      "initial_state": "restored",
+      "final_state": "restored",
+      "updated_reference_count": 0
+    }
+  },
+  "smoke_checks": [
+    {
+      "name": "backup_integrity",
+      "status": "passed"
+    },
+    {
+      "name": "data_integrity",
+      "status": "passed"
+    },
+    {
+      "name": "application_readiness",
+      "status": "passed"
+    },
+    {
+      "name": "rollback_readiness",
+      "status": "not_executed"
+    }
+  ],
+  "blocking_reason": "The measured RTO exceeded the 1800-second objective by 181.0923509 seconds. The drill also used a single-node staging source plus local recovery target, so it does not establish production fault-domain recovery or production availability.",
+  "prerequisites": [
+    "Parallelize PostgreSQL and object-store restore work.",
+    "Pre-provision the recovery application dependencies and image layers.",
+    "Remove first-run client and import failures from the operator procedure.",
+    "Repeat the drill on an independently provisioned recovery fault domain with an independent reviewer."
+  ],
+  "private_artifacts": [
+    {
+      "name": "staging-public.dump",
+      "size_bytes": 218386,
+      "sha256": "78dd158bc08041fe6af38cd1268cce43d471d77bf27c644ec2ceb783c68a34fc",
+      "retained_off_repository": true
+    },
+    {
+      "name": "r2-snapshot-private-manifest.json",
+      "size_bytes": 16178,
+      "sha256": "faa3625a8867f6b11a6964ce47ec6f216a0ed50d15a3c029eef6185ad4b22f2f",
+      "manifest_sha256": "4f34093ea0b7c9210bd86b2f03a0f98396e13784c95b6fad48db52a372cf1516",
+      "retained_off_repository": true
+    },
+    {
+      "name": "r2-restore-private-record.json",
+      "size_bytes": 578,
+      "sha256": "9a8dbd99e9d92233a9c053dfb06f38ac3caeb542b951710f7a5bef42d42447c9",
+      "retained_off_repository": true
+    },
+    {
+      "name": "r2-remap-idempotency-first-private-record.json",
+      "size_bytes": 629,
+      "sha256": "bb8a2edcffa7dc0e18c754e75b830a45fa02bd098e4e00c711e79b6492544b32",
+      "retained_off_repository": true
+    },
+    {
+      "name": "r2-remap-idempotency-second-private-record.json",
+      "size_bytes": 631,
+      "sha256": "f2b67b7c3f567e82eac72a5ec197d9371a969ce7df2d8a2e67f14e9969a8b878",
+      "retained_off_repository": true
+    },
+    {
+      "name": "application-smoke-private.json",
+      "size_bytes": 923,
+      "sha256": "08b7ff8a463d60d04a1ec3abf67c7eedc6487a25aa36ec60462f6b6fdccb5850",
+      "retained_off_repository": true
+    },
+    {
+      "name": "postgres-restore-idempotency-private-record.json",
+      "size_bytes": 766,
+      "sha256": "b1818ec0765adf8f75e90c2847f9479d315e88ce8780c1db717c4522fd553124",
+      "retained_off_repository": true
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "evidence/m6/20260806-staging-r2-recovery.json",
+      "kind": "cross-system-recovery-baseline",
+      "sha256": "789fb8af46d5c0dba3448be1583beaa12f34cd1706afb87fb82f7f51ac9fa6ba"
+    },
+    {
+      "path": "evidence/m6/20260806-isolated-application-recovery.json",
+      "kind": "authenticated-application-smoke-baseline",
+      "sha256": "27e7d979486ef4e8669bad3aa097ef518a1e217e89fa575ebc512d8643be529f"
+    },
+    {
+      "path": "evidence/m6/20260805-staging-postgres-restore.json",
+      "kind": "database-restore-baseline",
+      "sha256": "6c784c6c4dd4255eb946f20f57f2ddc59e7f729173d24f77a6f6a0d60e77af73"
+    }
+  ],
+  "limitations": [
+    "The RPO measurement is within the 300-second objective, but the RTO measurement fails the 1800-second objective.",
+    "This is a staging-source plus local-recovery execution and does not prove production fault-domain isolation, capacity, failover, or availability.",
+    "Private database URLs, credentials, object keys, and manifests are retained outside the repository and are represented here only by hashes.",
+    "The rollback path was not re-executed during this timing drill; the prior signed staging rollback evidence remains separate."
+  ],
+  "owner": "database and release owner"
+}

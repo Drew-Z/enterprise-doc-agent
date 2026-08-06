@@ -3,12 +3,12 @@
   "milestone": "M6",
   "requirement": "M6-R5",
   "owner": "database and release owner",
-  "blocking_reason": "The staging bidirectional release rollback, immutable database/object recovery, and authenticated isolated application recovery smoke passed. The service owner has not approved an RPO/RTO objective before execution, and no separate production-like recovery fault domain or independent reviewer has been assigned, so the overall recovery gate remains open.",
+  "blocking_reason": "The staging bidirectional release rollback, immutable database/object recovery, and authenticated isolated application recovery smoke passed. The measured RPO was 212.2147351 seconds against a 300-second objective, but the measured RTO was 1981.0923509 seconds against an 1800-second objective. The recovery target was also not an independent production-like fault domain, so the overall recovery gate remains open.",
   "prerequisites": [
-    "Approve or replace the proposed RPO 300 seconds and RTO 1800 seconds before execution",
+    "Reduce recovery execution time to meet the approved 1800-second RTO objective",
     "Provision a separately named recovery target outside the active single-node staging fault domain",
     "Assign an independent reviewer who is not the drill operator",
-    "Run the production-like recovery drill and derive RPO/RTO from the recorded failure timeline"
+    "Repeat the production-like recovery drill and meet both approved objectives"
   ],
   "required_evidence": [
     "Backup freshness and integrity record",
@@ -25,6 +25,7 @@
     "evidence/m6/20260806-isolated-application-recovery.json"
   ],
   "planning_evidence": "evidence/m6/20260806-production-rpo-rto-preflight.json",
+  "latest_execution_evidence": "evidence/m6/20260806-production-rpo-rto-drill-failed.json",
   "state": "open",
   "status": "blocked_external",
   "review_date": "2026-08-06"

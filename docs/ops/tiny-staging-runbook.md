@@ -939,6 +939,24 @@ evidence is retained in `evidence/m6/20260806-isolated-application-recovery.json
 Production RPO/RTO remains open because this single-node staging smoke is not a reviewed
 production-like recovery drill.
 
+The 2026-08-06 timed follow-up used the approved 300-second RPO and 1800-second RTO
+objectives. It captured a 218386-byte PostgreSQL backup, snapshotted and readback-verified
+29 R2 objects, restored the database and object inventory, and passed the authenticated
+upload, ingestion, Agent, artifact SHA-256 and citation smoke. The measured RPO was
+212.2147351 seconds and passed. The measured RTO was 1981.0923509 seconds and failed the
+objective by 181.0923509 seconds, so the recovery gate remains open. A second isolated
+database also verified remap idempotency: the first remap changed 47 references from
+`source` to `restored`, while the repeated remap remained `restored` and changed zero
+references. Sanitized evidence is retained in
+`evidence/m6/20260806-production-rpo-rto-drill-failed.json`; dumps, manifests, credentials,
+database URLs and object keys remain off repository.
+
+Before repeating the timed drill, pre-provision the recovery dependencies and validated
+client commands, run PostgreSQL and R2 restore work in parallel, and avoid serial per-object
+verification where a bounded parallel read-back retains the same integrity contract. The
+repeat must use a separate fault domain and independent reviewer, and it must meet both
+approved objectives before M6-R5 can close.
+
 ## Resource guardrails
 
 ```bash

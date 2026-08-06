@@ -4,8 +4,8 @@
   "milestone": "M6",
   "status": "blocked_external",
   "owner": "database and release owner",
-  "captured_at": "2026-08-06T15:37:52+08:00",
-  "source_commit": "e032d27be857f40c4303bfbdbd080360ae06936a",
+  "captured_at": "2026-08-06T21:46:01+08:00",
+  "source_commit": "ba15eaf5682a0cd308e6231c28dcba6a90eafb64",
   "deployment": {
     "status": "passed",
     "tag": "v0.1.19",
@@ -36,16 +36,18 @@
     "database_r2_bidirectional_validation": "passed",
     "isolated_application_recovery_smoke": "passed",
     "production_rpo_rto_preflight": "passed_blocked_contract",
+    "production_rpo_rto_drill": "failed_rto_objective",
     "production_rpo_rto": "blocked_external",
-    "latest_evidence": "evidence/m6/20260806-production-rpo-rto-preflight.json"
+    "latest_evidence": "evidence/m6/20260806-production-rpo-rto-drill-failed.json"
   },
   "remaining_work": [
-    "Approve or replace the proposed RPO 300 seconds and RTO 1800 seconds before execution.",
-    "Provision a recovery target outside the active single-node staging fault domain and assign an independent reviewer.",
-    "Execute the production-like drill and derive RPO/RTO from the recorded failure timeline."
+    "Reduce measured RTO from 1981.0923509 seconds to no more than the approved 1800-second objective.",
+    "Provision a recovery target outside the active single-node staging fault domain and obtain independent reviewer sign-off.",
+    "Repeat the production-like drill after parallel restore and pre-provisioning improvements."
   ],
   "limitations": [
-    "The M6 delivery, DB/R2 recovery, and isolated application recovery smoke sub-gates are passed, but the overall recovery gate remains open until production RPO and RTO are measured.",
+    "The measured RPO of 212.2147351 seconds passed the 300-second objective, but the measured RTO of 1981.0923509 seconds failed the 1800-second objective.",
+    "The M6 delivery, DB/R2 recovery, and isolated application recovery smoke sub-gates are passed, but the overall recovery gate remains open until a production-like recovery drill meets both objectives.",
     "The current cluster is intentionally single-node and does not prove production availability."
   ]
 }

@@ -947,6 +947,8 @@ def test_tiny_staging_runbook_requires_isolated_restore_and_coherent_rollback() 
     assert "Workers R2 Storage Write" in runbook
     assert "fresh isolated database" in runbook
     assert "20260806-staging-r2-recovery.json" in runbook
+    assert "20260806-production-rpo-rto-drill-failed.json" in runbook
+    assert "1981.0923509 seconds" in runbook
 
 
 def test_database_r2_recovery_closes_cross_system_subgate_but_keeps_rpo_rto_open() -> None:
@@ -968,6 +970,8 @@ def test_database_r2_recovery_closes_cross_system_subgate_but_keeps_rpo_rto_open
     rpo_preflight_evidence = json.loads(
         (ROOT / rpo_preflight_evidence_path).read_text(encoding="utf-8")
     )
+    rpo_drill_evidence_path = "evidence/m6/20260806-production-rpo-rto-drill-failed.json"
+    rpo_drill_evidence = json.loads((ROOT / rpo_drill_evidence_path).read_text(encoding="utf-8"))
     gate = json.loads(
         (ROOT / "evidence/gates/m6-backup-restore-rollback.json").read_text(encoding="utf-8")
     )
@@ -991,9 +995,10 @@ def test_database_r2_recovery_closes_cross_system_subgate_but_keeps_rpo_rto_open
         application_evidence_path,
     ]
     assert "application recovery smoke passed" in gate["blocking_reason"]
-    assert "service owner" in gate["blocking_reason"]
+    assert "RTO" in gate["blocking_reason"]
     assert "fault domain" in gate["blocking_reason"]
     assert gate["planning_evidence"] == rpo_preflight_evidence_path
+    assert gate["latest_execution_evidence"] == rpo_drill_evidence_path
     assert database_evidence["status"] == "passed_database_subgate"
     assert database_evidence["restore"]["relations_before"] == 0
     assert database_evidence["restore"]["relations_after"] == 25
@@ -1086,6 +1091,22 @@ def test_database_r2_recovery_closes_cross_system_subgate_but_keeps_rpo_rto_open
         for artifact in rpo_preflight_evidence["artifacts"]
         for artifact_path in [ROOT / artifact["path"]]
     )
+    assert rpo_drill_evidence["status"] == "failed"
+    assert rpo_drill_evidence["measurements"]["rpo_seconds"] == 212.2147351
+    assert rpo_drill_evidence["measurements"]["rto_seconds"] == 1981.0923509
+    assert rpo_drill_evidence["measurements"]["rpo_slo_status"] == "passed"
+    assert rpo_drill_evidence["measurements"]["rto_slo_status"] == "failed"
+    assert rpo_drill_evidence["cross_store_validation"]["second_remap"] == {
+        "initial_state": "restored",
+        "final_state": "restored",
+        "updated_reference_count": 0,
+    }
+    assert rpo_drill_evidence["recovery_scope"]["live_environment_mutated"] is False
+    assert rpo_drill_evidence["recovery_scope"]["fault_domain_isolation_verified"] is False
+    rendered_rpo_drill = json.dumps(rpo_drill_evidence).lower()
+    assert "database__url" not in rendered_rpo_drill
+    assert "secret_access_key" not in rendered_rpo_drill
+    assert "cloudflare_api_token" not in rendered_rpo_drill
     m6 = next(item for item in index["evidence"] if item["milestone"] == "M6")
     assert m6["rollback_drill"] == evidence_path
     assert m6["postgres_restore_drill"] == database_evidence_path
@@ -1094,6 +1115,7 @@ def test_database_r2_recovery_closes_cross_system_subgate_but_keeps_rpo_rto_open
     assert m6["r2_recovery_drill"] == r2_evidence_path
     assert m6["isolated_application_recovery_smoke"] == application_evidence_path
     assert m6["production_rpo_rto_preflight"] == rpo_preflight_evidence_path
+    assert m6["production_rpo_rto_drill"] == rpo_drill_evidence_path
 
 
 def test_signed_release_and_authenticated_staging_evidence_close_delivery_gates() -> None:

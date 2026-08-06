@@ -124,13 +124,9 @@ class UrlLibSmokeClient:
             hostname = parsed.hostname
         except ValueError as error:
             raise StagingSmokeFailure(f"{description} is not a valid URL.") from error
-        normalized_allowed_hosts = {
-            host.strip().lower() for host in allowed_hosts if host.strip()
-        }
+        normalized_allowed_hosts = {host.strip().lower() for host in allowed_hosts if host.strip()}
         if parsed.scheme != "http" or not hostname:
-            raise StagingSmokeFailure(
-                f"loopback {description} must use HTTP and include a host."
-            )
+            raise StagingSmokeFailure(f"loopback {description} must use HTTP and include a host.")
         if parsed.username or parsed.password:
             raise StagingSmokeFailure(f"{description} must not contain credentials.")
         if not normalized_allowed_hosts or hostname.lower() not in normalized_allowed_hosts:
