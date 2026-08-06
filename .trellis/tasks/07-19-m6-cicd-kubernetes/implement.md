@@ -114,9 +114,9 @@ immutable image or rollback evidence. Those remain open manual gates.
   continuing to bind image digests through the staging parent overlay.
 - [x] Run deployment tests, Kustomize renders, shell syntax/static checks, backend lint,
   Actionlint and Trellis validation before any server mutation.
-- [ ] Apply the baseline to the rebuilt Tencent host, reboot, re-verify SSH/TAT/firewall,
+- [x] Apply the baseline to the rebuilt Tencent host, reboot, re-verify SSH/TAT/firewall,
   install K3s and capture a sanitized host/cluster observation.
-- [ ] Apply bootstrap RBAC/admission, provision admin-owned prerequisites and Secrets,
+- [x] Apply bootstrap RBAC/admission, provision admin-owned prerequisites and Secrets,
   register the repository-scoped runner, configure Cloudflare Tunnel, publish immutable
   images, dispatch staging, and collect smoke/rollback/recovery evidence.
 
@@ -140,7 +140,7 @@ immutable image or rollback evidence. Those remain open manual gates.
   isolated database identity before copying to a dedicated restore prefix.
 - [x] Cover missing objects, checksum mismatches, target conflicts, partial-copy recovery,
   idempotent reruns, secret redaction and DB/manifest/restored-inventory equality.
-- [ ] Run local quality, publish an immutable image, execute the staging R2 drill against
+- [x] Run local quality, publish an immutable image, execute the staging R2 drill against
   the retained restore database, and record cross-system evidence without closing the
   production RPO/RTO gate prematurely.
 

@@ -15,12 +15,12 @@
   "branch": "feat/m4-agent-mcp-hitl",
   "base_branch": "feat/m4-agent-mcp-hitl",
   "worktree_path": null,
-  "commit": "8ea488ecdc243f96bc3fa13f3a0a126693884d65",
+  "commit": "f53f01e20132269e4eef66721ed39347ff41277d",
   "pr_url": null,
   "subtasks": [],
   "children": [],
   "parent": "07-17-enterprise-document-agent-platform",
   "relatedFiles": [".trellis/tasks/07-17-enterprise-document-agent-platform/prd.md", ".trellis/tasks/07-17-enterprise-document-agent-platform/design.md", ".trellis/tasks/07-17-enterprise-document-agent-platform/implement.md", "D:/workspace4Cursor/offer/output/企业文档Agent平台_深度面试问答.md", "D:/workspace4Cursor/offer/output/企业文档Agent平台_M5-M7深度面试问答.md"],
-  "notes": "M6 local delivery implementation is reviewed at implementation commit 8ea488e and the sanitized evidence bundle is immutable at evidence commit c6f9d28. evidence/m6/20260720-072628-m6-cicd-kubernetes.json records 63 deployment tests, containerized Actionlint, Compose and three Kustomize renders. Slices 6-10 define and harden tiny single-node staging. Slice 11 adds the rebuilt 4C8G host baseline and a separate single-node-4c8g profile; Slice 12 closes runtime blockers before the real registry, TLS, rollout, rollback and recovery gates execute. The initial real deployment remains an orchestration/platform drill because chat is real but embeddings are deterministic until a separate schema and reindex milestone.",
-  "meta": {"milestone": "M6", "workflow": "tdd", "current_slice": 11, "completed_slices": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], "approval_required_before_start": true}
+  "notes": "M6 delivery, the rebuilt single-node-4c8g host, immutable release/rollback, PostgreSQL/R2 cross-system recovery and isolated application recovery smoke are recorded in sanitized evidence through 2026-08-06. Local and remote Quality checks are green at commit f53f01e. The 2C2G tiny-staging stabilization slice remains open because it was not the exercised host profile. The reviewed production-like RPO/RTO contract and blocked preflight are now recorded, but the final recovery gate remains open until service-owner objectives, a separate fault domain, an independent reviewer and a measured drill are available.",
+  "meta": {"milestone": "M6", "workflow": "tdd", "current_slice": 14, "completed_slices": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13], "approval_required_before_start": true}
 }
