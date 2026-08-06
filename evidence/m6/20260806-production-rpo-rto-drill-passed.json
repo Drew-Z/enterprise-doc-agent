@@ -1,0 +1,230 @@
+{
+  "schema_version": 1,
+  "evidence_type": "recovery",
+  "evidence_id": "m6-production-rpo-rto-drill-passed-20260806",
+  "milestone": "M6",
+  "requirement_ids": [
+    "M6-R6",
+    "M6-R7"
+  ],
+  "status": "passed_rpo_rto_subgate",
+  "environment": {
+    "name": "staging-source-plus-isolated-local-recovery",
+    "provider": "remote-staging-source-and-local-docker-recovery",
+    "region": "local",
+    "cluster": "single-node-staging-source-and-local-recovery",
+    "external_execution": true
+  },
+  "commit_sha": "2ba0488572994698723aee3e67a0d14f5c304413",
+  "quality_run": {
+    "run_id": "31115622365",
+    "status": "passed",
+    "commit_sha": "2ba0488572994698723aee3e67a0d14f5c304413"
+  },
+  "operator": "database and release owner",
+  "started_at": "2026-08-06T15:32:03.832464+00:00",
+  "completed_at": "2026-08-06T15:37:40.307720+00:00",
+  "drill_id": "m6-rpo-rto-final-20260806t1522z",
+  "command_or_procedure": [
+    "Run the checked-in recovery orchestrator with the explicit run-recovery-drill confirmation token.",
+    "Capture a public-schema PostgreSQL custom backup and immutable R2 snapshot before declaring the simulated failure boundary.",
+    "Restore PostgreSQL into an isolated local recovery database and restore 29 snapshot objects into an isolated logical prefix with read-back hash validation.",
+    "Remap the isolated database references from source to restored keys.",
+    "Run the authenticated upload, ingestion, Agent, citation, artifact-download and SHA-256 smoke, then execute cleanup even after phase failure."
+  ],
+  "measurements": {
+    "rpo_seconds": 153.571069,
+    "rto_seconds": 166.397916,
+    "rpo_objective_seconds": 300,
+    "rto_objective_seconds": 1800,
+    "rpo_slo_status": "passed",
+    "rto_slo_status": "passed",
+    "backup_age_seconds_at_restore": 153.571069,
+    "restore_duration_seconds": 166.397916,
+    "rollback_duration_seconds": null
+  },
+  "recovery_timeline": {
+    "latest_recoverable_data_at": "2026-08-06T15:32:14.372168+00:00",
+    "failure_declared_at": "2026-08-06T15:34:47.943237+00:00",
+    "application_restored_at": "2026-08-06T15:37:34.341153+00:00",
+    "rpo_calculation": "failure_declared_at - latest_recoverable_data_at",
+    "rto_calculation": "application_restored_at - failure_declared_at"
+  },
+  "phase_results": [
+    {
+      "name": "prepare-recovery-target",
+      "status": "passed",
+      "duration_seconds": 164.109
+    },
+    {
+      "name": "restore-postgres",
+      "status": "passed",
+      "duration_seconds": 1.453
+    },
+    {
+      "name": "restore-r2",
+      "status": "passed",
+      "duration_seconds": 92.782
+    },
+    {
+      "name": "remap-references",
+      "status": "passed",
+      "duration_seconds": 28.015
+    },
+    {
+      "name": "application-smoke",
+      "status": "passed",
+      "duration_seconds": 44.156
+    },
+    {
+      "name": "cleanup-processes",
+      "status": "passed",
+      "duration_seconds": 5.954
+    }
+  ],
+  "recovery_scope": {
+    "source_environment": "enterprise-doc-agent-staging",
+    "recovery_environment": "local-docker-recovery",
+    "fault_domain_isolation_verified": false,
+    "live_environment_mutated": false,
+    "source_identity": {
+      "cluster_profile": "single-node-4c8g",
+      "workloads": [
+        "api",
+        "worker",
+        "consumer",
+        "web"
+      ]
+    },
+    "recovery_identity": {
+      "database": "fresh isolated PostgreSQL restore target retained off repository",
+      "object_store": "isolated R2 logical restore prefix",
+      "application": "local API, worker and consumer processes",
+      "public_ingress": false
+    }
+  },
+  "cross_store_validation": {
+    "snapshot_object_count": 29,
+    "restored_object_count": 29,
+    "read_back_hash_verified": true,
+    "database_document_version_count": 18,
+    "database_agent_artifact_count": 11,
+    "confirmed_remap": {
+      "initial_state": "source",
+      "final_state": "restored",
+      "updated_reference_count": 47
+    },
+    "remap_idempotency": {
+      "status": "passed_on_separate_clean_target",
+      "evidence": "evidence/m6/20260806-production-rpo-rto-drill-failed.json",
+      "current_drill_claim": "one confirmed source-to-restored remap only"
+    }
+  },
+  "smoke_checks": [
+    {
+      "name": "backup_integrity",
+      "status": "passed"
+    },
+    {
+      "name": "data_integrity",
+      "status": "passed"
+    },
+    {
+      "name": "application_readiness",
+      "status": "passed"
+    },
+    {
+      "name": "authenticated_upload_ingestion_agent",
+      "status": "passed"
+    },
+    {
+      "name": "artifact_download_sha256_and_citation",
+      "status": "passed"
+    },
+    {
+      "name": "rollback_readiness",
+      "status": "not_executed"
+    }
+  ],
+  "review": {
+    "production_like": false,
+    "independent_reviewer": null,
+    "sign_off_status": "pending"
+  },
+  "subgate_result": {
+    "approved_objectives_met": true,
+    "overall_recovery_gate_closed": false,
+    "overall_gate_status": "blocked_external"
+  },
+  "blocking_reason": "Both measured objectives passed, but the recovery target was local Docker beside a single-node staging source rather than a verified independent production-like fault domain, and no independent reviewer has signed off.",
+  "prerequisites": [
+    "Provision a recovery target outside the active single-node staging fault domain.",
+    "Assign an independent reviewer who is not the drill operator.",
+    "Repeat the reviewed production-like drill on that target and obtain reviewer sign-off."
+  ],
+  "private_artifacts": [
+    {
+      "name": "staging-public.dump",
+      "size_bytes": 218386,
+      "sha256": "ee780f5f586c9b609d8e7398b8cce0f7de24887ff8bd2d84c4be0b7f4f28ef78",
+      "retained_off_repository": true
+    },
+    {
+      "name": "r2-snapshot-private-manifest.json",
+      "size_bytes": 16370,
+      "sha256": "bdcdaa43f43ac5e733d3f9abdd728f55043ac808a73cc634b6cee2e62bc41c63",
+      "manifest_sha256": "d643035ef09b11e89673c9eb9009ad66bd32e5e90af556a11ddcad13ce7c3e03",
+      "retained_off_repository": true
+    },
+    {
+      "name": "orchestrator-private-report.json",
+      "size_bytes": 2820,
+      "sha256": "87a45d3d13bf4a076fdda2ec0b4300ef5d2ce944fad9548f611392e256c195b8",
+      "retained_off_repository": true
+    },
+    {
+      "name": "application-smoke-private.json",
+      "size_bytes": 911,
+      "sha256": "58fd91ce90270f35943ce891e47f8ec24982d589da436578dd2444c9de446a89",
+      "retained_off_repository": true
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "evidence/m6/20260805-staging-postgres-restore.json",
+      "kind": "database-restore-baseline",
+      "sha256": "6c784c6c4dd4255eb946f20f57f2ddc59e7f729173d24f77a6f6a0d60e77af73"
+    },
+    {
+      "path": "evidence/m6/20260806-staging-r2-recovery.json",
+      "kind": "cross-system-recovery-baseline",
+      "sha256": "789fb8af46d5c0dba3448be1583beaa12f34cd1706afb87fb82f7f51ac9fa6ba"
+    },
+    {
+      "path": "evidence/m6/20260806-isolated-application-recovery.json",
+      "kind": "authenticated-application-smoke-baseline",
+      "sha256": "27e7d979486ef4e8669bad3aa097ef518a1e217e89fa575ebc512d8643be529f"
+    },
+    {
+      "path": "evidence/m6/20260806-production-rpo-rto-drill-failed.json",
+      "kind": "historical-rto-failure-baseline",
+      "sha256": "a7d962a7036b6432fc85b1b5322cad671942a6e6cfe5f8291f7ba9617b3581df"
+    }
+  ],
+  "secret_handling": {
+    "command_arguments_persisted": false,
+    "inherited_environment_values_persisted": false,
+    "shell_execution": false,
+    "tokens_in_argv": false,
+    "database_urls_persisted": false,
+    "private_object_keys_persisted": false
+  },
+  "limitations": [
+    "The measured 153.571069-second RPO and 166.397916-second RTO pass the approved objectives only for this staging-source plus local-recovery execution.",
+    "This execution does not prove production fault-domain isolation, failover, capacity or availability, and it has no independent reviewer sign-off.",
+    "The final execution performed one clean source-to-restored remap; idempotency was established separately on an earlier clean target and is not re-claimed from a post-smoke database.",
+    "The rollback path was not re-executed during this timing drill; prior signed staging rollback evidence remains separate.",
+    "Private database URLs, credentials, object keys, dumps and manifests remain outside the repository and are represented only by hashes."
+  ],
+  "owner": "database and release owner"
+}

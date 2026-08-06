@@ -3,12 +3,11 @@
   "milestone": "M6",
   "requirement": "M6-R5",
   "owner": "database and release owner",
-  "blocking_reason": "The staging bidirectional release rollback, immutable database/object recovery, and authenticated isolated application recovery smoke passed. The measured RPO was 212.2147351 seconds against a 300-second objective, but the measured RTO was 1981.0923509 seconds against an 1800-second objective. The recovery target was also not an independent production-like fault domain, so the overall recovery gate remains open.",
+  "blocking_reason": "The staging bidirectional release rollback, immutable database/object recovery, authenticated isolated application recovery smoke, and measured RPO/RTO objectives passed. The recovery target was local Docker beside a single-node staging source rather than a verified independent production-like fault domain, and no independent reviewer has signed off, so the overall recovery gate remains open.",
   "prerequisites": [
-    "Reduce recovery execution time to meet the approved 1800-second RTO objective",
     "Provision a separately named recovery target outside the active single-node staging fault domain",
     "Assign an independent reviewer who is not the drill operator",
-    "Repeat the production-like recovery drill and meet both approved objectives"
+    "Repeat the production-like recovery drill on that target, meet both approved objectives, and obtain reviewer sign-off"
   ],
   "required_evidence": [
     "Backup freshness and integrity record",
@@ -22,10 +21,12 @@
     "evidence/m6/20260805-staging-postgres-restore.json",
     "evidence/m6/20260806-v0.1.19-staging-r2-preflight.json",
     "evidence/m6/20260806-staging-r2-recovery.json",
-    "evidence/m6/20260806-isolated-application-recovery.json"
+    "evidence/m6/20260806-isolated-application-recovery.json",
+    "evidence/m6/20260806-production-rpo-rto-drill-passed.json"
   ],
   "planning_evidence": "evidence/m6/20260806-production-rpo-rto-preflight.json",
-  "latest_execution_evidence": "evidence/m6/20260806-production-rpo-rto-drill-failed.json",
+  "previous_failed_execution_evidence": "evidence/m6/20260806-production-rpo-rto-drill-failed.json",
+  "latest_execution_evidence": "evidence/m6/20260806-production-rpo-rto-drill-passed.json",
   "state": "open",
   "status": "blocked_external",
   "review_date": "2026-08-06"

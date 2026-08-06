@@ -4,8 +4,8 @@
   "milestone": "M6",
   "status": "blocked_external",
   "owner": "database and release owner",
-  "captured_at": "2026-08-06T21:46:01+08:00",
-  "source_commit": "ba15eaf5682a0cd308e6231c28dcba6a90eafb64",
+  "captured_at": "2026-08-06T23:37:40+08:00",
+  "source_commit": "2ba0488572994698723aee3e67a0d14f5c304413",
   "deployment": {
     "status": "passed",
     "tag": "v0.1.19",
@@ -36,18 +36,17 @@
     "database_r2_bidirectional_validation": "passed",
     "isolated_application_recovery_smoke": "passed",
     "production_rpo_rto_preflight": "passed_blocked_contract",
-    "production_rpo_rto_drill": "failed_rto_objective",
+    "production_rpo_rto_drill": "passed_rpo_rto_subgate",
     "production_rpo_rto": "blocked_external",
-    "latest_evidence": "evidence/m6/20260806-production-rpo-rto-drill-failed.json"
+    "latest_evidence": "evidence/m6/20260806-production-rpo-rto-drill-passed.json"
   },
   "remaining_work": [
-    "Reduce measured RTO from 1981.0923509 seconds to no more than the approved 1800-second objective.",
     "Provision a recovery target outside the active single-node staging fault domain and obtain independent reviewer sign-off.",
-    "Repeat the production-like drill after parallel restore and pre-provisioning improvements."
+    "Repeat the reviewed production-like drill on the independent target and obtain reviewer sign-off."
   ],
   "limitations": [
-    "The measured RPO of 212.2147351 seconds passed the 300-second objective, but the measured RTO of 1981.0923509 seconds failed the 1800-second objective.",
-    "The M6 delivery, DB/R2 recovery, and isolated application recovery smoke sub-gates are passed, but the overall recovery gate remains open until a production-like recovery drill meets both objectives.",
+    "The automated repeat measured RPO 153.571069 seconds and RTO 166.397916 seconds, passing the approved 300-second and 1800-second objectives for the exercised staging-source plus local-recovery scope.",
+    "The M6 delivery, DB/R2 recovery, isolated application recovery smoke, and measured-objective sub-gates are passed, but the overall recovery gate remains open pending an independent fault domain and reviewer sign-off.",
     "The current cluster is intentionally single-node and does not prove production availability."
   ]
 }

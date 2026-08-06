@@ -949,6 +949,9 @@ def test_tiny_staging_runbook_requires_isolated_restore_and_coherent_rollback() 
     assert "20260806-staging-r2-recovery.json" in runbook
     assert "20260806-production-rpo-rto-drill-failed.json" in runbook
     assert "1981.0923509 seconds" in runbook
+    assert "20260806-production-rpo-rto-drill-passed.json" in runbook
+    assert "153.571069 seconds" in runbook
+    assert "166.397916 seconds" in runbook
 
 
 def test_database_r2_recovery_closes_cross_system_subgate_but_keeps_rpo_rto_open() -> None:
@@ -970,7 +973,11 @@ def test_database_r2_recovery_closes_cross_system_subgate_but_keeps_rpo_rto_open
     rpo_preflight_evidence = json.loads(
         (ROOT / rpo_preflight_evidence_path).read_text(encoding="utf-8")
     )
-    rpo_drill_evidence_path = "evidence/m6/20260806-production-rpo-rto-drill-failed.json"
+    failed_rpo_drill_evidence_path = "evidence/m6/20260806-production-rpo-rto-drill-failed.json"
+    failed_rpo_drill_evidence = json.loads(
+        (ROOT / failed_rpo_drill_evidence_path).read_text(encoding="utf-8")
+    )
+    rpo_drill_evidence_path = "evidence/m6/20260806-production-rpo-rto-drill-passed.json"
     rpo_drill_evidence = json.loads((ROOT / rpo_drill_evidence_path).read_text(encoding="utf-8"))
     gate = json.loads(
         (ROOT / "evidence/gates/m6-backup-restore-rollback.json").read_text(encoding="utf-8")
@@ -993,11 +1000,13 @@ def test_database_r2_recovery_closes_cross_system_subgate_but_keeps_rpo_rto_open
         release_preflight_evidence_path,
         r2_evidence_path,
         application_evidence_path,
+        rpo_drill_evidence_path,
     ]
-    assert "application recovery smoke passed" in gate["blocking_reason"]
-    assert "RTO" in gate["blocking_reason"]
+    assert "measured RPO/RTO objectives passed" in gate["blocking_reason"]
     assert "fault domain" in gate["blocking_reason"]
+    assert "independent reviewer" in gate["blocking_reason"]
     assert gate["planning_evidence"] == rpo_preflight_evidence_path
+    assert gate["previous_failed_execution_evidence"] == failed_rpo_drill_evidence_path
     assert gate["latest_execution_evidence"] == rpo_drill_evidence_path
     assert database_evidence["status"] == "passed_database_subgate"
     assert database_evidence["restore"]["relations_before"] == 0
@@ -1091,18 +1100,49 @@ def test_database_r2_recovery_closes_cross_system_subgate_but_keeps_rpo_rto_open
         for artifact in rpo_preflight_evidence["artifacts"]
         for artifact_path in [ROOT / artifact["path"]]
     )
-    assert rpo_drill_evidence["status"] == "failed"
-    assert rpo_drill_evidence["measurements"]["rpo_seconds"] == 212.2147351
-    assert rpo_drill_evidence["measurements"]["rto_seconds"] == 1981.0923509
-    assert rpo_drill_evidence["measurements"]["rpo_slo_status"] == "passed"
-    assert rpo_drill_evidence["measurements"]["rto_slo_status"] == "failed"
-    assert rpo_drill_evidence["cross_store_validation"]["second_remap"] == {
+    assert failed_rpo_drill_evidence["status"] == "failed"
+    assert failed_rpo_drill_evidence["measurements"]["rpo_seconds"] == 212.2147351
+    assert failed_rpo_drill_evidence["measurements"]["rto_seconds"] == 1981.0923509
+    assert failed_rpo_drill_evidence["measurements"]["rpo_slo_status"] == "passed"
+    assert failed_rpo_drill_evidence["measurements"]["rto_slo_status"] == "failed"
+    assert failed_rpo_drill_evidence["cross_store_validation"]["second_remap"] == {
         "initial_state": "restored",
         "final_state": "restored",
         "updated_reference_count": 0,
     }
+    assert rpo_drill_evidence["status"] == "passed_rpo_rto_subgate"
+    assert rpo_drill_evidence["commit_sha"] == "2ba0488572994698723aee3e67a0d14f5c304413"
+    assert rpo_drill_evidence["quality_run"]["run_id"] == "31115622365"
+    assert rpo_drill_evidence["measurements"]["rpo_seconds"] == 153.571069
+    assert rpo_drill_evidence["measurements"]["rto_seconds"] == 166.397916
+    assert rpo_drill_evidence["measurements"]["rpo_slo_status"] == "passed"
+    assert rpo_drill_evidence["measurements"]["rto_slo_status"] == "passed"
+    assert rpo_drill_evidence["subgate_result"] == {
+        "approved_objectives_met": True,
+        "overall_recovery_gate_closed": False,
+        "overall_gate_status": "blocked_external",
+    }
+    assert rpo_drill_evidence["review"] == {
+        "production_like": False,
+        "independent_reviewer": None,
+        "sign_off_status": "pending",
+    }
+    assert rpo_drill_evidence["cross_store_validation"]["confirmed_remap"] == {
+        "initial_state": "source",
+        "final_state": "restored",
+        "updated_reference_count": 47,
+    }
+    assert rpo_drill_evidence["cross_store_validation"]["remap_idempotency"] == {
+        "status": "passed_on_separate_clean_target",
+        "evidence": failed_rpo_drill_evidence_path,
+        "current_drill_claim": "one confirmed source-to-restored remap only",
+    }
     assert rpo_drill_evidence["recovery_scope"]["live_environment_mutated"] is False
     assert rpo_drill_evidence["recovery_scope"]["fault_domain_isolation_verified"] is False
+    for artifact in rpo_drill_evidence["artifacts"]:
+        artifact_path = ROOT / artifact["path"]
+        assert artifact_path.is_file()
+        assert hashlib.sha256(artifact_path.read_bytes()).hexdigest() == artifact["sha256"]
     rendered_rpo_drill = json.dumps(rpo_drill_evidence).lower()
     assert "database__url" not in rendered_rpo_drill
     assert "secret_access_key" not in rendered_rpo_drill
@@ -1115,6 +1155,7 @@ def test_database_r2_recovery_closes_cross_system_subgate_but_keeps_rpo_rto_open
     assert m6["r2_recovery_drill"] == r2_evidence_path
     assert m6["isolated_application_recovery_smoke"] == application_evidence_path
     assert m6["production_rpo_rto_preflight"] == rpo_preflight_evidence_path
+    assert m6["production_rpo_rto_failed_baseline"] == failed_rpo_drill_evidence_path
     assert m6["production_rpo_rto_drill"] == rpo_drill_evidence_path
 
 

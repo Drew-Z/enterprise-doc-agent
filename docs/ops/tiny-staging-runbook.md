@@ -951,11 +951,25 @@ references. Sanitized evidence is retained in
 `evidence/m6/20260806-production-rpo-rto-drill-failed.json`; dumps, manifests, credentials,
 database URLs and object keys remain off repository.
 
-Before repeating the timed drill, pre-provision the recovery dependencies and validated
-client commands, run PostgreSQL and R2 restore work in parallel, and avoid serial per-object
-verification where a bounded parallel read-back retains the same integrity contract. The
-repeat must use a separate fault domain and independent reviewer, and it must meet both
-approved objectives before M6-R5 can close.
+The final automated repeat was bound to pushed commit
+`2ba0488572994698723aee3e67a0d14f5c304413`, whose GitHub Quality run
+`31115622365` passed. The checked-in orchestrator completed PostgreSQL restore in 1.453
+seconds, R2 restore in 92.782 seconds, reference remap in 28.015 seconds and the application
+smoke phase in 44.156 seconds. It measured RPO 153.571069 seconds and
+RTO 166.397916 seconds, passing both approved objectives. The authenticated upload,
+ingestion, Agent, artifact download, SHA-256 and citation checks all passed. The final run
+performed one clean `source` to `restored` remap; the separate clean-target record in the
+earlier drill is the evidence for repeated-remap idempotency, so no post-smoke repeat is
+claimed here.
+Sanitized evidence is retained in
+`evidence/m6/20260806-production-rpo-rto-drill-passed.json`; private dumps, manifests,
+database URLs, credentials and object keys remain off repository.
+
+This closes only the measured RPO/RTO sub-gate. M6-R5 remains open because the exercised
+recovery target was local Docker beside a single-node staging source, not an independently
+verified production-like fault domain, and an independent reviewer has not signed off. To
+close the overall gate, repeat the drill on a separately provisioned fault domain, meet both
+approved objectives there, and retain the independent post-run review.
 
 ## Resource guardrails
 
