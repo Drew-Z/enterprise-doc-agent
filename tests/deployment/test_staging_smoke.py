@@ -230,6 +230,47 @@ def test_loopback_http_mode_applies_to_allowlisted_object_store_urls(
         client.get_bytes("http://staging.example/artifacts/download")
 
 
+def test_loopback_control_plane_allows_allowlisted_https_object_store(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: list[Request] = []
+
+    def fake_urlopen(request: Request, *, timeout: float) -> addinfourl:
+        del timeout
+        captured.append(request)
+        headers = {"ETag": '"etag-1"'} if request.method == "PUT" else {}
+        response = addinfourl(BytesIO(b"artifact"), headers, request.full_url, 200)
+        response.msg = "OK"
+        return response
+
+    monkeypatch.setattr(staging_smoke, "_open_url_no_redirect", fake_urlopen)
+    client = staging_smoke.UrlLibSmokeClient(
+        base_url="http://127.0.0.1:18000",
+        token="redacted",
+        allowed_control_plane_hosts=("127.0.0.1",),
+        allowed_object_store_hosts=("objects.example",),
+        allow_loopback_http=True,
+    )
+
+    assert (
+        client.put_bytes(
+            "https://objects.example/documents/upload",
+            content=b"document",
+            headers={},
+        )
+        == '"etag-1"'
+    )
+    assert client.get_bytes("https://objects.example/artifacts/download") == b"artifact"
+    assert [request.full_url for request in captured] == [
+        "https://objects.example/documents/upload",
+        "https://objects.example/artifacts/download",
+    ]
+    with pytest.raises(staging_smoke.StagingSmokeFailure):
+        client.get_bytes("https://other.example/artifacts/download")
+    with pytest.raises(staging_smoke.StagingSmokeFailure):
+        client.get_bytes("http://objects.example/artifacts/download")
+
+
 def test_object_store_redirects_are_rejected_before_followup(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

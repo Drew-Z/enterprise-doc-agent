@@ -167,6 +167,12 @@
   allow/deny behavior against a real API server with isolated policy names and cleanup.
 - `scripts/sanitize_deployment_evidence.py` structurally redacts JSON/YAML Secret data,
   credentials, DSN passwords, bearer tokens and signed query parameters.
+- `scripts/run_recovery_orchestrator.py` defaults to dry-run, requires the exact
+  `run-recovery-drill` confirmation, executes argv lists without a shell, records every
+  preflight/recovery/cleanup phase and derives RPO/RTO from the recorded failure boundary.
+- Local recovery smoke may use an explicitly allowlisted loopback HTTP control plane while
+  presigned object URLs remain either allowlisted HTTPS or allowlisted loopback HTTP; local
+  mode never permits arbitrary public HTTP object-store endpoints.
 - `tests/deployment/` checks digest-pinned bases, non-root runtime contracts,
   migration ordering, smoke redaction, final-digest supply-chain binding, staging host
   configuration and release/evidence safeguards.
@@ -185,6 +191,7 @@
 - `scripts/configure_staging_manifest.py`
 - `scripts/validate_recovery_capacity_evidence.py`
 - `scripts/local_recovery_drill.py`
+- `scripts/run_recovery_orchestrator.py`
 - `scripts/build_release_manifest.py`
 - `scripts/validate_buildkit_provenance.py`
 - `scripts/build_staging_release_record.py`

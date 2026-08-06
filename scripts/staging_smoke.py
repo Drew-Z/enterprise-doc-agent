@@ -142,7 +142,7 @@ class UrlLibSmokeClient:
         return value.rstrip("/")
 
     def _validate_object_store_url(self, value: str) -> str:
-        if self.allow_loopback_http:
+        if self.allow_loopback_http and urlparse(value).scheme == "http":
             return self._validate_loopback_http_endpoint(
                 value,
                 allowed_hosts=self.allowed_object_store_hosts,
