@@ -932,8 +932,12 @@ database backup, and copied and readback-verified 27 isolated restore objects. T
 restore dry run against the older retained database failed before mutation because its
 reference set no longer matched the manifest. The fresh database, manifest and restored
 inventory then matched in both directions. Sanitized evidence is retained in
-`evidence/m6/20260806-staging-r2-recovery.json`; application remapping smoke and production
-RPO/RTO remain open.
+`evidence/m6/20260806-staging-r2-recovery.json`. A temporary no-ingress recovery profile
+then ran against the isolated database and recovery bucket, and the authenticated upload,
+ingestion, Agent, artifact download, SHA-256 and citation checks passed. Sanitized smoke
+evidence is retained in `evidence/m6/20260806-isolated-application-recovery.json`.
+Production RPO/RTO remains open because this single-node staging smoke is not a reviewed
+production-like recovery drill.
 
 ## Resource guardrails
 

@@ -19,3 +19,6 @@ images:
   - name: enterprise-doc/worker
     newName: registry.example.invalid/enterprise-doc/worker
     digest: sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+  - name: enterprise-doc/consumer
+    newName: registry.example.invalid/enterprise-doc/consumer
+    digest: sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc

@@ -49,7 +49,8 @@
       "postgres_restore_drill": "evidence/m6/20260805-staging-postgres-restore.json",
       "latest_staging_release": "evidence/m6/20260806-v0.1.19-staging-r2-preflight.json",
       "r2_snapshot_preflight": "evidence/m6/20260806-v0.1.19-staging-r2-preflight.json",
-      "r2_recovery_drill": "evidence/m6/20260806-staging-r2-recovery.json"
+      "r2_recovery_drill": "evidence/m6/20260806-staging-r2-recovery.json",
+      "isolated_application_recovery_smoke": "evidence/m6/20260806-isolated-application-recovery.json"
     },
     {
       "milestone": "M7",

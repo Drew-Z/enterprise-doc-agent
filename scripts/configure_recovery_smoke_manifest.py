@@ -18,9 +18,14 @@ POSTGRES_POLICY_NAME = "enterprise-doc-recovery-postgres-egress"
 DEPLOYMENT_NAMES = {
     "enterprise-doc-api",
     "enterprise-doc-worker",
+    "enterprise-doc-consumer",
     "enterprise-doc-redis",
 }
-SERVICE_NAMES = DEPLOYMENT_NAMES
+SERVICE_NAMES = {
+    "enterprise-doc-api",
+    "enterprise-doc-worker",
+    "enterprise-doc-redis",
+}
 DNS_LABEL = re.compile(r"^[a-z0-9](?:[-a-z0-9]*[a-z0-9])?$")
 IMMUTABLE_IMAGE = re.compile(
     r"^[a-z0-9.-]+(?::[0-9]{1,5})?(?:/[a-z0-9][a-z0-9._-]*)+"
@@ -141,7 +146,9 @@ def _assert_isolated(documents: list[dict[str, Any]]) -> None:
         if document.get("kind") == "Deployment"
     }
     if deployments != DEPLOYMENT_NAMES:
-        raise ValueError("recovery manifests must contain only API, worker, and Redis deployments")
+        raise ValueError(
+            "recovery manifests must contain only API, worker, consumer, and Redis deployments"
+        )
     services = {
         str(document["metadata"]["name"])
         for document in documents
@@ -170,6 +177,7 @@ def configure_recovery_smoke_manifest(
     *,
     api_image: str,
     worker_image: str,
+    consumer_image: str,
     database_egress_cidrs: str,
     object_store_endpoint: str,
     documents_bucket: str,
@@ -209,6 +217,9 @@ def configure_recovery_smoke_manifest(
     images = {
         "enterprise-doc-api": _immutable_image(api_image, description="API image"),
         "enterprise-doc-worker": _immutable_image(worker_image, description="worker image"),
+        "enterprise-doc-consumer": _immutable_image(
+            consumer_image, description="consumer image"
+        ),
     }
     for deployment_name, image in images.items():
         deployment = _single_document(configured, kind="Deployment", name=deployment_name)
@@ -237,6 +248,7 @@ def main() -> None:
     parser.add_argument("--destination", type=Path, required=True)
     parser.add_argument("--api-image", required=True)
     parser.add_argument("--worker-image", required=True)
+    parser.add_argument("--consumer-image", required=True)
     parser.add_argument("--database-egress-cidrs", required=True)
     parser.add_argument("--object-store-endpoint", required=True)
     parser.add_argument("--documents-bucket", required=True)
@@ -251,6 +263,7 @@ def main() -> None:
             _load_documents(args.source),
             api_image=args.api_image,
             worker_image=args.worker_image,
+            consumer_image=args.consumer_image,
             database_egress_cidrs=args.database_egress_cidrs,
             object_store_endpoint=args.object_store_endpoint,
             documents_bucket=args.documents_bucket,

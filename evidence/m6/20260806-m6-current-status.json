@@ -4,8 +4,8 @@
   "milestone": "M6",
   "status": "blocked_external",
   "owner": "database and release owner",
-  "captured_at": "2026-08-06T04:38:00+08:00",
-  "source_commit": "72831ed093f403760b20ca92a98e91e037cbf7ff",
+  "captured_at": "2026-08-06T13:23:57+08:00",
+  "source_commit": "c94198711779ca235444ac6bba3f989c88f6bf81",
   "deployment": {
     "status": "passed",
     "tag": "v0.1.19",
@@ -34,18 +34,15 @@
     "immutable_r2_snapshot": "passed",
     "isolated_r2_restore": "passed",
     "database_r2_bidirectional_validation": "passed",
-    "isolated_application_recovery_smoke": "blocked_external",
+    "isolated_application_recovery_smoke": "passed",
     "production_rpo_rto": "blocked_external",
-    "latest_evidence": "evidence/m6/20260806-staging-r2-recovery.json"
+    "latest_evidence": "evidence/m6/20260806-isolated-application-recovery.json"
   },
   "remaining_work": [
-    "Implement an isolated object-key mapping or temporary recovery buckets that preserve application lookup semantics.",
-    "Deploy a temporary application profile against the isolated database and recovered objects.",
-    "Run authenticated retrieval, citation, Agent, and integrity smoke against the recovered system.",
     "Execute a reviewed production-like drill before claiming production RPO and RTO."
   ],
   "limitations": [
-    "The M6 delivery and DB/R2 recovery sub-gates are passed, but the overall recovery gate remains open.",
+    "The M6 delivery, DB/R2 recovery, and isolated application recovery smoke sub-gates are passed, but the overall recovery gate remains open until production RPO and RTO are measured.",
     "The current cluster is intentionally single-node and does not prove production availability."
   ]
 }

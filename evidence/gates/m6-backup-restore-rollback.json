@@ -3,11 +3,8 @@
   "milestone": "M6",
   "requirement": "M6-R5",
   "owner": "database and release owner",
-  "blocking_reason": "The staging bidirectional release rollback, authenticated v0.1.19 rollout, reviewed Bucket Lock, confirmed 27-object immutable snapshot, fresh isolated PostgreSQL restore, isolated R2 restore, and DB/manifest/restored-inventory bidirectional validation passed. The application cannot yet remap original database object references to the isolated hashed recovery keys, so no isolated application recovery smoke or defensible production RPO/RTO drill has executed.",
+  "blocking_reason": "The staging bidirectional release rollback, authenticated rollout, reviewed Bucket Lock, immutable snapshot, fresh isolated PostgreSQL restore, isolated object restore, database/object bidirectional validation, and authenticated isolated application recovery smoke passed. A reviewed production-like drill with measured production RPO/RTO has not executed, so the overall recovery gate remains open.",
   "prerequisites": [
-    "Implement or configure an isolated recovery object mapping without mutating live object keys",
-    "Deploy a temporary application profile against the isolated database and recovered objects",
-    "Run authenticated retrieval, citation, Agent, and data-integrity smoke after restore",
     "Run a reviewed production-like recovery drill with measured RPO and RTO"
   ],
   "required_evidence": [
@@ -21,7 +18,8 @@
     "evidence/m6/20260805-staging-bidirectional-rollback.json",
     "evidence/m6/20260805-staging-postgres-restore.json",
     "evidence/m6/20260806-v0.1.19-staging-r2-preflight.json",
-    "evidence/m6/20260806-staging-r2-recovery.json"
+    "evidence/m6/20260806-staging-r2-recovery.json",
+    "evidence/m6/20260806-isolated-application-recovery.json"
   ],
   "state": "open",
   "status": "blocked_external",

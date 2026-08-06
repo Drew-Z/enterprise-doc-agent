@@ -10,6 +10,7 @@ spec:
         values:
           - enterprise-doc-api
           - enterprise-doc-worker
+          - enterprise-doc-consumer
   policyTypes: [Egress]
   egress:
     - to:
@@ -17,4 +18,3 @@ spec:
             cidr: 192.0.2.1/32
       ports:
         - {protocol: TCP, port: 5432}
-

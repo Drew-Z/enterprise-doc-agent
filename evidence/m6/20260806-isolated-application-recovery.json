@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "evidence_type": "isolated-application-recovery-smoke",
+  "evidence_id": "m6-isolated-application-recovery-20260806",
+  "milestone": "M6",
+  "requirement_ids": [
+    "M6-R5"
+  ],
+  "status": "passed_isolated_application_recovery_smoke",
+  "captured_at": "2026-08-06T13:23:57+08:00",
+  "source_commit": "c94198711779ca235444ac6bba3f989c88f6bf81",
+  "deployment": {
+    "profile": "single-node-4c8g",
+    "namespace": "enterprise-doc-agent-recovery",
+    "manifest_sha256": "f91394b9282f65c2136c07e5c5fb40bc8df2a206f634727435f4b37b5bcc397d",
+    "images": {
+      "api": "sha256:26c835b0a2813e753770834179eeb37ff5e151adb8a262f36d6fef69e68ce9b2",
+      "worker": "sha256:52d1270a7583475874b8cbbc00baa7a595aaa5f7ccb6cf90c8f719ffa4371fcd",
+      "consumer": "sha256:e0c653aca8371a379d3902575edf6af8a3752bb670c9f52106bd926a50336e9d",
+      "web": "sha256:23171c6b200a12a81c87df6942dbd3d611c7e57e24d3c561e0db42f125dcfba4"
+    },
+    "workloads_ready": true
+  },
+  "recovery_target": {
+    "database": "fresh isolated PostgreSQL restore (name retained off repository)",
+    "object_store": "single isolated recovery bucket with separate logical document and artifact prefixes",
+    "object_key_remap": "confirmed for the isolated database only",
+    "public_ingress": false
+  },
+  "smoke": {
+    "scenario": "authenticated-upload-ingestion-agent",
+    "sample_count": 1,
+    "started_at": "2026-08-06T05:22:56.892544+00:00",
+    "completed_at": "2026-08-06T05:23:57.596700+00:00",
+    "duration_seconds": 60.70415699901059,
+    "status": "passed",
+    "steps": [
+      "upload_session_created",
+      "object_uploaded",
+      "upload_completed",
+      "document_ready",
+      "agent_run_created",
+      "agent_run_succeeded",
+      "answer_artifact_listed",
+      "answer_artifact_downloaded",
+      "answer_artifact_sha256_verified",
+      "answer_citation_verified"
+    ],
+    "artifact_sha256_verified": true,
+    "citation_verified_against_uploaded_version": true
+  },
+  "private_execution_record": {
+    "report_sha256": "886a521203e62967057bcc5de9351e53945161223ae792c6ba4cfc0cb1c4a05c",
+    "report_size_bytes": 897,
+    "retained_off_repository": true
+  },
+  "secret_handling": {
+    "tokens_in_argv": false,
+    "database_urls_in_argv": false,
+    "database_urls_persisted_in_evidence": false,
+    "private_object_keys_in_evidence": false,
+    "synthetic_smoke_principal": true
+  },
+  "limitations": [
+    "This is one authenticated main-path smoke on a dedicated single-node recovery target; it does not establish capacity, failover, model quality, or production availability.",
+    "The isolated recovery bucket intentionally backs two logical prefixes because the temporary credential was scoped to one bucket.",
+    "Production RPO and RTO remain unmeasured and the M6 recovery gate remains open."
+  ]
+}

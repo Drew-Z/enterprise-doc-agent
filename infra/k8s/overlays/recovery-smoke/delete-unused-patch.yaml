@@ -1,9 +1,3 @@
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: enterprise-doc-consumer
-$patch: delete
----
 apiVersion: batch/v1
 kind: Job
 metadata:

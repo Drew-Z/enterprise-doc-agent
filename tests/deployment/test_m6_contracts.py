@@ -958,6 +958,10 @@ def test_database_r2_recovery_closes_cross_system_subgate_but_keeps_rpo_rto_open
     preflight_evidence = json.loads((ROOT / preflight_evidence_path).read_text(encoding="utf-8"))
     r2_evidence_path = "evidence/m6/20260806-staging-r2-recovery.json"
     r2_evidence = json.loads((ROOT / r2_evidence_path).read_text(encoding="utf-8"))
+    application_evidence_path = "evidence/m6/20260806-isolated-application-recovery.json"
+    application_evidence = json.loads(
+        (ROOT / application_evidence_path).read_text(encoding="utf-8")
+    )
     gate = json.loads(
         (ROOT / "evidence/gates/m6-backup-restore-rollback.json").read_text(encoding="utf-8")
     )
@@ -978,8 +982,9 @@ def test_database_r2_recovery_closes_cross_system_subgate_but_keeps_rpo_rto_open
         database_evidence_path,
         preflight_evidence_path,
         r2_evidence_path,
+        application_evidence_path,
     ]
-    assert "application cannot yet remap" in gate["blocking_reason"]
+    assert "application recovery smoke passed" in gate["blocking_reason"]
     assert "production RPO/RTO" in gate["blocking_reason"]
     assert database_evidence["status"] == "passed_database_subgate"
     assert database_evidence["restore"]["relations_before"] == 0
@@ -1034,12 +1039,36 @@ def test_database_r2_recovery_closes_cross_system_subgate_but_keeps_rpo_rto_open
         assert "database__url" not in rendered
         assert "secret_access_key" not in rendered
         assert "cloudflare_api_token" not in rendered
+    assert application_evidence["status"] == "passed_isolated_application_recovery_smoke"
+    assert application_evidence["deployment"]["workloads_ready"] is True
+    assert application_evidence["recovery_target"]["public_ingress"] is False
+    assert application_evidence["smoke"]["status"] == "passed"
+    assert application_evidence["smoke"]["artifact_sha256_verified"] is True
+    assert application_evidence["smoke"]["citation_verified_against_uploaded_version"] is True
+    assert set(application_evidence["smoke"]["steps"]) == {
+        "upload_session_created",
+        "object_uploaded",
+        "upload_completed",
+        "document_ready",
+        "agent_run_created",
+        "agent_run_succeeded",
+        "answer_artifact_listed",
+        "answer_artifact_downloaded",
+        "answer_artifact_sha256_verified",
+        "answer_citation_verified",
+    }
+    assert application_evidence["secret_handling"]["tokens_in_argv"] is False
+    rendered_application_evidence = json.dumps(application_evidence).lower()
+    assert "database__url" not in rendered_application_evidence
+    assert "secret_access_key" not in rendered_application_evidence
+    assert "cloudflare_api_token" not in rendered_application_evidence
     m6 = next(item for item in index["evidence"] if item["milestone"] == "M6")
     assert m6["rollback_drill"] == evidence_path
     assert m6["postgres_restore_drill"] == database_evidence_path
     assert m6["latest_staging_release"] == preflight_evidence_path
     assert m6["r2_snapshot_preflight"] == preflight_evidence_path
     assert m6["r2_recovery_drill"] == r2_evidence_path
+    assert m6["isolated_application_recovery_smoke"] == application_evidence_path
 
 
 def test_signed_release_and_authenticated_staging_evidence_close_delivery_gates() -> None:

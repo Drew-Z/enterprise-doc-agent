@@ -20,6 +20,7 @@ SPEC.loader.exec_module(configure_recovery)
 
 API_IMAGE = "ghcr.io/example/api@sha256:" + "a" * 64
 WORKER_IMAGE = "ghcr.io/example/worker@sha256:" + "b" * 64
+CONSUMER_IMAGE = "ghcr.io/example/consumer@sha256:" + "c" * 64
 
 
 def _rendered_documents() -> list[dict[str, Any]]:
@@ -38,6 +39,7 @@ def _configure(documents: list[dict[str, Any]]) -> list[dict[str, Any]]:
         documents,
         api_image=API_IMAGE,
         worker_image=WORKER_IMAGE,
+        consumer_image=CONSUMER_IMAGE,
         database_egress_cidrs="52.74.252.201/32,52.77.146.31/32",
         object_store_endpoint="https://objects.example.com",
         documents_bucket="recovery-documents",
@@ -59,6 +61,34 @@ def test_recovery_overlay_is_private_minimal_and_configurable() -> None:
     assert deployments == configure_recovery.DEPLOYMENT_NAMES
     services = [item for item in configured if item["kind"] == "Service"]
     assert {item["metadata"]["name"] for item in services} == configure_recovery.SERVICE_NAMES
+    assert "enterprise-doc-consumer" in deployments
+    assert "enterprise-doc-consumer" not in configure_recovery.SERVICE_NAMES
+    deployment_images = {
+        item["metadata"]["name"]: item["spec"]["template"]["spec"]["containers"][0]["image"]
+        for item in configured
+        if item["kind"] == "Deployment"
+    }
+    assert deployment_images["enterprise-doc-consumer"] == CONSUMER_IMAGE
+    postgres_policy = next(
+        item
+        for item in configured
+        if item["kind"] == "NetworkPolicy"
+        and item["metadata"]["name"] == configure_recovery.POSTGRES_POLICY_NAME
+    )
+    selected_names = postgres_policy["spec"]["podSelector"]["matchExpressions"][0]["values"]
+    assert "enterprise-doc-consumer" in selected_names
+    redis_policy = next(
+        item
+        for item in configured
+        if item["kind"] == "NetworkPolicy"
+        and item["metadata"]["name"] == "enterprise-doc-redis-ingress"
+    )
+    redis_sources = redis_policy["spec"]["ingress"][0]["from"]
+    assert any(
+        source.get("podSelector", {}).get("matchLabels", {}).get("app.kubernetes.io/name")
+        == "enterprise-doc-consumer"
+        for source in redis_sources
+    )
     assert all(item.get("spec", {}).get("type") in {None, "ClusterIP"} for item in services)
     config = next(
         item
@@ -91,6 +121,7 @@ def test_recovery_configuration_rejects_public_or_mutable_inputs() -> None:
             documents,
             api_image="ghcr.io/example/api:latest",
             worker_image=WORKER_IMAGE,
+            consumer_image=CONSUMER_IMAGE,
             database_egress_cidrs="52.74.252.201/32",
             object_store_endpoint="https://objects.example.com",
             documents_bucket="recovery-documents",
@@ -108,6 +139,7 @@ def test_recovery_configuration_rejects_non_global_database_cidr() -> None:
             _rendered_documents(),
             api_image=API_IMAGE,
             worker_image=WORKER_IMAGE,
+            consumer_image=CONSUMER_IMAGE,
             database_egress_cidrs="127.0.0.1/32",
             object_store_endpoint="https://objects.example.com",
             documents_bucket="recovery-documents",
