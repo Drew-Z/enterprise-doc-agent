@@ -57,6 +57,28 @@ def _common(root: Path, *, evidence_type: str, status: str) -> dict[str, object]
 
 def _passed_recovery(root: Path) -> dict[str, object]:
     report = _common(root, evidence_type="recovery", status="passed")
+    report["recovery_objectives"] = {
+        "rpo_seconds": 60.0,
+        "rto_seconds": 300.0,
+        "approved_by": "service-owner",
+        "approved_at": "2026-07-20T09:55:00+08:00",
+    }
+    report["recovery_timeline"] = {
+        "latest_recoverable_data_at": "2026-07-20T09:59:30+08:00",
+        "failure_declared_at": "2026-07-20T10:00:00+08:00",
+        "application_restored_at": "2026-07-20T10:03:00+08:00",
+    }
+    report["review"] = {
+        "reviewed_by": "recovery-reviewer",
+        "reviewed_at": "2026-07-20T10:11:00+08:00",
+        "production_like": True,
+    }
+    report["recovery_scope"] = {
+        "source_environment": "production-like-primary",
+        "recovery_environment": "production-like-isolated-recovery",
+        "fault_domain_isolation_verified": True,
+        "live_environment_mutated": False,
+    }
     report["measurements"] = {
         "rpo_seconds": 30.0,
         "rto_seconds": 180.0,
@@ -169,6 +191,64 @@ def test_passed_recovery_requires_rpo_rto_and_all_smoke_checks(tmp_path: Path) -
     )
     with pytest.raises(EvidenceValidationError, match="duplicate smoke check"):
         validate_evidence(duplicate_smoke, root=tmp_path)
+
+
+def test_passed_recovery_requires_predeclared_objectives_and_measured_timeline(
+    tmp_path: Path,
+) -> None:
+    report = _passed_recovery(tmp_path)
+    validate_evidence(report, root=tmp_path)
+
+    missing_objectives = deepcopy(report)
+    missing_objectives.pop("recovery_objectives")
+    with pytest.raises(EvidenceValidationError, match="recovery_objectives"):
+        validate_evidence(missing_objectives, root=tmp_path)
+
+    late_approval = deepcopy(report)
+    late_approval["recovery_objectives"]["approved_at"] = "2026-07-20T10:00:01+08:00"  # type: ignore[index]
+    with pytest.raises(EvidenceValidationError, match="approved before"):
+        validate_evidence(late_approval, root=tmp_path)
+
+    mismatched_rpo = deepcopy(report)
+    mismatched_rpo["measurements"]["rpo_seconds"] = 29.0  # type: ignore[index]
+    with pytest.raises(EvidenceValidationError, match="calculated RPO"):
+        validate_evidence(mismatched_rpo, root=tmp_path)
+
+    missed_rto = deepcopy(report)
+    missed_rto["recovery_objectives"]["rto_seconds"] = 120.0  # type: ignore[index]
+    with pytest.raises(EvidenceValidationError, match="RTO objective"):
+        validate_evidence(missed_rto, root=tmp_path)
+
+
+def test_passed_recovery_requires_completed_independent_review(tmp_path: Path) -> None:
+    report = _passed_recovery(tmp_path)
+
+    same_operator = deepcopy(report)
+    same_operator["review"]["reviewed_by"] = same_operator["operator"]  # type: ignore[index]
+    with pytest.raises(EvidenceValidationError, match="independent"):
+        validate_evidence(same_operator, root=tmp_path)
+
+    early_review = deepcopy(report)
+    early_review["review"]["reviewed_at"] = "2026-07-20T10:09:59+08:00"  # type: ignore[index]
+    with pytest.raises(EvidenceValidationError, match="after completion"):
+        validate_evidence(early_review, root=tmp_path)
+
+    not_production_like = deepcopy(report)
+    not_production_like["review"]["production_like"] = False  # type: ignore[index]
+    with pytest.raises(EvidenceValidationError, match="production_like"):
+        validate_evidence(not_production_like, root=tmp_path)
+
+    same_environment = deepcopy(report)
+    same_environment["recovery_scope"]["recovery_environment"] = same_environment["recovery_scope"][
+        "source_environment"
+    ]  # type: ignore[index]
+    with pytest.raises(EvidenceValidationError, match="must differ"):
+        validate_evidence(same_environment, root=tmp_path)
+
+    live_mutation = deepcopy(report)
+    live_mutation["recovery_scope"]["live_environment_mutated"] = True  # type: ignore[index]
+    with pytest.raises(EvidenceValidationError, match="must not mutate"):
+        validate_evidence(live_mutation, root=tmp_path)
 
 
 def test_passed_capacity_requires_repeated_phases_and_dependency_telemetry(

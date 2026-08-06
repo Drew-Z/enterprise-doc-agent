@@ -334,8 +334,11 @@ uv run python scripts/validate_recovery_capacity_evidence.py --input evidence/de
 
 Executed reports must identify the external environment and cluster, reviewed commit,
 immutable image digest(s), operator, timezone-aware time bounds, measured results and
-artifact SHA-256 values. Recovery reports additionally require backup/restore/rollback
-timings and data/application smoke checks. Application-capacity reports require
+artifact SHA-256 values. A passed recovery report additionally requires RPO/RTO objectives
+approved before execution, a fault-domain-isolated recovery scope that does not mutate the
+live environment, failure/recovery timestamps from which the reported values are derived,
+an independent post-run reviewer, backup/restore/rollback timings and data/application
+smoke checks. Application-capacity reports require
 ramp/steady/burst/recovery repetitions, latency percentiles, errors, throughput and
 dependency telemetry; model-capacity reports require warm-up, TTFT/TPOT, token
 throughput, GPU/KV-cache telemetry and headroom. When the required external target or

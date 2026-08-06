@@ -143,3 +143,15 @@ immutable image or rollback evidence. Those remain open manual gates.
 - [ ] Run local quality, publish an immutable image, execute the staging R2 drill against
   the retained restore database, and record cross-system evidence without closing the
   production RPO/RTO gate prematurely.
+
+## Slice 14: Reviewed Production-Like RPO/RTO Contract
+
+- [x] Require passed recovery evidence to bind pre-approved objectives to a deterministic
+  failure/recovery timeline and reject measurements that are hand-entered or miss targets.
+- [x] Require a separately named, fault-domain-isolated recovery scope, no live mutation,
+  and an independent post-run reviewer before accepting `production_like` evidence.
+- [x] Publish a validator-backed blocked preflight with proposed RPO/RTO values and exact
+  external prerequisites without promoting the current single-node smoke.
+- [ ] Obtain service-owner objective approval, provision the separate recovery target,
+  execute the drill, retain sanitized hashed artifacts, and close the gate only if the
+  measured values meet the pre-approved objectives.

@@ -954,13 +954,19 @@ def test_database_r2_recovery_closes_cross_system_subgate_but_keeps_rpo_rto_open
     evidence = json.loads((ROOT / evidence_path).read_text(encoding="utf-8"))
     database_evidence_path = "evidence/m6/20260805-staging-postgres-restore.json"
     database_evidence = json.loads((ROOT / database_evidence_path).read_text(encoding="utf-8"))
-    preflight_evidence_path = "evidence/m6/20260806-v0.1.19-staging-r2-preflight.json"
-    preflight_evidence = json.loads((ROOT / preflight_evidence_path).read_text(encoding="utf-8"))
+    release_preflight_evidence_path = "evidence/m6/20260806-v0.1.19-staging-r2-preflight.json"
+    release_preflight_evidence = json.loads(
+        (ROOT / release_preflight_evidence_path).read_text(encoding="utf-8")
+    )
     r2_evidence_path = "evidence/m6/20260806-staging-r2-recovery.json"
     r2_evidence = json.loads((ROOT / r2_evidence_path).read_text(encoding="utf-8"))
     application_evidence_path = "evidence/m6/20260806-isolated-application-recovery.json"
     application_evidence = json.loads(
         (ROOT / application_evidence_path).read_text(encoding="utf-8")
+    )
+    rpo_preflight_evidence_path = "evidence/m6/20260806-production-rpo-rto-preflight.json"
+    rpo_preflight_evidence = json.loads(
+        (ROOT / rpo_preflight_evidence_path).read_text(encoding="utf-8")
     )
     gate = json.loads(
         (ROOT / "evidence/gates/m6-backup-restore-rollback.json").read_text(encoding="utf-8")
@@ -980,12 +986,14 @@ def test_database_r2_recovery_closes_cross_system_subgate_but_keeps_rpo_rto_open
     assert gate["completed_evidence"] == [
         evidence_path,
         database_evidence_path,
-        preflight_evidence_path,
+        release_preflight_evidence_path,
         r2_evidence_path,
         application_evidence_path,
     ]
     assert "application recovery smoke passed" in gate["blocking_reason"]
-    assert "production RPO/RTO" in gate["blocking_reason"]
+    assert "service owner" in gate["blocking_reason"]
+    assert "fault domain" in gate["blocking_reason"]
+    assert gate["planning_evidence"] == rpo_preflight_evidence_path
     assert database_evidence["status"] == "passed_database_subgate"
     assert database_evidence["restore"]["relations_before"] == 0
     assert database_evidence["restore"]["relations_after"] == 25
@@ -995,15 +1003,17 @@ def test_database_r2_recovery_closes_cross_system_subgate_but_keeps_rpo_rto_open
         artifact_path = ROOT / artifact["path"]
         assert artifact_path.is_file()
         assert hashlib.sha256(artifact_path.read_bytes()).hexdigest() == artifact["sha256"]
-    assert preflight_evidence["status"] == "passed_with_recovery_gate_open"
-    assert preflight_evidence["release"]["supply_chain_run"]["status"] == "passed"
-    assert preflight_evidence["staging_rollout"]["status"] == "passed"
-    assert set(preflight_evidence["staging_rollout"]["outcomes"].values()) == {"success"}
-    assert preflight_evidence["staging_rollout"]["authenticated_smoke"]["status"] == "passed"
-    assert preflight_evidence["r2_snapshot_preflight"]["object_count"] == 27
-    assert preflight_evidence["r2_snapshot_preflight"]["remote_mutations"] == 0
-    assert preflight_evidence["recovery_gate"]["bucket_lock_configured"] is False
-    assert preflight_evidence["recovery_gate"]["confirmed_snapshot_executed"] is False
+    assert release_preflight_evidence["status"] == "passed_with_recovery_gate_open"
+    assert release_preflight_evidence["release"]["supply_chain_run"]["status"] == "passed"
+    assert release_preflight_evidence["staging_rollout"]["status"] == "passed"
+    assert set(release_preflight_evidence["staging_rollout"]["outcomes"].values()) == {"success"}
+    assert (
+        release_preflight_evidence["staging_rollout"]["authenticated_smoke"]["status"] == "passed"
+    )
+    assert release_preflight_evidence["r2_snapshot_preflight"]["object_count"] == 27
+    assert release_preflight_evidence["r2_snapshot_preflight"]["remote_mutations"] == 0
+    assert release_preflight_evidence["recovery_gate"]["bucket_lock_configured"] is False
+    assert release_preflight_evidence["recovery_gate"]["confirmed_snapshot_executed"] is False
     assert r2_evidence["status"] == "passed_r2_cross_system_subgate"
     assert r2_evidence["bucket_lock"]["verified_before_snapshot"] is True
     assert r2_evidence["database_recovery"]["relations_before"] == 0
@@ -1062,13 +1072,28 @@ def test_database_r2_recovery_closes_cross_system_subgate_but_keeps_rpo_rto_open
     assert "database__url" not in rendered_application_evidence
     assert "secret_access_key" not in rendered_application_evidence
     assert "cloudflare_api_token" not in rendered_application_evidence
+    assert rpo_preflight_evidence["status"] == "blocked_external"
+    assert rpo_preflight_evidence["proposed_objectives"] == {
+        "rpo_seconds": 300,
+        "rto_seconds": 1800,
+        "status": "pending_service_owner_approval",
+        "approval_must_precede_execution": True,
+    }
+    assert "service-owner-approved RPO/RTO" in rpo_preflight_evidence["blocking_reason"]
+    assert all(
+        artifact_path.is_file()
+        and hashlib.sha256(artifact_path.read_bytes()).hexdigest() == artifact["sha256"]
+        for artifact in rpo_preflight_evidence["artifacts"]
+        for artifact_path in [ROOT / artifact["path"]]
+    )
     m6 = next(item for item in index["evidence"] if item["milestone"] == "M6")
     assert m6["rollback_drill"] == evidence_path
     assert m6["postgres_restore_drill"] == database_evidence_path
-    assert m6["latest_staging_release"] == preflight_evidence_path
-    assert m6["r2_snapshot_preflight"] == preflight_evidence_path
+    assert m6["latest_staging_release"] == release_preflight_evidence_path
+    assert m6["r2_snapshot_preflight"] == release_preflight_evidence_path
     assert m6["r2_recovery_drill"] == r2_evidence_path
     assert m6["isolated_application_recovery_smoke"] == application_evidence_path
+    assert m6["production_rpo_rto_preflight"] == rpo_preflight_evidence_path
 
 
 def test_signed_release_and_authenticated_staging_evidence_close_delivery_gates() -> None:

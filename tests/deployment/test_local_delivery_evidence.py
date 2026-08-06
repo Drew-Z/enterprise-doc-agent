@@ -82,10 +82,9 @@ def test_current_m6_status_links_live_staging_and_keeps_remaining_recovery_open(
     assert current["host"]["firewall"] == "active"
     assert current["recovery"]["database_r2_bidirectional_validation"] == "passed"
     assert current["recovery"]["isolated_application_recovery_smoke"] == "passed"
+    assert current["recovery"]["production_rpo_rto_preflight"] == "passed_blocked_contract"
     assert current["recovery"]["production_rpo_rto"] == "blocked_external"
-    assert (
-        current["recovery"]["latest_evidence"] == formal_m6["isolated_application_recovery_smoke"]
-    )
+    assert current["recovery"]["latest_evidence"] == formal_m6["production_rpo_rto_preflight"]
     assert host["status"] == "passed_staging_host"
     assert host["cluster"]["node_status"] == "Ready"
     assert host["cluster"]["profile"] == "single-node-4c8g"

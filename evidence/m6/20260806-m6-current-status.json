@@ -4,8 +4,8 @@
   "milestone": "M6",
   "status": "blocked_external",
   "owner": "database and release owner",
-  "captured_at": "2026-08-06T13:23:57+08:00",
-  "source_commit": "c94198711779ca235444ac6bba3f989c88f6bf81",
+  "captured_at": "2026-08-06T15:37:52+08:00",
+  "source_commit": "e032d27be857f40c4303bfbdbd080360ae06936a",
   "deployment": {
     "status": "passed",
     "tag": "v0.1.19",
@@ -35,11 +35,14 @@
     "isolated_r2_restore": "passed",
     "database_r2_bidirectional_validation": "passed",
     "isolated_application_recovery_smoke": "passed",
+    "production_rpo_rto_preflight": "passed_blocked_contract",
     "production_rpo_rto": "blocked_external",
-    "latest_evidence": "evidence/m6/20260806-isolated-application-recovery.json"
+    "latest_evidence": "evidence/m6/20260806-production-rpo-rto-preflight.json"
   },
   "remaining_work": [
-    "Execute a reviewed production-like drill before claiming production RPO and RTO."
+    "Approve or replace the proposed RPO 300 seconds and RTO 1800 seconds before execution.",
+    "Provision a recovery target outside the active single-node staging fault domain and assign an independent reviewer.",
+    "Execute the production-like drill and derive RPO/RTO from the recorded failure timeline."
   ],
   "limitations": [
     "The M6 delivery, DB/R2 recovery, and isolated application recovery smoke sub-gates are passed, but the overall recovery gate remains open until production RPO and RTO are measured.",

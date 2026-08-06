@@ -105,6 +105,9 @@
   `scripts/validate_recovery_capacity_evidence.py`. A `passed` report requires external
   environment and cluster identity, immutable commit/image identity, timezone-aware
   timings, measured results, hashed artifacts and the evidence-type-specific checks.
+  Passed recovery evidence also requires objectives approved before execution, an
+  isolated source/recovery scope, a recorded failure timeline whose calculated RPO/RTO
+  match the reported measurements and objectives, and an independent post-run review.
   Missing cloud, registry, cluster, restore or production-like load prerequisites must
   remain `blocked_external` with a reason and prerequisite list.
 - Local image builds, static checks and local rendering evidence do not prove registry,

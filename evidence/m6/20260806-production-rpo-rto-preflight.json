@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "evidence_type": "recovery",
+  "evidence_id": "m6-production-rpo-rto-preflight-20260806",
+  "milestone": "M6",
+  "requirement_ids": [
+    "M6-R6",
+    "M6-R7"
+  ],
+  "status": "blocked_external",
+  "environment": {
+    "name": "production-like-recovery-target-pending",
+    "provider": null,
+    "region": null,
+    "cluster": null,
+    "external_execution": false
+  },
+  "commit_sha": "e032d27be857f40c4303bfbdbd080360ae06936a",
+  "image_digest": {
+    "api": "sha256:26c835b0a2813e753770834179eeb37ff5e151adb8a262f36d6fef69e68ce9b2",
+    "worker": "sha256:52d1270a7583475874b8cbbc00baa7a595aaa5f7ccb6cf90c8f719ffa4371fcd",
+    "consumer": "sha256:e0c653aca8371a379d3902575edf6af8a3752bb670c9f52106bd926a50336e9d",
+    "web": "sha256:23171c6b200a12a81c87df6942dbd3d611c7e57e24d3c561e0db42f125dcfba4"
+  },
+  "operator": "database and release owner",
+  "started_at": "2026-08-06T14:20:00+08:00",
+  "completed_at": "2026-08-06T14:20:00+08:00",
+  "command_or_procedure": [
+    "Obtain service-owner approval for RPO and RTO objectives before declaring the failure boundary.",
+    "Provision an isolated production-like recovery target in a separately named cluster or fault domain without public application ingress.",
+    "Record latest recoverable data time and failure declaration time, then restore PostgreSQL and immutable object snapshots.",
+    "Deploy immutable API, worker, and consumer images, run authenticated data/application smoke, and record the application-restored time.",
+    "Run the reviewed rollback path, hash sanitized artifacts, and obtain independent reviewer sign-off after completion."
+  ],
+  "measurements": {},
+  "smoke_checks": [
+    {
+      "name": "backup_integrity",
+      "status": "not_executed"
+    },
+    {
+      "name": "data_integrity",
+      "status": "not_executed"
+    },
+    {
+      "name": "application_readiness",
+      "status": "not_executed"
+    },
+    {
+      "name": "rollback_readiness",
+      "status": "not_executed"
+    }
+  ],
+  "proposed_objectives": {
+    "rpo_seconds": 300,
+    "rto_seconds": 1800,
+    "status": "pending_service_owner_approval",
+    "approval_must_precede_execution": true
+  },
+  "blocking_reason": "No service-owner-approved RPO/RTO objective or separately provisioned production-like recovery target exists. The current single-node staging drill cannot prove fault-domain recovery or production availability.",
+  "prerequisites": [
+    "Approve or replace the proposed RPO 300 seconds and RTO 1800 seconds before execution.",
+    "Provision a separately named recovery target outside the active single-node staging fault domain.",
+    "Assign an independent reviewer who is not the drill operator.",
+    "Issue time-bounded least-privilege database, object-store, registry, model, and cluster credentials."
+  ],
+  "limitations": [
+    "This is a preflight plan and records no production RPO or RTO measurement.",
+    "The proposed objectives are recommendations, not approved service objectives.",
+    "Existing isolated staging recovery evidence remains valid only for its named single-node environment."
+  ],
+  "artifacts": [
+    {
+      "path": "evidence/m6/20260806-isolated-application-recovery.json",
+      "kind": "latest-isolated-application-recovery-baseline",
+      "sha256": "27e7d979486ef4e8669bad3aa097ef518a1e217e89fa575ebc512d8643be529f"
+    }
+  ],
+  "owner": "database and release owner"
+}

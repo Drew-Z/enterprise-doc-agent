@@ -227,6 +227,93 @@ def _validate_recovery(report: Mapping[str, Any], status: str) -> None:
     if status == "passed":
         for name in required_measurements:
             _number(measurements.get(name), f"measurements.{name}", minimum=0)
+        objectives = _require_mapping(report.get("recovery_objectives"), "recovery_objectives")
+        objective_rpo = _number(
+            objectives.get("rpo_seconds"),
+            "recovery_objectives.rpo_seconds",
+            minimum=0,
+        )
+        objective_rto = _number(
+            objectives.get("rto_seconds"),
+            "recovery_objectives.rto_seconds",
+            minimum=0,
+        )
+        _require_non_empty_string(objectives.get("approved_by"), "recovery_objectives.approved_by")
+        approved_at = _timestamp(objectives.get("approved_at"), "recovery_objectives.approved_at")
+        started_at = _timestamp(report.get("started_at"), "started_at")
+        if approved_at > started_at:
+            raise EvidenceValidationError(
+                "recovery objectives must be approved before the drill starts"
+            )
+
+        timeline = _require_mapping(report.get("recovery_timeline"), "recovery_timeline")
+        latest_recoverable = _timestamp(
+            timeline.get("latest_recoverable_data_at"),
+            "recovery_timeline.latest_recoverable_data_at",
+        )
+        failure_declared = _timestamp(
+            timeline.get("failure_declared_at"),
+            "recovery_timeline.failure_declared_at",
+        )
+        application_restored = _timestamp(
+            timeline.get("application_restored_at"),
+            "recovery_timeline.application_restored_at",
+        )
+        if latest_recoverable > failure_declared:
+            raise EvidenceValidationError(
+                "latest recoverable data must not follow failure declaration"
+            )
+        if application_restored < failure_declared:
+            raise EvidenceValidationError(
+                "application restoration must not precede failure declaration"
+            )
+        calculated_rpo = (failure_declared - latest_recoverable).total_seconds()
+        calculated_rto = (application_restored - failure_declared).total_seconds()
+        measured_rpo = float(measurements["rpo_seconds"])
+        measured_rto = float(measurements["rto_seconds"])
+        if not math.isclose(measured_rpo, calculated_rpo, abs_tol=0.001):
+            raise EvidenceValidationError("measurements.rpo_seconds must equal the calculated RPO")
+        if not math.isclose(measured_rto, calculated_rto, abs_tol=0.001):
+            raise EvidenceValidationError("measurements.rto_seconds must equal the calculated RTO")
+        if measured_rpo > objective_rpo:
+            raise EvidenceValidationError("measured RPO exceeds the approved RPO objective")
+        if measured_rto > objective_rto:
+            raise EvidenceValidationError("measured RTO exceeds the approved RTO objective")
+
+        review = _require_mapping(report.get("review"), "review")
+        reviewer = _require_non_empty_string(review.get("reviewed_by"), "review.reviewed_by")
+        operator = _require_non_empty_string(report.get("operator"), "operator")
+        if reviewer == operator:
+            raise EvidenceValidationError("recovery evidence requires an independent reviewer")
+        reviewed_at = _timestamp(review.get("reviewed_at"), "review.reviewed_at")
+        completed_at = _timestamp(report.get("completed_at"), "completed_at")
+        if reviewed_at < completed_at:
+            raise EvidenceValidationError("recovery review must occur after completion")
+        if review.get("production_like") is not True:
+            raise EvidenceValidationError("review.production_like must be true")
+
+        recovery_scope = _require_mapping(report.get("recovery_scope"), "recovery_scope")
+        source_environment = _require_non_empty_string(
+            recovery_scope.get("source_environment"),
+            "recovery_scope.source_environment",
+        )
+        recovery_environment = _require_non_empty_string(
+            recovery_scope.get("recovery_environment"),
+            "recovery_scope.recovery_environment",
+        )
+        if source_environment == recovery_environment:
+            raise EvidenceValidationError(
+                "recovery_scope source and recovery environments must differ"
+            )
+        if recovery_scope.get("fault_domain_isolation_verified") is not True:
+            raise EvidenceValidationError(
+                "recovery_scope.fault_domain_isolation_verified must be true"
+            )
+        if recovery_scope.get("live_environment_mutated") is not False:
+            raise EvidenceValidationError(
+                "production-like recovery must not mutate the live environment"
+            )
+
         smoke_checks = report.get("smoke_checks")
         if not isinstance(smoke_checks, Sequence) or isinstance(smoke_checks, (str, bytes)):
             raise EvidenceValidationError("smoke_checks must be a list")
