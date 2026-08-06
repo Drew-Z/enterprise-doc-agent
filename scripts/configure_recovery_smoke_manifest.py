@@ -217,9 +217,7 @@ def configure_recovery_smoke_manifest(
     images = {
         "enterprise-doc-api": _immutable_image(api_image, description="API image"),
         "enterprise-doc-worker": _immutable_image(worker_image, description="worker image"),
-        "enterprise-doc-consumer": _immutable_image(
-            consumer_image, description="consumer image"
-        ),
+        "enterprise-doc-consumer": _immutable_image(consumer_image, description="consumer image"),
     }
     for deployment_name, image in images.items():
         deployment = _single_document(configured, kind="Deployment", name=deployment_name)
