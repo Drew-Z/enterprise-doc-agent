@@ -1,0 +1,20 @@
+FROM mirror.gcr.io/library/postgres@sha256:dc17045ccfd343b49600570ea734b9c4991cf1c3f3302e67df51e3b402dd55c4
+
+# Alpine's unqualified postgresql-pgvector package currently targets PG18,
+# while this pinned image runs PG17. Build the extension with this image's
+# own PGXS toolchain so the shared library and control files match the server.
+ARG PGVECTOR_VERSION=0.8.1
+ARG PGVECTOR_COMMIT=778dacf20c07caf904557a88705142631818d8cb
+
+RUN apk add --no-cache --virtual .pgvector-build-deps \
+      build-base \
+      git \
+  && git init /tmp/pgvector \
+  && git -C /tmp/pgvector remote add origin https://github.com/pgvector/pgvector.git \
+  && git -C /tmp/pgvector fetch --depth 1 origin "${PGVECTOR_COMMIT}" \
+  && git -C /tmp/pgvector checkout --detach FETCH_HEAD \
+  && test "$(git -C /tmp/pgvector rev-parse HEAD)" = "${PGVECTOR_COMMIT}" \
+  && make -C /tmp/pgvector OPTFLAGS="" with_llvm=no \
+  && make -C /tmp/pgvector install with_llvm=no \
+  && rm -rf /tmp/pgvector \
+  && apk del .pgvector-build-deps

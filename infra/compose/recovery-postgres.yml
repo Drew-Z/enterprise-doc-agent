@@ -1,0 +1,89 @@
+name: enterprise-doc-recovery
+
+services:
+  recovery-postgres:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.recovery-postgres
+    image: enterprise-doc-recovery-postgres:17-pgvector-0.8.1
+    environment:
+      POSTGRES_USER: ${RECOVERY_POSTGRES_USER:-enterprise_doc_recovery}
+      POSTGRES_PASSWORD: ${RECOVERY_POSTGRES_PASSWORD:?set RECOVERY_POSTGRES_PASSWORD before starting recovery PostgreSQL}
+      POSTGRES_DB: ${RECOVERY_POSTGRES_DB:-enterprise_doc_recovery}
+    ports:
+      - "127.0.0.1:${RECOVERY_POSTGRES_PORT:-15432}:5432"
+    volumes:
+      - enterprise-doc-recovery-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"
+      interval: 3s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+    restart: "no"
+
+  recovery-redis:
+    image: redis:7.4-alpine@sha256:6ab0b6e7381779332f97b8ca76193e45b0756f38d4c0dcda72dbb3c32061ab99
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "127.0.0.1:${RECOVERY_REDIS_PORT:-16379}:6379"
+    volumes:
+      - enterprise-doc-recovery-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    restart: "no"
+
+  recovery-minio:
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${RECOVERY_MINIO_ROOT_USER:-enterprise_doc_recovery}
+      MINIO_ROOT_PASSWORD: ${RECOVERY_MINIO_ROOT_PASSWORD:?set RECOVERY_MINIO_ROOT_PASSWORD before starting recovery MinIO}
+      MINIO_API_CORS_ALLOW_ORIGIN: ${RECOVERY_MINIO_API_CORS_ALLOW_ORIGIN:-http://127.0.0.1:5173,http://localhost:5173}
+    ports:
+      - "127.0.0.1:${RECOVERY_MINIO_API_PORT:-19000}:9000"
+      - "127.0.0.1:${RECOVERY_MINIO_CONSOLE_PORT:-19001}:9001"
+    volumes:
+      - enterprise-doc-recovery-minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+    restart: "no"
+
+  recovery-minio-init:
+    image: minio/mc:RELEASE.2025-08-13T08-35-41Z@sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727
+    profiles: ["init"]
+    depends_on:
+      recovery-minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${RECOVERY_MINIO_ROOT_USER:-enterprise_doc_recovery}
+      MINIO_ROOT_PASSWORD: ${RECOVERY_MINIO_ROOT_PASSWORD:?set RECOVERY_MINIO_ROOT_PASSWORD before starting recovery MinIO}
+    entrypoint:
+      - /bin/sh
+      - -ec
+      - |
+        mc alias set recovery http://recovery-minio:9000 "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}"
+        mc mb --ignore-existing recovery/documents
+        mc mb --ignore-existing recovery/artifacts
+        mc anonymous set private recovery/documents
+        mc anonymous set private recovery/artifacts
+        mc anonymous get recovery/documents
+        mc anonymous get recovery/artifacts
+    restart: "no"
+
+volumes:
+  enterprise-doc-recovery-postgres-data:
+    name: enterprise-doc-recovery-postgres-data
+  enterprise-doc-recovery-redis-data:
+    name: enterprise-doc-recovery-redis-data
+  enterprise-doc-recovery-minio-data:
+    name: enterprise-doc-recovery-minio-data
