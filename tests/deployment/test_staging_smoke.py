@@ -7,6 +7,7 @@ from importlib.util import module_from_spec, spec_from_file_location
 from io import BytesIO
 from pathlib import Path
 from typing import Any
+from urllib.error import HTTPError
 from urllib.request import Request
 from urllib.response import addinfourl
 
@@ -140,7 +141,7 @@ def test_url_lib_client_sets_explicit_automation_user_agent(
         response.msg = "OK"
         return response
 
-    monkeypatch.setattr(staging_smoke, "urlopen", fake_urlopen)
+    monkeypatch.setattr(staging_smoke, "_open_url_no_redirect", fake_urlopen)
     client = staging_smoke.UrlLibSmokeClient(
         base_url="https://staging.example",
         token="redacted",
@@ -187,6 +188,81 @@ def test_loopback_http_requires_explicit_mode_and_exact_allowlist() -> None:
             allowed_control_plane_hosts=("staging.example",),
             allow_loopback_http=True,
         )
+
+
+def test_loopback_http_mode_applies_to_allowlisted_object_store_urls(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: list[Request] = []
+
+    def fake_urlopen(request: Request, *, timeout: float) -> addinfourl:
+        del timeout
+        captured.append(request)
+        headers = {"ETag": '"etag-1"'} if request.method == "PUT" else {}
+        body = b"" if request.method == "PUT" else b"artifact"
+        response = addinfourl(BytesIO(body), headers, request.full_url, 200)
+        response.msg = "OK"
+        return response
+
+    monkeypatch.setattr(staging_smoke, "_open_url_no_redirect", fake_urlopen)
+    client = staging_smoke.UrlLibSmokeClient(
+        base_url="http://127.0.0.1:18000",
+        token="redacted",
+        allowed_control_plane_hosts=("127.0.0.1",),
+        allowed_object_store_hosts=("127.0.0.1",),
+        allow_loopback_http=True,
+    )
+
+    assert (
+        client.put_bytes(
+            "http://127.0.0.1:19000/documents/upload",
+            content=b"document",
+            headers={},
+        )
+        == '"etag-1"'
+    )
+    assert client.get_bytes("http://127.0.0.1:19000/artifacts/download") == b"artifact"
+    assert [request.full_url for request in captured] == [
+        "http://127.0.0.1:19000/documents/upload",
+        "http://127.0.0.1:19000/artifacts/download",
+    ]
+    with pytest.raises(staging_smoke.StagingSmokeFailure):
+        client.get_bytes("http://staging.example/artifacts/download")
+
+
+def test_object_store_redirects_are_rejected_before_followup(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class RedirectingOpener:
+        def open(self, request: Request, *, timeout: float) -> None:
+            del timeout
+            raise HTTPError(
+                request.full_url,
+                302,
+                "Found",
+                {"Location": "http://localhost:19001/private"},
+                None,
+            )
+
+    handlers: list[object] = []
+
+    def fake_build_opener(*items: object) -> RedirectingOpener:
+        handlers.extend(items)
+        return RedirectingOpener()
+
+    monkeypatch.setattr(staging_smoke, "build_opener", fake_build_opener)
+    client = staging_smoke.UrlLibSmokeClient(
+        base_url="http://127.0.0.1:18000",
+        token="redacted",
+        allowed_control_plane_hosts=("127.0.0.1",),
+        allowed_object_store_hosts=("127.0.0.1",),
+        allow_loopback_http=True,
+    )
+
+    with pytest.raises(staging_smoke.StagingSmokeFailure, match="HTTP 302"):
+        client.get_bytes("http://127.0.0.1:19000/artifacts/download")
+    assert len(handlers) == 1
+    assert isinstance(handlers[0], staging_smoke._RejectRedirectHandler)
 
 
 def test_staging_smoke_rejects_tampered_artifact_download() -> None:

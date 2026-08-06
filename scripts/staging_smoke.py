@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any, Protocol
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
-from urllib.request import Request, urlopen
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 from uuid import uuid4
 
 
@@ -23,6 +23,24 @@ class StagingSmokeFailure(RuntimeError):
 
 
 _STAGING_SMOKE_USER_AGENT = "enterprise-doc-staging-smoke/1.0"
+
+
+class _RejectRedirectHandler(HTTPRedirectHandler):
+    def redirect_request(
+        self,
+        req: Request,
+        fp: Any,
+        code: int,
+        msg: str,
+        headers: Any,
+        newurl: str,
+    ) -> None:
+        del req, fp, code, msg, headers, newurl
+        return None
+
+
+def _open_url_no_redirect(request: Request, *, timeout: float) -> Any:
+    return build_opener(_RejectRedirectHandler()).open(request, timeout=timeout)
 
 
 def validate_https_endpoint(
@@ -88,28 +106,57 @@ class UrlLibSmokeClient:
             )
 
     def _validate_loopback_control_plane(self) -> None:
+        self._validate_loopback_http_endpoint(
+            self.base_url,
+            allowed_hosts=self.allowed_control_plane_hosts,
+            description="staging base URL",
+        )
+
+    @staticmethod
+    def _validate_loopback_http_endpoint(
+        value: str,
+        *,
+        allowed_hosts: tuple[str, ...],
+        description: str,
+    ) -> str:
         try:
-            parsed = urlparse(self.base_url)
+            parsed = urlparse(value)
             hostname = parsed.hostname
         except ValueError as error:
-            raise StagingSmokeFailure("staging base URL is not a valid URL.") from error
-        allowed_hosts = {
-            host.strip().lower() for host in self.allowed_control_plane_hosts if host.strip()
+            raise StagingSmokeFailure(f"{description} is not a valid URL.") from error
+        normalized_allowed_hosts = {
+            host.strip().lower() for host in allowed_hosts if host.strip()
         }
         if parsed.scheme != "http" or not hostname:
-            raise StagingSmokeFailure("loopback recovery smoke must use HTTP and include a host.")
+            raise StagingSmokeFailure(
+                f"loopback {description} must use HTTP and include a host."
+            )
         if parsed.username or parsed.password:
-            raise StagingSmokeFailure("staging base URL must not contain credentials.")
-        if not allowed_hosts or hostname.lower() not in allowed_hosts:
-            raise StagingSmokeFailure("staging base URL host is not in the configured allowlist.")
+            raise StagingSmokeFailure(f"{description} must not contain credentials.")
+        if not normalized_allowed_hosts or hostname.lower() not in normalized_allowed_hosts:
+            raise StagingSmokeFailure(f"{description} host is not in the configured allowlist.")
         try:
             address = ipaddress.ip_address(hostname)
         except ValueError:
             address = None
         if hostname.lower() != "localhost" and (address is None or not address.is_loopback):
             raise StagingSmokeFailure(
-                "loopback recovery smoke must target localhost or a loopback address."
+                f"loopback {description} must target localhost or a loopback address."
             )
+        return value.rstrip("/")
+
+    def _validate_object_store_url(self, value: str) -> str:
+        if self.allow_loopback_http:
+            return self._validate_loopback_http_endpoint(
+                value,
+                allowed_hosts=self.allowed_object_store_hosts,
+                description="presigned object URL",
+            )
+        return validate_https_endpoint(
+            value,
+            allowed_hosts=self.allowed_object_store_hosts,
+            description="presigned object URL",
+        )
 
     def request_json(
         self,
@@ -135,7 +182,7 @@ class UrlLibSmokeClient:
             },
         )
         try:
-            with urlopen(request, timeout=self.timeout_seconds) as response:
+            with _open_url_no_redirect(request, timeout=self.timeout_seconds) as response:
                 if response.status not in expected:
                     raise StagingSmokeFailure(
                         f"Control-plane request returned HTTP {response.status}."
@@ -154,11 +201,7 @@ class UrlLibSmokeClient:
         return decoded
 
     def put_bytes(self, url: str, *, content: bytes, headers: dict[str, str]) -> str:
-        validated_url = validate_https_endpoint(
-            url,
-            allowed_hosts=self.allowed_object_store_hosts,
-            description="presigned object URL",
-        )
+        validated_url = self._validate_object_store_url(url)
         request = Request(
             validated_url,
             data=content,
@@ -170,7 +213,7 @@ class UrlLibSmokeClient:
             },
         )
         try:
-            with urlopen(request, timeout=self.timeout_seconds) as response:
+            with _open_url_no_redirect(request, timeout=self.timeout_seconds) as response:
                 if response.status != 200:
                     raise StagingSmokeFailure(
                         f"Direct object-store upload returned HTTP {response.status}."
@@ -189,18 +232,14 @@ class UrlLibSmokeClient:
         return etag_value
 
     def get_bytes(self, url: str) -> bytes:
-        validated_url = validate_https_endpoint(
-            url,
-            allowed_hosts=self.allowed_object_store_hosts,
-            description="presigned object URL",
-        )
+        validated_url = self._validate_object_store_url(url)
         request = Request(
             validated_url,
             method="GET",
             headers={"User-Agent": _STAGING_SMOKE_USER_AGENT},
         )
         try:
-            with urlopen(request, timeout=self.timeout_seconds) as response:
+            with _open_url_no_redirect(request, timeout=self.timeout_seconds) as response:
                 if response.status != 200:
                     raise StagingSmokeFailure(
                         f"Direct object-store download returned HTTP {response.status}."
@@ -489,7 +528,7 @@ def main() -> None:
     parser.add_argument(
         "--allow-loopback-http",
         action="store_true",
-        help="allow an explicit loopback-only HTTP control plane for recovery drills",
+        help="allow explicit loopback-only HTTP endpoints for local recovery drills",
     )
     args = parser.parse_args()
     token = os.environ.get("STAGING_SMOKE_TOKEN", "")

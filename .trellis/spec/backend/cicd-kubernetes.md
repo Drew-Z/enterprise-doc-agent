@@ -101,6 +101,18 @@
 - `scripts/local_recovery_drill.py` requires `--confirm-local`, restores only to an
   `enterprise_doc_restore_` database, compares Alembic/table inventories, and still
   reports `blocked_external` without object-store restore and Kubernetes rollback.
+- The independent local recovery Compose binds PostgreSQL, Redis and MinIO only to
+  loopback ports and gives each service a recovery-specific named volume. Its PG17 image
+  builds pgvector with the pinned server's own PGXS toolchain; an unversioned Alpine
+  `postgresql-pgvector` package is invalid because it may target a newer PostgreSQL major.
+- A recovery application profile starts only after the recovered dependencies are healthy.
+  Recreating PostgreSQL, Redis or MinIO invalidates existing API, publisher and consumer
+  processes; restart all three before readiness checks and authenticated application smoke
+  so stale connection pools cannot be mistaken for a restore failure.
+- `scripts/staging_smoke.py --allow-loopback-http` may relax HTTPS only for an explicit
+  local recovery drill. Both control-plane and presigned object-store hosts must be in
+  their exact allowlists and resolve syntactically to `localhost` or a loopback IP; the
+  default staging path continues to require HTTPS and rejects loopback endpoints.
 - Recovery and capacity evidence is validated by
   `scripts/validate_recovery_capacity_evidence.py`. A `passed` report requires external
   environment and cluster identity, immutable commit/image identity, timezone-aware
