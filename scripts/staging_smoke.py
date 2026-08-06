@@ -65,6 +65,8 @@ class SmokeClient(Protocol):
 
     def put_bytes(self, url: str, *, content: bytes, headers: dict[str, str]) -> str: ...
 
+    def get_bytes(self, url: str) -> bytes: ...
+
 
 @dataclass(frozen=True, slots=True)
 class UrlLibSmokeClient:
@@ -73,13 +75,41 @@ class UrlLibSmokeClient:
     timeout_seconds: float = 30.0
     allowed_control_plane_hosts: tuple[str, ...] = ()
     allowed_object_store_hosts: tuple[str, ...] = ()
+    allow_loopback_http: bool = False
 
     def __post_init__(self) -> None:
-        validate_https_endpoint(
-            self.base_url,
-            allowed_hosts=self.allowed_control_plane_hosts,
-            description="staging base URL",
-        )
+        if self.allow_loopback_http:
+            self._validate_loopback_control_plane()
+        else:
+            validate_https_endpoint(
+                self.base_url,
+                allowed_hosts=self.allowed_control_plane_hosts,
+                description="staging base URL",
+            )
+
+    def _validate_loopback_control_plane(self) -> None:
+        try:
+            parsed = urlparse(self.base_url)
+            hostname = parsed.hostname
+        except ValueError as error:
+            raise StagingSmokeFailure("staging base URL is not a valid URL.") from error
+        allowed_hosts = {
+            host.strip().lower() for host in self.allowed_control_plane_hosts if host.strip()
+        }
+        if parsed.scheme != "http" or not hostname:
+            raise StagingSmokeFailure("loopback recovery smoke must use HTTP and include a host.")
+        if parsed.username or parsed.password:
+            raise StagingSmokeFailure("staging base URL must not contain credentials.")
+        if not allowed_hosts or hostname.lower() not in allowed_hosts:
+            raise StagingSmokeFailure("staging base URL host is not in the configured allowlist.")
+        try:
+            address = ipaddress.ip_address(hostname)
+        except ValueError:
+            address = None
+        if hostname.lower() != "localhost" and (address is None or not address.is_loopback):
+            raise StagingSmokeFailure(
+                "loopback recovery smoke must target localhost or a loopback address."
+            )
 
     def request_json(
         self,
@@ -158,6 +188,36 @@ class UrlLibSmokeClient:
             raise StagingSmokeFailure("Direct object-store upload omitted its ETag.")
         return etag_value
 
+    def get_bytes(self, url: str) -> bytes:
+        validated_url = validate_https_endpoint(
+            url,
+            allowed_hosts=self.allowed_object_store_hosts,
+            description="presigned object URL",
+        )
+        request = Request(
+            validated_url,
+            method="GET",
+            headers={"User-Agent": _STAGING_SMOKE_USER_AGENT},
+        )
+        try:
+            with urlopen(request, timeout=self.timeout_seconds) as response:
+                if response.status != 200:
+                    raise StagingSmokeFailure(
+                        f"Direct object-store download returned HTTP {response.status}."
+                    )
+                content = response.read()
+        except HTTPError as error:
+            raise StagingSmokeFailure(
+                f"Direct object-store download returned HTTP {error.code}."
+            ) from error
+        except (URLError, TimeoutError) as error:
+            raise StagingSmokeFailure(
+                f"Direct object-store download failed with {type(error).__name__}."
+            ) from error
+        if not isinstance(content, bytes):
+            raise StagingSmokeFailure("Direct object-store download did not return bytes.")
+        return content
+
 
 def _required_mapping(value: object, description: str) -> dict[str, Any]:
     if not isinstance(value, dict):
@@ -170,6 +230,72 @@ def _required_str(payload: dict[str, Any], key: str) -> str:
     if not isinstance(value, str) or not value:
         raise StagingSmokeFailure(f"Response omitted required field {key}.")
     return value
+
+
+def _required_int(payload: dict[str, Any], key: str) -> int:
+    value = payload.get(key)
+    if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+        raise StagingSmokeFailure(f"Response omitted required field {key}.")
+    return value
+
+
+def _validate_answer_artifact(
+    client: SmokeClient,
+    *,
+    run_id: str,
+    version_id: str,
+) -> None:
+    artifacts = client.request_json("GET", f"/api/agent-runs/{run_id}/artifacts")
+    if not isinstance(artifacts, list):
+        raise StagingSmokeFailure("Agent artifact response was not a JSON list.")
+    answers = [
+        item
+        for item in artifacts
+        if isinstance(item, dict)
+        and item.get("kind") == "answer"
+        and item.get("status") == "draft_ready"
+    ]
+    if len(answers) != 1:
+        raise StagingSmokeFailure("Agent run did not expose exactly one ready answer artifact.")
+    answer = answers[0]
+    artifact_id = _required_str(answer, "artifactId")
+    expected_sha256 = _required_str(answer, "contentSha256")
+    expected_size = _required_int(answer, "sizeBytes")
+    download = _required_mapping(
+        client.request_json("GET", f"/api/agent-artifacts/{artifact_id}/download"),
+        "Agent artifact download response",
+    )
+    if _required_str(download, "contentSha256") != expected_sha256:
+        raise StagingSmokeFailure("Artifact download metadata changed its SHA-256.")
+    if _required_int(download, "sizeBytes") != expected_size:
+        raise StagingSmokeFailure("Artifact download metadata changed its byte size.")
+    body = client.get_bytes(_required_str(download, "url"))
+    if len(body) != expected_size:
+        raise StagingSmokeFailure("Downloaded artifact byte size did not match metadata.")
+    if hashlib.sha256(body).hexdigest() != expected_sha256:
+        raise StagingSmokeFailure("Downloaded artifact SHA-256 did not match metadata.")
+    try:
+        payload = json.loads(body)
+    except json.JSONDecodeError as error:
+        raise StagingSmokeFailure("Downloaded artifact was not valid JSON.") from error
+    artifact_payload = _required_mapping(payload, "Downloaded artifact")
+    if _required_str(artifact_payload, "run_id") != run_id:
+        raise StagingSmokeFailure("Downloaded artifact referenced the wrong Agent run.")
+    _required_str(artifact_payload, "answer_text")
+    citations = artifact_payload.get("citations")
+    if not isinstance(citations, list) or not citations:
+        raise StagingSmokeFailure("Downloaded artifact did not contain citations.")
+    evidence_phrase = "evidence retention period is thirty days"
+    if not any(
+        isinstance(citation, dict)
+        and citation.get("document_version_id") == version_id
+        and isinstance(citation.get("excerpt"), str)
+        and evidence_phrase in citation["excerpt"].lower()
+        for citation in citations
+    ):
+        raise StagingSmokeFailure(
+            "Downloaded artifact did not cite the uploaded evidence retention statement."
+        )
 
 
 def _wait_for_ready_version(
@@ -314,6 +440,7 @@ def run_staging_smoke(
     )
     if terminal_status != "succeeded":
         raise StagingSmokeFailure(f"Agent run ended with status {terminal_status}.")
+    _validate_answer_artifact(client, run_id=run_id, version_id=version_id)
 
     completed_at = datetime.now(UTC)
     return {
@@ -327,6 +454,10 @@ def run_staging_smoke(
             "document_ready",
             "agent_run_created",
             "agent_run_succeeded",
+            "answer_artifact_listed",
+            "answer_artifact_downloaded",
+            "answer_artifact_sha256_verified",
+            "answer_citation_verified",
         ],
         "sample_count": 1,
         "duration_seconds": max(0.0, monotonic() - started),
@@ -355,6 +486,11 @@ def main() -> None:
     parser.add_argument("--allowed-object-store-host", action="append", required=True)
     parser.add_argument("--timeout-seconds", type=float, default=300.0)
     parser.add_argument("--report-path", type=Path)
+    parser.add_argument(
+        "--allow-loopback-http",
+        action="store_true",
+        help="allow an explicit loopback-only HTTP control plane for recovery drills",
+    )
     args = parser.parse_args()
     token = os.environ.get("STAGING_SMOKE_TOKEN", "")
     if not token:
@@ -368,6 +504,7 @@ def main() -> None:
                 token=token,
                 allowed_control_plane_hosts=tuple(args.allowed_host),
                 allowed_object_store_hosts=tuple(args.allowed_object_store_host),
+                allow_loopback_http=args.allow_loopback_http,
             ),
             timeout_seconds=args.timeout_seconds,
         )

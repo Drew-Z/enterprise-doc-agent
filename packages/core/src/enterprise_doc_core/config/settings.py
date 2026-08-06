@@ -51,6 +51,7 @@ class ObjectStoreSettings(BaseModel):
     presign_endpoint: str = "http://127.0.0.1:9000"
     access_key: SecretStr = SecretStr("enterprise_doc_local")
     secret_key: SecretStr = SecretStr("enterprise_doc_local_secret")
+    session_token: SecretStr | None = None
     region: str = "us-east-1"
     documents_bucket: str = "documents"
     artifacts_bucket: str = "artifacts"

@@ -18,6 +18,11 @@ def create_s3_client(
         endpoint_url=endpoint_url,
         aws_access_key_id=settings.access_key.get_secret_value(),
         aws_secret_access_key=settings.secret_key.get_secret_value(),
+        aws_session_token=(
+            settings.session_token.get_secret_value()
+            if settings.session_token is not None
+            else None
+        ),
         region_name=settings.region,
         use_ssl=settings.secure,
         config=Config(

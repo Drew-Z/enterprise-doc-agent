@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: enterprise-doc-consumer
+$patch: delete
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: enterprise-doc-migrate
+$patch: delete
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: enterprise-doc-api
+$patch: delete
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: enterprise-doc-worker
+$patch: delete
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: enterprise-doc-consumer
+$patch: delete
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: enterprise-doc-web
+$patch: delete
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: enterprise-doc-agent
+$patch: delete
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: enterprise-doc-web
+$patch: delete
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: enterprise-doc-consumer
+$patch: delete
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: enterprise-doc-web
+$patch: delete

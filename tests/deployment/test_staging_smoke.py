@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 import sys
 from importlib.util import module_from_spec, spec_from_file_location
 from io import BytesIO
@@ -21,6 +23,21 @@ SPEC.loader.exec_module(staging_smoke)
 class FakeClient:
     def __init__(self) -> None:
         self.calls: list[tuple[str, str]] = []
+        self.artifact_body = json.dumps(
+            {
+                "schema_version": 1,
+                "run_id": "run-1",
+                "answer_text": "The period is thirty days.",
+                "citations": [
+                    {
+                        "document_version_id": "version-1",
+                        "excerpt": "The evidence retention period is thirty days.",
+                    }
+                ],
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode()
 
     def request_json(
         self,
@@ -45,6 +62,22 @@ class FakeClient:
             return {"runId": "run-1"}
         if path == "/api/agent-runs/run-1":
             return {"status": "succeeded"}
+        if path == "/api/agent-runs/run-1/artifacts":
+            return [
+                {
+                    "artifactId": "artifact-1",
+                    "kind": "answer",
+                    "status": "draft_ready",
+                    "contentSha256": hashlib.sha256(self.artifact_body).hexdigest(),
+                    "sizeBytes": len(self.artifact_body),
+                }
+            ]
+        if path == "/api/agent-artifacts/artifact-1/download":
+            return {
+                "url": "https://objects.example/download",
+                "contentSha256": hashlib.sha256(self.artifact_body).hexdigest(),
+                "sizeBytes": len(self.artifact_body),
+            }
         raise AssertionError(path)
 
     def put_bytes(self, url: str, *, content: bytes, headers: dict[str, str]) -> str:
@@ -53,6 +86,11 @@ class FakeClient:
         assert headers == {"x-checksum": "ok"}
         self.calls.append(("PUT", url))
         return '"etag-1"'
+
+    def get_bytes(self, url: str) -> bytes:
+        assert url == "https://objects.example/download"
+        self.calls.append(("GET", url))
+        return self.artifact_body
 
 
 def test_staging_smoke_runs_authenticated_main_path_without_persisting_identifiers() -> None:
@@ -77,6 +115,9 @@ def test_staging_smoke_runs_authenticated_main_path_without_persisting_identifie
         ("GET", "/api/agent-runs/ready-document-versions"),
         ("POST", "/api/agent-runs"),
         ("GET", "/api/agent-runs/run-1"),
+        ("GET", "/api/agent-runs/run-1/artifacts"),
+        ("GET", "/api/agent-artifacts/artifact-1/download"),
+        ("GET", "https://objects.example/download"),
     ]
 
 
@@ -129,4 +170,33 @@ def test_staging_smoke_rejects_plaintext_or_unallowlisted_endpoints() -> None:
             "https://127.0.0.1",
             allowed_hosts=("127.0.0.1",),
             description="presigned object URL",
+        )
+
+
+def test_loopback_http_requires_explicit_mode_and_exact_allowlist() -> None:
+    staging_smoke.UrlLibSmokeClient(
+        base_url="http://127.0.0.1:18000",
+        token="redacted",
+        allowed_control_plane_hosts=("127.0.0.1",),
+        allow_loopback_http=True,
+    )
+    with pytest.raises(staging_smoke.StagingSmokeFailure):
+        staging_smoke.UrlLibSmokeClient(
+            base_url="http://staging.example",
+            token="redacted",
+            allowed_control_plane_hosts=("staging.example",),
+            allow_loopback_http=True,
+        )
+
+
+def test_staging_smoke_rejects_tampered_artifact_download() -> None:
+    client = FakeClient()
+    client.artifact_body = b"tampered"
+
+    with pytest.raises(staging_smoke.StagingSmokeFailure, match="valid JSON"):
+        staging_smoke.run_staging_smoke(
+            client,
+            timeout_seconds=30,
+            monotonic=lambda: 1.0,
+            sleep=lambda _: None,
         )
