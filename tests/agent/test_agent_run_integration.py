@@ -326,7 +326,7 @@ async def test_create_persists_only_the_initial_transaction_boundary() -> None:
                 "run_id": str(run.id),
                 "execution_sequence": 0,
                 "graph_thread_id": str(run.id),
-                "graph_version": "m4.v1",
+                "graph_version": "m4.v2",
             }
             assert outbox.event_type == "agent.execute.requested"
             assert outbox.status == OutboxEventStatus.PENDING.value

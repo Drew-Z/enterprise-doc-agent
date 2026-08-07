@@ -112,9 +112,9 @@ class RecoveryBackend:
             user_input="What are the payment terms?",
             evidence=[evidence],
             behavior_versions=BehaviorVersions(
-                graph_version="m4.v1",
-                prompt_version="m4.prompt.v1",
-                tool_schema_version="m4.tools.v1",
+                graph_version="m4.v2",
+                prompt_version="m4.prompt.v2",
+                tool_schema_version="m4.tools.v2",
             ),
         )
 
@@ -242,7 +242,7 @@ def _state(store: RecoveryStore, *, publish_requested: bool) -> dict[str, Any]:
         document_version_id=store.document_version_id,
         task_type=AgentRunTaskType.QUESTION_ANSWER,
         publish_requested=publish_requested,
-        graph_version="m4.v1",
+        graph_version="m4.v2",
     )
 
 
