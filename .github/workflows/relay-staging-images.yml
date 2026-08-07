@@ -1,0 +1,142 @@
+name: Relay Staging Images
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_image:
+        description: "Immutable API image reference"
+        required: true
+        type: string
+      worker_image:
+        description: "Immutable worker image reference"
+        required: true
+        type: string
+      consumer_image:
+        description: "Immutable consumer image reference"
+        required: true
+        type: string
+      web_image:
+        description: "Immutable Web image reference"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: api
+            image: ${{ inputs.api_image }}
+          - name: worker
+            image: ${{ inputs.worker_image }}
+          - name: consumer
+            image: ${{ inputs.consumer_image }}
+          - name: web
+            image: ${{ inputs.web_image }}
+    steps:
+      - name: Login to GHCR
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate immutable image reference
+        env:
+          IMAGE_NAME: ${{ matrix.name }}
+          IMAGE_REF: ${{ matrix.image }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$IMAGE_NAME" | grep -Eq '^(api|worker|consumer|web)$'
+          printf '%s' "$IMAGE_REF" | grep -Eq \
+            "^ghcr\\.io/drew-z/enterprise-doc-${IMAGE_NAME}@sha256:[0-9a-f]{64}$"
+
+      - name: Export digest-preserving OCI archive
+        env:
+          IMAGE_NAME: ${{ matrix.name }}
+          IMAGE_REF: ${{ matrix.image }}
+        run: |
+          set -euo pipefail
+          if ! command -v skopeo >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install --yes --no-install-recommends skopeo
+          fi
+          archive="enterprise-doc-${IMAGE_NAME}.oci.tar"
+          skopeo copy --all \
+            --src-authfile "$HOME/.docker/config.json" \
+            "docker://${IMAGE_REF}" \
+            "oci-archive:${archive}:enterprise-doc-${IMAGE_NAME}"
+          test -s "$archive"
+          sha256sum "$archive" > "${archive}.sha256"
+          skopeo inspect --raw "oci-archive:${archive}" \
+            > "enterprise-doc-${IMAGE_NAME}.oci-index.json"
+
+      - name: Upload OCI relay artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: staging-image-${{ matrix.name }}-${{ github.run_id }}
+          path: |
+            enterprise-doc-${{ matrix.name }}.oci.tar
+            enterprise-doc-${{ matrix.name }}.oci.tar.sha256
+            enterprise-doc-${{ matrix.name }}.oci-index.json
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 1
+
+  deliver:
+    needs: export
+    runs-on: [self-hosted, linux, x64, enterprise-doc-staging]
+    timeout-minutes: 60
+    concurrency:
+      group: enterprise-doc-agent-staging-image-relay
+      cancel-in-progress: false
+    steps:
+      - name: Download OCI relay artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: staging-image-*-${{ github.run_id }}
+          path: ${{ runner.temp }}/staging-image-relay
+
+      - name: Validate and stage archives for administrator import
+        env:
+          INCOMING_ROOT: ${{ runner.temp }}/staging-image-relay
+          STAGING_ROOT: /var/lib/gha-staging/prewarm/${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          umask 077
+          install -d -m 0700 "$STAGING_ROOT"
+          receipt="$STAGING_ROOT/receipt.txt"
+          : > "$receipt"
+          printf 'run_id=%s\nrun_attempt=%s\n' \
+            "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" >> "$receipt"
+          for name in api worker consumer web; do
+            source_dir="$INCOMING_ROOT/staging-image-${name}-${GITHUB_RUN_ID}"
+            archive="enterprise-doc-${name}.oci.tar"
+            test -f "$source_dir/$archive"
+            test -f "$source_dir/$archive.sha256"
+            (
+              cd "$source_dir"
+              sha256sum --check "$archive.sha256"
+            )
+            tar -tf "$source_dir/$archive" | grep -E '(^|/)oci-layout$' >/dev/null
+            install -m 0600 "$source_dir/$archive" "$STAGING_ROOT/$archive"
+            sha256sum "$STAGING_ROOT/$archive" >> "$receipt"
+          done
+          test "$(find "$STAGING_ROOT" -maxdepth 1 -type f -name '*.oci.tar' | wc -l)" -eq 4
+          printf 'staging_root=%s\n' "$STAGING_ROOT" >> "$receipt"
+          cat "$receipt"
+
+      - name: Upload relay receipt
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: staging-image-relay-receipt-${{ github.run_id }}
+          path: /var/lib/gha-staging/prewarm/${{ github.run_id }}-${{ github.run_attempt }}/receipt.txt
+          if-no-files-found: error
+          retention-days: 7
