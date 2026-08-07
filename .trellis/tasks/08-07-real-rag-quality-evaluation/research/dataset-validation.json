@@ -1,0 +1,49 @@
+{
+  "corpus_sha256": "c6887a0ca112cd62499c9d61d5caa9d87e94a4ba6c8770293f9f3a8c6cf54e36",
+  "dataset_sha256": "5684b055f2dd2e5eb0c148ce6383cbc983a1b68a8fb41ae0b9e4f85205514135",
+  "dataset_version": "enterprise-rag-quality-v1",
+  "limitations": [
+    "No staging, embedding, retrieval, or model call was executed."
+  ],
+  "provenance": {
+    "command": [
+      "python",
+      "scripts/evaluate_staging_rag_quality.py",
+      "--dataset",
+      "<dataset>",
+      "--validate-only",
+      "--trial-only",
+      "--report-path",
+      "<report-path>"
+    ],
+    "commit_sha": "55d3fafe6e162165d77d028b07a0c141c8780717",
+    "environment": {
+      "architecture": "AMD64",
+      "execution_scope": "local-dataset-validation",
+      "operating_system": "Windows-11-10.0.26200-SP0",
+      "python": "3.12.13"
+    },
+    "input_sha256": "35ee4a4053f48ccf50b06823608987d9be1158f5c60634706ba068485cc6129c",
+    "payload_sha256": "95b1f1a8d53a1b2d202e7e1608031423be5a54f960c0088daf1fa512fedf2acd",
+    "working_tree_dirty": true
+  },
+  "schema_version": 1,
+  "selected_case_count": 12,
+  "selected_case_ids": [
+    "fact-proc-manager",
+    "fact-sla-availability",
+    "fact-security-encryption-rest",
+    "fact-employee-vacation",
+    "fact-contract-payment",
+    "fact-retention-customer",
+    "hard-proc-7500",
+    "hard-support-objectives",
+    "refuse-security-ceo",
+    "refuse-contract-stock-price",
+    "citation-proc-po",
+    "safety-security-injection"
+  ],
+  "status": "passed",
+  "suite": "staging-real-provider-rag-quality-validation",
+  "total_case_count": 40
+}

@@ -3,19 +3,24 @@
   "milestone": "M5",
   "requirement": "M5-R5",
   "owner": "model evaluation owner",
-  "blocking_reason": "No approved real provider credentials or representative enterprise corpus are available in the local verification environment.",
+  "blocking_reason": "A 12-case synthetic staging trial ran against the real openai_compatible/grok-4.5 route but failed the approved quality targets: 8 of 12 cases passed, fact recall and grounded fact rate were 0.70, refusal recall was 0.50, and refusal reason accuracy was 0.50. Full-suite repeatability, representative-corpus review, human error review, and provider token/cost evidence remain absent.",
   "prerequisites": [
-    "Approve a provider, model revision, and evaluation budget",
-    "Provide a sanitized representative corpus and golden labels",
-    "Freeze prompt, graph, tool, embedding, and index versions"
+    "Human-review the four failed trial cases and distinguish retrieval, generation, policy, and deterministic-label errors before changing prompts or labels",
+    "Run all 40 synthetic cases repeatedly against frozen provider, prompt, graph, tool, embedding, and index versions",
+    "Add an approved sanitized representative enterprise corpus with independently reviewed golden labels",
+    "Expose provider token usage and cost metadata without logging credentials or raw model responses"
   ],
   "required_evidence": [
     "Retrieval, citation, refusal, and Agent quality report",
     "Provider and model identity",
     "Cost, token, P95, and P99 latency",
-    "Human-reviewed error taxonomy"
+    "Human-reviewed error taxonomy",
+    "Repeatability across multiple full-suite runs"
+  ],
+  "observed_evidence": [
+    "evidence/m5/20260807-staging-real-provider-rag-quality-trial.json"
   ],
   "state": "open",
   "status": "blocked_external",
-  "review_date": "2026-07-19"
+  "review_date": "2026-08-07"
 }

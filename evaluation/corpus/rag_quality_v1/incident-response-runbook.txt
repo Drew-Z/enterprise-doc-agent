@@ -1,0 +1,20 @@
+# Orion Incident Response Runbook
+
+## Priority One Response
+
+The on-call engineer must acknowledge a Priority One incident within 10 minutes.
+Stakeholder updates are issued every 30 minutes until service is restored.
+The Site Reliability Engineering lead serves as incident commander unless explicitly delegated.
+
+## Recovery Objectives
+
+The recovery time objective for the customer API is two hours.
+The recovery point objective for the customer API is 15 minutes.
+
+## Security Escalation
+
+A suspected data breach must be escalated to the Security team within 15 minutes.
+
+## Review
+
+A blameless post-incident review must be completed within five business days.

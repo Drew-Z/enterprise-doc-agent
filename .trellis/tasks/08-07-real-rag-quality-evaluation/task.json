@@ -1,0 +1,32 @@
+{
+  "id": "real-rag-quality-evaluation",
+  "name": "real-rag-quality-evaluation",
+  "title": "Real Provider RAG Quality Evaluation",
+  "description": "",
+  "status": "completed",
+  "dev_type": null,
+  "scope": null,
+  "package": "core",
+  "priority": "P2",
+  "creator": "developer",
+  "assignee": "developer",
+  "createdAt": "2026-08-07",
+  "completedAt": "2026-08-07",
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "07-17-enterprise-document-agent-platform",
+  "relatedFiles": [],
+  "notes": "Implemented a secret-safe 40-case synthetic RAG quality evaluator and executed a real-provider staging health check plus a 12-case bounded trial. The trial completed 8 of 12 cases successfully but failed configured fact, grounding, and refusal targets. M5/M7 gates remain open for full-suite repeatability, representative-corpus review, human error review, provider revision, usage/cost, fallback, and breaker evidence.",
+  "meta": {
+    "dataset_version": "enterprise-rag-quality-v1",
+    "trial_case_count": 12,
+    "trial_passed_case_count": 8,
+    "trial_status": "failed",
+    "quality_gates_closed": false
+  }
+}

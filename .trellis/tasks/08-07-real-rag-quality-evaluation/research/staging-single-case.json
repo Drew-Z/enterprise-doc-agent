@@ -1,0 +1,126 @@
+{
+  "behavior_versions": [
+    {
+      "graph": "m4.v1",
+      "prompt": "m4.v1",
+      "tool_schema": "m4.v1"
+    }
+  ],
+  "cases": [
+    {
+      "answer_char_count": 67,
+      "answer_sha256": "246d8afe1fcdd07d5b1f58fd9e2b918e2ee99dcba57efd2431f816be89932d88",
+      "case_id": "fact-proc-manager",
+      "category": "fact",
+      "duration_ms": 41542.836076929234,
+      "forbidden_fact_ids": [],
+      "matched_anchor_ids": [
+        "proc.manager"
+      ],
+      "matched_fact_ids": [
+        "manager-approval"
+      ],
+      "metrics": {
+        "citation_precision": 1.0,
+        "citation_recall": 1.0,
+        "closed_label_fact_precision": 1.0,
+        "fact_recall": 1.0,
+        "grounded_fact_rate": 1.0,
+        "refusal_reason_correct": null
+      },
+      "outcome_code": null,
+      "passed": true,
+      "query_sha256": "222567a9a84032e6532c834e53983fa090605f2038a222808b1c34ac4bf9b2bf",
+      "terminal_status": "succeeded"
+    }
+  ],
+  "completed_at": "2026-08-07T13:49:36.399826+00:00",
+  "corpus_sha256": "c6887a0ca112cd62499c9d61d5caa9d87e94a4ba6c8770293f9f3a8c6cf54e36",
+  "cost_metadata": {
+    "limitation": "The current staging status and artifact APIs do not expose provider token usage or billing data.",
+    "source": "not_available"
+  },
+  "coverage": "bounded_sample",
+  "dataset_sha256": "5684b055f2dd2e5eb0c148ce6383cbc983a1b68a8fb41ae0b9e4f85205514135",
+  "dataset_version": "enterprise-rag-quality-v1",
+  "errors_by_code": {},
+  "latency_ms": {
+    "max_ms": 41542.836076929234,
+    "min_ms": 41542.836076929234,
+    "p50_ms": 41542.836076929234,
+    "p95_ms": 41542.836076929234,
+    "p99_ms": 41542.836076929234,
+    "sample_count": 1
+  },
+  "limitations": [
+    "The corpus is synthetic and does not contain customer or personal data.",
+    "Closed-label fact precision detects only listed contradictory values and cannot validate arbitrary free-form claims.",
+    "Deterministic string matching and citation anchors do not replace human semantic review.",
+    "This is a bounded sample and does not represent the complete 40-case suite.",
+    "One execution does not establish repeatability across provider runs.",
+    "Human semantic review remains outstanding."
+  ],
+  "measured": {
+    "citation_precision": 1.0,
+    "citation_recall": 1.0,
+    "closed_label_fact_precision": 1.0,
+    "fact_recall": 1.0,
+    "grounded_fact_rate": 1.0,
+    "refusal_precision": null,
+    "refusal_reason_accuracy": null,
+    "refusal_recall": null
+  },
+  "provenance": {
+    "command": [
+      "python",
+      "scripts/evaluate_staging_rag_quality.py",
+      "--dataset",
+      "<dataset>",
+      "--base-url",
+      "<staging-base-url>",
+      "--allowed-host",
+      "<control-plane-host>",
+      "--allowed-object-store-host",
+      "<object-store-host>",
+      "--case-id",
+      "<case-id>",
+      "--report-path",
+      "<report-path>"
+    ],
+    "commit_sha": "55d3fafe6e162165d77d028b07a0c141c8780717",
+    "environment": {
+      "architecture": "x86_64",
+      "execution_scope": "authenticated-staging-real-provider-quality",
+      "operating_system": "Linux-6.8.0-136-generic-x86_64-with-glibc2.36",
+      "python": "3.12.13",
+      "runner_transport": "in-cluster-loopback-exported-working-tree"
+    },
+    "input_sha256": "35ee4a4053f48ccf50b06823608987d9be1158f5c60634706ba068485cc6129c",
+    "payload_sha256": "aa56ea3994e7275d792f0590f6a1905221bfc2f4d21efe47932e7d4f93776411",
+    "working_tree_dirty": true
+  },
+  "provider_routes": [
+    {
+      "model_name": "grok-4.5",
+      "model_version": null,
+      "provider": "openai_compatible"
+    }
+  ],
+  "schema_version": 1,
+  "selected_case_count": 1,
+  "started_at": "2026-08-07T13:48:39.987685+00:00",
+  "status": "failed",
+  "suite": "staging-real-provider-rag-quality",
+  "targets": {
+    "citation_precision": 0.95,
+    "citation_recall": 0.9,
+    "closed_label_fact_precision": 0.95,
+    "fact_recall": 0.9,
+    "grounded_fact_rate": 0.9,
+    "refusal_precision": 1.0,
+    "refusal_reason_accuracy": 1.0,
+    "refusal_recall": 1.0
+  },
+  "total_case_count": 40,
+  "trial_only": false
+}

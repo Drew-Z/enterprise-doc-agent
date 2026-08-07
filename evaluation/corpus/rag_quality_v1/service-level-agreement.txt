@@ -1,0 +1,18 @@
+# Atlas Service Level Agreement
+
+## Availability
+
+The monthly service availability objective is 99.9 percent.
+Scheduled maintenance is excluded only when customers receive at least 72 hours notice.
+
+## Severity One Incidents
+
+The initial response time for a Severity One incident is 15 minutes.
+The target restoration time for a Severity One incident is four hours.
+
+## Service Credits
+
+When monthly availability is below 99.9 percent but at least 99.5 percent, the credit is 5 percent.
+When monthly availability is below 99.5 percent but at least 99.0 percent, the credit is 10 percent.
+When monthly availability is below 99.0 percent, the credit is 20 percent.
+Total service credits are capped at 20 percent of the monthly fee.

@@ -3,19 +3,25 @@
   "milestone": "M7",
   "requirement": "M7-R6",
   "owner": "model evaluation owner",
-  "blocking_reason": "The current benchmark uses deterministic and local gateway cases; no approved real provider route or representative golden set is available.",
+  "blocking_reason": "The real openai_compatible/grok-4.5 route completed a 12-case synthetic staging trial, but the trial failed quality targets and did not expose a provider model revision, token usage, cost, fallback count, or breaker state. Full 40-case repeatability, representative-corpus coverage, and human review remain absent.",
   "prerequisites": [
-    "Approve provider, model, revision, and fallback route",
-    "Provide a representative sanitized golden set",
-    "Freeze benchmark and behavior versions"
+    "Approve and freeze the provider model revision and fallback route in addition to the current model name",
+    "Resolve or explicitly accept the failed trial cases after human error review",
+    "Run the complete 40-case benchmark repeatedly with frozen behavior versions",
+    "Provide provider-reported usage/cost plus fallback and breaker telemetry",
+    "Add an approved representative sanitized corpus alongside the synthetic golden set"
   ],
   "required_evidence": [
     "Real provider route identity",
     "Latency, errors, fallback count, breaker state, and cost",
     "Citation and refusal quality",
-    "Repeatability across multiple runs"
+    "Repeatability across multiple full-suite runs",
+    "Human-reviewed error taxonomy"
+  ],
+  "observed_evidence": [
+    "evidence/m5/20260807-staging-real-provider-rag-quality-trial.json"
   ],
   "state": "open",
   "status": "blocked_external",
-  "review_date": "2026-07-19"
+  "review_date": "2026-08-07"
 }

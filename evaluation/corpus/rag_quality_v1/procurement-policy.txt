@@ -1,0 +1,17 @@
+# Northstar Procurement Policy
+
+## Approval Thresholds
+
+Purchases up to USD 5,000 require approval from the requesting department manager.
+Purchases from USD 5,000.01 through USD 25,000 require approval from the department director.
+Purchases above USD 25,000 require approval from both the Chief Financial Officer and the Procurement Committee.
+
+## Competitive Sourcing
+
+Purchases above USD 10,000 require at least three written supplier quotations.
+Any sole-source exception must be documented by Procurement before approval.
+
+## Purchase Orders
+
+A purchase order must be issued before the supplier begins work.
+Invoices that do not reference an approved purchase order are returned to the requester.
