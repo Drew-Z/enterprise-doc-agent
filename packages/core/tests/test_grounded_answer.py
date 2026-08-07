@@ -15,6 +15,7 @@ from enterprise_doc_core.agents import (
     GroundedRefusal,
     GroundingValidationError,
     ModelIdentity,
+    ModelRefusalOutput,
     QuestionAnswerModelOutput,
     StructuredExtractionModelOutput,
     StructuredExtractionSchema,
@@ -108,13 +109,34 @@ def _qa_output(
     citations = [citation, citation] if duplicate else [citation]
     return GroundedModelOutput(
         payload=QuestionAnswerModelOutput(
+            outcome="answer",
             answer_text="Payment is due within 30 days after acceptance.",
             citations=citations,
+            refusal_reason=None,
         ),
         identity=ModelIdentity(
             provider="deterministic",
             model_name="deterministic-grounded",
             model_version="m4.v1",
+        ),
+    )
+
+
+def _refusal_output() -> GroundedModelOutput:
+    return GroundedModelOutput(
+        payload=ModelRefusalOutput(
+            outcome="refusal",
+            task_type=AgentRunTaskType.QUESTION_ANSWER,
+            refusal_reason="insufficient_evidence",
+            answer_text=None,
+            structured_fields=None,
+            citations=[],
+            risk_hint=None,
+        ),
+        identity=ModelIdentity(
+            provider="openai_compatible",
+            model_name="test-model",
+            model_version="2026-08",
         ),
     )
 
@@ -133,6 +155,20 @@ async def test_valid_grounded_answer_resolves_existing_citation_metadata() -> No
     assert result.citations[0].source_filename == "contract.txt"
     assert result.citations[0].page_number == 1
     assert result.identity.model_name == "deterministic-grounded"
+
+
+async def test_model_refusal_is_valid_after_retrieval_accepts_candidates() -> None:
+    gateway = FixedGateway(_refusal_output())
+
+    result = await generate_grounded_answer(
+        gateway,
+        _request(),
+        tenant_id=TENANT,
+        document_version_id=VERSION,
+    )
+
+    assert result == GroundedRefusal(RefusalReason.INSUFFICIENT_EVIDENCE)
+    assert gateway.calls == 1
 
 
 @pytest.mark.parametrize(
@@ -215,7 +251,12 @@ def test_cross_tenant_candidate_uses_existing_citation_authorization_gate() -> N
 
 def test_non_refusal_answer_requires_at_least_one_citation() -> None:
     output = GroundedModelOutput(
-        payload=QuestionAnswerModelOutput(answer_text="Unsupported answer", citations=[]),
+        payload=QuestionAnswerModelOutput(
+            outcome="answer",
+            answer_text="Unsupported answer",
+            citations=[],
+            refusal_reason=None,
+        ),
         identity=ModelIdentity(provider="deterministic", model_name="deterministic-grounded"),
     )
     with pytest.raises(GroundingValidationError) as error:
@@ -251,6 +292,7 @@ def test_structured_extraction_accepts_only_the_declared_closed_schema() -> None
     )
     valid = GroundedModelOutput(
         payload=StructuredExtractionModelOutput(
+            outcome="answer",
             answer_text="Structured extraction completed.",
             structured_fields={
                 "payment_days": 30,
@@ -258,6 +300,7 @@ def test_structured_extraction_accepts_only_the_declared_closed_schema() -> None
                 "milestones": ["acceptance"],
             },
             citations=_qa_output().payload.citations,
+            refusal_reason=None,
         ),
         identity=ModelIdentity(provider="deterministic", model_name="deterministic-grounded"),
     )
@@ -279,9 +322,11 @@ def test_structured_extraction_accepts_only_the_declared_closed_schema() -> None
     for fields in invalid_fields:
         output = GroundedModelOutput(
             payload=StructuredExtractionModelOutput(
+                outcome="answer",
                 answer_text="Structured extraction completed.",
                 structured_fields=fields,
                 citations=_qa_output().payload.citations,
+                refusal_reason=None,
             ),
             identity=valid.identity,
         )

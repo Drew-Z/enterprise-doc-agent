@@ -17,10 +17,11 @@ from enterprise_doc_core.agents.schemas import (
     GroundedAnswer,
     GroundedModelOutput,
     GroundedModelRequest,
+    GroundedRefusal,
 )
 from enterprise_doc_core.documents.retrieval import RefusalReason
 
-AGENT_GRAPH_VERSION = "m4.v1"
+AGENT_GRAPH_VERSION = "m4.v2"
 _HASH_PATTERN = r"^[0-9a-f]{64}$"
 
 
@@ -273,13 +274,18 @@ def build_agent_graph(
             raise AgentGraphError("model output fingerprint is missing")
         request = await backend.build_model_request(state)
         output = await backend.load_model_output(state, fingerprint)
-        answer = validate_grounded_output(
+        validated = validate_grounded_output(
             output,
             request=request,
             tenant_id=UUID(contract.tenant_id),
             document_version_id=UUID(contract.document_version_id),
         )
-        answer_fingerprint = await backend.store_validated_answer(state, answer)
+        if isinstance(validated, GroundedRefusal):
+            return {
+                "outcome": "refused",
+                "refusal_reason": validated.reason.value,
+            }
+        answer_fingerprint = await backend.store_validated_answer(state, validated)
         return {"answer_fingerprint": answer_fingerprint}
 
     async def create_draft(state: AgentGraphState) -> dict[str, Any]:
@@ -370,7 +376,11 @@ def build_agent_graph(
         {"refused": "finalize_refused", "accepted": "generate_answer"},
     )
     graph.add_edge("generate_answer", "validate_answer")
-    graph.add_edge("validate_answer", "create_draft")
+    graph.add_conditional_edges(
+        "validate_answer",
+        lambda state: "refused" if state.get("outcome") == "refused" else "answered",
+        {"refused": "finalize_refused", "answered": "create_draft"},
+    )
     graph.add_edge("create_draft", "assess_risk")
     graph.add_conditional_edges(
         "assess_risk",

@@ -66,12 +66,20 @@ def validate_grounded_output(
     request: GroundedModelRequest,
     tenant_id: UUID,
     document_version_id: UUID,
-) -> GroundedAnswer:
+) -> GroundedAnswer | GroundedRefusal:
     if output.task_type is not request.task_type:
         raise GroundingValidationError(
             "output_task_mismatch",
             "The model output task type does not match the requested task.",
         )
+    if output.is_refusal:
+        refusal_reason = output.refusal_reason
+        if refusal_reason is None:
+            raise GroundingValidationError(
+                "refusal_reason_required",
+                "A model refusal must contain an allowed refusal reason.",
+            )
+        return GroundedRefusal(refusal_reason)
     if not output.citations:
         raise GroundingValidationError(
             "citation_required",
@@ -118,9 +126,15 @@ def validate_grounded_output(
             "structured_fields_not_allowed",
             "QA and summary outputs cannot contain structured fields.",
         )
+    answer_text = output.answer_text
+    if answer_text is None:
+        raise GroundingValidationError(
+            "answer_text_required",
+            "A non-refusal grounded answer must contain answer text.",
+        )
     return GroundedAnswer(
         task_type=output.task_type,
-        answer_text=output.answer_text,
+        answer_text=answer_text,
         structured_fields=output.structured_fields,
         citations=resolved,
         risk_hint=output.risk_hint,

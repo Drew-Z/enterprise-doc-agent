@@ -110,7 +110,10 @@ class EvaluationGraphBackend:
         output: GroundedModelOutput,
     ) -> str:
         self.calls.append("stage_model_output")
-        fingerprint = hashlib.sha256(output.answer_text.encode("utf-8")).hexdigest()
+        answer_text = output.answer_text
+        if answer_text is None:
+            raise ValueError("M4 evaluator expected an answer outcome")
+        fingerprint = hashlib.sha256(answer_text.encode("utf-8")).hexdigest()
         self.outputs[fingerprint] = output
         return fingerprint
 
@@ -346,6 +349,8 @@ async def _evaluate_citation_tamper(
     request = _request_for_case(base_case)
     evidence = request.evidence[0]
     output = await DeterministicGroundedGateway().generate(request)
+    if output.answer_text is None:
+        raise ValueError("M4 evaluator expected an answer outcome")
     citation = output.citations[0]
     if case.tamper == "wrong_version":
         citation = CitationProposal(
@@ -369,8 +374,10 @@ async def _evaluate_citation_tamper(
         raise ValueError(f"unsupported citation tamper: {case.tamper}")
     tampered = GroundedModelOutput(
         payload=QuestionAnswerModelOutput(
+            outcome="answer",
             answer_text=output.answer_text,
             citations=[citation],
+            refusal_reason=None,
         ),
         identity=output.identity,
     )

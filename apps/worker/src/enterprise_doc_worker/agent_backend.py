@@ -33,6 +33,7 @@ from enterprise_doc_core.agents import (
     GroundedEvidence,
     GroundedModelOutput,
     GroundedModelRequest,
+    GroundedRefusal,
     PublishArtifactInput,
     SearchDocumentInput,
     SignedExecutionContext,
@@ -653,16 +654,18 @@ class DurableAgentGraphBackend:
             raise AgentGraphError("The model output fingerprint is missing during recovery.")
         request = await self.build_model_request(state)
         output = await self.load_model_output(state, model_fingerprint)
-        answer = validate_grounded_output(
+        validated = validate_grounded_output(
             output,
             request=request,
             tenant_id=self.context.tenant_id,
             document_version_id=self.context.document_version_id,
         )
-        if _fingerprint_answer(answer) != fingerprint:
+        if isinstance(validated, GroundedRefusal):
+            raise AgentGraphError("A refusal cannot recover a validated answer segment.")
+        if _fingerprint_answer(validated) != fingerprint:
             raise AgentGraphError("The validated answer changed during recovery.")
-        self._answers[fingerprint] = answer
-        return answer
+        self._answers[fingerprint] = validated
+        return validated
 
     async def _load_generation_id(self, session: AsyncSession) -> UUID | None:
         run = await session.scalar(

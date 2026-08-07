@@ -26,6 +26,7 @@ from enterprise_doc_core.agents import (
     gateway_error_is_retryable,
 )
 from enterprise_doc_core.config import ModelSettings
+from enterprise_doc_core.documents import RefusalReason
 
 TENANT = UUID("00000000-0000-0000-0000-000000000001")
 VERSION = UUID("00000000-0000-0000-0000-000000000011")
@@ -92,7 +93,9 @@ def _completion(content: str, *, model: str = "served-model") -> dict[str, objec
 def _valid_payload(request: GroundedModelRequest) -> dict[str, object]:
     evidence = request.evidence[0]
     return {
+        "outcome": "answer",
         "task_type": request.task_type.value,
+        "refusal_reason": None,
         "answer_text": "Payment is due within 30 days.",
         "structured_fields": None,
         "citations": [
@@ -103,6 +106,18 @@ def _valid_payload(request: GroundedModelRequest) -> dict[str, object]:
             }
         ],
         "risk_hint": "low",
+    }
+
+
+def _valid_refusal_payload(request: GroundedModelRequest) -> dict[str, object]:
+    return {
+        "outcome": "refusal",
+        "task_type": request.task_type.value,
+        "refusal_reason": "insufficient_evidence",
+        "answer_text": None,
+        "structured_fields": None,
+        "citations": [],
+        "risk_hint": None,
     }
 
 
@@ -166,6 +181,58 @@ async def test_openai_gateway_sends_strict_json_request_without_secret_or_tools(
     assert "tools" not in sent
     assert "test-secret-key" not in requests[0].content.decode()
     assert "tenant_id" not in sent["messages"][1]["content"]
+    assert 'outcome must be "refusal"' in sent["messages"][0]["content"]
+    assert (
+        'refusal_reason must be exactly "insufficient_evidence"' in (sent["messages"][0]["content"])
+    )
+
+
+async def test_openai_gateway_accepts_explicit_insufficient_evidence_refusal() -> None:
+    request = _request()
+
+    async def handler(_: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=_completion(json.dumps(_valid_refusal_payload(request))))
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler), trust_env=False)
+    gateway = OpenAICompatibleChatGateway(settings=_settings(), client=client)
+    try:
+        output = await gateway.generate(request)
+    finally:
+        await client.aclose()
+
+    assert output.is_refusal
+    assert output.refusal_reason is RefusalReason.INSUFFICIENT_EVIDENCE
+    assert output.answer_text is None
+    assert output.citations == ()
+    assert output.repaired is False
+
+
+@pytest.mark.parametrize("invalid_kind", ["reason", "citation", "task"])
+async def test_openai_gateway_rejects_invalid_explicit_refusal(invalid_kind: str) -> None:
+    request = _request()
+    payload = _valid_refusal_payload(request)
+    if invalid_kind == "reason":
+        payload["refusal_reason"] = "low_relevance"
+    elif invalid_kind == "citation":
+        payload["citations"] = _valid_payload(request)["citations"]
+    else:
+        payload["task_type"] = AgentRunTaskType.SUMMARY.value
+    calls = 0
+
+    async def handler(_: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        return httpx.Response(200, json=_completion(json.dumps(payload)))
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler), trust_env=False)
+    gateway = OpenAICompatibleChatGateway(settings=_settings(), client=client)
+    try:
+        with pytest.raises(ModelOutputSchemaError):
+            await gateway.generate(request)
+    finally:
+        await client.aclose()
+
+    assert calls == 2
 
 
 async def test_openai_gateway_performs_at_most_one_bounded_schema_repair() -> None:

@@ -1,0 +1,4 @@
+{"file":".trellis/tasks/08-07-rag-quality-v2-explicit-refusal/prd.md","reason":"Acceptance criteria for final review."}
+{"file":".trellis/tasks/08-07-rag-quality-v2-explicit-refusal/design.md","reason":"Security, compatibility, scoring, and rollout invariants."}
+{"file":".trellis/tasks/08-07-rag-quality-v2-explicit-refusal/implement.md","reason":"Required validation and rollback gates."}
+{"file":".trellis/tasks/08-07-rag-quality-v2-explicit-refusal/research/staging-stock-price-retrieval-diagnosis.md","reason":"Evidence supporting the no-threshold-change decision."}

@@ -228,7 +228,18 @@ def _normalize(value: str) -> str:
 
 def _contains_variant(text: str, variants: tuple[str, ...]) -> bool:
     normalized = _normalize(text)
-    return any(_normalize(variant) in normalized for variant in variants)
+    for variant in variants:
+        normalized_variant = _normalize(variant)
+        if not normalized_variant:
+            continue
+        left_boundary = r"(?<!\w)" if normalized_variant[0].isalnum() else ""
+        right_boundary = r"(?!\w)" if normalized_variant[-1].isalnum() else ""
+        if re.search(
+            f"{left_boundary}{re.escape(normalized_variant)}{right_boundary}",
+            normalized,
+        ):
+            return True
+    return False
 
 
 def _sha256(value: bytes) -> str:
@@ -284,22 +295,26 @@ def load_rag_quality_dataset(path: Path) -> LoadedRagQualityDataset:
     )
 
 
-def _resolve_anchor(
+def _resolve_anchors(
     dataset: RagQualityDataset,
     *,
     citation: ObservedCitation,
-) -> str | None:
+) -> tuple[str, ...]:
     document = dataset.documents_by_key.get(citation.document_key)
     if document is None:
-        return None
+        return ()
     normalized_excerpt = _normalize(citation.excerpt)
-    for anchor in document.anchors:
-        if anchor.page is not None and citation.page is not None and anchor.page != citation.page:
-            continue
-        normalized_quote = _normalize(anchor.quote)
-        if normalized_quote in normalized_excerpt or normalized_excerpt in normalized_quote:
-            return anchor.anchor_id
-    return None
+    return tuple(
+        anchor.anchor_id
+        for anchor in document.anchors
+        if not (
+            anchor.page is not None and citation.page is not None and anchor.page != citation.page
+        )
+        and (
+            _normalize(anchor.quote) in normalized_excerpt
+            or normalized_excerpt in _normalize(anchor.quote)
+        )
+    )
 
 
 def score_rag_quality_case(
@@ -324,18 +339,29 @@ def score_rag_quality_case(
         if precision_denominator
         else (0.0 if expected_fact_count else None)
     )
+    citation_anchor_ids = tuple(
+        _resolve_anchors(dataset, citation=citation) for citation in observation.citations
+    )
     matched_anchor_ids = tuple(
         dict.fromkeys(
             anchor_id
-            for citation in observation.citations
-            if (anchor_id := _resolve_anchor(dataset, citation=citation)) is not None
+            for resolved_anchor_ids in citation_anchor_ids
+            for anchor_id in resolved_anchor_ids
         )
     )
     expected_anchor_ids = set(case.expected_anchor_ids)
     correct_anchor_ids = expected_anchor_ids.intersection(matched_anchor_ids)
+    predicted_anchor_count = sum(
+        len(resolved_anchor_ids) if resolved_anchor_ids else 1
+        for resolved_anchor_ids in citation_anchor_ids
+    )
+    correct_anchor_prediction_count = sum(
+        len(expected_anchor_ids.intersection(resolved_anchor_ids))
+        for resolved_anchor_ids in citation_anchor_ids
+    )
     citation_precision = (
-        len(correct_anchor_ids) / len(observation.citations)
-        if observation.citations
+        correct_anchor_prediction_count / predicted_anchor_count
+        if predicted_anchor_count
         else (0.0 if expected_anchor_ids else 1.0)
     )
     citation_recall = (

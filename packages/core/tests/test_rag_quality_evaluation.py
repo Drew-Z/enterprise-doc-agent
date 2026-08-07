@@ -184,6 +184,122 @@ def test_score_uses_stable_anchor_and_does_not_reward_missing_citations(
     assert not missing.passed
 
 
+def test_score_credits_every_stable_anchor_covered_by_one_citation(tmp_path: Path) -> None:
+    payload = _dataset_payload()
+    document = payload["documents"][0]
+    assert isinstance(document, dict)
+    anchors = document["anchors"]
+    assert isinstance(anchors, list)
+    anchors.append(
+        {
+            "anchor_id": "leave.expiry",
+            "section": "Vacation Carryover",
+            "page": None,
+            "quote": "Carried vacation days expire on March 31.",
+        }
+    )
+    fact_case = payload["cases"][0]
+    assert isinstance(fact_case, dict)
+    fact_case["facts"] = [
+        {
+            "fact_id": "carryover-days",
+            "accepted_answers": ["five unused vacation days"],
+            "forbidden_answers": ["ten vacation days"],
+            "anchor_ids": ["leave.carryover"],
+        },
+        {
+            "fact_id": "carryover-expiry",
+            "accepted_answers": ["expire on March 31"],
+            "forbidden_answers": ["expire on April 30"],
+            "anchor_ids": ["leave.expiry"],
+        },
+    ]
+    fact_case["expected_anchor_ids"] = ["leave.carryover", "leave.expiry"]
+    path = _write_dataset(tmp_path, payload)
+    (tmp_path / "corpus" / "policy.txt").write_text(
+        "Vacation Carryover\nEmployees may carry over up to five unused vacation days. "
+        "Carried vacation days expire on March 31.\n",
+        encoding="utf-8",
+    )
+    loaded = load_rag_quality_dataset(path)
+    case = loaded.dataset.cases_by_id["fact-carryover"]
+    observation = RagQualityObservation(
+        terminal_status="succeeded",
+        answer_text=(
+            "Employees may carry over five unused vacation days, which expire on March 31."
+        ),
+        citations=(
+            ObservedCitation(
+                runtime_chunk_id="runtime-chunk-combined",
+                document_key="leave-policy",
+                page=None,
+                heading="Vacation Carryover",
+                excerpt=(
+                    "Employees may carry over up to five unused vacation days. "
+                    "Carried vacation days expire on March 31."
+                ),
+            ),
+        ),
+        duration_ms=80,
+    )
+
+    score = score_rag_quality_case(loaded.dataset, case, observation)
+
+    assert score.matched_anchor_ids == ("leave.carryover", "leave.expiry")
+    assert score.fact_recall == 1.0
+    assert score.grounded_fact_rate == 1.0
+    assert score.citation_precision == 1.0
+    assert score.citation_recall == 1.0
+    assert score.passed
+
+
+def test_score_matches_short_numeric_variants_only_at_safe_boundaries(tmp_path: Path) -> None:
+    payload = _dataset_payload()
+    fact_case = payload["cases"][0]
+    assert isinstance(fact_case, dict)
+    facts = fact_case["facts"]
+    assert isinstance(facts, list)
+    fact = facts[0]
+    assert isinstance(fact, dict)
+    fact["accepted_answers"] = ["15"]
+    loaded = load_rag_quality_dataset(_write_dataset(tmp_path, payload))
+    case = loaded.dataset.cases_by_id["fact-carryover"]
+    citation = ObservedCitation(
+        runtime_chunk_id="runtime-chunk-numeric",
+        document_key="leave-policy",
+        page=None,
+        heading="Vacation Carryover",
+        excerpt="Employees may carry over up to five unused vacation days.",
+    )
+
+    standalone = score_rag_quality_case(
+        loaded.dataset,
+        case,
+        RagQualityObservation(
+            terminal_status="succeeded",
+            answer_text="15",
+            citations=(citation,),
+            duration_ms=10,
+        ),
+    )
+    numeric_superset = score_rag_quality_case(
+        loaded.dataset,
+        case,
+        RagQualityObservation(
+            terminal_status="succeeded",
+            answer_text="The answer is 150 days.",
+            citations=(citation,),
+            duration_ms=10,
+        ),
+    )
+
+    assert standalone.matched_fact_ids == ("carryover-days",)
+    assert standalone.fact_recall == 1.0
+    assert numeric_superset.matched_fact_ids == ()
+    assert numeric_superset.fact_recall == 0.0
+    assert not numeric_superset.passed
+
+
 def test_aggregate_scores_refusal_and_reason_accuracy(tmp_path: Path) -> None:
     loaded = load_rag_quality_dataset(_write_dataset(tmp_path, _dataset_payload()))
     fact_case = loaded.dataset.cases_by_id["fact-carryover"]
@@ -273,3 +389,27 @@ def test_repository_rag_quality_dataset_has_required_distribution() -> None:
         "citation": 4,
         "safety": 4,
     }
+
+
+def test_repository_rag_quality_v2_preserves_shape_with_reviewed_labels() -> None:
+    root = Path(__file__).resolve().parents[3]
+    v1 = load_rag_quality_dataset(root / "evaluation" / "rag_quality_v1.json")
+    v2 = load_rag_quality_dataset(root / "evaluation" / "rag_quality_v2.json")
+
+    assert v2.dataset.version == "enterprise-rag-quality-v2"
+    assert len(v2.dataset.documents) == len(v1.dataset.documents) == 8
+    assert len(v2.dataset.cases) == len(v1.dataset.cases) == 40
+    assert sum(case.trial for case in v2.dataset.cases) == 12
+    assert v2.corpus_sha256 == v1.corpus_sha256
+    assert v2.dataset_sha256 != v1.dataset_sha256
+    assert "15" in v2.dataset.cases_by_id["fact-employee-vacation"].facts[0].accepted_answers
+    assert "30 days" in v2.dataset.cases_by_id["fact-retention-customer"].facts[0].accepted_answers
+    objectives = v2.dataset.cases_by_id["hard-support-objectives"].facts
+    assert (
+        "recovery time objective for the customer API is two hours"
+        in objectives[0].accepted_answers
+    )
+    assert (
+        "recovery point objective for the customer API is 15 minutes"
+        in objectives[1].accepted_answers
+    )

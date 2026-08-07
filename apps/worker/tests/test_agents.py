@@ -37,7 +37,7 @@ def _context(**overrides: Any) -> AgentExecutionContext:
         task_type="question_answer",
         publish_requested=False,
         graph_thread_id="",
-        graph_version="m4.v1",
+        graph_version="m4.v2",
         run_status="pending",
         approval_request_id=None,
     )
@@ -89,7 +89,7 @@ async def test_graph_executor_starts_initial_segment_with_json_state() -> None:
     state = graph.inputs[0]
     assert isinstance(state, dict)
     assert state["run_id"] == str(context.run_id)
-    assert state["graph_version"] == "m4.v1"
+    assert state["graph_version"] == "m4.v2"
     assert graph.configs[0]["configurable"]["thread_id"] == str(context.run_id)
     assert backend.prepared == 1
 

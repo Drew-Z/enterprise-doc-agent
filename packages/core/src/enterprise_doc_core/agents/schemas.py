@@ -221,9 +221,11 @@ class RiskHint(StrEnum):
 
 
 class _TaskOutput(_StrictModel):
+    outcome: Literal["answer"]
     answer_text: str = Field(min_length=1, max_length=100_000)
     citations: list[CitationProposal] = Field(max_length=50)
     risk_hint: RiskHint | None = None
+    refusal_reason: None
 
 
 class QuestionAnswerModelOutput(_TaskOutput):
@@ -243,10 +245,23 @@ class StructuredExtractionModelOutput(_TaskOutput):
     structured_fields: dict[str, JsonValue]
 
 
-type GroundedModelPayload = Annotated[
+type GroundedAnswerModelPayload = Annotated[
     QuestionAnswerModelOutput | SummaryModelOutput | StructuredExtractionModelOutput,
     Field(discriminator="task_type"),
 ]
+
+
+class ModelRefusalOutput(_StrictModel):
+    outcome: Literal["refusal"]
+    task_type: AgentRunTaskType
+    refusal_reason: Literal["insufficient_evidence"]
+    answer_text: None
+    structured_fields: None
+    citations: list[CitationProposal] = Field(max_length=0)
+    risk_hint: None
+
+
+type GroundedModelPayload = GroundedAnswerModelPayload | ModelRefusalOutput
 
 
 class ModelIdentity(_StrictModel):
@@ -266,7 +281,17 @@ class GroundedModelOutput:
         return self.payload.task_type
 
     @property
-    def answer_text(self) -> str:
+    def is_refusal(self) -> bool:
+        return isinstance(self.payload, ModelRefusalOutput)
+
+    @property
+    def refusal_reason(self) -> RefusalReason | None:
+        if isinstance(self.payload, ModelRefusalOutput):
+            return RefusalReason(self.payload.refusal_reason)
+        return None
+
+    @property
+    def answer_text(self) -> str | None:
         return self.payload.answer_text
 
     @property
@@ -302,6 +327,7 @@ __all__ = [
     "BehaviorVersions",
     "CitationProposal",
     "GroundedAnswer",
+    "GroundedAnswerModelPayload",
     "GroundedEvidence",
     "GroundedModelOutput",
     "GroundedModelPayload",
@@ -309,6 +335,7 @@ __all__ = [
     "GroundedRefusal",
     "JsonSchemaNode",
     "ModelIdentity",
+    "ModelRefusalOutput",
     "QuestionAnswerModelOutput",
     "RiskHint",
     "StructuredExtractionModelOutput",

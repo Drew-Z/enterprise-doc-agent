@@ -28,7 +28,8 @@
     "07-19-m6-cicd-kubernetes",
     "07-19-m7-local-model-routing",
     "07-19-m8-end-to-end-model-deadline",
-    "08-07-real-rag-quality-evaluation"
+    "08-07-real-rag-quality-evaluation",
+    "08-07-rag-quality-v2-explicit-refusal"
   ],
   "parent": null,
   "relatedFiles": [],

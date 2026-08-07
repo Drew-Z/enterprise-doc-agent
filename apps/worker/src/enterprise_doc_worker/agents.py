@@ -74,7 +74,7 @@ def _route_descriptor(settings: ModelSettings) -> ModelRouteDescriptor:
         provider=settings.provider.value,
         model_name=settings.model_name or "deterministic-grounded",
         model_version=settings.model_version
-        or ("m4.v1" if settings.provider is ModelProvider.DETERMINISTIC else None),
+        or (AGENT_GRAPH_VERSION if settings.provider is ModelProvider.DETERMINISTIC else None),
         model_revision=settings.model_revision,
         quantization=settings.quantization,
         context_window_tokens=settings.context_window_tokens,

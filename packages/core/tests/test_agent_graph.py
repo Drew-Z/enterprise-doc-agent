@@ -16,6 +16,8 @@ from enterprise_doc_core.agents import (
     GroundedEvidence,
     GroundedModelOutput,
     GroundedModelRequest,
+    ModelIdentity,
+    ModelRefusalOutput,
 )
 from enterprise_doc_core.agents.graph import (
     AgentGraphVersionMismatch,
@@ -64,7 +66,7 @@ class FakeGraphBackend:
 
     async def load_run(self, state: dict[str, Any]) -> None:
         self.calls.append("load_run")
-        if state["graph_version"] != "m4.v1":
+        if state["graph_version"] != "m4.v2":
             raise AgentGraphVersionMismatch()
 
     async def authorize(self, state: dict[str, Any]) -> None:
@@ -89,9 +91,9 @@ class FakeGraphBackend:
             user_input="What are the payment terms?",
             evidence=[self.evidence],
             behavior_versions=BehaviorVersions(
-                graph_version="m4.v1",
-                prompt_version="m4.prompt.v1",
-                tool_schema_version="m4.tools.v1",
+                graph_version="m4.v2",
+                prompt_version="m4.prompt.v2",
+                tool_schema_version="m4.tools.v2",
             ),
         )
 
@@ -167,6 +169,26 @@ class FakeGraphBackend:
         self.calls.append(f"finalize:{outcome}")
 
 
+class FixedRefusalGateway:
+    async def generate(self, request: GroundedModelRequest) -> GroundedModelOutput:
+        return GroundedModelOutput(
+            payload=ModelRefusalOutput(
+                outcome="refusal",
+                task_type=request.task_type,
+                refusal_reason="insufficient_evidence",
+                answer_text=None,
+                structured_fields=None,
+                citations=[],
+                risk_hint=None,
+            ),
+            identity=ModelIdentity(
+                provider="openai_compatible",
+                model_name="test-model",
+                model_version="2026-08",
+            ),
+        )
+
+
 def _state(*, publish_requested: bool = False) -> dict[str, Any]:
     return initial_graph_state(
         run_id=RUN_ID,
@@ -175,7 +197,7 @@ def _state(*, publish_requested: bool = False) -> dict[str, Any]:
         document_version_id=VERSION_ID,
         task_type=AgentRunTaskType.QUESTION_ANSWER,
         publish_requested=publish_requested,
-        graph_version="m4.v1",
+        graph_version="m4.v2",
     )
 
 
@@ -214,6 +236,26 @@ async def test_graph_refuses_without_calling_gateway_or_write_nodes() -> None:
     assert result["refusal_reason"] == RefusalReason.EMPTY_EVIDENCE.value
     assert "generate_answer" not in backend.calls
     assert "create_draft" not in backend.calls
+    assert backend.calls[-1] == "finalize:refused"
+
+
+@pytest.mark.asyncio
+async def test_graph_routes_valid_model_refusal_away_from_artifact_nodes() -> None:
+    backend = FakeGraphBackend(accepted=True)
+    graph = build_agent_graph(
+        backend=backend,
+        gateway=FixedRefusalGateway(),
+        checkpointer=InMemorySaver(),
+    )
+
+    result = await graph.ainvoke(_state(), config=graph_config(RUN_ID))
+
+    assert result["outcome"] == "refused"
+    assert result["refusal_reason"] == RefusalReason.INSUFFICIENT_EVIDENCE.value
+    assert "store_validated_answer" not in backend.calls
+    assert "create_draft" not in backend.calls
+    assert "assess_risk" not in backend.calls
+    assert "publish_artifact" not in backend.calls
     assert backend.calls[-1] == "finalize:refused"
 
 
@@ -279,7 +321,7 @@ async def test_graph_version_mismatch_is_stable_and_before_side_effects() -> Non
         backend=backend,
         gateway=DeterministicGroundedGateway(),
         checkpointer=InMemorySaver(),
-        graph_version="m4.v2",
+        graph_version="m4.v3",
     )
 
     with pytest.raises(AgentGraphVersionMismatch):

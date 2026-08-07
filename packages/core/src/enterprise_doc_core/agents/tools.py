@@ -41,6 +41,7 @@ from enterprise_doc_core.agents.schemas import (
     GroundedModelOutput,
     GroundedModelPayload,
     GroundedModelRequest,
+    GroundedRefusal,
     ModelIdentity,
     QuestionAnswerModelOutput,
     RiskHint,
@@ -950,24 +951,30 @@ class AgentToolService:
         payload: GroundedModelPayload
         if scope.run.task_type == "question_answer":
             payload = QuestionAnswerModelOutput(
+                outcome="answer",
                 answer_text=request.answer_text,
                 citations=citations,
                 risk_hint=request.risk_hint,
+                refusal_reason=None,
             )
         elif scope.run.task_type == "summary":
             payload = SummaryModelOutput(
+                outcome="answer",
                 answer_text=request.answer_text,
                 citations=citations,
                 risk_hint=request.risk_hint,
+                refusal_reason=None,
             )
         else:
             if request.structured_fields is None:
                 raise ToolInputInvalid("structured extraction requires fields")
             payload = StructuredExtractionModelOutput(
+                outcome="answer",
                 answer_text=request.answer_text,
                 structured_fields=request.structured_fields,
                 citations=citations,
                 risk_hint=request.risk_hint,
+                refusal_reason=None,
             )
         output = GroundedModelOutput(
             payload=payload,
@@ -986,6 +993,8 @@ class AgentToolService:
             )
         except GroundingValidationError as error:
             raise ToolInputInvalid() from error
+        if isinstance(answer, GroundedRefusal):
+            raise ToolInputInvalid("draft creation does not accept a refusal outcome")
         artifact_payload = {
             "schema_version": 1,
             "run_id": str(scope.run.id),

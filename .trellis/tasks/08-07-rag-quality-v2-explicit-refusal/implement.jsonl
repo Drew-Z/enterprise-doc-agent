@@ -1,0 +1,5 @@
+{"file":".trellis/tasks/08-07-rag-quality-v2-explicit-refusal/prd.md","reason":"Approved requirements and observable behavior slices."}
+{"file":".trellis/tasks/08-07-rag-quality-v2-explicit-refusal/design.md","reason":"Evaluator, model contract, graph routing, compatibility, and rollout design."}
+{"file":".trellis/tasks/08-07-rag-quality-v2-explicit-refusal/implement.md","reason":"Ordered TDD and validation checklist."}
+{"file":".trellis/tasks/08-07-real-rag-quality-evaluation/research/staging-trial-analysis.md","reason":"Measured false-negative and refusal failure diagnosis from the first real trial."}
+{"file":".trellis/tasks/08-07-rag-quality-v2-explicit-refusal/research/staging-stock-price-retrieval-diagnosis.md","reason":"Sanitized live retrieval evidence and threshold decision."}
