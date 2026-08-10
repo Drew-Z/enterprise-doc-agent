@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import json
 from collections.abc import Mapping
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 from typing import Any, Literal, Protocol
 from uuid import UUID, uuid4
@@ -63,6 +64,8 @@ from enterprise_doc_core.agents.state import (
 from enterprise_doc_core.documents.models import DocumentChunk, DocumentVersion
 from enterprise_doc_core.documents.retrieval import RefusalReason, RetrievalDecision
 from enterprise_doc_core.object_store import ArtifactObjectStore
+
+_SEARCH_INTERRUPTED_ERROR_CODE = "search_execution_interrupted"
 
 
 class ToolExecutionError(RuntimeError):
@@ -257,6 +260,7 @@ class _BeginResult:
     execution_id: UUID
     replayed: bool
     recovering: bool
+    lease_started_at: datetime | None
 
 
 class AgentToolService:
@@ -297,27 +301,71 @@ class AgentToolService:
         if begin.replayed:
             return await self._replay_search(context=context, execution_id=begin.execution_id)
         if begin.recovering:
-            return await self._recover_search(context=context, execution_id=begin.execution_id)
+            try:
+                recovered = await self._recover_search(
+                    context=context,
+                    execution_id=begin.execution_id,
+                    expected_started_at=begin.lease_started_at,
+                )
+            except asyncio.CancelledError:
+                await self._interrupt_search(
+                    begin.execution_id,
+                    context.tenant_id,
+                    expected_started_at=begin.lease_started_at,
+                )
+                raise
+            if recovered is not None:
+                return recovered
         try:
             decision = await self.retrieval_service.retrieve(
                 tenant_id=context.tenant_id,
                 document_version_id=context.target_document_version_id,
                 query=request.query,
             )
+        except asyncio.CancelledError:
+            await self._interrupt_search(
+                begin.execution_id,
+                context.tenant_id,
+                expected_started_at=begin.lease_started_at,
+            )
+            raise
         except Exception as error:
-            await self._fail(begin.execution_id, context.tenant_id, "retrieval_failed")
+            await self._fail(
+                begin.execution_id,
+                context.tenant_id,
+                "retrieval_failed",
+                expected_started_at=begin.lease_started_at,
+            )
             raise ToolExecutionError() from error
         try:
             result = await self._freeze_search_and_succeed(
                 context=context,
                 execution_id=begin.execution_id,
                 decision=decision,
+                expected_started_at=begin.lease_started_at,
             )
+        except asyncio.CancelledError:
+            await self._interrupt_search(
+                begin.execution_id,
+                context.tenant_id,
+                expected_started_at=begin.lease_started_at,
+            )
+            raise
         except ToolPolicyError:
-            await self._deny(begin.execution_id, context.tenant_id, "tool_policy_denied")
+            await self._deny(
+                begin.execution_id,
+                context.tenant_id,
+                "tool_policy_denied",
+                expected_started_at=begin.lease_started_at,
+            )
             raise
         except ToolExecutionError:
-            await self._fail(begin.execution_id, context.tenant_id, "tool_result_invalid")
+            await self._fail(
+                begin.execution_id,
+                context.tenant_id,
+                "tool_result_invalid",
+                expected_started_at=begin.lease_started_at,
+            )
             raise
         return result
 
@@ -645,21 +693,34 @@ class AgentToolService:
                     if existing.request_fingerprint != fingerprint:
                         raise ToolIdempotencyConflict()
                     if existing.status == ToolExecutionStatus.SUCCEEDED.value:
-                        result = _BeginResult(existing.id, replayed=True, recovering=False)
+                        result = _BeginResult(
+                            existing.id,
+                            replayed=True,
+                            recovering=False,
+                            lease_started_at=None,
+                        )
                     elif existing.status in {
                         ToolExecutionStatus.PENDING.value,
                         ToolExecutionStatus.RUNNING.value,
                     }:
+                        interrupted = existing.error_code == _SEARCH_INTERRUPTED_ERROR_CODE
                         age = (now - (existing.started_at or existing.created_at)).total_seconds()
-                        if age < self.stale_execution_seconds:
+                        if not interrupted and age < self.stale_execution_seconds:
                             raise ToolExecutionInProgress()
+                        lease_started_at = _next_lease_started_at(existing.started_at, now)
                         if existing.status == ToolExecutionStatus.PENDING.value:
                             existing.status = transition_tool_execution(
                                 ToolExecutionStatus.PENDING,
                                 ToolExecutionEvent.BEGIN,
                             ).value
-                        existing.started_at = now
-                        result = _BeginResult(existing.id, replayed=False, recovering=True)
+                        existing.started_at = lease_started_at
+                        existing.error_code = None
+                        result = _BeginResult(
+                            existing.id,
+                            replayed=False,
+                            recovering=not interrupted,
+                            lease_started_at=lease_started_at,
+                        )
                     else:
                         raise ToolPriorFailure()
                 else:
@@ -686,7 +747,12 @@ class AgentToolService:
                     ).value
                     session.add(execution)
                     await session.flush()
-                    result = _BeginResult(execution.id, replayed=False, recovering=False)
+                    result = _BeginResult(
+                        execution.id,
+                        replayed=False,
+                        recovering=False,
+                        lease_started_at=now,
+                    )
         if denial is not None:
             raise denial
         assert result is not None
@@ -698,6 +764,7 @@ class AgentToolService:
         context: SignedExecutionContext,
         execution_id: UUID,
         decision: RetrievalDecision,
+        expected_started_at: datetime | None,
     ) -> SearchDocumentResult:
         candidates = tuple(decision.candidates[: self.max_search_results])
         now = self.clock()
@@ -709,6 +776,16 @@ class AgentToolService:
                 now=now,
                 for_update=True,
             )
+            execution = await self._lock_execution(
+                session,
+                execution_id=execution_id,
+                tenant_id=context.tenant_id,
+            )
+            if (
+                execution.status != ToolExecutionStatus.RUNNING.value
+                or execution.started_at != expected_started_at
+            ):
+                raise ToolExecutionInProgress()
             existing_evidence = (
                 await session.scalars(
                     select(AgentRunEvidence)
@@ -1224,14 +1301,20 @@ class AgentToolService:
         *,
         context: SignedExecutionContext,
         execution_id: UUID,
-    ) -> SearchDocumentResult:
-        summary = await self._execution_summary(execution_id, context.tenant_id)
+        expected_started_at: datetime | None,
+    ) -> SearchDocumentResult | None:
+        summary = await self._execution_summary_or_none(execution_id, context.tenant_id)
         candidates = await self._frozen_candidates(context)
+        if summary is None:
+            if candidates:
+                raise ToolResultInvalid()
+            return None
         if candidates or not summary.get("accepted", False):
             await self._succeed(
                 execution_id=execution_id,
                 tenant_id=context.tenant_id,
                 result_summary=summary,
+                expected_started_at=expected_started_at,
             )
             return SearchDocumentResult(
                 execution_id=execution_id,
@@ -1284,6 +1367,16 @@ class AgentToolService:
             )
 
     async def _execution_summary(self, execution_id: UUID, tenant_id: UUID) -> dict[str, Any]:
+        summary = await self._execution_summary_or_none(execution_id, tenant_id)
+        if summary is None:
+            raise ToolResultInvalid()
+        return summary
+
+    async def _execution_summary_or_none(
+        self,
+        execution_id: UUID,
+        tenant_id: UUID,
+    ) -> dict[str, Any] | None:
         async with self.session_factory() as session:
             execution = await session.scalar(
                 select(ToolExecution).where(
@@ -1291,9 +1384,9 @@ class AgentToolService:
                     ToolExecution.tenant_id == tenant_id,
                 )
             )
-            if execution is None or execution.result_summary is None:
+            if execution is None:
                 raise ToolResultInvalid()
-            return dict(execution.result_summary)
+            return dict(execution.result_summary) if execution.result_summary is not None else None
 
     async def _succeed(
         self,
@@ -1301,6 +1394,7 @@ class AgentToolService:
         execution_id: UUID,
         tenant_id: UUID,
         result_summary: Mapping[str, Any],
+        expected_started_at: datetime | None = None,
     ) -> None:
         async with self.session_factory.begin() as session:
             execution = await self._lock_execution(
@@ -1308,19 +1402,30 @@ class AgentToolService:
                 execution_id=execution_id,
                 tenant_id=tenant_id,
             )
+            if expected_started_at is not None and execution.started_at != expected_started_at:
+                raise ToolExecutionInProgress()
             self._mark_execution_succeeded(
                 execution,
                 result_summary=dict(result_summary),
                 now=self.clock(),
             )
 
-    async def _fail(self, execution_id: UUID, tenant_id: UUID, error_code: str) -> None:
+    async def _fail(
+        self,
+        execution_id: UUID,
+        tenant_id: UUID,
+        error_code: str,
+        *,
+        expected_started_at: datetime | None = None,
+    ) -> None:
         async with self.session_factory.begin() as session:
             execution = await self._lock_execution(
                 session,
                 execution_id=execution_id,
                 tenant_id=tenant_id,
             )
+            if expected_started_at is not None and execution.started_at != expected_started_at:
+                return
             if execution.status in {
                 ToolExecutionStatus.SUCCEEDED.value,
                 ToolExecutionStatus.FAILED.value,
@@ -1333,6 +1438,26 @@ class AgentToolService:
             ).value
             execution.error_code = error_code
             execution.finished_at = self.clock()
+
+    async def _interrupt_search(
+        self,
+        execution_id: UUID,
+        tenant_id: UUID,
+        *,
+        expected_started_at: datetime | None,
+    ) -> None:
+        async with self.session_factory.begin() as session:
+            execution = await self._lock_execution(
+                session,
+                execution_id=execution_id,
+                tenant_id=tenant_id,
+            )
+            if (
+                execution.status != ToolExecutionStatus.RUNNING.value
+                or execution.started_at != expected_started_at
+            ):
+                return
+            execution.error_code = _SEARCH_INTERRUPTED_ERROR_CODE
 
     async def _fail_draft(self, execution_id: UUID, tenant_id: UUID, error_code: str) -> None:
         async with self.session_factory.begin() as session:
@@ -1371,13 +1496,22 @@ class AgentToolService:
             execution.error_code = error_code
             execution.finished_at = self.clock()
 
-    async def _deny(self, execution_id: UUID, tenant_id: UUID, error_code: str) -> None:
+    async def _deny(
+        self,
+        execution_id: UUID,
+        tenant_id: UUID,
+        error_code: str,
+        *,
+        expected_started_at: datetime | None = None,
+    ) -> None:
         async with self.session_factory.begin() as session:
             execution = await self._lock_execution(
                 session,
                 execution_id=execution_id,
                 tenant_id=tenant_id,
             )
+            if expected_started_at is not None and execution.started_at != expected_started_at:
+                return
             if execution.status in {
                 ToolExecutionStatus.SUCCEEDED.value,
                 ToolExecutionStatus.FAILED.value,
@@ -1443,6 +1577,12 @@ class AgentToolService:
         head = await self.artifact_store.head_object(bucket=bucket, key=key)
         if head.size_bytes != size_bytes or head.metadata.get("sha256") != content_sha256:
             raise ToolArtifactIntegrityError()
+
+
+def _next_lease_started_at(previous: datetime | None, now: datetime) -> datetime:
+    if previous is None or now > previous:
+        return now
+    return previous + timedelta(microseconds=1)
 
 
 def _input_sha256(request: _ToolModel) -> str:

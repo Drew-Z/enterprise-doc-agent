@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from contextlib import AbstractAsyncContextManager
 from pathlib import Path
 from time import perf_counter
@@ -359,17 +359,22 @@ def _exception_leaves(error: BaseException) -> tuple[BaseException, ...]:
 
 
 def _parse_result[ResultT: BaseModel](result: Any, result_model: type[ResultT]) -> ResultT:
-    if bool(getattr(result, "isError", False)):
-        content = getattr(result, "content", ())
+    if bool(getattr(result, "isError", getattr(result, "is_error", False))):
         retryable_codes = {
             "mcp_tool_timeout",
             "tool_execution_in_progress",
             "tool_object_store_unavailable",
         }
-        if isinstance(content, list) and any(
-            isinstance(text := getattr(item, "text", None), str)
-            and any(code in text for code in retryable_codes)
-            for item in content
+        error_payloads = (
+            getattr(result, "content", ()),
+            getattr(result, "structuredContent", None),
+            getattr(result, "structured_content", None),
+        )
+        if any(
+            code in value
+            for payload in error_payloads
+            for value in _iter_error_strings(payload)
+            for code in retryable_codes
         ):
             raise McpToolRetryableError()
         raise McpToolReturnedError()
@@ -383,6 +388,19 @@ def _parse_result[ResultT: BaseModel](result: Any, result_model: type[ResultT]) 
         return result_model.model_validate_json(encoded, strict=True)
     except (TypeError, ValueError, ValidationError) as error:
         raise McpToolResultInvalid() from error
+
+
+def _iter_error_strings(value: Any) -> tuple[str, ...]:
+    if isinstance(value, str):
+        return (value,)
+    if isinstance(value, BaseModel):
+        return _iter_error_strings(value.model_dump(mode="json", by_alias=True))
+    if isinstance(value, Mapping):
+        return tuple(text for item in value.values() for text in _iter_error_strings(item))
+    if isinstance(value, Sequence) and not isinstance(value, (bytes, bytearray)):
+        return tuple(text for item in value for text in _iter_error_strings(item))
+    text = getattr(value, "text", None)
+    return (text,) if isinstance(text, str) else ()
 
 
 __all__ = [

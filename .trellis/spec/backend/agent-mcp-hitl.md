@@ -11,6 +11,11 @@ node execution but cannot override tenant, run, approval, or artifact rows.
 - MCP exposes exactly five strict stdio tools. Signed execution context, membership,
   capability, current execution, document version, artifact, and approval are reloaded
   server-side before effects.
+- A cancelled `search_document` marks its execution immediately retryable. `started_at` is the
+  retrieval lease version: stale takeover advances it, and evidence freeze or terminal writes
+  must fence on the expected value so an older retrieval cannot overwrite the current attempt.
+- Worker MCP error handling searches both text and structured protocol error payloads for the
+  allowlisted retryable codes; payload container shape must not change retry classification.
 - Publication requires an active owner and one unexpired exact-target approval bound to
   operation, artifact, document version, and fingerprint. Replay is idempotent.
 - Agent events contain allowlisted public payloads only. Prompt, document, model/tool

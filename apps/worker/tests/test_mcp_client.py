@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from types import SimpleNamespace
 from typing import Any
 from uuid import uuid4
 
@@ -255,6 +256,35 @@ async def test_mcp_client_preserves_known_retryable_tool_errors() -> None:
         await client.search_document(context_token="secret-context", request=request)
 
     assert exc_info.value.retryable is True
+
+
+@pytest.mark.asyncio
+async def test_mcp_client_finds_retryable_codes_across_protocol_error_shapes() -> None:
+    request = SearchDocumentInput(idempotency_key="search-1", query="payment")
+    results = (
+        SimpleNamespace(
+            isError=True,
+            content=(
+                TextContent(
+                    type="text",
+                    text="Error executing tool search_document: tool_execution_in_progress",
+                ),
+            ),
+        ),
+        SimpleNamespace(
+            isError=True,
+            content=(),
+            structuredContent={"error": {"code": "tool_execution_in_progress"}},
+        ),
+    )
+
+    for result in results:
+        client = _client(FakeTransport(None), FakeSession(result))
+
+        with pytest.raises(McpToolRetryableError) as exc_info:
+            await client.search_document(context_token="secret-context", request=request)
+
+        assert exc_info.value.retryable is True
 
 
 @pytest.mark.asyncio

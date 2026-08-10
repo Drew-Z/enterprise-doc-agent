@@ -62,5 +62,20 @@ The explicit model refusal path is required even if retrieval thresholds are lat
 4. If bounded targets pass, execute all 40 cases and repeat as the cost/time budget permits.
 5. Seal each new report under a v2-specific path and leave v1 evidence unchanged.
 
+## MCP Timeout Recovery
+
+The third targeted staging repeat exposed a Worker-side MCP timeout while
+`search_document` was still retrieving. Cancellation must mark the current tool execution as
+interrupted so the same idempotency key can retry immediately instead of waiting for the normal
+stale threshold. `ToolExecution.started_at` is also the retrieval lease version: stale takeover
+advances it, and freeze/fail/deny/cancellation writes compare the expected value under row lock.
+An older retrieval may finish after takeover, but it cannot freeze evidence or change the new
+attempt's terminal state.
+
+If a stale execution has no frozen summary or evidence, the new lease reruns retrieval. If a
+completed summary exists, recovery replays/finalizes it without another retrieval. The Worker
+classifies known retryable MCP codes from text or structured protocol error payloads so transport
+serialization differences cannot turn `tool_execution_in_progress` into a permanent job failure.
+
 Rollback uses the previous container digest and behavior version. No database schema migration is
 required. New v2 evaluation files can remain as historical inputs even if runtime code rolls back.

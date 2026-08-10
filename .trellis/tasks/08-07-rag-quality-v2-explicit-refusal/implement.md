@@ -14,11 +14,14 @@
 - [x] Add grounding and graph tests for model refusal after accepted retrieval; confirm red.
 - [x] Implement grounding union return and conditional graph route; confirm green.
 - [x] Bump graph/prompt/tool behavior defaults and update affected compatibility assertions.
-- [ ] Run focused core, worker, API, and integration tests.
+- [x] Run focused core, worker, API, and integration tests.
 - [x] Run Ruff, mypy, secret scan, report seal verification, and the non-integration suite.
 - [x] Inspect and record sanitized stock-price retrieval diagnostics.
 - [ ] Build/push/deploy the staging image and verify rollout/health.
 - [ ] Run the four remediation cases three times each into new v2 evidence.
+- [x] Preserve the first two passing repeats and the third repeat's real MCP timeout failure.
+- [x] Add regression coverage and repair immediate search cancellation retry, stale lease fencing,
+      and retryable MCP error classification.
 - [ ] On success, run the 12-case v2 trial and the 40-case full suite.
 - [ ] Review reports, update task/gate records truthfully, validate Trellis, commit, and push.
 

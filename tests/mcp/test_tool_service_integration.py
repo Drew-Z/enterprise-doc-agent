@@ -27,6 +27,7 @@ from enterprise_doc_core.agents import (
     ToolApprovalError,
     ToolCapability,
     ToolExecution,
+    ToolExecutionInProgress,
     ToolObjectStoreUnavailable,
     ToolPolicyNotFound,
 )
@@ -71,6 +72,46 @@ class FixedRetrieval:
         assert tenant_id == self.candidate.tenant_id
         assert document_version_id == self.candidate.document_version_id
         assert query
+        return RetrievalDecision(True, (self.candidate,))
+
+
+class CancelOnceRetrieval(FixedRetrieval):
+    async def retrieve(
+        self,
+        *,
+        tenant_id: UUID,
+        document_version_id: UUID,
+        query: str,
+    ) -> RetrievalDecision:
+        self.calls += 1
+        assert tenant_id == self.candidate.tenant_id
+        assert document_version_id == self.candidate.document_version_id
+        assert query
+        if self.calls == 1:
+            raise asyncio.CancelledError()
+        return RetrievalDecision(True, (self.candidate,))
+
+
+class BlockFirstRetrieval(FixedRetrieval):
+    def __init__(self, candidate: RetrievalCandidate) -> None:
+        super().__init__(candidate)
+        self.started = asyncio.Event()
+        self.release = asyncio.Event()
+
+    async def retrieve(
+        self,
+        *,
+        tenant_id: UUID,
+        document_version_id: UUID,
+        query: str,
+    ) -> RetrievalDecision:
+        self.calls += 1
+        assert tenant_id == self.candidate.tenant_id
+        assert document_version_id == self.candidate.document_version_id
+        assert query
+        if self.calls == 1:
+            self.started.set()
+            await self.release.wait()
         return RetrievalDecision(True, (self.candidate,))
 
 
@@ -365,6 +406,100 @@ async def test_tool_service_freezes_evidence_and_replays_artifact_reads() -> Non
         )
         assert replayed_download.replayed is True
     finally:
+        await engine.dispose()
+
+
+async def test_search_document_retries_immediately_after_retrieval_cancellation() -> None:
+    engine = create_database_engine(DatabaseSettings())
+    session_factory = create_session_factory(engine)
+    context_seed = await _seed_agent_context(session_factory)
+    run_result, execution_id, candidate, _ = await _seed_running_tool_run(
+        session_factory,
+        context_seed,
+        idempotency_key=f"search-cancel-run-{uuid4().hex}",
+    )
+    context = _context(
+        tenant_id=context_seed.tenant_id,
+        actor_id=context_seed.actor_id,
+        run_id=run_result.run_id,
+        execution_id=execution_id,
+        document_version_id=context_seed.document_version_id,
+    )
+    retrieval = CancelOnceRetrieval(candidate)
+    service = AgentToolService(
+        session_factory=session_factory,
+        retrieval_service=retrieval,
+        stale_execution_seconds=30,
+    )
+    request = SearchDocumentInput(
+        idempotency_key="search-cancel-retry",
+        query="payment terms",
+    )
+    try:
+        with pytest.raises(asyncio.CancelledError):
+            await service.search_document(context, request)
+
+        searched = await service.search_document(context, request)
+
+        assert searched.accepted is True
+        assert searched.replayed is False
+        assert retrieval.calls == 2
+        async with session_factory() as session:
+            execution = await session.scalar(
+                select(ToolExecution).where(
+                    ToolExecution.tenant_id == context_seed.tenant_id,
+                    ToolExecution.idempotency_key == request.idempotency_key,
+                )
+            )
+            assert execution is not None
+            assert execution.status == "succeeded"
+            assert execution.error_code is None
+    finally:
+        await engine.dispose()
+
+
+async def test_stale_search_lease_fences_old_retrieval_writer() -> None:
+    engine = create_database_engine(DatabaseSettings())
+    session_factory = create_session_factory(engine)
+    context_seed = await _seed_agent_context(session_factory)
+    current = [datetime.now(UTC)]
+    run_result, execution_id, candidate, _ = await _seed_running_tool_run(
+        session_factory,
+        context_seed,
+        idempotency_key=f"search-lease-run-{uuid4().hex}",
+    )
+    context = _context(
+        tenant_id=context_seed.tenant_id,
+        actor_id=context_seed.actor_id,
+        run_id=run_result.run_id,
+        execution_id=execution_id,
+        document_version_id=context_seed.document_version_id,
+    )
+    retrieval = BlockFirstRetrieval(candidate)
+    service = AgentToolService(
+        session_factory=session_factory,
+        retrieval_service=retrieval,
+        clock=lambda: current[0],
+        stale_execution_seconds=1,
+    )
+    request = SearchDocumentInput(idempotency_key="search-lease-retry", query="payment terms")
+    first_task = asyncio.create_task(service.search_document(context, request))
+    try:
+        await retrieval.started.wait()
+        current[0] += timedelta(seconds=2)
+
+        second = await service.search_document(context, request)
+
+        assert second.accepted is True
+        assert second.replayed is False
+        assert retrieval.calls == 2
+        retrieval.release.set()
+        with pytest.raises(ToolExecutionInProgress):
+            await first_task
+    finally:
+        retrieval.release.set()
+        if not first_task.done():
+            await first_task
         await engine.dispose()
 
 
