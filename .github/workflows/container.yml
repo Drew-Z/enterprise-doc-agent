@@ -2,6 +2,26 @@ name: Container Supply Chain
 
 on:
   pull_request:
+    paths:
+      - ".github/workflows/container.yml"
+      - ".dockerignore"
+      - ".node-version"
+      - ".python-version"
+      - "Dockerfile*"
+      - "infra/docker/**"
+      - "infra/compose/**"
+      - "apps/**"
+      - "packages/**"
+      - "scripts/build_release_manifest.py"
+      - "scripts/sanitize_deployment_evidence.py"
+      - "scripts/validate_buildkit_provenance.py"
+      - "tests/deployment/**"
+      - "tests/foundation/test_ci_contract.py"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
   push:
     tags: ["v*.*.*"]
   workflow_dispatch:

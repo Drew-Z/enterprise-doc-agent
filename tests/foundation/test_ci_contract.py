@@ -7,6 +7,8 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = ROOT / ".github" / "workflows" / "quality.yml"
+HEAVY_WORKFLOW = ROOT / ".github" / "workflows" / "quality-heavy.yml"
+CONTAINER_WORKFLOW = ROOT / ".github" / "workflows" / "container.yml"
 
 BACKEND_COMMANDS = [
     "uv run ruff format --check .",
@@ -22,8 +24,8 @@ FRONTEND_COMMANDS = [
 ]
 
 
-def _workflow() -> dict[str, object]:
-    with WORKFLOW.open(encoding="utf-8") as handle:
+def _workflow(path: Path = WORKFLOW) -> dict[str, object]:
+    with path.open(encoding="utf-8") as handle:
         loaded = yaml.safe_load(handle)
     assert isinstance(loaded, dict)
     return loaded
@@ -34,6 +36,13 @@ def _run_commands(job: object) -> list[str]:
     steps = job.get("steps")
     assert isinstance(steps, list)
     return [str(step["run"]).strip() for step in steps if isinstance(step, dict) and "run" in step]
+
+
+def _triggers(workflow: dict[str, object]) -> dict[str, object]:
+    # PyYAML's YAML 1.1 loader treats the GitHub Actions `on` key as boolean.
+    triggers = workflow.get("on", workflow.get(True))
+    assert isinstance(triggers, dict)
+    return triggers
 
 
 def test_root_quality_commands_cover_backend_frontend_and_smoke() -> None:
@@ -53,11 +62,15 @@ def test_root_quality_commands_cover_backend_frontend_and_smoke() -> None:
     assert set(scripts) >= {"lint", "typecheck", "test", "build", "quality"}
 
 
-def test_quality_workflow_has_locked_independent_jobs() -> None:
+def test_quality_workflow_has_only_fast_jobs() -> None:
     workflow = _workflow()
+    triggers = _triggers(workflow)
+    assert set(triggers) == {"pull_request", "push"}
+    assert "**/*.md" in triggers["pull_request"]["paths-ignore"]
+    assert ".trellis/tasks/**/*.jsonl" in triggers["push"]["paths-ignore"]
     jobs = workflow.get("jobs")
     assert isinstance(jobs, dict)
-    assert set(jobs) >= {"backend", "frontend", "m1-integration", "m4-integration", "web-e2e"}
+    assert set(jobs) == {"backend", "frontend"}
 
     backend_commands = _run_commands(jobs["backend"])
     frontend_commands = _run_commands(jobs["frontend"])
@@ -68,6 +81,14 @@ def test_quality_workflow_has_locked_independent_jobs() -> None:
         assert command in backend_commands
     for command in FRONTEND_COMMANDS:
         assert command in frontend_commands
+
+
+def test_manual_heavy_quality_preserves_integration_and_e2e_evidence() -> None:
+    workflow = _workflow(HEAVY_WORKFLOW)
+    assert _triggers(workflow) == {"workflow_dispatch": None}
+    jobs = workflow.get("jobs")
+    assert isinstance(jobs, dict)
+    assert set(jobs) == {"m1-integration", "m4-integration", "web-e2e"}
 
     integration_commands = _run_commands(jobs["m1-integration"])
     assert "uv sync --frozen" in integration_commands
@@ -120,8 +141,30 @@ def test_quality_workflow_has_locked_independent_jobs() -> None:
     assert evidence["with"]["path"] == "apps/web/test-results"
 
 
+def test_container_pull_requests_are_path_filtered() -> None:
+    workflow = _workflow(CONTAINER_WORKFLOW)
+    triggers = _triggers(workflow)
+    pull_request = triggers.get("pull_request")
+    assert isinstance(pull_request, dict)
+    paths = set(pull_request["paths"])
+    assert {
+        ".github/workflows/container.yml",
+        "infra/docker/**",
+        "apps/**",
+        "packages/**",
+        "tests/deployment/**",
+        "uv.lock",
+        "pnpm-lock.yaml",
+    } <= paths
+    assert triggers["push"] == {"tags": ["v*.*.*"]}
+    assert "workflow_dispatch" in triggers
+
+
 def test_quality_workflow_has_no_allow_failure_or_retry_path() -> None:
-    text = WORKFLOW.read_text(encoding="utf-8").lower()
+    text = "\n".join(
+        path.read_text(encoding="utf-8").lower()
+        for path in (WORKFLOW, HEAVY_WORKFLOW, CONTAINER_WORKFLOW)
+    )
     forbidden = [
         "continue-on-error",
         "|| true",
