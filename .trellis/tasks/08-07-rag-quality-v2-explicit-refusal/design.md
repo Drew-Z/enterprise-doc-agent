@@ -107,8 +107,24 @@ document ingestion failed when the configured embedding provider returned HTTP 4
 therefore continued polling `ready-document-versions` until timeout and correctly produced no
 quality report for an evaluation that never reached the Agent cases.
 
-The remediation gate is now operationally blocked on embedding availability, not on a measured
-RAG quality regression. Restore provider quota or deploy an approved replacement endpoint with
-the same 1024-dimensional contract, verify one real embedding request, and then resume with a
-fresh targeted repeat. Failed ingestion attempts and transport diagnostics must not be relabeled
-as quality reports.
+Embedding quota was restored and a real probe returned 1024 dimensions. Targeted repeat 10 then
+passed all four cases. Repeat 11 is retained as a failed `mcp_client_timeout` report. Repeat 12
+did not produce a report: one uploaded document exhausted the default three ingestion job
+attempts while the provider alternated between successful calls, timeouts, and an HTTP 500.
+
+## Ingestion Failure Retry Budget
+
+Embedding request retries remain owned by `EmbeddingSettings.max_retries`; they bound retries
+inside one provider call. `EmbeddingSettings.ingestion_max_attempts` separately owns the durable
+`document.ingest` job budget. The default stays three and staging uses five. Upload completion and
+embedding reindex both pass this value to `create_job_records`, so a transient route does not get
+different durability depending on how ingestion started.
+
+Increasing the job budget does not make deterministic parse, authorization, configuration, or
+dimension failures retryable. The existing Worker classifier and Job runtime still decide the
+retry disposition and exponential backoff. The change only gives already-retryable ingestion
+failures two additional staging attempts before the job becomes dead.
+
+The remediation gate remains open until this setting is deployed and three consecutive targeted
+reports pass. Failed ingestion attempts and transport diagnostics must not be relabeled as quality
+reports.

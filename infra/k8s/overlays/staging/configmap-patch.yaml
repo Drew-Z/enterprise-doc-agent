@@ -26,6 +26,7 @@ data:
   EMBEDDING__BATCH_SIZE: "8"
   EMBEDDING__TIMEOUT_SECONDS: "20"
   EMBEDDING__MAX_RETRIES: "2"
+  EMBEDDING__INGESTION_MAX_ATTEMPTS: "5"
   EMBEDDING__SEND_DIMENSIONS: "true"
   EMBEDDING__QUERY_INSTRUCTION: >-
     Given a user question about enterprise documents, retrieve relevant passages that answer the question

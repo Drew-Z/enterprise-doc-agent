@@ -229,6 +229,7 @@ class EmbeddingSettings(BaseModel):
     batch_size: int = Field(default=8, ge=1, le=128)
     timeout_seconds: float = Field(default=20.0, gt=0, le=300)
     max_retries: int = Field(default=2, ge=0, le=5)
+    ingestion_max_attempts: int = Field(default=3, ge=1, le=100)
     retry_base_seconds: float = Field(default=1.5, gt=0, le=30)
     send_dimensions: bool = True
     query_instruction: str = Field(

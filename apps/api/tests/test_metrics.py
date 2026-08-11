@@ -4,7 +4,7 @@ from httpx import ASGITransport, AsyncClient
 
 from enterprise_doc_api.app import create_app
 from enterprise_doc_api.config import ApiSettings
-from enterprise_doc_core.config import AgentSettings
+from enterprise_doc_core.config import AgentSettings, EmbeddingSettings
 from enterprise_doc_core.telemetry import MetricsRuntime
 
 
@@ -42,3 +42,10 @@ def test_api_default_agent_services_share_the_execution_retry_budget() -> None:
 
     assert app.state.agent_run_service.agent_settings.execution_max_attempts == 5
     assert app.state.approval_service.resume_max_attempts == 5
+
+
+def test_api_default_upload_service_uses_embedding_ingestion_retry_budget() -> None:
+    settings = ApiSettings(embedding=EmbeddingSettings(ingestion_max_attempts=5))
+    app = create_app(settings=settings)
+
+    assert app.state.upload_session_service.ingestion_max_attempts == 5

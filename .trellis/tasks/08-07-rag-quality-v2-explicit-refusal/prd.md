@@ -32,6 +32,9 @@ evidence while producing independently versioned v2 inputs and reports.
 - Keep the Agent execution retry budget explicit and bounded. Initial executions and
   approval resumes must use the same configured value; staging may raise the default
   three attempts to five for observed transient provider failures.
+- Keep the document-ingestion job retry budget explicit and bounded. Initial upload and
+  embedding reindex jobs must use the same configured value; staging may raise the default
+  three attempts to five when a real embedding route is intermittently slow or returns 5xx.
 - Reports must remain secret-safe and omit raw answers, document text, URLs, credentials,
   runtime UUIDs, and provider response bodies.
 
@@ -68,6 +71,11 @@ evidence while producing independently versioned v2 inputs and reports.
    Input: a configured execution-attempt limit.
    Outcome: initial and resumed Agent jobs persist the same bounded retry limit.
    Mock boundary: database-backed job creation only; provider retries remain real in staging.
+7. Document-ingestion retry budget.
+   Public interface: `EmbeddingSettings`, `UploadSessionService`, and `enqueue_reindex`.
+   Input: a configured ingestion-attempt limit.
+   Outcome: initial upload and embedding reindex jobs persist the same bounded retry limit.
+   Mock boundary: database-backed job creation; embedding calls remain real in staging.
 
 ## Acceptance Criteria
 
@@ -84,6 +92,8 @@ evidence while producing independently versioned v2 inputs and reports.
       a new v2 remediation report.
 - [ ] Passing and failed remediation repeats remain immutable, including transient provider
       failures, and the bounded staging retry budget is covered by job and app-wiring tests.
+- [ ] Initial upload and reindex ingestion jobs share a bounded retry budget, with default and
+      staging values covered by settings, wiring, database, and deployment tests.
 - [ ] If the targeted gate passes, the 12-case bounded v2 trial and then the full 40-case v2
       suite are executed without overwriting prior evidence.
 - [ ] M5/M7 remain open unless all of their independent evidence requirements are genuinely
@@ -103,3 +113,7 @@ evidence while producing independently versioned v2 inputs and reports.
   ingestion when the configured embedding endpoint returned HTTP 402. The 12-case and 40-case
   gates remain blocked until embedding service is restored and three consecutive targeted
   reports pass.
+- After quota recovery, repeat 10 passed, repeat 11 preserved a real `mcp_client_timeout`, and
+  repeat 12 produced no report after one document exhausted three ingestion attempts across
+  embedding timeouts/5xx. The ingestion retry budget is therefore raised to five in staging
+  before targeted evaluation resumes.

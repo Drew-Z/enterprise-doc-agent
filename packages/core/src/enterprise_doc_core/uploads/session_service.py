@@ -240,13 +240,17 @@ class UploadSessionService:
         object_store: MultipartObjectStore,
         documents_bucket: str,
         settings: UploadSettings | None = None,
+        ingestion_max_attempts: int = 3,
         clock: Callable[[], datetime] | None = None,
         checksum_mode: ObjectStoreChecksumMode = ObjectStoreChecksumMode.NATIVE_SHA256,
     ) -> None:
+        if not 1 <= ingestion_max_attempts <= 100:
+            raise ValueError("ingestion_max_attempts must be between 1 and 100")
         self.session_factory = session_factory
         self.object_store = object_store
         self.documents_bucket = documents_bucket
         self.settings = settings if settings is not None else UploadSettings()
+        self.ingestion_max_attempts = ingestion_max_attempts
         self.clock = clock if clock is not None else _utc_now
         self.checksum_mode = checksum_mode
 
@@ -1134,6 +1138,7 @@ class UploadSessionService:
                         idempotency_key=f"document-version:{version.id}",
                         payload={"document_version_id": str(version.id)},
                         document_version_id=version.id,
+                        max_attempts=self.ingestion_max_attempts,
                         request_id=None,
                         correlation_id=None,
                         outbox_event_type="document.ingest.requested",

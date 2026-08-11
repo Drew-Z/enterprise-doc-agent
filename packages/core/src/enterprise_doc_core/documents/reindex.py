@@ -74,6 +74,7 @@ async def enqueue_reindex(
                         idempotency_key=(f"embedding-v{settings.embedding.version}:{version.id}"),
                         payload={"document_version_id": str(version.id)},
                         document_version_id=version.id,
+                        max_attempts=settings.embedding.ingestion_max_attempts,
                         outbox_event_type="document.ingest.requested",
                     )
                     if result.replayed:

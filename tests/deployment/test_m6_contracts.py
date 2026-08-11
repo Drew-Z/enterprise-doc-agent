@@ -579,6 +579,7 @@ def test_tiny_single_node_overlay_renders_with_a_bounded_k3s_runtime() -> None:
     assert config["data"]["OBJECT_STORE__CONNECT_TIMEOUT_SECONDS"] == "15"
     assert config["data"]["AGENT__CHECKPOINT_TIMEOUT_SECONDS"] == "60"
     assert config["data"]["AGENT__EXECUTION_MAX_ATTEMPTS"] == "5"
+    assert config["data"]["EMBEDDING__INGESTION_MAX_ATTEMPTS"] == "5"
     assert str(config["data"]["OBJECT_STORE__ENDPOINT"]).startswith("https://")
     assert config["data"]["MODEL__PROVIDER"] == "openai_compatible"
     assert str(config["data"]["MODEL__BASE_URL"]).endswith("/v1")

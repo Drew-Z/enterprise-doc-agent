@@ -1,0 +1,209 @@
+{
+  "behavior_versions": [
+    {
+      "graph": "m4.v2",
+      "prompt": "m4.v2",
+      "tool_schema": "m4.v2"
+    }
+  ],
+  "cases": [
+    {
+      "answer_char_count": 2,
+      "answer_sha256": "e629fa6598d732768f7c726b4b621285f9c3b85303900aa912017db7617d8bdb",
+      "case_id": "fact-employee-vacation",
+      "category": "fact",
+      "duration_ms": 63594.00000004098,
+      "forbidden_fact_ids": [],
+      "matched_anchor_ids": [
+        "emp.vacation"
+      ],
+      "matched_fact_ids": [
+        "vacation-days"
+      ],
+      "metrics": {
+        "citation_precision": 1.0,
+        "citation_recall": 1.0,
+        "closed_label_fact_precision": 1.0,
+        "fact_recall": 1.0,
+        "grounded_fact_rate": 1.0,
+        "refusal_reason_correct": null
+      },
+      "outcome_code": null,
+      "passed": true,
+      "query_sha256": "c2a252b91d2a6b7705cf76bb7c2a7ead687a3ff0d33c7893491ecdf5d16aa490",
+      "terminal_status": "succeeded"
+    },
+    {
+      "answer_char_count": 7,
+      "answer_sha256": "ffd7280513ce285e6d9dc8d0b7078c4f39c8fe0e69b0d0a87d8af2965e445d7a",
+      "case_id": "fact-retention-customer",
+      "category": "fact",
+      "duration_ms": 55765.00000001397,
+      "forbidden_fact_ids": [],
+      "matched_anchor_ids": [
+        "ret.customer"
+      ],
+      "matched_fact_ids": [
+        "customer-retention"
+      ],
+      "metrics": {
+        "citation_precision": 1.0,
+        "citation_recall": 1.0,
+        "closed_label_fact_precision": 1.0,
+        "fact_recall": 1.0,
+        "grounded_fact_rate": 1.0,
+        "refusal_reason_correct": null
+      },
+      "outcome_code": null,
+      "passed": true,
+      "query_sha256": "795d8990c11eb4eba6ba3865c49a1e2981379970f84ff8137c046c7f0712f59c",
+      "terminal_status": "succeeded"
+    },
+    {
+      "answer_char_count": 127,
+      "answer_sha256": "178c26c885d3380a2605868765f7903a254f1501e5464eda4c97c30ab0bd1adb",
+      "case_id": "hard-support-objectives",
+      "category": "hard_negative",
+      "duration_ms": 168780.99999995902,
+      "forbidden_fact_ids": [],
+      "matched_anchor_ids": [
+        "support.rto",
+        "support.rpo"
+      ],
+      "matched_fact_ids": [
+        "api-rto",
+        "api-rpo"
+      ],
+      "metrics": {
+        "citation_precision": 1.0,
+        "citation_recall": 1.0,
+        "closed_label_fact_precision": 1.0,
+        "fact_recall": 1.0,
+        "grounded_fact_rate": 1.0,
+        "refusal_reason_correct": null
+      },
+      "outcome_code": null,
+      "passed": true,
+      "query_sha256": "986d8aa7dd04e8b2b7ee7d3ec0ea47e63ea7ad5774231ea9763e06667133c6a3",
+      "terminal_status": "succeeded"
+    },
+    {
+      "answer_char_count": null,
+      "answer_sha256": null,
+      "case_id": "refuse-contract-stock-price",
+      "category": "refusal",
+      "duration_ms": 187500.0,
+      "forbidden_fact_ids": [],
+      "matched_anchor_ids": [],
+      "matched_fact_ids": [],
+      "metrics": {
+        "citation_precision": 1.0,
+        "citation_recall": 1.0,
+        "closed_label_fact_precision": null,
+        "fact_recall": null,
+        "grounded_fact_rate": 0.0,
+        "refusal_reason_correct": false
+      },
+      "outcome_code": "mcp_client_timeout",
+      "passed": false,
+      "query_sha256": "0c381672eb9fac25f6d5fff05191901afe69ff9e1f2a8196c7ef1300ac8bff8a",
+      "terminal_status": "failed"
+    }
+  ],
+  "completed_at": "2026-08-11T06:41:03.739257+00:00",
+  "corpus_sha256": "c6887a0ca112cd62499c9d61d5caa9d87e94a4ba6c8770293f9f3a8c6cf54e36",
+  "cost_metadata": {
+    "limitation": "The current staging status and artifact APIs do not expose provider token usage or billing data.",
+    "source": "not_available"
+  },
+  "coverage": "bounded_sample",
+  "dataset_sha256": "145df783dba7ee1c533a59de288bb1a9aff6ba3c0bdff7e4617a366dca1a9f5b",
+  "dataset_version": "enterprise-rag-quality-v2",
+  "errors_by_code": {
+    "mcp_client_timeout": 1
+  },
+  "latency_ms": {
+    "max_ms": 187500.0,
+    "min_ms": 55765.00000001397,
+    "p50_ms": 63594.00000004098,
+    "p95_ms": 187500.0,
+    "p99_ms": 187500.0,
+    "sample_count": 4
+  },
+  "limitations": [
+    "The corpus is synthetic and does not contain customer or personal data.",
+    "Closed-label fact precision detects only listed contradictory values and cannot validate arbitrary free-form claims.",
+    "Deterministic string matching and citation anchors do not replace human semantic review.",
+    "This is a bounded sample and does not represent the complete 40-case suite.",
+    "One execution does not establish repeatability across provider runs.",
+    "Human semantic review remains outstanding."
+  ],
+  "measured": {
+    "citation_precision": 1.0,
+    "citation_recall": 1.0,
+    "closed_label_fact_precision": 1.0,
+    "fact_recall": 1.0,
+    "grounded_fact_rate": 1.0,
+    "refusal_precision": null,
+    "refusal_reason_accuracy": 0.0,
+    "refusal_recall": 0.0
+  },
+  "provenance": {
+    "command": [
+      "python",
+      "scripts/evaluate_staging_rag_quality.py",
+      "--dataset",
+      "<dataset>",
+      "--base-url",
+      "<staging-base-url>",
+      "--allowed-host",
+      "<control-plane-host>",
+      "--allowed-object-store-host",
+      "<object-store-host>",
+      "--case-id",
+      "<case-id>",
+      "--case-id",
+      "<case-id>",
+      "--case-id",
+      "<case-id>",
+      "--case-id",
+      "<case-id>",
+      "--report-path",
+      "<report-path>"
+    ],
+    "commit_sha": "77b798e3831dbbdc9464200f317a6bb59cb1acd1",
+    "environment": {
+      "architecture": "AMD64",
+      "execution_scope": "authenticated-staging-real-provider-quality",
+      "operating_system": "Windows-11-10.0.26200-SP0",
+      "python": "3.12.13"
+    },
+    "input_sha256": "2f57295ce045ac20a500d69180a0f0811cc56abc4f236b84d4df191058753b97",
+    "payload_sha256": "9e52450be3af7511791cc8c597470185febbdc790bd414b14ef25612a1991119",
+    "working_tree_dirty": true
+  },
+  "provider_routes": [
+    {
+      "model_name": "grok-4.5",
+      "model_version": null,
+      "provider": "openai_compatible"
+    }
+  ],
+  "schema_version": 1,
+  "selected_case_count": 4,
+  "started_at": "2026-08-11T06:31:27.681559+00:00",
+  "status": "failed",
+  "suite": "staging-real-provider-rag-quality",
+  "targets": {
+    "citation_precision": 0.95,
+    "citation_recall": 0.9,
+    "closed_label_fact_precision": 0.95,
+    "fact_recall": 0.9,
+    "grounded_fact_rate": 0.9,
+    "refusal_precision": 1.0,
+    "refusal_reason_accuracy": 1.0,
+    "refusal_recall": 1.0
+  },
+  "total_case_count": 40,
+  "trial_only": false
+}

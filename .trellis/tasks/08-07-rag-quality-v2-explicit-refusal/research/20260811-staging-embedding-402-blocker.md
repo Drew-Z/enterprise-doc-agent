@@ -49,3 +49,18 @@ must not be counted as either a passing or failed quality repeat.
 The two local transport-failure logs were retained outside the repository for diagnosis. They
 contain no quality report and are not committed as M5 evidence. Existing repeat reports remain
 unchanged, including all real provider and MCP failures.
+
+## Recovery Outcome
+
+The embedding route was restored and a direct staging probe returned HTTP 200 with the configured
+1024 dimensions. Repeat 10 then passed all four targeted cases and produced a valid sealed report.
+Repeat 11 produced a valid failed report for `mcp_client_timeout` on the refusal case.
+
+The following targeted attempt uploaded new documents but did not reach the Agent cases. Consumer
+logs showed successful embedding calls interleaved with request timeouts and one HTTP 500. One
+document exhausted the default three durable ingestion attempts, so the evaluator timed out while
+polling readiness and correctly produced no report.
+
+The remediation adds `EmbeddingSettings.ingestion_max_attempts`, keeps the default at three, and
+sets staging to five. Both upload completion and embedding reindex use the same value. This is
+separate from the bounded retries performed inside one provider request.

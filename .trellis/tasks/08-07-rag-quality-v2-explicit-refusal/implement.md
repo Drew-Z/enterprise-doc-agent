@@ -28,8 +28,15 @@
 - [x] Preserve targeted repeat 9 as a passing, seal-valid report.
 - [x] Diagnose the next attempt's ingestion timeout as an embedding-provider HTTP 402 blocker;
       record that no quality report was produced.
-- [ ] Restore or replace the real embedding route, verify the 1024-dimensional contract, and
-      resume targeted repeats until three consecutive reports pass.
+- [x] Restore the real embedding route and verify a successful 1024-dimensional request.
+- [x] Preserve repeat 10 as passing and repeat 11 as a real MCP timeout failure; record that
+      repeat 12 never reached the Agent cases after ingestion exhausted its retry budget.
+- [x] Add a bounded ingestion job retry setting, apply it to upload and reindex jobs, and set
+      staging to five attempts.
+- [x] Cover settings, API wiring, upload Job persistence, reindex Job creation, and staging
+      deployment configuration; rerun Ruff, mypy, non-integration, and integration suites.
+- [ ] Release and deploy the ingestion retry budget, then resume targeted repeats until three
+      consecutive reports pass.
 - [ ] On success, run the 12-case v2 trial and the 40-case full suite.
 - [ ] Review reports, update task/gate records truthfully, validate Trellis, commit, and push.
 

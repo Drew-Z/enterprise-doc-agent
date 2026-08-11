@@ -334,6 +334,7 @@ async def test_real_minio_concurrent_complete_creates_one_uploaded_version() -> 
     settings = ApiSettings(
         _env_file=None,
         upload={"preferred_part_size_bytes": 5 * MIB},
+        embedding={"ingestion_max_attempts": 5},
     )
     engine = create_database_engine(settings.database)
     session_factory = create_session_factory(engine)
@@ -351,6 +352,7 @@ async def test_real_minio_concurrent_complete_creates_one_uploaded_version() -> 
         object_store=object_store,
         documents_bucket=settings.object_store.documents_bucket,
         settings=settings.upload,
+        ingestion_max_attempts=settings.embedding.ingestion_max_attempts,
     )
     content = b"%PDF-1.7\n" + b"slice-six" * 1024
     session_id: UUID | None = None
@@ -485,6 +487,7 @@ async def test_real_minio_concurrent_complete_creates_one_uploaded_version() -> 
             assert len(outbox_events) == 1
             assert len(job_events) == 1
             assert jobs[0].status == "pending"
+            assert jobs[0].max_attempts == 5
             assert outbox_events[0].status == "pending"
             assert outbox_events[0].payload["job_id"] == str(jobs[0].id)
             assert job_events[0].event_type == "job.created"

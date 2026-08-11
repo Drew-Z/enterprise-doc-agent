@@ -245,6 +245,7 @@ def create_app(
             object_store=_required_object_store(business_object_store),
             documents_bucket=resolved_settings.object_store.documents_bucket,
             settings=resolved_settings.upload,
+            ingestion_max_attempts=resolved_settings.embedding.ingestion_max_attempts,
             checksum_mode=resolved_settings.object_store.multipart_checksum_mode,
         )
     )

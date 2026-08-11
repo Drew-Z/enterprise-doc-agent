@@ -30,6 +30,7 @@ def test_nested_environment_values_are_parsed(monkeypatch: pytest.MonkeyPatch) -
     monkeypatch.setenv("UPLOAD__CLEANUP_BATCH_SIZE", "25")
     monkeypatch.setenv("UPLOAD__CLEANUP_CLAIM_TTL_SECONDS", "120")
     monkeypatch.setenv("UPLOAD__CLEANUP_COMPLETING_GRACE_SECONDS", "600")
+    monkeypatch.setenv("EMBEDDING__INGESTION_MAX_ATTEMPTS", "5")
     monkeypatch.setenv("OTEL__ENABLED", "true")
     monkeypatch.setenv("OTEL__SAMPLE_RATIO", "0.25")
     monkeypatch.setenv("EMBEDDING__QUERY_INSTRUCTION", "Retrieve enterprise evidence")
@@ -52,6 +53,7 @@ def test_nested_environment_values_are_parsed(monkeypatch: pytest.MonkeyPatch) -
     assert settings.upload.cleanup_batch_size == 25
     assert settings.upload.cleanup_claim_ttl_seconds == 120
     assert settings.upload.cleanup_completing_grace_seconds == 600
+    assert settings.embedding.ingestion_max_attempts == 5
     assert settings.otel.enabled is True
     assert settings.otel.sample_ratio == 0.25
     assert settings.embedding.query_instruction == "Retrieve enterprise evidence"
