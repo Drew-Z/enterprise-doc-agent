@@ -172,6 +172,7 @@ def test_manual_self_hosted_quality_is_serial_and_secret_free() -> None:
     assert "/opt/enterprise-doc-toolchain/python/bin/python" in text
     assert "/opt/enterprise-doc-toolchain/python/bin/uv" in text
     assert "/opt/enterprise-doc-toolchain/node/bin" in text
+    assert 'PATH="$RUNNER_NODE_BIN:$PATH" $RUNNER_NODE_BIN/pnpm --version' in text
     assert "v24.14.0" in text
     assert "11.9.0" in text
 

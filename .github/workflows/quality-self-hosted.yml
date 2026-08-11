@@ -31,7 +31,7 @@ jobs:
           test "$($RUNNER_PYTHON -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')" = "3.12"
           test "$($RUNNER_UV --version | awk '{print $2}')" = "0.11.3"
           test "$($RUNNER_NODE_BIN/node --version)" = "v24.14.0"
-          test "$($RUNNER_NODE_BIN/pnpm --version)" = "11.9.0"
+          test "$(PATH="$RUNNER_NODE_BIN:$PATH" $RUNNER_NODE_BIN/pnpm --version)" = "11.9.0"
           printf '%s\n' "$(dirname "$RUNNER_UV")" "$RUNNER_NODE_BIN" >> "$GITHUB_PATH"
       - run: uv sync --frozen
       - run: uv run ruff format --check .
