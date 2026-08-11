@@ -96,3 +96,10 @@ evidence while producing independently versioned v2 inputs and reports.
 - The first real trial established that three failed answer cases were semantically correct
   and one unsupported stock-price question incorrectly reached `citation_required`.
 - Real-provider repetition is ordered and bounded to respect the upstream concurrency limit.
+- Release `v0.1.24` is deployed to staging with the Agent execution retry budget set to five.
+  Targeted repeat 9 passed all four cases and its report seal is valid, but it establishes only
+  one consecutive pass because repeat 8 remains an immutable transient provider failure.
+- The next targeted attempt did not produce a report because newly uploaded documents failed
+  ingestion when the configured embedding endpoint returned HTTP 402. The 12-case and 40-case
+  gates remain blocked until embedding service is restored and three consecutive targeted
+  reports pass.

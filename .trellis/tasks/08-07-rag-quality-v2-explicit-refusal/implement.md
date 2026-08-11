@@ -17,7 +17,7 @@
 - [x] Run focused core, worker, API, and integration tests.
 - [x] Run Ruff, mypy, secret scan, report seal verification, and the non-integration suite.
 - [x] Inspect and record sanitized stock-price retrieval diagnostics.
-- [ ] Build/push/deploy the staging image and verify rollout/health.
+- [x] Build/push/deploy release `v0.1.24` and verify rollout/health.
 - [ ] Run the four remediation cases three times each into new v2 evidence.
 - [x] Preserve the first two passing repeats and the third repeat's real MCP timeout failure.
 - [x] Add regression coverage and repair immediate search cancellation retry, stale lease fencing,
@@ -25,6 +25,11 @@
 - [x] Preserve targeted repeats four through eight, including both transient provider failures.
 - [x] Add a bounded Agent execution retry setting and apply it consistently to initial and
       approval-resume jobs; set the staging budget to five.
+- [x] Preserve targeted repeat 9 as a passing, seal-valid report.
+- [x] Diagnose the next attempt's ingestion timeout as an embedding-provider HTTP 402 blocker;
+      record that no quality report was produced.
+- [ ] Restore or replace the real embedding route, verify the 1024-dimensional contract, and
+      resume targeted repeats until three consecutive reports pass.
 - [ ] On success, run the 12-case v2 trial and the 40-case full suite.
 - [ ] Review reports, update task/gate records truthfully, validate Trellis, commit, and push.
 

@@ -92,3 +92,23 @@ the budget does not convert an exhausted provider failure into success or hide i
 
 Rollback uses the previous container digest and behavior version. No database schema migration is
 required. New v2 evaluation files can remain as historical inputs even if runtime code rolls back.
+
+## Current Staging Gate
+
+Release `v0.1.24` passed the container supply-chain workflow and deployed successfully. Staging
+reported two ready API replicas plus ready Worker, Consumer, and Web workloads with no restarts.
+The runtime uses `Qwen/Qwen3-Embedding-4B` at 1024 dimensions and an Agent execution retry budget
+of five.
+
+Targeted repeat 9 passed all four remediation cases and its payload seal verifies. It is the first
+pass in the current consecutive sequence because repeat 8 remains a preserved
+`model_server_error` failure. The subsequent attempt uploaded new corpus objects, but every new
+document ingestion failed when the configured embedding provider returned HTTP 402. The evaluator
+therefore continued polling `ready-document-versions` until timeout and correctly produced no
+quality report for an evaluation that never reached the Agent cases.
+
+The remediation gate is now operationally blocked on embedding availability, not on a measured
+RAG quality regression. Restore provider quota or deploy an approved replacement endpoint with
+the same 1024-dimensional contract, verify one real embedding request, and then resume with a
+fresh targeted repeat. Failed ingestion attempts and transport diagnostics must not be relabeled
+as quality reports.
