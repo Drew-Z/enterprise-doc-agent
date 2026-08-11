@@ -61,6 +61,10 @@
   installed on the private K3s node; GitHub-hosted runners cannot reach the private
   Kubernetes API. Build and automatic quality jobs remain on GitHub-hosted runners;
   the full integration/evidence workflow is a separately dispatched GitHub-hosted job.
+  `quality-self-hosted.yml` is a manual, serial fallback for account-level hosted-runner
+  outages. It runs the same fast backend/frontend commands on the fixed runner without
+  Kubernetes commands, deployment environments, repository secrets, or Actions caches.
+  It is fallback evidence and does not replace the automatic GitHub-hosted Quality gate.
 - Release CI aggregates all four immutable image results into one strict manifest.
   The administrator preflight validates Secret structure and TLS SAN; the scoped
   staging workflow validates the exact Kubernetes context and registry prefix, performs

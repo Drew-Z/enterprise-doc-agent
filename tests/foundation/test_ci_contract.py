@@ -8,6 +8,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = ROOT / ".github" / "workflows" / "quality.yml"
 HEAVY_WORKFLOW = ROOT / ".github" / "workflows" / "quality-heavy.yml"
+SELF_HOSTED_WORKFLOW = ROOT / ".github" / "workflows" / "quality-self-hosted.yml"
 CONTAINER_WORKFLOW = ROOT / ".github" / "workflows" / "container.yml"
 
 BACKEND_COMMANDS = [
@@ -141,6 +142,32 @@ def test_manual_heavy_quality_preserves_integration_and_e2e_evidence() -> None:
     assert evidence["with"]["path"] == "apps/web/test-results"
 
 
+def test_manual_self_hosted_quality_is_serial_and_secret_free() -> None:
+    workflow = _workflow(SELF_HOSTED_WORKFLOW)
+    assert _triggers(workflow) == {"workflow_dispatch": None}
+    assert workflow["permissions"] == {"contents": "read"}
+    jobs = workflow.get("jobs")
+    assert isinstance(jobs, dict)
+    assert set(jobs) == {"quality"}
+    quality = jobs["quality"]
+    assert isinstance(quality, dict)
+    assert quality["runs-on"] == [
+        "self-hosted",
+        "linux",
+        "x64",
+        "enterprise-doc-staging",
+    ]
+    commands = _run_commands(quality)
+    assert "uv sync --frozen" in commands
+    assert "pnpm install --frozen-lockfile" in commands
+    for command in BACKEND_COMMANDS + FRONTEND_COMMANDS:
+        assert command in commands
+    assert not any("kubectl" in command or "docker compose" in command for command in commands)
+    text = SELF_HOSTED_WORKFLOW.read_text(encoding="utf-8")
+    assert "secrets." not in text
+    assert "enable-cache: false" in text
+
+
 def test_container_pull_requests_are_path_filtered() -> None:
     workflow = _workflow(CONTAINER_WORKFLOW)
     triggers = _triggers(workflow)
@@ -163,7 +190,7 @@ def test_container_pull_requests_are_path_filtered() -> None:
 def test_quality_workflow_has_no_allow_failure_or_retry_path() -> None:
     text = "\n".join(
         path.read_text(encoding="utf-8").lower()
-        for path in (WORKFLOW, HEAVY_WORKFLOW, CONTAINER_WORKFLOW)
+        for path in (WORKFLOW, HEAVY_WORKFLOW, SELF_HOSTED_WORKFLOW, CONTAINER_WORKFLOW)
     )
     forbidden = [
         "continue-on-error",
