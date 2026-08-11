@@ -18,7 +18,7 @@
 - [x] Run Ruff, mypy, secret scan, report seal verification, and the non-integration suite.
 - [x] Inspect and record sanitized stock-price retrieval diagnostics.
 - [x] Build/push/deploy release `v0.1.24` and verify rollout/health.
-- [ ] Run the four remediation cases three times each into new v2 evidence.
+- [x] Run the four remediation cases three times each into new v2 evidence.
 - [x] Preserve the first two passing repeats and the third repeat's real MCP timeout failure.
 - [x] Add regression coverage and repair immediate search cancellation retry, stale lease fencing,
       and retryable MCP error classification.
@@ -35,10 +35,10 @@
       staging to five attempts.
 - [x] Cover settings, API wiring, upload Job persistence, reindex Job creation, and staging
       deployment configuration; rerun Ruff, mypy, non-integration, and integration suites.
-- [ ] Release and deploy the ingestion retry budget, then resume targeted repeats until three
+- [x] Release and deploy the ingestion retry budget, then resume targeted repeats until three
       consecutive reports pass.
-- [ ] On success, run the 12-case v2 trial and the 40-case full suite.
-- [ ] Review reports, update task/gate records truthfully, validate Trellis, commit, and push.
+- [x] On success, run the 12-case v2 trial and the 40-case full suite.
+- [x] Review reports, update task/gate records truthfully, validate Trellis, commit, and push.
 
 ## Validation Commands
 

@@ -79,26 +79,26 @@ evidence while producing independently versioned v2 inputs and reports.
 
 ## Acceptance Criteria
 
-- [ ] Focused tests fail on the v1 implementation for multi-anchor mapping, numeric boundary
+- [x] Focused tests fail on the v1 implementation for multi-anchor mapping, numeric boundary
       safety, valid model refusal parsing, grounding, and graph routing.
-- [ ] Focused tests pass after implementation and preserve answer citation enforcement.
-- [ ] `rag_quality_v2.json` validates with 8 documents, 40 cases, 12 trial cases, and a hash
+- [x] Focused tests pass after implementation and preserve answer citation enforcement.
+- [x] `rag_quality_v2.json` validates with 8 documents, 40 cases, 12 trial cases, and a hash
       distinct from v1 while both v1 and v2 remain loadable.
-- [ ] The stock-price retrieval diagnosis records sanitized scores/anchor identifiers and a
+- [x] The stock-price retrieval diagnosis records sanitized scores/anchor identifiers and a
       threshold decision without leaking raw production identifiers or secrets.
-- [ ] Ruff, mypy, secret scan, report sealing checks, focused tests, and the non-integration
+- [x] Ruff, mypy, secret scan, report sealing checks, focused tests, and the non-integration
       suite pass locally.
-- [ ] The four formerly failing cases are run three times each against staging and recorded in
+- [x] The four formerly failing cases are run three times each against staging and recorded in
       a new v2 remediation report.
-- [ ] Passing and failed remediation repeats remain immutable, including transient provider
+- [x] Passing and failed remediation repeats remain immutable, including transient provider
       failures, and the bounded staging retry budget is covered by job and app-wiring tests.
-- [ ] Initial upload and reindex ingestion jobs share a bounded retry budget, with default and
+- [x] Initial upload and reindex ingestion jobs share a bounded retry budget, with default and
       staging values covered by settings, wiring, database, and deployment tests.
-- [ ] If the targeted gate passes, the 12-case bounded v2 trial and then the full 40-case v2
+- [x] If the targeted gate passes, the 12-case bounded v2 trial and then the full 40-case v2
       suite are executed without overwriting prior evidence.
-- [ ] M5/M7 remain open unless all of their independent evidence requirements are genuinely
+- [x] M5/M7 remain open unless all of their independent evidence requirements are genuinely
       satisfied; no quality result is relabeled as production proof.
-- [ ] The final changes are committed and pushed from `main` without adding the two unrelated
+- [x] The final changes are committed and pushed from `main` without adding the two unrelated
       untracked documentation files.
 
 ## Notes
@@ -117,3 +117,12 @@ evidence while producing independently versioned v2 inputs and reports.
   repeat 12 produced no report after one document exhausted three ingestion attempts across
   embedding timeouts/5xx. The ingestion retry budget is therefore raised to five in staging
   before targeted evaluation resumes.
+- Release `v0.1.25` deployed the five-attempt ingestion budget. Repeat 13 preserved a real
+  `citation_not_in_candidates` failure, while repeats 14, 15, and 16 passed all four targeted
+  cases consecutively with every configured aggregate metric at 1.0.
+- The v2 bounded 12-case trial passed 12 of 12 with every configured aggregate metric at 1.0.
+  The first full 40-case run completed 35 of 40 cases successfully but failed the approved
+  aggregate thresholds: citation precision 0.8529, citation recall 0.8824, fact recall and
+  closed-label precision 0.8824, and grounded fact rate 0.8529. Refusal precision, recall, and
+  reason accuracy remained 1.0. M5/M7 stay open for remediation, repeated full-suite evidence,
+  representative-corpus review, human error review, provider revision, and usage/cost telemetry.

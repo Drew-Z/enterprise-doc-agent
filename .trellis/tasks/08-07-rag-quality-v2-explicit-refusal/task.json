@@ -3,7 +3,7 @@
   "name": "rag-quality-v2-explicit-refusal",
   "title": "RAG Quality V2 and Explicit Model Refusal",
   "description": "",
-  "status": "in_progress",
+  "status": "completed",
   "dev_type": null,
   "scope": null,
   "package": "core",
@@ -11,7 +11,7 @@
   "creator": "developer",
   "assignee": "developer",
   "createdAt": "2026-08-07",
-  "completedAt": null,
+  "completedAt": "2026-08-11",
   "branch": null,
   "base_branch": "main",
   "worktree_path": null,
@@ -21,6 +21,6 @@
   "children": [],
   "parent": "07-17-enterprise-document-agent-platform",
   "relatedFiles": [],
-  "notes": "",
+  "notes": "Release v0.1.25 deployed the five-attempt ingestion budget. Targeted repeats 14-16 passed consecutively and the bounded 12-case v2 suite passed all targets. The first full 40-case run completed 35 of 40 cases and failed the fact, citation, and grounding thresholds while all refusal metrics remained 1.0. M5/M7 stay open for human review, remediation, repeated full-suite runs, representative-corpus evidence, provider revision, and usage/cost telemetry.",
   "meta": {}
 }

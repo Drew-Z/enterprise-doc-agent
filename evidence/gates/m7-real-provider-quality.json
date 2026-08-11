@@ -3,11 +3,11 @@
   "milestone": "M7",
   "requirement": "M7-R6",
   "owner": "model evaluation owner",
-  "blocking_reason": "The real openai_compatible/grok-4.5 route completed a 12-case synthetic staging trial, but the trial failed quality targets and did not expose a provider model revision, token usage, cost, fallback count, or breaker state. Full 40-case repeatability, representative-corpus coverage, and human review remain absent.",
+  "blocking_reason": "The real openai_compatible/grok-4.5 route passed three consecutive targeted runs and a 12-of-12 bounded suite on release v0.1.25. Its first full 40-case run completed 35 of 40 cases and missed the approved fact, citation, and grounding thresholds, although all refusal metrics were 1.0. The route still does not expose a provider model revision, token usage, cost, fallback count, or breaker state. Full-suite repeatability, representative-corpus coverage, and human review remain absent.",
   "prerequisites": [
     "Approve and freeze the provider model revision and fallback route in addition to the current model name",
-    "Resolve or explicitly accept the failed trial cases after human error review",
-    "Run the complete 40-case benchmark repeatedly with frozen behavior versions",
+    "Resolve or explicitly accept the five failed full-suite cases after human error review",
+    "Remediate approved causes and run the complete 40-case benchmark repeatedly with frozen behavior versions",
     "Provide provider-reported usage/cost plus fallback and breaker telemetry",
     "Add an approved representative sanitized corpus alongside the synthetic golden set"
   ],
@@ -19,9 +19,15 @@
     "Human-reviewed error taxonomy"
   ],
   "observed_evidence": [
-    "evidence/m5/20260807-staging-real-provider-rag-quality-trial.json"
+    "evidence/m5/20260807-staging-real-provider-rag-quality-trial.json",
+    "evidence/m5/20260811-rag-quality-v2-remediation-repeat-13.json",
+    "evidence/m5/20260811-rag-quality-v2-remediation-repeat-14.json",
+    "evidence/m5/20260811-rag-quality-v2-remediation-repeat-15.json",
+    "evidence/m5/20260811-rag-quality-v2-remediation-repeat-16.json",
+    "evidence/m5/20260811-rag-quality-v2-bounded-trial-12.json",
+    "evidence/m5/20260811-rag-quality-v2-full-40.json"
   ],
   "state": "open",
   "status": "blocked_external",
-  "review_date": "2026-08-07"
+  "review_date": "2026-08-11"
 }

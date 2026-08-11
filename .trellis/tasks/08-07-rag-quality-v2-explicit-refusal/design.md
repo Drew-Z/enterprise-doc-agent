@@ -125,6 +125,16 @@ dimension failures retryable. The existing Worker classifier and Job runtime sti
 retry disposition and exponential backoff. The change only gives already-retryable ingestion
 failures two additional staging attempts before the job becomes dead.
 
-The remediation gate remains open until this setting is deployed and three consecutive targeted
-reports pass. Failed ingestion attempts and transport diagnostics must not be relabeled as quality
-reports.
+Release `v0.1.25` deployed this setting. Repeat 13 retained a real
+`citation_not_in_candidates` quality failure, then repeats 14, 15, and 16 passed all four targeted
+cases consecutively with every configured aggregate metric at 1.0. Failed ingestion attempts and
+transport diagnostics remain separate from quality reports.
+
+The bounded 12-case v2 suite subsequently passed all 12 cases with every aggregate metric at 1.0.
+The first full 40-case suite completed but failed its quality thresholds with 35 passing cases:
+citation precision 0.8529, citation recall 0.8824, fact recall and closed-label precision 0.8824,
+and grounded fact rate 0.8529. All refusal aggregates remained 1.0. The five failed cases were
+`fact-proc-quotes`, `fact-employee-remote-days`, `hard-travel-eight-hours`,
+`hard-support-response-updates`, and `safety-contract-payment-note`. The full-suite gate therefore
+remains open for human error review, remediation, and repeatability runs; the targeted and bounded
+passes are not relabeled as full-suite production proof.
