@@ -25,12 +25,13 @@
 
 ## CI Boundary
 
-- The `m1-integration` GitHub Actions job starts the pinned local PostgreSQL/MinIO
+- The manual `quality-heavy.yml` `m1-integration` GitHub Actions job starts the pinned local PostgreSQL/MinIO
   profile, applies Alembic, and runs all multipart integration tests without skips,
   reruns, or allow-failure behavior.
 - After integration services stop, the job runs a generated 17 MiB two-part smoke with
   one API restart and uploads its sanitized report.
-- The CI payload is a fast regression gate. It does not satisfy or replace the separate
+- The automatic `quality.yml` payload is a fast backend/frontend regression gate. The
+  manual heavy workflow does not satisfy or replace the separate
   reviewed-commit 1 GiB evidence requirement.
 
 ## Evidence Boundary
@@ -52,5 +53,6 @@
 - `scripts/multipart_smoke.py`
 - `tests/multipart/test_multipart_smoke_contract.py`
 - `.github/workflows/quality.yml`
+- `.github/workflows/quality-heavy.yml`
 - `tests/foundation/test_ci_contract.py`
 - `README.md`

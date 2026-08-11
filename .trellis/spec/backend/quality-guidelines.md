@@ -15,6 +15,12 @@ Ruff excludes generated Trellis/Codex runtime files and checks project Python co
 Mypy runs in strict mode. Integration tests are marked explicitly and require the
 local Compose stack.
 
+The automatic `.github/workflows/quality.yml` workflow runs only the backend and
+frontend gates for pull requests and `main` pushes. The M1/M4 integration and Web
+E2E evidence jobs live in `.github/workflows/quality-heavy.yml` and run only through
+an explicit manual dispatch, so the full evidence suite remains available without
+charging every routine code change.
+
 ## Testing
 
 - Unit tests inject health checkers, exporters, and process boundaries.
@@ -39,5 +45,6 @@ module import, log raw exceptions containing secrets, or edit an applied migrati
 
 - `pyproject.toml`
 - `.github/workflows/quality.yml`
+- `.github/workflows/quality-heavy.yml`
 - `tests/foundation/test_ci_contract.py`
 - `packages/core/tests/test_health.py`

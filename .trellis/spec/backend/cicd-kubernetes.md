@@ -59,7 +59,8 @@
 - Staging and rollback target the fixed `enterprise-doc-staging` self-hosted runner
   label. The runner is repository-scoped, runs as a dedicated non-root user, and is
   installed on the private K3s node; GitHub-hosted runners cannot reach the private
-  Kubernetes API. Build and quality jobs remain on GitHub-hosted runners.
+  Kubernetes API. Build and automatic quality jobs remain on GitHub-hosted runners;
+  the full integration/evidence workflow is a separately dispatched GitHub-hosted job.
 - Release CI aggregates all four immutable image results into one strict manifest.
   The administrator preflight validates Secret structure and TLS SAN; the scoped
   staging workflow validates the exact Kubernetes context and registry prefix, performs
