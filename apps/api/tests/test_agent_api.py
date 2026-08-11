@@ -123,6 +123,7 @@ class StubAgentRunService:
                             heartbeat_at=None,
                             finished_at=None,
                             error_code=None,
+                            diagnostic_code="grounding.citation_excerpt_not_verbatim",
                         ),
                     ),
                 ),
@@ -258,6 +259,10 @@ async def test_agent_status_events_cancel_and_ready_versions_are_tenant_scoped()
     assert status_response.status_code == 200
     assert status_response.json()["runId"] == str(service.run_id)
     assert status_response.json()["executions"][0]["attemptHistory"][0]["workerId"] == ("worker-1")
+    assert status_response.json()["executions"][0]["attemptHistory"][0]["diagnosticCode"] == (
+        "grounding.citation_excerpt_not_verbatim"
+    )
+    assert "errorMessage" not in status_response.json()["executions"][0]["attemptHistory"][0]
     assert events.status_code == 200
     assert events.json()[0]["seq"] == 1
     assert cancelled.json()["status"] == "cancelled"

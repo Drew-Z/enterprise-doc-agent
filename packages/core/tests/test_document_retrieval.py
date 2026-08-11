@@ -6,6 +6,7 @@ import pytest
 
 from enterprise_doc_core.documents.retrieval import (
     Citation,
+    CitationValidationError,
     RefusalReason,
     RetrievalCandidate,
     authorize_candidates,
@@ -116,3 +117,71 @@ def test_citation_gate_requires_authorized_candidate_and_excerpt() -> None:
             document_version_id=VERSION,
             max_excerpt_chars=5,
         )
+
+
+@pytest.mark.parametrize(
+    ("citation", "candidates", "max_excerpt_chars", "public_code", "diagnostic_code"),
+    [
+        (
+            Citation(candidate(1).chunk_id, OTHER_VERSION, "evidence 1"),
+            (candidate(1),),
+            500,
+            RefusalReason.CITATION_WRONG_VERSION,
+            "grounding.citation_wrong_version",
+        ),
+        (
+            Citation(candidate(2).chunk_id, VERSION, "evidence 2"),
+            (candidate(1),),
+            500,
+            RefusalReason.CITATION_NOT_IN_CANDIDATES,
+            "grounding.citation_chunk_not_in_candidates",
+        ),
+        (
+            Citation(candidate(1).chunk_id, VERSION, "evidence 1"),
+            (candidate(1, tenant_id=OTHER_TENANT),),
+            500,
+            RefusalReason.CITATION_NOT_AUTHORIZED,
+            "grounding.citation_not_authorized",
+        ),
+        (
+            Citation(candidate(1).chunk_id, VERSION, " "),
+            (candidate(1),),
+            500,
+            RefusalReason.CITATION_NOT_IN_CANDIDATES,
+            "grounding.citation_excerpt_empty",
+        ),
+        (
+            Citation(candidate(1).chunk_id, VERSION, "evidence 1"),
+            (candidate(1),),
+            5,
+            RefusalReason.CITATION_NOT_IN_CANDIDATES,
+            "grounding.citation_excerpt_too_long",
+        ),
+        (
+            Citation(candidate(1).chunk_id, VERSION, "different evidence"),
+            (candidate(1),),
+            500,
+            RefusalReason.CITATION_NOT_IN_CANDIDATES,
+            "grounding.citation_excerpt_not_verbatim",
+        ),
+    ],
+)
+def test_citation_gate_exposes_bounded_diagnostics_without_changing_public_codes(
+    citation: Citation,
+    candidates: tuple[RetrievalCandidate, ...],
+    max_excerpt_chars: int,
+    public_code: RefusalReason,
+    diagnostic_code: str,
+) -> None:
+    with pytest.raises(CitationValidationError) as captured:
+        validate_citations(
+            (citation,),
+            candidates,
+            tenant_id=TENANT,
+            document_version_id=VERSION,
+            max_excerpt_chars=max_excerpt_chars,
+        )
+
+    assert captured.value.code == public_code
+    assert str(captured.value) == public_code.value
+    assert captured.value.diagnostic_code == diagnostic_code

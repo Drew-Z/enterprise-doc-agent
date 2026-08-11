@@ -18,6 +18,7 @@ from enterprise_doc_worker.queue import (
     AsyncTaskRunner,
     CeleryTaskDispatcher,
     JobDeliveryConsumer,
+    JobHandlerError,
     JobMessage,
     create_celery_app,
     register_job_task,
@@ -283,6 +284,37 @@ async def test_consumer_preserves_sanitized_ingestion_error_code() -> None:
     )
     assert runtime.failure_metadata[0]["error_code"] == "pdf_parse_failed"
     assert runtime.failure_metadata[0]["error_message"] == "PDF could not be parsed"
+
+
+async def test_consumer_persists_only_allowlisted_handler_diagnostic_code() -> None:
+    claim = _claim()
+    runtime = FakeRuntime(claim)
+
+    class DiagnosticFailure(JobHandlerError):
+        code = "citation_not_in_candidates"
+        diagnostic_code = "grounding.citation_excerpt_not_verbatim"
+
+    async def handler(_: ClaimedJob) -> None:
+        raise DiagnosticFailure("raw citation text must not be persisted")
+
+    consumer = JobDeliveryConsumer(
+        runtime=runtime,  # type: ignore[arg-type]
+        worker_id="worker-a",
+        handler=handler,
+        classify_error=lambda _: RetryDisposition.PERMANENT,
+    )
+
+    assert (
+        await consumer.handle(
+            JobMessage(job_id=claim.job_id, tenant_id=claim.tenant_id, event_id=uuid4())
+        )
+        == "failed"
+    )
+    assert runtime.failure_metadata[0]["error_code"] == "citation_not_in_candidates"
+    assert runtime.failure_metadata[0]["diagnostic_code"] == (
+        "grounding.citation_excerpt_not_verbatim"
+    )
+    assert "raw citation text" not in runtime.failure_metadata[0]["error_message"]
 
 
 def test_celery_app_uses_redis_only_as_broker() -> None:

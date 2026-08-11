@@ -34,6 +34,8 @@ from enterprise_doc_core.documents.models import (
 )
 from enterprise_doc_core.documents.retrieval import (
     Citation,
+    CitationValidationDiagnostic,
+    CitationValidationError,
     RefusalReason,
     ResolvedCitation,
     RetrievalCandidate,
@@ -47,6 +49,8 @@ from enterprise_doc_core.documents.retrieval import (
 __all__ = [
     "DEFAULT_EMBEDDING_DIMENSION",
     "Citation",
+    "CitationValidationDiagnostic",
+    "CitationValidationError",
     "DimensionCheckedEmbeddingProvider",
     "Document",
     "DocumentChunk",

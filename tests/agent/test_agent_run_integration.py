@@ -634,8 +634,16 @@ async def test_terminal_agent_job_failure_projects_run_failed_atomically() -> No
             disposition=RetryDisposition.PERMANENT,
             error_code="agent_graph_result_invalid",
             error_message="The Agent execution failed.",
+            diagnostic_code="grounding.citation_excerpt_not_verbatim",
         )
         assert failure.status == JobStatus.DEAD.value
+        status = await service.get_status(
+            run_id=created.run_id,
+            tenant_id=context.tenant_id,
+        )
+        assert status.executions[0].attempt_history[0].diagnostic_code == (
+            "grounding.citation_excerpt_not_verbatim"
+        )
 
         async with session_factory() as session:
             run = await session.get(AgentRun, created.run_id)

@@ -225,9 +225,15 @@ async def test_retry_backoff_dead_manual_retry_and_cancel_are_durable() -> None:
             disposition=RetryDisposition.RETRYABLE,
             error_code="dependency_timeout",
             error_message="bounded failure",
+            diagnostic_code="grounding.citation_excerpt_not_verbatim",
         )
         assert failed.status == JobStatus.RETRY_WAIT.value
         assert failed.retry_at == clock.value + timedelta(seconds=2)
+        first_attempts = await service.list_attempts(
+            job_id=created.job_id,
+            tenant_id=tenant_id,
+        )
+        assert first_attempts[0].diagnostic_code == ("grounding.citation_excerpt_not_verbatim")
         assert await service.claim(job_id=created.job_id, worker_id="too-early") is None
 
         async with session_factory() as session:

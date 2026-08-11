@@ -53,6 +53,7 @@ class JobAttemptResponse(ApiModel):
     heartbeat_at: datetime | None
     finished_at: datetime | None
     error_code: str | None
+    diagnostic_code: str | None = None
 
 
 class JobEventResponse(ApiModel):
@@ -146,6 +147,7 @@ async def get_job(
                 heartbeat_at=attempt.heartbeat_at,
                 finished_at=attempt.finished_at,
                 error_code=attempt.error_code,
+                diagnostic_code=attempt.diagnostic_code,
             )
             for attempt in attempts
         ],

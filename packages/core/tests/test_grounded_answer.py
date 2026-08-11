@@ -213,20 +213,30 @@ async def test_cross_tenant_evidence_is_rejected_before_model() -> None:
 
 
 @pytest.mark.parametrize(
-    ("output", "expected_code"),
+    ("output", "expected_code", "expected_diagnostic"),
     [
-        (_qa_output(version_id=OTHER_VERSION), RefusalReason.CITATION_WRONG_VERSION.value),
-        (_qa_output(chunk_id=uuid4()), RefusalReason.CITATION_NOT_IN_CANDIDATES.value),
+        (
+            _qa_output(version_id=OTHER_VERSION),
+            RefusalReason.CITATION_WRONG_VERSION.value,
+            "grounding.citation_wrong_version",
+        ),
+        (
+            _qa_output(chunk_id=uuid4()),
+            RefusalReason.CITATION_NOT_IN_CANDIDATES.value,
+            "grounding.citation_chunk_not_in_candidates",
+        ),
         (
             _qa_output(excerpt="Payment is due whenever the model says so"),
             RefusalReason.CITATION_NOT_IN_CANDIDATES.value,
+            "grounding.citation_excerpt_not_verbatim",
         ),
-        (_qa_output(duplicate=True), "duplicate_citation"),
+        (_qa_output(duplicate=True), "duplicate_citation", None),
     ],
 )
 def test_citation_failures_are_deterministic_and_not_model_repairable(
     output: GroundedModelOutput,
     expected_code: str,
+    expected_diagnostic: str | None,
 ) -> None:
     with pytest.raises(GroundingValidationError) as error:
         validate_grounded_output(
@@ -236,6 +246,7 @@ def test_citation_failures_are_deterministic_and_not_model_repairable(
             document_version_id=VERSION,
         )
     assert error.value.code == expected_code
+    assert error.value.diagnostic_code == expected_diagnostic
 
 
 def test_cross_tenant_candidate_uses_existing_citation_authorization_gate() -> None:
@@ -247,6 +258,7 @@ def test_cross_tenant_candidate_uses_existing_citation_authorization_gate() -> N
             document_version_id=VERSION,
         )
     assert error.value.code == RefusalReason.CITATION_NOT_AUTHORIZED.value
+    assert error.value.diagnostic_code == "grounding.citation_not_authorized"
 
 
 def test_non_refusal_answer_requires_at_least_one_citation() -> None:

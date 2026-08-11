@@ -209,6 +209,50 @@ class FakeClient:
         return self.artifact_body
 
 
+class FailedDiagnosticClient(FakeClient):
+    def __init__(self, diagnostic_code: str) -> None:
+        super().__init__()
+        self.diagnostic_code = diagnostic_code
+
+    def request_json(
+        self,
+        method: str,
+        path: str,
+        *,
+        payload: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
+        expected_statuses: set[int] | None = None,
+    ) -> dict[str, Any] | list[dict[str, Any]]:
+        if path == "/api/agent-runs/run-answer":
+            return {
+                "status": "failed",
+                "errorCode": "mcp_tool_returned_error",
+                "modelProvider": "openai_compatible",
+                "modelName": "reviewed-chat-model",
+                "modelVersion": "2026-08",
+                "graphVersion": "graph-v1",
+                "promptVersion": "prompt-v1",
+                "toolSchemaVersion": "tools-v1",
+                "executions": [
+                    {
+                        "attemptHistory": [
+                            {
+                                "diagnosticCode": self.diagnostic_code,
+                                "errorMessage": "raw-mcp-secret-must-not-appear",
+                            }
+                        ]
+                    }
+                ],
+            }
+        return super().request_json(
+            method,
+            path,
+            payload=payload,
+            headers=headers,
+            expected_statuses=expected_statuses,
+        )
+
+
 def _provenance() -> ReportProvenance:
     return ReportProvenance(
         command=["python", "scripts/evaluate_staging_rag_quality.py", "<sanitized>"],
@@ -258,6 +302,46 @@ def test_staging_quality_runs_answer_and_refusal_without_leaking_runtime_data(
     ):
         assert forbidden not in encoded
     assert report["cases"][0]["answer_sha256"] == hashlib.sha256(client.answer.encode()).hexdigest()
+
+
+@pytest.mark.parametrize(
+    ("diagnostic_code", "expected"),
+    [
+        (
+            "mcp.search_document.tool_input_invalid",
+            "mcp.search_document.tool_input_invalid",
+        ),
+        ("mcp.search_document.raw-mcp-secret-must-not-appear", None),
+    ],
+)
+def test_staging_quality_reports_only_allowlisted_attempt_diagnostics(
+    tmp_path: Path,
+    diagnostic_code: str,
+    expected: str | None,
+) -> None:
+    loaded = load_rag_quality_dataset(_write_dataset(tmp_path))
+    client = FailedDiagnosticClient(diagnostic_code)
+
+    report = staging_quality.run_staging_rag_quality(
+        client,
+        loaded=loaded,
+        case_ids=("answer-case",),
+        timeout_seconds=30,
+        run_nonce="fixed-diagnostic-run",
+        monotonic=lambda: 1.0,
+        sleep=lambda _: None,
+        provenance=_provenance(),
+    )
+
+    assert report["status"] == "failed"
+    assert report["evaluator_version"] == "m5.rag-quality.v3"
+    assert report["cases"][0]["failure_diagnostic_code"] == expected
+    assert report["cases"][0]["citation_diagnostics"] == []
+    assert report["cases"][0]["unresolved_citation_count"] == 0
+    assert report["cases"][0]["unexpected_anchor_ids"] == []
+    encoded = json.dumps(report, sort_keys=True)
+    assert "raw-mcp-secret-must-not-appear" not in encoded
+    assert verify_report_payload(report)
 
 
 def test_selection_errors_before_any_staging_request(tmp_path: Path) -> None:

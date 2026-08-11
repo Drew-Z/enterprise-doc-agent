@@ -183,6 +183,7 @@ class JobAttempt(UUIDPrimaryKeyMixin, Base):
     retryable: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     error_class: Mapped[str | None] = mapped_column(String(200), nullable=True)
     error_code: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    diagnostic_code: Mapped[str | None] = mapped_column(String(100), nullable=True)
     error_message: Mapped[str | None] = mapped_column(String(1000), nullable=True)
 
 

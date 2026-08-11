@@ -17,6 +17,7 @@ from enterprise_doc_core.jobs import (
     JobRuntimeService,
     JobStatus,
     RetryDisposition,
+    is_allowed_job_diagnostic_code,
 )
 from enterprise_doc_core.telemetry import MetricsRuntime
 from enterprise_doc_worker.config import WorkerSettings
@@ -42,9 +43,17 @@ class JobHandlerError(Exception):
     code = "job_handler_error"
     message = "The job handler could not complete the task."
     retryable = False
+    diagnostic_code: str | None = None
 
-    def __init__(self, message: str | None = None) -> None:
+    def __init__(
+        self,
+        message: str | None = None,
+        *,
+        diagnostic_code: str | None = None,
+    ) -> None:
         self.message = message or type(self).message
+        candidate = diagnostic_code or type(self).diagnostic_code
+        self.diagnostic_code = candidate if is_allowed_job_diagnostic_code(candidate) else None
         super().__init__(self.message)
 
 
@@ -267,9 +276,14 @@ class JobDeliveryConsumer:
             )
             raise
         except Exception as error:
-            if isinstance(error, (DocumentIngestionError, JobHandlerError)):
+            diagnostic_code: str | None = None
+            if isinstance(error, DocumentIngestionError):
                 error_code = error.code
                 error_message = error.message
+            elif isinstance(error, JobHandlerError):
+                error_code = error.code
+                error_message = type(error).message
+                diagnostic_code = error.diagnostic_code
             else:
                 error_code = "job_handler_failed"
                 error_message = "The job handler failed."
@@ -279,6 +293,7 @@ class JobDeliveryConsumer:
                 error_code=error_code,
                 error_message=error_message,
                 error_class=type(error).__name__,
+                diagnostic_code=diagnostic_code,
             )
             return "cancelled" if failure.status == JobStatus.CANCELLED.value else "failed"
         final_status = await self.runtime.succeed(claim)

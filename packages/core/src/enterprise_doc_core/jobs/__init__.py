@@ -1,3 +1,10 @@
+from enterprise_doc_core.jobs.diagnostics import (
+    GROUNDING_DIAGNOSTIC_CODES,
+    MCP_DIAGNOSTIC_SUBCODES,
+    MCP_TOOL_NAMES,
+    is_allowed_job_diagnostic_code,
+    mcp_diagnostic_code,
+)
 from enterprise_doc_core.jobs.models import (
     Job,
     JobAttempt,
@@ -31,6 +38,9 @@ from enterprise_doc_core.jobs.service import (
 )
 
 __all__ = [
+    "GROUNDING_DIAGNOSTIC_CODES",
+    "MCP_DIAGNOSTIC_SUBCODES",
+    "MCP_TOOL_NAMES",
     "ClaimedJob",
     "ClaimedOutboxEvent",
     "Job",
@@ -57,5 +67,7 @@ __all__ = [
     "RetryDisposition",
     "cancel_job_records",
     "create_job_records",
+    "is_allowed_job_diagnostic_code",
+    "mcp_diagnostic_code",
     "request_fingerprint",
 ]

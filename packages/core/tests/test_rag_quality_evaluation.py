@@ -253,6 +253,64 @@ def test_score_credits_every_stable_anchor_covered_by_one_citation(tmp_path: Pat
     assert score.passed
 
 
+def test_score_reports_secret_safe_per_citation_anchor_diagnostics(tmp_path: Path) -> None:
+    payload = _dataset_payload()
+    document = payload["documents"][0]
+    assert isinstance(document, dict)
+    anchors = document["anchors"]
+    assert isinstance(anchors, list)
+    anchors.append(
+        {
+            "anchor_id": "leave.heading",
+            "section": "Vacation Carryover",
+            "page": None,
+            "quote": "Vacation Carryover",
+        }
+    )
+    loaded = load_rag_quality_dataset(_write_dataset(tmp_path, payload))
+    case = loaded.dataset.cases_by_id["fact-carryover"]
+    observation = RagQualityObservation(
+        terminal_status="succeeded",
+        answer_text="Employees may carry over five unused vacation days.",
+        citations=(
+            ObservedCitation(
+                runtime_chunk_id="runtime-expected-secret",
+                document_key="leave-policy",
+                page=None,
+                heading="Vacation Carryover",
+                excerpt="carry over up to five unused vacation days",
+            ),
+            ObservedCitation(
+                runtime_chunk_id="runtime-extra-secret",
+                document_key="leave-policy",
+                page=None,
+                heading="Vacation Carryover",
+                excerpt="Vacation Carryover",
+            ),
+            ObservedCitation(
+                runtime_chunk_id="runtime-unresolved-secret",
+                document_key="leave-policy",
+                page=None,
+                heading=None,
+                excerpt="A citation that does not cover a stable anchor.",
+            ),
+        ),
+        duration_ms=80,
+    )
+
+    score = score_rag_quality_case(loaded.dataset, case, observation)
+
+    assert [diagnostic.ordinal for diagnostic in score.citation_diagnostics] == [1, 2, 3]
+    assert score.citation_diagnostics[0].resolved_anchor_ids == ("leave.carryover",)
+    assert score.citation_diagnostics[0].resolved is True
+    assert score.citation_diagnostics[1].resolved_anchor_ids == ("leave.heading",)
+    assert score.citation_diagnostics[2].resolved_anchor_ids == ()
+    assert score.citation_diagnostics[2].resolved is False
+    assert score.unresolved_citation_count == 1
+    assert score.unexpected_anchor_ids == ("leave.heading",)
+    assert "runtime-expected-secret" not in repr(score.citation_diagnostics)
+
+
 def test_score_matches_short_numeric_variants_only_at_safe_boundaries(tmp_path: Path) -> None:
     payload = _dataset_payload()
     fact_case = payload["cases"][0]

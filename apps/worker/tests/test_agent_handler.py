@@ -7,6 +7,7 @@ from uuid import uuid4
 
 import pytest
 
+from enterprise_doc_core.agents import GroundingValidationError
 from enterprise_doc_core.jobs import ClaimedJob
 from enterprise_doc_worker.agent_handler import (
     AGENT_EXECUTE_JOB_TYPE,
@@ -163,6 +164,7 @@ async def test_agent_handler_preserves_stable_runtime_error_classification() -> 
     class RetryableFailure(RuntimeError):
         code = "model_timeout"
         retryable = True
+        diagnostic_code = "grounding.citation_excerpt_not_verbatim"
 
     async def failed(_: AgentExecutionContext) -> None:
         raise RetryableFailure
@@ -174,3 +176,27 @@ async def test_agent_handler_preserves_stable_runtime_error_classification() -> 
 
     assert caught.value.code == "model_timeout"
     assert caught.value.retryable is True
+    assert caught.value.diagnostic_code is None
+
+
+@pytest.mark.asyncio
+async def test_agent_handler_propagates_only_typed_grounding_diagnostics() -> None:
+    claim = _claim()
+    context = _context(claim)
+    loader = FakeLoader(context)
+
+    async def failed(_: AgentExecutionContext) -> None:
+        raise GroundingValidationError(
+            "citation_not_in_candidates",
+            "The model citation did not pass the deterministic authorization gate.",
+            diagnostic_code="grounding.citation_excerpt_not_verbatim",
+        )
+
+    handler = AgentExecutionHandler(loader=loader, executor=failed)
+
+    with pytest.raises(AgentExecutionRuntimeError) as caught:
+        await handler(claim)
+
+    assert caught.value.code == "citation_not_in_candidates"
+    assert caught.value.retryable is False
+    assert caught.value.diagnostic_code == "grounding.citation_excerpt_not_verbatim"

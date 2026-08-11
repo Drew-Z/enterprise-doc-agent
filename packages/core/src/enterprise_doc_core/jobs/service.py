@@ -15,6 +15,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import func, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from enterprise_doc_core.jobs.diagnostics import is_allowed_job_diagnostic_code
 from enterprise_doc_core.jobs.models import (
     Job,
     JobAttempt,
@@ -144,6 +145,7 @@ class JobAttemptResult:
     heartbeat_at: datetime | None
     finished_at: datetime | None
     error_code: str | None
+    diagnostic_code: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -456,6 +458,7 @@ class JobRuntimeService:
                     heartbeat_at=row.heartbeat_at,
                     finished_at=row.finished_at,
                     error_code=row.error_code,
+                    diagnostic_code=row.diagnostic_code,
                 )
                 for row in rows
             )
@@ -715,6 +718,7 @@ class JobRuntimeService:
         error_code: str,
         error_message: str,
         error_class: str = "JobError",
+        diagnostic_code: str | None = None,
     ) -> JobFailureResult:
         now = self.clock()
         async with self.session_factory.begin() as session:
@@ -737,6 +741,9 @@ class JobRuntimeService:
             attempt.finished_at = now
             attempt.error_code = error_code[:100]
             attempt.error_class = error_class[:200]
+            attempt.diagnostic_code = (
+                diagnostic_code[:100] if is_allowed_job_diagnostic_code(diagnostic_code) else None
+            )
             attempt.error_message = error_message[:1000]
             attempt.retryable = disposition is RetryDisposition.RETRYABLE
             retry_at: datetime | None = None

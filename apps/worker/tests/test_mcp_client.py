@@ -256,6 +256,7 @@ async def test_mcp_client_preserves_known_retryable_tool_errors() -> None:
         await client.search_document(context_token="secret-context", request=request)
 
     assert exc_info.value.retryable is True
+    assert exc_info.value.diagnostic_code == ("mcp.search_document.tool_object_store_unavailable")
 
 
 @pytest.mark.asyncio
@@ -285,6 +286,103 @@ async def test_mcp_client_finds_retryable_codes_across_protocol_error_shapes() -
             await client.search_document(context_token="secret-context", request=request)
 
         assert exc_info.value.retryable is True
+        assert exc_info.value.diagnostic_code == ("mcp.search_document.tool_execution_in_progress")
+
+
+@pytest.mark.asyncio
+async def test_mcp_client_reports_allowlisted_permanent_tool_subcode() -> None:
+    request = SearchDocumentInput(idempotency_key="search-1", query="payment")
+    result = SimpleNamespace(
+        isError=True,
+        content=(),
+        structuredContent={"error": {"code": "tool_input_invalid"}},
+    )
+    client = _client(FakeTransport(None), FakeSession(result))
+
+    with pytest.raises(McpToolReturnedError) as exc_info:
+        await client.search_document(context_token="secret-context", request=request)
+
+    assert exc_info.value.retryable is False
+    assert exc_info.value.diagnostic_code == "mcp.search_document.tool_input_invalid"
+
+
+@pytest.mark.asyncio
+async def test_mcp_client_collapses_unknown_payload_to_generic_diagnostic() -> None:
+    request = SearchDocumentInput(idempotency_key="search-1", query="payment")
+    secret = "provider-secret-body-must-not-survive"
+    result = CallToolResult(
+        content=[TextContent(type="text", text=secret)],
+        isError=True,
+    )
+    client = _client(FakeTransport(None), FakeSession(result))
+
+    with pytest.raises(McpToolReturnedError) as exc_info:
+        await client.search_document(context_token="secret-context", request=request)
+
+    assert exc_info.value.diagnostic_code == "mcp.search_document.returned_error"
+    assert secret not in str(exc_info.value)
+    assert secret not in repr(exc_info.value)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "result",
+    [
+        CallToolResult(
+            content=[
+                TextContent(
+                    type="text",
+                    text="provider body mentions tool_input_invalid but is not a stable error",
+                )
+            ],
+            isError=True,
+        ),
+        SimpleNamespace(
+            isError=True,
+            content=(),
+            structuredContent={"error": {"message": "tool_input_invalid"}},
+        ),
+        CallToolResult(
+            content=[
+                TextContent(
+                    type="text",
+                    text=("Error executing tool create_draft_artifact: tool_input_invalid"),
+                )
+            ],
+            isError=True,
+        ),
+    ],
+)
+async def test_mcp_client_does_not_promote_arbitrary_or_wrong_operation_text(
+    result: Any,
+) -> None:
+    request = SearchDocumentInput(idempotency_key="search-1", query="payment")
+    client = _client(FakeTransport(None), FakeSession(result))
+
+    with pytest.raises(McpToolReturnedError) as exc_info:
+        await client.search_document(context_token="secret-context", request=request)
+
+    assert exc_info.value.diagnostic_code == "mcp.search_document.returned_error"
+
+
+@pytest.mark.asyncio
+async def test_mcp_client_binds_diagnostic_to_requested_tool_operation() -> None:
+    request = SearchDocumentInput(idempotency_key="draft-1", query="payment")
+    result = SimpleNamespace(
+        isError=True,
+        content=(TextContent(type="text", text="tool_prior_failure"),),
+    )
+    client = _client(FakeTransport(None), FakeSession(result))
+
+    with pytest.raises(McpToolReturnedError) as exc_info:
+        await client.call(
+            tool_name="create_draft_artifact",
+            request=request,
+            result_model=SearchDocumentResult,
+            context_token="secret-context",
+        )
+
+    assert exc_info.value.diagnostic_code == "mcp.create_draft_artifact.tool_prior_failure"
 
 
 @pytest.mark.asyncio

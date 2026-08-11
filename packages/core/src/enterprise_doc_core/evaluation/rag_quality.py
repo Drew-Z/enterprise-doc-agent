@@ -185,6 +185,16 @@ class RagQualityObservation(BaseModel):
 
 
 @dataclass(frozen=True, slots=True)
+class RagQualityCitationDiagnostic:
+    ordinal: int
+    resolved_anchor_ids: tuple[str, ...]
+
+    @property
+    def resolved(self) -> bool:
+        return bool(self.resolved_anchor_ids)
+
+
+@dataclass(frozen=True, slots=True)
 class RagQualityCaseScore:
     case_id: str
     passed: bool
@@ -199,6 +209,9 @@ class RagQualityCaseScore:
     matched_fact_ids: tuple[str, ...]
     forbidden_fact_ids: tuple[str, ...]
     matched_anchor_ids: tuple[str, ...]
+    citation_diagnostics: tuple[RagQualityCitationDiagnostic, ...]
+    unresolved_citation_count: int
+    unexpected_anchor_ids: tuple[str, ...]
     duration_ms: float
     terminal_status: str
     error_code: str | None
@@ -342,6 +355,10 @@ def score_rag_quality_case(
     citation_anchor_ids = tuple(
         _resolve_anchors(dataset, citation=citation) for citation in observation.citations
     )
+    citation_diagnostics = tuple(
+        RagQualityCitationDiagnostic(ordinal=ordinal, resolved_anchor_ids=resolved_anchor_ids)
+        for ordinal, resolved_anchor_ids in enumerate(citation_anchor_ids, start=1)
+    )
     matched_anchor_ids = tuple(
         dict.fromkeys(
             anchor_id
@@ -350,6 +367,9 @@ def score_rag_quality_case(
         )
     )
     expected_anchor_ids = set(case.expected_anchor_ids)
+    unexpected_anchor_ids = tuple(
+        anchor_id for anchor_id in matched_anchor_ids if anchor_id not in expected_anchor_ids
+    )
     correct_anchor_ids = expected_anchor_ids.intersection(matched_anchor_ids)
     predicted_anchor_count = sum(
         len(resolved_anchor_ids) if resolved_anchor_ids else 1
@@ -403,6 +423,11 @@ def score_rag_quality_case(
         matched_fact_ids=matched_facts,
         forbidden_fact_ids=forbidden_facts,
         matched_anchor_ids=matched_anchor_ids,
+        citation_diagnostics=citation_diagnostics,
+        unresolved_citation_count=sum(
+            not diagnostic.resolved for diagnostic in citation_diagnostics
+        ),
+        unexpected_anchor_ids=unexpected_anchor_ids,
         duration_ms=observation.duration_ms,
         terminal_status=observation.terminal_status,
         error_code=observation.error_code,
@@ -478,6 +503,7 @@ __all__ = [
     "RagQualityCase",
     "RagQualityCaseScore",
     "RagQualityCategory",
+    "RagQualityCitationDiagnostic",
     "RagQualityDataset",
     "RagQualityDocument",
     "RagQualityObservation",

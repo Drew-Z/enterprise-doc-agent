@@ -14,6 +14,26 @@ class RefusalReason(StrEnum):
     CITATION_NOT_IN_CANDIDATES = "citation_not_in_candidates"
 
 
+class CitationValidationDiagnostic(StrEnum):
+    WRONG_VERSION = "grounding.citation_wrong_version"
+    CHUNK_NOT_IN_CANDIDATES = "grounding.citation_chunk_not_in_candidates"
+    NOT_AUTHORIZED = "grounding.citation_not_authorized"
+    EXCERPT_EMPTY = "grounding.citation_excerpt_empty"
+    EXCERPT_TOO_LONG = "grounding.citation_excerpt_too_long"
+    EXCERPT_NOT_VERBATIM = "grounding.citation_excerpt_not_verbatim"
+
+
+class CitationValidationError(ValueError):
+    def __init__(
+        self,
+        code: RefusalReason,
+        diagnostic: CitationValidationDiagnostic,
+    ) -> None:
+        self.code = code
+        self.diagnostic_code = diagnostic.value
+        super().__init__(code.value)
+
+
 @dataclass(frozen=True, slots=True)
 class RetrievalCandidate:
     chunk_id: UUID
@@ -145,15 +165,37 @@ def validate_citations(
     resolved: list[ResolvedCitation] = []
     for citation in citations:
         if citation.document_version_id != document_version_id:
-            raise ValueError(RefusalReason.CITATION_WRONG_VERSION.value)
+            raise CitationValidationError(
+                RefusalReason.CITATION_WRONG_VERSION,
+                CitationValidationDiagnostic.WRONG_VERSION,
+            )
         if citation.chunk_id not in candidate_ids:
-            raise ValueError(RefusalReason.CITATION_NOT_IN_CANDIDATES.value)
+            raise CitationValidationError(
+                RefusalReason.CITATION_NOT_IN_CANDIDATES,
+                CitationValidationDiagnostic.CHUNK_NOT_IN_CANDIDATES,
+            )
         candidate = authorized.get(citation.chunk_id)
         if candidate is None:
-            raise ValueError(RefusalReason.CITATION_NOT_AUTHORIZED.value)
+            raise CitationValidationError(
+                RefusalReason.CITATION_NOT_AUTHORIZED,
+                CitationValidationDiagnostic.NOT_AUTHORIZED,
+            )
         excerpt = citation.excerpt.strip()
-        if not excerpt or len(excerpt) > max_excerpt_chars or excerpt not in candidate.text:
-            raise ValueError(RefusalReason.CITATION_NOT_IN_CANDIDATES.value)
+        if not excerpt:
+            raise CitationValidationError(
+                RefusalReason.CITATION_NOT_IN_CANDIDATES,
+                CitationValidationDiagnostic.EXCERPT_EMPTY,
+            )
+        if len(excerpt) > max_excerpt_chars:
+            raise CitationValidationError(
+                RefusalReason.CITATION_NOT_IN_CANDIDATES,
+                CitationValidationDiagnostic.EXCERPT_TOO_LONG,
+            )
+        if excerpt not in candidate.text:
+            raise CitationValidationError(
+                RefusalReason.CITATION_NOT_IN_CANDIDATES,
+                CitationValidationDiagnostic.EXCERPT_NOT_VERBATIM,
+            )
         resolved.append(
             ResolvedCitation(
                 chunk_id=candidate.chunk_id,

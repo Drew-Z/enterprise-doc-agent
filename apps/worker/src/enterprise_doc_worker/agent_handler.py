@@ -15,6 +15,7 @@ from enterprise_doc_core.agents import (
     AgentRunStatus,
     ApprovalRequest,
     ApprovalRequestStatus,
+    GroundingValidationError,
     append_agent_run_event,
 )
 from enterprise_doc_core.agents.models import AgentRunExecutionKind
@@ -92,11 +93,12 @@ class AgentExecutionRuntimeError(JobHandlerError):
         code: str | None = None,
         message: str | None = None,
         retryable: bool = False,
+        diagnostic_code: str | None = None,
     ) -> None:
         self.code = code or type(self).code
         self.message = message or type(self).message
         self.retryable = retryable
-        super().__init__(self.message)
+        super().__init__(self.message, diagnostic_code=diagnostic_code)
 
 
 @dataclass(frozen=True, slots=True)
@@ -359,7 +361,14 @@ class AgentExecutionHandler:
         except Exception as error:
             code = getattr(error, "code", None)
             retryable = bool(getattr(error, "retryable", False))
-            raise AgentExecutionRuntimeError(code=code, retryable=retryable) from error
+            diagnostic_code = (
+                error.diagnostic_code if isinstance(error, GroundingValidationError) else None
+            )
+            raise AgentExecutionRuntimeError(
+                code=code,
+                retryable=retryable,
+                diagnostic_code=diagnostic_code,
+            ) from error
 
 
 def build_agent_execution_handler(

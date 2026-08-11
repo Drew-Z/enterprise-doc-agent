@@ -15,6 +15,7 @@ from enterprise_doc_core.agents.schemas import (
 )
 from enterprise_doc_core.documents.retrieval import (
     Citation,
+    CitationValidationError,
     RetrievalCandidate,
     decide_retrieval,
     validate_citations,
@@ -22,9 +23,16 @@ from enterprise_doc_core.documents.retrieval import (
 
 
 class GroundingValidationError(ValueError):
-    def __init__(self, code: str, message: str) -> None:
+    def __init__(
+        self,
+        code: str,
+        message: str,
+        *,
+        diagnostic_code: str | None = None,
+    ) -> None:
         self.code = code
         self.message = message
+        self.diagnostic_code = diagnostic_code
         super().__init__(message)
 
 
@@ -106,11 +114,11 @@ def validate_grounded_output(
             tenant_id=tenant_id,
             document_version_id=document_version_id,
         )
-    except ValueError as error:
-        code = str(error)
+    except CitationValidationError as error:
         raise GroundingValidationError(
-            code,
+            error.code.value,
             "The model citation did not pass the deterministic authorization gate.",
+            diagnostic_code=error.diagnostic_code,
         ) from error
     if output.task_type.value == "structured_extraction":
         schema = request.extraction_schema

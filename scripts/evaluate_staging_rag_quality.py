@@ -28,6 +28,7 @@ from enterprise_doc_core.evaluation.rag_quality import (
     load_rag_quality_dataset,
     score_rag_quality_case,
 )
+from enterprise_doc_core.jobs import is_allowed_job_diagnostic_code
 
 if TYPE_CHECKING:
     from scripts.staging_smoke import SmokeClient, UrlLibSmokeClient
@@ -39,6 +40,7 @@ else:
 
 
 ROOT = Path(__file__).resolve().parents[1]
+EVALUATOR_VERSION = "m5.rag-quality.v3"
 _TERMINAL_STATUSES = frozenset(
     {"cancelled", "expired", "failed", "refused", "rejected", "succeeded"}
 )
@@ -313,6 +315,26 @@ def _thresholds_passed(measured: dict[str, float | None], targets: dict[str, flo
     return True
 
 
+def _safe_attempt_diagnostic(status: dict[str, Any]) -> str | None:
+    executions = status.get("executions")
+    if not isinstance(executions, list):
+        return None
+    for raw_execution in reversed(executions):
+        if not isinstance(raw_execution, dict):
+            continue
+        attempts = raw_execution.get("attemptHistory")
+        if not isinstance(attempts, list):
+            continue
+        for raw_attempt in reversed(attempts):
+            if not isinstance(raw_attempt, dict):
+                continue
+            diagnostic = raw_attempt.get("diagnosticCode")
+            if is_allowed_job_diagnostic_code(diagnostic):
+                assert isinstance(diagnostic, str)
+                return diagnostic
+    return None
+
+
 def run_staging_rag_quality(
     client: SmokeClient,
     *,
@@ -401,6 +423,7 @@ def run_staging_rag_quality(
         behaviors[behavior_key] = behavior
         terminal_status = _required_str(status, "status")
         outcome_code = _optional_str(status, "errorCode")
+        failure_diagnostic_code = _safe_attempt_diagnostic(status)
         answer_text: str | None = None
         citations: tuple[ObservedCitation, ...] = ()
         if terminal_status == "succeeded":
@@ -442,6 +465,17 @@ def run_staging_rag_quality(
                 "matched_fact_ids": list(score.matched_fact_ids),
                 "forbidden_fact_ids": list(score.forbidden_fact_ids),
                 "matched_anchor_ids": list(score.matched_anchor_ids),
+                "citation_diagnostics": [
+                    {
+                        "ordinal": diagnostic.ordinal,
+                        "resolved": diagnostic.resolved,
+                        "resolved_anchor_ids": list(diagnostic.resolved_anchor_ids),
+                    }
+                    for diagnostic in score.citation_diagnostics
+                ],
+                "unresolved_citation_count": score.unresolved_citation_count,
+                "unexpected_anchor_ids": list(score.unexpected_anchor_ids),
+                "failure_diagnostic_code": failure_diagnostic_code,
                 "metrics": {
                     "fact_recall": score.fact_recall,
                     "closed_label_fact_precision": score.closed_label_fact_precision,
@@ -487,6 +521,7 @@ def run_staging_rag_quality(
     coverage = "full" if len(selected) == len(loaded.dataset.cases) else "bounded_sample"
     report: dict[str, object] = {
         "schema_version": 1,
+        "evaluator_version": EVALUATOR_VERSION,
         "suite": "staging-real-provider-rag-quality",
         "status": "passed" if _thresholds_passed(measured, loaded.dataset.targets) else "failed",
         "coverage": coverage,
@@ -535,6 +570,7 @@ def build_validation_report(
 ) -> dict[str, Any]:
     report: dict[str, object] = {
         "schema_version": 1,
+        "evaluator_version": EVALUATOR_VERSION,
         "suite": "staging-real-provider-rag-quality-validation",
         "status": "passed",
         "dataset_version": loaded.dataset.version,

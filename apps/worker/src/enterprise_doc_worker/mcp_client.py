@@ -25,11 +25,19 @@ from enterprise_doc_core.agents import (
     SearchDocumentInput,
     SearchDocumentResult,
 )
+from enterprise_doc_core.jobs import MCP_DIAGNOSTIC_SUBCODES, mcp_diagnostic_code
 from enterprise_doc_core.telemetry import MetricsRuntime
 from enterprise_doc_worker.queue import JobHandlerError
 
 CONTEXT_ENV = "ENTERPRISE_DOC_MCP_CONTEXT"
 _ResultT = TypeVar("_ResultT", bound=BaseModel)
+_RETRYABLE_MCP_SUBCODES = frozenset(
+    {
+        "mcp_tool_timeout",
+        "tool_execution_in_progress",
+        "tool_object_store_unavailable",
+    }
+)
 
 
 class McpClientError(JobHandlerError):
@@ -162,7 +170,7 @@ class McpStdioClient:
                             await session.initialize()
                         async with asyncio.timeout(self.request_timeout_seconds):
                             result = await session.call_tool(tool_name, arguments=arguments)
-                        return _parse_result(result, result_model)
+                        return _parse_result(result, result_model, tool_name=tool_name)
         except asyncio.CancelledError:
             raise
         except McpClientError:
@@ -358,26 +366,26 @@ def _exception_leaves(error: BaseException) -> tuple[BaseException, ...]:
     return (error,)
 
 
-def _parse_result[ResultT: BaseModel](result: Any, result_model: type[ResultT]) -> ResultT:
+def _parse_result[ResultT: BaseModel](
+    result: Any,
+    result_model: type[ResultT],
+    *,
+    tool_name: str,
+) -> ResultT:
     if bool(getattr(result, "isError", getattr(result, "is_error", False))):
-        retryable_codes = {
-            "mcp_tool_timeout",
-            "tool_execution_in_progress",
-            "tool_object_store_unavailable",
-        }
-        error_payloads = (
-            getattr(result, "content", ()),
+        structured_payloads = (
             getattr(result, "structuredContent", None),
             getattr(result, "structured_content", None),
         )
-        if any(
-            code in value
-            for payload in error_payloads
-            for value in _iter_error_strings(payload)
-            for code in retryable_codes
-        ):
-            raise McpToolRetryableError()
-        raise McpToolReturnedError()
+        subcode = _matched_error_subcode(
+            content=getattr(result, "content", ()),
+            structured_payloads=structured_payloads,
+            tool_name=tool_name,
+        )
+        diagnostic_code = mcp_diagnostic_code(tool_name=tool_name, subcode=subcode)
+        if subcode in _RETRYABLE_MCP_SUBCODES:
+            raise McpToolRetryableError(diagnostic_code=diagnostic_code)
+        raise McpToolReturnedError(diagnostic_code=diagnostic_code)
     structured = getattr(result, "structuredContent", None)
     if not isinstance(structured, dict):
         raise McpToolResultInvalid()
@@ -390,17 +398,80 @@ def _parse_result[ResultT: BaseModel](result: Any, result_model: type[ResultT]) 
         raise McpToolResultInvalid() from error
 
 
-def _iter_error_strings(value: Any) -> tuple[str, ...]:
+def _allowlisted_subcode(value: object) -> str | None:
+    if not isinstance(value, str) or value == "returned_error":
+        return None
+    return value if value in MCP_DIAGNOSTIC_SUBCODES else None
+
+
+def _iter_content_texts(value: Any) -> tuple[str, ...]:
     if isinstance(value, str):
         return (value,)
     if isinstance(value, BaseModel):
-        return _iter_error_strings(value.model_dump(mode="json", by_alias=True))
+        return _iter_content_texts(value.model_dump(mode="json", by_alias=True))
     if isinstance(value, Mapping):
-        return tuple(text for item in value.values() for text in _iter_error_strings(item))
+        text = value.get("text")
+        return (text,) if isinstance(text, str) else ()
     if isinstance(value, Sequence) and not isinstance(value, (bytes, bytearray)):
-        return tuple(text for item in value for text in _iter_error_strings(item))
+        return tuple(text for item in value for text in _iter_content_texts(item))
     text = getattr(value, "text", None)
     return (text,) if isinstance(text, str) else ()
+
+
+def _subcode_from_content_text(text: str, *, tool_name: str) -> str | None:
+    normalized = text.strip()
+    direct = _allowlisted_subcode(normalized)
+    if direct is not None:
+        return direct
+    prefixes = (
+        f"Error executing tool {tool_name}:",
+        f"Error executing tool '{tool_name}':",
+        f'Error executing tool "{tool_name}":',
+    )
+    for prefix in prefixes:
+        if normalized.startswith(prefix):
+            return _allowlisted_subcode(normalized[len(prefix) :].strip())
+    return None
+
+
+def _iter_structured_error_codes(value: Any) -> tuple[str, ...]:
+    if isinstance(value, BaseModel):
+        return _iter_structured_error_codes(value.model_dump(mode="json", by_alias=True))
+    if isinstance(value, Mapping):
+        codes: list[str] = []
+        for key, item in value.items():
+            if key in {"code", "errorCode", "error_code"}:
+                code = _allowlisted_subcode(item)
+                if code is not None:
+                    codes.append(code)
+            elif isinstance(item, (BaseModel, Mapping, Sequence)) and not isinstance(
+                item, (str, bytes, bytearray)
+            ):
+                codes.extend(_iter_structured_error_codes(item))
+        return tuple(codes)
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
+        return tuple(code for item in value for code in _iter_structured_error_codes(item))
+    return ()
+
+
+def _matched_error_subcode(
+    *,
+    content: Any,
+    structured_payloads: Sequence[Any],
+    tool_name: str,
+) -> str | None:
+    matched = {
+        code
+        for text in _iter_content_texts(content)
+        if (code := _subcode_from_content_text(text, tool_name=tool_name)) is not None
+    }
+    matched.update(
+        code for payload in structured_payloads for code in _iter_structured_error_codes(payload)
+    )
+    retryable = sorted(matched.intersection(_RETRYABLE_MCP_SUBCODES))
+    if retryable:
+        return retryable[0]
+    return min(matched) if matched else None
 
 
 __all__ = [
