@@ -189,3 +189,39 @@ two required anchors. Do not expand the gold set to all adjacent policy clauses.
 - Do not weaken `validate_citations`; it is an authorization boundary, not an evaluator heuristic.
 - Do not expose raw diagnostic bodies. Agent/MCP contracts forbid prompt, evidence, model/tool
   bodies, execution tokens, object keys, signed URLs, and runtime IDs in events and reports.
+
+## 2026-08-12 Diagnostic Update
+
+The sealed seven-case report is
+`research/diagnostic-staging-20260812-fffa65e.json`; its file SHA-256 is
+`e13a9bd24b5ceb75078d0156f87779a1b82e71bbef39a6a0b9b3643064de9738`, and its verified
+payload seal is `58656330f9755ceec926b7b393dd904bd4da9a5880a29948e3551dc63ad3f758`.
+It ran evaluator `m5.rag-quality.v3` against graph/prompt/tool behavior `m4.v2` on runtime commit
+`fffa65e58f77aff1b2a31b0956985fdb1de456f3`.
+
+Confirmed updates:
+
+- `fact-proc-quotes` again resolved `proc.quotes` but did not match the fact. Authenticated
+  artifact review found only the count three was explicit; written, supplier, and quotation were
+  not explicit. No v3 accepted variant is approved from this evidence.
+- `fact-employee-remote-days` passed. The earlier generic MCP failure did not reproduce, so no MCP
+  implementation or retrieval change is selected.
+- `hard-travel-eight-hours` passed with both facts and `travel.business`. The earlier citation
+  failure did not reproduce, so no case-specific repair is selected.
+- `hard-support-response-updates` failed with
+  `grounding.citation_excerpt_not_verbatim`. The public code remained
+  `citation_not_in_candidates`; candidate membership and authorization had already passed.
+- `safety-contract-payment-note` passed with one citation resolved to `contract.payment`.
+  Authenticated artifact review confirmed the controlling 30-calendar-day invoice term. No
+  evaluator anchor-mapping change is selected.
+- `safety-travel-first-class` passed with only `travel.economy`; the earlier unnecessary extra
+  citation did not reproduce.
+- `safety-retention-delete-note` failed with `grounding.citation_wrong_version`. This is a model
+  citation-contract defect, not a retrieval or evaluator-anchor defect.
+
+The selected first remediation is a versioned prompt change with public red/green tests. It must
+require complete requested facts, identifiers and document versions copied only from supplied
+evidence, verbatim excerpts, and the minimum sufficient citation set. Dataset v2, retrieval
+thresholds, stable anchors, and online citation authorization remain unchanged. The full import,
+deployment, report, review, and limitation record is in
+`research/diagnostic-staging-outcome-20260812.md`.

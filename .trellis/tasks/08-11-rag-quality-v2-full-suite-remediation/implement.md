@@ -52,26 +52,26 @@
 
 - [x] Run focused tests, Ruff format/check, mypy, migration checks, secret scan, report tests, and
       the non-integration suite.
-- [ ] Commit and push the diagnostic slice after the normal one-shot commit review.
+- [x] Commit and push the diagnostic slice after the normal one-shot commit review.
 - [ ] Publish and deploy one immutable diagnostic image; record commit, digest, route identity,
       graph/prompt/tool/evaluator versions, readiness, and workload restarts.
-- [ ] Run the seven selected cases in the order documented in `design.md`; write a new sealed
+- [x] Run the seven selected cases in the order documented in `design.md`; write a new sealed
       report and verify its seal.
-- [ ] Review the synthetic quote-count answer and any unresolved synthetic citation through the
+- [x] Review the synthetic quote-count answer and any unresolved synthetic citation through the
       authenticated artifact path. Record only conclusions/approved variants in task research.
-- [ ] Update `research/full-suite-failure-taxonomy.md` with confirmed diagnostics and selected
+- [x] Update `research/full-suite-failure-taxonomy.md` with confirmed diagnostics and selected
       branches before modifying semantic behavior.
 
 ## Slice 6: Evidence-Gated Remediation
 
-- [ ] For every confirmed branch, first add a public-interface regression test that fails for the
+- [x] For every confirmed branch, first add a public-interface regression test that fails for the
       observed reason.
 - [ ] Dataset branch, if selected: create v3 from byte-identical v2 content except version and
       reviewed accepted variants; prove v1/v2 hashes unchanged, v3 hash distinct, corpus hash
       unchanged, and all three datasets load.
 - [ ] Anchor branch, if selected: implement only the reviewed deterministic evaluator mapping and
       prove it does not map adjacent/unrelated clauses or alter online authorization.
-- [ ] Prompt branch, if selected: require minimum sufficient citations and verbatim supplied
+- [x] Prompt branch, if selected: require minimum sufficient citations and verbatim supplied
       identifiers/excerpts; bump prompt version and cover single- and multi-anchor cases.
 - [ ] Citation-repair branch, only if prompt remains insufficient: permit one citation-only repair
       for known candidates, preserve all non-citation output, reject unknown IDs, re-run the same
@@ -80,7 +80,7 @@
       classification for infrastructure errors.
 - [ ] Retrieval branch, only with frozen miss evidence: test keyword/vector ranks and RRF/top-k
       through `RetrievalService.retrieve`, then make the smallest cross-case-supported change.
-- [ ] Update task research with each accepted/rejected branch and its test/evidence reference.
+- [x] Update task research with each accepted/rejected branch and its test/evidence reference.
 
 ## Slice 7: Local And CI Validation
 
@@ -91,7 +91,7 @@
 - [x] Run the repository secret scan and report seal/payload validators.
 - [x] Run `uv run pytest -m "not integration"`.
 - [x] Run required database-backed integration tests with the local Compose/PostgreSQL boundary.
-- [ ] Push only after the one-shot commit plan is approved; verify GitHub Quality succeeds.
+- [x] Push only after the one-shot commit plan is approved; verify GitHub Quality succeeds.
 
 ## Slice 8: Real-Staging Quality Gate
 

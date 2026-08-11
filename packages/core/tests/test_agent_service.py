@@ -48,6 +48,14 @@ def test_agent_run_fingerprint_is_canonical_and_behavior_versioned() -> None:
     )
 
 
+def test_agent_settings_bump_only_the_prompt_behavior_version() -> None:
+    settings = AgentSettings()
+
+    assert settings.graph_version == "m4.v2"
+    assert settings.prompt_version == "m4.v3"
+    assert settings.tool_schema_version == "m4.v2"
+
+
 def test_agent_run_fingerprint_normalizes_persisted_input_text() -> None:
     request = _request()
     padded = CreateAgentRunInput(

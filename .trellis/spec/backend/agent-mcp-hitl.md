@@ -8,6 +8,10 @@ node execution but cannot override tenant, run, approval, or artifact rows.
 - Worker execution uses the M2 lease, heartbeat, cancellation, and fencing contract.
 - Grounded output must cite the frozen authorized M3 evidence set and pass deterministic
   citation validation before draft creation.
+- Prompt behavior `m4.v3` requires complete explicit requested facts, the minimum sufficient
+  citation set, identifiers and document versions copied from the same supplied evidence item,
+  and contiguous verbatim excerpts. The gateway applies this guidance only when the persisted
+  prompt version is exactly `m4.v3`; older `m4.v2` runs retain their prior prompt contract.
 - MCP exposes exactly five strict stdio tools. Signed execution context, membership,
   capability, current execution, document version, artifact, and approval are reloaded
   server-side before effects.
