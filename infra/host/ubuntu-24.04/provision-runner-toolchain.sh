@@ -8,6 +8,7 @@ MODE=""
 KUSTOMIZE_ASSET_PATH=""
 RUNNER_ASSET_PATH=""
 POSTGRES_KEY_ASSET_PATH=""
+NODE_ASSET_PATH=""
 
 usage() {
   cat <<'EOF'
@@ -16,6 +17,7 @@ Usage:
   sudo provision-runner-toolchain.sh --apply \
     [--kustomize-asset /path/to/kustomize.tar.gz] \
     [--runner-asset /path/to/actions-runner.tar.gz] \
+    [--node-asset /path/to/node.tar.xz] \
     [--postgres-key-asset /path/to/apt.postgresql.org.asc]
 
 Installs the pinned root-owned deployment toolchain and unpacked repository runner.
@@ -40,7 +42,7 @@ while (($#)); do
       usage
       exit 0
       ;;
-    --kustomize-asset | --runner-asset | --postgres-key-asset)
+    --kustomize-asset | --runner-asset | --node-asset | --postgres-key-asset)
       option="$1"
       shift
       (($#)) || die "$option requires a path"
@@ -48,6 +50,8 @@ while (($#)); do
         KUSTOMIZE_ASSET_PATH="$1"
       elif test "$option" = --runner-asset; then
         RUNNER_ASSET_PATH="$1"
+      elif test "$option" = --node-asset; then
+        NODE_ASSET_PATH="$1"
       else
         POSTGRES_KEY_ASSET_PATH="$1"
       fi
@@ -62,6 +66,7 @@ test -n "$MODE" || { usage >&2; exit 2; }
 if test "$MODE" != apply && {
   test -n "$KUSTOMIZE_ASSET_PATH" \
     || test -n "$RUNNER_ASSET_PATH" \
+    || test -n "$NODE_ASSET_PATH" \
     || test -n "$POSTGRES_KEY_ASSET_PATH"
 }; then
   die "asset paths are valid only with --apply"
@@ -76,6 +81,10 @@ import yaml
 assert cryptography.__version__ == "$CRYPTOGRAPHY_VERSION"
 assert yaml.__version__ == "$PYYAML_VERSION"
 PY
+  test "$(/opt/enterprise-doc-toolchain/python/bin/uv --version | awk '{print $2}')" = "$UV_VERSION"
+  test "$(/opt/enterprise-doc-toolchain/node/bin/node --version)" = "v$NODE_VERSION"
+  test "$(PATH="/opt/enterprise-doc-toolchain/node/bin:$PATH" \
+    /opt/enterprise-doc-toolchain/node/bin/pnpm --version)" = "$PNPM_VERSION"
   test -x /opt/actions-runner/run.sh
   test "$(stat -c '%U' /opt/actions-runner)" = "$RUNNER_USER"
   test "$(/opt/actions-runner/bin/Runner.Listener --version)" = "$RUNNER_VERSION"
@@ -118,8 +127,13 @@ fi
 printf '%s  %s\n' "$POSTGRES_PGDG_KEY_SHA256" "$postgres_key_asset_path" \
   | sha256sum --check --status || die "PostgreSQL repository key SHA-256 mismatch"
 install -d -o root -g root -m 0755 /usr/share/postgresql-common/pgdg
-install -o root -g root -m 0644 "$postgres_key_asset_path" \
-  /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+postgres_key_destination=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+if test "$(readlink -f "$postgres_key_asset_path")" != "$postgres_key_destination"; then
+  install -o root -g root -m 0644 "$postgres_key_asset_path" "$postgres_key_destination"
+else
+  chown root:root "$postgres_key_destination"
+  chmod 0644 "$postgres_key_destination"
+fi
 cat >/etc/apt/sources.list.d/pgdg.sources <<'EOF'
 Types: deb
 URIs: https://apt.postgresql.org/pub/repos/apt
@@ -162,7 +176,35 @@ fi
 install -d -o root -g root -m 0755 /opt/enterprise-doc-toolchain
 python3.12 -m venv /opt/enterprise-doc-toolchain/python
 /opt/enterprise-doc-toolchain/python/bin/python -m pip install --disable-pip-version-check \
-  --no-cache-dir "PyYAML==$PYYAML_VERSION" "cryptography==$CRYPTOGRAPHY_VERSION"
+  --no-cache-dir "PyYAML==$PYYAML_VERSION" "cryptography==$CRYPTOGRAPHY_VERSION" \
+  "uv==$UV_VERSION"
+
+observed_node_version=""
+if test -x /opt/enterprise-doc-toolchain/node/bin/node; then
+  observed_node_version="$(/opt/enterprise-doc-toolchain/node/bin/node --version)"
+fi
+if test "$observed_node_version" != "v$NODE_VERSION"; then
+  node_asset="node-v${NODE_VERSION}-linux-x64.tar.xz"
+  if test -n "$NODE_ASSET_PATH"; then
+    test -f "$NODE_ASSET_PATH" || die "Node.js asset does not exist: $NODE_ASSET_PATH"
+    node_asset_path="$NODE_ASSET_PATH"
+  else
+    node_asset_path="$tmp_dir/$node_asset"
+    curl --fail --location --proto '=https' --proto-redir '=https' \
+      --connect-timeout 15 --max-time 900 --retry 4 --retry-all-errors \
+      --output "$node_asset_path" \
+      "https://nodejs.org/dist/v${NODE_VERSION}/${node_asset}"
+  fi
+  printf '%s  %s\n' "$NODE_LINUX_X64_SHA256" "$node_asset_path" \
+    | sha256sum --check --status || die "Node.js asset SHA-256 mismatch"
+  rm -rf /opt/enterprise-doc-toolchain/node
+  install -d -o root -g root -m 0755 /opt/enterprise-doc-toolchain/node
+  tar -xJf "$node_asset_path" -C /opt/enterprise-doc-toolchain/node --strip-components=1
+fi
+PATH="/opt/enterprise-doc-toolchain/node/bin:$PATH" \
+  /opt/enterprise-doc-toolchain/node/bin/npm install --global \
+  --prefix /opt/enterprise-doc-toolchain/node --no-audit --no-fund \
+  "pnpm@$PNPM_VERSION"
 chown -R root:root /opt/enterprise-doc-toolchain
 chmod -R go-w /opt/enterprise-doc-toolchain
 

@@ -64,6 +64,9 @@
   `quality-self-hosted.yml` is a manual, serial fallback for account-level hosted-runner
   outages. It runs the same fast backend/frontend commands on the fixed runner without
   Kubernetes commands, deployment environments, repository secrets, or Actions caches.
+  Python, uv, Node.js and pnpm are pinned and installed by
+  `provision-runner-toolchain.sh`; the fallback validates those exact versions and does
+  not use network-dependent setup actions.
   It is fallback evidence and does not replace the automatic GitHub-hosted Quality gate.
 - Release CI aggregates all four immutable image results into one strict manifest.
   The administrator preflight validates Secret structure and TLS SAN; the scoped

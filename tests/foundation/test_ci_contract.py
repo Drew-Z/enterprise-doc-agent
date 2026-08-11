@@ -165,7 +165,15 @@ def test_manual_self_hosted_quality_is_serial_and_secret_free() -> None:
     assert not any("kubectl" in command or "docker compose" in command for command in commands)
     text = SELF_HOSTED_WORKFLOW.read_text(encoding="utf-8")
     assert "secrets." not in text
-    assert "enable-cache: false" in text
+    assert "actions/setup-python" not in text
+    assert "astral-sh/setup-uv" not in text
+    assert "actions/setup-node" not in text
+    assert "pnpm/action-setup" not in text
+    assert "/opt/enterprise-doc-toolchain/python/bin/python" in text
+    assert "/opt/enterprise-doc-toolchain/python/bin/uv" in text
+    assert "/opt/enterprise-doc-toolchain/node/bin" in text
+    assert "v24.14.0" in text
+    assert "11.9.0" in text
 
 
 def test_container_pull_requests_are_path_filtered() -> None:

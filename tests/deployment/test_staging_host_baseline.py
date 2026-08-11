@@ -184,6 +184,10 @@ def test_k3s_and_runner_toolchain_versions_are_exact() -> None:
         "PYTHON_MINOR=3.12",
         "PYYAML_VERSION=6.0.3",
         "CRYPTOGRAPHY_VERSION=50.0.0",
+        "UV_VERSION=0.11.3",
+        "NODE_VERSION=24.14.0",
+        "NODE_LINUX_X64_SHA256=41cd79bb7877c81605a9e68ec4c91547774f46a40c67a17e34d7179ef11729df",
+        "PNPM_VERSION=11.9.0",
         "POSTGRES_CLIENT_MAJOR=17",
         "POSTGRES_CLIENT_PACKAGE_VERSION=17.10-1.pgdg24.04+1",
         "POSTGRES_PGDG_KEY_SHA256=0144068502a1eddd2a0280ede10ef607d1ec592ce819940991203941564e8e76",
@@ -223,9 +227,11 @@ def test_k3s_and_runner_toolchain_versions_are_exact() -> None:
     assert "useradd" in toolchain
     assert "--kustomize-asset" in toolchain
     assert "--runner-asset" in toolchain
+    assert "--node-asset" in toolchain
     assert "--postgres-key-asset" in toolchain
     assert '"$KUSTOMIZE_LINUX_AMD64_SHA256" "$kustomize_asset_path"' in toolchain
     assert '"$RUNNER_SHA256" "$runner_asset_path"' in toolchain
+    assert '"$NODE_LINUX_X64_SHA256" "$node_asset_path"' in toolchain
     assert '"$POSTGRES_PGDG_KEY_SHA256" "$postgres_key_asset_path"' in toolchain
     assert 'if test "$observed_kustomize_version" != "$KUSTOMIZE_VERSION"; then' in toolchain
     assert toolchain.index('observed_kustomize_version=""') < toolchain.index(
