@@ -1,0 +1,11 @@
+{"file":".trellis/spec/core/backend/index.md","reason":"Review evaluator, retrieval, grounding, Jobs, and schema ownership together."}
+{"file":".trellis/spec/worker/backend/index.md","reason":"Review Worker MCP and Agent failure handling against package boundaries."}
+{"file":".trellis/spec/foundation-tests/backend/index.md","reason":"Verify cross-layer contracts and database-backed integration coverage."}
+{"file":".trellis/spec/backend/agent-mcp-hitl.md","reason":"Check deterministic authorization, frozen evidence, MCP policy, and secret-safe events."}
+{"file":".trellis/spec/backend/observability-eval-load.md","reason":"Check report provenance, sanitization, evidence claims, and staging gate semantics."}
+{"file":".trellis/spec/backend/model-routing.md","reason":"Check prompt/repair versioning, fallback boundaries, and provider behavior."}
+{"file":".trellis/spec/backend/error-handling.md","reason":"Check stable errors, bounded diagnostics, and failure propagation."}
+{"file":".trellis/spec/backend/logging-guidelines.md","reason":"Check that no raw model, evidence, tool, secret, or runtime data can leak."}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Check red/green tests, mocks, lint, type checking, and full non-integration coverage."}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"The diagnostic contract crosses Core, Worker, persistence, API, and evaluator layers."}
+{"file":".trellis/tasks/08-11-rag-quality-v2-full-suite-remediation/research/full-suite-failure-taxonomy.md","reason":"Verify every change is justified by the recorded failure taxonomy rather than threshold tuning."}

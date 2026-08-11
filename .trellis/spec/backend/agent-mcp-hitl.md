@@ -27,3 +27,76 @@ node execution but cannot override tenant, run, approval, or artifact rows.
 - `apps/worker/src/enterprise_doc_worker/agent_backend.py`
 - `apps/mcp/src/enterprise_doc_mcp/server.py`
 - `tests/agent/`, `tests/mcp/`, `tests/security/`, and `tests/contracts/`
+
+## Scenario: Durable Secret-Safe Attempt Diagnostics
+
+### 1. Scope / Trigger
+
+- Trigger: grounding and MCP failures need a stable subreason for staging diagnosis without
+  exposing exception messages, document text, tool payloads, runtime IDs, URLs, or credentials.
+- Ownership: Core defines and persists allowlisted codes; Worker classifies typed failures; the
+  authenticated Job and Agent status APIs project the stored value.
+
+### 2. Signatures
+
+- Database: `job_attempts.diagnostic_code VARCHAR(100) NULL`.
+- Runtime: `JobRuntimeService.fail(..., diagnostic_code: str | None = None)`.
+- Worker: `JobHandlerError(..., diagnostic_code: str | None = None)`.
+- API: `attemptHistory[].diagnosticCode: string | null` on authenticated Job and Agent status.
+
+### 3. Contracts
+
+- Grounding codes are exact members of `GROUNDING_DIAGNOSTIC_CODES`.
+- MCP codes have the exact shape `mcp.<known_tool>.<allowlisted_subcode>`.
+- Unknown, malformed, or oversized values persist as null. MCP tool errors with no recognized
+  stable code use `mcp.<known_tool>.returned_error`.
+- Public `errorCode` and retryability remain independent from `diagnosticCode`.
+- Diagnostics never enter Agent events, Prometheus labels, or report fields without a second
+  allowlist check.
+
+### 4. Validation & Error Matrix
+
+- Typed `GroundingValidationError` with an allowlisted diagnostic -> preserve public code and
+  diagnostic.
+- Arbitrary exception with a `diagnostic_code` attribute -> preserve existing public
+  classification, discard the diagnostic.
+- MCP structured `code` / `errorCode` / `error_code` with an allowlisted exact value -> bind it to
+  the requested known tool.
+- MCP wrapper text `Error executing tool <requested_tool>: <allowlisted_code>` -> accept the exact
+  suffix only.
+- Unknown payload, message text that merely mentions a code, or a different tool operation ->
+  `mcp.<known_tool>.returned_error`.
+- Direct runtime caller supplies a non-allowlisted code -> persist null.
+
+### 5. Good/Base/Bad Cases
+
+- Good: `grounding.citation_excerpt_not_verbatim` survives queue settlement and appears in the
+  authenticated attempt history.
+- Base: old attempts and successful attempts return `diagnosticCode: null`.
+- Bad: raw provider text such as `token=... tool_input_invalid ...` is never promoted or stored.
+
+### 6. Tests Required
+
+- Core unit tests assert every grounding public-code/diagnostic pair and allowlist rejection.
+- Worker boundary tests assert exact MCP text/structured parsing, wrong-operation rejection,
+  retryability stability, and typed-only grounding propagation.
+- Database integration tests assert nullable migration round-trip and durable attempt persistence.
+- API tests assert camelCase projection and absence of `error_message` from attempt responses.
+- Staging evaluator tests seed secret-like values and verify only allowlisted diagnostics survive
+  into a seal-valid report.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```python
+diagnostic_code = str(error)
+```
+
+#### Correct
+
+```python
+diagnostic_code = (
+    error.diagnostic_code if isinstance(error, GroundingValidationError) else None
+)
+```
