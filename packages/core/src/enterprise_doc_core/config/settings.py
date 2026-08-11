@@ -156,6 +156,7 @@ class AgentSettings(BaseModel):
     graph_version: str = Field(default="m4.v2", min_length=1, max_length=64)
     prompt_version: str = Field(default="m4.v2", min_length=1, max_length=64)
     tool_schema_version: str = Field(default="m4.v2", min_length=1, max_length=64)
+    execution_max_attempts: int = Field(default=3, ge=1, le=100)
     checkpoint_url: SecretStr | None = None
     checkpoint_timeout_seconds: float = Field(default=15.0, gt=0, le=120)
     max_artifact_bytes: int = Field(default=16 * 1024 * 1024, ge=1, le=256 * 1024 * 1024)

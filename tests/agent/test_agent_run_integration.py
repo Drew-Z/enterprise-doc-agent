@@ -98,10 +98,11 @@ def _service(
     session_factory: async_sessionmaker[AsyncSession],
     *,
     clock: Any | None = None,
+    execution_max_attempts: int = 3,
 ) -> AgentRunService:
     kwargs: dict[str, Any] = {
         "session_factory": session_factory,
-        "agent_settings": AgentSettings(),
+        "agent_settings": AgentSettings(execution_max_attempts=execution_max_attempts),
         "model_settings": ModelSettings(),
     }
     if clock is not None:
@@ -273,7 +274,10 @@ async def _runtime() -> tuple[
 
 
 async def test_create_persists_only_the_initial_transaction_boundary() -> None:
-    engine, session_factory, context, service = await _runtime()
+    engine = create_database_engine(DatabaseSettings())
+    session_factory = create_session_factory(engine)
+    context = await _seed_agent_context(session_factory)
+    service = _service(session_factory, execution_max_attempts=5)
     request = _request(context, input_text="  What are the payment terms?  ")
     try:
         result = await service.create(
@@ -318,6 +322,7 @@ async def test_create_persists_only_the_initial_transaction_boundary() -> None:
             assert execution.job_id == job.id
             assert job.type == "agent.execute"
             assert job.status == JobStatus.PENDING.value
+            assert job.max_attempts == 5
             assert job.idempotency_key == f"agent:{run.id}:execution:0"
             assert job.request_id == "request-m4-initial"
             assert job.correlation_id == "correlation-m4-initial"

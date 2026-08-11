@@ -22,6 +22,9 @@
 - [x] Preserve the first two passing repeats and the third repeat's real MCP timeout failure.
 - [x] Add regression coverage and repair immediate search cancellation retry, stale lease fencing,
       and retryable MCP error classification.
+- [x] Preserve targeted repeats four through eight, including both transient provider failures.
+- [x] Add a bounded Agent execution retry setting and apply it consistently to initial and
+      approval-resume jobs; set the staging budget to five.
 - [ ] On success, run the 12-case v2 trial and the 40-case full suite.
 - [ ] Review reports, update task/gate records truthfully, validate Trellis, commit, and push.
 

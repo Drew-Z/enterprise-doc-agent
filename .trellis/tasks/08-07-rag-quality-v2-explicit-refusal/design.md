@@ -77,5 +77,18 @@ completed summary exists, recovery replays/finalizes it without another retrieva
 classifies known retryable MCP codes from text or structured protocol error payloads so transport
 serialization differences cannot turn `tool_execution_in_progress` into a permanent job failure.
 
+## Provider Failure Retry Budget
+
+Targeted repeats four, five, and seven passed, while repeats six and eight failed only on
+`hard-support-objectives` with `model_server_error`. The same case passed in the surrounding
+runs, so those reports are retained as transient-provider evidence rather than relabeled as
+answer-quality failures.
+
+`AgentSettings.execution_max_attempts` owns a bounded job-level retry budget. Its default remains
+three and the single-node staging profile sets five. `AgentRunService` applies the setting to the
+initial execution job and the API passes the same value to `ApprovalService` for resumed jobs.
+The existing job retry/backoff contract remains responsible for scheduling attempts; increasing
+the budget does not convert an exhausted provider failure into success or hide its terminal code.
+
 Rollback uses the previous container digest and behavior version. No database schema migration is
 required. New v2 evaluation files can remain as historical inputs even if runtime code rolls back.

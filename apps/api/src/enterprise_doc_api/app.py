@@ -265,6 +265,7 @@ def create_app(
         if approval_service is not None
         else ApprovalService(
             session_factory=_required_session_factory(session_factory),
+            resume_max_attempts=resolved_settings.agent.execution_max_attempts,
             metrics=resolved_metrics,
         )
     )

@@ -29,6 +29,9 @@ evidence while producing independently versioned v2 inputs and reports.
 - Diagnose the stock-price case retrieval candidates and scores before changing retrieval
   thresholds. Do not tune a global threshold from one synthetic example.
 - Store every remediation trial under a new v2 evidence filename. Never overwrite v1 files.
+- Keep the Agent execution retry budget explicit and bounded. Initial executions and
+  approval resumes must use the same configured value; staging may raise the default
+  three attempts to five for observed transient provider failures.
 - Reports must remain secret-safe and omit raw answers, document text, URLs, credentials,
   runtime UUIDs, and provider response bodies.
 
@@ -60,6 +63,11 @@ evidence while producing independently versioned v2 inputs and reports.
    Outcome: four prior failures repeat three times, followed by bounded and full suites when
    the earlier gates pass.
    Mock boundary: none; provider and object store are real.
+6. Agent execution retry budget.
+   Public interface: `AgentSettings`, `AgentRunService.create`, and `ApprovalService`.
+   Input: a configured execution-attempt limit.
+   Outcome: initial and resumed Agent jobs persist the same bounded retry limit.
+   Mock boundary: database-backed job creation only; provider retries remain real in staging.
 
 ## Acceptance Criteria
 
@@ -74,6 +82,8 @@ evidence while producing independently versioned v2 inputs and reports.
       suite pass locally.
 - [ ] The four formerly failing cases are run three times each against staging and recorded in
       a new v2 remediation report.
+- [ ] Passing and failed remediation repeats remain immutable, including transient provider
+      failures, and the bounded staging retry budget is covered by job and app-wiring tests.
 - [ ] If the targeted gate passes, the 12-case bounded v2 trial and then the full 40-case v2
       suite are executed without overwriting prior evidence.
 - [ ] M5/M7 remain open unless all of their independent evidence requirements are genuinely

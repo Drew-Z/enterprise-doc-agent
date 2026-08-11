@@ -353,6 +353,7 @@ class AgentRunService:
                     "graph_version": self.agent_settings.graph_version,
                 },
                 document_version_id=None,
+                max_attempts=self.agent_settings.execution_max_attempts,
                 request_id=request_id,
                 correlation_id=correlation_id,
                 outbox_event_type="agent.execute.requested",

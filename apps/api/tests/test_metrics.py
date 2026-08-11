@@ -3,6 +3,8 @@ from __future__ import annotations
 from httpx import ASGITransport, AsyncClient
 
 from enterprise_doc_api.app import create_app
+from enterprise_doc_api.config import ApiSettings
+from enterprise_doc_core.config import AgentSettings
 from enterprise_doc_core.telemetry import MetricsRuntime
 
 
@@ -32,3 +34,11 @@ def test_api_default_services_share_the_process_metrics_registry() -> None:
     assert app.state.agent_artifact_service.metrics is metrics
     assert app.state.agent_artifact_service.artifact_store.metrics is metrics
     assert app.state.upload_creation_service.object_store.metrics is metrics
+
+
+def test_api_default_agent_services_share_the_execution_retry_budget() -> None:
+    settings = ApiSettings(agent=AgentSettings(execution_max_attempts=5))
+    app = create_app(settings=settings)
+
+    assert app.state.agent_run_service.agent_settings.execution_max_attempts == 5
+    assert app.state.approval_service.resume_max_attempts == 5
