@@ -78,7 +78,7 @@
 - [x] Evaluator sample branch: record `applicable_targets` and apply unchanged thresholds only to
       metrics represented by the selected sample; prove the complete suite still requires all
       eight targets and bump the evaluator behavior version.
-- [ ] Citation-repair branch, only if prompt remains insufficient: permit one citation-only repair
+- [x] Citation-repair branch, only if prompt remains insufficient: permit one citation-only repair
       for known candidates, preserve all non-citation output, reject unknown IDs, re-run the same
       authorization gate, and bump graph/prompt versions.
 - [ ] MCP branch, if selected: fix the owning deterministic tool failure and preserve retryable

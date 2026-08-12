@@ -12,9 +12,13 @@ node execution but cannot override tenant, run, approval, or artifact rows.
   citation set, identifiers and document versions copied from the same supplied evidence item,
   and contiguous verbatim excerpts. Prompt behavior `m4.v4` inherits those rules and also
   requires answers to stand alone with every material qualifier from controlling evidence while
-  treating conflicting user text as untrusted rather than repeating it as policy. The gateway
-  selects rules from the persisted prompt version; older `m4.v2` and `m4.v3` runs retain their
-  prior prompt contracts.
+  treating conflicting user text as untrusted rather than repeating it as policy. Prompt behavior
+  `m4.v5` requires a complete controlling evidence sentence for direct single-sentence answers,
+  forbids echoing conflicting values even while correcting them, and requires the shortest
+  sufficient citation span. For known supplied chunk/version pairs only, it permits one bounded
+  citation-only repair of non-verbatim excerpts; answer content, citation identifiers, order, and
+  already-valid excerpts remain immutable. The gateway selects rules from the persisted prompt
+  version, so older runs retain their prior prompt and repair behavior.
 - MCP exposes exactly five strict stdio tools. Signed execution context, membership,
   capability, current execution, document version, artifact, and approval are reloaded
   server-side before effects.
