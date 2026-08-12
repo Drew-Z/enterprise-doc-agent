@@ -17,7 +17,10 @@ node execution but cannot override tenant, run, approval, or artifact rows.
   forbids echoing conflicting values even while correcting them, and requires the shortest
   sufficient citation span. For known supplied chunk/version pairs only, it permits one bounded
   citation-only repair of non-verbatim excerpts; answer content, citation identifiers, order, and
-  already-valid excerpts remain immutable. The gateway selects rules from the persisted prompt
+  already-valid excerpts remain immutable. Prompt behavior `m4.v6` inherits the v5 rules and makes
+  the sentence boundary explicit: when one complete evidence sentence fully supports the answer,
+  the citation excerpt starts at that sentence and stops at its boundary rather than extending into
+  adjacent sentences in the same evidence item. The gateway selects rules from the persisted prompt
   version, so older runs retain their prior prompt and repair behavior.
 - MCP exposes exactly five strict stdio tools. Signed execution context, membership,
   capability, current execution, document version, artifact, and approval are reloaded

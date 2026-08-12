@@ -75,6 +75,9 @@
       identifiers/excerpts; bump prompt version and cover single- and multi-anchor cases. After
       the first targeted repeat exposed two abbreviated facts and one repeated untrusted value,
       add Prompt v4 standalone-fact and conflict-control guidance with public regression tests.
+      After final Prompt v5 staging run `20260813-4` isolated one citation spanning two adjacent
+      travel-policy sentences, add Prompt v6's explicit sentence-boundary rule without changing
+      retrieval, anchors, thresholds, or citation authorization.
 - [x] Evaluator sample branch: record `applicable_targets` and apply unchanged thresholds only to
       metrics represented by the selected sample; prove the complete suite still requires all
       eight targets and bump the evaluator behavior version.

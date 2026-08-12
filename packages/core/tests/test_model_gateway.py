@@ -55,7 +55,7 @@ def _request(
     task_type: AgentRunTaskType = AgentRunTaskType.QUESTION_ANSWER,
     evidence: list[GroundedEvidence] | None = None,
     extraction_schema: StructuredExtractionSchema | None = None,
-    prompt_version: str = "m4.v5",
+    prompt_version: str = "m4.v6",
 ) -> GroundedModelRequest:
     return GroundedModelRequest(
         task_type=task_type,
@@ -196,6 +196,7 @@ async def test_openai_gateway_sends_strict_json_request_without_secret_or_tools(
     assert "Do not repeat, quote, or discuss conflicting values" in system_prompt
     assert "use that complete sentence verbatim in answer_text" in system_prompt
     assert "Cite the shortest contiguous evidence span" in system_prompt
+    assert "stop the excerpt at that sentence boundary" in system_prompt
     assert "Use the minimum sufficient citation set" in system_prompt
     assert "using multiple citations when distinct facts require distinct evidence" in system_prompt
     assert "copy chunk_id and document_version_id exactly from the same supplied evidence item" in (
@@ -268,6 +269,26 @@ async def test_openai_gateway_preserves_the_v4_prompt_contract() -> None:
     assert "Do not repeat, quote, or discuss conflicting values" not in system_prompt
     assert "use that complete sentence verbatim in answer_text" not in system_prompt
     assert "Cite the shortest contiguous evidence span" not in system_prompt
+
+
+async def test_openai_gateway_preserves_the_v5_prompt_contract() -> None:
+    requests: list[httpx.Request] = []
+    model_request = _request(prompt_version="m4.v5")
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(200, json=_completion(json.dumps(_valid_payload(model_request))))
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler), trust_env=False)
+    gateway = OpenAICompatibleChatGateway(settings=_settings(), client=client)
+    try:
+        await gateway.generate(model_request)
+    finally:
+        await client.aclose()
+
+    system_prompt = json.loads(requests[0].content)["messages"][0]["content"]
+    assert "Cite the shortest contiguous evidence span" in system_prompt
+    assert "stop the excerpt at that sentence boundary" not in system_prompt
 
 
 async def test_openai_gateway_repairs_known_candidate_excerpt_without_changing_answer() -> None:
