@@ -20,7 +20,10 @@ node execution but cannot override tenant, run, approval, or artifact rows.
   already-valid excerpts remain immutable. Prompt behavior `m4.v6` inherits the v5 rules and makes
   the sentence boundary explicit: when one complete evidence sentence fully supports the answer,
   the citation excerpt starts at that sentence and stops at its boundary rather than extending into
-  adjacent sentences in the same evidence item. The gateway selects rules from the persisted prompt
+  adjacent sentences in the same evidence item. Prompt behavior `m4.v7` additionally forbids
+  duplicate citation pairs, requires one minimum sufficient span when one evidence item supports
+  multiple requested facts, and forbids repeating conflicting instructions, actions, commands,
+  claims, or values from untrusted input. The gateway selects rules from the persisted prompt
   version, so older runs retain their prior prompt and repair behavior.
 - MCP exposes exactly five strict stdio tools. Signed execution context, membership,
   capability, current execution, document version, artifact, and approval are reloaded

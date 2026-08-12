@@ -77,7 +77,9 @@
       add Prompt v4 standalone-fact and conflict-control guidance with public regression tests.
       After final Prompt v5 staging run `20260813-4` isolated one citation spanning two adjacent
       travel-policy sentences, add Prompt v6's explicit sentence-boundary rule without changing
-      retrieval, anchors, thresholds, or citation authorization.
+      retrieval, anchors, thresholds, or citation authorization. After Prompt v6 runs
+      `20260813-5` and `-6` proved that travel case fixed but exposed duplicate citation pairs and
+      repeated untrusted actions, add Prompt v7's bounded pair-uniqueness and conflict-scope rules.
 - [x] Evaluator sample branch: record `applicable_targets` and apply unchanged thresholds only to
       metrics represented by the selected sample; prove the complete suite still requires all
       eight targets and bump the evaluator behavior version.
