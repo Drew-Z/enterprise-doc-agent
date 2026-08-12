@@ -284,6 +284,7 @@ def test_staging_quality_runs_answer_and_refusal_without_leaking_runtime_data(
     assert report["coverage"] == "full"
     assert report["measured"]["fact_recall"] == 1.0
     assert report["measured"]["refusal_reason_accuracy"] == 1.0
+    assert report["applicable_targets"] == sorted(loaded.dataset.targets)
     assert verify_report_payload(report)
     encoded = json.dumps(report, sort_keys=True)
     for forbidden in (
@@ -334,13 +335,43 @@ def test_staging_quality_reports_only_allowlisted_attempt_diagnostics(
     )
 
     assert report["status"] == "failed"
-    assert report["evaluator_version"] == "m5.rag-quality.v3"
+    assert report["evaluator_version"] == "m5.rag-quality.v4"
     assert report["cases"][0]["failure_diagnostic_code"] == expected
     assert report["cases"][0]["citation_diagnostics"] == []
     assert report["cases"][0]["unresolved_citation_count"] == 0
     assert report["cases"][0]["unexpected_anchor_ids"] == []
     encoded = json.dumps(report, sort_keys=True)
     assert "raw-mcp-secret-must-not-appear" not in encoded
+    assert verify_report_payload(report)
+
+
+def test_staging_quality_ignores_uncovered_refusal_targets_for_answer_only_sample(
+    tmp_path: Path,
+) -> None:
+    loaded = load_rag_quality_dataset(_write_dataset(tmp_path))
+
+    report = staging_quality.run_staging_rag_quality(
+        FakeClient(),
+        loaded=loaded,
+        case_ids=("answer-case",),
+        timeout_seconds=30,
+        run_nonce="fixed-answer-only-run",
+        monotonic=lambda: 1.0,
+        sleep=lambda _: None,
+        provenance=_provenance(),
+    )
+
+    assert report["status"] == "passed"
+    assert report["measured"]["refusal_precision"] is None
+    assert report["measured"]["refusal_recall"] is None
+    assert report["measured"]["refusal_reason_accuracy"] is None
+    assert report["applicable_targets"] == [
+        "citation_precision",
+        "citation_recall",
+        "closed_label_fact_precision",
+        "fact_recall",
+        "grounded_fact_rate",
+    ]
     assert verify_report_payload(report)
 
 

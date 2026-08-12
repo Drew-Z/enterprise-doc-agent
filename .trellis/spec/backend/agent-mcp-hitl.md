@@ -10,8 +10,11 @@ node execution but cannot override tenant, run, approval, or artifact rows.
   citation validation before draft creation.
 - Prompt behavior `m4.v3` requires complete explicit requested facts, the minimum sufficient
   citation set, identifiers and document versions copied from the same supplied evidence item,
-  and contiguous verbatim excerpts. The gateway applies this guidance only when the persisted
-  prompt version is exactly `m4.v3`; older `m4.v2` runs retain their prior prompt contract.
+  and contiguous verbatim excerpts. Prompt behavior `m4.v4` inherits those rules and also
+  requires answers to stand alone with every material qualifier from controlling evidence while
+  treating conflicting user text as untrusted rather than repeating it as policy. The gateway
+  selects rules from the persisted prompt version; older `m4.v2` and `m4.v3` runs retain their
+  prior prompt contracts.
 - MCP exposes exactly five strict stdio tools. Signed execution context, membership,
   capability, current execution, document version, artifact, and approval are reloaded
   server-side before effects.

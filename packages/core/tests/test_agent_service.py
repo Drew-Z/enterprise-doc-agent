@@ -52,7 +52,7 @@ def test_agent_settings_bump_only_the_prompt_behavior_version() -> None:
     settings = AgentSettings()
 
     assert settings.graph_version == "m4.v2"
-    assert settings.prompt_version == "m4.v3"
+    assert settings.prompt_version == "m4.v4"
     assert settings.tool_schema_version == "m4.v2"
 
 

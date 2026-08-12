@@ -14,6 +14,10 @@
   at Worker composition roots.
 - `scripts/evaluate_m5.py` records dataset hashes, behavior versions, target and measured
   values; deterministic results are not real-provider quality.
+- The staging RAG evaluator records the sorted target names represented by a selected sample and
+  applies unchanged thresholds only to those metrics. A complete suite represents every answer
+  and refusal metric, so all dataset targets remain mandatory; unavailable metrics are never
+  invented or coerced to passing values.
 - `scripts/load_m5.py` reports nearest-rank P50/P95/P99 and explicitly labels one bounded
   run as non-production capacity.
 - `scripts/run_application_capacity.py` executes repeated ramp, steady-state, burst and

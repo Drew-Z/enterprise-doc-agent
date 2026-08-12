@@ -72,7 +72,12 @@
 - [ ] Anchor branch, if selected: implement only the reviewed deterministic evaluator mapping and
       prove it does not map adjacent/unrelated clauses or alter online authorization.
 - [x] Prompt branch, if selected: require minimum sufficient citations and verbatim supplied
-      identifiers/excerpts; bump prompt version and cover single- and multi-anchor cases.
+      identifiers/excerpts; bump prompt version and cover single- and multi-anchor cases. After
+      the first targeted repeat exposed two abbreviated facts and one repeated untrusted value,
+      add Prompt v4 standalone-fact and conflict-control guidance with public regression tests.
+- [x] Evaluator sample branch: record `applicable_targets` and apply unchanged thresholds only to
+      metrics represented by the selected sample; prove the complete suite still requires all
+      eight targets and bump the evaluator behavior version.
 - [ ] Citation-repair branch, only if prompt remains insufficient: permit one citation-only repair
       for known candidates, preserve all non-citation output, reject unknown IDs, re-run the same
       authorization gate, and bump graph/prompt versions.

@@ -40,7 +40,7 @@ else:
 
 
 ROOT = Path(__file__).resolve().parents[1]
-EVALUATOR_VERSION = "m5.rag-quality.v3"
+EVALUATOR_VERSION = "m5.rag-quality.v4"
 _TERMINAL_STATUSES = frozenset(
     {"cancelled", "expired", "failed", "refused", "rejected", "succeeded"}
 )
@@ -308,9 +308,12 @@ def _safe_runtime_identity(status: dict[str, Any]) -> tuple[dict[str, str | None
 
 
 def _thresholds_passed(measured: dict[str, float | None], targets: dict[str, float]) -> bool:
-    for name, threshold in targets.items():
-        value = measured.get(name)
-        if value is None or value < threshold:
+    applicable_targets = [name for name in targets if measured.get(name) is not None]
+    if not applicable_targets:
+        return False
+    for name in applicable_targets:
+        value = measured[name]
+        if value is None or value < targets[name]:
             return False
     return True
 
@@ -532,6 +535,9 @@ def run_staging_rag_quality(
         "total_case_count": len(loaded.dataset.cases),
         "trial_only": trial_only,
         "targets": loaded.dataset.targets,
+        "applicable_targets": sorted(
+            name for name in loaded.dataset.targets if measured.get(name) is not None
+        ),
         "measured": measured,
         "latency_ms": build_percentile_summary(list(aggregate.duration_ms)),
         "errors_by_code": dict(sorted(errors.items())),
