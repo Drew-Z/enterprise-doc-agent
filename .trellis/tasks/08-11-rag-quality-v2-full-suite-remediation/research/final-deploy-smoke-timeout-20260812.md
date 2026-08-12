@@ -34,3 +34,26 @@ provider payloads.
 - Raise only `UrlLibSmokeClient.timeout_seconds` from 30 to 90 seconds.
 - Do not change API behavior, data, retrieval, prompt behavior, model routing, quality thresholds,
   or the immutable runtime digests for this transport correction.
+
+## Attempt 3
+
+- Deploy run: `31552350141` used source commit `25aa1b69ae80ca8b33d684cbfa97715020233fec`
+  and the same four immutable runtime digests.
+- Migration, rollout, embedding rollout, readiness smoke, upload, ingestion, and ready-version
+  polling passed.
+- The Agent run did not reach a terminal status inside the existing 300-second end-to-end smoke
+  deadline.
+- Safe durable status showed attempts 1-4 as retryable `mcp_client_timeout`; attempt 5 was still
+  running at collection time. The public Agent run had no terminal error code yet.
+- Tool projection showed `search_document` succeeded in `17.91` seconds and
+  `create_draft_artifact` remained running. The Worker-side 30-second MCP stdio deadline ended the
+  client before the object-store write/readback/database-finalize operation could return a stable
+  MCP result, so no allowlisted diagnostic subcode was available.
+
+## MCP Decision
+
+- Keep `AGENT__EXECUTION_MAX_ATTEMPTS=5` and the smoke's 300-second end-to-end deadline unchanged.
+- Set `MCP__REQUEST_TIMEOUT_SECONDS=90` in the staging ConfigMap. The same setting configures the
+  Worker client, MCP server operation deadline, and stale execution recovery window.
+- Do not weaken tool authorization, artifact integrity verification, idempotency, or retry
+  classification.

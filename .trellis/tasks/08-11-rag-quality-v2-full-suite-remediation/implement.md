@@ -99,6 +99,10 @@
       readiness smoke was transient, then reproduce the second failure as the authenticated
       smoke client's 30-second per-request timeout against a successful 63-second ready-version
       query. Raise only the bounded smoke request timeout to 90 seconds with a red/green test.
+- [x] Preserve failed deploy run `31552350141`. Confirm upload, ingestion, and readiness passed,
+      then classify the Agent failure as repeated Worker-side `mcp_client_timeout` while
+      `create_draft_artifact` remained running. Set the staging MCP client/server/stale-recovery
+      timeout to one reviewed 90-second value with a final-render red/green contract test.
 - [ ] Publish and deploy one immutable final image. Confirm readiness and zero unexpected restarts.
 - [ ] Run the seven-case targeted set until three consecutive complete reports pass. Preserve all
       failed/transient/interrupted evidence and reset the sequence after each failure.

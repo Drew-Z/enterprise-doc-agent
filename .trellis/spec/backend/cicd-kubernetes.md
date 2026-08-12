@@ -94,6 +94,9 @@
   per-request transport budget. The transport budget must cover measured external database and
   ingestion latency without turning a completed request into a client timeout, while remaining
   bounded below the end-to-end gate.
+- Staging sets `MCP__REQUEST_TIMEOUT_SECONDS=90`. The Worker-side stdio client, MCP server tool
+  deadline, and stale execution recovery window must share this reviewed budget so an artifact
+  write/readback/finalize operation is not killed before it can return a bounded tool result.
 - Restore and rollback commands are dry-run or validation-only without explicit
   `--confirm`.
 - R2 recovery uses an application-level manifest because R2 does not implement S3 bucket
