@@ -90,6 +90,10 @@
 - The in-cluster readiness smoke receives a dedicated Pod label and staging-only API
   ingress policy. `deployment-profile.txt` is written to raw evidence before sanitizing,
   so its sanitized copy is included in the evidence manifest hash chain.
+- The authenticated staging smoke keeps a 300-second end-to-end budget and a 90-second
+  per-request transport budget. The transport budget must cover measured external database and
+  ingestion latency without turning a completed request into a client timeout, while remaining
+  bounded below the end-to-end gate.
 - Restore and rollback commands are dry-run or validation-only without explicit
   `--confirm`.
 - R2 recovery uses an application-level manifest because R2 does not implement S3 bucket

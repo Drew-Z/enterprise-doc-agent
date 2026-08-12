@@ -95,6 +95,10 @@
 
 ## Slice 8: Real-Staging Quality Gate
 
+- [x] Preserve failed deploy runs `31550723096` and `31551145786`. Confirm the first
+      readiness smoke was transient, then reproduce the second failure as the authenticated
+      smoke client's 30-second per-request timeout against a successful 63-second ready-version
+      query. Raise only the bounded smoke request timeout to 90 seconds with a red/green test.
 - [ ] Publish and deploy one immutable final image. Confirm readiness and zero unexpected restarts.
 - [ ] Run the seven-case targeted set until three consecutive complete reports pass. Preserve all
       failed/transient/interrupted evidence and reset the sequence after each failure.

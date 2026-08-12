@@ -90,7 +90,7 @@ class SmokeClient(Protocol):
 class UrlLibSmokeClient:
     base_url: str
     token: str
-    timeout_seconds: float = 30.0
+    timeout_seconds: float = 90.0
     allowed_control_plane_hosts: tuple[str, ...] = ()
     allowed_object_store_hosts: tuple[str, ...] = ()
     allow_loopback_http: bool = False

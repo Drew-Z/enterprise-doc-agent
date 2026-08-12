@@ -133,10 +133,11 @@ def test_url_lib_client_sets_explicit_automation_user_agent(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     captured: list[Request] = []
+    timeouts: list[float] = []
 
     def fake_urlopen(request: Request, *, timeout: float) -> addinfourl:
-        del timeout
         captured.append(request)
+        timeouts.append(timeout)
         response = addinfourl(BytesIO(b"{}"), {}, "https://staging.example/api", 200)
         response.msg = "OK"
         return response
@@ -151,6 +152,7 @@ def test_url_lib_client_sets_explicit_automation_user_agent(
     assert len(captured) == 1
     request = captured[0]
     assert request.headers["User-agent"] == "enterprise-doc-staging-smoke/1.0"
+    assert timeouts == [90.0]
 
 
 def test_staging_smoke_rejects_plaintext_or_unallowlisted_endpoints() -> None:
