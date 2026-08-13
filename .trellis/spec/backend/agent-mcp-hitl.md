@@ -27,7 +27,12 @@ node execution but cannot override tenant, run, approval, or artifact rows.
   correct only a wrong document version on a known supplied chunk when that chunk occurs once in
   the frozen evidence and the proposed excerpt is already a verbatim span from it. Unknown chunks,
   duplicate chunk ambiguity, and non-verbatim excerpts are not identifier-normalized. The
-  unchanged authorization gate still validates every resulting citation. The gateway selects
+  unchanged authorization gate still validates every resulting citation. Prompt behavior `m4.v9`
+  additionally projects direct-QA answer text from the final authorized verbatim citation excerpts
+  in citation order, deduplicating identical excerpts. It omits only balanced double-quoted spans
+  explicitly labeled untrusted in the same clause. Projection is skipped for refusals, non-QA
+  tasks, empty or duplicate citations, unknown pairs, and non-verbatim excerpts, so invalid output
+  still reaches the unchanged authorization gate. The gateway selects
   rules from the persisted prompt version, so older runs retain their prior prompt and repair
   behavior.
 - MCP exposes exactly five strict stdio tools. Signed execution context, membership,

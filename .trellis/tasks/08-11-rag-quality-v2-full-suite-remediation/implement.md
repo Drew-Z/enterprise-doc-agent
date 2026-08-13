@@ -84,6 +84,12 @@
       supplied chunk, add Prompt v8's deterministic known-chunk version normalization. Require a
       unique supplied chunk and an already-verbatim excerpt; preserve unknown, ambiguous, and
       non-verbatim failures for the unchanged authorization gate.
+- [x] After Prompt v7 runs `20260813-17` through `-25` show dominant closed-label failures from
+      conflict prose outside otherwise valid controlling citations, add Prompt v9 deterministic
+      direct-QA answer projection. First prove red through the public gateway and grounding
+      interfaces. Project only fully authorized, verbatim, unique citations; deduplicate identical
+      excerpts in order; omit only balanced quoted spans explicitly labeled untrusted; preserve all
+      non-answer fields and skip every unprovable, non-QA, or refusal case.
 - [x] Evaluator sample branch: record `applicable_targets` and apply unchanged thresholds only to
       metrics represented by the selected sample; prove the complete suite still requires all
       eight targets and bump the evaluator behavior version.

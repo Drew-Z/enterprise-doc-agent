@@ -159,6 +159,29 @@ identical, and must pass the same authorization gate. It may not repair unknown 
 different evidence. This changes graph behavior and therefore requires an explicit graph version
 bump and tests for one repair only.
 
+After prompt v7 targeted runs `20260813-17` through `-25`, closed-label failures remain dominated
+by direct-QA answers that contain the accepted controlling fact and expected authorized citation
+but also repeat conflict prose. Prompt v8's known-chunk version normalization does not affect this
+failure class. Prompt v9 therefore adds a deterministic answer projection after citation
+normalization and citation-only repair:
+
+- The payload must be a non-refusal `question_answer` with at least one citation.
+- Every final citation pair must exist in the frozen supplied evidence, each excerpt must be a
+  non-empty verbatim span of at most 500 characters, and chunk IDs must be unique. If any condition
+  fails, retain the provider answer so the existing grounding gate remains authoritative.
+- Replace only `answer_text` with the cited excerpts in citation order. Deduplicate identical
+  excerpts without reordering; preserve citations and all other output fields.
+- If an excerpt explicitly labels balanced double-quoted content as untrusted, omit only that
+  quoted span while preserving the surrounding evidence statement. Do not perform general phrase,
+  benchmark, or semantic filtering.
+- Do not project summaries, structured extraction, refusals, empty citations, unknown pairs,
+  non-verbatim excerpts, or duplicate chunks.
+
+This keeps fact selection with the model's authorized citations while preventing uncited provider
+prose from changing the direct answer. It does not relax authorization, repair a different
+candidate, or import evaluator accepted/forbidden variants into production. The graph and provider
+call count do not change, so only the prompt behavior version advances to `m4.v9`.
+
 ### Retrieval branch
 
 Retrieval changes are last. For each case diagnosed as missing expected evidence, freeze keyword
@@ -191,6 +214,8 @@ failures.
 - Prompt changes increment only the prompt version unless graph behavior changes. Citation repair
   increments graph and prompt behavior versions. MCP result schemas remain unchanged unless a
   tool's wire contract genuinely changes.
+- Prompt v9 direct-QA projection is local post-processing with no new node or provider call, so it
+  increments only the prompt behavior version. Prompt v8 remains selectable for rollback.
 
 ## Security And Privacy
 
