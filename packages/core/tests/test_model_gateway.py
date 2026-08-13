@@ -24,12 +24,14 @@ from enterprise_doc_core.agents import (
     OpenAICompatibleChatGateway,
     StructuredExtractionSchema,
     gateway_error_is_retryable,
+    validate_grounded_output,
 )
 from enterprise_doc_core.config import ModelSettings
 from enterprise_doc_core.documents import RefusalReason
 
 TENANT = UUID("00000000-0000-0000-0000-000000000001")
 VERSION = UUID("00000000-0000-0000-0000-000000000011")
+WRONG_VERSION = UUID("00000000-0000-0000-0000-000000000012")
 GENERATION = UUID("00000000-0000-0000-0000-000000000021")
 
 
@@ -55,7 +57,7 @@ def _request(
     task_type: AgentRunTaskType = AgentRunTaskType.QUESTION_ANSWER,
     evidence: list[GroundedEvidence] | None = None,
     extraction_schema: StructuredExtractionSchema | None = None,
-    prompt_version: str = "m4.v7",
+    prompt_version: str = "m4.v8",
 ) -> GroundedModelRequest:
     return GroundedModelRequest(
         task_type=task_type,
@@ -371,6 +373,110 @@ async def test_openai_gateway_does_not_repair_unknown_candidate_identifier() -> 
     assert len(requests) == 1
     assert output.repaired is False
     assert str(output.citations[0].chunk_id) == citation["chunk_id"]
+
+
+async def test_openai_gateway_normalizes_known_candidate_document_version() -> None:
+    requests: list[httpx.Request] = []
+    model_request = _request()
+    invalid_payload = _valid_payload(model_request)
+    citation = invalid_payload["citations"][0]
+    assert isinstance(citation, dict)
+    citation["document_version_id"] = str(WRONG_VERSION)
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(200, json=_completion(json.dumps(invalid_payload)))
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler), trust_env=False)
+    gateway = OpenAICompatibleChatGateway(settings=_settings(), client=client)
+    try:
+        output = await gateway.generate(model_request)
+    finally:
+        await client.aclose()
+
+    assert len(requests) == 1
+    assert output.repaired is True
+    assert output.citations[0].chunk_id == model_request.evidence[0].chunk_id
+    assert output.citations[0].document_version_id == VERSION
+    assert output.citations[0].excerpt == citation["excerpt"]
+    grounded = validate_grounded_output(
+        output,
+        request=model_request,
+        tenant_id=TENANT,
+        document_version_id=VERSION,
+    )
+    assert grounded.citations[0].chunk_id == model_request.evidence[0].chunk_id
+    assert grounded.citations[0].document_version_id == VERSION
+
+
+async def test_openai_gateway_preserves_v7_wrong_version_behavior() -> None:
+    model_request = _request(prompt_version="m4.v7")
+    invalid_payload = _valid_payload(model_request)
+    citation = invalid_payload["citations"][0]
+    assert isinstance(citation, dict)
+    citation["document_version_id"] = str(WRONG_VERSION)
+
+    async def handler(_: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=_completion(json.dumps(invalid_payload)))
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler), trust_env=False)
+    gateway = OpenAICompatibleChatGateway(settings=_settings(), client=client)
+    try:
+        output = await gateway.generate(model_request)
+    finally:
+        await client.aclose()
+
+    assert output.repaired is False
+    assert output.citations[0].document_version_id == WRONG_VERSION
+
+
+async def test_openai_gateway_does_not_normalize_non_verbatim_wrong_version() -> None:
+    model_request = _request()
+    invalid_payload = _valid_payload(model_request)
+    citation = invalid_payload["citations"][0]
+    assert isinstance(citation, dict)
+    citation["document_version_id"] = str(WRONG_VERSION)
+    citation["excerpt"] = "Payment is payable in thirty days."
+
+    async def handler(_: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=_completion(json.dumps(invalid_payload)))
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler), trust_env=False)
+    gateway = OpenAICompatibleChatGateway(settings=_settings(), client=client)
+    try:
+        output = await gateway.generate(model_request)
+    finally:
+        await client.aclose()
+
+    assert output.repaired is False
+    assert output.citations[0].document_version_id == WRONG_VERSION
+    assert output.citations[0].excerpt == citation["excerpt"]
+
+
+async def test_openai_gateway_does_not_normalize_ambiguous_candidate_version() -> None:
+    evidence = [
+        _evidence(),
+        _evidence().model_copy(update={"document_version_id": WRONG_VERSION}),
+    ]
+    model_request = _request(evidence=evidence)
+    invalid_payload = _valid_payload(model_request)
+    citation = invalid_payload["citations"][0]
+    assert isinstance(citation, dict)
+    unknown_version = UUID("00000000-0000-0000-0000-000000000013")
+    citation["document_version_id"] = str(unknown_version)
+
+    async def handler(_: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=_completion(json.dumps(invalid_payload)))
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler), trust_env=False)
+    gateway = OpenAICompatibleChatGateway(settings=_settings(), client=client)
+    try:
+        output = await gateway.generate(model_request)
+    finally:
+        await client.aclose()
+
+    assert output.repaired is False
+    assert output.citations[0].document_version_id == unknown_version
 
 
 async def test_openai_gateway_rejects_invalid_citation_only_repair() -> None:

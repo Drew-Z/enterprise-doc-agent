@@ -154,7 +154,7 @@ class FaultInjectionSettings(BaseModel):
 
 class AgentSettings(BaseModel):
     graph_version: str = Field(default="m4.v2", min_length=1, max_length=64)
-    prompt_version: str = Field(default="m4.v7", min_length=1, max_length=64)
+    prompt_version: str = Field(default="m4.v8", min_length=1, max_length=64)
     tool_schema_version: str = Field(default="m4.v2", min_length=1, max_length=64)
     execution_max_attempts: int = Field(default=3, ge=1, le=100)
     checkpoint_url: SecretStr | None = None

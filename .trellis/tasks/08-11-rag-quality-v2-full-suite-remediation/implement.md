@@ -80,6 +80,10 @@
       retrieval, anchors, thresholds, or citation authorization. After Prompt v6 runs
       `20260813-5` and `-6` proved that travel case fixed but exposed duplicate citation pairs and
       repeated untrusted actions, add Prompt v7's bounded pair-uniqueness and conflict-scope rules.
+      After Prompt v7 run `20260813-15` exposed a wrong document version on an otherwise known
+      supplied chunk, add Prompt v8's deterministic known-chunk version normalization. Require a
+      unique supplied chunk and an already-verbatim excerpt; preserve unknown, ambiguous, and
+      non-verbatim failures for the unchanged authorization gate.
 - [x] Evaluator sample branch: record `applicable_targets` and apply unchanged thresholds only to
       metrics represented by the selected sample; prove the complete suite still requires all
       eight targets and bump the evaluator behavior version.
