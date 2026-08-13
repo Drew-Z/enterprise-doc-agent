@@ -45,6 +45,24 @@ IGNORED_LIVE_IDENTITIES = frozenset(
         ("ServiceAccount", NAMESPACE, "enterprise-doc-staging-deployer"),
     }
 )
+EVALUATOR_BUNDLE_NAME = re.compile(r"^enterprise-doc-rag-quality-v2-bundle-[0-9]{8}-[1-9][0-9]*$")
+EVALUATOR_BUNDLE_KEYS = frozenset(
+    {
+        "data-retention-standard.txt",
+        "employee-handbook.txt",
+        "evaluate_staging_rag_quality.py",
+        "incident-response-runbook.txt",
+        "incluster_rag_quality_driver.py",
+        "issue_staging_smoke_token.py",
+        "procurement-policy.txt",
+        "rag_quality_v2.json",
+        "security-policy.txt",
+        "service-level-agreement.txt",
+        "staging_smoke.py",
+        "travel-policy.txt",
+        "vendor-contract.txt",
+    }
+)
 
 
 class PrerequisiteValidationError(ValueError):
@@ -80,6 +98,19 @@ def _identity(document: dict[str, Any]) -> tuple[str, str, str]:
     if not isinstance(kind, str) or not isinstance(name, str) or not isinstance(namespace, str):
         raise PrerequisiteValidationError("each prerequisite must have kind and metadata.name")
     return kind, namespace, name
+
+
+def _is_evaluator_bundle(document: dict[str, Any]) -> bool:
+    kind, namespace, name = _identity(document)
+    data = document.get("data")
+    return (
+        kind == "ConfigMap"
+        and namespace == NAMESPACE
+        and EVALUATOR_BUNDLE_NAME.fullmatch(name) is not None
+        and isinstance(data, dict)
+        and set(data) == EVALUATOR_BUNDLE_KEYS
+        and all(isinstance(value, str) for value in data.values())
+    )
 
 
 def _canonical(document: dict[str, Any]) -> dict[str, Any]:
@@ -208,7 +239,7 @@ def _validate_live_objects(expected_manifest: Path, live_manifest: Path) -> int:
     live_documents = [
         document
         for document in _documents(live_manifest)
-        if _identity(document) not in IGNORED_LIVE_IDENTITIES
+        if _identity(document) not in IGNORED_LIVE_IDENTITIES and not _is_evaluator_bundle(document)
     ]
     if any(document.get("kind") in WORKLOAD_KINDS for document in expected_documents):
         raise PrerequisiteValidationError("expected prerequisite manifest contains a workload")

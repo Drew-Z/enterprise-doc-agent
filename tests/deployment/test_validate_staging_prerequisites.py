@@ -152,6 +152,35 @@ def _write_live(path: Path, annotations: dict[str, str]) -> None:
     )
 
 
+def _evaluator_bundle() -> dict[str, object]:
+    return {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+            "name": "enterprise-doc-rag-quality-v2-bundle-20260813-26",
+            "namespace": "enterprise-doc-agent-staging",
+        },
+        "data": {
+            name: "synthetic-test-data"
+            for name in (
+                "data-retention-standard.txt",
+                "employee-handbook.txt",
+                "evaluate_staging_rag_quality.py",
+                "incident-response-runbook.txt",
+                "incluster_rag_quality_driver.py",
+                "issue_staging_smoke_token.py",
+                "procurement-policy.txt",
+                "rag_quality_v2.json",
+                "security-policy.txt",
+                "service-level-agreement.txt",
+                "staging_smoke.py",
+                "travel-policy.txt",
+                "vendor-contract.txt",
+            )
+        },
+    }
+
+
 def test_validate_prerequisites_accepts_matching_admin_approval(tmp_path: Path) -> None:
     expected = tmp_path / "expected.yaml"
     live = tmp_path / "live.json"
@@ -173,6 +202,65 @@ def test_validate_prerequisites_accepts_matching_admin_approval(tmp_path: Path) 
         "live_objects_checked": 3,
         "prerequisites_sha256": "a" * 64,
     }
+
+
+def test_validate_prerequisites_ignores_exact_evaluator_bundle_inventory(
+    tmp_path: Path,
+) -> None:
+    expected = tmp_path / "expected.yaml"
+    live = tmp_path / "live.json"
+    live_manifest = tmp_path / "live.yaml"
+    _write_expected(expected)
+    _write_live(live, _approval_annotations())
+    _write_live_manifest(live_manifest, expected)
+    payload = yaml.safe_load(live_manifest.read_text(encoding="utf-8"))
+    payload["items"].append(_evaluator_bundle())
+    live_manifest.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+
+    report = validate_staging_prerequisites.validate_prerequisites(
+        expected,
+        live,
+        live_manifest,
+    )
+
+    assert report["live_objects_checked"] == 3
+
+
+@pytest.mark.parametrize("mutation", ["unexpected_key", "missing_key", "wrong_name"])
+def test_validate_prerequisites_rejects_evaluator_bundle_lookalike(
+    tmp_path: Path,
+    mutation: str,
+) -> None:
+    expected = tmp_path / "expected.yaml"
+    live = tmp_path / "live.json"
+    live_manifest = tmp_path / "live.yaml"
+    _write_expected(expected)
+    _write_live(live, _approval_annotations())
+    _write_live_manifest(live_manifest, expected)
+    bundle = _evaluator_bundle()
+    data = bundle["data"]
+    metadata = bundle["metadata"]
+    assert isinstance(data, dict)
+    assert isinstance(metadata, dict)
+    if mutation == "unexpected_key":
+        data["unexpected.py"] = "not-approved"
+    elif mutation == "missing_key":
+        data.pop("rag_quality_v2.json")
+    else:
+        metadata["name"] = "enterprise-doc-rag-quality-v2-bundle-current"
+    payload = yaml.safe_load(live_manifest.read_text(encoding="utf-8"))
+    payload["items"].append(bundle)
+    live_manifest.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+
+    with pytest.raises(
+        validate_staging_prerequisites.PrerequisiteValidationError,
+        match="resource inventory",
+    ):
+        validate_staging_prerequisites.validate_prerequisites(
+            expected,
+            live,
+            live_manifest,
+        )
 
 
 @pytest.mark.parametrize(
