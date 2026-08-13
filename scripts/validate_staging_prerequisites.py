@@ -63,6 +63,10 @@ EVALUATOR_BUNDLE_KEYS = frozenset(
         "vendor-contract.txt",
     }
 )
+EVALUATOR_POSTGRES_POLICY_NAME = re.compile(
+    r"^rag-quality-v2-(targeted-[0-9]{8}-[1-9][0-9]*)-postgres-egress$"
+)
+ADMIN_POSTGRES_POLICY = ("NetworkPolicy", NAMESPACE, "enterprise-doc-external-postgres-egress")
 
 
 class PrerequisiteValidationError(ValueError):
@@ -110,6 +114,40 @@ def _is_evaluator_bundle(document: dict[str, Any]) -> bool:
         and isinstance(data, dict)
         and set(data) == EVALUATOR_BUNDLE_KEYS
         and all(isinstance(value, str) for value in data.values())
+    )
+
+
+def _is_evaluator_postgres_policy(
+    document: dict[str, Any],
+    *,
+    expected_by_identity: dict[tuple[str, str, str], dict[str, Any]],
+) -> bool:
+    kind, namespace, name = _identity(document)
+    match = EVALUATOR_POSTGRES_POLICY_NAME.fullmatch(name)
+    expected_policy = expected_by_identity.get(ADMIN_POSTGRES_POLICY)
+    if kind != "NetworkPolicy" or namespace != NAMESPACE or match is None:
+        return False
+    if expected_policy is None:
+        return False
+    metadata = document.get("metadata")
+    spec = document.get("spec")
+    expected_spec = expected_policy.get("spec")
+    if (
+        not isinstance(metadata, dict)
+        or not isinstance(spec, dict)
+        or not isinstance(expected_spec, dict)
+    ):
+        return False
+    return (
+        metadata.get("labels")
+        == {
+            "app.kubernetes.io/managed-by": "codex",
+            "app.kubernetes.io/part-of": "enterprise-doc-agent",
+        }
+        and spec.get("podSelector")
+        == {"matchLabels": {"enterprise-doc-agent/evaluation-run": match.group(1)}}
+        and spec.get("policyTypes") == ["Egress"]
+        and spec.get("egress") == expected_spec.get("egress")
     )
 
 
@@ -236,14 +274,19 @@ def _without_server_defaults(
 
 def _validate_live_objects(expected_manifest: Path, live_manifest: Path) -> int:
     expected_documents = _documents(expected_manifest)
+    expected_by_identity = {_identity(document): document for document in expected_documents}
     live_documents = [
         document
         for document in _documents(live_manifest)
-        if _identity(document) not in IGNORED_LIVE_IDENTITIES and not _is_evaluator_bundle(document)
+        if _identity(document) not in IGNORED_LIVE_IDENTITIES
+        and not _is_evaluator_bundle(document)
+        and not _is_evaluator_postgres_policy(
+            document,
+            expected_by_identity=expected_by_identity,
+        )
     ]
     if any(document.get("kind") in WORKLOAD_KINDS for document in expected_documents):
         raise PrerequisiteValidationError("expected prerequisite manifest contains a workload")
-    expected_by_identity = {_identity(document): document for document in expected_documents}
     live_by_identity = {_identity(document): document for document in live_documents}
     if len(expected_by_identity) != len(expected_documents):
         raise PrerequisiteValidationError("expected prerequisite manifest contains duplicates")

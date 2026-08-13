@@ -181,6 +181,48 @@ def _evaluator_bundle() -> dict[str, object]:
     }
 
 
+def _postgres_egress_policy() -> dict[str, object]:
+    return {
+        "apiVersion": "networking.k8s.io/v1",
+        "kind": "NetworkPolicy",
+        "metadata": {
+            "name": "enterprise-doc-external-postgres-egress",
+            "namespace": "enterprise-doc-agent-staging",
+        },
+        "spec": {
+            "podSelector": {"matchLabels": {"app.kubernetes.io/part-of": "enterprise-doc-agent"}},
+            "policyTypes": ["Egress"],
+            "egress": [
+                {
+                    "ports": [{"port": 5432, "protocol": "TCP"}],
+                    "to": [{"ipBlock": {"cidr": "8.8.8.8/32"}}],
+                }
+            ],
+        },
+    }
+
+
+def _evaluator_postgres_egress_policy() -> dict[str, object]:
+    policy = _postgres_egress_policy()
+    metadata = policy["metadata"]
+    spec = policy["spec"]
+    assert isinstance(metadata, dict)
+    assert isinstance(spec, dict)
+    metadata.update(
+        {
+            "name": "rag-quality-v2-targeted-20260813-26-postgres-egress",
+            "labels": {
+                "app.kubernetes.io/managed-by": "codex",
+                "app.kubernetes.io/part-of": "enterprise-doc-agent",
+            },
+        }
+    )
+    spec["podSelector"] = {
+        "matchLabels": {"enterprise-doc-agent/evaluation-run": "targeted-20260813-26"}
+    }
+    return policy
+
+
 def test_validate_prerequisites_accepts_matching_admin_approval(tmp_path: Path) -> None:
     expected = tmp_path / "expected.yaml"
     live = tmp_path / "live.json"
@@ -250,6 +292,81 @@ def test_validate_prerequisites_rejects_evaluator_bundle_lookalike(
         metadata["name"] = "enterprise-doc-rag-quality-v2-bundle-current"
     payload = yaml.safe_load(live_manifest.read_text(encoding="utf-8"))
     payload["items"].append(bundle)
+    live_manifest.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+
+    with pytest.raises(
+        validate_staging_prerequisites.PrerequisiteValidationError,
+        match="resource inventory",
+    ):
+        validate_staging_prerequisites.validate_prerequisites(
+            expected,
+            live,
+            live_manifest,
+        )
+
+
+def test_validate_prerequisites_ignores_exact_evaluator_postgres_policy(
+    tmp_path: Path,
+) -> None:
+    expected = tmp_path / "expected.yaml"
+    live = tmp_path / "live.json"
+    live_manifest = tmp_path / "live.yaml"
+    _write_expected(expected)
+    expected_documents = list(yaml.safe_load_all(expected.read_text(encoding="utf-8")))
+    expected_documents.append(_postgres_egress_policy())
+    expected.write_text(
+        yaml.safe_dump_all(expected_documents, sort_keys=False),
+        encoding="utf-8",
+    )
+    _write_live(live, _approval_annotations())
+    _write_live_manifest(live_manifest, expected)
+    payload = yaml.safe_load(live_manifest.read_text(encoding="utf-8"))
+    payload["items"].append(_evaluator_postgres_egress_policy())
+    live_manifest.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+
+    report = validate_staging_prerequisites.validate_prerequisites(
+        expected,
+        live,
+        live_manifest,
+    )
+
+    assert report["live_objects_checked"] == 4
+
+
+@pytest.mark.parametrize("mutation", ["cidr", "port", "selector", "name"])
+def test_validate_prerequisites_rejects_evaluator_postgres_policy_lookalike(
+    tmp_path: Path,
+    mutation: str,
+) -> None:
+    expected = tmp_path / "expected.yaml"
+    live = tmp_path / "live.json"
+    live_manifest = tmp_path / "live.yaml"
+    _write_expected(expected)
+    expected_documents = list(yaml.safe_load_all(expected.read_text(encoding="utf-8")))
+    expected_documents.append(_postgres_egress_policy())
+    expected.write_text(
+        yaml.safe_dump_all(expected_documents, sort_keys=False),
+        encoding="utf-8",
+    )
+    _write_live(live, _approval_annotations())
+    _write_live_manifest(live_manifest, expected)
+    policy = _evaluator_postgres_egress_policy()
+    metadata = policy["metadata"]
+    spec = policy["spec"]
+    assert isinstance(metadata, dict)
+    assert isinstance(spec, dict)
+    if mutation == "cidr":
+        spec["egress"][0]["to"][0]["ipBlock"]["cidr"] = "0.0.0.0/0"
+    elif mutation == "port":
+        spec["egress"][0]["ports"][0]["port"] = 443
+    elif mutation == "selector":
+        spec["podSelector"]["matchLabels"]["enterprise-doc-agent/evaluation-run"] = (
+            "targeted-20260813-27"
+        )
+    else:
+        metadata["name"] = "rag-quality-v2-targeted-current-postgres-egress"
+    payload = yaml.safe_load(live_manifest.read_text(encoding="utf-8"))
+    payload["items"].append(policy)
     live_manifest.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
 
     with pytest.raises(
