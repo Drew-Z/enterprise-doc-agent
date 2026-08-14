@@ -96,6 +96,7 @@
     }
   ],
   "manual_gates": [
+    "evidence/gates/release-scope-decision-20260814.json",
     "evidence/gates/m5-real-provider-quality.json",
     "evidence/gates/m5-representative-capacity.json",
     "evidence/gates/m5-managed-observability.json",
