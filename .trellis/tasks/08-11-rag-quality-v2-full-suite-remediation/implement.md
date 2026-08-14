@@ -53,7 +53,7 @@
 - [x] Run focused tests, Ruff format/check, mypy, migration checks, secret scan, report tests, and
       the non-integration suite.
 - [x] Commit and push the diagnostic slice after the normal one-shot commit review.
-- [ ] Publish and deploy one immutable diagnostic image; record commit, digest, route identity,
+- [x] Publish and deploy one immutable diagnostic image; record commit, digest, route identity,
       graph/prompt/tool/evaluator versions, readiness, and workload restarts.
 - [x] Run the seven selected cases in the order documented in `design.md`; write a new sealed
       report and verify its seal.
@@ -66,10 +66,15 @@
 
 - [x] For every confirmed branch, first add a public-interface regression test that fails for the
       observed reason.
-- [ ] Dataset branch, if selected: create v3 from byte-identical v2 content except version and
+- [x] Dataset branch not selected: frozen evidence did not justify dataset mutation; v1/v2 stayed
+      immutable, so no v3 was created.
+      <!-- Original conditional acceptance criteria retained below for auditability. -->
+      Dataset branch, if selected: create v3 from byte-identical v2 content except version and
       reviewed accepted variants; prove v1/v2 hashes unchanged, v3 hash distinct, corpus hash
       unchanged, and all three datasets load.
-- [ ] Anchor branch, if selected: implement only the reviewed deterministic evaluator mapping and
+- [x] Anchor branch not selected: the confirmed failures did not justify changing anchors or
+      deterministic evaluator mappings.
+      Anchor branch, if selected: implement only the reviewed deterministic evaluator mapping and
       prove it does not map adjacent/unrelated clauses or alter online authorization.
 - [x] Prompt branch, if selected: require minimum sufficient citations and verbatim supplied
       identifiers/excerpts; bump prompt version and cover single- and multi-anchor cases. After
@@ -96,9 +101,13 @@
 - [x] Citation-repair branch, only if prompt remains insufficient: permit one citation-only repair
       for known candidates, preserve all non-citation output, reject unknown IDs, re-run the same
       authorization gate, and bump graph/prompt versions.
-- [ ] MCP branch, if selected: fix the owning deterministic tool failure and preserve retryable
+- [x] MCP branch not selected: final remediation evidence did not identify an owning deterministic
+      MCP defect.
+      MCP branch, if selected: fix the owning deterministic tool failure and preserve retryable
       classification for infrastructure errors.
-- [ ] Retrieval branch, only with frozen miss evidence: test keyword/vector ranks and RRF/top-k
+- [x] Retrieval branch not selected: frozen evidence did not establish a retrieval separation
+      defect; RRF/top-k remained unchanged.
+      Retrieval branch, only with frozen miss evidence: test keyword/vector ranks and RRF/top-k
       through `RetrievalService.retrieve`, then make the smallest cross-case-supported change.
 - [x] Update task research with each accepted/rejected branch and its test/evidence reference.
 
@@ -123,14 +132,15 @@
       then classify the Agent failure as repeated Worker-side `mcp_client_timeout` while
       `create_draft_artifact` remained running. Set the staging MCP client/server/stale-recovery
       timeout to one reviewed 90-second value with a final-render red/green contract test.
-- [ ] Publish and deploy one immutable final image. Confirm readiness and zero unexpected restarts.
-- [ ] Run the seven-case targeted set until three consecutive complete reports pass. Preserve all
+- [x] Publish and deploy one immutable final image. Confirm readiness and zero unexpected restarts.
+- [x] Run the seven-case targeted set until three consecutive complete reports pass. Preserve all
       failed/transient/interrupted evidence and reset the sequence after each failure.
-- [ ] Run and seal the bounded 12-case suite once; require all approved targets.
-- [ ] Run and seal the complete 40-case suite. Require every unchanged aggregate target.
-- [ ] Repeat the full suite until three consecutive complete reports pass on the same image,
+- [x] Run and seal the bounded 12-case suite once; require all approved targets.
+- [x] Run and seal the complete 40-case suite. Require every unchanged aggregate target.
+- [x] Repeat the full suite until three consecutive complete reports pass on the same image,
       runtime route, behavior versions, and dataset version.
-- [ ] Verify every new payload seal and record evidence hashes and GitHub/deployment references.
+- [x] Verify every new payload seal and record evidence hashes and GitHub/deployment references in
+      `research/final-staging-quality-gate-20260814.md`.
 
 ## Final Review
 
