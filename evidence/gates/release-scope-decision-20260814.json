@@ -2,7 +2,19 @@
   "schema_version": 1,
   "gate_id": "release-scope-decision-20260814",
   "decision_date": "2026-08-14",
+  "requirement": "release-scope-decision",
   "owner": "service owner",
+  "blocking_reason": null,
+  "prerequisites": [
+    "Service-owner approval of the included and excluded requirements",
+    "Explicit recording of the independent recovery drill as the remaining external hard gate"
+  ],
+  "required_evidence": [
+    "Approved release-scope decision",
+    "Linked manual-gate records for every included requirement"
+  ],
+  "state": "closed",
+  "status": "passed",
   "release_scope": "staging-capable-cpu-openai-compatible",
   "decision": "Continue all non-GPU production-readiness work that can be evidenced on the existing server; keep only the independently unavailable recovery drill externally blocked.",
   "included_requirements": [
@@ -26,5 +38,8 @@
   ],
   "acceptance_rule": "No excluded or externally blocked requirement may be reported as passed; all included requirements require command-backed evidence or a linked manual-gate record.",
   "approved_by": "user",
+  "completed_evidence": [
+    "evidence/gates/release-scope-decision-20260814.json"
+  ],
   "review_date": "2026-08-14"
 }
