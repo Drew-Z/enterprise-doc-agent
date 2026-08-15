@@ -91,11 +91,11 @@ immutable image or rollback evidence. Those remain open manual gates.
 
 ## Slice 10: Real Tiny-Staging Stabilization
 
-- [ ] Make the reviewed migration Job run Alembic followed by idempotent LangGraph
+- [x] Make the reviewed migration Job run Alembic followed by idempotent LangGraph
   checkpointer setup and verification before any application rollout.
-- [ ] Give the tiny single-node profile bounded external-dependency and startup probe
+- [x] Give the tiny single-node profile bounded external-dependency and startup probe
   budgets that match measured Supabase/R2 latency without changing production defaults.
-- [ ] Keep the tiny overlap budget at or below 1 GiB while allowing the Worker enough
+- [x] Keep the tiny overlap budget at or below 1 GiB while allowing the Worker enough
   CPU, memory and startup time to become ready on the 2-vCPU/2-GiB K3s node.
 - [ ] Emit immediate non-secret migration Job status and describe diagnostics when the
   pre-rollout wait fails, then verify the change against the real staging cluster.
@@ -155,3 +155,12 @@ immutable image or rollback evidence. Those remain open manual gates.
 - [ ] Obtain service-owner objective approval, provision the separate recovery target,
   execute the drill, retain sanitized hashed artifacts, and close the gate only if the
   measured values meet the pre-approved objectives.
+
+## Slice 15: Reviewed Staging Fallback Route
+
+- [x] Render an optional OpenAI-compatible fallback base URL and model name into the
+  non-secret ConfigMap only when both protected values are present.
+- [x] Include the fallback route in the backend config hash and administrator-owned
+  Namespace approvals while keeping both API keys exclusively in the Secret.
+- [x] Source fallback routing from protected staging Environment variables without adding
+  workflow-dispatch inputs, then cover configured, absent, and partial-route failures.

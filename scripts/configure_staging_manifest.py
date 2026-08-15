@@ -267,6 +267,8 @@ def configure_manifest(
     model_provider: str,
     model_base_url: str,
     model_name: str,
+    fallback_model_base_url: str | None = None,
+    fallback_model_name: str | None = None,
     embedding_base_url: str = "https://embedding.example.invalid/v1",
     embedding_model_name: str = "staging-embedding",
     object_store_checksum_mode: str = "native_sha256",
@@ -302,6 +304,16 @@ def configure_manifest(
         raise ValueError(f"model provider must be {MODEL_PROVIDER}")
     normalized_model_base_url = _model_base_url(model_base_url)
     normalized_model_name = _model_name(model_name)
+    fallback_base_url_value = (
+        fallback_model_base_url.strip() if fallback_model_base_url is not None else ""
+    )
+    fallback_name_value = fallback_model_name.strip() if fallback_model_name is not None else ""
+    if bool(fallback_base_url_value) != bool(fallback_name_value):
+        raise ValueError("fallback model route requires both a base URL and a model name")
+    normalized_fallback_base_url = (
+        _model_base_url(fallback_base_url_value) if fallback_base_url_value else None
+    )
+    normalized_fallback_name = _model_name(fallback_name_value) if fallback_name_value else None
     normalized_embedding_base_url = _embedding_base_url(embedding_base_url)
     normalized_embedding_model_name = _model_name(embedding_model_name)
     normalized_checksum_mode = _object_store_checksum_mode(object_store_checksum_mode)
@@ -324,6 +336,16 @@ def configure_manifest(
     data["MODEL__PROVIDER"] = MODEL_PROVIDER
     data["MODEL__BASE_URL"] = normalized_model_base_url
     data["MODEL__MODEL_NAME"] = normalized_model_name
+    for fallback_key in (
+        "MODEL__FALLBACK_PROVIDER",
+        "MODEL__FALLBACK_BASE_URL",
+        "MODEL__FALLBACK_MODEL_NAME",
+    ):
+        data.pop(fallback_key, None)
+    if normalized_fallback_base_url is not None and normalized_fallback_name is not None:
+        data["MODEL__FALLBACK_PROVIDER"] = MODEL_PROVIDER
+        data["MODEL__FALLBACK_BASE_URL"] = normalized_fallback_base_url
+        data["MODEL__FALLBACK_MODEL_NAME"] = normalized_fallback_name
     data["EMBEDDING__PROVIDER"] = "openai_compatible"
     data["EMBEDDING__BASE_URL"] = normalized_embedding_base_url
     data["EMBEDDING__MODEL_NAME"] = normalized_embedding_model_name
@@ -488,6 +510,23 @@ def configure_manifest(
         f"{APPROVAL_ANNOTATION_PREFIX}config-sha256": config_digest,
         f"{APPROVAL_ANNOTATION_PREFIX}prometheus-images": PROMETHEUS_IMAGE,
     }
+    fallback_approval_keys = {
+        f"{APPROVAL_ANNOTATION_PREFIX}model-fallback-provider",
+        f"{APPROVAL_ANNOTATION_PREFIX}model-fallback-base-url",
+        f"{APPROVAL_ANNOTATION_PREFIX}model-fallback-name",
+    }
+    for key in fallback_approval_keys:
+        namespace_annotations.pop(key, None)
+    if normalized_fallback_base_url is not None and normalized_fallback_name is not None:
+        approval_annotations.update(
+            {
+                f"{APPROVAL_ANNOTATION_PREFIX}model-fallback-provider": MODEL_PROVIDER,
+                f"{APPROVAL_ANNOTATION_PREFIX}model-fallback-base-url": (
+                    normalized_fallback_base_url
+                ),
+                f"{APPROVAL_ANNOTATION_PREFIX}model-fallback-name": normalized_fallback_name,
+            }
+        )
     for service, image in current_images.items():
         approval_annotations[f"{APPROVAL_ANNOTATION_PREFIX}{service}-images"] = _approved_images(
             image,
@@ -524,6 +563,8 @@ def main() -> None:
     parser.add_argument("--model-provider", required=True)
     parser.add_argument("--model-base-url", required=True)
     parser.add_argument("--model-name", required=True)
+    parser.add_argument("--fallback-model-base-url")
+    parser.add_argument("--fallback-model-name")
     parser.add_argument("--embedding-base-url", required=True)
     parser.add_argument("--embedding-model-name", required=True)
     parser.add_argument("--rollback-api-image")
@@ -544,6 +585,8 @@ def main() -> None:
         model_provider=args.model_provider,
         model_base_url=args.model_base_url,
         model_name=args.model_name,
+        fallback_model_base_url=args.fallback_model_base_url,
+        fallback_model_name=args.fallback_model_name,
         embedding_base_url=args.embedding_base_url,
         embedding_model_name=args.embedding_model_name,
         rollback_api_image=args.rollback_api_image,

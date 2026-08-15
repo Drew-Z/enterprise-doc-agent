@@ -527,6 +527,8 @@ def _configure_model(
     model_provider: str = "openai_compatible",
     model_base_url: str = "https://model.example.com/v1",
     model_name: str = "staging-model",
+    fallback_model_base_url: str | None = None,
+    fallback_model_name: str | None = None,
 ) -> None:
     configure_staging_manifest.configure_manifest(
         source,
@@ -540,7 +542,112 @@ def _configure_model(
         model_provider=model_provider,
         model_base_url=model_base_url,
         model_name=model_name,
+        fallback_model_base_url=fallback_model_base_url,
+        fallback_model_name=fallback_model_name,
     )
+
+
+def test_configure_manifest_binds_optional_fallback_route_without_secret_data(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "template.yaml"
+    destination = tmp_path / "fallback.yaml"
+    primary_only_destination = tmp_path / "primary-only.yaml"
+    _write_template(source)
+
+    _configure_model(source, primary_only_destination)
+    _configure_model(
+        source,
+        destination,
+        fallback_model_base_url="https://fallback.example.com/v1",
+        fallback_model_name="fallback-model",
+    )
+
+    documents = [
+        item
+        for item in yaml.safe_load_all(destination.read_text(encoding="utf-8"))
+        if isinstance(item, dict)
+    ]
+    config = next(item for item in documents if item["kind"] == "ConfigMap")
+    assert config["data"]["MODEL__FALLBACK_PROVIDER"] == "openai_compatible"
+    assert config["data"]["MODEL__FALLBACK_BASE_URL"] == ("https://fallback.example.com/v1")
+    assert config["data"]["MODEL__FALLBACK_MODEL_NAME"] == "fallback-model"
+    assert "MODEL__FALLBACK_API_KEY" not in config["data"]
+    namespace = next(item for item in documents if item["kind"] == "Namespace")
+    annotations = namespace["metadata"]["annotations"]
+    assert annotations["enterprise-doc-agent/approved-model-fallback-base-url"] == (
+        "https://fallback.example.com/v1"
+    )
+    assert annotations["enterprise-doc-agent/approved-model-fallback-name"] == ("fallback-model")
+    primary_only_documents = [
+        item
+        for item in yaml.safe_load_all(primary_only_destination.read_text(encoding="utf-8"))
+        if isinstance(item, dict)
+    ]
+    primary_only_api = next(
+        item
+        for item in primary_only_documents
+        if item["kind"] == "Deployment" and item["metadata"]["name"] == "enterprise-doc-api"
+    )
+    fallback_api = next(
+        item
+        for item in documents
+        if item["kind"] == "Deployment" and item["metadata"]["name"] == "enterprise-doc-api"
+    )
+    assert (
+        primary_only_api["spec"]["template"]["metadata"]["annotations"][
+            "enterprise-doc-agent/config-sha256"
+        ]
+        != fallback_api["spec"]["template"]["metadata"]["annotations"][
+            "enterprise-doc-agent/config-sha256"
+        ]
+    )
+
+
+def test_configure_manifest_omits_fallback_route_when_unconfigured(tmp_path: Path) -> None:
+    source = tmp_path / "template.yaml"
+    destination = tmp_path / "primary-only.yaml"
+    _write_template(source)
+
+    _configure_model(source, destination)
+
+    documents = [
+        item
+        for item in yaml.safe_load_all(destination.read_text(encoding="utf-8"))
+        if isinstance(item, dict)
+    ]
+    config = next(item for item in documents if item["kind"] == "ConfigMap")
+    assert not {key for key in config["data"] if key.startswith("MODEL__FALLBACK_")}
+    namespace = next(item for item in documents if item["kind"] == "Namespace")
+    assert not {
+        key
+        for key in namespace["metadata"]["annotations"]
+        if key.startswith("enterprise-doc-agent/approved-model-fallback-")
+    }
+
+
+@pytest.mark.parametrize(
+    ("fallback_model_base_url", "fallback_model_name"),
+    [
+        ("https://fallback.example.com/v1", None),
+        (None, "fallback-model"),
+    ],
+)
+def test_configure_manifest_rejects_partial_fallback_route(
+    tmp_path: Path,
+    fallback_model_base_url: str | None,
+    fallback_model_name: str | None,
+) -> None:
+    source = tmp_path / "template.yaml"
+    _write_template(source)
+
+    with pytest.raises(ValueError, match="fallback model route"):
+        _configure_model(
+            source,
+            tmp_path / "partial-fallback.yaml",
+            fallback_model_base_url=fallback_model_base_url,
+            fallback_model_name=fallback_model_name,
+        )
 
 
 def test_configure_manifest_rejects_unreviewed_model_provider(tmp_path: Path) -> None:

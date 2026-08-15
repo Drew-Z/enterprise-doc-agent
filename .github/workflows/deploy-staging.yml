@@ -245,6 +245,8 @@ jobs:
           MODEL_PROVIDER: openai_compatible
           MODEL_BASE_URL: ${{ vars.STAGING_MODEL_BASE_URL }}
           MODEL_NAME: ${{ vars.STAGING_MODEL_NAME }}
+          MODEL_FALLBACK_BASE_URL: ${{ vars.STAGING_MODEL_FALLBACK_BASE_URL }}
+          MODEL_FALLBACK_NAME: ${{ vars.STAGING_MODEL_FALLBACK_NAME }}
           EMBEDDING_BASE_URL: ${{ vars.STAGING_EMBEDDING_BASE_URL }}
           EMBEDDING_MODEL_NAME: ${{ vars.STAGING_EMBEDDING_MODEL_NAME }}
           ROLLBACK_API_IMAGE: ${{ vars.STAGING_ROLLBACK_API_IMAGE }}
@@ -264,6 +266,17 @@ jobs:
           test -n "$MODEL_NAME"
           test -n "$EMBEDDING_BASE_URL"
           test -n "$EMBEDDING_MODEL_NAME"
+          fallback_args=()
+          if test -n "$MODEL_FALLBACK_BASE_URL" || test -n "$MODEL_FALLBACK_NAME"; then
+            if test -z "$MODEL_FALLBACK_BASE_URL" || test -z "$MODEL_FALLBACK_NAME"; then
+              echo 'fallback model route requires both a base URL and a model name' >&2
+              exit 1
+            fi
+            fallback_args+=(
+              --fallback-model-base-url "$MODEL_FALLBACK_BASE_URL"
+              --fallback-model-name "$MODEL_FALLBACK_NAME"
+            )
+          fi
           kustomize build "$OVERLAY_DIR" > "$RUNNER_TEMP/staging-template.yaml"
           "$RUNNER_PYTHON" scripts/configure_staging_manifest.py \
             --input "$RUNNER_TEMP/staging-template.yaml" \
@@ -280,6 +293,7 @@ jobs:
             --model-name "$MODEL_NAME" \
             --embedding-base-url "$EMBEDDING_BASE_URL" \
             --embedding-model-name "$EMBEDDING_MODEL_NAME" \
+            "${fallback_args[@]}" \
             --rollback-api-image "$ROLLBACK_API_IMAGE" \
             --rollback-worker-image "$ROLLBACK_WORKER_IMAGE" \
             --rollback-consumer-image "$ROLLBACK_CONSUMER_IMAGE" \
