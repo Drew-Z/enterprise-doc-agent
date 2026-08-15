@@ -47,6 +47,45 @@ The endpoint must:
 - return one indexed 1024-dimensional finite vector per input;
 - permit the selected enterprise document classification to leave the staging host.
 
+### Free channel challenger validation (2026-08-16)
+
+A concrete local adapter probe was run against the current Free channel without persisting its
+API key. The probe embedded two enterprise-document questions through the project
+`OpenAICompatibleEmbeddingProvider` and verified finite, non-zero vectors:
+
+- Endpoint: `https://api.astrdark.cyou/v1/embeddings`.
+- Requested model: `qwen3-embedding-8b`.
+- Provider-reported model: `xop3qwen8bembedding`.
+- Result: two vectors, each exactly 1024 dimensions.
+
+The same channel also accepted a concrete two-document rerank request at
+`/v1/rerank` with `qwen3-reranker-8b` and ranked the document containing the retention-policy
+answer above an unrelated upload document.
+
+This closes only the provider compatibility probe. It does not replace the currently reviewed
+staging identity (`Qwen/Qwen3-Embedding-4B`, generation version `2`), does not prove corpus
+quality, and does not constitute a staging reindex. To adopt the Free challenger, set these as
+protected staging Environment variables:
+
+```powershell
+gh variable set STAGING_EMBEDDING_BASE_URL --env staging `
+  --body 'https://api.astrdark.cyou/v1'
+gh variable set STAGING_EMBEDDING_MODEL_NAME --env staging `
+  --body 'qwen3-embedding-8b'
+```
+
+Because the embedding model identity changes, increment `EMBEDDING__VERSION` from `2` to `3`,
+re-render administrator approvals, run the embedding rollout/reindex Job, and repeat the RAG
+quality gate before accepting the route. Keep the channel key only as `EMBEDDING__API_KEY` in the
+operator-owned Secret; never copy it into repository files, GitHub variables, workflow inputs, or
+evidence.
+
+The project currently has no independent reranker implementation or `RERANK__*` configuration.
+The existing RRF step is deterministic candidate fusion, not cross-encoder reranking. Do not add
+the tested rerank endpoint to the runtime ConfigMap until a separate retrieval slice defines its
+timeout, failure fallback, candidate budget, tenant/version filtering, telemetry, and quality
+evaluation contract.
+
 Document chunks are embedded without an instruction. Query embeddings use:
 
 ```text
