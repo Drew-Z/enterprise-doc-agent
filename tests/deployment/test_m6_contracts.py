@@ -902,6 +902,7 @@ def test_staging_model_routing_uses_environment_variables_within_dispatch_limit(
         "MODEL_NAME": "${{ vars.STAGING_MODEL_NAME }}",
         "EMBEDDING_BASE_URL": "${{ vars.STAGING_EMBEDDING_BASE_URL }}",
         "EMBEDDING_MODEL_NAME": "${{ vars.STAGING_EMBEDDING_MODEL_NAME }}",
+        "EMBEDDING_VERSION": "${{ vars.STAGING_EMBEDDING_VERSION || '2' }}",
     }
     for step_name in (
         "Render and validate staging manifests",
@@ -915,6 +916,7 @@ def test_staging_model_routing_uses_environment_variables_within_dispatch_limit(
         assert '--model-name "$MODEL_NAME"' in command
         assert '--embedding-base-url "$EMBEDDING_BASE_URL"' in command
         assert '--embedding-model-name "$EMBEDDING_MODEL_NAME"' in command
+        assert '--embedding-version "$EMBEDDING_VERSION"' in command
 
     render = _named_step(steps, "Render and validate staging manifests")
     assert render["env"]["MODEL_FALLBACK_BASE_URL"] == (
@@ -1510,6 +1512,9 @@ def test_staging_workflows_preserve_admin_boundary_and_clean_credentials() -> No
 
     embedding = _named_step(deploy_steps, "Run embedding provider and reindex gate")
     embedding_run = str(embedding["run"])
+    assert embedding["env"]["EXPECTED_EMBEDDING_VERSION"] == (
+        "${{ vars.STAGING_EMBEDDING_VERSION || '2' }}"
+    )
     step_names = [str(step.get("name", "")) for step in deploy_steps]
     assert (
         step_names.index("Wait for workloads")
@@ -1524,6 +1529,7 @@ def test_staging_workflows_preserve_admin_boundary_and_clean_credentials() -> No
     assert '@.type=="Failed"' in embedding_run
     assert 'if test "$job_result" != "complete"' in embedding_run
     assert "validate_embedding_rollout_report.py" in embedding_run
+    assert '--expected-version "$EXPECTED_EMBEDDING_VERSION"' in embedding_run
     assert "kubectl exec" not in embedding_run
 
     smoke_cleanup = _named_step(deploy_steps, "Clean up readiness smoke")

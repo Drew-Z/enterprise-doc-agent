@@ -72,6 +72,8 @@ gh variable set STAGING_EMBEDDING_BASE_URL --env staging `
   --body 'https://api.astrdark.cyou/v1'
 gh variable set STAGING_EMBEDDING_MODEL_NAME --env staging `
   --body 'qwen3-embedding-8b'
+gh variable set STAGING_EMBEDDING_VERSION --env staging `
+  --body '3'
 ```
 
 Because the embedding model identity changes, increment `EMBEDDING__VERSION` from `2` to `3`,
@@ -105,6 +107,8 @@ gh variable set STAGING_EMBEDDING_BASE_URL --env staging \
   --body 'https://<embedding-provider-host>/v1'
 gh variable set STAGING_EMBEDDING_MODEL_NAME --env staging \
   --body 'Qwen/Qwen3-Embedding-4B'
+gh variable set STAGING_EMBEDDING_VERSION --env staging \
+  --body '2'
 ```
 
 Do not paste the API key into GitHub variables, repository files, issue comments, CI

@@ -119,6 +119,13 @@ def _model_name(value: str) -> str:
     return normalized
 
 
+def _embedding_version(value: str) -> str:
+    normalized = value.strip()
+    if not normalized.isdigit() or not 1 <= int(normalized) <= 1000:
+        raise ValueError("embedding version must be an integer from 1 to 1000")
+    return str(int(normalized))
+
+
 def _embedding_base_url(value: str) -> str:
     if _contains_control_character(value):
         raise ValueError("embedding base URL must not contain control characters")
@@ -271,6 +278,7 @@ def configure_manifest(
     fallback_model_name: str | None = None,
     embedding_base_url: str = "https://embedding.example.invalid/v1",
     embedding_model_name: str = "staging-embedding",
+    embedding_version: str = EMBEDDING_VERSION,
     object_store_checksum_mode: str = "native_sha256",
     rollback_api_image: str | None = None,
     rollback_worker_image: str | None = None,
@@ -316,6 +324,7 @@ def configure_manifest(
     normalized_fallback_name = _model_name(fallback_name_value) if fallback_name_value else None
     normalized_embedding_base_url = _embedding_base_url(embedding_base_url)
     normalized_embedding_model_name = _model_name(embedding_model_name)
+    normalized_embedding_version = _embedding_version(embedding_version)
     normalized_checksum_mode = _object_store_checksum_mode(object_store_checksum_mode)
 
     documents = [
@@ -350,7 +359,7 @@ def configure_manifest(
     data["EMBEDDING__BASE_URL"] = normalized_embedding_base_url
     data["EMBEDDING__MODEL_NAME"] = normalized_embedding_model_name
     data["EMBEDDING__DIMENSION"] = EMBEDDING_DIMENSION
-    data["EMBEDDING__VERSION"] = EMBEDDING_VERSION
+    data["EMBEDDING__VERSION"] = normalized_embedding_version
     data["EMBEDDING__SEND_DIMENSIONS"] = "true"
     data["EMBEDDING__QUERY_INSTRUCTION"] = EMBEDDING_QUERY_INSTRUCTION
 
@@ -506,7 +515,7 @@ def configure_manifest(
         f"{APPROVAL_ANNOTATION_PREFIX}embedding-base-url": normalized_embedding_base_url,
         f"{APPROVAL_ANNOTATION_PREFIX}embedding-model-name": normalized_embedding_model_name,
         f"{APPROVAL_ANNOTATION_PREFIX}embedding-dimension": EMBEDDING_DIMENSION,
-        f"{APPROVAL_ANNOTATION_PREFIX}embedding-version": EMBEDDING_VERSION,
+        f"{APPROVAL_ANNOTATION_PREFIX}embedding-version": normalized_embedding_version,
         f"{APPROVAL_ANNOTATION_PREFIX}config-sha256": config_digest,
         f"{APPROVAL_ANNOTATION_PREFIX}prometheus-images": PROMETHEUS_IMAGE,
     }
@@ -567,6 +576,7 @@ def main() -> None:
     parser.add_argument("--fallback-model-name")
     parser.add_argument("--embedding-base-url", required=True)
     parser.add_argument("--embedding-model-name", required=True)
+    parser.add_argument("--embedding-version", default=EMBEDDING_VERSION)
     parser.add_argument("--rollback-api-image")
     parser.add_argument("--rollback-worker-image")
     parser.add_argument("--rollback-consumer-image")
@@ -589,6 +599,7 @@ def main() -> None:
         fallback_model_name=args.fallback_model_name,
         embedding_base_url=args.embedding_base_url,
         embedding_model_name=args.embedding_model_name,
+        embedding_version=args.embedding_version,
         rollback_api_image=args.rollback_api_image,
         rollback_worker_image=args.rollback_worker_image,
         rollback_consumer_image=args.rollback_consumer_image,

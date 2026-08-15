@@ -128,6 +128,7 @@ def _embedding_metadata(
     rollout_report: Path,
     embedding_base_url: str = "https://embedding.example.invalid/v1",
     embedding_model_name: str = "staging-embedding",
+    embedding_version: int = 2,
 ) -> tuple[dict[str, Any], str | None]:
     metadata, error = _model_metadata(
         model_provider=MODEL_PROVIDER,
@@ -141,6 +142,7 @@ def _embedding_metadata(
         rollout = validate_embedding_rollout_report(
             rollout_report,
             expected_model=metadata["name"],
+            expected_version=embedding_version,
         )
     except EmbeddingRolloutReportError as report_error:
         metadata.update(
@@ -183,6 +185,7 @@ def build_record(
     embedding_rollout_report: Path,
     embedding_base_url: str = "https://embedding.example.invalid/v1",
     embedding_model_name: str = "staging-embedding",
+    embedding_version: int = 2,
     smoke_required: bool,
     output: Path,
 ) -> dict[str, Any]:
@@ -214,6 +217,7 @@ def build_record(
         rollout_report=embedding_rollout_report,
         embedding_base_url=embedding_base_url,
         embedding_model_name=embedding_model_name,
+        embedding_version=embedding_version,
     )
 
     rollout_ok = all(outcomes[name] == "success" for name in ROLLOUT_STEPS)
@@ -277,6 +281,7 @@ def main() -> None:
     parser.add_argument("--model-name", required=True)
     parser.add_argument("--embedding-base-url", required=True)
     parser.add_argument("--embedding-model-name", required=True)
+    parser.add_argument("--embedding-version", type=int, default=2)
     parser.add_argument("--embedding-rollout-report", type=Path, required=True)
     parser.add_argument("--smoke-required", choices=("true", "false"), required=True)
     parser.add_argument("--output", type=Path, required=True)
@@ -302,6 +307,7 @@ def main() -> None:
             embedding_rollout_report=args.embedding_rollout_report,
             embedding_base_url=args.embedding_base_url,
             embedding_model_name=args.embedding_model_name,
+            embedding_version=args.embedding_version,
             smoke_required=args.smoke_required == "true",
             output=args.output,
         )

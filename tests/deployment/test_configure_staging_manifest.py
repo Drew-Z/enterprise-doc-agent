@@ -529,6 +529,7 @@ def _configure_model(
     model_name: str = "staging-model",
     fallback_model_base_url: str | None = None,
     fallback_model_name: str | None = None,
+    embedding_version: str = "2",
 ) -> None:
     configure_staging_manifest.configure_manifest(
         source,
@@ -544,6 +545,7 @@ def _configure_model(
         model_name=model_name,
         fallback_model_base_url=fallback_model_base_url,
         fallback_model_name=fallback_model_name,
+        embedding_version=embedding_version,
     )
 
 
@@ -624,6 +626,34 @@ def test_configure_manifest_omits_fallback_route_when_unconfigured(tmp_path: Pat
         for key in namespace["metadata"]["annotations"]
         if key.startswith("enterprise-doc-agent/approved-model-fallback-")
     }
+
+
+def test_configure_manifest_binds_embedding_generation_version(tmp_path: Path) -> None:
+    source = tmp_path / "template.yaml"
+    destination = tmp_path / "embedding-v3.yaml"
+    _write_template(source)
+
+    _configure_model(source, destination, embedding_version="3")
+
+    documents = [item for item in yaml.safe_load_all(destination.read_text()) if item]
+    config = next(item for item in documents if item["kind"] == "ConfigMap")
+    namespace = next(item for item in documents if item["kind"] == "Namespace")
+    assert config["data"]["EMBEDDING__VERSION"] == "3"
+    assert (
+        namespace["metadata"]["annotations"]["enterprise-doc-agent/approved-embedding-version"]
+        == "3"
+    )
+
+
+@pytest.mark.parametrize("value", ["0", "1001", "version-3", " "])
+def test_configure_manifest_rejects_invalid_embedding_generation_version(
+    tmp_path: Path, value: str
+) -> None:
+    source = tmp_path / "template.yaml"
+    _write_template(source)
+
+    with pytest.raises(ValueError, match="embedding version"):
+        _configure_model(source, tmp_path / "invalid-version.yaml", embedding_version=value)
 
 
 @pytest.mark.parametrize(

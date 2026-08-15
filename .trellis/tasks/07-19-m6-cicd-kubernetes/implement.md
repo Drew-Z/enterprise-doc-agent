@@ -164,3 +164,12 @@ immutable image or rollback evidence. Those remain open manual gates.
   Namespace approvals while keeping both API keys exclusively in the Secret.
 - [x] Source fallback routing from protected staging Environment variables without adding
   workflow-dispatch inputs, then cover configured, absent, and partial-route failures.
+
+## Slice 16: Versioned Embedding Rollout
+
+- [x] Parameterize the embedding generation version from a protected staging Environment
+  variable while retaining version `2` as the compatibility default.
+- [x] Bind the same version through manifest approvals, the embedding rollout validator, and
+  the sanitized release record so a model change cannot reuse an older generation silently.
+- [ ] Validate the Free `qwen3-embedding-8b` candidate only through a versioned reindex and
+  repeated RAG quality gate before replacing the reviewed 4B staging identity.

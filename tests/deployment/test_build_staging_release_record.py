@@ -19,7 +19,7 @@ def _digests() -> dict[str, str]:
     }
 
 
-def _rollout_report(path: Path, *, final_selected: int = 0) -> Path:
+def _rollout_report(path: Path, *, final_selected: int = 0, version: int = 2) -> Path:
     plan = {
         "status": "planned",
         "selected": 0,
@@ -27,7 +27,7 @@ def _rollout_report(path: Path, *, final_selected: int = 0) -> Path:
         "replayed": 0,
         "embedding_model": "staging-embedding",
         "embedding_dimension": 1024,
-        "embedding_version": 2,
+        "embedding_version": version,
         "values_redacted": True,
     }
     final = {**plan, "selected": final_selected}
@@ -43,7 +43,7 @@ def _rollout_report(path: Path, *, final_selected: int = 0) -> Path:
                     "provider": "openai_compatible",
                     "model": "staging-embedding",
                     "dimension": 1024,
-                    "version": 2,
+                    "version": version,
                     "item_count": 2,
                     "finite": True,
                     "nonzero_norms": True,
@@ -83,6 +83,7 @@ def _build(
     model_provider: str = "openai_compatible",
     model_base_url: str = "https://model.example.com/v1",
     model_name: str = "staging-model",
+    embedding_version: int = 2,
 ) -> dict[str, object]:
     return build_record(
         _manifest(tmp_path / "evidence.json"),
@@ -97,7 +98,10 @@ def _build(
         model_provider=model_provider,
         model_base_url=model_base_url,
         model_name=model_name,
-        embedding_rollout_report=_rollout_report(tmp_path / "embedding-rollout.json"),
+        embedding_rollout_report=_rollout_report(
+            tmp_path / "embedding-rollout.json", version=embedding_version
+        ),
+        embedding_version=embedding_version,
         smoke_required=smoke_required,
         output=tmp_path / "record.json",
     )
@@ -119,6 +123,13 @@ def test_staging_record_passes_only_with_rollout_and_smoke(tmp_path: Path) -> No
     assert record["embedding"]["version"] == 2
     assert record["embedding"]["rollout"]["reindex"]["final_selected"] == 0
     assert record["embedding"]["rollout_report"]["sha256"]
+
+
+def test_staging_record_preserves_alternate_embedding_version(tmp_path: Path) -> None:
+    record = _build(tmp_path, outcomes=_outcomes(), smoke_required=True, embedding_version=3)
+
+    assert record["embedding"]["version"] == 3
+    assert record["embedding"]["rollout"]["version"] == 3
 
 
 def test_staging_record_marks_skipped_smoke_blocked_external(tmp_path: Path) -> None:
