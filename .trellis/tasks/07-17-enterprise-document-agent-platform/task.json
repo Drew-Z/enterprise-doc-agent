@@ -34,9 +34,9 @@
   ],
   "parent": null,
   "relatedFiles": [],
-  "notes": "M0-M4 have reviewed local evidence, with M4 now passed at implementation commit 70f5644 and evidence commit 6a53dd9. Release v0.1.25 produced three consecutive targeted passes and a 12-of-12 bounded v2 quality pass, but the first full 40-case run passed only 35 cases and missed fact, citation, and grounding targets. The linked full-suite remediation child is implementing secret-safe diagnostics before any semantic change. M5/M7 therefore remain open alongside representative-corpus review, repeated full-suite evidence, provider telemetry, production-like capacity, managed observability, registry/OIDC, recovery, and GPU/vLLM gates. M8 is archived with refreshed shared route-deadline evidence. The parent remains in_progress until required external gates are executed or explicitly removed by an approved scope decision.",
+  "notes": "M0-M4 and M8 are complete. The fixed real-provider synthetic suite now has three consecutive full 40-case passes at the retained staging identity, so repeat synthetic-suite convergence is no longer a blocker. M5/M7 remain active for representative-corpus review, provider revision and usage/cost/fallback/breaker telemetry, representative capacity, and managed observability ownership. M6 has 4C8G staging, immutable supply-chain, migration, rollback, database/R2 recovery, and local fallback-rendering evidence; real 2C2G tiny-profile verification remains open. The approved release scope excludes GPU/vLLM/quantization capacity work (M7-R7). The independent fault-domain recovery drill (M6-R5) is the only approved externally blocked hard gate. Server-side development is frozen at the synchronized 6a0ae11 source checkpoint; subsequent work continues locally and does not imply a runtime deployment.",
   "meta": {
-    "current_milestone": "external-delivery-gates",
+    "current_milestone": "remaining-release-gates",
     "completed_milestones": [
       "M0",
       "M1",
@@ -45,10 +45,16 @@
       "M4",
       "M8"
     ],
-    "reviewed_local_but_blocked_external": [
+    "active_milestones": [
       "M5",
       "M6",
       "M7"
+    ],
+    "excluded_requirements": [
+      "M7-R7"
+    ],
+    "blocked_external_requirements": [
+      "M6-R5"
     ]
   }
 }
