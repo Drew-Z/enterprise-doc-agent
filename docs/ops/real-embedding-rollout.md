@@ -125,12 +125,36 @@ rollout.
 The 4B repeat preserved every top-chunk order, anchor rank, and calibration row; rounded cosine
 values moved by at most `0.003658` without crossing a scanned threshold.
 
+### Hybrid vector-evidence admission gate (2026-08-16)
+
+The local hybrid review used the production query stopword/fallback policy, vector distance
+boundary, `top_k=10`, `rrf_k=60`, and RRF acceptance floor. Its keyword score is a deterministic
+local token-overlap approximation, not PostgreSQL `ts_rank_cd`. Sealed reports are:
+
+- `evidence/m6/20260816-local-embedding-reviewed4b-v2-hybrid.json`;
+- `evidence/m6/20260816-local-embedding-free8b-v3-hybrid.json`.
+
+Without an additional admission gate, both routes accepted four of the six refusal cases after
+hybrid fusion (`0.666667`). Three of the 4B false acceptances came from keyword-only rank-1
+candidates meeting the default RRF floor exactly. Requiring at least one candidate to pass the
+existing vector-distance boundary changed the results as follows:
+
+- reviewed 4B: refusal acceptance fell from `0.666667` to `0.166667`;
+- Free 8B: refusal acceptance remained `0.666667` because four cases already passed its vector
+  boundary;
+- both routes retained answer anchor Recall@1 `0.985294`, Recall@3 `1.0`, and MRR `1.0`.
+
+`RETRIEVAL__REQUIRE_VECTOR_EVIDENCE` is therefore enabled in staging and recovery manifests while
+remaining `false` by default for local compatibility and explicit keyword-only tests. When enabled,
+keyword candidates can still improve RRF ordering, but cannot open the retrieval gate without any
+distance-qualified vector evidence. This repository change has not been deployed to staging.
+
 Decision: the 8B route is a strong retrieval-ranking challenger, but version `3` rollout remains
 blocked. Keep staging on the reviewed 4B/version `2` identity; the newly confirmed 4B route is
 currently the stronger candidate on the local refusal metric. Do not change protected variables or
-run a reindex. The next gate is review of similarity-threshold behavior in the full hybrid retrieval
-path, followed by the complete post-reindex staging RAG quality gate only if a model/version change
-is approved.
+run a reindex. The next gate is a database-backed execution using PostgreSQL keyword ranking,
+followed by the complete staging RAG quality gate after the retrieval configuration is deployed. A
+post-reindex quality gate is required only if a model/version change is later approved.
 
 The project currently has no independent reranker implementation or `RERANK__*` configuration.
 The existing RRF step is deterministic candidate fusion, not cross-encoder reranking. Do not add
