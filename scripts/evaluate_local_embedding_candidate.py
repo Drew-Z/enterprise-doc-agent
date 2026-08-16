@@ -135,23 +135,57 @@ def _channel_fields(channel_env: dict[str, str], channel_name: str) -> tuple[str
     return provider_name, base_url.rstrip("/"), api_key
 
 
+def _provider_secret_fields(path: Path) -> tuple[str, str, str]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise ValueError("unable to read provider secret JSON") from error
+    if not isinstance(payload, dict):
+        raise ValueError("provider secret JSON must contain an object")
+    values: list[str] = []
+    for key in ("base_url", "model_name", "api_key"):
+        value = payload.get(key)
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError(f"provider secret JSON is missing {key}")
+        values.append(value.strip())
+    base_url, model_name, api_key = values
+    parsed = urlparse(base_url)
+    if parsed.scheme != "https" or not parsed.hostname:
+        raise ValueError("embedding provider base URL must be an HTTPS URL with a host")
+    return base_url.rstrip("/"), model_name, api_key
+
+
 def _build_candidate_provider(
     *,
-    channel_env: Path,
+    channel_env: Path | None,
+    provider_secret_json: Path | None = None,
     channel_name: str,
-    model_name: str,
+    model_name: str | None,
     dimension: int,
     version: int,
     timeout_seconds: float,
     batch_size: int,
 ) -> tuple[EmbeddingProvider, dict[str, object]]:
-    env_values = _parse_channel_env(channel_env)
-    provider_name, base_url, api_key = _channel_fields(env_values, channel_name)
+    if (channel_env is None) == (provider_secret_json is None):
+        raise ValueError("select exactly one provider credential source")
+    if provider_secret_json is not None:
+        base_url, secret_model_name, api_key = _provider_secret_fields(provider_secret_json)
+        if model_name is not None and model_name != secret_model_name:
+            raise ValueError("--model must match model_name in provider secret JSON")
+        provider_name = "reviewed-staging-route"
+        resolved_model_name = secret_model_name
+        credential_source = "provider_secret_json"
+    else:
+        assert channel_env is not None
+        env_values = _parse_channel_env(channel_env)
+        provider_name, base_url, api_key = _channel_fields(env_values, channel_name)
+        resolved_model_name = model_name or "qwen3-embedding-8b"
+        credential_source = "channel_env"
     settings = EmbeddingSettings(
         provider=EmbeddingProviderKind.OPENAI_COMPATIBLE,
         base_url=base_url,
         api_key=SecretStr(api_key),
-        model_name=model_name,
+        model_name=resolved_model_name,
         dimension=dimension,
         version=version,
         timeout_seconds=timeout_seconds,
@@ -163,10 +197,11 @@ def _build_candidate_provider(
     host = urlparse(base_url).hostname
     return OpenAICompatibleEmbeddingProvider(settings=settings), {
         "provider": provider_name,
-        "requested_model_name": model_name,
+        "requested_model_name": resolved_model_name,
         "embedding_version": version,
         "dimension": dimension,
         "base_url_host": host,
+        "credential_source": credential_source,
         "api_key_present": True,
     }
 
@@ -449,9 +484,10 @@ def _delta(candidate: dict[str, object], baseline: dict[str, object]) -> dict[st
 async def run_evaluation(
     *,
     dataset_path: Path,
-    channel_env: Path,
+    channel_env: Path | None,
+    provider_secret_json: Path | None,
     channel_name: str,
-    model_name: str,
+    model_name: str | None,
     embedding_version: int,
     max_chars: int,
     overlap_chars: int,
@@ -469,6 +505,7 @@ async def run_evaluation(
     cases = loaded.dataset.cases
     candidate, route = _build_candidate_provider(
         channel_env=channel_env,
+        provider_secret_json=provider_secret_json,
         channel_name=channel_name,
         model_name=model_name,
         dimension=dimension,
@@ -537,8 +574,8 @@ async def run_evaluation(
                 "RRF, Agent answering, or citation validation."
             ),
             (
-                "The local channel file did not provide a verified Qwen3-Embedding-4B route, "
-                "so no 4B versus 8B comparison is claimed."
+                "This report compares the selected route with the deterministic hash baseline; "
+                "the separate Free 8B report is the reference for cross-model comparison."
             ),
             "The corpus is synthetic and contains no customer or personal data.",
             (
@@ -557,25 +594,36 @@ def _report_command(args: argparse.Namespace, ks: Sequence[int]) -> list[str]:
         "scripts/evaluate_local_embedding_candidate.py",
         "--dataset",
         "<dataset>",
-        "--channel-env",
-        "<channel-env>",
-        "--channel-name",
-        str(args.channel_name),
-        "--model",
-        str(args.model_name),
-        "--embedding-version",
-        str(args.embedding_version),
-        "--dimension",
-        str(args.dimension),
-        "--max-chars",
-        str(args.max_chars),
-        "--overlap-chars",
-        str(args.overlap_chars),
-        "--timeout-seconds",
-        str(args.timeout_seconds),
-        "--batch-size",
-        str(args.batch_size),
     ]
+    if args.provider_secret_json:
+        command.extend(["--provider-secret-json", "<provider-secret-json>"])
+    else:
+        command.extend(
+            [
+                "--channel-env",
+                "<channel-env>",
+                "--channel-name",
+                str(args.channel_name),
+            ]
+        )
+    if args.model_name:
+        command.extend(["--model", str(args.model_name)])
+    command.extend(
+        [
+            "--embedding-version",
+            str(args.embedding_version),
+            "--dimension",
+            str(args.dimension),
+            "--max-chars",
+            str(args.max_chars),
+            "--overlap-chars",
+            str(args.overlap_chars),
+            "--timeout-seconds",
+            str(args.timeout_seconds),
+            "--batch-size",
+            str(args.batch_size),
+        ]
+    )
     for k in ks:
         command.extend(["--k", str(k)])
     if args.report_path:
@@ -586,14 +634,19 @@ def _report_command(args: argparse.Namespace, ks: Sequence[int]) -> list[str]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset", type=Path, default=Path("evaluation/rag_quality_v2.json"))
-    parser.add_argument(
+    credentials = parser.add_mutually_exclusive_group(required=True)
+    credentials.add_argument(
         "--channel-env",
         type=Path,
-        required=True,
         help="dotenv file containing the selected Free channel (the API key is not reported)",
     )
+    credentials.add_argument(
+        "--provider-secret-json",
+        type=Path,
+        help="operator-owned provider JSON with base_url, model_name, and api_key",
+    )
     parser.add_argument("--channel-name", default="Free")
-    parser.add_argument("--model", dest="model_name", default="qwen3-embedding-8b")
+    parser.add_argument("--model", dest="model_name")
     parser.add_argument("--embedding-version", type=int, default=3)
     parser.add_argument("--dimension", type=int, default=DEFAULT_DIMENSION)
     parser.add_argument("--max-chars", type=int, default=DEFAULT_MAX_CHARS)
@@ -619,6 +672,7 @@ def main() -> None:
             run_evaluation(
                 dataset_path=args.dataset,
                 channel_env=args.channel_env,
+                provider_secret_json=args.provider_secret_json,
                 channel_name=args.channel_name,
                 model_name=args.model_name,
                 embedding_version=args.embedding_version,

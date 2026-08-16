@@ -93,6 +93,39 @@ def test_candidate_route_metadata_does_not_contain_api_key(tmp_path: Path) -> No
     assert "secret-free" not in rendered
 
 
+def test_provider_secret_json_selects_reviewed_route_without_exposing_key(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "embedding.json"
+    path.write_text(
+        json.dumps(
+            {
+                "base_url": "https://embedding.example/v1",
+                "model_name": "Qwen/Qwen3-Embedding-4B",
+                "api_key": "secret-reviewed",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    _, route = evaluator._build_candidate_provider(
+        channel_env=None,
+        provider_secret_json=path,
+        channel_name="Free",
+        model_name=None,
+        dimension=1024,
+        version=2,
+        timeout_seconds=20,
+        batch_size=8,
+    )
+
+    rendered = json.dumps(route, sort_keys=True)
+    assert route["provider"] == "reviewed-staging-route"
+    assert route["requested_model_name"] == "Qwen/Qwen3-Embedding-4B"
+    assert route["credential_source"] == "provider_secret_json"
+    assert "secret-reviewed" not in rendered
+
+
 def test_similarity_calibration_exposes_refusal_tradeoff() -> None:
     loaded = load_rag_quality_dataset(_dataset_path())
     chunks = evaluator._build_chunks(loaded, max_chars=1200, overlap_chars=120)
