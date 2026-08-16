@@ -89,7 +89,8 @@ parser, 1,200-character chunks with 120-character overlap, 1024-dimensional vect
 Qwen query instruction. It evaluated all 40 cases and eight synthetic documents in
 `evaluation/rag_quality_v2.json` without uploading documents, writing the staging database, or
 executing an Agent run. The sealed, credential-free report is
-`evidence/m6/20260816-local-embedding-free8b-v3.json`.
+`evidence/m6/20260816-local-embedding-free8b-v3.json`; an independent repeat is recorded in
+`evidence/m6/20260816-local-embedding-free8b-v3-repeat.json`.
 
 The requested `qwen3-embedding-8b` route produced these vector-only results:
 
@@ -102,12 +103,14 @@ The requested `qwen3-embedding-8b` route produced these vector-only results:
 - A diagnostic threshold scan found `cosine >= 0.55` retained complete anchor coverage for all 34
   answer cases and produced no vector candidate for the six refusal cases in this one synthetic
   run. This is calibration evidence, not an approved production threshold change.
+- The repeat preserved every top-chunk order, anchor rank, Recall/MRR result, and calibration row.
+  Rounded cosine values moved by at most `0.002834`; no result crossed a scanned threshold.
 
 Decision: the 8B route is a strong retrieval-ranking challenger, but version `3` rollout remains
 blocked. Keep staging on the reviewed 4B/version `2` identity. Before changing the protected
-variables or running a reindex, obtain a real 4B route for a same-corpus comparison, repeat the
-candidate run for stability, review similarity-threshold behavior in the full hybrid retrieval
-path, and then run the complete post-reindex staging RAG quality gate.
+variables or running a reindex, obtain a real 4B route for a same-corpus comparison, review
+similarity-threshold behavior in the full hybrid retrieval path, and then run the complete
+post-reindex staging RAG quality gate.
 
 The project currently has no independent reranker implementation or `RERANK__*` configuration.
 The existing RRF step is deterministic candidate fusion, not cross-encoder reranking. Do not add
