@@ -106,11 +106,31 @@ The requested `qwen3-embedding-8b` route produced these vector-only results:
 - The repeat preserved every top-chunk order, anchor rank, Recall/MRR result, and calibration row.
   Rounded cosine values moved by at most `0.002834`; no result crossed a scanned threshold.
 
+### Reviewed 4B local vector evaluation (2026-08-16)
+
+The earlier Free-channel scan did not find 4B because the reviewed 4B credentials are kept in a
+separate operator-owned secret, not in `grok-4.5-channel.local.env`. The staging non-secret variable
+still points to `https://ai.hybgzs.com/v1`, and the local secret file identifies
+`Qwen/Qwen3-Embedding-4B`. The sealed report is
+`evidence/m6/20260816-local-embedding-reviewed4b-v2.json`; an independent repeat is recorded in
+`evidence/m6/20260816-local-embedding-reviewed4b-v2-repeat.json`. Neither report contains the key.
+
+Using the same 40-case corpus and retrieval contract, the reviewed 4B route produced Recall@1
+`0.985294`, Recall@3/5 `1.0`, and MRR `1.0`, matching the 8B positive-retrieval results. At the
+current production boundary (`cosine >= 0.35`), 4B produced a vector candidate for one of six
+refusal cases (`0.166667`), versus four of six for 8B (`0.666667`). The 4B route therefore has the
+better observed refusal margin; this is still a local vector-only comparison, not a new staging
+rollout.
+
+The 4B repeat preserved every top-chunk order, anchor rank, and calibration row; rounded cosine
+values moved by at most `0.003658` without crossing a scanned threshold.
+
 Decision: the 8B route is a strong retrieval-ranking challenger, but version `3` rollout remains
-blocked. Keep staging on the reviewed 4B/version `2` identity. Before changing the protected
-variables or running a reindex, obtain a real 4B route for a same-corpus comparison, review
-similarity-threshold behavior in the full hybrid retrieval path, and then run the complete
-post-reindex staging RAG quality gate.
+blocked. Keep staging on the reviewed 4B/version `2` identity; the newly confirmed 4B route is
+currently the stronger candidate on the local refusal metric. Do not change protected variables or
+run a reindex. The next gate is review of similarity-threshold behavior in the full hybrid retrieval
+path, followed by the complete post-reindex staging RAG quality gate only if a model/version change
+is approved.
 
 The project currently has no independent reranker implementation or `RERANK__*` configuration.
 The existing RRF step is deterministic candidate fusion, not cross-encoder reranking. Do not add
