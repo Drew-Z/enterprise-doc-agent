@@ -64,8 +64,8 @@ answer above an unrelated upload document.
 
 This closes only the provider compatibility probe. It does not replace the currently reviewed
 staging identity (`Qwen/Qwen3-Embedding-4B`, generation version `2`), does not prove corpus
-quality, and does not constitute a staging reindex. To adopt the Free challenger, set these as
-protected staging Environment variables:
+quality, and does not constitute a staging reindex. If a later reviewed quality decision adopts
+the Free challenger, set these as protected staging Environment variables:
 
 ```powershell
 gh variable set STAGING_EMBEDDING_BASE_URL --env staging `
@@ -81,6 +81,33 @@ re-render administrator approvals, run the embedding rollout/reindex Job, and re
 quality gate before accepting the route. Keep the channel key only as `EMBEDDING__API_KEY` in the
 operator-owned Secret; never copy it into repository files, GitHub variables, workflow inputs, or
 evidence.
+
+### Free 8B local vector evaluation (2026-08-16)
+
+The local evaluator in `scripts/evaluate_local_embedding_candidate.py` reused the production text
+parser, 1,200-character chunks with 120-character overlap, 1024-dimensional vectors, and the same
+Qwen query instruction. It evaluated all 40 cases and eight synthetic documents in
+`evaluation/rag_quality_v2.json` without uploading documents, writing the staging database, or
+executing an Agent run. The sealed, credential-free report is
+`evidence/m6/20260816-local-embedding-free8b-v3.json`.
+
+The requested `qwen3-embedding-8b` route produced these vector-only results:
+
+- 34 answer cases: anchor Recall@1 `0.985294`, Recall@3/5 `1.0`, and MRR `1.0`.
+- Hash baseline: anchor Recall@1 `0.161765`, Recall@3 `0.852941`, and MRR `0.496078`.
+- The only incomplete top-1 anchor set was `safety-retention-delete-note`; both expected anchors
+  were present by rank 2.
+- At the current production vector-distance boundary (`cosine >= 0.35`), four of six expected
+  refusal cases still produced a vector candidate (`0.666667`).
+- A diagnostic threshold scan found `cosine >= 0.55` retained complete anchor coverage for all 34
+  answer cases and produced no vector candidate for the six refusal cases in this one synthetic
+  run. This is calibration evidence, not an approved production threshold change.
+
+Decision: the 8B route is a strong retrieval-ranking challenger, but version `3` rollout remains
+blocked. Keep staging on the reviewed 4B/version `2` identity. Before changing the protected
+variables or running a reindex, obtain a real 4B route for a same-corpus comparison, repeat the
+candidate run for stability, review similarity-threshold behavior in the full hybrid retrieval
+path, and then run the complete post-reindex staging RAG quality gate.
 
 The project currently has no independent reranker implementation or `RERANK__*` configuration.
 The existing RRF step is deterministic candidate fusion, not cross-encoder reranking. Do not add
