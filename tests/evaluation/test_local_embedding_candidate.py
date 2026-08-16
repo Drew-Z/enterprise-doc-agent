@@ -150,6 +150,40 @@ def test_similarity_calibration_exposes_refusal_tradeoff() -> None:
     assert rows[1]["refusal_vector_candidate_rate"] == 0.0
 
 
+def test_hybrid_helpers_apply_keyword_overlap_and_rrf_floor() -> None:
+    loaded = load_rag_quality_dataset(_dataset_path())
+    chunks = evaluator._build_chunks(loaded, max_chars=1200, overlap_chars=120)
+    case = loaded.dataset.cases_by_id["fact-proc-manager"]
+    document_chunks = chunks[case.document_key]
+    keyword = evaluator._keyword_rank_chunks(
+        document_chunks,
+        case.query,
+        top_k=10,
+    )
+    assert keyword
+    assert "proc.manager" in keyword[0].chunk.anchor_ids
+
+    fused = evaluator._rrf_rank_chunks(
+        keyword,
+        keyword,
+        rrf_k=60,
+        top_k=10,
+    )
+    assert fused[0].chunk.chunk_id == keyword[0].chunk.chunk_id
+
+    refusal = loaded.dataset.cases_by_id["refuse-security-ceo"]
+    refusal_result = evaluator._hybrid_case_result(
+        refusal,
+        (evaluator.RankedChunk(chunks[refusal.document_key][0], 1 / 61),),
+        ks=(1, 3),
+        min_score=1 / 61,
+    )
+    assert refusal_result["metrics"] == {
+        "accepted": True,
+        "top1_rrf_score": 1 / 61,
+    }
+
+
 def test_channel_env_rejects_http_endpoint(tmp_path: Path) -> None:
     path = tmp_path / "channels.env"
     path.write_text(

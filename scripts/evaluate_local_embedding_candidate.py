@@ -54,6 +54,8 @@ DEFAULT_DIMENSION = 1024
 DEFAULT_MAX_CHARS = 1200
 DEFAULT_OVERLAP_CHARS = 120
 DEFAULT_MAX_VECTOR_DISTANCE = 0.65
+DEFAULT_TOP_K = 10
+DEFAULT_RRF_K = 60
 REPORT_SCHEMA_VERSION = 1
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CALIBRATION_THRESHOLDS = (0.35, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65)
@@ -72,6 +74,39 @@ class LocalChunk:
 class RankedChunk:
     chunk: LocalChunk
     score: float
+
+
+_QUERY_STOPWORDS = frozenset(
+    {
+        "a",
+        "about",
+        "according",
+        "an",
+        "and",
+        "are",
+        "can",
+        "could",
+        "do",
+        "does",
+        "for",
+        "from",
+        "how",
+        "in",
+        "is",
+        "me",
+        "of",
+        "on",
+        "please",
+        "tell",
+        "the",
+        "to",
+        "what",
+        "which",
+        "where",
+        "who",
+        "why",
+    }
+)
 
 
 def _normalize(value: str) -> str:
@@ -266,6 +301,133 @@ def _rank_chunks(
     return tuple(sorted(ranked, key=lambda item: (-item.score, item.chunk.chunk_index)))
 
 
+def _keyword_rank_chunks(
+    chunks: Sequence[LocalChunk], query: str, *, top_k: int
+) -> tuple[RankedChunk, ...]:
+    terms = tuple(
+        term
+        for term in re.findall(r"[^\W_]+", query.casefold(), flags=re.UNICODE)
+        if len(term) > 1 and term not in _QUERY_STOPWORDS
+    )
+    if not terms:
+        return ()
+    ranked: list[RankedChunk] = []
+    for chunk in chunks:
+        tokens = re.findall(r"[^\W_]+", chunk.text.casefold(), flags=re.UNICODE)
+        counts = {term: tokens.count(term) for term in set(terms)}
+        overlap = sum(count > 0 for count in counts.values())
+        if overlap:
+            ranked.append(RankedChunk(chunk, float(overlap) + sum(counts.values()) / 1000))
+    ranked.sort(key=lambda item: (-item.score, item.chunk.chunk_index))
+    return tuple(ranked[:top_k])
+
+
+def _rrf_rank_chunks(
+    keyword: Sequence[RankedChunk],
+    vector: Sequence[RankedChunk],
+    *,
+    rrf_k: int,
+    top_k: int,
+) -> tuple[RankedChunk, ...]:
+    merged: dict[str, LocalChunk] = {}
+    scores: dict[str, float] = {}
+    for candidates in (keyword, vector):
+        for rank, item in enumerate(candidates, start=1):
+            merged.setdefault(item.chunk.chunk_id, item.chunk)
+            scores[item.chunk.chunk_id] = scores.get(item.chunk.chunk_id, 0.0) + 1.0 / (
+                rrf_k + rank
+            )
+    ranked = sorted(
+        merged,
+        key=lambda chunk_id: (-scores[chunk_id], merged[chunk_id].chunk_index),
+    )
+    return tuple(RankedChunk(merged[chunk_id], scores[chunk_id]) for chunk_id in ranked[:top_k])
+
+
+def _hybrid_case_result(
+    case: RagQualityCase,
+    ranked: Sequence[RankedChunk],
+    *,
+    ks: Sequence[int],
+    min_score: float,
+) -> dict[str, object]:
+    expected = set(case.expected_anchor_ids)
+    anchor_ranks: dict[str, int] = {}
+    for rank, item in enumerate(ranked, start=1):
+        for anchor_id in item.chunk.anchor_ids:
+            anchor_ranks.setdefault(anchor_id, rank)
+    metrics: dict[str, float | bool | None] = {}
+    if case.expected_outcome is RagExpectedOutcome.ANSWER:
+        for k in ks:
+            found = sum(anchor_ranks.get(anchor_id, math.inf) <= k for anchor_id in expected)
+            metrics[f"anchor_recall_at_{k}"] = found / len(expected) if expected else None
+        first_rank = min(
+            (anchor_ranks[anchor_id] for anchor_id in expected if anchor_id in anchor_ranks),
+            default=None,
+        )
+        metrics["mrr"] = 1.0 / first_rank if first_rank is not None else 0.0
+    else:
+        metrics["accepted"] = bool(ranked and ranked[0].score >= min_score)
+        metrics["top1_rrf_score"] = ranked[0].score if ranked else None
+    return {
+        "case_id": case.case_id,
+        "category": case.category.value,
+        "expected_anchor_ids": sorted(expected),
+        "metrics": metrics,
+        "anchor_ranks": anchor_ranks,
+        "top_chunks": [
+            {
+                "rank": rank,
+                "chunk_id": item.chunk.chunk_id,
+                "anchor_ids": list(item.chunk.anchor_ids),
+                "rrf_score": round(item.score, 6),
+            }
+            for rank, item in enumerate(ranked, start=1)
+        ],
+    }
+
+
+def _aggregate_hybrid_results(
+    results: Sequence[dict[str, object]], *, ks: Sequence[int]
+) -> dict[str, float | int | None]:
+    answer_results = [
+        result
+        for result in results
+        if isinstance(result.get("metrics"), dict) and "mrr" in result["metrics"]
+    ]
+    refusal_results = [
+        result
+        for result in results
+        if isinstance(result.get("metrics"), dict) and "accepted" in result["metrics"]
+    ]
+    metrics: dict[str, float | int | None] = {
+        "case_count": len(results),
+        "answer_case_count": len(answer_results),
+        "refusal_case_count": len(refusal_results),
+    }
+    for k in ks:
+        values = [
+            float(result["metrics"][f"anchor_recall_at_{k}"])  # type: ignore[index]
+            for result in answer_results
+        ]
+        metrics[f"answer_anchor_recall_at_{k}"] = (
+            round(statistics.fmean(values), 6) if values else None
+        )
+    mrr_values = [float(result["metrics"]["mrr"]) for result in answer_results]  # type: ignore[index]
+    accepted_values = [float(result["metrics"]["accepted"]) for result in refusal_results]  # type: ignore[index]
+    rrf_values = [
+        float(result["metrics"]["top1_rrf_score"])
+        for result in refusal_results
+        if result["metrics"]["top1_rrf_score"] is not None
+    ]  # type: ignore[index]
+    metrics["answer_mrr"] = round(statistics.fmean(mrr_values), 6) if mrr_values else None
+    metrics["refusal_acceptance_rate"] = (
+        round(statistics.fmean(accepted_values), 6) if accepted_values else None
+    )
+    metrics["refusal_top1_rrf_score_max"] = round(max(rrf_values), 6) if rrf_values else None
+    return metrics
+
+
 def _percentile(values: Sequence[float], percentile: float) -> float | None:
     if not values:
         return None
@@ -435,11 +597,34 @@ async def _evaluate_provider(
     if len(query_vectors) != len(cases):
         raise ValueError("embedding provider returned an invalid query batch")
     results: list[dict[str, object]] = []
+    hybrid_results: list[dict[str, object]] = []
     ranked_cases: list[tuple[RagQualityCase, Sequence[RankedChunk]]] = []
     for case, query_vector in zip(cases, query_vectors, strict=True):
         chunks = chunks_by_document[case.document_key]
         ranked = _rank_chunks(chunks, vectors_by_document[case.document_key], query_vector)
         ranked_cases.append((case, ranked))
+        vector_candidates = tuple(
+            item for item in ranked if item.score >= refusal_similarity_threshold
+        )[:DEFAULT_TOP_K]
+        keyword_candidates = _keyword_rank_chunks(
+            chunks,
+            case.query,
+            top_k=DEFAULT_TOP_K,
+        )
+        hybrid_ranked = _rrf_rank_chunks(
+            keyword_candidates,
+            vector_candidates,
+            rrf_k=DEFAULT_RRF_K,
+            top_k=DEFAULT_TOP_K,
+        )
+        hybrid_results.append(
+            _hybrid_case_result(
+                case,
+                hybrid_ranked,
+                ks=ks,
+                min_score=1.0 / (DEFAULT_RRF_K + 1),
+            )
+        )
         results.append(
             _score_case(
                 case,
@@ -458,6 +643,10 @@ async def _evaluate_provider(
                 ranked_cases,
                 thresholds=DEFAULT_CALIBRATION_THRESHOLDS,
             ),
+            "hybrid_approximation": {
+                "metrics": _aggregate_hybrid_results(hybrid_results, ks=ks),
+                "cases": hybrid_results,
+            },
         },
         results,
     )
@@ -553,6 +742,9 @@ async def run_evaluation(
             "query_instruction": DEFAULT_QUERY_INSTRUCTION,
             "vector_dimension": dimension,
             "refusal_vector_candidate_similarity_threshold": refusal_threshold,
+            "hybrid_top_k": DEFAULT_TOP_K,
+            "hybrid_rrf_k": DEFAULT_RRF_K,
+            "hybrid_min_score": 1.0 / (DEFAULT_RRF_K + 1),
             "ks": list(ks),
         },
         "baseline": {
@@ -570,8 +762,12 @@ async def run_evaluation(
         "candidate_delta_vs_hash": _delta(candidate_summary, baseline_summary),
         "limitations": [
             (
-                "This evaluates vector retrieval only; it does not execute keyword recall, "
-                "RRF, Agent answering, or citation validation."
+                "The primary provider comparison is vector retrieval; the included hybrid section "
+                "does not execute Agent answering or citation validation."
+            ),
+            (
+                "The hybrid approximation uses the production stopword/fallback term policy and "
+                "RRF constants, but local token overlap is not PostgreSQL ts_rank_cd."
             ),
             (
                 "This report compares the selected route with the deterministic hash baseline; "
