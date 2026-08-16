@@ -34,6 +34,7 @@ def test_nested_environment_values_are_parsed(monkeypatch: pytest.MonkeyPatch) -
     monkeypatch.setenv("OTEL__ENABLED", "true")
     monkeypatch.setenv("OTEL__SAMPLE_RATIO", "0.25")
     monkeypatch.setenv("EMBEDDING__QUERY_INSTRUCTION", "Retrieve enterprise evidence")
+    monkeypatch.setenv("RETRIEVAL__REQUIRE_VECTOR_EVIDENCE", "true")
 
     settings = FoundationSettings(_env_file=None)
 
@@ -57,6 +58,7 @@ def test_nested_environment_values_are_parsed(monkeypatch: pytest.MonkeyPatch) -
     assert settings.otel.enabled is True
     assert settings.otel.sample_ratio == 0.25
     assert settings.embedding.query_instruction == "Retrieve enterprise evidence"
+    assert settings.retrieval.require_vector_evidence is True
 
 
 def test_non_local_environment_rejects_local_defaults(

@@ -598,6 +598,7 @@ async def _evaluate_provider(
         raise ValueError("embedding provider returned an invalid query batch")
     results: list[dict[str, object]] = []
     hybrid_results: list[dict[str, object]] = []
+    vector_required_hybrid_results: list[dict[str, object]] = []
     ranked_cases: list[tuple[RagQualityCase, Sequence[RankedChunk]]] = []
     for case, query_vector in zip(cases, query_vectors, strict=True):
         chunks = chunks_by_document[case.document_key]
@@ -625,6 +626,14 @@ async def _evaluate_provider(
                 min_score=1.0 / (DEFAULT_RRF_K + 1),
             )
         )
+        vector_required_hybrid_results.append(
+            _hybrid_case_result(
+                case,
+                hybrid_ranked if vector_candidates else (),
+                ks=ks,
+                min_score=1.0 / (DEFAULT_RRF_K + 1),
+            )
+        )
         results.append(
             _score_case(
                 case,
@@ -646,6 +655,11 @@ async def _evaluate_provider(
             "hybrid_approximation": {
                 "metrics": _aggregate_hybrid_results(hybrid_results, ks=ks),
                 "cases": hybrid_results,
+                "vector_required_metrics": _aggregate_hybrid_results(
+                    vector_required_hybrid_results,
+                    ks=ks,
+                ),
+                "vector_required_cases": vector_required_hybrid_results,
             },
         },
         results,

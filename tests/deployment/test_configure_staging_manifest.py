@@ -191,6 +191,7 @@ def test_configure_manifest_binds_https_hosts_without_secret_data(tmp_path: Path
     assert config["data"]["EMBEDDING__SEND_DIMENSIONS"] == "true"
     assert config["data"]["EMBEDDING__QUERY_INSTRUCTION"].startswith("Given a user question")
     assert config["data"]["EMBEDDING__VERSION"] == "2"
+    assert config["data"]["RETRIEVAL__REQUIRE_VECTOR_EVIDENCE"] == "true"
     api_deployment = next(
         item
         for item in documents

@@ -602,6 +602,7 @@ def test_tiny_single_node_overlay_renders_with_a_bounded_k3s_runtime() -> None:
     assert config["data"]["EMBEDDING__VERSION"] == "2"
     assert config["data"]["EMBEDDING__SEND_DIMENSIONS"] == "true"
     assert config["data"]["EMBEDDING__QUERY_INSTRUCTION"].startswith("Given a user question")
+    assert config["data"]["RETRIEVAL__REQUIRE_VECTOR_EVIDENCE"] == "true"
 
     api = _named_resource(documents, "Deployment", "enterprise-doc-api")
     api_container = api["spec"]["template"]["spec"]["containers"][0]

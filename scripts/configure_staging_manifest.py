@@ -362,6 +362,7 @@ def configure_manifest(
     data["EMBEDDING__VERSION"] = normalized_embedding_version
     data["EMBEDDING__SEND_DIMENSIONS"] = "true"
     data["EMBEDDING__QUERY_INSTRUCTION"] = EMBEDDING_QUERY_INSTRUCTION
+    data["RETRIEVAL__REQUIRE_VECTOR_EVIDENCE"] = "true"
 
     config_digest = hashlib.sha256(
         json.dumps(data, sort_keys=True, separators=(",", ":")).encode("utf-8")

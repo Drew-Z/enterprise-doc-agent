@@ -271,6 +271,7 @@ def build_runtime(
             if settings.embedding.provider.value == "openai_compatible"
             else None
         ),
+        require_vector_evidence=settings.retrieval.require_vector_evidence,
         metrics=resolved_metrics,
     )
     artifact_store = Boto3ArtifactObjectStore(

@@ -20,6 +20,7 @@ from enterprise_doc_core.documents.models import (
     DocumentVersion,
 )
 from enterprise_doc_core.documents.retrieval import (
+    RefusalReason,
     RetrievalCandidate,
     RetrievalDecision,
     decide_retrieval,
@@ -81,6 +82,7 @@ class HybridRetrievalService:
         min_score: float | None = None,
         min_candidates: int = 1,
         max_vector_distance: float = 0.65,
+        require_vector_evidence: bool = False,
         metrics: MetricsRuntime | None = None,
     ) -> None:
         if top_k <= 0:
@@ -109,6 +111,7 @@ class HybridRetrievalService:
         self.min_score = resolved_min_score
         self.min_candidates = min_candidates
         self.max_vector_distance = max_vector_distance
+        self.require_vector_evidence = require_vector_evidence
         self.metrics = metrics
 
     async def retrieve(
@@ -180,6 +183,12 @@ class HybridRetrievalService:
             document_version_id=document_version_id,
             vector=vectors[0],
         )
+        if self.require_vector_evidence and not vector_candidates:
+            return RetrievalDecision(
+                accepted=False,
+                candidates=keyword_candidates,
+                refusal_reason=RefusalReason.LOW_RELEVANCE,
+            )
         fused = reciprocal_rank_fusion(
             keyword_candidates,
             vector_candidates,
