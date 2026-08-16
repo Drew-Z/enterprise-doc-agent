@@ -11,6 +11,7 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+from urllib.error import HTTPError, URLError
 from uuid import uuid4
 
 from enterprise_doc_core.evaluation import (
@@ -31,12 +32,12 @@ from enterprise_doc_core.evaluation.rag_quality import (
 from enterprise_doc_core.jobs import is_allowed_job_diagnostic_code
 
 if TYPE_CHECKING:
-    from scripts.staging_smoke import SmokeClient, UrlLibSmokeClient
+    from scripts.staging_smoke import SmokeClient, StagingSmokeFailure, UrlLibSmokeClient
 else:
     try:
-        from scripts.staging_smoke import SmokeClient, UrlLibSmokeClient
+        from scripts.staging_smoke import SmokeClient, StagingSmokeFailure, UrlLibSmokeClient
     except ModuleNotFoundError:
-        from staging_smoke import SmokeClient, UrlLibSmokeClient
+        from staging_smoke import SmokeClient, StagingSmokeFailure, UrlLibSmokeClient
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -44,10 +45,41 @@ EVALUATOR_VERSION = "m5.rag-quality.v4"
 _TERMINAL_STATUSES = frozenset(
     {"cancelled", "expired", "failed", "refused", "rejected", "succeeded"}
 )
+_SAFE_READ_ATTEMPTS = 3
+_SAFE_READ_BACKOFF_SECONDS = (2.0, 4.0)
 
 
 class StagingRagQualityFailure(RuntimeError):
     pass
+
+
+def _is_transient_safe_read_failure(error: StagingSmokeFailure) -> bool:
+    cause = error.__cause__
+    if isinstance(cause, HTTPError):
+        return False
+    return isinstance(cause, (TimeoutError, URLError))
+
+
+def _request_safe_read_json(
+    client: SmokeClient,
+    path: str,
+    *,
+    deadline: float,
+    monotonic: Callable[[], float],
+    sleep: Callable[[float], None],
+) -> dict[str, Any] | list[dict[str, Any]]:
+    for attempt in range(_SAFE_READ_ATTEMPTS):
+        try:
+            return client.request_json("GET", path)
+        except StagingSmokeFailure as error:
+            if (
+                not _is_transient_safe_read_failure(error)
+                or attempt + 1 >= _SAFE_READ_ATTEMPTS
+                or monotonic() >= deadline
+            ):
+                raise
+            sleep(_SAFE_READ_BACKOFF_SECONDS[attempt])
+    raise AssertionError("safe read retry loop was exhausted")
 
 
 def _required_mapping(value: object, description: str) -> dict[str, Any]:
@@ -186,7 +218,13 @@ def _wait_for_ready_version(
     sleep: Callable[[float], None],
 ) -> None:
     while monotonic() < deadline:
-        payload = client.request_json("GET", "/api/agent-runs/ready-document-versions")
+        payload = _request_safe_read_json(
+            client,
+            "/api/agent-runs/ready-document-versions",
+            deadline=deadline,
+            monotonic=monotonic,
+            sleep=sleep,
+        )
         if not isinstance(payload, list):
             raise StagingRagQualityFailure("ready-document response was not a JSON list")
         if any(isinstance(item, dict) and item.get("versionId") == version_id for item in payload):
@@ -205,7 +243,13 @@ def _wait_for_run(
 ) -> dict[str, Any]:
     while monotonic() < deadline:
         status = _required_mapping(
-            client.request_json("GET", f"/api/agent-runs/{run_id}"),
+            _request_safe_read_json(
+                client,
+                f"/api/agent-runs/{run_id}",
+                deadline=deadline,
+                monotonic=monotonic,
+                sleep=sleep,
+            ),
             "Agent status response",
         )
         if _required_str(status, "status") in _TERMINAL_STATUSES:

@@ -253,6 +253,38 @@ class FailedDiagnosticClient(FakeClient):
         )
 
 
+class TransientStatusClient(FakeClient):
+    def __init__(self) -> None:
+        super().__init__()
+        self.status_attempts = 0
+
+    def request_json(
+        self,
+        method: str,
+        path: str,
+        *,
+        payload: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
+        expected_statuses: set[int] | None = None,
+    ) -> dict[str, Any] | list[dict[str, Any]]:
+        if path == "/api/agent-runs/run-answer":
+            self.status_attempts += 1
+            if self.status_attempts == 1:
+                try:
+                    raise TimeoutError("transient test timeout")
+                except TimeoutError as cause:
+                    raise staging_quality.StagingSmokeFailure(
+                        "Control-plane request failed with TimeoutError."
+                    ) from cause
+        return super().request_json(
+            method,
+            path,
+            payload=payload,
+            headers=headers,
+            expected_statuses=expected_statuses,
+        )
+
+
 def _provenance() -> ReportProvenance:
     return ReportProvenance(
         command=["python", "scripts/evaluate_staging_rag_quality.py", "<sanitized>"],
@@ -343,6 +375,27 @@ def test_staging_quality_reports_only_allowlisted_attempt_diagnostics(
     encoded = json.dumps(report, sort_keys=True)
     assert "raw-mcp-secret-must-not-appear" not in encoded
     assert verify_report_payload(report)
+
+
+def test_staging_quality_retries_transient_status_read(tmp_path: Path) -> None:
+    loaded = load_rag_quality_dataset(_write_dataset(tmp_path))
+    client = TransientStatusClient()
+    sleeps: list[float] = []
+
+    report = staging_quality.run_staging_rag_quality(
+        client,
+        loaded=loaded,
+        case_ids=("answer-case",),
+        timeout_seconds=30,
+        run_nonce="fixed-transient-status-run",
+        monotonic=lambda: 1.0,
+        sleep=sleeps.append,
+        provenance=_provenance(),
+    )
+
+    assert report["status"] == "passed"
+    assert client.status_attempts == 2
+    assert sleeps == [2.0]
 
 
 def test_staging_quality_ignores_uncovered_refusal_targets_for_answer_only_sample(
