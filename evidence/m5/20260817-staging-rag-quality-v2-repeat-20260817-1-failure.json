@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "suite": "staging-real-provider-rag-quality",
+  "status": "runtime_failed",
+  "namespace": "enterprise-doc-agent-staging",
+  "job": "rag-quality-v2-repeat-20260817-1",
+  "image": "ghcr.io/drew-z/enterprise-doc-api@sha256:00f6fb6ae3675f977b10008067f1fdb32c9f563c7e2facf0943283943ab7b1b4",
+  "commit_sha": "411197eee561e03af7a581855359b9516c6c1fa2",
+  "dataset": {
+    "version": "enterprise-rag-quality-v2",
+    "selected_case_count": 40,
+    "total_case_count": 40
+  },
+  "provider_route": {
+    "provider": "openai_compatible",
+    "embedding_base_url_host": "ai.hybgzs.com",
+    "embedding_model": "Qwen/Qwen3-Embedding-4B",
+    "embedding_dimension": 1024
+  },
+  "failure": {
+    "error": "document ingestion did not reach ready before timeout",
+    "failed_version_id": "7fdd7bbd-02f8-4b40-894f-a55f6c31f4ff",
+    "failed_filename": "travel-policy.txt",
+    "generation_status": "failed",
+    "generation_stage": "embed",
+    "generation_error_code": "ingestion_failed",
+    "chunk_count": 3,
+    "embedded_count": 0,
+    "provider_observation": {
+      "consumer_log": "POST /v1/embeddings returned HTTP 502 Bad Gateway for all three provider retries",
+      "probe_after_failure": {
+        "status_code": 200,
+        "model": "Qwen/Qwen3-Embedding-4B",
+        "data_count": 1,
+        "embedding_dimension": 1024
+      }
+    }
+  },
+  "timing": {
+    "job_started_at": "2026-08-16T18:07:14Z",
+    "job_failed_at": "2026-08-16T19:12:34Z"
+  },
+  "interpretation": "The complete suite did not reach evaluation. The observed failure was an external transient embedding-provider 502 during ingestion, not an evaluator quality assertion failure."
+}

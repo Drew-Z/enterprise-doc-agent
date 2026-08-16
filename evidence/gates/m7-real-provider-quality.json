@@ -3,11 +3,10 @@
   "milestone": "M7",
   "requirement": "M7-R6",
   "owner": "model evaluation owner",
-  "blocking_reason": "The real openai_compatible/glm-5.2 route completed all 40 synthetic cases on release v0.1.27 and passed every approved aggregate fact, citation, grounding, and refusal threshold. Two individual cases failed deterministic case-level checks. The route still does not expose a provider model revision, token usage, cost, fallback count, or breaker state. Full-suite repeatability, representative-corpus coverage, and human review remain absent.",
+  "blocking_reason": "Two complete 40-case synthetic-suite runs against the frozen openai_compatible/glm-5.2 route and behavior versions passed every approved aggregate fact, citation, grounding, and refusal threshold. The baseline had two deterministic case-level failures and the repeat had one, so the two unique failed cases still require human review. The route still does not expose a provider model revision, token usage, cost, fallback count, or breaker state, and representative-corpus coverage remains absent.",
   "prerequisites": [
     "Approve and freeze the provider model revision and fallback route in addition to the current model name",
-    "Resolve or explicitly accept the two failed full-suite cases after human error review",
-    "Repeat the complete 40-case benchmark with frozen behavior versions",
+    "Resolve or explicitly accept the two unique failed full-suite cases after human error review",
     "Provide provider-reported usage/cost plus fallback and breaker telemetry",
     "Add an approved representative sanitized corpus alongside the synthetic golden set"
   ],
@@ -27,7 +26,10 @@
     "evidence/m5/20260811-rag-quality-v2-bounded-trial-12.json",
     "evidence/m5/20260811-rag-quality-v2-full-40.json",
     "evidence/m5/20260817-staging-rag-quality-v2-full-40.json",
-    "evidence/m5/20260817-staging-rag-quality-v2-full-40-execution.json"
+    "evidence/m5/20260817-staging-rag-quality-v2-full-40-execution.json",
+    "evidence/m5/20260817-staging-rag-quality-v2-repeat-20260817-1-failure.json",
+    "evidence/m5/20260817-staging-rag-quality-v2-full-40-repeat.json",
+    "evidence/m5/20260817-staging-rag-quality-v2-full-40-repeat-execution.json"
   ],
   "state": "open",
   "status": "blocked_external",

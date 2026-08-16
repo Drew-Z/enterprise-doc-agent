@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "suite": "staging-real-provider-rag-quality",
+  "status": "passed",
+  "namespace": "enterprise-doc-agent-staging",
+  "commit_sha": "411197eee561e03af7a581855359b9516c6c1fa2",
+  "image": "ghcr.io/drew-z/enterprise-doc-api@sha256:00f6fb6ae3675f977b10008067f1fdb32c9f563c7e2facf0943283943ab7b1b4",
+  "dataset": {
+    "version": "enterprise-rag-quality-v2",
+    "sha256": "145df783dba7ee1c533a59de288bb1a9aff6ba3c0bdff7e4617a366dca1a9f5b",
+    "corpus_sha256": "c6887a0ca112cd62499c9d61d5caa9d87e94a4ba6c8770293f9f3a8c6cf54e36",
+    "selected_case_count": 40,
+    "total_case_count": 40
+  },
+  "evaluator": {
+    "version": "m5.rag-quality.v4",
+    "runner_transport": "in-cluster-api-pod"
+  },
+  "provider_route": {
+    "provider": "openai_compatible",
+    "model_name": "glm-5.2",
+    "model_version": null
+  },
+  "behavior_versions": {
+    "graph": "m4.v2",
+    "prompt": "m4.v9",
+    "tool_schema": "m4.v2"
+  },
+  "aggregate": {
+    "measured": {
+      "citation_precision": 1.0,
+      "citation_recall": 1.0,
+      "closed_label_fact_precision": 0.9852941176470589,
+      "fact_recall": 1.0,
+      "grounded_fact_rate": 1.0,
+      "refusal_precision": 1.0,
+      "refusal_reason_accuracy": 1.0,
+      "refusal_recall": 1.0
+    },
+    "targets": {
+      "citation_precision": 0.95,
+      "citation_recall": 0.9,
+      "closed_label_fact_precision": 0.95,
+      "fact_recall": 0.9,
+      "grounded_fact_rate": 0.9,
+      "refusal_precision": 1.0,
+      "refusal_reason_accuracy": 1.0,
+      "refusal_recall": 1.0
+    },
+    "all_targets_passed": true
+  },
+  "case_summary": {
+    "passed": 39,
+    "failed": 1,
+    "failed_case_ids": [
+      "hard-sla-994-credit"
+    ]
+  },
+  "report": {
+    "path": "evidence/m5/20260817-staging-rag-quality-v2-full-40-repeat.json",
+    "file_sha256": "abac7ebf1cf9d3bf9ec3d4b7937f8d834a69c92390e1c36f70acd68983501b77",
+    "payload_sha256": "4c4fcd29125dd154e729d51efd1d6903f8176d411c55dad38bfa976cfbede6e3",
+    "payload_seal_valid": true
+  },
+  "execution": {
+    "job": "rag-quality-v2-repeat-20260817-2",
+    "evaluator_exit_code": 0,
+    "started_at": "2026-08-16T22:55:01.588163+00:00",
+    "completed_at": "2026-08-16T23:19:39.296620+00:00"
+  },
+  "repeatability": {
+    "baseline_report": "evidence/m5/20260817-staging-rag-quality-v2-full-40.json",
+    "dataset_equal": true,
+    "corpus_equal": true,
+    "evaluator_equal": true,
+    "provider_route_equal": true,
+    "behavior_versions_equal": true,
+    "targets_equal": true,
+    "both_complete_aggregate_passes": true
+  },
+  "limitations": [
+    "Two complete synthetic-suite passes do not replace representative sanitized enterprise-corpus review.",
+    "Human semantic review of the remaining failed case is outstanding.",
+    "Provider token usage and cost metadata are not exposed by the current staging APIs."
+  ]
+}
