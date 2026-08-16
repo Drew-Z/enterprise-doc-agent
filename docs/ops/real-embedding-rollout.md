@@ -152,9 +152,35 @@ distance-qualified vector evidence. This repository change has not been deployed
 Decision: the 8B route is a strong retrieval-ranking challenger, but version `3` rollout remains
 blocked. Keep staging on the reviewed 4B/version `2` identity; the newly confirmed 4B route is
 currently the stronger candidate on the local refusal metric. Do not change protected variables or
-run a reindex. The next gate is a database-backed execution using PostgreSQL keyword ranking,
-followed by the complete staging RAG quality gate after the retrieval configuration is deployed. A
-post-reindex quality gate is required only if a model/version change is later approved.
+run a reindex.
+
+### PostgreSQL hybrid retrieval evaluation (2026-08-16)
+
+The database-backed review seeded the same synthetic corpus into an isolated local PostgreSQL 16
+database with pgvector, then called the production `HybridRetrievalService`. Keyword retrieval used
+`websearch_to_tsquery('simple', ...)`, the production natural-language fallback, and `ts_rank_cd`;
+vector filtering, RRF, and admission used the production implementation and constants. The seeded
+tenant was deleted after each route completed. Sealed reports are:
+
+- `evidence/m6/20260816-local-postgres-reviewed4b-v2-hybrid.json`;
+- `evidence/m6/20260816-local-postgres-free8b-v3-hybrid.json`.
+
+The real PostgreSQL path confirmed the vector-evidence gate and made the 4B/8B difference clearer:
+
+- reviewed 4B: refusal acceptance fell from `0.666667` to `0.166667`; answer anchor Recall@1 was
+  `0.955882`, Recall@3/5 was `1.0`, and MRR was `0.985294` with either gate;
+- Free 8B: refusal acceptance remained `0.666667`; answer anchor Recall@1 was `0.926471`,
+  Recall@3/5 was `1.0`, and MRR was `0.970588` with either gate;
+- the 4B gate admitted only `refuse-retention-statute`, while 8B admitted four refusal cases;
+- 4B missed a complete top-1 anchor set on `fact-sla-availability` and
+  `safety-retention-delete-note`; 8B additionally missed `fact-proc-quotes`.
+
+This closes the local database-backed retrieval gate. It is stronger than the earlier token-overlap
+approximation, but it is not a staging quality result: no staging deployment, protected-variable
+change, or reindex occurred. Keep the reviewed 4B/version `2` identity and the vector-evidence gate.
+The next release gate is the complete staging RAG quality suite after the retrieval configuration is
+explicitly approved and deployed. A post-reindex quality gate is required only if a model/version
+change is later approved.
 
 The project currently has no independent reranker implementation or `RERANK__*` configuration.
 The existing RRF step is deterministic candidate fusion, not cross-encoder reranking. Do not add
