@@ -1703,3 +1703,21 @@ def test_release_registry_is_parameterized_but_defaults_to_ghcr() -> None:
     assert "secrets.CONTAINER_REGISTRY_USERNAME" in text
     assert "secrets.CONTAINER_REGISTRY_PASSWORD" in text
     assert "steps.release_ref.outputs.prefix" in text
+
+
+def test_staging_image_relay_binds_the_versioned_canonical_receiver() -> None:
+    workflow = yaml.safe_load(
+        (ROOT / ".github" / "workflows" / "relay-staging-images.yml").read_text(encoding="utf-8")
+    )
+    export = workflow["jobs"]["export"]
+    matrix = export["strategy"]["matrix"]["include"]
+    assert {entry["name"] for entry in matrix} == {"api", "worker", "consumer", "web"}
+    steps = [step for step in export["steps"] if isinstance(step, dict)]
+    archive_export = _named_step(steps, "Export digest-preserving OCI archive")
+    assert "skopeo copy --all" in str(archive_export["run"])
+    relay_upload = _named_step(steps, "Upload OCI archive through temporary R2 relay")
+    receipt = str(relay_upload["run"])
+    assert "receiver_script=scripts/import_staging_oci_archive.py" in receipt
+    assert "receiver_base_name=$RELAY_ID" in receipt
+    assert "receiver_canonical_base=docker.io/library/$RELAY_ID" in receipt
+    assert (ROOT / "scripts" / "import_staging_oci_archive.py").is_file()

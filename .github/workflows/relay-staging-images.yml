@@ -113,6 +113,9 @@ jobs:
             "image_ref=$IMAGE_REF" \
             "archive_sha256=$archive_sha256" \
             "archive_bytes=$archive_bytes" \
+            "receiver_script=scripts/import_staging_oci_archive.py" \
+            "receiver_base_name=$RELAY_ID" \
+            "receiver_canonical_base=docker.io/library/$RELAY_ID" \
             > "enterprise-doc-${IMAGE_NAME}.relay-receipt.txt"
 
       - name: Upload OCI relay receipt

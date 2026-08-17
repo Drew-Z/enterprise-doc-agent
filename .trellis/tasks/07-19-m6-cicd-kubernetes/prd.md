@@ -55,6 +55,9 @@ cloud deployment or production release without an external gate record.
   versions. The host keeps the GitHub runner repository-scoped and non-root, keeps the
   Kubernetes API on loopback for deployment jobs, and does not install application
   secrets, tunnel credentials or runner registration tokens from repository files.
+- **M6-R14**: Restricted-network OCI relay imports are repository-owned, checksum-verified,
+  dry-run-first, and use a fully qualified containerd base name. Every imported image index
+  and manifest digest must have a resolvable canonical alias before staging deploy can start.
 
 ## Acceptance Criteria
 
@@ -87,6 +90,9 @@ cloud deployment or production release without an external gate record.
 - [x] The K3s installer pins `v1.36.2+k3s1`, retains packaged Traefik, reserves node
   resources, never exposes the API through Cloudflare Tunnel, and verifies Ready system
   Pods before bootstrap manifests are applied.
+- [x] The OCI relay receipt names the versioned receiver contract, and the receiver verifies
+  archive SHA-256 plus canonical `docker.io/library/...@sha256:...` aliases for every image
+  index and manifest descriptor instead of requiring manual containerd tags.
 
 ## Out Of Scope
 

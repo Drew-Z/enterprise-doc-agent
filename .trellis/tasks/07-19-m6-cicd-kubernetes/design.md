@@ -160,3 +160,19 @@ UFW input filtering. Packaged Traefik remains enabled as a ClusterIP Service and
 only `127.0.0.1:8080` and `127.0.0.1:8443`; the host cloudflared connector uses the TLS
 loopback endpoint. SSH hardening is loaded through a drop-in and validated with `sshd -t`
 before reload; the active key session and provider console are mandatory rollback paths.
+
+## Restricted-Network OCI Relay Import
+
+The GitHub-hosted relay exports every release image as a digest-preserving OCI archive and
+records the expected archive checksum plus receiver base name. The staging node imports the
+archive through `scripts/import_staging_oci_archive.py`, which is dry-run-only unless the
+operator passes `--confirm`. The receiver streams the archive checksum, parses OCI metadata
+without extracting files, validates each image index/manifest descriptor, and supplies a
+fully qualified `docker.io/library/<relay-id>` base to `ctr images import --digests`.
+
+After import, the receiver requires and inspects a canonical digest image record for every
+validated index and manifest descriptor. Checking only the top-level application index is
+insufficient because containerd and CRI may resolve nested runtime or attestation manifests
+by their normalized name. A short `--base-name` can create records such as
+`import-date@sha256:...` while CRI asks for `docker.io/library/import-date@sha256:...`; the
+versioned receiver prevents that namespace mismatch before staging workloads are applied.

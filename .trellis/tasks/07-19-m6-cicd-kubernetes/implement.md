@@ -173,3 +173,12 @@ immutable image or rollback evidence. Those remain open manual gates.
   the sanitized release record so a model change cannot reuse an older generation silently.
 - [ ] Validate the Free `qwen3-embedding-8b` candidate only through a versioned reindex and
   repeated RAG quality gate before replacing the reviewed 4B staging identity.
+
+## Slice 17: Canonical OCI Relay Receiver
+
+- [x] Add a dry-run-first receiver that verifies the relay archive SHA-256 and parses OCI
+  index/manifest descriptors without extracting the archive.
+- [x] Normalize the import base to `docker.io/library/<relay-id>`, import all platforms with
+  digest records, and fail unless every descriptor has a resolvable canonical alias.
+- [x] Bind the receiver script and canonical base into the relay receipt, document the host
+  operation, and regression-test missing-alias failure instead of relying on manual tags.

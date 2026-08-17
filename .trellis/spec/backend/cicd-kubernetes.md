@@ -139,6 +139,12 @@
   remain `blocked_external` with a reason and prerequisite list.
 - Local image builds, static checks and local rendering evidence do not prove registry,
   cloud-cluster, TLS, secret-manager, staging smoke or rollback execution.
+- Restricted-network image relay receipts bind the archive checksum, a short receiver base
+  name and `scripts/import_staging_oci_archive.py`. The receiver is dry-run-first, validates
+  OCI metadata without extraction, imports with the fully qualified
+  `docker.io/library/<relay-id>` base, and inspects canonical digest aliases for every image
+  index and manifest. Supplying a short base directly to `ctr images import --digests` is
+  invalid because CRI normalizes the later lookup and can miss nested containerd records.
 - The deployer retrieves the live prerequisite objects and compares their normalized
   specs and inventory with the administrator-approved render. Comparing only a stored
   Namespace fingerprint is insufficient because an administrator-side object could
@@ -182,6 +188,9 @@
   allow/deny behavior against a real API server with isolated policy names and cleanup.
 - `scripts/sanitize_deployment_evidence.py` structurally redacts JSON/YAML Secret data,
   credentials, DSN passwords, bearer tokens and signed query parameters.
+- `scripts/import_staging_oci_archive.py` checksum-validates restricted-network relay
+  archives and fail-closes unless all OCI image descriptor digests resolve through canonical
+  containerd aliases.
 - `scripts/run_recovery_orchestrator.py` defaults to dry-run, requires the exact
   `run-recovery-drill` confirmation, executes argv lists without a shell, records every
   preflight/recovery/cleanup phase and derives RPO/RTO from the recorded failure boundary.
@@ -214,6 +223,7 @@
 - `scripts/validate_staging_prerequisites.py`
 - `scripts/verify_staging_admission.py`
 - `scripts/sanitize_deployment_evidence.py`
+- `scripts/import_staging_oci_archive.py`
 - `tests/deployment/`
 
 ## Scenario: Rebuild A 4C8G Single-Node Staging Host
