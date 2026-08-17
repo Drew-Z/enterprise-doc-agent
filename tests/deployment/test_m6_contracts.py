@@ -1733,4 +1733,5 @@ def test_staging_image_relay_binds_the_versioned_canonical_receiver() -> None:
     assert "receiver_script=scripts/import_staging_oci_archive.py" in receipt
     assert "receiver_base_name=$RELAY_ID" in receipt
     assert "receiver_canonical_base=docker.io/library/$RELAY_ID" in receipt
+    assert "receiver_image_reference=$IMAGE_REF" in receipt
     assert (ROOT / "scripts" / "import_staging_oci_archive.py").is_file()

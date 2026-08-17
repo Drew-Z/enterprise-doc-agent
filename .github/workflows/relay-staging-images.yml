@@ -116,6 +116,7 @@ jobs:
             "receiver_script=scripts/import_staging_oci_archive.py" \
             "receiver_base_name=$RELAY_ID" \
             "receiver_canonical_base=docker.io/library/$RELAY_ID" \
+            "receiver_image_reference=$IMAGE_REF" \
             > "enterprise-doc-${IMAGE_NAME}.relay-receipt.txt"
 
       - name: Upload OCI relay receipt

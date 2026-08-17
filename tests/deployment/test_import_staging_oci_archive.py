@@ -140,7 +140,7 @@ def test_import_plan_normalizes_short_base_and_covers_every_image_descriptor(
         "--digests",
         "--base-name",
         canonical_base,
-        str(archive),
+        "<normalized-archive>",
     )
     assert plan.expected_refs == tuple(f"{canonical_base}@{digest}" for digest in expected_digests)
 
@@ -155,9 +155,18 @@ def test_execute_import_verifies_every_canonical_digest_alias(tmp_path: Path) ->
         containerd_cli="ctr",
     )
     commands: list[tuple[str, ...]] = []
+    normalized_digests: tuple[str, ...] = ()
 
     def run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        nonlocal normalized_digests
         commands.append(tuple(command))
+        if command[-2] == plan.canonical_base and command[-1] != "<normalized-archive>":
+            with tarfile.open(command[-1], "r:*") as normalized:
+                root = json.load(normalized.extractfile("index.json"))
+            normalized_digests = tuple(
+                sorted(str(descriptor["digest"]) for descriptor in root["manifests"])
+            )
+            assert all("annotations" not in descriptor for descriptor in root["manifests"])
         if command[-3:] == ["images", "list", "--quiet"]:
             return subprocess.CompletedProcess(command, 0, "\n".join(plan.expected_refs) + "\n", "")
         return subprocess.CompletedProcess(command, 0, "", "")
@@ -166,8 +175,11 @@ def test_execute_import_verifies_every_canonical_digest_alias(tmp_path: Path) ->
 
     assert report["status"] == "passed"
     assert report["canonical_base"] == plan.canonical_base
+    assert report["normalized_archive_imported"] is True
     assert report["verified_descriptor_count"] == 3
-    assert commands[0] == plan.import_command
+    assert normalized_digests == plan.descriptor_digests
+    assert commands[0][:-1] == plan.import_command[:-1]
+    assert commands[0][-1] != plan.import_command[-1]
     assert commands[1] == ("ctr", "--namespace", "k8s.io", "images", "list", "--quiet")
     assert commands[2:] == [
         ("ctr", "--namespace", "k8s.io", "images", "inspect", reference)
@@ -192,6 +204,74 @@ def test_execute_import_fails_when_any_canonical_alias_is_missing(tmp_path: Path
 
     with pytest.raises(MODULE.StagingOciImportError, match="canonical digest aliases"):
         MODULE.execute_import_plan(plan, run=run)
+
+
+def test_execute_import_tags_and_verifies_the_exact_deployment_reference(tmp_path: Path) -> None:
+    archive = tmp_path / "enterprise-doc-api.oci.tar"
+    archive_sha256, expected_digests = _write_oci_archive(archive)
+    root_digest = next(
+        digest for digest in expected_digests if digest == MODULE.image_descriptors(archive)[1][0]
+    )
+    image_reference = f"ghcr.io/drew-z/enterprise-doc-api@{root_digest}"
+    plan = MODULE.prepare_import_plan(
+        archive=archive,
+        expected_sha256=archive_sha256,
+        base_name="import-2026-08-17",
+        containerd_cli="ctr",
+        image_reference=image_reference,
+    )
+    commands: list[tuple[str, ...]] = []
+
+    def run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        commands.append(tuple(command))
+        if command[-3:] == ["images", "list", "--quiet"]:
+            return subprocess.CompletedProcess(command, 0, "\n".join(plan.expected_refs) + "\n", "")
+        if command[-3:] == ["images", "list", f"name=={image_reference}"]:
+            table = (
+                "REF TYPE DIGEST SIZE PLATFORMS LABELS\n"
+                f"{image_reference} application/vnd.oci.image.index.v1+json "
+                f"{root_digest} 1B linux/amd64 -\n"
+            )
+            return subprocess.CompletedProcess(command, 0, table, "")
+        return subprocess.CompletedProcess(command, 0, "", "")
+
+    report = MODULE.execute_import_plan(plan, run=run)
+
+    canonical_source = f"{plan.canonical_base}@{root_digest}"
+    assert (
+        "ctr",
+        "--namespace",
+        "k8s.io",
+        "images",
+        "tag",
+        canonical_source,
+        image_reference,
+    ) in commands
+    assert commands[-1] == (
+        "ctr",
+        "--namespace",
+        "k8s.io",
+        "images",
+        "inspect",
+        image_reference,
+    )
+    assert report["deployment_image_reference"] == image_reference
+
+
+def test_import_plan_rejects_deployment_reference_for_a_nested_digest(tmp_path: Path) -> None:
+    archive = tmp_path / "enterprise-doc-api.oci.tar"
+    archive_sha256, expected_digests = _write_oci_archive(archive)
+    root_digest = MODULE.image_descriptors(archive)[1][0]
+    nested_digest = next(digest for digest in expected_digests if digest != root_digest)
+
+    with pytest.raises(MODULE.StagingOciImportError, match="root OCI archive descriptor"):
+        MODULE.prepare_import_plan(
+            archive=archive,
+            expected_sha256=archive_sha256,
+            base_name="import-2026-08-17",
+            containerd_cli="k3s",
+            image_reference=f"ghcr.io/drew-z/enterprise-doc-api@{nested_digest}",
+        )
 
 
 @pytest.mark.parametrize(
