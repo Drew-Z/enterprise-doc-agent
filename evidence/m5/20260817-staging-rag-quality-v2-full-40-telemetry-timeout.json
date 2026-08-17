@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "suite": "staging-real-provider-rag-quality",
+  "status": "runtime_failed",
+  "namespace": "enterprise-doc-agent-staging",
+  "dataset": {
+    "version": "enterprise-rag-quality-v2",
+    "selected_case_count": 40,
+    "total_case_count": 40
+  },
+  "evaluator": {
+    "version": "m5.rag-quality.v5",
+    "runner": "scripts/evaluate_staging_rag_quality.py",
+    "local_session_id": 80926,
+    "timeout_seconds": 900
+  },
+  "provider_route": {
+    "provider": "openai_compatible",
+    "model_name": "glm-5.2",
+    "embedding_model": "Qwen/Qwen3-Embedding-4B"
+  },
+  "case_progress": {
+    "completed_run_ids": [
+      "86b4374f-525a-4b70-aae6-36a8c0422229",
+      "13a2fc54-8d1e-4d95-84f6-eb856cb9fea9"
+    ],
+    "stuck_run_id": "d5c181b5-6b5e-483e-98b2-1bc3e189c5ce"
+  },
+  "timing": {
+    "started_at": "2026-08-17T09:50:14+08:00",
+    "completed_at": "2026-08-17T10:05:45+08:00"
+  },
+  "failure": {
+    "error": "Agent run did not reach terminal status before timeout",
+    "report_produced": false,
+    "provider_telemetry_captured": false
+  },
+  "interpretation": "The telemetry-enabled complete suite did not reach evaluation and produced no aggregate score. This is an execution timeout on one Agent run, not a quality assertion failure or evidence of provider correctness. The existing passed 40-case reports remain the quality evidence, while a complete post-deployment telemetry report is still unavailable."
+}

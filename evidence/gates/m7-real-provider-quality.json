@@ -32,7 +32,8 @@
     "evidence/m5/20260817-staging-rag-quality-v2-full-40-repeat.json",
     "evidence/m5/20260817-staging-rag-quality-v2-full-40-repeat-execution.json",
     "evidence/m5/20260817-staging-rag-quality-v2-semantic-review.json",
-    "evidence/m5/20260817-staging-rag-quality-v2-telemetry-probe.json"
+    "evidence/m5/20260817-staging-rag-quality-v2-telemetry-probe.json",
+    "evidence/m5/20260817-staging-rag-quality-v2-full-40-telemetry-timeout.json"
   ],
   "state": "open",
   "status": "blocked_external",
