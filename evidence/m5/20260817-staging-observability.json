@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "evidence_type": "staging-observability",
+  "evidence_id": "m5-staging-observability-20260817-v0.1.29",
+  "milestone": "M5",
+  "requirement_ids": ["M5-R4"],
+  "status": "blocked_external",
+  "commit_sha": "a1d6326b556bd15b5fc3bec9411c844d2e602336",
+  "deployment_run_id": "32000846633",
+  "environment": {
+    "provider": "tencent-cloud",
+    "region": "ap-guangzhou-7",
+    "profile": "single-node-4c8g",
+    "namespace": "enterprise-doc-agent-staging"
+  },
+  "observed": {
+    "prometheus_ready": true,
+    "prometheus_replicas": "1/1",
+    "prometheus_pvc": {
+      "name": "enterprise-doc-prometheus-data",
+      "status": "Bound",
+      "capacity": "5Gi"
+    },
+    "targets": {
+      "enterprise-doc-api": {"count": 2, "up": 2},
+      "enterprise-doc-worker": {"count": 1, "up": 1},
+      "enterprise-doc-consumer": {"count": 1, "up": 1}
+    },
+    "process_metrics": {
+      "cpu_series": {"api": 2, "worker": 1, "consumer": 1},
+      "resident_memory_series": {"api": 2, "worker": 1, "consumer": 1}
+    },
+    "prometheus_rules": {
+      "loaded": 9,
+      "health_ok": 9,
+      "evaluation_errors": 0,
+      "alerting_rules_inactive": 6,
+      "recording_rules_healthy": 3
+    }
+  },
+  "blocking_reason": "Staging scrape, PVC and rule evaluation are verified, but managed retention ownership, alert delivery, dashboard ownership and incident response are not configured.",
+  "limitations": [
+    "A Bound local-path PVC does not prove node or disk-loss recovery.",
+    "Prometheus rules are inspectable but no Alertmanager or managed receiver is deployed.",
+    "Point-in-time series counts are not a cardinality budget."
+  ],
+  "owner": "observability owner"
+}

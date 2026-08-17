@@ -19,7 +19,10 @@
   "completed_evidence": [
     "evidence/m6/20260806-v0.1.19-staging-r2-preflight.json"
   ],
+  "latest_observed_evidence": [
+    "evidence/m6/20260817-v0.1.29-staging-rollout.json"
+  ],
   "state": "closed",
   "status": "passed",
-  "review_date": "2026-08-06"
+  "review_date": "2026-08-17"
 }

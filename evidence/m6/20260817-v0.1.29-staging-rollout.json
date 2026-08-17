@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "evidence_type": "staging-release",
+  "evidence_id": "m6-staging-rollout-20260817-v0.1.29",
+  "milestone": "M6",
+  "requirement_ids": ["M6-R4"],
+  "status": "passed",
+  "commit_sha": "a1d6326b556bd15b5fc3bec9411c844d2e602336",
+  "workflow": {
+    "repository": "Drew-Z/enterprise-doc-agent",
+    "run_id": "32000846633",
+    "run_attempt": 4,
+    "job_id": "95335157584",
+    "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/32000846633",
+    "completed_at": "2026-08-17T17:15:43+08:00"
+  },
+  "environment": {
+    "provider": "tencent-cloud",
+    "region": "ap-guangzhou-7",
+    "profile": "single-node-4c8g",
+    "namespace": "enterprise-doc-agent-staging"
+  },
+  "image_digests": {
+    "api": "sha256:8da2b7098e34122ec8d0ce29c8a80a954bb5a266e2452553b409644ba37b8df5",
+    "worker": "sha256:fe98cb5da5b5b8eb6da1bd8e6bbaab00ceca8476dcf2b6b68e9fc54c1f6c67bc",
+    "consumer": "sha256:bffd17bcb8aa8d599513089a2477070d08f8c07734e451504e155be2e12b89cb",
+    "web": "sha256:25ba01c09dd6b98fe6787f2ed9f7d06b6a2e1cef91cd57ed381f8afc9c148f0b"
+  },
+  "outcomes": {
+    "prerequisites": "passed",
+    "migration": "passed",
+    "workloads": "passed",
+    "rollout": "passed",
+    "embedding_rollout": "passed",
+    "cluster_readiness_smoke": "passed",
+    "authenticated_agent_smoke": "passed"
+  },
+  "embedding": {
+    "provider": "openai_compatible",
+    "model": "Qwen/Qwen3-Embedding-4B",
+    "version": 2,
+    "dimension": 1024,
+    "probe_item_count": 2,
+    "reindex_status": "completed",
+    "replayed": 0,
+    "rollout_report_sha256": "fda7432578c7dcb45a782bb1a65ae78c3cea78399dc2c41634feea6f6b33c670"
+  },
+  "authenticated_smoke": {
+    "scenario": "authenticated-upload-ingestion-agent",
+    "status": "passed",
+    "sample_count": 1,
+    "steps": [
+      "upload_session_created",
+      "object_uploaded",
+      "upload_completed",
+      "document_ready",
+      "agent_run_created",
+      "agent_run_succeeded",
+      "answer_artifact_listed",
+      "answer_artifact_downloaded",
+      "answer_artifact_sha256_verified",
+      "answer_citation_verified"
+    ],
+    "report_sha256": "6937cd0fbfb5ff65eedd98da09974ae0877977f8fec78da3091624f15c025631"
+  },
+  "operator_intervention": {
+    "type": "containerd-image-record-alias",
+    "reason": "Imported OCI metadata retained only unqualified import-2026-08-17 digest records while CRI requested docker.io/library/import-2026-08-17 records, causing CreateContainerError despite complete content.",
+    "resolution": "Added canonical docker.io/library aliases for the six imported manifest/index records; no application image content or source was changed.",
+    "validated_by": "migration and all workload containers reached Running/Ready"
+  },
+  "repository_prevention": {
+    "receiver": "scripts/import_staging_oci_archive.py",
+    "contract": "checksum-verified, dry-run-first, fully qualified import base with canonical alias inspection for every OCI image descriptor",
+    "validation": "synthetic multi-manifest tests and read-only v0.1.29 archive plans passed",
+    "remaining_validation": "The versioned receiver has not yet been exercised by a subsequent live relay/import rollout."
+  },
+  "limitations": [
+    "This is a single-node staging rollout, not a highly available production deployment.",
+    "This evidence does not close independent fault-domain migration and recovery.",
+    "The authenticated smoke validates one business-path execution, not capacity or provider quality."
+  ],
+  "owner": "platform owner"
+}

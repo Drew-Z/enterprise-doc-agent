@@ -3,7 +3,7 @@
   "milestone": "M5",
   "requirement": "M5-R4",
   "owner": "observability owner",
-  "blocking_reason": "The local Prometheus and Grafana profile proves configuration only; managed retention, alert routing, ownership, and incident response are unavailable.",
+  "blocking_reason": "Staging scrape, PVC and rule evaluation are verified, but managed retention ownership, alert delivery, dashboard ownership and incident response are not configured.",
   "prerequisites": [
     "Deploy the services in a managed environment",
     "Configure scrape discovery, retention, and alert routing",
@@ -15,7 +15,10 @@
     "Alert delivery test",
     "Dashboard and incident runbook review"
   ],
+  "observed_evidence": [
+    "evidence/m5/20260817-staging-observability.json"
+  ],
   "state": "open",
   "status": "blocked_external",
-  "review_date": "2026-07-19"
+  "review_date": "2026-08-17"
 }

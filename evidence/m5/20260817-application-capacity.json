@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "evidence_type": "application-capacity",
+  "evidence_id": "m5-application-capacity-20260817-v0.1.29",
+  "milestone": "M5",
+  "requirement_ids": ["M5-R10", "DR-9"],
+  "status": "blocked_external",
+  "commit_sha": "a1d6326b556bd15b5fc3bec9411c844d2e602336",
+  "environment": {
+    "provider": "tencent-cloud",
+    "region": "ap-guangzhou-7",
+    "cluster": "enterprise-doc-agent-staging-single-node-4c8g",
+    "profile": "single-node-4c8g",
+    "image_digests": {
+      "api": "sha256:8da2b7098e34122ec8d0ce29c8a80a954bb5a266e2452553b409644ba37b8df5",
+      "worker": "sha256:fe98cb5da5b5b8eb6da1bd8e6bbaab00ceca8476dcf2b6b68e9fc54c1f6c67bc",
+      "consumer": "sha256:bffd17bcb8aa8d599513089a2477070d08f8c07734e451504e155be2e12b89cb",
+      "web": "sha256:25ba01c09dd6b98fe6787f2ed9f7d06b6a2e1cef91cd57ed381f8afc9c148f0b"
+    }
+  },
+  "workload_matrix": {
+    "scenario": "ready",
+    "phases": ["ramp", "steady_state", "burst", "recovery"],
+    "repetitions": 2,
+    "requests": 3600,
+    "target_p95_ms": 250
+  },
+  "public_edge_result": {
+    "status": "failed_latency_target",
+    "completed_requests": 3600,
+    "error_rate": 0.0,
+    "p50_ms": 884.679,
+    "p95_ms": 1825.441,
+    "p99_ms": 2498.320,
+    "throughput_per_second": 18.837,
+    "telemetry_complete": true,
+    "cpu_p95_percent": 0.957,
+    "memory_p95_percent": 21.796,
+    "database_pool_p95_percent": 20.0,
+    "headroom_percent": 78.204,
+    "report_sha256": "b388261fdcb02fc831bbe3c79ff266ad56ce9ac2540d392453c048b4cf1395ba"
+  },
+  "cluster_internal_result": {
+    "status": "passed",
+    "completed_requests": 3600,
+    "error_rate": 0.0,
+    "p50_ms": 32.293,
+    "p95_ms": 70.580,
+    "p99_ms": 130.267,
+    "throughput_per_second": 450.859,
+    "telemetry_complete": true,
+    "cpu_p95_percent": 0.773,
+    "memory_p95_percent": 21.867,
+    "database_pool_p95_percent": 0.0,
+    "headroom_percent": 78.133,
+    "report_sha256": "73df00b49bf9d4579ae8cee811798704cfe650d5ea2319bfb9cca9b11ceef52d"
+  },
+  "conclusion": "The application and single-node cluster passed the repeated readiness control-path baseline. The public edge path exceeded the 250ms target without request errors, isolating tail latency to the Tunnel/edge route. This is not representative business capacity because the matrix did not exercise upload, ingestion, retrieval, Agent or SSE workloads.",
+  "blocking_reason": "Representative authorized business traffic and an approved managed capacity/edge target are still absent; readiness-only evidence cannot close M5-R10.",
+  "limitations": [
+    "No GPU/vLLM capacity is included by release scope.",
+    "The matrix did not claim model quality, failover, or production availability.",
+    "A second independent fault-domain migration drill remains outside this evidence."
+  ],
+  "owner": "performance owner"
+}

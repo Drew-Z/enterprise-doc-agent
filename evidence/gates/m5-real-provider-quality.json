@@ -3,10 +3,11 @@
   "milestone": "M5",
   "requirement": "M5-R5",
   "owner": "model evaluation owner",
-  "blocking_reason": "Two complete 40-case synthetic-suite runs against the frozen openai_compatible/glm-5.2 route, dataset, corpus, evaluator, prompt, graph, and tool versions passed every approved aggregate threshold. Artifact-backed semantic review classified the two unique failures as one numeric evaluator false positive and one semantically correct overanswer, with no factual error or safety violation. Post-deployment staging run 31982245586 attempt 4 passed migration, rollout, embedding, readiness, and authenticated Agent smoke; bounded v5 telemetry evidence now captures provider usage, repair, fallback, and direct-route breaker absence without fabricating a provider revision. A complete post-deployment 40-case report, representative-corpus review, provider billing data, and independent human approval remain absent.",
+  "blocking_reason": "Earlier complete 40-case synthetic-suite runs against openai_compatible/glm-5.2 passed every approved aggregate threshold, but the complete post-v0.1.29 run bound to commit a1d6326 failed: 19 of 40 Agent runs terminated with model_server_error, aggregate fact/citation/grounding metrics fell to 0.4412, and two runtime model names were observed. Only 16 of 40 cases exposed provider request telemetry, while token usage, fallback, breaker and billing data remained incomplete. The current route must be stabilized and frozen before a passing repeat can supersede this result; representative-corpus review and independent human approval also remain absent.",
   "prerequisites": [
+    "Stabilize and freeze the approved primary and fallback route identities, then obtain a passing complete post-v0.1.29 40-case report without model_server_error",
     "Add an approved sanitized representative enterprise corpus with independently reviewed golden labels",
-    "Deploy and capture a complete staging report with provider revision, token usage, repair count, fallback count, and breaker state",
+    "Capture complete provider revision, token usage, repair count, fallback count, and breaker state for every evaluated case",
     "Obtain provider billing data or an approved rate-derived cost calculation and independent human approval of the semantic review"
   ],
   "required_evidence": [
@@ -31,7 +32,9 @@
     "evidence/m5/20260817-staging-rag-quality-v2-full-40-repeat-execution.json",
     "evidence/m5/20260817-staging-rag-quality-v2-semantic-review.json",
     "evidence/m5/20260817-staging-rag-quality-v2-telemetry-probe.json",
-    "evidence/m5/20260817-staging-rag-quality-v2-full-40-telemetry-timeout.json"
+    "evidence/m5/20260817-staging-rag-quality-v2-full-40-telemetry-timeout.json",
+    "evidence/m5/20260817-staging-rag-quality-v2-v0.1.29-full-40-failed.json",
+    "evidence/m5/20260817-staging-rag-quality-v2-v0.1.29-full-40-failed-execution.json"
   ],
   "state": "open",
   "status": "blocked_external",
