@@ -110,8 +110,7 @@ def test_kubernetes_prometheus_is_internal_and_bounded() -> None:
     service = next(
         item
         for item in documents
-        if item["kind"] == "Service"
-        and item["metadata"]["name"] == "enterprise-doc-prometheus"
+        if item["kind"] == "Service" and item["metadata"]["name"] == "enterprise-doc-prometheus"
     )
     assert service["spec"]["type"] == "ClusterIP"
     headless_services = {
