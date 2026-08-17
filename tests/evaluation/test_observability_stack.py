@@ -82,23 +82,49 @@ def test_kubernetes_prometheus_is_internal_and_bounded() -> None:
         (ROOT / "infra/observability/prometheus-kubernetes.yml").read_text(encoding="utf-8")
     )
     targets = {
-        target
+        job["job_name"]: (
+            job["dns_sd_configs"][0]["names"],
+            job["dns_sd_configs"][0]["port"],
+        )
         for job in prometheus["scrape_configs"]
-        for config in job["static_configs"]
-        for target in config["targets"]
     }
     assert targets == {
-        "enterprise-doc-api:8000",
-        "enterprise-doc-worker:8081",
-        "enterprise-doc-consumer:8082",
+        "enterprise-doc-api": (
+            ["enterprise-doc-api-metrics.enterprise-doc-agent-staging.svc.cluster.local"],
+            8000,
+        ),
+        "enterprise-doc-worker": (
+            ["enterprise-doc-worker-metrics.enterprise-doc-agent-staging.svc.cluster.local"],
+            8081,
+        ),
+        "enterprise-doc-consumer": (
+            ["enterprise-doc-consumer-metrics.enterprise-doc-agent-staging.svc.cluster.local"],
+            8082,
+        ),
     }
     documents = list(
         yaml.safe_load_all(
             (ROOT / "infra/observability/prometheus-kubernetes.yaml").read_text(encoding="utf-8")
         )
     )
-    service = next(item for item in documents if item["kind"] == "Service")
+    service = next(
+        item
+        for item in documents
+        if item["kind"] == "Service"
+        and item["metadata"]["name"] == "enterprise-doc-prometheus"
+    )
     assert service["spec"]["type"] == "ClusterIP"
+    headless_services = {
+        item["metadata"]["name"]: item
+        for item in documents
+        if item["kind"] == "Service" and item["spec"].get("clusterIP") == "None"
+    }
+    assert set(headless_services) == {
+        "enterprise-doc-api-metrics",
+        "enterprise-doc-worker-metrics",
+        "enterprise-doc-consumer-metrics",
+    }
+    assert all(item["spec"]["type"] == "ClusterIP" for item in headless_services.values())
     pvc = next(item for item in documents if item["kind"] == "PersistentVolumeClaim")
     assert pvc["spec"]["storageClassName"] == "local-path"
     deployment = next(item for item in documents if item["kind"] == "Deployment")

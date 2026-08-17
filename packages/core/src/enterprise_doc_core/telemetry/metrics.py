@@ -11,6 +11,7 @@ from prometheus_client import (
     Counter,
     Gauge,
     Histogram,
+    ProcessCollector,
     exposition,
     generate_latest,
 )
@@ -131,6 +132,10 @@ class MetricsRuntime:
     @classmethod
     def create(cls) -> MetricsRuntime:
         registry = CollectorRegistry(auto_describe=True)
+        # Private registries do not receive the default process collector
+        # implicitly. Register Linux process CPU and resident-memory metrics
+        # explicitly; they carry no business or request identifiers.
+        ProcessCollector(registry=registry)
         return cls(
             registry=registry,
             api_requests_total=Counter(

@@ -29,6 +29,57 @@ spec:
       port: 9090
       targetPort: http
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: enterprise-doc-api-metrics
+  labels:
+    app.kubernetes.io/name: enterprise-doc-api-metrics
+    app.kubernetes.io/part-of: enterprise-doc-agent
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: enterprise-doc-api
+  ports:
+    - name: metrics
+      port: 8000
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: enterprise-doc-worker-metrics
+  labels:
+    app.kubernetes.io/name: enterprise-doc-worker-metrics
+    app.kubernetes.io/part-of: enterprise-doc-agent
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: enterprise-doc-worker
+  ports:
+    - name: metrics
+      port: 8081
+      targetPort: metrics
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: enterprise-doc-consumer-metrics
+  labels:
+    app.kubernetes.io/name: enterprise-doc-consumer-metrics
+    app.kubernetes.io/part-of: enterprise-doc-agent
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: enterprise-doc-consumer
+  ports:
+    - name: metrics
+      port: 8082
+      targetPort: metrics
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:

@@ -4,6 +4,7 @@ import asyncio
 
 import pytest
 
+import enterprise_doc_core.telemetry.metrics as metrics_module
 from enterprise_doc_core.documents.ingestion_service import (
     DocumentIngestionError,
     DocumentIngestionService,
@@ -17,6 +18,19 @@ from enterprise_doc_core.telemetry import (
     bounded_route,
     status_class,
 )
+
+
+def test_metrics_runtime_registers_the_process_collector(monkeypatch: pytest.MonkeyPatch) -> None:
+    observed: list[object] = []
+
+    class FakeProcessCollector:
+        def __init__(self, *, registry: object) -> None:
+            observed.append(registry)
+
+    monkeypatch.setattr(metrics_module, "ProcessCollector", FakeProcessCollector)
+    runtime = MetricsRuntime.create()
+
+    assert observed == [runtime.registry]
 
 
 def test_metrics_runtime_uses_an_independent_registry_and_bounded_labels() -> None:
