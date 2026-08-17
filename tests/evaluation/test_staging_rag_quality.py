@@ -153,6 +153,15 @@ class FakeClient:
                 "modelProvider": "openai_compatible",
                 "modelName": "reviewed-chat-model",
                 "modelVersion": "2026-08",
+                "modelRevision": "revision-1",
+                "providerRequestCount": 1,
+                "providerUsageRequestCount": 1,
+                "promptTokens": 100,
+                "completionTokens": 20,
+                "totalTokens": 120,
+                "repairRequestCount": 0,
+                "fallbackCount": 0,
+                "breakerState": "closed",
                 "graphVersion": "graph-v1",
                 "promptVersion": "prompt-v1",
                 "toolSchemaVersion": "tools-v1",
@@ -164,6 +173,15 @@ class FakeClient:
                 "modelProvider": "openai_compatible",
                 "modelName": "reviewed-chat-model",
                 "modelVersion": "2026-08",
+                "modelRevision": "revision-1",
+                "providerRequestCount": 1,
+                "providerUsageRequestCount": 1,
+                "promptTokens": 80,
+                "completionTokens": 10,
+                "totalTokens": 90,
+                "repairRequestCount": 0,
+                "fallbackCount": 0,
+                "breakerState": "closed",
                 "graphVersion": "graph-v1",
                 "promptVersion": "prompt-v1",
                 "toolSchemaVersion": "tools-v1",
@@ -317,6 +335,21 @@ def test_staging_quality_runs_answer_and_refusal_without_leaking_runtime_data(
     assert report["measured"]["fact_recall"] == 1.0
     assert report["measured"]["refusal_reason_accuracy"] == 1.0
     assert report["applicable_targets"] == sorted(loaded.dataset.targets)
+    assert report["provider_routes"] == [
+        {
+            "provider": "openai_compatible",
+            "model_name": "reviewed-chat-model",
+            "model_version": "2026-08",
+            "model_revision": "revision-1",
+        }
+    ]
+    assert report["provider_telemetry"]["provider_request_count"] == 2
+    assert report["provider_telemetry"]["total_tokens"] == 210
+    assert report["provider_telemetry"]["fallback_count"] == 0
+    assert report["provider_telemetry"]["breaker_states"] == ["closed"]
+    assert report["cost_metadata"]["source"] == "provider_usage"
+    assert report["cost_metadata"]["total_tokens"] == 210
+    assert report["cost_metadata"]["billing_amount"] is None
     assert verify_report_payload(report)
     encoded = json.dumps(report, sort_keys=True)
     for forbidden in (
@@ -367,7 +400,7 @@ def test_staging_quality_reports_only_allowlisted_attempt_diagnostics(
     )
 
     assert report["status"] == "failed"
-    assert report["evaluator_version"] == "m5.rag-quality.v4"
+    assert report["evaluator_version"] == "m5.rag-quality.v5"
     assert report["cases"][0]["failure_diagnostic_code"] == expected
     assert report["cases"][0]["citation_diagnostics"] == []
     assert report["cases"][0]["unresolved_citation_count"] == 0

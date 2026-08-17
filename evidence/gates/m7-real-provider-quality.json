@@ -3,12 +3,13 @@
   "milestone": "M7",
   "requirement": "M7-R6",
   "owner": "model evaluation owner",
-  "blocking_reason": "Two complete 40-case synthetic-suite runs against the frozen openai_compatible/glm-5.2 route and behavior versions passed every approved aggregate fact, citation, grounding, and refusal threshold. The baseline had two deterministic case-level failures and the repeat had one, so the two unique failed cases still require human review. The route still does not expose a provider model revision, token usage, cost, fallback count, or breaker state, and representative-corpus coverage remains absent.",
+  "blocking_reason": "Two complete 40-case synthetic-suite runs against the frozen openai_compatible/glm-5.2 route and behavior versions passed every approved aggregate fact, citation, grounding, and refusal threshold. Artifact-backed semantic review classified the two unique failures as one evaluator false positive and one semantically correct overanswer. Run-level actual model revision, token usage, repair count, fallback count, and breaker state are now implemented and locally verified, but the provider revision must still be frozen and the telemetry captured in a post-deployment staging report. Provider billing data, representative-corpus coverage, and independent human approval remain absent.",
   "prerequisites": [
     "Approve and freeze the provider model revision and fallback route in addition to the current model name",
-    "Resolve or explicitly accept the two unique failed full-suite cases after human error review",
-    "Provide provider-reported usage/cost plus fallback and breaker telemetry",
-    "Add an approved representative sanitized corpus alongside the synthetic golden set"
+    "Deploy and capture provider-reported usage plus fallback and breaker telemetry",
+    "Provide provider billing data or an approved rate-derived cost calculation",
+    "Add an approved representative sanitized corpus alongside the synthetic golden set",
+    "Obtain independent human approval of the artifact-backed semantic classification"
   ],
   "required_evidence": [
     "Real provider route identity",
@@ -29,7 +30,8 @@
     "evidence/m5/20260817-staging-rag-quality-v2-full-40-execution.json",
     "evidence/m5/20260817-staging-rag-quality-v2-repeat-20260817-1-failure.json",
     "evidence/m5/20260817-staging-rag-quality-v2-full-40-repeat.json",
-    "evidence/m5/20260817-staging-rag-quality-v2-full-40-repeat-execution.json"
+    "evidence/m5/20260817-staging-rag-quality-v2-full-40-repeat-execution.json",
+    "evidence/m5/20260817-staging-rag-quality-v2-semantic-review.json"
   ],
   "state": "open",
   "status": "blocked_external",

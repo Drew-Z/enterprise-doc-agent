@@ -242,6 +242,7 @@ class DurableAgentGraphBackend:
     ) -> str:
         self._validate_state_identity(state)
         fingerprint = _fingerprint_model_output(output)
+        await self._record_model_telemetry(output, accumulate=False)
         self._model_outputs[fingerprint] = output
         return fingerprint
 
@@ -260,8 +261,55 @@ class DurableAgentGraphBackend:
         output = await self.gateway.generate(request)
         if _fingerprint_model_output(output) != fingerprint:
             raise AgentGraphError("The model output changed while recovering a segment.")
+        await self._record_model_telemetry(output, accumulate=True)
         self._model_outputs[fingerprint] = output
         return output
+
+    async def _record_model_telemetry(
+        self,
+        output: GroundedModelOutput,
+        *,
+        accumulate: bool,
+    ) -> None:
+        async with self.session_factory.begin() as session:
+            run = await self._load_authorized_run(session, for_update=True)
+            run.model_provider = output.identity.provider
+            run.model_name = output.identity.model_name
+            run.model_version = output.identity.model_version
+            run.model_revision = output.identity.model_revision
+            if not accumulate and run.provider_request_count is not None:
+                return
+
+            telemetry = output.telemetry
+            if not accumulate:
+                run.provider_request_count = telemetry.provider_request_count
+                run.provider_usage_request_count = telemetry.usage_request_count
+                run.prompt_tokens = telemetry.prompt_tokens
+                run.completion_tokens = telemetry.completion_tokens
+                run.total_tokens = telemetry.total_tokens
+                run.repair_request_count = telemetry.repair_request_count
+                run.fallback_count = telemetry.fallback_count
+                run.breaker_state = telemetry.breaker_state
+                return
+
+            run.provider_request_count = (
+                run.provider_request_count or 0
+            ) + telemetry.provider_request_count
+            run.provider_usage_request_count = (
+                run.provider_usage_request_count or 0
+            ) + telemetry.usage_request_count
+            run.prompt_tokens = _add_optional_count(run.prompt_tokens, telemetry.prompt_tokens)
+            run.completion_tokens = _add_optional_count(
+                run.completion_tokens,
+                telemetry.completion_tokens,
+            )
+            run.total_tokens = _add_optional_count(run.total_tokens, telemetry.total_tokens)
+            run.repair_request_count = (
+                run.repair_request_count or 0
+            ) + telemetry.repair_request_count
+            run.fallback_count = (run.fallback_count or 0) + telemetry.fallback_count
+            if telemetry.breaker_state is not None:
+                run.breaker_state = telemetry.breaker_state
 
     async def store_validated_answer(
         self,
@@ -723,6 +771,12 @@ class DurableAgentGraphBackend:
 
 def operation_nonce(capability: ToolCapability) -> str:
     return hashlib.sha256(capability.value.encode("ascii")).hexdigest()[:16]
+
+
+def _add_optional_count(current: int | None, increment: int | None) -> int | None:
+    if increment is None:
+        return current
+    return (current or 0) + increment
 
 
 def _fingerprint_model_output(output: GroundedModelOutput) -> str:

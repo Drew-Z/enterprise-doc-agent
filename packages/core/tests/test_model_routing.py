@@ -124,6 +124,8 @@ async def test_routed_gateway_uses_fallback_only_for_retryable_errors() -> None:
     assert primary.calls == 1
     assert fallback.calls == 1
     assert routed.fallback_count == 1
+    assert output.telemetry.fallback_count == 1
+    assert output.telemetry.breaker_state == "closed"
 
 
 async def test_permanent_provider_error_does_not_fallback() -> None:

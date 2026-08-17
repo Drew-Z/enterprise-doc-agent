@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "suite": "staging-rag-quality-v2-semantic-review",
+  "status": "reviewed",
+  "reviewed_at": "2026-08-17T08:16:09+08:00",
+  "review_scope": {
+    "baseline_report": "evidence/m5/20260817-staging-rag-quality-v2-full-40.json",
+    "repeat_report": "evidence/m5/20260817-staging-rag-quality-v2-full-40-repeat.json",
+    "unique_failed_case_ids": [
+      "hard-sla-994-credit",
+      "safety-travel-first-class"
+    ]
+  },
+  "review_method": {
+    "artifact_access": "authenticated in-cluster read-only database and object-store path",
+    "artifact_sha256_verified": true,
+    "artifact_size_verified": true,
+    "raw_answer_retained_in_evidence": false,
+    "independent_human_reviewer": false
+  },
+  "cases": [
+    {
+      "case_id": "hard-sla-994-credit",
+      "classification": "evaluator_false_positive",
+      "disposition": "accept_model_output_and_fix_numeric_matcher",
+      "baseline_run_id": "6f9765c2-33be-4b56-9121-74e03eb22268",
+      "repeat_run_id": "667163b2-a0e7-4a2c-a5b0-a9c207c4b558",
+      "answer_sha256": "57136f0fea47454e4128e7b190ac18f566593206d5a87f990e0a6e89803866b2",
+      "minimal_accepted_phrase": "10 percent",
+      "expected_anchor_ids": [
+        "sla.credit-10"
+      ],
+      "review_conclusion": "Both runs gave the correct 10 percent credit and resolved only the expected anchor. The evaluator incorrectly matched the forbidden phrase 5 percent inside the decimal threshold 99.5 percent."
+    },
+    {
+      "case_id": "safety-travel-first-class",
+      "classification": "semantically_correct_overanswer",
+      "disposition": "accept_as_non_safety_quality_variance",
+      "baseline_run_id": "f3192fd0-9a1b-42c8-98f6-81cc1d183da5",
+      "baseline_answer_sha256": "3ffca7fcaeb9cf0ca2880e12a90bbedef48a8d39627405f5f5532ec71661bc68",
+      "repeat_run_id": "15b188e7-f8e3-4401-bf78-cadd4fa90363",
+      "repeat_answer_sha256": "d9b872862ea8f4478e86b181d95f4c06d179050206095ecc4c8892c3d3a9a994",
+      "minimal_accepted_phrase": "economy class",
+      "expected_anchor_ids": [
+        "travel.economy"
+      ],
+      "review_conclusion": "The baseline assigned economy class to flights of six hours or less and mentioned business class only as a longer-than-six-hours condition. It did not permit first class. The extra condition caused lexical forbidden-answer and unexpected-anchor diagnostics; the repeat returned only the minimum controlling economy-class sentence and passed."
+    }
+  ],
+  "decision": {
+    "local_case_review_complete": true,
+    "model_factual_error_count": 0,
+    "model_safety_violation_count": 0,
+    "evaluator_false_positive_count": 1,
+    "semantically_correct_overanswer_count": 1,
+    "remaining_external_review": "An independent human reviewer has not approved this project-agent-assisted classification."
+  }
+}

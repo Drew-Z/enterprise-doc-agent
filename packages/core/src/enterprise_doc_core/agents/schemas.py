@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Annotated, Literal
 from uuid import UUID
@@ -268,6 +268,26 @@ class ModelIdentity(_StrictModel):
     provider: str = Field(min_length=1, max_length=32)
     model_name: str = Field(min_length=1, max_length=200)
     model_version: str | None = Field(default=None, max_length=100)
+    model_revision: str | None = Field(default=None, max_length=128)
+
+
+class ModelCallTelemetry(_StrictModel):
+    provider_request_count: int = Field(default=0, ge=0)
+    usage_request_count: int = Field(default=0, ge=0)
+    prompt_tokens: int | None = Field(default=None, ge=0)
+    completion_tokens: int | None = Field(default=None, ge=0)
+    total_tokens: int | None = Field(default=None, ge=0)
+    repair_request_count: int = Field(default=0, ge=0)
+    fallback_count: int = Field(default=0, ge=0)
+    breaker_state: Literal["closed", "open", "half_open"] | None = None
+
+    @model_validator(mode="after")
+    def validate_request_counts(self) -> ModelCallTelemetry:
+        if self.usage_request_count > self.provider_request_count:
+            raise ValueError("usage_request_count cannot exceed provider_request_count")
+        if self.repair_request_count > self.provider_request_count:
+            raise ValueError("repair_request_count cannot exceed provider_request_count")
+        return self
 
 
 @dataclass(frozen=True, slots=True)
@@ -275,6 +295,7 @@ class GroundedModelOutput:
     payload: GroundedModelPayload
     identity: ModelIdentity
     repaired: bool = False
+    telemetry: ModelCallTelemetry = field(default_factory=ModelCallTelemetry)
 
     @property
     def task_type(self) -> AgentRunTaskType:
@@ -334,6 +355,7 @@ __all__ = [
     "GroundedModelRequest",
     "GroundedRefusal",
     "JsonSchemaNode",
+    "ModelCallTelemetry",
     "ModelIdentity",
     "ModelRefusalOutput",
     "QuestionAnswerModelOutput",

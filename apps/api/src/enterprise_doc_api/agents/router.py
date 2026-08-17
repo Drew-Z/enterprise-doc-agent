@@ -141,6 +141,15 @@ class AgentRunStatusResponse(ApiModel):
     model_provider: str
     model_name: str
     model_version: str | None
+    model_revision: str | None
+    provider_request_count: int | None
+    provider_usage_request_count: int | None
+    prompt_tokens: int | None
+    completion_tokens: int | None
+    total_tokens: int | None
+    repair_request_count: int | None
+    fallback_count: int | None
+    breaker_state: str | None
     tool_schema_version: str
     current_execution_seq: int
     error_code: str | None
@@ -493,6 +502,15 @@ def _status_response(result: AgentRunStatusResult) -> AgentRunStatusResponse:
         model_provider=result.model_provider,
         model_name=result.model_name,
         model_version=result.model_version,
+        model_revision=result.model_revision,
+        provider_request_count=result.provider_request_count,
+        provider_usage_request_count=result.provider_usage_request_count,
+        prompt_tokens=result.prompt_tokens,
+        completion_tokens=result.completion_tokens,
+        total_tokens=result.total_tokens,
+        repair_request_count=result.repair_request_count,
+        fallback_count=result.fallback_count,
+        breaker_state=result.breaker_state,
         tool_schema_version=result.tool_schema_version,
         current_execution_seq=result.current_execution_seq,
         error_code=result.error_code,

@@ -146,6 +146,15 @@ class AgentRunStatusResult:
     finished_at: datetime | None
     cancelled_at: datetime | None
     executions: tuple[AgentRunExecutionResult, ...]
+    model_revision: str | None = None
+    provider_request_count: int | None = None
+    provider_usage_request_count: int | None = None
+    prompt_tokens: int | None = None
+    completion_tokens: int | None = None
+    total_tokens: int | None = None
+    repair_request_count: int | None = None
+    fallback_count: int | None = None
+    breaker_state: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -173,12 +182,17 @@ def _utcnow() -> datetime:
     return datetime.now(UTC)
 
 
-def _model_identity(model: ModelSettings) -> tuple[str, str, str | None]:
+def _model_identity(model: ModelSettings) -> tuple[str, str, str | None, str | None]:
     if model.provider is ModelProvider.DETERMINISTIC:
-        return model.provider.value, "deterministic-grounded", model.model_version
+        return (
+            model.provider.value,
+            "deterministic-grounded",
+            model.model_version,
+            model.model_revision,
+        )
     if model.model_name is None:
         raise AgentRunInputInvalid()
-    return model.provider.value, model.model_name, model.model_version
+    return model.provider.value, model.model_name, model.model_version, model.model_revision
 
 
 def agent_run_fingerprint(
@@ -187,7 +201,7 @@ def agent_run_fingerprint(
     agent: AgentSettings,
     model: ModelSettings,
 ) -> str:
-    model_provider, model_name, model_version = _model_identity(model)
+    model_provider, model_name, model_version, model_revision = _model_identity(model)
     encoded = json.dumps(
         {
             "document_version_id": str(request.document_version_id),
@@ -196,6 +210,7 @@ def agent_run_fingerprint(
             "input_text": request.input_text.strip(),
             "model_name": model_name,
             "model_provider": model_provider,
+            "model_revision": model_revision,
             "model_version": model_version,
             "prompt_version": agent.prompt_version,
             "publish_requested": request.publish_requested,
@@ -270,7 +285,9 @@ class AgentRunService:
             agent=self.agent_settings,
             model=self.model_settings,
         )
-        model_provider, model_name, model_version = _model_identity(self.model_settings)
+        model_provider, model_name, model_version, model_revision = _model_identity(
+            self.model_settings
+        )
         async with self.session_factory.begin() as session:
             await session.execute(
                 text("SELECT pg_advisory_xact_lock(hashtextextended(:key, 0))"),
@@ -333,6 +350,7 @@ class AgentRunService:
                 model_provider=model_provider,
                 model_name=model_name,
                 model_version=model_version,
+                model_revision=model_revision,
                 tool_schema_version=self.agent_settings.tool_schema_version,
                 index_generation_id=generation_id,
                 next_event_seq=1,
@@ -755,4 +773,13 @@ class AgentRunService:
             finished_at=run.finished_at,
             cancelled_at=run.cancelled_at,
             executions=tuple(execution_results),
+            model_revision=run.model_revision,
+            provider_request_count=run.provider_request_count,
+            provider_usage_request_count=run.provider_usage_request_count,
+            prompt_tokens=run.prompt_tokens,
+            completion_tokens=run.completion_tokens,
+            total_tokens=run.total_tokens,
+            repair_request_count=run.repair_request_count,
+            fallback_count=run.fallback_count,
+            breaker_state=run.breaker_state,
         )

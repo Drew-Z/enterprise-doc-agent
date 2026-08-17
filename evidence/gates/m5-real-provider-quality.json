@@ -3,11 +3,11 @@
   "milestone": "M5",
   "requirement": "M5-R5",
   "owner": "model evaluation owner",
-  "blocking_reason": "Two complete 40-case synthetic-suite runs against the frozen openai_compatible/glm-5.2 route, dataset, corpus, evaluator, prompt, graph, and tool versions passed every approved aggregate threshold. The baseline had two deterministic case-level failures and the repeat had one, so the two unique failed cases still require human review. Representative-corpus review and provider token/cost evidence remain absent.",
+  "blocking_reason": "Two complete 40-case synthetic-suite runs against the frozen openai_compatible/glm-5.2 route, dataset, corpus, evaluator, prompt, graph, and tool versions passed every approved aggregate threshold. Artifact-backed semantic review classified the two unique failures as one numeric evaluator false positive and one semantically correct overanswer, with no factual error or safety violation. Run-level provider revision, token, repair, fallback, and breaker telemetry is implemented and locally verified but still requires a post-deployment staging report. Representative-corpus review, provider billing data, and independent human approval remain absent.",
   "prerequisites": [
-    "Human-review the two unique failed full-suite cases and distinguish retrieval, generation, grounding, transport, and deterministic-label errors before changing prompts or labels",
     "Add an approved sanitized representative enterprise corpus with independently reviewed golden labels",
-    "Expose provider token usage and cost metadata without logging credentials or raw model responses"
+    "Deploy and capture a complete staging report with provider revision, token usage, repair count, fallback count, and breaker state",
+    "Obtain provider billing data or an approved rate-derived cost calculation and independent human approval of the semantic review"
   ],
   "required_evidence": [
     "Retrieval, citation, refusal, and Agent quality report",
@@ -28,7 +28,8 @@
     "evidence/m5/20260817-staging-rag-quality-v2-full-40-execution.json",
     "evidence/m5/20260817-staging-rag-quality-v2-repeat-20260817-1-failure.json",
     "evidence/m5/20260817-staging-rag-quality-v2-full-40-repeat.json",
-    "evidence/m5/20260817-staging-rag-quality-v2-full-40-repeat-execution.json"
+    "evidence/m5/20260817-staging-rag-quality-v2-full-40-repeat-execution.json",
+    "evidence/m5/20260817-staging-rag-quality-v2-semantic-review.json"
   ],
   "state": "open",
   "status": "blocked_external",

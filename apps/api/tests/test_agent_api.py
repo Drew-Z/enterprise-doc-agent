@@ -128,6 +128,15 @@ class StubAgentRunService:
                     ),
                 ),
             ),
+            model_revision="revision-1",
+            provider_request_count=2,
+            provider_usage_request_count=2,
+            prompt_tokens=30,
+            completion_tokens=8,
+            total_tokens=38,
+            repair_request_count=1,
+            fallback_count=1,
+            breaker_state="open",
         )
 
 
@@ -258,6 +267,15 @@ async def test_agent_status_events_cancel_and_ready_versions_are_tenant_scoped()
 
     assert status_response.status_code == 200
     assert status_response.json()["runId"] == str(service.run_id)
+    assert status_response.json()["modelRevision"] == "revision-1"
+    assert status_response.json()["providerRequestCount"] == 2
+    assert status_response.json()["providerUsageRequestCount"] == 2
+    assert status_response.json()["promptTokens"] == 30
+    assert status_response.json()["completionTokens"] == 8
+    assert status_response.json()["totalTokens"] == 38
+    assert status_response.json()["repairRequestCount"] == 1
+    assert status_response.json()["fallbackCount"] == 1
+    assert status_response.json()["breakerState"] == "open"
     assert status_response.json()["executions"][0]["attemptHistory"][0]["workerId"] == ("worker-1")
     assert status_response.json()["executions"][0]["attemptHistory"][0]["diagnosticCode"] == (
         "grounding.citation_excerpt_not_verbatim"
