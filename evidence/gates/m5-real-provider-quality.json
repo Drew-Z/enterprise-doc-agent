@@ -3,7 +3,7 @@
   "milestone": "M5",
   "requirement": "M5-R5",
   "owner": "model evaluation owner",
-  "blocking_reason": "Two complete 40-case synthetic-suite runs against the frozen openai_compatible/glm-5.2 route, dataset, corpus, evaluator, prompt, graph, and tool versions passed every approved aggregate threshold. Artifact-backed semantic review classified the two unique failures as one numeric evaluator false positive and one semantically correct overanswer, with no factual error or safety violation. Run-level provider revision, token, repair, fallback, and breaker telemetry is implemented and locally verified but still requires a post-deployment staging report. Representative-corpus review, provider billing data, and independent human approval remain absent.",
+  "blocking_reason": "Two complete 40-case synthetic-suite runs against the frozen openai_compatible/glm-5.2 route, dataset, corpus, evaluator, prompt, graph, and tool versions passed every approved aggregate threshold. Artifact-backed semantic review classified the two unique failures as one numeric evaluator false positive and one semantically correct overanswer, with no factual error or safety violation. Post-deployment staging run 31982245586 attempt 4 passed migration, rollout, embedding, readiness, and authenticated Agent smoke; bounded v5 telemetry evidence now captures provider usage, repair, fallback, and direct-route breaker absence without fabricating a provider revision. A complete post-deployment 40-case report, representative-corpus review, provider billing data, and independent human approval remain absent.",
   "prerequisites": [
     "Add an approved sanitized representative enterprise corpus with independently reviewed golden labels",
     "Deploy and capture a complete staging report with provider revision, token usage, repair count, fallback count, and breaker state",
@@ -29,7 +29,8 @@
     "evidence/m5/20260817-staging-rag-quality-v2-repeat-20260817-1-failure.json",
     "evidence/m5/20260817-staging-rag-quality-v2-full-40-repeat.json",
     "evidence/m5/20260817-staging-rag-quality-v2-full-40-repeat-execution.json",
-    "evidence/m5/20260817-staging-rag-quality-v2-semantic-review.json"
+    "evidence/m5/20260817-staging-rag-quality-v2-semantic-review.json",
+    "evidence/m5/20260817-staging-rag-quality-v2-telemetry-probe.json"
   ],
   "state": "open",
   "status": "blocked_external",
