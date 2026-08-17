@@ -5,6 +5,7 @@ import copy
 import hashlib
 import ipaddress
 import json
+import math
 import re
 from pathlib import Path
 from typing import Any
@@ -17,6 +18,7 @@ NAMESPACE_NAME = "enterprise-doc-agent-staging"
 INGRESS_NAME = "enterprise-doc-web"
 DATABASE_EGRESS_POLICY_NAME = "enterprise-doc-external-postgres-egress"
 MODEL_PROVIDER = "openai_compatible"
+MODEL_FALLBACK_SECRET_KEY = "MODEL__FALLBACK_API_KEY"
 EMBEDDING_DIMENSION = "1024"
 EMBEDDING_VERSION = "2"
 EMBEDDING_QUERY_INSTRUCTION = (
@@ -117,6 +119,26 @@ def _model_name(value: str) -> str:
     if not normalized or len(normalized) > 200:
         raise ValueError("model name must contain 1-200 characters")
     return normalized
+
+
+def _model_version(value: str) -> str:
+    if _contains_control_character(value):
+        raise ValueError("model version must not contain control characters")
+    normalized = value.strip()
+    if not normalized or len(normalized) > 100:
+        raise ValueError("model version must contain 1-100 characters")
+    return normalized
+
+
+def _model_timeout_seconds(value: str) -> str:
+    normalized = value.strip()
+    try:
+        timeout = float(normalized)
+    except ValueError as error:
+        raise ValueError("model timeout must be a number greater than 0 and at most 300") from error
+    if not math.isfinite(timeout) or not 0 < timeout <= 300:
+        raise ValueError("model timeout must be a number greater than 0 and at most 300")
+    return format(timeout, "g")
 
 
 def _embedding_version(value: str) -> str:
@@ -276,6 +298,8 @@ def configure_manifest(
     model_name: str,
     fallback_model_base_url: str | None = None,
     fallback_model_name: str | None = None,
+    fallback_model_version: str | None = None,
+    fallback_model_timeout_seconds: str | None = None,
     embedding_base_url: str = "https://embedding.example.invalid/v1",
     embedding_model_name: str = "staging-embedding",
     embedding_version: str = EMBEDDING_VERSION,
@@ -316,12 +340,26 @@ def configure_manifest(
         fallback_model_base_url.strip() if fallback_model_base_url is not None else ""
     )
     fallback_name_value = fallback_model_name.strip() if fallback_model_name is not None else ""
+    fallback_version_value = (
+        fallback_model_version.strip() if fallback_model_version is not None else ""
+    )
+    fallback_timeout_value = (
+        fallback_model_timeout_seconds.strip() if fallback_model_timeout_seconds is not None else ""
+    )
     if bool(fallback_base_url_value) != bool(fallback_name_value):
         raise ValueError("fallback model route requires both a base URL and a model name")
+    if (fallback_version_value or fallback_timeout_value) and not fallback_base_url_value:
+        raise ValueError("fallback model version and timeout require a configured fallback route")
     normalized_fallback_base_url = (
         _model_base_url(fallback_base_url_value) if fallback_base_url_value else None
     )
     normalized_fallback_name = _model_name(fallback_name_value) if fallback_name_value else None
+    normalized_fallback_version = (
+        _model_version(fallback_version_value) if fallback_version_value else None
+    )
+    normalized_fallback_timeout = (
+        _model_timeout_seconds(fallback_timeout_value) if fallback_timeout_value else None
+    )
     normalized_embedding_base_url = _embedding_base_url(embedding_base_url)
     normalized_embedding_model_name = _model_name(embedding_model_name)
     normalized_embedding_version = _embedding_version(embedding_version)
@@ -349,12 +387,18 @@ def configure_manifest(
         "MODEL__FALLBACK_PROVIDER",
         "MODEL__FALLBACK_BASE_URL",
         "MODEL__FALLBACK_MODEL_NAME",
+        "MODEL__FALLBACK_MODEL_VERSION",
+        "MODEL__FALLBACK_TIMEOUT_SECONDS",
     ):
         data.pop(fallback_key, None)
     if normalized_fallback_base_url is not None and normalized_fallback_name is not None:
         data["MODEL__FALLBACK_PROVIDER"] = MODEL_PROVIDER
         data["MODEL__FALLBACK_BASE_URL"] = normalized_fallback_base_url
         data["MODEL__FALLBACK_MODEL_NAME"] = normalized_fallback_name
+        if normalized_fallback_version is not None:
+            data["MODEL__FALLBACK_MODEL_VERSION"] = normalized_fallback_version
+        if normalized_fallback_timeout is not None:
+            data["MODEL__FALLBACK_TIMEOUT_SECONDS"] = normalized_fallback_timeout
     data["EMBEDDING__PROVIDER"] = "openai_compatible"
     data["EMBEDDING__BASE_URL"] = normalized_embedding_base_url
     data["EMBEDDING__MODEL_NAME"] = normalized_embedding_model_name
@@ -524,6 +568,9 @@ def configure_manifest(
         f"{APPROVAL_ANNOTATION_PREFIX}model-fallback-provider",
         f"{APPROVAL_ANNOTATION_PREFIX}model-fallback-base-url",
         f"{APPROVAL_ANNOTATION_PREFIX}model-fallback-name",
+        f"{APPROVAL_ANNOTATION_PREFIX}model-fallback-version",
+        f"{APPROVAL_ANNOTATION_PREFIX}model-fallback-timeout-seconds",
+        f"{APPROVAL_ANNOTATION_PREFIX}model-fallback-secret-key",
     }
     for key in fallback_approval_keys:
         namespace_annotations.pop(key, None)
@@ -535,8 +582,19 @@ def configure_manifest(
                     normalized_fallback_base_url
                 ),
                 f"{APPROVAL_ANNOTATION_PREFIX}model-fallback-name": normalized_fallback_name,
+                f"{APPROVAL_ANNOTATION_PREFIX}model-fallback-secret-key": (
+                    MODEL_FALLBACK_SECRET_KEY
+                ),
             }
         )
+        if normalized_fallback_version is not None:
+            approval_annotations[f"{APPROVAL_ANNOTATION_PREFIX}model-fallback-version"] = (
+                normalized_fallback_version
+            )
+        if normalized_fallback_timeout is not None:
+            approval_annotations[f"{APPROVAL_ANNOTATION_PREFIX}model-fallback-timeout-seconds"] = (
+                normalized_fallback_timeout
+            )
     for service, image in current_images.items():
         approval_annotations[f"{APPROVAL_ANNOTATION_PREFIX}{service}-images"] = _approved_images(
             image,
@@ -575,6 +633,8 @@ def main() -> None:
     parser.add_argument("--model-name", required=True)
     parser.add_argument("--fallback-model-base-url")
     parser.add_argument("--fallback-model-name")
+    parser.add_argument("--fallback-model-version")
+    parser.add_argument("--fallback-model-timeout-seconds")
     parser.add_argument("--embedding-base-url", required=True)
     parser.add_argument("--embedding-model-name", required=True)
     parser.add_argument("--embedding-version", default=EMBEDDING_VERSION)
@@ -598,6 +658,8 @@ def main() -> None:
         model_name=args.model_name,
         fallback_model_base_url=args.fallback_model_base_url,
         fallback_model_name=args.fallback_model_name,
+        fallback_model_version=args.fallback_model_version,
+        fallback_model_timeout_seconds=args.fallback_model_timeout_seconds,
         embedding_base_url=args.embedding_base_url,
         embedding_model_name=args.embedding_model_name,
         embedding_version=args.embedding_version,

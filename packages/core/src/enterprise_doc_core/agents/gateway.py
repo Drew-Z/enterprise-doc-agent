@@ -34,8 +34,16 @@ class ModelGatewayError(Exception):
     retryable = False
     default_message = "The model gateway could not complete the request."
 
-    def __init__(self, message: str | None = None) -> None:
+    def __init__(
+        self,
+        message: str | None = None,
+        *,
+        identity: ModelIdentity | None = None,
+        telemetry: ModelCallTelemetry | None = None,
+    ) -> None:
         self.message = message or self.default_message
+        self.identity = identity
+        self.telemetry = telemetry or ModelCallTelemetry()
         super().__init__(self.message)
 
 
@@ -252,8 +260,16 @@ class RoutedChatModelGateway:
         permit = await self.breaker.allow_request()
         if permit is None:
             if self.fallback is None:
-                raise ModelCircuitOpenError()
-            return await self._generate_fallback(request, deadline=deadline)
+                raise _with_failure_telemetry(
+                    ModelCircuitOpenError(),
+                    descriptor=self.primary_descriptor,
+                    breaker_state=self.breaker.state,
+                )
+            return await self._generate_fallback(
+                request,
+                deadline=deadline,
+                prior_request_count=0,
+            )
         try:
             output = await self._generate_before_deadline(
                 self.primary,
@@ -262,15 +278,36 @@ class RoutedChatModelGateway:
             )
         except _RouteDeadlineExceeded as error:
             await self.breaker.record_retryable_failure(permit)
-            raise ModelTimeoutError() from error
+            raise _with_failure_telemetry(
+                ModelTimeoutError(),
+                descriptor=self.primary_descriptor,
+                provider_request_count=1,
+                breaker_state=self.breaker.state,
+            ) from error
         except ModelGatewayError as error:
             if not error.retryable:
                 await self.breaker.abort_probe(permit)
+                _with_failure_telemetry(
+                    error,
+                    descriptor=self.primary_descriptor,
+                    provider_request_count=1,
+                    breaker_state=self.breaker.state,
+                )
                 raise
             await self.breaker.record_retryable_failure(permit)
             if self.fallback is None:
+                _with_failure_telemetry(
+                    error,
+                    descriptor=self.primary_descriptor,
+                    provider_request_count=1,
+                    breaker_state=self.breaker.state,
+                )
                 raise
-            return await self._generate_fallback(request, deadline=deadline)
+            return await self._generate_fallback(
+                request,
+                deadline=deadline,
+                prior_request_count=1,
+            )
         except BaseException:
             await self.breaker.abort_probe(permit)
             raise
@@ -283,11 +320,26 @@ class RoutedChatModelGateway:
         request: GroundedModelRequest,
         *,
         deadline: float | None,
+        prior_request_count: int,
     ) -> GroundedModelOutput:
         if self.fallback is None:
-            raise ModelCircuitOpenError()
+            raise _with_failure_telemetry(
+                ModelCircuitOpenError(),
+                descriptor=self.primary_descriptor,
+                provider_request_count=prior_request_count,
+                breaker_state=self.breaker.state,
+            )
         if deadline is not None and asyncio.get_running_loop().time() >= deadline:
-            raise ModelTimeoutError()
+            descriptor = (
+                self.primary_descriptor if prior_request_count else self.fallback_descriptor
+            )
+            assert descriptor is not None
+            raise _with_failure_telemetry(
+                ModelTimeoutError(),
+                descriptor=descriptor,
+                provider_request_count=prior_request_count,
+                breaker_state=self.breaker.state,
+            )
         self.fallback_count += 1
         try:
             output = await self._generate_before_deadline(
@@ -297,11 +349,29 @@ class RoutedChatModelGateway:
             )
             return _with_route_telemetry(
                 output,
+                provider_request_count=prior_request_count,
                 fallback_count=1,
                 breaker_state=self.breaker.state,
             )
         except _RouteDeadlineExceeded as error:
-            raise ModelTimeoutError() from error
+            assert self.fallback_descriptor is not None
+            raise _with_failure_telemetry(
+                ModelTimeoutError(),
+                descriptor=self.fallback_descriptor,
+                provider_request_count=prior_request_count + 1,
+                fallback_count=1,
+                breaker_state=self.breaker.state,
+            ) from error
+        except ModelGatewayError as error:
+            assert self.fallback_descriptor is not None
+            _with_failure_telemetry(
+                error,
+                descriptor=self.fallback_descriptor,
+                provider_request_count=prior_request_count + 1,
+                fallback_count=1,
+                breaker_state=self.breaker.state,
+            )
+            raise
 
     @staticmethod
     async def _generate_before_deadline(
@@ -725,16 +795,46 @@ def _aggregate_openai_telemetry(
 def _with_route_telemetry(
     output: GroundedModelOutput,
     *,
+    provider_request_count: int = 0,
     fallback_count: int = 0,
     breaker_state: CircuitState,
 ) -> GroundedModelOutput:
     telemetry = output.telemetry.model_copy(
         update={
+            "provider_request_count": (
+                output.telemetry.provider_request_count + provider_request_count
+            ),
             "fallback_count": output.telemetry.fallback_count + fallback_count,
             "breaker_state": breaker_state.value,
         }
     )
     return replace(output, telemetry=telemetry)
+
+
+def _with_failure_telemetry(
+    error: ModelGatewayError,
+    *,
+    descriptor: ModelRouteDescriptor,
+    provider_request_count: int = 0,
+    fallback_count: int = 0,
+    breaker_state: CircuitState,
+) -> ModelGatewayError:
+    error.identity = ModelIdentity(
+        provider=descriptor.provider,
+        model_name=descriptor.model_name,
+        model_version=descriptor.model_version,
+        model_revision=descriptor.model_revision,
+    )
+    error.telemetry = error.telemetry.model_copy(
+        update={
+            "provider_request_count": (
+                error.telemetry.provider_request_count + provider_request_count
+            ),
+            "fallback_count": error.telemetry.fallback_count + fallback_count,
+            "breaker_state": breaker_state.value,
+        }
+    )
+    return error
 
 
 def _raise_for_provider_status(status_code: int) -> None:

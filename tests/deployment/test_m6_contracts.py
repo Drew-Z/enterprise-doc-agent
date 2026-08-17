@@ -362,6 +362,9 @@ def test_staging_deployer_bootstrap_cannot_read_or_mount_unreviewed_secrets() ->
     assert "enterprise-doc-agent/approved-model-fallback-provider" in policy_text
     assert "enterprise-doc-agent/approved-model-fallback-base-url" in policy_text
     assert "enterprise-doc-agent/approved-model-fallback-name" in policy_text
+    assert "enterprise-doc-agent/approved-model-fallback-version" in policy_text
+    assert "enterprise-doc-agent/approved-model-fallback-timeout-seconds" in policy_text
+    assert "enterprise-doc-agent/approved-model-fallback-secret-key" in policy_text
     assert "automountServiceAccountToken" in policy_text
     assert "serviceAccountToken" in policy_text
     assert "pod-security.kubernetes.io/enforce" in policy_text
@@ -428,6 +431,10 @@ def test_fallback_model_api_key_has_one_secret_backed_source() -> None:
     secret = (ROOT / "infra/k8s/base/secret.example.yaml").read_text(encoding="utf-8")
     assert "MODEL__FALLBACK_API_KEY" not in config
     assert "MODEL__FALLBACK_API_KEY" in secret
+    validator = (ROOT / "scripts/validate_staging_secrets.py").read_text(encoding="utf-8")
+    runbook = (ROOT / "docs/ops/tiny-staging-runbook.md").read_text(encoding="utf-8")
+    assert "--require-model-fallback-api-key" in validator
+    assert "--require-model-fallback-api-key" in runbook
 
 
 def test_staging_overlay_defines_https_ingress_and_private_registry_contract() -> None:
@@ -924,6 +931,10 @@ def test_staging_model_routing_uses_environment_variables_within_dispatch_limit(
         "${{ vars.STAGING_MODEL_FALLBACK_BASE_URL }}"
     )
     assert render["env"]["MODEL_FALLBACK_NAME"] == ("${{ vars.STAGING_MODEL_FALLBACK_NAME }}")
+    assert render["env"]["MODEL_FALLBACK_VERSION"] == ("${{ vars.STAGING_MODEL_FALLBACK_VERSION }}")
+    assert render["env"]["MODEL_FALLBACK_TIMEOUT_SECONDS"] == (
+        "${{ vars.STAGING_MODEL_FALLBACK_TIMEOUT_SECONDS || '60' }}"
+    )
     assert render["env"]["OBJECT_STORE_CHECKSUM_MODE"] == (
         "${{ vars.STAGING_OBJECT_STORE_CHECKSUM_MODE }}"
     )
@@ -936,6 +947,8 @@ def test_staging_model_routing_uses_environment_variables_within_dispatch_limit(
     assert "fallback_args=()" in render_command
     assert '--fallback-model-base-url "$MODEL_FALLBACK_BASE_URL"' in render_command
     assert '--fallback-model-name "$MODEL_FALLBACK_NAME"' in render_command
+    assert '--fallback-model-version "$MODEL_FALLBACK_VERSION"' in render_command
+    assert '--fallback-model-timeout-seconds "$MODEL_FALLBACK_TIMEOUT_SECONDS"' in render_command
     assert "yaml.safe_load_all" in render_command
     assert '("Namespace", "enterprise-doc-agent-staging")' in render_command
     assert '("Job", "enterprise-doc-migrate")' in render_command

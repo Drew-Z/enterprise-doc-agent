@@ -530,6 +530,8 @@ def _configure_model(
     model_name: str = "staging-model",
     fallback_model_base_url: str | None = None,
     fallback_model_name: str | None = None,
+    fallback_model_version: str | None = None,
+    fallback_model_timeout_seconds: str | None = None,
     embedding_version: str = "2",
 ) -> None:
     configure_staging_manifest.configure_manifest(
@@ -546,6 +548,8 @@ def _configure_model(
         model_name=model_name,
         fallback_model_base_url=fallback_model_base_url,
         fallback_model_name=fallback_model_name,
+        fallback_model_version=fallback_model_version,
+        fallback_model_timeout_seconds=fallback_model_timeout_seconds,
         embedding_version=embedding_version,
     )
 
@@ -564,6 +568,8 @@ def test_configure_manifest_binds_optional_fallback_route_without_secret_data(
         destination,
         fallback_model_base_url="https://fallback.example.com/v1",
         fallback_model_name="fallback-model",
+        fallback_model_version="2026-08-17",
+        fallback_model_timeout_seconds="60.0",
     )
 
     documents = [
@@ -575,6 +581,8 @@ def test_configure_manifest_binds_optional_fallback_route_without_secret_data(
     assert config["data"]["MODEL__FALLBACK_PROVIDER"] == "openai_compatible"
     assert config["data"]["MODEL__FALLBACK_BASE_URL"] == ("https://fallback.example.com/v1")
     assert config["data"]["MODEL__FALLBACK_MODEL_NAME"] == "fallback-model"
+    assert config["data"]["MODEL__FALLBACK_MODEL_VERSION"] == "2026-08-17"
+    assert config["data"]["MODEL__FALLBACK_TIMEOUT_SECONDS"] == "60"
     assert "MODEL__FALLBACK_API_KEY" not in config["data"]
     namespace = next(item for item in documents if item["kind"] == "Namespace")
     annotations = namespace["metadata"]["annotations"]
@@ -582,6 +590,11 @@ def test_configure_manifest_binds_optional_fallback_route_without_secret_data(
         "https://fallback.example.com/v1"
     )
     assert annotations["enterprise-doc-agent/approved-model-fallback-name"] == ("fallback-model")
+    assert annotations["enterprise-doc-agent/approved-model-fallback-version"] == "2026-08-17"
+    assert annotations["enterprise-doc-agent/approved-model-fallback-timeout-seconds"] == "60"
+    assert annotations["enterprise-doc-agent/approved-model-fallback-secret-key"] == (
+        "MODEL__FALLBACK_API_KEY"
+    )
     primary_only_documents = [
         item
         for item in yaml.safe_load_all(primary_only_destination.read_text(encoding="utf-8"))
@@ -611,6 +624,23 @@ def test_configure_manifest_omits_fallback_route_when_unconfigured(tmp_path: Pat
     source = tmp_path / "template.yaml"
     destination = tmp_path / "primary-only.yaml"
     _write_template(source)
+    source_documents = [item for item in yaml.safe_load_all(source.read_text()) if item]
+    source_config = next(item for item in source_documents if item["kind"] == "ConfigMap")
+    source_config["data"].update(
+        {
+            "MODEL__FALLBACK_MODEL_VERSION": "stale",
+            "MODEL__FALLBACK_TIMEOUT_SECONDS": "99",
+        }
+    )
+    source_namespace = next(item for item in source_documents if item["kind"] == "Namespace")
+    source_namespace["metadata"]["annotations"].update(
+        {
+            "enterprise-doc-agent/approved-model-fallback-version": "stale",
+            "enterprise-doc-agent/approved-model-fallback-timeout-seconds": "99",
+            "enterprise-doc-agent/approved-model-fallback-secret-key": ("MODEL__FALLBACK_API_KEY"),
+        }
+    )
+    source.write_text(yaml.safe_dump_all(source_documents, sort_keys=False), encoding="utf-8")
 
     _configure_model(source, destination)
 
@@ -678,6 +708,47 @@ def test_configure_manifest_rejects_partial_fallback_route(
             tmp_path / "partial-fallback.yaml",
             fallback_model_base_url=fallback_model_base_url,
             fallback_model_name=fallback_model_name,
+        )
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "match"),
+    [
+        ("fallback_model_version", "v\x00", "model version"),
+        ("fallback_model_version", "v" * 101, "model version"),
+        ("fallback_model_timeout_seconds", "0", "model timeout"),
+        ("fallback_model_timeout_seconds", "301", "model timeout"),
+        ("fallback_model_timeout_seconds", "not-a-number", "model timeout"),
+    ],
+)
+def test_configure_manifest_rejects_invalid_fallback_metadata(
+    tmp_path: Path,
+    field: str,
+    value: str,
+    match: str,
+) -> None:
+    source = tmp_path / "template.yaml"
+    _write_template(source)
+
+    with pytest.raises(ValueError, match=match):
+        _configure_model(
+            source,
+            tmp_path / "invalid-fallback-metadata.yaml",
+            fallback_model_base_url="https://fallback.example.com/v1",
+            fallback_model_name="fallback-model",
+            **{field: value},
+        )
+
+
+def test_configure_manifest_rejects_fallback_metadata_without_route(tmp_path: Path) -> None:
+    source = tmp_path / "template.yaml"
+    _write_template(source)
+
+    with pytest.raises(ValueError, match="require a configured fallback route"):
+        _configure_model(
+            source,
+            tmp_path / "metadata-without-route.yaml",
+            fallback_model_version="2026-08-17",
         )
 
 

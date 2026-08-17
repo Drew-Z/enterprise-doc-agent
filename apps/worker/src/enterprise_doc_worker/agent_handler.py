@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Protocol
+from typing import Any, Protocol
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
@@ -16,6 +17,9 @@ from enterprise_doc_core.agents import (
     ApprovalRequest,
     ApprovalRequestStatus,
     GroundingValidationError,
+    ModelCallTelemetry,
+    ModelGatewayError,
+    ModelIdentity,
     append_agent_run_event,
 )
 from enterprise_doc_core.agents.models import AgentRunExecutionKind
@@ -94,11 +98,41 @@ class AgentExecutionRuntimeError(JobHandlerError):
         message: str | None = None,
         retryable: bool = False,
         diagnostic_code: str | None = None,
+        failure_metadata: Mapping[str, Any] | None = None,
     ) -> None:
         self.code = code or type(self).code
         self.message = message or type(self).message
         self.retryable = retryable
-        super().__init__(self.message, diagnostic_code=diagnostic_code)
+        super().__init__(
+            self.message,
+            diagnostic_code=diagnostic_code,
+            failure_metadata=failure_metadata,
+        )
+
+
+class _ModelFailureProjection(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+
+    identity: ModelIdentity
+    telemetry: ModelCallTelemetry
+
+
+def _model_failure_metadata(error: Exception) -> dict[str, Any] | None:
+    if not isinstance(error, ModelGatewayError) or error.identity is None:
+        return None
+    projection = _ModelFailureProjection(identity=error.identity, telemetry=error.telemetry)
+    return {"model_failure": projection.model_dump(mode="json")}
+
+
+def _model_failure_projection(
+    failure_metadata: Mapping[str, Any] | None,
+) -> _ModelFailureProjection | None:
+    if failure_metadata is None:
+        return None
+    try:
+        return _ModelFailureProjection.model_validate(failure_metadata.get("model_failure"))
+    except ValidationError:
+        return None
 
 
 @dataclass(frozen=True, slots=True)
@@ -272,6 +306,7 @@ async def project_agent_run_failure(
     status: str,
     error_code: str,
     error_message: str,
+    failure_metadata: Mapping[str, Any] | None,
     now: datetime,
 ) -> None:
     """Project a terminal Agent Job failure onto its active run exactly once."""
@@ -318,6 +353,21 @@ async def project_agent_run_failure(
     )
     if run is None or is_agent_run_terminal(AgentRunStatus(run.status)):
         return
+
+    model_failure = _model_failure_projection(failure_metadata)
+    if model_failure is not None:
+        run.model_provider = model_failure.identity.provider
+        run.model_name = model_failure.identity.model_name
+        run.model_version = model_failure.identity.model_version
+        run.model_revision = model_failure.identity.model_revision
+        run.provider_request_count = model_failure.telemetry.provider_request_count
+        run.provider_usage_request_count = model_failure.telemetry.usage_request_count
+        run.prompt_tokens = model_failure.telemetry.prompt_tokens
+        run.completion_tokens = model_failure.telemetry.completion_tokens
+        run.total_tokens = model_failure.telemetry.total_tokens
+        run.repair_request_count = model_failure.telemetry.repair_request_count
+        run.fallback_count = model_failure.telemetry.fallback_count
+        run.breaker_state = model_failure.telemetry.breaker_state
 
     run.status = transition_agent_run(
         AgentRunStatus(run.status),
@@ -368,6 +418,7 @@ class AgentExecutionHandler:
                 code=code,
                 retryable=retryable,
                 diagnostic_code=diagnostic_code,
+                failure_metadata=_model_failure_metadata(error),
             ) from error
 
 

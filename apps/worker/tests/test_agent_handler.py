@@ -7,7 +7,12 @@ from uuid import uuid4
 
 import pytest
 
-from enterprise_doc_core.agents import GroundingValidationError
+from enterprise_doc_core.agents import (
+    GroundingValidationError,
+    ModelCallTelemetry,
+    ModelIdentity,
+    ModelServerError,
+)
 from enterprise_doc_core.jobs import ClaimedJob
 from enterprise_doc_worker.agent_handler import (
     AGENT_EXECUTE_JOB_TYPE,
@@ -177,6 +182,55 @@ async def test_agent_handler_preserves_stable_runtime_error_classification() -> 
     assert caught.value.code == "model_timeout"
     assert caught.value.retryable is True
     assert caught.value.diagnostic_code is None
+
+
+@pytest.mark.asyncio
+async def test_agent_handler_preserves_sanitized_model_failure_telemetry() -> None:
+    claim = _claim()
+    context = _context(claim)
+    loader = FakeLoader(context)
+
+    async def failed(_: AgentExecutionContext) -> None:
+        raise ModelServerError(
+            "raw provider body must not be projected",
+            identity=ModelIdentity(
+                provider="openai_compatible",
+                model_name="fallback-model",
+                model_version="2026-08-17",
+            ),
+            telemetry=ModelCallTelemetry(
+                provider_request_count=2,
+                fallback_count=1,
+                breaker_state="open",
+            ),
+        )
+
+    handler = AgentExecutionHandler(loader=loader, executor=failed)
+
+    with pytest.raises(AgentExecutionRuntimeError) as caught:
+        await handler(claim)
+
+    assert caught.value.failure_metadata == {
+        "model_failure": {
+            "identity": {
+                "provider": "openai_compatible",
+                "model_name": "fallback-model",
+                "model_version": "2026-08-17",
+                "model_revision": None,
+            },
+            "telemetry": {
+                "provider_request_count": 2,
+                "usage_request_count": 0,
+                "prompt_tokens": None,
+                "completion_tokens": None,
+                "total_tokens": None,
+                "repair_request_count": 0,
+                "fallback_count": 1,
+                "breaker_state": "open",
+            },
+        }
+    }
+    assert "raw provider body" not in str(caught.value.failure_metadata)
 
 
 @pytest.mark.asyncio

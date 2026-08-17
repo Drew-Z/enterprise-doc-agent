@@ -14,6 +14,7 @@ from enterprise_doc_core.agents import (
     GroundedModelRequest,
     ModelAuthError,
     ModelRouteDescriptor,
+    ModelServerError,
     ModelTimeoutError,
     RoutedChatModelGateway,
 )
@@ -124,8 +125,49 @@ async def test_routed_gateway_uses_fallback_only_for_retryable_errors() -> None:
     assert primary.calls == 1
     assert fallback.calls == 1
     assert routed.fallback_count == 1
+    assert output.telemetry.provider_request_count == 1
     assert output.telemetry.fallback_count == 1
     assert output.telemetry.breaker_state == "closed"
+
+
+async def test_model_server_error_falls_back_with_complete_route_telemetry() -> None:
+    primary = ScriptedGateway([ModelServerError()])
+    fallback = ScriptedGateway([None])
+    routed = RoutedChatModelGateway(
+        primary=primary,
+        primary_descriptor=_descriptor("primary"),
+        fallback=fallback,
+        fallback_descriptor=_descriptor("fallback"),
+    )
+
+    output = await routed.generate(_request())
+
+    assert output.answer_text
+    assert output.telemetry.provider_request_count == 1
+    assert output.telemetry.fallback_count == 1
+    assert output.telemetry.breaker_state == "closed"
+
+
+async def test_failed_fallback_carries_final_identity_and_attempt_telemetry() -> None:
+    primary = ScriptedGateway([ModelServerError()])
+    fallback = ScriptedGateway([ModelServerError()])
+    breaker = CircuitBreaker(failure_threshold=1, cooldown_seconds=60)
+    routed = RoutedChatModelGateway(
+        primary=primary,
+        primary_descriptor=_descriptor("primary"),
+        fallback=fallback,
+        fallback_descriptor=_descriptor("fallback"),
+        breaker=breaker,
+    )
+
+    with pytest.raises(ModelServerError) as caught:
+        await routed.generate(_request())
+
+    assert caught.value.identity is not None
+    assert caught.value.identity.model_name == "fallback"
+    assert caught.value.telemetry.provider_request_count == 2
+    assert caught.value.telemetry.fallback_count == 1
+    assert caught.value.telemetry.breaker_state == "open"
 
 
 async def test_permanent_provider_error_does_not_fallback() -> None:

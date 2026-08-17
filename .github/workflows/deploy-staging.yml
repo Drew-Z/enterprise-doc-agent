@@ -247,6 +247,8 @@ jobs:
           MODEL_NAME: ${{ vars.STAGING_MODEL_NAME }}
           MODEL_FALLBACK_BASE_URL: ${{ vars.STAGING_MODEL_FALLBACK_BASE_URL }}
           MODEL_FALLBACK_NAME: ${{ vars.STAGING_MODEL_FALLBACK_NAME }}
+          MODEL_FALLBACK_VERSION: ${{ vars.STAGING_MODEL_FALLBACK_VERSION }}
+          MODEL_FALLBACK_TIMEOUT_SECONDS: ${{ vars.STAGING_MODEL_FALLBACK_TIMEOUT_SECONDS || '60' }}
           EMBEDDING_BASE_URL: ${{ vars.STAGING_EMBEDDING_BASE_URL }}
           EMBEDDING_MODEL_NAME: ${{ vars.STAGING_EMBEDDING_MODEL_NAME }}
           EMBEDDING_VERSION: ${{ vars.STAGING_EMBEDDING_VERSION || '2' }}
@@ -274,10 +276,18 @@ jobs:
               echo 'fallback model route requires both a base URL and a model name' >&2
               exit 1
             fi
+            test -n "$MODEL_FALLBACK_TIMEOUT_SECONDS"
             fallback_args+=(
               --fallback-model-base-url "$MODEL_FALLBACK_BASE_URL"
               --fallback-model-name "$MODEL_FALLBACK_NAME"
+              --fallback-model-timeout-seconds "$MODEL_FALLBACK_TIMEOUT_SECONDS"
             )
+            if test -n "$MODEL_FALLBACK_VERSION"; then
+              fallback_args+=(--fallback-model-version "$MODEL_FALLBACK_VERSION")
+            fi
+          elif test -n "$MODEL_FALLBACK_VERSION"; then
+            echo 'fallback model version requires a configured fallback route' >&2
+            exit 1
           fi
           kustomize build "$OVERLAY_DIR" > "$RUNNER_TEMP/staging-template.yaml"
           "$RUNNER_PYTHON" scripts/configure_staging_manifest.py \

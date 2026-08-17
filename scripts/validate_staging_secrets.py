@@ -12,6 +12,7 @@ from cryptography.hazmat.primitives import serialization
 
 APP_SECRET_NAME = "enterprise-doc-secrets"
 REGISTRY_SECRET_NAME = "enterprise-doc-registry"
+MODEL_FALLBACK_SECRET_KEY = "MODEL__FALLBACK_API_KEY"
 APP_SECRET_KEYS = {
     "DATABASE__URL",
     "DATABASE__PASSWORD",
@@ -141,6 +142,7 @@ def validate_staging_secrets(
     *,
     staging_host: str,
     tls_secret_name: str,
+    require_model_fallback_api_key: bool = False,
 ) -> dict[str, Any]:
     by_name = {item["metadata"]["name"]: _secret_map(item) for item in _items(payload)}
     required = {APP_SECRET_NAME, REGISTRY_SECRET_NAME, tls_secret_name}
@@ -153,7 +155,10 @@ def validate_staging_secrets(
     app = by_name[APP_SECRET_NAME]
     _require_type(app, "Opaque")
     app_data = _decode_data(app)
-    missing_app = APP_SECRET_KEYS - app_data.keys()
+    required_app_keys = set(APP_SECRET_KEYS)
+    if require_model_fallback_api_key:
+        required_app_keys.add(MODEL_FALLBACK_SECRET_KEY)
+    missing_app = required_app_keys - app_data.keys()
     if missing_app:
         raise StagingSecretValidationError(
             "application Secret missing key(s): " + ", ".join(sorted(missing_app))
@@ -197,6 +202,7 @@ def main() -> None:
     parser.add_argument("--input", type=Path, required=True)
     parser.add_argument("--staging-host", required=True)
     parser.add_argument("--tls-secret-name", required=True)
+    parser.add_argument("--require-model-fallback-api-key", action="store_true")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     try:
@@ -204,6 +210,7 @@ def main() -> None:
             json.loads(args.input.read_text(encoding="utf-8")),
             staging_host=args.staging_host,
             tls_secret_name=args.tls_secret_name,
+            require_model_fallback_api_key=args.require_model_fallback_api_key,
         )
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(
