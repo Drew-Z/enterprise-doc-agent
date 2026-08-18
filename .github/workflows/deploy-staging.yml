@@ -379,14 +379,44 @@ jobs:
           kubectl -n enterprise-doc-agent-staging delete job enterprise-doc-migrate --ignore-not-found
           kubectl apply --dry-run=server -f "$RUNNER_TEMP/staging-migration.yaml"
           kubectl apply -f "$RUNNER_TEMP/staging-migration.yaml"
-          if ! kubectl -n enterprise-doc-agent-staging wait --for=condition=complete \
-            job/enterprise-doc-migrate --timeout=2760s; then
+          migration_result=""
+          for ((attempt = 0; attempt < 552; attempt += 1)); do
+            complete="$(kubectl -n enterprise-doc-agent-staging get \
+              job/enterprise-doc-migrate \
+              -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}' \
+              2>/dev/null || true)"
+            failed="$(kubectl -n enterprise-doc-agent-staging get \
+              job/enterprise-doc-migrate \
+              -o jsonpath='{.status.conditions[?(@.type=="Failed")].status}' \
+              2>/dev/null || true)"
+            if (( attempt % 12 == 0 )); then
+              echo "migration Job status after $((attempt * 5)) seconds"
+              kubectl -n enterprise-doc-agent-staging get \
+                job/enterprise-doc-migrate -o wide || true
+              kubectl -n enterprise-doc-agent-staging get pods \
+                -l job-name=enterprise-doc-migrate -o wide || true
+            fi
+            if test "$complete" = "True"; then
+              migration_result="complete"
+              break
+            fi
+            if test "$failed" = "True"; then
+              migration_result="failed"
+              break
+            fi
+            sleep 5
+          done
+          if test "$migration_result" != "complete"; then
+            echo "migration Job did not complete: ${migration_result:-timeout}" >&2
             kubectl -n enterprise-doc-agent-staging get job/enterprise-doc-migrate -o wide || true
             kubectl -n enterprise-doc-agent-staging get pods \
               -l job-name=enterprise-doc-migrate -o wide || true
             kubectl -n enterprise-doc-agent-staging describe job/enterprise-doc-migrate || true
             kubectl -n enterprise-doc-agent-staging describe pods \
               -l job-name=enterprise-doc-migrate || true
+            kubectl -n enterprise-doc-agent-staging get events \
+              --field-selector involvedObject.name=enterprise-doc-migrate \
+              --sort-by=.lastTimestamp || true
             exit 1
           fi
       - name: Apply workloads after migration

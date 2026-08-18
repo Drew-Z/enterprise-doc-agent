@@ -1365,7 +1365,7 @@ def test_ci_workflows_have_no_allow_failure_and_include_release_boundaries() -> 
     assert "staging-migration.yaml" in deploy
     assert "staging-embedding-rollout.yaml" in deploy
     assert "staging-workloads.yaml" in deploy
-    assert deploy.index("wait --for=condition=complete") < deploy.index(
+    assert deploy.index('test "$migration_result" != "complete"') < deploy.index(
         "Apply workloads after migration"
     )
     assert "rollout status" in deploy
@@ -1516,25 +1516,25 @@ def test_staging_workflows_preserve_admin_boundary_and_clean_credentials() -> No
     assert migration_run.index("apply --dry-run=server") < migration_run.index(
         'kubectl apply -f "$RUNNER_TEMP/staging-migration.yaml"'
     )
-    assert "job/enterprise-doc-migrate --timeout=2760s" in migration_run
+    assert "attempt < 552" in migration_run
+    assert 'test "$complete" = "True"' in migration_run
+    assert 'test "$failed" = "True"' in migration_run
+    assert "migration Job status after" in migration_run
+    assert "migration Job did not complete" in migration_run
     assert "kubectl -n enterprise-doc-agent-staging get job/enterprise-doc-migrate" in (
         migration_run
     )
     assert "kubectl -n enterprise-doc-agent-staging describe job/enterprise-doc-migrate" in (
         migration_run
     )
-    assert migration_run.endswith(
-        "if ! kubectl -n enterprise-doc-agent-staging wait --for=condition=complete \\\n"
-        "  job/enterprise-doc-migrate --timeout=2760s; then\n"
-        "  kubectl -n enterprise-doc-agent-staging get job/enterprise-doc-migrate -o wide || true\n"
-        "  kubectl -n enterprise-doc-agent-staging get pods \\\n"
-        "    -l job-name=enterprise-doc-migrate -o wide || true\n"
-        "  kubectl -n enterprise-doc-agent-staging describe job/enterprise-doc-migrate || true\n"
-        "  kubectl -n enterprise-doc-agent-staging describe pods \\\n"
-        "    -l job-name=enterprise-doc-migrate || true\n"
-        "  exit 1\n"
-        "fi\n"
+    assert "--field-selector involvedObject.name=enterprise-doc-migrate" in migration_run
+    assert migration_run.index('kubectl apply -f "$RUNNER_TEMP/staging-migration.yaml"') < (
+        migration_run.index("migration Job status after")
     )
+    assert migration_run.index("migration Job status after") < migration_run.index(
+        'test "$migration_result" != "complete"'
+    )
+    assert migration_run.endswith("  exit 1\nfi\n")
 
     rollout = _named_step(deploy_steps, "Wait for workloads")
     rollout_run = str(rollout["run"])

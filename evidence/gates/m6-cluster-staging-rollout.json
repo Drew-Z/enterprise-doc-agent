@@ -21,7 +21,8 @@
   ],
   "latest_observed_evidence": [
     "evidence/m6/20260817-v0.1.29-staging-rollout.json",
-    "evidence/m6/20260818-v0.1.30-staging-rollout.json"
+    "evidence/m6/20260818-v0.1.30-staging-rollout.json",
+    "evidence/m6/20260818-v0.1.31-staging-rollout.json"
   ],
   "state": "closed",
   "status": "passed",

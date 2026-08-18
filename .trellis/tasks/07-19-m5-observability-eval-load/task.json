@@ -28,7 +28,7 @@
     "D:/workspace4Cursor/offer/output/企业文档Agent平台_深度面试问答.md",
     "D:/workspace4Cursor/offer/output/企业文档Agent平台_M5-M7深度面试问答.md"
   ],
-  "notes": "M5 local implementation is reviewed at implementation commit 8ea488e and the sanitized evidence bundle is immutable at evidence commit c6f9d28. evidence/m5/20260720-072628-m5-observability-eval-load.json records deterministic evaluation, four synthetic fault drills, bounded load, report integrity, observability tests and the application-capacity dry-run. The task remains in_progress because real-provider quality, representative production-like capacity and managed observability gates are blocked_external.",
+  "notes": "M5 local implementation and its immutable reviewed evidence remain valid. Current staging evidence adds a clean v0.1.30 40-case aggregate pass, one later control-plane abort, and two complete repeats that each contain one distinct system failure despite passing aggregate thresholds. Repeatability is therefore still open. Continue with targeted provider/fallback failure analysis, a sanitized representative enterprise corpus with reviewed labels, provider revision and cost inputs, managed observability ownership, and representative capacity evidence before another full-suite run. These are active manual-gate tasks on the current delivery path; only M6-R5 requires another server or independent fault domain.",
   "meta": {
     "milestone": "M5",
     "workflow": "tdd",
