@@ -258,6 +258,10 @@ class EmbeddingSettings(BaseModel):
         return self
 
 
+class RetrievalSettings(BaseModel):
+    require_vector_evidence: bool = False
+
+
 class McpSettings(BaseModel):
     command: str = Field(default="enterprise-doc-mcp", min_length=1, max_length=512)
     signing_secret: SecretStr = SecretStr(
@@ -293,6 +297,7 @@ class FoundationSettings(BaseSettings):
     agent: AgentSettings = Field(default_factory=AgentSettings)
     model: ModelSettings = Field(default_factory=ModelSettings)
     embedding: EmbeddingSettings = Field(default_factory=EmbeddingSettings)
+    retrieval: RetrievalSettings = Field(default_factory=RetrievalSettings)
     mcp: McpSettings = Field(default_factory=McpSettings)
     fault_injection: FaultInjectionSettings = Field(default_factory=FaultInjectionSettings)
 

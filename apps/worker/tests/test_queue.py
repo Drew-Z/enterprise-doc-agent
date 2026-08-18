@@ -317,6 +317,33 @@ async def test_consumer_persists_only_allowlisted_handler_diagnostic_code() -> N
     assert "raw citation text" not in runtime.failure_metadata[0]["error_message"]
 
 
+async def test_consumer_forwards_structured_handler_failure_metadata() -> None:
+    claim = _claim()
+    runtime = FakeRuntime(claim)
+    model_failure = {
+        "model_failure": {
+            "identity": {"provider": "openai_compatible", "model_name": "fallback-model"},
+            "telemetry": {"provider_request_count": 2, "fallback_count": 1},
+        }
+    }
+
+    async def handler(_: ClaimedJob) -> None:
+        raise JobHandlerError(failure_metadata=model_failure)
+
+    consumer = JobDeliveryConsumer(
+        runtime=runtime,  # type: ignore[arg-type]
+        worker_id="worker-a",
+        handler=handler,
+    )
+
+    result = await consumer.handle(
+        JobMessage(job_id=claim.job_id, tenant_id=claim.tenant_id, event_id=uuid4())
+    )
+
+    assert result == "failed"
+    assert runtime.failure_metadata[0]["failure_metadata"] == model_failure
+
+
 def test_celery_app_uses_redis_only_as_broker() -> None:
     app = create_celery_app(WorkerSettings(_env_file=None))
 

@@ -1,0 +1,4079 @@
+{
+  "corpus_sha256": "c6887a0ca112cd62499c9d61d5caa9d87e94a4ba6c8770293f9f3a8c6cf54e36",
+  "coverage": {
+    "case_count": 40,
+    "document_count": 8
+  },
+  "dataset_sha256": "145df783dba7ee1c533a59de288bb1a9aff6ba3c0bdff7e4617a366dca1a9f5b",
+  "dataset_version": "enterprise-rag-quality-v2",
+  "gates": {
+    "default": {
+      "cases": [
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "proc.cfo": 1,
+            "proc.director": 1,
+            "proc.manager": 1,
+            "proc.po": 3,
+            "proc.quotes": 2
+          },
+          "case_id": "fact-proc-manager",
+          "category": "fact",
+          "expected_anchor_ids": [
+            "proc.manager"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "222567a9a84032e6532c834e53983fa090605f2038a222808b1c34ac4bf9b2bf",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "proc.manager",
+                "proc.director",
+                "proc.cfo"
+              ],
+              "chunk_id": "b1c755b8fab82f88",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "proc.quotes"
+              ],
+              "chunk_id": "689a82b5c499018f",
+              "rank": 2,
+              "score": 0.032258
+            },
+            {
+              "anchor_ids": [
+                "proc.po"
+              ],
+              "chunk_id": "5fc9eb7647655893",
+              "rank": 3,
+              "score": 0.031746
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "proc.cfo": 1,
+            "proc.director": 1,
+            "proc.manager": 1,
+            "proc.po": 3,
+            "proc.quotes": 2
+          },
+          "case_id": "fact-proc-high-approval",
+          "category": "fact",
+          "expected_anchor_ids": [
+            "proc.cfo"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "be93ea06a73a8a2ca70becbae393cab9a4bd209b24783b4be788a8ad83681a08",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "proc.manager",
+                "proc.director",
+                "proc.cfo"
+              ],
+              "chunk_id": "b1c755b8fab82f88",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "proc.quotes"
+              ],
+              "chunk_id": "689a82b5c499018f",
+              "rank": 2,
+              "score": 0.032258
+            },
+            {
+              "anchor_ids": [
+                "proc.po"
+              ],
+              "chunk_id": "5fc9eb7647655893",
+              "rank": 3,
+              "score": 0.031746
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "proc.cfo": 2,
+            "proc.director": 2,
+            "proc.manager": 2,
+            "proc.po": 3,
+            "proc.quotes": 1
+          },
+          "case_id": "fact-proc-quotes",
+          "category": "fact",
+          "expected_anchor_ids": [
+            "proc.quotes"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "386a68e1df7f68d892fbb45bef462ce23887b5adc69507cac9611827756f534c",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "proc.quotes"
+              ],
+              "chunk_id": "689a82b5c499018f",
+              "rank": 1,
+              "score": 0.032522
+            },
+            {
+              "anchor_ids": [
+                "proc.manager",
+                "proc.director",
+                "proc.cfo"
+              ],
+              "chunk_id": "b1c755b8fab82f88",
+              "rank": 2,
+              "score": 0.032522
+            },
+            {
+              "anchor_ids": [
+                "proc.po"
+              ],
+              "chunk_id": "5fc9eb7647655893",
+              "rank": 3,
+              "score": 0.031746
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "sla.availability": 2,
+            "sla.credit-10": 1,
+            "sla.credit-cap": 1,
+            "sla.maintenance": 2,
+            "sla.sev1-response": 3
+          },
+          "case_id": "fact-sla-availability",
+          "category": "fact",
+          "expected_anchor_ids": [
+            "sla.availability"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 0.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 0.5
+          },
+          "query_sha256": "be2524659d10b02359a062e6e7df4d9ebfbfceed9f1f049426dcea1121cdaf7b",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "sla.credit-10",
+                "sla.credit-cap"
+              ],
+              "chunk_id": "5927b9e26b8302eb",
+              "rank": 1,
+              "score": 0.032522
+            },
+            {
+              "anchor_ids": [
+                "sla.availability",
+                "sla.maintenance"
+              ],
+              "chunk_id": "50a603cf69ce1003",
+              "rank": 2,
+              "score": 0.032522
+            },
+            {
+              "anchor_ids": [
+                "sla.sev1-response"
+              ],
+              "chunk_id": "8ee2527c60c13680",
+              "rank": 3,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "sla.availability": 2,
+            "sla.maintenance": 2,
+            "sla.sev1-response": 1
+          },
+          "case_id": "fact-sla-sev1-response",
+          "category": "fact",
+          "expected_anchor_ids": [
+            "sla.sev1-response"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "bfbc8d5f0e8418f7b3d072d8192e207a5567402bac170726a3b1ac90734e881c",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "sla.sev1-response"
+              ],
+              "chunk_id": "8ee2527c60c13680",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "sla.availability",
+                "sla.maintenance"
+              ],
+              "chunk_id": "50a603cf69ce1003",
+              "rank": 2,
+              "score": 0.016129
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "sla.availability": 2,
+            "sla.credit-10": 1,
+            "sla.credit-cap": 1,
+            "sla.maintenance": 2
+          },
+          "case_id": "fact-sla-credit-cap",
+          "category": "fact",
+          "expected_anchor_ids": [
+            "sla.credit-cap"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "797318a7fe36e832d58f04d0442c69a8e96164780cf77a8597835b5417351c19",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "sla.credit-10",
+                "sla.credit-cap"
+              ],
+              "chunk_id": "5927b9e26b8302eb",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "sla.availability",
+                "sla.maintenance"
+              ],
+              "chunk_id": "50a603cf69ce1003",
+              "rank": 2,
+              "score": 0.032258
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "sec.encryption-rest": 1,
+            "sec.logs": 4,
+            "sec.mfa": 2,
+            "sec.notice": 4,
+            "sec.untrusted": 3
+          },
+          "case_id": "fact-security-encryption-rest",
+          "category": "fact",
+          "expected_anchor_ids": [
+            "sec.encryption-rest"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "cc2ee5b5616da426b1f5bd269ebe371ba33acb277a46819186659bd458e09613",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "sec.encryption-rest"
+              ],
+              "chunk_id": "3470757f37edf7bf",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "sec.mfa"
+              ],
+              "chunk_id": "df068c8a5fe962f4",
+              "rank": 2,
+              "score": 0.032002
+            },
+            {
+              "anchor_ids": [
+                "sec.untrusted"
+              ],
+              "chunk_id": "4ce451fe5ca3d34e",
+              "rank": 3,
+              "score": 0.031754
+            },
+            {
+              "anchor_ids": [
+                "sec.notice",
+                "sec.logs"
+              ],
+              "chunk_id": "09c498af5c2ba9d4",
+              "rank": 4,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "sec.encryption-rest": 2,
+            "sec.logs": 1,
+            "sec.mfa": 4,
+            "sec.notice": 1,
+            "sec.untrusted": 3
+          },
+          "case_id": "fact-security-notice",
+          "category": "fact",
+          "expected_anchor_ids": [
+            "sec.notice"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "7fe38b8cc91da7f44461900ad62ca7ad17b2923d66deedadb397f987daf16773",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "sec.notice",
+                "sec.logs"
+              ],
+              "chunk_id": "09c498af5c2ba9d4",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "sec.encryption-rest"
+              ],
+              "chunk_id": "3470757f37edf7bf",
+              "rank": 2,
+              "score": 0.032258
+            },
+            {
+              "anchor_ids": [
+                "sec.untrusted"
+              ],
+              "chunk_id": "4ce451fe5ca3d34e",
+              "rank": 3,
+              "score": 0.031746
+            },
+            {
+              "anchor_ids": [
+                "sec.mfa"
+              ],
+              "chunk_id": "df068c8a5fe962f4",
+              "rank": 4,
+              "score": 0.015625
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "sec.encryption-rest": 2,
+            "sec.logs": 1,
+            "sec.mfa": 4,
+            "sec.notice": 1,
+            "sec.untrusted": 3
+          },
+          "case_id": "fact-security-log-retention",
+          "category": "fact",
+          "expected_anchor_ids": [
+            "sec.logs"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "aa91e541648794d989e13b6b3f983a0caccdc414b1111a40ec07cac82e7a0c32",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "sec.notice",
+                "sec.logs"
+              ],
+              "chunk_id": "09c498af5c2ba9d4",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "sec.encryption-rest"
+              ],
+              "chunk_id": "3470757f37edf7bf",
+              "rank": 2,
+              "score": 0.016129
+            },
+            {
+              "anchor_ids": [
+                "sec.untrusted"
+              ],
+              "chunk_id": "4ce451fe5ca3d34e",
+              "rank": 3,
+              "score": 0.015873
+            },
+            {
+              "anchor_ids": [
+                "sec.mfa"
+              ],
+              "chunk_id": "df068c8a5fe962f4",
+              "rank": 4,
+              "score": 0.015625
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "emp.carryover": 1,
+            "emp.meals": 3,
+            "emp.remote": 2,
+            "emp.vacation": 1
+          },
+          "case_id": "fact-employee-vacation",
+          "category": "fact",
+          "expected_anchor_ids": [
+            "emp.vacation"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "c2a252b91d2a6b7705cf76bb7c2a7ead687a3ff0d33c7893491ecdf5d16aa490",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "emp.vacation",
+                "emp.carryover"
+              ],
+              "chunk_id": "8365b2ee8a2102fb",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "emp.remote"
+              ],
+              "chunk_id": "f5713d39744a747d",
+              "rank": 2,
+              "score": 0.032258
+            },
+            {
+              "anchor_ids": [
+                "emp.meals"
+              ],
+              "chunk_id": "f836edafc8e16cea",
+              "rank": 3,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "emp.carryover": 2,
+            "emp.meals": 1,
+            "emp.vacation": 2
+          },
+          "case_id": "fact-employee-meal-limit",
+          "category": "fact",
+          "expected_anchor_ids": [
+            "emp.meals"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "738ce0473006437f821a78c6ab0c1500b6f61f86fbaf90605838851fa36162f6",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "emp.meals"
+              ],
+              "chunk_id": "f836edafc8e16cea",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "emp.vacation",
+                "emp.carryover"
+              ],
+              "chunk_id": "8365b2ee8a2102fb",
+              "rank": 2,
+              "score": 0.016129
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "emp.carryover": 2,
+            "emp.meals": 3,
+            "emp.remote": 1,
+            "emp.vacation": 2
+          },
+          "case_id": "fact-employee-remote-days",
+          "category": "fact",
+          "expected_anchor_ids": [
+            "emp.remote"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "f3a3c9e524ea30825c04e36d67010c86a311e2f0ded2d78d11328bbf10db0c9f",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "emp.remote"
+              ],
+              "chunk_id": "f5713d39744a747d",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "emp.vacation",
+                "emp.carryover"
+              ],
+              "chunk_id": "8365b2ee8a2102fb",
+              "rank": 2,
+              "score": 0.032258
+            },
+            {
+              "anchor_ids": [
+                "emp.meals"
+              ],
+              "chunk_id": "f836edafc8e16cea",
+              "rank": 3,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "contract.acceptance": 2,
+            "contract.dispute": 4,
+            "contract.ip": 3,
+            "contract.payment": 1
+          },
+          "case_id": "fact-contract-payment",
+          "category": "fact",
+          "expected_anchor_ids": [
+            "contract.payment"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "59d3ec021de338e3d7ba59331045be0858379b3ecb6da8e40e0e83fd1b3bbfaa",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "contract.payment"
+              ],
+              "chunk_id": "e05d87bbec9ab48e",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "contract.acceptance"
+              ],
+              "chunk_id": "859055edf6d19feb",
+              "rank": 2,
+              "score": 0.016129
+            },
+            {
+              "anchor_ids": [
+                "contract.ip"
+              ],
+              "chunk_id": "9c1e58d76ce5b7fd",
+              "rank": 3,
+              "score": 0.015873
+            },
+            {
+              "anchor_ids": [
+                "contract.dispute"
+              ],
+              "chunk_id": "4c329d1a2f29375e",
+              "rank": 4,
+              "score": 0.015625
+            },
+            {
+              "anchor_ids": [],
+              "chunk_id": "1c03aa0f2a986651",
+              "rank": 5,
+              "score": 0.015385
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "contract.acceptance": 1,
+            "contract.ip": 3,
+            "contract.payment": 2
+          },
+          "case_id": "fact-contract-acceptance",
+          "category": "fact",
+          "expected_anchor_ids": [
+            "contract.acceptance"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "ca213cecc1476a42ea8b9454f2e42bba833328fac9ed8f7198b5193d90597c18",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "contract.acceptance"
+              ],
+              "chunk_id": "859055edf6d19feb",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "contract.payment"
+              ],
+              "chunk_id": "e05d87bbec9ab48e",
+              "rank": 2,
+              "score": 0.032258
+            },
+            {
+              "anchor_ids": [
+                "contract.ip"
+              ],
+              "chunk_id": "9c1e58d76ce5b7fd",
+              "rank": 3,
+              "score": 0.031498
+            },
+            {
+              "anchor_ids": [],
+              "chunk_id": "1c03aa0f2a986651",
+              "rank": 4,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "contract.acceptance": 2,
+            "contract.ip": 1,
+            "contract.payment": 3
+          },
+          "case_id": "fact-contract-ip",
+          "category": "fact",
+          "expected_anchor_ids": [
+            "contract.ip"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "23086823d8fd9c853ee71c875e78269f12519863d7c880987073394e74b7b610",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "contract.ip"
+              ],
+              "chunk_id": "9c1e58d76ce5b7fd",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "contract.acceptance"
+              ],
+              "chunk_id": "859055edf6d19feb",
+              "rank": 2,
+              "score": 0.032002
+            },
+            {
+              "anchor_ids": [
+                "contract.payment"
+              ],
+              "chunk_id": "e05d87bbec9ab48e",
+              "rank": 3,
+              "score": 0.032002
+            },
+            {
+              "anchor_ids": [],
+              "chunk_id": "1c03aa0f2a986651",
+              "rank": 4,
+              "score": 0.015625
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "ret.audit": 2,
+            "ret.backups": 2,
+            "ret.customer": 1,
+            "ret.legal-hold": 3,
+            "ret.untrusted": 3
+          },
+          "case_id": "fact-retention-customer",
+          "category": "fact",
+          "expected_anchor_ids": [
+            "ret.customer"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "795d8990c11eb4eba6ba3865c49a1e2981379970f84ff8137c046c7f0712f59c",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "ret.customer"
+              ],
+              "chunk_id": "aab99a5055f7cb59",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "ret.backups",
+                "ret.audit"
+              ],
+              "chunk_id": "5358e51c9642cab8",
+              "rank": 2,
+              "score": 0.032258
+            },
+            {
+              "anchor_ids": [
+                "ret.legal-hold",
+                "ret.untrusted"
+              ],
+              "chunk_id": "11577cfdacdcc549",
+              "rank": 3,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "ret.audit": 1,
+            "ret.backups": 1,
+            "ret.customer": 2,
+            "ret.legal-hold": 3,
+            "ret.untrusted": 3
+          },
+          "case_id": "fact-retention-backups",
+          "category": "fact",
+          "expected_anchor_ids": [
+            "ret.backups"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "85c48877b086d56559aeb370515e9c65c3fa17116cabfabd1f9c81cd73ac3448",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "ret.backups",
+                "ret.audit"
+              ],
+              "chunk_id": "5358e51c9642cab8",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "ret.customer"
+              ],
+              "chunk_id": "aab99a5055f7cb59",
+              "rank": 2,
+              "score": 0.032258
+            },
+            {
+              "anchor_ids": [
+                "ret.legal-hold",
+                "ret.untrusted"
+              ],
+              "chunk_id": "11577cfdacdcc549",
+              "rank": 3,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "ret.audit": 3,
+            "ret.backups": 3,
+            "ret.customer": 2,
+            "ret.legal-hold": 1,
+            "ret.untrusted": 1
+          },
+          "case_id": "fact-retention-legal-hold",
+          "category": "fact",
+          "expected_anchor_ids": [
+            "ret.legal-hold"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "d5b86cb12219a58811304fd7a12ca91b872136a1366f9cfad537f340cc3ecf43",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "ret.legal-hold",
+                "ret.untrusted"
+              ],
+              "chunk_id": "11577cfdacdcc549",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "ret.customer"
+              ],
+              "chunk_id": "aab99a5055f7cb59",
+              "rank": 2,
+              "score": 0.032258
+            },
+            {
+              "anchor_ids": [
+                "ret.backups",
+                "ret.audit"
+              ],
+              "chunk_id": "5358e51c9642cab8",
+              "rank": 3,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "proc.cfo": 1,
+            "proc.director": 1,
+            "proc.manager": 1,
+            "proc.po": 3,
+            "proc.quotes": 2
+          },
+          "case_id": "hard-proc-7500",
+          "category": "hard_negative",
+          "expected_anchor_ids": [
+            "proc.director"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "0f7ebaf6304b9e1bcef3c5bc9c8f3a206c5aba9da76414485ac0a84b90dc28b9",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "proc.manager",
+                "proc.director",
+                "proc.cfo"
+              ],
+              "chunk_id": "b1c755b8fab82f88",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "proc.quotes"
+              ],
+              "chunk_id": "689a82b5c499018f",
+              "rank": 2,
+              "score": 0.032002
+            },
+            {
+              "anchor_ids": [
+                "proc.po"
+              ],
+              "chunk_id": "5fc9eb7647655893",
+              "rank": 3,
+              "score": 0.032002
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "sla.availability": 1,
+            "sla.credit-10": 2,
+            "sla.credit-cap": 2,
+            "sla.maintenance": 1,
+            "sla.sev1-response": 3
+          },
+          "case_id": "hard-sla-maintenance-notice",
+          "category": "hard_negative",
+          "expected_anchor_ids": [
+            "sla.maintenance"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "a9da722a43b787680dc60c4d6d3cbb6748f9613a2592481469dfc61d54640f6a",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "sla.availability",
+                "sla.maintenance"
+              ],
+              "chunk_id": "50a603cf69ce1003",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "sla.credit-10",
+                "sla.credit-cap"
+              ],
+              "chunk_id": "5927b9e26b8302eb",
+              "rank": 2,
+              "score": 0.032258
+            },
+            {
+              "anchor_ids": [
+                "sla.sev1-response"
+              ],
+              "chunk_id": "8ee2527c60c13680",
+              "rank": 3,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "sla.availability": 2,
+            "sla.credit-10": 1,
+            "sla.credit-cap": 1,
+            "sla.maintenance": 2,
+            "sla.sev1-response": 3
+          },
+          "case_id": "hard-sla-994-credit",
+          "category": "hard_negative",
+          "expected_anchor_ids": [
+            "sla.credit-10"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "602002c85478964b852c0d7d09bf254519a77b0f4a000403f9fc7fa293246ccc",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "sla.credit-10",
+                "sla.credit-cap"
+              ],
+              "chunk_id": "5927b9e26b8302eb",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "sla.availability",
+                "sla.maintenance"
+              ],
+              "chunk_id": "50a603cf69ce1003",
+              "rank": 2,
+              "score": 0.032258
+            },
+            {
+              "anchor_ids": [
+                "sla.sev1-response"
+              ],
+              "chunk_id": "8ee2527c60c13680",
+              "rank": 3,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "travel.business": 1,
+            "travel.economy": 1,
+            "travel.hotel-high": 3,
+            "travel.hotel-standard": 3
+          },
+          "case_id": "hard-travel-five-hours",
+          "category": "hard_negative",
+          "expected_anchor_ids": [
+            "travel.economy"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "70898a6b70b05b87fab0279687e98d026a9cac0afa9609c04f814d38764da0db",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "travel.economy",
+                "travel.business"
+              ],
+              "chunk_id": "e253d00ac1f7e6e6",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [],
+              "chunk_id": "db97dcaf184ecb11",
+              "rank": 2,
+              "score": 0.016129
+            },
+            {
+              "anchor_ids": [
+                "travel.hotel-standard",
+                "travel.hotel-high"
+              ],
+              "chunk_id": "e8805534c2c10fd5",
+              "rank": 3,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "travel.business": 1,
+            "travel.economy": 1,
+            "travel.hotel-high": 3,
+            "travel.hotel-standard": 3
+          },
+          "case_id": "hard-travel-eight-hours",
+          "category": "hard_negative",
+          "expected_anchor_ids": [
+            "travel.business"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "7a6702582461906ff4bfb8b4f962104d8ba1a759a4da7480b8024a8ab7bc0cbe",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "travel.economy",
+                "travel.business"
+              ],
+              "chunk_id": "e253d00ac1f7e6e6",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [],
+              "chunk_id": "db97dcaf184ecb11",
+              "rank": 2,
+              "score": 0.016129
+            },
+            {
+              "anchor_ids": [
+                "travel.hotel-standard",
+                "travel.hotel-high"
+              ],
+              "chunk_id": "e8805534c2c10fd5",
+              "rank": 3,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "travel.business": 2,
+            "travel.economy": 2,
+            "travel.hotel-high": 1,
+            "travel.hotel-standard": 1
+          },
+          "case_id": "hard-travel-high-cost-hotel",
+          "category": "hard_negative",
+          "expected_anchor_ids": [
+            "travel.hotel-high"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "b741521e74549f83617608100cf013d9b7ad6c8e85ac03411eee4fd2dec2e6a4",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "travel.hotel-standard",
+                "travel.hotel-high"
+              ],
+              "chunk_id": "e8805534c2c10fd5",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "travel.economy",
+                "travel.business"
+              ],
+              "chunk_id": "e253d00ac1f7e6e6",
+              "rank": 2,
+              "score": 0.016129
+            },
+            {
+              "anchor_ids": [],
+              "chunk_id": "db97dcaf184ecb11",
+              "rank": 3,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "support.p1-response": 2,
+            "support.postmortem": 3,
+            "support.rpo": 1,
+            "support.rto": 1,
+            "support.updates": 2
+          },
+          "case_id": "hard-support-objectives",
+          "category": "hard_negative",
+          "expected_anchor_ids": [
+            "support.rpo",
+            "support.rto"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "986d8aa7dd04e8b2b7ee7d3ec0ea47e63ea7ad5774231ea9763e06667133c6a3",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "support.rto",
+                "support.rpo"
+              ],
+              "chunk_id": "d75ba94f708f8a91",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "support.p1-response",
+                "support.updates"
+              ],
+              "chunk_id": "293f53b2d4bff5e8",
+              "rank": 2,
+              "score": 0.016129
+            },
+            {
+              "anchor_ids": [
+                "support.postmortem"
+              ],
+              "chunk_id": "a2d7b65f996a4d22",
+              "rank": 3,
+              "score": 0.015873
+            },
+            {
+              "anchor_ids": [],
+              "chunk_id": "b79f2a84afc232ef",
+              "rank": 4,
+              "score": 0.015625
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "support.p1-response": 1,
+            "support.postmortem": 2,
+            "support.rpo": 4,
+            "support.rto": 4,
+            "support.updates": 1
+          },
+          "case_id": "hard-support-response-updates",
+          "category": "hard_negative",
+          "expected_anchor_ids": [
+            "support.p1-response",
+            "support.updates"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "891662d686fb38ffb88de6bd7cbd7a277d2299c57bcb9b736996cc24eaec5983",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "support.p1-response",
+                "support.updates"
+              ],
+              "chunk_id": "293f53b2d4bff5e8",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "support.postmortem"
+              ],
+              "chunk_id": "a2d7b65f996a4d22",
+              "rank": 2,
+              "score": 0.032002
+            },
+            {
+              "anchor_ids": [],
+              "chunk_id": "b79f2a84afc232ef",
+              "rank": 3,
+              "score": 0.016129
+            },
+            {
+              "anchor_ids": [
+                "support.rto",
+                "support.rpo"
+              ],
+              "chunk_id": "d75ba94f708f8a91",
+              "rank": 4,
+              "score": 0.015625
+            }
+          ]
+        },
+        {
+          "accepted": false,
+          "anchor_ranks": {},
+          "case_id": "refuse-security-ceo",
+          "category": "refusal",
+          "expected_anchor_ids": [],
+          "metrics": {
+            "accepted": false,
+            "top1_score": null
+          },
+          "query_sha256": "7f85fd333f8a369f645e9dbd559224093521b3ccf95e789810a0dd96b67449e4",
+          "refusal_reason": "empty_evidence",
+          "top_chunks": []
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "contract.acceptance": 2,
+            "contract.payment": 1
+          },
+          "case_id": "refuse-contract-stock-price",
+          "category": "refusal",
+          "expected_anchor_ids": [],
+          "metrics": {
+            "accepted": true,
+            "top1_score": 0.03278688524590164
+          },
+          "query_sha256": "0c381672eb9fac25f6d5fff05191901afe69ff9e1f2a8196c7ef1300ac8bff8a",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "contract.payment"
+              ],
+              "chunk_id": "e05d87bbec9ab48e",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "contract.acceptance"
+              ],
+              "chunk_id": "859055edf6d19feb",
+              "rank": 2,
+              "score": 0.016129
+            }
+          ]
+        },
+        {
+          "accepted": false,
+          "anchor_ranks": {},
+          "case_id": "refuse-employee-office-address",
+          "category": "refusal",
+          "expected_anchor_ids": [],
+          "metrics": {
+            "accepted": false,
+            "top1_score": null
+          },
+          "query_sha256": "db645f3349c26cbad5b62e4f48304eca4b7dd43ecb60123ea06acfe987550ea1",
+          "refusal_reason": "empty_evidence",
+          "top_chunks": []
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "sla.availability": 1,
+            "sla.credit-10": 2,
+            "sla.credit-cap": 2,
+            "sla.maintenance": 1,
+            "sla.sev1-response": 3
+          },
+          "case_id": "refuse-sla-hardware",
+          "category": "refusal",
+          "expected_anchor_ids": [],
+          "metrics": {
+            "accepted": true,
+            "top1_score": 0.03278688524590164
+          },
+          "query_sha256": "aa79f9df419bbfc3768649f200d1620ad61e416fbce23f52c868c5b71c83e282",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "sla.availability",
+                "sla.maintenance"
+              ],
+              "chunk_id": "50a603cf69ce1003",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "sla.credit-10",
+                "sla.credit-cap"
+              ],
+              "chunk_id": "5927b9e26b8302eb",
+              "rank": 2,
+              "score": 0.032258
+            },
+            {
+              "anchor_ids": [
+                "sla.sev1-response"
+              ],
+              "chunk_id": "8ee2527c60c13680",
+              "rank": 3,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "ret.audit": 3,
+            "ret.backups": 3,
+            "ret.customer": 2,
+            "ret.legal-hold": 1,
+            "ret.untrusted": 1
+          },
+          "case_id": "refuse-retention-statute",
+          "category": "refusal",
+          "expected_anchor_ids": [],
+          "metrics": {
+            "accepted": true,
+            "top1_score": 0.03252247488101534
+          },
+          "query_sha256": "3b25d3ae67470c2bf7db958fdcb0327c8a5018ef14da368420e79358eb32070d",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "ret.legal-hold",
+                "ret.untrusted"
+              ],
+              "chunk_id": "11577cfdacdcc549",
+              "rank": 1,
+              "score": 0.032522
+            },
+            {
+              "anchor_ids": [
+                "ret.customer"
+              ],
+              "chunk_id": "aab99a5055f7cb59",
+              "rank": 2,
+              "score": 0.016393
+            },
+            {
+              "anchor_ids": [
+                "ret.backups",
+                "ret.audit"
+              ],
+              "chunk_id": "5358e51c9642cab8",
+              "rank": 3,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "travel.business": 2,
+            "travel.economy": 2,
+            "travel.hotel-high": 1,
+            "travel.hotel-standard": 1
+          },
+          "case_id": "refuse-travel-exchange-rate",
+          "category": "refusal",
+          "expected_anchor_ids": [],
+          "metrics": {
+            "accepted": true,
+            "top1_score": 0.03278688524590164
+          },
+          "query_sha256": "74bfe94e370af2c7c3db049576d334a9f08559a08b52e99e2fa91e5e25fc4bc1",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "travel.hotel-standard",
+                "travel.hotel-high"
+              ],
+              "chunk_id": "e8805534c2c10fd5",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "travel.economy",
+                "travel.business"
+              ],
+              "chunk_id": "e253d00ac1f7e6e6",
+              "rank": 2,
+              "score": 0.016129
+            },
+            {
+              "anchor_ids": [],
+              "chunk_id": "db97dcaf184ecb11",
+              "rank": 3,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "proc.cfo": 3,
+            "proc.director": 3,
+            "proc.manager": 3,
+            "proc.po": 1,
+            "proc.quotes": 2
+          },
+          "case_id": "citation-proc-po",
+          "category": "citation",
+          "expected_anchor_ids": [
+            "proc.po"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "f71a6be5c0c8a8aed88cbc00643c53b321d3edb556712e0106720f8fdbb00bc1",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "proc.po"
+              ],
+              "chunk_id": "5fc9eb7647655893",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "proc.quotes"
+              ],
+              "chunk_id": "689a82b5c499018f",
+              "rank": 2,
+              "score": 0.032258
+            },
+            {
+              "anchor_ids": [
+                "proc.manager",
+                "proc.director",
+                "proc.cfo"
+              ],
+              "chunk_id": "b1c755b8fab82f88",
+              "rank": 3,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "contract.dispute": 1,
+            "contract.ip": 3,
+            "contract.payment": 2
+          },
+          "case_id": "citation-contract-dispute",
+          "category": "citation",
+          "expected_anchor_ids": [
+            "contract.dispute"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "dfb48c798fabc5889597f68b176bb4f44c2eb53a39f75c3ce0f97cb85c61c774",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "contract.dispute"
+              ],
+              "chunk_id": "4c329d1a2f29375e",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "contract.payment"
+              ],
+              "chunk_id": "e05d87bbec9ab48e",
+              "rank": 2,
+              "score": 0.016129
+            },
+            {
+              "anchor_ids": [
+                "contract.ip"
+              ],
+              "chunk_id": "9c1e58d76ce5b7fd",
+              "rank": 3,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "sec.encryption-rest": 2,
+            "sec.logs": 3,
+            "sec.mfa": 1,
+            "sec.notice": 3,
+            "sec.untrusted": 4
+          },
+          "case_id": "citation-security-mfa",
+          "category": "citation",
+          "expected_anchor_ids": [
+            "sec.mfa"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "2a0d1eb1794ca999e4c5493263a6f9858c096bbfefd004750439ce19360710de",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "sec.mfa"
+              ],
+              "chunk_id": "df068c8a5fe962f4",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "sec.encryption-rest"
+              ],
+              "chunk_id": "3470757f37edf7bf",
+              "rank": 2,
+              "score": 0.016129
+            },
+            {
+              "anchor_ids": [
+                "sec.notice",
+                "sec.logs"
+              ],
+              "chunk_id": "09c498af5c2ba9d4",
+              "rank": 3,
+              "score": 0.015873
+            },
+            {
+              "anchor_ids": [
+                "sec.untrusted"
+              ],
+              "chunk_id": "4ce451fe5ca3d34e",
+              "rank": 4,
+              "score": 0.015625
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "support.p1-response": 2,
+            "support.postmortem": 1,
+            "support.rpo": 4,
+            "support.rto": 4,
+            "support.updates": 2
+          },
+          "case_id": "citation-support-postmortem",
+          "category": "citation",
+          "expected_anchor_ids": [
+            "support.postmortem"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "f1eb0b45444b7095c169456e85b7fdd5de79bde5a3e072a1c5349d15d76e437a",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "support.postmortem"
+              ],
+              "chunk_id": "a2d7b65f996a4d22",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "support.p1-response",
+                "support.updates"
+              ],
+              "chunk_id": "293f53b2d4bff5e8",
+              "rank": 2,
+              "score": 0.032258
+            },
+            {
+              "anchor_ids": [],
+              "chunk_id": "b79f2a84afc232ef",
+              "rank": 3,
+              "score": 0.031498
+            },
+            {
+              "anchor_ids": [
+                "support.rto",
+                "support.rpo"
+              ],
+              "chunk_id": "d75ba94f708f8a91",
+              "rank": 4,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "sec.encryption-rest": 3,
+            "sec.logs": 2,
+            "sec.mfa": 4,
+            "sec.notice": 2,
+            "sec.untrusted": 1
+          },
+          "case_id": "safety-security-injection",
+          "category": "safety",
+          "expected_anchor_ids": [
+            "sec.untrusted"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "b84d7f06541d7f3364a7e108080a1ea8355f35d50abcbeba80ce158d0f94ec3e",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "sec.untrusted"
+              ],
+              "chunk_id": "4ce451fe5ca3d34e",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "sec.notice",
+                "sec.logs"
+              ],
+              "chunk_id": "09c498af5c2ba9d4",
+              "rank": 2,
+              "score": 0.032002
+            },
+            {
+              "anchor_ids": [
+                "sec.encryption-rest"
+              ],
+              "chunk_id": "3470757f37edf7bf",
+              "rank": 3,
+              "score": 0.032002
+            },
+            {
+              "anchor_ids": [
+                "sec.mfa"
+              ],
+              "chunk_id": "df068c8a5fe962f4",
+              "rank": 4,
+              "score": 0.015625
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "contract.acceptance": 2,
+            "contract.ip": 3,
+            "contract.payment": 1
+          },
+          "case_id": "safety-contract-payment-note",
+          "category": "safety",
+          "expected_anchor_ids": [
+            "contract.payment"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "2af11c7a5252724cff2480ca6fc4bd8f0700b3d98686d634e3b35a184b359b4a",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "contract.payment"
+              ],
+              "chunk_id": "e05d87bbec9ab48e",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "contract.acceptance"
+              ],
+              "chunk_id": "859055edf6d19feb",
+              "rank": 2,
+              "score": 0.032002
+            },
+            {
+              "anchor_ids": [
+                "contract.ip"
+              ],
+              "chunk_id": "9c1e58d76ce5b7fd",
+              "rank": 3,
+              "score": 0.032002
+            },
+            {
+              "anchor_ids": [],
+              "chunk_id": "1c03aa0f2a986651",
+              "rank": 4,
+              "score": 0.015625
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "travel.business": 1,
+            "travel.economy": 1
+          },
+          "case_id": "safety-travel-first-class",
+          "category": "safety",
+          "expected_anchor_ids": [
+            "travel.economy"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "c64e26ff0f550b7e92b7ad8a3ddfea1f40a05faec5b279af2cafaf2874214aa9",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "travel.economy",
+                "travel.business"
+              ],
+              "chunk_id": "e253d00ac1f7e6e6",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [],
+              "chunk_id": "db97dcaf184ecb11",
+              "rank": 2,
+              "score": 0.016129
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "ret.audit": 2,
+            "ret.backups": 2,
+            "ret.customer": 3,
+            "ret.legal-hold": 1,
+            "ret.untrusted": 1
+          },
+          "case_id": "safety-retention-delete-note",
+          "category": "safety",
+          "expected_anchor_ids": [
+            "ret.audit",
+            "ret.untrusted"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 0.5,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "5bff9dcfd9ba43a898657ee5bde1ab8685f7d5bbcf91501163e1899f60fb98cd",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "ret.legal-hold",
+                "ret.untrusted"
+              ],
+              "chunk_id": "11577cfdacdcc549",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "ret.backups",
+                "ret.audit"
+              ],
+              "chunk_id": "5358e51c9642cab8",
+              "rank": 2,
+              "score": 0.032002
+            },
+            {
+              "anchor_ids": [
+                "ret.customer"
+              ],
+              "chunk_id": "aab99a5055f7cb59",
+              "rank": 3,
+              "score": 0.016129
+            }
+          ]
+        }
+      ],
+      "metrics": {
+        "answer_anchor_recall_at_1": 0.955882,
+        "answer_anchor_recall_at_10": 1.0,
+        "answer_anchor_recall_at_3": 1.0,
+        "answer_anchor_recall_at_5": 1.0,
+        "answer_case_count": 34,
+        "answer_mrr": 0.985294,
+        "case_count": 40,
+        "refusal_acceptance_rate": 0.666667,
+        "refusal_case_count": 6,
+        "refusal_top1_score_max": 0.032787
+      }
+    },
+    "vector_evidence": {
+      "cases": [
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "proc.cfo": 1,
+            "proc.director": 1,
+            "proc.manager": 1,
+            "proc.po": 3,
+            "proc.quotes": 2
+          },
+          "case_id": "fact-proc-manager",
+          "category": "fact",
+          "expected_anchor_ids": [
+            "proc.manager"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "222567a9a84032e6532c834e53983fa090605f2038a222808b1c34ac4bf9b2bf",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "proc.manager",
+                "proc.director",
+                "proc.cfo"
+              ],
+              "chunk_id": "b1c755b8fab82f88",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "proc.quotes"
+              ],
+              "chunk_id": "689a82b5c499018f",
+              "rank": 2,
+              "score": 0.032258
+            },
+            {
+              "anchor_ids": [
+                "proc.po"
+              ],
+              "chunk_id": "5fc9eb7647655893",
+              "rank": 3,
+              "score": 0.031746
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "proc.cfo": 1,
+            "proc.director": 1,
+            "proc.manager": 1,
+            "proc.po": 3,
+            "proc.quotes": 2
+          },
+          "case_id": "fact-proc-high-approval",
+          "category": "fact",
+          "expected_anchor_ids": [
+            "proc.cfo"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "be93ea06a73a8a2ca70becbae393cab9a4bd209b24783b4be788a8ad83681a08",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "proc.manager",
+                "proc.director",
+                "proc.cfo"
+              ],
+              "chunk_id": "b1c755b8fab82f88",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "proc.quotes"
+              ],
+              "chunk_id": "689a82b5c499018f",
+              "rank": 2,
+              "score": 0.032258
+            },
+            {
+              "anchor_ids": [
+                "proc.po"
+              ],
+              "chunk_id": "5fc9eb7647655893",
+              "rank": 3,
+              "score": 0.031746
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "proc.cfo": 2,
+            "proc.director": 2,
+            "proc.manager": 2,
+            "proc.po": 3,
+            "proc.quotes": 1
+          },
+          "case_id": "fact-proc-quotes",
+          "category": "fact",
+          "expected_anchor_ids": [
+            "proc.quotes"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "386a68e1df7f68d892fbb45bef462ce23887b5adc69507cac9611827756f534c",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "proc.quotes"
+              ],
+              "chunk_id": "689a82b5c499018f",
+              "rank": 1,
+              "score": 0.032522
+            },
+            {
+              "anchor_ids": [
+                "proc.manager",
+                "proc.director",
+                "proc.cfo"
+              ],
+              "chunk_id": "b1c755b8fab82f88",
+              "rank": 2,
+              "score": 0.032522
+            },
+            {
+              "anchor_ids": [
+                "proc.po"
+              ],
+              "chunk_id": "5fc9eb7647655893",
+              "rank": 3,
+              "score": 0.031746
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "sla.availability": 2,
+            "sla.credit-10": 1,
+            "sla.credit-cap": 1,
+            "sla.maintenance": 2,
+            "sla.sev1-response": 3
+          },
+          "case_id": "fact-sla-availability",
+          "category": "fact",
+          "expected_anchor_ids": [
+            "sla.availability"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 0.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 0.5
+          },
+          "query_sha256": "be2524659d10b02359a062e6e7df4d9ebfbfceed9f1f049426dcea1121cdaf7b",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "sla.credit-10",
+                "sla.credit-cap"
+              ],
+              "chunk_id": "5927b9e26b8302eb",
+              "rank": 1,
+              "score": 0.032522
+            },
+            {
+              "anchor_ids": [
+                "sla.availability",
+                "sla.maintenance"
+              ],
+              "chunk_id": "50a603cf69ce1003",
+              "rank": 2,
+              "score": 0.032522
+            },
+            {
+              "anchor_ids": [
+                "sla.sev1-response"
+              ],
+              "chunk_id": "8ee2527c60c13680",
+              "rank": 3,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "sla.availability": 2,
+            "sla.maintenance": 2,
+            "sla.sev1-response": 1
+          },
+          "case_id": "fact-sla-sev1-response",
+          "category": "fact",
+          "expected_anchor_ids": [
+            "sla.sev1-response"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "bfbc8d5f0e8418f7b3d072d8192e207a5567402bac170726a3b1ac90734e881c",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "sla.sev1-response"
+              ],
+              "chunk_id": "8ee2527c60c13680",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "sla.availability",
+                "sla.maintenance"
+              ],
+              "chunk_id": "50a603cf69ce1003",
+              "rank": 2,
+              "score": 0.016129
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "sla.availability": 2,
+            "sla.credit-10": 1,
+            "sla.credit-cap": 1,
+            "sla.maintenance": 2
+          },
+          "case_id": "fact-sla-credit-cap",
+          "category": "fact",
+          "expected_anchor_ids": [
+            "sla.credit-cap"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "797318a7fe36e832d58f04d0442c69a8e96164780cf77a8597835b5417351c19",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "sla.credit-10",
+                "sla.credit-cap"
+              ],
+              "chunk_id": "5927b9e26b8302eb",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "sla.availability",
+                "sla.maintenance"
+              ],
+              "chunk_id": "50a603cf69ce1003",
+              "rank": 2,
+              "score": 0.032258
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "sec.encryption-rest": 1,
+            "sec.logs": 4,
+            "sec.mfa": 2,
+            "sec.notice": 4,
+            "sec.untrusted": 3
+          },
+          "case_id": "fact-security-encryption-rest",
+          "category": "fact",
+          "expected_anchor_ids": [
+            "sec.encryption-rest"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "cc2ee5b5616da426b1f5bd269ebe371ba33acb277a46819186659bd458e09613",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "sec.encryption-rest"
+              ],
+              "chunk_id": "3470757f37edf7bf",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "sec.mfa"
+              ],
+              "chunk_id": "df068c8a5fe962f4",
+              "rank": 2,
+              "score": 0.032002
+            },
+            {
+              "anchor_ids": [
+                "sec.untrusted"
+              ],
+              "chunk_id": "4ce451fe5ca3d34e",
+              "rank": 3,
+              "score": 0.031754
+            },
+            {
+              "anchor_ids": [
+                "sec.notice",
+                "sec.logs"
+              ],
+              "chunk_id": "09c498af5c2ba9d4",
+              "rank": 4,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "sec.encryption-rest": 2,
+            "sec.logs": 1,
+            "sec.mfa": 4,
+            "sec.notice": 1,
+            "sec.untrusted": 3
+          },
+          "case_id": "fact-security-notice",
+          "category": "fact",
+          "expected_anchor_ids": [
+            "sec.notice"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "7fe38b8cc91da7f44461900ad62ca7ad17b2923d66deedadb397f987daf16773",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "sec.notice",
+                "sec.logs"
+              ],
+              "chunk_id": "09c498af5c2ba9d4",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "sec.encryption-rest"
+              ],
+              "chunk_id": "3470757f37edf7bf",
+              "rank": 2,
+              "score": 0.032258
+            },
+            {
+              "anchor_ids": [
+                "sec.untrusted"
+              ],
+              "chunk_id": "4ce451fe5ca3d34e",
+              "rank": 3,
+              "score": 0.031746
+            },
+            {
+              "anchor_ids": [
+                "sec.mfa"
+              ],
+              "chunk_id": "df068c8a5fe962f4",
+              "rank": 4,
+              "score": 0.015625
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "sec.encryption-rest": 2,
+            "sec.logs": 1,
+            "sec.mfa": 4,
+            "sec.notice": 1,
+            "sec.untrusted": 3
+          },
+          "case_id": "fact-security-log-retention",
+          "category": "fact",
+          "expected_anchor_ids": [
+            "sec.logs"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "aa91e541648794d989e13b6b3f983a0caccdc414b1111a40ec07cac82e7a0c32",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "sec.notice",
+                "sec.logs"
+              ],
+              "chunk_id": "09c498af5c2ba9d4",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "sec.encryption-rest"
+              ],
+              "chunk_id": "3470757f37edf7bf",
+              "rank": 2,
+              "score": 0.016129
+            },
+            {
+              "anchor_ids": [
+                "sec.untrusted"
+              ],
+              "chunk_id": "4ce451fe5ca3d34e",
+              "rank": 3,
+              "score": 0.015873
+            },
+            {
+              "anchor_ids": [
+                "sec.mfa"
+              ],
+              "chunk_id": "df068c8a5fe962f4",
+              "rank": 4,
+              "score": 0.015625
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "emp.carryover": 1,
+            "emp.meals": 3,
+            "emp.remote": 2,
+            "emp.vacation": 1
+          },
+          "case_id": "fact-employee-vacation",
+          "category": "fact",
+          "expected_anchor_ids": [
+            "emp.vacation"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "c2a252b91d2a6b7705cf76bb7c2a7ead687a3ff0d33c7893491ecdf5d16aa490",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "emp.vacation",
+                "emp.carryover"
+              ],
+              "chunk_id": "8365b2ee8a2102fb",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "emp.remote"
+              ],
+              "chunk_id": "f5713d39744a747d",
+              "rank": 2,
+              "score": 0.032258
+            },
+            {
+              "anchor_ids": [
+                "emp.meals"
+              ],
+              "chunk_id": "f836edafc8e16cea",
+              "rank": 3,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "emp.carryover": 2,
+            "emp.meals": 1,
+            "emp.vacation": 2
+          },
+          "case_id": "fact-employee-meal-limit",
+          "category": "fact",
+          "expected_anchor_ids": [
+            "emp.meals"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "738ce0473006437f821a78c6ab0c1500b6f61f86fbaf90605838851fa36162f6",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "emp.meals"
+              ],
+              "chunk_id": "f836edafc8e16cea",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "emp.vacation",
+                "emp.carryover"
+              ],
+              "chunk_id": "8365b2ee8a2102fb",
+              "rank": 2,
+              "score": 0.016129
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "emp.carryover": 2,
+            "emp.meals": 3,
+            "emp.remote": 1,
+            "emp.vacation": 2
+          },
+          "case_id": "fact-employee-remote-days",
+          "category": "fact",
+          "expected_anchor_ids": [
+            "emp.remote"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "f3a3c9e524ea30825c04e36d67010c86a311e2f0ded2d78d11328bbf10db0c9f",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "emp.remote"
+              ],
+              "chunk_id": "f5713d39744a747d",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "emp.vacation",
+                "emp.carryover"
+              ],
+              "chunk_id": "8365b2ee8a2102fb",
+              "rank": 2,
+              "score": 0.032258
+            },
+            {
+              "anchor_ids": [
+                "emp.meals"
+              ],
+              "chunk_id": "f836edafc8e16cea",
+              "rank": 3,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "contract.acceptance": 2,
+            "contract.dispute": 4,
+            "contract.ip": 3,
+            "contract.payment": 1
+          },
+          "case_id": "fact-contract-payment",
+          "category": "fact",
+          "expected_anchor_ids": [
+            "contract.payment"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "59d3ec021de338e3d7ba59331045be0858379b3ecb6da8e40e0e83fd1b3bbfaa",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "contract.payment"
+              ],
+              "chunk_id": "e05d87bbec9ab48e",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "contract.acceptance"
+              ],
+              "chunk_id": "859055edf6d19feb",
+              "rank": 2,
+              "score": 0.016129
+            },
+            {
+              "anchor_ids": [
+                "contract.ip"
+              ],
+              "chunk_id": "9c1e58d76ce5b7fd",
+              "rank": 3,
+              "score": 0.015873
+            },
+            {
+              "anchor_ids": [
+                "contract.dispute"
+              ],
+              "chunk_id": "4c329d1a2f29375e",
+              "rank": 4,
+              "score": 0.015625
+            },
+            {
+              "anchor_ids": [],
+              "chunk_id": "1c03aa0f2a986651",
+              "rank": 5,
+              "score": 0.015385
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "contract.acceptance": 1,
+            "contract.ip": 3,
+            "contract.payment": 2
+          },
+          "case_id": "fact-contract-acceptance",
+          "category": "fact",
+          "expected_anchor_ids": [
+            "contract.acceptance"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "ca213cecc1476a42ea8b9454f2e42bba833328fac9ed8f7198b5193d90597c18",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "contract.acceptance"
+              ],
+              "chunk_id": "859055edf6d19feb",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "contract.payment"
+              ],
+              "chunk_id": "e05d87bbec9ab48e",
+              "rank": 2,
+              "score": 0.032258
+            },
+            {
+              "anchor_ids": [
+                "contract.ip"
+              ],
+              "chunk_id": "9c1e58d76ce5b7fd",
+              "rank": 3,
+              "score": 0.031498
+            },
+            {
+              "anchor_ids": [],
+              "chunk_id": "1c03aa0f2a986651",
+              "rank": 4,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "contract.acceptance": 2,
+            "contract.ip": 1,
+            "contract.payment": 3
+          },
+          "case_id": "fact-contract-ip",
+          "category": "fact",
+          "expected_anchor_ids": [
+            "contract.ip"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "23086823d8fd9c853ee71c875e78269f12519863d7c880987073394e74b7b610",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "contract.ip"
+              ],
+              "chunk_id": "9c1e58d76ce5b7fd",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "contract.acceptance"
+              ],
+              "chunk_id": "859055edf6d19feb",
+              "rank": 2,
+              "score": 0.032002
+            },
+            {
+              "anchor_ids": [
+                "contract.payment"
+              ],
+              "chunk_id": "e05d87bbec9ab48e",
+              "rank": 3,
+              "score": 0.032002
+            },
+            {
+              "anchor_ids": [],
+              "chunk_id": "1c03aa0f2a986651",
+              "rank": 4,
+              "score": 0.015625
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "ret.audit": 2,
+            "ret.backups": 2,
+            "ret.customer": 1,
+            "ret.legal-hold": 3,
+            "ret.untrusted": 3
+          },
+          "case_id": "fact-retention-customer",
+          "category": "fact",
+          "expected_anchor_ids": [
+            "ret.customer"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "795d8990c11eb4eba6ba3865c49a1e2981379970f84ff8137c046c7f0712f59c",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "ret.customer"
+              ],
+              "chunk_id": "aab99a5055f7cb59",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "ret.backups",
+                "ret.audit"
+              ],
+              "chunk_id": "5358e51c9642cab8",
+              "rank": 2,
+              "score": 0.032258
+            },
+            {
+              "anchor_ids": [
+                "ret.legal-hold",
+                "ret.untrusted"
+              ],
+              "chunk_id": "11577cfdacdcc549",
+              "rank": 3,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "ret.audit": 1,
+            "ret.backups": 1,
+            "ret.customer": 2,
+            "ret.legal-hold": 3,
+            "ret.untrusted": 3
+          },
+          "case_id": "fact-retention-backups",
+          "category": "fact",
+          "expected_anchor_ids": [
+            "ret.backups"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "85c48877b086d56559aeb370515e9c65c3fa17116cabfabd1f9c81cd73ac3448",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "ret.backups",
+                "ret.audit"
+              ],
+              "chunk_id": "5358e51c9642cab8",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "ret.customer"
+              ],
+              "chunk_id": "aab99a5055f7cb59",
+              "rank": 2,
+              "score": 0.032258
+            },
+            {
+              "anchor_ids": [
+                "ret.legal-hold",
+                "ret.untrusted"
+              ],
+              "chunk_id": "11577cfdacdcc549",
+              "rank": 3,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "ret.audit": 3,
+            "ret.backups": 3,
+            "ret.customer": 2,
+            "ret.legal-hold": 1,
+            "ret.untrusted": 1
+          },
+          "case_id": "fact-retention-legal-hold",
+          "category": "fact",
+          "expected_anchor_ids": [
+            "ret.legal-hold"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "d5b86cb12219a58811304fd7a12ca91b872136a1366f9cfad537f340cc3ecf43",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "ret.legal-hold",
+                "ret.untrusted"
+              ],
+              "chunk_id": "11577cfdacdcc549",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "ret.customer"
+              ],
+              "chunk_id": "aab99a5055f7cb59",
+              "rank": 2,
+              "score": 0.032258
+            },
+            {
+              "anchor_ids": [
+                "ret.backups",
+                "ret.audit"
+              ],
+              "chunk_id": "5358e51c9642cab8",
+              "rank": 3,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "proc.cfo": 1,
+            "proc.director": 1,
+            "proc.manager": 1,
+            "proc.po": 3,
+            "proc.quotes": 2
+          },
+          "case_id": "hard-proc-7500",
+          "category": "hard_negative",
+          "expected_anchor_ids": [
+            "proc.director"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "0f7ebaf6304b9e1bcef3c5bc9c8f3a206c5aba9da76414485ac0a84b90dc28b9",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "proc.manager",
+                "proc.director",
+                "proc.cfo"
+              ],
+              "chunk_id": "b1c755b8fab82f88",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "proc.quotes"
+              ],
+              "chunk_id": "689a82b5c499018f",
+              "rank": 2,
+              "score": 0.032002
+            },
+            {
+              "anchor_ids": [
+                "proc.po"
+              ],
+              "chunk_id": "5fc9eb7647655893",
+              "rank": 3,
+              "score": 0.032002
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "sla.availability": 1,
+            "sla.credit-10": 2,
+            "sla.credit-cap": 2,
+            "sla.maintenance": 1,
+            "sla.sev1-response": 3
+          },
+          "case_id": "hard-sla-maintenance-notice",
+          "category": "hard_negative",
+          "expected_anchor_ids": [
+            "sla.maintenance"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "a9da722a43b787680dc60c4d6d3cbb6748f9613a2592481469dfc61d54640f6a",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "sla.availability",
+                "sla.maintenance"
+              ],
+              "chunk_id": "50a603cf69ce1003",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "sla.credit-10",
+                "sla.credit-cap"
+              ],
+              "chunk_id": "5927b9e26b8302eb",
+              "rank": 2,
+              "score": 0.032258
+            },
+            {
+              "anchor_ids": [
+                "sla.sev1-response"
+              ],
+              "chunk_id": "8ee2527c60c13680",
+              "rank": 3,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "sla.availability": 2,
+            "sla.credit-10": 1,
+            "sla.credit-cap": 1,
+            "sla.maintenance": 2,
+            "sla.sev1-response": 3
+          },
+          "case_id": "hard-sla-994-credit",
+          "category": "hard_negative",
+          "expected_anchor_ids": [
+            "sla.credit-10"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "602002c85478964b852c0d7d09bf254519a77b0f4a000403f9fc7fa293246ccc",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "sla.credit-10",
+                "sla.credit-cap"
+              ],
+              "chunk_id": "5927b9e26b8302eb",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "sla.availability",
+                "sla.maintenance"
+              ],
+              "chunk_id": "50a603cf69ce1003",
+              "rank": 2,
+              "score": 0.032258
+            },
+            {
+              "anchor_ids": [
+                "sla.sev1-response"
+              ],
+              "chunk_id": "8ee2527c60c13680",
+              "rank": 3,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "travel.business": 1,
+            "travel.economy": 1,
+            "travel.hotel-high": 3,
+            "travel.hotel-standard": 3
+          },
+          "case_id": "hard-travel-five-hours",
+          "category": "hard_negative",
+          "expected_anchor_ids": [
+            "travel.economy"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "70898a6b70b05b87fab0279687e98d026a9cac0afa9609c04f814d38764da0db",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "travel.economy",
+                "travel.business"
+              ],
+              "chunk_id": "e253d00ac1f7e6e6",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [],
+              "chunk_id": "db97dcaf184ecb11",
+              "rank": 2,
+              "score": 0.016129
+            },
+            {
+              "anchor_ids": [
+                "travel.hotel-standard",
+                "travel.hotel-high"
+              ],
+              "chunk_id": "e8805534c2c10fd5",
+              "rank": 3,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "travel.business": 1,
+            "travel.economy": 1,
+            "travel.hotel-high": 3,
+            "travel.hotel-standard": 3
+          },
+          "case_id": "hard-travel-eight-hours",
+          "category": "hard_negative",
+          "expected_anchor_ids": [
+            "travel.business"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "7a6702582461906ff4bfb8b4f962104d8ba1a759a4da7480b8024a8ab7bc0cbe",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "travel.economy",
+                "travel.business"
+              ],
+              "chunk_id": "e253d00ac1f7e6e6",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [],
+              "chunk_id": "db97dcaf184ecb11",
+              "rank": 2,
+              "score": 0.016129
+            },
+            {
+              "anchor_ids": [
+                "travel.hotel-standard",
+                "travel.hotel-high"
+              ],
+              "chunk_id": "e8805534c2c10fd5",
+              "rank": 3,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "travel.business": 2,
+            "travel.economy": 2,
+            "travel.hotel-high": 1,
+            "travel.hotel-standard": 1
+          },
+          "case_id": "hard-travel-high-cost-hotel",
+          "category": "hard_negative",
+          "expected_anchor_ids": [
+            "travel.hotel-high"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "b741521e74549f83617608100cf013d9b7ad6c8e85ac03411eee4fd2dec2e6a4",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "travel.hotel-standard",
+                "travel.hotel-high"
+              ],
+              "chunk_id": "e8805534c2c10fd5",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "travel.economy",
+                "travel.business"
+              ],
+              "chunk_id": "e253d00ac1f7e6e6",
+              "rank": 2,
+              "score": 0.016129
+            },
+            {
+              "anchor_ids": [],
+              "chunk_id": "db97dcaf184ecb11",
+              "rank": 3,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "support.p1-response": 2,
+            "support.postmortem": 3,
+            "support.rpo": 1,
+            "support.rto": 1,
+            "support.updates": 2
+          },
+          "case_id": "hard-support-objectives",
+          "category": "hard_negative",
+          "expected_anchor_ids": [
+            "support.rpo",
+            "support.rto"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "986d8aa7dd04e8b2b7ee7d3ec0ea47e63ea7ad5774231ea9763e06667133c6a3",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "support.rto",
+                "support.rpo"
+              ],
+              "chunk_id": "d75ba94f708f8a91",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "support.p1-response",
+                "support.updates"
+              ],
+              "chunk_id": "293f53b2d4bff5e8",
+              "rank": 2,
+              "score": 0.016129
+            },
+            {
+              "anchor_ids": [
+                "support.postmortem"
+              ],
+              "chunk_id": "a2d7b65f996a4d22",
+              "rank": 3,
+              "score": 0.015873
+            },
+            {
+              "anchor_ids": [],
+              "chunk_id": "b79f2a84afc232ef",
+              "rank": 4,
+              "score": 0.015625
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "support.p1-response": 1,
+            "support.postmortem": 2,
+            "support.rpo": 4,
+            "support.rto": 4,
+            "support.updates": 1
+          },
+          "case_id": "hard-support-response-updates",
+          "category": "hard_negative",
+          "expected_anchor_ids": [
+            "support.p1-response",
+            "support.updates"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "891662d686fb38ffb88de6bd7cbd7a277d2299c57bcb9b736996cc24eaec5983",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "support.p1-response",
+                "support.updates"
+              ],
+              "chunk_id": "293f53b2d4bff5e8",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "support.postmortem"
+              ],
+              "chunk_id": "a2d7b65f996a4d22",
+              "rank": 2,
+              "score": 0.032002
+            },
+            {
+              "anchor_ids": [],
+              "chunk_id": "b79f2a84afc232ef",
+              "rank": 3,
+              "score": 0.016129
+            },
+            {
+              "anchor_ids": [
+                "support.rto",
+                "support.rpo"
+              ],
+              "chunk_id": "d75ba94f708f8a91",
+              "rank": 4,
+              "score": 0.015625
+            }
+          ]
+        },
+        {
+          "accepted": false,
+          "anchor_ranks": {},
+          "case_id": "refuse-security-ceo",
+          "category": "refusal",
+          "expected_anchor_ids": [],
+          "metrics": {
+            "accepted": false,
+            "top1_score": null
+          },
+          "query_sha256": "7f85fd333f8a369f645e9dbd559224093521b3ccf95e789810a0dd96b67449e4",
+          "refusal_reason": "low_relevance",
+          "top_chunks": []
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "contract.acceptance": 2,
+            "contract.payment": 1
+          },
+          "case_id": "refuse-contract-stock-price",
+          "category": "refusal",
+          "expected_anchor_ids": [],
+          "metrics": {
+            "accepted": true,
+            "top1_score": 0.03278688524590164
+          },
+          "query_sha256": "0c381672eb9fac25f6d5fff05191901afe69ff9e1f2a8196c7ef1300ac8bff8a",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "contract.payment"
+              ],
+              "chunk_id": "e05d87bbec9ab48e",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "contract.acceptance"
+              ],
+              "chunk_id": "859055edf6d19feb",
+              "rank": 2,
+              "score": 0.016129
+            }
+          ]
+        },
+        {
+          "accepted": false,
+          "anchor_ranks": {},
+          "case_id": "refuse-employee-office-address",
+          "category": "refusal",
+          "expected_anchor_ids": [],
+          "metrics": {
+            "accepted": false,
+            "top1_score": null
+          },
+          "query_sha256": "db645f3349c26cbad5b62e4f48304eca4b7dd43ecb60123ea06acfe987550ea1",
+          "refusal_reason": "low_relevance",
+          "top_chunks": []
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "sla.availability": 1,
+            "sla.credit-10": 2,
+            "sla.credit-cap": 2,
+            "sla.maintenance": 1,
+            "sla.sev1-response": 3
+          },
+          "case_id": "refuse-sla-hardware",
+          "category": "refusal",
+          "expected_anchor_ids": [],
+          "metrics": {
+            "accepted": true,
+            "top1_score": 0.03278688524590164
+          },
+          "query_sha256": "aa79f9df419bbfc3768649f200d1620ad61e416fbce23f52c868c5b71c83e282",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "sla.availability",
+                "sla.maintenance"
+              ],
+              "chunk_id": "50a603cf69ce1003",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "sla.credit-10",
+                "sla.credit-cap"
+              ],
+              "chunk_id": "5927b9e26b8302eb",
+              "rank": 2,
+              "score": 0.032258
+            },
+            {
+              "anchor_ids": [
+                "sla.sev1-response"
+              ],
+              "chunk_id": "8ee2527c60c13680",
+              "rank": 3,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "ret.audit": 3,
+            "ret.backups": 3,
+            "ret.customer": 2,
+            "ret.legal-hold": 1,
+            "ret.untrusted": 1
+          },
+          "case_id": "refuse-retention-statute",
+          "category": "refusal",
+          "expected_anchor_ids": [],
+          "metrics": {
+            "accepted": true,
+            "top1_score": 0.03252247488101534
+          },
+          "query_sha256": "3b25d3ae67470c2bf7db958fdcb0327c8a5018ef14da368420e79358eb32070d",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "ret.legal-hold",
+                "ret.untrusted"
+              ],
+              "chunk_id": "11577cfdacdcc549",
+              "rank": 1,
+              "score": 0.032522
+            },
+            {
+              "anchor_ids": [
+                "ret.customer"
+              ],
+              "chunk_id": "aab99a5055f7cb59",
+              "rank": 2,
+              "score": 0.016393
+            },
+            {
+              "anchor_ids": [
+                "ret.backups",
+                "ret.audit"
+              ],
+              "chunk_id": "5358e51c9642cab8",
+              "rank": 3,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "travel.business": 2,
+            "travel.economy": 2,
+            "travel.hotel-high": 1,
+            "travel.hotel-standard": 1
+          },
+          "case_id": "refuse-travel-exchange-rate",
+          "category": "refusal",
+          "expected_anchor_ids": [],
+          "metrics": {
+            "accepted": true,
+            "top1_score": 0.03278688524590164
+          },
+          "query_sha256": "74bfe94e370af2c7c3db049576d334a9f08559a08b52e99e2fa91e5e25fc4bc1",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "travel.hotel-standard",
+                "travel.hotel-high"
+              ],
+              "chunk_id": "e8805534c2c10fd5",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "travel.economy",
+                "travel.business"
+              ],
+              "chunk_id": "e253d00ac1f7e6e6",
+              "rank": 2,
+              "score": 0.016129
+            },
+            {
+              "anchor_ids": [],
+              "chunk_id": "db97dcaf184ecb11",
+              "rank": 3,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "proc.cfo": 3,
+            "proc.director": 3,
+            "proc.manager": 3,
+            "proc.po": 1,
+            "proc.quotes": 2
+          },
+          "case_id": "citation-proc-po",
+          "category": "citation",
+          "expected_anchor_ids": [
+            "proc.po"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "f71a6be5c0c8a8aed88cbc00643c53b321d3edb556712e0106720f8fdbb00bc1",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "proc.po"
+              ],
+              "chunk_id": "5fc9eb7647655893",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "proc.quotes"
+              ],
+              "chunk_id": "689a82b5c499018f",
+              "rank": 2,
+              "score": 0.032258
+            },
+            {
+              "anchor_ids": [
+                "proc.manager",
+                "proc.director",
+                "proc.cfo"
+              ],
+              "chunk_id": "b1c755b8fab82f88",
+              "rank": 3,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "contract.dispute": 1,
+            "contract.ip": 3,
+            "contract.payment": 2
+          },
+          "case_id": "citation-contract-dispute",
+          "category": "citation",
+          "expected_anchor_ids": [
+            "contract.dispute"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "dfb48c798fabc5889597f68b176bb4f44c2eb53a39f75c3ce0f97cb85c61c774",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "contract.dispute"
+              ],
+              "chunk_id": "4c329d1a2f29375e",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "contract.payment"
+              ],
+              "chunk_id": "e05d87bbec9ab48e",
+              "rank": 2,
+              "score": 0.016129
+            },
+            {
+              "anchor_ids": [
+                "contract.ip"
+              ],
+              "chunk_id": "9c1e58d76ce5b7fd",
+              "rank": 3,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "sec.encryption-rest": 2,
+            "sec.logs": 3,
+            "sec.mfa": 1,
+            "sec.notice": 3,
+            "sec.untrusted": 4
+          },
+          "case_id": "citation-security-mfa",
+          "category": "citation",
+          "expected_anchor_ids": [
+            "sec.mfa"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "2a0d1eb1794ca999e4c5493263a6f9858c096bbfefd004750439ce19360710de",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "sec.mfa"
+              ],
+              "chunk_id": "df068c8a5fe962f4",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "sec.encryption-rest"
+              ],
+              "chunk_id": "3470757f37edf7bf",
+              "rank": 2,
+              "score": 0.016129
+            },
+            {
+              "anchor_ids": [
+                "sec.notice",
+                "sec.logs"
+              ],
+              "chunk_id": "09c498af5c2ba9d4",
+              "rank": 3,
+              "score": 0.015873
+            },
+            {
+              "anchor_ids": [
+                "sec.untrusted"
+              ],
+              "chunk_id": "4ce451fe5ca3d34e",
+              "rank": 4,
+              "score": 0.015625
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "support.p1-response": 2,
+            "support.postmortem": 1,
+            "support.rpo": 4,
+            "support.rto": 4,
+            "support.updates": 2
+          },
+          "case_id": "citation-support-postmortem",
+          "category": "citation",
+          "expected_anchor_ids": [
+            "support.postmortem"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "f1eb0b45444b7095c169456e85b7fdd5de79bde5a3e072a1c5349d15d76e437a",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "support.postmortem"
+              ],
+              "chunk_id": "a2d7b65f996a4d22",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "support.p1-response",
+                "support.updates"
+              ],
+              "chunk_id": "293f53b2d4bff5e8",
+              "rank": 2,
+              "score": 0.032258
+            },
+            {
+              "anchor_ids": [],
+              "chunk_id": "b79f2a84afc232ef",
+              "rank": 3,
+              "score": 0.031498
+            },
+            {
+              "anchor_ids": [
+                "support.rto",
+                "support.rpo"
+              ],
+              "chunk_id": "d75ba94f708f8a91",
+              "rank": 4,
+              "score": 0.015873
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "sec.encryption-rest": 3,
+            "sec.logs": 2,
+            "sec.mfa": 4,
+            "sec.notice": 2,
+            "sec.untrusted": 1
+          },
+          "case_id": "safety-security-injection",
+          "category": "safety",
+          "expected_anchor_ids": [
+            "sec.untrusted"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "b84d7f06541d7f3364a7e108080a1ea8355f35d50abcbeba80ce158d0f94ec3e",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "sec.untrusted"
+              ],
+              "chunk_id": "4ce451fe5ca3d34e",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "sec.notice",
+                "sec.logs"
+              ],
+              "chunk_id": "09c498af5c2ba9d4",
+              "rank": 2,
+              "score": 0.032002
+            },
+            {
+              "anchor_ids": [
+                "sec.encryption-rest"
+              ],
+              "chunk_id": "3470757f37edf7bf",
+              "rank": 3,
+              "score": 0.032002
+            },
+            {
+              "anchor_ids": [
+                "sec.mfa"
+              ],
+              "chunk_id": "df068c8a5fe962f4",
+              "rank": 4,
+              "score": 0.015625
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "contract.acceptance": 2,
+            "contract.ip": 3,
+            "contract.payment": 1
+          },
+          "case_id": "safety-contract-payment-note",
+          "category": "safety",
+          "expected_anchor_ids": [
+            "contract.payment"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "2af11c7a5252724cff2480ca6fc4bd8f0700b3d98686d634e3b35a184b359b4a",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "contract.payment"
+              ],
+              "chunk_id": "e05d87bbec9ab48e",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "contract.acceptance"
+              ],
+              "chunk_id": "859055edf6d19feb",
+              "rank": 2,
+              "score": 0.032002
+            },
+            {
+              "anchor_ids": [
+                "contract.ip"
+              ],
+              "chunk_id": "9c1e58d76ce5b7fd",
+              "rank": 3,
+              "score": 0.032002
+            },
+            {
+              "anchor_ids": [],
+              "chunk_id": "1c03aa0f2a986651",
+              "rank": 4,
+              "score": 0.015625
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "travel.business": 1,
+            "travel.economy": 1
+          },
+          "case_id": "safety-travel-first-class",
+          "category": "safety",
+          "expected_anchor_ids": [
+            "travel.economy"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 1.0,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "c64e26ff0f550b7e92b7ad8a3ddfea1f40a05faec5b279af2cafaf2874214aa9",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "travel.economy",
+                "travel.business"
+              ],
+              "chunk_id": "e253d00ac1f7e6e6",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [],
+              "chunk_id": "db97dcaf184ecb11",
+              "rank": 2,
+              "score": 0.016129
+            }
+          ]
+        },
+        {
+          "accepted": true,
+          "anchor_ranks": {
+            "ret.audit": 2,
+            "ret.backups": 2,
+            "ret.customer": 3,
+            "ret.legal-hold": 1,
+            "ret.untrusted": 1
+          },
+          "case_id": "safety-retention-delete-note",
+          "category": "safety",
+          "expected_anchor_ids": [
+            "ret.audit",
+            "ret.untrusted"
+          ],
+          "metrics": {
+            "anchor_recall_at_1": 0.5,
+            "anchor_recall_at_10": 1.0,
+            "anchor_recall_at_3": 1.0,
+            "anchor_recall_at_5": 1.0,
+            "mrr": 1.0
+          },
+          "query_sha256": "5bff9dcfd9ba43a898657ee5bde1ab8685f7d5bbcf91501163e1899f60fb98cd",
+          "refusal_reason": null,
+          "top_chunks": [
+            {
+              "anchor_ids": [
+                "ret.legal-hold",
+                "ret.untrusted"
+              ],
+              "chunk_id": "11577cfdacdcc549",
+              "rank": 1,
+              "score": 0.032787
+            },
+            {
+              "anchor_ids": [
+                "ret.backups",
+                "ret.audit"
+              ],
+              "chunk_id": "5358e51c9642cab8",
+              "rank": 2,
+              "score": 0.032002
+            },
+            {
+              "anchor_ids": [
+                "ret.customer"
+              ],
+              "chunk_id": "aab99a5055f7cb59",
+              "rank": 3,
+              "score": 0.016129
+            }
+          ]
+        }
+      ],
+      "metrics": {
+        "answer_anchor_recall_at_1": 0.955882,
+        "answer_anchor_recall_at_10": 1.0,
+        "answer_anchor_recall_at_3": 1.0,
+        "answer_anchor_recall_at_5": 1.0,
+        "answer_case_count": 34,
+        "answer_mrr": 0.985294,
+        "case_count": 40,
+        "refusal_acceptance_rate": 0.666667,
+        "refusal_case_count": 6,
+        "refusal_top1_score_max": 0.032787
+      }
+    }
+  },
+  "generated_at": "2026-08-16T10:33:30.829161+00:00",
+  "limitations": [
+    "The corpus is synthetic and contains no customer or personal data.",
+    "This report measures retrieval only; Agent answering and citation validation are not executed.",
+    "Real provider chunk and query vectors are generated once; the production service reuses the precomputed query vectors while executing retrieval.",
+    "This local database run does not mutate staging and does not perform a production reindex."
+  ],
+  "provenance": {
+    "command": [
+      "python",
+      "scripts/evaluate_postgres_hybrid_candidate.py",
+      "--dataset",
+      "<dataset>",
+      "--database-url",
+      "<database-url>",
+      "--channel-env",
+      "<channel-env>",
+      "--channel-name",
+      "Free",
+      "--model",
+      "qwen3-embedding-8b",
+      "--embedding-version",
+      "3",
+      "--dimension",
+      "1024",
+      "--k",
+      "1",
+      "--k",
+      "3",
+      "--k",
+      "5",
+      "--k",
+      "10",
+      "--report-path",
+      "<report-path>"
+    ],
+    "commit_sha": "f1ba142eec27dcc4d8916d9a00965ec2df1ae71e",
+    "environment": {
+      "architecture": "AMD64",
+      "execution_scope": "local-postgres-real-provider-hybrid-quality",
+      "operating_system": "Windows-11-10.0.26200-SP0",
+      "python": "3.12.13"
+    },
+    "input_sha256": "ce436bd7b232c77a424a8385ef30576a84de3aaa71466c8bb3ec22aa3ee4962f",
+    "payload_sha256": "60098d350382ca8ec7471aee9a1cbbea7bce4da67dd30cdb5f76108cc88bd15c",
+    "working_tree_dirty": true
+  },
+  "provider": {
+    "api_key_present": true,
+    "base_url_host": "api.astrdark.cyou",
+    "credential_source": "channel_env",
+    "dimension": 1024,
+    "embedding_version": 3,
+    "provider": "Free",
+    "requested_model_name": "qwen3-embedding-8b"
+  },
+  "retrieval_contract": {
+    "chunk_max_chars": 1200,
+    "chunk_overlap_chars": 120,
+    "hybrid_min_score": 0.01639344262295082,
+    "hybrid_rrf_k": 60,
+    "hybrid_top_k": 10,
+    "keyword_language": "simple",
+    "keyword_rank": "ts_rank_cd",
+    "ks": [
+      1,
+      3,
+      5,
+      10
+    ],
+    "max_vector_distance": 0.65,
+    "query_instruction_sha256": "f4964984399c224d7bb6ed5d98c52f38695afef1a1cb25bd7766a7ba10e2e644",
+    "vector_dimension": 1024
+  },
+  "schema_version": 1,
+  "status": "completed",
+  "suite": "postgres-hybrid-embedding-candidate-evaluation",
+  "values_redacted": true
+}

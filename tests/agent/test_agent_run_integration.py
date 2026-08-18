@@ -635,6 +635,27 @@ async def test_terminal_agent_job_failure_projects_run_failed_atomically() -> No
             error_code="agent_graph_result_invalid",
             error_message="The Agent execution failed.",
             diagnostic_code="grounding.citation_excerpt_not_verbatim",
+            failure_metadata={
+                "model_failure": {
+                    "identity": {
+                        "provider": "openai_compatible",
+                        "model_name": "fallback-model",
+                        "model_version": "2026-08-17",
+                        "model_revision": None,
+                    },
+                    "telemetry": {
+                        "provider_request_count": 2,
+                        "usage_request_count": 0,
+                        "prompt_tokens": None,
+                        "completion_tokens": None,
+                        "total_tokens": None,
+                        "repair_request_count": 0,
+                        "fallback_count": 1,
+                        "breaker_state": "open",
+                        "fallback_trigger_code": "model_server_error",
+                    },
+                }
+            },
         )
         assert failure.status == JobStatus.DEAD.value
         status = await service.get_status(
@@ -658,6 +679,14 @@ async def test_terminal_agent_job_failure_projects_run_failed_atomically() -> No
         assert run is not None and run.status == AgentRunStatus.FAILED.value
         assert run.error_code == "agent_graph_result_invalid"
         assert run.finished_at is not None
+        assert run.model_provider == "openai_compatible"
+        assert run.model_name == "fallback-model"
+        assert run.model_version == "2026-08-17"
+        assert run.provider_request_count == 2
+        assert run.provider_usage_request_count == 0
+        assert run.fallback_count == 1
+        assert run.breaker_state == "open"
+        assert run.fallback_trigger_code == "model_server_error"
         assert job is not None and job.status == JobStatus.DEAD.value
         assert events[-1].event_type == "run.finished"
         assert events[-1].public_payload == {

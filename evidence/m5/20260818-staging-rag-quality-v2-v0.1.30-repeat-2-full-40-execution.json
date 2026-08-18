@@ -1,0 +1,137 @@
+{
+  "schema_version": 1,
+  "suite": "staging-real-provider-rag-quality",
+  "status": "failed_system_quality",
+  "namespace": "enterprise-doc-agent-staging",
+  "commit_sha": "6860552fae1d1bbd8a09e7dbe1458a613aa9f601",
+  "image": "ghcr.io/drew-z/enterprise-doc-api@sha256:731055539544faac51ea38bd673ef73d24be8acb6bfa32f59eb8b65b588d13c8",
+  "source_snapshot": {
+    "transport": "in-cluster-api-pod-dev-shm",
+    "archive_sha256": "004afb7851b00f412cc5e13892302d7bbae743e54d06942d5a0650d7429cff19",
+    "working_tree_dirty": false
+  },
+  "dataset": {
+    "version": "enterprise-rag-quality-v2",
+    "sha256": "145df783dba7ee1c533a59de288bb1a9aff6ba3c0bdff7e4617a366dca1a9f5b",
+    "corpus_sha256": "c6887a0ca112cd62499c9d61d5caa9d87e94a4ba6c8770293f9f3a8c6cf54e36",
+    "selected_case_count": 40,
+    "total_case_count": 40
+  },
+  "evaluator": {
+    "version": "m5.rag-quality.v5",
+    "runner_transport": "in-cluster-api-pod"
+  },
+  "configured_routes": {
+    "primary": {
+      "provider": "openai_compatible",
+      "model_name": "glm-5-2",
+      "timeout_seconds": 60.0
+    },
+    "fallback": {
+      "provider": "openai_compatible",
+      "model_name": "DeepSeek-V4-Flash",
+      "timeout_seconds": 60.0
+    }
+  },
+  "observed_provider_routes": [
+    {
+      "provider": "openai_compatible",
+      "model_name": "glm-5-2",
+      "model_version": null,
+      "model_revision": null
+    },
+    {
+      "provider": "openai_compatible",
+      "model_name": "deepseek-ai/DeepSeek-V4-Flash",
+      "model_version": null,
+      "model_revision": null
+    }
+  ],
+  "aggregate": {
+    "report_status": "passed",
+    "all_targets_passed": true,
+    "measured": {
+      "citation_precision": 0.9705882352941176,
+      "citation_recall": 0.9705882352941176,
+      "closed_label_fact_precision": 0.9705882352941176,
+      "fact_recall": 0.9705882352941176,
+      "grounded_fact_rate": 0.9705882352941176,
+      "refusal_precision": 1.0,
+      "refusal_reason_accuracy": 1.0,
+      "refusal_recall": 1.0
+    }
+  },
+  "case_summary": {
+    "passed": 39,
+    "failed": 1,
+    "terminal_status_counts": {
+      "succeeded": 33,
+      "refused": 6,
+      "failed": 1
+    },
+    "failed_cases": [
+      {
+        "case_id": "citation-contract-dispute",
+        "outcome_code": "citation_not_in_candidates",
+        "failure_diagnostic_code": "grounding.citation_chunk_not_in_candidates"
+      }
+    ],
+    "errors_by_code": {
+      "citation_not_in_candidates": 1,
+      "insufficient_evidence": 1,
+      "low_relevance": 5
+    }
+  },
+  "provider_telemetry": {
+    "case_count": 40,
+    "observed_provider_call_case_count": 35,
+    "pre_model_refusal_case_count": 5,
+    "provider_request_count": 47,
+    "usage_request_count": 35,
+    "prompt_tokens": 59023,
+    "completion_tokens": 5908,
+    "total_tokens": 64931,
+    "repair_request_count": 0,
+    "fallback_count": 12,
+    "breaker_state_case_counts": {
+      "closed": 35,
+      "not_applicable": 5
+    },
+    "audit_path": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-repeat-2-full-40-telemetry-audit.json"
+  },
+  "latency_ms": {
+    "min_ms": 18211.939741158858,
+    "p50_ms": 73117.17601609416,
+    "p95_ms": 99596.81234578602,
+    "p99_ms": 100406.45121200942,
+    "max_ms": 100406.45121200942,
+    "sample_count": 40
+  },
+  "report": {
+    "path": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-repeat-2-full-40.json",
+    "file_sha256": "d564137b2c46a9a5f6da76b63247f78200a94ab6972f104800e34281ec67edba",
+    "payload_sha256": "aeffd71b6c4ce90ba7277d2fee9d0018f12cee6f07b6f2ba7781199da9cd9e0a",
+    "payload_seal_valid": true
+  },
+  "execution": {
+    "started_at": "2026-08-18T06:07:52.672752+00:00",
+    "completed_at": "2026-08-18T07:00:11.291862+00:00",
+    "report_produced": true,
+    "evaluator_exit_code": 0
+  },
+  "repeatability": {
+    "baseline_report": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-full-40.json",
+    "dataset_equal": true,
+    "corpus_equal": true,
+    "evaluator_equal": true,
+    "configured_route_equal": true,
+    "observed_route_identity_equal": false,
+    "zero_system_failures": false,
+    "valid_clean_repeat": false
+  },
+  "limitations": [
+    "The evaluator report status reflects aggregate thresholds and remained passed even though one case ended in a system failure; this execution summary therefore marks the run failed_system_quality.",
+    "The fallback provider returned a model identity with a deepseek-ai prefix, while the configured fallback name remained DeepSeek-V4-Flash.",
+    "Representative enterprise-corpus review, independent human approval, provider model revisions, and billing remain outstanding."
+  ]
+}

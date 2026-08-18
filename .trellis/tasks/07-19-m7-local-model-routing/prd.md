@@ -18,8 +18,9 @@ filled with vLLM/GPU evidence without changing the Agent graph contract.
 - **M7-R5**: Embedding routes enforce dimension isolation and reject incompatible indexes.
 - **M7-R6**: Benchmark reports include dataset/evidence hashes, latency, errors, fallback
   count, breaker state, citation validity, cost metadata and limitations.
-- **M7-R7**: GPU/vLLM/quantization throughput and memory remain `blocked_external` until
-  a real hardware run supplies evidence.
+- **M7-R7**: GPU/vLLM/quantization throughput and memory are explicitly excluded from the
+  2026-08-14 release scope; no GPU capacity claim may be made. A future release may reopen
+  this branch only with approved hardware and a pinned benchmark run.
 
 ## Acceptance Criteria
 

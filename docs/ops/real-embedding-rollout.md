@@ -47,6 +47,147 @@ The endpoint must:
 - return one indexed 1024-dimensional finite vector per input;
 - permit the selected enterprise document classification to leave the staging host.
 
+### Free channel challenger validation (2026-08-16)
+
+A concrete local adapter probe was run against the current Free channel without persisting its
+API key. The probe embedded two enterprise-document questions through the project
+`OpenAICompatibleEmbeddingProvider` and verified finite, non-zero vectors:
+
+- Endpoint: `https://api.astrdark.cyou/v1/embeddings`.
+- Requested model: `qwen3-embedding-8b`.
+- Provider-reported model: `xop3qwen8bembedding`.
+- Result: two vectors, each exactly 1024 dimensions.
+
+The same channel also accepted a concrete two-document rerank request at
+`/v1/rerank` with `qwen3-reranker-8b` and ranked the document containing the retention-policy
+answer above an unrelated upload document.
+
+This closes only the provider compatibility probe. It does not replace the currently reviewed
+staging identity (`Qwen/Qwen3-Embedding-4B`, generation version `2`), does not prove corpus
+quality, and does not constitute a staging reindex. If a later reviewed quality decision adopts
+the Free challenger, set these as protected staging Environment variables:
+
+```powershell
+gh variable set STAGING_EMBEDDING_BASE_URL --env staging `
+  --body 'https://api.astrdark.cyou/v1'
+gh variable set STAGING_EMBEDDING_MODEL_NAME --env staging `
+  --body 'qwen3-embedding-8b'
+gh variable set STAGING_EMBEDDING_VERSION --env staging `
+  --body '3'
+```
+
+Because the embedding model identity changes, increment `EMBEDDING__VERSION` from `2` to `3`,
+re-render administrator approvals, run the embedding rollout/reindex Job, and repeat the RAG
+quality gate before accepting the route. Keep the channel key only as `EMBEDDING__API_KEY` in the
+operator-owned Secret; never copy it into repository files, GitHub variables, workflow inputs, or
+evidence.
+
+### Free 8B local vector evaluation (2026-08-16)
+
+The local evaluator in `scripts/evaluate_local_embedding_candidate.py` reused the production text
+parser, 1,200-character chunks with 120-character overlap, 1024-dimensional vectors, and the same
+Qwen query instruction. It evaluated all 40 cases and eight synthetic documents in
+`evaluation/rag_quality_v2.json` without uploading documents, writing the staging database, or
+executing an Agent run. The sealed, credential-free report is
+`evidence/m6/20260816-local-embedding-free8b-v3.json`; an independent repeat is recorded in
+`evidence/m6/20260816-local-embedding-free8b-v3-repeat.json`.
+
+The requested `qwen3-embedding-8b` route produced these vector-only results:
+
+- 34 answer cases: anchor Recall@1 `0.985294`, Recall@3/5 `1.0`, and MRR `1.0`.
+- Hash baseline: anchor Recall@1 `0.161765`, Recall@3 `0.852941`, and MRR `0.496078`.
+- The only incomplete top-1 anchor set was `safety-retention-delete-note`; both expected anchors
+  were present by rank 2.
+- At the current production vector-distance boundary (`cosine >= 0.35`), four of six expected
+  refusal cases still produced a vector candidate (`0.666667`).
+- A diagnostic threshold scan found `cosine >= 0.55` retained complete anchor coverage for all 34
+  answer cases and produced no vector candidate for the six refusal cases in this one synthetic
+  run. This is calibration evidence, not an approved production threshold change.
+- The repeat preserved every top-chunk order, anchor rank, Recall/MRR result, and calibration row.
+  Rounded cosine values moved by at most `0.002834`; no result crossed a scanned threshold.
+
+### Reviewed 4B local vector evaluation (2026-08-16)
+
+The earlier Free-channel scan did not find 4B because the reviewed 4B credentials are kept in a
+separate operator-owned secret, not in `grok-4.5-channel.local.env`. The staging non-secret variable
+still points to `https://ai.hybgzs.com/v1`, and the local secret file identifies
+`Qwen/Qwen3-Embedding-4B`. The sealed report is
+`evidence/m6/20260816-local-embedding-reviewed4b-v2.json`; an independent repeat is recorded in
+`evidence/m6/20260816-local-embedding-reviewed4b-v2-repeat.json`. Neither report contains the key.
+
+Using the same 40-case corpus and retrieval contract, the reviewed 4B route produced Recall@1
+`0.985294`, Recall@3/5 `1.0`, and MRR `1.0`, matching the 8B positive-retrieval results. At the
+current production boundary (`cosine >= 0.35`), 4B produced a vector candidate for one of six
+refusal cases (`0.166667`), versus four of six for 8B (`0.666667`). The 4B route therefore has the
+better observed refusal margin; this is still a local vector-only comparison, not a new staging
+rollout.
+
+The 4B repeat preserved every top-chunk order, anchor rank, and calibration row; rounded cosine
+values moved by at most `0.003658` without crossing a scanned threshold.
+
+### Hybrid vector-evidence admission gate (2026-08-16)
+
+The local hybrid review used the production query stopword/fallback policy, vector distance
+boundary, `top_k=10`, `rrf_k=60`, and RRF acceptance floor. Its keyword score is a deterministic
+local token-overlap approximation, not PostgreSQL `ts_rank_cd`. Sealed reports are:
+
+- `evidence/m6/20260816-local-embedding-reviewed4b-v2-hybrid.json`;
+- `evidence/m6/20260816-local-embedding-free8b-v3-hybrid.json`.
+
+Without an additional admission gate, both routes accepted four of the six refusal cases after
+hybrid fusion (`0.666667`). Three of the 4B false acceptances came from keyword-only rank-1
+candidates meeting the default RRF floor exactly. Requiring at least one candidate to pass the
+existing vector-distance boundary changed the results as follows:
+
+- reviewed 4B: refusal acceptance fell from `0.666667` to `0.166667`;
+- Free 8B: refusal acceptance remained `0.666667` because four cases already passed its vector
+  boundary;
+- both routes retained answer anchor Recall@1 `0.985294`, Recall@3 `1.0`, and MRR `1.0`.
+
+`RETRIEVAL__REQUIRE_VECTOR_EVIDENCE` is therefore enabled in staging and recovery manifests while
+remaining `false` by default for local compatibility and explicit keyword-only tests. When enabled,
+keyword candidates can still improve RRF ordering, but cannot open the retrieval gate without any
+distance-qualified vector evidence. This repository change has not been deployed to staging.
+
+Decision: the 8B route is a strong retrieval-ranking challenger, but version `3` rollout remains
+blocked. Keep staging on the reviewed 4B/version `2` identity; the newly confirmed 4B route is
+currently the stronger candidate on the local refusal metric. Do not change protected variables or
+run a reindex.
+
+### PostgreSQL hybrid retrieval evaluation (2026-08-16)
+
+The database-backed review seeded the same synthetic corpus into an isolated local PostgreSQL 16
+database with pgvector, then called the production `HybridRetrievalService`. Keyword retrieval used
+`websearch_to_tsquery('simple', ...)`, the production natural-language fallback, and `ts_rank_cd`;
+vector filtering, RRF, and admission used the production implementation and constants. The seeded
+tenant was deleted after each route completed. Sealed reports are:
+
+- `evidence/m6/20260816-local-postgres-reviewed4b-v2-hybrid.json`;
+- `evidence/m6/20260816-local-postgres-free8b-v3-hybrid.json`.
+
+The real PostgreSQL path confirmed the vector-evidence gate and made the 4B/8B difference clearer:
+
+- reviewed 4B: refusal acceptance fell from `0.666667` to `0.166667`; answer anchor Recall@1 was
+  `0.955882`, Recall@3/5 was `1.0`, and MRR was `0.985294` with either gate;
+- Free 8B: refusal acceptance remained `0.666667`; answer anchor Recall@1 was `0.926471`,
+  Recall@3/5 was `1.0`, and MRR was `0.970588` with either gate;
+- the 4B gate admitted only `refuse-retention-statute`, while 8B admitted four refusal cases;
+- 4B missed a complete top-1 anchor set on `fact-sla-availability` and
+  `safety-retention-delete-note`; 8B additionally missed `fact-proc-quotes`.
+
+This closes the local database-backed retrieval gate. It is stronger than the earlier token-overlap
+approximation, but it is not a staging quality result: no staging deployment, protected-variable
+change, or reindex occurred. Keep the reviewed 4B/version `2` identity and the vector-evidence gate.
+The next release gate is the complete staging RAG quality suite after the retrieval configuration is
+explicitly approved and deployed. A post-reindex quality gate is required only if a model/version
+change is later approved.
+
+The project currently has no independent reranker implementation or `RERANK__*` configuration.
+The existing RRF step is deterministic candidate fusion, not cross-encoder reranking. Do not add
+the tested rerank endpoint to the runtime ConfigMap until a separate retrieval slice defines its
+timeout, failure fallback, candidate budget, tenant/version filtering, telemetry, and quality
+evaluation contract.
+
 Document chunks are embedded without an instruction. Query embeddings use:
 
 ```text
@@ -66,6 +207,8 @@ gh variable set STAGING_EMBEDDING_BASE_URL --env staging \
   --body 'https://<embedding-provider-host>/v1'
 gh variable set STAGING_EMBEDDING_MODEL_NAME --env staging \
   --body 'Qwen/Qwen3-Embedding-4B'
+gh variable set STAGING_EMBEDDING_VERSION --env staging \
+  --body '2'
 ```
 
 Do not paste the API key into GitHub variables, repository files, issue comments, CI

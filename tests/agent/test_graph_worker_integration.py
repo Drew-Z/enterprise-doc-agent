@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import sys
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
@@ -24,6 +25,8 @@ from enterprise_doc_core.agents import (
     CreateDraftArtifactInput,
     CreateDraftArtifactResult,
     DeterministicGroundedGateway,
+    ModelCallTelemetry,
+    ModelIdentity,
     SearchCandidateResult,
     SearchDocumentInput,
     SearchDocumentResult,
@@ -171,6 +174,31 @@ class DatabaseBackedFakeMcpClient(McpStdioClient):
         )
 
 
+class TelemetryGateway(DeterministicGroundedGateway):
+    async def generate(self, request):
+        output = await super().generate(request)
+        return replace(
+            output,
+            identity=ModelIdentity(
+                provider="openai_compatible",
+                model_name="reviewed-chat-model",
+                model_version="2026-08",
+                model_revision="revision-1",
+            ),
+            telemetry=ModelCallTelemetry(
+                provider_request_count=2,
+                usage_request_count=2,
+                prompt_tokens=30,
+                completion_tokens=8,
+                total_tokens=38,
+                repair_request_count=1,
+                fallback_count=1,
+                breaker_state="open",
+                fallback_trigger_code="model_timeout",
+            ),
+        )
+
+
 async def test_worker_executes_non_publication_graph_to_terminal_artifact() -> None:
     engine = create_database_engine(DatabaseSettings())
     session_factory = create_session_factory(engine)
@@ -216,7 +244,7 @@ async def test_worker_executes_non_publication_graph_to_terminal_artifact() -> N
             settings=settings,
         )
 
-        gateway = DeterministicGroundedGateway()
+        gateway = TelemetryGateway()
 
         def backend_factory(
             execution_context: AgentExecutionContext,
@@ -263,6 +291,19 @@ async def test_worker_executes_non_publication_graph_to_terminal_artifact() -> N
             ).all()
 
         assert run is not None and run.status == AgentRunStatus.SUCCEEDED.value
+        assert run.model_provider == "openai_compatible"
+        assert run.model_name == "reviewed-chat-model"
+        assert run.model_version == "2026-08"
+        assert run.model_revision == "revision-1"
+        assert run.provider_request_count == 2
+        assert run.provider_usage_request_count == 2
+        assert run.prompt_tokens == 30
+        assert run.completion_tokens == 8
+        assert run.total_tokens == 38
+        assert run.repair_request_count == 1
+        assert run.fallback_count == 1
+        assert run.breaker_state == "open"
+        assert run.fallback_trigger_code == "model_timeout"
         assert len(evidence) == 1
         assert len(artifacts) == 1
         assert artifacts[0].status == AgentArtifactStatus.DRAFT_READY.value

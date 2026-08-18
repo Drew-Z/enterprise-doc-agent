@@ -91,11 +91,11 @@ immutable image or rollback evidence. Those remain open manual gates.
 
 ## Slice 10: Real Tiny-Staging Stabilization
 
-- [ ] Make the reviewed migration Job run Alembic followed by idempotent LangGraph
+- [x] Make the reviewed migration Job run Alembic followed by idempotent LangGraph
   checkpointer setup and verification before any application rollout.
-- [ ] Give the tiny single-node profile bounded external-dependency and startup probe
+- [x] Give the tiny single-node profile bounded external-dependency and startup probe
   budgets that match measured Supabase/R2 latency without changing production defaults.
-- [ ] Keep the tiny overlap budget at or below 1 GiB while allowing the Worker enough
+- [x] Keep the tiny overlap budget at or below 1 GiB while allowing the Worker enough
   CPU, memory and startup time to become ready on the 2-vCPU/2-GiB K3s node.
 - [ ] Emit immediate non-secret migration Job status and describe diagnostics when the
   pre-rollout wait fails, then verify the change against the real staging cluster.
@@ -155,3 +155,30 @@ immutable image or rollback evidence. Those remain open manual gates.
 - [ ] Obtain service-owner objective approval, provision the separate recovery target,
   execute the drill, retain sanitized hashed artifacts, and close the gate only if the
   measured values meet the pre-approved objectives.
+
+## Slice 15: Reviewed Staging Fallback Route
+
+- [x] Render an optional OpenAI-compatible fallback base URL and model name into the
+  non-secret ConfigMap only when both protected values are present.
+- [x] Include the fallback route in the backend config hash and administrator-owned
+  Namespace approvals while keeping both API keys exclusively in the Secret.
+- [x] Source fallback routing from protected staging Environment variables without adding
+  workflow-dispatch inputs, then cover configured, absent, and partial-route failures.
+
+## Slice 16: Versioned Embedding Rollout
+
+- [x] Parameterize the embedding generation version from a protected staging Environment
+  variable while retaining version `2` as the compatibility default.
+- [x] Bind the same version through manifest approvals, the embedding rollout validator, and
+  the sanitized release record so a model change cannot reuse an older generation silently.
+- [ ] Validate the Free `qwen3-embedding-8b` candidate only through a versioned reindex and
+  repeated RAG quality gate before replacing the reviewed 4B staging identity.
+
+## Slice 17: Canonical OCI Relay Receiver
+
+- [x] Add a dry-run-first receiver that verifies the relay archive SHA-256 and parses OCI
+  index/manifest descriptors without extracting the archive.
+- [x] Normalize the import base to `docker.io/library/<relay-id>`, import all platforms with
+  digest records, and fail unless every descriptor has a resolvable canonical alias.
+- [x] Bind the receiver script and canonical base into the relay receipt, document the host
+  operation, and regression-test missing-alias failure instead of relying on manual tags.

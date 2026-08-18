@@ -26,10 +26,12 @@ prometheus:
   bearer_token_env: ENTERPRISE_DOC_PROMETHEUS_TOKEN
   step_seconds: 5
   queries:
-    cpu: 100 * avg(rate(container_cpu_usage_seconds_total{namespace="enterprise-doc-agent-staging"}[1m]))
-    memory: 100 * sum(container_memory_working_set_bytes{namespace="enterprise-doc-agent-staging"}) / sum(kube_pod_container_resource_limits{namespace="enterprise-doc-agent-staging",resource="memory"})
-    database_pool: 100 * max(enterprise_doc_database_pool_checked_out / enterprise_doc_database_pool_size)
+    # single-node-4c8g limits: API 2x750m, Worker 1000m, Consumer 750m.
+    cpu: 100 * sum(rate(process_cpu_seconds_total{job=~"enterprise-doc-(api|worker|consumer)"}[1m])) / 3.25
+    # single-node-4c8g limits: API 2x768Mi, Worker 1Gi, Consumer 768Mi.
+    memory: 100 * sum(process_resident_memory_bytes{job=~"enterprise-doc-(api|worker|consumer)"}) / (3.25 * 1024 * 1024 * 1024)
+    database_pool: max(enterprise_doc_database_pool_utilization_percent)
     queue: max(enterprise_doc_queue_oldest_age_seconds)
     redis: max(enterprise_doc_redis_connections)
-    object_store: histogram_quantile(0.95, sum(rate(enterprise_doc_dependency_duration_seconds_bucket{dependency="object_store"}[5m])) by (le))
-    model: histogram_quantile(0.95, sum(rate(enterprise_doc_dependency_duration_seconds_bucket{dependency="model"}[5m])) by (le))
+    object_store: histogram_quantile(0.95, sum(rate(enterprise_doc_dependency_duration_seconds_bucket{dependency="object_store"}[1m])) by (le))
+    model: histogram_quantile(0.95, sum(rate(enterprise_doc_dependency_duration_seconds_bucket{dependency="model"}[1m])) by (le))

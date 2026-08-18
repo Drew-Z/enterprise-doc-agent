@@ -13,6 +13,7 @@ from enterprise_doc_core.config.settings import (
     ObjectStoreSettings,
     ObservabilitySettings,
     RedisSettings,
+    RetrievalSettings,
     UploadSettings,
 )
 
@@ -31,5 +32,6 @@ __all__ = [
     "ObjectStoreSettings",
     "ObservabilitySettings",
     "RedisSettings",
+    "RetrievalSettings",
     "UploadSettings",
 ]

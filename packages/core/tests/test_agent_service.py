@@ -46,6 +46,10 @@ def test_agent_run_fingerprint_is_canonical_and_behavior_versioned() -> None:
     assert agent_run_fingerprint(request=request, agent=agent, model=model) != (
         agent_run_fingerprint(request=request, agent=agent, model=changed_model)
     )
+    changed_revision = changed_model.model_copy(update={"model_revision": "revision-2"})
+    assert agent_run_fingerprint(request=request, agent=agent, model=changed_model) != (
+        agent_run_fingerprint(request=request, agent=agent, model=changed_revision)
+    )
 
 
 def test_agent_settings_bump_only_the_prompt_behavior_version() -> None:

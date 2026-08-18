@@ -26,11 +26,13 @@ def _count(value: object, *, description: str) -> int:
     return value
 
 
-def _validate_reindex_identity(report: dict[str, Any], *, expected_model: str) -> None:
+def _validate_reindex_identity(
+    report: dict[str, Any], *, expected_model: str, expected_version: int
+) -> None:
     if (
         report.get("embedding_model") != expected_model
         or report.get("embedding_dimension") != EXPECTED_DIMENSION
-        or report.get("embedding_version") != EXPECTED_VERSION
+        or report.get("embedding_version") != expected_version
         or report.get("values_redacted") is not True
     ):
         raise EmbeddingRolloutReportError("reindex embedding identity is invalid")
@@ -40,7 +42,10 @@ def validate_embedding_rollout_report(
     path: Path,
     *,
     expected_model: str,
+    expected_version: int = EXPECTED_VERSION,
 ) -> dict[str, Any]:
+    if isinstance(expected_version, bool) or not 1 <= expected_version <= 1000:
+        raise EmbeddingRolloutReportError("expected embedding version must be from 1 to 1000")
     if not path.is_file():
         raise EmbeddingRolloutReportError("embedding rollout report does not exist")
     try:
@@ -63,7 +68,7 @@ def validate_embedding_rollout_report(
         or probe.get("provider") != EXPECTED_PROVIDER
         or probe.get("model") != expected_model
         or probe.get("dimension") != EXPECTED_DIMENSION
-        or probe.get("version") != EXPECTED_VERSION
+        or probe.get("version") != expected_version
         or probe.get("item_count") != 2
         or probe.get("finite") is not True
         or probe.get("nonzero_norms") is not True
@@ -81,7 +86,11 @@ def validate_embedding_rollout_report(
         raise EmbeddingRolloutReportError("embedding reindex attempts must be an array")
 
     for plan, description in ((initial, "initial plan"), (final, "final plan")):
-        _validate_reindex_identity(plan, expected_model=expected_model)
+        _validate_reindex_identity(
+            plan,
+            expected_model=expected_model,
+            expected_version=expected_version,
+        )
         if plan.get("status") != "planned":
             raise EmbeddingRolloutReportError(f"{description} status is invalid")
         _count(plan.get("selected"), description=f"{description} selected")
@@ -94,7 +103,11 @@ def validate_embedding_rollout_report(
     replayed = 0
     for item in attempts:
         attempt = _mapping(item, description="reindex apply attempt")
-        _validate_reindex_identity(attempt, expected_model=expected_model)
+        _validate_reindex_identity(
+            attempt,
+            expected_model=expected_model,
+            expected_version=expected_version,
+        )
         if attempt.get("status") != "applied":
             raise EmbeddingRolloutReportError("reindex apply attempt status is invalid")
         selected = _count(attempt.get("selected"), description="apply selected")
@@ -115,7 +128,7 @@ def validate_embedding_rollout_report(
         "provider": EXPECTED_PROVIDER,
         "model": expected_model,
         "dimension": EXPECTED_DIMENSION,
-        "version": EXPECTED_VERSION,
+        "version": expected_version,
         "probe_item_count": 2,
         "reindex": {
             "status": "completed",
@@ -133,11 +146,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Validate an embedding rollout JSON report")
     parser.add_argument("--input", type=Path, required=True)
     parser.add_argument("--expected-model", required=True)
+    parser.add_argument("--expected-version", type=int, default=EXPECTED_VERSION)
     args = parser.parse_args()
     try:
         summary = validate_embedding_rollout_report(
             args.input,
             expected_model=args.expected_model,
+            expected_version=args.expected_version,
         )
     except EmbeddingRolloutReportError as error:
         raise SystemExit(str(error)) from error

@@ -1,0 +1,121 @@
+{
+  "schema_version": 1,
+  "suite": "staging-real-provider-rag-quality",
+  "status": "passed",
+  "namespace": "enterprise-doc-agent-staging",
+  "commit_sha": "6860552fae1d1bbd8a09e7dbe1458a613aa9f601",
+  "image": "ghcr.io/drew-z/enterprise-doc-api@sha256:731055539544faac51ea38bd673ef73d24be8acb6bfa32f59eb8b65b588d13c8",
+  "source_snapshot": {
+    "transport": "in-cluster-api-pod-dev-shm",
+    "archive_sha256": "004afb7851b00f412cc5e13892302d7bbae743e54d06942d5a0650d7429cff19",
+    "working_tree_dirty": false,
+    "token_issuance": "one short-lived JWT issued in memory for the sole active smoke principal",
+    "secret_material_persisted": false
+  },
+  "dataset": {
+    "version": "enterprise-rag-quality-v2",
+    "sha256": "145df783dba7ee1c533a59de288bb1a9aff6ba3c0bdff7e4617a366dca1a9f5b",
+    "corpus_sha256": "c6887a0ca112cd62499c9d61d5caa9d87e94a4ba6c8770293f9f3a8c6cf54e36",
+    "selected_case_count": 40,
+    "total_case_count": 40
+  },
+  "evaluator": {
+    "version": "m5.rag-quality.v5",
+    "runner_transport": "in-cluster-api-pod"
+  },
+  "provider_routes": [
+    {
+      "role": "primary",
+      "provider": "openai_compatible",
+      "model_name": "glm-5-2",
+      "model_version": null,
+      "model_revision": null
+    },
+    {
+      "role": "fallback",
+      "provider": "openai_compatible",
+      "model_name": "DeepSeek-V4-Flash",
+      "model_version": null,
+      "model_revision": null
+    }
+  ],
+  "aggregate": {
+    "measured": {
+      "citation_precision": 1.0,
+      "citation_recall": 1.0,
+      "closed_label_fact_precision": 1.0,
+      "fact_recall": 1.0,
+      "grounded_fact_rate": 1.0,
+      "refusal_precision": 1.0,
+      "refusal_reason_accuracy": 1.0,
+      "refusal_recall": 1.0
+    },
+    "targets": {
+      "citation_precision": 0.95,
+      "citation_recall": 0.9,
+      "closed_label_fact_precision": 0.95,
+      "fact_recall": 0.9,
+      "grounded_fact_rate": 0.9,
+      "refusal_precision": 1.0,
+      "refusal_reason_accuracy": 1.0,
+      "refusal_recall": 1.0
+    },
+    "all_targets_passed": true
+  },
+  "case_summary": {
+    "passed": 40,
+    "failed": 0,
+    "terminal_status_counts": {
+      "succeeded": 34,
+      "refused": 6
+    },
+    "errors_by_code": {
+      "insufficient_evidence": 1,
+      "low_relevance": 5
+    }
+  },
+  "provider_telemetry": {
+    "source": "agent_run_status_api with explicit zero normalization for five pre-model refusals",
+    "case_count": 40,
+    "observed_provider_call_case_count": 35,
+    "pre_model_refusal_case_count": 5,
+    "provider_request_count": 46,
+    "usage_request_count": 35,
+    "prompt_tokens": 59378,
+    "completion_tokens": 9680,
+    "total_tokens": 69058,
+    "repair_request_count": 0,
+    "fallback_count": 11,
+    "breaker_state_case_counts": {
+      "closed": 34,
+      "open": 1,
+      "not_applicable": 5
+    },
+    "audit_path": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-full-40-telemetry-audit.json"
+  },
+  "latency_ms": {
+    "min_ms": 16631.372175877914,
+    "p50_ms": 66308.79999604076,
+    "p95_ms": 109663.93014509231,
+    "p99_ms": 157177.4684090633,
+    "max_ms": 157177.4684090633,
+    "sample_count": 40
+  },
+  "report": {
+    "path": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-full-40.json",
+    "file_sha256": "1c925d83e0f3e3d646893532b6142c70b6d35d9fb467f023e9531f8d2c24505d",
+    "payload_sha256": "c8ab9e854c372f2732facb7fa9d697f5c7347f55d03b31190b6c415d585c8f45",
+    "payload_seal_valid": true
+  },
+  "execution": {
+    "started_at": "2026-08-18T02:51:46.860268+00:00",
+    "completed_at": "2026-08-18T03:43:04.727010+00:00",
+    "report_produced": true
+  },
+  "limitations": [
+    "This is the first complete synthetic-suite pass after freezing the primary and fallback routes; another complete repeat is required for repeatability evidence.",
+    "Representative sanitized enterprise-corpus review and independent human approval remain outstanding.",
+    "Provider model revisions and billing amounts were not returned.",
+    "The five retrieval-stage refusals intentionally made no provider request and therefore retain nullable provider fields in the sealed report."
+  ]
+}

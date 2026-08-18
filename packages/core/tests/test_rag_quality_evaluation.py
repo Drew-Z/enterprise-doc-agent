@@ -184,6 +184,46 @@ def test_score_uses_stable_anchor_and_does_not_reward_missing_citations(
     assert not missing.passed
 
 
+def test_score_does_not_match_numeric_variant_inside_decimal_threshold(tmp_path: Path) -> None:
+    payload = _dataset_payload()
+    fact_case = payload["cases"][0]
+    assert isinstance(fact_case, dict)
+    fact_case["facts"] = [
+        {
+            "fact_id": "service-credit",
+            "accepted_answers": ["10 percent"],
+            "forbidden_answers": ["5 percent", "20 percent"],
+            "anchor_ids": ["leave.carryover"],
+        }
+    ]
+    loaded = load_rag_quality_dataset(_write_dataset(tmp_path, payload))
+    case = loaded.dataset.cases_by_id["fact-carryover"]
+    observation = RagQualityObservation(
+        terminal_status="succeeded",
+        answer_text=(
+            "When monthly availability is below 99.5 percent but at least 99.0 percent, "
+            "the credit is 10 percent."
+        ),
+        citations=(
+            ObservedCitation(
+                runtime_chunk_id="runtime-chunk-credit",
+                document_key="leave-policy",
+                page=None,
+                heading="Service Credits",
+                excerpt="Employees may carry over up to five unused vacation days.",
+            ),
+        ),
+        duration_ms=80,
+    )
+
+    score = score_rag_quality_case(loaded.dataset, case, observation)
+
+    assert score.matched_fact_ids == ("service-credit",)
+    assert score.forbidden_fact_ids == ()
+    assert score.closed_label_fact_precision == 1.0
+    assert score.passed
+
+
 def test_score_credits_every_stable_anchor_covered_by_one_citation(tmp_path: Path) -> None:
     payload = _dataset_payload()
     document = payload["documents"][0]

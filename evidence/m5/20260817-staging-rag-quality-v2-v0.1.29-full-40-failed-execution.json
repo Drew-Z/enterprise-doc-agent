@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "suite": "staging-real-provider-rag-quality",
+  "status": "failed",
+  "namespace": "enterprise-doc-agent-staging",
+  "commit_sha": "a1d6326b556bd15b5fc3bec9411c844d2e602336",
+  "image": "ghcr.io/drew-z/enterprise-doc-api@sha256:8da2b7098e34122ec8d0ce29c8a80a954bb5a266e2452553b409644ba37b8df5",
+  "source_snapshot": {
+    "transport": "in-cluster-api-pod-dev-shm",
+    "working_tree_dirty": false,
+    "token_issuance": "one short-lived JWT issued in memory for the sole active smoke principal",
+    "secret_material_persisted": false
+  },
+  "dataset": {
+    "version": "enterprise-rag-quality-v2",
+    "sha256": "145df783dba7ee1c533a59de288bb1a9aff6ba3c0bdff7e4617a366dca1a9f5b",
+    "corpus_sha256": "c6887a0ca112cd62499c9d61d5caa9d87e94a4ba6c8770293f9f3a8c6cf54e36",
+    "selected_case_count": 40,
+    "total_case_count": 40
+  },
+  "evaluator": {
+    "version": "m5.rag-quality.v5",
+    "runner_transport": "in-cluster-api-pod"
+  },
+  "provider_routes": [
+    {
+      "provider": "openai_compatible",
+      "model_name": "z-ai/glm-5.2",
+      "model_version": null,
+      "model_revision": null
+    },
+    {
+      "provider": "openai_compatible",
+      "model_name": "glm-5.2",
+      "model_version": null,
+      "model_revision": null
+    }
+  ],
+  "aggregate": {
+    "measured": {
+      "citation_precision": 0.4411764705882353,
+      "citation_recall": 0.4411764705882353,
+      "closed_label_fact_precision": 0.4411764705882353,
+      "fact_recall": 0.4411764705882353,
+      "grounded_fact_rate": 0.4411764705882353,
+      "refusal_precision": 1.0,
+      "refusal_reason_accuracy": 1.0,
+      "refusal_recall": 1.0
+    },
+    "targets": {
+      "citation_precision": 0.95,
+      "citation_recall": 0.9,
+      "closed_label_fact_precision": 0.95,
+      "fact_recall": 0.9,
+      "grounded_fact_rate": 0.9,
+      "refusal_precision": 1.0,
+      "refusal_reason_accuracy": 1.0,
+      "refusal_recall": 1.0
+    },
+    "all_targets_passed": false
+  },
+  "case_summary": {
+    "passed": 21,
+    "failed": 19,
+    "terminal_status_counts": {
+      "succeeded": 15,
+      "refused": 6,
+      "failed": 19
+    },
+    "errors_by_code": {
+      "insufficient_evidence": 1,
+      "low_relevance": 5,
+      "model_server_error": 19
+    }
+  },
+  "provider_telemetry": {
+    "source": "agent_run_status_api",
+    "case_count": 40,
+    "observed_case_count": 16,
+    "provider_request_count": null,
+    "usage_request_count": null,
+    "prompt_tokens": null,
+    "completion_tokens": null,
+    "total_tokens": null,
+    "repair_request_count": null,
+    "fallback_count": null,
+    "breaker_states": []
+  },
+  "latency_ms": {
+    "min_ms": 17953.074460150674,
+    "p50_ms": 79241.93833302706,
+    "p95_ms": 102632.85258901305,
+    "p99_ms": 111404.41740397364,
+    "max_ms": 111404.41740397364,
+    "sample_count": 40
+  },
+  "report": {
+    "path": "evidence/m5/20260817-staging-rag-quality-v2-v0.1.29-full-40-failed.json",
+    "file_sha256": "11cd79fdfd8322a273ce9c7abd1d2f12cd3f35bf6041a27660e877918b1bb1af",
+    "payload_sha256": "ddcb15a89b3f90df7edadebb86303f2f5978c6f2513324d48eee3221f507b824",
+    "payload_seal_valid": true
+  },
+  "execution": {
+    "started_at": "2026-08-17T10:39:46.855998+00:00",
+    "completed_at": "2026-08-17T11:29:13.112913+00:00",
+    "report_produced": true
+  },
+  "limitations": [
+    "The complete synthetic-suite run failed because 19 Agent runs terminated with model_server_error.",
+    "Two runtime model names were observed, so the evaluated route was not frozen to one model identity.",
+    "Complete provider usage, fallback, breaker and billing telemetry was not available for this run.",
+    "Representative sanitized enterprise-corpus review and independent human approval remain outstanding."
+  ]
+}

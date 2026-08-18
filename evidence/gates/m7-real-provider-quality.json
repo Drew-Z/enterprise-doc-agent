@@ -3,13 +3,12 @@
   "milestone": "M7",
   "requirement": "M7-R6",
   "owner": "model evaluation owner",
-  "blocking_reason": "The real openai_compatible/grok-4.5 route passed three consecutive targeted runs and a 12-of-12 bounded suite on release v0.1.25. Its first full 40-case run completed 35 of 40 cases and missed the approved fact, citation, and grounding thresholds, although all refusal metrics were 1.0. The route still does not expose a provider model revision, token usage, cost, fallback count, or breaker state. Full-suite repeatability, representative-corpus coverage, and human review remain absent.",
+  "blocking_reason": "The frozen post-v0.1.30 primary glm-5-2 and configured fallback DeepSeek-V4-Flash routes have one clean aggregate pass, but repeatability is not established. One follow-up aborted after 14 cases on a control-plane TimeoutError, and two complete follow-ups each contained one system failure in a different case while aggregate thresholds still passed. The observed fallback identity also drifted to deepseek-ai/DeepSeek-V4-Flash. M7-R6 remains blocked pending route/failure remediation and a clean repeat, plus provider model revisions and billing or approved rate-derived cost, representative-corpus coverage, and independent human approval.",
   "prerequisites": [
-    "Approve and freeze the provider model revision and fallback route in addition to the current model name",
-    "Resolve or explicitly accept the five failed full-suite cases after human error review",
-    "Remediate approved causes and run the complete 40-case benchmark repeatedly with frozen behavior versions",
-    "Provide provider-reported usage/cost plus fallback and breaker telemetry",
-    "Add an approved representative sanitized corpus alongside the synthetic golden set"
+    "Remediate provider/fallback non-determinism and obtain a second complete 40-case evaluation with zero system failures and stable observed route identities",
+    "Capture provider model revisions and provide provider billing data or an approved rate-derived cost calculation",
+    "Add an approved representative sanitized corpus alongside the synthetic golden set",
+    "Obtain independent human approval of the artifact-backed semantic classification"
   ],
   "required_evidence": [
     "Real provider route identity",
@@ -25,9 +24,29 @@
     "evidence/m5/20260811-rag-quality-v2-remediation-repeat-15.json",
     "evidence/m5/20260811-rag-quality-v2-remediation-repeat-16.json",
     "evidence/m5/20260811-rag-quality-v2-bounded-trial-12.json",
-    "evidence/m5/20260811-rag-quality-v2-full-40.json"
+    "evidence/m5/20260811-rag-quality-v2-full-40.json",
+    "evidence/m5/20260817-staging-rag-quality-v2-full-40.json",
+    "evidence/m5/20260817-staging-rag-quality-v2-full-40-execution.json",
+    "evidence/m5/20260817-staging-rag-quality-v2-repeat-20260817-1-failure.json",
+    "evidence/m5/20260817-staging-rag-quality-v2-full-40-repeat.json",
+    "evidence/m5/20260817-staging-rag-quality-v2-full-40-repeat-execution.json",
+    "evidence/m5/20260817-staging-rag-quality-v2-semantic-review.json",
+    "evidence/m5/20260817-staging-rag-quality-v2-telemetry-probe.json",
+    "evidence/m5/20260817-staging-rag-quality-v2-full-40-telemetry-timeout.json",
+    "evidence/m5/20260817-staging-rag-quality-v2-v0.1.29-full-40-failed.json",
+    "evidence/m5/20260817-staging-rag-quality-v2-v0.1.29-full-40-failed-execution.json",
+    "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-full-40.json",
+    "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-full-40-execution.json",
+    "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-full-40-telemetry-audit.json",
+    "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-repeat-1-control-plane-failure.json",
+    "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-repeat-2-full-40.json",
+    "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-repeat-2-full-40-execution.json",
+    "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-repeat-2-full-40-telemetry-audit.json",
+    "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-repeat-3-full-40.json",
+    "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-repeat-3-full-40-execution.json",
+    "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-repeat-3-full-40-telemetry-audit.json"
   ],
   "state": "open",
   "status": "blocked_external",
-  "review_date": "2026-08-11"
+  "review_date": "2026-08-18"
 }

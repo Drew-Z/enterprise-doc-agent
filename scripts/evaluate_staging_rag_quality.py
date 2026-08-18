@@ -5,12 +5,14 @@ import base64
 import hashlib
 import json
 import os
+import re
 import time
 from collections import Counter
 from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
+from urllib.error import HTTPError, URLError
 from uuid import uuid4
 
 from enterprise_doc_core.evaluation import (
@@ -31,23 +33,55 @@ from enterprise_doc_core.evaluation.rag_quality import (
 from enterprise_doc_core.jobs import is_allowed_job_diagnostic_code
 
 if TYPE_CHECKING:
-    from scripts.staging_smoke import SmokeClient, UrlLibSmokeClient
+    from scripts.staging_smoke import SmokeClient, StagingSmokeFailure, UrlLibSmokeClient
 else:
     try:
-        from scripts.staging_smoke import SmokeClient, UrlLibSmokeClient
+        from scripts.staging_smoke import SmokeClient, StagingSmokeFailure, UrlLibSmokeClient
     except ModuleNotFoundError:
-        from staging_smoke import SmokeClient, UrlLibSmokeClient
+        from staging_smoke import SmokeClient, StagingSmokeFailure, UrlLibSmokeClient
 
 
 ROOT = Path(__file__).resolve().parents[1]
-EVALUATOR_VERSION = "m5.rag-quality.v4"
+EVALUATOR_VERSION = "m5.rag-quality.v6"
 _TERMINAL_STATUSES = frozenset(
     {"cancelled", "expired", "failed", "refused", "rejected", "succeeded"}
 )
+_SAFE_READ_ATTEMPTS = 3
+_SAFE_READ_BACKOFF_SECONDS = (2.0, 4.0)
+_ERROR_CODE_PATTERN = re.compile(r"^[a-z][a-z0-9_]{0,99}$")
 
 
 class StagingRagQualityFailure(RuntimeError):
     pass
+
+
+def _is_transient_safe_read_failure(error: StagingSmokeFailure) -> bool:
+    cause = error.__cause__
+    if isinstance(cause, HTTPError):
+        return False
+    return isinstance(cause, (TimeoutError, URLError))
+
+
+def _request_safe_read_json(
+    client: SmokeClient,
+    path: str,
+    *,
+    deadline: float,
+    monotonic: Callable[[], float],
+    sleep: Callable[[float], None],
+) -> dict[str, Any] | list[dict[str, Any]]:
+    for attempt in range(_SAFE_READ_ATTEMPTS):
+        try:
+            return client.request_json("GET", path)
+        except StagingSmokeFailure as error:
+            if (
+                not _is_transient_safe_read_failure(error)
+                or attempt + 1 >= _SAFE_READ_ATTEMPTS
+                or monotonic() >= deadline
+            ):
+                raise
+            sleep(_SAFE_READ_BACKOFF_SECONDS[attempt])
+    raise AssertionError("safe read retry loop was exhausted")
 
 
 def _required_mapping(value: object, description: str) -> dict[str, Any]:
@@ -66,6 +100,22 @@ def _required_str(payload: dict[str, Any], key: str) -> str:
 def _optional_str(payload: dict[str, Any], key: str) -> str | None:
     value = payload.get(key)
     return value if isinstance(value, str) and value else None
+
+
+def _optional_error_code(payload: dict[str, Any], key: str) -> str | None:
+    value = _optional_str(payload, key)
+    if value is not None and _ERROR_CODE_PATTERN.fullmatch(value) is None:
+        raise StagingRagQualityFailure(f"response contained invalid field {key}")
+    return value
+
+
+def _optional_int(payload: dict[str, Any], key: str) -> int | None:
+    value = payload.get(key)
+    if value is None:
+        return None
+    if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+        raise StagingRagQualityFailure(f"response contained invalid field {key}")
+    return value
 
 
 def _required_int(payload: dict[str, Any], key: str) -> int:
@@ -186,7 +236,13 @@ def _wait_for_ready_version(
     sleep: Callable[[float], None],
 ) -> None:
     while monotonic() < deadline:
-        payload = client.request_json("GET", "/api/agent-runs/ready-document-versions")
+        payload = _request_safe_read_json(
+            client,
+            "/api/agent-runs/ready-document-versions",
+            deadline=deadline,
+            monotonic=monotonic,
+            sleep=sleep,
+        )
         if not isinstance(payload, list):
             raise StagingRagQualityFailure("ready-document response was not a JSON list")
         if any(isinstance(item, dict) and item.get("versionId") == version_id for item in payload):
@@ -205,7 +261,13 @@ def _wait_for_run(
 ) -> dict[str, Any]:
     while monotonic() < deadline:
         status = _required_mapping(
-            client.request_json("GET", f"/api/agent-runs/{run_id}"),
+            _request_safe_read_json(
+                client,
+                f"/api/agent-runs/{run_id}",
+                deadline=deadline,
+                monotonic=monotonic,
+                sleep=sleep,
+            ),
             "Agent status response",
         )
         if _required_str(status, "status") in _TERMINAL_STATUSES:
@@ -298,6 +360,7 @@ def _safe_runtime_identity(status: dict[str, Any]) -> tuple[dict[str, str | None
         "provider": _required_str(status, "modelProvider"),
         "model_name": _required_str(status, "modelName"),
         "model_version": _optional_str(status, "modelVersion"),
+        "model_revision": _optional_str(status, "modelRevision"),
     }
     behavior = {
         "graph": _required_str(status, "graphVersion"),
@@ -305,6 +368,95 @@ def _safe_runtime_identity(status: dict[str, Any]) -> tuple[dict[str, str | None
         "tool_schema": _required_str(status, "toolSchemaVersion"),
     }
     return route, behavior
+
+
+def _safe_provider_telemetry(status: dict[str, Any]) -> dict[str, int | str | None]:
+    breaker_state = _optional_str(status, "breakerState")
+    if breaker_state not in {None, "closed", "open", "half_open"}:
+        raise StagingRagQualityFailure("response contained invalid field breakerState")
+    return {
+        "provider_request_count": _optional_int(status, "providerRequestCount"),
+        "usage_request_count": _optional_int(status, "providerUsageRequestCount"),
+        "prompt_tokens": _optional_int(status, "promptTokens"),
+        "completion_tokens": _optional_int(status, "completionTokens"),
+        "total_tokens": _optional_int(status, "totalTokens"),
+        "repair_request_count": _optional_int(status, "repairRequestCount"),
+        "fallback_count": _optional_int(status, "fallbackCount"),
+        "breaker_state": breaker_state,
+        "fallback_trigger_code": _optional_error_code(status, "fallbackTriggerCode"),
+    }
+
+
+def _aggregate_provider_telemetry(
+    values: list[dict[str, int | str | None]],
+) -> dict[str, Any]:
+    integer_fields = (
+        "provider_request_count",
+        "usage_request_count",
+        "prompt_tokens",
+        "completion_tokens",
+        "total_tokens",
+        "repair_request_count",
+        "fallback_count",
+    )
+    aggregate: dict[str, Any] = {
+        "source": "agent_run_status_api",
+        "case_count": len(values),
+        "observed_case_count": sum(value["provider_request_count"] is not None for value in values),
+    }
+    for field in integer_fields:
+        field_values = [value[field] for value in values]
+        aggregate[field] = (
+            sum(cast(int, value) for value in field_values)
+            if field_values and all(value is not None for value in field_values)
+            else None
+        )
+    aggregate["breaker_states"] = sorted(
+        {
+            cast(str, value["breaker_state"])
+            for value in values
+            if value["breaker_state"] is not None
+        }
+    )
+    aggregate["fallback_trigger_counts"] = dict(
+        sorted(
+            Counter(
+                cast(str, value["fallback_trigger_code"])
+                for value in values
+                if value["fallback_trigger_code"] is not None
+            ).items()
+        )
+    )
+    return aggregate
+
+
+def _cost_metadata(provider_telemetry: dict[str, Any]) -> dict[str, Any]:
+    total_tokens = provider_telemetry["total_tokens"]
+    provider_requests = provider_telemetry["provider_request_count"]
+    usage_requests = provider_telemetry["usage_request_count"]
+    if total_tokens is None:
+        return {
+            "source": "not_available",
+            "prompt_tokens": provider_telemetry["prompt_tokens"],
+            "completion_tokens": provider_telemetry["completion_tokens"],
+            "total_tokens": None,
+            "billing_amount": None,
+            "billing_currency": None,
+            "limitation": (
+                "The evaluated Agent runs did not expose complete provider token usage or billing "
+                "data."
+            ),
+        }
+    usage_complete = provider_requests is not None and usage_requests == provider_requests
+    return {
+        "source": "provider_usage" if usage_complete else "provider_usage_partial",
+        "prompt_tokens": provider_telemetry["prompt_tokens"],
+        "completion_tokens": provider_telemetry["completion_tokens"],
+        "total_tokens": total_tokens,
+        "billing_amount": None,
+        "billing_currency": None,
+        "limitation": "The provider response exposed token usage but did not expose billing data.",
+    }
 
 
 def _thresholds_passed(measured: dict[str, float | None], targets: dict[str, float]) -> bool:
@@ -385,6 +537,7 @@ def run_staging_rag_quality(
     case_results: list[dict[str, Any]] = []
     routes: dict[str, dict[str, str | None]] = {}
     behaviors: dict[str, dict[str, str]] = {}
+    provider_telemetry_values: list[dict[str, int | str | None]] = []
     errors: Counter[str] = Counter()
     for case in selected:
         case_started = monotonic()
@@ -420,6 +573,8 @@ def run_staging_rag_quality(
             sleep=sleep,
         )
         route, behavior = _safe_runtime_identity(status)
+        provider_telemetry = _safe_provider_telemetry(status)
+        provider_telemetry_values.append(provider_telemetry)
         route_key = json.dumps(route, sort_keys=True)
         behavior_key = json.dumps(behavior, sort_keys=True)
         routes[route_key] = route
@@ -479,6 +634,8 @@ def run_staging_rag_quality(
                 "unresolved_citation_count": score.unresolved_citation_count,
                 "unexpected_anchor_ids": list(score.unexpected_anchor_ids),
                 "failure_diagnostic_code": failure_diagnostic_code,
+                "fallback_trigger_code": provider_telemetry["fallback_trigger_code"],
+                "provider_telemetry": provider_telemetry,
                 "metrics": {
                     "fact_recall": score.fact_recall,
                     "closed_label_fact_precision": score.closed_label_fact_precision,
@@ -491,6 +648,8 @@ def run_staging_rag_quality(
         )
 
     aggregate = aggregate_rag_quality_scores(tuple(scores))
+    system_failure_count = sum(score.terminal_status == "failed" for score in scores)
+    provider_telemetry_summary = _aggregate_provider_telemetry(provider_telemetry_values)
     measured = {
         "fact_recall": aggregate.fact_recall,
         "closed_label_fact_precision": aggregate.closed_label_fact_precision,
@@ -526,7 +685,11 @@ def run_staging_rag_quality(
         "schema_version": 1,
         "evaluator_version": EVALUATOR_VERSION,
         "suite": "staging-real-provider-rag-quality",
-        "status": "passed" if _thresholds_passed(measured, loaded.dataset.targets) else "failed",
+        "status": (
+            "passed"
+            if system_failure_count == 0 and _thresholds_passed(measured, loaded.dataset.targets)
+            else "failed"
+        ),
         "coverage": coverage,
         "dataset_version": loaded.dataset.version,
         "dataset_sha256": loaded.dataset_sha256,
@@ -541,15 +704,11 @@ def run_staging_rag_quality(
         "measured": measured,
         "latency_ms": build_percentile_summary(list(aggregate.duration_ms)),
         "errors_by_code": dict(sorted(errors.items())),
+        "system_failure_count": system_failure_count,
         "provider_routes": list(routes.values()),
         "behavior_versions": list(behaviors.values()),
-        "cost_metadata": {
-            "source": "not_available",
-            "limitation": (
-                "The current staging status and artifact APIs do not expose provider token "
-                "usage or billing data."
-            ),
-        },
+        "provider_telemetry": provider_telemetry_summary,
+        "cost_metadata": _cost_metadata(provider_telemetry_summary),
         "cases": case_results,
         "limitations": [
             *loaded.dataset.limitations,

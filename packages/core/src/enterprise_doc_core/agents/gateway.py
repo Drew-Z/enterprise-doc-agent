@@ -4,13 +4,13 @@ import asyncio
 import json
 import math
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import StrEnum
 from typing import Any, Protocol, cast
 from uuid import UUID
 
 import httpx
-from pydantic import BaseModel, ConfigDict, TypeAdapter, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError
 
 from enterprise_doc_core.agents.models import AgentRunTaskType
 from enterprise_doc_core.agents.schemas import (
@@ -20,6 +20,7 @@ from enterprise_doc_core.agents.schemas import (
     GroundedModelPayload,
     GroundedModelRequest,
     JsonSchemaNode,
+    ModelCallTelemetry,
     ModelIdentity,
     QuestionAnswerModelOutput,
     StructuredExtractionModelOutput,
@@ -33,8 +34,16 @@ class ModelGatewayError(Exception):
     retryable = False
     default_message = "The model gateway could not complete the request."
 
-    def __init__(self, message: str | None = None) -> None:
+    def __init__(
+        self,
+        message: str | None = None,
+        *,
+        identity: ModelIdentity | None = None,
+        telemetry: ModelCallTelemetry | None = None,
+    ) -> None:
         self.message = message or self.default_message
+        self.identity = identity
+        self.telemetry = telemetry or ModelCallTelemetry()
         super().__init__(self.message)
 
 
@@ -251,8 +260,18 @@ class RoutedChatModelGateway:
         permit = await self.breaker.allow_request()
         if permit is None:
             if self.fallback is None:
-                raise ModelCircuitOpenError()
-            return await self._generate_fallback(request, deadline=deadline)
+                raise _with_failure_telemetry(
+                    ModelCircuitOpenError(),
+                    descriptor=self.primary_descriptor,
+                    breaker_state=self.breaker.state,
+                    fallback_trigger_code=ModelCircuitOpenError.code,
+                )
+            return await self._generate_fallback(
+                request,
+                deadline=deadline,
+                prior_request_count=0,
+                fallback_trigger_code=ModelCircuitOpenError.code,
+            )
         try:
             output = await self._generate_before_deadline(
                 self.primary,
@@ -261,41 +280,109 @@ class RoutedChatModelGateway:
             )
         except _RouteDeadlineExceeded as error:
             await self.breaker.record_retryable_failure(permit)
-            raise ModelTimeoutError() from error
+            raise _with_failure_telemetry(
+                ModelTimeoutError(),
+                descriptor=self.primary_descriptor,
+                provider_request_count=1,
+                breaker_state=self.breaker.state,
+                fallback_trigger_code=ModelTimeoutError.code,
+            ) from error
         except ModelGatewayError as error:
             if not error.retryable:
                 await self.breaker.abort_probe(permit)
+                _with_failure_telemetry(
+                    error,
+                    descriptor=self.primary_descriptor,
+                    provider_request_count=1,
+                    breaker_state=self.breaker.state,
+                )
                 raise
             await self.breaker.record_retryable_failure(permit)
             if self.fallback is None:
+                _with_failure_telemetry(
+                    error,
+                    descriptor=self.primary_descriptor,
+                    provider_request_count=1,
+                    breaker_state=self.breaker.state,
+                    fallback_trigger_code=error.code,
+                )
                 raise
-            return await self._generate_fallback(request, deadline=deadline)
+            return await self._generate_fallback(
+                request,
+                deadline=deadline,
+                prior_request_count=1,
+                fallback_trigger_code=error.code,
+            )
         except BaseException:
             await self.breaker.abort_probe(permit)
             raise
         else:
             await self.breaker.record_success(permit)
-            return output
+            return _with_route_telemetry(output, breaker_state=self.breaker.state)
 
     async def _generate_fallback(
         self,
         request: GroundedModelRequest,
         *,
         deadline: float | None,
+        prior_request_count: int,
+        fallback_trigger_code: str | None,
     ) -> GroundedModelOutput:
         if self.fallback is None:
-            raise ModelCircuitOpenError()
+            raise _with_failure_telemetry(
+                ModelCircuitOpenError(),
+                descriptor=self.primary_descriptor,
+                provider_request_count=prior_request_count,
+                breaker_state=self.breaker.state,
+                fallback_trigger_code=fallback_trigger_code,
+            )
         if deadline is not None and asyncio.get_running_loop().time() >= deadline:
-            raise ModelTimeoutError()
+            descriptor = (
+                self.primary_descriptor if prior_request_count else self.fallback_descriptor
+            )
+            assert descriptor is not None
+            raise _with_failure_telemetry(
+                ModelTimeoutError(),
+                descriptor=descriptor,
+                provider_request_count=prior_request_count,
+                breaker_state=self.breaker.state,
+                fallback_trigger_code=fallback_trigger_code,
+            )
         self.fallback_count += 1
         try:
-            return await self._generate_before_deadline(
+            output = await self._generate_before_deadline(
                 self.fallback,
                 request,
                 deadline=deadline,
             )
+            return _with_route_telemetry(
+                output,
+                provider_request_count=prior_request_count,
+                fallback_count=1,
+                breaker_state=self.breaker.state,
+                fallback_trigger_code=fallback_trigger_code,
+            )
         except _RouteDeadlineExceeded as error:
-            raise ModelTimeoutError() from error
+            assert self.fallback_descriptor is not None
+            raise _with_failure_telemetry(
+                ModelTimeoutError(),
+                descriptor=self.fallback_descriptor,
+                provider_request_count=prior_request_count + 1,
+                fallback_count=1,
+                breaker_state=self.breaker.state,
+                fallback_trigger_code=fallback_trigger_code,
+            ) from error
+        except ModelGatewayError as error:
+            assert self.fallback_descriptor is not None
+            _with_failure_telemetry(
+                error,
+                descriptor=self.fallback_descriptor,
+                provider_request_count=prior_request_count + 1,
+                fallback_count=1,
+                breaker_state=self.breaker.state,
+                fallback_trigger_code=fallback_trigger_code,
+            )
+            raise
 
     @staticmethod
     async def _generate_before_deadline(
@@ -460,11 +547,29 @@ class _OpenAIChoice(BaseModel):
     message: _OpenAIMessage
 
 
+class _OpenAIUsage(BaseModel):
+    model_config = ConfigDict(extra="ignore", strict=True)
+
+    prompt_tokens: int | None = Field(default=None, ge=0)
+    completion_tokens: int | None = Field(default=None, ge=0)
+    total_tokens: int | None = Field(default=None, ge=0)
+
+
 class _OpenAIResponse(BaseModel):
     model_config = ConfigDict(extra="ignore", strict=True)
 
     model: str | None = None
+    system_fingerprint: str | None = Field(default=None, max_length=128)
     choices: list[_OpenAIChoice]
+    usage: _OpenAIUsage | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class _OpenAICompletion:
+    content: str
+    model: str | None
+    model_revision: str | None
+    usage: _OpenAIUsage | None
 
 
 _OUTPUT_ADAPTER: TypeAdapter[GroundedModelPayload] = TypeAdapter(GroundedModelPayload)
@@ -514,26 +619,32 @@ class OpenAICompatibleChatGateway:
         self,
         request: GroundedModelRequest,
     ) -> GroundedModelOutput:
-        first_content, first_model = await self._request_content(request)
+        responses = [await self._request_content(request)]
+        first = responses[0]
         try:
-            payload = _parse_model_payload(first_content, expected_task=request.task_type)
+            payload = _parse_model_payload(first.content, expected_task=request.task_type)
             repaired = False
-            model_name = first_model
+            model_name = first.model
+            model_revision = first.model_revision
         except _RepairableOutputError as first_error:
-            repaired_content, repaired_model = await self._request_content(
-                request,
-                invalid_content=first_content,
-                repair_issues=first_error.issues,
+            responses.append(
+                await self._request_content(
+                    request,
+                    invalid_content=first.content,
+                    repair_issues=first_error.issues,
+                )
             )
+            repaired_response = responses[-1]
             try:
                 payload = _parse_model_payload(
-                    repaired_content,
+                    repaired_response.content,
                     expected_task=request.task_type,
                 )
             except _RepairableOutputError as error:
                 raise ModelOutputSchemaError() from error
             repaired = True
-            model_name = repaired_model
+            model_name = repaired_response.model
+            model_revision = repaired_response.model_revision
         if request.behavior_versions.prompt_version in {"m4.v8", "m4.v9"}:
             payload, identifiers_normalized = _normalize_known_citation_versions(
                 payload,
@@ -553,15 +664,18 @@ class OpenAICompatibleChatGateway:
                 separators=(",", ":"),
                 sort_keys=True,
             )
-            repaired_content, repaired_model = await self._request_content(
-                request,
-                invalid_content=citation_source,
-                repair_issues=citation_issues,
-                citation_only=True,
+            responses.append(
+                await self._request_content(
+                    request,
+                    invalid_content=citation_source,
+                    repair_issues=citation_issues,
+                    citation_only=True,
+                )
             )
+            repaired_response = responses[-1]
             try:
                 repaired_payload = _parse_model_payload(
-                    repaired_content,
+                    repaired_response.content,
                     expected_task=request.task_type,
                 )
             except _RepairableOutputError as error:
@@ -572,7 +686,8 @@ class OpenAICompatibleChatGateway:
                 request=request,
             )
             repaired = True
-            model_name = repaired_model
+            model_name = repaired_response.model
+            model_revision = repaired_response.model_revision
         if request.behavior_versions.prompt_version == "m4.v9":
             payload, answer_projected = _project_direct_qa_answer(
                 payload,
@@ -585,8 +700,10 @@ class OpenAICompatibleChatGateway:
                 provider=ModelProvider.OPENAI_COMPATIBLE.value,
                 model_name=model_name or cast(str, self.settings.model_name),
                 model_version=self.settings.model_version,
+                model_revision=model_revision or self.settings.model_revision,
             ),
             repaired=repaired,
+            telemetry=_aggregate_openai_telemetry(responses),
         )
 
     async def healthcheck(self) -> bool:
@@ -612,7 +729,7 @@ class OpenAICompatibleChatGateway:
         invalid_content: str | None = None,
         repair_issues: tuple[str, ...] = (),
         citation_only: bool = False,
-    ) -> tuple[str, str | None]:
+    ) -> _OpenAICompletion:
         assert self.settings.api_key is not None
         assert self.settings.model_name is not None
         messages = _request_messages(
@@ -658,7 +775,79 @@ class OpenAICompatibleChatGateway:
             raise ModelContractError() from error
         if not envelope.choices:
             raise ModelContractError("The model provider returned no choices.")
-        return envelope.choices[0].message.content, envelope.model
+        return _OpenAICompletion(
+            content=envelope.choices[0].message.content,
+            model=envelope.model,
+            model_revision=envelope.system_fingerprint,
+            usage=envelope.usage,
+        )
+
+
+def _aggregate_openai_telemetry(
+    responses: list[_OpenAICompletion],
+) -> ModelCallTelemetry:
+    usages = [response.usage for response in responses if response.usage is not None]
+
+    def token_sum(field: str) -> int | None:
+        values = [getattr(usage, field) for usage in usages]
+        present = [value for value in values if value is not None]
+        return sum(present) if present else None
+
+    return ModelCallTelemetry(
+        provider_request_count=len(responses),
+        usage_request_count=len(usages),
+        prompt_tokens=token_sum("prompt_tokens"),
+        completion_tokens=token_sum("completion_tokens"),
+        total_tokens=token_sum("total_tokens"),
+        repair_request_count=max(0, len(responses) - 1),
+    )
+
+
+def _with_route_telemetry(
+    output: GroundedModelOutput,
+    *,
+    provider_request_count: int = 0,
+    fallback_count: int = 0,
+    breaker_state: CircuitState,
+    fallback_trigger_code: str | None = None,
+) -> GroundedModelOutput:
+    update = {
+        "provider_request_count": (
+            output.telemetry.provider_request_count + provider_request_count
+        ),
+        "fallback_count": output.telemetry.fallback_count + fallback_count,
+        "breaker_state": breaker_state.value,
+    }
+    if fallback_trigger_code is not None:
+        update["fallback_trigger_code"] = fallback_trigger_code
+    telemetry = output.telemetry.model_copy(update=update)
+    return replace(output, telemetry=telemetry)
+
+
+def _with_failure_telemetry(
+    error: ModelGatewayError,
+    *,
+    descriptor: ModelRouteDescriptor,
+    provider_request_count: int = 0,
+    fallback_count: int = 0,
+    breaker_state: CircuitState,
+    fallback_trigger_code: str | None = None,
+) -> ModelGatewayError:
+    error.identity = ModelIdentity(
+        provider=descriptor.provider,
+        model_name=descriptor.model_name,
+        model_version=descriptor.model_version,
+        model_revision=descriptor.model_revision,
+    )
+    update = {
+        "provider_request_count": (error.telemetry.provider_request_count + provider_request_count),
+        "fallback_count": error.telemetry.fallback_count + fallback_count,
+        "breaker_state": breaker_state.value,
+    }
+    if fallback_trigger_code is not None:
+        update["fallback_trigger_code"] = fallback_trigger_code
+    error.telemetry = error.telemetry.model_copy(update=update)
+    return error
 
 
 def _raise_for_provider_status(status_code: int) -> None:

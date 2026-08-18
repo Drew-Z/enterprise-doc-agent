@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
+from typing import Any, cast
 from uuid import UUID
 
 import pytest
@@ -14,13 +16,21 @@ from enterprise_doc_core.documents.retrieval import (
     reciprocal_rank_fusion,
     validate_citations,
 )
-from enterprise_doc_core.documents.retrieval_service import format_embedding_query
+from enterprise_doc_core.documents.retrieval_service import (
+    HybridRetrievalService,
+    format_embedding_query,
+)
 
 TENANT = UUID("00000000-0000-0000-0000-000000000001")
 OTHER_TENANT = UUID("00000000-0000-0000-0000-000000000002")
 VERSION = UUID("00000000-0000-0000-0000-000000000010")
 OTHER_VERSION = UUID("00000000-0000-0000-0000-000000000011")
 GENERATION = UUID("00000000-0000-0000-0000-000000000020")
+
+
+class StaticEmbeddingProvider:
+    async def embed(self, texts: Sequence[str]) -> tuple[tuple[float, ...], ...]:
+        return tuple((1.0,) * 1024 for _ in texts)
 
 
 def candidate(
@@ -83,6 +93,35 @@ def test_refusal_is_returned_for_empty_or_low_evidence() -> None:
         decide_retrieval((candidate(1),), min_score=-0.1)
     with pytest.raises(ValueError, match="min_candidates"):
         decide_retrieval((candidate(1),), min_candidates=0)
+
+
+async def test_vector_evidence_gate_rejects_keyword_only_candidates(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    service = HybridRetrievalService(
+        session_factory=cast(Any, object()),
+        embedding_provider=StaticEmbeddingProvider(),
+        require_vector_evidence=True,
+    )
+
+    async def keyword_recall(**_: object) -> tuple[RetrievalCandidate, ...]:
+        return (candidate(1),)
+
+    async def vector_recall(**_: object) -> tuple[RetrievalCandidate, ...]:
+        return ()
+
+    monkeypatch.setattr(service, "_keyword_recall", keyword_recall)
+    monkeypatch.setattr(service, "_vector_recall", vector_recall)
+
+    decision = await service._retrieve(
+        tenant_id=TENANT,
+        document_version_id=VERSION,
+        query="keyword-only evidence",
+    )
+
+    assert decision.accepted is False
+    assert decision.refusal_reason is RefusalReason.LOW_RELEVANCE
+    assert [item.chunk_id for item in decision.candidates] == [candidate(1).chunk_id]
 
 
 def test_citation_gate_requires_authorized_candidate_and_excerpt() -> None:

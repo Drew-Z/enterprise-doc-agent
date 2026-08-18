@@ -1,0 +1,76 @@
+{
+  "blocking_reason": null,
+  "commit_sha": "64b3f0fce4637c76d806bb15879b05ec99bddb00",
+  "deployment_profile": "single-node-4c8g",
+  "embedding": {
+    "base_url": "https://ai.hybgzs.com/v1",
+    "dimension": 1024,
+    "kind": "embedding",
+    "name": "Qwen/Qwen3-Embedding-4B",
+    "provider": "openai_compatible",
+    "rollout": {
+      "dimension": 1024,
+      "model": "Qwen/Qwen3-Embedding-4B",
+      "probe_item_count": 2,
+      "provider": "openai_compatible",
+      "reindex": {
+        "apply_attempts": 0,
+        "created": 0,
+        "final_selected": 0,
+        "initial_selected": 0,
+        "replayed": 0,
+        "status": "completed"
+      },
+      "status": "validated",
+      "values_redacted": true,
+      "version": 2
+    },
+    "rollout_report": {
+      "path": "tmp/staging-sanitized-64b3f0fce4637c76d806bb15879b05ec99bddb00/staging-embedding-rollout.json",
+      "sha256": "9cb3482a010437fac6b98bf3803627d2214b0bbf3bb2eeaeba7fc35599b61acd"
+    },
+    "status": "validated",
+    "version": 2
+  },
+  "evidence_manifest": {
+    "path": "tmp/staging-evidence-64b3f0fce4637c76d806bb15879b05ec99bddb00.manifest.json",
+    "sha256": "25fc0f3cbaed251ccf3a3c8a51c56d8db78ef37d8613de21b956028efddebdca"
+  },
+  "failure_reason": null,
+  "fallback_model": {
+    "base_url": "https://new-api.abrdns.com/v1",
+    "name": "DeepSeek-V4-Flash",
+    "provider": "openai_compatible",
+    "status": "validated",
+    "timeout_seconds": 60.0,
+    "version": null
+  },
+  "generated_at": "2026-08-18T14:30:13.687948+00:00",
+  "image_digests": {
+    "api": "sha256:47374f763618e179da9b8cda8c993a13463fd48bf62c95e423924d7ed6a4471d",
+    "consumer": "sha256:988c9018946215de8b60de2307815b76a1d5658baa5926d7f9589f627dce61ba",
+    "web": "sha256:dacc722952d0b2ccac49ee0e26692c7ed960aa83a91ebc8ed2505f2afcbe42a8",
+    "worker": "sha256:178ae19c4adc65573e721124692ed16ee88767eef6e76158786af7d10e64f6dd"
+  },
+  "model": {
+    "base_url": "https://ai.futureppo.top/v1",
+    "name": "glm-5-2",
+    "provider": "openai_compatible",
+    "status": "validated"
+  },
+  "outcomes": {
+    "authenticated_smoke": "success",
+    "cluster_smoke": "success",
+    "embedding_rollout": "success",
+    "migration": "success",
+    "prerequisites": "success",
+    "rollout": "success",
+    "workloads": "success"
+  },
+  "registry_prefix": "ghcr.io/drew-z",
+  "repository": "Drew-Z/enterprise-doc-agent",
+  "run_attempt": "1",
+  "run_id": "32148038508",
+  "schema_version": 3,
+  "status": "passed"
+}

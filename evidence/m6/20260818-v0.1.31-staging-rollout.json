@@ -1,0 +1,185 @@
+{
+  "schema_version": 1,
+  "evidence_type": "staging-release",
+  "evidence_id": "m6-staging-rollout-20260818-v0.1.31",
+  "milestone": "M6",
+  "requirement_ids": ["M6-R4"],
+  "status": "passed",
+  "release": "v0.1.31",
+  "commit_sha": "64b3f0fce4637c76d806bb15879b05ec99bddb00",
+  "workflow": {
+    "repository": "Drew-Z/enterprise-doc-agent",
+    "run_id": "32148038508",
+    "run_attempt": 1,
+    "job_id": "95746580664",
+    "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/32148038508",
+    "started_at": "2026-08-18T14:23:43+00:00",
+    "completed_at": "2026-08-18T14:30:25+00:00"
+  },
+  "workflow_artifact": {
+    "artifact_id": "9328833756",
+    "name": "staging-release-64b3f0fce4637c76d806bb15879b05ec99bddb00",
+    "size_bytes": 39163,
+    "digest": "sha256:55e0b75d06f94c433cdc2fffcac1bc3c143b465f606c2462d218f2c48501c652",
+    "downloaded_by_artifact_id": true,
+    "manifest_files_verified": 20
+  },
+  "environment": {
+    "provider": "tencent-cloud",
+    "region": "ap-guangzhou-7",
+    "profile": "single-node-4c8g",
+    "namespace": "enterprise-doc-agent-staging"
+  },
+  "scope": {
+    "gpu_vllm": "excluded",
+    "second_server_migration_drill": "excluded",
+    "server_side_claude_code": "disabled"
+  },
+  "image_digests": {
+    "api": "sha256:47374f763618e179da9b8cda8c993a13463fd48bf62c95e423924d7ed6a4471d",
+    "worker": "sha256:178ae19c4adc65573e721124692ed16ee88767eef6e76158786af7d10e64f6dd",
+    "consumer": "sha256:988c9018946215de8b60de2307815b76a1d5658baa5926d7f9589f627dce61ba",
+    "web": "sha256:dacc722952d0b2ccac49ee0e26692c7ed960aa83a91ebc8ed2505f2afcbe42a8"
+  },
+  "oci_relay": {
+    "receiver_commit": "64b3f0fce4637c76d806bb15879b05ec99bddb00",
+    "normalized_archive_imported": true,
+    "verified_descriptor_count_per_image": 3,
+    "imports": [
+      {
+        "component": "api",
+        "archive_sha256": "f4688fbaa8cc336b7ed8a0f56f1ca67dd9625037cd06f13512cb12d3d5592822",
+        "report_path": "evidence/m6/20260818-v0.1.31-staging-release/oci-import-api.json",
+        "report_sha256": "3ea7381b2cfd9c0c258b572d6378ab2aa166af613b7f67880a5cf90423c92078"
+      },
+      {
+        "component": "worker",
+        "archive_sha256": "a09c6dfa2fb38861ab250e4dfe20b3bc114bad9e2ef4a337693c83fe67f4feaa",
+        "report_path": "evidence/m6/20260818-v0.1.31-staging-release/oci-import-worker.json",
+        "report_sha256": "7d89aab1db6d3dca0294ec2f3e9c42b416b1f41c58e5c89cd744f488f7dab4b8"
+      },
+      {
+        "component": "consumer",
+        "archive_sha256": "c63a60d781b52042e5a079cedbb306ebdd0823b3a01ba115a046e62a9df6da6b",
+        "report_path": "evidence/m6/20260818-v0.1.31-staging-release/oci-import-consumer.json",
+        "report_sha256": "9314c6d3b4cadb201f42ba186d8108137fe01cf8cfd08a99ff70fffa363c8364"
+      },
+      {
+        "component": "web",
+        "archive_sha256": "048f4bfcac992128768977e707101078dccc788a383e0252bc396f15de8951e2",
+        "report_path": "evidence/m6/20260818-v0.1.31-staging-release/oci-import-web.json",
+        "report_sha256": "7222e0247d68a62fee8dc16ba2849de1da0fda209a456cbcb2fa06e0110bf780"
+      }
+    ],
+    "cleanup_path": "evidence/m6/20260818-v0.1.31-staging-release/r2-relay-cleanup.json",
+    "cleanup_sha256": "fffeb887f170b7f50bb7d606fc270beeb6053b52eb0082c3972194863a60d35e",
+    "temporary_r2_objects_deleted": true
+  },
+  "prerequisites": {
+    "status": "passed",
+    "live_objects_checked": 28,
+    "approval_keys_checked": 17,
+    "prerequisites_sha256": "4046915e7deb733ac8754281c7353c1bbdf9fa96854ba246f3123f96bab41294",
+    "workloads_server_side_dry_run": "passed"
+  },
+  "migration": {
+    "status": "passed",
+    "alembic_revision": "20260818_0014",
+    "alembic_head": true,
+    "checkpointer_migration_version": 9,
+    "checkpointer_ready": true
+  },
+  "model_routes": {
+    "primary": {
+      "provider": "openai_compatible",
+      "base_url": "https://ai.futureppo.top/v1",
+      "model": "glm-5-2"
+    },
+    "fallback": {
+      "provider": "openai_compatible",
+      "base_url": "https://new-api.abrdns.com/v1",
+      "model": "DeepSeek-V4-Flash",
+      "version": null,
+      "timeout_seconds": 60,
+      "status": "validated"
+    }
+  },
+  "outcomes": {
+    "prerequisites": "passed",
+    "migration": "passed",
+    "workloads": "passed",
+    "rollout": "passed",
+    "embedding_rollout": "passed",
+    "cluster_readiness_smoke": "passed",
+    "authenticated_agent_smoke": "passed"
+  },
+  "embedding": {
+    "provider": "openai_compatible",
+    "base_url": "https://ai.hybgzs.com/v1",
+    "model": "Qwen/Qwen3-Embedding-4B",
+    "version": 2,
+    "dimension": 1024,
+    "probe_item_count": 2,
+    "reindex_status": "completed",
+    "replayed": 0,
+    "rollout_report_path": "evidence/m6/20260818-v0.1.31-staging-release/sanitized/staging-embedding-rollout.json",
+    "rollout_report_sha256": "9cb3482a010437fac6b98bf3803627d2214b0bbf3bb2eeaeba7fc35599b61acd"
+  },
+  "authenticated_smoke": {
+    "scenario": "authenticated-upload-ingestion-agent",
+    "status": "passed",
+    "sample_count": 1,
+    "duration_seconds": 177.16336416592821,
+    "task": "According to the document, what is the evidence retention period?",
+    "expected_citation_evidence": "evidence retention period is thirty days",
+    "steps": [
+      "upload_session_created",
+      "object_uploaded",
+      "upload_completed",
+      "document_ready",
+      "agent_run_created",
+      "agent_run_succeeded",
+      "answer_artifact_listed",
+      "answer_artifact_downloaded",
+      "answer_artifact_sha256_verified",
+      "answer_citation_verified"
+    ],
+    "status_api": {
+      "status": "succeeded",
+      "model_provider": "openai_compatible",
+      "model_name": "glm-5-2",
+      "provider_request_count": 1,
+      "total_tokens": 1811,
+      "fallback_count": 0,
+      "fallback_trigger_code": null,
+      "breaker_state": "closed"
+    },
+    "report_path": "evidence/m6/20260818-v0.1.31-staging-release/sanitized/staging-smoke.json",
+    "report_sha256": "c7bd3aaf4093f68a844d9b355bcc722f1741525a2f5052a345cc6a5331610d55"
+  },
+  "deployment_evidence": {
+    "release_record_path": "evidence/m6/20260818-v0.1.31-staging-release/staging-release-record.json",
+    "release_record_sha256": "8c7fe575cb3c88c4cd2ac782e0c3e058716ff865ee69a19d259ec5d19b06fbfd",
+    "release_record_schema_version": 3,
+    "release_record_status": "passed",
+    "manifest_path": "evidence/m6/20260818-v0.1.31-staging-release/staging-evidence-manifest.json",
+    "manifest_sha256": "25fc0f3cbaed251ccf3a3c8a51c56d8db78ef37d8613de21b956028efddebdca",
+    "manifest_files_verified": 20,
+    "sanitized_directory": "evidence/m6/20260818-v0.1.31-staging-release/sanitized"
+  },
+  "operator_interventions": [
+    {
+      "type": "staging-smoke-token-rotation",
+      "reason": "The previous short-lived token returned HTTP 401 before upload-session creation.",
+      "resolution": "The sole active dedicated smoke membership was verified, and a new token was issued inside the current API Pod and piped directly to the GitHub Environment secret without printing or persistence."
+    }
+  ],
+  "limitations": [
+    "This is a single-node staging rollout, not a highly available production deployment.",
+    "The explicitly excluded second-server migration drill remains outside this release scope.",
+    "GPU and vLLM are explicitly excluded from the supported deployment scope.",
+    "The authenticated smoke validates one concrete business-path execution; it is not a full provider-quality or capacity suite.",
+    "The pinned artifact upload action emits a non-fatal Node 20 deprecation warning under the Node 24 runner."
+  ],
+  "owner": "platform owner"
+}

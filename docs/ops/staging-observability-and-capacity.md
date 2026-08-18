@@ -44,9 +44,12 @@ dependency names, queue/publish results, and business boundary outcomes. Tenant,
 document, run, user, object-key, prompt, and error text are not metric labels.
 
 The `single-node-4c8g` profile also runs a digest-pinned Prometheus behind an internal
-ClusterIP. It scrapes only those three Services every 15 seconds. A `local-path` PVC is
-bounded to 5 GiB and Prometheus independently enforces both seven-day and 4 GB TSDB
-retention. This preserves samples across Pod replacement, but not node or disk loss.
+ClusterIP. It discovers the headless metrics Services every 30 seconds and scrapes every
+API, Worker, and Consumer Pod every 15 seconds, so replicas are not hidden behind a
+load-balanced ClusterIP. Each application registry includes Linux process CPU and
+resident-memory collectors without business identifiers. A `local-path` PVC is bounded
+to 5 GiB and Prometheus independently enforces both seven-day and 4 GB TSDB retention.
+This preserves samples across Pod replacement, but not node or disk loss.
 There is deliberately no public Ingress, NodePort, Grafana or Alertmanager.
 
 Use an operator-only port forward to inspect the retained view:
@@ -61,10 +64,10 @@ curl --fail http://127.0.0.1:19090/api/v1/targets
 curl --fail http://127.0.0.1:19090/api/v1/rules
 ```
 
-All three targets must be present with `health: up`; recording and alert rules must be
-loaded without evaluation errors. Stop the forward after inspection. Retain only the
-target names, aggregate status, image digest and rule counts as evidence, not a raw TSDB
-or unbounded metric dump.
+Every discovered Pod target must be present with `health: up`; recording and alert rules
+must be loaded without evaluation errors. Stop the forward after inspection. Retain only
+the bounded job/target counts, aggregate status, image digest and rule counts as evidence,
+not a raw TSDB or unbounded metric dump.
 
 To prove that Pod replacement keeps the PVC-backed history, record a restart epoch,
 replace the Prometheus Pod, wait for rollout, and query a range spanning that epoch:

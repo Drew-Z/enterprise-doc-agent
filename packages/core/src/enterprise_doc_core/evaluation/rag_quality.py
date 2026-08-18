@@ -245,7 +245,12 @@ def _contains_variant(text: str, variants: tuple[str, ...]) -> bool:
         normalized_variant = _normalize(variant)
         if not normalized_variant:
             continue
-        left_boundary = r"(?<!\w)" if normalized_variant[0].isalnum() else ""
+        if normalized_variant[0].isdigit():
+            # A decimal component is not a standalone numeric answer: for example,
+            # "5 percent" must not match the threshold "99.5 percent".
+            left_boundary = r"(?<![\w.])"
+        else:
+            left_boundary = r"(?<!\w)" if normalized_variant[0].isalnum() else ""
         right_boundary = r"(?!\w)" if normalized_variant[-1].isalnum() else ""
         if re.search(
             f"{left_boundary}{re.escape(normalized_variant)}{right_boundary}",

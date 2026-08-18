@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import threading
-from collections.abc import Callable, Coroutine
+from collections.abc import Callable, Coroutine, Mapping
 from time import perf_counter
 from typing import Any, Protocol, TypeVar
 from uuid import UUID
@@ -50,10 +50,12 @@ class JobHandlerError(Exception):
         message: str | None = None,
         *,
         diagnostic_code: str | None = None,
+        failure_metadata: Mapping[str, Any] | None = None,
     ) -> None:
         self.message = message or type(self).message
         candidate = diagnostic_code or type(self).diagnostic_code
         self.diagnostic_code = candidate if is_allowed_job_diagnostic_code(candidate) else None
+        self.failure_metadata = dict(failure_metadata) if failure_metadata is not None else None
         super().__init__(self.message)
 
 
@@ -277,6 +279,7 @@ class JobDeliveryConsumer:
             raise
         except Exception as error:
             diagnostic_code: str | None = None
+            failure_metadata: Mapping[str, Any] | None = None
             if isinstance(error, DocumentIngestionError):
                 error_code = error.code
                 error_message = error.message
@@ -284,6 +287,7 @@ class JobDeliveryConsumer:
                 error_code = error.code
                 error_message = type(error).message
                 diagnostic_code = error.diagnostic_code
+                failure_metadata = error.failure_metadata
             else:
                 error_code = "job_handler_failed"
                 error_message = "The job handler failed."
@@ -294,6 +298,7 @@ class JobDeliveryConsumer:
                 error_message=error_message,
                 error_class=type(error).__name__,
                 diagnostic_code=diagnostic_code,
+                failure_metadata=failure_metadata,
             )
             return "cancelled" if failure.status == JobStatus.CANCELLED.value else "failed"
         final_status = await self.runtime.succeed(claim)

@@ -9,13 +9,22 @@ rule_files:
 scrape_configs:
   - job_name: enterprise-doc-api
     metrics_path: /metrics
-    static_configs:
-      - targets: ["enterprise-doc-api:8000"]
+    dns_sd_configs:
+      - names: ["enterprise-doc-api-metrics.enterprise-doc-agent-staging.svc.cluster.local"]
+        type: A
+        port: 8000
+        refresh_interval: 30s
   - job_name: enterprise-doc-worker
     metrics_path: /metrics
-    static_configs:
-      - targets: ["enterprise-doc-worker:8081"]
+    dns_sd_configs:
+      - names: ["enterprise-doc-worker-metrics.enterprise-doc-agent-staging.svc.cluster.local"]
+        type: A
+        port: 8081
+        refresh_interval: 30s
   - job_name: enterprise-doc-consumer
     metrics_path: /metrics
-    static_configs:
-      - targets: ["enterprise-doc-consumer:8082"]
+    dns_sd_configs:
+      - names: ["enterprise-doc-consumer-metrics.enterprise-doc-agent-staging.svc.cluster.local"]
+        type: A
+        port: 8082
+        refresh_interval: 30s

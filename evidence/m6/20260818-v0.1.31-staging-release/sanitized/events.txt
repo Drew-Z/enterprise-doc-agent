@@ -1,0 +1,94 @@
+time="2026-08-18T22:30:13+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-08-18T22:30:13+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-08-18T22:30:13+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+LAST SEEN   TYPE     REASON              OBJECT                                          MESSAGE
+22m         Normal   Scheduled           pod/enterprise-doc-web-7b4b7ccc96-5rcg9         Successfully assigned enterprise-doc-agent-staging/enterprise-doc-web-7b4b7ccc96-5rcg9 to vm-0-2-ubuntu
+22m         Normal   Scheduled           pod/enterprise-doc-embedding-rollout-npwt6      Successfully assigned enterprise-doc-agent-staging/enterprise-doc-embedding-rollout-npwt6 to vm-0-2-ubuntu
+22m         Normal   Scheduled           pod/enterprise-doc-migrate-8npdr                Successfully assigned enterprise-doc-agent-staging/enterprise-doc-migrate-8npdr to vm-0-2-ubuntu
+22m         Normal   Scheduled           pod/enterprise-doc-consumer-7bb564d7b7-8kt65    Successfully assigned enterprise-doc-agent-staging/enterprise-doc-consumer-7bb564d7b7-8kt65 to vm-0-2-ubuntu
+22m         Normal   Scheduled           pod/enterprise-doc-api-5bbc9d97dc-wrnsg         Successfully assigned enterprise-doc-agent-staging/enterprise-doc-api-5bbc9d97dc-wrnsg to vm-0-2-ubuntu
+22m         Normal   Scheduled           pod/m5-staging-smoke-gg7ks                      Successfully assigned enterprise-doc-agent-staging/m5-staging-smoke-gg7ks to vm-0-2-ubuntu
+3m3s        Normal   Scheduled           pod/m5-staging-smoke-2k4th                      Successfully assigned enterprise-doc-agent-staging/m5-staging-smoke-2k4th to vm-0-2-ubuntu
+3m20s       Normal   Scheduled           pod/enterprise-doc-embedding-rollout-4hjxp      Successfully assigned enterprise-doc-agent-staging/enterprise-doc-embedding-rollout-4hjxp to vm-0-2-ubuntu
+3m37s       Normal   Scheduled           pod/enterprise-doc-migrate-dbfgz                Successfully assigned enterprise-doc-agent-staging/enterprise-doc-migrate-dbfgz to vm-0-2-ubuntu
+22m         Normal   Scheduled           pod/enterprise-doc-worker-8476c6cb5b-qbrxg      Successfully assigned enterprise-doc-agent-staging/enterprise-doc-worker-8476c6cb5b-qbrxg to vm-0-2-ubuntu
+22m         Normal   Scheduled           pod/enterprise-doc-api-5bbc9d97dc-4jpjs         Successfully assigned enterprise-doc-agent-staging/enterprise-doc-api-5bbc9d97dc-4jpjs to vm-0-2-ubuntu
+22m         Normal   Scheduled           pod/enterprise-doc-web-7b4b7ccc96-v9j2b         Successfully assigned enterprise-doc-agent-staging/enterprise-doc-web-7b4b7ccc96-v9j2b to vm-0-2-ubuntu
+22m         Normal   Pulled              pod/enterprise-doc-migrate-8npdr                Container image "ghcr.io/drew-z/enterprise-doc-api@sha256:47374f763618e179da9b8cda8c993a13463fd48bf62c95e423924d7ed6a4471d" already present on machine and can be accessed by the pod
+22m         Normal   SuccessfulCreate    job/enterprise-doc-migrate                      Created pod: enterprise-doc-migrate-8npdr
+22m         Normal   Started             pod/enterprise-doc-migrate-8npdr                Container started
+22m         Normal   Created             pod/enterprise-doc-migrate-8npdr                Container created
+22m         Normal   ScalingReplicaSet   deployment/enterprise-doc-api                   Scaled down replica set enterprise-doc-api-6b7867f4dc from 2 to 1
+22m         Normal   SuccessfulDelete    replicaset/enterprise-doc-consumer-7576b7d64c   Deleted pod: enterprise-doc-consumer-7576b7d64c-kg26x
+22m         Normal   Pulled              pod/enterprise-doc-api-5bbc9d97dc-4jpjs         Container image "ghcr.io/drew-z/enterprise-doc-api@sha256:47374f763618e179da9b8cda8c993a13463fd48bf62c95e423924d7ed6a4471d" already present on machine and can be accessed by the pod
+22m         Normal   Killing             pod/enterprise-doc-consumer-7576b7d64c-kg26x    Stopping container consumer
+22m         Normal   ScalingReplicaSet   deployment/enterprise-doc-consumer              Scaled down replica set enterprise-doc-consumer-7576b7d64c from 1 to 0
+22m         Normal   ScalingReplicaSet   deployment/enterprise-doc-web                   Scaled up replica set enterprise-doc-web-7b4b7ccc96 from 0 to 1
+22m         Normal   SuccessfulDelete    replicaset/enterprise-doc-worker-755467f7f9     Deleted pod: enterprise-doc-worker-755467f7f9-9cjn5
+22m         Normal   ScalingReplicaSet   deployment/enterprise-doc-web                   Scaled down replica set enterprise-doc-web-5fcfd4c456 from 2 to 1
+22m         Normal   SuccessfulCreate    replicaset/enterprise-doc-consumer-7bb564d7b7   Created pod: enterprise-doc-consumer-7bb564d7b7-8kt65
+22m         Normal   ScalingReplicaSet   deployment/enterprise-doc-api                   Scaled up replica set enterprise-doc-api-5bbc9d97dc from 0 to 1
+22m         Normal   ScalingReplicaSet   deployment/enterprise-doc-consumer              Scaled up replica set enterprise-doc-consumer-7bb564d7b7 from 0 to 1
+22m         Normal   Killing             pod/enterprise-doc-worker-755467f7f9-9cjn5      Stopping container worker
+22m         Normal   SuccessfulCreate    replicaset/enterprise-doc-web-7b4b7ccc96        Created pod: enterprise-doc-web-7b4b7ccc96-v9j2b
+22m         Normal   SuccessfulDelete    replicaset/enterprise-doc-api-6b7867f4dc        Deleted pod: enterprise-doc-api-6b7867f4dc-lwqbb
+22m         Normal   SuccessfulCreate    replicaset/enterprise-doc-worker-8476c6cb5b     Created pod: enterprise-doc-worker-8476c6cb5b-qbrxg
+22m         Normal   Killing             pod/enterprise-doc-api-6b7867f4dc-lwqbb         Stopping container api
+22m         Normal   SuccessfulDelete    replicaset/enterprise-doc-web-5fcfd4c456        Deleted pod: enterprise-doc-web-5fcfd4c456-99vkf
+22m         Normal   Killing             pod/enterprise-doc-web-5fcfd4c456-99vkf         Stopping container web
+22m         Normal   Completed           job/enterprise-doc-migrate                      Job completed
+22m         Normal   ScalingReplicaSet   deployment/enterprise-doc-worker                Scaled down replica set enterprise-doc-worker-755467f7f9 from 1 to 0
+22m         Normal   SuccessfulCreate    replicaset/enterprise-doc-api-5bbc9d97dc        Created pod: enterprise-doc-api-5bbc9d97dc-4jpjs
+22m         Normal   ScalingReplicaSet   deployment/enterprise-doc-worker                Scaled up replica set enterprise-doc-worker-8476c6cb5b from 0 to 1
+22m         Normal   Started             pod/enterprise-doc-api-5bbc9d97dc-4jpjs         Container started
+22m         Normal   Created             pod/enterprise-doc-api-5bbc9d97dc-4jpjs         Container created
+22m         Normal   Created             pod/enterprise-doc-consumer-7bb564d7b7-8kt65    Container created
+22m         Normal   Started             pod/enterprise-doc-web-7b4b7ccc96-v9j2b         Container started
+22m         Normal   Created             pod/enterprise-doc-web-7b4b7ccc96-v9j2b         Container created
+22m         Normal   Pulled              pod/enterprise-doc-web-7b4b7ccc96-v9j2b         Container image "ghcr.io/drew-z/enterprise-doc-web@sha256:dacc722952d0b2ccac49ee0e26692c7ed960aa83a91ebc8ed2505f2afcbe42a8" already present on machine and can be accessed by the pod
+22m         Normal   Started             pod/enterprise-doc-worker-8476c6cb5b-qbrxg      Container started
+22m         Normal   Created             pod/enterprise-doc-worker-8476c6cb5b-qbrxg      Container created
+22m         Normal   Pulled              pod/enterprise-doc-worker-8476c6cb5b-qbrxg      Container image "ghcr.io/drew-z/enterprise-doc-worker@sha256:178ae19c4adc65573e721124692ed16ee88767eef6e76158786af7d10e64f6dd" already present on machine and can be accessed by the pod
+22m         Normal   Started             pod/enterprise-doc-consumer-7bb564d7b7-8kt65    Container started
+22m         Normal   Pulled              pod/enterprise-doc-consumer-7bb564d7b7-8kt65    Container image "ghcr.io/drew-z/enterprise-doc-consumer@sha256:988c9018946215de8b60de2307815b76a1d5658baa5926d7f9589f627dce61ba" already present on machine and can be accessed by the pod
+22m         Normal   ScalingReplicaSet   deployment/enterprise-doc-web                   Scaled down replica set enterprise-doc-web-5fcfd4c456 from 1 to 0
+22m         Normal   ScalingReplicaSet   deployment/enterprise-doc-web                   Scaled up replica set enterprise-doc-web-7b4b7ccc96 from 1 to 2
+22m         Normal   Killing             pod/enterprise-doc-web-5fcfd4c456-qc9pd         Stopping container web
+22m         Normal   SuccessfulDelete    replicaset/enterprise-doc-web-5fcfd4c456        Deleted pod: enterprise-doc-web-5fcfd4c456-qc9pd
+22m         Normal   Pulled              pod/enterprise-doc-web-7b4b7ccc96-5rcg9         Container image "ghcr.io/drew-z/enterprise-doc-web@sha256:dacc722952d0b2ccac49ee0e26692c7ed960aa83a91ebc8ed2505f2afcbe42a8" already present on machine and can be accessed by the pod
+22m         Normal   Created             pod/enterprise-doc-web-7b4b7ccc96-5rcg9         Container created
+22m         Normal   Started             pod/enterprise-doc-web-7b4b7ccc96-5rcg9         Container started
+22m         Normal   SuccessfulCreate    replicaset/enterprise-doc-web-7b4b7ccc96        Created pod: enterprise-doc-web-7b4b7ccc96-5rcg9
+22m         Normal   ScalingReplicaSet   deployment/enterprise-doc-api                   Scaled up replica set enterprise-doc-api-5bbc9d97dc from 1 to 2
+22m         Normal   ScalingReplicaSet   deployment/enterprise-doc-api                   Scaled down replica set enterprise-doc-api-6b7867f4dc from 1 to 0
+22m         Normal   SuccessfulDelete    replicaset/enterprise-doc-api-6b7867f4dc        Deleted pod: enterprise-doc-api-6b7867f4dc-sxt6m
+22m         Normal   Killing             pod/enterprise-doc-api-6b7867f4dc-sxt6m         Stopping container api
+22m         Normal   SuccessfulCreate    replicaset/enterprise-doc-api-5bbc9d97dc        Created pod: enterprise-doc-api-5bbc9d97dc-wrnsg
+22m         Normal   Started             pod/enterprise-doc-api-5bbc9d97dc-wrnsg         Container started
+22m         Normal   Pulled              pod/enterprise-doc-api-5bbc9d97dc-wrnsg         Container image "ghcr.io/drew-z/enterprise-doc-api@sha256:47374f763618e179da9b8cda8c993a13463fd48bf62c95e423924d7ed6a4471d" already present on machine and can be accessed by the pod
+22m         Normal   Created             pod/enterprise-doc-api-5bbc9d97dc-wrnsg         Container created
+22m         Normal   Pulled              pod/enterprise-doc-embedding-rollout-npwt6      Container image "ghcr.io/drew-z/enterprise-doc-api@sha256:47374f763618e179da9b8cda8c993a13463fd48bf62c95e423924d7ed6a4471d" already present on machine and can be accessed by the pod
+22m         Normal   Created             pod/enterprise-doc-embedding-rollout-npwt6      Container created
+22m         Normal   Started             pod/enterprise-doc-embedding-rollout-npwt6      Container started
+22m         Normal   SuccessfulCreate    job/enterprise-doc-embedding-rollout            Created pod: enterprise-doc-embedding-rollout-npwt6
+22m         Normal   Completed           job/enterprise-doc-embedding-rollout            Job completed
+22m         Normal   SuccessfulCreate    job/m5-staging-smoke                            Created pod: m5-staging-smoke-gg7ks
+22m         Normal   Started             pod/m5-staging-smoke-gg7ks                      Container started
+22m         Normal   Created             pod/m5-staging-smoke-gg7ks                      Container created
+22m         Normal   Pulled              pod/m5-staging-smoke-gg7ks                      Container image "curlimages/curl@sha256:94e9e444bcba979c2ea12e27ae39bee4cd10bc7041a472c4727a558e213744e6" already present on machine and can be accessed by the pod
+22m         Normal   Completed           job/m5-staging-smoke                            Job completed
+3m38s       Normal   SuccessfulCreate    job/enterprise-doc-migrate                      Created pod: enterprise-doc-migrate-dbfgz
+3m38s       Normal   Created             pod/enterprise-doc-migrate-dbfgz                Container created
+3m38s       Normal   Started             pod/enterprise-doc-migrate-dbfgz                Container started
+3m38s       Normal   Pulled              pod/enterprise-doc-migrate-dbfgz                Container image "ghcr.io/drew-z/enterprise-doc-api@sha256:47374f763618e179da9b8cda8c993a13463fd48bf62c95e423924d7ed6a4471d" already present on machine and can be accessed by the pod
+3m22s       Normal   Completed           job/enterprise-doc-migrate                      Job completed
+3m20s       Normal   Pulled              pod/enterprise-doc-embedding-rollout-4hjxp      Container image "ghcr.io/drew-z/enterprise-doc-api@sha256:47374f763618e179da9b8cda8c993a13463fd48bf62c95e423924d7ed6a4471d" already present on machine and can be accessed by the pod
+3m20s       Normal   SuccessfulCreate    job/enterprise-doc-embedding-rollout            Created pod: enterprise-doc-embedding-rollout-4hjxp
+3m20s       Normal   Started             pod/enterprise-doc-embedding-rollout-4hjxp      Container started
+3m20s       Normal   Created             pod/enterprise-doc-embedding-rollout-4hjxp      Container created
+3m9s        Normal   Completed           job/enterprise-doc-embedding-rollout            Job completed
+3m4s        Normal   SuccessfulCreate    job/m5-staging-smoke                            Created pod: m5-staging-smoke-2k4th
+3m3s        Normal   Created             pod/m5-staging-smoke-2k4th                      Container created
+3m3s        Normal   Started             pod/m5-staging-smoke-2k4th                      Container started
+3m3s        Normal   Pulled              pod/m5-staging-smoke-2k4th                      Container image "curlimages/curl@sha256:94e9e444bcba979c2ea12e27ae39bee4cd10bc7041a472c4727a558e213744e6" already present on machine and can be accessed by the pod
+3m          Normal   Completed           job/m5-staging-smoke                            Job completed

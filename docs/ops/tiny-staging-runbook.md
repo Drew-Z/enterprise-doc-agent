@@ -97,7 +97,8 @@ Create these before the first workflow dispatch:
   public HTTPS, an exact model identifier available from that endpoint, and a
   scoped API key. Store only `MODEL__API_KEY` in `enterprise-doc-secrets`;
   keep the non-secret endpoint and model identifier in GitHub Environment
-  variables;
+  variables. When fallback is enabled, repeat that contract for the fallback
+  route and store only `MODEL__FALLBACK_API_KEY` in the same Secret;
 - a real OpenAI-compatible embedding endpoint and reviewed 1024-dimensional model.
   Store only `EMBEDDING__API_KEY` in `enterprise-doc-secrets`; follow
   `docs/ops/real-embedding-rollout.md` without modifying the blog vector store.
@@ -164,6 +165,10 @@ Optional var:      STAGING_ROLLBACK_API_IMAGE=<previous-api-image@sha256:...>
                    STAGING_ROLLBACK_WORKER_IMAGE=<previous-worker-image@sha256:...>
                    STAGING_ROLLBACK_CONSUMER_IMAGE=<previous-consumer-image@sha256:...>
                    STAGING_ROLLBACK_WEB_IMAGE=<previous-web-image@sha256:...>
+                   STAGING_MODEL_FALLBACK_BASE_URL=https://<fallback-host>/v1
+                   STAGING_MODEL_FALLBACK_NAME=<exact-fallback-model-id>
+                   STAGING_MODEL_FALLBACK_VERSION=<reviewed-route-version>
+                   STAGING_MODEL_FALLBACK_TIMEOUT_SECONDS=60
 ```
 
 Configured variables are:
@@ -177,7 +182,8 @@ VITE_OBJECT_STORE_ORIGINS=https://2741446a7478f2d8a5ff31df7e077f17.r2.cloudflare
 
 The deploy workflow fixes `MODEL__PROVIDER=openai_compatible`; the deterministic
 test provider is intentionally forbidden in staging. It reads
-`STAGING_MODEL_BASE_URL`, `STAGING_MODEL_NAME`, `STAGING_EMBEDDING_BASE_URL`,
+`STAGING_MODEL_BASE_URL`, `STAGING_MODEL_NAME`, the optional
+`STAGING_MODEL_FALLBACK_*` route, `STAGING_EMBEDDING_BASE_URL`,
 `STAGING_EMBEDDING_MODEL_NAME` and
 `STAGING_OBJECT_STORE_CHECKSUM_MODE` from the protected `staging` Environment rather
 than exceeding GitHub's ten-input `workflow_dispatch` limit. Configure them only
@@ -188,6 +194,12 @@ gh variable set STAGING_MODEL_BASE_URL --env staging \
   --repo Drew-Z/enterprise-doc-agent --body 'https://<gateway-host>/v1'
 gh variable set STAGING_MODEL_NAME --env staging \
   --repo Drew-Z/enterprise-doc-agent --body '<exact-model-id>'
+gh variable set STAGING_MODEL_FALLBACK_BASE_URL --env staging \
+  --repo Drew-Z/enterprise-doc-agent --body 'https://<fallback-host>/v1'
+gh variable set STAGING_MODEL_FALLBACK_NAME --env staging \
+  --repo Drew-Z/enterprise-doc-agent --body '<exact-fallback-model-id>'
+gh variable set STAGING_MODEL_FALLBACK_TIMEOUT_SECONDS --env staging \
+  --repo Drew-Z/enterprise-doc-agent --body '60'
 gh variable set STAGING_EMBEDDING_BASE_URL --env staging \
   --repo Drew-Z/enterprise-doc-agent --body 'https://<embedding-host>/v1'
 gh variable set STAGING_EMBEDDING_MODEL_NAME --env staging \
@@ -205,7 +217,7 @@ a substitute for recurring network observation.
 
 The manifest configurator rejects credentials, query strings, fragments,
 loopback hosts, control characters and endpoints that do not end in `/v1`.
-Changing either model variable changes the ConfigMap digest annotation and
+Changing any primary or fallback model variable changes the ConfigMap digest annotation and
 therefore replaces API, Worker, consumer and migration Pods. The release
 record includes only the non-secret provider, URL and model name; it never
 includes `MODEL__API_KEY`.
@@ -393,6 +405,13 @@ WEB_OBJECT_STORE_ORIGINS="$OBJECT_STORE_PRESIGN_ENDPOINT"
 DATABASE_EGRESS_CIDR=<comma-separated-reviewed-public-db-/32-list>
 MODEL_BASE_URL=https://<gateway-host>/v1
 MODEL_NAME=<exact-model-id>
+MODEL_FALLBACK_BASE_URL=https://<fallback-host>/v1
+MODEL_FALLBACK_NAME=<exact-fallback-model-id>
+MODEL_FALLBACK_VERSION=${MODEL_FALLBACK_VERSION:-}
+MODEL_FALLBACK_TIMEOUT_SECONDS=60
+EMBEDDING_BASE_URL=https://<embedding-host>/v1
+EMBEDDING_MODEL_NAME=Qwen/Qwen3-Embedding-4B
+EMBEDDING_VERSION=2
 ROLLBACK_API_IMAGE=${ROLLBACK_API_IMAGE:-}
 ROLLBACK_WORKER_IMAGE=${ROLLBACK_WORKER_IMAGE:-}
 ROLLBACK_CONSUMER_IMAGE=${ROLLBACK_CONSUMER_IMAGE:-}
@@ -423,6 +442,13 @@ python scripts/configure_staging_manifest.py \
   --model-provider openai_compatible \
   --model-base-url "$MODEL_BASE_URL" \
   --model-name "$MODEL_NAME" \
+  --fallback-model-base-url "$MODEL_FALLBACK_BASE_URL" \
+  --fallback-model-name "$MODEL_FALLBACK_NAME" \
+  --fallback-model-version "$MODEL_FALLBACK_VERSION" \
+  --fallback-model-timeout-seconds "$MODEL_FALLBACK_TIMEOUT_SECONDS" \
+  --embedding-base-url "$EMBEDDING_BASE_URL" \
+  --embedding-model-name "$EMBEDDING_MODEL_NAME" \
+  --embedding-version "$EMBEDDING_VERSION" \
   --rollback-api-image "$ROLLBACK_API_IMAGE" \
   --rollback-worker-image "$ROLLBACK_WORKER_IMAGE" \
   --rollback-consumer-image "$ROLLBACK_CONSUMER_IMAGE" \
@@ -454,6 +480,27 @@ Secret list must stay in the temporary directory; only the redacted report may b
 retained as external evidence:
 
 ```bash
+read -rsp 'Primary model API key: ' MODEL_API_KEY && printf '\n'
+read -rsp 'Fallback model API key: ' MODEL_FALLBACK_API_KEY && printf '\n'
+export MODEL_API_KEY MODEL_FALLBACK_API_KEY
+python3 - <<'PY' | kubectl -n enterprise-doc-agent-staging patch secret \
+  enterprise-doc-secrets --type merge --patch-file /dev/stdin
+import json
+import os
+
+print(
+    json.dumps(
+        {
+            "stringData": {
+                "MODEL__API_KEY": os.environ["MODEL_API_KEY"],
+                "MODEL__FALLBACK_API_KEY": os.environ["MODEL_FALLBACK_API_KEY"],
+            }
+        }
+    )
+)
+PY
+unset MODEL_API_KEY MODEL_FALLBACK_API_KEY
+
 kubectl -n enterprise-doc-agent-staging get secrets \
   enterprise-doc-secrets enterprise-doc-registry "$TLS_SECRET_NAME" -o json \
   > "$workdir/staging-secrets.json"
@@ -461,6 +508,7 @@ python scripts/validate_staging_secrets.py \
   --input "$workdir/staging-secrets.json" \
   --staging-host agent.playlab.eu.cc \
   --tls-secret-name "$TLS_SECRET_NAME" \
+  --require-model-fallback-api-key \
   --output "$workdir/staging-secrets-redacted.json"
 rm -f "$workdir/staging-secrets.json"
 ```
@@ -543,7 +591,10 @@ measurement is the basis for the bounded cold-pull budget above.
 
 Before dispatch, confirm `STAGING_MODEL_BASE_URL`, `STAGING_MODEL_NAME` and the
 `MODEL__API_KEY` Secret value all refer to the same gateway account and model. Also
-confirm `STAGING_EMBEDDING_BASE_URL`, `STAGING_EMBEDDING_MODEL_NAME` and
+confirm the optional `STAGING_MODEL_FALLBACK_BASE_URL`,
+`STAGING_MODEL_FALLBACK_NAME` and `MODEL__FALLBACK_API_KEY` identify one concrete-task
+validated fallback route; do not approve a route that only passed `/models` discovery.
+Finally, confirm `STAGING_EMBEDDING_BASE_URL`, `STAGING_EMBEDDING_MODEL_NAME` and
 `EMBEDDING__API_KEY` identify the reviewed embedding route.
 The API, Worker, consumer, migration and embedding rollout processes all load the
 staging model settings, so an incomplete model contract blocks startup before smoke

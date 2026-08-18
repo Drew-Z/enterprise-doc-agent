@@ -178,6 +178,19 @@ async def test_server_records_tool_boundary_and_runtime_shares_metrics_registry(
         assert resources.metrics is metrics
         assert resources.artifact_store.metrics is metrics
         assert resources.runtime.service.retrieval_service.metrics is metrics
+        assert resources.runtime.service.retrieval_service.require_vector_evidence is False
+    finally:
+        await resources.close()
+
+
+async def test_server_runtime_applies_vector_evidence_setting() -> None:
+    settings = FoundationSettings(
+        _env_file=None,
+        retrieval={"require_vector_evidence": True},
+    )
+    resources = build_runtime(settings)
+    try:
+        assert resources.runtime.service.retrieval_service.require_vector_evidence is True
     finally:
         await resources.close()
 

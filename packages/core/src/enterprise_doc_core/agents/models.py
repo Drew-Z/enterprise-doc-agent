@@ -97,6 +97,33 @@ class AgentRun(UUIDPrimaryKeyMixin, TimestampMixin, Base):
             "current_execution_seq >= 0",
             name="current_execution_seq_non_negative",
         ),
+        CheckConstraint(
+            "(provider_request_count IS NULL OR provider_request_count >= 0) AND "
+            "(provider_usage_request_count IS NULL OR provider_usage_request_count >= 0) AND "
+            "(repair_request_count IS NULL OR repair_request_count >= 0) AND "
+            "(fallback_count IS NULL OR fallback_count >= 0)",
+            name="provider_telemetry_counts_non_negative",
+        ),
+        CheckConstraint(
+            "provider_request_count IS NULL OR provider_usage_request_count IS NULL OR "
+            "provider_usage_request_count <= provider_request_count",
+            name="provider_usage_count_bounded",
+        ),
+        CheckConstraint(
+            "provider_request_count IS NULL OR repair_request_count IS NULL OR "
+            "repair_request_count <= provider_request_count",
+            name="repair_request_count_bounded",
+        ),
+        CheckConstraint(
+            "(prompt_tokens IS NULL OR prompt_tokens >= 0) AND "
+            "(completion_tokens IS NULL OR completion_tokens >= 0) AND "
+            "(total_tokens IS NULL OR total_tokens >= 0)",
+            name="provider_token_counts_non_negative",
+        ),
+        CheckConstraint(
+            "breaker_state IS NULL OR breaker_state IN ('closed', 'open', 'half_open')",
+            name="breaker_state_valid",
+        ),
         Index(
             "ix_agent_runs_tenant_id_status_created_at",
             "tenant_id",
@@ -137,6 +164,16 @@ class AgentRun(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     model_provider: Mapped[str] = mapped_column(String(32), nullable=False)
     model_name: Mapped[str] = mapped_column(String(200), nullable=False)
     model_version: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    model_revision: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    fallback_trigger_code: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    provider_request_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    provider_usage_request_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    prompt_tokens: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    completion_tokens: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    total_tokens: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    repair_request_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    fallback_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    breaker_state: Mapped[str | None] = mapped_column(String(16), nullable=True)
     tool_schema_version: Mapped[str] = mapped_column(String(64), nullable=False)
     index_generation_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("document_ingestion_generations.id", ondelete="CASCADE"),

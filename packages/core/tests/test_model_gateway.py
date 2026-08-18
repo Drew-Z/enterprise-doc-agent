@@ -79,6 +79,7 @@ def _settings(**overrides: object) -> ModelSettings:
         "api_key": SecretStr("test-secret-key"),
         "model_name": "test-model",
         "model_version": "2026-07",
+        "model_revision": "revision-test-1",
         "timeout_seconds": 2.0,
         "max_output_bytes": 4096,
     }
@@ -174,6 +175,7 @@ async def test_openai_gateway_sends_strict_json_request_without_secret_or_tools(
 
     assert output.identity.provider == "openai_compatible"
     assert output.identity.model_name == "served-model"
+    assert output.identity.model_revision == "revision-test-1"
     assert output.repaired is False
     assert len(requests) == 1
     sent = json.loads(requests[0].content)
@@ -207,6 +209,46 @@ async def test_openai_gateway_sends_strict_json_request_without_secret_or_tools(
         system_prompt
     )
     assert "Copy excerpt exactly as a contiguous verbatim span" in system_prompt
+
+
+async def test_openai_gateway_aggregates_usage_across_schema_repair() -> None:
+    requests: list[httpx.Request] = []
+    model_request = _request(prompt_version="m4.v2")
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        if len(requests) == 1:
+            completion = _completion("not-json")
+            completion["usage"] = {
+                "prompt_tokens": 10,
+                "completion_tokens": 3,
+                "total_tokens": 13,
+            }
+        else:
+            completion = _completion(json.dumps(_valid_payload(model_request)))
+            completion["system_fingerprint"] = "provider-fingerprint-2"
+            completion["usage"] = {
+                "prompt_tokens": 20,
+                "completion_tokens": 5,
+                "total_tokens": 25,
+            }
+        return httpx.Response(200, json=completion)
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler), trust_env=False)
+    gateway = OpenAICompatibleChatGateway(settings=_settings(), client=client)
+    try:
+        output = await gateway.generate(model_request)
+    finally:
+        await client.aclose()
+
+    assert output.repaired is True
+    assert output.identity.model_revision == "provider-fingerprint-2"
+    assert output.telemetry.provider_request_count == 2
+    assert output.telemetry.usage_request_count == 2
+    assert output.telemetry.prompt_tokens == 30
+    assert output.telemetry.completion_tokens == 8
+    assert output.telemetry.total_tokens == 38
+    assert output.telemetry.repair_request_count == 1
 
 
 async def test_openai_gateway_preserves_the_v2_prompt_contract() -> None:

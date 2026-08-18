@@ -3,7 +3,7 @@
   "milestone": "M5",
   "requirement": "M5-R10",
   "owner": "performance owner",
-  "blocking_reason": "Only bounded workstation runs are available; there is no isolated production-like environment with immutable images and representative traffic.",
+  "blocking_reason": "The immutable single-node staging baseline is measured, but representative authorized business traffic and an approved managed capacity/edge target are still absent; readiness-only evidence cannot close M5-R10.",
   "prerequisites": [
     "Provision an isolated production-like environment",
     "Deploy immutable application images",
@@ -16,7 +16,10 @@
     "Queue age, Redis, object-store, model, CPU, memory, and GPU saturation",
     "Capacity bottleneck and headroom conclusion"
   ],
+  "observed_evidence": [
+    "evidence/m5/20260817-application-capacity.json"
+  ],
   "state": "open",
   "status": "blocked_external",
-  "review_date": "2026-07-19"
+  "review_date": "2026-08-17"
 }

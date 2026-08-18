@@ -38,6 +38,7 @@ class JobFailureProjector(Protocol):
         status: str,
         error_code: str,
         error_message: str,
+        failure_metadata: Mapping[str, Any] | None,
         now: datetime,
     ) -> None: ...
 
@@ -561,6 +562,7 @@ class JobRuntimeService:
                         status=job.status,
                         error_code="max_attempts_exceeded",
                         error_message="The job exhausted its retry budget.",
+                        failure_metadata=None,
                         now=now,
                     )
                 return None
@@ -719,6 +721,7 @@ class JobRuntimeService:
         error_message: str,
         error_class: str = "JobError",
         diagnostic_code: str | None = None,
+        failure_metadata: Mapping[str, Any] | None = None,
     ) -> JobFailureResult:
         now = self.clock()
         async with self.session_factory.begin() as session:
@@ -786,6 +789,7 @@ class JobRuntimeService:
                     status=job.status,
                     error_code=error_code[:100],
                     error_message=error_message[:1000],
+                    failure_metadata=failure_metadata,
                     now=now,
                 )
             return JobFailureResult(job.status, retry_at, attempt.id)

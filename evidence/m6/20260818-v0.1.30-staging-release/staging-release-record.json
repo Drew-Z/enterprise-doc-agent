@@ -1,0 +1,68 @@
+{
+  "blocking_reason": null,
+  "commit_sha": "6860552fae1d1bbd8a09e7dbe1458a613aa9f601",
+  "deployment_profile": "single-node-4c8g",
+  "embedding": {
+    "base_url": "https://ai.hybgzs.com/v1",
+    "dimension": 1024,
+    "kind": "embedding",
+    "name": "Qwen/Qwen3-Embedding-4B",
+    "provider": "openai_compatible",
+    "rollout": {
+      "dimension": 1024,
+      "model": "Qwen/Qwen3-Embedding-4B",
+      "probe_item_count": 2,
+      "provider": "openai_compatible",
+      "reindex": {
+        "apply_attempts": 0,
+        "created": 0,
+        "final_selected": 0,
+        "initial_selected": 0,
+        "replayed": 0,
+        "status": "completed"
+      },
+      "status": "validated",
+      "values_redacted": true,
+      "version": 2
+    },
+    "rollout_report": {
+      "path": "tmp/staging-sanitized-6860552fae1d1bbd8a09e7dbe1458a613aa9f601/staging-embedding-rollout.json",
+      "sha256": "7210b0aef4c71637396dcfe8a93228cb79c343877cc703dfcee41132c5a67255"
+    },
+    "status": "validated",
+    "version": 2
+  },
+  "evidence_manifest": {
+    "path": "tmp/staging-evidence-6860552fae1d1bbd8a09e7dbe1458a613aa9f601.manifest.json",
+    "sha256": "f8c9d780392f2c99a5aad71b9bffed24b97b822ce0c770c05db3c34e82400761"
+  },
+  "failure_reason": null,
+  "generated_at": "2026-08-17T16:37:46.597635+00:00",
+  "image_digests": {
+    "api": "sha256:731055539544faac51ea38bd673ef73d24be8acb6bfa32f59eb8b65b588d13c8",
+    "consumer": "sha256:9b60599b82472b125cf25db722be3c62f4e5793f63583db88064b093d9f28728",
+    "web": "sha256:c02e3bfb19f09c5248c3fe5a8bd786f5f1867f6a5b7716f4dd2313740111a303",
+    "worker": "sha256:34f0685a50973caaeaec078aa253db0b5660fb03ba0f7527ed5d3dd1772cfe4a"
+  },
+  "model": {
+    "base_url": "https://ai.futureppo.top/v1",
+    "name": "glm-5-2",
+    "provider": "openai_compatible",
+    "status": "validated"
+  },
+  "outcomes": {
+    "authenticated_smoke": "success",
+    "cluster_smoke": "success",
+    "embedding_rollout": "success",
+    "migration": "success",
+    "prerequisites": "success",
+    "rollout": "success",
+    "workloads": "success"
+  },
+  "registry_prefix": "ghcr.io/drew-z",
+  "repository": "Drew-Z/enterprise-doc-agent",
+  "run_attempt": "5",
+  "run_id": "32044381031",
+  "schema_version": 2,
+  "status": "passed"
+}

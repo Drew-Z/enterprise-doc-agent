@@ -359,6 +359,12 @@ def test_staging_deployer_bootstrap_cannot_read_or_mount_unreviewed_secrets() ->
     assert "enterprise-doc-agent/approved-consumer-images" in policy_text
     assert "enterprise-doc-agent/approved-web-images" in policy_text
     assert "enterprise-doc-agent/approved-prometheus-images" in policy_text
+    assert "enterprise-doc-agent/approved-model-fallback-provider" in policy_text
+    assert "enterprise-doc-agent/approved-model-fallback-base-url" in policy_text
+    assert "enterprise-doc-agent/approved-model-fallback-name" in policy_text
+    assert "enterprise-doc-agent/approved-model-fallback-version" in policy_text
+    assert "enterprise-doc-agent/approved-model-fallback-timeout-seconds" in policy_text
+    assert "enterprise-doc-agent/approved-model-fallback-secret-key" in policy_text
     assert "automountServiceAccountToken" in policy_text
     assert "serviceAccountToken" in policy_text
     assert "pod-security.kubernetes.io/enforce" in policy_text
@@ -418,6 +424,17 @@ def test_database_url_has_one_secret_backed_source() -> None:
     secret = (ROOT / "infra/k8s/base/secret.example.yaml").read_text(encoding="utf-8")
     assert "DATABASE__URL" not in config
     assert "DATABASE__URL" in secret
+
+
+def test_fallback_model_api_key_has_one_secret_backed_source() -> None:
+    config = (ROOT / "infra/k8s/base/configmap.yaml").read_text(encoding="utf-8")
+    secret = (ROOT / "infra/k8s/base/secret.example.yaml").read_text(encoding="utf-8")
+    assert "MODEL__FALLBACK_API_KEY" not in config
+    assert "MODEL__FALLBACK_API_KEY" in secret
+    validator = (ROOT / "scripts/validate_staging_secrets.py").read_text(encoding="utf-8")
+    runbook = (ROOT / "docs/ops/tiny-staging-runbook.md").read_text(encoding="utf-8")
+    assert "--require-model-fallback-api-key" in validator
+    assert "--require-model-fallback-api-key" in runbook
 
 
 def test_staging_overlay_defines_https_ingress_and_private_registry_contract() -> None:
@@ -592,6 +609,7 @@ def test_tiny_single_node_overlay_renders_with_a_bounded_k3s_runtime() -> None:
     assert config["data"]["EMBEDDING__VERSION"] == "2"
     assert config["data"]["EMBEDDING__SEND_DIMENSIONS"] == "true"
     assert config["data"]["EMBEDDING__QUERY_INSTRUCTION"].startswith("Given a user question")
+    assert config["data"]["RETRIEVAL__REQUIRE_VECTOR_EVIDENCE"] == "true"
 
     api = _named_resource(documents, "Deployment", "enterprise-doc-api")
     api_container = api["spec"]["template"]["spec"]["containers"][0]
@@ -892,6 +910,7 @@ def test_staging_model_routing_uses_environment_variables_within_dispatch_limit(
         "MODEL_NAME": "${{ vars.STAGING_MODEL_NAME }}",
         "EMBEDDING_BASE_URL": "${{ vars.STAGING_EMBEDDING_BASE_URL }}",
         "EMBEDDING_MODEL_NAME": "${{ vars.STAGING_EMBEDDING_MODEL_NAME }}",
+        "EMBEDDING_VERSION": "${{ vars.STAGING_EMBEDDING_VERSION || '2' }}",
     }
     for step_name in (
         "Render and validate staging manifests",
@@ -905,8 +924,17 @@ def test_staging_model_routing_uses_environment_variables_within_dispatch_limit(
         assert '--model-name "$MODEL_NAME"' in command
         assert '--embedding-base-url "$EMBEDDING_BASE_URL"' in command
         assert '--embedding-model-name "$EMBEDDING_MODEL_NAME"' in command
+        assert '--embedding-version "$EMBEDDING_VERSION"' in command
 
     render = _named_step(steps, "Render and validate staging manifests")
+    assert render["env"]["MODEL_FALLBACK_BASE_URL"] == (
+        "${{ vars.STAGING_MODEL_FALLBACK_BASE_URL }}"
+    )
+    assert render["env"]["MODEL_FALLBACK_NAME"] == ("${{ vars.STAGING_MODEL_FALLBACK_NAME }}")
+    assert render["env"]["MODEL_FALLBACK_VERSION"] == ("${{ vars.STAGING_MODEL_FALLBACK_VERSION }}")
+    assert render["env"]["MODEL_FALLBACK_TIMEOUT_SECONDS"] == (
+        "${{ vars.STAGING_MODEL_FALLBACK_TIMEOUT_SECONDS || '60' }}"
+    )
     assert render["env"]["OBJECT_STORE_CHECKSUM_MODE"] == (
         "${{ vars.STAGING_OBJECT_STORE_CHECKSUM_MODE }}"
     )
@@ -916,10 +944,32 @@ def test_staging_model_routing_uses_environment_variables_within_dispatch_limit(
     assert 'test -n "$EMBEDDING_BASE_URL"' in render_command
     assert 'test -n "$EMBEDDING_MODEL_NAME"' in render_command
     assert 'test -n "$OBJECT_STORE_CHECKSUM_MODE"' in render_command
+    assert "fallback_args=()" in render_command
+    assert '--fallback-model-base-url "$MODEL_FALLBACK_BASE_URL"' in render_command
+    assert '--fallback-model-name "$MODEL_FALLBACK_NAME"' in render_command
+    assert '--fallback-model-version "$MODEL_FALLBACK_VERSION"' in render_command
+    assert '--fallback-model-timeout-seconds "$MODEL_FALLBACK_TIMEOUT_SECONDS"' in render_command
     assert "yaml.safe_load_all" in render_command
     assert '("Namespace", "enterprise-doc-agent-staging")' in render_command
     assert '("Job", "enterprise-doc-migrate")' in render_command
     assert "grep -A4 '^kind: Namespace$'" not in render_command
+
+    collect = _named_step(steps, "Collect sanitized release evidence")
+    for key, value in {
+        "MODEL_FALLBACK_BASE_URL": "${{ vars.STAGING_MODEL_FALLBACK_BASE_URL }}",
+        "MODEL_FALLBACK_NAME": "${{ vars.STAGING_MODEL_FALLBACK_NAME }}",
+        "MODEL_FALLBACK_VERSION": "${{ vars.STAGING_MODEL_FALLBACK_VERSION }}",
+        "MODEL_FALLBACK_TIMEOUT_SECONDS": (
+            "${{ vars.STAGING_MODEL_FALLBACK_TIMEOUT_SECONDS || '60' }}"
+        ),
+    }.items():
+        assert collect["env"][key] == value
+    collect_command = str(collect["run"])
+    assert "fallback_record_args=()" in collect_command
+    assert '--fallback-model-base-url "$MODEL_FALLBACK_BASE_URL"' in collect_command
+    assert '--fallback-model-name "$MODEL_FALLBACK_NAME"' in collect_command
+    assert '--fallback-model-version "$MODEL_FALLBACK_VERSION"' in collect_command
+    assert '--fallback-model-timeout-seconds "$MODEL_FALLBACK_TIMEOUT_SECONDS"' in collect_command
 
 
 def test_tiny_staging_runbook_keeps_r2_presign_on_the_s3_api_surface() -> None:
@@ -1493,6 +1543,9 @@ def test_staging_workflows_preserve_admin_boundary_and_clean_credentials() -> No
 
     embedding = _named_step(deploy_steps, "Run embedding provider and reindex gate")
     embedding_run = str(embedding["run"])
+    assert embedding["env"]["EXPECTED_EMBEDDING_VERSION"] == (
+        "${{ vars.STAGING_EMBEDDING_VERSION || '2' }}"
+    )
     step_names = [str(step.get("name", "")) for step in deploy_steps]
     assert (
         step_names.index("Wait for workloads")
@@ -1507,6 +1560,7 @@ def test_staging_workflows_preserve_admin_boundary_and_clean_credentials() -> No
     assert '@.type=="Failed"' in embedding_run
     assert 'if test "$job_result" != "complete"' in embedding_run
     assert "validate_embedding_rollout_report.py" in embedding_run
+    assert '--expected-version "$EXPECTED_EMBEDDING_VERSION"' in embedding_run
     assert "kubectl exec" not in embedding_run
 
     smoke_cleanup = _named_step(deploy_steps, "Clean up readiness smoke")
@@ -1679,3 +1733,22 @@ def test_release_registry_is_parameterized_but_defaults_to_ghcr() -> None:
     assert "secrets.CONTAINER_REGISTRY_USERNAME" in text
     assert "secrets.CONTAINER_REGISTRY_PASSWORD" in text
     assert "steps.release_ref.outputs.prefix" in text
+
+
+def test_staging_image_relay_binds_the_versioned_canonical_receiver() -> None:
+    workflow = yaml.safe_load(
+        (ROOT / ".github" / "workflows" / "relay-staging-images.yml").read_text(encoding="utf-8")
+    )
+    export = workflow["jobs"]["export"]
+    matrix = export["strategy"]["matrix"]["include"]
+    assert {entry["name"] for entry in matrix} == {"api", "worker", "consumer", "web"}
+    steps = [step for step in export["steps"] if isinstance(step, dict)]
+    archive_export = _named_step(steps, "Export digest-preserving OCI archive")
+    assert "skopeo copy --all" in str(archive_export["run"])
+    relay_upload = _named_step(steps, "Upload OCI archive through temporary R2 relay")
+    receipt = str(relay_upload["run"])
+    assert "receiver_script=scripts/import_staging_oci_archive.py" in receipt
+    assert "receiver_base_name=$RELAY_ID" in receipt
+    assert "receiver_canonical_base=docker.io/library/$RELAY_ID" in receipt
+    assert "receiver_image_reference=$IMAGE_REF" in receipt
+    assert (ROOT / "scripts" / "import_staging_oci_archive.py").is_file()

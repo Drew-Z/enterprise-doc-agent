@@ -267,6 +267,51 @@ systemctl is-active cloudflared
 curl --fail --silent --show-error https://agent.playlab.eu.cc/health/ready
 ```
 
+## Restricted-network image relay import
+
+When the staging node cannot pull an immutable GHCR image directly, dispatch the reviewed
+`Relay Staging Images` workflow. Download each OCI archive with an operator-owned temporary
+GET URL without printing or retaining the signed URL. Verify the relay receipt and copy the
+versioned receiver script from the same reviewed commit to the node.
+
+Run the receiver once without `--confirm`; this validates the archive checksum and every OCI
+image index/manifest descriptor but does not call containerd:
+
+```bash
+archive=/tmp/enterprise-doc-api.oci.tar
+expected_sha256=<sha256-from-enterprise-doc-api-relay-receipt>
+relay_id=import-2026-08-17
+image_reference=<image-ref-from-enterprise-doc-api-relay-receipt>
+
+sudo python3 scripts/import_staging_oci_archive.py \
+  --archive "$archive" \
+  --expected-sha256 "$expected_sha256" \
+  --base-name "$relay_id" \
+  --image-reference "$image_reference"
+```
+
+Review the planned command and require its base name to be
+`docker.io/library/$relay_id`. Then execute and retain the non-secret result:
+
+```bash
+sudo python3 scripts/import_staging_oci_archive.py \
+  --archive "$archive" \
+  --expected-sha256 "$expected_sha256" \
+  --base-name "$relay_id" \
+  --image-reference "$image_reference" \
+  --record-path "/tmp/enterprise-doc-api-${relay_id}-import.json" \
+  --confirm
+```
+
+Repeat for API, Worker, consumer and Web using the same receipt-bound relay ID and each
+receipt's exact immutable image reference. After validating the original archive checksum
+and every OCI descriptor, the receiver writes a temporary normalized index that exposes
+the release index, runtime manifest and attestation manifest as anonymous import roots. It
+uses `k3s ctr --namespace k8s.io images import --all-platforms --digests` and then inspects
+`docker.io/library/<relay-id>@sha256:<digest>` for every archive index and manifest. Finally,
+it binds the root release descriptor to the receipt's deployment image reference and verifies
+that record's target digest. Stop before deployment if any alias or target check fails.
+
 ## Remaining operator gates
 
 After host and K3s verification, continue in this order:

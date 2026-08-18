@@ -1,0 +1,1224 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  annotations:
+    enterprise-doc-agent/approved-api-images: ghcr.io/drew-z/enterprise-doc-api@sha256:731055539544faac51ea38bd673ef73d24be8acb6bfa32f59eb8b65b588d13c8,ghcr.io/drew-z/enterprise-doc-api@sha256:33c9d21cc3a7706a34edf57625f8c940a58f458038b9b9e126f1fc862158d3db
+    enterprise-doc-agent/approved-config-sha256: 8bb05619a46540690780a03c41ef18a18ee153066bbd566121907ac29aacc327
+    enterprise-doc-agent/approved-consumer-images: ghcr.io/drew-z/enterprise-doc-consumer@sha256:9b60599b82472b125cf25db722be3c62f4e5793f63583db88064b093d9f28728,ghcr.io/drew-z/enterprise-doc-consumer@sha256:0ca9ebca41cc03baa8096c0ac495add3418456e7408fbc2d655f6a26831d44eb
+    enterprise-doc-agent/approved-database-egress-cidr: 52.74.252.201/32,52.77.146.31/32,54.255.219.82/32
+    enterprise-doc-agent/approved-embedding-base-url: https://ai.hybgzs.com/v1
+    enterprise-doc-agent/approved-embedding-dimension: '1024'
+    enterprise-doc-agent/approved-embedding-model-name: Qwen/Qwen3-Embedding-4B
+    enterprise-doc-agent/approved-embedding-version: '2'
+    enterprise-doc-agent/approved-model-base-url: https://ai.futureppo.top/v1
+    enterprise-doc-agent/approved-model-fallback-base-url: https://new-api.abrdns.com/v1
+    enterprise-doc-agent/approved-model-fallback-name: DeepSeek-V4-Flash
+    enterprise-doc-agent/approved-model-fallback-provider: openai_compatible
+    enterprise-doc-agent/approved-model-fallback-secret-key: '[REDACTED]'
+    enterprise-doc-agent/approved-model-fallback-timeout-seconds: '60'
+    enterprise-doc-agent/approved-model-name: glm-5-2
+    enterprise-doc-agent/approved-model-provider: openai_compatible
+    enterprise-doc-agent/approved-object-store-endpoint: https://2741446a7478f2d8a5ff31df7e077f17.r2.cloudflarestorage.com
+    enterprise-doc-agent/approved-object-store-presign-endpoint: https://2741446a7478f2d8a5ff31df7e077f17.r2.cloudflarestorage.com
+    enterprise-doc-agent/approved-prometheus-images: quay.io/prometheus/prometheus@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996
+    enterprise-doc-agent/approved-staging-host: agent.playlab.eu.cc
+    enterprise-doc-agent/approved-tls-secret-name: '[REDACTED]'
+    enterprise-doc-agent/approved-web-images: ghcr.io/drew-z/enterprise-doc-web@sha256:c02e3bfb19f09c5248c3fe5a8bd786f5f1867f6a5b7716f4dd2313740111a303,ghcr.io/drew-z/enterprise-doc-web@sha256:939eba4b52f896aafe9e8860f676b4c443c30c997c2bd57a67ecc468fcdf26ad
+    enterprise-doc-agent/approved-web-object-store-origins: https://2741446a7478f2d8a5ff31df7e077f17.r2.cloudflarestorage.com
+    enterprise-doc-agent/approved-worker-images: ghcr.io/drew-z/enterprise-doc-worker@sha256:34f0685a50973caaeaec078aa253db0b5660fb03ba0f7527ed5d3dd1772cfe4a,ghcr.io/drew-z/enterprise-doc-worker@sha256:ec7c726200bf2ba40ae0534f6dbc62556f6e5e22a1b47253f51001963abbfd03
+    enterprise-doc-agent/deployment-profile: single-node-4c8g
+    enterprise-doc-agent/prerequisites-sha256: cbafcd2036dd3ad2a1cd0120ffe68aee2dee123be2e4496602232c2e1825e66d
+  labels:
+    app.kubernetes.io/part-of: enterprise-doc-agent
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/audit-version: latest
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+  name: enterprise-doc-agent-staging
+---
+apiVersion: v1
+automountServiceAccountToken: '[REDACTED]'
+kind: ServiceAccount
+metadata:
+  name: enterprise-doc-runtime
+  namespace: enterprise-doc-agent-staging
+---
+apiVersion: v1
+data:
+  AGENT__CHECKPOINT_TIMEOUT_SECONDS: '60'
+  AGENT__EXECUTION_MAX_ATTEMPTS: '5'
+  API__HOST: 0.0.0.0
+  API__PORT: '8000'
+  API__READINESS_CACHE_TTL_SECONDS: '2'
+  APP_ENV: staging
+  DATABASE__CONNECT_TIMEOUT_SECONDS: '15'
+  DATABASE__MAX_OVERFLOW: '2'
+  DATABASE__POOL_RECYCLE_SECONDS: '600'
+  DATABASE__POOL_SIZE: '3'
+  DATABASE__POOL_TIMEOUT_SECONDS: '10'
+  EMBEDDING__BASE_URL: https://ai.hybgzs.com/v1
+  EMBEDDING__BATCH_SIZE: '8'
+  EMBEDDING__DIMENSION: '1024'
+  EMBEDDING__INGESTION_MAX_ATTEMPTS: '5'
+  EMBEDDING__MAX_RETRIES: '2'
+  EMBEDDING__MODEL_NAME: Qwen/Qwen3-Embedding-4B
+  EMBEDDING__PROVIDER: openai_compatible
+  EMBEDDING__QUERY_INSTRUCTION: Given a user question about enterprise documents,
+    retrieve relevant passages that answer the question
+  EMBEDDING__SEND_DIMENSIONS: 'true'
+  EMBEDDING__TIMEOUT_SECONDS: '20'
+  EMBEDDING__VERSION: '2'
+  LOG_LEVEL: INFO
+  MCP__REQUEST_TIMEOUT_SECONDS: '90'
+  MODEL__BASE_URL: https://ai.futureppo.top/v1
+  MODEL__FALLBACK_BASE_URL: https://new-api.abrdns.com/v1
+  MODEL__FALLBACK_MODEL_NAME: DeepSeek-V4-Flash
+  MODEL__FALLBACK_PROVIDER: openai_compatible
+  MODEL__FALLBACK_TIMEOUT_SECONDS: '60'
+  MODEL__MODEL_NAME: glm-5-2
+  MODEL__PROVIDER: openai_compatible
+  MODEL__TIMEOUT_SECONDS: '60'
+  OBJECT_STORE__ARTIFACTS_BUCKET: artifacts
+  OBJECT_STORE__CONNECT_TIMEOUT_SECONDS: '15'
+  OBJECT_STORE__DOCUMENTS_BUCKET: documents
+  OBJECT_STORE__ENDPOINT: https://2741446a7478f2d8a5ff31df7e077f17.r2.cloudflarestorage.com
+  OBJECT_STORE__MULTIPART_CHECKSUM_MODE: readback_sha256
+  OBJECT_STORE__PRESIGN_ENDPOINT: https://2741446a7478f2d8a5ff31df7e077f17.r2.cloudflarestorage.com
+  OBJECT_STORE__SECURE: 'true'
+  OTEL__ENABLED: 'false'
+  OTEL__EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+  OTEL__METRICS_ENABLED: 'true'
+  REDIS__URL: redis://enterprise-doc-redis:6379/0
+  RETRIEVAL__REQUIRE_VECTOR_EVIDENCE: 'true'
+  WORKER__CONSUMER_METRICS_PORT: '8082'
+  WORKER__HOST: 0.0.0.0
+  WORKER__PROBE_PORT: '8081'
+kind: ConfigMap
+metadata:
+  name: enterprise-doc-config
+  namespace: enterprise-doc-agent-staging
+---
+apiVersion: v1
+data:
+  enterprise-doc-agent.rules.yml: "groups:\n  - name: enterprise-doc-agent-recordings\n\
+    \    interval: 15s\n    rules:\n      - record: enterprise_doc:api_error_ratio5m\n\
+    \        expr: |\n          sum(rate(enterprise_doc_api_requests_total{status_class=~\"\
+    5xx\"}[5m]))\n          /\n          clamp_min(sum(rate(enterprise_doc_api_requests_total[5m])),\
+    \ 1e-9)\n      - record: enterprise_doc:worker_failure_ratio5m\n        expr:\
+    \ |\n          sum(rate(enterprise_doc_worker_jobs_completed_total{outcome=\"\
+    failed\"}[5m]))\n          /\n          clamp_min(sum(rate(enterprise_doc_worker_jobs_completed_total[5m])),\
+    \ 1e-9)\n      - record: enterprise_doc:outbox_error_ratio5m\n        expr: |\n\
+    \          sum(rate(enterprise_doc_worker_outbox_publish_total{result=\"error\"\
+    }[5m]))\n          /\n          clamp_min(sum(rate(enterprise_doc_worker_outbox_publish_total[5m])),\
+    \ 1e-9)\n\n  - name: enterprise-doc-agent-alerts\n    interval: 15s\n    rules:\n\
+    \      - alert: EnterpriseDocApiHighErrorRate\n        expr: enterprise_doc:api_error_ratio5m\
+    \ > 0.05\n        for: 10m\n        labels:\n          severity: page\n      \
+    \    service: enterprise-doc-api\n        annotations:\n          summary: API\
+    \ 5xx error ratio is above 5 percent\n          runbook: \"https://github.com/Drew-Z/enterprise-doc-agent/blob/main/docs/ops/staging-observability-and-capacity.md#alert-response\"\
+    \n      - alert: EnterpriseDocWorkerFailureRate\n        expr: enterprise_doc:worker_failure_ratio5m\
+    \ > 0.1\n        for: 10m\n        labels:\n          severity: ticket\n     \
+    \     service: enterprise-doc-worker\n        annotations:\n          summary:\
+    \ Worker failure ratio is above 10 percent\n          runbook: \"https://github.com/Drew-Z/enterprise-doc-agent/blob/main/docs/ops/staging-observability-and-capacity.md#alert-response\"\
+    \n      - alert: EnterpriseDocOutboxPublishErrors\n        expr: enterprise_doc:outbox_error_ratio5m\
+    \ > 0\n        for: 5m\n        labels:\n          severity: ticket\n        \
+    \  service: enterprise-doc-worker\n        annotations:\n          summary: Outbox\
+    \ publication errors are present\n          runbook: \"https://github.com/Drew-Z/enterprise-doc-agent/blob/main/docs/ops/staging-observability-and-capacity.md#alert-response\"\
+    \n      - alert: EnterpriseDocDependencyDown\n        expr: enterprise_doc_dependency_up\
+    \ == 0\n        for: 5m\n        labels:\n          severity: page\n         \
+    \ service: enterprise-doc-agent\n        annotations:\n          summary: A required\
+    \ dependency health check is down\n          runbook: \"https://github.com/Drew-Z/enterprise-doc-agent/blob/main/docs/ops/staging-observability-and-capacity.md#alert-response\"\
+    \n      - alert: EnterpriseDocMetricsTargetDown\n        expr: up{job=~\"enterprise-doc-(api|worker|consumer)\"\
+    } == 0\n        for: 5m\n        labels:\n          severity: page\n         \
+    \ service: enterprise-doc-prometheus\n        annotations:\n          summary:\
+    \ An enterprise document metrics target is down\n          runbook: \"https://github.com/Drew-Z/enterprise-doc-agent/blob/main/docs/ops/staging-observability-and-capacity.md#alert-response\"\
+    \n      - alert: EnterpriseDocMetricsTargetAbsent\n        expr: |\n         \
+    \ absent(up{job=\"enterprise-doc-api\"})\n          or absent(up{job=\"enterprise-doc-worker\"\
+    })\n          or absent(up{job=\"enterprise-doc-consumer\"})\n        for: 5m\n\
+    \        labels:\n          severity: page\n          service: enterprise-doc-prometheus\n\
+    \        annotations:\n          summary: An expected enterprise document metrics\
+    \ target is absent\n          runbook: \"https://github.com/Drew-Z/enterprise-doc-agent/blob/main/docs/ops/staging-observability-and-capacity.md#alert-response\"\
+    \n"
+  prometheus.yml: "global:\n  scrape_interval: 15s\n  scrape_timeout: 5s\n  evaluation_interval:\
+    \ 15s\n\nrule_files:\n  - /etc/prometheus/enterprise-doc-agent.rules.yml\n\nscrape_configs:\n\
+    \  - job_name: enterprise-doc-api\n    metrics_path: /metrics\n    dns_sd_configs:\n\
+    \      - names: [\"enterprise-doc-api-metrics.enterprise-doc-agent-staging.svc.cluster.local\"\
+    ]\n        type: A\n        port: 8000\n        refresh_interval: 30s\n  - job_name:\
+    \ enterprise-doc-worker\n    metrics_path: /metrics\n    dns_sd_configs:\n   \
+    \   - names: [\"enterprise-doc-worker-metrics.enterprise-doc-agent-staging.svc.cluster.local\"\
+    ]\n        type: A\n        port: 8081\n        refresh_interval: 30s\n  - job_name:\
+    \ enterprise-doc-consumer\n    metrics_path: /metrics\n    dns_sd_configs:\n \
+    \     - names: [\"enterprise-doc-consumer-metrics.enterprise-doc-agent-staging.svc.cluster.local\"\
+    ]\n        type: A\n        port: 8082\n        refresh_interval: 30s\n"
+kind: ConfigMap
+metadata:
+  name: enterprise-doc-prometheus-config
+  namespace: enterprise-doc-agent-staging
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: enterprise-doc-api
+  namespace: enterprise-doc-agent-staging
+spec:
+  ports:
+  - name: http
+    port: 8000
+    targetPort: http
+  selector:
+    app.kubernetes.io/name: enterprise-doc-api
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: enterprise-doc-api-metrics
+    app.kubernetes.io/part-of: enterprise-doc-agent
+  name: enterprise-doc-api-metrics
+  namespace: enterprise-doc-agent-staging
+spec:
+  clusterIP: None
+  ports:
+  - name: metrics
+    port: 8000
+    targetPort: http
+  selector:
+    app.kubernetes.io/name: enterprise-doc-api
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: enterprise-doc-consumer
+  namespace: enterprise-doc-agent-staging
+spec:
+  ports:
+  - name: metrics
+    port: 8082
+    targetPort: metrics
+  selector:
+    app.kubernetes.io/name: enterprise-doc-consumer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: enterprise-doc-consumer-metrics
+    app.kubernetes.io/part-of: enterprise-doc-agent
+  name: enterprise-doc-consumer-metrics
+  namespace: enterprise-doc-agent-staging
+spec:
+  clusterIP: None
+  ports:
+  - name: metrics
+    port: 8082
+    targetPort: metrics
+  selector:
+    app.kubernetes.io/name: enterprise-doc-consumer
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: enterprise-doc-prometheus
+    app.kubernetes.io/part-of: enterprise-doc-agent
+  name: enterprise-doc-prometheus
+  namespace: enterprise-doc-agent-staging
+spec:
+  ports:
+  - name: http
+    port: 9090
+    targetPort: http
+  selector:
+    app.kubernetes.io/name: enterprise-doc-prometheus
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: enterprise-doc-redis
+  namespace: enterprise-doc-agent-staging
+spec:
+  ports:
+  - name: redis
+    port: 6379
+    targetPort: redis
+  selector:
+    app.kubernetes.io/name: enterprise-doc-redis
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: enterprise-doc-web
+  namespace: enterprise-doc-agent-staging
+spec:
+  ports:
+  - name: http
+    port: 8080
+    targetPort: http
+  selector:
+    app.kubernetes.io/name: enterprise-doc-web
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: enterprise-doc-worker
+  namespace: enterprise-doc-agent-staging
+spec:
+  ports:
+  - name: probe
+    port: 8081
+    targetPort: probe
+  selector:
+    app.kubernetes.io/name: enterprise-doc-worker
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: enterprise-doc-worker-metrics
+    app.kubernetes.io/part-of: enterprise-doc-agent
+  name: enterprise-doc-worker-metrics
+  namespace: enterprise-doc-agent-staging
+spec:
+  clusterIP: None
+  ports:
+  - name: metrics
+    port: 8081
+    targetPort: metrics
+  selector:
+    app.kubernetes.io/name: enterprise-doc-worker
+  type: ClusterIP
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app.kubernetes.io/name: enterprise-doc-prometheus
+    app.kubernetes.io/part-of: enterprise-doc-agent
+  name: enterprise-doc-prometheus-data
+  namespace: enterprise-doc-agent-staging
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: local-path
+  volumeMode: Filesystem
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: enterprise-doc-api
+    app.kubernetes.io/part-of: enterprise-doc-agent
+  name: enterprise-doc-api
+  namespace: enterprise-doc-agent-staging
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: enterprise-doc-api
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        enterprise-doc-agent/config-sha256: 8bb05619a46540690780a03c41ef18a18ee153066bbd566121907ac29aacc327
+      labels:
+        app.kubernetes.io/name: enterprise-doc-api
+        app.kubernetes.io/part-of: enterprise-doc-agent
+    spec:
+      containers:
+      - envFrom:
+        - configMapRef:
+            name: enterprise-doc-config
+        - secretRef: '[REDACTED]'
+        image: ghcr.io/drew-z/enterprise-doc-api@sha256:731055539544faac51ea38bd673ef73d24be8acb6bfa32f59eb8b65b588d13c8
+        imagePullPolicy: IfNotPresent
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - sleep 5
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: http
+          periodSeconds: 10
+          timeoutSeconds: 3
+        name: api
+        ports:
+        - containerPort: 8000
+          name: http
+        readinessProbe:
+          failureThreshold: 6
+          httpGet:
+            path: /health/ready
+            port: http
+          periodSeconds: 20
+          timeoutSeconds: 20
+        resources:
+          limits:
+            cpu: 750m
+            memory: 768Mi
+          requests:
+            cpu: 250m
+            memory: 384Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        startupProbe:
+          failureThreshold: 30
+          httpGet:
+            path: /health/live
+            port: http
+          periodSeconds: 5
+      imagePullSecrets: '[REDACTED]'
+      securityContext:
+        runAsGroup: 10001
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: enterprise-doc-runtime
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: enterprise-doc-consumer
+    app.kubernetes.io/part-of: enterprise-doc-agent
+  name: enterprise-doc-consumer
+  namespace: enterprise-doc-agent-staging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: enterprise-doc-consumer
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        enterprise-doc-agent/config-sha256: 8bb05619a46540690780a03c41ef18a18ee153066bbd566121907ac29aacc327
+      labels:
+        app.kubernetes.io/name: enterprise-doc-consumer
+        app.kubernetes.io/part-of: enterprise-doc-agent
+    spec:
+      containers:
+      - envFrom:
+        - configMapRef:
+            name: enterprise-doc-config
+        - secretRef: '[REDACTED]'
+        image: ghcr.io/drew-z/enterprise-doc-consumer@sha256:9b60599b82472b125cf25db722be3c62f4e5793f63583db88064b093d9f28728
+        livenessProbe:
+          periodSeconds: 10
+          tcpSocket:
+            port: metrics
+        name: consumer
+        ports:
+        - containerPort: 8082
+          name: metrics
+        readinessProbe:
+          periodSeconds: 5
+          tcpSocket:
+            port: metrics
+        resources:
+          limits:
+            cpu: 750m
+            memory: 768Mi
+          requests:
+            cpu: 250m
+            memory: 384Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        startupProbe:
+          failureThreshold: 30
+          periodSeconds: 5
+          tcpSocket:
+            port: metrics
+      imagePullSecrets: '[REDACTED]'
+      securityContext:
+        runAsGroup: 10001
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: enterprise-doc-runtime
+      terminationGracePeriodSeconds: 60
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: enterprise-doc-prometheus
+    app.kubernetes.io/part-of: enterprise-doc-agent
+  name: enterprise-doc-prometheus
+  namespace: enterprise-doc-agent-staging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: enterprise-doc-prometheus
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        enterprise-doc-agent/prometheus-config-sha256: b15b385ef1b28ee397fb153902e813d539feb49126a8972a480f9bdeb54b0de8
+      labels:
+        app.kubernetes.io/name: enterprise-doc-prometheus
+        app.kubernetes.io/part-of: enterprise-doc-agent
+    spec:
+      automountServiceAccountToken: '[REDACTED]'
+      containers:
+      - args:
+        - --config.file=/etc/prometheus/prometheus.yml
+        - --storage.tsdb.path=/prometheus
+        - --storage.tsdb.retention.time=7d
+        - --storage.tsdb.retention.size=4GB
+        - --web.listen-address=0.0.0.0:9090
+        image: quay.io/prometheus/prometheus@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /-/healthy
+            port: http
+          periodSeconds: 30
+          timeoutSeconds: 3
+        name: prometheus
+        ports:
+        - containerPort: 9090
+          name: http
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /-/ready
+            port: http
+          periodSeconds: 10
+          timeoutSeconds: 3
+        resources:
+          limits:
+            cpu: 300m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        startupProbe:
+          failureThreshold: 30
+          httpGet:
+            path: /-/ready
+            port: http
+          periodSeconds: 10
+        volumeMounts:
+        - mountPath: /etc/prometheus
+          name: config
+          readOnly: true
+        - mountPath: /prometheus
+          name: storage
+      securityContext:
+        fsGroup: 65534
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 65534
+        runAsNonRoot: true
+        runAsUser: 65534
+        seccompProfile:
+          type: RuntimeDefault
+      terminationGracePeriodSeconds: 60
+      volumes:
+      - configMap:
+          name: enterprise-doc-prometheus-config
+        name: config
+      - name: storage
+        persistentVolumeClaim:
+          claimName: enterprise-doc-prometheus-data
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: enterprise-doc-redis
+    app.kubernetes.io/part-of: enterprise-doc-agent
+  name: enterprise-doc-redis
+  namespace: enterprise-doc-agent-staging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: enterprise-doc-redis
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: enterprise-doc-redis
+        app.kubernetes.io/part-of: enterprise-doc-agent
+    spec:
+      automountServiceAccountToken: '[REDACTED]'
+      containers:
+      - args:
+        - redis-server
+        - --save
+        - ''
+        - --appendonly
+        - 'no'
+        - --maxmemory
+        - 128mb
+        - --maxmemory-policy
+        - noeviction
+        image: redis@sha256:6ab0b6e7381779332f97b8ca76193e45b0756f38d4c0dcda72dbb3c32061ab99
+        livenessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          periodSeconds: 10
+          timeoutSeconds: 2
+        name: redis
+        ports:
+        - containerPort: 6379
+          name: redis
+        readinessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          periodSeconds: 5
+          timeoutSeconds: 2
+        resources:
+          limits:
+            cpu: 250m
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        startupProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          failureThreshold: 30
+          periodSeconds: 2
+        volumeMounts:
+        - mountPath: /data
+          name: data
+      securityContext:
+        fsGroup: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 999
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+      - emptyDir: {}
+        name: data
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: enterprise-doc-web
+    app.kubernetes.io/part-of: enterprise-doc-agent
+  name: enterprise-doc-web
+  namespace: enterprise-doc-agent-staging
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: enterprise-doc-web
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: enterprise-doc-web
+        app.kubernetes.io/part-of: enterprise-doc-agent
+    spec:
+      containers:
+      - image: ghcr.io/drew-z/enterprise-doc-web@sha256:c02e3bfb19f09c5248c3fe5a8bd786f5f1867f6a5b7716f4dd2313740111a303
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: http
+          periodSeconds: 10
+        name: web
+        ports:
+        - containerPort: 8080
+          name: http
+        readinessProbe:
+          httpGet:
+            path: /health/live
+            port: http
+          periodSeconds: 5
+        resources:
+          limits:
+            cpu: 250m
+            memory: 256Mi
+          requests:
+            cpu: 50m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        startupProbe:
+          failureThreshold: 30
+          httpGet:
+            path: /health/live
+            port: http
+          periodSeconds: 5
+      imagePullSecrets: '[REDACTED]'
+      securityContext:
+        runAsGroup: 101
+        runAsNonRoot: true
+        runAsUser: 101
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: enterprise-doc-runtime
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: enterprise-doc-worker
+    app.kubernetes.io/part-of: enterprise-doc-agent
+  name: enterprise-doc-worker
+  namespace: enterprise-doc-agent-staging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: enterprise-doc-worker
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        enterprise-doc-agent/config-sha256: 8bb05619a46540690780a03c41ef18a18ee153066bbd566121907ac29aacc327
+      labels:
+        app.kubernetes.io/name: enterprise-doc-worker
+        app.kubernetes.io/part-of: enterprise-doc-agent
+    spec:
+      containers:
+      - envFrom:
+        - configMapRef:
+            name: enterprise-doc-config
+        - secretRef: '[REDACTED]'
+        image: ghcr.io/drew-z/enterprise-doc-worker@sha256:34f0685a50973caaeaec078aa253db0b5660fb03ba0f7527ed5d3dd1772cfe4a
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: probe
+          periodSeconds: 10
+        name: worker
+        ports:
+        - containerPort: 8081
+          name: probe
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: probe
+          periodSeconds: 30
+          timeoutSeconds: 70
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 1Gi
+          requests:
+            cpu: 300m
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        startupProbe:
+          failureThreshold: 60
+          httpGet:
+            path: /health/live
+            port: probe
+          periodSeconds: 5
+      imagePullSecrets: '[REDACTED]'
+      securityContext:
+        runAsGroup: 10001
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: enterprise-doc-runtime
+      terminationGracePeriodSeconds: 45
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: enterprise-doc-embedding-rollout
+  namespace: enterprise-doc-agent-staging
+spec:
+  activeDeadlineSeconds: 1260
+  backoffLimit: 0
+  template:
+    metadata:
+      annotations:
+        enterprise-doc-agent/config-sha256: 8bb05619a46540690780a03c41ef18a18ee153066bbd566121907ac29aacc327
+      labels:
+        app.kubernetes.io/name: enterprise-doc-embedding-rollout
+    spec:
+      automountServiceAccountToken: '[REDACTED]'
+      containers:
+      - args:
+        - --limit
+        - '1000'
+        - --deadline-seconds
+        - '1200'
+        - --poll-seconds
+        - '5'
+        command:
+        - enterprise-doc-embedding-rollout
+        envFrom:
+        - configMapRef:
+            name: enterprise-doc-config
+        - secretRef: '[REDACTED]'
+        image: ghcr.io/drew-z/enterprise-doc-api@sha256:731055539544faac51ea38bd673ef73d24be8acb6bfa32f59eb8b65b588d13c8
+        name: embedding-rollout
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 50m
+            memory: 128Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+      imagePullSecrets: '[REDACTED]'
+      restartPolicy: Never
+      securityContext:
+        runAsGroup: 10001
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: enterprise-doc-runtime
+  ttlSecondsAfterFinished: 86400
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+  name: enterprise-doc-migrate
+  namespace: enterprise-doc-agent-staging
+spec:
+  activeDeadlineSeconds: 2700
+  backoffLimit: 3
+  template:
+    metadata:
+      annotations:
+        enterprise-doc-agent/config-sha256: 8bb05619a46540690780a03c41ef18a18ee153066bbd566121907ac29aacc327
+      labels:
+        app.kubernetes.io/name: enterprise-doc-migrate
+    spec:
+      containers:
+      - command:
+        - sh
+        - -ec
+        - 'alembic upgrade head
+
+          enterprise-doc-checkpointer-setup --setup
+
+          enterprise-doc-checkpointer-setup --check
+
+          '
+        envFrom:
+        - configMapRef:
+            name: enterprise-doc-config
+        - secretRef: '[REDACTED]'
+        image: ghcr.io/drew-z/enterprise-doc-api@sha256:731055539544faac51ea38bd673ef73d24be8acb6bfa32f59eb8b65b588d13c8
+        name: migrate
+        resources:
+          limits:
+            cpu: 750m
+            memory: 512Mi
+          requests:
+            cpu: 150m
+            memory: 256Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+      imagePullSecrets: '[REDACTED]'
+      restartPolicy: OnFailure
+      securityContext:
+        runAsGroup: 10001
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: enterprise-doc-runtime
+  ttlSecondsAfterFinished: 86400
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+  name: enterprise-doc-web
+  namespace: enterprise-doc-agent-staging
+spec:
+  ingressClassName: traefik
+  rules:
+  - host: agent.playlab.eu.cc
+    http:
+      paths:
+      - backend:
+          service:
+            name: enterprise-doc-web
+            port:
+              number: 8080
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - agent.playlab.eu.cc
+    secretName: '[REDACTED]'
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: enterprise-doc-api-ingress
+  namespace: enterprise-doc-agent-staging
+spec:
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: enterprise-doc-web
+    ports:
+    - port: 8000
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: enterprise-doc-api
+  policyTypes:
+  - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: enterprise-doc-api-metrics-ingress
+  namespace: enterprise-doc-agent-staging
+spec:
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: enterprise-doc-prometheus
+    ports:
+    - port: 8000
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: enterprise-doc-api
+  policyTypes:
+  - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: enterprise-doc-consumer-metrics-ingress
+  namespace: enterprise-doc-agent-staging
+spec:
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: enterprise-doc-prometheus
+    ports:
+    - port: 8082
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: enterprise-doc-consumer
+  policyTypes:
+  - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: enterprise-doc-default-deny
+  namespace: enterprise-doc-agent-staging
+spec:
+  egress:
+  - ports:
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
+    to:
+    - namespaceSelector: {}
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: enterprise-doc-external-postgres-egress
+  namespace: enterprise-doc-agent-staging
+spec:
+  egress:
+  - ports:
+    - port: 5432
+      protocol: TCP
+    to:
+    - ipBlock:
+        cidr: 52.74.252.201/32
+    - ipBlock:
+        cidr: 52.77.146.31/32
+    - ipBlock:
+        cidr: 54.255.219.82/32
+  podSelector:
+    matchExpressions:
+    - key: app.kubernetes.io/name
+      operator: In
+      values:
+      - enterprise-doc-api
+      - enterprise-doc-worker
+      - enterprise-doc-consumer
+      - enterprise-doc-migrate
+      - enterprise-doc-embedding-rollout
+  policyTypes:
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: enterprise-doc-otel-collector-ingress
+  namespace: enterprise-doc-agent-staging
+spec:
+  ingress:
+  - from:
+    - namespaceSelector: {}
+    ports:
+    - port: 4317
+      protocol: TCP
+    - port: 4318
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: otel-collector
+  policyTypes:
+  - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: enterprise-doc-prometheus-egress
+  namespace: enterprise-doc-agent-staging
+spec:
+  egress:
+  - ports:
+    - port: 8000
+      protocol: TCP
+    to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: enterprise-doc-api
+  - ports:
+    - port: 8081
+      protocol: TCP
+    to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: enterprise-doc-worker
+  - ports:
+    - port: 8082
+      protocol: TCP
+    to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: enterprise-doc-consumer
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: enterprise-doc-prometheus
+  policyTypes:
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: enterprise-doc-redis-ingress
+  namespace: enterprise-doc-agent-staging
+spec:
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: enterprise-doc-api
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: enterprise-doc-worker
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: enterprise-doc-consumer
+    ports:
+    - port: 6379
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: enterprise-doc-redis
+  policyTypes:
+  - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: enterprise-doc-runtime-egress
+  namespace: enterprise-doc-agent-staging
+spec:
+  egress:
+  - ports:
+    - port: 5432
+      protocol: TCP
+    - port: 6379
+      protocol: TCP
+    - port: 9000
+      protocol: TCP
+    - port: 4318
+      protocol: TCP
+    - port: 8000
+      protocol: TCP
+    to:
+    - podSelector: {}
+  - ports:
+    - port: 443
+      protocol: TCP
+  podSelector: {}
+  policyTypes:
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: enterprise-doc-staging-smoke-api-egress
+  namespace: enterprise-doc-agent-staging
+spec:
+  egress:
+  - ports:
+    - port: 8000
+      protocol: TCP
+    to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: enterprise-doc-api
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: m5-staging-smoke
+  policyTypes:
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: enterprise-doc-staging-smoke-api-ingress
+  namespace: enterprise-doc-agent-staging
+spec:
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: m5-staging-smoke
+    ports:
+    - port: 8000
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: enterprise-doc-api
+  policyTypes:
+  - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: enterprise-doc-web-ingress
+  namespace: enterprise-doc-agent-staging
+spec:
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+    ports:
+    - port: 8080
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: enterprise-doc-web
+  policyTypes:
+  - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: enterprise-doc-worker-metrics-ingress
+  namespace: enterprise-doc-agent-staging
+spec:
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: enterprise-doc-prometheus
+    ports:
+    - port: 8081
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: enterprise-doc-worker
+  policyTypes:
+  - Ingress

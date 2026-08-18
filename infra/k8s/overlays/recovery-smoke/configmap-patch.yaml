@@ -31,4 +31,4 @@ data:
   EMBEDDING__SEND_DIMENSIONS: "true"
   EMBEDDING__QUERY_INSTRUCTION: >-
     Given a user question about enterprise documents, retrieve relevant passages that answer the question
-
+  RETRIEVAL__REQUIRE_VECTOR_EVIDENCE: "true"

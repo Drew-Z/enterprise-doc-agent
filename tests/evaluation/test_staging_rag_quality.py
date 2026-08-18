@@ -153,6 +153,16 @@ class FakeClient:
                 "modelProvider": "openai_compatible",
                 "modelName": "reviewed-chat-model",
                 "modelVersion": "2026-08",
+                "modelRevision": "revision-1",
+                "providerRequestCount": 1,
+                "providerUsageRequestCount": 1,
+                "promptTokens": 100,
+                "completionTokens": 20,
+                "totalTokens": 120,
+                "repairRequestCount": 0,
+                "fallbackCount": 1,
+                "breakerState": "closed",
+                "fallbackTriggerCode": "model_timeout",
                 "graphVersion": "graph-v1",
                 "promptVersion": "prompt-v1",
                 "toolSchemaVersion": "tools-v1",
@@ -164,6 +174,16 @@ class FakeClient:
                 "modelProvider": "openai_compatible",
                 "modelName": "reviewed-chat-model",
                 "modelVersion": "2026-08",
+                "modelRevision": "revision-1",
+                "providerRequestCount": 1,
+                "providerUsageRequestCount": 1,
+                "promptTokens": 80,
+                "completionTokens": 10,
+                "totalTokens": 90,
+                "repairRequestCount": 0,
+                "fallbackCount": 0,
+                "breakerState": "closed",
+                "fallbackTriggerCode": None,
                 "graphVersion": "graph-v1",
                 "promptVersion": "prompt-v1",
                 "toolSchemaVersion": "tools-v1",
@@ -253,6 +273,38 @@ class FailedDiagnosticClient(FakeClient):
         )
 
 
+class TransientStatusClient(FakeClient):
+    def __init__(self) -> None:
+        super().__init__()
+        self.status_attempts = 0
+
+    def request_json(
+        self,
+        method: str,
+        path: str,
+        *,
+        payload: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
+        expected_statuses: set[int] | None = None,
+    ) -> dict[str, Any] | list[dict[str, Any]]:
+        if path == "/api/agent-runs/run-answer":
+            self.status_attempts += 1
+            if self.status_attempts == 1:
+                try:
+                    raise TimeoutError("transient test timeout")
+                except TimeoutError as cause:
+                    raise staging_quality.StagingSmokeFailure(
+                        "Control-plane request failed with TimeoutError."
+                    ) from cause
+        return super().request_json(
+            method,
+            path,
+            payload=payload,
+            headers=headers,
+            expected_statuses=expected_statuses,
+        )
+
+
 def _provenance() -> ReportProvenance:
     return ReportProvenance(
         command=["python", "scripts/evaluate_staging_rag_quality.py", "<sanitized>"],
@@ -281,10 +333,29 @@ def test_staging_quality_runs_answer_and_refusal_without_leaking_runtime_data(
     )
 
     assert report["status"] == "passed"
+    assert report["system_failure_count"] == 0
     assert report["coverage"] == "full"
     assert report["measured"]["fact_recall"] == 1.0
     assert report["measured"]["refusal_reason_accuracy"] == 1.0
     assert report["applicable_targets"] == sorted(loaded.dataset.targets)
+    assert report["provider_routes"] == [
+        {
+            "provider": "openai_compatible",
+            "model_name": "reviewed-chat-model",
+            "model_version": "2026-08",
+            "model_revision": "revision-1",
+        }
+    ]
+    assert report["provider_telemetry"]["provider_request_count"] == 2
+    assert report["provider_telemetry"]["total_tokens"] == 210
+    assert report["provider_telemetry"]["fallback_count"] == 1
+    assert report["provider_telemetry"]["breaker_states"] == ["closed"]
+    assert report["provider_telemetry"]["fallback_trigger_counts"] == {"model_timeout": 1}
+    assert report["cases"][0]["fallback_trigger_code"] == "model_timeout"
+    assert report["cases"][1]["fallback_trigger_code"] is None
+    assert report["cost_metadata"]["source"] == "provider_usage"
+    assert report["cost_metadata"]["total_tokens"] == 210
+    assert report["cost_metadata"]["billing_amount"] is None
     assert verify_report_payload(report)
     encoded = json.dumps(report, sort_keys=True)
     for forbidden in (
@@ -335,7 +406,8 @@ def test_staging_quality_reports_only_allowlisted_attempt_diagnostics(
     )
 
     assert report["status"] == "failed"
-    assert report["evaluator_version"] == "m5.rag-quality.v4"
+    assert report["system_failure_count"] == 1
+    assert report["evaluator_version"] == "m5.rag-quality.v6"
     assert report["cases"][0]["failure_diagnostic_code"] == expected
     assert report["cases"][0]["citation_diagnostics"] == []
     assert report["cases"][0]["unresolved_citation_count"] == 0
@@ -343,6 +415,51 @@ def test_staging_quality_reports_only_allowlisted_attempt_diagnostics(
     encoded = json.dumps(report, sort_keys=True)
     assert "raw-mcp-secret-must-not-appear" not in encoded
     assert verify_report_payload(report)
+
+
+def test_staging_quality_never_passes_with_a_system_failure(tmp_path: Path) -> None:
+    dataset_path = _write_dataset(tmp_path)
+    payload = json.loads(dataset_path.read_text(encoding="utf-8"))
+    payload["targets"] = {name: 0.0 for name in payload["targets"]}
+    dataset_path.write_text(json.dumps(payload), encoding="utf-8")
+    loaded = load_rag_quality_dataset(dataset_path)
+
+    report = staging_quality.run_staging_rag_quality(
+        FailedDiagnosticClient("grounding.citation_excerpt_not_verbatim"),
+        loaded=loaded,
+        trial_only=True,
+        timeout_seconds=30,
+        run_nonce="fixed-system-failure-run",
+        monotonic=lambda: 1.0,
+        sleep=lambda _: None,
+        provenance=_provenance(),
+    )
+
+    assert staging_quality._thresholds_passed(report["measured"], loaded.dataset.targets)
+    assert report["system_failure_count"] == 1
+    assert report["status"] == "failed"
+    assert verify_report_payload(report)
+
+
+def test_staging_quality_retries_transient_status_read(tmp_path: Path) -> None:
+    loaded = load_rag_quality_dataset(_write_dataset(tmp_path))
+    client = TransientStatusClient()
+    sleeps: list[float] = []
+
+    report = staging_quality.run_staging_rag_quality(
+        client,
+        loaded=loaded,
+        case_ids=("answer-case",),
+        timeout_seconds=30,
+        run_nonce="fixed-transient-status-run",
+        monotonic=lambda: 1.0,
+        sleep=sleeps.append,
+        provenance=_provenance(),
+    )
+
+    assert report["status"] == "passed"
+    assert client.status_attempts == 2
+    assert sleeps == [2.0]
 
 
 def test_staging_quality_ignores_uncovered_refusal_targets_for_answer_only_sample(

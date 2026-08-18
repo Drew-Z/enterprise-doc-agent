@@ -61,6 +61,11 @@ def test_agent_run_constraints_lock_idempotency_status_and_versions() -> None:
         "ck_agent_runs_status_valid",
         "ck_agent_runs_next_event_seq_positive",
         "ck_agent_runs_current_execution_seq_non_negative",
+        "ck_agent_runs_provider_telemetry_counts_non_negative",
+        "ck_agent_runs_provider_usage_count_bounded",
+        "ck_agent_runs_repair_request_count_bounded",
+        "ck_agent_runs_provider_token_counts_non_negative",
+        "ck_agent_runs_breaker_state_valid",
     } <= constraints
     assert {
         "ix_agent_runs_tenant_id_status_created_at",
@@ -69,6 +74,8 @@ def test_agent_run_constraints_lock_idempotency_status_and_versions() -> None:
     assert table.columns.graph_version.type.length == 64
     assert table.columns.prompt_version.type.length == 64
     assert table.columns.tool_schema_version.type.length == 64
+    assert table.columns.model_revision.type.length == 128
+    assert table.columns.breaker_state.type.length == 16
 
 
 def test_execution_event_and_evidence_constraints_are_replay_safe() -> None:

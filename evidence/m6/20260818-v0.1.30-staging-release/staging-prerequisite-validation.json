@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "evidence_type": "staging-prerequisite-validation",
+  "status": "passed",
+  "commit_sha": "6860552fae1d1bbd8a09e7dbe1458a613aa9f601",
+  "namespace": "enterprise-doc-agent-staging",
+  "workflow": {
+    "repository": "Drew-Z/enterprise-doc-agent",
+    "run_id": "32044381031",
+    "run_attempt": 5,
+    "job_id": "95434461346"
+  },
+  "validation": {
+    "live_objects_checked": 28,
+    "approval_keys_checked": 17,
+    "prerequisites_sha256": "cbafcd2036dd3ad2a1cd0120ffe68aee2dee123be2e4496602232c2e1825e66d",
+    "workload_server_side_dry_run": "passed"
+  },
+  "source": "successful deploy job log",
+  "values_redacted": true
+}

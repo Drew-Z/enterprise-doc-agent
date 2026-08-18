@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "gate_id": "release-scope-decision-20260814",
+  "decision_date": "2026-08-14",
+  "requirement": "release-scope-decision",
+  "owner": "service owner",
+  "blocking_reason": null,
+  "prerequisites": [
+    "Service-owner approval of the included and excluded requirements",
+    "Explicit recording of the independent recovery drill as the remaining external hard gate"
+  ],
+  "required_evidence": [
+    "Approved release-scope decision",
+    "Linked manual-gate records for every included requirement"
+  ],
+  "state": "closed",
+  "status": "passed",
+  "release_scope": "staging-capable-cpu-openai-compatible",
+  "decision": "Continue all non-GPU production-readiness work that can be evidenced on the existing server; keep only the independently unavailable recovery drill externally blocked.",
+  "included_requirements": [
+    "M5 real-provider quality, representative corpus review, and available capacity/observability checks",
+    "M6 CI/CD, staging, image supply chain, secrets, network boundaries, migrations, backup/restore, rollback, monitoring, audit, and incident procedures",
+    "M7 provider routing and real-provider quality evidence without GPU capacity claims"
+  ],
+  "excluded_by_scope": [
+    {
+      "requirement": "M7-R7",
+      "item": "GPU/vLLM/quantization throughput and memory benchmark",
+      "reason": "Explicit release scope decision: this release does not claim GPU or vLLM capacity."
+    }
+  ],
+  "blocked_external": [
+    {
+      "requirement": "M6-R5",
+      "item": "Independent fault-domain migration/recovery drill",
+      "reason": "Requires another server or independently isolated recovery target and an independent reviewer; current single-node evidence remains valid but not production-like."
+    }
+  ],
+  "acceptance_rule": "No excluded or externally blocked requirement may be reported as passed; all included requirements require command-backed evidence or a linked manual-gate record.",
+  "approved_by": "user",
+  "completed_evidence": [
+    "evidence/gates/release-scope-decision-20260814.json"
+  ],
+  "review_date": "2026-08-14"
+}

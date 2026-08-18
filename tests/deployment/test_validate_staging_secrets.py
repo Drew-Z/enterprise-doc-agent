@@ -11,6 +11,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
 from scripts.validate_staging_secrets import (
     APP_SECRET_KEYS,
+    MODEL_FALLBACK_SECRET_KEY,
     StagingSecretValidationError,
     validate_staging_secrets,
 )
@@ -95,6 +96,34 @@ def test_validate_staging_secrets_rejects_missing_application_key() -> None:
             staging_host="staging.example.com",
             tls_secret_name="enterprise-doc-staging-tls",
         )
+
+
+def test_validate_staging_secrets_requires_fallback_key_only_when_enabled() -> None:
+    payload = _payload()
+
+    validate_staging_secrets(
+        payload,
+        staging_host="staging.example.com",
+        tls_secret_name="enterprise-doc-staging-tls",
+    )
+    with pytest.raises(StagingSecretValidationError, match=MODEL_FALLBACK_SECRET_KEY):
+        validate_staging_secrets(
+            payload,
+            staging_host="staging.example.com",
+            tls_secret_name="enterprise-doc-staging-tls",
+            require_model_fallback_api_key=True,
+        )
+
+    app = payload["items"][0]
+    assert isinstance(app, dict)
+    app["data"][MODEL_FALLBACK_SECRET_KEY] = _b64(b"fallback-secret")
+    report = validate_staging_secrets(
+        payload,
+        staging_host="staging.example.com",
+        tls_secret_name="enterprise-doc-staging-tls",
+        require_model_fallback_api_key=True,
+    )
+    assert report["status"] == "passed"
 
 
 def test_validate_staging_secrets_rejects_wrong_tls_host() -> None:
