@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "files": [
+    {
+      "source": "tmp/staging-raw-64b3f0fce4637c76d806bb15879b05ec99bddb00/collection-status.txt",
+      "path": "tmp/staging-sanitized-64b3f0fce4637c76d806bb15879b05ec99bddb00/collection-status.txt",
+      "sha256": "607fd80fca8a4e73c2059d15efeee99708cbf06461e00ee7bf13b5648bf819bd"
+    },
+    {
+      "source": "tmp/staging-raw-64b3f0fce4637c76d806bb15879b05ec99bddb00/consumer-current.log",
+      "path": "tmp/staging-sanitized-64b3f0fce4637c76d806bb15879b05ec99bddb00/consumer-current.log",
+      "sha256": "87bc86e64f0e8e75bc3e5de5d233b62bf4d1d7b1a868c738e46e658d968c90d1"
+    },
+    {
+      "source": "tmp/staging-raw-64b3f0fce4637c76d806bb15879b05ec99bddb00/consumer-previous.log",
+      "path": "tmp/staging-sanitized-64b3f0fce4637c76d806bb15879b05ec99bddb00/consumer-previous.log",
+      "sha256": "b281e450fa7244824376a130616f6f6a52a069646ce93043747b7f500257006d"
+    },
+    {
+      "source": "tmp/staging-raw-64b3f0fce4637c76d806bb15879b05ec99bddb00/deployment-profile.txt",
+      "path": "tmp/staging-sanitized-64b3f0fce4637c76d806bb15879b05ec99bddb00/deployment-profile.txt",
+      "sha256": "cc42e7f7666765a9e8de381c5fe34f91da2bac54f3d0bb81780d9c018f2d5671"
+    },
+    {
+      "source": "tmp/staging-raw-64b3f0fce4637c76d806bb15879b05ec99bddb00/deployments.json",
+      "path": "tmp/staging-sanitized-64b3f0fce4637c76d806bb15879b05ec99bddb00/deployments.json",
+      "sha256": "f423dea72135595989ad5c040342735efa8a27a034cea008a9abf23382510ff7"
+    },
+    {
+      "source": "tmp/staging-raw-64b3f0fce4637c76d806bb15879b05ec99bddb00/embedding-rollout-job.json",
+      "path": "tmp/staging-sanitized-64b3f0fce4637c76d806bb15879b05ec99bddb00/embedding-rollout-job.json",
+      "sha256": "15ba2ab705c316b6d3c71aa03a0e43147730d23474e7d8bc6f62a6ddfe712ff1"
+    },
+    {
+      "source": "tmp/staging-raw-64b3f0fce4637c76d806bb15879b05ec99bddb00/embedding-rollout.log",
+      "path": "tmp/staging-sanitized-64b3f0fce4637c76d806bb15879b05ec99bddb00/embedding-rollout.log",
+      "sha256": "b5583938c78e46670d5acbc2e4834795deb26dd05fdcf2e39ca3dfc975a835c2"
+    },
+    {
+      "source": "tmp/staging-raw-64b3f0fce4637c76d806bb15879b05ec99bddb00/events.txt",
+      "path": "tmp/staging-sanitized-64b3f0fce4637c76d806bb15879b05ec99bddb00/events.txt",
+      "sha256": "b83cc0d5d298f370b6311eae07fb44f37ea6ce90b46de2c225a1641384a98e9a"
+    },
+    {
+      "source": "tmp/staging-raw-64b3f0fce4637c76d806bb15879b05ec99bddb00/ingress.yaml",
+      "path": "tmp/staging-sanitized-64b3f0fce4637c76d806bb15879b05ec99bddb00/ingress.yaml",
+      "sha256": "55d1d333be0fedc1548f46262c60f1dc0428ea213123b4aca415f3ed924d907f"
+    },
+    {
+      "source": "tmp/staging-raw-64b3f0fce4637c76d806bb15879b05ec99bddb00/migration.log",
+      "path": "tmp/staging-sanitized-64b3f0fce4637c76d806bb15879b05ec99bddb00/migration.log",
+      "sha256": "3bf1c6b05c02bb92a376286a6de39188860095714ddfbf00d4d9a22b6868e56d"
+    },
+    {
+      "source": "tmp/staging-raw-64b3f0fce4637c76d806bb15879b05ec99bddb00/network-policy.yaml",
+      "path": "tmp/staging-sanitized-64b3f0fce4637c76d806bb15879b05ec99bddb00/network-policy.yaml",
+      "sha256": "c87006d6257441a7bcb1ce8685878bfe8ed00a0b61ac15250307e6977c192592"
+    },
+    {
+      "source": "tmp/staging-raw-64b3f0fce4637c76d806bb15879b05ec99bddb00/staging-embedding-rollout.json",
+      "path": "tmp/staging-sanitized-64b3f0fce4637c76d806bb15879b05ec99bddb00/staging-embedding-rollout.json",
+      "sha256": "9cb3482a010437fac6b98bf3803627d2214b0bbf3bb2eeaeba7fc35599b61acd"
+    },
+    {
+      "source": "tmp/staging-raw-64b3f0fce4637c76d806bb15879b05ec99bddb00/staging-rendered-staging-embedding-rollout.yaml",
+      "path": "tmp/staging-sanitized-64b3f0fce4637c76d806bb15879b05ec99bddb00/staging-rendered-staging-embedding-rollout.yaml",
+      "sha256": "c4e7bd673ac2301151c30d377ae7fcb938bcad3eb0830b6179d981793e2f2890"
+    },
+    {
+      "source": "tmp/staging-raw-64b3f0fce4637c76d806bb15879b05ec99bddb00/staging-rendered-staging-migration.yaml",
+      "path": "tmp/staging-sanitized-64b3f0fce4637c76d806bb15879b05ec99bddb00/staging-rendered-staging-migration.yaml",
+      "sha256": "2401e3fdc56a8010fdd978c3a07132c7448c2d950eb98a30f2a6627b9ff1c663"
+    },
+    {
+      "source": "tmp/staging-raw-64b3f0fce4637c76d806bb15879b05ec99bddb00/staging-rendered-staging-prerequisites.yaml",
+      "path": "tmp/staging-sanitized-64b3f0fce4637c76d806bb15879b05ec99bddb00/staging-rendered-staging-prerequisites.yaml",
+      "sha256": "4f330c417c2120e9b57320c058d78e764d55dc73db05a6611b08b8aead522a7d"
+    },
+    {
+      "source": "tmp/staging-raw-64b3f0fce4637c76d806bb15879b05ec99bddb00/staging-rendered-staging-workloads.yaml",
+      "path": "tmp/staging-sanitized-64b3f0fce4637c76d806bb15879b05ec99bddb00/staging-rendered-staging-workloads.yaml",
+      "sha256": "2b1038e6a3eb04de937da1c26b52ba7b1bf95eda4da02affa2163cddf76318ae"
+    },
+    {
+      "source": "tmp/staging-raw-64b3f0fce4637c76d806bb15879b05ec99bddb00/staging-rendered-staging.yaml",
+      "path": "tmp/staging-sanitized-64b3f0fce4637c76d806bb15879b05ec99bddb00/staging-rendered-staging.yaml",
+      "sha256": "4325623ea1b0aea28c76c85f6552318cd4bd95d79de07001e9296aee4216d9db"
+    },
+    {
+      "source": "tmp/staging-raw-64b3f0fce4637c76d806bb15879b05ec99bddb00/staging-smoke.json",
+      "path": "tmp/staging-sanitized-64b3f0fce4637c76d806bb15879b05ec99bddb00/staging-smoke.json",
+      "sha256": "c7bd3aaf4093f68a844d9b355bcc722f1741525a2f5052a345cc6a5331610d55"
+    },
+    {
+      "source": "tmp/staging-raw-64b3f0fce4637c76d806bb15879b05ec99bddb00/worker-current.log",
+      "path": "tmp/staging-sanitized-64b3f0fce4637c76d806bb15879b05ec99bddb00/worker-current.log",
+      "sha256": "23fe6af3e1fdd59905ee9fc97c3b7593916e5829d719a974e775bc42f3e6606b"
+    },
+    {
+      "source": "tmp/staging-raw-64b3f0fce4637c76d806bb15879b05ec99bddb00/worker-previous.log",
+      "path": "tmp/staging-sanitized-64b3f0fce4637c76d806bb15879b05ec99bddb00/worker-previous.log",
+      "sha256": "a3b0310bc4ef397092206846690eb0ae552e3380efb9b22044ad71ab9f590029"
+    }
+  ]
+}

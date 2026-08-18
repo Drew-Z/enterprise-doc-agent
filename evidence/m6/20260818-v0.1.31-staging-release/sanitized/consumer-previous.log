@@ -1,0 +1,4 @@
+time="2026-08-18T22:30:12+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-08-18T22:30:12+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-08-18T22:30:12+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+Error from server (BadRequest): previous terminated container "consumer" in pod "enterprise-doc-consumer-7bb564d7b7-8kt65" not found

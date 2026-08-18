@@ -1,0 +1,41 @@
+time="2026-08-18T22:30:12+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-08-18T22:30:12+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-08-18T22:30:12+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer]  
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer]  -------------- worker-local@enterprise-doc-consumer-7bb564d7b7-8kt65 v5.6.3 (recovery)
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer] --- ***** ----- 
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer] -- ******* ---- Linux-6.8.0-136-generic-x86_64-with-glibc2.36 2026-08-18 14:07:39
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer] - *** --- * --- 
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer] - ** ---------- [config]
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer] - ** ---------- .> app:         enterprise-doc-worker:0x7ec591886630
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer] - ** ---------- .> transport:   redis://enterprise-doc-redis:6379/0
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer] - ** ---------- .> results:     disabled://
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer] - *** --- * --- .> concurrency: 1 (solo)
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer] -- ******* ---- .> task events: OFF (enable -E to monitor tasks in this worker)
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer] --- ***** ----- 
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer]  -------------- [queues]
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer]                 .> document-ingestion exchange=document-ingestion(direct) key=document-ingestion
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer]                 
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer] 
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer] [tasks]
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer]   . enterprise_doc_worker.execute_job
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer] 
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer] [2026-08-18 14:07:39,436: INFO/MainProcess] Connected to redis://enterprise-doc-redis:6379/0
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer] [2026-08-18 14:07:39,441: INFO/MainProcess] mingle: searching for neighbors
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer] [2026-08-18 14:07:40,462: INFO/MainProcess] mingle: all alone
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer] [2026-08-18 14:07:40,476: INFO/MainProcess] worker-local@enterprise-doc-consumer-7bb564d7b7-8kt65 ready.
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer] [2026-08-18 14:27:28,128: INFO/MainProcess] Task enterprise_doc_worker.execute_job[cd159492-4114-4f41-b88b-a08c307f27a8] received
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer] [2026-08-18 14:27:33,667: INFO/MainProcess] HTTP Request: POST https://ai.hybgzs.com/v1/embeddings "HTTP/1.1 200 OK"
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer] [2026-08-18 14:27:34,918: INFO/MainProcess] Task enterprise_doc_worker.execute_job[cd159492-4114-4f41-b88b-a08c307f27a8] succeeded in 6.789786654990166s: 'succeeded'
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer] [2026-08-18 14:27:44,216: INFO/MainProcess] Task enterprise_doc_worker.execute_job[d6a22956-a6f3-426d-8884-a51963c79032] received
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer] {"timestamp":"2026-08-18T14:27:50.203714+00:00","level":"INFO","service":"enterprise-doc-mcp","environment":"staging","event":"**********"}
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer] {"timestamp":"2026-08-18T14:27:53.447059+00:00","level":"INFO","service":"enterprise-doc-mcp","environment":"staging","event":"**********","request_id":"b8a95017-b1a1-46eb-8c6a-0e51ce08689a","correlation_id":"7a443910-455e-4853-8218-fb60fb57f9f4","tenant_id":"04d3e300-7b31-4d06-9b55-5a4e1eceeee5","actor_id":"479b2492-a4a7-4707-8dac-4fcb3af5848d"}
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer] {"timestamp":"2026-08-18T14:27:56.080561+00:00","level":"INFO","service":"enterprise-doc-mcp","environment":"staging","event":"**********"}
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer] [2026-08-18 14:28:58,078: INFO/MainProcess] Task enterprise_doc_worker.execute_job[d6a22956-a6f3-426d-8884-a51963c79032] succeeded in 73.86233674106188s: 'failed'
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer] [2026-08-18 14:28:59,018: INFO/MainProcess] Task enterprise_doc_worker.execute_job[94e254aa-f55b-4f95-b033-269c3e89a9b9] received
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer] {"timestamp":"2026-08-18T14:29:04.609510+00:00","level":"INFO","service":"enterprise-doc-mcp","environment":"staging","event":"**********"}
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer] {"timestamp":"2026-08-18T14:29:06.590327+00:00","level":"INFO","service":"enterprise-doc-mcp","environment":"staging","event":"**********"}
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer] [2026-08-18 14:29:53,873: INFO/MainProcess] HTTP Request: POST https://ai.futureppo.top/v1/chat/completions "HTTP/1.1 200 OK"
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer] {"timestamp":"2026-08-18T14:29:58.104378+00:00","level":"INFO","service":"enterprise-doc-mcp","environment":"staging","event":"**********"}
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer] {"timestamp":"2026-08-18T14:30:03.359120+00:00","level":"INFO","service":"enterprise-doc-mcp","environment":"staging","event":"**********"}
+[pod/enterprise-doc-consumer-7bb564d7b7-8kt65/consumer] [2026-08-18 14:30:04,978: INFO/MainProcess] Task enterprise_doc_worker.execute_job[94e254aa-f55b-4f95-b033-269c3e89a9b9] succeeded in 65.96024738391861s: 'succeeded'
