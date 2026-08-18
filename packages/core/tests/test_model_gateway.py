@@ -14,6 +14,7 @@ from enterprise_doc_core.agents import (
     DeterministicGroundedGateway,
     GroundedEvidence,
     GroundedModelRequest,
+    GroundingValidationError,
     ModelAuthError,
     ModelContractError,
     ModelOutputSchemaError,
@@ -393,13 +394,17 @@ async def test_openai_gateway_repairs_known_candidate_excerpt_without_changing_a
     assert "citations.0.excerpt:not_verbatim" in repair_messages[-1]["content"]
 
 
-async def test_openai_gateway_does_not_repair_unknown_candidate_identifier() -> None:
+@pytest.mark.parametrize("prompt_version", ["m4.v8", "m4.v9"])
+async def test_openai_gateway_repairs_unique_verbatim_unknown_candidate_identifier(
+    prompt_version: str,
+) -> None:
     requests: list[httpx.Request] = []
-    model_request = _request()
+    model_request = _request(prompt_version=prompt_version)
     invalid_payload = _valid_payload(model_request)
     citation = invalid_payload["citations"][0]
     assert isinstance(citation, dict)
     citation["chunk_id"] = "00000000-0000-0000-0000-000000000999"
+    citation["document_version_id"] = str(WRONG_VERSION)
 
     async def handler(request: httpx.Request) -> httpx.Response:
         requests.append(request)
@@ -413,8 +418,43 @@ async def test_openai_gateway_does_not_repair_unknown_candidate_identifier() -> 
         await client.aclose()
 
     assert len(requests) == 1
+    assert output.repaired is True
+    assert output.citations[0].chunk_id == model_request.evidence[0].chunk_id
+    assert output.citations[0].document_version_id == model_request.evidence[0].document_version_id
+    assert output.citations[0].excerpt == citation["excerpt"]
+
+
+async def test_openai_gateway_does_not_repair_ambiguous_verbatim_candidate_identifier() -> None:
+    evidence = [
+        _evidence(),
+        _evidence(chunk_number=2).model_copy(update={"text": _evidence().text}),
+    ]
+    model_request = _request(evidence=evidence)
+    invalid_payload = _valid_payload(model_request)
+    citation = invalid_payload["citations"][0]
+    assert isinstance(citation, dict)
+    citation["chunk_id"] = "00000000-0000-0000-0000-000000000999"
+
+    async def handler(_: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=_completion(json.dumps(invalid_payload)))
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler), trust_env=False)
+    gateway = OpenAICompatibleChatGateway(settings=_settings(), client=client)
+    try:
+        output = await gateway.generate(model_request)
+    finally:
+        await client.aclose()
+
     assert output.repaired is False
-    assert str(output.citations[0].chunk_id) == citation["chunk_id"]
+    with pytest.raises(GroundingValidationError) as caught:
+        validate_grounded_output(
+            output,
+            request=model_request,
+            tenant_id=TENANT,
+            document_version_id=VERSION,
+        )
+    assert caught.value.code == "citation_not_in_candidates"
+    assert caught.value.diagnostic_code == "grounding.citation_chunk_not_in_candidates"
 
 
 async def test_openai_gateway_normalizes_known_candidate_document_version() -> None:
@@ -736,6 +776,7 @@ async def test_openai_gateway_does_not_normalize_ambiguous_candidate_version() -
 
 
 async def test_openai_gateway_rejects_invalid_citation_only_repair() -> None:
+    calls = 0
     model_request = _request()
     invalid_payload = _valid_payload(model_request)
     citation = invalid_payload["citations"][0]
@@ -743,15 +784,31 @@ async def test_openai_gateway_rejects_invalid_citation_only_repair() -> None:
     citation["excerpt"] = "Payment is payable in thirty days."
 
     async def handler(_: httpx.Request) -> httpx.Response:
-        return httpx.Response(200, json=_completion(json.dumps(invalid_payload)))
+        nonlocal calls
+        calls += 1
+        completion = _completion(json.dumps(invalid_payload))
+        completion["usage"] = {
+            "prompt_tokens": calls * 10,
+            "completion_tokens": calls * 2,
+            "total_tokens": calls * 12,
+        }
+        return httpx.Response(200, json=completion)
 
     client = httpx.AsyncClient(transport=httpx.MockTransport(handler), trust_env=False)
     gateway = OpenAICompatibleChatGateway(settings=_settings(), client=client)
     try:
-        with pytest.raises(ModelOutputSchemaError):
+        with pytest.raises(ModelOutputSchemaError) as caught:
             await gateway.generate(model_request)
     finally:
         await client.aclose()
+
+    assert calls == 2
+    assert caught.value.telemetry.provider_request_count == 2
+    assert caught.value.telemetry.usage_request_count == 2
+    assert caught.value.telemetry.prompt_tokens == 30
+    assert caught.value.telemetry.completion_tokens == 6
+    assert caught.value.telemetry.total_tokens == 36
+    assert caught.value.telemetry.repair_request_count == 1
 
 
 async def test_openai_gateway_preserves_legacy_invalid_excerpt_behavior() -> None:
@@ -991,9 +1048,20 @@ async def test_schema_repair_shares_one_total_timeout_budget() -> None:
     assert calls == 2
 
 
-async def test_openai_gateway_schema_repair_failure_is_permanent() -> None:
+async def test_openai_gateway_schema_repair_failure_is_retryable_with_observed_telemetry() -> None:
+    calls = 0
+
     async def handler(_: httpx.Request) -> httpx.Response:
-        return httpx.Response(200, json=_completion("still-invalid"))
+        nonlocal calls
+        calls += 1
+        completion = _completion("still-invalid", model=f"served-model-{calls}")
+        completion["system_fingerprint"] = f"provider-fingerprint-{calls}"
+        completion["usage"] = {
+            "prompt_tokens": calls * 10,
+            "completion_tokens": calls * 3,
+            "total_tokens": calls * 13,
+        }
+        return httpx.Response(200, json=completion)
 
     client = httpx.AsyncClient(transport=httpx.MockTransport(handler), trust_env=False)
     gateway = OpenAICompatibleChatGateway(settings=_settings(), client=client)
@@ -1002,7 +1070,19 @@ async def test_openai_gateway_schema_repair_failure_is_permanent() -> None:
             await gateway.generate(_request())
     finally:
         await client.aclose()
-    assert error.value.retryable is False
+
+    assert calls == 2
+    assert error.value.retryable is True
+    assert error.value.identity is not None
+    assert error.value.identity.provider == "openai_compatible"
+    assert error.value.identity.model_name == "served-model-2"
+    assert error.value.identity.model_revision == "provider-fingerprint-2"
+    assert error.value.telemetry.provider_request_count == 2
+    assert error.value.telemetry.usage_request_count == 2
+    assert error.value.telemetry.prompt_tokens == 30
+    assert error.value.telemetry.completion_tokens == 9
+    assert error.value.telemetry.total_tokens == 39
+    assert error.value.telemetry.repair_request_count == 1
 
 
 @pytest.mark.parametrize(

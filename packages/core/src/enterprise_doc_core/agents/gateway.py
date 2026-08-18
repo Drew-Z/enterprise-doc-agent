@@ -92,6 +92,7 @@ class ModelResponseTooLarge(ModelGatewayError):
 
 class ModelOutputSchemaError(ModelGatewayError):
     code = "model_output_schema_error"
+    retryable = True
     default_message = "The model output did not match the required schema."
 
 
@@ -269,7 +270,8 @@ class RoutedChatModelGateway:
             return await self._generate_fallback(
                 request,
                 deadline=deadline,
-                prior_request_count=0,
+                prior_telemetry=ModelCallTelemetry(),
+                prior_identity=None,
                 fallback_trigger_code=ModelCircuitOpenError.code,
             )
         try:
@@ -288,29 +290,31 @@ class RoutedChatModelGateway:
                 fallback_trigger_code=ModelTimeoutError.code,
             ) from error
         except ModelGatewayError as error:
+            observed_identity = error.identity
             if not error.retryable:
                 await self.breaker.abort_probe(permit)
                 _with_failure_telemetry(
                     error,
                     descriptor=self.primary_descriptor,
-                    provider_request_count=1,
+                    provider_request_count=int(error.telemetry.provider_request_count == 0),
                     breaker_state=self.breaker.state,
                 )
                 raise
             await self.breaker.record_retryable_failure(permit)
+            _with_failure_telemetry(
+                error,
+                descriptor=self.primary_descriptor,
+                provider_request_count=int(error.telemetry.provider_request_count == 0),
+                breaker_state=self.breaker.state,
+                fallback_trigger_code=error.code,
+            )
             if self.fallback is None:
-                _with_failure_telemetry(
-                    error,
-                    descriptor=self.primary_descriptor,
-                    provider_request_count=1,
-                    breaker_state=self.breaker.state,
-                    fallback_trigger_code=error.code,
-                )
                 raise
             return await self._generate_fallback(
                 request,
                 deadline=deadline,
-                prior_request_count=1,
+                prior_telemetry=error.telemetry,
+                prior_identity=observed_identity,
                 fallback_trigger_code=error.code,
             )
         except BaseException:
@@ -325,26 +329,27 @@ class RoutedChatModelGateway:
         request: GroundedModelRequest,
         *,
         deadline: float | None,
-        prior_request_count: int,
+        prior_telemetry: ModelCallTelemetry,
+        prior_identity: ModelIdentity | None,
         fallback_trigger_code: str | None,
     ) -> GroundedModelOutput:
         if self.fallback is None:
             raise _with_failure_telemetry(
-                ModelCircuitOpenError(),
+                ModelCircuitOpenError(identity=prior_identity, telemetry=prior_telemetry),
                 descriptor=self.primary_descriptor,
-                provider_request_count=prior_request_count,
                 breaker_state=self.breaker.state,
                 fallback_trigger_code=fallback_trigger_code,
             )
         if deadline is not None and asyncio.get_running_loop().time() >= deadline:
             descriptor = (
-                self.primary_descriptor if prior_request_count else self.fallback_descriptor
+                self.primary_descriptor
+                if prior_telemetry.provider_request_count
+                else self.fallback_descriptor
             )
             assert descriptor is not None
             raise _with_failure_telemetry(
-                ModelTimeoutError(),
+                ModelTimeoutError(identity=prior_identity, telemetry=prior_telemetry),
                 descriptor=descriptor,
-                provider_request_count=prior_request_count,
                 breaker_state=self.breaker.state,
                 fallback_trigger_code=fallback_trigger_code,
             )
@@ -357,7 +362,7 @@ class RoutedChatModelGateway:
             )
             return _with_route_telemetry(
                 output,
-                provider_request_count=prior_request_count,
+                prior_telemetry=prior_telemetry,
                 fallback_count=1,
                 breaker_state=self.breaker.state,
                 fallback_trigger_code=fallback_trigger_code,
@@ -365,19 +370,22 @@ class RoutedChatModelGateway:
         except _RouteDeadlineExceeded as error:
             assert self.fallback_descriptor is not None
             raise _with_failure_telemetry(
-                ModelTimeoutError(),
+                ModelTimeoutError(identity=prior_identity, telemetry=prior_telemetry),
                 descriptor=self.fallback_descriptor,
-                provider_request_count=prior_request_count + 1,
+                provider_request_count=1,
                 fallback_count=1,
                 breaker_state=self.breaker.state,
                 fallback_trigger_code=fallback_trigger_code,
             ) from error
         except ModelGatewayError as error:
             assert self.fallback_descriptor is not None
+            if error.identity is None:
+                error.identity = prior_identity
             _with_failure_telemetry(
                 error,
                 descriptor=self.fallback_descriptor,
-                provider_request_count=prior_request_count + 1,
+                prior_telemetry=prior_telemetry,
+                provider_request_count=int(error.telemetry.provider_request_count == 0),
                 fallback_count=1,
                 breaker_state=self.breaker.state,
                 fallback_trigger_code=fallback_trigger_code,
@@ -641,7 +649,7 @@ class OpenAICompatibleChatGateway:
                     expected_task=request.task_type,
                 )
             except _RepairableOutputError as error:
-                raise ModelOutputSchemaError() from error
+                raise self._output_schema_error(responses) from error
             repaired = True
             model_name = repaired_response.model
             model_revision = repaired_response.model_revision
@@ -650,7 +658,11 @@ class OpenAICompatibleChatGateway:
                 payload,
                 request=request,
             )
-            repaired = repaired or identifiers_normalized
+            payload, identifiers_recovered = _recover_unique_citation_identifiers(
+                payload,
+                request=request,
+            )
+            repaired = repaired or identifiers_normalized or identifiers_recovered
         citation_issues = (
             _citation_repair_issues(payload, request=request)
             if request.behavior_versions.prompt_version
@@ -679,12 +691,15 @@ class OpenAICompatibleChatGateway:
                     expected_task=request.task_type,
                 )
             except _RepairableOutputError as error:
-                raise ModelOutputSchemaError() from error
-            payload = _merge_repaired_citations(
-                payload,
-                repaired_payload,
-                request=request,
-            )
+                raise self._output_schema_error(responses) from error
+            try:
+                payload = _merge_repaired_citations(
+                    payload,
+                    repaired_payload,
+                    request=request,
+                )
+            except ModelOutputSchemaError as error:
+                raise self._output_schema_error(responses) from error
             repaired = True
             model_name = repaired_response.model
             model_revision = repaired_response.model_revision
@@ -703,6 +718,21 @@ class OpenAICompatibleChatGateway:
                 model_revision=model_revision or self.settings.model_revision,
             ),
             repaired=repaired,
+            telemetry=_aggregate_openai_telemetry(responses),
+        )
+
+    def _output_schema_error(
+        self,
+        responses: list[_OpenAICompletion],
+    ) -> ModelOutputSchemaError:
+        last = responses[-1]
+        return ModelOutputSchemaError(
+            identity=ModelIdentity(
+                provider=ModelProvider.OPENAI_COMPATIBLE.value,
+                model_name=last.model or cast(str, self.settings.model_name),
+                model_version=self.settings.model_version,
+                model_revision=last.model_revision or self.settings.model_revision,
+            ),
             telemetry=_aggregate_openai_telemetry(responses),
         )
 
@@ -806,21 +836,20 @@ def _aggregate_openai_telemetry(
 def _with_route_telemetry(
     output: GroundedModelOutput,
     *,
+    prior_telemetry: ModelCallTelemetry | None = None,
     provider_request_count: int = 0,
     fallback_count: int = 0,
     breaker_state: CircuitState,
     fallback_trigger_code: str | None = None,
 ) -> GroundedModelOutput:
-    update = {
-        "provider_request_count": (
-            output.telemetry.provider_request_count + provider_request_count
-        ),
-        "fallback_count": output.telemetry.fallback_count + fallback_count,
-        "breaker_state": breaker_state.value,
-    }
-    if fallback_trigger_code is not None:
-        update["fallback_trigger_code"] = fallback_trigger_code
-    telemetry = output.telemetry.model_copy(update=update)
+    telemetry = _merge_call_telemetry(
+        output.telemetry,
+        prior=prior_telemetry,
+        provider_request_count=provider_request_count,
+        fallback_count=fallback_count,
+        breaker_state=breaker_state,
+        fallback_trigger_code=fallback_trigger_code,
+    )
     return replace(output, telemetry=telemetry)
 
 
@@ -828,26 +857,73 @@ def _with_failure_telemetry(
     error: ModelGatewayError,
     *,
     descriptor: ModelRouteDescriptor,
+    prior_telemetry: ModelCallTelemetry | None = None,
     provider_request_count: int = 0,
     fallback_count: int = 0,
     breaker_state: CircuitState,
     fallback_trigger_code: str | None = None,
 ) -> ModelGatewayError:
-    error.identity = ModelIdentity(
-        provider=descriptor.provider,
-        model_name=descriptor.model_name,
-        model_version=descriptor.model_version,
-        model_revision=descriptor.model_revision,
+    if error.identity is None:
+        error.identity = ModelIdentity(
+            provider=descriptor.provider,
+            model_name=descriptor.model_name,
+            model_version=descriptor.model_version,
+            model_revision=descriptor.model_revision,
+        )
+    error.telemetry = _merge_call_telemetry(
+        error.telemetry,
+        prior=prior_telemetry,
+        provider_request_count=provider_request_count,
+        fallback_count=fallback_count,
+        breaker_state=breaker_state,
+        fallback_trigger_code=fallback_trigger_code,
     )
-    update = {
-        "provider_request_count": (error.telemetry.provider_request_count + provider_request_count),
-        "fallback_count": error.telemetry.fallback_count + fallback_count,
-        "breaker_state": breaker_state.value,
-    }
-    if fallback_trigger_code is not None:
-        update["fallback_trigger_code"] = fallback_trigger_code
-    error.telemetry = error.telemetry.model_copy(update=update)
     return error
+
+
+def _merge_call_telemetry(
+    current: ModelCallTelemetry,
+    *,
+    prior: ModelCallTelemetry | None,
+    provider_request_count: int,
+    fallback_count: int,
+    breaker_state: CircuitState,
+    fallback_trigger_code: str | None,
+) -> ModelCallTelemetry:
+    prior = prior or ModelCallTelemetry()
+
+    def token_sum(
+        current_value: int | None,
+        prior_value: int | None,
+    ) -> int | None:
+        if current_value is None and prior_value is None:
+            return None
+        return (current_value or 0) + (prior_value or 0)
+
+    return current.model_copy(
+        update={
+            "provider_request_count": (
+                prior.provider_request_count
+                + current.provider_request_count
+                + provider_request_count
+            ),
+            "usage_request_count": prior.usage_request_count + current.usage_request_count,
+            "prompt_tokens": token_sum(current.prompt_tokens, prior.prompt_tokens),
+            "completion_tokens": token_sum(
+                current.completion_tokens,
+                prior.completion_tokens,
+            ),
+            "total_tokens": token_sum(current.total_tokens, prior.total_tokens),
+            "repair_request_count": (prior.repair_request_count + current.repair_request_count),
+            "fallback_count": prior.fallback_count + current.fallback_count + fallback_count,
+            "breaker_state": breaker_state.value,
+            "fallback_trigger_code": (
+                fallback_trigger_code
+                or current.fallback_trigger_code
+                or prior.fallback_trigger_code
+            ),
+        }
+    )
 
 
 def _raise_for_provider_status(status_code: int) -> None:
@@ -1085,6 +1161,45 @@ def _normalize_known_citation_versions(
     return cast(
         GroundedModelPayload,
         payload.model_copy(update={"citations": normalized}),
+    ), True
+
+
+def _recover_unique_citation_identifiers(
+    payload: GroundedModelPayload,
+    *,
+    request: GroundedModelRequest,
+) -> tuple[GroundedModelPayload, bool]:
+    if payload.outcome == "refusal":
+        return payload, False
+    evidence_by_pair = {
+        (item.chunk_id, item.document_version_id): item for item in request.evidence
+    }
+    recovered: list[CitationProposal] = []
+    changed = False
+    for citation in payload.citations:
+        if (citation.chunk_id, citation.document_version_id) in evidence_by_pair:
+            recovered.append(citation)
+            continue
+        excerpt = citation.excerpt.strip()
+        matches = [item for item in request.evidence if excerpt and excerpt in item.text]
+        if len(matches) != 1:
+            recovered.append(citation)
+            continue
+        evidence = matches[0]
+        recovered.append(
+            citation.model_copy(
+                update={
+                    "chunk_id": evidence.chunk_id,
+                    "document_version_id": evidence.document_version_id,
+                }
+            )
+        )
+        changed = True
+    if not changed:
+        return payload, False
+    return cast(
+        GroundedModelPayload,
+        payload.model_copy(update={"citations": recovered}),
     ), True
 
 

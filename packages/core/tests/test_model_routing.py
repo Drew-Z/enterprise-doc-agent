@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from dataclasses import replace
 from uuid import uuid4
 
 import pytest
@@ -13,6 +14,9 @@ from enterprise_doc_core.agents import (
     GroundedEvidence,
     GroundedModelRequest,
     ModelAuthError,
+    ModelCallTelemetry,
+    ModelIdentity,
+    ModelOutputSchemaError,
     ModelRouteDescriptor,
     ModelServerError,
     ModelTimeoutError,
@@ -77,6 +81,19 @@ class DelayedGateway:
         if self.error is not None:
             raise self.error
         return await self.delegate.generate(request)
+
+
+class ObservedTelemetryGateway:
+    def __init__(self, *, identity: ModelIdentity, telemetry: ModelCallTelemetry) -> None:
+        self.identity = identity
+        self.telemetry = telemetry
+        self.calls = 0
+        self.delegate = DeterministicGroundedGateway()
+
+    async def generate(self, request: GroundedModelRequest):
+        self.calls += 1
+        output = await self.delegate.generate(request)
+        return replace(output, identity=self.identity, telemetry=self.telemetry)
 
 
 def _descriptor(name: str) -> ModelRouteDescriptor:
@@ -148,6 +165,95 @@ async def test_model_server_error_falls_back_with_complete_route_telemetry() -> 
     assert output.telemetry.fallback_count == 1
     assert output.telemetry.breaker_state == "closed"
     assert output.telemetry.fallback_trigger_code == "model_server_error"
+
+
+async def test_schema_failure_fallback_merges_observed_primary_and_fallback_telemetry() -> None:
+    primary_error = ModelOutputSchemaError(
+        identity=ModelIdentity(
+            provider="openai_compatible",
+            model_name="primary-observed",
+            model_revision="primary-revision",
+        ),
+        telemetry=ModelCallTelemetry(
+            provider_request_count=2,
+            usage_request_count=2,
+            prompt_tokens=30,
+            completion_tokens=9,
+            total_tokens=39,
+            repair_request_count=1,
+        ),
+    )
+    primary = ScriptedGateway([primary_error])
+    fallback = ObservedTelemetryGateway(
+        identity=ModelIdentity(
+            provider="openai_compatible",
+            model_name="fallback-observed",
+            model_revision="fallback-revision",
+        ),
+        telemetry=ModelCallTelemetry(
+            provider_request_count=1,
+            usage_request_count=1,
+            prompt_tokens=11,
+            completion_tokens=4,
+            total_tokens=15,
+        ),
+    )
+    routed = RoutedChatModelGateway(
+        primary=primary,
+        primary_descriptor=_descriptor("primary-configured"),
+        fallback=fallback,
+        fallback_descriptor=_descriptor("fallback-configured"),
+    )
+
+    output = await routed.generate(_request())
+
+    assert fallback.calls == 1
+    assert output.identity.model_name == "fallback-observed"
+    assert output.identity.model_revision == "fallback-revision"
+    assert output.telemetry.provider_request_count == 3
+    assert output.telemetry.usage_request_count == 3
+    assert output.telemetry.prompt_tokens == 41
+    assert output.telemetry.completion_tokens == 13
+    assert output.telemetry.total_tokens == 54
+    assert output.telemetry.repair_request_count == 1
+    assert output.telemetry.fallback_count == 1
+    assert output.telemetry.breaker_state == "closed"
+    assert output.telemetry.fallback_trigger_code == "model_output_schema_error"
+
+
+async def test_schema_failure_without_fallback_preserves_raw_observed_model_identity() -> None:
+    primary_error = ModelOutputSchemaError(
+        identity=ModelIdentity(
+            provider="openai_compatible",
+            model_name="deepseek-ai/DeepSeek-V4-Flash",
+            model_revision="provider-revision",
+        ),
+        telemetry=ModelCallTelemetry(
+            provider_request_count=2,
+            usage_request_count=2,
+            prompt_tokens=30,
+            completion_tokens=9,
+            total_tokens=39,
+            repair_request_count=1,
+        ),
+    )
+    routed = RoutedChatModelGateway(
+        primary=ScriptedGateway([primary_error]),
+        primary_descriptor=_descriptor("DeepSeek-V4-Flash"),
+    )
+
+    with pytest.raises(ModelOutputSchemaError) as caught:
+        await routed.generate(_request())
+
+    assert caught.value.identity is not None
+    assert caught.value.identity.model_name == "deepseek-ai/DeepSeek-V4-Flash"
+    assert caught.value.identity.model_revision == "provider-revision"
+    assert caught.value.telemetry.provider_request_count == 2
+    assert caught.value.telemetry.usage_request_count == 2
+    assert caught.value.telemetry.repair_request_count == 1
+    assert caught.value.telemetry.fallback_count == 0
+    assert caught.value.telemetry.breaker_state == "closed"
+    assert caught.value.telemetry.fallback_trigger_code == "model_output_schema_error"
 
 
 async def test_failed_fallback_carries_final_identity_and_attempt_telemetry() -> None:

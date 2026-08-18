@@ -3,10 +3,18 @@
 ## Adopted Facts
 
 - `RoutedChatModelGateway` uses fallback only for retryable gateway errors.
-- Permanent auth, contract and schema failures are returned without silent fallback.
+- Exhausted bounded provider-output schema repair is retryable; permanent auth,
+  provider-envelope contract, authorization and grounding failures do not silently
+  fall back.
+- Prompt v8/v9 may replace both identifiers of an invalid citation only when its stripped
+  excerpt is a verbatim substring of exactly one supplied authorized evidence item. Zero
+  or multiple matches remain unchanged for the deterministic grounding gate to reject.
 - `CircuitBreaker` implements CLOSED, OPEN and HALF_OPEN with one in-flight probe.
 - Primary and fallback calls share one optional monotonic route deadline. Fallback uses
   only remaining budget, and caller cancellation remains distinct from timeout.
+- Route results and failures merge primary/fallback request, usage, optional token, repair,
+  fallback and breaker telemetry. Provider-returned model identity is preserved verbatim;
+  configured descriptor identity is used only when no observed identity is available.
 - Route metadata records provider/model/revision/quantization/context and embedding
   dimension without secrets.
 - `DimensionCheckedEmbeddingProvider` rejects item-count and vector-dimension mismatch.
@@ -18,8 +26,11 @@
 ## Proven Examples
 
 - `packages/core/tests/test_model_routing.py` proves retryable-only fallback, permanent
-  failure propagation, shared deadline enforcement, cancellation propagation,
-  single-probe HALF_OPEN behavior and embedding dimension rejection.
+  failure propagation, schema-failure telemetry merging, raw observed identity retention,
+  shared deadline enforcement, cancellation propagation, single-probe HALF_OPEN behavior
+  and embedding dimension rejection.
+- `packages/core/tests/test_model_gateway.py` proves bounded output repair telemetry and
+  unique-verbatim citation identifier recovery while ambiguous matches fail closed.
 - `scripts/benchmark_m7.py` runs the versioned routing dataset repeatedly and records
   route metadata, outcome counts and latency summaries without claiming model quality.
 - `tests/deployment/test_run_model_capacity.py` proves missing streamed usage cannot

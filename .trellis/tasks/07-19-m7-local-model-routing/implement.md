@@ -22,3 +22,14 @@
   fallback/citation metadata, including an explicit fallback-count and breaker-state
   contract gate.
 - [x] Add a GPU/vLLM manual gate rather than inventing throughput or memory values.
+
+## Slice 4: Retained Provider-Failure Remediation
+
+- [x] Repair prompt v8/v9 citation identifier pairs only for one uniquely matching
+  authorized verbatim excerpt; retain fail-closed behavior for zero or multiple matches.
+- [x] Make exhausted bounded model-output schema repair retryable and route it to fallback
+  within the existing shared deadline.
+- [x] Preserve final observed provider identity and merge primary/fallback request, usage,
+  token, repair, fallback, and breaker telemetry without hardcoded undercounting.
+- [x] Run focused gateway/routing tests and core quality checks without rerunning the
+  40-case staging quality suite.
