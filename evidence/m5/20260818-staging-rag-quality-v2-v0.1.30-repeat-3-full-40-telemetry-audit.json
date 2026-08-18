@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "evidence_type": "staging-real-provider-quality-telemetry-audit",
+  "status": "failed_system_quality",
+  "commit_sha": "6860552fae1d1bbd8a09e7dbe1458a613aa9f601",
+  "namespace": "enterprise-doc-agent-staging",
+  "execution_window": {
+    "started_at": "2026-08-18T08:47:15.405112+00:00",
+    "completed_at": "2026-08-18T09:29:07.614274+00:00"
+  },
+  "report": {
+    "path": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-repeat-3-full-40.json",
+    "file_sha256": "341f697aeb6f3cc31b45470ac3e9e63ba56ed56f33b1a81f57ca43834bd87c8c",
+    "payload_sha256": "bce1b7a34eab1b37cb5eab0d77ddce3db8a46f5775628a0a099a9d69f26be5be"
+  },
+  "case_accounting": {
+    "case_count": 40,
+    "passed": 39,
+    "succeeded": 33,
+    "refused": 6,
+    "failed": 1,
+    "provider_telemetry_observed": 35,
+    "pre_model_refusals": 5,
+    "system_failures": 1
+  },
+  "route_identity": {
+    "configured_primary": "glm-5-2",
+    "configured_fallback": "DeepSeek-V4-Flash",
+    "observed_primary": "glm-5-2",
+    "observed_fallback": "deepseek-ai/DeepSeek-V4-Flash",
+    "primary_completed_case_count": 28,
+    "fallback_completed_case_count": 7,
+    "no_provider_request_case_count": 5
+  },
+  "normalized_route_telemetry": {
+    "normalization": "Five retrieval-stage refusals made no provider call and are normalized to zero counts with no breaker observation.",
+    "provider_request_count": 43,
+    "usage_request_count": 35,
+    "prompt_tokens": 62949,
+    "completion_tokens": 6172,
+    "total_tokens": 69121,
+    "repair_request_count": 1,
+    "fallback_count": 7,
+    "breaker_state_case_counts": {
+      "closed": 33,
+      "open": 2,
+      "not_applicable_no_provider_call": 5
+    }
+  },
+  "sanitized_http_response_log": {
+    "source": "enterprise-doc-consumer logs within the execution window",
+    "responses": [
+      {
+        "route": "primary",
+        "status": 200,
+        "count": 32
+      },
+      {
+        "route": "primary",
+        "status": 429,
+        "count": 2
+      },
+      {
+        "route": "primary",
+        "status": 500,
+        "count": 1
+      },
+      {
+        "route": "primary",
+        "status": 502,
+        "count": 1
+      },
+      {
+        "route": "fallback",
+        "status": 200,
+        "count": 7
+      }
+    ],
+    "visible_response_count": 43,
+    "provider_request_count": 43
+  },
+  "limitations": [
+    "HTTP response logs count visible responses, including a repair request, and are corroborating evidence rather than the route-counter source of truth.",
+    "The primary failure cause is not persisted when fallback succeeds.",
+    "Provider model revisions and billing amounts were not returned."
+  ]
+}

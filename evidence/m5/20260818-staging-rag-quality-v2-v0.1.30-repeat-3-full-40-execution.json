@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "suite": "staging-real-provider-rag-quality",
+  "status": "failed_system_quality",
+  "namespace": "enterprise-doc-agent-staging",
+  "commit_sha": "6860552fae1d1bbd8a09e7dbe1458a613aa9f601",
+  "image": "ghcr.io/drew-z/enterprise-doc-api@sha256:731055539544faac51ea38bd673ef73d24be8acb6bfa32f59eb8b65b588d13c8",
+  "source_snapshot": {
+    "transport": "in-cluster-api-pod-dev-shm",
+    "archive_sha256": "004afb7851b00f412cc5e13892302d7bbae743e54d06942d5a0650d7429cff19",
+    "working_tree_dirty": false
+  },
+  "dataset": {
+    "version": "enterprise-rag-quality-v2",
+    "sha256": "145df783dba7ee1c533a59de288bb1a9aff6ba3c0bdff7e4617a366dca1a9f5b",
+    "corpus_sha256": "c6887a0ca112cd62499c9d61d5caa9d87e94a4ba6c8770293f9f3a8c6cf54e36",
+    "selected_case_count": 40,
+    "total_case_count": 40
+  },
+  "evaluator": {
+    "version": "m5.rag-quality.v5",
+    "runner_transport": "in-cluster-api-pod"
+  },
+  "configured_routes": {
+    "primary": {
+      "provider": "openai_compatible",
+      "model_name": "glm-5-2",
+      "timeout_seconds": 60.0
+    },
+    "fallback": {
+      "provider": "openai_compatible",
+      "model_name": "DeepSeek-V4-Flash",
+      "timeout_seconds": 60.0
+    }
+  },
+  "observed_provider_routes": [
+    {
+      "provider": "openai_compatible",
+      "model_name": "glm-5-2",
+      "model_version": null,
+      "model_revision": null
+    },
+    {
+      "provider": "openai_compatible",
+      "model_name": "deepseek-ai/DeepSeek-V4-Flash",
+      "model_version": null,
+      "model_revision": null
+    }
+  ],
+  "aggregate": {
+    "report_status": "passed",
+    "all_targets_passed": true,
+    "measured": {
+      "citation_precision": 0.9607843137254901,
+      "citation_recall": 0.9705882352941176,
+      "closed_label_fact_precision": 0.9705882352941176,
+      "fact_recall": 0.9705882352941176,
+      "grounded_fact_rate": 0.9705882352941176,
+      "refusal_precision": 1.0,
+      "refusal_reason_accuracy": 1.0,
+      "refusal_recall": 1.0
+    }
+  },
+  "case_summary": {
+    "passed": 39,
+    "failed": 1,
+    "terminal_status_counts": {
+      "succeeded": 33,
+      "refused": 6,
+      "failed": 1
+    },
+    "failed_cases": [
+      {
+        "case_id": "fact-retention-legal-hold",
+        "outcome_code": "model_output_schema_error",
+        "failure_diagnostic_code": null
+      }
+    ],
+    "errors_by_code": {
+      "insufficient_evidence": 1,
+      "low_relevance": 5,
+      "model_output_schema_error": 1
+    }
+  },
+  "provider_telemetry": {
+    "case_count": 40,
+    "observed_provider_call_case_count": 35,
+    "pre_model_refusal_case_count": 5,
+    "provider_request_count": 43,
+    "usage_request_count": 35,
+    "prompt_tokens": 62949,
+    "completion_tokens": 6172,
+    "total_tokens": 69121,
+    "repair_request_count": 1,
+    "fallback_count": 7,
+    "breaker_state_case_counts": {
+      "closed": 33,
+      "open": 2,
+      "not_applicable": 5
+    },
+    "audit_path": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-repeat-3-full-40-telemetry-audit.json"
+  },
+  "latency_ms": {
+    "min_ms": 18193.12442210503,
+    "p50_ms": 47551.59562686458,
+    "p95_ms": 98074.04471794143,
+    "p99_ms": 147503.19534097798,
+    "max_ms": 147503.19534097798,
+    "sample_count": 40
+  },
+  "report": {
+    "path": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-repeat-3-full-40.json",
+    "file_sha256": "341f697aeb6f3cc31b45470ac3e9e63ba56ed56f33b1a81f57ca43834bd87c8c",
+    "payload_sha256": "bce1b7a34eab1b37cb5eab0d77ddce3db8a46f5775628a0a099a9d69f26be5be",
+    "payload_seal_valid": true
+  },
+  "execution": {
+    "started_at": "2026-08-18T08:47:15.405112+00:00",
+    "completed_at": "2026-08-18T09:29:07.614274+00:00",
+    "report_produced": true,
+    "evaluator_exit_code": 0
+  },
+  "repeatability": {
+    "baseline_report": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-full-40.json",
+    "dataset_equal": true,
+    "corpus_equal": true,
+    "evaluator_equal": true,
+    "configured_route_equal": true,
+    "observed_route_identity_equal": false,
+    "zero_system_failures": false,
+    "valid_clean_repeat": false
+  },
+  "limitations": [
+    "The evaluator report status reflects aggregate thresholds and remained passed even though one case ended in a system failure; this execution summary therefore marks the run failed_system_quality.",
+    "The system failure occurred on a different case and error class than repeat-2, demonstrating route instability rather than one deterministic fixture defect.",
+    "Representative enterprise-corpus review, independent human approval, provider model revisions, and billing remain outstanding."
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "evidence_type": "staging-real-provider-quality-telemetry-audit",
+  "status": "failed_system_quality",
+  "commit_sha": "6860552fae1d1bbd8a09e7dbe1458a613aa9f601",
+  "namespace": "enterprise-doc-agent-staging",
+  "execution_window": {
+    "started_at": "2026-08-18T06:07:52.672752+00:00",
+    "completed_at": "2026-08-18T07:00:11.291862+00:00"
+  },
+  "report": {
+    "path": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-repeat-2-full-40.json",
+    "file_sha256": "d564137b2c46a9a5f6da76b63247f78200a94ab6972f104800e34281ec67edba",
+    "payload_sha256": "aeffd71b6c4ce90ba7277d2fee9d0018f12cee6f07b6f2ba7781199da9cd9e0a"
+  },
+  "case_accounting": {
+    "case_count": 40,
+    "passed": 39,
+    "succeeded": 33,
+    "refused": 6,
+    "failed": 1,
+    "provider_telemetry_observed": 35,
+    "pre_model_refusals": 5,
+    "system_failures": 1
+  },
+  "route_identity": {
+    "configured_primary": "glm-5-2",
+    "configured_fallback": "DeepSeek-V4-Flash",
+    "observed_primary": "glm-5-2",
+    "observed_fallback": "deepseek-ai/DeepSeek-V4-Flash",
+    "primary_completed_case_count": 23,
+    "fallback_completed_case_count": 12,
+    "no_provider_request_case_count": 5
+  },
+  "normalized_route_telemetry": {
+    "normalization": "Five retrieval-stage refusals made no provider call and are normalized to zero counts with no breaker observation.",
+    "provider_request_count": 47,
+    "usage_request_count": 35,
+    "prompt_tokens": 59023,
+    "completion_tokens": 5908,
+    "total_tokens": 64931,
+    "repair_request_count": 0,
+    "fallback_count": 12,
+    "breaker_state_case_counts": {
+      "closed": 35,
+      "not_applicable_no_provider_call": 5
+    }
+  },
+  "sanitized_http_response_log": {
+    "source": "enterprise-doc-consumer logs within the execution window",
+    "responses": [
+      {
+        "route": "primary",
+        "status": 200,
+        "count": 24
+      },
+      {
+        "route": "fallback",
+        "status": 200,
+        "count": 12
+      }
+    ],
+    "visible_response_count": 36,
+    "provider_request_count": 47
+  },
+  "limitations": [
+    "Eleven provider requests have no visible HTTP response log and cannot be partitioned into timeout or transport failures from the current telemetry.",
+    "The primary failure cause is not persisted when fallback succeeds.",
+    "Provider model revisions and billing amounts were not returned."
+  ]
+}

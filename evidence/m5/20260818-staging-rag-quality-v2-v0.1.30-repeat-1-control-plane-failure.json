@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "suite": "staging-real-provider-rag-quality",
+  "status": "failed",
+  "failure_class": "control_plane_read_timeout",
+  "namespace": "enterprise-doc-agent-staging",
+  "commit_sha": "6860552fae1d1bbd8a09e7dbe1458a613aa9f601",
+  "image": "ghcr.io/drew-z/enterprise-doc-api@sha256:731055539544faac51ea38bd673ef73d24be8acb6bfa32f59eb8b65b588d13c8",
+  "source_snapshot": {
+    "transport": "in-cluster-api-pod-dev-shm",
+    "archive_sha256": "004afb7851b00f412cc5e13892302d7bbae743e54d06942d5a0650d7429cff19",
+    "working_tree_dirty": false
+  },
+  "dataset": {
+    "version": "enterprise-rag-quality-v2",
+    "sha256": "145df783dba7ee1c533a59de288bb1a9aff6ba3c0bdff7e4617a366dca1a9f5b",
+    "corpus_sha256": "c6887a0ca112cd62499c9d61d5caa9d87e94a4ba6c8770293f9f3a8c6cf54e36",
+    "selected_case_count": 40,
+    "total_case_count": 40
+  },
+  "evaluator": {
+    "version": "m5.rag-quality.v5",
+    "runner_transport": "in-cluster-api-pod",
+    "control_plane_request_timeout_seconds": 90,
+    "safe_read_attempts": 3
+  },
+  "configured_routes": {
+    "primary": {
+      "provider": "openai_compatible",
+      "model_name": "glm-5-2",
+      "timeout_seconds": 60.0
+    },
+    "fallback": {
+      "provider": "openai_compatible",
+      "model_name": "DeepSeek-V4-Flash",
+      "timeout_seconds": 60.0
+    }
+  },
+  "partial_execution": {
+    "started_at": "2026-08-18T04:57:12.947358+00:00",
+    "failed_at": "2026-08-18T05:12:37.265975+00:00",
+    "submitted_case_count": 14,
+    "eventual_status_counts": {
+      "succeeded": 14
+    },
+    "report_produced": false,
+    "evaluator_exit_code": 1
+  },
+  "failure": {
+    "exception_type": "StagingSmokeFailure",
+    "message": "Control-plane request failed with TimeoutError.",
+    "operation": "GET /api/agent-runs/{run_id}",
+    "stderr_sha256": "b10cbc2225b9e7f4c922c73efb15dc4533d876749b16731b05fcecd4eceff846",
+    "stderr_size_bytes": 3348
+  },
+  "repeatability": {
+    "baseline_report": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-full-40.json",
+    "dataset_equal": true,
+    "corpus_equal": true,
+    "evaluator_equal": true,
+    "configured_route_equal": true,
+    "valid_complete_repeat": false
+  },
+  "limitations": [
+    "The evaluator aborted during a safe status read, so no sealed quality report was produced.",
+    "All 14 submitted runs eventually reached succeeded, which isolates this attempt from a model-quality failure but does not make it a complete repeat."
+  ]
+}

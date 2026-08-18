@@ -41,7 +41,11 @@
       "latest_application_capacity": "evidence/m5/20260817-application-capacity.json",
       "latest_real_provider_quality": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-full-40.json",
       "latest_real_provider_quality_execution": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-full-40-execution.json",
-      "latest_real_provider_quality_telemetry": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-full-40-telemetry-audit.json"
+      "latest_real_provider_quality_telemetry": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-full-40-telemetry-audit.json",
+      "latest_repeatability_attempt": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-repeat-3-full-40.json",
+      "latest_repeatability_execution": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-repeat-3-full-40-execution.json",
+      "latest_repeatability_telemetry": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-repeat-3-full-40-telemetry-audit.json",
+      "latest_repeatability_control_plane_failure": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-repeat-1-control-plane-failure.json"
     },
     {
       "milestone": "M6",
@@ -69,7 +73,11 @@
       "manifest_commit": "8983107153b3cd8c3d7c501c9c70dc5d6068c2ae",
       "latest_real_provider_quality": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-full-40.json",
       "latest_real_provider_quality_execution": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-full-40-execution.json",
-      "latest_real_provider_quality_telemetry": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-full-40-telemetry-audit.json"
+      "latest_real_provider_quality_telemetry": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-full-40-telemetry-audit.json",
+      "latest_repeatability_attempt": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-repeat-3-full-40.json",
+      "latest_repeatability_execution": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-repeat-3-full-40-execution.json",
+      "latest_repeatability_telemetry": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-repeat-3-full-40-telemetry-audit.json",
+      "latest_repeatability_control_plane_failure": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-repeat-1-control-plane-failure.json"
     },
     {
       "milestone": "M8",
