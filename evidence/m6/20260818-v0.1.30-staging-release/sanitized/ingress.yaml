@@ -1,0 +1,35 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{"traefik.ingress.kubernetes.io/router.entrypoints":"websecure"},"name":"enterprise-doc-web","namespace":"enterprise-doc-agent-staging"},"spec":{"ingressClassName":"traefik","rules":[{"host":"agent.playlab.eu.cc","http":{"paths":[{"backend":{"service":{"name":"enterprise-doc-web","port":{"number":8080}}},"path":"/","pathType":"Prefix"}]}}],"tls":[{"hosts":["agent.playlab.eu.cc"],"secretName":"enterprise-doc-staging-tls"}]}}
+
+      '
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+  creationTimestamp: '2026-07-31T11:37:32Z'
+  generation: 1
+  name: enterprise-doc-web
+  namespace: enterprise-doc-agent-staging
+  resourceVersion: '7529'
+  uid: 2bdc4085-d550-4cb1-b781-10dc1644df2d
+spec:
+  ingressClassName: traefik
+  rules:
+  - host: agent.playlab.eu.cc
+    http:
+      paths:
+      - backend:
+          service:
+            name: enterprise-doc-web
+            port:
+              number: 8080
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - agent.playlab.eu.cc
+    secretName: '[REDACTED]'
+status:
+  loadBalancer: {}
+time="2026-08-18T00:37:45+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission
+  denied"

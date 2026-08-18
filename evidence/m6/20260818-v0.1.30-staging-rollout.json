@@ -1,0 +1,167 @@
+{
+  "schema_version": 1,
+  "evidence_type": "staging-release",
+  "evidence_id": "m6-staging-rollout-20260818-v0.1.30",
+  "milestone": "M6",
+  "requirement_ids": ["M6-R4"],
+  "status": "passed",
+  "release": "v0.1.30",
+  "commit_sha": "6860552fae1d1bbd8a09e7dbe1458a613aa9f601",
+  "workflow": {
+    "repository": "Drew-Z/enterprise-doc-agent",
+    "run_id": "32044381031",
+    "run_attempt": 5,
+    "job_id": "95434461346",
+    "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/32044381031",
+    "started_at": "2026-08-17T16:33:38+00:00",
+    "completed_at": "2026-08-17T16:37:57+00:00"
+  },
+  "workflow_artifact": {
+    "artifact_id": "9293058561",
+    "name": "staging-release-6860552fae1d1bbd8a09e7dbe1458a613aa9f601",
+    "size_bytes": 38222,
+    "digest": "sha256:263ab69e779c07d5cf8dc8d3bf2abf9f19482b1cdfe8c98c7385baae2f679fba",
+    "duplicate_name_handling": "Artifact ID 9293058561 is the newest successful attempt-5 artifact; older same-name artifact 9292842464 is excluded."
+  },
+  "environment": {
+    "provider": "tencent-cloud",
+    "region": "ap-guangzhou-7",
+    "profile": "single-node-4c8g",
+    "namespace": "enterprise-doc-agent-staging"
+  },
+  "image_digests": {
+    "api": "sha256:731055539544faac51ea38bd673ef73d24be8acb6bfa32f59eb8b65b588d13c8",
+    "worker": "sha256:34f0685a50973caaeaec078aa253db0b5660fb03ba0f7527ed5d3dd1772cfe4a",
+    "consumer": "sha256:9b60599b82472b125cf25db722be3c62f4e5793f63583db88064b093d9f28728",
+    "web": "sha256:c02e3bfb19f09c5248c3fe5a8bd786f5f1867f6a5b7716f4dd2313740111a303"
+  },
+  "oci_relay": {
+    "receiver_commit": "6860552fae1d1bbd8a09e7dbe1458a613aa9f601",
+    "normalized_archive_imported": true,
+    "verified_descriptor_count_per_image": 3,
+    "imports": [
+      {
+        "component": "api",
+        "archive_sha256": "2dda72c16a604403b75284049712688746f777f0e9b3a52f5286a536a904cf46",
+        "report_path": "evidence/m6/20260818-v0.1.30-staging-release/oci-import-api.json",
+        "report_sha256": "3f23b9eb5fb4154d864174581a114923e5543454011758058b003b851a616560"
+      },
+      {
+        "component": "worker",
+        "archive_sha256": "3fda180c2492feeb5136cdd5365d537c916df77e97cc5bc69e823a58f930ddb6",
+        "report_path": "evidence/m6/20260818-v0.1.30-staging-release/oci-import-worker.json",
+        "report_sha256": "7404b81157340fa15c4362f6b109bca9157c6aad6fb754d4af66797f61df8dc0"
+      },
+      {
+        "component": "consumer",
+        "archive_sha256": "0fd895c5d81de140243b977950ec2000df93f6a078736bdc825924ca2536db64",
+        "report_path": "evidence/m6/20260818-v0.1.30-staging-release/oci-import-consumer.json",
+        "report_sha256": "60a3e165d09d3149804706071c54ba60ba5af63e07e7fb0776a105297b6c0447"
+      },
+      {
+        "component": "web",
+        "archive_sha256": "74d158e4c18f6f218d8741fa5a2c0a0e5df158372a0fd6bc050fecc1b81c772a",
+        "report_path": "evidence/m6/20260818-v0.1.30-staging-release/oci-import-web.json",
+        "report_sha256": "6b165ad3910dae3e175b4e0172791f02ca64d8f898456099e55231a47c4ee717"
+      }
+    ],
+    "cleanup_path": "evidence/m6/20260818-v0.1.30-staging-release/r2-relay-cleanup.json",
+    "cleanup_sha256": "c6ae5abf93b1eb4549595b490b50ce4c917f4bf7a1e98aec47b6d8407d760b97",
+    "temporary_r2_objects_deleted": true
+  },
+  "prerequisites": {
+    "status": "passed",
+    "live_objects_checked": 28,
+    "approval_keys_checked": 17,
+    "prerequisites_sha256": "cbafcd2036dd3ad2a1cd0120ffe68aee2dee123be2e4496602232c2e1825e66d",
+    "report_path": "evidence/m6/20260818-v0.1.30-staging-release/staging-prerequisite-validation.json",
+    "report_sha256": "f4dc745792517471b19eae81e183015bdeb7009304b6f23dcc23cade77f165fb"
+  },
+  "secrets": {
+    "status": "passed",
+    "fallback_api_key_required": true,
+    "values_redacted": true,
+    "report_path": "evidence/m6/20260818-v0.1.30-staging-release/staging-secret-validation.json",
+    "report_sha256": "3d0e535166f1da23d52377a180b24fae0597559b573c21214d6ff4c01bb6a3ff"
+  },
+  "model_routes": {
+    "primary": {
+      "provider": "openai_compatible",
+      "base_url": "https://ai.futureppo.top/v1",
+      "model": "glm-5-2",
+      "timeout_seconds": 60
+    },
+    "fallback": {
+      "provider": "openai_compatible",
+      "base_url": "https://new-api.abrdns.com/v1",
+      "model": "DeepSeek-V4-Flash",
+      "timeout_seconds": 60
+    }
+  },
+  "outcomes": {
+    "prerequisites": "passed",
+    "migration": "passed",
+    "workloads": "passed",
+    "rollout": "passed",
+    "embedding_rollout": "passed",
+    "cluster_readiness_smoke": "passed",
+    "authenticated_agent_smoke": "passed"
+  },
+  "embedding": {
+    "provider": "openai_compatible",
+    "model": "Qwen/Qwen3-Embedding-4B",
+    "version": 2,
+    "dimension": 1024,
+    "probe_item_count": 2,
+    "reindex_status": "completed",
+    "replayed": 0,
+    "rollout_report_path": "evidence/m6/20260818-v0.1.30-staging-release/sanitized/staging-embedding-rollout.json",
+    "rollout_report_sha256": "7210b0aef4c71637396dcfe8a93228cb79c343877cc703dfcee41132c5a67255"
+  },
+  "authenticated_smoke": {
+    "scenario": "authenticated-upload-ingestion-agent",
+    "status": "passed",
+    "sample_count": 1,
+    "steps": [
+      "upload_session_created",
+      "object_uploaded",
+      "upload_completed",
+      "document_ready",
+      "agent_run_created",
+      "agent_run_succeeded",
+      "answer_artifact_listed",
+      "answer_artifact_downloaded",
+      "answer_artifact_sha256_verified",
+      "answer_citation_verified"
+    ],
+    "report_path": "evidence/m6/20260818-v0.1.30-staging-release/sanitized/staging-smoke.json",
+    "report_sha256": "da0163f18c4c00a4b963eba8f4da78bef624a3e4eb6058746526ec7ec4eb57a9"
+  },
+  "deployment_evidence": {
+    "release_record_path": "evidence/m6/20260818-v0.1.30-staging-release/staging-release-record.json",
+    "release_record_sha256": "b060a43386fd8c26c40920d618d27a2fd4f1e999d0dacee07577656e0b6fa660",
+    "manifest_path": "evidence/m6/20260818-v0.1.30-staging-release/staging-evidence-manifest.json",
+    "manifest_sha256": "f8c9d780392f2c99a5aad71b9bffed24b97b822ce0c770c05db3c34e82400761",
+    "sanitized_directory": "evidence/m6/20260818-v0.1.30-staging-release/sanitized"
+  },
+  "operator_interventions": [
+    {
+      "type": "staging-smoke-token-rotation",
+      "reason": "The previous scoped token had expired and the authenticated smoke returned 401.",
+      "resolution": "A new token for the sole active smoke principal was issued inside the API Pod and piped directly to the GitHub Environment secret without printing or persistence."
+    },
+    {
+      "type": "pinned-action-cache",
+      "reason": "Anonymous GitHub codeload returned HTTP 429 from both local and server networks.",
+      "resolution": "The exact actions/upload-artifact commit was fetched through Git HTTPS and cached for the self-hosted runner.",
+      "cache_sha256": "b00992f586f1cfa5eb18e511ed4d0bbf81e3a2355727bba1cafc76a3945fd4c7"
+    }
+  ],
+  "limitations": [
+    "This is a single-node staging rollout, not a highly available production deployment.",
+    "This evidence does not close independent fault-domain migration and recovery.",
+    "The authenticated smoke validates one business-path execution; the separate 40-case quality record covers provider quality but not production availability.",
+    "The action cache emits a non-fatal Node 20 deprecation warning."
+  ],
+  "owner": "platform owner"
+}

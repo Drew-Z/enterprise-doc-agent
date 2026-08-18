@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "evidence_type": "staging-image-relay-cleanup",
+  "status": "passed",
+  "bucket": "artifacts",
+  "verified_at": "2026-08-18T04:33:53Z",
+  "credential_handling": "Kubernetes-held object-store credentials were consumed in-process; values were not printed or persisted.",
+  "objects": [
+    {
+      "key": "staging-image-relay/v0.1.30/enterprise-doc-api.oci.tar",
+      "archive_sha256": "2dda72c16a604403b75284049712688746f777f0e9b3a52f5286a536a904cf46",
+      "size_bytes_before": 127099392,
+      "delete_request": "succeeded",
+      "head_after": "404_not_found"
+    },
+    {
+      "key": "staging-image-relay/v0.1.30/enterprise-doc-worker.oci.tar",
+      "archive_sha256": "3fda180c2492feeb5136cdd5365d537c916df77e97cc5bc69e823a58f930ddb6",
+      "size_bytes_before": 127080960,
+      "delete_request": "succeeded",
+      "head_after": "404_not_found"
+    },
+    {
+      "key": "staging-image-relay/v0.1.30/enterprise-doc-consumer.oci.tar",
+      "archive_sha256": "0fd895c5d81de140243b977950ec2000df93f6a078736bdc825924ca2536db64",
+      "size_bytes_before": 127081472,
+      "delete_request": "succeeded",
+      "head_after": "404_not_found"
+    },
+    {
+      "key": "staging-image-relay/v0.1.30/enterprise-doc-web.oci.tar",
+      "archive_sha256": "74d158e4c18f6f218d8741fa5a2c0a0e5df158372a0fd6bc050fecc1b81c772a",
+      "size_bytes_before": 27295232,
+      "delete_request": "succeeded",
+      "head_after": "404_not_found"
+    }
+  ],
+  "all_deleted": true,
+  "recovery_boundary": "The server-local archives and import reports remain under /tmp/enterprise-doc-relay-v0.1.30; recreating the R2 objects requires an explicit relay upload."
+}

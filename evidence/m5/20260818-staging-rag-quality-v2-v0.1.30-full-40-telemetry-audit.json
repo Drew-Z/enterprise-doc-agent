@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "evidence_type": "staging-real-provider-quality-telemetry-audit",
+  "status": "passed_with_documented_limitations",
+  "commit_sha": "6860552fae1d1bbd8a09e7dbe1458a613aa9f601",
+  "namespace": "enterprise-doc-agent-staging",
+  "execution_window": {
+    "started_at": "2026-08-18T02:51:46.860268+00:00",
+    "completed_at": "2026-08-18T03:43:04.727010+00:00"
+  },
+  "report": {
+    "path": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-full-40.json",
+    "file_sha256": "1c925d83e0f3e3d646893532b6142c70b6d35d9fb467f023e9531f8d2c24505d",
+    "payload_sha256": "c8ab9e854c372f2732facb7fa9d697f5c7347f55d03b31190b6c415d585c8f45"
+  },
+  "case_accounting": {
+    "case_count": 40,
+    "passed": 40,
+    "succeeded": 34,
+    "refused": 6,
+    "provider_telemetry_observed": 35,
+    "pre_model_refusals": 5,
+    "system_failures": 0
+  },
+  "route_identity": {
+    "primary": {
+      "provider": "openai_compatible",
+      "model_name": "glm-5-2",
+      "model_version": null,
+      "model_revision": null,
+      "model_completed_case_count": 24
+    },
+    "fallback": {
+      "provider": "openai_compatible",
+      "model_name": "DeepSeek-V4-Flash",
+      "model_version": null,
+      "model_revision": null,
+      "model_completed_case_count": 11
+    },
+    "configured_primary_identity_case_count": 29,
+    "no_provider_request_case_count": 5
+  },
+  "normalized_route_telemetry": {
+    "normalization": "The five retrieval-stage refusals made no provider call; their nullable provider fields are counted as zero requests, zero usage, zero fallback, zero repair, and no breaker observation.",
+    "provider_request_count": 46,
+    "usage_request_count": 35,
+    "prompt_tokens": 59378,
+    "completion_tokens": 9680,
+    "total_tokens": 69058,
+    "repair_request_count": 0,
+    "fallback_count": 11,
+    "breaker_state_case_counts": {
+      "closed": 34,
+      "open": 1,
+      "not_applicable_no_provider_call": 5
+    }
+  },
+  "sanitized_http_response_log": {
+    "source": "enterprise-doc-consumer logs within the execution window",
+    "responses": [
+      {
+        "route": "primary",
+        "status": 200,
+        "count": 27
+      },
+      {
+        "route": "primary",
+        "status": 429,
+        "count": 1
+      },
+      {
+        "route": "fallback",
+        "status": 200,
+        "count": 11
+      },
+      {
+        "route": "fallback",
+        "status": 429,
+        "count": 1
+      },
+      {
+        "route": "fallback",
+        "status": 500,
+        "count": 1
+      }
+    ]
+  },
+  "limitations": [
+    "The sealed evaluator report aggregates nullable no-call telemetry to null; this audit preserves the exact database totals and the no-call semantics without changing the sealed report.",
+    "HTTP response logs count visible responses, including provider-internal retries, and omit timeouts or connection failures; they are corroborating evidence rather than the route-counter source of truth.",
+    "Provider model revisions and billing amounts were not returned.",
+    "Primary failure cause is not persisted when fallback succeeds, so the 11 fallback transitions cannot be partitioned exactly into timeout, 429, 5xx, or transport causes from route telemetry alone."
+  ]
+}

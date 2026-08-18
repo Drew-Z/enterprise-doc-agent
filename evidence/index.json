@@ -39,7 +39,9 @@
       "manifest_commit": "8983107153b3cd8c3d7c501c9c70dc5d6068c2ae",
       "latest_staging_observability": "evidence/m5/20260817-staging-observability.json",
       "latest_application_capacity": "evidence/m5/20260817-application-capacity.json",
-      "latest_real_provider_quality": "evidence/m5/20260817-staging-rag-quality-v2-v0.1.29-full-40-failed.json"
+      "latest_real_provider_quality": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-full-40.json",
+      "latest_real_provider_quality_execution": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-full-40-execution.json",
+      "latest_real_provider_quality_telemetry": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-full-40-telemetry-audit.json"
     },
     {
       "milestone": "M6",
@@ -57,14 +59,17 @@
       "production_rpo_rto_preflight": "evidence/m6/20260806-production-rpo-rto-preflight.json",
       "production_rpo_rto_failed_baseline": "evidence/m6/20260806-production-rpo-rto-drill-failed.json",
       "production_rpo_rto_drill": "evidence/m6/20260806-production-rpo-rto-drill-passed.json",
-      "latest_staging_release_v0_1_29": "evidence/m6/20260817-v0.1.29-staging-rollout.json"
+      "latest_staging_release_v0_1_29": "evidence/m6/20260817-v0.1.29-staging-rollout.json",
+      "latest_staging_release_v0_1_30": "evidence/m6/20260818-v0.1.30-staging-rollout.json"
     },
     {
       "milestone": "M7",
       "status": "blocked_external",
       "manifest": "evidence/m7/20260720-072628-m7-local-model-routing.json",
       "manifest_commit": "8983107153b3cd8c3d7c501c9c70dc5d6068c2ae",
-      "latest_real_provider_quality": "evidence/m5/20260817-staging-rag-quality-v2-v0.1.29-full-40-failed.json"
+      "latest_real_provider_quality": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-full-40.json",
+      "latest_real_provider_quality_execution": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-full-40-execution.json",
+      "latest_real_provider_quality_telemetry": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-full-40-telemetry-audit.json"
     },
     {
       "milestone": "M8",

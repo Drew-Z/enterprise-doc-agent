@@ -1,0 +1,55 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: enterprise-doc-embedding-rollout
+  namespace: enterprise-doc-agent-staging
+spec:
+  activeDeadlineSeconds: 1260
+  backoffLimit: 0
+  template:
+    metadata:
+      annotations:
+        enterprise-doc-agent/config-sha256: 8bb05619a46540690780a03c41ef18a18ee153066bbd566121907ac29aacc327
+      labels:
+        app.kubernetes.io/name: enterprise-doc-embedding-rollout
+    spec:
+      automountServiceAccountToken: '[REDACTED]'
+      containers:
+      - args:
+        - --limit
+        - '1000'
+        - --deadline-seconds
+        - '1200'
+        - --poll-seconds
+        - '5'
+        command:
+        - enterprise-doc-embedding-rollout
+        envFrom:
+        - configMapRef:
+            name: enterprise-doc-config
+        - secretRef: '[REDACTED]'
+        image: ghcr.io/drew-z/enterprise-doc-api@sha256:731055539544faac51ea38bd673ef73d24be8acb6bfa32f59eb8b65b588d13c8
+        name: embedding-rollout
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 50m
+            memory: 128Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+      imagePullSecrets: '[REDACTED]'
+      restartPolicy: Never
+      securityContext:
+        runAsGroup: 10001
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: enterprise-doc-runtime
+  ttlSecondsAfterFinished: 86400

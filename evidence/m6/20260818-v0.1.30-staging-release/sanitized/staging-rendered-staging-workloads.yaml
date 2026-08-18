@@ -1,0 +1,479 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: enterprise-doc-api
+    app.kubernetes.io/part-of: enterprise-doc-agent
+  name: enterprise-doc-api
+  namespace: enterprise-doc-agent-staging
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: enterprise-doc-api
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        enterprise-doc-agent/config-sha256: 8bb05619a46540690780a03c41ef18a18ee153066bbd566121907ac29aacc327
+      labels:
+        app.kubernetes.io/name: enterprise-doc-api
+        app.kubernetes.io/part-of: enterprise-doc-agent
+    spec:
+      containers:
+      - envFrom:
+        - configMapRef:
+            name: enterprise-doc-config
+        - secretRef: '[REDACTED]'
+        image: ghcr.io/drew-z/enterprise-doc-api@sha256:731055539544faac51ea38bd673ef73d24be8acb6bfa32f59eb8b65b588d13c8
+        imagePullPolicy: IfNotPresent
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - sleep 5
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: http
+          periodSeconds: 10
+          timeoutSeconds: 3
+        name: api
+        ports:
+        - containerPort: 8000
+          name: http
+        readinessProbe:
+          failureThreshold: 6
+          httpGet:
+            path: /health/ready
+            port: http
+          periodSeconds: 20
+          timeoutSeconds: 20
+        resources:
+          limits:
+            cpu: 750m
+            memory: 768Mi
+          requests:
+            cpu: 250m
+            memory: 384Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        startupProbe:
+          failureThreshold: 30
+          httpGet:
+            path: /health/live
+            port: http
+          periodSeconds: 5
+      imagePullSecrets: '[REDACTED]'
+      securityContext:
+        runAsGroup: 10001
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: enterprise-doc-runtime
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: enterprise-doc-consumer
+    app.kubernetes.io/part-of: enterprise-doc-agent
+  name: enterprise-doc-consumer
+  namespace: enterprise-doc-agent-staging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: enterprise-doc-consumer
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        enterprise-doc-agent/config-sha256: 8bb05619a46540690780a03c41ef18a18ee153066bbd566121907ac29aacc327
+      labels:
+        app.kubernetes.io/name: enterprise-doc-consumer
+        app.kubernetes.io/part-of: enterprise-doc-agent
+    spec:
+      containers:
+      - envFrom:
+        - configMapRef:
+            name: enterprise-doc-config
+        - secretRef: '[REDACTED]'
+        image: ghcr.io/drew-z/enterprise-doc-consumer@sha256:9b60599b82472b125cf25db722be3c62f4e5793f63583db88064b093d9f28728
+        livenessProbe:
+          periodSeconds: 10
+          tcpSocket:
+            port: metrics
+        name: consumer
+        ports:
+        - containerPort: 8082
+          name: metrics
+        readinessProbe:
+          periodSeconds: 5
+          tcpSocket:
+            port: metrics
+        resources:
+          limits:
+            cpu: 750m
+            memory: 768Mi
+          requests:
+            cpu: 250m
+            memory: 384Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        startupProbe:
+          failureThreshold: 30
+          periodSeconds: 5
+          tcpSocket:
+            port: metrics
+      imagePullSecrets: '[REDACTED]'
+      securityContext:
+        runAsGroup: 10001
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: enterprise-doc-runtime
+      terminationGracePeriodSeconds: 60
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: enterprise-doc-prometheus
+    app.kubernetes.io/part-of: enterprise-doc-agent
+  name: enterprise-doc-prometheus
+  namespace: enterprise-doc-agent-staging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: enterprise-doc-prometheus
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        enterprise-doc-agent/prometheus-config-sha256: b15b385ef1b28ee397fb153902e813d539feb49126a8972a480f9bdeb54b0de8
+      labels:
+        app.kubernetes.io/name: enterprise-doc-prometheus
+        app.kubernetes.io/part-of: enterprise-doc-agent
+    spec:
+      automountServiceAccountToken: '[REDACTED]'
+      containers:
+      - args:
+        - --config.file=/etc/prometheus/prometheus.yml
+        - --storage.tsdb.path=/prometheus
+        - --storage.tsdb.retention.time=7d
+        - --storage.tsdb.retention.size=4GB
+        - --web.listen-address=0.0.0.0:9090
+        image: quay.io/prometheus/prometheus@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /-/healthy
+            port: http
+          periodSeconds: 30
+          timeoutSeconds: 3
+        name: prometheus
+        ports:
+        - containerPort: 9090
+          name: http
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /-/ready
+            port: http
+          periodSeconds: 10
+          timeoutSeconds: 3
+        resources:
+          limits:
+            cpu: 300m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        startupProbe:
+          failureThreshold: 30
+          httpGet:
+            path: /-/ready
+            port: http
+          periodSeconds: 10
+        volumeMounts:
+        - mountPath: /etc/prometheus
+          name: config
+          readOnly: true
+        - mountPath: /prometheus
+          name: storage
+      securityContext:
+        fsGroup: 65534
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 65534
+        runAsNonRoot: true
+        runAsUser: 65534
+        seccompProfile:
+          type: RuntimeDefault
+      terminationGracePeriodSeconds: 60
+      volumes:
+      - configMap:
+          name: enterprise-doc-prometheus-config
+        name: config
+      - name: storage
+        persistentVolumeClaim:
+          claimName: enterprise-doc-prometheus-data
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: enterprise-doc-redis
+    app.kubernetes.io/part-of: enterprise-doc-agent
+  name: enterprise-doc-redis
+  namespace: enterprise-doc-agent-staging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: enterprise-doc-redis
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: enterprise-doc-redis
+        app.kubernetes.io/part-of: enterprise-doc-agent
+    spec:
+      automountServiceAccountToken: '[REDACTED]'
+      containers:
+      - args:
+        - redis-server
+        - --save
+        - ''
+        - --appendonly
+        - 'no'
+        - --maxmemory
+        - 128mb
+        - --maxmemory-policy
+        - noeviction
+        image: redis@sha256:6ab0b6e7381779332f97b8ca76193e45b0756f38d4c0dcda72dbb3c32061ab99
+        livenessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          periodSeconds: 10
+          timeoutSeconds: 2
+        name: redis
+        ports:
+        - containerPort: 6379
+          name: redis
+        readinessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          periodSeconds: 5
+          timeoutSeconds: 2
+        resources:
+          limits:
+            cpu: 250m
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        startupProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          failureThreshold: 30
+          periodSeconds: 2
+        volumeMounts:
+        - mountPath: /data
+          name: data
+      securityContext:
+        fsGroup: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 999
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+      - emptyDir: {}
+        name: data
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: enterprise-doc-web
+    app.kubernetes.io/part-of: enterprise-doc-agent
+  name: enterprise-doc-web
+  namespace: enterprise-doc-agent-staging
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: enterprise-doc-web
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: enterprise-doc-web
+        app.kubernetes.io/part-of: enterprise-doc-agent
+    spec:
+      containers:
+      - image: ghcr.io/drew-z/enterprise-doc-web@sha256:c02e3bfb19f09c5248c3fe5a8bd786f5f1867f6a5b7716f4dd2313740111a303
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: http
+          periodSeconds: 10
+        name: web
+        ports:
+        - containerPort: 8080
+          name: http
+        readinessProbe:
+          httpGet:
+            path: /health/live
+            port: http
+          periodSeconds: 5
+        resources:
+          limits:
+            cpu: 250m
+            memory: 256Mi
+          requests:
+            cpu: 50m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        startupProbe:
+          failureThreshold: 30
+          httpGet:
+            path: /health/live
+            port: http
+          periodSeconds: 5
+      imagePullSecrets: '[REDACTED]'
+      securityContext:
+        runAsGroup: 101
+        runAsNonRoot: true
+        runAsUser: 101
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: enterprise-doc-runtime
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: enterprise-doc-worker
+    app.kubernetes.io/part-of: enterprise-doc-agent
+  name: enterprise-doc-worker
+  namespace: enterprise-doc-agent-staging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: enterprise-doc-worker
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        enterprise-doc-agent/config-sha256: 8bb05619a46540690780a03c41ef18a18ee153066bbd566121907ac29aacc327
+      labels:
+        app.kubernetes.io/name: enterprise-doc-worker
+        app.kubernetes.io/part-of: enterprise-doc-agent
+    spec:
+      containers:
+      - envFrom:
+        - configMapRef:
+            name: enterprise-doc-config
+        - secretRef: '[REDACTED]'
+        image: ghcr.io/drew-z/enterprise-doc-worker@sha256:34f0685a50973caaeaec078aa253db0b5660fb03ba0f7527ed5d3dd1772cfe4a
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: probe
+          periodSeconds: 10
+        name: worker
+        ports:
+        - containerPort: 8081
+          name: probe
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: probe
+          periodSeconds: 30
+          timeoutSeconds: 70
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 1Gi
+          requests:
+            cpu: 300m
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        startupProbe:
+          failureThreshold: 60
+          httpGet:
+            path: /health/live
+            port: probe
+          periodSeconds: 5
+      imagePullSecrets: '[REDACTED]'
+      securityContext:
+        runAsGroup: 10001
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: enterprise-doc-runtime
+      terminationGracePeriodSeconds: 45
