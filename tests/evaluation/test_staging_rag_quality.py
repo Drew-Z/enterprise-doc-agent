@@ -160,8 +160,9 @@ class FakeClient:
                 "completionTokens": 20,
                 "totalTokens": 120,
                 "repairRequestCount": 0,
-                "fallbackCount": 0,
+                "fallbackCount": 1,
                 "breakerState": "closed",
+                "fallbackTriggerCode": "model_timeout",
                 "graphVersion": "graph-v1",
                 "promptVersion": "prompt-v1",
                 "toolSchemaVersion": "tools-v1",
@@ -182,6 +183,7 @@ class FakeClient:
                 "repairRequestCount": 0,
                 "fallbackCount": 0,
                 "breakerState": "closed",
+                "fallbackTriggerCode": None,
                 "graphVersion": "graph-v1",
                 "promptVersion": "prompt-v1",
                 "toolSchemaVersion": "tools-v1",
@@ -331,6 +333,7 @@ def test_staging_quality_runs_answer_and_refusal_without_leaking_runtime_data(
     )
 
     assert report["status"] == "passed"
+    assert report["system_failure_count"] == 0
     assert report["coverage"] == "full"
     assert report["measured"]["fact_recall"] == 1.0
     assert report["measured"]["refusal_reason_accuracy"] == 1.0
@@ -345,8 +348,11 @@ def test_staging_quality_runs_answer_and_refusal_without_leaking_runtime_data(
     ]
     assert report["provider_telemetry"]["provider_request_count"] == 2
     assert report["provider_telemetry"]["total_tokens"] == 210
-    assert report["provider_telemetry"]["fallback_count"] == 0
+    assert report["provider_telemetry"]["fallback_count"] == 1
     assert report["provider_telemetry"]["breaker_states"] == ["closed"]
+    assert report["provider_telemetry"]["fallback_trigger_counts"] == {"model_timeout": 1}
+    assert report["cases"][0]["fallback_trigger_code"] == "model_timeout"
+    assert report["cases"][1]["fallback_trigger_code"] is None
     assert report["cost_metadata"]["source"] == "provider_usage"
     assert report["cost_metadata"]["total_tokens"] == 210
     assert report["cost_metadata"]["billing_amount"] is None
@@ -400,13 +406,38 @@ def test_staging_quality_reports_only_allowlisted_attempt_diagnostics(
     )
 
     assert report["status"] == "failed"
-    assert report["evaluator_version"] == "m5.rag-quality.v5"
+    assert report["system_failure_count"] == 1
+    assert report["evaluator_version"] == "m5.rag-quality.v6"
     assert report["cases"][0]["failure_diagnostic_code"] == expected
     assert report["cases"][0]["citation_diagnostics"] == []
     assert report["cases"][0]["unresolved_citation_count"] == 0
     assert report["cases"][0]["unexpected_anchor_ids"] == []
     encoded = json.dumps(report, sort_keys=True)
     assert "raw-mcp-secret-must-not-appear" not in encoded
+    assert verify_report_payload(report)
+
+
+def test_staging_quality_never_passes_with_a_system_failure(tmp_path: Path) -> None:
+    dataset_path = _write_dataset(tmp_path)
+    payload = json.loads(dataset_path.read_text(encoding="utf-8"))
+    payload["targets"] = {name: 0.0 for name in payload["targets"]}
+    dataset_path.write_text(json.dumps(payload), encoding="utf-8")
+    loaded = load_rag_quality_dataset(dataset_path)
+
+    report = staging_quality.run_staging_rag_quality(
+        FailedDiagnosticClient("grounding.citation_excerpt_not_verbatim"),
+        loaded=loaded,
+        trial_only=True,
+        timeout_seconds=30,
+        run_nonce="fixed-system-failure-run",
+        monotonic=lambda: 1.0,
+        sleep=lambda _: None,
+        provenance=_provenance(),
+    )
+
+    assert staging_quality._thresholds_passed(report["measured"], loaded.dataset.targets)
+    assert report["system_failure_count"] == 1
+    assert report["status"] == "failed"
     assert verify_report_payload(report)
 
 

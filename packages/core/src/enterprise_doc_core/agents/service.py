@@ -147,6 +147,7 @@ class AgentRunStatusResult:
     cancelled_at: datetime | None
     executions: tuple[AgentRunExecutionResult, ...]
     model_revision: str | None = None
+    fallback_trigger_code: str | None = None
     provider_request_count: int | None = None
     provider_usage_request_count: int | None = None
     prompt_tokens: int | None = None
@@ -774,6 +775,7 @@ class AgentRunService:
             cancelled_at=run.cancelled_at,
             executions=tuple(execution_results),
             model_revision=run.model_revision,
+            fallback_trigger_code=run.fallback_trigger_code,
             provider_request_count=run.provider_request_count,
             provider_usage_request_count=run.provider_usage_request_count,
             prompt_tokens=run.prompt_tokens,

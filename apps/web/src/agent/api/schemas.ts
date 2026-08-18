@@ -122,6 +122,7 @@ export const agentRunStatusResponseSchema = z
     modelName: z.string().min(1),
     modelVersion: z.string().nullable(),
     modelRevision: z.string().nullable(),
+    fallbackTriggerCode: z.string().regex(/^[a-z][a-z0-9_]{0,99}$/).nullable(),
     providerRequestCount: safeIntegerSchema.nonnegative().nullable(),
     providerUsageRequestCount: safeIntegerSchema.nonnegative().nullable(),
     promptTokens: safeIntegerSchema.nonnegative().nullable(),

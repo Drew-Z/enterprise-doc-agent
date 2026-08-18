@@ -165,6 +165,7 @@ class AgentRun(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     model_name: Mapped[str] = mapped_column(String(200), nullable=False)
     model_version: Mapped[str | None] = mapped_column(String(100), nullable=True)
     model_revision: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    fallback_trigger_code: Mapped[str | None] = mapped_column(String(100), nullable=True)
     provider_request_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     provider_usage_request_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     prompt_tokens: Mapped[int | None] = mapped_column(BigInteger, nullable=True)

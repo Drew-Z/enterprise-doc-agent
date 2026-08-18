@@ -129,6 +129,7 @@ class StubAgentRunService:
                 ),
             ),
             model_revision="revision-1",
+            fallback_trigger_code="model_timeout",
             provider_request_count=2,
             provider_usage_request_count=2,
             prompt_tokens=30,
@@ -268,6 +269,7 @@ async def test_agent_status_events_cancel_and_ready_versions_are_tenant_scoped()
     assert status_response.status_code == 200
     assert status_response.json()["runId"] == str(service.run_id)
     assert status_response.json()["modelRevision"] == "revision-1"
+    assert status_response.json()["fallbackTriggerCode"] == "model_timeout"
     assert status_response.json()["providerRequestCount"] == 2
     assert status_response.json()["providerUsageRequestCount"] == 2
     assert status_response.json()["promptTokens"] == 30

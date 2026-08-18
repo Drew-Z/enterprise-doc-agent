@@ -202,6 +202,7 @@ async def test_agent_handler_preserves_sanitized_model_failure_telemetry() -> No
                 provider_request_count=2,
                 fallback_count=1,
                 breaker_state="open",
+                fallback_trigger_code="model_server_error",
             ),
         )
 
@@ -227,6 +228,7 @@ async def test_agent_handler_preserves_sanitized_model_failure_telemetry() -> No
                 "repair_request_count": 0,
                 "fallback_count": 1,
                 "breaker_state": "open",
+                "fallback_trigger_code": "model_server_error",
             },
         }
     }

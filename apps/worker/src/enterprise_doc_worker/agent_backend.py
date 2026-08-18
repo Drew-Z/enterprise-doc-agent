@@ -290,6 +290,7 @@ class DurableAgentGraphBackend:
                 run.repair_request_count = telemetry.repair_request_count
                 run.fallback_count = telemetry.fallback_count
                 run.breaker_state = telemetry.breaker_state
+                run.fallback_trigger_code = telemetry.fallback_trigger_code
                 return
 
             run.provider_request_count = (
@@ -308,6 +309,8 @@ class DurableAgentGraphBackend:
                 run.repair_request_count or 0
             ) + telemetry.repair_request_count
             run.fallback_count = (run.fallback_count or 0) + telemetry.fallback_count
+            if run.fallback_trigger_code is None and telemetry.fallback_trigger_code is not None:
+                run.fallback_trigger_code = telemetry.fallback_trigger_code
             if telemetry.breaker_state is not None:
                 run.breaker_state = telemetry.breaker_state
 

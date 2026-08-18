@@ -360,6 +360,7 @@ async def project_agent_run_failure(
         run.model_name = model_failure.identity.model_name
         run.model_version = model_failure.identity.model_version
         run.model_revision = model_failure.identity.model_revision
+        run.fallback_trigger_code = model_failure.telemetry.fallback_trigger_code
         run.provider_request_count = model_failure.telemetry.provider_request_count
         run.provider_usage_request_count = model_failure.telemetry.usage_request_count
         run.prompt_tokens = model_failure.telemetry.prompt_tokens

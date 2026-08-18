@@ -954,6 +954,23 @@ def test_staging_model_routing_uses_environment_variables_within_dispatch_limit(
     assert '("Job", "enterprise-doc-migrate")' in render_command
     assert "grep -A4 '^kind: Namespace$'" not in render_command
 
+    collect = _named_step(steps, "Collect sanitized release evidence")
+    for key, value in {
+        "MODEL_FALLBACK_BASE_URL": "${{ vars.STAGING_MODEL_FALLBACK_BASE_URL }}",
+        "MODEL_FALLBACK_NAME": "${{ vars.STAGING_MODEL_FALLBACK_NAME }}",
+        "MODEL_FALLBACK_VERSION": "${{ vars.STAGING_MODEL_FALLBACK_VERSION }}",
+        "MODEL_FALLBACK_TIMEOUT_SECONDS": (
+            "${{ vars.STAGING_MODEL_FALLBACK_TIMEOUT_SECONDS || '60' }}"
+        ),
+    }.items():
+        assert collect["env"][key] == value
+    collect_command = str(collect["run"])
+    assert "fallback_record_args=()" in collect_command
+    assert '--fallback-model-base-url "$MODEL_FALLBACK_BASE_URL"' in collect_command
+    assert '--fallback-model-name "$MODEL_FALLBACK_NAME"' in collect_command
+    assert '--fallback-model-version "$MODEL_FALLBACK_VERSION"' in collect_command
+    assert '--fallback-model-timeout-seconds "$MODEL_FALLBACK_TIMEOUT_SECONDS"' in collect_command
+
 
 def test_tiny_staging_runbook_keeps_r2_presign_on_the_s3_api_surface() -> None:
     runbook = (ROOT / "docs/ops/tiny-staging-runbook.md").read_text(encoding="utf-8")

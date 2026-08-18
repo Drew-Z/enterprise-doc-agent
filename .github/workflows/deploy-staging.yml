@@ -510,6 +510,10 @@ jobs:
           MODEL_PROVIDER: openai_compatible
           MODEL_BASE_URL: ${{ vars.STAGING_MODEL_BASE_URL }}
           MODEL_NAME: ${{ vars.STAGING_MODEL_NAME }}
+          MODEL_FALLBACK_BASE_URL: ${{ vars.STAGING_MODEL_FALLBACK_BASE_URL }}
+          MODEL_FALLBACK_NAME: ${{ vars.STAGING_MODEL_FALLBACK_NAME }}
+          MODEL_FALLBACK_VERSION: ${{ vars.STAGING_MODEL_FALLBACK_VERSION }}
+          MODEL_FALLBACK_TIMEOUT_SECONDS: ${{ vars.STAGING_MODEL_FALLBACK_TIMEOUT_SECONDS || '60' }}
           EMBEDDING_BASE_URL: ${{ vars.STAGING_EMBEDDING_BASE_URL }}
           EMBEDDING_MODEL_NAME: ${{ vars.STAGING_EMBEDDING_MODEL_NAME }}
           EMBEDDING_VERSION: ${{ vars.STAGING_EMBEDDING_VERSION || '2' }}
@@ -579,6 +583,17 @@ jobs:
             --manifest "tmp/staging-evidence-${evidence_id}.manifest.json"
           image_digests_json="$("$RUNNER_PYTHON" -c 'import json, os; print(json.dumps({"api": os.environ["API_DIGEST"], "worker": os.environ["WORKER_DIGEST"], "consumer": os.environ["CONSUMER_DIGEST"], "web": os.environ["WEB_DIGEST"]}))')"
           outcomes_json="$("$RUNNER_PYTHON" -c 'import json, os; print(json.dumps({"prerequisites": os.environ["PREREQUISITES_OUTCOME"], "migration": os.environ["MIGRATION_OUTCOME"], "workloads": os.environ["WORKLOADS_OUTCOME"], "rollout": os.environ["ROLLOUT_OUTCOME"], "embedding_rollout": os.environ["EMBEDDING_ROLLOUT_OUTCOME"], "cluster_smoke": os.environ["CLUSTER_SMOKE_OUTCOME"], "authenticated_smoke": os.environ["AUTHENTICATED_SMOKE_OUTCOME"]}))')"
+          fallback_record_args=()
+          if test -n "$MODEL_FALLBACK_BASE_URL" || test -n "$MODEL_FALLBACK_NAME" || test -n "$MODEL_FALLBACK_VERSION"; then
+            fallback_record_args+=(
+              --fallback-model-base-url "$MODEL_FALLBACK_BASE_URL"
+              --fallback-model-name "$MODEL_FALLBACK_NAME"
+              --fallback-model-timeout-seconds "$MODEL_FALLBACK_TIMEOUT_SECONDS"
+            )
+            if test -n "$MODEL_FALLBACK_VERSION"; then
+              fallback_record_args+=(--fallback-model-version "$MODEL_FALLBACK_VERSION")
+            fi
+          fi
           "$RUNNER_PYTHON" scripts/build_staging_release_record.py \
             --evidence-manifest "tmp/staging-evidence-${evidence_id}.manifest.json" \
             --deployment-profile "$DEPLOYMENT_PROFILE" \
@@ -592,6 +607,7 @@ jobs:
             --model-provider "$MODEL_PROVIDER" \
             --model-base-url "$MODEL_BASE_URL" \
             --model-name "$MODEL_NAME" \
+            "${fallback_record_args[@]}" \
             --embedding-base-url "$EMBEDDING_BASE_URL" \
             --embedding-model-name "$EMBEDDING_MODEL_NAME" \
             --embedding-version "$EMBEDDING_VERSION" \

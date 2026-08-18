@@ -31,6 +31,7 @@ function statusPayload(
     modelName: "fixture",
     modelVersion: null,
     modelRevision: null,
+    fallbackTriggerCode: null,
     providerRequestCount: 0,
     providerUsageRequestCount: 0,
     promptTokens: null,

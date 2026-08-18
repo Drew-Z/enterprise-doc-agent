@@ -128,6 +128,7 @@ async def test_routed_gateway_uses_fallback_only_for_retryable_errors() -> None:
     assert output.telemetry.provider_request_count == 1
     assert output.telemetry.fallback_count == 1
     assert output.telemetry.breaker_state == "closed"
+    assert output.telemetry.fallback_trigger_code == "model_timeout"
 
 
 async def test_model_server_error_falls_back_with_complete_route_telemetry() -> None:
@@ -146,6 +147,7 @@ async def test_model_server_error_falls_back_with_complete_route_telemetry() -> 
     assert output.telemetry.provider_request_count == 1
     assert output.telemetry.fallback_count == 1
     assert output.telemetry.breaker_state == "closed"
+    assert output.telemetry.fallback_trigger_code == "model_server_error"
 
 
 async def test_failed_fallback_carries_final_identity_and_attempt_telemetry() -> None:
@@ -168,6 +170,7 @@ async def test_failed_fallback_carries_final_identity_and_attempt_telemetry() ->
     assert caught.value.telemetry.provider_request_count == 2
     assert caught.value.telemetry.fallback_count == 1
     assert caught.value.telemetry.breaker_state == "open"
+    assert caught.value.telemetry.fallback_trigger_code == "model_server_error"
 
 
 async def test_permanent_provider_error_does_not_fallback() -> None:
@@ -180,11 +183,12 @@ async def test_permanent_provider_error_does_not_fallback() -> None:
         fallback_descriptor=_descriptor("fallback"),
     )
 
-    with pytest.raises(ModelAuthError):
+    with pytest.raises(ModelAuthError) as caught:
         await routed.generate(_request())
 
     assert fallback.calls == 0
     assert routed.fallback_count == 0
+    assert caught.value.telemetry.fallback_trigger_code is None
 
 
 async def test_primary_and_fallback_share_one_route_deadline() -> None:
@@ -202,7 +206,7 @@ async def test_primary_and_fallback_share_one_route_deadline() -> None:
     )
     started_at = asyncio.get_running_loop().time()
 
-    with pytest.raises(ModelTimeoutError):
+    with pytest.raises(ModelTimeoutError) as caught:
         await routed.generate(_request())
 
     elapsed = asyncio.get_running_loop().time() - started_at
@@ -210,6 +214,7 @@ async def test_primary_and_fallback_share_one_route_deadline() -> None:
     assert primary.calls == 1
     assert fallback.calls == 1
     assert routed.fallback_count == 1
+    assert caught.value.telemetry.fallback_trigger_code == "model_timeout"
 
 
 async def test_exhausted_route_budget_does_not_invoke_fallback() -> None:
@@ -225,13 +230,14 @@ async def test_exhausted_route_budget_does_not_invoke_fallback() -> None:
         deadline_seconds=0.03,
     )
 
-    with pytest.raises(ModelTimeoutError):
+    with pytest.raises(ModelTimeoutError) as caught:
         await routed.generate(_request())
 
     assert primary.calls == 1
     assert fallback.calls == 0
     assert routed.fallback_count == 0
     assert breaker.state is CircuitState.OPEN
+    assert caught.value.telemetry.fallback_trigger_code == "model_timeout"
 
 
 async def test_circuit_opens_skips_primary_and_recovers_with_one_probe() -> None:
@@ -280,11 +286,12 @@ async def test_open_circuit_fallback_uses_route_budget_without_calling_primary()
 
     await routed.generate(_request())
     assert breaker.state is CircuitState.OPEN
-    await routed.generate(_request())
+    output = await routed.generate(_request())
 
     assert primary.calls == 1
     assert fallback.calls == 2
     assert routed.fallback_count == 2
+    assert output.telemetry.fallback_trigger_code == "model_circuit_open"
 
 
 class ConcurrentPrimaryGateway:

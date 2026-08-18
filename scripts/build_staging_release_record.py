@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import ipaddress
 import json
+import math
 import re
 from datetime import UTC, datetime
 from pathlib import Path
@@ -85,6 +86,31 @@ def _normalize_model_name(value: str) -> str:
     return normalized
 
 
+def _normalize_model_version(value: str) -> str:
+    if _contains_control_character(value):
+        raise StagingReleaseRecordError("model version must not contain control characters")
+    normalized = value.strip()
+    if not normalized or len(normalized) > 100:
+        raise StagingReleaseRecordError("model version must contain 1-100 characters")
+    return normalized
+
+
+def _normalize_model_timeout_seconds(value: str) -> float:
+    if _contains_control_character(value):
+        raise StagingReleaseRecordError("model timeout must not contain control characters")
+    try:
+        timeout = float(value.strip())
+    except ValueError as error:
+        raise StagingReleaseRecordError(
+            "model timeout must be a number greater than 0 and at most 300"
+        ) from error
+    if not math.isfinite(timeout) or not 0 < timeout <= 300:
+        raise StagingReleaseRecordError(
+            "model timeout must be a number greater than 0 and at most 300"
+        )
+    return timeout
+
+
 def _model_metadata(
     *,
     model_provider: str,
@@ -121,6 +147,77 @@ def _model_metadata(
         },
         None,
     )
+
+
+def _fallback_model_metadata(
+    *,
+    model_provider: str,
+    model_base_url: str | None,
+    model_name: str | None,
+    model_version: str | None,
+    model_timeout_seconds: str | None,
+) -> tuple[dict[str, Any], str | None]:
+    raw_values = {
+        "base_url": model_base_url or "",
+        "name": model_name or "",
+        "version": model_version or "",
+        "timeout_seconds": model_timeout_seconds or "",
+    }
+    values = {key: value.strip() for key, value in raw_values.items()}
+    if not any(values.values()):
+        return (
+            {
+                "status": "not_configured",
+                "provider": None,
+                "base_url": None,
+                "name": None,
+                "version": None,
+                "timeout_seconds": None,
+            },
+            None,
+        )
+    configured = {key: bool(value) for key, value in values.items()}
+    try:
+        if not values["base_url"] or not values["name"]:
+            raise StagingReleaseRecordError(
+                "fallback model route requires both a base URL and a model name"
+            )
+        if not values["timeout_seconds"]:
+            raise StagingReleaseRecordError(
+                "fallback model timeout requires a configured timeout value"
+            )
+        metadata, error = _model_metadata(
+            model_provider=model_provider,
+            model_base_url=raw_values["base_url"],
+            model_name=raw_values["name"],
+        )
+        if error is not None:
+            raise StagingReleaseRecordError(error)
+        normalized_version = (
+            _normalize_model_version(raw_values["version"]) if values["version"] else None
+        )
+        normalized_timeout = _normalize_model_timeout_seconds(raw_values["timeout_seconds"])
+    except StagingReleaseRecordError as error:
+        return (
+            {
+                "status": "invalid",
+                "provider": MODEL_PROVIDER if model_provider == MODEL_PROVIDER else None,
+                "base_url": None,
+                "name": None,
+                "version": None,
+                "timeout_seconds": None,
+                "configured": configured,
+                "validation_error": str(error),
+            },
+            str(error),
+        )
+    metadata.update(
+        {
+            "version": normalized_version,
+            "timeout_seconds": normalized_timeout,
+        }
+    )
+    return metadata, None
 
 
 def _embedding_metadata(
@@ -188,6 +285,10 @@ def build_record(
     embedding_version: int = 2,
     smoke_required: bool,
     output: Path,
+    fallback_model_base_url: str | None = None,
+    fallback_model_name: str | None = None,
+    fallback_model_version: str | None = None,
+    fallback_model_timeout_seconds: str | None = None,
 ) -> dict[str, Any]:
     if deployment_profile not in DEPLOYMENT_PROFILES:
         raise StagingReleaseRecordError("deployment profile is not reviewed")
@@ -213,6 +314,13 @@ def build_record(
         model_base_url=model_base_url,
         model_name=model_name,
     )
+    fallback_model, fallback_model_error = _fallback_model_metadata(
+        model_provider=model_provider,
+        model_base_url=fallback_model_base_url,
+        model_name=fallback_model_name,
+        model_version=fallback_model_version,
+        model_timeout_seconds=fallback_model_timeout_seconds,
+    )
     embedding, embedding_error = _embedding_metadata(
         rollout_report=embedding_rollout_report,
         embedding_base_url=embedding_base_url,
@@ -222,7 +330,7 @@ def build_record(
 
     rollout_ok = all(outcomes[name] == "success" for name in ROLLOUT_STEPS)
     smoke_ok = all(outcomes[name] == "success" for name in SMOKE_STEPS)
-    if model_error is not None or embedding_error is not None:
+    if model_error is not None or fallback_model_error is not None or embedding_error is not None:
         status = "failed"
         blocking_reason = None
         failure_reason = "Model routing validation failed before staging rollout."
@@ -240,7 +348,7 @@ def build_record(
         failure_reason = "One or more staging rollout or smoke steps did not succeed."
 
     record: dict[str, Any] = {
-        "schema_version": 2,
+        "schema_version": 3,
         "status": status,
         "blocking_reason": blocking_reason,
         "failure_reason": failure_reason,
@@ -252,6 +360,7 @@ def build_record(
         "generated_at": datetime.now(UTC).isoformat(),
         "registry_prefix": registry_prefix,
         "model": model,
+        "fallback_model": fallback_model,
         "embedding": embedding,
         "image_digests": image_digests,
         "outcomes": outcomes,
@@ -279,6 +388,10 @@ def main() -> None:
     parser.add_argument("--model-provider", required=True)
     parser.add_argument("--model-base-url", required=True)
     parser.add_argument("--model-name", required=True)
+    parser.add_argument("--fallback-model-base-url")
+    parser.add_argument("--fallback-model-name")
+    parser.add_argument("--fallback-model-version")
+    parser.add_argument("--fallback-model-timeout-seconds")
     parser.add_argument("--embedding-base-url", required=True)
     parser.add_argument("--embedding-model-name", required=True)
     parser.add_argument("--embedding-version", type=int, default=2)
@@ -304,6 +417,10 @@ def main() -> None:
             model_provider=args.model_provider,
             model_base_url=args.model_base_url,
             model_name=args.model_name,
+            fallback_model_base_url=args.fallback_model_base_url,
+            fallback_model_name=args.fallback_model_name,
+            fallback_model_version=args.fallback_model_version,
+            fallback_model_timeout_seconds=args.fallback_model_timeout_seconds,
             embedding_rollout_report=args.embedding_rollout_report,
             embedding_base_url=args.embedding_base_url,
             embedding_model_name=args.embedding_model_name,

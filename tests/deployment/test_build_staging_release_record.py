@@ -83,6 +83,10 @@ def _build(
     model_provider: str = "openai_compatible",
     model_base_url: str = "https://model.example.com/v1",
     model_name: str = "staging-model",
+    fallback_model_base_url: str | None = "https://fallback.example.com/v1",
+    fallback_model_name: str | None = "fallback-model",
+    fallback_model_version: str | None = "2026-08-17",
+    fallback_model_timeout_seconds: str | None = "60",
     embedding_version: int = 2,
 ) -> dict[str, object]:
     return build_record(
@@ -98,6 +102,10 @@ def _build(
         model_provider=model_provider,
         model_base_url=model_base_url,
         model_name=model_name,
+        fallback_model_base_url=fallback_model_base_url,
+        fallback_model_name=fallback_model_name,
+        fallback_model_version=fallback_model_version,
+        fallback_model_timeout_seconds=fallback_model_timeout_seconds,
         embedding_rollout_report=_rollout_report(
             tmp_path / "embedding-rollout.json", version=embedding_version
         ),
@@ -117,7 +125,15 @@ def test_staging_record_passes_only_with_rollout_and_smoke(tmp_path: Path) -> No
         "base_url": "https://model.example.com/v1",
         "name": "staging-model",
     }
-    assert record["schema_version"] == 2
+    assert record["schema_version"] == 3
+    assert record["fallback_model"] == {
+        "status": "validated",
+        "provider": "openai_compatible",
+        "base_url": "https://fallback.example.com/v1",
+        "name": "fallback-model",
+        "version": "2026-08-17",
+        "timeout_seconds": 60.0,
+    }
     assert record["embedding"]["status"] == "validated"
     assert record["embedding"]["dimension"] == 1024
     assert record["embedding"]["version"] == 2
@@ -372,3 +388,88 @@ def test_staging_record_preserves_missing_model_configuration_as_failed_evidence
         "base_url": False,
         "name": False,
     }
+
+
+def test_staging_record_preserves_unconfigured_fallback_route(tmp_path: Path) -> None:
+    record = _build(
+        tmp_path,
+        outcomes=_outcomes(),
+        smoke_required=True,
+        fallback_model_base_url=None,
+        fallback_model_name=None,
+        fallback_model_version=None,
+        fallback_model_timeout_seconds=None,
+    )
+
+    assert record["status"] == "passed"
+    assert record["fallback_model"] == {
+        "status": "not_configured",
+        "provider": None,
+        "base_url": None,
+        "name": None,
+        "version": None,
+        "timeout_seconds": None,
+    }
+
+
+@pytest.mark.parametrize("timeout", [None, "0", "301", "not-a-number"])
+def test_staging_record_rejects_invalid_fallback_timeout(
+    tmp_path: Path,
+    timeout: str | None,
+) -> None:
+    record = _build(
+        tmp_path,
+        outcomes=_outcomes(),
+        smoke_required=True,
+        fallback_model_timeout_seconds=timeout,
+    )
+
+    assert record["status"] == "failed"
+    assert record["fallback_model"]["status"] == "invalid"
+    assert record["fallback_model"]["timeout_seconds"] is None
+
+
+def test_staging_record_rejects_partial_fallback_route(tmp_path: Path) -> None:
+    record = _build(
+        tmp_path,
+        outcomes=_outcomes(),
+        smoke_required=True,
+        fallback_model_name=None,
+    )
+
+    assert record["status"] == "failed"
+    assert record["fallback_model"]["status"] == "invalid"
+    assert record["fallback_model"]["configured"]["base_url"] is True
+    assert record["fallback_model"]["configured"]["name"] is False
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("fallback_model_base_url", "https://fallback.example.com/v1\n"),
+        ("fallback_model_name", "fallback-model\n"),
+        ("fallback_model_version", "2026-08-17\n"),
+        ("fallback_model_timeout_seconds", "60\n"),
+    ],
+)
+def test_staging_record_rejects_fallback_control_characters(
+    tmp_path: Path,
+    field: str,
+    value: str,
+) -> None:
+    record = _build(
+        tmp_path,
+        outcomes=_outcomes(),
+        smoke_required=True,
+        fallback_model_base_url=(
+            value if field == "fallback_model_base_url" else "https://fallback.example.com/v1"
+        ),
+        fallback_model_name=(value if field == "fallback_model_name" else "fallback-model"),
+        fallback_model_version=(value if field == "fallback_model_version" else "2026-08-17"),
+        fallback_model_timeout_seconds=(
+            value if field == "fallback_model_timeout_seconds" else "60"
+        ),
+    )
+
+    assert record["status"] == "failed"
+    assert record["fallback_model"]["status"] == "invalid"

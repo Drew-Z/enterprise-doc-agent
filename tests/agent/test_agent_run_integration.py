@@ -652,6 +652,7 @@ async def test_terminal_agent_job_failure_projects_run_failed_atomically() -> No
                         "repair_request_count": 0,
                         "fallback_count": 1,
                         "breaker_state": "open",
+                        "fallback_trigger_code": "model_server_error",
                     },
                 }
             },
@@ -685,6 +686,7 @@ async def test_terminal_agent_job_failure_projects_run_failed_atomically() -> No
         assert run.provider_usage_request_count == 0
         assert run.fallback_count == 1
         assert run.breaker_state == "open"
+        assert run.fallback_trigger_code == "model_server_error"
         assert job is not None and job.status == JobStatus.DEAD.value
         assert events[-1].event_type == "run.finished"
         assert events[-1].public_payload == {

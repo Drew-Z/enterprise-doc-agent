@@ -264,11 +264,13 @@ class RoutedChatModelGateway:
                     ModelCircuitOpenError(),
                     descriptor=self.primary_descriptor,
                     breaker_state=self.breaker.state,
+                    fallback_trigger_code=ModelCircuitOpenError.code,
                 )
             return await self._generate_fallback(
                 request,
                 deadline=deadline,
                 prior_request_count=0,
+                fallback_trigger_code=ModelCircuitOpenError.code,
             )
         try:
             output = await self._generate_before_deadline(
@@ -283,6 +285,7 @@ class RoutedChatModelGateway:
                 descriptor=self.primary_descriptor,
                 provider_request_count=1,
                 breaker_state=self.breaker.state,
+                fallback_trigger_code=ModelTimeoutError.code,
             ) from error
         except ModelGatewayError as error:
             if not error.retryable:
@@ -301,12 +304,14 @@ class RoutedChatModelGateway:
                     descriptor=self.primary_descriptor,
                     provider_request_count=1,
                     breaker_state=self.breaker.state,
+                    fallback_trigger_code=error.code,
                 )
                 raise
             return await self._generate_fallback(
                 request,
                 deadline=deadline,
                 prior_request_count=1,
+                fallback_trigger_code=error.code,
             )
         except BaseException:
             await self.breaker.abort_probe(permit)
@@ -321,6 +326,7 @@ class RoutedChatModelGateway:
         *,
         deadline: float | None,
         prior_request_count: int,
+        fallback_trigger_code: str | None,
     ) -> GroundedModelOutput:
         if self.fallback is None:
             raise _with_failure_telemetry(
@@ -328,6 +334,7 @@ class RoutedChatModelGateway:
                 descriptor=self.primary_descriptor,
                 provider_request_count=prior_request_count,
                 breaker_state=self.breaker.state,
+                fallback_trigger_code=fallback_trigger_code,
             )
         if deadline is not None and asyncio.get_running_loop().time() >= deadline:
             descriptor = (
@@ -339,6 +346,7 @@ class RoutedChatModelGateway:
                 descriptor=descriptor,
                 provider_request_count=prior_request_count,
                 breaker_state=self.breaker.state,
+                fallback_trigger_code=fallback_trigger_code,
             )
         self.fallback_count += 1
         try:
@@ -352,6 +360,7 @@ class RoutedChatModelGateway:
                 provider_request_count=prior_request_count,
                 fallback_count=1,
                 breaker_state=self.breaker.state,
+                fallback_trigger_code=fallback_trigger_code,
             )
         except _RouteDeadlineExceeded as error:
             assert self.fallback_descriptor is not None
@@ -361,6 +370,7 @@ class RoutedChatModelGateway:
                 provider_request_count=prior_request_count + 1,
                 fallback_count=1,
                 breaker_state=self.breaker.state,
+                fallback_trigger_code=fallback_trigger_code,
             ) from error
         except ModelGatewayError as error:
             assert self.fallback_descriptor is not None
@@ -370,6 +380,7 @@ class RoutedChatModelGateway:
                 provider_request_count=prior_request_count + 1,
                 fallback_count=1,
                 breaker_state=self.breaker.state,
+                fallback_trigger_code=fallback_trigger_code,
             )
             raise
 
@@ -798,16 +809,18 @@ def _with_route_telemetry(
     provider_request_count: int = 0,
     fallback_count: int = 0,
     breaker_state: CircuitState,
+    fallback_trigger_code: str | None = None,
 ) -> GroundedModelOutput:
-    telemetry = output.telemetry.model_copy(
-        update={
-            "provider_request_count": (
-                output.telemetry.provider_request_count + provider_request_count
-            ),
-            "fallback_count": output.telemetry.fallback_count + fallback_count,
-            "breaker_state": breaker_state.value,
-        }
-    )
+    update = {
+        "provider_request_count": (
+            output.telemetry.provider_request_count + provider_request_count
+        ),
+        "fallback_count": output.telemetry.fallback_count + fallback_count,
+        "breaker_state": breaker_state.value,
+    }
+    if fallback_trigger_code is not None:
+        update["fallback_trigger_code"] = fallback_trigger_code
+    telemetry = output.telemetry.model_copy(update=update)
     return replace(output, telemetry=telemetry)
 
 
@@ -818,6 +831,7 @@ def _with_failure_telemetry(
     provider_request_count: int = 0,
     fallback_count: int = 0,
     breaker_state: CircuitState,
+    fallback_trigger_code: str | None = None,
 ) -> ModelGatewayError:
     error.identity = ModelIdentity(
         provider=descriptor.provider,
@@ -825,15 +839,14 @@ def _with_failure_telemetry(
         model_version=descriptor.model_version,
         model_revision=descriptor.model_revision,
     )
-    error.telemetry = error.telemetry.model_copy(
-        update={
-            "provider_request_count": (
-                error.telemetry.provider_request_count + provider_request_count
-            ),
-            "fallback_count": error.telemetry.fallback_count + fallback_count,
-            "breaker_state": breaker_state.value,
-        }
-    )
+    update = {
+        "provider_request_count": (error.telemetry.provider_request_count + provider_request_count),
+        "fallback_count": error.telemetry.fallback_count + fallback_count,
+        "breaker_state": breaker_state.value,
+    }
+    if fallback_trigger_code is not None:
+        update["fallback_trigger_code"] = fallback_trigger_code
+    error.telemetry = error.telemetry.model_copy(update=update)
     return error
 
 

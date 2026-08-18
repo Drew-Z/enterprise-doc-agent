@@ -142,6 +142,10 @@ class AgentRunStatusResponse(ApiModel):
     model_name: str
     model_version: str | None
     model_revision: str | None
+    fallback_trigger_code: Annotated[
+        str | None,
+        Field(pattern=r"^[a-z][a-z0-9_]{0,99}$"),
+    ]
     provider_request_count: int | None
     provider_usage_request_count: int | None
     prompt_tokens: int | None
@@ -503,6 +507,7 @@ def _status_response(result: AgentRunStatusResult) -> AgentRunStatusResponse:
         model_name=result.model_name,
         model_version=result.model_version,
         model_revision=result.model_revision,
+        fallback_trigger_code=result.fallback_trigger_code,
         provider_request_count=result.provider_request_count,
         provider_usage_request_count=result.provider_usage_request_count,
         prompt_tokens=result.prompt_tokens,

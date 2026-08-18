@@ -194,6 +194,7 @@ class TelemetryGateway(DeterministicGroundedGateway):
                 repair_request_count=1,
                 fallback_count=1,
                 breaker_state="open",
+                fallback_trigger_code="model_timeout",
             ),
         )
 
@@ -302,6 +303,7 @@ async def test_worker_executes_non_publication_graph_to_terminal_artifact() -> N
         assert run.repair_request_count == 1
         assert run.fallback_count == 1
         assert run.breaker_state == "open"
+        assert run.fallback_trigger_code == "model_timeout"
         assert len(evidence) == 1
         assert len(artifacts) == 1
         assert artifacts[0].status == AgentArtifactStatus.DRAFT_READY.value

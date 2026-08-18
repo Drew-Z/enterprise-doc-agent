@@ -280,6 +280,10 @@ class ModelCallTelemetry(_StrictModel):
     repair_request_count: int = Field(default=0, ge=0)
     fallback_count: int = Field(default=0, ge=0)
     breaker_state: Literal["closed", "open", "half_open"] | None = None
+    fallback_trigger_code: str | None = Field(
+        default=None,
+        pattern=r"^[a-z][a-z0-9_]{0,99}$",
+    )
 
     @model_validator(mode="after")
     def validate_request_counts(self) -> ModelCallTelemetry:

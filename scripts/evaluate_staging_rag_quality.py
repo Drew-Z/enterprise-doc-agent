@@ -5,6 +5,7 @@ import base64
 import hashlib
 import json
 import os
+import re
 import time
 from collections import Counter
 from collections.abc import Callable
@@ -41,12 +42,13 @@ else:
 
 
 ROOT = Path(__file__).resolve().parents[1]
-EVALUATOR_VERSION = "m5.rag-quality.v5"
+EVALUATOR_VERSION = "m5.rag-quality.v6"
 _TERMINAL_STATUSES = frozenset(
     {"cancelled", "expired", "failed", "refused", "rejected", "succeeded"}
 )
 _SAFE_READ_ATTEMPTS = 3
 _SAFE_READ_BACKOFF_SECONDS = (2.0, 4.0)
+_ERROR_CODE_PATTERN = re.compile(r"^[a-z][a-z0-9_]{0,99}$")
 
 
 class StagingRagQualityFailure(RuntimeError):
@@ -98,6 +100,13 @@ def _required_str(payload: dict[str, Any], key: str) -> str:
 def _optional_str(payload: dict[str, Any], key: str) -> str | None:
     value = payload.get(key)
     return value if isinstance(value, str) and value else None
+
+
+def _optional_error_code(payload: dict[str, Any], key: str) -> str | None:
+    value = _optional_str(payload, key)
+    if value is not None and _ERROR_CODE_PATTERN.fullmatch(value) is None:
+        raise StagingRagQualityFailure(f"response contained invalid field {key}")
+    return value
 
 
 def _optional_int(payload: dict[str, Any], key: str) -> int | None:
@@ -374,6 +383,7 @@ def _safe_provider_telemetry(status: dict[str, Any]) -> dict[str, int | str | No
         "repair_request_count": _optional_int(status, "repairRequestCount"),
         "fallback_count": _optional_int(status, "fallbackCount"),
         "breaker_state": breaker_state,
+        "fallback_trigger_code": _optional_error_code(status, "fallbackTriggerCode"),
     }
 
 
@@ -407,6 +417,15 @@ def _aggregate_provider_telemetry(
             for value in values
             if value["breaker_state"] is not None
         }
+    )
+    aggregate["fallback_trigger_counts"] = dict(
+        sorted(
+            Counter(
+                cast(str, value["fallback_trigger_code"])
+                for value in values
+                if value["fallback_trigger_code"] is not None
+            ).items()
+        )
     )
     return aggregate
 
@@ -615,6 +634,7 @@ def run_staging_rag_quality(
                 "unresolved_citation_count": score.unresolved_citation_count,
                 "unexpected_anchor_ids": list(score.unexpected_anchor_ids),
                 "failure_diagnostic_code": failure_diagnostic_code,
+                "fallback_trigger_code": provider_telemetry["fallback_trigger_code"],
                 "provider_telemetry": provider_telemetry,
                 "metrics": {
                     "fact_recall": score.fact_recall,
@@ -628,6 +648,7 @@ def run_staging_rag_quality(
         )
 
     aggregate = aggregate_rag_quality_scores(tuple(scores))
+    system_failure_count = sum(score.terminal_status == "failed" for score in scores)
     provider_telemetry_summary = _aggregate_provider_telemetry(provider_telemetry_values)
     measured = {
         "fact_recall": aggregate.fact_recall,
@@ -664,7 +685,11 @@ def run_staging_rag_quality(
         "schema_version": 1,
         "evaluator_version": EVALUATOR_VERSION,
         "suite": "staging-real-provider-rag-quality",
-        "status": "passed" if _thresholds_passed(measured, loaded.dataset.targets) else "failed",
+        "status": (
+            "passed"
+            if system_failure_count == 0 and _thresholds_passed(measured, loaded.dataset.targets)
+            else "failed"
+        ),
         "coverage": coverage,
         "dataset_version": loaded.dataset.version,
         "dataset_sha256": loaded.dataset_sha256,
@@ -679,6 +704,7 @@ def run_staging_rag_quality(
         "measured": measured,
         "latency_ms": build_percentile_summary(list(aggregate.duration_ms)),
         "errors_by_code": dict(sorted(errors.items())),
+        "system_failure_count": system_failure_count,
         "provider_routes": list(routes.values()),
         "behavior_versions": list(behaviors.values()),
         "provider_telemetry": provider_telemetry_summary,
