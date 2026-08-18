@@ -64,7 +64,8 @@
       "production_rpo_rto_failed_baseline": "evidence/m6/20260806-production-rpo-rto-drill-failed.json",
       "production_rpo_rto_drill": "evidence/m6/20260806-production-rpo-rto-drill-passed.json",
       "latest_staging_release_v0_1_29": "evidence/m6/20260817-v0.1.29-staging-rollout.json",
-      "latest_staging_release_v0_1_30": "evidence/m6/20260818-v0.1.30-staging-rollout.json"
+      "latest_staging_release_v0_1_30": "evidence/m6/20260818-v0.1.30-staging-rollout.json",
+      "latest_staging_release_v0_1_31": "evidence/m6/20260818-v0.1.31-staging-rollout.json"
     },
     {
       "milestone": "M7",

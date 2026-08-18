@@ -97,8 +97,10 @@ immutable image or rollback evidence. Those remain open manual gates.
   budgets that match measured Supabase/R2 latency without changing production defaults.
 - [x] Keep the tiny overlap budget at or below 1 GiB while allowing the Worker enough
   CPU, memory and startup time to become ready on the 2-vCPU/2-GiB K3s node.
-- [ ] Emit immediate non-secret migration Job status and describe diagnostics when the
-  pre-rollout wait fails, then verify the change against the real staging cluster.
+- [x] Emit immediate non-secret migration Job status, poll terminal conditions, and print
+  describe/event diagnostics as soon as the pre-rollout migration fails.
+- [ ] Verify the migration diagnostics and resource envelope against the real 2C2G tiny
+  staging profile.
 
 ## Slice 11: Rebuilt 4C8G Staging Host And Profile
 
