@@ -1,0 +1,231 @@
+{
+  "applicable_targets": [
+    "citation_precision",
+    "citation_recall",
+    "closed_label_fact_precision",
+    "fact_recall",
+    "grounded_fact_rate"
+  ],
+  "behavior_versions": [
+    {
+      "graph": "m4.v2",
+      "prompt": "m4.v9",
+      "tool_schema": "m4.v2"
+    }
+  ],
+  "cases": [
+    {
+      "answer_char_count": 87,
+      "answer_sha256": "a7d82d75566e3d16daa0daaacef9df5cb1877d3205709dfeff83788ab78305f6",
+      "case_id": "citation-contract-dispute",
+      "category": "citation",
+      "citation_diagnostics": [
+        {
+          "ordinal": 1,
+          "resolved": true,
+          "resolved_anchor_ids": [
+            "contract.dispute"
+          ]
+        }
+      ],
+      "duration_ms": 75250.0,
+      "failure_diagnostic_code": null,
+      "fallback_trigger_code": null,
+      "forbidden_fact_ids": [],
+      "matched_anchor_ids": [
+        "contract.dispute"
+      ],
+      "matched_fact_ids": [
+        "dispute-seat",
+        "dispute-rules"
+      ],
+      "metrics": {
+        "citation_precision": 1.0,
+        "citation_recall": 1.0,
+        "closed_label_fact_precision": 1.0,
+        "fact_recall": 1.0,
+        "grounded_fact_rate": 1.0,
+        "refusal_reason_correct": null
+      },
+      "outcome_code": null,
+      "passed": true,
+      "provider_telemetry": {
+        "breaker_state": null,
+        "completion_tokens": 1554,
+        "fallback_count": 0,
+        "fallback_trigger_code": null,
+        "prompt_tokens": 1427,
+        "provider_request_count": 1,
+        "repair_request_count": 0,
+        "total_tokens": 2981,
+        "usage_request_count": 1
+      },
+      "query_sha256": "dfb48c798fabc5889597f68b176bb4f44c2eb53a39f75c3ce0f97cb85c61c774",
+      "terminal_status": "succeeded",
+      "unexpected_anchor_ids": [],
+      "unresolved_citation_count": 0
+    },
+    {
+      "answer_char_count": 99,
+      "answer_sha256": "270a53cc53f229c72f5aa39d368c520e745cae9005a06fda9c95f9fa0c56c6a9",
+      "case_id": "fact-retention-legal-hold",
+      "category": "fact",
+      "citation_diagnostics": [
+        {
+          "ordinal": 1,
+          "resolved": true,
+          "resolved_anchor_ids": [
+            "ret.legal-hold"
+          ]
+        }
+      ],
+      "duration_ms": 85296.99999999866,
+      "failure_diagnostic_code": null,
+      "fallback_trigger_code": null,
+      "forbidden_fact_ids": [],
+      "matched_anchor_ids": [
+        "ret.legal-hold"
+      ],
+      "matched_fact_ids": [
+        "legal-hold-effect"
+      ],
+      "metrics": {
+        "citation_precision": 1.0,
+        "citation_recall": 1.0,
+        "closed_label_fact_precision": 1.0,
+        "fact_recall": 1.0,
+        "grounded_fact_rate": 1.0,
+        "refusal_reason_correct": null
+      },
+      "outcome_code": null,
+      "passed": true,
+      "provider_telemetry": {
+        "breaker_state": null,
+        "completion_tokens": 1660,
+        "fallback_count": 0,
+        "fallback_trigger_code": null,
+        "prompt_tokens": 1339,
+        "provider_request_count": 1,
+        "repair_request_count": 0,
+        "total_tokens": 2999,
+        "usage_request_count": 1
+      },
+      "query_sha256": "d5b86cb12219a58811304fd7a12ca91b872136a1366f9cfad537f340cc3ecf43",
+      "terminal_status": "succeeded",
+      "unexpected_anchor_ids": [],
+      "unresolved_citation_count": 0
+    }
+  ],
+  "completed_at": "2026-08-19T06:41:56.877869+00:00",
+  "corpus_sha256": "c6887a0ca112cd62499c9d61d5caa9d87e94a4ba6c8770293f9f3a8c6cf54e36",
+  "cost_metadata": {
+    "billing_amount": null,
+    "billing_currency": null,
+    "completion_tokens": 3214,
+    "limitation": "The provider response exposed token usage but did not expose billing data.",
+    "prompt_tokens": 2766,
+    "source": "provider_usage",
+    "total_tokens": 5980
+  },
+  "coverage": "bounded_sample",
+  "dataset_sha256": "145df783dba7ee1c533a59de288bb1a9aff6ba3c0bdff7e4617a366dca1a9f5b",
+  "dataset_version": "enterprise-rag-quality-v2",
+  "errors_by_code": {},
+  "evaluator_version": "m5.rag-quality.v6",
+  "latency_ms": {
+    "max_ms": 85296.99999999866,
+    "min_ms": 75250.0,
+    "p50_ms": 75250.0,
+    "p95_ms": 85296.99999999866,
+    "p99_ms": 85296.99999999866,
+    "sample_count": 2
+  },
+  "limitations": [
+    "The corpus is synthetic and does not contain customer or personal data.",
+    "Closed-label fact precision detects only listed contradictory values and cannot validate arbitrary free-form claims.",
+    "Deterministic string matching and citation anchors do not replace human semantic review.",
+    "This is a bounded sample and does not represent the complete 40-case suite.",
+    "One execution does not establish repeatability across provider runs.",
+    "Human semantic review remains outstanding."
+  ],
+  "measured": {
+    "citation_precision": 1.0,
+    "citation_recall": 1.0,
+    "closed_label_fact_precision": 1.0,
+    "fact_recall": 1.0,
+    "grounded_fact_rate": 1.0,
+    "refusal_precision": null,
+    "refusal_reason_accuracy": null,
+    "refusal_recall": null
+  },
+  "provenance": {
+    "command": [
+      "python",
+      "scripts/evaluate_staging_rag_quality.py",
+      "--dataset",
+      "<dataset>",
+      "--base-url",
+      "<staging-base-url>",
+      "--allowed-host",
+      "<control-plane-host>",
+      "--allowed-object-store-host",
+      "<object-store-host>",
+      "--case-id",
+      "<case-id>",
+      "--case-id",
+      "<case-id>",
+      "--report-path",
+      "<report-path>"
+    ],
+    "commit_sha": "be872878853bff313a8d7aa400c86d548a547227",
+    "environment": {
+      "architecture": "AMD64",
+      "execution_scope": "authenticated-staging-real-provider-quality",
+      "operating_system": "Windows-11-10.0.26200-SP0",
+      "python": "3.12.13"
+    },
+    "input_sha256": "2f57295ce045ac20a500d69180a0f0811cc56abc4f236b84d4df191058753b97",
+    "payload_sha256": "995cf0a7653dcfe621cfbc4b0aeac10dbd886fcdf8e2c604186f543b35b72daa",
+    "working_tree_dirty": true
+  },
+  "provider_routes": [
+    {
+      "model_name": "grok-4.6",
+      "model_revision": null,
+      "model_version": null,
+      "provider": "openai_compatible"
+    }
+  ],
+  "provider_telemetry": {
+    "breaker_states": [],
+    "case_count": 2,
+    "completion_tokens": 3214,
+    "fallback_count": 0,
+    "fallback_trigger_counts": {},
+    "observed_case_count": 2,
+    "prompt_tokens": 2766,
+    "provider_request_count": 2,
+    "repair_request_count": 0,
+    "source": "agent_run_status_api",
+    "total_tokens": 5980,
+    "usage_request_count": 2
+  },
+  "schema_version": 1,
+  "selected_case_count": 2,
+  "started_at": "2026-08-19T06:38:30.819360+00:00",
+  "status": "passed",
+  "suite": "staging-real-provider-rag-quality",
+  "system_failure_count": 0,
+  "targets": {
+    "citation_precision": 0.95,
+    "citation_recall": 0.9,
+    "closed_label_fact_precision": 0.95,
+    "fact_recall": 0.9,
+    "grounded_fact_rate": 0.9,
+    "refusal_precision": 1.0,
+    "refusal_reason_accuracy": 1.0,
+    "refusal_recall": 1.0
+  },
+  "total_case_count": 40,
+  "trial_only": false
+}

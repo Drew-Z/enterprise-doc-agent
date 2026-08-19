@@ -1,0 +1,44 @@
+{
+  "elapsed_ms": 4091.68,
+  "error_code": null,
+  "failed_stage": null,
+  "probe": {
+    "dimension": 1024,
+    "elapsed_ms": 1773.94,
+    "finite": true,
+    "item_count": 2,
+    "model": "Qwen/Qwen3-Embedding-4B",
+    "nonzero_norms": true,
+    "provider": "openai_compatible",
+    "status": "passed",
+    "values_redacted": true,
+    "version": 2
+  },
+  "reindex": {
+    "attempts": [],
+    "final_plan": {
+      "created": 0,
+      "embedding_dimension": 1024,
+      "embedding_model": "Qwen/Qwen3-Embedding-4B",
+      "embedding_version": 2,
+      "replayed": 0,
+      "selected": 0,
+      "status": "planned",
+      "values_redacted": true
+    },
+    "initial_plan": {
+      "created": 0,
+      "embedding_dimension": 1024,
+      "embedding_model": "Qwen/Qwen3-Embedding-4B",
+      "embedding_version": 2,
+      "replayed": 0,
+      "selected": 0,
+      "status": "planned",
+      "values_redacted": true
+    },
+    "status": "completed"
+  },
+  "schema_version": 1,
+  "status": "passed",
+  "values_redacted": true
+}

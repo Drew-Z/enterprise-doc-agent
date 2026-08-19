@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "source_manifest_sha256": "f402b08fdf04076620cf60d312fe9a26af6b56a66fca75bbf42b41dbb055d5e1",
+  "repository_redaction": {
+    "applied": true,
+    "replacement": "REDACTED-UUID",
+    "replacement_count": 64,
+    "affected_files": [
+      "consumer-current.log",
+      "deployments.json",
+      "embedding-rollout-job.json",
+      "ingress.yaml",
+      "network-policy.yaml"
+    ],
+    "reason": "Remove runtime UUID identifiers from the repository copy while preserving the source artifact digest and original manifest digest separately."
+  },
+  "files": [
+    {
+      "source": "tmp/staging-raw-a66b98ff9055a36dead1784ba67b41f0c05044ae/collection-status.txt",
+      "path": "tmp/staging-sanitized-a66b98ff9055a36dead1784ba67b41f0c05044ae/collection-status.txt",
+      "sha256": "607fd80fca8a4e73c2059d15efeee99708cbf06461e00ee7bf13b5648bf819bd"
+    },
+    {
+      "source": "tmp/staging-raw-a66b98ff9055a36dead1784ba67b41f0c05044ae/consumer-current.log",
+      "path": "tmp/staging-sanitized-a66b98ff9055a36dead1784ba67b41f0c05044ae/consumer-current.log",
+      "sha256": "a6aa5fc089f44bc177ef59bd1432b001cc948f0f525f619ee872d15f04df8b33"
+    },
+    {
+      "source": "tmp/staging-raw-a66b98ff9055a36dead1784ba67b41f0c05044ae/consumer-previous.log",
+      "path": "tmp/staging-sanitized-a66b98ff9055a36dead1784ba67b41f0c05044ae/consumer-previous.log",
+      "sha256": "367287ea41dc5bedee902ffc370af366212365a411beb08f2c881a77708de808"
+    },
+    {
+      "source": "tmp/staging-raw-a66b98ff9055a36dead1784ba67b41f0c05044ae/deployment-profile.txt",
+      "path": "tmp/staging-sanitized-a66b98ff9055a36dead1784ba67b41f0c05044ae/deployment-profile.txt",
+      "sha256": "cc42e7f7666765a9e8de381c5fe34f91da2bac54f3d0bb81780d9c018f2d5671"
+    },
+    {
+      "source": "tmp/staging-raw-a66b98ff9055a36dead1784ba67b41f0c05044ae/deployments.json",
+      "path": "tmp/staging-sanitized-a66b98ff9055a36dead1784ba67b41f0c05044ae/deployments.json",
+      "sha256": "9bba319c9cf3ad6d6c4f30a88fb823327a4d5c7733b1b7d9c13f6f972d29e8a9"
+    },
+    {
+      "source": "tmp/staging-raw-a66b98ff9055a36dead1784ba67b41f0c05044ae/embedding-rollout-job.json",
+      "path": "tmp/staging-sanitized-a66b98ff9055a36dead1784ba67b41f0c05044ae/embedding-rollout-job.json",
+      "sha256": "a29793092604e94e9724aa06dd745b5aba7f94c119e32b5e3b1e2d6db200fef2"
+    },
+    {
+      "source": "tmp/staging-raw-a66b98ff9055a36dead1784ba67b41f0c05044ae/embedding-rollout.log",
+      "path": "tmp/staging-sanitized-a66b98ff9055a36dead1784ba67b41f0c05044ae/embedding-rollout.log",
+      "sha256": "1c9abe13e7ae5078faf894938e08b4bfdbb408182fe18b01374638434e1a7245"
+    },
+    {
+      "source": "tmp/staging-raw-a66b98ff9055a36dead1784ba67b41f0c05044ae/events.txt",
+      "path": "tmp/staging-sanitized-a66b98ff9055a36dead1784ba67b41f0c05044ae/events.txt",
+      "sha256": "e35df4a8385fe64088a0d6bfd6f42c43518a2851c3fa040e7a379c1137583428"
+    },
+    {
+      "source": "tmp/staging-raw-a66b98ff9055a36dead1784ba67b41f0c05044ae/ingress.yaml",
+      "path": "tmp/staging-sanitized-a66b98ff9055a36dead1784ba67b41f0c05044ae/ingress.yaml",
+      "sha256": "e7585e9a847b11ba63e1cc8fb6ced3d2aefe8f2ce8d8edb1c196439a7fcc42c4"
+    },
+    {
+      "source": "tmp/staging-raw-a66b98ff9055a36dead1784ba67b41f0c05044ae/migration.log",
+      "path": "tmp/staging-sanitized-a66b98ff9055a36dead1784ba67b41f0c05044ae/migration.log",
+      "sha256": "b02dc5bcea1c1d4deb47e466504771b3c964f6778e2b9a18fe16a5d4a34efcd7"
+    },
+    {
+      "source": "tmp/staging-raw-a66b98ff9055a36dead1784ba67b41f0c05044ae/network-policy.yaml",
+      "path": "tmp/staging-sanitized-a66b98ff9055a36dead1784ba67b41f0c05044ae/network-policy.yaml",
+      "sha256": "d1644654276e1d02e63977dba40634fc92a91fe7da34d84a9d2358291a22e603"
+    },
+    {
+      "source": "tmp/staging-raw-a66b98ff9055a36dead1784ba67b41f0c05044ae/staging-embedding-rollout.json",
+      "path": "tmp/staging-sanitized-a66b98ff9055a36dead1784ba67b41f0c05044ae/staging-embedding-rollout.json",
+      "sha256": "cb502bd684cf90696a98ea800bc4b19955d4afb560822fe35fb79a59ac237033"
+    },
+    {
+      "source": "tmp/staging-raw-a66b98ff9055a36dead1784ba67b41f0c05044ae/staging-rendered-staging-embedding-rollout.yaml",
+      "path": "tmp/staging-sanitized-a66b98ff9055a36dead1784ba67b41f0c05044ae/staging-rendered-staging-embedding-rollout.yaml",
+      "sha256": "cb80d05c9dfe146cf226c20a1b3f98712a145e9da09f51308fffe8006e6587c4"
+    },
+    {
+      "source": "tmp/staging-raw-a66b98ff9055a36dead1784ba67b41f0c05044ae/staging-rendered-staging-migration.yaml",
+      "path": "tmp/staging-sanitized-a66b98ff9055a36dead1784ba67b41f0c05044ae/staging-rendered-staging-migration.yaml",
+      "sha256": "8d4b478042ff5c3a0f92864229e030dcb0eadae5cf185fba4abd82c30c6033bf"
+    },
+    {
+      "source": "tmp/staging-raw-a66b98ff9055a36dead1784ba67b41f0c05044ae/staging-rendered-staging-prerequisites.yaml",
+      "path": "tmp/staging-sanitized-a66b98ff9055a36dead1784ba67b41f0c05044ae/staging-rendered-staging-prerequisites.yaml",
+      "sha256": "9603f5b7fa0d30fa6c125346e5fda2469868ba900cecb73cc0d6907554e15ac2"
+    },
+    {
+      "source": "tmp/staging-raw-a66b98ff9055a36dead1784ba67b41f0c05044ae/staging-rendered-staging-workloads.yaml",
+      "path": "tmp/staging-sanitized-a66b98ff9055a36dead1784ba67b41f0c05044ae/staging-rendered-staging-workloads.yaml",
+      "sha256": "db4dc9e9b930c7c7f6309bca15acea5fc5a0a714cdaf5857d162f19dcea4466b"
+    },
+    {
+      "source": "tmp/staging-raw-a66b98ff9055a36dead1784ba67b41f0c05044ae/staging-rendered-staging.yaml",
+      "path": "tmp/staging-sanitized-a66b98ff9055a36dead1784ba67b41f0c05044ae/staging-rendered-staging.yaml",
+      "sha256": "13f0e1d5aeff293d393b1546743655844f7450744a205e1f6e83ddc90ceb0ec7"
+    },
+    {
+      "source": "tmp/staging-raw-a66b98ff9055a36dead1784ba67b41f0c05044ae/staging-smoke.json",
+      "path": "tmp/staging-sanitized-a66b98ff9055a36dead1784ba67b41f0c05044ae/staging-smoke.json",
+      "sha256": "5a427cfb7c6bf397b602e7f902a95d92a09967f193b8a8630299c25a86cdc8e2"
+    },
+    {
+      "source": "tmp/staging-raw-a66b98ff9055a36dead1784ba67b41f0c05044ae/worker-current.log",
+      "path": "tmp/staging-sanitized-a66b98ff9055a36dead1784ba67b41f0c05044ae/worker-current.log",
+      "sha256": "35c993b5a6556bcd554a17bfbc85eb9052889eb41ed60cbbcbfe46819e3cf580"
+    },
+    {
+      "source": "tmp/staging-raw-a66b98ff9055a36dead1784ba67b41f0c05044ae/worker-previous.log",
+      "path": "tmp/staging-sanitized-a66b98ff9055a36dead1784ba67b41f0c05044ae/worker-previous.log",
+      "sha256": "8cde5a8c00226b327f821f5e0699325e77f7d5ef3efa6c4fe1b7220cd98793db"
+    }
+  ]
+}

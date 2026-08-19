@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "evidence_type": "staging-image-relay-cleanup",
+  "status": "passed",
+  "bucket": "artifacts",
+  "account_id": "2741446a7478f2d8a5ff31df7e077f17",
+  "release": "v0.1.32",
+  "verified_at": "2026-08-19T06:48:15Z",
+  "tool": "wrangler 4.114.0",
+  "credential_handling": "The Cloudflare API token was consumed from the process environment; its value was not printed or persisted.",
+  "objects": [
+    {
+      "key": "staging-image-relay/v0.1.32/enterprise-doc-api.oci.tar",
+      "archive_sha256": "58f1cd0434c79d3dc7ea879f0eab93243f7a3f5e12be917aa7e186df1b8e30e3",
+      "size_bytes_before": 127104512,
+      "delete_request": "succeeded",
+      "get_after": "not_found"
+    },
+    {
+      "key": "staging-image-relay/v0.1.32/enterprise-doc-worker.oci.tar",
+      "archive_sha256": "4986b62b2c51474098136d9dc7ffbacef7e29e38e2a09d6968a59f9869b02460",
+      "size_bytes_before": 127091200,
+      "delete_request": "succeeded",
+      "get_after": "not_found"
+    },
+    {
+      "key": "staging-image-relay/v0.1.32/enterprise-doc-consumer.oci.tar",
+      "archive_sha256": "d2998a8e355f86d473e7af1fc38bdabba7822c8676315b8d3ccd3d5bd6ece018",
+      "size_bytes_before": 127089152,
+      "delete_request": "succeeded",
+      "get_after": "not_found"
+    },
+    {
+      "key": "staging-image-relay/v0.1.32/enterprise-doc-web.oci.tar",
+      "archive_sha256": "c31933e81662ffda1803aa402bc129a13c2b555227c66b7e421ac23861fd5ab2",
+      "size_bytes_before": 27295232,
+      "delete_request": "succeeded",
+      "get_after": "not_found"
+    }
+  ],
+  "all_deleted": true,
+  "github_environment_secret": {
+    "name": "STAGING_IMAGE_RELAY_PUT_URLS",
+    "status": "deleted",
+    "absence_verified": true
+  },
+  "recovery_boundary": "The server-local archives and import reports remain under /tmp/enterprise-doc-relay-v0.1.32; recreating the R2 objects requires an explicit relay upload."
+}

@@ -1,0 +1,1384 @@
+apiVersion: v1
+items:
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"name":"enterprise-doc-api-ingress","namespace":"enterprise-doc-agent-staging"},"spec":{"ingress":[{"from":[{"podSelector":{"matchLabels":{"app.kubernetes.io/name":"enterprise-doc-web"}}}],"ports":[{"port":8000,"protocol":"TCP"}]}],"podSelector":{"matchLabels":{"app.kubernetes.io/name":"enterprise-doc-api"}},"policyTypes":["Ingress"]}}
+
+        '
+    creationTimestamp: '2026-07-31T11:37:32Z'
+    generation: 1
+    name: enterprise-doc-api-ingress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '7530'
+    uid: REDACTED-UUID
+  spec:
+    ingress:
+    - from:
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/name: enterprise-doc-web
+      ports:
+      - port: 8000
+        protocol: TCP
+    podSelector:
+      matchLabels:
+        app.kubernetes.io/name: enterprise-doc-api
+    policyTypes:
+    - Ingress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"name":"enterprise-doc-api-metrics-ingress","namespace":"enterprise-doc-agent-staging"},"spec":{"ingress":[{"from":[{"podSelector":{"matchLabels":{"app.kubernetes.io/name":"enterprise-doc-prometheus"}}}],"ports":[{"port":8000,"protocol":"TCP"}]}],"podSelector":{"matchLabels":{"app.kubernetes.io/name":"enterprise-doc-api"}},"policyTypes":["Ingress"]}}
+
+        '
+    creationTimestamp: '2026-08-05T02:41:55Z'
+    generation: 1
+    name: enterprise-doc-api-metrics-ingress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '175358'
+    uid: REDACTED-UUID
+  spec:
+    ingress:
+    - from:
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/name: enterprise-doc-prometheus
+      ports:
+      - port: 8000
+        protocol: TCP
+    podSelector:
+      matchLabels:
+        app.kubernetes.io/name: enterprise-doc-api
+    policyTypes:
+    - Ingress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"name":"enterprise-doc-consumer-metrics-ingress","namespace":"enterprise-doc-agent-staging"},"spec":{"ingress":[{"from":[{"podSelector":{"matchLabels":{"app.kubernetes.io/name":"enterprise-doc-prometheus"}}}],"ports":[{"port":8082,"protocol":"TCP"}]}],"podSelector":{"matchLabels":{"app.kubernetes.io/name":"enterprise-doc-consumer"}},"policyTypes":["Ingress"]}}
+
+        '
+    creationTimestamp: '2026-08-05T02:41:55Z'
+    generation: 1
+    name: enterprise-doc-consumer-metrics-ingress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '175359'
+    uid: REDACTED-UUID
+  spec:
+    ingress:
+    - from:
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/name: enterprise-doc-prometheus
+      ports:
+      - port: 8082
+        protocol: TCP
+    podSelector:
+      matchLabels:
+        app.kubernetes.io/name: enterprise-doc-consumer
+    policyTypes:
+    - Ingress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"name":"enterprise-doc-default-deny","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":53,"protocol":"UDP"},{"port":53,"protocol":"TCP"}],"to":[{"namespaceSelector":{}}]}],"podSelector":{},"policyTypes":["Ingress","Egress"]}}
+
+        '
+    creationTimestamp: '2026-07-31T11:37:32Z'
+    generation: 1
+    name: enterprise-doc-default-deny
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '7531'
+    uid: REDACTED-UUID
+  spec:
+    egress:
+    - ports:
+      - port: 53
+        protocol: UDP
+      - port: 53
+        protocol: TCP
+      to:
+      - namespaceSelector: {}
+    podSelector: {}
+    policyTypes:
+    - Ingress
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"name":"enterprise-doc-external-postgres-egress","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":5432,"protocol":"TCP"}],"to":[{"ipBlock":{"cidr":"52.74.252.201/32"}},{"ipBlock":{"cidr":"52.77.146.31/32"}},{"ipBlock":{"cidr":"54.255.219.82/32"}}]}],"podSelector":{"matchExpressions":[{"key":"app.kubernetes.io/name","operator":"In","values":["enterprise-doc-api","enterprise-doc-worker","enterprise-doc-consumer","enterprise-doc-migrate","enterprise-doc-embedding-rollout"]}]},"policyTypes":["Egress"]}}
+
+        '
+    creationTimestamp: '2026-07-31T11:37:32Z'
+    generation: 2
+    name: enterprise-doc-external-postgres-egress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '149558'
+    uid: REDACTED-UUID
+  spec:
+    egress:
+    - ports:
+      - port: 5432
+        protocol: TCP
+      to:
+      - ipBlock:
+          cidr: 52.74.252.201/32
+      - ipBlock:
+          cidr: 52.77.146.31/32
+      - ipBlock:
+          cidr: 54.255.219.82/32
+    podSelector:
+      matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: In
+        values:
+        - enterprise-doc-api
+        - enterprise-doc-worker
+        - enterprise-doc-consumer
+        - enterprise-doc-migrate
+        - enterprise-doc-embedding-rollout
+    policyTypes:
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"name":"enterprise-doc-otel-collector-ingress","namespace":"enterprise-doc-agent-staging"},"spec":{"ingress":[{"from":[{"namespaceSelector":{}}],"ports":[{"port":4317,"protocol":"TCP"},{"port":4318,"protocol":"TCP"}]}],"podSelector":{"matchLabels":{"app.kubernetes.io/name":"otel-collector"}},"policyTypes":["Ingress"]}}
+
+        '
+    creationTimestamp: '2026-07-31T11:37:32Z'
+    generation: 1
+    name: enterprise-doc-otel-collector-ingress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '7533'
+    uid: REDACTED-UUID
+  spec:
+    ingress:
+    - from:
+      - namespaceSelector: {}
+      ports:
+      - port: 4317
+        protocol: TCP
+      - port: 4318
+        protocol: TCP
+    podSelector:
+      matchLabels:
+        app.kubernetes.io/name: otel-collector
+    policyTypes:
+    - Ingress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"name":"enterprise-doc-prometheus-egress","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":8000,"protocol":"TCP"}],"to":[{"podSelector":{"matchLabels":{"app.kubernetes.io/name":"enterprise-doc-api"}}}]},{"ports":[{"port":8081,"protocol":"TCP"}],"to":[{"podSelector":{"matchLabels":{"app.kubernetes.io/name":"enterprise-doc-worker"}}}]},{"ports":[{"port":8082,"protocol":"TCP"}],"to":[{"podSelector":{"matchLabels":{"app.kubernetes.io/name":"enterprise-doc-consumer"}}}]}],"podSelector":{"matchLabels":{"app.kubernetes.io/name":"enterprise-doc-prometheus"}},"policyTypes":["Egress"]}}
+
+        '
+    creationTimestamp: '2026-08-05T02:41:55Z'
+    generation: 1
+    name: enterprise-doc-prometheus-egress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '175360'
+    uid: REDACTED-UUID
+  spec:
+    egress:
+    - ports:
+      - port: 8000
+        protocol: TCP
+      to:
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/name: enterprise-doc-api
+    - ports:
+      - port: 8081
+        protocol: TCP
+      to:
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/name: enterprise-doc-worker
+    - ports:
+      - port: 8082
+        protocol: TCP
+      to:
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/name: enterprise-doc-consumer
+    podSelector:
+      matchLabels:
+        app.kubernetes.io/name: enterprise-doc-prometheus
+    policyTypes:
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"name":"enterprise-doc-redis-ingress","namespace":"enterprise-doc-agent-staging"},"spec":{"ingress":[{"from":[{"podSelector":{"matchLabels":{"app.kubernetes.io/name":"enterprise-doc-api"}}},{"podSelector":{"matchLabels":{"app.kubernetes.io/name":"enterprise-doc-worker"}}},{"podSelector":{"matchLabels":{"app.kubernetes.io/name":"enterprise-doc-consumer"}}}],"ports":[{"port":6379,"protocol":"TCP"}]}],"podSelector":{"matchLabels":{"app.kubernetes.io/name":"enterprise-doc-redis"}},"policyTypes":["Ingress"]}}
+
+        '
+    creationTimestamp: '2026-07-31T11:37:32Z'
+    generation: 1
+    name: enterprise-doc-redis-ingress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '7535'
+    uid: REDACTED-UUID
+  spec:
+    ingress:
+    - from:
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/name: enterprise-doc-api
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/name: enterprise-doc-worker
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/name: enterprise-doc-consumer
+      ports:
+      - port: 6379
+        protocol: TCP
+    podSelector:
+      matchLabels:
+        app.kubernetes.io/name: enterprise-doc-redis
+    policyTypes:
+    - Ingress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"name":"enterprise-doc-runtime-egress","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":5432,"protocol":"TCP"},{"port":6379,"protocol":"TCP"},{"port":9000,"protocol":"TCP"},{"port":4318,"protocol":"TCP"},{"port":8000,"protocol":"TCP"}],"to":[{"podSelector":{}}]},{"ports":[{"port":443,"protocol":"TCP"}]}],"podSelector":{},"policyTypes":["Egress"]}}
+
+        '
+    creationTimestamp: '2026-07-31T11:37:32Z'
+    generation: 1
+    name: enterprise-doc-runtime-egress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '7536'
+    uid: REDACTED-UUID
+  spec:
+    egress:
+    - ports:
+      - port: 5432
+        protocol: TCP
+      - port: 6379
+        protocol: TCP
+      - port: 9000
+        protocol: TCP
+      - port: 4318
+        protocol: TCP
+      - port: 8000
+        protocol: TCP
+      to:
+      - podSelector: {}
+    - ports:
+      - port: 443
+        protocol: TCP
+    podSelector: {}
+    policyTypes:
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"name":"enterprise-doc-staging-smoke-api-egress","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":8000,"protocol":"TCP"}],"to":[{"podSelector":{"matchLabels":{"app.kubernetes.io/name":"enterprise-doc-api"}}}]}],"podSelector":{"matchLabels":{"app.kubernetes.io/name":"m5-staging-smoke"}},"policyTypes":["Egress"]}}
+
+        '
+    creationTimestamp: '2026-07-31T11:37:32Z'
+    generation: 1
+    name: enterprise-doc-staging-smoke-api-egress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '7537'
+    uid: REDACTED-UUID
+  spec:
+    egress:
+    - ports:
+      - port: 8000
+        protocol: TCP
+      to:
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/name: enterprise-doc-api
+    podSelector:
+      matchLabels:
+        app.kubernetes.io/name: m5-staging-smoke
+    policyTypes:
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"name":"enterprise-doc-staging-smoke-api-ingress","namespace":"enterprise-doc-agent-staging"},"spec":{"ingress":[{"from":[{"podSelector":{"matchLabels":{"app.kubernetes.io/name":"m5-staging-smoke"}}}],"ports":[{"port":8000,"protocol":"TCP"}]}],"podSelector":{"matchLabels":{"app.kubernetes.io/name":"enterprise-doc-api"}},"policyTypes":["Ingress"]}}
+
+        '
+    creationTimestamp: '2026-07-31T11:37:32Z'
+    generation: 1
+    name: enterprise-doc-staging-smoke-api-ingress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '7538'
+    uid: REDACTED-UUID
+  spec:
+    ingress:
+    - from:
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/name: m5-staging-smoke
+      ports:
+      - port: 8000
+        protocol: TCP
+    podSelector:
+      matchLabels:
+        app.kubernetes.io/name: enterprise-doc-api
+    policyTypes:
+    - Ingress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"name":"enterprise-doc-web-ingress","namespace":"enterprise-doc-agent-staging"},"spec":{"ingress":[{"from":[{"namespaceSelector":{"matchLabels":{"kubernetes.io/metadata.name":"kube-system"}}}],"ports":[{"port":8080,"protocol":"TCP"}]}],"podSelector":{"matchLabels":{"app.kubernetes.io/name":"enterprise-doc-web"}},"policyTypes":["Ingress"]}}
+
+        '
+    creationTimestamp: '2026-07-31T11:37:32Z'
+    generation: 1
+    name: enterprise-doc-web-ingress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '7539'
+    uid: REDACTED-UUID
+  spec:
+    ingress:
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: kube-system
+      ports:
+      - port: 8080
+        protocol: TCP
+    podSelector:
+      matchLabels:
+        app.kubernetes.io/name: enterprise-doc-web
+    policyTypes:
+    - Ingress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"name":"enterprise-doc-worker-metrics-ingress","namespace":"enterprise-doc-agent-staging"},"spec":{"ingress":[{"from":[{"podSelector":{"matchLabels":{"app.kubernetes.io/name":"enterprise-doc-prometheus"}}}],"ports":[{"port":8081,"protocol":"TCP"}]}],"podSelector":{"matchLabels":{"app.kubernetes.io/name":"enterprise-doc-worker"}},"policyTypes":["Ingress"]}}
+
+        '
+    creationTimestamp: '2026-08-05T02:41:55Z'
+    generation: 1
+    name: enterprise-doc-worker-metrics-ingress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '175361'
+    uid: REDACTED-UUID
+  spec:
+    ingress:
+    - from:
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/name: enterprise-doc-prometheus
+      ports:
+      - port: 8081
+        protocol: TCP
+    podSelector:
+      matchLabels:
+        app.kubernetes.io/name: enterprise-doc-worker
+    policyTypes:
+    - Ingress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"labels":{"app.kubernetes.io/managed-by":"codex","app.kubernetes.io/part-of":"enterprise-doc-agent"},"name":"rag-quality-v2-targeted-20260813-10-postgres-egress","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":5432,"protocol":"TCP"}],"to":[{"ipBlock":{"cidr":"52.74.252.201/32"}},{"ipBlock":{"cidr":"52.77.146.31/32"}},{"ipBlock":{"cidr":"54.255.219.82/32"}}]}],"podSelector":{"matchLabels":{"enterprise-doc-agent/evaluation-run":"targeted-20260813-10"}},"policyTypes":["Egress"]}}
+
+        '
+    creationTimestamp: '2026-08-13T01:53:33Z'
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: codex
+      app.kubernetes.io/part-of: enterprise-doc-agent
+    name: rag-quality-v2-targeted-20260813-10-postgres-egress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '461455'
+    uid: REDACTED-UUID
+  spec:
+    egress:
+    - ports:
+      - port: 5432
+        protocol: TCP
+      to:
+      - ipBlock:
+          cidr: 52.74.252.201/32
+      - ipBlock:
+          cidr: 52.77.146.31/32
+      - ipBlock:
+          cidr: 54.255.219.82/32
+    podSelector:
+      matchLabels:
+        enterprise-doc-agent/evaluation-run: targeted-20260813-10
+    policyTypes:
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"labels":{"app.kubernetes.io/managed-by":"codex","app.kubernetes.io/part-of":"enterprise-doc-agent"},"name":"rag-quality-v2-targeted-20260813-11-postgres-egress","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":5432,"protocol":"TCP"}],"to":[{"ipBlock":{"cidr":"52.74.252.201/32"}},{"ipBlock":{"cidr":"52.77.146.31/32"}},{"ipBlock":{"cidr":"54.255.219.82/32"}}]}],"podSelector":{"matchLabels":{"enterprise-doc-agent/evaluation-run":"targeted-20260813-11"}},"policyTypes":["Egress"]}}
+
+        '
+    creationTimestamp: '2026-08-13T02:03:21Z'
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: codex
+      app.kubernetes.io/part-of: enterprise-doc-agent
+    name: rag-quality-v2-targeted-20260813-11-postgres-egress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '461725'
+    uid: REDACTED-UUID
+  spec:
+    egress:
+    - ports:
+      - port: 5432
+        protocol: TCP
+      to:
+      - ipBlock:
+          cidr: 52.74.252.201/32
+      - ipBlock:
+          cidr: 52.77.146.31/32
+      - ipBlock:
+          cidr: 54.255.219.82/32
+    podSelector:
+      matchLabels:
+        enterprise-doc-agent/evaluation-run: targeted-20260813-11
+    policyTypes:
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"labels":{"app.kubernetes.io/managed-by":"codex","app.kubernetes.io/part-of":"enterprise-doc-agent"},"name":"rag-quality-v2-targeted-20260813-12-postgres-egress","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":5432,"protocol":"TCP"}],"to":[{"ipBlock":{"cidr":"52.74.252.201/32"}},{"ipBlock":{"cidr":"52.77.146.31/32"}},{"ipBlock":{"cidr":"54.255.219.82/32"}}]}],"podSelector":{"matchLabels":{"enterprise-doc-agent/evaluation-run":"targeted-20260813-12"}},"policyTypes":["Egress"]}}
+
+        '
+    creationTimestamp: '2026-08-13T02:12:44Z'
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: codex
+      app.kubernetes.io/part-of: enterprise-doc-agent
+    name: rag-quality-v2-targeted-20260813-12-postgres-egress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '461983'
+    uid: REDACTED-UUID
+  spec:
+    egress:
+    - ports:
+      - port: 5432
+        protocol: TCP
+      to:
+      - ipBlock:
+          cidr: 52.74.252.201/32
+      - ipBlock:
+          cidr: 52.77.146.31/32
+      - ipBlock:
+          cidr: 54.255.219.82/32
+    podSelector:
+      matchLabels:
+        enterprise-doc-agent/evaluation-run: targeted-20260813-12
+    policyTypes:
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"labels":{"app.kubernetes.io/managed-by":"codex","app.kubernetes.io/part-of":"enterprise-doc-agent"},"name":"rag-quality-v2-targeted-20260813-13-postgres-egress","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":5432,"protocol":"TCP"}],"to":[{"ipBlock":{"cidr":"52.74.252.201/32"}},{"ipBlock":{"cidr":"52.77.146.31/32"}},{"ipBlock":{"cidr":"54.255.219.82/32"}}]}],"podSelector":{"matchLabels":{"enterprise-doc-agent/evaluation-run":"targeted-20260813-13"}},"policyTypes":["Egress"]}}
+
+        '
+    creationTimestamp: '2026-08-13T02:20:45Z'
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: codex
+      app.kubernetes.io/part-of: enterprise-doc-agent
+    name: rag-quality-v2-targeted-20260813-13-postgres-egress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '462275'
+    uid: REDACTED-UUID
+  spec:
+    egress:
+    - ports:
+      - port: 5432
+        protocol: TCP
+      to:
+      - ipBlock:
+          cidr: 52.74.252.201/32
+      - ipBlock:
+          cidr: 52.77.146.31/32
+      - ipBlock:
+          cidr: 54.255.219.82/32
+    podSelector:
+      matchLabels:
+        enterprise-doc-agent/evaluation-run: targeted-20260813-13
+    policyTypes:
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"labels":{"app.kubernetes.io/managed-by":"codex","app.kubernetes.io/part-of":"enterprise-doc-agent"},"name":"rag-quality-v2-targeted-20260813-14-postgres-egress","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":5432,"protocol":"TCP"}],"to":[{"ipBlock":{"cidr":"52.74.252.201/32"}},{"ipBlock":{"cidr":"52.77.146.31/32"}},{"ipBlock":{"cidr":"54.255.219.82/32"}}]}],"podSelector":{"matchLabels":{"enterprise-doc-agent/evaluation-run":"targeted-20260813-14"}},"policyTypes":["Egress"]}}
+
+        '
+    creationTimestamp: '2026-08-13T02:29:26Z'
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: codex
+      app.kubernetes.io/part-of: enterprise-doc-agent
+    name: rag-quality-v2-targeted-20260813-14-postgres-egress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '462520'
+    uid: REDACTED-UUID
+  spec:
+    egress:
+    - ports:
+      - port: 5432
+        protocol: TCP
+      to:
+      - ipBlock:
+          cidr: 52.74.252.201/32
+      - ipBlock:
+          cidr: 52.77.146.31/32
+      - ipBlock:
+          cidr: 54.255.219.82/32
+    podSelector:
+      matchLabels:
+        enterprise-doc-agent/evaluation-run: targeted-20260813-14
+    policyTypes:
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"labels":{"app.kubernetes.io/managed-by":"codex","app.kubernetes.io/part-of":"enterprise-doc-agent"},"name":"rag-quality-v2-targeted-20260813-15-postgres-egress","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":5432,"protocol":"TCP"}],"to":[{"ipBlock":{"cidr":"52.74.252.201/32"}},{"ipBlock":{"cidr":"52.77.146.31/32"}},{"ipBlock":{"cidr":"54.255.219.82/32"}}]}],"podSelector":{"matchLabels":{"enterprise-doc-agent/evaluation-run":"targeted-20260813-15"}},"policyTypes":["Egress"]}}
+
+        '
+    creationTimestamp: '2026-08-13T02:37:31Z'
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: codex
+      app.kubernetes.io/part-of: enterprise-doc-agent
+    name: rag-quality-v2-targeted-20260813-15-postgres-egress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '462760'
+    uid: REDACTED-UUID
+  spec:
+    egress:
+    - ports:
+      - port: 5432
+        protocol: TCP
+      to:
+      - ipBlock:
+          cidr: 52.74.252.201/32
+      - ipBlock:
+          cidr: 52.77.146.31/32
+      - ipBlock:
+          cidr: 54.255.219.82/32
+    podSelector:
+      matchLabels:
+        enterprise-doc-agent/evaluation-run: targeted-20260813-15
+    policyTypes:
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"labels":{"app.kubernetes.io/managed-by":"codex","app.kubernetes.io/part-of":"enterprise-doc-agent"},"name":"rag-quality-v2-targeted-20260813-16-postgres-egress","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":5432,"protocol":"TCP"}],"to":[{"ipBlock":{"cidr":"52.74.252.201/32"}},{"ipBlock":{"cidr":"52.77.146.31/32"}},{"ipBlock":{"cidr":"54.255.219.82/32"}}]}],"podSelector":{"matchLabels":{"enterprise-doc-agent/evaluation-run":"targeted-20260813-16"}},"policyTypes":["Egress"]}}
+
+        '
+    creationTimestamp: '2026-08-13T02:46:18Z'
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: codex
+      app.kubernetes.io/part-of: enterprise-doc-agent
+    name: rag-quality-v2-targeted-20260813-16-postgres-egress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '463016'
+    uid: REDACTED-UUID
+  spec:
+    egress:
+    - ports:
+      - port: 5432
+        protocol: TCP
+      to:
+      - ipBlock:
+          cidr: 52.74.252.201/32
+      - ipBlock:
+          cidr: 52.77.146.31/32
+      - ipBlock:
+          cidr: 54.255.219.82/32
+    podSelector:
+      matchLabels:
+        enterprise-doc-agent/evaluation-run: targeted-20260813-16
+    policyTypes:
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"labels":{"app.kubernetes.io/managed-by":"codex","app.kubernetes.io/part-of":"enterprise-doc-agent"},"name":"rag-quality-v2-targeted-20260813-17-postgres-egress","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":5432,"protocol":"TCP"}],"to":[{"ipBlock":{"cidr":"52.74.252.201/32"}},{"ipBlock":{"cidr":"52.77.146.31/32"}},{"ipBlock":{"cidr":"54.255.219.82/32"}}]}],"podSelector":{"matchLabels":{"enterprise-doc-agent/evaluation-run":"targeted-20260813-17"}},"policyTypes":["Egress"]}}
+
+        '
+    creationTimestamp: '2026-08-13T02:54:40Z'
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: codex
+      app.kubernetes.io/part-of: enterprise-doc-agent
+    name: rag-quality-v2-targeted-20260813-17-postgres-egress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '463261'
+    uid: REDACTED-UUID
+  spec:
+    egress:
+    - ports:
+      - port: 5432
+        protocol: TCP
+      to:
+      - ipBlock:
+          cidr: 52.74.252.201/32
+      - ipBlock:
+          cidr: 52.77.146.31/32
+      - ipBlock:
+          cidr: 54.255.219.82/32
+    podSelector:
+      matchLabels:
+        enterprise-doc-agent/evaluation-run: targeted-20260813-17
+    policyTypes:
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"labels":{"app.kubernetes.io/managed-by":"codex","app.kubernetes.io/part-of":"enterprise-doc-agent"},"name":"rag-quality-v2-targeted-20260813-18-postgres-egress","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":5432,"protocol":"TCP"}],"to":[{"ipBlock":{"cidr":"52.74.252.201/32"}},{"ipBlock":{"cidr":"52.77.146.31/32"}},{"ipBlock":{"cidr":"54.255.219.82/32"}}]}],"podSelector":{"matchLabels":{"enterprise-doc-agent/evaluation-run":"targeted-20260813-18"}},"policyTypes":["Egress"]}}
+
+        '
+    creationTimestamp: '2026-08-13T03:03:21Z'
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: codex
+      app.kubernetes.io/part-of: enterprise-doc-agent
+    name: rag-quality-v2-targeted-20260813-18-postgres-egress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '463510'
+    uid: REDACTED-UUID
+  spec:
+    egress:
+    - ports:
+      - port: 5432
+        protocol: TCP
+      to:
+      - ipBlock:
+          cidr: 52.74.252.201/32
+      - ipBlock:
+          cidr: 52.77.146.31/32
+      - ipBlock:
+          cidr: 54.255.219.82/32
+    podSelector:
+      matchLabels:
+        enterprise-doc-agent/evaluation-run: targeted-20260813-18
+    policyTypes:
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"labels":{"app.kubernetes.io/managed-by":"codex","app.kubernetes.io/part-of":"enterprise-doc-agent"},"name":"rag-quality-v2-targeted-20260813-19-postgres-egress","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":5432,"protocol":"TCP"}],"to":[{"ipBlock":{"cidr":"52.74.252.201/32"}},{"ipBlock":{"cidr":"52.77.146.31/32"}},{"ipBlock":{"cidr":"54.255.219.82/32"}}]}],"podSelector":{"matchLabels":{"enterprise-doc-agent/evaluation-run":"targeted-20260813-19"}},"policyTypes":["Egress"]}}
+
+        '
+    creationTimestamp: '2026-08-13T03:11:37Z'
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: codex
+      app.kubernetes.io/part-of: enterprise-doc-agent
+    name: rag-quality-v2-targeted-20260813-19-postgres-egress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '463753'
+    uid: REDACTED-UUID
+  spec:
+    egress:
+    - ports:
+      - port: 5432
+        protocol: TCP
+      to:
+      - ipBlock:
+          cidr: 52.74.252.201/32
+      - ipBlock:
+          cidr: 52.77.146.31/32
+      - ipBlock:
+          cidr: 54.255.219.82/32
+    podSelector:
+      matchLabels:
+        enterprise-doc-agent/evaluation-run: targeted-20260813-19
+    policyTypes:
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"labels":{"app.kubernetes.io/managed-by":"codex","app.kubernetes.io/part-of":"enterprise-doc-agent"},"name":"rag-quality-v2-targeted-20260813-20-postgres-egress","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":5432,"protocol":"TCP"}],"to":[{"ipBlock":{"cidr":"52.74.252.201/32"}},{"ipBlock":{"cidr":"52.77.146.31/32"}},{"ipBlock":{"cidr":"54.255.219.82/32"}}]}],"podSelector":{"matchLabels":{"enterprise-doc-agent/evaluation-run":"targeted-20260813-20"}},"policyTypes":["Egress"]}}
+
+        '
+    creationTimestamp: '2026-08-13T03:20:19Z'
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: codex
+      app.kubernetes.io/part-of: enterprise-doc-agent
+    name: rag-quality-v2-targeted-20260813-20-postgres-egress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '464007'
+    uid: REDACTED-UUID
+  spec:
+    egress:
+    - ports:
+      - port: 5432
+        protocol: TCP
+      to:
+      - ipBlock:
+          cidr: 52.74.252.201/32
+      - ipBlock:
+          cidr: 52.77.146.31/32
+      - ipBlock:
+          cidr: 54.255.219.82/32
+    podSelector:
+      matchLabels:
+        enterprise-doc-agent/evaluation-run: targeted-20260813-20
+    policyTypes:
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"labels":{"app.kubernetes.io/managed-by":"codex","app.kubernetes.io/part-of":"enterprise-doc-agent"},"name":"rag-quality-v2-targeted-20260813-21-postgres-egress","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":5432,"protocol":"TCP"}],"to":[{"ipBlock":{"cidr":"52.74.252.201/32"}},{"ipBlock":{"cidr":"52.77.146.31/32"}},{"ipBlock":{"cidr":"54.255.219.82/32"}}]}],"podSelector":{"matchLabels":{"enterprise-doc-agent/evaluation-run":"targeted-20260813-21"}},"policyTypes":["Egress"]}}
+
+        '
+    creationTimestamp: '2026-08-13T03:29:58Z'
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: codex
+      app.kubernetes.io/part-of: enterprise-doc-agent
+    name: rag-quality-v2-targeted-20260813-21-postgres-egress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '464287'
+    uid: REDACTED-UUID
+  spec:
+    egress:
+    - ports:
+      - port: 5432
+        protocol: TCP
+      to:
+      - ipBlock:
+          cidr: 52.74.252.201/32
+      - ipBlock:
+          cidr: 52.77.146.31/32
+      - ipBlock:
+          cidr: 54.255.219.82/32
+    podSelector:
+      matchLabels:
+        enterprise-doc-agent/evaluation-run: targeted-20260813-21
+    policyTypes:
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"labels":{"app.kubernetes.io/managed-by":"codex","app.kubernetes.io/part-of":"enterprise-doc-agent"},"name":"rag-quality-v2-targeted-20260813-22-postgres-egress","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":5432,"protocol":"TCP"}],"to":[{"ipBlock":{"cidr":"52.74.252.201/32"}},{"ipBlock":{"cidr":"52.77.146.31/32"}},{"ipBlock":{"cidr":"54.255.219.82/32"}}]}],"podSelector":{"matchLabels":{"enterprise-doc-agent/evaluation-run":"targeted-20260813-22"}},"policyTypes":["Egress"]}}
+
+        '
+    creationTimestamp: '2026-08-13T03:41:31Z'
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: codex
+      app.kubernetes.io/part-of: enterprise-doc-agent
+    name: rag-quality-v2-targeted-20260813-22-postgres-egress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '464624'
+    uid: REDACTED-UUID
+  spec:
+    egress:
+    - ports:
+      - port: 5432
+        protocol: TCP
+      to:
+      - ipBlock:
+          cidr: 52.74.252.201/32
+      - ipBlock:
+          cidr: 52.77.146.31/32
+      - ipBlock:
+          cidr: 54.255.219.82/32
+    podSelector:
+      matchLabels:
+        enterprise-doc-agent/evaluation-run: targeted-20260813-22
+    policyTypes:
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"labels":{"app.kubernetes.io/managed-by":"codex","app.kubernetes.io/part-of":"enterprise-doc-agent"},"name":"rag-quality-v2-targeted-20260813-23-postgres-egress","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":5432,"protocol":"TCP"}],"to":[{"ipBlock":{"cidr":"52.74.252.201/32"}},{"ipBlock":{"cidr":"52.77.146.31/32"}},{"ipBlock":{"cidr":"54.255.219.82/32"}}]}],"podSelector":{"matchLabels":{"enterprise-doc-agent/evaluation-run":"targeted-20260813-23"}},"policyTypes":["Egress"]}}
+
+        '
+    creationTimestamp: '2026-08-13T03:50:18Z'
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: codex
+      app.kubernetes.io/part-of: enterprise-doc-agent
+    name: rag-quality-v2-targeted-20260813-23-postgres-egress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '464881'
+    uid: REDACTED-UUID
+  spec:
+    egress:
+    - ports:
+      - port: 5432
+        protocol: TCP
+      to:
+      - ipBlock:
+          cidr: 52.74.252.201/32
+      - ipBlock:
+          cidr: 52.77.146.31/32
+      - ipBlock:
+          cidr: 54.255.219.82/32
+    podSelector:
+      matchLabels:
+        enterprise-doc-agent/evaluation-run: targeted-20260813-23
+    policyTypes:
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"labels":{"app.kubernetes.io/managed-by":"codex","app.kubernetes.io/part-of":"enterprise-doc-agent"},"name":"rag-quality-v2-targeted-20260813-24-postgres-egress","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":5432,"protocol":"TCP"}],"to":[{"ipBlock":{"cidr":"52.74.252.201/32"}},{"ipBlock":{"cidr":"52.77.146.31/32"}},{"ipBlock":{"cidr":"54.255.219.82/32"}}]}],"podSelector":{"matchLabels":{"enterprise-doc-agent/evaluation-run":"targeted-20260813-24"}},"policyTypes":["Egress"]}}
+
+        '
+    creationTimestamp: '2026-08-13T03:58:18Z'
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: codex
+      app.kubernetes.io/part-of: enterprise-doc-agent
+    name: rag-quality-v2-targeted-20260813-24-postgres-egress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '465119'
+    uid: REDACTED-UUID
+  spec:
+    egress:
+    - ports:
+      - port: 5432
+        protocol: TCP
+      to:
+      - ipBlock:
+          cidr: 52.74.252.201/32
+      - ipBlock:
+          cidr: 52.77.146.31/32
+      - ipBlock:
+          cidr: 54.255.219.82/32
+    podSelector:
+      matchLabels:
+        enterprise-doc-agent/evaluation-run: targeted-20260813-24
+    policyTypes:
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"labels":{"app.kubernetes.io/managed-by":"codex","app.kubernetes.io/part-of":"enterprise-doc-agent"},"name":"rag-quality-v2-targeted-20260813-25-postgres-egress","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":5432,"protocol":"TCP"}],"to":[{"ipBlock":{"cidr":"52.74.252.201/32"}},{"ipBlock":{"cidr":"52.77.146.31/32"}},{"ipBlock":{"cidr":"54.255.219.82/32"}}]}],"podSelector":{"matchLabels":{"enterprise-doc-agent/evaluation-run":"targeted-20260813-25"}},"policyTypes":["Egress"]}}
+
+        '
+    creationTimestamp: '2026-08-13T04:08:49Z'
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: codex
+      app.kubernetes.io/part-of: enterprise-doc-agent
+    name: rag-quality-v2-targeted-20260813-25-postgres-egress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '465418'
+    uid: REDACTED-UUID
+  spec:
+    egress:
+    - ports:
+      - port: 5432
+        protocol: TCP
+      to:
+      - ipBlock:
+          cidr: 52.74.252.201/32
+      - ipBlock:
+          cidr: 52.77.146.31/32
+      - ipBlock:
+          cidr: 54.255.219.82/32
+    podSelector:
+      matchLabels:
+        enterprise-doc-agent/evaluation-run: targeted-20260813-25
+    policyTypes:
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"labels":{"app.kubernetes.io/managed-by":"codex","app.kubernetes.io/part-of":"enterprise-doc-agent"},"name":"rag-quality-v2-targeted-20260813-26-postgres-egress","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":5432,"protocol":"TCP"}],"to":[{"ipBlock":{"cidr":"52.74.252.201/32"}},{"ipBlock":{"cidr":"52.77.146.31/32"}},{"ipBlock":{"cidr":"54.255.219.82/32"}}]}],"podSelector":{"matchLabels":{"enterprise-doc-agent/evaluation-run":"targeted-20260813-26"}},"policyTypes":["Egress"]}}
+
+        '
+    creationTimestamp: '2026-08-13T16:04:02Z'
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: codex
+      app.kubernetes.io/part-of: enterprise-doc-agent
+    name: rag-quality-v2-targeted-20260813-26-postgres-egress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '483194'
+    uid: REDACTED-UUID
+  spec:
+    egress:
+    - ports:
+      - port: 5432
+        protocol: TCP
+      to:
+      - ipBlock:
+          cidr: 52.74.252.201/32
+      - ipBlock:
+          cidr: 52.77.146.31/32
+      - ipBlock:
+          cidr: 54.255.219.82/32
+    podSelector:
+      matchLabels:
+        enterprise-doc-agent/evaluation-run: targeted-20260813-26
+    policyTypes:
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"labels":{"app.kubernetes.io/managed-by":"codex","app.kubernetes.io/part-of":"enterprise-doc-agent"},"name":"rag-quality-v2-targeted-20260813-27-postgres-egress","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":5432,"protocol":"TCP"}],"to":[{"ipBlock":{"cidr":"52.74.252.201/32"}},{"ipBlock":{"cidr":"52.77.146.31/32"}},{"ipBlock":{"cidr":"54.255.219.82/32"}}]}],"podSelector":{"matchLabels":{"enterprise-doc-agent/evaluation-run":"targeted-20260813-27"}},"policyTypes":["Egress"]}}
+
+        '
+    creationTimestamp: '2026-08-13T16:17:51Z'
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: codex
+      app.kubernetes.io/part-of: enterprise-doc-agent
+    name: rag-quality-v2-targeted-20260813-27-postgres-egress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '483562'
+    uid: REDACTED-UUID
+  spec:
+    egress:
+    - ports:
+      - port: 5432
+        protocol: TCP
+      to:
+      - ipBlock:
+          cidr: 52.74.252.201/32
+      - ipBlock:
+          cidr: 52.77.146.31/32
+      - ipBlock:
+          cidr: 54.255.219.82/32
+    podSelector:
+      matchLabels:
+        enterprise-doc-agent/evaluation-run: targeted-20260813-27
+    policyTypes:
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"labels":{"app.kubernetes.io/managed-by":"codex","app.kubernetes.io/part-of":"enterprise-doc-agent"},"name":"rag-quality-v2-targeted-20260813-28-postgres-egress","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":5432,"protocol":"TCP"}],"to":[{"ipBlock":{"cidr":"52.74.252.201/32"}},{"ipBlock":{"cidr":"52.77.146.31/32"}},{"ipBlock":{"cidr":"54.255.219.82/32"}}]}],"podSelector":{"matchLabels":{"enterprise-doc-agent/evaluation-run":"targeted-20260813-28"}},"policyTypes":["Egress"]}}
+
+        '
+    creationTimestamp: '2026-08-13T16:32:33Z'
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: codex
+      app.kubernetes.io/part-of: enterprise-doc-agent
+    name: rag-quality-v2-targeted-20260813-28-postgres-egress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '483951'
+    uid: REDACTED-UUID
+  spec:
+    egress:
+    - ports:
+      - port: 5432
+        protocol: TCP
+      to:
+      - ipBlock:
+          cidr: 52.74.252.201/32
+      - ipBlock:
+          cidr: 52.77.146.31/32
+      - ipBlock:
+          cidr: 54.255.219.82/32
+    podSelector:
+      matchLabels:
+        enterprise-doc-agent/evaluation-run: targeted-20260813-28
+    policyTypes:
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"labels":{"app.kubernetes.io/managed-by":"codex","app.kubernetes.io/part-of":"enterprise-doc-agent"},"name":"rag-quality-v2-targeted-20260813-29-postgres-egress","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":5432,"protocol":"TCP"}],"to":[{"ipBlock":{"cidr":"52.74.252.201/32"}},{"ipBlock":{"cidr":"52.77.146.31/32"}},{"ipBlock":{"cidr":"54.255.219.82/32"}}]}],"podSelector":{"matchLabels":{"enterprise-doc-agent/evaluation-run":"targeted-20260813-29"}},"policyTypes":["Egress"]}}
+
+        '
+    creationTimestamp: '2026-08-13T16:42:12Z'
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: codex
+      app.kubernetes.io/part-of: enterprise-doc-agent
+    name: rag-quality-v2-targeted-20260813-29-postgres-egress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '484215'
+    uid: REDACTED-UUID
+  spec:
+    egress:
+    - ports:
+      - port: 5432
+        protocol: TCP
+      to:
+      - ipBlock:
+          cidr: 52.74.252.201/32
+      - ipBlock:
+          cidr: 52.77.146.31/32
+      - ipBlock:
+          cidr: 54.255.219.82/32
+    podSelector:
+      matchLabels:
+        enterprise-doc-agent/evaluation-run: targeted-20260813-29
+    policyTypes:
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"labels":{"app.kubernetes.io/managed-by":"codex","app.kubernetes.io/part-of":"enterprise-doc-agent"},"name":"rag-quality-v2-targeted-20260813-30-postgres-egress","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":5432,"protocol":"TCP"}],"to":[{"ipBlock":{"cidr":"52.74.252.201/32"}},{"ipBlock":{"cidr":"52.77.146.31/32"}},{"ipBlock":{"cidr":"54.255.219.82/32"}}]}],"podSelector":{"matchLabels":{"enterprise-doc-agent/evaluation-run":"targeted-20260813-30"}},"policyTypes":["Egress"]}}
+
+        '
+    creationTimestamp: '2026-08-13T16:52:17Z'
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: codex
+      app.kubernetes.io/part-of: enterprise-doc-agent
+    name: rag-quality-v2-targeted-20260813-30-postgres-egress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '484510'
+    uid: REDACTED-UUID
+  spec:
+    egress:
+    - ports:
+      - port: 5432
+        protocol: TCP
+      to:
+      - ipBlock:
+          cidr: 52.74.252.201/32
+      - ipBlock:
+          cidr: 52.77.146.31/32
+      - ipBlock:
+          cidr: 54.255.219.82/32
+    podSelector:
+      matchLabels:
+        enterprise-doc-agent/evaluation-run: targeted-20260813-30
+    policyTypes:
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"labels":{"app.kubernetes.io/managed-by":"codex","app.kubernetes.io/part-of":"enterprise-doc-agent"},"name":"rag-quality-v2-targeted-20260813-31-postgres-egress","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":5432,"protocol":"TCP"}],"to":[{"ipBlock":{"cidr":"52.74.252.201/32"}},{"ipBlock":{"cidr":"52.77.146.31/32"}},{"ipBlock":{"cidr":"54.255.219.82/32"}}]}],"podSelector":{"matchLabels":{"enterprise-doc-agent/evaluation-run":"targeted-20260813-31"}},"policyTypes":["Egress"]}}
+
+        '
+    creationTimestamp: '2026-08-13T17:02:17Z'
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: codex
+      app.kubernetes.io/part-of: enterprise-doc-agent
+    name: rag-quality-v2-targeted-20260813-31-postgres-egress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '484785'
+    uid: REDACTED-UUID
+  spec:
+    egress:
+    - ports:
+      - port: 5432
+        protocol: TCP
+      to:
+      - ipBlock:
+          cidr: 52.74.252.201/32
+      - ipBlock:
+          cidr: 52.77.146.31/32
+      - ipBlock:
+          cidr: 54.255.219.82/32
+    podSelector:
+      matchLabels:
+        enterprise-doc-agent/evaluation-run: targeted-20260813-31
+    policyTypes:
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"labels":{"app.kubernetes.io/managed-by":"codex","app.kubernetes.io/part-of":"enterprise-doc-agent"},"name":"rag-quality-v2-targeted-20260813-32-postgres-egress","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":5432,"protocol":"TCP"}],"to":[{"ipBlock":{"cidr":"52.74.252.201/32"}},{"ipBlock":{"cidr":"52.77.146.31/32"}},{"ipBlock":{"cidr":"54.255.219.82/32"}}]}],"podSelector":{"matchLabels":{"enterprise-doc-agent/evaluation-run":"targeted-20260813-32"}},"policyTypes":["Egress"]}}
+
+        '
+    creationTimestamp: '2026-08-13T17:12:58Z'
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: codex
+      app.kubernetes.io/part-of: enterprise-doc-agent
+    name: rag-quality-v2-targeted-20260813-32-postgres-egress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '485087'
+    uid: REDACTED-UUID
+  spec:
+    egress:
+    - ports:
+      - port: 5432
+        protocol: TCP
+      to:
+      - ipBlock:
+          cidr: 52.74.252.201/32
+      - ipBlock:
+          cidr: 52.77.146.31/32
+      - ipBlock:
+          cidr: 54.255.219.82/32
+    podSelector:
+      matchLabels:
+        enterprise-doc-agent/evaluation-run: targeted-20260813-32
+    policyTypes:
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"labels":{"app.kubernetes.io/managed-by":"codex","app.kubernetes.io/part-of":"enterprise-doc-agent"},"name":"rag-quality-v2-targeted-20260813-33-postgres-egress","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":5432,"protocol":"TCP"}],"to":[{"ipBlock":{"cidr":"52.74.252.201/32"}},{"ipBlock":{"cidr":"52.77.146.31/32"}},{"ipBlock":{"cidr":"54.255.219.82/32"}}]}],"podSelector":{"matchLabels":{"enterprise-doc-agent/evaluation-run":"targeted-20260813-33"}},"policyTypes":["Egress"]}}
+
+        '
+    creationTimestamp: '2026-08-13T17:23:24Z'
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: codex
+      app.kubernetes.io/part-of: enterprise-doc-agent
+    name: rag-quality-v2-targeted-20260813-33-postgres-egress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '485385'
+    uid: REDACTED-UUID
+  spec:
+    egress:
+    - ports:
+      - port: 5432
+        protocol: TCP
+      to:
+      - ipBlock:
+          cidr: 52.74.252.201/32
+      - ipBlock:
+          cidr: 52.77.146.31/32
+      - ipBlock:
+          cidr: 54.255.219.82/32
+    podSelector:
+      matchLabels:
+        enterprise-doc-agent/evaluation-run: targeted-20260813-33
+    policyTypes:
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"labels":{"app.kubernetes.io/managed-by":"codex","app.kubernetes.io/part-of":"enterprise-doc-agent"},"name":"rag-quality-v2-targeted-20260813-34-postgres-egress","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":5432,"protocol":"TCP"}],"to":[{"ipBlock":{"cidr":"52.74.252.201/32"}},{"ipBlock":{"cidr":"52.77.146.31/32"}},{"ipBlock":{"cidr":"54.255.219.82/32"}}]}],"podSelector":{"matchLabels":{"enterprise-doc-agent/evaluation-run":"targeted-20260813-34"}},"policyTypes":["Egress"]}}
+
+        '
+    creationTimestamp: '2026-08-13T17:33:29Z'
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: codex
+      app.kubernetes.io/part-of: enterprise-doc-agent
+    name: rag-quality-v2-targeted-20260813-34-postgres-egress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '485664'
+    uid: REDACTED-UUID
+  spec:
+    egress:
+    - ports:
+      - port: 5432
+        protocol: TCP
+      to:
+      - ipBlock:
+          cidr: 52.74.252.201/32
+      - ipBlock:
+          cidr: 52.77.146.31/32
+      - ipBlock:
+          cidr: 54.255.219.82/32
+    podSelector:
+      matchLabels:
+        enterprise-doc-agent/evaluation-run: targeted-20260813-34
+    policyTypes:
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"labels":{"app.kubernetes.io/managed-by":"codex","app.kubernetes.io/part-of":"enterprise-doc-agent"},"name":"rag-quality-v2-targeted-20260813-35-postgres-egress","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":5432,"protocol":"TCP"}],"to":[{"ipBlock":{"cidr":"52.74.252.201/32"}},{"ipBlock":{"cidr":"52.77.146.31/32"}},{"ipBlock":{"cidr":"54.255.219.82/32"}}]}],"podSelector":{"matchLabels":{"enterprise-doc-agent/evaluation-run":"targeted-20260813-35"}},"policyTypes":["Egress"]}}
+
+        '
+    creationTimestamp: '2026-08-13T17:42:16Z'
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: codex
+      app.kubernetes.io/part-of: enterprise-doc-agent
+    name: rag-quality-v2-targeted-20260813-35-postgres-egress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '485920'
+    uid: REDACTED-UUID
+  spec:
+    egress:
+    - ports:
+      - port: 5432
+        protocol: TCP
+      to:
+      - ipBlock:
+          cidr: 52.74.252.201/32
+      - ipBlock:
+          cidr: 52.77.146.31/32
+      - ipBlock:
+          cidr: 54.255.219.82/32
+    podSelector:
+      matchLabels:
+        enterprise-doc-agent/evaluation-run: targeted-20260813-35
+    policyTypes:
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"labels":{"app.kubernetes.io/managed-by":"codex","app.kubernetes.io/part-of":"enterprise-doc-agent"},"name":"rag-quality-v2-targeted-20260813-36-postgres-egress","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":5432,"protocol":"TCP"}],"to":[{"ipBlock":{"cidr":"52.74.252.201/32"}},{"ipBlock":{"cidr":"52.77.146.31/32"}},{"ipBlock":{"cidr":"54.255.219.82/32"}}]}],"podSelector":{"matchLabels":{"enterprise-doc-agent/evaluation-run":"targeted-20260813-36"}},"policyTypes":["Egress"]}}
+
+        '
+    creationTimestamp: '2026-08-13T17:52:21Z'
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: codex
+      app.kubernetes.io/part-of: enterprise-doc-agent
+    name: rag-quality-v2-targeted-20260813-36-postgres-egress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '486209'
+    uid: REDACTED-UUID
+  spec:
+    egress:
+    - ports:
+      - port: 5432
+        protocol: TCP
+      to:
+      - ipBlock:
+          cidr: 52.74.252.201/32
+      - ipBlock:
+          cidr: 52.77.146.31/32
+      - ipBlock:
+          cidr: 54.255.219.82/32
+    podSelector:
+      matchLabels:
+        enterprise-doc-agent/evaluation-run: targeted-20260813-36
+    policyTypes:
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"labels":{"app.kubernetes.io/managed-by":"codex","app.kubernetes.io/part-of":"enterprise-doc-agent"},"name":"rag-quality-v2-targeted-20260813-7-postgres-egress","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":5432,"protocol":"TCP"}],"to":[{"ipBlock":{"cidr":"52.74.252.201/32"}},{"ipBlock":{"cidr":"52.77.146.31/32"}},{"ipBlock":{"cidr":"54.255.219.82/32"}}]}],"podSelector":{"matchLabels":{"enterprise-doc-agent/evaluation-run":"targeted-20260813-7"}},"policyTypes":["Egress"]}}
+
+        '
+    creationTimestamp: '2026-08-13T01:18:05Z'
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: codex
+      app.kubernetes.io/part-of: enterprise-doc-agent
+    name: rag-quality-v2-targeted-20260813-7-postgres-egress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '460498'
+    uid: REDACTED-UUID
+  spec:
+    egress:
+    - ports:
+      - port: 5432
+        protocol: TCP
+      to:
+      - ipBlock:
+          cidr: 52.74.252.201/32
+      - ipBlock:
+          cidr: 52.77.146.31/32
+      - ipBlock:
+          cidr: 54.255.219.82/32
+    podSelector:
+      matchLabels:
+        enterprise-doc-agent/evaluation-run: targeted-20260813-7
+    policyTypes:
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"labels":{"app.kubernetes.io/managed-by":"codex","app.kubernetes.io/part-of":"enterprise-doc-agent"},"name":"rag-quality-v2-targeted-20260813-8-postgres-egress","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":5432,"protocol":"TCP"}],"to":[{"ipBlock":{"cidr":"52.74.252.201/32"}},{"ipBlock":{"cidr":"52.77.146.31/32"}},{"ipBlock":{"cidr":"54.255.219.82/32"}}]}],"podSelector":{"matchLabels":{"enterprise-doc-agent/evaluation-run":"targeted-20260813-8"}},"policyTypes":["Egress"]}}
+
+        '
+    creationTimestamp: '2026-08-13T01:35:02Z'
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: codex
+      app.kubernetes.io/part-of: enterprise-doc-agent
+    name: rag-quality-v2-targeted-20260813-8-postgres-egress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '460940'
+    uid: REDACTED-UUID
+  spec:
+    egress:
+    - ports:
+      - port: 5432
+        protocol: TCP
+      to:
+      - ipBlock:
+          cidr: 52.74.252.201/32
+      - ipBlock:
+          cidr: 52.77.146.31/32
+      - ipBlock:
+          cidr: 54.255.219.82/32
+    podSelector:
+      matchLabels:
+        enterprise-doc-agent/evaluation-run: targeted-20260813-8
+    policyTypes:
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"labels":{"app.kubernetes.io/managed-by":"codex","app.kubernetes.io/part-of":"enterprise-doc-agent"},"name":"rag-quality-v2-targeted-20260813-9-postgres-egress","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":5432,"protocol":"TCP"}],"to":[{"ipBlock":{"cidr":"52.74.252.201/32"}},{"ipBlock":{"cidr":"52.77.146.31/32"}},{"ipBlock":{"cidr":"54.255.219.82/32"}}]}],"podSelector":{"matchLabels":{"enterprise-doc-agent/evaluation-run":"targeted-20260813-9"}},"policyTypes":["Egress"]}}
+
+        '
+    creationTimestamp: '2026-08-13T01:44:24Z'
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: codex
+      app.kubernetes.io/part-of: enterprise-doc-agent
+    name: rag-quality-v2-targeted-20260813-9-postgres-egress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '461200'
+    uid: REDACTED-UUID
+  spec:
+    egress:
+    - ports:
+      - port: 5432
+        protocol: TCP
+      to:
+      - ipBlock:
+          cidr: 52.74.252.201/32
+      - ipBlock:
+          cidr: 52.77.146.31/32
+      - ipBlock:
+          cidr: 54.255.219.82/32
+    podSelector:
+      matchLabels:
+        enterprise-doc-agent/evaluation-run: targeted-20260813-9
+    policyTypes:
+    - Egress
+kind: List
+metadata:
+  resourceVersion: ''
+time="2026-08-19T14:24:45+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission
+  denied"
