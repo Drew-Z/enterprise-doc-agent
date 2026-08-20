@@ -327,6 +327,8 @@ test "$(kubectl auth can-i patch persistentvolumeclaims \
 test "$(kubectl auth can-i create jobs.batch -n enterprise-doc-agent-staging --as "$deployer")" = yes
 test "$(kubectl auth can-i patch deployments.apps -n enterprise-doc-agent-staging \
   --as "$deployer")" = yes
+test "$(kubectl auth can-i patch deployments.apps/scale -n enterprise-doc-agent-staging \
+  --as "$deployer")" = yes
 test "$(kubectl auth can-i list replicasets.apps -n enterprise-doc-agent-staging \
   --as "$deployer")" = yes
 ```

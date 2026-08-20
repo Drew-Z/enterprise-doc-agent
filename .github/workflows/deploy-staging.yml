@@ -174,6 +174,7 @@ jobs:
           fi
           kubectl auth can-i create jobs.batch -n enterprise-doc-agent-staging | grep -qx 'yes'
           kubectl auth can-i patch deployments.apps -n enterprise-doc-agent-staging | grep -qx 'yes'
+          kubectl auth can-i patch deployments.apps/scale -n enterprise-doc-agent-staging | grep -qx 'yes'
           trap - ERR INT TERM
       - name: Validate deployment profile ownership
         env:
