@@ -1,0 +1,4 @@
+time="2026-08-19T14:24:44+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-08-19T14:24:44+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-08-19T14:24:44+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+Error from server (BadRequest): previous terminated container "worker" in pod "enterprise-doc-worker-7fbdb7bdc5-fkn4v" not found

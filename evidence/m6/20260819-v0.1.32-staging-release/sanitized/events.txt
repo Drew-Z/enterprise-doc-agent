@@ -1,0 +1,78 @@
+time="2026-08-19T14:24:45+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-08-19T14:24:45+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-08-19T14:24:45+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+LAST SEEN   TYPE      REASON              OBJECT                                          MESSAGE
+7m24s       Normal    Scheduled           pod/enterprise-doc-api-7fc9b49dd9-b8cx7         Successfully assigned enterprise-doc-agent-staging/enterprise-doc-api-7fc9b49dd9-b8cx7 to vm-0-2-ubuntu
+7m40s       Normal    Scheduled           pod/enterprise-doc-migrate-nk7nr                Successfully assigned enterprise-doc-agent-staging/enterprise-doc-migrate-nk7nr to vm-0-2-ubuntu
+7m24s       Normal    Scheduled           pod/enterprise-doc-consumer-7f9668c9cc-qvblp    Successfully assigned enterprise-doc-agent-staging/enterprise-doc-consumer-7f9668c9cc-qvblp to vm-0-2-ubuntu
+7m6s        Normal    Scheduled           pod/enterprise-doc-embedding-rollout-p7r2l      Successfully assigned enterprise-doc-agent-staging/enterprise-doc-embedding-rollout-p7r2l to vm-0-2-ubuntu
+7m17s       Normal    Scheduled           pod/enterprise-doc-api-7fc9b49dd9-dblbb         Successfully assigned enterprise-doc-agent-staging/enterprise-doc-api-7fc9b49dd9-dblbb to vm-0-2-ubuntu
+6m55s       Normal    Scheduled           pod/m5-staging-smoke-n5c4m                      Successfully assigned enterprise-doc-agent-staging/m5-staging-smoke-n5c4m to vm-0-2-ubuntu
+109s        Normal    Scheduled           pod/m5-staging-smoke-7kwq8                      Successfully assigned enterprise-doc-agent-staging/m5-staging-smoke-7kwq8 to vm-0-2-ubuntu
+2m18s       Normal    Scheduled           pod/enterprise-doc-migrate-zrfrk                Successfully assigned enterprise-doc-agent-staging/enterprise-doc-migrate-zrfrk to vm-0-2-ubuntu
+7m24s       Normal    Scheduled           pod/enterprise-doc-worker-7fbdb7bdc5-fkn4v      Successfully assigned enterprise-doc-agent-staging/enterprise-doc-worker-7fbdb7bdc5-fkn4v to vm-0-2-ubuntu
+2m          Normal    Scheduled           pod/enterprise-doc-embedding-rollout-x89hs      Successfully assigned enterprise-doc-agent-staging/enterprise-doc-embedding-rollout-x89hs to vm-0-2-ubuntu
+12m         Warning   Unhealthy           pod/enterprise-doc-worker-5cf6fb7d8-cp7gs       Readiness probe failed: HTTP probe failed with statuscode: 503
+12m         Warning   Unhealthy           pod/enterprise-doc-api-97b7b86-zj68b            Readiness probe failed: HTTP probe failed with statuscode: 503
+7m41s       Normal    Pulled              pod/enterprise-doc-migrate-nk7nr                Container image "ghcr.io/drew-z/enterprise-doc-api@sha256:5472211ba8882ffa8ed60cffbe85aab94b2712cfece28f29d6b0271f0dbdb703" already present on machine and can be accessed by the pod
+7m41s       Normal    SuccessfulCreate    job/enterprise-doc-migrate                      Created pod: enterprise-doc-migrate-nk7nr
+7m41s       Normal    Started             pod/enterprise-doc-migrate-nk7nr                Container started
+7m41s       Normal    Created             pod/enterprise-doc-migrate-nk7nr                Container created
+7m26s       Normal    Completed           job/enterprise-doc-migrate                      Job completed
+7m25s       Normal    SuccessfulCreate    replicaset/enterprise-doc-worker-7fbdb7bdc5     Created pod: enterprise-doc-worker-7fbdb7bdc5-fkn4v
+7m25s       Normal    ScalingReplicaSet   deployment/enterprise-doc-api                   Scaled down replica set enterprise-doc-api-97b7b86 from 2 to 1
+7m25s       Normal    Killing             pod/enterprise-doc-consumer-7d949c74c4-nh7tm    Stopping container consumer
+7m25s       Normal    SuccessfulDelete    replicaset/enterprise-doc-consumer-7d949c74c4   Deleted pod: enterprise-doc-consumer-7d949c74c4-nh7tm
+7m25s       Normal    ScalingReplicaSet   deployment/enterprise-doc-api                   Scaled up replica set enterprise-doc-api-7fc9b49dd9 from 0 to 1
+7m25s       Normal    Pulled              pod/enterprise-doc-consumer-7f9668c9cc-qvblp    Container image "ghcr.io/drew-z/enterprise-doc-consumer@sha256:746e072e4b9f63e27438b7397984d4e85362db5d57a28c7baa40f2acfa027efd" already present on machine and can be accessed by the pod
+7m25s       Normal    Created             pod/enterprise-doc-consumer-7f9668c9cc-qvblp    Container created
+7m25s       Normal    Pulled              pod/enterprise-doc-api-7fc9b49dd9-b8cx7         Container image "ghcr.io/drew-z/enterprise-doc-api@sha256:5472211ba8882ffa8ed60cffbe85aab94b2712cfece28f29d6b0271f0dbdb703" already present on machine and can be accessed by the pod
+7m25s       Normal    SuccessfulCreate    replicaset/enterprise-doc-consumer-7f9668c9cc   Created pod: enterprise-doc-consumer-7f9668c9cc-qvblp
+7m25s       Normal    ScalingReplicaSet   deployment/enterprise-doc-consumer              Scaled down replica set enterprise-doc-consumer-7d949c74c4 from 1 to 0
+7m25s       Normal    ScalingReplicaSet   deployment/enterprise-doc-consumer              Scaled up replica set enterprise-doc-consumer-7f9668c9cc from 0 to 1
+7m25s       Normal    Created             pod/enterprise-doc-api-7fc9b49dd9-b8cx7         Container created
+7m25s       Normal    Started             pod/enterprise-doc-api-7fc9b49dd9-b8cx7         Container started
+7m25s       Normal    ScalingReplicaSet   deployment/enterprise-doc-worker                Scaled up replica set enterprise-doc-worker-7fbdb7bdc5 from 0 to 1
+7m25s       Normal    SuccessfulDelete    replicaset/enterprise-doc-worker-5cf6fb7d8      Deleted pod: enterprise-doc-worker-5cf6fb7d8-cp7gs
+7m25s       Normal    SuccessfulDelete    replicaset/enterprise-doc-api-97b7b86           Deleted pod: enterprise-doc-api-97b7b86-zj68b
+7m25s       Normal    Killing             pod/enterprise-doc-worker-5cf6fb7d8-cp7gs       Stopping container worker
+7m25s       Normal    Killing             pod/enterprise-doc-api-97b7b86-zj68b            Stopping container api
+7m25s       Normal    ScalingReplicaSet   deployment/enterprise-doc-worker                Scaled down replica set enterprise-doc-worker-5cf6fb7d8 from 1 to 0
+7m25s       Normal    SuccessfulCreate    replicaset/enterprise-doc-api-7fc9b49dd9        Created pod: enterprise-doc-api-7fc9b49dd9-b8cx7
+7m24s       Normal    Started             pod/enterprise-doc-worker-7fbdb7bdc5-fkn4v      Container started
+7m24s       Normal    Pulled              pod/enterprise-doc-worker-7fbdb7bdc5-fkn4v      Container image "ghcr.io/drew-z/enterprise-doc-worker@sha256:8d85cd2ec6d26dc6a71c65bf86e0d9e7f2301596d7a8d3c3a9df6e8390682c68" already present on machine and can be accessed by the pod
+7m24s       Normal    Created             pod/enterprise-doc-worker-7fbdb7bdc5-fkn4v      Container created
+7m24s       Normal    Started             pod/enterprise-doc-consumer-7f9668c9cc-qvblp    Container started
+7m18s       Normal    ScalingReplicaSet   deployment/enterprise-doc-api                   Scaled down replica set enterprise-doc-api-97b7b86 from 1 to 0
+7m18s       Normal    Pulled              pod/enterprise-doc-api-7fc9b49dd9-dblbb         Container image "ghcr.io/drew-z/enterprise-doc-api@sha256:5472211ba8882ffa8ed60cffbe85aab94b2712cfece28f29d6b0271f0dbdb703" already present on machine and can be accessed by the pod
+7m18s       Normal    Created             pod/enterprise-doc-api-7fc9b49dd9-dblbb         Container created
+7m18s       Normal    Started             pod/enterprise-doc-api-7fc9b49dd9-dblbb         Container started
+7m18s       Normal    SuccessfulCreate    replicaset/enterprise-doc-api-7fc9b49dd9        Created pod: enterprise-doc-api-7fc9b49dd9-dblbb
+7m18s       Normal    Killing             pod/enterprise-doc-api-97b7b86-rwssc            Stopping container api
+7m18s       Normal    SuccessfulDelete    replicaset/enterprise-doc-api-97b7b86           Deleted pod: enterprise-doc-api-97b7b86-rwssc
+7m18s       Normal    ScalingReplicaSet   deployment/enterprise-doc-api                   Scaled up replica set enterprise-doc-api-7fc9b49dd9 from 1 to 2
+7m7s        Normal    SuccessfulCreate    job/enterprise-doc-embedding-rollout            Created pod: enterprise-doc-embedding-rollout-p7r2l
+7m6s        Normal    Started             pod/enterprise-doc-embedding-rollout-p7r2l      Container started
+7m6s        Normal    Pulled              pod/enterprise-doc-embedding-rollout-p7r2l      Container image "ghcr.io/drew-z/enterprise-doc-api@sha256:5472211ba8882ffa8ed60cffbe85aab94b2712cfece28f29d6b0271f0dbdb703" already present on machine and can be accessed by the pod
+7m6s        Normal    Created             pod/enterprise-doc-embedding-rollout-p7r2l      Container created
+6m56s       Normal    Completed           job/enterprise-doc-embedding-rollout            Job completed
+6m56s       Normal    SuccessfulCreate    job/m5-staging-smoke                            Created pod: m5-staging-smoke-n5c4m
+6m55s       Normal    Pulled              pod/m5-staging-smoke-n5c4m                      Container image "curlimages/curl@sha256:94e9e444bcba979c2ea12e27ae39bee4cd10bc7041a472c4727a558e213744e6" already present on machine and can be accessed by the pod
+6m55s       Normal    Created             pod/m5-staging-smoke-n5c4m                      Container created
+6m54s       Normal    Started             pod/m5-staging-smoke-n5c4m                      Container started
+6m51s       Normal    Completed           job/m5-staging-smoke                            Job completed
+2m19s       Normal    Created             pod/enterprise-doc-migrate-zrfrk                Container created
+2m19s       Normal    Started             pod/enterprise-doc-migrate-zrfrk                Container started
+2m19s       Normal    SuccessfulCreate    job/enterprise-doc-migrate                      Created pod: enterprise-doc-migrate-zrfrk
+2m19s       Normal    Pulled              pod/enterprise-doc-migrate-zrfrk                Container image "ghcr.io/drew-z/enterprise-doc-api@sha256:5472211ba8882ffa8ed60cffbe85aab94b2712cfece28f29d6b0271f0dbdb703" already present on machine and can be accessed by the pod
+2m4s        Normal    Completed           job/enterprise-doc-migrate                      Job completed
+2m1s        Normal    Started             pod/enterprise-doc-embedding-rollout-x89hs      Container started
+2m1s        Normal    SuccessfulCreate    job/enterprise-doc-embedding-rollout            Created pod: enterprise-doc-embedding-rollout-x89hs
+2m1s        Normal    Created             pod/enterprise-doc-embedding-rollout-x89hs      Container created
+2m1s        Normal    Pulled              pod/enterprise-doc-embedding-rollout-x89hs      Container image "ghcr.io/drew-z/enterprise-doc-api@sha256:5472211ba8882ffa8ed60cffbe85aab94b2712cfece28f29d6b0271f0dbdb703" already present on machine and can be accessed by the pod
+111s        Normal    Completed           job/enterprise-doc-embedding-rollout            Job completed
+110s        Normal    SuccessfulCreate    job/m5-staging-smoke                            Created pod: m5-staging-smoke-7kwq8
+109s        Normal    Created             pod/m5-staging-smoke-7kwq8                      Container created
+109s        Normal    Pulled              pod/m5-staging-smoke-7kwq8                      Container image "curlimages/curl@sha256:94e9e444bcba979c2ea12e27ae39bee4cd10bc7041a472c4727a558e213744e6" already present on machine and can be accessed by the pod
+108s        Normal    Started             pod/m5-staging-smoke-7kwq8                      Container started
+105s        Normal    Completed           job/m5-staging-smoke                            Job completed

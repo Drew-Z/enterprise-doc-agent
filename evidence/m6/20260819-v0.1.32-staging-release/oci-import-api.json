@@ -1,0 +1,16 @@
+{
+  "archive_sha256": "58f1cd0434c79d3dc7ea879f0eab93243f7a3f5e12be917aa7e186df1b8e30e3",
+  "canonical_base": "docker.io/library/v0.1.32",
+  "containerd_namespace": "k8s.io",
+  "deployment_image_reference": "ghcr.io/drew-z/enterprise-doc-api@sha256:5472211ba8882ffa8ed60cffbe85aab94b2712cfece28f29d6b0271f0dbdb703",
+  "normalized_archive_imported": true,
+  "operation": "staging-oci-archive-import",
+  "schema_version": 1,
+  "status": "passed",
+  "verified_descriptor_count": 3,
+  "verified_refs": [
+    "docker.io/library/v0.1.32@sha256:5472211ba8882ffa8ed60cffbe85aab94b2712cfece28f29d6b0271f0dbdb703",
+    "docker.io/library/v0.1.32@sha256:a7d21d3797787cab77f4b27a7056eb32f76b79ecb71981eadcaf628e6181d03e",
+    "docker.io/library/v0.1.32@sha256:b0a34af5518fb5c684ea38f7583d8a3ed1c0601e99747430b0250367859a0391"
+  ]
+}

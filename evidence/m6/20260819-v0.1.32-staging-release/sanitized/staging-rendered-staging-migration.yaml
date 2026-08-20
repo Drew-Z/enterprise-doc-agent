@@ -1,0 +1,58 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+  name: enterprise-doc-migrate
+  namespace: enterprise-doc-agent-staging
+spec:
+  activeDeadlineSeconds: 2700
+  backoffLimit: 3
+  template:
+    metadata:
+      annotations:
+        enterprise-doc-agent/config-sha256: bc7c69a854a6e35bd335d582dbb2b2015c91d8188f8f6117ad1b2e278a2e68fd
+      labels:
+        app.kubernetes.io/name: enterprise-doc-migrate
+    spec:
+      containers:
+      - command:
+        - sh
+        - -ec
+        - 'alembic upgrade head
+
+          enterprise-doc-checkpointer-setup --setup
+
+          enterprise-doc-checkpointer-setup --check
+
+          '
+        envFrom:
+        - configMapRef:
+            name: enterprise-doc-config
+        - secretRef: '[REDACTED]'
+        image: ghcr.io/drew-z/enterprise-doc-api@sha256:5472211ba8882ffa8ed60cffbe85aab94b2712cfece28f29d6b0271f0dbdb703
+        name: migrate
+        resources:
+          limits:
+            cpu: 750m
+            memory: 512Mi
+          requests:
+            cpu: 150m
+            memory: 256Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+      imagePullSecrets: '[REDACTED]'
+      restartPolicy: OnFailure
+      securityContext:
+        runAsGroup: 10001
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: enterprise-doc-runtime
+  ttlSecondsAfterFinished: 86400

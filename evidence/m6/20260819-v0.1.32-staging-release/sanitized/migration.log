@@ -1,0 +1,7 @@
+time="2026-08-19T14:24:43+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-08-19T14:24:43+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-08-19T14:24:43+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+{"command":"setup","expected_migration_version":9,"migration_version":9,"missing_tables":[],"ready":true}
+{"command":"check","expected_migration_version":9,"migration_version":9,"missing_tables":[],"ready":true}

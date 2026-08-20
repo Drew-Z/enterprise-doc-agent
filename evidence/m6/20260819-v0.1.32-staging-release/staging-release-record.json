@@ -1,0 +1,83 @@
+{
+  "blocking_reason": null,
+  "commit_sha": "a66b98ff9055a36dead1784ba67b41f0c05044ae",
+  "deployment_profile": "single-node-4c8g",
+  "embedding": {
+    "base_url": "https://ai.hybgzs.com/v1",
+    "dimension": 1024,
+    "kind": "embedding",
+    "name": "Qwen/Qwen3-Embedding-4B",
+    "provider": "openai_compatible",
+    "rollout": {
+      "dimension": 1024,
+      "model": "Qwen/Qwen3-Embedding-4B",
+      "probe_item_count": 2,
+      "provider": "openai_compatible",
+      "reindex": {
+        "apply_attempts": 0,
+        "created": 0,
+        "final_selected": 0,
+        "initial_selected": 0,
+        "replayed": 0,
+        "status": "completed"
+      },
+      "status": "validated",
+      "values_redacted": true,
+      "version": 2
+    },
+    "rollout_report": {
+      "path": "tmp/staging-sanitized-a66b98ff9055a36dead1784ba67b41f0c05044ae/staging-embedding-rollout.json",
+      "sha256": "cb502bd684cf90696a98ea800bc4b19955d4afb560822fe35fb79a59ac237033"
+    },
+    "status": "validated",
+    "version": 2
+  },
+  "evidence_manifest": {
+    "path": "tmp/staging-evidence-a66b98ff9055a36dead1784ba67b41f0c05044ae.manifest.json",
+    "sha256": "bebbc550abdbf5ae986891a4a7d4fd6deacb20c94983ab4214d25de55290cce9",
+    "source_sha256": "f402b08fdf04076620cf60d312fe9a26af6b56a66fca75bbf42b41dbb055d5e1"
+  },
+  "failure_reason": null,
+  "fallback_model": {
+    "base_url": null,
+    "name": null,
+    "provider": null,
+    "status": "not_configured",
+    "timeout_seconds": null,
+    "version": null
+  },
+  "generated_at": "2026-08-19T06:24:45.862220+00:00",
+  "image_digests": {
+    "api": "sha256:5472211ba8882ffa8ed60cffbe85aab94b2712cfece28f29d6b0271f0dbdb703",
+    "consumer": "sha256:746e072e4b9f63e27438b7397984d4e85362db5d57a28c7baa40f2acfa027efd",
+    "web": "sha256:09fbf339806364e7137c94a50783b019d946cc468e3ed83de541f5e9f5b0d2e7",
+    "worker": "sha256:8d85cd2ec6d26dc6a71c65bf86e0d9e7f2301596d7a8d3c3a9df6e8390682c68"
+  },
+  "model": {
+    "base_url": "https://api.maoyulin.xyz/v1",
+    "name": "grok-4.6",
+    "provider": "openai_compatible",
+    "status": "validated"
+  },
+  "outcomes": {
+    "authenticated_smoke": "success",
+    "cluster_smoke": "success",
+    "embedding_rollout": "success",
+    "migration": "success",
+    "prerequisites": "success",
+    "rollout": "success",
+    "workloads": "success"
+  },
+  "registry_prefix": "ghcr.io/drew-z",
+  "repository": "Drew-Z/enterprise-doc-agent",
+  "repository_redaction": {
+    "applied": true,
+    "replacement": "REDACTED-UUID",
+    "replacement_count": 64,
+    "source_artifact_preserved_by_digest": true
+  },
+  "run_attempt": "2",
+  "run_id": "32222645484",
+  "schema_version": 3,
+  "status": "passed"
+}

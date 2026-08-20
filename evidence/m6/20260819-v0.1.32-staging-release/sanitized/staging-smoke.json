@@ -1,0 +1,26 @@
+{
+  "completed_at": "2026-08-19T06:24:43.506503+00:00",
+  "duration_seconds": 102.62917361781001,
+  "limitations": [
+    "This smoke uses a dedicated synthetic text fixture and must run with a dedicated staging tenant.",
+    "It validates one main-path execution, not capacity, failover, model quality, or production availability.",
+    "The object-store presign endpoint must be reachable from the workflow runner."
+  ],
+  "sample_count": 1,
+  "scenario": "authenticated-upload-ingestion-agent",
+  "schema_version": 1,
+  "started_at": "2026-08-19T06:23:00.877330+00:00",
+  "status": "passed",
+  "steps": [
+    "upload_session_created",
+    "object_uploaded",
+    "upload_completed",
+    "document_ready",
+    "agent_run_created",
+    "agent_run_succeeded",
+    "answer_artifact_listed",
+    "answer_artifact_downloaded",
+    "answer_artifact_sha256_verified",
+    "answer_citation_verified"
+  ]
+}

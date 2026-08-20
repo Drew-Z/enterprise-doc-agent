@@ -321,6 +321,7 @@ def test_staging_deployer_bootstrap_cannot_read_or_mount_unreviewed_secrets() ->
     assert ("", "pods/attach") not in resource_verbs
     assert "create" in resource_verbs[("apps", "deployments")]
     assert "patch" in resource_verbs[("apps", "deployments")]
+    assert resource_verbs[("apps", "deployments/scale")] == {"patch"}
     job_rules = [
         rule for rule in rules if rule["apiGroups"] == ["batch"] and rule["resources"] == ["jobs"]
     ]
@@ -1488,6 +1489,7 @@ def test_staging_workflows_preserve_admin_boundary_and_clean_credentials() -> No
     assert "kubectl auth can-i patch persistentvolumeclaims" in configure_run
     assert "kubectl auth can-i create jobs.batch" in configure_run
     assert "kubectl auth can-i patch deployments.apps" in configure_run
+    assert "kubectl auth can-i patch deployments.apps/scale" in configure_run
 
     prerequisites = _named_step(
         deploy_steps,
@@ -1553,6 +1555,11 @@ def test_staging_workflows_preserve_admin_boundary_and_clean_credentials() -> No
         < step_names.index("Run in-cluster readiness smoke")
     )
     assert "previous embedding rollout Job is not complete" in embedding_run
+    assert "DEPLOYMENT_PROFILE" in embedding["env"]
+    assert "scale" in embedding_run
+    assert 'test "${DEPLOYMENT_PROFILE:-}" = "tiny-single-node"' in embedding_run
+    assert "restore_workloads" in embedding_run
+    assert 'trap - EXIT' in embedding_run
     assert "staging-embedding-rollout.yaml" in embedding_run
     assert "apply --dry-run=server" in embedding_run
     assert "attempt < 264" in embedding_run
@@ -1562,6 +1569,21 @@ def test_staging_workflows_preserve_admin_boundary_and_clean_credentials() -> No
     assert "validate_embedding_rollout_report.py" in embedding_run
     assert '--expected-version "$EXPECTED_EMBEDDING_VERSION"' in embedding_run
     assert "kubectl exec" not in embedding_run
+
+    migration = _named_step(deploy_steps, "Apply migration job before rollout")
+    migration_run = str(migration["run"])
+    assert migration["env"]["DEPLOYMENT_PROFILE"] == (
+        "${{ vars.STAGING_DEPLOYMENT_PROFILE || 'tiny-single-node' }}"
+    )
+    assert 'test "$DEPLOYMENT_PROFILE" = "tiny-single-node"' in migration_run
+    assert "--replicas=0" in migration_run
+
+    restore = _named_step(deploy_steps, "Restore tiny workloads after deployment attempt")
+    assert str(restore["if"]) == "always()"
+    assert restore["env"]["DEPLOYMENT_PROFILE"] == (
+        "${{ vars.STAGING_DEPLOYMENT_PROFILE || 'tiny-single-node' }}"
+    )
+    assert "staging-workloads.yaml" in str(restore["run"])
 
     smoke_cleanup = _named_step(deploy_steps, "Clean up readiness smoke")
     assert "always()" in str(smoke_cleanup["if"])
