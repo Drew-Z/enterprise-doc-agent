@@ -366,8 +366,17 @@ jobs:
           kubectl apply --dry-run=server -f "$RUNNER_TEMP/staging-workloads.yaml"
       - name: Apply migration job before rollout
         id: migration
+        env:
+          DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'tiny-single-node' }}
         run: |
           set -euo pipefail
+          if test "$DEPLOYMENT_PROFILE" = "tiny-single-node"; then
+            kubectl -n enterprise-doc-agent-staging scale \
+              deployment/enterprise-doc-api \
+              deployment/enterprise-doc-worker \
+              deployment/enterprise-doc-consumer \
+              deployment/enterprise-doc-web --replicas=0
+          fi
           if kubectl -n enterprise-doc-agent-staging get job enterprise-doc-migrate >/dev/null 2>&1; then
             previous_complete="$(kubectl -n enterprise-doc-agent-staging get job enterprise-doc-migrate \
               -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')"
@@ -563,6 +572,23 @@ jobs:
             --allowed-host "$STAGING_ALLOWED_HOST" \
             --allowed-object-store-host "$STAGING_OBJECT_STORE_ALLOWED_HOST" \
             --report-path "tmp/staging-smoke-${GITHUB_SHA}.json"
+      - name: Restore tiny workloads after deployment attempt
+        if: always()
+        env:
+          DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'tiny-single-node' }}
+        run: |
+          set -euo pipefail
+          if test "$DEPLOYMENT_PROFILE" != "tiny-single-node"; then
+            exit 0
+          fi
+          if test ! -f "$RUNNER_TEMP/staging-workloads.yaml"; then
+            exit 0
+          fi
+          kubectl apply -f "$RUNNER_TEMP/staging-workloads.yaml" >/dev/null
+          kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-api --timeout=600s
+          kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-worker --timeout=600s
+          kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-consumer --timeout=600s
+          kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-web --timeout=600s
       - name: Collect sanitized release evidence
         if: always()
         env:

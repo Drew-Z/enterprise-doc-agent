@@ -1568,6 +1568,21 @@ def test_staging_workflows_preserve_admin_boundary_and_clean_credentials() -> No
     assert '--expected-version "$EXPECTED_EMBEDDING_VERSION"' in embedding_run
     assert "kubectl exec" not in embedding_run
 
+    migration = _named_step(deploy_steps, "Apply migration job before rollout")
+    migration_run = str(migration["run"])
+    assert migration["env"]["DEPLOYMENT_PROFILE"] == (
+        "${{ vars.STAGING_DEPLOYMENT_PROFILE || 'tiny-single-node' }}"
+    )
+    assert 'test "$DEPLOYMENT_PROFILE" = "tiny-single-node"' in migration_run
+    assert "--replicas=0" in migration_run
+
+    restore = _named_step(deploy_steps, "Restore tiny workloads after deployment attempt")
+    assert str(restore["if"]) == "always()"
+    assert restore["env"]["DEPLOYMENT_PROFILE"] == (
+        "${{ vars.STAGING_DEPLOYMENT_PROFILE || 'tiny-single-node' }}"
+    )
+    assert "staging-workloads.yaml" in str(restore["run"])
+
     smoke_cleanup = _named_step(deploy_steps, "Clean up readiness smoke")
     assert "always()" in str(smoke_cleanup["if"])
     assert "delete job m5-staging-smoke" in str(smoke_cleanup["run"])
