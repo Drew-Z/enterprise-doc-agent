@@ -5,6 +5,7 @@ MIN_CPU_COUNT=4
 MIN_MEMORY_KIB=7864320
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 MODE=""
+PROFILE="single-node-4c8g"
 OPERATOR_SSH_CIDR=""
 CONSOLE_CONFIRMED=false
 KEY_SESSION_CONFIRMED=false
@@ -13,13 +14,16 @@ TAILNET_SESSION_CONFIRMED=false
 usage() {
   cat <<'EOF'
 Usage:
-  bootstrap-host.sh --check
-  sudo bootstrap-host.sh --apply --confirm-console-access --confirm-key-session \
+  bootstrap-host.sh --check [--profile tiny-single-node|single-node-4c4g|single-node-4c8g]
+  sudo bootstrap-host.sh --apply --profile single-node-4c4g \
+    --confirm-console-access --confirm-key-session \
     --confirm-tailnet-session [--operator-ssh-cidr <IPv4-or-IPv6-host-CIDR>]
 
 --check is read-only. --apply upgrades and hardens a clean Ubuntu 24.04 host.
 Run --apply from a verified Tailscale SSH key session while provider console/TAT
 access remains available. The optional operator CIDR retains a public SSH fallback.
+The default profile is single-node-4c8g; single-node-4c4g targets a 4-vCPU/4-GiB host
+and tiny-single-node accepts a 2-vCPU/2-GiB host.
 EOF
 }
 
@@ -38,6 +42,11 @@ while (($#)); do
     --operator-ssh-cidr)
       (($# >= 2)) || die "--operator-ssh-cidr requires a value"
       OPERATOR_SSH_CIDR="$2"
+      shift 2
+      ;;
+    --profile)
+      (($# >= 2)) || die "--profile requires a value"
+      PROFILE="$2"
       shift 2
       ;;
     --confirm-console-access)
@@ -62,6 +71,24 @@ while (($#)); do
   esac
 done
 
+case "$PROFILE" in
+  single-node-4c8g)
+    MIN_CPU_COUNT=4
+    MIN_MEMORY_KIB=7864320
+    ;;
+  single-node-4c4g)
+    MIN_CPU_COUNT=4
+    MIN_MEMORY_KIB=3500000
+    ;;
+  tiny-single-node)
+    MIN_CPU_COUNT=2
+    MIN_MEMORY_KIB=1800000
+    ;;
+  *)
+    die "unsupported host profile: $PROFILE"
+    ;;
+esac
+
 test -n "$MODE" || {
   usage >&2
   exit 2
@@ -78,8 +105,8 @@ read_host_facts() {
 
   CPU_COUNT="$(nproc)"
   MEMORY_KIB="$(awk '/^MemTotal:/ {print $2}' /proc/meminfo)"
-  ((CPU_COUNT >= MIN_CPU_COUNT)) || die "host requires at least 4 CPUs"
-  ((MEMORY_KIB >= MIN_MEMORY_KIB)) || die "host requires at least 7.5 GiB RAM"
+  ((CPU_COUNT >= MIN_CPU_COUNT)) || die "host profile $PROFILE requires at least $MIN_CPU_COUNT CPUs"
+  ((MEMORY_KIB >= MIN_MEMORY_KIB)) || die "host profile $PROFILE requires at least $MIN_MEMORY_KIB KiB RAM"
   PUBLIC_INTERFACE="$(ip route show default | awk 'NR == 1 {print $5}')"
   test -n "$PUBLIC_INTERFACE" || die "default-route interface was not found"
 }
@@ -118,8 +145,8 @@ verify_tailnet_access() {
 case "$MODE" in
   check)
     read_host_facts
-    printf 'ubuntu_version=%s\ncpu_count=%s\nmemory_kib=%s\npublic_interface=%s\n' \
-      "$VERSION_ID" "$CPU_COUNT" "$MEMORY_KIB" "$PUBLIC_INTERFACE"
+    printf 'profile=%s\nubuntu_version=%s\ncpu_count=%s\nmemory_kib=%s\npublic_interface=%s\n' \
+      "$PROFILE" "$VERSION_ID" "$CPU_COUNT" "$MEMORY_KIB" "$PUBLIC_INTERFACE"
     if systemctl is-active --quiet k3s 2>/dev/null; then
       printf 'k3s_state=active\n'
     else

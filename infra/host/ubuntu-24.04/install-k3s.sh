@@ -5,6 +5,7 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/versions.env"
 MODE=""
+PROFILE="single-node-4c8g"
 ASSET_PATH=""
 DOCKER_IO_MIRROR=""
 REGISTRY_CONFIG_CHANGED=0
@@ -13,8 +14,8 @@ RUNTIME_CONFIG_CHANGED=0
 usage() {
   cat <<'EOF'
 Usage:
-  install-k3s.sh --check
-  sudo install-k3s.sh --apply [--asset /path/to/k3s] \
+  install-k3s.sh --check [--profile tiny-single-node|single-node-4c4g|single-node-4c8g]
+  sudo install-k3s.sh --apply --profile single-node-4c4g [--asset /path/to/k3s] \
     [--docker-io-mirror https://registry-mirror.example.com]
 
 Installs the reviewed K3s binary and single-node systemd service. Packaged Traefik stays enabled.
@@ -41,6 +42,12 @@ while (($#)); do
       usage
       exit 0
       ;;
+    --profile)
+      shift
+      (($#)) || die "--profile requires a value"
+      PROFILE="$1"
+      shift
+      ;;
     --asset)
       shift
       (($#)) || die "--asset requires a path"
@@ -58,6 +65,29 @@ while (($#)); do
       ;;
   esac
 done
+case "$PROFILE" in
+  single-node-4c8g)
+    NODE_LABEL="single-node-4c8g"
+    SYSTEM_RESERVED="cpu=300m,memory=512Mi,ephemeral-storage=1Gi"
+    KUBE_RESERVED="cpu=300m,memory=512Mi,ephemeral-storage=1Gi"
+    EVICTION_HARD="memory.available<700Mi,nodefs.available<10%,imagefs.available<10%"
+    ;;
+  single-node-4c4g)
+    NODE_LABEL="single-node-4c4g"
+    SYSTEM_RESERVED="cpu=250m,memory=384Mi,ephemeral-storage=768Mi"
+    KUBE_RESERVED="cpu=250m,memory=384Mi,ephemeral-storage=768Mi"
+    EVICTION_HARD="memory.available<384Mi,nodefs.available<10%,imagefs.available<10%"
+    ;;
+  tiny-single-node)
+    NODE_LABEL="tiny-single-node"
+    SYSTEM_RESERVED="cpu=150m,memory=256Mi,ephemeral-storage=512Mi"
+    KUBE_RESERVED="cpu=150m,memory=256Mi,ephemeral-storage=512Mi"
+    EVICTION_HARD="memory.available<256Mi,nodefs.available<10%,imagefs.available<10%"
+    ;;
+  *)
+    die "unsupported host profile: $PROFILE"
+    ;;
+esac
 test -n "$MODE" || { usage >&2; exit 2; }
 test "$MODE" = apply || test -z "$ASSET_PATH" || die "--asset is valid only with --apply"
 test "$MODE" = apply || test -z "$DOCKER_IO_MIRROR" \
@@ -79,6 +109,18 @@ wait_system_components() {
   wait_system_component k8s-app=kube-dns "$timeout"
   wait_system_component k8s-app=metrics-server "$timeout"
   wait_system_component app.kubernetes.io/name=traefik "$timeout"
+}
+
+wait_node_object() {
+  local timeout_seconds="${1%s}"
+  local deadline=$((SECONDS + timeout_seconds))
+  while ((SECONDS < deadline)); do
+    if /usr/local/bin/k3s kubectl get nodes --no-headers 2>/dev/null | grep -q .; then
+      return 0
+    fi
+    sleep 2
+  done
+  die "K3s Node object did not appear within ${timeout_seconds}s"
 }
 
 wait_traefik_private_service() {
@@ -127,18 +169,18 @@ configure_k3s_runtime() {
 
   local candidate
   candidate="$(mktemp)"
-  cat >"$candidate" <<'EOF'
+  cat >"$candidate" <<EOF
 write-kubeconfig-mode: "0600"
 secrets-encryption: true
 flannel-backend: vxlan
 disable:
   - servicelb
 node-label:
-  - "enterprise-doc-agent/profile=single-node-4c8g"
+  - "enterprise-doc-agent/profile=$NODE_LABEL"
 kubelet-arg:
-  - "system-reserved=cpu=300m,memory=512Mi,ephemeral-storage=1Gi"
-  - "kube-reserved=cpu=300m,memory=512Mi,ephemeral-storage=1Gi"
-  - "eviction-hard=memory.available<700Mi,nodefs.available<10%,imagefs.available<10%"
+  - "system-reserved=$SYSTEM_RESERVED"
+  - "kube-reserved=$KUBE_RESERVED"
+  - "eviction-hard=$EVICTION_HARD"
 EOF
   if test ! -f /etc/rancher/k3s/config.yaml \
     || ! cmp --silent "$candidate" /etc/rancher/k3s/config.yaml; then
@@ -193,7 +235,7 @@ check_cluster() {
 
 if test "$MODE" = check; then
   check_cluster
-  printf 'k3s_version=%s\ntraefik=packaged\n' "$K3S_VERSION"
+  printf 'profile=%s\nk3s_version=%s\ntraefik=packaged\n' "$PROFILE" "$K3S_VERSION"
   exit 0
 fi
 
@@ -256,6 +298,7 @@ EOF
 systemctl daemon-reload
 systemctl enable --now k3s
 
+wait_node_object 300s
 kubectl wait --for=condition=Ready node --all --timeout=300s
 wait_system_components 300s
 wait_traefik_private_service 300s

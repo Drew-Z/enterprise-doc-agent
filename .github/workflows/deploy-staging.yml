@@ -178,11 +178,11 @@ jobs:
           trap - ERR INT TERM
       - name: Validate deployment profile ownership
         env:
-          DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'tiny-single-node' }}
+          DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'single-node-4c4g' }}
         run: |
           set -euo pipefail
           case "$DEPLOYMENT_PROFILE" in
-            tiny-single-node|single-node-4c8g|staging) ;;
+            tiny-single-node|single-node-4c4g|single-node-4c8g|staging) ;;
             *) echo 'unsupported deployment profile' >&2; exit 1 ;;
           esac
           namespace_json="$(
@@ -205,7 +205,7 @@ jobs:
           fi
       - name: Bind exact image digests
         env:
-          DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'tiny-single-node' }}
+          DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'single-node-4c4g' }}
           REGISTRY_PREFIX: ${{ inputs.registry_prefix }}
           API_DIGEST: ${{ inputs.api_digest }}
           WORKER_DIGEST: ${{ inputs.worker_digest }}
@@ -214,7 +214,7 @@ jobs:
         run: |
           set -euo pipefail
           case "$DEPLOYMENT_PROFILE" in
-            tiny-single-node|single-node-4c8g|staging) ;;
+            tiny-single-node|single-node-4c4g|single-node-4c8g|staging) ;;
             *) echo 'unsupported deployment profile' >&2; exit 1 ;;
           esac
           # Reviewed single-node profiles inherit the staging image transformer.
@@ -235,7 +235,7 @@ jobs:
           kustomize edit set image enterprise-doc/web="$REGISTRY_PREFIX/enterprise-doc-web@$WEB_DIGEST"
       - name: Render and validate staging manifests
         env:
-          DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'tiny-single-node' }}
+          DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'single-node-4c4g' }}
           STAGING_BASE_URL: ${{ inputs.staging_base_url }}
           OBJECT_STORE_ENDPOINT: ${{ inputs.object_store_endpoint }}
           OBJECT_STORE_PRESIGN_ENDPOINT: ${{ inputs.object_store_presign_endpoint }}
@@ -260,7 +260,7 @@ jobs:
         run: |
           set -euo pipefail
           case "$DEPLOYMENT_PROFILE" in
-            tiny-single-node|single-node-4c8g|staging) ;;
+            tiny-single-node|single-node-4c4g|single-node-4c8g|staging) ;;
             *) echo 'unsupported deployment profile' >&2; exit 1 ;;
           esac
           OVERLAY_DIR="infra/k8s/overlays/${DEPLOYMENT_PROFILE}"
@@ -368,10 +368,10 @@ jobs:
       - name: Apply migration job before rollout
         id: migration
         env:
-          DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'tiny-single-node' }}
+          DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'single-node-4c4g' }}
         run: |
           set -euo pipefail
-          if test "$DEPLOYMENT_PROFILE" = "tiny-single-node"; then
+          if test "$DEPLOYMENT_PROFILE" = "tiny-single-node" || test "$DEPLOYMENT_PROFILE" = "single-node-4c4g"; then
             kubectl -n enterprise-doc-agent-staging scale \
               deployment/enterprise-doc-api \
               deployment/enterprise-doc-worker \
@@ -453,12 +453,12 @@ jobs:
         env:
           EXPECTED_EMBEDDING_MODEL: ${{ vars.STAGING_EMBEDDING_MODEL_NAME }}
           EXPECTED_EMBEDDING_VERSION: ${{ vars.STAGING_EMBEDDING_VERSION || '2' }}
-          DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'tiny-single-node' }}
+          DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'single-node-4c4g' }}
         run: |
           set -euo pipefail
           report="$RUNNER_TEMP/staging-embedding-rollout.json"
           restore_workloads() {
-            if test "${DEPLOYMENT_PROFILE:-}" != "tiny-single-node"; then
+            if test "${DEPLOYMENT_PROFILE:-}" != "tiny-single-node" && test "${DEPLOYMENT_PROFILE:-}" != "single-node-4c4g"; then
               return 0
             fi
             kubectl apply -f "$RUNNER_TEMP/staging-workloads.yaml" >/dev/null
@@ -467,7 +467,7 @@ jobs:
             kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-consumer --timeout=600s
             kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-web --timeout=600s
           }
-          if test "${DEPLOYMENT_PROFILE:-}" = "tiny-single-node"; then
+          if test "${DEPLOYMENT_PROFILE:-}" = "tiny-single-node" || test "${DEPLOYMENT_PROFILE:-}" = "single-node-4c4g"; then
             # The 2C2G control plane cannot sustain four Python workloads while
             # the embedding reindex Job is also active. Keep Redis available,
             # then restore the reviewed workload manifest before this step exits.
@@ -576,10 +576,10 @@ jobs:
       - name: Restore tiny workloads after deployment attempt
         if: always()
         env:
-          DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'tiny-single-node' }}
+          DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'single-node-4c4g' }}
         run: |
           set -euo pipefail
-          if test "$DEPLOYMENT_PROFILE" != "tiny-single-node"; then
+          if test "$DEPLOYMENT_PROFILE" != "tiny-single-node" && test "$DEPLOYMENT_PROFILE" != "single-node-4c4g"; then
             exit 0
           fi
           if test ! -f "$RUNNER_TEMP/staging-workloads.yaml"; then
@@ -609,7 +609,7 @@ jobs:
           EMBEDDING_BASE_URL: ${{ vars.STAGING_EMBEDDING_BASE_URL }}
           EMBEDDING_MODEL_NAME: ${{ vars.STAGING_EMBEDDING_MODEL_NAME }}
           EMBEDDING_VERSION: ${{ vars.STAGING_EMBEDDING_VERSION || '2' }}
-          DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'tiny-single-node' }}
+          DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'single-node-4c4g' }}
           PREREQUISITES_OUTCOME: ${{ steps.prerequisites.outcome }}
           MIGRATION_OUTCOME: ${{ steps.migration.outcome }}
           WORKLOADS_OUTCOME: ${{ steps.workloads.outcome }}
