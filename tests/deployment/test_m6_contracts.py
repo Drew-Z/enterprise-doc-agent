@@ -228,6 +228,16 @@ def test_secret_example_is_not_referenced_as_a_real_secret() -> None:
     assert "replace-with-secret-manager-reference" in secret
 
 
+def test_secret_example_scim_tokens_are_a_parseable_json_mapping() -> None:
+    secret = _named_resource(
+        _documents(ROOT / "infra/k8s/base/secret.example.yaml"),
+        "Secret",
+        "enterprise-doc-secrets",
+    )
+    value = secret["stringData"]["AUTH__SCIM_TENANT_TOKENS"]
+    assert json.loads(value) == {}
+
+
 def test_staging_deployer_bootstrap_cannot_read_or_mount_unreviewed_secrets() -> None:
     bootstrap = ROOT / "infra" / "k8s" / "bootstrap"
     documents = [
@@ -249,7 +259,7 @@ def test_staging_deployer_bootstrap_cannot_read_or_mount_unreviewed_secrets() ->
 
     namespace = _named_resource(documents, "Namespace", "enterprise-doc-agent-staging")
     assert namespace["metadata"]["annotations"]["enterprise-doc-agent/deployment-profile"] == (
-        "single-node-4c8g"
+        "single-node-4c4g"
     )
     assert (
         namespace["metadata"]["labels"]
@@ -679,7 +689,10 @@ def test_tiny_single_node_redis_and_network_boundaries_are_explicit() -> None:
     assert external_db["spec"]["egress"] == [
         {
             "to": [{"ipBlock": {"cidr": "192.0.2.1/32"}}],
-            "ports": [{"protocol": "TCP", "port": 5432}],
+            "ports": [
+                {"protocol": "TCP", "port": 5432},
+                {"protocol": "TCP", "port": 6543},
+            ],
         },
     ]
 
@@ -817,6 +830,93 @@ def test_single_node_4c8g_overlay_renders_reviewed_capacity_shape() -> None:
         "enterprise-doc-consumer-metrics-ingress",
     }
 
+    config = _named_resource(documents, "ConfigMap", "enterprise-doc-config")
+    assert config["data"]["DATABASE__POOL_SIZE"] == "2"
+    assert config["data"]["DATABASE__MAX_OVERFLOW"] == "0"
+    database_processes = 2 + 1 + 1
+    assert database_processes * int(config["data"]["DATABASE__POOL_SIZE"]) <= 15
+
+
+def test_single_node_4c4g_overlay_matches_current_server_envelope() -> None:
+    overlay = ROOT / "infra" / "k8s" / "overlays" / "single-node-4c4g"
+    documents = _render_kustomization(overlay)
+    deployments = {
+        item["metadata"]["name"]: item for item in documents if item.get("kind") == "Deployment"
+    }
+    assert set(deployments) == {
+        "enterprise-doc-api",
+        "enterprise-doc-worker",
+        "enterprise-doc-consumer",
+        "enterprise-doc-web",
+        "enterprise-doc-redis",
+    }
+    assert {name: item["spec"]["replicas"] for name, item in deployments.items()} == {
+        "enterprise-doc-api": 1,
+        "enterprise-doc-worker": 1,
+        "enterprise-doc-consumer": 1,
+        "enterprise-doc-web": 1,
+        "enterprise-doc-redis": 1,
+    }
+    expected_resources = {
+        "enterprise-doc-api": (
+            {"cpu": "150m", "memory": "256Mi"},
+            {"cpu": "600m", "memory": "512Mi"},
+        ),
+        "enterprise-doc-worker": (
+            {"cpu": "150m", "memory": "256Mi"},
+            {"cpu": "700m", "memory": "640Mi"},
+        ),
+        "enterprise-doc-consumer": (
+            {"cpu": "100m", "memory": "192Mi"},
+            {"cpu": "500m", "memory": "384Mi"},
+        ),
+        "enterprise-doc-web": (
+            {"cpu": "25m", "memory": "64Mi"},
+            {"cpu": "150m", "memory": "128Mi"},
+        ),
+        "enterprise-doc-redis": (
+            {"cpu": "50m", "memory": "128Mi"},
+            {"cpu": "200m", "memory": "192Mi"},
+        ),
+    }
+    total_request_memory = 0
+    total_limit_memory = 0
+    for name, deployment in deployments.items():
+        container = deployment["spec"]["template"]["spec"]["containers"][0]
+        requests, limits = expected_resources[name]
+        assert container["resources"] == {"requests": requests, "limits": limits}
+        total_request_memory += _memory_mib(requests["memory"])
+        total_limit_memory += _memory_mib(limits["memory"])
+        if name == "enterprise-doc-redis":
+            assert "128mb" in container["args"]
+        else:
+            assert deployment["spec"]["strategy"] == {
+                "type": "RollingUpdate",
+                "rollingUpdate": {"maxSurge": 0, "maxUnavailable": 1},
+            }
+    migration = _named_resource(documents, "Job", "enterprise-doc-migrate")
+    migration_resources = migration["spec"]["template"]["spec"]["containers"][0]["resources"]
+    assert migration_resources == {
+        "requests": {"cpu": "100m", "memory": "192Mi"},
+        "limits": {"cpu": "500m", "memory": "384Mi"},
+    }
+    total_request_memory += _memory_mib(migration_resources["requests"]["memory"])
+    total_limit_memory += _memory_mib(migration_resources["limits"]["memory"])
+    assert total_request_memory <= 1200
+    assert total_limit_memory <= 2400
+    assert not [
+        item
+        for item in documents
+        if item.get("metadata", {}).get("name") == "enterprise-doc-prometheus"
+    ]
+    namespace = _named_resource(documents, "Namespace", "enterprise-doc-agent-staging")
+    assert namespace["metadata"]["annotations"]["enterprise-doc-agent/deployment-profile"] == (
+        "single-node-4c4g"
+    )
+    config = _named_resource(documents, "ConfigMap", "enterprise-doc-config")
+    assert config["data"]["DATABASE__POOL_SIZE"] == "1"
+    assert config["data"]["DATABASE__MAX_OVERFLOW"] == "0"
+
 
 def test_staging_deploy_workflow_can_select_the_reviewed_tiny_overlay() -> None:
     deploy = (ROOT / ".github/workflows/deploy-staging.yml").read_text(encoding="utf-8")
@@ -826,7 +926,7 @@ def test_staging_deploy_workflow_can_select_the_reviewed_tiny_overlay() -> None:
     assert 'OVERLAY_DIR="infra/k8s/overlays/${DEPLOYMENT_PROFILE}"' in deploy
     assert 'case "$DEPLOYMENT_PROFILE" in' in deploy
     annotation = "enterprise-doc-agent/deployment-profile"
-    for profile in ("staging", "tiny-single-node", "single-node-4c8g"):
+    for profile in ("staging", "tiny-single-node", "single-node-4c4g", "single-node-4c8g"):
         documents = _render_kustomization(ROOT / "infra" / "k8s" / "overlays" / profile)
         namespace = _named_resource(documents, "Namespace", "enterprise-doc-agent-staging")
         assert namespace["metadata"]["annotations"][annotation] == profile
@@ -1557,12 +1657,26 @@ def test_staging_workflows_preserve_admin_boundary_and_clean_credentials() -> No
     assert "previous embedding rollout Job is not complete" in embedding_run
     assert "DEPLOYMENT_PROFILE" in embedding["env"]
     assert "scale" in embedding_run
-    assert 'test "${DEPLOYMENT_PROFILE:-}" = "tiny-single-node"' in embedding_run
+    assert (
+        'test "${DEPLOYMENT_PROFILE:-}" = "tiny-single-node" || '
+        'test "${DEPLOYMENT_PROFILE:-}" = "single-node-4c4g"' in embedding_run
+    )
+    scale_start = embedding_run.index("kubectl -n enterprise-doc-agent-staging scale")
+    scale_end = embedding_run.index("--replicas=0", scale_start)
+    embedding_scale = embedding_run[scale_start:scale_end]
+    assert "deployment/enterprise-doc-api" in embedding_scale
+    assert "deployment/enterprise-doc-web" in embedding_scale
+    assert "deployment/enterprise-doc-worker" not in embedding_scale
+    assert "deployment/enterprise-doc-consumer" not in embedding_scale
+    assert "Keep the queue publisher and consumer available" in embedding_run
+    assert "deployment/enterprise-doc-consumer --replicas=4" in embedding_run
+    assert "rollout status" in embedding_run
+    assert "deployment/enterprise-doc-consumer --timeout=180s" in embedding_run
     assert "restore_workloads" in embedding_run
     assert "trap - EXIT" in embedding_run
     assert "staging-embedding-rollout.yaml" in embedding_run
     assert "apply --dry-run=server" in embedding_run
-    assert "attempt < 264" in embedding_run
+    assert "attempt < 660" in embedding_run
     assert '@.type=="Complete"' in embedding_run
     assert '@.type=="Failed"' in embedding_run
     assert 'if test "$job_result" != "complete"' in embedding_run
@@ -1573,15 +1687,18 @@ def test_staging_workflows_preserve_admin_boundary_and_clean_credentials() -> No
     migration = _named_step(deploy_steps, "Apply migration job before rollout")
     migration_run = str(migration["run"])
     assert migration["env"]["DEPLOYMENT_PROFILE"] == (
-        "${{ vars.STAGING_DEPLOYMENT_PROFILE || 'tiny-single-node' }}"
+        "${{ vars.STAGING_DEPLOYMENT_PROFILE || 'single-node-4c4g' }}"
     )
-    assert 'test "$DEPLOYMENT_PROFILE" = "tiny-single-node"' in migration_run
+    assert (
+        'test "$DEPLOYMENT_PROFILE" = "tiny-single-node" || '
+        'test "$DEPLOYMENT_PROFILE" = "single-node-4c4g"' in migration_run
+    )
     assert "--replicas=0" in migration_run
 
     restore = _named_step(deploy_steps, "Restore tiny workloads after deployment attempt")
     assert str(restore["if"]) == "always()"
     assert restore["env"]["DEPLOYMENT_PROFILE"] == (
-        "${{ vars.STAGING_DEPLOYMENT_PROFILE || 'tiny-single-node' }}"
+        "${{ vars.STAGING_DEPLOYMENT_PROFILE || 'single-node-4c4g' }}"
     )
     assert "staging-workloads.yaml" in str(restore["run"])
 
