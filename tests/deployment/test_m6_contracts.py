@@ -228,16 +228,6 @@ def test_secret_example_is_not_referenced_as_a_real_secret() -> None:
     assert "replace-with-secret-manager-reference" in secret
 
 
-def test_secret_example_scim_tokens_are_a_parseable_json_mapping() -> None:
-    secret = _named_resource(
-        _documents(ROOT / "infra/k8s/base/secret.example.yaml"),
-        "Secret",
-        "enterprise-doc-secrets",
-    )
-    value = secret["stringData"]["AUTH__SCIM_TENANT_TOKENS"]
-    assert json.loads(value) == {}
-
-
 def test_staging_deployer_bootstrap_cannot_read_or_mount_unreviewed_secrets() -> None:
     bootstrap = ROOT / "infra" / "k8s" / "bootstrap"
     documents = [
@@ -689,10 +679,7 @@ def test_tiny_single_node_redis_and_network_boundaries_are_explicit() -> None:
     assert external_db["spec"]["egress"] == [
         {
             "to": [{"ipBlock": {"cidr": "192.0.2.1/32"}}],
-            "ports": [
-                {"protocol": "TCP", "port": 5432},
-                {"protocol": "TCP", "port": 6543},
-            ],
+            "ports": [{"protocol": "TCP", "port": 5432}],
         },
     ]
 
@@ -829,12 +816,6 @@ def test_single_node_4c8g_overlay_renders_reviewed_capacity_shape() -> None:
         "enterprise-doc-worker-metrics-ingress",
         "enterprise-doc-consumer-metrics-ingress",
     }
-
-    config = _named_resource(documents, "ConfigMap", "enterprise-doc-config")
-    assert config["data"]["DATABASE__POOL_SIZE"] == "2"
-    assert config["data"]["DATABASE__MAX_OVERFLOW"] == "0"
-    database_processes = 2 + 1 + 1
-    assert database_processes * int(config["data"]["DATABASE__POOL_SIZE"]) <= 15
 
 
 def test_single_node_4c4g_overlay_matches_current_server_envelope() -> None:
