@@ -1559,7 +1559,7 @@ def test_staging_workflows_preserve_admin_boundary_and_clean_credentials() -> No
     assert "scale" in embedding_run
     assert 'test "${DEPLOYMENT_PROFILE:-}" = "tiny-single-node"' in embedding_run
     assert "restore_workloads" in embedding_run
-    assert 'trap - EXIT' in embedding_run
+    assert "trap - EXIT" in embedding_run
     assert "staging-embedding-rollout.yaml" in embedding_run
     assert "apply --dry-run=server" in embedding_run
     assert "attempt < 264" in embedding_run
