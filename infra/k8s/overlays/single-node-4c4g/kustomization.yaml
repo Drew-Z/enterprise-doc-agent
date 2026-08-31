@@ -7,3 +7,4 @@ patches:
   - path: resources-patch.yaml
   - path: configmap-patch.yaml
   - path: namespace-profile-patch.yaml
+  - path: embedding-rollout-patch.yaml

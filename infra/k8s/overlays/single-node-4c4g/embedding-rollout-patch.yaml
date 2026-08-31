@@ -1,0 +1,17 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: enterprise-doc-embedding-rollout
+spec:
+  activeDeadlineSeconds: 3060
+  template:
+    spec:
+      containers:
+        - name: embedding-rollout
+          args:
+            - --limit
+            - "1000"
+            - --deadline-seconds
+            - "3000"
+            - --poll-seconds
+            - "5"

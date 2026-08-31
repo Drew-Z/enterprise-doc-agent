@@ -410,11 +410,22 @@ spec:
           ].split(',').exists(image,
             image == variables.container.image) &&
           variables.container.command == ['enterprise-doc-embedding-rollout'] &&
-          variables.container.args == [
-            '--limit', '1000',
-            '--deadline-seconds', '1200',
-            '--poll-seconds', '5'
-          ] &&
+          ((namespaceObject.metadata.annotations[
+              'enterprise-doc-agent/deployment-profile'
+            ] == 'single-node-4c4g' &&
+            variables.container.args == [
+              '--limit', '1000',
+              '--deadline-seconds', '3000',
+              '--poll-seconds', '5'
+            ]) ||
+          (namespaceObject.metadata.annotations[
+              'enterprise-doc-agent/deployment-profile'
+            ] != 'single-node-4c4g' &&
+            variables.container.args == [
+              '--limit', '1000',
+              '--deadline-seconds', '1200',
+              '--poll-seconds', '5'
+            ])) &&
           !has(variables.container.env) &&
           size(variables.container.envFrom) == 2 &&
           variables.container.envFrom[0].configMapRef.name == 'enterprise-doc-config' &&

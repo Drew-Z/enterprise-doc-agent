@@ -5,11 +5,17 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_embedding_rollout_job_has_capacity_for_current_4c4g_backlog() -> None:
-    source = (ROOT / "infra/k8s/overlays/staging/embedding-rollout-job.yaml").read_text(
+    source = (ROOT / "infra/k8s/overlays/single-node-4c4g/embedding-rollout-patch.yaml").read_text(
         encoding="utf-8"
     )
     assert "activeDeadlineSeconds: 3060" in source
     assert '- "3000"' in source
+    guardrails = (ROOT / "infra/k8s/bootstrap/staging-deployer-guardrails.yaml").read_text(
+        encoding="utf-8"
+    )
+    assert "'--deadline-seconds', '3000'" in guardrails
+    assert "'--deadline-seconds', '1200'" in guardrails
+    assert "== 'single-node-4c4g'" in guardrails
 
 
 def test_4c4g_embedding_gate_keeps_queue_workers_and_scales_consumer() -> None:
