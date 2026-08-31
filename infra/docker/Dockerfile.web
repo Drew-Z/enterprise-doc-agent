@@ -14,7 +14,9 @@ RUN pnpm --filter web build
 FROM nginx:1.30.4-alpine3.24@sha256:97d490c12ba55b4946b01546d1c3ed324e8d41ab1c9fcb2a616aa470620e5b46 AS runtime
 COPY infra/docker/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /app/apps/web/dist /usr/share/nginx/html
-RUN touch /run/nginx.pid && chown -R nginx:nginx /usr/share/nginx/html /var/cache/nginx /run/nginx.pid
+RUN apk upgrade --no-cache \
+    && touch /run/nginx.pid \
+    && chown -R nginx:nginx /usr/share/nginx/html /var/cache/nginx /run/nginx.pid
 USER nginx
 EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]
