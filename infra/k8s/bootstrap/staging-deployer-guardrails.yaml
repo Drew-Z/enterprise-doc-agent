@@ -203,7 +203,7 @@ spec:
           !has(variables.container.command) &&
           ((namespaceObject.metadata.annotations[
               'enterprise-doc-agent/deployment-profile'
-            ] == 'single-node-4c8g' &&
+            ] in ['single-node-4c4g', 'single-node-4c8g'] &&
             variables.container.args == [
               'redis-server', '--save', '', '--appendonly', 'no', '--maxmemory',
               '128mb', '--maxmemory-policy', 'noeviction'
