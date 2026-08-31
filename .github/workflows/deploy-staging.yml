@@ -468,18 +468,18 @@ jobs:
             kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-web --timeout=600s
           }
           if test "${DEPLOYMENT_PROFILE:-}" = "tiny-single-node" || test "${DEPLOYMENT_PROFILE:-}" = "single-node-4c4g"; then
-            # The 2C2G control plane cannot sustain four Python workloads while
-            # the embedding reindex Job is also active. Keep Redis available,
-            # then restore the reviewed workload manifest before this step exits.
+            # Keep the queue publisher and consumer available while the
+            # embedding reindex Job drains the work they produce. API and Web
+            # are not needed by this gate and can be paused to reduce pressure
+            # on the small single-node staging host. Restore the reviewed
+            # workload manifest before this step exits.
             trap 'restore_workloads' EXIT
             kubectl -n enterprise-doc-agent-staging scale \
               deployment/enterprise-doc-api \
-              deployment/enterprise-doc-worker \
-              deployment/enterprise-doc-consumer \
               deployment/enterprise-doc-web --replicas=0
             for ((attempt = 0; attempt < 60; attempt += 1)); do
               remaining="$(kubectl -n enterprise-doc-agent-staging get pods \
-                -l 'app.kubernetes.io/name in (enterprise-doc-api,enterprise-doc-worker,enterprise-doc-consumer,enterprise-doc-web)' \
+                -l 'app.kubernetes.io/name in (enterprise-doc-api,enterprise-doc-web)' \
                 --no-headers 2>/dev/null | awk 'NF { count += 1 } END { print count + 0 }')"
               if test "$remaining" = "0"; then
                 break
