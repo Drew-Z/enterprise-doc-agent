@@ -16,6 +16,7 @@ def test_embedding_rollout_job_has_capacity_for_current_4c4g_backlog() -> None:
     assert "'--deadline-seconds', '3000'" in guardrails
     assert "'--deadline-seconds', '1200'" in guardrails
     assert "== 'single-node-4c4g'" in guardrails
+    assert "in ['single-node-4c4g', 'single-node-4c8g']" in guardrails
 
 
 def test_4c4g_embedding_gate_keeps_queue_workers_and_scales_consumer() -> None:
