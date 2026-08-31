@@ -3,7 +3,7 @@ kind: Job
 metadata:
   name: enterprise-doc-embedding-rollout
 spec:
-  activeDeadlineSeconds: 1260
+  activeDeadlineSeconds: 3060
   backoffLimit: 0
   ttlSecondsAfterFinished: 86400
   template:
@@ -27,7 +27,7 @@ spec:
             - --limit
             - "1000"
             - --deadline-seconds
-            - "1200"
+            - "3000"
             - --poll-seconds
             - "5"
           envFrom:
