@@ -2,6 +2,7 @@ import { z, type ZodType } from "zod";
 
 import {
   agentArtifactDownloadResponseSchema,
+  agentArtifactPreviewResponseSchema,
   agentArtifactResponseSchema,
   agentRunEventResponseSchema,
   agentRunStatusResponseSchema,
@@ -13,6 +14,7 @@ import {
   errorResponseSchema,
   readyDocumentVersionSchema,
   type AgentArtifactDownloadResponse,
+  type AgentArtifactPreviewResponse,
   type AgentArtifactResponse,
   type AgentRunEventResponse,
   type AgentRunStatusResponse,
@@ -84,6 +86,7 @@ export interface AgentApiClientProtocol {
     signal?: AbortSignal,
   ): Promise<ApprovalDecisionResponse>;
   listArtifacts(runId: string, signal?: AbortSignal): Promise<AgentArtifactResponse[]>;
+  getArtifactPreview(artifactId: string, signal?: AbortSignal): Promise<AgentArtifactPreviewResponse>;
   getArtifactDownload(artifactId: string, signal?: AbortSignal): Promise<AgentArtifactDownloadResponse>;
 }
 
@@ -236,6 +239,15 @@ export class AgentApiClient implements AgentApiClientProtocol {
     return this.requestJson(
       `/api/agent-runs/${encodeURIComponent(parseOutgoingStringUuid(runId))}/artifacts`,
       z.array(agentArtifactResponseSchema),
+      [200],
+      { signal },
+    );
+  }
+
+  getArtifactPreview(artifactId: string, signal?: AbortSignal): Promise<AgentArtifactPreviewResponse> {
+    return this.requestJson(
+      `/api/agent-artifacts/${encodeURIComponent(parseOutgoingStringUuid(artifactId))}`,
+      agentArtifactPreviewResponseSchema,
       [200],
       { signal },
     );

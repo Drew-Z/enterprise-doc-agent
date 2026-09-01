@@ -1,5 +1,18 @@
 # Enterprise Document Agent Platform
 
+## Project Showcase
+
+For a concise project overview, architecture diagram, verified capabilities, and
+explicit production boundaries, see
+[docs/showcase/PROJECT_SHOWCASE.md](docs/showcase/PROJECT_SHOWCASE.md). The
+five-minute interview demo flow is documented in
+[docs/showcase/INTERVIEW_DEMO_SCRIPT.md](docs/showcase/INTERVIEW_DEMO_SCRIPT.md).
+The UI redesign rationale and editable Figma handoff are documented in
+[docs/showcase/UI_REDESIGN_NOTES.md](docs/showcase/UI_REDESIGN_NOTES.md).
+The enterprise authorization, SSO, audit-retention, and deployment boundaries
+are documented in
+[docs/showcase/ENTERPRISE_READINESS.md](docs/showcase/ENTERPRISE_READINESS.md).
+
 This repository is a modular monorepo for a tenant-scoped enterprise document Agent
 platform. M1-M7 is the repository milestone envelope. M1 provides resumable direct-to-object-store upload, M2 provides durable
 Job/Attempt/Outbox execution, and M3 provides deterministic parsing plus PostgreSQL
@@ -268,6 +281,7 @@ Render the Kubernetes contracts and inspect safe release tooling:
 kubectl kustomize infra/k8s/base
 kubectl kustomize infra/k8s/overlays/staging
 kubectl kustomize infra/k8s/overlays/tiny-single-node
+kubectl kustomize infra/k8s/overlays/single-node-4c4g
 kubectl kustomize infra/k8s/overlays/single-node-4c8g
 uv run python scripts/backup_database.py --help
 uv run python scripts/restore_database.py --help
@@ -297,8 +311,15 @@ consumer and Redis singletons. It remains a single failure domain with no PDB. A
 plus migration limits stay below 6 GiB so K3s, the runner, cloudflared and host daemons
 retain headroom. See `docs/ops/single-node-4c8g-staging-runbook.md`.
 
+`single-node-4c4g` is the reviewed profile for the current 4-vCPU/4-GiB host. It keeps one
+replica of each application process, caps Redis at 128 MiB, omits Prometheus, uses zero-surge
+rollouts, and scales application replicas to zero while migration or embedding jobs run.
+PostgreSQL/pgvector, object storage, chat and embedding providers remain external. It is
+appropriate for low-concurrency demonstrations and bounded staging evidence, but not HA
+or production capacity claims. See `docs/ops/single-node-4c4g-staging-runbook.md`.
+
 The staging environment requires `STAGING_DEPLOYMENT_PROFILE` (default
-`tiny-single-node`) and `STAGING_DATABASE_EGRESS_CIDRS` (with the singular
+`single-node-4c4g`) and `STAGING_DATABASE_EGRESS_CIDRS` (with the singular
 `STAGING_DATABASE_EGRESS_CIDR` retained as a compatibility fallback). The database
 value is a comma-separated allowlist of public global-unicast host CIDRs: IPv4 `/32`
 or IPv6 `/128`. Resolve and review every managed database address immediately before
@@ -421,12 +442,16 @@ API control plane while document bytes travel directly to the configured object 
 
 - No production semantic embedding or real chat-model quality benchmark is claimed.
 - MCP is local stdio, not a public authenticated remote MCP deployment.
-- Tenant membership is the authorization boundary; per-document ACL/ABAC is not implemented.
-- Local Kubernetes manifests and CI/CD workflows exist, but no real registry digest,
-  cloud-cluster rollout, TLS/secret-manager review, authenticated staging smoke run,
-  production QPS, multi-region recovery, backup-restore RTO/RPO, promotion, or rollback
-  evidence exists. The workflow definitions include these gates but their remote
-  execution is not implied by local static checks.
+- Server-enforced document ACL supports `tenant`/`restricted` visibility plus user and tenant-role grants across inventory, retrieval, Agent runs/tools, and artifacts. Arbitrary ABAC expressions and an external PDP are not implemented.
+- External authentication remains disabled by default. When enabled, the API can verify asymmetric OIDC JWTs through a configured JWKS URL (algorithm/`kid`/issuer/audience/time claims), resolve non-UUID subjects through explicit issuer/subject bindings, normalize tenant and actor claims, map explicitly configured owner/member groups with startup validation and ambiguity rejection, and re-check the resulting role against active database membership. Direct role claims remain opt-in. Authentication failures emit bounded structured security logs without credentials; successful stateless bearer requests are not mislabeled as login events. Local JWT sessions can be revoked server-side through `POST /api/session/logout`; revocations are tenant-scoped, audited, and purged after token expiry. External OIDC logout remains an explicit integration gate because the application cannot revoke tokens issued by an external IdP. The owner-only API and Web control plane now supports bounded member search, manual email provisioning, role changes, membership deactivate/reactivate, last-owner and self-mutation safeguards, binding deactivate/reactivate, and audit events. Membership deactivation also revokes that tenant's active external bindings; reactivation does not silently restore them. The SCIM surface now exposes constrained ServiceProviderConfig/ResourceTypes/Schemas discovery, tenant-scoped Users list pagination and `userName`/`externalId` equality filters, a bounded sequential Bulk endpoint (up to 50 `POST`/`PUT`/`PATCH`/`DELETE` User operations), and single-user GET/upsert/deprovision plus a bounded PATCH supporting only `replace` of `active` or `userName`; it is not a complete SCIM server or IdP integration. Batch IdP/SCIM synchronization, full PATCH semantics, PATCH/bulkId reference replacement, complex filters, OAuth authorization server, first-login provisioning, SAML, and real-IdP end-to-end acceptance remain deployment gates.
+- Tenant-scoped audit events support cursor pagination, bounded CSV export, an owner-only retention/legal-hold governance control plane, and verified non-destructive JSON archive snapshots (`POST /api/audit-governance/retention-archive`). Recent archive batches can be listed, re-verified, and downloaded through a short-lived signed URL (`GET /api/audit-governance/retention-archives`, `POST /api/audit-governance/retention-archives/{batch_id}/verify`, `GET /api/audit-governance/retention-archives/{batch_id}/download`). Source events are not deleted; WORM/independent audit storage, automated cross-region recovery, deletion proof, and production export governance are not claimed.
+- Local Kubernetes manifests and CI/CD workflows exist, and the current reviewed
+  4C4G single-node profile has authenticated staging smoke, readiness and rollout
+  evidence. It still lacks a real cloud-cluster promotion, TLS/secret-manager
+  review, production QPS proof, standby-node or multi-region recovery,
+  backup-restore RTO/RPO, and independent rollback evidence. The workflow
+  definitions include these gates; local checks and a single-node run do not imply
+  production availability.
 - No GPU/vLLM/quantization throughput or memory result is claimed; M7 reports only the
   deterministic local routing and fallback contract until hardware evidence exists.
 - The deterministic safety corpus is a repeatable regression set, not complete adversarial certification.

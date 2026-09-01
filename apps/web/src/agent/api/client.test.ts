@@ -7,6 +7,7 @@ import {
 } from "./client";
 
 const runId = "11111111-1111-4111-8111-111111111111";
+const artifactId = "22222222-2222-4222-8222-222222222222";
 
 describe("Agent API client", () => {
   it("opens an authenticated event stream with Last-Event-ID", async () => {
@@ -90,5 +91,49 @@ describe("Agent API client", () => {
       status: 403,
       code: "approval_principal_forbidden",
     });
+  });
+
+  it("loads a strictly validated grounded artifact preview", async () => {
+    const fetcher = vi.fn(() =>
+      Promise.resolve(new Response(
+        JSON.stringify({
+          artifactId,
+          runId,
+          documentVersionId: "33333333-3333-4333-8333-333333333333",
+          status: "published",
+          contentSha256: "a".repeat(64),
+          schemaVersion: 1,
+          taskType: "question_answer",
+          answerText: "Payment is due within 30 days.",
+          structuredFields: null,
+          riskHint: "low",
+          citations: [{
+            chunkId: "44444444-4444-4444-8444-444444444444",
+            documentVersionId: "33333333-3333-4333-8333-333333333333",
+            sourceFilename: "contract.pdf",
+            pageNumber: 3,
+            heading: "Payment terms",
+            startOffset: 120,
+            endOffset: 168,
+            excerpt: "Invoices are payable within thirty calendar days.",
+          }],
+          behaviorVersions: {
+            graphVersion: "graph-v1",
+            promptVersion: "prompt-v1",
+            toolSchemaVersion: "tool-v1",
+          },
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      )),
+    );
+    const client = new AgentApiClient({ baseUrl: "http://api.test", getToken: () => "token", fetcher });
+
+    const preview = await client.getArtifactPreview(artifactId);
+
+    expect(preview.answerText).toBe("Payment is due within 30 days.");
+    expect(preview.citations[0]?.pageNumber).toBe(3);
+    const [url, init] = (fetcher.mock.calls[0] ?? []) as unknown as [string, RequestInit];
+    expect(url).toBe(`http://api.test/api/agent-artifacts/${artifactId}`);
+    expect(new Headers(init.headers).get("Authorization")).toBe("Bearer token");
   });
 });

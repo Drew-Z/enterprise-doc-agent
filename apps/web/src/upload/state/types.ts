@@ -59,6 +59,7 @@ export interface UploadFailure {
   code: string;
   message: string;
   retryable: boolean;
+  requestId?: string | null;
 }
 
 export interface UploadMachineState {
@@ -136,11 +137,11 @@ export type UploadAction =
   | { type: "clear" }
   | { type: "hash_progress"; generation: number; processedBytes: number; totalBytes: number }
   | { type: "hash_succeeded"; generation: number; result: HashResult }
-  | { type: "hash_failed"; generation: number; code: string; message: string }
+  | { type: "hash_failed"; generation: number; code: string; message: string; requestId?: string | null }
   | { type: "session_created"; generation: number; session: CreateUploadResponse }
-  | { type: "session_create_failed"; generation: number; code: string; message: string }
+  | { type: "session_create_failed"; generation: number; code: string; message: string; requestId?: string | null }
   | { type: "session_reconciled"; generation: number; session: GetUploadResponse }
-  | { type: "session_reconcile_failed"; generation: number; code: string; message: string }
+  | { type: "session_reconcile_failed"; generation: number; code: string; message: string; requestId?: string | null }
   | { type: "part_presign_started"; generation: number; partNumber: number; attempt: number }
   | { type: "part_upload_started"; generation: number; partNumber: number; attempt: number }
   | {
@@ -165,7 +166,7 @@ export type UploadAction =
       code: string;
     }
   | { type: "complete_succeeded"; generation: number; result: CompleteUploadResponse }
-  | { type: "complete_failed"; generation: number; code: string; message: string };
+  | { type: "complete_failed"; generation: number; code: string; message: string; requestId?: string | null };
 
 export interface UploadTransition {
   accepted: boolean;

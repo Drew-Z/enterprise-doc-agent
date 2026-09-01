@@ -94,6 +94,8 @@ test("interrupts, reloads, rejects a wrong file, resumes missing parts, and comp
   });
 
   await page.goto("/");
+  await page.getByRole("button", { name: "Documents", exact: true }).click();
+  await page.getByRole("button", { name: "Open development access" }).click();
   await page.getByLabel("Local API token").fill(runtime.token);
   await page.getByRole("button", { name: "Save token" }).click();
   const fileInput = page.locator("#upload-file");

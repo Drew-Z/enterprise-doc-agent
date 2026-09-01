@@ -397,7 +397,7 @@ export function reduceUpload(state: UploadMachineState, action: UploadAction): U
       if (state.phase !== "hashing" || !isCurrent(state, action.generation)) {
         return reject(state);
       }
-      return fail(state, { stage: "hash", code: action.code, message: action.message, retryable: true });
+      return fail(state, { stage: "hash", code: action.code, message: action.message, retryable: true, requestId: action.requestId });
     }
 
     case "session_created": {
@@ -457,7 +457,7 @@ export function reduceUpload(state: UploadMachineState, action: UploadAction): U
       if (state.phase !== "creating" || !isCurrent(state, action.generation)) {
         return reject(state);
       }
-      return fail(state, { stage: "create", code: action.code, message: action.message, retryable: true });
+      return fail(state, { stage: "create", code: action.code, message: action.message, retryable: true, requestId: action.requestId });
     }
 
     case "session_reconciled": {
@@ -512,7 +512,7 @@ export function reduceUpload(state: UploadMachineState, action: UploadAction): U
       if (state.phase !== "uploading" || !state.reconciling || !isCurrent(state, action.generation)) {
         return reject(state);
       }
-      return fail(state, { stage: "reconcile", code: action.code, message: action.message, retryable: true });
+      return fail(state, { stage: "reconcile", code: action.code, message: action.message, retryable: true, requestId: action.requestId });
     }
 
     case "part_presign_started": {
@@ -709,7 +709,7 @@ export function reduceUpload(state: UploadMachineState, action: UploadAction): U
       if (state.phase !== "completing" || !isCurrent(state, action.generation)) {
         return reject(state);
       }
-      return fail(state, { stage: "complete", code: action.code, message: action.message, retryable: true });
+      return fail(state, { stage: "complete", code: action.code, message: action.message, retryable: true, requestId: action.requestId });
     }
 
     case "cancel": {

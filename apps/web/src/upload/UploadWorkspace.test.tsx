@@ -14,6 +14,7 @@ import {
   type UploadWorkspaceDependencies,
 } from ".";
 import { UploadWorkspace } from "./UploadWorkspace";
+import { UploadApiError } from "./api/client";
 
 const SESSION_ID = "11111111-1111-4111-8111-111111111111";
 const DOCUMENT_ID = "22222222-2222-4222-8222-222222222222";
@@ -175,5 +176,21 @@ describe("UploadWorkspace", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent("does not match the upload session");
     await waitFor(() => expect(api.getSession).not.toHaveBeenCalled());
+  });
+
+  it("surfaces the server request id when session creation fails", async () => {
+    sessionStorage.setItem(UPLOAD_TOKEN_STORAGE_KEY, "header.payload.signature");
+    const { api, dependencies } = createDependencies();
+    api.createSession.mockRejectedValueOnce(
+      new UploadApiError(503, "upload_session_unavailable", "Upload service unavailable.", "req-upload-1"),
+    );
+    render(<UploadWorkspace dependencies={dependencies} storage={sessionStorage} />);
+
+    const file = new File(["12345678"], "notes.txt", { type: "text/plain" });
+    fireEvent.change(screen.getByLabelText("Choose document"), { target: { files: [file] } });
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Upload service unavailable. (upload_session_unavailable · Request ID: req-upload-1)",
+    );
   });
 });
