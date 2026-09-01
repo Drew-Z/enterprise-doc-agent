@@ -33,3 +33,14 @@
   token, repair, fallback, and breaker telemetry without hardcoded undercounting.
 - [x] Run focused gateway/routing tests and core quality checks without rerunning the
   40-case staging quality suite.
+
+## Slice 5: Local Revalidation And Scope Decision
+
+- [x] Re-run the deterministic route benchmark and synthetic fallback contract with 20
+  iterations each; both produced 100% valid citations, zero errors, and the expected
+  fallback/breaker state.
+- [x] Preserve the explicit GPU/vLLM exclusion. The local reports prove routing contracts
+  only and do not claim real-provider quality, production latency, cost, or capacity.
+- [ ] Obtain a clean repeated real-provider 40-case run with stable observed route identity,
+  provider revision and cost metadata, representative corpus review, and independent human
+  semantic approval. These remain external/open gates.

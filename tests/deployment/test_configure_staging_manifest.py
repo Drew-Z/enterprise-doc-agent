@@ -141,7 +141,10 @@ def _write_template(path: Path) -> None:
                 "egress": [
                     {
                         "to": [{"ipBlock": {"cidr": "192.0.2.1/32"}}],
-                        "ports": [{"protocol": "TCP", "port": 5432}],
+                        "ports": [
+                            {"protocol": "TCP", "port": 5432},
+                            {"protocol": "TCP", "port": 6543},
+                        ],
                     },
                 ],
             },
@@ -249,7 +252,10 @@ def test_configure_manifest_binds_https_hosts_without_secret_data(tmp_path: Path
                 {"ipBlock": {"cidr": "1.1.1.1/32"}},
                 {"ipBlock": {"cidr": "8.8.8.8/32"}},
             ],
-            "ports": [{"protocol": "TCP", "port": 5432}],
+            "ports": [
+                {"protocol": "TCP", "port": 5432},
+                {"protocol": "TCP", "port": 6543},
+            ],
         },
     ]
 

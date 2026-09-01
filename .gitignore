@@ -22,6 +22,7 @@ apps/web/test-results/
 *.log
 !evidence/**/*.log
 tmp/
+.tmp-*
 .DS_Store
 Thumbs.db
 

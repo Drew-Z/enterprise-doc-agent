@@ -19,6 +19,18 @@ data:
   API__HOST: 0.0.0.0
   API__PORT: "8000"
   API__READINESS_CACHE_TTL_SECONDS: "2"
+  # External OIDC is disabled until the IdP, provisioning and end-to-end
+  # acceptance gates are reviewed. Configure issuer/audience/JWKS together.
+  AUTH__EXTERNAL_AUTH_ENABLED: "false"
+  # Role claims are opt-in. Group mappings are explicit and must not overlap;
+  # ambiguous owner/member claims are rejected by the API.
+  AUTH__EXTERNAL_ROLE_CLAIM_ENABLED: "false"
+  AUTH__EXTERNAL_OWNER_GROUPS: '["owner", "tenant-owner"]'
+  AUTH__EXTERNAL_MEMBER_GROUPS: '["member", "tenant-member"]'
+  # SCIM is disabled by default. Tenant tokens belong in Secret Manager.
+  AUTH__SCIM_ENABLED: "false"
+  AUTH__SCIM_ISSUER: https://idp.example.test/scim
+  AUTH__SCIM_TENANT_TOKENS: '{}'
   WORKER__HOST: 0.0.0.0
   WORKER__PROBE_PORT: "8081"
   WORKER__CONSUMER_METRICS_PORT: "8082"

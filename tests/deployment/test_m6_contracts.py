@@ -679,7 +679,10 @@ def test_tiny_single_node_redis_and_network_boundaries_are_explicit() -> None:
     assert external_db["spec"]["egress"] == [
         {
             "to": [{"ipBlock": {"cidr": "192.0.2.1/32"}}],
-            "ports": [{"protocol": "TCP", "port": 5432}],
+            "ports": [
+                {"protocol": "TCP", "port": 5432},
+                {"protocol": "TCP", "port": 6543},
+            ],
         },
     ]
 

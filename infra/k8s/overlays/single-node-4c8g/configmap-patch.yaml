@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: enterprise-doc-config
+data:
+  # Supabase session pooler allows 15 concurrent sessions for this staging account.
+  # Two API replicas plus Worker, consumer and migration must stay below that cap.
+  DATABASE__POOL_SIZE: "2"
+  DATABASE__MAX_OVERFLOW: "0"
+  # Bound the complete graph segment, including all model and tool calls.
+  AGENT__EXECUTION_TIMEOUT_SECONDS: "300"
+  # MCP uses one short-lived stdio process per tool call. Route those clients
+  # through Supavisor transaction mode instead of accumulating session slots.
+  MCP__DATABASE_TRANSACTION_MODE: "true"

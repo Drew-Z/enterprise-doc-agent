@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "evidence_type": "tiny-staging-resource-envelope",
+  "evidence_id": "m6-tiny-resource-envelope-20260820-v0.1.32",
+  "milestone": "M6",
+  "requirement_ids": ["M6-R8"],
+  "slice": 10,
+  "status": "verified_not_suitable_for_full_staging_workflow",
+  "commit_sha": "52aadd738b311d1b9afa454235b5291a77fb69f3",
+  "environment": {
+    "provider": "tencent-cloud",
+    "region": "ap-guangzhou-7",
+    "profile": "tiny-single-node",
+    "node": "enterprise-doc-tiny-staging",
+    "k3s": "v1.36.2+k3s1",
+    "cpu": 2,
+    "memory_gib": 2,
+    "swap": "disabled",
+    "gpu_vllm": "excluded"
+  },
+  "source_runs": [
+    {
+      "run_id": "32320731190",
+      "attempt": 2,
+      "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/32320731190",
+      "artifact_id": "9390373497",
+      "artifact_digest": "sha256:cb4852c6c7d340891e83656f37a7cd042d050a914033209599bd9bdedf55a963",
+      "result": "failure",
+      "passed_before_failure": [
+        "prerequisites",
+        "migration",
+        "workloads",
+        "rollout",
+        "embedding_rollout"
+      ],
+      "failure_gate": "cluster_readiness_smoke",
+      "failure_reason": "curlimages/curl exact digest was not locally resolvable and Docker Hub timed out"
+    },
+    {
+      "run_id": "32325917378",
+      "attempt": 1,
+      "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/32325917378",
+      "artifact_id": "9391669758",
+      "artifact_digest": "sha256:a6ac2fb51ac38cd7a79c77df4be3c113e6c9c77b38c6b41730832218e4a0e72c",
+      "result": "failure",
+      "failure_gate": "verify_administrator_owned_staging_prerequisites",
+      "failure_reason": "K3s API server TLS handshake and handler timeouts while reading services, serviceaccounts and networkpolicies",
+      "skipped_gates": [
+        "migration",
+        "workloads",
+        "rollout",
+        "embedding_rollout",
+        "cluster_readiness_smoke",
+        "authenticated_agent_smoke"
+      ]
+    }
+  ],
+  "image_relay_fix": {
+    "image": "curlimages/curl@sha256:94e9e444bcba979c2ea12e27ae39bee4cd10bc7041a472c4727a558e213744e6",
+    "archive_sha256": "e5fa928a41d0e8b846cf6bf039d643e4f2361386f262592f2b803e1029f85e95",
+    "archive_size_bytes": 28588032,
+    "exact_cri_reference_verified": true,
+    "standalone_readiness_job": {
+      "status": "passed",
+      "duration_seconds": 22,
+      "database": "up",
+      "redis": "up",
+      "object_store": "up"
+    }
+  },
+  "resource_observations": {
+    "observed_total_memory": "1.8Gi",
+    "available_memory_during_workflow": "approximately 85-100Mi",
+    "available_memory_after_recovery": "approximately 190Mi",
+    "swap": "0B",
+    "k3s_restart_count": 2,
+    "application_restarts": {
+      "api": 5,
+      "consumer": 3,
+      "web": 7,
+      "worker": 7
+    },
+    "control_plane_symptoms": [
+      "TLS handshake timeout",
+      "API server handler timeout",
+      "SubjectAccessReview timeout",
+      "metrics-server unavailable",
+      "node lease update timeout",
+      "temporary NodeNotReady events"
+    ]
+  },
+  "decision": {
+    "full_staging_workflow": "not_suitable_on_2c2g",
+    "readiness_only": "works_after_local_curl_image_import",
+    "do_not_claim": [
+      "complete tiny staging rollout",
+      "authenticated upload smoke on tiny",
+      "migration and embedding success for the second workflow run"
+    ],
+    "required_action": "move complete staging to the reviewed 4C8G profile; retain tiny only for bounded/static or isolated probes"
+  },
+  "scope": {
+    "second_server_migration_drill": "excluded",
+    "server_side_claude_code": "disabled"
+  },
+  "owner": "platform owner"
+}
