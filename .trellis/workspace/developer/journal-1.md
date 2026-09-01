@@ -58,3 +58,38 @@ Implemented digest-bound container delivery gates with Trivy, SPDX SBOM, BuildKi
 - Execute the registry/GitHub Actions, staging rollout, isolated recovery, and
   production-like application/GPU capacity gates when the required external
   repository, cluster, credentials, restore target, and test environment exist.
+
+
+## Session 2: Bound 4C4G staging Worker cold-pull rollout
+
+**Date**: 2026-09-02
+**Task**: Bound 4C4G staging Worker cold-pull rollout
+**Package**: core
+**Branch**: `agent/grok-provider-rollout-evidence`
+
+### Summary
+
+Added a profile-specific 1800s Worker rollout deadline and bounded workflow waits, documented the verified OCI relay fallback, passed 993 non-integration tests plus deployment/lint/type/actionlint checks, and completed staging run 33570932597 with embedding, readiness, authenticated smoke, public health, and bilingual route validation.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `0505513` | (see git log) |
+| `db6401d` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
