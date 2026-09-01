@@ -67,3 +67,27 @@ kubectl kustomize infra/k8s/overlays/single-node-4c4g | Out-File staging-4c4g.ya
 The workflow must use immutable image digests and external dependency Secrets. A Ready
 K3s node alone is not a successful staging deployment; migration, rollout, embedding or
 reindex, and authenticated smoke gates must pass in order.
+
+## Restricted-network image delivery
+
+The normal path is a direct pull of the exact immutable GHCR digests. The 4C4G Worker
+has a bounded 30-minute rollout window to cover the measured cold-pull case. If that
+window expires, stop the release and inspect the sanitized workflow evidence; do not
+retry indefinitely against an unhealthy registry.
+
+Use the reviewed `Relay Staging Images` workflow when GHCR remains unreachable or a
+repeatable cold pull would exceed the bounded window. It produces one receipt per API,
+Worker, consumer and Web OCI archive. Download the archive and the versioned
+`scripts/import_staging_oci_archive.py` receiver out of band, then run the receiver
+without `--confirm` first. This validates the archive checksum, every OCI descriptor,
+the canonical import base and the receipt-bound deployment digest without changing
+containerd. Review the output, then repeat the same command with `--confirm` and a
+root-owned record path. Keep only the non-secret receipt, checksum and import result in
+the release evidence. Do not copy signed URLs, registry credentials or Kubernetes
+Secret contents into the repository or logs.
+
+The canonical command sequence and descriptor checks are maintained in the
+[4C8G restricted-network relay procedure](single-node-4c8g-staging-runbook.md#restricted-network-image-relay-import).
+After all four images import successfully, dispatch a new staging run with the same
+immutable digests and require every existing migration, rollout, embedding, readiness
+and authenticated smoke gate to pass.

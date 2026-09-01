@@ -23,6 +23,7 @@ metadata:
   name: enterprise-doc-worker
 spec:
   replicas: 1
+  progressDeadlineSeconds: 1800
   strategy:
     type: RollingUpdate
     rollingUpdate:

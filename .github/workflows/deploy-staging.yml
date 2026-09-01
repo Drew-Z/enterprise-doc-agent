@@ -436,10 +436,16 @@ jobs:
           kubectl apply -f "$RUNNER_TEMP/staging-workloads.yaml"
       - name: Wait for workloads
         id: rollout
+        env:
+          DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'single-node-4c4g' }}
         run: |
           set -euo pipefail
+          worker_timeout=600s
+          if test "$DEPLOYMENT_PROFILE" = "single-node-4c4g"; then
+            worker_timeout=1800s
+          fi
           kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-api --timeout=600s
-          kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-worker --timeout=600s
+          kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-worker --timeout="$worker_timeout"
           kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-consumer --timeout=600s
           kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-web --timeout=600s
           if kubectl -n enterprise-doc-agent-staging get deployment enterprise-doc-redis >/dev/null 2>&1; then
@@ -461,9 +467,13 @@ jobs:
             if test "${DEPLOYMENT_PROFILE:-}" != "tiny-single-node" && test "${DEPLOYMENT_PROFILE:-}" != "single-node-4c4g"; then
               return 0
             fi
+            worker_timeout=600s
+            if test "$DEPLOYMENT_PROFILE" = "single-node-4c4g"; then
+              worker_timeout=1800s
+            fi
             kubectl apply -f "$RUNNER_TEMP/staging-workloads.yaml" >/dev/null
             kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-api --timeout=600s
-            kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-worker --timeout=600s
+            kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-worker --timeout="$worker_timeout"
             kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-consumer --timeout=600s
             kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-web --timeout=600s
           }
@@ -600,9 +610,13 @@ jobs:
           if test ! -f "$RUNNER_TEMP/staging-workloads.yaml"; then
             exit 0
           fi
+          worker_timeout=600s
+          if test "$DEPLOYMENT_PROFILE" = "single-node-4c4g"; then
+            worker_timeout=1800s
+          fi
           kubectl apply -f "$RUNNER_TEMP/staging-workloads.yaml" >/dev/null
           kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-api --timeout=600s
-          kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-worker --timeout=600s
+          kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-worker --timeout="$worker_timeout"
           kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-consumer --timeout=600s
           kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-web --timeout=600s
       - name: Collect sanitized release evidence

@@ -841,6 +841,7 @@ def test_single_node_4c4g_overlay_matches_current_server_envelope() -> None:
         "enterprise-doc-web": 1,
         "enterprise-doc-redis": 1,
     }
+    assert deployments["enterprise-doc-worker"]["spec"]["progressDeadlineSeconds"] == 1800
     expected_resources = {
         "enterprise-doc-api": (
             {"cpu": "150m", "memory": "256Mi"},
@@ -1624,8 +1625,16 @@ def test_staging_workflows_preserve_admin_boundary_and_clean_credentials() -> No
 
     rollout = _named_step(deploy_steps, "Wait for workloads")
     rollout_run = str(rollout["run"])
-    for deployment in ("api", "worker", "consumer", "web"):
-        assert f"deployment/enterprise-doc-{deployment} --timeout=600s" in rollout_run
+    assert rollout["env"]["DEPLOYMENT_PROFILE"] == (
+        "${{ vars.STAGING_DEPLOYMENT_PROFILE || 'single-node-4c4g' }}"
+    )
+    assert "worker_timeout=600s" in rollout_run
+    assert 'test "$DEPLOYMENT_PROFILE" = "single-node-4c4g"' in rollout_run
+    assert "worker_timeout=1800s" in rollout_run
+    assert "deployment/enterprise-doc-api --timeout=600s" in rollout_run
+    assert 'deployment/enterprise-doc-worker --timeout="$worker_timeout"' in rollout_run
+    assert "deployment/enterprise-doc-consumer --timeout=600s" in rollout_run
+    assert "deployment/enterprise-doc-web --timeout=600s" in rollout_run
 
     embedding = _named_step(deploy_steps, "Run embedding provider and reindex gate")
     embedding_run = str(embedding["run"])
@@ -1685,6 +1694,8 @@ def test_staging_workflows_preserve_admin_boundary_and_clean_credentials() -> No
         "${{ vars.STAGING_DEPLOYMENT_PROFILE || 'single-node-4c4g' }}"
     )
     assert "staging-workloads.yaml" in str(restore["run"])
+    restore_run = str(restore["run"])
+    assert 'deployment/enterprise-doc-worker --timeout="$worker_timeout"' in restore_run
 
     smoke_cleanup = _named_step(deploy_steps, "Clean up readiness smoke")
     assert "always()" in str(smoke_cleanup["if"])
@@ -1875,3 +1886,13 @@ def test_staging_image_relay_binds_the_versioned_canonical_receiver() -> None:
     assert "receiver_canonical_base=docker.io/library/$RELAY_ID" in receipt
     assert "receiver_image_reference=$IMAGE_REF" in receipt
     assert (ROOT / "scripts" / "import_staging_oci_archive.py").is_file()
+
+
+def test_single_node_4c4g_runbook_documents_restricted_network_fallback() -> None:
+    runbook = (ROOT / "docs/ops/single-node-4c4g-staging-runbook.md").read_text(encoding="utf-8")
+    assert "Restricted-network image delivery" in runbook
+    assert "Relay Staging Images" in runbook
+    assert "import_staging_oci_archive.py" in runbook
+    assert "without `--confirm`" in runbook
+    assert "--confirm" in runbook
+    assert "Do not copy signed URLs" in runbook
