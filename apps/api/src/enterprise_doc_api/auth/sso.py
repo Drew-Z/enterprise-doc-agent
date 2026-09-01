@@ -101,7 +101,7 @@ class JwksExternalIdentityAdapter:
         self.fetcher = fetcher or UrllibJwksFetcher()
         self.cache_ttl_seconds = cache_ttl_seconds
         self._jwks: tuple[Mapping[str, Any], ...] = ()
-        self._cached_at = 0.0
+        self._cached_at: float | None = None
         self._lock = asyncio.Lock()
 
     async def decode(self, token: str) -> ExternalIdentity:
@@ -166,11 +166,19 @@ class JwksExternalIdentityAdapter:
 
     async def _refresh_jwks(self, *, force: bool) -> None:
         now = time.monotonic()
-        if not force and now - self._cached_at < self.cache_ttl_seconds:
+        if (
+            not force
+            and self._cached_at is not None
+            and now - self._cached_at < self.cache_ttl_seconds
+        ):
             return
         async with self._lock:
             now = time.monotonic()
-            if not force and now - self._cached_at < self.cache_ttl_seconds:
+            if (
+                not force
+                and self._cached_at is not None
+                and now - self._cached_at < self.cache_ttl_seconds
+            ):
                 return
             payload = await self.fetcher.fetch(cast(str, self.settings.external_jwks_url))
             raw_keys = payload.get("keys")

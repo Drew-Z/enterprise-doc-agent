@@ -413,7 +413,10 @@ async def test_jwks_external_identity_adapter_rejects_wrong_kid_and_hs256() -> N
     assert exc_info.value.code == "external_identity_invalid"
 
 
-async def test_jwks_external_identity_adapter_refreshes_on_key_rotation() -> None:
+async def test_jwks_external_identity_adapter_refreshes_on_key_rotation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("enterprise_doc_api.auth.sso.time.monotonic", lambda: 1.0)
     first_private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     second_private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
 
