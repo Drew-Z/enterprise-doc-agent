@@ -303,6 +303,25 @@ test("Agent workspace reports unauthorized run access without exposing approval 
       JSON.stringify({ version: 1, runId: recoveryRunId, lastSequence: 0 }),
     );
   }, unauthorizedRunId);
+  await page.route("**/api/session", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        tenantId: "88888888-8888-4888-8888-888888888888",
+        actorId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaab",
+        role: "member",
+        capabilities: {
+          documentRead: true,
+          documentWrite: true,
+          agentRunCreate: true,
+          auditRead: true,
+          auditExport: false,
+          approvalDecide: false,
+        },
+      }),
+    }),
+  );
   await page.route("**/health/ready", (route) =>
     route.fulfill({
       status: 200,
@@ -337,7 +356,9 @@ test("Agent workspace reports unauthorized run access without exposing approval 
   await page.goto("/");
   await page.getByRole("button", { name: "Agent runs" }).click();
 
-  await expect(page.getByRole("alert")).toContainText("agent_principal_forbidden");
+  await expect(
+    page.getByRole("region", { name: "Agent run workspace" }).getByRole("alert"),
+  ).toContainText("agent_principal_forbidden");
   await expect(page.getByRole("region", { name: "Approval request", exact: true })).toHaveCount(0);
   await expect(page.getByText("Verified result", { exact: true })).toHaveCount(0);
 });

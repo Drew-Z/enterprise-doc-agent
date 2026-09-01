@@ -77,6 +77,23 @@ async function mockOwnerAudit(page: import("@playwright/test").Page) {
     contentType: "application/json",
     body: JSON.stringify({ cutoffAt: "2025-08-26T00:00:00+00:00", eligibleEventCount: 12, protectedEventCount: 2 }),
   }));
+  await page.route("**/api/audit-governance/retention-plan?*", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({
+      policy: { tenantId, retentionDays: 365, isEnabled: true, updatedBy: actorId },
+      cutoffAt: "2025-08-26T00:00:00+00:00",
+      eligibleEventCount: 12,
+      protectedEventCount: 2,
+      eligibleEventIds: [],
+      fingerprint: "a".repeat(64),
+    }),
+  }));
+  await page.route("**/api/audit-governance/retention-archives?*", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: "[]",
+  }));
   await page.route("**/api/audit-governance/legal-holds", (route) => route.fulfill({
     status: 200,
     contentType: "application/json",
@@ -98,8 +115,9 @@ test("owner audit governance panel fits desktop and mobile layouts", async ({ pa
       return { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom };
     }),
   );
-  expect(cards).toHaveLength(2);
+  expect(cards).toHaveLength(3);
   expect(cards[0]?.right ?? 0).toBeLessThanOrEqual(cards[1]?.left ?? 0);
+  expect(cards[2]?.top ?? 0).toBeGreaterThanOrEqual(cards[0]?.bottom ?? 0);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();
