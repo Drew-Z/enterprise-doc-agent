@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from dataclasses import replace
 from typing import Any
 from uuid import uuid4
@@ -14,6 +15,7 @@ from enterprise_doc_core.telemetry import MetricsRuntime
 from enterprise_doc_worker.agent_handler import AgentExecutionContext
 from enterprise_doc_worker.agents import (
     AgentGraphExecutionResultInvalid,
+    AgentGraphExecutionTimeout,
     AgentGraphExecutor,
     _configured_gateway,
 )
@@ -66,6 +68,50 @@ class FakeBackend:
 
     async def mark_waiting_for_approval(self) -> None:
         self.waiting_marked += 1
+
+
+class HangingGraph:
+    def __init__(self) -> None:
+        self.cancelled = False
+
+    async def ainvoke(self, input: object, *, config: object) -> dict[str, Any]:
+        del input, config
+        try:
+            await asyncio.Event().wait()
+        except asyncio.CancelledError:
+            self.cancelled = True
+            raise
+
+
+class SlowCancellingGraph:
+    def __init__(self) -> None:
+        self.cancel_count = 0
+
+    async def ainvoke(self, input: object, *, config: object) -> dict[str, Any]:
+        del input, config
+        while True:
+            try:
+                await asyncio.Event().wait()
+            except asyncio.CancelledError:
+                self.cancel_count += 1
+                if self.cancel_count >= 2:
+                    raise
+
+
+class NeverCancellingGraph:
+    def __init__(self) -> None:
+        self.stop = False
+        self.task: asyncio.Task[Any] | None = None
+
+    async def ainvoke(self, input: object, *, config: object) -> dict[str, Any]:
+        del input, config
+        self.task = asyncio.current_task()
+        while not self.stop:
+            try:
+                await asyncio.Event().wait()
+            except asyncio.CancelledError:
+                continue
+        return {"outcome": "succeeded"}
 
 
 @pytest.mark.asyncio
@@ -151,6 +197,110 @@ async def test_graph_executor_rejects_unknown_result_outcome() -> None:
 
     rendered = metrics.render().decode("utf-8")
     assert 'boundary="graph",operation="run",result="permanent_error"' in rendered
+
+
+@pytest.mark.asyncio
+async def test_graph_executor_bounds_and_cancels_the_complete_segment() -> None:
+    graph = HangingGraph()
+    metrics = MetricsRuntime.create()
+    executor = AgentGraphExecutor(
+        backend_factory=lambda _: FakeBackend(),  # type: ignore[arg-type]
+        gateway=object(),  # type: ignore[arg-type]
+        checkpointer=InMemorySaver(),
+        execution_timeout_seconds=0.01,
+        graph_builder=lambda **_: graph,  # type: ignore[arg-type]
+        metrics=metrics,
+    )
+
+    with pytest.raises(AgentGraphExecutionTimeout) as caught:
+        await executor(_context())
+
+    assert caught.value.code == "agent_graph_timeout"
+    assert graph.cancelled is True
+    rendered = metrics.render().decode("utf-8")
+    assert 'boundary="graph",operation="run",result="timeout"' in rendered
+
+
+@pytest.mark.asyncio
+async def test_graph_executor_repeats_cancellation_when_cleanup_swallows_first_cancel(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    graph = SlowCancellingGraph()
+    original_wait = asyncio.wait
+    wait_calls = 0
+
+    async def fast_wait(*args: Any, **kwargs: Any) -> Any:
+        nonlocal wait_calls
+        wait_calls += 1
+        if wait_calls == 2:
+            kwargs["timeout"] = 0.01
+        return await original_wait(*args, **kwargs)
+
+    monkeypatch.setattr(asyncio, "wait", fast_wait)
+    executor = AgentGraphExecutor(
+        backend_factory=lambda _: FakeBackend(),  # type: ignore[arg-type]
+        gateway=object(),  # type: ignore[arg-type]
+        checkpointer=InMemorySaver(),
+        execution_timeout_seconds=0.01,
+        graph_builder=lambda **_: graph,  # type: ignore[arg-type]
+    )
+
+    with pytest.raises(AgentGraphExecutionTimeout):
+        await executor(_context())
+
+    assert graph.cancel_count == 2
+
+
+@pytest.mark.asyncio
+async def test_graph_executor_keeps_timeout_bounded_when_cancellation_never_converges(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    graph = NeverCancellingGraph()
+    original_wait = asyncio.wait
+
+    async def fast_wait(*args: Any, **kwargs: Any) -> Any:
+        kwargs["timeout"] = 0.01
+        return await original_wait(*args, **kwargs)
+
+    monkeypatch.setattr(asyncio, "wait", fast_wait)
+    executor = AgentGraphExecutor(
+        backend_factory=lambda _: FakeBackend(),  # type: ignore[arg-type]
+        gateway=object(),  # type: ignore[arg-type]
+        checkpointer=InMemorySaver(),
+        execution_timeout_seconds=0.01,
+        graph_builder=lambda **_: graph,  # type: ignore[arg-type]
+    )
+
+    started = asyncio.get_running_loop().time()
+    with pytest.raises(AgentGraphExecutionTimeout):
+        await executor(_context())
+
+    assert asyncio.get_running_loop().time() - started < 0.5
+    graph.stop = True
+    assert graph.task is not None
+    graph.task.cancel()
+    await asyncio.sleep(0)
+
+
+@pytest.mark.asyncio
+async def test_graph_executor_cleans_up_segment_when_outer_call_is_cancelled() -> None:
+    graph = HangingGraph()
+    executor = AgentGraphExecutor(
+        backend_factory=lambda _: FakeBackend(),  # type: ignore[arg-type]
+        gateway=object(),  # type: ignore[arg-type]
+        checkpointer=InMemorySaver(),
+        execution_timeout_seconds=10,
+        graph_builder=lambda **_: graph,  # type: ignore[arg-type]
+    )
+
+    task = asyncio.create_task(executor(_context()))
+    await asyncio.sleep(0)
+    task.cancel()
+
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
+    assert graph.cancelled is True
 
 
 @pytest.mark.asyncio

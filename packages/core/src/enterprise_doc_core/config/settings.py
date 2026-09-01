@@ -39,6 +39,7 @@ class DatabaseSettings(BaseModel):
     max_overflow: int = Field(default=2, ge=0, le=20)
     pool_timeout_seconds: float = Field(default=10.0, gt=0, le=60)
     pool_recycle_seconds: int = Field(default=600, ge=30, le=3600)
+    prepare_threshold: int | None = Field(default=5, ge=0)
 
 
 class RedisSettings(BaseModel):
@@ -157,6 +158,7 @@ class AgentSettings(BaseModel):
     prompt_version: str = Field(default="m4.v9", min_length=1, max_length=64)
     tool_schema_version: str = Field(default="m4.v2", min_length=1, max_length=64)
     execution_max_attempts: int = Field(default=3, ge=1, le=100)
+    execution_timeout_seconds: float = Field(default=300.0, gt=0, le=3600)
     checkpoint_url: SecretStr | None = None
     checkpoint_timeout_seconds: float = Field(default=15.0, gt=0, le=120)
     max_artifact_bytes: int = Field(default=16 * 1024 * 1024, ge=1, le=256 * 1024 * 1024)
@@ -270,11 +272,15 @@ class McpSettings(BaseModel):
     context_ttl_seconds: int = Field(default=300, ge=30, le=3600)
     request_timeout_seconds: float = Field(default=30.0, gt=0, le=300)
     max_message_bytes: int = Field(default=1024 * 1024, ge=1024, le=16 * 1024**2)
+    database_url: SecretStr | None = None
+    database_transaction_mode: bool = False
 
     @model_validator(mode="after")
     def require_signing_secret_strength(self) -> Self:
         if len(self.signing_secret.get_secret_value()) < 32:
             raise ValueError("MCP signing secret must be at least 32 bytes")
+        if self.database_transaction_mode and self.database_url is None:
+            raise ValueError("MCP transaction-mode database requires a dedicated database URL")
         return self
 
 
@@ -309,7 +315,14 @@ class FoundationSettings(BaseSettings):
                 self.object_store.access_key.get_secret_value(),
                 self.object_store.secret_key.get_secret_value(),
             )
-            if any("enterprise_doc_local" in value for value in sensitive_values):
+            mcp_database_url = (
+                self.mcp.database_url.get_secret_value()
+                if self.mcp.database_url is not None
+                else ""
+            )
+            if any(
+                "enterprise_doc_local" in value for value in (*sensitive_values, mcp_database_url)
+            ):
                 raise ValueError(
                     "development credentials are forbidden outside the local environment"
                 )

@@ -68,6 +68,42 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
 
 
+class ExternalIdentityBinding(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+    """Explicit issuer/subject binding for external IdP identities."""
+
+    __tablename__ = "external_identity_bindings"
+    __table_args__ = (
+        UniqueConstraint(
+            "tenant_id",
+            "issuer",
+            "subject",
+            name="uq_external_identity_bindings_tenant_issuer_subject",
+        ),
+        Index(
+            "ix_external_identity_bindings_tenant_id_user_id_is_active",
+            "tenant_id",
+            "user_id",
+            "is_active",
+        ),
+    )
+
+    tenant_id: Mapped[UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    issuer: Mapped[str] = mapped_column(String(512), nullable=False)
+    subject: Mapped[str] = mapped_column(String(512), nullable=False)
+    user_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    is_active: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        server_default=text("true"),
+    )
+
+
 class Membership(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "memberships"
     __table_args__ = (

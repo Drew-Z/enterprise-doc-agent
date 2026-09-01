@@ -95,6 +95,7 @@ async def run_worker() -> None:
             mcp_settings=settings.mcp,
             checkpointer=checkpointer,
             graph_version=settings.agent.graph_version,
+            execution_timeout_seconds=settings.agent.execution_timeout_seconds,
             fault_injection=settings.fault_injection,
             metrics=metrics,
         )

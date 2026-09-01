@@ -49,10 +49,12 @@ class StubAgentRunService:
             created_at=datetime(2026, 7, 18, tzinfo=UTC),
         )
 
-    async def get_status(self, *, run_id, tenant_id):
+    async def get_status(self, *, run_id, tenant_id, actor_id):
+        assert actor_id
         return self._status(run_id=run_id, tenant_id=tenant_id)
 
-    async def list_events(self, *, run_id, tenant_id, after_seq=0, limit=100):
+    async def list_events(self, *, run_id, tenant_id, actor_id, after_seq=0, limit=100):
+        assert actor_id
         return (
             AgentRunEventResult(
                 event_id=uuid4(),
@@ -67,7 +69,8 @@ class StubAgentRunService:
     async def cancel(self, *, run_id, tenant_id, actor_id):
         return self._status(run_id=run_id, tenant_id=tenant_id, status="cancelled")
 
-    async def list_ready_document_versions(self, *, tenant_id):
+    async def list_ready_document_versions(self, *, tenant_id, actor_id):
+        assert actor_id
         return (
             ReadyDocumentVersionResult(
                 version_id=self.version_id,

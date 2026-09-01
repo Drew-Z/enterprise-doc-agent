@@ -364,3 +364,86 @@ async def test_outbox_expired_publication_lease_can_repeat_safely() -> None:
         assert row.attempts == 2
     finally:
         await engine.dispose()
+
+
+@pytest.mark.integration
+async def test_outbox_republishes_stale_event_for_pending_job() -> None:
+    engine, session_factory, clock, _, _, _, created = await _runtime()
+    outbox = OutboxService(
+        session_factory=session_factory,
+        clock=clock,
+        lease_seconds=5,
+        recovery_seconds=5,
+    )
+    try:
+        assert created.outbox_event_id is not None
+        first = await outbox.claim(publisher_id="publisher-a", event_id=created.outbox_event_id)
+        assert len(first) == 1
+        await outbox.mark_published(first[0])
+
+        clock.advance(6)
+        recovered = await outbox.claim(publisher_id="publisher-b", event_id=created.outbox_event_id)
+        assert len(recovered) == 1
+        assert recovered[0].event_id == created.outbox_event_id
+        await outbox.mark_published(recovered[0])
+    finally:
+        await engine.dispose()
+
+
+@pytest.mark.integration
+async def test_outbox_republishes_latest_event_after_job_lease_expiry() -> None:
+    engine, session_factory, clock, service, _, _, created = await _runtime()
+    outbox = OutboxService(
+        session_factory=session_factory,
+        clock=clock,
+        lease_seconds=5,
+        recovery_seconds=5,
+    )
+    try:
+        assert created.outbox_event_id is not None
+        first = await outbox.claim(publisher_id="publisher-a", event_id=created.outbox_event_id)
+        assert len(first) == 1
+        await outbox.mark_published(first[0])
+        claim = await service.claim(job_id=created.job_id, worker_id="worker-a")
+        assert claim is not None
+
+        clock.advance(11)
+        recovered = await outbox.claim(publisher_id="publisher-b", event_id=created.outbox_event_id)
+        assert len(recovered) == 1
+        assert recovered[0].event_id == created.outbox_event_id
+        await outbox.mark_published(recovered[0])
+    finally:
+        await engine.dispose()
+
+
+@pytest.mark.integration
+async def test_outbox_does_not_recover_superseded_published_event() -> None:
+    engine, session_factory, clock, service, _, _, created = await _runtime()
+    outbox = OutboxService(
+        session_factory=session_factory,
+        clock=clock,
+        lease_seconds=5,
+        recovery_seconds=5,
+    )
+    try:
+        assert created.outbox_event_id is not None
+        initial = await outbox.claim(publisher_id="publisher-a", event_id=created.outbox_event_id)
+        assert len(initial) == 1
+        await outbox.mark_published(initial[0])
+
+        claim = await service.claim(job_id=created.job_id, worker_id="worker-a")
+        assert claim is not None
+        failure = await service.fail(
+            claim,
+            disposition=RetryDisposition.RETRYABLE,
+            error_code="dependency_timeout",
+            error_message="bounded failure",
+        )
+        assert failure.retry_at is not None
+
+        clock.advance(11)
+        assert (
+            await outbox.claim(publisher_id="publisher-b", event_id=created.outbox_event_id) == ()
+        )
+    finally:
+        await engine.dispose()

@@ -29,7 +29,14 @@ from enterprise_doc_worker.consumer_main import build_consumer_app
 
 create_session_factory(None)
 configure_mappers()
-required = {"tenants", "users", "documents", "document_chunks", "outbox_events"}
+required = {
+    "tenants",
+    "users",
+    "documents",
+    "document_chunks",
+    "outbox_events",
+    "local_token_revocations",
+}
 missing = required.difference(Base.metadata.tables)
 if missing:
     raise SystemExit(f"missing model tables: {sorted(missing)}")
@@ -57,6 +64,7 @@ def test_database_engine_uses_explicit_bounded_pool_settings(
         max_overflow=2,
         pool_timeout_seconds=8,
         pool_recycle_seconds=600,
+        prepare_threshold=None,
     )
 
     assert engine_module.create_database_engine(settings) is sentinel
@@ -67,5 +75,5 @@ def test_database_engine_uses_explicit_bounded_pool_settings(
         "max_overflow": 2,
         "pool_timeout": 8,
         "pool_recycle": 600,
-        "connect_args": {"connect_timeout": 12.0},
+        "connect_args": {"connect_timeout": 12.0, "prepare_threshold": None},
     }

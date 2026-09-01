@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from datetime import datetime
 
 import pytest
 from fastapi import FastAPI
@@ -21,11 +22,11 @@ async def test_runtime_readiness_uses_real_local_dependencies(
             response = await client.get("/health/ready")
 
     assert response.status_code == 200
-    assert response.json() == {
-        "status": "ready",
-        "checks": {
-            "database": {"status": "up"},
-            "redis": {"status": "up"},
-            "object_store": {"status": "up"},
-        },
+    body = response.json()
+    assert body["status"] == "ready"
+    assert body["checks"] == {
+        "database": {"status": "up"},
+        "redis": {"status": "up"},
+        "object_store": {"status": "up"},
     }
+    assert datetime.fromisoformat(body["checked_at"]).tzinfo is not None

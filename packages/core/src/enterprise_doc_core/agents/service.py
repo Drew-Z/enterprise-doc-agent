@@ -28,15 +28,18 @@ from enterprise_doc_core.agents.state import (
     transition_agent_run,
     transition_approval_request,
 )
+from enterprise_doc_core.audit import append_audit_event
 from enterprise_doc_core.config import AgentSettings, ModelProvider, ModelSettings
 from enterprise_doc_core.context import PrincipalContext
 from enterprise_doc_core.documents.models import (
+    Document,
     DocumentIngestionGeneration,
     DocumentIngestionStage,
     DocumentIngestionStatus,
     DocumentVersion,
     DocumentVersionStatus,
 )
+from enterprise_doc_core.documents.policy import document_visible_to_actor
 from enterprise_doc_core.identity.models import Membership, MembershipRole, Tenant, User
 from enterprise_doc_core.jobs import cancel_job_records, create_job_records
 from enterprise_doc_core.jobs.models import Job, JobAttempt
@@ -253,6 +256,19 @@ async def append_agent_run_event(
     run.next_event_seq += 1
     session.add(event)
     await session.flush()
+    await append_audit_event(
+        session,
+        tenant_id=tenant_id,
+        actor_id=actor_id,
+        action=(
+            f"agent_run.{event_type.removeprefix('run.')}"
+            if event_type.startswith("run.")
+            else event_type
+        ),
+        resource_type="agent_run",
+        resource_id=run_id,
+        metadata={"event_type": event_type, **event.public_payload},
+    )
     return event
 
 
@@ -329,6 +345,7 @@ class AgentRunService:
             generation_id = await self._ready_generation_id(
                 session,
                 tenant_id=tenant_id,
+                actor_id=actor_id,
                 document_version_id=request.document_version_id,
             )
 
@@ -408,9 +425,13 @@ class AgentRunService:
                 created_at=run.created_at,
             )
 
-    async def get_status(self, *, run_id: UUID, tenant_id: UUID) -> AgentRunStatusResult:
+    async def get_status(
+        self, *, run_id: UUID, tenant_id: UUID, actor_id: UUID | None = None
+    ) -> AgentRunStatusResult:
         async with self.session_factory() as session:
-            run = await self._get_run(session, run_id=run_id, tenant_id=tenant_id)
+            run = await self._get_run(
+                session, run_id=run_id, tenant_id=tenant_id, actor_id=actor_id
+            )
             return await self._status_result(session, run)
 
     async def list_events(
@@ -418,13 +439,14 @@ class AgentRunService:
         *,
         run_id: UUID,
         tenant_id: UUID,
+        actor_id: UUID | None = None,
         after_seq: int = 0,
         limit: int = 100,
     ) -> tuple[AgentRunEventResult, ...]:
         if after_seq < 0 or not 1 <= limit <= 500:
             raise AgentRunInputInvalid()
         async with self.session_factory() as session:
-            await self._get_run(session, run_id=run_id, tenant_id=tenant_id)
+            await self._get_run(session, run_id=run_id, tenant_id=tenant_id, actor_id=actor_id)
             events = (
                 await session.scalars(
                     select(AgentRunEvent)
@@ -453,15 +475,18 @@ class AgentRunService:
         self,
         *,
         tenant_id: UUID,
+        actor_id: UUID | None = None,
     ) -> tuple[ReadyDocumentVersionResult, ...]:
         statement = (
             select(DocumentVersion, DocumentIngestionGeneration)
+            .join(Document, Document.id == DocumentVersion.document_id)
             .join(
                 DocumentIngestionGeneration,
                 DocumentIngestionGeneration.document_version_id == DocumentVersion.id,
             )
             .where(
                 DocumentVersion.tenant_id == tenant_id,
+                document_visible_to_actor(tenant_id=tenant_id, actor_id=actor_id),
                 DocumentVersion.status == DocumentVersionStatus.READY.value,
                 DocumentIngestionGeneration.tenant_id == tenant_id,
                 DocumentIngestionGeneration.status == DocumentIngestionStatus.SUCCEEDED.value,
@@ -654,6 +679,7 @@ class AgentRunService:
         session: AsyncSession,
         *,
         tenant_id: UUID,
+        actor_id: UUID,
         document_version_id: UUID,
     ) -> UUID:
         generation_id = await session.scalar(
@@ -662,9 +688,11 @@ class AgentRunService:
                 DocumentVersion,
                 DocumentVersion.id == DocumentIngestionGeneration.document_version_id,
             )
+            .join(Document, Document.id == DocumentVersion.document_id)
             .where(
                 DocumentVersion.id == document_version_id,
                 DocumentVersion.tenant_id == tenant_id,
+                document_visible_to_actor(tenant_id=tenant_id, actor_id=actor_id),
                 DocumentVersion.status == DocumentVersionStatus.READY.value,
                 DocumentIngestionGeneration.tenant_id == tenant_id,
                 DocumentIngestionGeneration.document_version_id == document_version_id,
@@ -684,10 +712,16 @@ class AgentRunService:
         *,
         run_id: UUID,
         tenant_id: UUID,
+        actor_id: UUID | None = None,
     ) -> AgentRun:
-        run = await session.scalar(
-            select(AgentRun).where(AgentRun.id == run_id, AgentRun.tenant_id == tenant_id)
-        )
+        statement = select(AgentRun).where(AgentRun.id == run_id, AgentRun.tenant_id == tenant_id)
+        if actor_id is not None:
+            statement = (
+                statement.join(DocumentVersion, DocumentVersion.id == AgentRun.document_version_id)
+                .join(Document, Document.id == DocumentVersion.document_id)
+                .where(document_visible_to_actor(tenant_id=tenant_id, actor_id=actor_id))
+            )
+        run = await session.scalar(statement)
         if run is None:
             raise AgentRunNotFound()
         return run

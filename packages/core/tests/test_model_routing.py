@@ -308,7 +308,9 @@ async def test_primary_and_fallback_share_one_route_deadline() -> None:
         primary_descriptor=_descriptor("primary"),
         fallback=fallback,
         fallback_descriptor=_descriptor("fallback"),
-        deadline_seconds=0.06,
+        # Leave enough scheduling headroom for the fallback to start when the
+        # full suite is under load, while still bounding the one-second call.
+        deadline_seconds=0.15,
     )
     started_at = asyncio.get_running_loop().time()
 

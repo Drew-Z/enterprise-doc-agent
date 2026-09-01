@@ -18,13 +18,50 @@ from enterprise_doc_api.approvals import router as approval_router
 from enterprise_doc_api.approvals.router import ApprovalServiceProtocol
 from enterprise_doc_api.artifacts import router as artifact_router
 from enterprise_doc_api.artifacts.router import AgentArtifactServiceProtocol
+from enterprise_doc_api.audit import router as audit_router
+from enterprise_doc_api.audit.router import (
+    AuditEventServiceProtocol,
+    AuditGovernanceServiceProtocol,
+    governance_router,
+)
 from enterprise_doc_api.auth import (
+    DatabaseExternalMembershipResolver,
     DatabasePrincipalResolver,
+    ExternalPrincipalResolver,
+    JwksExternalIdentityAdapter,
     JwtTokenCodec,
     PrincipalResolver,
 )
+from enterprise_doc_api.auth.session_router import (
+    LocalTokenRevocationServiceProtocol,
+)
+from enterprise_doc_api.auth.session_router import (
+    router as session_router,
+)
 from enterprise_doc_api.config import ApiSettings
+from enterprise_doc_api.documents import router as document_router
+from enterprise_doc_api.documents.router import (
+    DocumentInventoryServiceProtocol,
+    DocumentPolicyServiceProtocol,
+)
 from enterprise_doc_api.errors import register_error_handlers
+from enterprise_doc_api.identity import router as identity_router
+from enterprise_doc_api.identity.members_router import (
+    MembershipAdministrationServiceProtocol,
+)
+from enterprise_doc_api.identity.members_router import (
+    router as members_router,
+)
+from enterprise_doc_api.identity.router import ExternalIdentityBindingServiceProtocol
+from enterprise_doc_api.identity.scim_router import (
+    ScimProvisioningServiceProtocol,
+)
+from enterprise_doc_api.identity.scim_router import (
+    discovery_router as scim_discovery_router,
+)
+from enterprise_doc_api.identity.scim_router import (
+    router as scim_router,
+)
 from enterprise_doc_api.jobs import router as jobs_router
 from enterprise_doc_api.middleware import (
     ApiAuthenticationMiddleware,
@@ -37,7 +74,10 @@ from enterprise_doc_api.uploads.router import (
     UploadSessionServiceProtocol,
 )
 from enterprise_doc_core.agents import AgentArtifactService, AgentRunService, ApprovalService
+from enterprise_doc_core.audit import AuditEventService, AuditGovernanceService
+from enterprise_doc_core.auth import LocalTokenRevocationService
 from enterprise_doc_core.db import create_database_engine, create_session_factory
+from enterprise_doc_core.documents import DocumentInventoryService, DocumentPolicyService
 from enterprise_doc_core.health import (
     ComponentStatus,
     HealthChecker,
@@ -47,6 +87,11 @@ from enterprise_doc_core.health import (
     StaticChecker,
     build_foundation_resources,
 )
+from enterprise_doc_core.identity.membership_service import (
+    MembershipAdministrationService,
+)
+from enterprise_doc_core.identity.scim_service import ScimProvisioningService
+from enterprise_doc_core.identity.service import ExternalIdentityBindingService
 from enterprise_doc_core.jobs import JobRuntimeService
 from enterprise_doc_core.object_store import (
     Boto3ArtifactObjectStore,
@@ -105,14 +150,37 @@ def create_app(
     readiness_cache_ttl_seconds: float | None = None,
     telemetry: TelemetryRuntime | None = None,
     principal_resolver: PrincipalResolver | None = None,
+    external_principal_resolver: PrincipalResolver | None = None,
     upload_creation_service: UploadCreationServiceProtocol | None = None,
     upload_session_service: UploadSessionServiceProtocol | None = None,
+    document_inventory_service: DocumentInventoryServiceProtocol | None = None,
+    document_policy_service: DocumentPolicyServiceProtocol | None = None,
     agent_run_service: AgentRunServiceProtocol | None = None,
     approval_service: ApprovalServiceProtocol | None = None,
     agent_artifact_service: AgentArtifactServiceProtocol | None = None,
+    audit_service: AuditEventServiceProtocol | None = None,
+    audit_governance_service: AuditGovernanceServiceProtocol | None = None,
+    external_identity_binding_service: ExternalIdentityBindingServiceProtocol | None = None,
+    membership_administration_service: MembershipAdministrationServiceProtocol | None = None,
+    scim_provisioning_service: ScimProvisioningServiceProtocol | None = None,
+    token_revocation_service: LocalTokenRevocationServiceProtocol | None = None,
     metrics: MetricsRuntime | None = None,
 ) -> FastAPI:
     resolved_settings = settings if settings is not None else ApiSettings()
+    if (
+        resolved_settings.auth.external_auth_enabled
+        and external_principal_resolver is None
+        and not resolved_settings.auth.external_jwks_url
+    ):
+        raise RuntimeError(
+            "external authentication has no external principal resolver; "
+            "configure a JWKS URL or inject one"
+        )
+    resolved_principal_resolver = (
+        external_principal_resolver
+        if resolved_settings.auth.external_auth_enabled
+        else principal_resolver
+    )
     resolved_metrics = metrics if metrics is not None else MetricsRuntime.create()
     if checkers is None:
         resources = build_foundation_resources(resolved_settings, metrics=resolved_metrics)
@@ -123,12 +191,20 @@ def create_app(
     if resolved_settings.otel.metrics_enabled:
         resolved_checkers = instrument_health_checkers(resolved_checkers, resolved_metrics)
     needs_default_database = (
-        principal_resolver is None
+        resolved_principal_resolver is None
         or upload_creation_service is None
         or upload_session_service is None
+        or document_inventory_service is None
+        or document_policy_service is None
         or agent_run_service is None
         or approval_service is None
         or agent_artifact_service is None
+        or audit_service is None
+        or audit_governance_service is None
+        or external_identity_binding_service is None
+        or membership_administration_service is None
+        or (resolved_settings.auth.scim_enabled and scim_provisioning_service is None)
+        or token_revocation_service is None
     )
     needs_default_object_store = upload_creation_service is None or upload_session_service is None
     owned_database_engine: AsyncEngine | None = None
@@ -159,6 +235,20 @@ def create_app(
         if business_database_engine is not None
         else None
     )
+    if (
+        resolved_settings.auth.external_auth_enabled
+        and resolved_principal_resolver is None
+        and resolved_settings.auth.external_jwks_url
+    ):
+        external_membership_resolver = DatabaseExternalMembershipResolver(
+            session_factory=session_factory,
+        )
+        resolved_principal_resolver = ExternalPrincipalResolver(
+            adapter=JwksExternalIdentityAdapter(settings=resolved_settings.auth),
+            settings=resolved_settings.auth,
+            membership_resolver=external_membership_resolver,
+            identity_binding_resolver=external_membership_resolver,
+        )
     timeout_seconds = readiness_timeout_seconds or max(
         resolved_settings.database.connect_timeout_seconds,
         resolved_settings.redis.connect_timeout_seconds,
@@ -199,7 +289,7 @@ def create_app(
         CORSMiddleware,
         allow_origins=resolved_settings.api.cors_origins,
         allow_credentials=False,
-        allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         allow_headers=[
             "Authorization",
             "Content-Type",
@@ -218,13 +308,14 @@ def create_app(
     )
     register_error_handlers(app)
     app.state.principal_resolver = (
-        principal_resolver
-        if principal_resolver is not None
+        resolved_principal_resolver
+        if resolved_principal_resolver is not None
         else DatabasePrincipalResolver(
             session_factory=session_factory,
             codec=JwtTokenCodec(resolved_settings.auth),
         )
     )
+    app.state.auth_settings = resolved_settings.auth
     app.state.metrics = resolved_metrics
     app.state.readiness_cache = readiness_cache
     app.state.upload_creation_service = (
@@ -251,6 +342,24 @@ def create_app(
     )
     app.state.job_runtime_service = (
         JobRuntimeService(session_factory=session_factory) if session_factory is not None else None
+    )
+    app.state.document_inventory_service = (
+        document_inventory_service
+        if document_inventory_service is not None
+        else DocumentInventoryService(
+            session_factory=_required_session_factory(session_factory),
+        )
+        if session_factory is not None
+        else None
+    )
+    app.state.document_policy_service = (
+        document_policy_service
+        if document_policy_service is not None
+        else DocumentPolicyService(
+            session_factory=_required_session_factory(session_factory),
+        )
+        if session_factory is not None
+        else None
     )
     app.state.agent_run_service = (
         agent_run_service
@@ -282,11 +391,76 @@ def create_app(
         )
     else:
         app.state.agent_artifact_service = agent_artifact_service
+    audit_archive_store = owned_artifact_object_store
+    if audit_archive_store is None and agent_artifact_service is not None:
+        audit_archive_store = getattr(agent_artifact_service, "artifact_store", None)
+    app.state.audit_service = (
+        audit_service
+        if audit_service is not None
+        else AuditEventService(session_factory=_required_session_factory(session_factory))
+        if session_factory is not None
+        else None
+    )
+    app.state.audit_governance_service = (
+        audit_governance_service
+        if audit_governance_service is not None
+        else AuditGovernanceService(
+            session_factory=_required_session_factory(session_factory),
+            archive_store=audit_archive_store,
+            archive_bucket=resolved_settings.object_store.artifacts_bucket,
+        )
+        if session_factory is not None
+        else None
+    )
+    app.state.external_identity_binding_service = (
+        external_identity_binding_service
+        if external_identity_binding_service is not None
+        else ExternalIdentityBindingService(
+            session_factory=_required_session_factory(session_factory),
+        )
+        if session_factory is not None
+        else None
+    )
+    app.state.membership_administration_service = (
+        membership_administration_service
+        if membership_administration_service is not None
+        else MembershipAdministrationService(
+            session_factory=_required_session_factory(session_factory),
+        )
+        if session_factory is not None
+        else None
+    )
+    app.state.scim_provisioning_service = (
+        scim_provisioning_service
+        if scim_provisioning_service is not None
+        else ScimProvisioningService(
+            session_factory=_required_session_factory(session_factory),
+        )
+        if resolved_settings.auth.scim_enabled and session_factory is not None
+        else None
+    )
+    app.state.token_revocation_service = (
+        token_revocation_service
+        if token_revocation_service is not None
+        else LocalTokenRevocationService(
+            session_factory=_required_session_factory(session_factory),
+        )
+        if session_factory is not None
+        else None
+    )
     app.include_router(upload_router)
+    app.include_router(document_router)
     app.include_router(jobs_router)
     app.include_router(agent_router)
     app.include_router(approval_router)
     app.include_router(artifact_router)
+    app.include_router(audit_router)
+    app.include_router(governance_router)
+    app.include_router(session_router)
+    app.include_router(identity_router)
+    app.include_router(members_router)
+    app.include_router(scim_router)
+    app.include_router(scim_discovery_router)
     if resolved_settings.otel.metrics_enabled:
 
         @app.get("/metrics", include_in_schema=False)
@@ -312,10 +486,15 @@ def create_app(
         response_model=ReadinessResponse,
         responses={503: {"model": ReadinessResponse}},
     )
-    async def ready() -> ReadinessResponse | JSONResponse:
+    async def ready(response: Response) -> ReadinessResponse | JSONResponse:
         result = await readiness_cache.get()
+        response.headers["Cache-Control"] = "no-store"
         if result.status is OverallStatus.NOT_READY:
-            return JSONResponse(status_code=503, content=result.model_dump(mode="json"))
+            return JSONResponse(
+                status_code=503,
+                content=result.model_dump(mode="json"),
+                headers={"Cache-Control": "no-store"},
+            )
         return result
 
     return app

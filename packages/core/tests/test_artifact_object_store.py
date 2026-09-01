@@ -159,6 +159,33 @@ async def test_artifact_adapter_caps_get_ttl_and_deletes_without_logging_body() 
     assert control.calls[0][0] == "delete_object"
 
 
+async def test_artifact_adapter_reads_only_the_expected_bounded_body() -> None:
+    control = RecordingArtifactClient()
+    control.body = b'{"answer":"verified"}'
+    adapter = Boto3ArtifactObjectStore(
+        settings=ObjectStoreSettings(),
+        control_client=control,
+        presign_client=RecordingArtifactClient(),
+        max_object_bytes=64,
+    )
+
+    body = await adapter.read_object(
+        bucket="artifacts",
+        key="tenant/run/answer.json",
+        expected_size=len(control.body),
+    )
+
+    assert body == control.body
+    assert control.calls[0][0] == "get_object"
+
+    with pytest.raises(ObjectStoreProtocolError):
+        await adapter.read_object(
+            bucket="artifacts",
+            key="tenant/run/answer.json",
+            expected_size=65,
+        )
+
+
 @pytest.mark.parametrize(
     "kwargs",
     [

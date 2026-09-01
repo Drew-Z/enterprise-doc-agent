@@ -47,6 +47,10 @@ class AgentGraphExecutionResultInvalid(AgentGraphError):
     code = "agent_graph_result_invalid"
 
 
+class AgentGraphExecutionTimeout(AgentGraphError):
+    code = "agent_graph_timeout"
+
+
 class CompiledGraph(Protocol):
     async def ainvoke(
         self,
@@ -128,23 +132,83 @@ class AgentGraphExecutor:
         gateway: ChatModelGateway,
         checkpointer: BaseCheckpointSaver[Any],
         graph_version: str = AGENT_GRAPH_VERSION,
+        execution_timeout_seconds: float = 300.0,
         graph_builder: GraphBuilder = build_agent_graph,
         metrics: MetricsRuntime | None = None,
     ) -> None:
+        if execution_timeout_seconds <= 0:
+            raise ValueError("execution timeout must be positive")
         self.backend_factory = backend_factory
         self.gateway = gateway
         self.checkpointer = checkpointer
         self.graph_version = graph_version
+        self.execution_timeout_seconds = execution_timeout_seconds
         self.graph_builder = graph_builder
         self.metrics = metrics
+
+    @staticmethod
+    def _consume_task_result(task: asyncio.Task[Any]) -> None:
+        """Consume a detached task's terminal exception to avoid loop warnings."""
+        if not task.done():
+            return
+        try:
+            task.exception()
+        except (asyncio.CancelledError, Exception):
+            pass
+
+    @classmethod
+    async def _cancel_execution(cls, execution: asyncio.Task[Any]) -> bool:
+        """Cancel a graph task with two bounded cleanup attempts.
+
+        A graph or one of its async cleanup layers can swallow a cancellation.
+        The caller must still regain control, so a second cancellation is sent
+        after a fixed grace window. If the task remains pending, it is detached
+        with a callback that consumes its eventual result.
+        """
+        for _ in range(2):
+            if execution.done():
+                cls._consume_task_result(execution)
+                return True
+            execution.cancel()
+            done, _ = await asyncio.wait({execution}, timeout=1.0)
+            if done:
+                cls._consume_task_result(execution)
+                return True
+        execution.cancel()
+        if execution.done():
+            cls._consume_task_result(execution)
+            return True
+        execution.add_done_callback(cls._consume_task_result)
+        return False
 
     async def __call__(self, context: AgentExecutionContext) -> None:
         started = perf_counter()
         result_label = "error"
+        execution: asyncio.Task[Any] | None = None
         try:
-            result_label = await self._execute(context)
+            execution = asyncio.create_task(self._execute(context))
+            done, _ = await asyncio.wait(
+                {execution},
+                timeout=self.execution_timeout_seconds,
+            )
+            if done:
+                result_label = execution.result()
+            else:
+                result_label = "timeout"
+                await self._cancel_execution(execution)
+                raise AgentGraphExecutionTimeout()
         except asyncio.CancelledError:
             result_label = "cancelled"
+            if execution is not None and not execution.done():
+                try:
+                    await self._cancel_execution(execution)
+                except asyncio.CancelledError:
+                    # Preserve the caller's cancellation after making a best
+                    # effort to stop the graph task.
+                    pass
+            raise
+        except AgentGraphExecutionTimeout:
+            result_label = "timeout"
             raise
         except AgentGraphError:
             result_label = "permanent_error"
@@ -227,6 +291,7 @@ def build_agent_graph_executor(
     gateway: ChatModelGateway,
     checkpointer: BaseCheckpointSaver[Any],
     graph_version: str = AGENT_GRAPH_VERSION,
+    execution_timeout_seconds: float = 300.0,
     metrics: MetricsRuntime | None = None,
 ) -> AgentGraphExecutor:
     return AgentGraphExecutor(
@@ -234,6 +299,7 @@ def build_agent_graph_executor(
         gateway=gateway,
         checkpointer=checkpointer,
         graph_version=graph_version,
+        execution_timeout_seconds=execution_timeout_seconds,
         metrics=metrics,
     )
 
@@ -245,6 +311,7 @@ def build_durable_agent_handler(
     mcp_settings: McpSettings,
     checkpointer: BaseCheckpointSaver[Any],
     graph_version: str = AGENT_GRAPH_VERSION,
+    execution_timeout_seconds: float = 300.0,
     gateway: ChatModelGateway | None = None,
     mcp_client: McpClient | None = None,
     fault_injection: FaultInjectionSettings | None = None,
@@ -283,6 +350,7 @@ def build_durable_agent_handler(
         gateway=resolved_gateway,
         checkpointer=checkpointer,
         graph_version=graph_version,
+        execution_timeout_seconds=execution_timeout_seconds,
         metrics=metrics,
     )
     return build_agent_execution_handler(session_factory=session_factory, executor=executor)
@@ -290,6 +358,7 @@ def build_durable_agent_handler(
 
 __all__ = [
     "AgentGraphExecutionResultInvalid",
+    "AgentGraphExecutionTimeout",
     "AgentGraphExecutor",
     "build_agent_graph_executor",
     "build_durable_agent_handler",

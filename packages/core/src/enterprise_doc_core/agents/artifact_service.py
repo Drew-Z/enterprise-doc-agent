@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
+import json
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from time import perf_counter
+from typing import Literal
 from uuid import UUID
 
+from pydantic import BaseModel, ConfigDict, Field, JsonValue, ValidationError, model_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -14,11 +18,18 @@ from enterprise_doc_core.agents.models import (
     AgentArtifact,
     AgentArtifactStatus,
     AgentRun,
+    AgentRunTaskType,
 )
+from enterprise_doc_core.agents.schemas import BehaviorVersions, RiskHint
+from enterprise_doc_core.documents.models import Document, DocumentVersion
+from enterprise_doc_core.documents.policy import document_visible_to_actor
+from enterprise_doc_core.documents.retrieval import ResolvedCitation
 from enterprise_doc_core.identity.models import Membership, Tenant, User
 from enterprise_doc_core.object_store import (
     ArtifactObjectStore,
+    ObjectStoreChecksumMismatch,
     ObjectStoreError,
+    ObjectStoreProtocolError,
 )
 from enterprise_doc_core.telemetry import MetricsRuntime
 
@@ -75,6 +86,54 @@ class AgentArtifactDownloadResult:
     size_bytes: int
     url: str
     expires_in_seconds: int
+
+
+@dataclass(frozen=True, slots=True)
+class AgentArtifactPreviewResult:
+    artifact_id: UUID
+    run_id: UUID
+    document_version_id: UUID
+    status: str
+    content_sha256: str
+    schema_version: int
+    task_type: str
+    answer_text: str
+    structured_fields: dict[str, JsonValue] | None
+    risk_hint: str | None
+    citations: tuple[ResolvedCitation, ...]
+    behavior_versions: BehaviorVersions
+
+
+class _ArtifactCitationPayload(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    chunk_id: UUID
+    document_version_id: UUID
+    source_filename: str | None = Field(default=None, max_length=255)
+    page_number: int | None = Field(default=None, ge=1)
+    heading: str | None = Field(default=None, max_length=500)
+    start_offset: int = Field(ge=0)
+    end_offset: int = Field(ge=0)
+    excerpt: str = Field(min_length=1, max_length=500)
+
+    @model_validator(mode="after")
+    def validate_offsets(self) -> _ArtifactCitationPayload:
+        if self.end_offset < self.start_offset:
+            raise ValueError("end_offset must be greater than or equal to start_offset")
+        return self
+
+
+class _AgentArtifactPayload(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    schema_version: Literal[1]
+    run_id: UUID
+    task_type: AgentRunTaskType
+    answer_text: str = Field(min_length=1, max_length=100_000)
+    structured_fields: dict[str, JsonValue] | None
+    risk_hint: RiskHint | None
+    citations: list[_ArtifactCitationPayload] = Field(min_length=1, max_length=50)
+    behavior_versions: BehaviorVersions
 
 
 def _utcnow() -> datetime:
@@ -148,7 +207,14 @@ class AgentArtifactService:
         async with self.session_factory() as session:
             await self._require_membership(session, tenant_id=tenant_id, actor_id=actor_id)
             run = await session.scalar(
-                select(AgentRun).where(AgentRun.id == run_id, AgentRun.tenant_id == tenant_id)
+                select(AgentRun)
+                .join(DocumentVersion, DocumentVersion.id == AgentRun.document_version_id)
+                .join(Document, Document.id == DocumentVersion.document_id)
+                .where(
+                    AgentRun.id == run_id,
+                    AgentRun.tenant_id == tenant_id,
+                    document_visible_to_actor(tenant_id=tenant_id, actor_id=actor_id),
+                )
             )
             if run is None:
                 raise AgentArtifactNotFound()
@@ -214,6 +280,48 @@ class AgentArtifactService:
                     duration=perf_counter() - started,
                 )
 
+    async def get_preview(
+        self,
+        *,
+        tenant_id: UUID,
+        actor_id: UUID,
+        artifact_id: UUID,
+    ) -> AgentArtifactPreviewResult:
+        started = perf_counter()
+        result_label = "error"
+        try:
+            result = await self._get_preview(
+                tenant_id=tenant_id,
+                actor_id=actor_id,
+                artifact_id=artifact_id,
+            )
+        except asyncio.CancelledError:
+            result_label = "cancelled"
+            raise
+        except AgentArtifactNotFound:
+            result_label = "not_found"
+            raise
+        except AgentArtifactPrincipalForbidden:
+            result_label = "forbidden"
+            raise
+        except AgentArtifactStoreUnavailable:
+            result_label = "retryable_error"
+            raise
+        except AgentArtifactError:
+            result_label = "permanent_error"
+            raise
+        else:
+            result_label = "success"
+            return result
+        finally:
+            if self.metrics is not None:
+                self.metrics.observe_boundary(
+                    boundary="artifact",
+                    operation="read",
+                    result=result_label,
+                    duration=perf_counter() - started,
+                )
+
     async def _get_download(
         self,
         *,
@@ -226,10 +334,13 @@ class AgentArtifactService:
             row = await session.execute(
                 select(AgentArtifact, AgentRun)
                 .join(AgentRun, AgentRun.id == AgentArtifact.run_id)
+                .join(DocumentVersion, DocumentVersion.id == AgentRun.document_version_id)
+                .join(Document, Document.id == DocumentVersion.document_id)
                 .where(
                     AgentArtifact.id == artifact_id,
                     AgentArtifact.tenant_id == tenant_id,
                     AgentRun.tenant_id == tenant_id,
+                    document_visible_to_actor(tenant_id=tenant_id, actor_id=actor_id),
                 )
             )
             pair = row.one_or_none()
@@ -251,6 +362,8 @@ class AgentArtifactService:
                 )
             except AgentArtifactError:
                 raise
+            except (ObjectStoreChecksumMismatch, ObjectStoreProtocolError) as error:
+                raise AgentArtifactIntegrityError() from error
             except ObjectStoreError as error:
                 raise AgentArtifactStoreUnavailable() from error
             return AgentArtifactDownloadResult(
@@ -261,6 +374,63 @@ class AgentArtifactService:
                 size_bytes=artifact.size_bytes or 0,
                 url=signed.url,
                 expires_in_seconds=signed.expires_in_seconds,
+            )
+
+    async def _get_preview(
+        self,
+        *,
+        tenant_id: UUID,
+        actor_id: UUID,
+        artifact_id: UUID,
+    ) -> AgentArtifactPreviewResult:
+        async with self.session_factory() as session:
+            await self._require_membership(session, tenant_id=tenant_id, actor_id=actor_id)
+            row = await session.execute(
+                select(AgentArtifact, AgentRun)
+                .join(AgentRun, AgentRun.id == AgentArtifact.run_id)
+                .join(DocumentVersion, DocumentVersion.id == AgentRun.document_version_id)
+                .join(Document, Document.id == DocumentVersion.document_id)
+                .where(
+                    AgentArtifact.id == artifact_id,
+                    AgentArtifact.tenant_id == tenant_id,
+                    AgentRun.tenant_id == tenant_id,
+                    document_visible_to_actor(tenant_id=tenant_id, actor_id=actor_id),
+                )
+            )
+            pair = row.one_or_none()
+            if pair is None:
+                raise AgentArtifactNotFound()
+            artifact, run = pair
+            if not self._is_visible(artifact=artifact, run=run):
+                raise AgentArtifactNotFound()
+            if artifact.content_type != "application/json":
+                raise AgentArtifactIntegrityError()
+            try:
+                head = await self.artifact_store.head_object(
+                    bucket=artifact.object_bucket,
+                    key=artifact.object_key,
+                )
+                self._verify(artifact, size_bytes=head.size_bytes, metadata=dict(head.metadata))
+                body = await self.artifact_store.read_object(
+                    bucket=artifact.object_bucket,
+                    key=artifact.object_key,
+                    expected_size=head.size_bytes,
+                )
+            except AgentArtifactError:
+                raise
+            except (ObjectStoreChecksumMismatch, ObjectStoreProtocolError) as error:
+                raise AgentArtifactIntegrityError() from error
+            except ObjectStoreError as error:
+                raise AgentArtifactStoreUnavailable() from error
+            if hashlib.sha256(body).hexdigest() != artifact.content_sha256:
+                raise AgentArtifactIntegrityError()
+            return _parse_preview_payload(
+                body,
+                artifact_id=artifact.id,
+                expected_run_id=run.id,
+                expected_document_version_id=artifact.source_document_version_id,
+                status=artifact.status,
+                content_sha256=artifact.content_sha256 or "",
             )
 
     @staticmethod
@@ -333,11 +503,58 @@ class AgentArtifactService:
         )
 
 
+def _parse_preview_payload(
+    body: bytes,
+    *,
+    artifact_id: UUID,
+    expected_run_id: UUID,
+    expected_document_version_id: UUID,
+    status: str,
+    content_sha256: str,
+) -> AgentArtifactPreviewResult:
+    try:
+        payload = _AgentArtifactPayload.model_validate_json(body)
+    except (ValidationError, ValueError, json.JSONDecodeError) as error:
+        raise AgentArtifactIntegrityError() from error
+    if payload.run_id != expected_run_id or any(
+        citation.document_version_id != expected_document_version_id
+        for citation in payload.citations
+    ):
+        raise AgentArtifactIntegrityError()
+    return AgentArtifactPreviewResult(
+        artifact_id=artifact_id,
+        run_id=payload.run_id,
+        document_version_id=expected_document_version_id,
+        status=status,
+        content_sha256=content_sha256,
+        schema_version=payload.schema_version,
+        task_type=payload.task_type.value,
+        answer_text=payload.answer_text,
+        structured_fields=payload.structured_fields,
+        risk_hint=payload.risk_hint.value if payload.risk_hint is not None else None,
+        citations=tuple(
+            ResolvedCitation(
+                chunk_id=citation.chunk_id,
+                document_version_id=citation.document_version_id,
+                source_filename=citation.source_filename,
+                page_number=citation.page_number,
+                heading=citation.heading,
+                start_offset=citation.start_offset,
+                end_offset=citation.end_offset,
+                excerpt=citation.excerpt,
+            )
+            for citation in payload.citations
+        ),
+        behavior_versions=payload.behavior_versions,
+    )
+
+
 __all__ = [
     "AgentArtifactDownloadResult",
     "AgentArtifactError",
     "AgentArtifactIntegrityError",
     "AgentArtifactNotFound",
+    "AgentArtifactPreviewResult",
     "AgentArtifactPrincipalForbidden",
     "AgentArtifactResult",
     "AgentArtifactService",

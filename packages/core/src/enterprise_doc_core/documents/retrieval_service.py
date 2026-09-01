@@ -13,12 +13,14 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from enterprise_doc_core.documents.ingestion import EmbeddingProvider
 from enterprise_doc_core.documents.models import (
     DEFAULT_EMBEDDING_DIMENSION,
+    Document,
     DocumentChunk,
     DocumentIngestionGeneration,
     DocumentIngestionStage,
     DocumentIngestionStatus,
     DocumentVersion,
 )
+from enterprise_doc_core.documents.policy import document_visible_to_actor
 from enterprise_doc_core.documents.retrieval import (
     RefusalReason,
     RetrievalCandidate,
@@ -118,6 +120,7 @@ class HybridRetrievalService:
         self,
         *,
         tenant_id: UUID,
+        actor_id: UUID | None = None,
         document_version_id: UUID,
         query: str,
     ) -> RetrievalDecision:
@@ -125,6 +128,7 @@ class HybridRetrievalService:
         try:
             decision = await self._retrieve(
                 tenant_id=tenant_id,
+                actor_id=actor_id,
                 document_version_id=document_version_id,
                 query=query,
             )
@@ -159,6 +163,7 @@ class HybridRetrievalService:
         self,
         *,
         tenant_id: UUID,
+        actor_id: UUID | None = None,
         document_version_id: UUID,
         query: str,
     ) -> RetrievalDecision:
@@ -171,6 +176,7 @@ class HybridRetrievalService:
             )
         keyword_candidates = await self._keyword_recall(
             tenant_id=tenant_id,
+            actor_id=actor_id,
             document_version_id=document_version_id,
             query=normalized_query,
         )
@@ -180,6 +186,7 @@ class HybridRetrievalService:
             raise ValueError("embedding provider returned an invalid query batch")
         vector_candidates = await self._vector_recall(
             tenant_id=tenant_id,
+            actor_id=actor_id,
             document_version_id=document_version_id,
             vector=vectors[0],
         )
@@ -202,12 +209,13 @@ class HybridRetrievalService:
         )
 
     async def _keyword_recall(
-        self, *, tenant_id: UUID, document_version_id: UUID, query: str
+        self, *, tenant_id: UUID, actor_id: UUID | None, document_version_id: UUID, query: str
     ) -> tuple[RetrievalCandidate, ...]:
         ts_query = func.websearch_to_tsquery("simple", query)
         rank = func.ts_rank_cd(DocumentChunk.search_vector, ts_query)
         candidates = await self._execute_keyword_recall(
             tenant_id=tenant_id,
+            actor_id=actor_id,
             document_version_id=document_version_id,
             ts_query=ts_query,
             rank=rank,
@@ -225,6 +233,7 @@ class HybridRetrievalService:
         fallback_rank = func.ts_rank_cd(DocumentChunk.search_vector, fallback_ts_query)
         return await self._execute_keyword_recall(
             tenant_id=tenant_id,
+            actor_id=actor_id,
             document_version_id=document_version_id,
             ts_query=fallback_ts_query,
             rank=fallback_rank,
@@ -234,6 +243,7 @@ class HybridRetrievalService:
         self,
         *,
         tenant_id: UUID,
+        actor_id: UUID | None,
         document_version_id: UUID,
         ts_query: Any,
         rank: Any,
@@ -257,7 +267,9 @@ class HybridRetrievalService:
                 DocumentIngestionGeneration.id == DocumentChunk.generation_id,
             )
             .join(DocumentVersion, DocumentVersion.id == DocumentChunk.document_version_id)
+            .join(Document, Document.id == DocumentVersion.document_id)
             .where(
+                document_visible_to_actor(tenant_id=tenant_id, actor_id=actor_id),
                 DocumentChunk.tenant_id == tenant_id,
                 DocumentChunk.document_version_id == document_version_id,
                 DocumentIngestionGeneration.tenant_id == DocumentChunk.tenant_id,
@@ -295,6 +307,7 @@ class HybridRetrievalService:
         self,
         *,
         tenant_id: UUID,
+        actor_id: UUID | None,
         document_version_id: UUID,
         vector: Sequence[float],
     ) -> tuple[RetrievalCandidate, ...]:
@@ -318,7 +331,9 @@ class HybridRetrievalService:
                 DocumentIngestionGeneration.id == DocumentChunk.generation_id,
             )
             .join(DocumentVersion, DocumentVersion.id == DocumentChunk.document_version_id)
+            .join(Document, Document.id == DocumentVersion.document_id)
             .where(
+                document_visible_to_actor(tenant_id=tenant_id, actor_id=actor_id),
                 DocumentChunk.tenant_id == tenant_id,
                 DocumentChunk.document_version_id == document_version_id,
                 DocumentChunk.embedding.is_not(None),

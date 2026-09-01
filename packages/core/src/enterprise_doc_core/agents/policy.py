@@ -23,6 +23,7 @@ from enterprise_doc_core.agents.models import (
     ApprovalRequestStatus,
 )
 from enterprise_doc_core.documents.models import (
+    Document,
     DocumentChunk,
     DocumentIngestionGeneration,
     DocumentIngestionStage,
@@ -30,6 +31,7 @@ from enterprise_doc_core.documents.models import (
     DocumentVersion,
     DocumentVersionStatus,
 )
+from enterprise_doc_core.documents.policy import document_visible_to_actor
 from enterprise_doc_core.identity.models import Membership, MembershipRole, Tenant, User
 from enterprise_doc_core.jobs.models import Job, JobAttempt, JobAttemptStatus, JobStatus
 
@@ -194,10 +196,16 @@ async def reload_tool_policy(
         raise ToolApprovalError()
 
     version = await session.scalar(
-        select(DocumentVersion).where(
+        select(DocumentVersion)
+        .join(Document, Document.id == DocumentVersion.document_id)
+        .where(
             DocumentVersion.id == context.target_document_version_id,
             DocumentVersion.tenant_id == context.tenant_id,
             DocumentVersion.status == DocumentVersionStatus.READY.value,
+            document_visible_to_actor(
+                tenant_id=context.tenant_id,
+                actor_id=context.actor_id,
+            ),
         )
     )
     if version is None:

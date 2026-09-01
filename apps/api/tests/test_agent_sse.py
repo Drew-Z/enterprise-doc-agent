@@ -44,7 +44,10 @@ class StubAgentRunService:
         self.events: list[AgentRunEventResult] = []
         self.list_calls: list[int] = []
 
-    async def get_status(self, *, run_id: UUID, tenant_id: UUID) -> AgentRunStatusResult:
+    async def get_status(
+        self, *, run_id: UUID, tenant_id: UUID, actor_id: UUID
+    ) -> AgentRunStatusResult:
+        assert actor_id
         assert run_id == self.run_id
         assert tenant_id == self.tenant_id
         return AgentRunStatusResult(
@@ -98,11 +101,13 @@ class StubAgentRunService:
         *,
         run_id: UUID,
         tenant_id: UUID,
+        actor_id: UUID,
         after_seq: int = 0,
         limit: int = 100,
     ) -> tuple[AgentRunEventResult, ...]:
         assert run_id == self.run_id
         assert tenant_id == self.tenant_id
+        assert actor_id
         self.list_calls.append(after_seq)
         return tuple(event for event in self.events if event.seq > after_seq)[:limit]
 
@@ -192,6 +197,7 @@ async def test_sse_disconnect_stops_polling_and_heartbeat_is_comment_only() -> N
         request=probe,
         run_id=service.run_id,
         tenant_id=service.tenant_id,
+        actor_id=uuid4(),
         after_seq=0,
         initial_status="running",
         sleep=fake_sleep,

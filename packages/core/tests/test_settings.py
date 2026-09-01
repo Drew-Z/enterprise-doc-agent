@@ -18,6 +18,7 @@ def test_nested_environment_values_are_parsed(monkeypatch: pytest.MonkeyPatch) -
     monkeypatch.setenv("DATABASE__MAX_OVERFLOW", "1")
     monkeypatch.setenv("DATABASE__POOL_TIMEOUT_SECONDS", "7")
     monkeypatch.setenv("DATABASE__POOL_RECYCLE_SECONDS", "480")
+    monkeypatch.setenv("DATABASE__PREPARE_THRESHOLD", "0")
     monkeypatch.setenv("REDIS__URL", "redis://:password@redis:6379/1")
     monkeypatch.setenv("OBJECT_STORE__ACCESS_KEY", "test-access")
     monkeypatch.setenv("OBJECT_STORE__SECRET_KEY", "test-secret")
@@ -31,10 +32,16 @@ def test_nested_environment_values_are_parsed(monkeypatch: pytest.MonkeyPatch) -
     monkeypatch.setenv("UPLOAD__CLEANUP_CLAIM_TTL_SECONDS", "120")
     monkeypatch.setenv("UPLOAD__CLEANUP_COMPLETING_GRACE_SECONDS", "600")
     monkeypatch.setenv("EMBEDDING__INGESTION_MAX_ATTEMPTS", "5")
+    monkeypatch.setenv("AGENT__EXECUTION_TIMEOUT_SECONDS", "12.5")
     monkeypatch.setenv("OTEL__ENABLED", "true")
     monkeypatch.setenv("OTEL__SAMPLE_RATIO", "0.25")
     monkeypatch.setenv("EMBEDDING__QUERY_INSTRUCTION", "Retrieve enterprise evidence")
     monkeypatch.setenv("RETRIEVAL__REQUIRE_VECTOR_EVIDENCE", "true")
+    monkeypatch.setenv(
+        "MCP__DATABASE_URL",
+        "postgresql+psycopg://user:password@db:6543/test",
+    )
+    monkeypatch.setenv("MCP__DATABASE_TRANSACTION_MODE", "true")
 
     settings = FoundationSettings(_env_file=None)
 
@@ -44,6 +51,7 @@ def test_nested_environment_values_are_parsed(monkeypatch: pytest.MonkeyPatch) -
     assert settings.database.max_overflow == 1
     assert settings.database.pool_timeout_seconds == 7
     assert settings.database.pool_recycle_seconds == 480
+    assert settings.database.prepare_threshold == 0
     assert settings.redis.url.get_secret_value().endswith("@redis:6379/1")
     assert settings.object_store.secret_key.get_secret_value() == "test-secret"
     assert settings.object_store.multipart_checksum_mode is ObjectStoreChecksumMode.READBACK_SHA256
@@ -55,10 +63,22 @@ def test_nested_environment_values_are_parsed(monkeypatch: pytest.MonkeyPatch) -
     assert settings.upload.cleanup_claim_ttl_seconds == 120
     assert settings.upload.cleanup_completing_grace_seconds == 600
     assert settings.embedding.ingestion_max_attempts == 5
+    assert settings.agent.execution_timeout_seconds == 12.5
     assert settings.otel.enabled is True
     assert settings.otel.sample_ratio == 0.25
     assert settings.embedding.query_instruction == "Retrieve enterprise evidence"
     assert settings.retrieval.require_vector_evidence is True
+    assert settings.mcp.database_url is not None
+    assert settings.mcp.database_url.get_secret_value().endswith("@db:6543/test")
+    assert settings.mcp.database_transaction_mode is True
+
+
+def test_mcp_transaction_mode_requires_dedicated_database_url() -> None:
+    with pytest.raises(ValidationError, match="dedicated database URL"):
+        FoundationSettings(
+            _env_file=None,
+            mcp={"database_transaction_mode": True},
+        )
 
 
 def test_non_local_environment_rejects_local_defaults(

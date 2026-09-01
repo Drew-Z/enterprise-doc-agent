@@ -11,9 +11,12 @@ from enterprise_doc_core.agents import (
     AgentArtifactDownloadResult,
     AgentArtifactIntegrityError,
     AgentArtifactNotFound,
+    AgentArtifactPreviewResult,
     AgentArtifactResult,
+    BehaviorVersions,
 )
 from enterprise_doc_core.context import PrincipalContext
+from enterprise_doc_core.documents import ResolvedCitation
 
 
 class StubPrincipalResolver:
@@ -66,6 +69,40 @@ class StubArtifactService:
             expires_in_seconds=300,
         )
 
+    async def get_preview(self, **kwargs: object) -> AgentArtifactPreviewResult:
+        self.calls.append(("preview", kwargs))
+        if self.error is not None:
+            raise self.error
+        return AgentArtifactPreviewResult(
+            artifact_id=self.artifact_id,
+            run_id=self.run_id,
+            document_version_id=self.document_version_id,
+            status="published",
+            content_sha256="a" * 64,
+            schema_version=1,
+            task_type="question_answer",
+            answer_text="Payment is due within 30 days.",
+            structured_fields=None,
+            risk_hint="low",
+            citations=(
+                ResolvedCitation(
+                    chunk_id=uuid4(),
+                    document_version_id=self.document_version_id,
+                    source_filename="contract.pdf",
+                    page_number=3,
+                    heading="Payment terms",
+                    start_offset=120,
+                    end_offset=168,
+                    excerpt="Invoices are payable within thirty calendar days.",
+                ),
+            ),
+            behavior_versions=BehaviorVersions(
+                graph_version="graph-v1",
+                prompt_version="prompt-v1",
+                tool_schema_version="tool-v1",
+            ),
+        )
+
 
 def _principal() -> PrincipalContext:
     return PrincipalContext(tenant_id=str(uuid4()), actor_id=str(uuid4()), role="owner")
@@ -98,6 +135,10 @@ async def test_artifact_list_and_download_are_authenticated_and_tenant_scoped() 
             f"/api/agent-runs/{service.run_id}/artifacts",
             headers=headers,
         )
+        preview = await client.get(
+            f"/api/agent-artifacts/{service.artifact_id}",
+            headers=headers,
+        )
         download = await client.get(
             f"/api/agent-artifacts/{service.artifact_id}/download",
             headers=headers,
@@ -107,6 +148,12 @@ async def test_artifact_list_and_download_are_authenticated_and_tenant_scoped() 
     assert artifacts.status_code == 200
     assert artifacts.json()[0]["artifactId"] == str(service.artifact_id)
     assert "objectKey" not in artifacts.json()[0]
+    assert preview.status_code == 200
+    assert preview.json()["answerText"] == "Payment is due within 30 days."
+    assert preview.json()["citations"][0]["sourceFilename"] == "contract.pdf"
+    assert preview.json()["behaviorVersions"]["graphVersion"] == "graph-v1"
+    assert "objectKey" not in preview.text
+    assert "url" not in preview.json()
     assert download.status_code == 200
     assert download.json()["url"] == "https://object.test/signed-answer"
     expected_scope = {
@@ -115,6 +162,7 @@ async def test_artifact_list_and_download_are_authenticated_and_tenant_scoped() 
     }
     assert service.calls == [
         ("list", {**expected_scope, "run_id": service.run_id}),
+        ("preview", {**expected_scope, "artifact_id": service.artifact_id}),
         ("download", {**expected_scope, "artifact_id": service.artifact_id}),
     ]
 
