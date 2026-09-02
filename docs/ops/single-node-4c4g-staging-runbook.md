@@ -91,3 +91,27 @@ The canonical command sequence and descriptor checks are maintained in the
 After all four images import successfully, dispatch a new staging run with the same
 immutable digests and require every existing migration, rollout, embedding, readiness
 and authenticated smoke gate to pass.
+
+## Governance smoke
+
+The main upload/Agent smoke proves the primary business path. A separate governance
+smoke is available for a dedicated synthetic staging tenant when the protected
+environment variable below is set:
+
+```text
+STAGING_RUN_GOVERNANCE_SMOKE=true
+```
+
+The operator must provision two short-lived environment secrets for that tenant:
+`STAGING_GOVERNANCE_OWNER_TOKEN` and `STAGING_GOVERNANCE_MEMBER_TOKEN`. Do not paste
+either token into a workflow input, command line, repository file or chat message.
+The smoke verifies restricted-document grant/revoke, member denial, owner-only
+retention/legal-hold governance, optional archive verification, and external identity
+binding deactivate/reactivate. It writes only sanitized step status and bounded counts;
+document IDs, actor IDs, emails, issuer/subject values, object keys and signed URLs are
+not evidence.
+
+The governance result is recorded separately from the ordinary rollout outcomes. A
+required governance smoke that is skipped or fails keeps the staging release from
+being promoted. This evidence still does not prove external IdP/SSO, complete ABAC,
+WORM compliance, production capacity, HA or disaster recovery.

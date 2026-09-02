@@ -88,6 +88,8 @@ def _build(
     fallback_model_version: str | None = "2026-08-17",
     fallback_model_timeout_seconds: str | None = "60",
     embedding_version: int = 2,
+    governance_smoke_required: bool = False,
+    governance_smoke_outcome: str = "skipped",
 ) -> dict[str, object]:
     return build_record(
         _manifest(tmp_path / "evidence.json"),
@@ -111,6 +113,8 @@ def _build(
         ),
         embedding_version=embedding_version,
         smoke_required=smoke_required,
+        governance_smoke_required=governance_smoke_required,
+        governance_smoke_outcome=governance_smoke_outcome,
         output=tmp_path / "record.json",
     )
 
@@ -139,6 +143,24 @@ def test_staging_record_passes_only_with_rollout_and_smoke(tmp_path: Path) -> No
     assert record["embedding"]["version"] == 2
     assert record["embedding"]["rollout"]["reindex"]["final_selected"] == 0
     assert record["embedding"]["rollout_report"]["sha256"]
+
+
+def test_required_governance_smoke_blocks_promotion_when_skipped(tmp_path: Path) -> None:
+    record = _build(
+        tmp_path,
+        outcomes=_outcomes(),
+        smoke_required=True,
+        governance_smoke_required=True,
+        governance_smoke_outcome="skipped",
+    )
+    assert record["status"] == "failed"
+    assert record["governance_smoke"] == {"required": True, "outcome": "skipped"}
+
+
+def test_optional_governance_smoke_is_recorded_as_skipped(tmp_path: Path) -> None:
+    record = _build(tmp_path, outcomes=_outcomes(), smoke_required=True)
+    assert record["status"] == "passed"
+    assert record["governance_smoke"] == {"required": False, "outcome": "skipped"}
 
 
 def test_staging_record_preserves_alternate_embedding_version(tmp_path: Path) -> None:

@@ -1,0 +1,4 @@
+{"file":".trellis/spec/backend/cicd-kubernetes.md","reason":"Staging workflow, secret handling, evidence sanitization and RBAC boundaries."}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Python test, lint, type-check and boundary-mocking requirements."}
+{"file":".trellis/spec/backend/logging-guidelines.md","reason":"Credential and signed-URL redaction rules for smoke output."}
+{"file":"scripts/staging_smoke.py","reason":"Reuse the reviewed HTTPS client and endpoint validation boundary."}

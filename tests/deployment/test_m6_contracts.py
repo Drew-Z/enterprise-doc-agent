@@ -1058,6 +1058,28 @@ def test_staging_model_routing_uses_environment_variables_within_dispatch_limit(
     assert '--fallback-model-timeout-seconds "$MODEL_FALLBACK_TIMEOUT_SECONDS"' in collect_command
 
 
+def test_staging_governance_smoke_is_opt_in_and_secret_backed() -> None:
+    workflow, steps = _deploy_workflow()
+    trigger = workflow.get("on", workflow.get(True))
+    assert isinstance(trigger, dict)
+    assert len(trigger["workflow_dispatch"]["inputs"]) == 10
+    smoke = _named_step(steps, "Run staging governance smoke")
+    assert smoke["if"] == "inputs.run_smoke && vars.STAGING_RUN_GOVERNANCE_SMOKE == 'true'"
+    env = smoke["env"]
+    assert env["STAGING_GOVERNANCE_OWNER_TOKEN"] == "${{ secrets.STAGING_GOVERNANCE_OWNER_TOKEN }}"
+    assert (
+        env["STAGING_GOVERNANCE_MEMBER_TOKEN"] == "${{ secrets.STAGING_GOVERNANCE_MEMBER_TOKEN }}"
+    )
+    command = str(smoke["run"])
+    assert "scripts/staging_governance_smoke.py" in command
+    assert "--owner-token" not in command and "--member-token" not in command
+    assert "STAGING_GOVERNANCE_OWNER_TOKEN" in command
+    evidence = _named_step(steps, "Collect sanitized release evidence")
+    assert "staging-governance-smoke-${GITHUB_SHA}.json" in str(evidence["run"])
+    assert "GOVERNANCE_SMOKE_REQUIRED" in evidence["env"]
+    assert "GOVERNANCE_SMOKE_OUTCOME" in evidence["env"]
+
+
 def test_tiny_staging_runbook_keeps_r2_presign_on_the_s3_api_surface() -> None:
     runbook = (ROOT / "docs/ops/tiny-staging-runbook.md").read_text(encoding="utf-8")
     assert "r2.cloudflarestorage.com" in runbook

@@ -289,6 +289,8 @@ def build_record(
     fallback_model_name: str | None = None,
     fallback_model_version: str | None = None,
     fallback_model_timeout_seconds: str | None = None,
+    governance_smoke_required: bool = False,
+    governance_smoke_outcome: str = "skipped",
 ) -> dict[str, Any]:
     if deployment_profile not in DEPLOYMENT_PROFILES:
         raise StagingReleaseRecordError("deployment profile is not reviewed")
@@ -309,6 +311,8 @@ def build_record(
         raise StagingReleaseRecordError("workflow outcomes are incomplete")
     if any(value not in OUTCOME_VALUES for value in outcomes.values()):
         raise StagingReleaseRecordError("workflow outcomes contain an invalid value")
+    if governance_smoke_outcome not in OUTCOME_VALUES:
+        raise StagingReleaseRecordError("governance smoke outcome is invalid")
     model, model_error = _model_metadata(
         model_provider=model_provider,
         model_base_url=model_base_url,
@@ -330,11 +334,12 @@ def build_record(
 
     rollout_ok = all(outcomes[name] == "success" for name in ROLLOUT_STEPS)
     smoke_ok = all(outcomes[name] == "success" for name in SMOKE_STEPS)
+    governance_ok = not governance_smoke_required or governance_smoke_outcome == "success"
     if model_error is not None or fallback_model_error is not None or embedding_error is not None:
         status = "failed"
         blocking_reason = None
         failure_reason = "Model routing validation failed before staging rollout."
-    elif rollout_ok and smoke_required and smoke_ok:
+    elif rollout_ok and smoke_required and smoke_ok and governance_ok:
         status = "passed"
         blocking_reason = None
         failure_reason = None
@@ -364,6 +369,10 @@ def build_record(
         "embedding": embedding,
         "image_digests": image_digests,
         "outcomes": outcomes,
+        "governance_smoke": {
+            "required": governance_smoke_required,
+            "outcome": governance_smoke_outcome,
+        },
         "evidence_manifest": {
             "path": evidence_manifest.as_posix(),
             "sha256": hashlib.sha256(evidence_manifest.read_bytes()).hexdigest(),
@@ -397,6 +406,10 @@ def main() -> None:
     parser.add_argument("--embedding-version", type=int, default=2)
     parser.add_argument("--embedding-rollout-report", type=Path, required=True)
     parser.add_argument("--smoke-required", choices=("true", "false"), required=True)
+    parser.add_argument("--governance-smoke-required", choices=("true", "false"), default="false")
+    parser.add_argument(
+        "--governance-smoke-outcome", choices=sorted(OUTCOME_VALUES), default="skipped"
+    )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     try:
@@ -426,6 +439,8 @@ def main() -> None:
             embedding_model_name=args.embedding_model_name,
             embedding_version=args.embedding_version,
             smoke_required=args.smoke_required == "true",
+            governance_smoke_required=args.governance_smoke_required == "true",
+            governance_smoke_outcome=args.governance_smoke_outcome,
             output=args.output,
         )
     except (OSError, json.JSONDecodeError, StagingReleaseRecordError) as error:

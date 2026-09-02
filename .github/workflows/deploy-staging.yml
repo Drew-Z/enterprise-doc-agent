@@ -598,6 +598,27 @@ jobs:
             --allowed-host "$STAGING_ALLOWED_HOST" \
             --allowed-object-store-host "$STAGING_OBJECT_STORE_ALLOWED_HOST" \
             --report-path "tmp/staging-smoke-${GITHUB_SHA}.json"
+      - name: Run staging governance smoke
+        id: governance_smoke
+        if: inputs.run_smoke && vars.STAGING_RUN_GOVERNANCE_SMOKE == 'true'
+        env:
+          STAGING_BASE_URL: ${{ inputs.staging_base_url }}
+          STAGING_ALLOWED_HOST: ${{ vars.STAGING_ALLOWED_HOST }}
+          STAGING_OBJECT_STORE_ALLOWED_HOST: ${{ vars.STAGING_OBJECT_STORE_ALLOWED_HOST }}
+          STAGING_GOVERNANCE_OWNER_TOKEN: ${{ secrets.STAGING_GOVERNANCE_OWNER_TOKEN }}
+          STAGING_GOVERNANCE_MEMBER_TOKEN: ${{ secrets.STAGING_GOVERNANCE_MEMBER_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$STAGING_BASE_URL"
+          test -n "$STAGING_ALLOWED_HOST"
+          test -n "$STAGING_OBJECT_STORE_ALLOWED_HOST"
+          test -n "$STAGING_GOVERNANCE_OWNER_TOKEN"
+          test -n "$STAGING_GOVERNANCE_MEMBER_TOKEN"
+          "$RUNNER_PYTHON" scripts/staging_governance_smoke.py \
+            --base-url "$STAGING_BASE_URL" \
+            --allowed-host "$STAGING_ALLOWED_HOST" \
+            --allowed-object-store-host "$STAGING_OBJECT_STORE_ALLOWED_HOST" \
+            --report-path "tmp/staging-governance-smoke-${GITHUB_SHA}.json"
       - name: Restore tiny workloads after deployment attempt
         if: always()
         env:
@@ -646,6 +667,8 @@ jobs:
           EMBEDDING_ROLLOUT_OUTCOME: ${{ steps.embedding_rollout.outcome }}
           CLUSTER_SMOKE_OUTCOME: ${{ steps.cluster_smoke.outcome }}
           AUTHENTICATED_SMOKE_OUTCOME: ${{ steps.authenticated_smoke.outcome }}
+          GOVERNANCE_SMOKE_REQUIRED: ${{ vars.STAGING_RUN_GOVERNANCE_SMOKE == 'true' }}
+          GOVERNANCE_SMOKE_OUTCOME: ${{ steps.governance_smoke.outcome || 'skipped' }}
         run: |
           set -euo pipefail
           mkdir -p tmp
@@ -671,6 +694,9 @@ jobs:
           done
           if test -f "tmp/staging-smoke-${GITHUB_SHA}.json"; then
             cp "tmp/staging-smoke-${GITHUB_SHA}.json" "$raw_dir/staging-smoke.json"
+          fi
+          if test -f "tmp/staging-governance-smoke-${GITHUB_SHA}.json"; then
+            cp "tmp/staging-governance-smoke-${GITHUB_SHA}.json" "$raw_dir/staging-governance-smoke.json"
           fi
           if test -f "$RUNNER_TEMP/staging-embedding-rollout.json"; then
             cp "$RUNNER_TEMP/staging-embedding-rollout.json" \
@@ -734,6 +760,8 @@ jobs:
             --embedding-version "$EMBEDDING_VERSION" \
             --embedding-rollout-report "$sanitized_dir/staging-embedding-rollout.json" \
             --smoke-required "$RUN_SMOKE" \
+            --governance-smoke-required "$GOVERNANCE_SMOKE_REQUIRED" \
+            --governance-smoke-outcome "$GOVERNANCE_SMOKE_OUTCOME" \
             --output "tmp/staging-release-${evidence_id}.record.json"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
