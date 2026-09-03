@@ -116,7 +116,15 @@ required governance smoke that is skipped or fails keeps the staging release fro
 being promoted. This evidence still does not prove external IdP/SSO, complete ABAC,
 WORM compliance, production capacity, HA or disaster recovery.
 
-The reviewed `v0.1.33-rc.2` acceptance run completed all of these gates in GitHub
-Actions run `33641819523`. Its immutable digests, report hashes, strict failed-run
-history, and limitations are recorded in
-`evidence/m6/20260902-v0.1.33-rc.2-staging-governance.json`.
+The merged `v0.1.33` acceptance run completed all of these gates in GitHub Actions
+run `33777258980` (commit `9e9efb52a27a7a7ccf963e68d97c95722cbb72f5`). Its
+immutable digests, report hashes, strict failed-run history, and limitations are
+recorded in `evidence/m6/20260904-v0.1.33-staging-governance.json`. The earlier
+`v0.1.33-rc.2` record remains retained as historical candidate evidence.
+
+The release window included three intentionally retained failed attempts: a GHCR
+cold-pull timeout at migration, a fail-closed stale migration Job guard, and an
+expired short-lived smoke token that returned HTTP 401. The fixed smoke and
+governance memberships were revalidated, tokens were rotated in memory and piped
+directly to protected GitHub Environment secrets, and the final run passed without
+persisting or printing token values.

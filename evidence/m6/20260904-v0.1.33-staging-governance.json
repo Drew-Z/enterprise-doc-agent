@@ -1,0 +1,162 @@
+{
+  "schema_version": 1,
+  "evidence_type": "staging-governance-release-acceptance",
+  "evidence_id": "m6-staging-governance-20260904-v0.1.33",
+  "milestone": "M6",
+  "requirement_ids": ["M6-R2", "M6-R4"],
+  "status": "passed",
+  "release": "v0.1.33",
+  "commit_sha": "9e9efb52a27a7a7ccf963e68d97c95722cbb72f5",
+  "workflow": {
+    "repository": "Drew-Z/enterprise-doc-agent",
+    "name": "Deploy Staging",
+    "run_id": "33777258980",
+    "run_attempt": 1,
+    "job_id": "100721969558",
+    "conclusion": "success",
+    "started_at": "2026-09-03T16:12:50Z",
+    "completed_at": "2026-09-03T16:20:13Z",
+    "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/33777258980"
+  },
+  "environment": {
+    "provider": "tencent-cloud",
+    "region": "Guangzhou",
+    "os": "Ubuntu 24.04.4 LTS",
+    "cluster_kind": "single-node-k3s",
+    "k3s_version": "v1.36.2+k3s1",
+    "profile": "single-node-4c4g",
+    "namespace": "enterprise-doc-agent-staging",
+    "public_host": "agent.playlab.eu.cc"
+  },
+  "image_digests": {
+    "api": "sha256:566f0328605382b19ee26f48fe535bfaa8c7d8295ee4f893c7a1fabbdc948fc5",
+    "worker": "sha256:d83e4db8bf199917d85e5b6ea5e8caa48a8701ab6e022783cec3be3dac13782d",
+    "consumer": "sha256:94998cf53afb0b334c84df24bc93e370de3db9577294c916ad9099b3c6507b88",
+    "web": "sha256:15130a914d5a37e1059e7da1d0145c6652ae2c05ff0288d32dfa7ac8f7157b2a"
+  },
+  "providers": {
+    "chat_primary": {
+      "provider": "openai_compatible",
+      "base_url": "https://new.lucky0625.qzz.io/v1",
+      "model": "grok-4.6",
+      "status": "validated"
+    },
+    "chat_fallback": {
+      "provider": "openai_compatible",
+      "base_url": "https://elysia.h-e.top/v1",
+      "model": "deepseek-v4-flash-0731",
+      "status": "validated"
+    },
+    "embedding": {
+      "provider": "openai_compatible",
+      "base_url": "https://api.siliconflow.cn/v1",
+      "model": "Qwen/Qwen3-Embedding-4B",
+      "dimension": 1024,
+      "version": 3,
+      "status": "validated"
+    }
+  },
+  "gates": {
+    "prerequisites": "success",
+    "migration": "success",
+    "workloads": "success",
+    "rollout": "success",
+    "embedding_rollout": "success",
+    "cluster_smoke": "success",
+    "authenticated_smoke": "success",
+    "governance_smoke": "success"
+  },
+  "authenticated_smoke": {
+    "status": "passed",
+    "duration_seconds": 87.52691372396657,
+    "sample_count": 1,
+    "steps": [
+      "upload_session_created",
+      "object_uploaded",
+      "upload_completed",
+      "document_ready",
+      "agent_run_created",
+      "agent_run_succeeded",
+      "answer_artifact_listed",
+      "answer_artifact_downloaded",
+      "answer_artifact_sha256_verified",
+      "answer_citation_verified"
+    ]
+  },
+  "governance_smoke": {
+    "status": "passed",
+    "duration_seconds": 71.78431746299611,
+    "scope": [
+      "restricted_document_acl_grant_revoke",
+      "member_denial_and_visibility",
+      "owner_only_retention_policy",
+      "legal_hold_create_release",
+      "retention_preview_and_plan",
+      "identity_binding_deactivate_reactivate"
+    ]
+  },
+  "embedding_rollout": {
+    "status": "passed",
+    "provider": "openai_compatible",
+    "model": "Qwen/Qwen3-Embedding-4B",
+    "dimension": 1024,
+    "version": 3,
+    "probe_item_count": 2,
+    "reindex_status": "completed",
+    "initial_selected": 0,
+    "final_selected": 0
+  },
+  "artifact": {
+    "name": "staging-release-9e9efb52a27a7a7ccf963e68d97c95722cbb72f5",
+    "release_record_sha256": "e8f274ed0d91229655d92b7fded41a130b6edf6febff0bdc53ead880173606dc",
+    "evidence_manifest_sha256": "189f3b59f256555526cb777bb9e1e130085ce312bb9e9bcaafd95ce731b742b2",
+    "authenticated_smoke_report_sha256": "e568c7071ce9a06bc1244986bb524244b21b81f1e1823e612dbbb6649c54b460",
+    "governance_smoke_report_sha256": "0969a1b0ecf64640e6837acbe277072ecd6bce5a633cf84e9bd9dc4588ea069e",
+    "embedding_rollout_report_sha256": "cbd8321f6ae561b0a86ddb83f727cbfa0f0542b6c62bb30f1fe8c2dffbba7017",
+    "manifest_files_verified": 20,
+    "values_redacted": true,
+    "retained_download": true
+  },
+  "strict_failure_history": [
+    {
+      "run_id": "33736923508",
+      "status": "failed",
+      "failed_gate": "migration",
+      "reason": "The migration Job could not pull the immutable GHCR API image; the runner observed a registry connection timeout and ImagePullBackOff."
+    },
+    {
+      "run_id": "33749278799",
+      "status": "failed",
+      "failed_gate": "migration",
+      "reason": "The fail-closed workflow preserved the incomplete prior migration Job for operator review instead of replacing it."
+    },
+    {
+      "run_id": "33749989373",
+      "status": "failed",
+      "failed_gate": "authenticated_smoke",
+      "reason": "The short-lived staging smoke token had expired; the API rejected the request with HTTP 401 before upload-session creation."
+    }
+  ],
+  "operator_interventions": [
+    {
+      "type": "staging-smoke-token-rotation",
+      "reason": "The fixed smoke memberships were valid, but their short-lived bearer tokens had exceeded the configured lifetime.",
+      "resolution": "New smoke and governance tokens were issued inside the Ready API Pod and piped directly to protected GitHub Environment secrets without persistence, command-line arguments or log output."
+    }
+  ],
+  "security": {
+    "tokens_loaded_from_protected_environment_secrets": true,
+    "tokens_in_cli_or_artifact": false,
+    "values_redacted": true,
+    "kubernetes_rbac_expanded": false
+  },
+  "limitations": [
+    "This is bounded CPU staging evidence on one 4-vCPU/4-GiB K3s node, not production capacity or high-availability evidence.",
+    "The ACL and retention/legal-hold results validate the implemented control plane, not arbitrary ABAC, an external PDP, WORM storage, automated deletion proof or a complete compliance program.",
+    "The run does not prove a real enterprise IdP/SSO integration, complete SCIM semantics, independent fault-domain recovery, production RPO/RTO or managed observability delivery.",
+    "The authenticated and governance smokes are bounded synthetic fixtures; they are not representative provider-quality, concurrency or model-capacity benchmarks.",
+    "No GPU, vLLM, quantization throughput or model-serving capacity claim is made."
+  ],
+  "historical_candidate": "evidence/m6/20260902-v0.1.33-rc.2-staging-governance.json",
+  "owner": "platform owner"
+}

@@ -32,9 +32,10 @@ probe, RBAC/NetworkPolicy/PDB contracts, supply-chain workflows, and guarded bac
 restore/rollback scripts. M7 adds provider route metadata, retryable-only fallback,
 CLOSED/OPEN/HALF_OPEN circuit breaking, a shared primary/fallback route deadline,
 embedding-dimension checks, and deterministic
-benchmark reports. These are implementation and local-contract facts. Real registry,
-cluster, staging, production-capacity, managed-observability, and GPU/vLLM evidence
-remain open external gates.
+benchmark reports. These are implementation and local-contract facts. A bounded
+cloud-hosted single-node staging acceptance for the merged `v0.1.33` is recorded
+separately; production-capacity, managed-observability, independent recovery, and
+GPU/vLLM evidence remain open external gates.
 
 ## Prerequisites
 
@@ -398,12 +399,13 @@ not satisfy the individual gate records under `evidence/gates/`:
   tests. These are not real-provider quality, cost, GPU, vLLM, or production-capacity
   evidence.
 - The latest immutable M6 bundle records 63 deployment tests, containerized Actionlint,
-  Compose validation, and base/staging/prod Kustomize renders. The subsequent reviewed
-  tiny-single-node implementation adds a bounded K3s profile, profile ownership guard,
-  host-scoped database egress, and deployment-profile release metadata; it does not
-  replace the immutable bundle until committed and re-recorded. Registry signing, cluster
-  rollout, external TLS/secrets, versioned object-store restore, Kubernetes rollback
-  and production RPO/RTO remain external gates.
+  Compose validation, and base/staging/prod Kustomize renders. The merged `v0.1.33`
+  release also has a separate cloud-hosted single-node staging acceptance record,
+  including immutable image rollout, migration, embedding reindex, authenticated
+  business smoke, and governance smoke. That acceptance does not close the formal
+  production gates: registry signing, external TLS/secrets, versioned object-store
+  restore, Kubernetes rollback, independent fault-domain recovery and production
+  RPO/RTO remain external gates.
 
 `evidence/m8/20260720-054000-m8-end-to-end-model-deadline.json` supersedes the earlier
 local M8 record. It includes the route-budget boundary fix, the same status-snapshot
@@ -450,11 +452,14 @@ API control plane while document bytes travel directly to the configured object 
   immutable-image rollout, embedding probe/reindex, readiness, authenticated
   upload/ingestion/Agent/artifact/citation smoke, restricted-document ACL
   grant/revoke, audit retention/legal-hold governance, and identity-binding
-  lifecycle checks. The verified record is
-  `evidence/m6/20260902-v0.1.33-rc.2-staging-governance.json`. This remains
-  single-node staging evidence: production QPS, standby-node or multi-region
-  recovery, independent fault-domain RPO/RTO, production secret-manager review,
-  and high availability are not claimed.
+  lifecycle checks. The merged-release record is
+  `evidence/m6/20260904-v0.1.33-staging-governance.json`; the earlier
+  `20260902-v0.1.33-rc.2-staging-governance.json` remains historical candidate
+  evidence. ACL and retention results validate the implemented control plane,
+  not arbitrary ABAC or WORM compliance. This remains single-node staging
+  evidence: production QPS, standby-node or multi-region recovery, independent
+  fault-domain RPO/RTO, production secret-manager review, and high availability
+  are not claimed.
 - No GPU/vLLM/quantization throughput or memory result is claimed; M7 reports only the
   deterministic local routing and fallback contract until hardware evidence exists.
 - The deterministic safety corpus is a repeatable regression set, not complete adversarial certification.
