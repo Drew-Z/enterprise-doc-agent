@@ -1,0 +1,112 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: enterprise-doc-api
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  template:
+    spec:
+      containers:
+        - name: api
+          resources:
+            requests: {cpu: 150m, memory: 256Mi}
+            limits: {cpu: 600m, memory: 512Mi}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: enterprise-doc-worker
+spec:
+  replicas: 1
+  progressDeadlineSeconds: 1800
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  template:
+    spec:
+      containers:
+        - name: worker
+          resources:
+            requests: {cpu: 150m, memory: 256Mi}
+            limits: {cpu: 700m, memory: 640Mi}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: enterprise-doc-consumer
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  template:
+    spec:
+      containers:
+        - name: consumer
+          resources:
+            requests: {cpu: 100m, memory: 192Mi}
+            limits: {cpu: 500m, memory: 384Mi}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: enterprise-doc-web
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  template:
+    spec:
+      containers:
+        - name: web
+          resources:
+            requests: {cpu: 25m, memory: 64Mi}
+            limits: {cpu: 150m, memory: 128Mi}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: enterprise-doc-redis
+spec:
+  template:
+    spec:
+      containers:
+        - name: redis
+          args:
+            - redis-server
+            - --save
+            - ""
+            - --appendonly
+            - "no"
+            - --maxmemory
+            - 128mb
+            - --maxmemory-policy
+            - noeviction
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {cpu: 200m, memory: 192Mi}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: enterprise-doc-migrate
+spec:
+  template:
+    spec:
+      containers:
+        - name: migrate
+          resources:
+            requests: {cpu: 100m, memory: 192Mi}
+            limits: {cpu: 500m, memory: 384Mi}

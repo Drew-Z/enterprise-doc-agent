@@ -88,6 +88,8 @@ def _build(
     fallback_model_version: str | None = "2026-08-17",
     fallback_model_timeout_seconds: str | None = "60",
     embedding_version: int = 2,
+    governance_smoke_required: bool = False,
+    governance_smoke_outcome: str = "skipped",
 ) -> dict[str, object]:
     return build_record(
         _manifest(tmp_path / "evidence.json"),
@@ -111,6 +113,8 @@ def _build(
         ),
         embedding_version=embedding_version,
         smoke_required=smoke_required,
+        governance_smoke_required=governance_smoke_required,
+        governance_smoke_outcome=governance_smoke_outcome,
         output=tmp_path / "record.json",
     )
 
@@ -139,6 +143,24 @@ def test_staging_record_passes_only_with_rollout_and_smoke(tmp_path: Path) -> No
     assert record["embedding"]["version"] == 2
     assert record["embedding"]["rollout"]["reindex"]["final_selected"] == 0
     assert record["embedding"]["rollout_report"]["sha256"]
+
+
+def test_required_governance_smoke_blocks_promotion_when_skipped(tmp_path: Path) -> None:
+    record = _build(
+        tmp_path,
+        outcomes=_outcomes(),
+        smoke_required=True,
+        governance_smoke_required=True,
+        governance_smoke_outcome="skipped",
+    )
+    assert record["status"] == "failed"
+    assert record["governance_smoke"] == {"required": True, "outcome": "skipped"}
+
+
+def test_optional_governance_smoke_is_recorded_as_skipped(tmp_path: Path) -> None:
+    record = _build(tmp_path, outcomes=_outcomes(), smoke_required=True)
+    assert record["status"] == "passed"
+    assert record["governance_smoke"] == {"required": False, "outcome": "skipped"}
 
 
 def test_staging_record_preserves_alternate_embedding_version(tmp_path: Path) -> None:
@@ -285,6 +307,28 @@ def test_staging_record_accepts_reviewed_single_node_4c8g_profile(tmp_path: Path
         output=tmp_path / "record.json",
     )
     assert record["deployment_profile"] == "single-node-4c8g"
+    assert record["status"] == "passed"
+
+
+def test_staging_record_accepts_reviewed_single_node_4c4g_profile(tmp_path: Path) -> None:
+    record = build_record(
+        _manifest(tmp_path / "evidence.json"),
+        deployment_profile="single-node-4c4g",
+        repository="example/repo",
+        commit_sha="a" * 40,
+        run_id="42",
+        run_attempt="1",
+        registry_prefix="registry.example/team",
+        image_digests=_digests(),
+        outcomes=_outcomes(),
+        model_provider="openai_compatible",
+        model_base_url="https://model.example.com/v1",
+        model_name="staging-model",
+        embedding_rollout_report=_rollout_report(tmp_path / "embedding-rollout.json"),
+        smoke_required=True,
+        output=tmp_path / "record.json",
+    )
+    assert record["deployment_profile"] == "single-node-4c4g"
     assert record["status"] == "passed"
 
 

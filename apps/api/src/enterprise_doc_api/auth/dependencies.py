@@ -70,5 +70,6 @@ async def resolve_bearer_principal(
 
     resolver = cast(PrincipalResolver, request.app.state.principal_resolver)
     principal = await resolver.resolve(token)
+    request.state.auth_token = token
     enrich_request_principal(principal)
     return principal

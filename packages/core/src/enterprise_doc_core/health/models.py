@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Sequence
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Protocol
 
@@ -29,6 +30,7 @@ class ComponentHealth(BaseModel):
 class ReadinessResponse(BaseModel):
     status: OverallStatus
     checks: dict[str, ComponentHealth]
+    checked_at: datetime
 
 
 class HealthChecker(Protocol):
@@ -134,4 +136,8 @@ async def evaluate_readiness(
         if checks and all(item.status is ComponentStatus.UP for item in checks.values())
         else OverallStatus.NOT_READY
     )
-    return ReadinessResponse(status=status, checks=checks)
+    return ReadinessResponse(
+        status=status,
+        checks=checks,
+        checked_at=datetime.now(UTC),
+    )

@@ -45,7 +45,8 @@
       "latest_repeatability_attempt": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-repeat-3-full-40.json",
       "latest_repeatability_execution": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-repeat-3-full-40-execution.json",
       "latest_repeatability_telemetry": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-repeat-3-full-40-telemetry-audit.json",
-      "latest_repeatability_control_plane_failure": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-repeat-1-control-plane-failure.json"
+      "latest_repeatability_control_plane_failure": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-repeat-1-control-plane-failure.json",
+      "latest_provider_remediation_targeted_quality": "evidence/m5/20260819-staging-rag-quality-v2-v0.1.32-targeted-2.json"
     },
     {
       "milestone": "M6",
@@ -65,7 +66,12 @@
       "production_rpo_rto_drill": "evidence/m6/20260806-production-rpo-rto-drill-passed.json",
       "latest_staging_release_v0_1_29": "evidence/m6/20260817-v0.1.29-staging-rollout.json",
       "latest_staging_release_v0_1_30": "evidence/m6/20260818-v0.1.30-staging-rollout.json",
-      "latest_staging_release_v0_1_31": "evidence/m6/20260818-v0.1.31-staging-rollout.json"
+      "latest_staging_release_v0_1_31": "evidence/m6/20260818-v0.1.31-staging-rollout.json",
+      "latest_staging_release_v0_1_32": "evidence/m6/20260819-v0.1.32-staging-rollout.json",
+      "latest_staging_governance_v0_1_33_candidate": "evidence/m6/20260902-v0.1.33-rc.2-staging-governance.json",
+      "tiny_resource_envelope_verification": "evidence/m6/20260820-v0.1.32-tiny-resource-envelope.json",
+      "reviewed_4b_revalidation": "evidence/m6/20260820-local-embedding-reviewed4b-v2.json",
+      "reviewed_4b_revalidation_repeat": "evidence/m6/20260820-local-embedding-reviewed4b-v2-repeat.json"
     },
     {
       "milestone": "M7",
@@ -78,7 +84,10 @@
       "latest_repeatability_attempt": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-repeat-3-full-40.json",
       "latest_repeatability_execution": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-repeat-3-full-40-execution.json",
       "latest_repeatability_telemetry": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-repeat-3-full-40-telemetry-audit.json",
-      "latest_repeatability_control_plane_failure": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-repeat-1-control-plane-failure.json"
+      "latest_repeatability_control_plane_failure": "evidence/m5/20260818-staging-rag-quality-v2-v0.1.30-repeat-1-control-plane-failure.json",
+      "latest_provider_remediation_targeted_quality": "evidence/m5/20260819-staging-rag-quality-v2-v0.1.32-targeted-2.json",
+      "local_routing_revalidation": "evidence/m7/20260820-local-routing-deterministic.json",
+      "local_fallback_revalidation": "evidence/m7/20260820-local-routing-fallback-contract.json"
     },
     {
       "milestone": "M8",

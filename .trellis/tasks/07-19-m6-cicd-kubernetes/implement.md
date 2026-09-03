@@ -99,8 +99,10 @@ immutable image or rollback evidence. Those remain open manual gates.
   CPU, memory and startup time to become ready on the 2-vCPU/2-GiB K3s node.
 - [x] Emit immediate non-secret migration Job status, poll terminal conditions, and print
   describe/event diagnostics as soon as the pre-rollout migration fails.
-- [ ] Verify the migration diagnostics and resource envelope against the real 2C2G tiny
-  staging profile.
+- [x] Verify the migration diagnostics and resource envelope against the real 2C2G tiny
+  staging profile; the bounded migration/embedding/readiness path was observed, but the
+  complete workflow made the K3s control plane unstable, so tiny is not suitable for full
+  staging. Evidence: `evidence/m6/20260820-v0.1.32-tiny-resource-envelope.json`.
 
 ## Slice 11: Rebuilt 4C8G Staging Host And Profile
 
@@ -173,8 +175,14 @@ immutable image or rollback evidence. Those remain open manual gates.
   variable while retaining version `2` as the compatibility default.
 - [x] Bind the same version through manifest approvals, the embedding rollout validator, and
   the sanitized release record so a model change cannot reuse an older generation silently.
-- [ ] Validate the Free `qwen3-embedding-8b` candidate only through a versioned reindex and
-  repeated RAG quality gate before replacing the reviewed 4B staging identity.
+- [x] Revalidate the reviewed `Qwen/Qwen3-Embedding-4B` route with two independent local
+  40-case runs after transient provider connectivity was observed; retain the existing
+  `ai.hybgzs.com` / version `2` staging identity.
+- [x] Record the release decision to defer the Free `qwen3-embedding-8b` challenger. No
+  version `3` protected-variable change, staging reindex, or model switch was performed.
+- [ ] Validate the Free `qwen3-embedding-8b` candidate through a versioned reindex and
+  repeated staging RAG quality gate before any future replacement of the reviewed 4B
+  identity. This remains intentionally deferred for the current release.
 
 ## Slice 17: Canonical OCI Relay Receiver
 

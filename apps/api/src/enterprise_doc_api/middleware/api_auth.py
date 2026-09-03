@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from starlette.requests import Request
 from starlette.types import ASGIApp, Receive, Scope, Send
 
@@ -9,6 +11,8 @@ from enterprise_doc_api.errors import (
     api_error_response,
     unexpected_error_response,
 )
+
+_LOGGER = logging.getLogger("enterprise_doc_api.auth")
 
 
 class ApiAuthenticationMiddleware:
@@ -28,11 +32,32 @@ class ApiAuthenticationMiddleware:
         try:
             principal = await resolve_request_principal(request)
         except ApiError as error:
+            _log_auth_failure(scope, error_code=error.code, error_type=type(error).__name__)
             await api_error_response(error)(scope, receive, send)
             return
         except Exception as error:
+            _log_auth_failure(
+                scope,
+                error_code="auth_internal_error",
+                error_type=type(error).__name__,
+            )
             await unexpected_error_response(error)(scope, receive, send)
             return
 
         scope.setdefault("state", {})["principal"] = principal
         await self.app(scope, receive, send)
+
+
+def _log_auth_failure(scope: Scope, *, error_code: str, error_type: str) -> None:
+    """Emit a bounded security signal without logging credentials or claim data."""
+    _LOGGER.warning(
+        "auth_failed",
+        extra={
+            "event_data": {
+                "method": scope.get("method"),
+                "surface": "api",
+                "error_code": error_code,
+                "error_type": error_type,
+            }
+        },
+    )

@@ -35,6 +35,7 @@ async def test_readiness_is_ready_only_when_every_component_is_up() -> None:
     result = await evaluate_readiness(checkers, timeout_seconds=0.1)
 
     assert result.status is OverallStatus.READY
+    assert result.checked_at.tzinfo is not None
     assert {name: state.status for name, state in result.checks.items()} == {
         "database": ComponentStatus.UP,
         "redis": ComponentStatus.UP,
@@ -52,6 +53,7 @@ async def test_readiness_maps_failures_and_timeouts_without_raising() -> None:
     result = await evaluate_readiness(checkers, timeout_seconds=0.01)
 
     assert result.status is OverallStatus.NOT_READY
+    assert result.checked_at.tzinfo is not None
     assert result.checks["database"].status is ComponentStatus.DOWN
     assert result.checks["redis"].status is ComponentStatus.TIMEOUT
     assert result.checks["object_store"].status is ComponentStatus.UP
@@ -91,9 +93,14 @@ async def test_readiness_cache_returns_stale_result_during_refresh() -> None:
     )
 
     first = await cache.get()
-    await asyncio.sleep(0.01)
+    assert cache._cached is not None
+    cached_at, cached_result = cache._cached
+    cache._cached = (cached_at - 1, cached_result)
     refresh = asyncio.create_task(cache.get())
-    await asyncio.sleep(0)
+    for _ in range(100):
+        if checker.calls == 2:
+            break
+        await asyncio.sleep(0)
     stale = await cache.get()
     refreshed = await refresh
 

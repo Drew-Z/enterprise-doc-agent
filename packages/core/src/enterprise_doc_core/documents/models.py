@@ -11,6 +11,7 @@ from sqlalchemy import (
     CheckConstraint,
     DateTime,
     ForeignKey,
+    ForeignKeyConstraint,
     Index,
     Integer,
     String,
@@ -46,9 +47,21 @@ class DocumentIngestionStage(StrEnum):
     READY = "ready"
 
 
+class DocumentAccessMode(StrEnum):
+    TENANT = "tenant"
+    RESTRICTED = "restricted"
+
+
 class Document(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "documents"
-    __table_args__ = (Index("ix_documents_tenant_id_created_at", "tenant_id", "created_at"),)
+    __table_args__ = (
+        CheckConstraint(
+            "access_mode IN ('tenant', 'restricted')", name="document_access_mode_valid"
+        ),
+        UniqueConstraint("tenant_id", "id", name="uq_documents_tenant_id_id"),
+        Index("ix_documents_tenant_id_created_at", "tenant_id", "created_at"),
+        Index("ix_documents_tenant_id_access_mode", "tenant_id", "access_mode"),
+    )
 
     tenant_id: Mapped[UUID] = mapped_column(
         ForeignKey("tenants.id", ondelete="CASCADE"),
@@ -59,6 +72,48 @@ class Document(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         nullable=False,
     )
     title: Mapped[str] = mapped_column(String(255), nullable=False)
+    access_mode: Mapped[str] = mapped_column(
+        String(20), nullable=False, server_default=DocumentAccessMode.TENANT.value
+    )
+
+
+class DocumentGrant(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+    __tablename__ = "document_grants"
+    __table_args__ = (
+        CheckConstraint(
+            "(grantee_user_id IS NOT NULL AND grantee_role IS NULL) OR "
+            "(grantee_user_id IS NULL AND grantee_role IS NOT NULL)",
+            name="document_grant_single_target",
+        ),
+        CheckConstraint(
+            "grantee_role IS NULL OR grantee_role IN ('owner', 'member')",
+            name="document_grant_role_valid",
+        ),
+        UniqueConstraint("document_id", "grantee_user_id", name="uq_document_grants_document_user"),
+        UniqueConstraint("document_id", "grantee_role", name="uq_document_grants_document_role"),
+        ForeignKeyConstraint(
+            ["tenant_id", "document_id"],
+            ["documents.tenant_id", "documents.id"],
+            ondelete="CASCADE",
+            name="fk_document_grants_tenant_document",
+        ),
+        ForeignKeyConstraint(
+            ["tenant_id", "grantee_user_id"],
+            ["memberships.tenant_id", "memberships.user_id"],
+            ondelete="CASCADE",
+            name="fk_document_grants_tenant_user",
+        ),
+        Index("ix_document_grants_tenant_document", "tenant_id", "document_id"),
+        Index("ix_document_grants_user", "tenant_id", "grantee_user_id"),
+        Index("ix_document_grants_role", "tenant_id", "grantee_role"),
+    )
+
+    tenant_id: Mapped[UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
+    )
+    document_id: Mapped[UUID] = mapped_column(nullable=False)
+    grantee_user_id: Mapped[UUID | None] = mapped_column(nullable=True)
+    grantee_role: Mapped[str | None] = mapped_column(String(20), nullable=True)
 
 
 class DocumentVersion(UUIDPrimaryKeyMixin, TimestampMixin, Base):

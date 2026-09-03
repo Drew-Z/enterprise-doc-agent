@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime
@@ -33,6 +34,7 @@ from enterprise_doc_core.jobs.models import JobAttempt
 from enterprise_doc_worker.queue import JobHandlerError
 
 AGENT_EXECUTE_JOB_TYPE = "agent.execute"
+_LOGGER = logging.getLogger("enterprise_doc_worker.agent_handler")
 
 
 class AgentExecutionPayload(BaseModel):
@@ -85,6 +87,13 @@ class AgentExecutionPayloadInvalid(JobHandlerError):
 class AgentExecutionContractMismatch(JobHandlerError):
     code = "agent_execution_contract_mismatch"
     message = "The Agent execution claim no longer matches the current run."
+
+
+class AgentExecutionStaleRun(JobHandlerError):
+    """A retried claim belongs to a run that already reached a terminal state."""
+
+    code = "agent_execution_stale_run"
+    message = "The Agent run is already terminal; the stale execution is cancelled."
 
 
 class AgentExecutionRuntimeError(JobHandlerError):
@@ -209,6 +218,21 @@ class SqlAlchemyAgentExecutionLoader:
             execution,
             approval,
         ):
+            if (
+                execution is not None
+                and claim.tenant_id == run.tenant_id
+                and claim.actor_id == run.actor_id
+                and payload.run_uuid == run.id
+                and payload.execution_sequence == run.current_execution_seq
+                and payload.graph_thread_id == run.graph_thread_id
+                and payload.graph_version == run.graph_version
+                and execution.tenant_id == run.tenant_id
+                and execution.run_id == run.id
+                and execution.sequence == payload.execution_sequence
+                and execution.job_id == claim.job_id
+                and is_agent_run_terminal(AgentRunStatus(run.status))
+            ):
+                raise AgentExecutionStaleRun()
             raise AgentExecutionContractMismatch()
 
         return AgentExecutionContext(
@@ -415,6 +439,25 @@ class AgentExecutionHandler:
             diagnostic_code = (
                 error.diagnostic_code if isinstance(error, GroundingValidationError) else None
             )
+            _LOGGER.error(
+                "agent_execution_handler_failed",
+                extra={
+                    "event_data": {
+                        "run_id": str(context.run_id),
+                        "execution_id": str(context.execution_id),
+                        "execution_kind": context.execution_kind,
+                        "error_type": type(error).__name__,
+                        "error_code": code if isinstance(code, str) else None,
+                        "cause_type": (
+                            type(error.__cause__).__name__ if error.__cause__ is not None else None
+                        ),
+                        "exception_group_leaf_count": (
+                            len(error.exceptions) if isinstance(error, ExceptionGroup) else None
+                        ),
+                    }
+                },
+                exc_info=True,
+            )
             raise AgentExecutionRuntimeError(
                 code=code,
                 retryable=retryable,
@@ -444,6 +487,7 @@ __all__ = [
     "AgentExecutionPayload",
     "AgentExecutionPayloadInvalid",
     "AgentExecutionRuntimeError",
+    "AgentExecutionStaleRun",
     "SqlAlchemyAgentExecutionLoader",
     "agent_failure_lock_key",
     "build_agent_execution_handler",

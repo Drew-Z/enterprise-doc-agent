@@ -286,3 +286,71 @@ Wrong: run a mutable `curl | sh`, leave SSH/6443 open to the Internet, and call 
 node production. Correct: verify repository-pinned artifact hashes, apply the explicit
 operator allowlist with console recovery, keep cluster ports private, and record every
 remaining external gate separately.
+
+## Scenario: Bounded Restricted-Network Worker Delivery on 4C4G
+
+### 1. Scope / Trigger
+
+- Trigger: a single-node 4C4G staging host can eventually pull an immutable GHCR Worker
+  image, but the measured cold pull exceeds the default 600-second rollout deadline.
+
+### 2. Signatures
+
+- Kustomize overlay: `infra/k8s/overlays/single-node-4c4g`.
+- Deployment field: Worker `spec.progressDeadlineSeconds=1800`.
+- Workflow command: `kubectl rollout status deployment/enterprise-doc-worker
+  --timeout="$worker_timeout"`, where `worker_timeout=1800s` only for the 4C4G profile.
+
+### 3. Contracts
+
+- API, Consumer and Web rollout waits remain `600s`; Worker waits are `1800s` only for
+  `single-node-4c4g` and remain `600s` for other profiles.
+- Deployment images remain exact `image@sha256:<64 hex>` references with
+  `imagePullPolicy: IfNotPresent`.
+- A failed bounded wait fails the workflow and retains its existing diagnostics and
+  workload restoration; it never retries indefinitely.
+- The exceptional fallback is the administrator-run `Relay Staging Images` workflow and
+  `scripts/import_staging_oci_archive.py`, not a new runner privilege or Kubernetes RBAC
+  grant.
+
+### 4. Validation & Error Matrix
+
+- 4C4G Worker cold pull completes within 1800 seconds -> rollout may continue.
+- Worker remains unavailable after 1800 seconds -> deployment workflow fails and emits
+  sanitized diagnostics; no success evidence is produced.
+- Other profile selects the workflow -> Worker timeout is 600 seconds and no 4C4G
+  deadline override is rendered.
+- Relay archive checksum, OCI descriptor or deployment digest mismatches its receipt ->
+  import receiver fails closed before containerd mutation.
+
+### 5. Good/Base/Bad Cases
+
+- Good: 4C4G direct pull completes in the bounded window, then embedding, readiness and
+  authenticated smoke gates pass.
+- Base: direct pull is slow; the workflow waits up to 30 minutes and records the actual
+  rollout result.
+- Bad: increase every profile to an unbounded timeout, use a mutable tag, or grant the
+  repository runner host-root access to pre-pull images.
+
+### 6. Tests Required
+
+- `tests/deployment/test_m6_contracts.py` renders 4C4G and asserts only the Worker has
+  `progressDeadlineSeconds=1800`.
+- The same contract test asserts profile-specific `worker_timeout` selection and keeps
+  API, Consumer and Web at `600s`.
+- The runbook contract asserts the relay workflow, dry-run-first import, `--confirm`
+  step and secret/signed-URL redaction warning.
+- `kubectl kustomize`, Ruff, mypy and per-workflow actionlint must pass before dispatch.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+Treat a 600-second progress timeout as proof that the Worker cannot start, or solve the
+symptom by granting the Actions runner unrestricted access to containerd.
+
+#### Correct
+
+Use the profile-specific 1800-second cap for the measured 4C4G cold pull. If it still
+fails, stop the release, validate the receipt-bound OCI relay archive out of band, import
+it with the reviewed receiver, and rerun the unchanged immutable deployment workflow.

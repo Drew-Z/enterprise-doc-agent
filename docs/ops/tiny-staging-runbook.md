@@ -327,6 +327,8 @@ test "$(kubectl auth can-i patch persistentvolumeclaims \
 test "$(kubectl auth can-i create jobs.batch -n enterprise-doc-agent-staging --as "$deployer")" = yes
 test "$(kubectl auth can-i patch deployments.apps -n enterprise-doc-agent-staging \
   --as "$deployer")" = yes
+test "$(kubectl auth can-i patch deployments.apps/scale -n enterprise-doc-agent-staging \
+  --as "$deployer")" = yes
 test "$(kubectl auth can-i list replicasets.apps -n enterprise-doc-agent-staging \
   --as "$deployer")" = yes
 ```
@@ -1034,3 +1036,10 @@ free -h
 If memory pressure or swap activity appears during migration, stop the rollout
 and move staging to a larger node. Do not compensate by removing probes,
 security contexts, or digest pinning.
+
+The staging workflow also treats the embedding/reindex phase as a bounded
+maintenance window on `tiny-single-node`: it scales API, worker, consumer and
+web to zero while the embedding Job runs, keeps Redis available, and restores
+the reviewed workload manifest before readiness or authenticated smoke. This
+avoids claiming an embedding failure when the Job completed but the 2C2G
+control plane could not answer a concurrent status poll.

@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from enterprise_doc_api.config import AuthSettings
 from enterprise_doc_api.errors import ApiError
+from enterprise_doc_core.auth import LocalTokenRevocation
 from enterprise_doc_core.context import PrincipalContext
 from enterprise_doc_core.identity import Membership, Tenant, User
 
@@ -39,6 +40,8 @@ class JwtClaims:
     tenant_id: UUID
     actor_id: UUID
     token_id: str
+    issued_at: datetime
+    expires_at: datetime
 
 
 class JwtTokenCodec:
@@ -86,12 +89,34 @@ class JwtTokenCodec:
             )
             actor_id = UUID(str(payload["sub"]))
             tenant_id = UUID(str(payload["tenant_id"]))
-            token_id = str(payload["jti"])
-            if not token_id or len(token_id) > 128:
+            token_id_value = payload["jti"]
+            if not isinstance(token_id_value, str):
                 raise ValueError("invalid token id")
-        except (KeyError, TypeError, ValueError, PyJWTError) as exc:
+            token_id = token_id_value
+            issued_at = _claim_datetime(payload["iat"])
+            expires_at = _claim_datetime(payload["exp"])
+            if (
+                not token_id
+                or len(token_id) > 128
+                or token_id != token_id.strip()
+                or any(ord(character) < 32 or ord(character) == 127 for character in token_id)
+            ):
+                raise ValueError("invalid token id")
+        except (KeyError, OSError, OverflowError, TypeError, ValueError, PyJWTError) as exc:
             raise InvalidBearerToken() from exc
-        return JwtClaims(tenant_id=tenant_id, actor_id=actor_id, token_id=token_id)
+        return JwtClaims(
+            tenant_id=tenant_id,
+            actor_id=actor_id,
+            token_id=token_id,
+            issued_at=issued_at,
+            expires_at=expires_at,
+        )
+
+
+def _claim_datetime(value: object) -> datetime:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError("invalid timestamp claim")
+    return datetime.fromtimestamp(value, UTC)
 
 
 class DatabasePrincipalResolver:
@@ -122,6 +147,14 @@ class DatabasePrincipalResolver:
             )
         )
         async with self.session_factory() as session:
+            revoked = await session.scalar(
+                select(LocalTokenRevocation.id).where(
+                    LocalTokenRevocation.tenant_id == claims.tenant_id,
+                    LocalTokenRevocation.token_id == claims.token_id,
+                )
+            )
+            if revoked is not None:
+                raise InvalidBearerToken()
             role = await session.scalar(statement)
         if role is None:
             raise PrincipalForbidden()

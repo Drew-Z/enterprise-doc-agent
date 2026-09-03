@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: enterprise-doc-config
+data:
+  REDIS__URL: redis://enterprise-doc-redis:6379/0
+  DATABASE__POOL_SIZE: "1"
+  DATABASE__MAX_OVERFLOW: "0"
+  AGENT__EXECUTION_TIMEOUT_SECONDS: "300"
+  MCP__DATABASE_TRANSACTION_MODE: "true"

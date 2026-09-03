@@ -12,9 +12,11 @@ from enum import StrEnum
 from typing import Any, Protocol
 from uuid import UUID, uuid4
 
-from sqlalchemy import func, or_, select, text
+from sqlalchemy import and_, exists, func, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.orm import aliased
 
+from enterprise_doc_core.audit import append_audit_event
 from enterprise_doc_core.jobs.diagnostics import is_allowed_job_diagnostic_code
 from enterprise_doc_core.jobs.models import (
     Job,
@@ -215,6 +217,20 @@ async def _append_job_event(
     )
     session.add(event)
     await session.flush()
+    metadata: dict[str, Any] = {"event_type": event_type, "status": job.status}
+    if job.type:
+        metadata["job_type"] = job.type
+    await append_audit_event(
+        session,
+        tenant_id=job.tenant_id,
+        actor_id=actor_id or job.actor_id,
+        action=event_type,
+        resource_type="job",
+        resource_id=job.id,
+        metadata=metadata,
+        request_id=job.request_id,
+        correlation_id=job.correlation_id,
+    )
     return event
 
 
@@ -871,10 +887,14 @@ class OutboxService:
         session_factory: async_sessionmaker[AsyncSession],
         clock: Callable[[], datetime] = _utcnow,
         lease_seconds: float = 30.0,
+        recovery_seconds: float = 60.0,
     ) -> None:
+        if lease_seconds <= 0 or recovery_seconds <= 0:
+            raise ValueError("outbox lease and recovery intervals must be positive")
         self.session_factory = session_factory
         self.clock = clock
         self.lease_seconds = lease_seconds
+        self.recovery_seconds = recovery_seconds
 
     async def claim(
         self,
@@ -887,11 +907,48 @@ class OutboxService:
             return ()
         now = self.clock()
         async with self.session_factory.begin() as session:
+            # A published Celery message is only a wake-up hint. Re-open the
+            # latest hint after a grace period when the durable Job still needs
+            # work, covering broker loss and workers that outlive their lease.
+            stale_event = aliased(OutboxEvent)
+            stale_job = exists(
+                select(1)
+                .select_from(Job)
+                .where(
+                    Job.id == OutboxEvent.aggregate_id,
+                    or_(
+                        and_(
+                            Job.status.in_((JobStatus.PENDING.value, JobStatus.RETRY_WAIT.value)),
+                            Job.available_at <= now,
+                        ),
+                        and_(
+                            Job.status == JobStatus.RUNNING.value,
+                            Job.lease_expires_at <= now,
+                        ),
+                    ),
+                )
+            )
+            latest_event = ~exists(
+                select(1)
+                .select_from(stale_event)
+                .where(
+                    stale_event.aggregate_id == OutboxEvent.aggregate_id,
+                    stale_event.status != OutboxEventStatus.DEAD.value,
+                    stale_event.created_at > OutboxEvent.created_at,
+                )
+            )
+            published_recovery = and_(
+                OutboxEvent.status == OutboxEventStatus.PUBLISHED.value,
+                OutboxEvent.published_at <= now - timedelta(seconds=self.recovery_seconds),
+                stale_job,
+                latest_event,
+            )
             filters = [
                 or_(
                     OutboxEvent.status == OutboxEventStatus.PENDING.value,
                     (OutboxEvent.status == OutboxEventStatus.PUBLISHING.value)
                     & (OutboxEvent.lease_expires_at <= now),
+                    published_recovery,
                 ),
                 OutboxEvent.available_at <= now,
             ]

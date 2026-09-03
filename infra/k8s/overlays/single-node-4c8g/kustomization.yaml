@@ -7,4 +7,5 @@ resources:
 patches:
   - path: resources-patch.yaml
   - path: replicas-patch.yaml
+  - path: configmap-patch.yaml
   - path: namespace-profile-patch.yaml

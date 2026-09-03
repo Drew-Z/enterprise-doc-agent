@@ -87,7 +87,8 @@ PY
     /opt/enterprise-doc-toolchain/node/bin/pnpm --version)" = "$PNPM_VERSION"
   test -x /opt/actions-runner/run.sh
   test "$(stat -c '%U' /opt/actions-runner)" = "$RUNNER_USER"
-  test "$(/opt/actions-runner/bin/Runner.Listener --version)" = "$RUNNER_VERSION"
+  test "$(runuser -u "$RUNNER_USER" -- /opt/actions-runner/bin/Runner.Listener --version)" \
+    = "$RUNNER_VERSION"
   test "$(dpkg-query --show --showformat='${Version}' \
     "postgresql-client-$POSTGRES_CLIENT_MAJOR")" = "$POSTGRES_CLIENT_PACKAGE_VERSION"
   test "$(pg_dump --version | sed -E 's/^pg_dump \(PostgreSQL\) ([0-9]+).*/\1/')" \
@@ -99,7 +100,8 @@ PY
 if test "$MODE" = check; then
   check_toolchain
   printf 'runner_version=%s\nrunner_label=%s\nkustomize_version=%s\npostgres_client_package=%s\n' \
-    "$(/opt/actions-runner/bin/Runner.Listener --version)" "$RUNNER_LABEL" \
+    "$(runuser -u "$RUNNER_USER" -- /opt/actions-runner/bin/Runner.Listener --version)" \
+    "$RUNNER_LABEL" \
     "$KUSTOMIZE_VERSION" "$POSTGRES_CLIENT_PACKAGE_VERSION"
   exit 0
 fi
@@ -144,10 +146,17 @@ Signed-By: /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
 EOF
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
-candidate="$(apt-cache policy "postgresql-client-$POSTGRES_CLIENT_MAJOR" \
-  | awk '/Candidate:/ { candidate=$2 } END { if (!candidate) exit 1; print candidate }')"
-test "$candidate" = "$POSTGRES_CLIENT_PACKAGE_VERSION" \
-  || die "reviewed PostgreSQL client package is unavailable: $POSTGRES_CLIENT_PACKAGE_VERSION"
+if ! apt-cache madison "postgresql-client-$POSTGRES_CLIENT_MAJOR" \
+  | awk -F '|' -v expected="$POSTGRES_CLIENT_PACKAGE_VERSION" '
+      {
+        version = $2
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", version)
+        if (version == expected) found = 1
+      }
+      END { exit(found ? 0 : 1) }
+    '; then
+  die "reviewed PostgreSQL client package is unavailable: $POSTGRES_CLIENT_PACKAGE_VERSION"
+fi
 apt-get install -y --no-install-recommends --allow-downgrades \
   "postgresql-client-$POSTGRES_CLIENT_MAJOR=$POSTGRES_CLIENT_PACKAGE_VERSION"
 
@@ -176,6 +185,7 @@ fi
 install -d -o root -g root -m 0755 /opt/enterprise-doc-toolchain
 python3.12 -m venv /opt/enterprise-doc-toolchain/python
 /opt/enterprise-doc-toolchain/python/bin/python -m pip install --disable-pip-version-check \
+  --index-url https://mirrors.aliyun.com/pypi/simple/ --timeout 60 --retries 4 \
   --no-cache-dir "PyYAML==$PYYAML_VERSION" "cryptography==$CRYPTOGRAPHY_VERSION" \
   "uv==$UV_VERSION"
 
@@ -204,6 +214,7 @@ fi
 PATH="/opt/enterprise-doc-toolchain/node/bin:$PATH" \
   /opt/enterprise-doc-toolchain/node/bin/npm install --global \
   --prefix /opt/enterprise-doc-toolchain/node --no-audit --no-fund \
+  --registry https://registry.npmjs.org --fetch-timeout 300000 \
   "pnpm@$PNPM_VERSION"
 chown -R root:root /opt/enterprise-doc-toolchain
 chmod -R go-w /opt/enterprise-doc-toolchain

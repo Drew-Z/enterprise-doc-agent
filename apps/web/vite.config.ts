@@ -23,6 +23,15 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ["@tanstack/react-query", "lucide-react", "react", "react-dom", "zod"],
+        },
+      },
+    },
+  },
   test: {
     environment: "jsdom",
     setupFiles: "./src/test/setup.ts",

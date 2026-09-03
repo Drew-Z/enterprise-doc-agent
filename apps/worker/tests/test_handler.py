@@ -5,6 +5,7 @@ from uuid import uuid4
 import pytest
 
 from enterprise_doc_core.jobs import ClaimedJob, RetryDisposition
+from enterprise_doc_worker.agent_handler import AgentExecutionStaleRun
 from enterprise_doc_worker.handler import (
     JobHandlerRouter,
     UnsupportedJobType,
@@ -59,3 +60,7 @@ async def test_job_handler_router_rejects_unknown_job_type_permanently() -> None
 
     assert caught.value.code == "unsupported_job_type"
     assert classify_job_error(caught.value) is RetryDisposition.PERMANENT
+
+
+async def test_stale_terminal_agent_execution_is_cancelled() -> None:
+    assert classify_job_error(AgentExecutionStaleRun()) is RetryDisposition.CANCELLED

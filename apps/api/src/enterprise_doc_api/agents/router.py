@@ -50,13 +50,16 @@ class AgentRunServiceProtocol(Protocol):
         correlation_id: str | None = None,
     ) -> CreateAgentRunResult: ...
 
-    async def get_status(self, *, run_id: UUID, tenant_id: UUID) -> AgentRunStatusResult: ...
+    async def get_status(
+        self, *, run_id: UUID, tenant_id: UUID, actor_id: UUID
+    ) -> AgentRunStatusResult: ...
 
     async def list_events(
         self,
         *,
         run_id: UUID,
         tenant_id: UUID,
+        actor_id: UUID,
         after_seq: int = 0,
         limit: int = 100,
     ) -> tuple[AgentRunEventResult, ...]: ...
@@ -73,6 +76,7 @@ class AgentRunServiceProtocol(Protocol):
         self,
         *,
         tenant_id: UUID,
+        actor_id: UUID,
     ) -> tuple[ReadyDocumentVersionResult, ...]: ...
 
 
@@ -254,7 +258,9 @@ async def list_ready_document_versions(
     principal: Annotated[PrincipalContext, Depends(get_current_principal)],
 ) -> list[ReadyDocumentVersionResponse]:
     service = cast(AgentRunServiceProtocol, request.app.state.agent_run_service)
-    versions = await service.list_ready_document_versions(tenant_id=UUID(principal.tenant_id))
+    versions = await service.list_ready_document_versions(
+        tenant_id=UUID(principal.tenant_id), actor_id=UUID(principal.actor_id)
+    )
     return [_ready_document_version_response(version) for version in versions]
 
 
@@ -274,7 +280,11 @@ async def get_agent_run(
 ) -> AgentRunStatusResponse:
     service = cast(AgentRunServiceProtocol, request.app.state.agent_run_service)
     try:
-        result = await service.get_status(run_id=run_id, tenant_id=UUID(principal.tenant_id))
+        result = await service.get_status(
+            run_id=run_id,
+            tenant_id=UUID(principal.tenant_id),
+            actor_id=UUID(principal.actor_id),
+        )
     except AgentRunError as error:
         raise _agent_run_api_error(error) from error
     return _status_response(result)
@@ -302,6 +312,7 @@ async def list_agent_run_events(
         events = await service.list_events(
             run_id=run_id,
             tenant_id=UUID(principal.tenant_id),
+            actor_id=UUID(principal.actor_id),
             after_seq=after_seq,
             limit=limit,
         )
@@ -340,8 +351,11 @@ async def stream_agent_run_events(
         ) from error
     service = cast(AgentRunServiceProtocol, request.app.state.agent_run_service)
     tenant_id = UUID(principal.tenant_id)
+    actor_id = UUID(principal.actor_id)
     try:
-        initial_status = await service.get_status(run_id=run_id, tenant_id=tenant_id)
+        initial_status = await service.get_status(
+            run_id=run_id, tenant_id=tenant_id, actor_id=actor_id
+        )
     except AgentRunError as error:
         raise _agent_run_api_error(error) from error
     return StreamingResponse(
@@ -350,6 +364,7 @@ async def stream_agent_run_events(
             request=request,
             run_id=run_id,
             tenant_id=tenant_id,
+            actor_id=actor_id,
             after_seq=cursor,
             initial_status=initial_status.status,
         ),
@@ -394,6 +409,7 @@ async def _stream_agent_run_events(
     request: DisconnectProbe,
     run_id: UUID,
     tenant_id: UUID,
+    actor_id: UUID,
     after_seq: int,
     initial_status: str,
     sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
@@ -412,6 +428,7 @@ async def _stream_agent_run_events(
         events = await service.list_events(
             run_id=run_id,
             tenant_id=tenant_id,
+            actor_id=actor_id,
             after_seq=cursor,
             limit=_SSE_BATCH_SIZE,
         )
@@ -428,7 +445,9 @@ async def _stream_agent_run_events(
 
         if current_status in _TERMINAL_RUN_STATUSES:
             return
-        status_result = await service.get_status(run_id=run_id, tenant_id=tenant_id)
+        status_result = await service.get_status(
+            run_id=run_id, tenant_id=tenant_id, actor_id=actor_id
+        )
         current_status = status_result.status
         if current_status in _TERMINAL_RUN_STATUSES:
             return

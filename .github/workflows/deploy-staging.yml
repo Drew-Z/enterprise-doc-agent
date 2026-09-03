@@ -174,14 +174,15 @@ jobs:
           fi
           kubectl auth can-i create jobs.batch -n enterprise-doc-agent-staging | grep -qx 'yes'
           kubectl auth can-i patch deployments.apps -n enterprise-doc-agent-staging | grep -qx 'yes'
+          kubectl auth can-i patch deployments.apps/scale -n enterprise-doc-agent-staging | grep -qx 'yes'
           trap - ERR INT TERM
       - name: Validate deployment profile ownership
         env:
-          DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'tiny-single-node' }}
+          DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'single-node-4c4g' }}
         run: |
           set -euo pipefail
           case "$DEPLOYMENT_PROFILE" in
-            tiny-single-node|single-node-4c8g|staging) ;;
+            tiny-single-node|single-node-4c4g|single-node-4c8g|staging) ;;
             *) echo 'unsupported deployment profile' >&2; exit 1 ;;
           esac
           namespace_json="$(
@@ -204,7 +205,7 @@ jobs:
           fi
       - name: Bind exact image digests
         env:
-          DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'tiny-single-node' }}
+          DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'single-node-4c4g' }}
           REGISTRY_PREFIX: ${{ inputs.registry_prefix }}
           API_DIGEST: ${{ inputs.api_digest }}
           WORKER_DIGEST: ${{ inputs.worker_digest }}
@@ -213,7 +214,7 @@ jobs:
         run: |
           set -euo pipefail
           case "$DEPLOYMENT_PROFILE" in
-            tiny-single-node|single-node-4c8g|staging) ;;
+            tiny-single-node|single-node-4c4g|single-node-4c8g|staging) ;;
             *) echo 'unsupported deployment profile' >&2; exit 1 ;;
           esac
           # Reviewed single-node profiles inherit the staging image transformer.
@@ -234,7 +235,7 @@ jobs:
           kustomize edit set image enterprise-doc/web="$REGISTRY_PREFIX/enterprise-doc-web@$WEB_DIGEST"
       - name: Render and validate staging manifests
         env:
-          DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'tiny-single-node' }}
+          DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'single-node-4c4g' }}
           STAGING_BASE_URL: ${{ inputs.staging_base_url }}
           OBJECT_STORE_ENDPOINT: ${{ inputs.object_store_endpoint }}
           OBJECT_STORE_PRESIGN_ENDPOINT: ${{ inputs.object_store_presign_endpoint }}
@@ -259,7 +260,7 @@ jobs:
         run: |
           set -euo pipefail
           case "$DEPLOYMENT_PROFILE" in
-            tiny-single-node|single-node-4c8g|staging) ;;
+            tiny-single-node|single-node-4c4g|single-node-4c8g|staging) ;;
             *) echo 'unsupported deployment profile' >&2; exit 1 ;;
           esac
           OVERLAY_DIR="infra/k8s/overlays/${DEPLOYMENT_PROFILE}"
@@ -366,8 +367,17 @@ jobs:
           kubectl apply --dry-run=server -f "$RUNNER_TEMP/staging-workloads.yaml"
       - name: Apply migration job before rollout
         id: migration
+        env:
+          DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'single-node-4c4g' }}
         run: |
           set -euo pipefail
+          if test "$DEPLOYMENT_PROFILE" = "tiny-single-node" || test "$DEPLOYMENT_PROFILE" = "single-node-4c4g"; then
+            kubectl -n enterprise-doc-agent-staging scale \
+              deployment/enterprise-doc-api \
+              deployment/enterprise-doc-worker \
+              deployment/enterprise-doc-consumer \
+              deployment/enterprise-doc-web --replicas=0
+          fi
           if kubectl -n enterprise-doc-agent-staging get job enterprise-doc-migrate >/dev/null 2>&1; then
             previous_complete="$(kubectl -n enterprise-doc-agent-staging get job enterprise-doc-migrate \
               -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')"
@@ -426,10 +436,16 @@ jobs:
           kubectl apply -f "$RUNNER_TEMP/staging-workloads.yaml"
       - name: Wait for workloads
         id: rollout
+        env:
+          DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'single-node-4c4g' }}
         run: |
           set -euo pipefail
+          worker_timeout=600s
+          if test "$DEPLOYMENT_PROFILE" = "single-node-4c4g"; then
+            worker_timeout=1800s
+          fi
           kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-api --timeout=600s
-          kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-worker --timeout=600s
+          kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-worker --timeout="$worker_timeout"
           kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-consumer --timeout=600s
           kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-web --timeout=600s
           if kubectl -n enterprise-doc-agent-staging get deployment enterprise-doc-redis >/dev/null 2>&1; then
@@ -443,9 +459,59 @@ jobs:
         env:
           EXPECTED_EMBEDDING_MODEL: ${{ vars.STAGING_EMBEDDING_MODEL_NAME }}
           EXPECTED_EMBEDDING_VERSION: ${{ vars.STAGING_EMBEDDING_VERSION || '2' }}
+          DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'single-node-4c4g' }}
         run: |
           set -euo pipefail
           report="$RUNNER_TEMP/staging-embedding-rollout.json"
+          restore_workloads() {
+            if test "${DEPLOYMENT_PROFILE:-}" != "tiny-single-node" && test "${DEPLOYMENT_PROFILE:-}" != "single-node-4c4g"; then
+              return 0
+            fi
+            worker_timeout=600s
+            if test "$DEPLOYMENT_PROFILE" = "single-node-4c4g"; then
+              worker_timeout=1800s
+            fi
+            kubectl apply -f "$RUNNER_TEMP/staging-workloads.yaml" >/dev/null
+            kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-api --timeout=600s
+            kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-worker --timeout="$worker_timeout"
+            kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-consumer --timeout=600s
+            kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-web --timeout=600s
+          }
+          if test "${DEPLOYMENT_PROFILE:-}" = "tiny-single-node" || test "${DEPLOYMENT_PROFILE:-}" = "single-node-4c4g"; then
+            trap 'restore_workloads' EXIT
+            if test "${DEPLOYMENT_PROFILE:-}" = "single-node-4c4g"; then
+              # Keep the queue publisher and consumer available while the
+              # embedding reindex Job drains the work they produce. API and
+              # Web are not needed by this gate and can be paused to reduce
+              # pressure on the small single-node staging host.
+              kubectl -n enterprise-doc-agent-staging scale \
+                deployment/enterprise-doc-api \
+                deployment/enterprise-doc-web --replicas=0
+              kubectl -n enterprise-doc-agent-staging scale \
+                deployment/enterprise-doc-consumer --replicas=4
+              kubectl -n enterprise-doc-agent-staging rollout status \
+                deployment/enterprise-doc-consumer --timeout=180s
+              selector='app.kubernetes.io/name in (enterprise-doc-api,enterprise-doc-web)'
+            else
+              # The tiny profile cannot sustain the queue workers alongside
+              # the reindex Job, so preserve its original all-workload pause.
+              kubectl -n enterprise-doc-agent-staging scale \
+                deployment/enterprise-doc-api \
+                deployment/enterprise-doc-worker \
+                deployment/enterprise-doc-consumer \
+                deployment/enterprise-doc-web --replicas=0
+              selector='app.kubernetes.io/name in (enterprise-doc-api,enterprise-doc-worker,enterprise-doc-consumer,enterprise-doc-web)'
+            fi
+            for ((attempt = 0; attempt < 60; attempt += 1)); do
+              remaining="$(kubectl -n enterprise-doc-agent-staging get pods \
+                -l "$selector" \
+                --no-headers 2>/dev/null | awk 'NF { count += 1 } END { print count + 0 }')"
+              if test "$remaining" = "0"; then
+                break
+              fi
+              sleep 2
+            done
+          fi
           if kubectl -n enterprise-doc-agent-staging get job enterprise-doc-embedding-rollout >/dev/null 2>&1; then
             previous_complete="$(kubectl -n enterprise-doc-agent-staging get job enterprise-doc-embedding-rollout \
               -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')"
@@ -459,13 +525,15 @@ jobs:
           kubectl apply --dry-run=server -f "$RUNNER_TEMP/staging-embedding-rollout.yaml"
           kubectl apply -f "$RUNNER_TEMP/staging-embedding-rollout.yaml"
           job_result=""
-          for ((attempt = 0; attempt < 264; attempt += 1)); do
+          for ((attempt = 0; attempt < 660; attempt += 1)); do
             complete="$(kubectl -n enterprise-doc-agent-staging get \
               job/enterprise-doc-embedding-rollout \
-              -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')"
+              -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}' \
+              2>/dev/null || true)"
             failed="$(kubectl -n enterprise-doc-agent-staging get \
               job/enterprise-doc-embedding-rollout \
-              -o jsonpath='{.status.conditions[?(@.type=="Failed")].status}')"
+              -o jsonpath='{.status.conditions[?(@.type=="Failed")].status}' \
+              2>/dev/null || true)"
             if test "$complete" = "True"; then
               job_result="complete"
               break
@@ -495,6 +563,8 @@ jobs:
             --input "$report" \
             --expected-model "$EXPECTED_EMBEDDING_MODEL" \
             --expected-version "$EXPECTED_EMBEDDING_VERSION"
+          trap - EXIT
+          restore_workloads
       - name: Run in-cluster readiness smoke
         id: cluster_smoke
         if: inputs.run_smoke
@@ -528,6 +598,48 @@ jobs:
             --allowed-host "$STAGING_ALLOWED_HOST" \
             --allowed-object-store-host "$STAGING_OBJECT_STORE_ALLOWED_HOST" \
             --report-path "tmp/staging-smoke-${GITHUB_SHA}.json"
+      - name: Run staging governance smoke
+        id: governance_smoke
+        if: inputs.run_smoke && vars.STAGING_RUN_GOVERNANCE_SMOKE == 'true'
+        env:
+          STAGING_BASE_URL: ${{ inputs.staging_base_url }}
+          STAGING_ALLOWED_HOST: ${{ vars.STAGING_ALLOWED_HOST }}
+          STAGING_OBJECT_STORE_ALLOWED_HOST: ${{ vars.STAGING_OBJECT_STORE_ALLOWED_HOST }}
+          STAGING_GOVERNANCE_OWNER_TOKEN: ${{ secrets.STAGING_GOVERNANCE_OWNER_TOKEN }}
+          STAGING_GOVERNANCE_MEMBER_TOKEN: ${{ secrets.STAGING_GOVERNANCE_MEMBER_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$STAGING_BASE_URL"
+          test -n "$STAGING_ALLOWED_HOST"
+          test -n "$STAGING_OBJECT_STORE_ALLOWED_HOST"
+          test -n "$STAGING_GOVERNANCE_OWNER_TOKEN"
+          test -n "$STAGING_GOVERNANCE_MEMBER_TOKEN"
+          "$RUNNER_PYTHON" scripts/staging_governance_smoke.py \
+            --base-url "$STAGING_BASE_URL" \
+            --allowed-host "$STAGING_ALLOWED_HOST" \
+            --allowed-object-store-host "$STAGING_OBJECT_STORE_ALLOWED_HOST" \
+            --report-path "tmp/staging-governance-smoke-${GITHUB_SHA}.json"
+      - name: Restore tiny workloads after deployment attempt
+        if: always()
+        env:
+          DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'single-node-4c4g' }}
+        run: |
+          set -euo pipefail
+          if test "$DEPLOYMENT_PROFILE" != "tiny-single-node" && test "$DEPLOYMENT_PROFILE" != "single-node-4c4g"; then
+            exit 0
+          fi
+          if test ! -f "$RUNNER_TEMP/staging-workloads.yaml"; then
+            exit 0
+          fi
+          worker_timeout=600s
+          if test "$DEPLOYMENT_PROFILE" = "single-node-4c4g"; then
+            worker_timeout=1800s
+          fi
+          kubectl apply -f "$RUNNER_TEMP/staging-workloads.yaml" >/dev/null
+          kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-api --timeout=600s
+          kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-worker --timeout="$worker_timeout"
+          kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-consumer --timeout=600s
+          kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-web --timeout=600s
       - name: Collect sanitized release evidence
         if: always()
         env:
@@ -547,7 +659,7 @@ jobs:
           EMBEDDING_BASE_URL: ${{ vars.STAGING_EMBEDDING_BASE_URL }}
           EMBEDDING_MODEL_NAME: ${{ vars.STAGING_EMBEDDING_MODEL_NAME }}
           EMBEDDING_VERSION: ${{ vars.STAGING_EMBEDDING_VERSION || '2' }}
-          DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'tiny-single-node' }}
+          DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'single-node-4c4g' }}
           PREREQUISITES_OUTCOME: ${{ steps.prerequisites.outcome }}
           MIGRATION_OUTCOME: ${{ steps.migration.outcome }}
           WORKLOADS_OUTCOME: ${{ steps.workloads.outcome }}
@@ -555,6 +667,8 @@ jobs:
           EMBEDDING_ROLLOUT_OUTCOME: ${{ steps.embedding_rollout.outcome }}
           CLUSTER_SMOKE_OUTCOME: ${{ steps.cluster_smoke.outcome }}
           AUTHENTICATED_SMOKE_OUTCOME: ${{ steps.authenticated_smoke.outcome }}
+          GOVERNANCE_SMOKE_REQUIRED: ${{ vars.STAGING_RUN_GOVERNANCE_SMOKE == 'true' }}
+          GOVERNANCE_SMOKE_OUTCOME: ${{ steps.governance_smoke.outcome || 'skipped' }}
         run: |
           set -euo pipefail
           mkdir -p tmp
@@ -580,6 +694,9 @@ jobs:
           done
           if test -f "tmp/staging-smoke-${GITHUB_SHA}.json"; then
             cp "tmp/staging-smoke-${GITHUB_SHA}.json" "$raw_dir/staging-smoke.json"
+          fi
+          if test -f "tmp/staging-governance-smoke-${GITHUB_SHA}.json"; then
+            cp "tmp/staging-governance-smoke-${GITHUB_SHA}.json" "$raw_dir/staging-governance-smoke.json"
           fi
           if test -f "$RUNNER_TEMP/staging-embedding-rollout.json"; then
             cp "$RUNNER_TEMP/staging-embedding-rollout.json" \
@@ -643,6 +760,8 @@ jobs:
             --embedding-version "$EMBEDDING_VERSION" \
             --embedding-rollout-report "$sanitized_dir/staging-embedding-rollout.json" \
             --smoke-required "$RUN_SMOKE" \
+            --governance-smoke-required "$GOVERNANCE_SMOKE_REQUIRED" \
+            --governance-smoke-outcome "$GOVERNANCE_SMOKE_OUTCOME" \
             --output "tmp/staging-release-${evidence_id}.record.json"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()

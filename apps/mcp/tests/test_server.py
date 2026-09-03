@@ -30,6 +30,7 @@ from enterprise_doc_core.telemetry import MetricsRuntime
 from enterprise_doc_mcp.server import (
     McpRuntime,
     McpServerError,
+    _mcp_database_settings,
     build_runtime,
     build_server,
 )
@@ -193,6 +194,29 @@ async def test_server_runtime_applies_vector_evidence_setting() -> None:
         assert resources.runtime.service.retrieval_service.require_vector_evidence is True
     finally:
         await resources.close()
+
+
+def test_mcp_transaction_database_uses_one_unprepared_connection() -> None:
+    settings = FoundationSettings(
+        _env_file=None,
+        mcp={
+            "database_url": "postgresql+psycopg://user:password@pooler:6543/app",
+            "database_transaction_mode": True,
+        },
+    )
+
+    database = _mcp_database_settings(settings)
+
+    assert database.url.get_secret_value().endswith("@pooler:6543/app")
+    assert database.pool_size == 1
+    assert database.max_overflow == 0
+    assert database.prepare_threshold is None
+
+
+def test_mcp_database_defaults_to_process_database_settings() -> None:
+    settings = FoundationSettings(_env_file=None)
+
+    assert _mcp_database_settings(settings) is settings.database
 
 
 async def test_server_records_retryable_tool_failures() -> None:

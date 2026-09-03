@@ -29,7 +29,7 @@ from enterprise_doc_core.agents import (
     ToolExecutionError,
     verify_execution_context,
 )
-from enterprise_doc_core.config import FoundationSettings
+from enterprise_doc_core.config import DatabaseSettings, FoundationSettings
 from enterprise_doc_core.context import (
     PrincipalContext,
     RequestContext,
@@ -256,7 +256,7 @@ def build_runtime(
     metrics: MetricsRuntime | None = None,
 ) -> RuntimeResources:
     resolved_metrics = metrics if metrics is not None else MetricsRuntime.create()
-    engine = create_database_engine(settings.database)
+    engine = create_database_engine(_mcp_database_settings(settings))
     session_factory = create_session_factory(engine)
     embedding_provider, embedding_model, embedding_dimension = build_embedding_provider(
         settings.embedding
@@ -297,6 +297,24 @@ def build_runtime(
         artifact_store=artifact_store,
         metrics=resolved_metrics,
     )
+
+
+def _mcp_database_settings(settings: FoundationSettings) -> DatabaseSettings:
+    database_url = settings.mcp.database_url
+    if database_url is None:
+        return settings.database
+    updates: dict[str, object] = {"url": database_url}
+    if settings.mcp.database_transaction_mode:
+        # Supavisor transaction mode is intended for short-lived clients such as
+        # the per-call stdio MCP process. Keep its client pool singular and
+        # disable server-side prepared statements, which transaction mode does
+        # not support.
+        updates.update(
+            pool_size=1,
+            max_overflow=0,
+            prepare_threshold=None,
+        )
+    return settings.database.model_copy(update=updates)
 
 
 async def run_stdio(settings: FoundationSettings | None = None) -> None:

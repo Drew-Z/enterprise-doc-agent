@@ -41,6 +41,7 @@ def test_host_baseline_fails_closed_and_keeps_check_mode_non_mutating() -> None:
     assert "--check" in script
     assert "--apply" in script
     assert "--operator-ssh-cidr" in script
+    assert "--profile tiny-single-node|single-node-4c4g|single-node-4c8g" in script
     assert "--confirm-key-session" in script
     assert "a separate SSH public-key login must be confirmed" in script
     assert "--confirm-tailnet-session" in script
@@ -48,6 +49,9 @@ def test_host_baseline_fails_closed_and_keeps_check_mode_non_mutating() -> None:
     assert 'VERSION_ID" != "24.04"' in script
     assert "MIN_CPU_COUNT=4" in script
     assert "MIN_MEMORY_KIB=7864320" in script
+    assert "MIN_CPU_COUNT=2" in script
+    assert "MIN_MEMORY_KIB=1800000" in script
+    assert "MIN_MEMORY_KIB=3500000" in script
 
     check_branch = script.split('case "$MODE" in', maxsplit=1)[1].split("apply)", maxsplit=1)[0]
     for mutating_command in ("apt-get", "swapoff", "systemctl restart", "ufw --force enable"):
@@ -196,6 +200,7 @@ def test_k3s_and_runner_toolchain_versions_are_exact() -> None:
 
     k3s = _script("install-k3s.sh")
     assert 'INSTALL_K3S_VERSION="$K3S_VERSION"' in k3s
+    assert "--profile tiny-single-node|single-node-4c4g|single-node-4c8g" in k3s
     assert "--asset" in k3s
     assert "--docker-io-mirror" in k3s
     assert "--docker-io-mirror must be an HTTPS host" in k3s
@@ -211,12 +216,22 @@ def test_k3s_and_runner_toolchain_versions_are_exact() -> None:
     assert "updateStrategy:\n      type: Recreate" in k3s
     assert "check_cluster 300s" in k3s
     assert 'wait_traefik_loopback "$timeout"' in k3s
+    assert "wait_node_object 300s" in k3s
+    assert k3s.index("wait_node_object 300s") < k3s.index(
+        "kubectl wait --for=condition=Ready node --all --timeout=300s"
+    )
     assert 'test -f "$ASSET_PATH"' in k3s
     assert '"$K3S_AMD64_SHA256" "$asset_path"' in k3s
     assert 'install -o root -g root -m 0755 "$asset_path" /usr/local/bin/k3s' in k3s
     assert 'write-kubeconfig-mode: "0600"' in k3s
-    assert "system-reserved=cpu=300m,memory=512Mi,ephemeral-storage=1Gi" in k3s
-    assert "kube-reserved=cpu=300m,memory=512Mi,ephemeral-storage=1Gi" in k3s
+    assert 'SYSTEM_RESERVED="cpu=300m,memory=512Mi,ephemeral-storage=1Gi"' in k3s
+    assert 'KUBE_RESERVED="cpu=300m,memory=512Mi,ephemeral-storage=1Gi"' in k3s
+    assert 'SYSTEM_RESERVED="cpu=150m,memory=256Mi,ephemeral-storage=512Mi"' in k3s
+    assert 'KUBE_RESERVED="cpu=150m,memory=256Mi,ephemeral-storage=512Mi"' in k3s
+    assert 'NODE_LABEL="single-node-4c4g"' in k3s
+    assert 'SYSTEM_RESERVED="cpu=250m,memory=384Mi,ephemeral-storage=768Mi"' in k3s
+    assert 'KUBE_RESERVED="cpu=250m,memory=384Mi,ephemeral-storage=768Mi"' in k3s
+    assert 'NODE_LABEL="tiny-single-node"' in k3s
     assert "kubectl wait --for=condition=Ready node" in k3s
     assert "traefik" in k3s.lower()
     assert "--disable traefik" not in k3s.lower()
@@ -244,10 +259,20 @@ def test_k3s_and_runner_toolchain_versions_are_exact() -> None:
     package_contract = '"postgresql-client-$POSTGRES_CLIENT_MAJOR=$POSTGRES_CLIENT_PACKAGE_VERSION"'
     assert package_contract in toolchain
     assert "dpkg-query --show" in toolchain
-    assert "END { if (!candidate) exit 1; print candidate }" in toolchain
+    assert 'apt-cache madison "postgresql-client-$POSTGRES_CLIENT_MAJOR"' in toolchain
+    assert "if (version == expected) found = 1" in toolchain
+    assert "END { exit(found ? 0 : 1) }" in toolchain
+    assert (
+        "--index-url https://mirrors.aliyun.com/pypi/simple/ --timeout 60 --retries 4" in toolchain
+    )
+    assert "--registry https://registry.npmjs.org --fetch-timeout 300000" in toolchain
     assert "pg_dump --version" in toolchain
     assert "pg_restore --version" in toolchain
     assert "Runner.Listener --version" in toolchain
+    assert (
+        'runuser -u "$RUNNER_USER" -- /opt/actions-runner/bin/Runner.Listener --version'
+        in toolchain
+    )
     assert "refusing to replace a registered Actions runner" in toolchain
     assert "./config.sh" not in toolchain
     assert "registration-token" not in toolchain

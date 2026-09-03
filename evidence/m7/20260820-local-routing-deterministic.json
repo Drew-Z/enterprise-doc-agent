@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "milestone": "M7",
+  "scenario": "deterministic",
+  "status": "passed",
+  "route": {
+    "route_id": "m7-local",
+    "provider": "deterministic",
+    "model_name": "deterministic-grounded",
+    "model_version": "m7.benchmark.v1",
+    "quantization": "none",
+    "context_window_tokens": 8192,
+    "embedding_dimension": 8
+  },
+  "dataset_version": "m7-model-benchmark-v1",
+  "dataset_sha256": "c3a5bd3eff11888d7f88284e37482234b0b3f7b5d11129440458a9e60757ab8c",
+  "sample_count": 20,
+  "latency_ms": {
+    "sample_count": 20,
+    "min_ms": 0.022400010493583977,
+    "p50_ms": 0.023900007363408804,
+    "p95_ms": 0.058600009651854634,
+    "p99_ms": 0.6897000130265951,
+    "max_ms": 0.6897000130265951
+  },
+  "errors_by_code": {},
+  "fallback_count": 0,
+  "breaker_state": "not_applicable",
+  "provider_health": {
+    "primary": {
+      "available": true,
+      "provider": "deterministic",
+      "model_name": "deterministic-grounded",
+      "model_version": "m7.benchmark.v1",
+      "model_revision": null,
+      "quantization": "none",
+      "context_window_tokens": 8192,
+      "embedding_dimension": 8,
+      "error_code": null
+    }
+  },
+  "cost_metadata": {
+    "source": "not_available",
+    "currency": null,
+    "input_tokens": null,
+    "output_tokens": null,
+    "estimated_cost": null,
+    "pricing_version": null,
+    "limitation": "The deterministic local gateway does not report token usage or provider pricing; no monetary cost is claimed."
+  },
+  "citation_validity": {
+    "valid_cases": 20,
+    "total_cases": 20,
+    "valid_citation_count": 20,
+    "citation_precision": 1.0,
+    "valid_case_rate": 1.0,
+    "citation_count": 20
+  },
+  "targets": {
+    "citation_precision": 1.0,
+    "valid_case_rate": 1.0
+  },
+  "measured": {
+    "citation_precision": 1.0,
+    "valid_case_rate": 1.0,
+    "fallback_count": 0,
+    "successful_requests": 20
+  },
+  "limitations": [
+    "Synthetic deterministic cases only; no GPU, vLLM, quantization memory, or production provider measurement.",
+    "Latency is measured in the local Python process and excludes network and queue saturation.",
+    "This benchmark is a local orchestration baseline, not a GPU/vLLM throughput or memory result.",
+    "Real provider quality, cost, network latency and queue contention require a separate manual gate."
+  ],
+  "provenance": {
+    "command": [
+      "python",
+      "scripts/benchmark_m7.py",
+      "--dataset",
+      "<dataset>",
+      "--scenario",
+      "deterministic",
+      "--iterations",
+      "20",
+      "--report-path",
+      "<report-path>"
+    ],
+    "environment": {
+      "operating_system": "Windows-11-10.0.26200-SP0",
+      "architecture": "AMD64",
+      "python": "3.12.13",
+      "execution_scope": "local-model-benchmark"
+    },
+    "commit_sha": "52aadd738b311d1b9afa454235b5291a77fb69f3",
+    "working_tree_dirty": true,
+    "input_sha256": "c3a5bd3eff11888d7f88284e37482234b0b3f7b5d11129440458a9e60757ab8c",
+    "payload_sha256": "c5c7d877d341c82fcdd771363e5076170eba0c94760f19570737b770131c537a"
+  },
+  "started_at": "2026-08-20T07:58:28.414519+00:00",
+  "completed_at": "2026-08-20T07:58:28.664652+00:00",
+  "owner": "developer"
+}

@@ -121,6 +121,35 @@ describe("AgentWorkspace", () => {
           publishedAt: null,
         },
       ]),
+      getArtifactPreview: vi.fn().mockResolvedValue({
+        artifactId,
+        runId,
+        documentVersionId: versionId,
+        status: "draft_ready",
+        contentSha256: "b".repeat(64),
+        schemaVersion: 1,
+        taskType: "question_answer",
+        answerText: "Payment is due within 30 days.",
+        structuredFields: null,
+        riskHint: "low",
+        citations: [
+          {
+            chunkId: "88888888-8888-4888-8888-888888888888",
+            documentVersionId: versionId,
+            sourceFilename: "contract.pdf",
+            pageNumber: 3,
+            heading: "Payment terms",
+            startOffset: 120,
+            endOffset: 168,
+            excerpt: "Invoices are payable within thirty calendar days.",
+          },
+        ],
+        behaviorVersions: {
+          graphVersion: "graph-v1",
+          promptVersion: "prompt-v1",
+          toolSchemaVersion: "tool-v1",
+        },
+      }),
       getArtifactDownload: vi.fn().mockResolvedValue({
         artifactId,
         status: "draft_ready",
@@ -144,7 +173,15 @@ describe("AgentWorkspace", () => {
     fireEvent.click(screen.getByRole("button", { name: "Create run" }));
 
     expect(await screen.findByText("Run succeeded")).toBeInTheDocument();
-    expect(screen.getByText("Verified artifacts")).toBeInTheDocument();
+    expect(screen.getByText("Verified result")).toBeInTheDocument();
+    expect(screen.getByText("Payment is due within 30 days.")).toBeInTheDocument();
+    expect(screen.getByText("contract.pdf · page 3 · Payment terms")).toBeInTheDocument();
+    expect(screen.getByText("Invoices are payable within thirty calendar days.")).toBeInTheDocument();
+    expect(screen.getByText("graph-v1")).toBeInTheDocument();
+    expect(screen.getByText("Execution metadata")).toBeInTheDocument();
+    expect(screen.getByText("deterministic · fixture")).toBeInTheDocument();
+    expect(screen.getByText("0 requests", { exact: false })).toBeInTheDocument();
+    expect(screen.queryByText("Loading events")).not.toBeInTheDocument();
     expect(openEventStream).toHaveBeenCalledWith(runId, 1, expect.any(AbortSignal));
 
     fireEvent.click(screen.getByRole("button", { name: "Download answer" }));
@@ -193,6 +230,7 @@ describe("AgentWorkspace", () => {
       getApproval: vi.fn(),
       decideApproval: vi.fn(),
       listArtifacts: vi.fn().mockResolvedValue([]),
+      getArtifactPreview: vi.fn(),
       getArtifactDownload: vi.fn(),
     };
     const dependencies: AgentWorkspaceDependencies = {

@@ -125,6 +125,23 @@ rollout.
 The 4B repeat preserved every top-chunk order, anchor rank, and calibration row; rounded cosine
 values moved by at most `0.003658` without crossing a scanned threshold.
 
+### Reviewed 4B route revalidation (2026-08-20)
+
+The operator-owned `Qwen/Qwen3-Embedding-4B` route was rechecked after a transient
+network failure was observed while probing the separate Free 8B challenger. Two
+independent runs used the same 40-case synthetic corpus, production parser/chunker,
+1024-dimensional output, and generation version `2`. Both completed successfully:
+
+- endpoint host: `ai.hybgzs.com` (the protected base URL remains outside repository evidence);
+- answer anchor Recall@1: `0.985294`; Recall@3/5/10: `1.0`; MRR: `1.0`;
+- refusal vector-candidate rate at the current `0.35` boundary: `0.166667`;
+- returned vectors: finite, non-zero, exactly 1024 dimensions.
+
+These are local vector-quality revalidation reports, not a new staging rollout. The
+reviewed staging identity remains `Qwen/Qwen3-Embedding-4B`, generation version `2`.
+The Free `qwen3-embedding-8b` challenger is intentionally deferred: no version `3`
+protected-variable change, reindex, or model switch is authorized by this decision.
+
 ### Hybrid vector-evidence admission gate (2026-08-16)
 
 The local hybrid review used the production query stopword/fallback policy, vector distance

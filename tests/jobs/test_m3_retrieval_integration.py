@@ -23,7 +23,7 @@ from enterprise_doc_core.documents.models import (
     DocumentVersionStatus,
 )
 from enterprise_doc_core.documents.retrieval_service import HybridRetrievalService
-from enterprise_doc_core.identity import Tenant, User
+from enterprise_doc_core.identity import Membership, MembershipRole, Tenant, User
 from enterprise_doc_core.uploads.models import UploadSession, UploadSessionStatus
 
 VECTOR_A = (1.0,) + (0.0,) * (DEFAULT_EMBEDDING_DIMENSION - 1)
@@ -62,6 +62,15 @@ async def _seed_identity(
             )
         )
         session.add(User(id=actor_id, email=f"m3-retrieval-{suffix}@example.test"))
+        await session.flush()
+        session.add(
+            Membership(
+                tenant_id=tenant_id,
+                user_id=actor_id,
+                role=MembershipRole.OWNER.value,
+                is_active=True,
+            )
+        )
     return tenant_id, actor_id
 
 
@@ -234,11 +243,13 @@ async def test_keyword_and_vector_recall_work_independently() -> None:
     try:
         keyword_candidates = await service._keyword_recall(
             tenant_id=tenant_id,
+            actor_id=actor_id,
             document_version_id=keyword_version.document_version_id,
             query="escrow",
         )
         keyword_vector_candidates = await service._vector_recall(
             tenant_id=tenant_id,
+            actor_id=actor_id,
             document_version_id=keyword_version.document_version_id,
             vector=VECTOR_B,
         )
@@ -254,11 +265,13 @@ async def test_keyword_and_vector_recall_work_independently() -> None:
 
         vector_keyword_candidates = await service._keyword_recall(
             tenant_id=tenant_id,
+            actor_id=actor_id,
             document_version_id=vector_version.document_version_id,
             query="proof of delivery",
         )
         vector_candidates = await service._vector_recall(
             tenant_id=tenant_id,
+            actor_id=actor_id,
             document_version_id=vector_version.document_version_id,
             vector=VECTOR_A,
         )
@@ -366,6 +379,7 @@ async def test_retrieval_rejects_mismatched_version_generation_links() -> None:
         assert (
             await service._keyword_recall(
                 tenant_id=tenant_id,
+                actor_id=actor_id,
                 document_version_id=target_version.document_version_id,
                 query="leak",
             )
@@ -373,12 +387,14 @@ async def test_retrieval_rejects_mismatched_version_generation_links() -> None:
         assert (
             await service._vector_recall(
                 tenant_id=tenant_id,
+                actor_id=actor_id,
                 document_version_id=target_version.document_version_id,
                 vector=VECTOR_A,
             )
         ) == ()
         source_candidates = await service._vector_recall(
             tenant_id=tenant_id,
+            actor_id=actor_id,
             document_version_id=source_version.document_version_id,
             vector=VECTOR_A,
         )
@@ -429,6 +445,7 @@ async def test_generation_switch_exposes_only_the_ready_active_generation() -> N
         assert (
             await service._keyword_recall(
                 tenant_id=tenant_id,
+                actor_id=actor_id,
                 document_version_id=version.document_version_id,
                 query="legacy",
             )
@@ -436,17 +453,20 @@ async def test_generation_switch_exposes_only_the_ready_active_generation() -> N
         assert (
             await service._vector_recall(
                 tenant_id=tenant_id,
+                actor_id=actor_id,
                 document_version_id=version.document_version_id,
                 vector=VECTOR_A,
             )
         ) == ()
         current_keyword = await service._keyword_recall(
             tenant_id=tenant_id,
+            actor_id=actor_id,
             document_version_id=version.document_version_id,
             query="current",
         )
         current_vector = await service._vector_recall(
             tenant_id=tenant_id,
+            actor_id=actor_id,
             document_version_id=version.document_version_id,
             vector=VECTOR_B,
         )

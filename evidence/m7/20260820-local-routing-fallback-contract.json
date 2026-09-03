@@ -1,0 +1,121 @@
+{
+  "schema_version": 1,
+  "milestone": "M7",
+  "scenario": "fallback-contract",
+  "status": "passed",
+  "route": {
+    "route_id": "m7-local-timeout",
+    "provider": "synthetic",
+    "model_name": "timeout-gateway",
+    "model_version": "m7.fault.v1",
+    "quantization": null,
+    "context_window_tokens": null,
+    "embedding_dimension": null,
+    "primary_provider": "synthetic",
+    "primary_model_name": "timeout-gateway",
+    "primary_model_version": "m7.fault.v1",
+    "fallback_provider": "deterministic",
+    "fallback_model_name": "deterministic-grounded",
+    "fallback_model_version": "m7.benchmark.v1"
+  },
+  "dataset_version": "m7-model-benchmark-v1",
+  "dataset_sha256": "c3a5bd3eff11888d7f88284e37482234b0b3f7b5d11129440458a9e60757ab8c",
+  "sample_count": 20,
+  "latency_ms": {
+    "sample_count": 20,
+    "min_ms": 0.03199999628122896,
+    "p50_ms": 0.03779999678954482,
+    "p95_ms": 0.15100000018719584,
+    "p99_ms": 0.7165999995777383,
+    "max_ms": 0.7165999995777383
+  },
+  "errors_by_code": {},
+  "fallback_count": 20,
+  "breaker_state": "open",
+  "provider_health": {
+    "primary": {
+      "available": false,
+      "provider": "synthetic",
+      "model_name": "timeout-gateway",
+      "model_version": "m7.fault.v1",
+      "model_revision": null,
+      "quantization": null,
+      "context_window_tokens": null,
+      "embedding_dimension": null,
+      "error_code": "healthcheck_not_supported"
+    },
+    "fallback": {
+      "available": true,
+      "provider": "deterministic",
+      "model_name": "deterministic-grounded",
+      "model_version": "m7.benchmark.v1",
+      "model_revision": null,
+      "quantization": "none",
+      "context_window_tokens": 8192,
+      "embedding_dimension": 8,
+      "error_code": null
+    }
+  },
+  "cost_metadata": {
+    "source": "not_available",
+    "currency": null,
+    "input_tokens": null,
+    "output_tokens": null,
+    "estimated_cost": null,
+    "pricing_version": null,
+    "limitation": "The deterministic local gateway does not report token usage or provider pricing; no monetary cost is claimed."
+  },
+  "citation_validity": {
+    "valid_cases": 20,
+    "total_cases": 20,
+    "valid_citation_count": 20,
+    "citation_precision": 1.0,
+    "valid_case_rate": 1.0,
+    "citation_count": 20
+  },
+  "targets": {
+    "citation_precision": 1.0,
+    "valid_case_rate": 1.0,
+    "fallback_count": 20,
+    "breaker_state": "open"
+  },
+  "measured": {
+    "citation_precision": 1.0,
+    "valid_case_rate": 1.0,
+    "fallback_count": 20,
+    "successful_requests": 20
+  },
+  "limitations": [
+    "Synthetic deterministic cases only; no GPU, vLLM, quantization memory, or production provider measurement.",
+    "Latency is measured in the local Python process and excludes network and queue saturation.",
+    "This benchmark is a local orchestration baseline, not a GPU/vLLM throughput or memory result.",
+    "Real provider quality, cost, network latency and queue contention require a separate manual gate."
+  ],
+  "provenance": {
+    "command": [
+      "python",
+      "scripts/benchmark_m7.py",
+      "--dataset",
+      "<dataset>",
+      "--scenario",
+      "fallback-contract",
+      "--iterations",
+      "20",
+      "--report-path",
+      "<report-path>"
+    ],
+    "environment": {
+      "operating_system": "Windows-11-10.0.26200-SP0",
+      "architecture": "AMD64",
+      "python": "3.12.13",
+      "execution_scope": "local-model-benchmark"
+    },
+    "commit_sha": "52aadd738b311d1b9afa454235b5291a77fb69f3",
+    "working_tree_dirty": true,
+    "input_sha256": "c3a5bd3eff11888d7f88284e37482234b0b3f7b5d11129440458a9e60757ab8c",
+    "payload_sha256": "d8245ca764836fbdc7950a64ff8d4c9a8288601119e0638c4ebcb7a0716b6f67"
+  },
+  "started_at": "2026-08-20T07:58:28.414519+00:00",
+  "completed_at": "2026-08-20T07:58:28.657243+00:00",
+  "owner": "developer"
+}

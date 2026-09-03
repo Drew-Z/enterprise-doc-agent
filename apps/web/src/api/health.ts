@@ -9,6 +9,14 @@ export interface ComponentHealth {
 export interface ReadinessResponse {
   status: "ready" | "not_ready";
   checks: Record<ComponentName, ComponentHealth>;
+  /** Server-side probe time; optional for backwards-compatible older APIs. */
+  checkedAt?: string;
+}
+
+interface ReadinessResponseWire {
+  status: ReadinessResponse["status"];
+  checks: Record<ComponentName, ComponentHealth>;
+  checked_at?: string;
 }
 
 const componentNames: ComponentName[] = ["database", "redis", "object_store"];
@@ -18,7 +26,7 @@ function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-export function isReadinessResponse(value: unknown): value is ReadinessResponse {
+export function isReadinessResponse(value: unknown): value is ReadinessResponseWire {
   if (!isObject(value) || (value.status !== "ready" && value.status !== "not_ready")) {
     return false;
   }
@@ -26,10 +34,22 @@ export function isReadinessResponse(value: unknown): value is ReadinessResponse 
     return false;
   }
   const checks = value.checks;
+  if (value.checked_at !== undefined && typeof value.checked_at !== "string") {
+    return false;
+  }
   return componentNames.every((name) => {
     const component = checks[name];
     return isObject(component) && componentStatuses.includes(component.status as ComponentStatus);
-  });
+  }) && (value.checked_at === undefined || !Number.isNaN(Date.parse(value.checked_at)));
+}
+
+function normalizeReadiness(body: ReadinessResponseWire): ReadinessResponse {
+  const normalized: ReadinessResponse = {
+    status: body.status,
+    checks: body.checks,
+  };
+  if (body.checked_at !== undefined) normalized.checkedAt = body.checked_at;
+  return normalized;
 }
 
 export async function fetchReadiness(): Promise<ReadinessResponse> {
@@ -43,10 +63,10 @@ export async function fetchReadiness(): Promise<ReadinessResponse> {
     throw new Error("Readiness response schema is invalid");
   }
   if (response.status === 200 && body.status === "ready") {
-    return body;
+    return normalizeReadiness(body);
   }
   if (response.status === 503 && body.status === "not_ready") {
-    return body;
+    return normalizeReadiness(body);
   }
   throw new Error(`Unexpected readiness response: ${response.status}`);
 }

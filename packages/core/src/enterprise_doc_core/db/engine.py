@@ -33,7 +33,10 @@ def create_database_engine(
         max_overflow=settings.max_overflow,
         pool_timeout=settings.pool_timeout_seconds,
         pool_recycle=settings.pool_recycle_seconds,
-        connect_args={"connect_timeout": settings.connect_timeout_seconds},
+        connect_args={
+            "connect_timeout": settings.connect_timeout_seconds,
+            "prepare_threshold": settings.prepare_threshold,
+        },
     )
     if metrics is not None:
         pool = cast(Any, engine.sync_engine.pool)

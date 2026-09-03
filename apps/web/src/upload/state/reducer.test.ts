@@ -387,7 +387,9 @@ describe("reduceUpload", () => {
       generation: 1,
       code: "network_error",
       message: "Failed.",
+      requestId: "req-create-1",
     });
+    expect(createFailure.state.failure?.requestId).toBe("req-create-1");
     expect(reduceUpload(createFailure.state, { type: "retry" }).effects[0]).toMatchObject({ type: "create_session" });
 
     const reconciling = reduceUpload(

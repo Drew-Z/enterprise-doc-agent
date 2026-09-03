@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import inspect
 import json
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -250,6 +251,7 @@ class RetrievalService(Protocol):
         self,
         *,
         tenant_id: UUID,
+        actor_id: UUID | None = None,
         document_version_id: UUID,
         query: str,
     ) -> RetrievalDecision: ...
@@ -317,11 +319,14 @@ class AgentToolService:
             if recovered is not None:
                 return recovered
         try:
-            decision = await self.retrieval_service.retrieve(
-                tenant_id=context.tenant_id,
-                document_version_id=context.target_document_version_id,
-                query=request.query,
-            )
+            retrieval_kwargs: dict[str, object] = {
+                "tenant_id": context.tenant_id,
+                "document_version_id": context.target_document_version_id,
+                "query": request.query,
+            }
+            if "actor_id" in inspect.signature(self.retrieval_service.retrieve).parameters:
+                retrieval_kwargs["actor_id"] = context.actor_id
+            decision = await self.retrieval_service.retrieve(**retrieval_kwargs)  # type: ignore[arg-type]
         except asyncio.CancelledError:
             await self._interrupt_search(
                 begin.execution_id,

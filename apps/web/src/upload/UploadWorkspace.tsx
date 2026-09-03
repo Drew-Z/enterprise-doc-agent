@@ -22,6 +22,8 @@ import {
   type UploadWorkspaceDependencies,
 } from "./controller";
 import { uploadPartWithXhr } from "./transfer/xhrUploadPart";
+import { useT } from "../i18n";
+import { formatApiError } from "../api/errorDisplay";
 
 const localObjectStoreOrigins = (
   import.meta.env.VITE_OBJECT_STORE_ORIGINS ?? "http://127.0.0.1:9000"
@@ -45,19 +47,22 @@ const defaultUploadWorkspaceDependencies: UploadWorkspaceDependencies = {
 export interface UploadWorkspaceProps {
   dependencies?: UploadWorkspaceDependencies;
   storage?: Storage;
+  onTokenChange?: () => void;
+  onCompleted?: () => void;
+  canUpload?: boolean;
 }
 
-const phaseLabels: Record<UploadPhase, string> = {
-  idle: "Ready for document",
-  awaiting_file: "Reselect original file",
-  hashing: "Hashing document",
-  creating: "Creating upload session",
-  uploading: "Uploading parts",
-  paused: "Upload paused",
-  completing: "Finalizing document",
-  completed: "Upload complete",
-  failed: "Upload needs attention",
-  canceled: "Upload canceled",
+const phaseLabelKeys: Record<UploadPhase, Parameters<ReturnType<typeof useT>>[0]> = {
+  idle: "upload.phase.idle",
+  awaiting_file: "upload.phase.awaitingFile",
+  hashing: "upload.phase.hashing",
+  creating: "upload.phase.creating",
+  uploading: "upload.phase.uploading",
+  paused: "upload.phase.paused",
+  completing: "upload.phase.completing",
+  completed: "upload.phase.completed",
+  failed: "upload.phase.failed",
+  canceled: "upload.phase.canceled",
 };
 
 function mediaTypeForFilename(filename: string): string | null {
@@ -91,19 +96,31 @@ function formatBytes(value: number): string {
   return `${amount >= 10 ? amount.toFixed(1) : amount.toFixed(2)} ${unit}`;
 }
 
-function progressForState(state: UploadMachineState): { percent: number; label: string } {
+function progressForState(state: UploadMachineState, t: ReturnType<typeof useT>): { percent: number; label: string } {
   if (state.phase === "hashing" && state.file !== null) {
     const percent = (state.hashProcessedBytes / state.file.size) * 100;
-    return { percent, label: `${formatBytes(state.hashProcessedBytes)} of ${formatBytes(state.file.size)}` };
+    return {
+      percent,
+      label: t("upload.progress.of", { uploaded: formatBytes(state.hashProcessedBytes), total: formatBytes(state.file.size) }),
+    };
   }
   const progress = aggregateUploadProgress(state.parts);
   return {
     percent: state.phase === "completed" ? 100 : progress.percent,
     label:
       progress.totalBytes === 0
-        ? "No bytes transferred"
-        : `${formatBytes(progress.uploadedBytes)} of ${formatBytes(progress.totalBytes)}`,
+        ? t("upload.progress.none")
+        : t("upload.progress.of", { uploaded: formatBytes(progress.uploadedBytes), total: formatBytes(progress.totalBytes) }),
   };
+}
+
+function partStatusLabel(status: string, t: ReturnType<typeof useT>): string {
+  if (status === "pending") return t("upload.status.pending");
+  if (status === "uploading") return t("upload.status.uploading");
+  if (status === "uploaded") return t("upload.status.uploaded");
+  if (status === "failed") return t("upload.status.failed");
+  if (status === "canceled") return t("upload.status.canceled");
+  return status;
 }
 
 function canCancel(state: UploadMachineState): boolean {
@@ -123,19 +140,27 @@ function canClear(state: UploadMachineState): boolean {
 export function UploadWorkspace({
   dependencies = defaultUploadWorkspaceDependencies,
   storage = sessionStorage,
+  onTokenChange,
+  onCompleted,
+  canUpload = true,
 }: UploadWorkspaceProps) {
+  const t = useT();
   const controller = useUploadController(dependencies, storage);
   const [tokenDraft, setTokenDraft] = useState(controller.token ?? "");
   const [inputError, setInputError] = useState<string | null>(null);
-  const progress = useMemo(() => progressForState(controller.state), [controller.state]);
+  const progress = useMemo(() => progressForState(controller.state, t), [controller.state, t]);
   const state = controller.state;
 
   useEffect(() => {
     setTokenDraft(controller.token ?? "");
   }, [controller.token]);
 
+  useEffect(() => {
+    if (state.phase === "completed") onCompleted?.();
+  }, [onCompleted, state.phase]);
+
   const handleFile = (file: File | undefined): void => {
-    if (file === undefined) {
+    if (file === undefined || !canUpload) {
       return;
     }
     setInputError(null);
@@ -145,7 +170,7 @@ export function UploadWorkspace({
     }
     const mediaType = mediaTypeForFilename(file.name);
     if (mediaType === null) {
-      setInputError("Select a TXT, PDF, or DOCX document.");
+      setInputError(t("upload.error.fileType"));
       return;
     }
     controller.dispatch({
@@ -158,24 +183,26 @@ export function UploadWorkspace({
 
   const tokenConnected = controller.token !== null;
   const fileInputDisabled =
-    !tokenConnected || !["idle", "awaiting_file", "completed", "canceled"].includes(state.phase);
-  const alertMessage = inputError ?? state.failure?.message ?? controller.runtimeError;
+    !canUpload || !tokenConnected || !["idle", "awaiting_file", "completed", "canceled"].includes(state.phase);
+  const alertMessage = inputError ?? (state.failure !== null
+    ? formatApiError(state.failure, t("upload.requestFailed"), t("common.requestId"))
+    : controller.runtimeError);
 
   return (
     <section className="upload-workspace" aria-labelledby="upload-title">
       <div className="upload-heading">
         <div>
-          <p className="eyebrow">Document intake</p>
-          <h1 id="upload-title">Multipart upload</h1>
+          <p className="eyebrow">{t("upload.eyebrow")}</p>
+          <h1 id="upload-title">{t("upload.title")}</h1>
         </div>
         <span className={`token-state ${tokenConnected ? "connected" : "disconnected"}`}>
           <KeyRound aria-hidden="true" />
-          {tokenConnected ? "Token saved" : "Token required"}
+          {tokenConnected ? t("upload.tokenSaved") : t("upload.tokenRequired")}
         </span>
       </div>
 
       <div className="auth-strip">
-        <label htmlFor="local-api-token">Local API token</label>
+        <label htmlFor="local-api-token">{t("upload.localToken")}</label>
         <div className="auth-controls">
           <input
             id="local-api-token"
@@ -188,29 +215,36 @@ export function UploadWorkspace({
           <button
             className="command-button"
             type="button"
-            onClick={() => controller.saveToken(tokenDraft)}
+            onClick={() => {
+              controller.saveToken(tokenDraft);
+              onTokenChange?.();
+            }}
           >
             <Check aria-hidden="true" />
-            Save token
+            {t("upload.saveToken")}
           </button>
           <button
             className="icon-button"
             type="button"
-            aria-label="Clear token"
-            title="Clear token"
+            aria-label={t("upload.clearToken")}
+            title={t("upload.clearToken")}
             disabled={!tokenConnected}
-            onClick={() => controller.clearToken()}
+            onClick={() => {
+              controller.clearToken();
+              onTokenChange?.();
+            }}
           >
             <Trash2 aria-hidden="true" />
           </button>
         </div>
+        <small className="auth-boundary">{t("upload.localTokenDetail")}</small>
       </div>
 
       <div className="upload-command-bar">
         <div className="file-picker">
           <FileText aria-hidden="true" />
           <label htmlFor="upload-file">
-            {state.phase === "awaiting_file" ? "Choose original document" : "Choose document"}
+            {state.phase === "awaiting_file" ? t("upload.chooseOriginal") : t("upload.chooseDocument")}
           </label>
           <input
             id="upload-file"
@@ -221,13 +255,13 @@ export function UploadWorkspace({
           />
         </div>
 
-        <div className="upload-actions" aria-label="Upload actions">
+        <div className="upload-actions" aria-label={t("upload.actions")}>
           {state.phase === "uploading" && !state.reconciling && (
             <button
               className="icon-button"
               type="button"
-              aria-label="Pause upload"
-              title="Pause upload"
+              aria-label={t("upload.pause")}
+              title={t("upload.pause")}
               onClick={() => controller.dispatch({ type: "pause" })}
             >
               <Pause aria-hidden="true" />
@@ -237,8 +271,8 @@ export function UploadWorkspace({
             <button
               className="icon-button primary-icon"
               type="button"
-              aria-label="Resume upload"
-              title="Resume upload"
+              aria-label={t("upload.resume")}
+              title={t("upload.resume")}
               onClick={() => controller.dispatch({ type: "resume" })}
             >
               <Play aria-hidden="true" />
@@ -248,8 +282,8 @@ export function UploadWorkspace({
             <button
               className="icon-button"
               type="button"
-              aria-label="Retry upload"
-              title="Retry upload"
+              aria-label={t("upload.retry")}
+              title={t("upload.retry")}
               onClick={() => controller.dispatch({ type: "retry" })}
             >
               <RefreshCw aria-hidden="true" />
@@ -259,8 +293,8 @@ export function UploadWorkspace({
             <button
               className="icon-button danger-icon"
               type="button"
-              aria-label="Cancel upload"
-              title="Cancel upload"
+              aria-label={t("upload.cancel")}
+              title={t("upload.cancel")}
               onClick={() => controller.dispatch({ type: "cancel" })}
             >
               <CircleX aria-hidden="true" />
@@ -270,8 +304,8 @@ export function UploadWorkspace({
             <button
               className="icon-button"
               type="button"
-              aria-label="Start another upload"
-              title="Start another upload"
+              aria-label={t("upload.startAnother")}
+              title={t("upload.startAnother")}
               onClick={() => controller.dispatch({ type: "clear" })}
             >
               <RotateCcw aria-hidden="true" />
@@ -292,9 +326,9 @@ export function UploadWorkspace({
             )}
           </div>
           <div>
-            <h2>{phaseLabels[state.phase]}</h2>
+            <h2>{t(phaseLabelKeys[state.phase])}</h2>
             <p>
-              {state.fileIdentity?.filename ?? state.file?.name ?? "No document selected"}
+              {state.fileIdentity?.filename ?? state.file?.name ?? t("upload.noDocument")}
               {(state.fileIdentity?.sizeBytes ?? state.file?.size) !== undefined
                 ? ` · ${formatBytes(state.fileIdentity?.sizeBytes ?? state.file?.size ?? 0)}`
                 : ""}
@@ -302,7 +336,7 @@ export function UploadWorkspace({
           </div>
           <strong>{Math.round(progress.percent)}%</strong>
         </div>
-        <div className="progress-track" aria-label="Upload progress">
+        <div className="progress-track" aria-label={t("upload.progress")}>
           <span style={{ width: `${Math.max(0, Math.min(progress.percent, 100))}%` }} />
         </div>
         <span className="progress-detail">{progress.label}</span>
@@ -318,11 +352,11 @@ export function UploadWorkspace({
       {state.completion !== null && (
         <dl className="completion-result">
           <div>
-            <dt>Document ID</dt>
+            <dt>{t("upload.documentId")}</dt>
             <dd>{state.completion.documentId}</dd>
           </div>
           <div>
-            <dt>Version ID</dt>
+            <dt>{t("upload.versionId")}</dt>
             <dd>{state.completion.versionId}</dd>
           </div>
         </dl>
@@ -331,14 +365,14 @@ export function UploadWorkspace({
       {state.parts.length > 0 && (
         <div className="part-section" aria-labelledby="parts-title">
           <div className="section-heading">
-            <h2 id="parts-title">Upload parts</h2>
-            <span>{state.parts.length} total</span>
+            <h2 id="parts-title">{t("upload.parts")}</h2>
+            <span>{t("upload.total", { value: String(state.parts.length) })}</span>
           </div>
           <div className="part-list">
             {state.parts.map((part) => (
               <article className="part-card" key={part.partNumber}>
                 <div>
-                  <strong>Part {part.partNumber}</strong>
+                  <strong>{t("upload.part", { value: String(part.partNumber) })}</strong>
                   <span>{formatBytes(part.sizeBytes)}</span>
                 </div>
                 <div className="part-progress">
@@ -348,13 +382,13 @@ export function UploadWorkspace({
                     }}
                   />
                 </div>
-                <span className={`part-state ${part.status}`}>{part.status}</span>
+                <span className={`part-state ${part.status}`}>{partStatusLabel(part.status, t)}</span>
                 {part.status === "failed" && (
                   <button
                     className="icon-button compact-icon"
                     type="button"
-                    aria-label={`Retry part ${part.partNumber}`}
-                    title={`Retry part ${part.partNumber}`}
+                    aria-label={t("upload.retryPart", { value: String(part.partNumber) })}
+                    title={t("upload.retryPart", { value: String(part.partNumber) })}
                     onClick={() => controller.dispatch({ type: "retry_part", partNumber: part.partNumber })}
                   >
                     <RefreshCw aria-hidden="true" />

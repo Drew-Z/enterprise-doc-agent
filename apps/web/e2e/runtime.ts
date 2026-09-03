@@ -6,6 +6,8 @@ export const runtimeFile = path.join(rootDirectory, "tmp", "playwright-m1-runtim
 
 export interface PlaywrightRuntime {
   token: string;
+  memberToken: string;
+  memberActorId: string;
   composeOwned: boolean;
 }
 
@@ -16,10 +18,21 @@ export function parseRuntime(value: unknown): PlaywrightRuntime {
     !("token" in value) ||
     typeof value.token !== "string" ||
     value.token === "" ||
+    !("memberToken" in value) ||
+    typeof value.memberToken !== "string" ||
+    value.memberToken === "" ||
+    !("memberActorId" in value) ||
+    typeof value.memberActorId !== "string" ||
+    value.memberActorId === "" ||
     !("composeOwned" in value) ||
     typeof value.composeOwned !== "boolean"
   ) {
     throw new Error("Playwright runtime state is invalid.");
   }
-  return { token: value.token, composeOwned: value.composeOwned };
+  return {
+    token: value.token,
+    memberToken: value.memberToken,
+    memberActorId: value.memberActorId,
+    composeOwned: value.composeOwned,
+  };
 }

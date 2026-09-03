@@ -183,8 +183,26 @@ class UrlLibSmokeClient:
                     raise StagingSmokeFailure(
                         f"Control-plane request returned HTTP {response.status}."
                     )
-                decoded = json.loads(response.read())
+                body = response.read()
+                if not body:
+                    return {}
+                decoded = json.loads(body)
         except HTTPError as error:
+            if error.code in expected:
+                try:
+                    body = error.read()
+                    if not body:
+                        return {}
+                    decoded = json.loads(body)
+                except (OSError, json.JSONDecodeError) as decode_error:
+                    raise StagingSmokeFailure(
+                        f"Control-plane request returned HTTP {error.code} without valid JSON."
+                    ) from decode_error
+                if not isinstance(decoded, (dict, list)):
+                    raise StagingSmokeFailure(
+                        "Control-plane response was not a JSON object or list."
+                    ) from None
+                return decoded
             raise StagingSmokeFailure(
                 f"Control-plane request returned HTTP {error.code}."
             ) from error

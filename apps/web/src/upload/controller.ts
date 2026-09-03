@@ -73,28 +73,28 @@ interface ActiveTransfer {
   handle: XhrUploadHandle;
 }
 
-function errorDetails(error: unknown): { code: string; message: string } {
+function errorDetails(error: unknown): { code: string; message: string; requestId: string | null } {
   if (
     error instanceof UploadApiError ||
     error instanceof UploadNetworkError ||
     error instanceof HashWorkerClientError ||
     error instanceof XhrUploadError
   ) {
-    return { code: error.code, message: error.message };
+    return { code: error.code, message: error.message, requestId: error instanceof UploadApiError ? error.requestId : null };
   }
   if (error instanceof UploadApiProtocolError) {
-    return { code: "protocol_error", message: error.message };
+    return { code: "protocol_error", message: error.message, requestId: null };
   }
   if (error instanceof UploadAuthenticationError) {
-    return { code: "authentication_required", message: error.message };
+    return { code: "authentication_required", message: error.message, requestId: null };
   }
   if (error instanceof UploadPersistenceError) {
-    return { code: "persistence_error", message: error.message };
+    return { code: "persistence_error", message: error.message, requestId: null };
   }
   if (error instanceof Error) {
-    return { code: "unexpected_error", message: error.message };
+    return { code: "unexpected_error", message: error.message, requestId: null };
   }
-  return { code: "unexpected_error", message: "The upload operation failed unexpectedly." };
+  return { code: "unexpected_error", message: "The upload operation failed unexpectedly.", requestId: null };
 }
 
 function transferKey(generation: number, partNumber: number, attempt: number): string {
@@ -151,7 +151,8 @@ export function useUploadController(
   }, []);
 
   const setBackgroundError = useCallback((error: unknown): void => {
-    setRuntimeError(errorDetails(error).message);
+    const details = errorDetails(error);
+    setRuntimeError(details.requestId ? `${details.message} (Request ID: ${details.requestId})` : details.message);
   }, []);
 
   const runScheduledPart = useCallback(
@@ -264,10 +265,11 @@ export function useUploadController(
               }
               const details = errorDetails(error);
               dispatch({
-                type: "hash_failed",
-                generation: effect.generation,
-                code: details.code,
-                message: details.message,
+              type: "hash_failed",
+              generation: effect.generation,
+              code: details.code,
+              message: details.message,
+              requestId: details.requestId,
               });
             },
           );
@@ -283,6 +285,7 @@ export function useUploadController(
                 generation: effect.generation,
                 code: details.code,
                 message: details.message,
+                requestId: details.requestId,
               });
             },
           );
@@ -311,6 +314,7 @@ export function useUploadController(
                 generation: effect.generation,
                 code: details.code,
                 message: details.message,
+                requestId: details.requestId,
               });
             },
           );
@@ -353,6 +357,7 @@ export function useUploadController(
                 generation: effect.generation,
                 code: details.code,
                 message: details.message,
+                requestId: details.requestId,
               });
             },
           );

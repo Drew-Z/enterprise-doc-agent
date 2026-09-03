@@ -19,6 +19,11 @@ dependency checks:
 - a failed refresh is cached as `not_ready`, so an outage is not hidden indefinitely;
 - set the value to `0` for local tests that require an uncached check on every request.
 
+Each readiness response also includes a server-generated UTC `checked_at` timestamp.
+The Web runtime surface displays this probe time (rather than the browser fetch time)
+so an operator can distinguish a fresh dependency observation from a cached response.
+Older clients may ignore the field; it does not change the readiness decision.
+
 This cache is an availability/readiness control, not a replacement for dependency
 metrics or alerting. Kubernetes liveness remains independent.
 

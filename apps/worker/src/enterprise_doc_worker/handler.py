@@ -14,7 +14,7 @@ from enterprise_doc_core.documents.ingestion_service import (
 from enterprise_doc_core.jobs import ClaimedJob, JobRuntimeService, RetryDisposition
 from enterprise_doc_core.object_store import MultipartObjectStore
 from enterprise_doc_core.telemetry import MetricsRuntime
-from enterprise_doc_worker.agent_handler import AGENT_EXECUTE_JOB_TYPE
+from enterprise_doc_worker.agent_handler import AGENT_EXECUTE_JOB_TYPE, AgentExecutionStaleRun
 from enterprise_doc_worker.faults import wrap_handler, wrap_multipart_store
 from enterprise_doc_worker.queue import (
     AsyncJobHandler,
@@ -42,6 +42,8 @@ class JobHandlerRouter:
 
 
 def classify_job_error(error: Exception) -> RetryDisposition:
+    if isinstance(error, AgentExecutionStaleRun):
+        return RetryDisposition.CANCELLED
     if isinstance(error, (DocumentIngestionError, JobHandlerError)) and not error.retryable:
         return RetryDisposition.PERMANENT
     return RetryDisposition.RETRYABLE

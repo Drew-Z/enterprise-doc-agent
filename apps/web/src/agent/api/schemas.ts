@@ -61,6 +61,69 @@ export const readyDocumentVersionSchema = z
   })
   .strict();
 
+export const documentAccessModeSchema = z.enum(["tenant", "restricted"]);
+
+export const documentInventoryItemSchema = z
+  .object({
+    documentId: uuidSchema,
+    title: z.string().min(1),
+    accessMode: documentAccessModeSchema,
+    canManage: z.boolean(),
+    versionId: uuidSchema,
+    versionNumber: positiveSafeIntegerSchema,
+    filename: z.string().min(1),
+    mediaType: z.string().min(1),
+    sizeBytes: positiveSafeIntegerSchema,
+    versionStatus: z.enum(["uploaded", "ready", "failed"]),
+    generationId: uuidSchema.nullable(),
+    ingestionStatus: z.enum(["pending", "running", "succeeded", "failed"]).nullable(),
+    ingestionStage: z.enum(["download_spool", "parse", "chunk", "embed", "index", "ready"]).nullable(),
+    errorCode: z.string().nullable(),
+    createdAt: dateTimeSchema,
+    updatedAt: dateTimeSchema,
+  })
+  .strict();
+
+export const documentInventoryResponseSchema = z.array(documentInventoryItemSchema);
+
+export type DocumentInventoryItem = z.infer<typeof documentInventoryItemSchema>;
+
+export const documentAccessResponseSchema = z
+  .object({
+    documentId: uuidSchema,
+    accessMode: documentAccessModeSchema,
+    canManage: z.boolean(),
+  })
+  .strict();
+
+export const documentGrantResponseSchema = z
+  .object({
+    grantId: uuidSchema,
+    documentId: uuidSchema,
+    granteeUserId: uuidSchema.nullable(),
+    granteeRole: z.enum(["owner", "member"]).nullable(),
+  })
+  .strict()
+  .refine((grant) => (grant.granteeUserId === null) !== (grant.granteeRole === null), {
+    message: "Exactly one document grant target is required.",
+  });
+
+export const documentGrantCreateRequestSchema = z
+  .object({
+    granteeUserId: uuidSchema.nullable().optional(),
+    granteeRole: z.enum(["owner", "member"]).nullable().optional(),
+  })
+  .strict()
+  .refine(
+    (grant) => (grant.granteeUserId == null) !== (grant.granteeRole == null),
+    { message: "Exactly one document grant target is required." },
+  );
+
+export type DocumentAccessMode = z.infer<typeof documentAccessModeSchema>;
+export type DocumentAccessResponse = z.infer<typeof documentAccessResponseSchema>;
+export type DocumentGrantResponse = z.infer<typeof documentGrantResponseSchema>;
+export type DocumentGrantCreateRequest = z.infer<typeof documentGrantCreateRequestSchema>;
+
 export const createAgentRunRequestSchema = z
   .object({
     documentVersionId: uuidSchema,
@@ -261,6 +324,47 @@ export const agentArtifactDownloadResponseSchema = z
   })
   .strict();
 
+export const agentArtifactCitationSchema = z
+  .object({
+    chunkId: uuidSchema,
+    documentVersionId: uuidSchema,
+    sourceFilename: z.string().min(1).nullable(),
+    pageNumber: positiveSafeIntegerSchema.nullable(),
+    heading: z.string().min(1).nullable(),
+    startOffset: safeIntegerSchema.nonnegative(),
+    endOffset: safeIntegerSchema.nonnegative(),
+    excerpt: z.string().min(1).max(500),
+  })
+  .strict()
+  .refine((value) => value.endOffset >= value.startOffset, {
+    message: "Citation end offset must not precede its start offset.",
+  });
+
+export const agentBehaviorVersionsSchema = z
+  .object({
+    graphVersion: z.string().min(1),
+    promptVersion: z.string().min(1),
+    toolSchemaVersion: z.string().min(1),
+  })
+  .strict();
+
+export const agentArtifactPreviewResponseSchema = z
+  .object({
+    artifactId: uuidSchema,
+    runId: uuidSchema,
+    documentVersionId: uuidSchema,
+    status: z.enum(["draft_ready", "published"]),
+    contentSha256: z.string().regex(/^[0-9a-f]{64}$/),
+    schemaVersion: z.literal(1),
+    taskType: agentRunTaskTypeSchema,
+    answerText: z.string().min(1).max(100_000),
+    structuredFields: z.record(z.string(), z.json()).nullable(),
+    riskHint: z.enum(["low", "medium", "high"]).nullable(),
+    citations: z.array(agentArtifactCitationSchema).min(1).max(50),
+    behaviorVersions: agentBehaviorVersionsSchema,
+  })
+  .strict();
+
 export const persistedAgentRunSchema = z
   .object({
     version: z.literal(1),
@@ -283,6 +387,7 @@ export type ApprovalDecisionRequest = z.infer<typeof approvalDecisionRequestSche
 export type ApprovalDecisionResponse = z.infer<typeof approvalDecisionResponseSchema>;
 export type AgentArtifactResponse = z.infer<typeof agentArtifactResponseSchema>;
 export type AgentArtifactDownloadResponse = z.infer<typeof agentArtifactDownloadResponseSchema>;
+export type AgentArtifactPreviewResponse = z.infer<typeof agentArtifactPreviewResponseSchema>;
 export type PersistedAgentRun = z.infer<typeof persistedAgentRunSchema>;
 
 export function validateSsePayload(eventType: AgentEventType, payload: unknown): Record<string, unknown> {

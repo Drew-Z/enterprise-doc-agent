@@ -45,6 +45,8 @@ class ArtifactObjectStore(Protocol):
 
     async def head_object(self, *, bucket: str, key: str) -> ObjectHead: ...
 
+    async def read_object(self, *, bucket: str, key: str, expected_size: int) -> bytes: ...
+
     async def delete_object(self, *, bucket: str, key: str) -> None: ...
 
     async def presign_get(
@@ -193,6 +195,22 @@ class Boto3ArtifactObjectStore:
             return content
 
         return cast(bytes, await self._call(read_body))
+
+    @instrument_object_store_operation("read")
+    async def read_object(self, *, bucket: str, key: str, expected_size: int) -> bytes:
+        _validate_location(bucket=bucket, key=key)
+        if (
+            isinstance(expected_size, bool)
+            or not isinstance(expected_size, int)
+            or expected_size < 1
+            or expected_size > self.max_object_bytes
+        ):
+            raise ObjectStoreProtocolError()
+        return await self._read_object_body(
+            bucket=bucket,
+            key=key,
+            expected_size=expected_size,
+        )
 
     @instrument_object_store_operation("write")
     async def delete_object(self, *, bucket: str, key: str) -> None:

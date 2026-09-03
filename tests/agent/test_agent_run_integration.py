@@ -57,9 +57,13 @@ from enterprise_doc_core.jobs import (
 )
 from enterprise_doc_core.uploads import UploadSession, UploadSessionStatus
 from enterprise_doc_worker.agent_handler import (
+    AgentExecutionPayload,
+    AgentExecutionStaleRun,
+    SqlAlchemyAgentExecutionLoader,
     agent_failure_lock_key,
     project_agent_run_failure,
 )
+from enterprise_doc_worker.handler import classify_job_error
 
 pytestmark = pytest.mark.integration
 
@@ -750,6 +754,64 @@ async def test_expired_final_agent_lease_projects_run_failed() -> None:
             "status": AgentRunStatus.FAILED.value,
             "refusal_reason": None,
         }
+    finally:
+        await engine.dispose()
+
+
+async def test_terminal_run_retry_cancels_stale_agent_claim() -> None:
+    engine = create_database_engine(DatabaseSettings())
+    session_factory = create_session_factory(engine)
+    context = await _seed_agent_context(session_factory)
+    clock = MutableClock(datetime.now(UTC))
+    service = _service(session_factory, clock=clock)
+    runtime = JobRuntimeService(
+        session_factory=session_factory,
+        clock=clock,
+        lease_seconds=10,
+        failure_lock_key=agent_failure_lock_key,
+        failure_projector=project_agent_run_failure,
+    )
+    try:
+        created = await service.create(
+            principal=context.principal,
+            idempotency_key=f"terminal-run-stale-claim:{uuid4().hex}",
+            request=_request(context),
+        )
+        clock.advance(2)
+        async with session_factory.begin() as session:
+            job = await session.get(Job, created.job_id)
+            run = await session.get(AgentRun, created.run_id)
+            assert job is not None and run is not None
+            job.max_attempts = 2
+            run.status = AgentRunStatus.FAILED.value
+            run.error_code = "evaluation_timeout"
+            run.finished_at = clock.value
+
+        first_claim = await runtime.claim(job_id=created.job_id, worker_id="stale-agent-worker")
+        assert first_claim is not None
+        clock.advance(11)
+        second_claim = await runtime.claim(job_id=created.job_id, worker_id="reclaimer")
+        assert second_claim is not None
+
+        loader = SqlAlchemyAgentExecutionLoader(session_factory)
+        payload = AgentExecutionPayload.model_validate(second_claim.payload)
+        with pytest.raises(AgentExecutionStaleRun):
+            await loader.load(second_claim, payload)
+        assert classify_job_error(AgentExecutionStaleRun()) is RetryDisposition.CANCELLED
+        failure = await runtime.fail(
+            second_claim,
+            disposition=RetryDisposition.CANCELLED,
+            error_code="agent_execution_stale_run",
+            error_message="The Agent run is already terminal; the stale execution is cancelled.",
+            error_class="AgentExecutionStaleRun",
+        )
+        assert failure.status == JobStatus.CANCELLED.value
+
+        async with session_factory() as session:
+            run = await session.get(AgentRun, created.run_id)
+            job = await session.get(Job, created.job_id)
+        assert run is not None and run.status == AgentRunStatus.FAILED.value
+        assert job is not None and job.status == JobStatus.CANCELLED.value
     finally:
         await engine.dispose()
 

@@ -10,7 +10,7 @@ metadata:
     pod-security.kubernetes.io/audit: restricted
     pod-security.kubernetes.io/audit-version: latest
   annotations:
-    enterprise-doc-agent/deployment-profile: single-node-4c8g
+    enterprise-doc-agent/deployment-profile: single-node-4c4g
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -90,6 +90,9 @@ rules:
   - apiGroups: ["apps"]
     resources: ["deployments"]
     verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments/scale"]
+    verbs: ["patch"]
   - apiGroups: ["apps"]
     resources: ["replicasets"]
     verbs: ["get", "list", "watch"]
