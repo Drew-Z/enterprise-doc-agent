@@ -68,6 +68,7 @@
       "latest_staging_release_v0_1_30": "evidence/m6/20260818-v0.1.30-staging-rollout.json",
       "latest_staging_release_v0_1_31": "evidence/m6/20260818-v0.1.31-staging-rollout.json",
       "latest_staging_release_v0_1_32": "evidence/m6/20260819-v0.1.32-staging-rollout.json",
+      "latest_staging_governance_v0_1_33_candidate": "evidence/m6/20260902-v0.1.33-rc.2-staging-governance.json",
       "tiny_resource_envelope_verification": "evidence/m6/20260820-v0.1.32-tiny-resource-envelope.json",
       "reviewed_4b_revalidation": "evidence/m6/20260820-local-embedding-reviewed4b-v2.json",
       "reviewed_4b_revalidation_repeat": "evidence/m6/20260820-local-embedding-reviewed4b-v2-repeat.json"

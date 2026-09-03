@@ -445,13 +445,16 @@ API control plane while document bytes travel directly to the configured object 
 - Server-enforced document ACL supports `tenant`/`restricted` visibility plus user and tenant-role grants across inventory, retrieval, Agent runs/tools, and artifacts. Arbitrary ABAC expressions and an external PDP are not implemented.
 - External authentication remains disabled by default. When enabled, the API can verify asymmetric OIDC JWTs through a configured JWKS URL (algorithm/`kid`/issuer/audience/time claims), resolve non-UUID subjects through explicit issuer/subject bindings, normalize tenant and actor claims, map explicitly configured owner/member groups with startup validation and ambiguity rejection, and re-check the resulting role against active database membership. Direct role claims remain opt-in. Authentication failures emit bounded structured security logs without credentials; successful stateless bearer requests are not mislabeled as login events. Local JWT sessions can be revoked server-side through `POST /api/session/logout`; revocations are tenant-scoped, audited, and purged after token expiry. External OIDC logout remains an explicit integration gate because the application cannot revoke tokens issued by an external IdP. The owner-only API and Web control plane now supports bounded member search, manual email provisioning, role changes, membership deactivate/reactivate, last-owner and self-mutation safeguards, binding deactivate/reactivate, and audit events. Membership deactivation also revokes that tenant's active external bindings; reactivation does not silently restore them. The SCIM surface now exposes constrained ServiceProviderConfig/ResourceTypes/Schemas discovery, tenant-scoped Users list pagination and `userName`/`externalId` equality filters, a bounded sequential Bulk endpoint (up to 50 `POST`/`PUT`/`PATCH`/`DELETE` User operations), and single-user GET/upsert/deprovision plus a bounded PATCH supporting only `replace` of `active` or `userName`; it is not a complete SCIM server or IdP integration. Batch IdP/SCIM synchronization, full PATCH semantics, PATCH/bulkId reference replacement, complex filters, OAuth authorization server, first-login provisioning, SAML, and real-IdP end-to-end acceptance remain deployment gates.
 - Tenant-scoped audit events support cursor pagination, bounded CSV export, an owner-only retention/legal-hold governance control plane, and verified non-destructive JSON archive snapshots (`POST /api/audit-governance/retention-archive`). Recent archive batches can be listed, re-verified, and downloaded through a short-lived signed URL (`GET /api/audit-governance/retention-archives`, `POST /api/audit-governance/retention-archives/{batch_id}/verify`, `GET /api/audit-governance/retention-archives/{batch_id}/download`). Source events are not deleted; WORM/independent audit storage, automated cross-region recovery, deletion proof, and production export governance are not claimed.
-- Local Kubernetes manifests and CI/CD workflows exist, and the current reviewed
-  4C4G single-node profile has authenticated staging smoke, readiness and rollout
-  evidence. It still lacks a real cloud-cluster promotion, TLS/secret-manager
-  review, production QPS proof, standby-node or multi-region recovery,
-  backup-restore RTO/RPO, and independent rollback evidence. The workflow
-  definitions include these gates; local checks and a single-node run do not imply
-  production availability.
+- The reviewed 4C4G single-node profile has completed a real cloud-hosted K3s
+  staging rollout through the HTTPS public endpoint, including migrations,
+  immutable-image rollout, embedding probe/reindex, readiness, authenticated
+  upload/ingestion/Agent/artifact/citation smoke, restricted-document ACL
+  grant/revoke, audit retention/legal-hold governance, and identity-binding
+  lifecycle checks. The verified record is
+  `evidence/m6/20260902-v0.1.33-rc.2-staging-governance.json`. This remains
+  single-node staging evidence: production QPS, standby-node or multi-region
+  recovery, independent fault-domain RPO/RTO, production secret-manager review,
+  and high availability are not claimed.
 - No GPU/vLLM/quantization throughput or memory result is claimed; M7 reports only the
   deterministic local routing and fallback contract until hardware evidence exists.
 - The deterministic safety corpus is a repeatable regression set, not complete adversarial certification.

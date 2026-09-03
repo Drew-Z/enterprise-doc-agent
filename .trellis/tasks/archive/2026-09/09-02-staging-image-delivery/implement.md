@@ -13,9 +13,10 @@
    section and run the documentation contract checks.
 4. [x] Full validation: render the 4C4G overlay, run affected deployment tests,
    inspect the workflow statically, and run the appropriate lint/type checks.
-5. Controlled release validation: dispatch the immutable `v0.1.33-rc.2`
+5. [x] Controlled release validation: dispatch the immutable `v0.1.33-rc.2`
    staging workflow, retain sanitized evidence, then perform the remaining
-   public and UI acceptance gates.
+   public and UI acceptance gates. GitHub Actions run `33641819523` completed
+   every required gate.
 
 ## Files Expected To Change
 

@@ -66,20 +66,23 @@ smoke gates before public UI acceptance and promotion are considered.
 
 ## Acceptance Criteria
 
-- [ ] AC1: The rendered `single-node-4c4g` Worker Deployment declares a
+- [x] AC1: The rendered `single-node-4c4g` Worker Deployment declares a
       1800-second progress deadline; other application Deployment deadlines
       remain unchanged unless separately justified.
-- [ ] AC2: The staging workflow waits up to 1800 seconds for the Worker in
+- [x] AC2: The staging workflow waits up to 1800 seconds for the Worker in
       normal rollout and small-profile restoration paths, while API, Consumer,
       and Web remain at 600 seconds.
-- [ ] AC3: Deployment contract tests assert the profile-specific deadline and
+- [x] AC3: Deployment contract tests assert the profile-specific deadline and
       bounded workflow behavior, and pass alongside the existing test suite.
-- [ ] AC4: The 4C4G runbook links the existing verified relay/import procedure
+- [x] AC4: The 4C4G runbook links the existing verified relay/import procedure
       and clearly states when it is required after a direct-pull failure.
-- [ ] AC5: No Kubernetes RBAC/admission-policy expansion, secret disclosure,
+- [x] AC5: No Kubernetes RBAC/admission-policy expansion, secret disclosure,
       mutable image reference, or runner sudo grant is introduced.
-- [ ] AC6: A new controlled staging run completes all existing workflow gates;
+- [x] AC6: A new controlled staging run completes all existing workflow gates;
       the resulting sanitized evidence is reconciled with `v0.1.33-rc.2`.
+
+Verified by GitHub Actions run `33641819523`; the sanitized record and hashes are
+reconciled in `evidence/m6/20260902-v0.1.33-rc.2-staging-governance.json`.
 
 ## Out Of Scope
 

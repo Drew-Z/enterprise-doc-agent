@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "evidence_type": "staging-governance-release-acceptance",
+  "evidence_id": "m6-staging-governance-20260902-v0.1.33-rc.2",
+  "milestone": "M6",
+  "requirement_ids": ["M6-R2", "M6-R4"],
+  "status": "passed",
+  "release_candidate": "v0.1.33-rc.2",
+  "candidate_commit_sha": "5410adc5935f99db9302ed4c5b9a29b4d96d55b8",
+  "workflow_source_commit_sha": "dff0c1fb7c4bd4b8b8854fdccf337e072186bce2",
+  "workflow": {
+    "repository": "Drew-Z/enterprise-doc-agent",
+    "name": "Deploy Staging",
+    "run_id": "33641819523",
+    "run_attempt": 1,
+    "conclusion": "success",
+    "completed_at": "2026-09-02T14:31:50Z",
+    "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/33641819523"
+  },
+  "deployment": {
+    "profile": "single-node-4c4g",
+    "cluster_kind": "single-node-k3s",
+    "public_host": "agent.playlab.eu.cc",
+    "image_digests": {
+      "api": "sha256:82c61a6bad901a9a06273c856a9656cca068391a114d59f1d78b119814636f2c",
+      "worker": "sha256:442166ded4285ae0335717c5d04d299e21319a1638882e4ffcdc860116ed100b",
+      "consumer": "sha256:7927c2b87eac53818ade4cd199e27f34943c1bf8288940f7dd435a20d98e3daa",
+      "web": "sha256:f9913a57948b964b358e6466c3aabfb19d269be0aab59fa259f49dc0324475cb"
+    }
+  },
+  "providers": {
+    "chat_primary": "grok-4.6",
+    "chat_fallback": "deepseek-v4-flash-0731",
+    "embedding": "Qwen/Qwen3-Embedding-4B",
+    "embedding_dimension": 1024,
+    "embedding_version": 3
+  },
+  "gates": {
+    "prerequisites": "success",
+    "migration": "success",
+    "workload_rollout": "success",
+    "embedding_probe_and_reindex": "success",
+    "in_cluster_readiness": "success",
+    "authenticated_upload_ingestion_agent_artifact_citation": "success",
+    "document_acl_governance": "success",
+    "audit_retention_and_legal_hold_governance": "success",
+    "identity_binding_lifecycle": "success",
+    "sanitized_release_evidence": "success"
+  },
+  "artifact": {
+    "name": "staging-release-dff0c1fb7c4bd4b8b8854fdccf337e072186bce2",
+    "release_record_sha256": "ecc6898cfdb14a83decf800267c471d6ebfff8ef73070497c5d115517be89121",
+    "evidence_manifest_sha256": "4fdcc0039d2b84c55b44767176d620d9afc0a68c7dcafc7480d318b7bb5a43d9",
+    "authenticated_smoke_report_sha256": "da633ac631545dcb7b859be056552ff0850fd8c0c72b2a49046aed2261eac485",
+    "governance_smoke_report_sha256": "82cbeb05adc4fbcf524e4bef81110a19b5fa82fcc444e523731b0706a029d21e",
+    "embedding_rollout_report_sha256": "6ae7a17d706a6fe2e169269343c4eb0eb1abc97d6bf8e88ad1dd8619a8e1b999",
+    "values_redacted": true
+  },
+  "strict_failure_history": [
+    {
+      "run_id": "33602765169",
+      "status": "failed",
+      "reason": "The immutable-image dispatch used rollback digests and was rejected by the fail-closed prerequisite gate."
+    },
+    {
+      "run_id": "33603327315",
+      "status": "failed",
+      "reason": "The authenticated Agent smoke failed, so governance smoke was skipped and promotion remained blocked."
+    }
+  ],
+  "security": {
+    "tokens_loaded_from_protected_environment_secrets": true,
+    "tokens_in_cli_or_artifact": false,
+    "synthetic_fixture_only": true,
+    "kubernetes_rbac_expanded": false
+  },
+  "limitations": [
+    "This is bounded CPU staging evidence on one 4-vCPU/4-GiB K3s node, not production capacity or high-availability evidence.",
+    "The run does not prove a real enterprise IdP integration, full SCIM semantics, arbitrary-attribute ABAC or an external PDP.",
+    "The run does not prove WORM audit storage, automated retention deletion, an independent fault-domain recovery drill, or production RPO/RTO.",
+    "No GPU, vLLM, quantization throughput, or model-serving capacity claim is made."
+  ]
+}

@@ -115,3 +115,8 @@ The governance result is recorded separately from the ordinary rollout outcomes.
 required governance smoke that is skipped or fails keeps the staging release from
 being promoted. This evidence still does not prove external IdP/SSO, complete ABAC,
 WORM compliance, production capacity, HA or disaster recovery.
+
+The reviewed `v0.1.33-rc.2` acceptance run completed all of these gates in GitHub
+Actions run `33641819523`. Its immutable digests, report hashes, strict failed-run
+history, and limitations are recorded in
+`evidence/m6/20260902-v0.1.33-rc.2-staging-governance.json`.
