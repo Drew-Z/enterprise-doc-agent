@@ -192,3 +192,19 @@ immutable image or rollback evidence. Those remain open manual gates.
   digest records, and fail unless every descriptor has a resolvable canonical alias.
 - [x] Bind the receiver script and canonical base into the relay receipt, document the host
   operation, and regression-test missing-alias failure instead of relying on manual tags.
+
+## Release acceptance refresh: merged v0.1.33 (2026-09-04)
+
+- [x] Reconcile the merged `v0.1.33` / commit
+  `9e9efb52a27a7a7ccf963e68d97c95722cbb72f5` staging run `33777258980` against the
+  `single-node-4c4g` profile and exact API, Worker, consumer and Web image digests.
+- [x] Record successful migration, workload rollout, version 3 embedding probe/reindex,
+  readiness, authenticated business smoke, document ACL governance, audit
+  retention/legal-hold governance and identity-binding lifecycle evidence.
+- [x] Record the three strict failed attempts and the short-lived smoke-token rotation
+  without persisting or printing credentials; retain the earlier `rc.2` record as history.
+- [x] Publish the merged-release acceptance record at
+  `evidence/m6/20260904-v0.1.33-staging-governance.json` and update the evidence index,
+  README and 4C4G runbook.
+- [ ] Keep M6-R5 open until a separately provisioned fault domain, approved objectives,
+  measured recovery timeline and independent post-run review exist.

@@ -73,7 +73,8 @@
   staging workflow validates the exact Kubernetes context and registry prefix, performs
   server-side dry-run, and sanitizes raw evidence before hashing it.
 - `STAGING_DEPLOYMENT_PROFILE` selects an allowlisted staging profile and defaults to
-  `tiny-single-node`. It is a repository variable instead of an eleventh dispatch input
+  `single-node-4c4g`; `tiny-single-node` remains an explicit opt-in profile. It is a
+  repository variable instead of an eleventh dispatch input
   because GitHub limits `workflow_dispatch` to ten inputs. The selected profile is part
   of release evidence so a rollout cannot be described without its resource shape. The
   Namespace stores the same profile and deployment rejects existing unannotated or
@@ -94,6 +95,11 @@
   per-request transport budget. The transport budget must cover measured external database and
   ingestion latency without turning a completed request into a client timeout, while remaining
   bounded below the end-to-end gate.
+- Smoke and governance bearer tokens are short-lived protected-environment credentials. Before a
+  deployment window, revalidate the fixed synthetic memberships and issue fresh tokens from the
+  current Ready API Pod, piping them directly to the protected GitHub Environment secrets. An
+  expired token must fail the smoke with HTTP 401 and must never be persisted, passed as a CLI
+  argument, printed, or included in sanitized evidence.
 - Staging sets `MCP__REQUEST_TIMEOUT_SECONDS=90`. The Worker-side stdio client, MCP server tool
   deadline, and stale execution recovery window must share this reviewed budget so an artifact
   write/readback/finalize operation is not killed before it can return a bounded tool result.
@@ -194,6 +200,9 @@
 - `scripts/import_staging_oci_archive.py` checksum-validates restricted-network relay
   archives and fail-closes unless all OCI image descriptor digests resolve through canonical
   containerd aliases and the deployment reference targets the receipt-bound root digest.
+- `evidence/m6/20260904-v0.1.33-staging-governance.json` records the merged-release 4C4G
+  acceptance, exact image digests, embedding version, governance smoke, token-rotation
+  intervention and strict failed-run history without retaining credential values.
 - `scripts/run_recovery_orchestrator.py` defaults to dry-run, requires the exact
   `run-recovery-drill` confirmation, executes argv lists without a shell, records every
   preflight/recovery/cleanup phase and derives RPO/RTO from the recorded failure boundary.
