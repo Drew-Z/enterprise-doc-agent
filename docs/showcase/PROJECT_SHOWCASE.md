@@ -113,11 +113,11 @@ LangGraph 图把检索、生成、校验、审批和发布分成明确节点。�
 ## 当前可验证成果
 
 - M0-M4、M8 的核心实现和相应证据已完成。
-- 当前工作树非集成回归为 `989 passed`（`125` 项集成测试按标记单独执行）；前端为 `29` 个测试文件、`186 passed`；成员、外部绑定、live membership、受限 SCIM 和 local JWT revocation 五条 PostgreSQL 身份集成链路为 `7 passed`，完整 integration suite 为 `125 passed`，其余集成回归按环境单独执行。
+- 当前工作树非集成回归为 `1004 passed`（`125` 项集成测试按标记单独执行）；前端为 `31` 个测试文件、`192 passed`；成员、外部绑定、live membership、受限 SCIM 和 local JWT revocation 五条 PostgreSQL 身份集成链路为 `7 passed`，完整 integration suite 为 `125 passed`，其余集成回归按环境单独执行。
 - 前端 ESLint、TypeScript、Vite production build，以及后端 Ruff 定向检查和 `mypy packages/core/src apps/api/src` 均已通过。
 - 六个产品页面已完成既有视觉检查；本轮 Identity 成员/绑定控制面另在桌面 `1440x1000` 和移动端 `390x844` 完成 Playwright 截图检查。
 - 已有非 root 容器、Kubernetes base/staging/prod manifest、迁移 Job、探针、RBAC、NetworkPolicy、PDB 和发布/回滚脚本。
-- 当前 4C4G 单节点 staging 路径已完成发布、迁移、工作负载 rollout、嵌入重建、readiness 检查和认证业务 smoke。
+- 当前 4C4G 单节点 staging 路径已完成发布、迁移、工作负载 rollout、版本 3 嵌入重建、readiness、认证业务 smoke 与治理 smoke；正式记录为 `evidence/m6/20260904-v0.1.33-staging-governance.json`。
 - M7 本地 deterministic routing 与 synthetic fallback contract 已有 20/20 重复验证。
 - 文档 ACL 迁移已在本地 PostgreSQL 完成 upgrade/downgrade 往返；相关 Core、API、Worker、Agent、MCP 与安全回归为 `652 passed`。
 - 文档 ACL 已补真实双用户浏览器证据：同租户 owner/member 通过真实 API、PostgreSQL 和 MinIO 完成上传、restricted、grant、撤销及刷新后不可见的完整链路。

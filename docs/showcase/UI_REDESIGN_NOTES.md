@@ -162,9 +162,9 @@ export is available at `D:/workspace4Cursor/offer/figma-final-handoff.png`.
 
 ## Validation
 
-- Frontend tests: `186 passed` across `29` files.
+- Frontend tests: `192 passed` across `31` files.
 - Documents API and inventory-service focused tests: passed.
-- Non-integration backend regression: `989 passed, 125 deselected`.
+- Non-integration backend regression: `1004 passed, 125 deselected`.
 - TypeScript project check: passed.
 - Frontend ESLint: passed.
 - Ruff format/check for the changed backend files: passed.
@@ -179,7 +179,7 @@ export is available at `D:/workspace4Cursor/offer/figma-final-handoff.png`.
 - Command search interaction covered by `App.test.tsx`.
 
 `pnpm quality` passes on the current working tree. The separate integration suite
-also passes with `125 passed, 989 deselected`; `web-e2e` installs Chromium and runs
+also passes with `125 passed, 1004 deselected`; `web-e2e` installs Chromium and runs
 the upload-recovery and Agent approval/download workflows. Generated `.tmp-*`
 evidence scripts are excluded from Ruff so one-off operator artifacts do not affect
 the product source quality gate.

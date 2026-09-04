@@ -1,6 +1,6 @@
 # Enterprise Document Agent: Current Architecture and Configuration Gap
 
-Date: 2026-08-27
+Date: 2026-09-04
 
 This note records what the repository actually implements. It deliberately
 separates runnable deterministic fixtures from production-grade model-backed
@@ -17,10 +17,13 @@ This is a combined system:
    and applies approval/publish policy.
 
 The default local profile is not a fully model-backed semantic RAG deployment.
-The chat gateway and embedding pipeline can use OpenAI-compatible providers,
-but staging still requires protected endpoint, model and key configuration.
-Local/test defaults use deterministic hash embeddings; the reviewed real-provider
-shape is 1024 dimensions. There is no independent cross-encoder reranker.
+The chat gateway and embedding pipeline support OpenAI-compatible providers. The
+merged `v0.1.33` release has now completed a protected single-node 4C4G staging
+acceptance with `grok-4.6` and `Qwen/Qwen3-Embedding-4B` version 3; the formal
+record is `evidence/m6/20260904-v0.1.33-staging-governance.json`. Local/test
+defaults still use deterministic hash embeddings, and the real-provider run does
+not establish semantic quality or production capacity. There is no independent
+cross-encoder reranker.
 
 ## Actual Data Path
 
@@ -91,9 +94,9 @@ Primary code evidence:
 - Jobs have leases, heartbeats, retry/dead states, and attempt history.
 - Kubernetes manifests, image digests, deployment smoke, SBOM/provenance and
   signing workflows exist. The reviewed `single-node-4c4g` profile is the
-  current bounded staging target; `single-node-4c8g` remains a separate,
-  higher-memory capacity-drill profile, and `tiny-single-node` remains a
-  readiness/isolated-probe baseline.
+  current bounded staging target and has a passed merged-release acceptance;
+  `single-node-4c8g` remains a separate, higher-memory capacity-drill profile,
+  and `tiny-single-node` remains a readiness/isolated-probe baseline.
 
 ### Identity and governance
 
@@ -131,11 +134,12 @@ versioned embedding migration and reindex workflow documented in
 `docs/ops/real-embedding-rollout.md`.
 
 The default hash provider remains deterministic and is rejected outside
-local/test environments. A real staging run therefore requires an operator
-supplied HTTPS embedding endpoint, model name and API key through the
-protected secret channel. Local provider probes and reviewed 4B vector reports
-demonstrate adapter and migration behavior, but do not prove semantic quality,
-production capacity or provider availability.
+local/test environments. The current staging release uses an operator-approved
+HTTPS embedding endpoint and model through the protected secret channel, with
+version 3 recorded in the release evidence. Local provider probes and the
+staging embedding probe demonstrate adapter, migration and availability
+behavior, but do not prove semantic quality, production capacity or durable
+provider availability.
 
 ### Reranking
 
@@ -150,10 +154,11 @@ The supported providers are only `deterministic` and `openai_compatible`:
 The deterministic provider is rejected outside local/test at
 `packages/core/src/enterprise_doc_core/config/settings.py:257-264`.
 
-The staging overlay currently contains placeholder OpenAI-compatible values in
-`infra/k8s/overlays/staging/configmap-patch.yaml:12-14`; it is not a real model
-configuration until protected deployment variables and the Kubernetes secret
-are supplied.
+The generic staging overlay still contains placeholder OpenAI-compatible values
+in `infra/k8s/overlays/staging/configmap-patch.yaml:12-14`; the reviewed
+`single-node-4c4g` deployment binds its non-secret route metadata from protected
+environment variables and keeps API keys in the Kubernetes Secret. The merged
+release record captures the selected route metadata without credentials.
 
 ### Previously observed blocker
 
@@ -165,18 +170,19 @@ guards the worker-style import path. Current ingestion or staging failures
 must therefore be diagnosed from the live dependency, model, object-store and
 deployment evidence rather than attributed to the old metadata defect.
 
-## Information You Need to Decide or Supply
+## Inputs and decisions for future external gates
 
-### A. Chat/Agent model route (required for staging outside local/test)
+### A. Chat/Agent model route (required for a new or production-like run)
 
-Provide through the protected GitHub Environment/Kubernetes secret channel,
-not in chat or committed files:
+For a new or production-like run, provide through the protected GitHub
+Environment/Kubernetes secret channel, not in chat or committed files:
 
 - OpenAI-compatible HTTPS base URL, normally ending in `/v1`.
 - Exact chat model name.
 - API key secret for `MODEL__API_KEY`.
 
-Recommended optional non-secret values:
+The current accepted staging route is already recorded in the merged-release
+evidence; future changes should additionally provide:
 
 - model revision or deployment revision;
 - context window;
@@ -194,11 +200,12 @@ Choose one of these explicit paths:
 1. **Deterministic local/test path:** keep the hash provider for repeatable
    authorization, retry, and deployment tests. It must remain labelled as a
    non-semantic fixture and is rejected in staging/production settings.
-2. **Reviewed real-provider path:** configure the OpenAI-compatible 1024-
-   dimensional route, run the versioned reindex, and preserve the provider
-   identity, migration, readiness and quality evidence. The adapter and
-   migration are implemented; endpoint ownership, quotas, semantic quality and
-   representative capacity still require external validation.
+2. **Reviewed real-provider path:** use the current version 3,
+   OpenAI-compatible 1024-dimensional route or a separately reviewed replacement,
+   run the versioned reindex, and preserve provider identity, migration,
+   readiness and quality evidence. The current staging probe/reindex is passed;
+   endpoint ownership, quotas, semantic quality and representative capacity
+   still require external validation.
 
 ### C. Retrieval quality policy (recommended)
 
@@ -212,18 +219,15 @@ Decide whether the next milestone needs:
 
 These are product/quality decisions, not deployment secrets.
 
-### D. Operational inputs still missing for a real staging gate
+### D. Operational inputs still required for production-like gates
 
-- approved model base URL and model name;
-- database egress allowlist/CIDR and pooler connection budget;
-- object-store HTTPS endpoints and allowed host variables;
-- protected staging kubeconfig/context/namespace values;
-- smoke JWT secret and TLS secret name;
-- immutable image digests for the four workloads;
+- a second server or isolated fault domain for recovery and RPO/RTO evidence;
+- a managed observability target with retention, alert routing and incident ownership;
+- an approved representative corpus, labels and independent human review;
+- provider model revision and billing/rate metadata for quality and cost reports;
+- production-like concurrency, capacity and rollback objectives;
 - approval that external model and object-store data may receive the selected
-  document class;
-- rollback/recovery expectations and a test document that contains no sensitive
-  business data.
+  document class.
 
 Do not paste any of the secret values into this repository or into a chat
 message. Use the protected environment workflow and record only redacted
@@ -232,25 +236,27 @@ presence/validation evidence.
 ## Recommended Order
 
 1. Keep the local regression, migration, authorization, audit, SCIM and local
-   JWT revocation contracts green; the current non-integration suite is
-   `989 passed` (`125` integration tests deselected).
-2. Supply protected chat and embedding provider configuration, then run the
-   reviewed 4C4G staging rollout with readiness and authenticated business
-   smoke evidence.
-3. Measure real-provider retrieval quality and cost on the representative
-   corpus before changing prompts, reranking or refusal thresholds.
-4. Complete the external IdP/SCIM, full ABAC/PDP, WORM/archive, managed
-   observability and production export reviews as separate gates.
-5. Treat the result as a bounded single-node 4C4G staging drill until capacity,
-   HA, restore/RPO/RTO and rollback evidence exist. The host has no standby
-   node, so this does not establish node-failure recovery or multi-fault-domain
-   disaster recovery.
+   JWT revocation contracts green; the latest non-integration suite is
+   `1004 passed` (`125` integration tests deselected).
+2. Keep the passed merged `v0.1.33` 4C4G staging record reproducible, including
+   immutable digests, version 3 embedding identity, authenticated smoke and
+   governance smoke.
+3. Measure real-provider retrieval quality and cost on an approved representative
+   corpus, with stable route identity, provider revision and independent human
+   review, before changing prompts, reranking or refusal thresholds.
+4. Complete the external IdP/SCIM, full ABAC/PDP, WORM/archive and managed
+   observability reviews as separate gates.
+5. Provision an independent fault domain for recovery/RPO/RTO and capacity
+   evidence. The current host has no standby node, so it remains a bounded
+   single-node staging drill rather than an HA or production topology.
 
 ## Release Boundary
 
 Even after a successful smoke run, the evidence must say:
 
 - single-node 4C4G staging only (the 2C2G profile is readiness-only);
+- merged-release acceptance is recorded in
+  `evidence/m6/20260904-v0.1.33-staging-governance.json`;
 - no production capacity proof;
 - no multi-node HA;
 - no GPU/vLLM validation;

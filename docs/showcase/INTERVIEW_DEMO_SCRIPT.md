@@ -90,7 +90,7 @@
 
 口述：
 
-> Audit log 会按当前租户记录文档、Job、Agent run、审批和 artifact 的治理事件，支持 action、资源、actor、时间范围查询、游标加载历史和 CSV 导出。认证 middleware 对失败请求写入不含凭据的结构化安全日志，但不会把每次无状态 bearer 请求伪装成 login；本地 JWT 通过 `POST /api/session/logout` 写入 tenant-scoped revocation 和 `auth.session.revoked` 审计事件。当前工作树非集成回归是 989 passed，成员、绑定、live membership、受限 SCIM 和 local JWT revocation 相关 PostgreSQL 身份集成链路是 7 passed，完整 integration suite 是 125 passed；其余数据库和浏览器集成回归按环境单独执行。项目还有 Kubernetes、镜像签名、迁移、探针和回滚契约；服务端已实现 JWKS-backed OIDC token verification、owner-only 手工成员 provisioning/deprovisioning、显式 issuer/subject binding 管理，以及受限 SCIM discovery、Users 分页/等值过滤、50 操作串行 Bulk（含受限 PATCH）、仅支持 `replace active/userName` 的 PATCH 与 user upsert/deprovision。需要明确的是，完整 SCIM PATCH 语义/bulkId、复杂 filter、批量 IdP 同步、首次登录自动 provisioning、端到端 SSO、外部 IdP logout、真实 Provider 可重复 40-case、代表性容量、托管 observability、独立故障域恢复和 GPU/vLLM 仍是外部 gate。我会把它定位为 CPU staging-capable 的工程项目，不把本地审计 fixture 或本地证据说成生产容量。
+> Audit log 会按当前租户记录文档、Job、Agent run、审批和 artifact 的治理事件，支持 action、资源、actor、时间范围查询、游标加载历史和 CSV 导出。认证 middleware 对失败请求写入不含凭据的结构化安全日志，但不会把每次无状态 bearer 请求伪装成 login；本地 JWT 通过 `POST /api/session/logout` 写入 tenant-scoped revocation 和 `auth.session.revoked` 审计事件。当前工作树非集成回归是 1004 passed，成员、绑定、live membership、受限 SCIM 和 local JWT revocation 相关 PostgreSQL 身份集成链路是 7 passed，完整 integration suite 是 125 passed；其余数据库和浏览器集成回归按环境单独执行。项目还有 Kubernetes、镜像签名、迁移、探针和回滚契约；服务端已实现 JWKS-backed OIDC token verification、owner-only 手工成员 provisioning/deprovisioning、显式 issuer/subject binding 管理，以及受限 SCIM discovery、Users 分页/等值过滤、50 操作串行 Bulk（含受限 PATCH）、仅支持 `replace active/userName` 的 PATCH 与 user upsert/deprovision。需要明确的是，完整 SCIM PATCH 语义/bulkId、复杂 filter、批量 IdP 同步、首次登录自动 provisioning、端到端 SSO、外部 IdP logout、真实 Provider 可重复 40-case、代表性容量、托管 observability、独立故障域恢复和 GPU/vLLM 仍是外部 gate。我会把它定位为 CPU staging-capable 的工程项目，不把本地审计 fixture 或本地证据说成生产容量。
 
 ## 面试官追问速答
 
@@ -112,4 +112,4 @@
 
 **当前已经有一台 4C4G 单节点机器，下一步做什么？**
 
-先固定代码、镜像 digest、模型版本和代表性语料，在现有 4C4G 单节点上以低并发重跑质量与容量基线；随后补 managed observability ownership，最后在独立 fault domain 做恢复演练和人工复核。当前单节点可以做受控 staging，但不能证明 HA 或灾备。
+当前代码、镜像 digest、模型版本和 4C4G staging 验收记录已经固定；下一步是在获得批准的代表性语料和 provider revision/cost 信息后，以低并发完成真实质量重复性基线，再补 managed observability ownership，最后在独立 fault domain 做恢复演练和人工复核。当前单节点可以做受控 staging，但不能证明 HA 或灾备。
