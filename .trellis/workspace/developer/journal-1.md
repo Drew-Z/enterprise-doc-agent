@@ -93,3 +93,43 @@ Added a profile-specific 1800s Worker rollout deadline and bounded workflow wait
 ### Next Steps
 
 - None - task complete
+
+
+## Session 3: Public-reference-inspired RAG evaluation suite
+
+**Date**: 2026-09-05
+**Task**: Public-reference-inspired RAG evaluation suite
+**Package**: core
+**Branch**: `main`
+
+### Summary
+
+Added and validated a fully synthetic public-reference-inspired RAG suite with 4 documents, 17 anchors, 20 cases, provenance boundaries, repository contracts, and unchanged v2 hashes.
+
+### Main Changes
+
+- Added four fully synthetic Northstar Ledger reference-inspired documents with 17 pinned anchors.
+- Added 20 fixed RAG cases covering fact, hard-negative, refusal, citation, and safety behavior, plus provenance and governance boundaries.
+- Added repository contract tests and documented that the suite is evaluation-only; no runtime, provider, staging, M5, or M7 behavior was changed.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `a2977a1` | test: add public-reference RAG evaluation suite |
+| `eecbc47` | chore: normalize RAG evaluation artifacts |
+
+### Testing
+
+- [OK] Focused repository contract tests: 15 passed.
+- [OK] Full non-integration suite: 1006 passed, 125 deselected.
+- [OK] Ruff format/lint, mypy, and Trellis task validation passed.
+- [OK] Public-reference suite validate-only: 20 cases; v2 regression: 40 cases; no provider or staging execution.
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
