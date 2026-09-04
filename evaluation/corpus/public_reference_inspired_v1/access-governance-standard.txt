@@ -1,0 +1,9 @@
+# Northstar Ledger Access Governance Standard
+
+## Requests and decisions
+
+Any team lead may submit an access request, but a requester may not approve the request.
+Restricted workspace access may be granted for no more than 30 days by the designated access owner.
+As soon as a task ends or membership is deactivated, the associated access must be revoked.
+Each access decision records the requester, approver, scope, decision, and UTC decision time.
+

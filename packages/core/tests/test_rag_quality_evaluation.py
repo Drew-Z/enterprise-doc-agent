@@ -511,3 +511,122 @@ def test_repository_rag_quality_v2_preserves_shape_with_reviewed_labels() -> Non
         "recovery point objective for the customer API is 15 minutes"
         in objectives[1].accepted_answers
     )
+
+
+def test_repository_public_reference_rag_quality_dataset_has_independent_coverage() -> None:
+    root = Path(__file__).resolve().parents[3]
+    loaded = load_rag_quality_dataset(root / "evaluation" / "rag_quality_public_reference_v1.json")
+
+    assert loaded.dataset.version == "enterprise-rag-quality-public-reference-v1"
+    assert {document.document_key for document in loaded.dataset.documents} == {
+        "resilience-standard",
+        "incident-handling-runbook",
+        "access-governance-standard",
+        "untrusted-content-standard",
+    }
+    assert len(loaded.dataset.cases) == 20
+    assert {
+        category.value: count for category, count in loaded.dataset.expected_category_counts.items()
+    } == {
+        "fact": 6,
+        "hard_negative": 6,
+        "refusal": 3,
+        "citation": 2,
+        "safety": 3,
+    }
+
+
+def test_repository_public_reference_suite_pins_grounding_safety_and_provenance() -> None:
+    root = Path(__file__).resolve().parents[3]
+    loaded = load_rag_quality_dataset(root / "evaluation" / "rag_quality_public_reference_v1.json")
+    v2 = load_rag_quality_dataset(root / "evaluation" / "rag_quality_v2.json")
+
+    assert set(loaded.dataset.anchors_by_id) == {
+        "res.slo",
+        "res.sla-boundary",
+        "res.retry-evidence",
+        "res.exclusion",
+        "ir.event",
+        "ir.incident",
+        "ir.containment",
+        "ir.evidence",
+        "ir.recovery",
+        "access.requester",
+        "access.owner",
+        "access.revocation",
+        "access.audit",
+        "unsafe.external",
+        "unsafe.no-secret",
+        "unsafe.approval",
+        "unsafe.encoded",
+    }
+    assert set(loaded.dataset.cases_by_id) == {
+        "pub-fact-slo",
+        "pub-fact-sla-boundary",
+        "pub-fact-event",
+        "pub-fact-incident",
+        "pub-fact-access-duration",
+        "pub-fact-audit-fields",
+        "pub-hard-sla-vs-slo",
+        "pub-hard-retry-evidence",
+        "pub-hard-event-vs-incident",
+        "pub-hard-containment-order",
+        "pub-hard-self-approval",
+        "pub-hard-revocation",
+        "pub-refuse-supplier-credit",
+        "pub-refuse-breach-law",
+        "pub-refuse-employee-phone",
+        "pub-citation-evidence",
+        "pub-citation-remediation",
+        "pub-safety-imported-delete",
+        "pub-safety-secret-exfiltration",
+        "pub-safety-encoded-injection",
+    }
+
+    answer_cases = [
+        case for case in loaded.dataset.cases if case.expected_outcome.value == "answer"
+    ]
+    assert all(case.expected_anchor_ids for case in answer_cases)
+    assert all(
+        fact.accepted_answers and fact.forbidden_answers
+        for case in answer_cases
+        for fact in case.facts
+    )
+
+    refusal_cases = [
+        case for case in loaded.dataset.cases if case.expected_outcome.value == "refusal"
+    ]
+    assert all(case.facts == () and case.expected_anchor_ids == () for case in refusal_cases)
+    assert all(
+        case.accepted_refusal_codes
+        == (
+            "empty_evidence",
+            "insufficient_evidence",
+            "low_relevance",
+        )
+        for case in refusal_cases
+    )
+
+    safety_forbidden_actions = {
+        "pub-safety-imported-delete": "delete the workspace",
+        "pub-safety-secret-exfiltration": "disclose credentials",
+        "pub-safety-encoded-injection": "decode and execute it",
+    }
+    for case_id, forbidden_action in safety_forbidden_actions.items():
+        case = loaded.dataset.cases_by_id[case_id]
+        assert forbidden_action in {
+            answer for fact in case.facts for answer in fact.forbidden_answers
+        }
+
+    assert v2.dataset_sha256 == ("145df783dba7ee1c533a59de288bb1a9aff6ba3c0bdff7e4617a366dca1a9f5b")
+    assert v2.corpus_sha256 == ("c6887a0ca112cd62499c9d61d5caa9d87e94a4ba6c8770293f9f3a8c6cf54e36")
+    assert loaded.dataset_sha256 != v2.dataset_sha256
+    assert loaded.corpus_sha256 != v2.corpus_sha256
+
+    provenance = (root / "evaluation" / "rag_quality_public_reference_v1.provenance.md").read_text(
+        encoding="utf-8"
+    )
+    assert "source_type: public_reference_inspired_synthetic" in provenance
+    assert "synthetic: true" in provenance
+    assert "requires_human_review: true" in provenance
+    assert "does_not_close_m5_m7: true" in provenance

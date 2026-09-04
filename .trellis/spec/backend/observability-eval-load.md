@@ -18,6 +18,10 @@
   applies unchanged thresholds only to those metrics. A complete suite represents every answer
   and refusal metric, so all dataset targets remain mandatory; unavailable metrics are never
   invented or coerced to passing values.
+- Public-reference-inspired RAG suites keep their fictional corpus, versioned dataset, and
+  provenance record as one review unit. Static loader or `--validate-only` success preserves
+  deterministic contracts only; it cannot create M5/M7 provider evidence and requires independent
+  human content and semantic review before any provider trial.
 - `scripts/load_m5.py` reports nearest-rank P50/P95/P99 and explicitly labels one bounded
   run as non-production capacity.
 - `scripts/run_application_capacity.py` executes repeated ramp, steady-state, burst and
@@ -47,6 +51,9 @@
   ready run uses 1000 requests at concurrency 20 with host and selected API-process
   resource sampling; neither run is representative production-quality or
   production-capacity evidence.
+- `evaluation/rag_quality_public_reference_v1.json`, its `corpus/public_reference_inspired_v1/`,
+  and `rag_quality_public_reference_v1.provenance.md` demonstrate a standalone synthetic suite
+  with source-boundary review; they are not provider-quality evidence.
 
 ## Proven Files
 

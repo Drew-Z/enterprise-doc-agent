@@ -1,0 +1,12 @@
+# Northstar Ledger Service Resilience Standard
+
+## Service objective
+
+The internal API availability objective is 99.7 percent for each calendar month.
+That internal objective is an operating target; it does not define, calculate, or promise supplier service credits.
+
+## Investigation record
+
+Availability investigations record UTC timestamps, response outcomes, retry attempts, and the active deployment profile.
+Planned drills, approved maintenance windows, and upstream provider events are excluded from the internal objective only when recorded under this standard.
+

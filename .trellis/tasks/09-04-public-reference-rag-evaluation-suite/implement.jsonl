@@ -1,0 +1,4 @@
+{"file":".trellis/spec/core/backend/index.md","reason":"Defines the core package boundary and directs evaluation/M5 facts for the dataset-loader contract."}
+{"file":".trellis/spec/foundation-tests/backend/index.md","reason":"Sets the repository-level test context for executable cross-package contracts."}
+{"file":".trellis/spec/backend/observability-eval-load.md","reason":"Records that deterministic validation is not real-provider quality and metrics are never invented."}
+{"file":".trellis/tasks/09-04-public-reference-rag-evaluation-suite/research/public-reference-source-boundaries.md","reason":"Provides the reviewed public-reference provenance, no-copy licensing boundary, and synthetic/non-gate constraints."}
