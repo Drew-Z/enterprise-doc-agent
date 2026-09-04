@@ -21,6 +21,6 @@
   "children": [],
   "parent": null,
   "relatedFiles": [],
-  "notes": "",
+  "notes": "Validated locally with synthetic data only; no provider or staging execution.",
   "meta": {}
 }

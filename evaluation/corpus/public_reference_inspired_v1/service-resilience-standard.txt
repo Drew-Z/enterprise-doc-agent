@@ -9,4 +9,3 @@ That internal objective is an operating target; it does not define, calculate, o
 
 Availability investigations record UTC timestamps, response outcomes, retry attempts, and the active deployment profile.
 Planned drills, approved maintenance windows, and upstream provider events are excluded from the internal objective only when recorded under this standard.
-

@@ -10,4 +10,3 @@ An incident is a declared service disruption or confirmed security impact that n
 The response lead may isolate the affected workload before root-cause analysis when that action limits continuing harm.
 Preserve relevant logs and artifacts before destructive remediation when doing so does not add material risk.
 Recovery actions return the documented service to a known-good state and record the decision owner.
-

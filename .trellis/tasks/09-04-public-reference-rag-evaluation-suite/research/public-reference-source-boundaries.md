@@ -41,4 +41,3 @@ stability/revision/cost, production reliability/capacity, privacy/compliance, or
 A future real-provider run requires approved de-identified representative material, independent
 semantic labels, stable route/revision evidence, cost data, repeatable clean runs, and explicit
 gate review.
-
