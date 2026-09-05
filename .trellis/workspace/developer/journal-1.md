@@ -180,3 +180,45 @@ Environment token scoped to the evaluation step.
 - Configure the protected staging Environment and dedicated runner, then dispatch
   `trial` before `full` once provider revision, billing metadata, corpus approval, and
   independent reviewer inputs are available.
+
+
+## Session 5: Staging RAG operational handoff and report isolation
+
+**Date**: 2026-09-05
+**Task**: M5 protected staging quality execution
+**Package**: infrastructure, foundation-tests
+**Branch**: `main`
+
+### Summary
+
+Bound uploaded artifacts to the exact run/attempt report, preventing stale runner files
+from entering a later result. Added the 4C4G evaluation handoff and verified the actual
+v2 trial selection is 12 cases, correcting the earlier documentation's count of ten.
+
+### Main Changes
+
+- Added a regression contract for exact artifact selection and missing-report failure.
+- Documented Environment prerequisites, PowerShell dispatch/download, report integrity
+  and evaluator SHA verification, failure handling, retained test data, and billing gaps.
+- Recorded the artifact contract in the Trellis spec and preserved the open M5/M7 gates.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ed4fef4` | fix: isolate staging RAG reports and document operation |
+
+### Testing
+
+- [OK] Red-to-green artifact isolation test; focused CI/evaluator suite: 17 passed.
+- [OK] Full non-integration suite: 1008 passed, 125 deselected; documentation checks: 9 passed.
+- [OK] Ruff format/lint, mypy, Trellis context validation, and `git diff --check` passed.
+- [OK] Existing `rhysd/actionlint:1.7.7` image passed offline with a read-only repository mount.
+- [OK] v2 validate-only: 12 trial and 40 full cases, unchanged dataset/corpus hashes.
+- [OK] Four PowerShell examples parsed; verifier accepted valid payload and rejected wrong SHA.
+- [OK] The task-created temporary validation report was removed; pre-existing files were retained.
+
+### Status
+
+Operational handoff implemented. No remote push, staging dispatch, provider calls or
+server changes occurred. M5 remains in progress pending external quality evidence.
