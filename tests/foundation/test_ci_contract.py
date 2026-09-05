@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = ROOT / ".github" / "workflows" / "quality.yml"
 HEAVY_WORKFLOW = ROOT / ".github" / "workflows" / "quality-heavy.yml"
 SELF_HOSTED_WORKFLOW = ROOT / ".github" / "workflows" / "quality-self-hosted.yml"
+STAGING_RAG_QUALITY_WORKFLOW = ROOT / ".github" / "workflows" / "evaluate-staging-rag-quality.yml"
 CONTAINER_WORKFLOW = ROOT / ".github" / "workflows" / "container.yml"
 
 BACKEND_COMMANDS = [
@@ -177,6 +178,81 @@ def test_manual_self_hosted_quality_is_serial_and_secret_free() -> None:
     assert "11.9.0" in text
 
 
+def test_manual_staging_rag_quality_is_serialized_and_secret_scoped() -> None:
+    workflow = _workflow(STAGING_RAG_QUALITY_WORKFLOW)
+    assert workflow["permissions"] == {"contents": "read"}
+    assert _triggers(workflow) == {
+        "workflow_dispatch": {
+            "inputs": {
+                "evaluation_scope": {
+                    "description": (
+                        "trial runs the vetted subset; full runs all 40 reviewed v2 cases"
+                    ),
+                    "required": True,
+                    "default": "trial",
+                    "type": "choice",
+                    "options": ["trial", "full"],
+                },
+                "staging_base_url": {
+                    "description": "Externally reachable staging API base URL",
+                    "required": True,
+                    "default": "https://agent.playlab.eu.cc",
+                    "type": "string",
+                },
+            }
+        }
+    }
+    assert workflow["concurrency"] == {
+        "group": "enterprise-doc-agent-staging",
+        "cancel-in-progress": False,
+    }
+    jobs = workflow["jobs"]
+    assert isinstance(jobs, dict)
+    assert set(jobs) == {"evaluate"}
+    evaluate = jobs["evaluate"]
+    assert isinstance(evaluate, dict)
+    assert evaluate["runs-on"] == ["self-hosted", "linux", "x64", "enterprise-doc-staging"]
+    assert evaluate["environment"] == "staging"
+    assert evaluate["timeout-minutes"] == 40
+    assert evaluate["env"] == {
+        "RUNNER_PYTHON": "/opt/enterprise-doc-toolchain/python/bin/python",
+        "RUNNER_UV": "/opt/enterprise-doc-toolchain/python/bin/uv",
+    }
+    steps = evaluate["steps"]
+    assert isinstance(steps, list)
+    evaluation_step = next(
+        step
+        for step in steps
+        if isinstance(step, dict)
+        and step.get("name") == "Run authenticated staging RAG quality evaluation"
+    )
+    assert evaluation_step["env"] == {
+        "EVALUATION_SCOPE": "${{ inputs.evaluation_scope }}",
+        "STAGING_BASE_URL": "${{ inputs.staging_base_url }}",
+        "STAGING_SMOKE_TOKEN": "${{ secrets.STAGING_SMOKE_TOKEN }}",
+        "STAGING_ALLOWED_HOST": "${{ vars.STAGING_ALLOWED_HOST }}",
+        "STAGING_OBJECT_STORE_ALLOWED_HOST": "${{ vars.STAGING_OBJECT_STORE_ALLOWED_HOST }}",
+    }
+    assert (
+        "STAGING_SMOKE_TOKEN" not in evaluate["env"]
+        and "STAGING_ALLOWED_HOST" not in evaluate["env"]
+        and "STAGING_OBJECT_STORE_ALLOWED_HOST" not in evaluate["env"]
+    )
+    commands = _run_commands(evaluate)
+    assert '"$RUNNER_UV" sync --frozen' in commands
+    evaluation = next(
+        command for command in commands if "evaluate_staging_rag_quality.py" in command
+    )
+    assert "evaluation/rag_quality_v2.json" in evaluation
+    assert "--trial-only" in evaluation
+    assert "--timeout-seconds 1800" in evaluation
+    assert "kubectl" not in evaluation
+    text = STAGING_RAG_QUALITY_WORKFLOW.read_text(encoding="utf-8")
+    assert "secrets.STAGING_KUBECONFIG" not in text
+    assert "STAGING_SMOKE_TOKEN" in text
+    assert "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02" in text
+
+
 def test_container_pull_requests_are_path_filtered() -> None:
     workflow = _workflow(CONTAINER_WORKFLOW)
     triggers = _triggers(workflow)
@@ -199,7 +275,13 @@ def test_container_pull_requests_are_path_filtered() -> None:
 def test_quality_workflow_has_no_allow_failure_or_retry_path() -> None:
     text = "\n".join(
         path.read_text(encoding="utf-8").lower()
-        for path in (WORKFLOW, HEAVY_WORKFLOW, SELF_HOSTED_WORKFLOW, CONTAINER_WORKFLOW)
+        for path in (
+            WORKFLOW,
+            HEAVY_WORKFLOW,
+            SELF_HOSTED_WORKFLOW,
+            STAGING_RAG_QUALITY_WORKFLOW,
+            CONTAINER_WORKFLOW,
+        )
     )
     forbidden = [
         "continue-on-error",

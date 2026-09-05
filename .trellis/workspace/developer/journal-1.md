@@ -137,3 +137,46 @@ Added and validated a fully synthetic public-reference-inspired RAG suite with 4
 ### Next Steps
 
 - None - task complete
+
+
+## Session 4: Protected staging RAG quality execution
+
+**Date**: 2026-09-05
+**Task**: Protected staging RAG quality execution
+**Package**: core
+**Branch**: `main`
+
+### Summary
+
+Added a manual GitHub Actions workflow for authenticated staging RAG quality evaluation
+against the reviewed v2 dataset. The workflow supports a bounded `trial` run and a
+full 40-case run, serializes with staging deployment and rollback, and keeps the
+Environment token scoped to the evaluation step.
+
+### Main Changes
+
+- Added the `Evaluate Staging RAG Quality` workflow on the reviewed self-hosted staging
+  runner with protected `staging` Environment and the shared staging concurrency lock.
+- Kept Kubernetes credentials out of the workflow; only the sealed evaluator report is
+  uploaded as an artifact.
+- Added CI contract coverage and documented that a workflow pass does not close M5/M7
+  without stable provider revision, cost metadata, representative corpus review, and
+  independent human semantic approval.
+
+### Testing
+
+- [OK] Focused CI and evaluator tests: 16 passed.
+- [OK] Full non-integration suite: 1007 passed, 125 deselected.
+- [OK] Ruff format/lint, `git diff --check`, and YAML structural validation passed.
+- [NOT RUN] Actionlint is not installed in the local environment; no authenticated
+  staging evaluation was dispatched.
+
+### Status
+
+[OK] **Implemented; external quality gate remains open**
+
+### Next Steps
+
+- Configure the protected staging Environment and dedicated runner, then dispatch
+  `trial` before `full` once provider revision, billing metadata, corpus approval, and
+  independent reviewer inputs are available.

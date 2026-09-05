@@ -1,0 +1,93 @@
+name: Evaluate Staging RAG Quality
+
+on:
+  workflow_dispatch:
+    inputs:
+      evaluation_scope:
+        description: "trial runs the vetted subset; full runs all 40 reviewed v2 cases"
+        required: true
+        default: trial
+        type: choice
+        options:
+          - trial
+          - full
+      staging_base_url:
+        description: "Externally reachable staging API base URL"
+        required: true
+        default: https://agent.playlab.eu.cc
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  # Keep quality evaluation out of the deployment and rollback critical section.
+  group: enterprise-doc-agent-staging
+  cancel-in-progress: false
+
+jobs:
+  evaluate:
+    # This runner is the only reviewed location that can receive the protected
+    # staging Environment token. The evaluator talks to the public HTTPS API;
+    # it does not receive Kubernetes credentials or read cluster Secrets.
+    runs-on: [self-hosted, linux, x64, enterprise-doc-staging]
+    environment: staging
+    timeout-minutes: 40
+    env:
+      RUNNER_PYTHON: /opt/enterprise-doc-toolchain/python/bin/python
+      RUNNER_UV: /opt/enterprise-doc-toolchain/python/bin/uv
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          fetch-depth: 0
+      - name: Validate pre-provisioned evaluator toolchain
+        run: |
+          set -euo pipefail
+          test -x "$RUNNER_PYTHON"
+          test -x "$RUNNER_UV"
+          test "$("$RUNNER_PYTHON" -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')" = "3.12"
+          test "$("$RUNNER_UV" --version | awk '{print $2}')" = "0.11.3"
+      - name: Synchronize frozen evaluator dependencies
+        run: '"$RUNNER_UV" sync --frozen'
+      - name: Run authenticated staging RAG quality evaluation
+        env:
+          EVALUATION_SCOPE: ${{ inputs.evaluation_scope }}
+          STAGING_BASE_URL: ${{ inputs.staging_base_url }}
+          STAGING_ALLOWED_HOST: ${{ vars.STAGING_ALLOWED_HOST }}
+          STAGING_OBJECT_STORE_ALLOWED_HOST: ${{ vars.STAGING_OBJECT_STORE_ALLOWED_HOST }}
+          STAGING_SMOKE_TOKEN: ${{ secrets.STAGING_SMOKE_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$STAGING_BASE_URL"
+          test -n "$STAGING_ALLOWED_HOST"
+          test -n "$STAGING_OBJECT_STORE_ALLOWED_HOST"
+          test -n "$STAGING_SMOKE_TOKEN"
+          report_dir="$RUNNER_TEMP/enterprise-doc-rag-quality"
+          report="$report_dir/rag-quality-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"
+          mkdir -p "$report_dir"
+          scope_args=()
+          case "$EVALUATION_SCOPE" in
+            trial)
+              scope_args+=(--trial-only)
+              ;;
+            full)
+              ;;
+            *)
+              echo 'evaluation_scope must be trial or full' >&2
+              exit 2
+              ;;
+          esac
+          "$RUNNER_UV" run python scripts/evaluate_staging_rag_quality.py \
+            --dataset evaluation/rag_quality_v2.json \
+            --base-url "$STAGING_BASE_URL" \
+            --allowed-host "$STAGING_ALLOWED_HOST" \
+            --allowed-object-store-host "$STAGING_OBJECT_STORE_ALLOWED_HOST" \
+            --timeout-seconds 1800 \
+            --report-path "$report" \
+            "${scope_args[@]}"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: staging-rag-quality-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/enterprise-doc-rag-quality/
+          if-no-files-found: error

@@ -151,6 +151,29 @@ telemetry, and an isolated production-like environment. A non-zero error rate or
 latency regression is a diagnostic signal, not evidence to suppress by raising the
 target.
 
+## Protected staging RAG quality execution
+
+`Evaluate Staging RAG Quality` is a manual GitHub Actions workflow for the reviewed
+`evaluation/rag_quality_v2.json` corpus. It runs only on the repository-scoped staging
+runner, uses the protected `staging` Environment, and shares the
+`enterprise-doc-agent-staging` concurrency lock with deployment and rollback. It does
+not receive Kubernetes credentials and cannot read Kubernetes Secrets; it calls the
+public HTTPS control plane with the short-lived `STAGING_SMOKE_TOKEN` Environment
+secret.
+
+The dispatch menu defaults to `trial`, which selects the ten explicitly marked v2
+cases. Choose `full` only after the provider route, revision, provider billing inputs,
+approved corpus scope, and human reviewer are available; it selects all 40 v2 cases.
+Each attempt uploads only the evaluator's sealed JSON report. The report carries hashed
+queries and answers, route/behavior identities, aggregate token telemetry, and quality
+diagnostics, not bearer tokens, document bodies, artifact URLs, or raw model output.
+
+A passing workflow proves only that selected evaluation completed against the observed
+route. It does not by itself close M5/M7: the full quality gate also requires stable
+provider revision and cost metadata, representative-corpus review, and independent
+human semantic approval. Do not run the public-reference-inspired synthetic suite
+through this workflow or represent it as provider-quality evidence.
+
 ## v0.1.18 observation
 
 Before the readiness cache was added, a 200-request/20-concurrency run completed all

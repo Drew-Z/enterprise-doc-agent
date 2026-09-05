@@ -85,6 +85,15 @@ Rollback point: observability services are optional and independent of readiness
 - [x] Separate reviewed implementation and evidence commits when the user approves the
   commit boundary.
 
+## Slice 8: Protected Staging Quality Execution
+
+- [x] Add a manual, Environment-protected `trial`/`full` v2 RAG evaluation workflow that
+  serializes with staging deployment and rollback, has no Kubernetes credentials, and
+  uploads only the sealed report.
+- [ ] Dispatch a clean full 40-case execution only after stable provider revision,
+  billing metadata, approved representative corpus scope, and independent human semantic
+  reviewer are available. A workflow pass alone is not a completion claim.
+
 ## Full Completion Gate
 
 ```powershell
