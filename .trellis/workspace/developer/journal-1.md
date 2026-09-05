@@ -222,3 +222,39 @@ v2 trial selection is 12 cases, correcting the earlier documentation's count of 
 
 Operational handoff implemented. No remote push, staging dispatch, provider calls or
 server changes occurred. M5 remains in progress pending external quality evidence.
+
+
+## Session 6: Live staging publication prerequisite audit
+
+**Date**: 2026-09-05
+**Task**: M5 protected staging quality execution
+**Package**: infrastructure
+**Branch**: `main`
+
+### Summary
+
+Read-only GitHub checks confirmed the public repository has no staging Environment
+protection rules or deployment ref policy. The 4C4G runner is online and both required
+host variables exist among 23 paginated variables. The smoke secret exists, but metadata
+does not verify its expiry. The evaluation workflow is still local-only.
+
+### Main Changes
+
+- Corrected the runbook's claim that the live Environment was already protected.
+- Recorded the observed remote SHA, runner/variable presence, token metadata limits,
+  and proposed repository permission/ref restrictions and publication sequence.
+- Kept independent reviewer ownership, token validity and real provider quality open.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5c36592` | docs: record live staging publication prerequisites |
+
+### Testing and Status
+
+- [OK] Read-only GitHub API checks and remote-main ancestry validation.
+- [OK] Nine documentation/repository tests, Trellis validation and `git diff --check`.
+- No remote settings, secrets, refs or server workloads changed; no live evaluation ran.
+- No temporary files were created; existing files and registered worktrees were preserved.
+- Await explicit push authorization before executing the documented publication scope.
