@@ -89,5 +89,5 @@ jobs:
         if: always()
         with:
           name: staging-rag-quality-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/enterprise-doc-rag-quality/
+          path: ${{ runner.temp }}/enterprise-doc-rag-quality/rag-quality-${{ github.run_id }}-${{ github.run_attempt }}.json
           if-no-files-found: error

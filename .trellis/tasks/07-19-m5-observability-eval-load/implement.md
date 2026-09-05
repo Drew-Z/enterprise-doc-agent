@@ -90,6 +90,17 @@ Rollback point: observability services are optional and independent of readiness
 - [x] Add a manual, Environment-protected `trial`/`full` v2 RAG evaluation workflow that
   serializes with staging deployment and rollback, has no Kubernetes credentials, and
   uploads only the sealed report.
+- [x] Bind artifact upload to the current run and attempt, with a regression check
+  rejecting directory-wide uploads and a per-workflow Actionlint pass.
+- [x] Link the 4C4G runbook to exact prerequisites, PowerShell dispatch/download
+  commands, report verification, and failure-handling instructions.
+
+Validation on 2026-09-05: 1008 non-integration tests passed (125 deselected), Ruff
+format/lint and mypy passed, and `rhysd/actionlint:1.7.7` passed for the evaluation
+workflow. Offline v2 selection is 12 trial cases and 40 full cases, with unchanged
+dataset/corpus hashes. Four PowerShell examples parsed; the documented verifier
+accepted a valid seal and rejected a mismatched evaluator SHA. No live evaluation ran.
+
 - [ ] Dispatch a clean full 40-case execution only after stable provider revision,
   billing metadata, approved representative corpus scope, and independent human semantic
   reviewer are available. A workflow pass alone is not a completion claim.

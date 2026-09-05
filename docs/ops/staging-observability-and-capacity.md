@@ -157,14 +157,15 @@ target.
 `evaluation/rag_quality_v2.json` corpus. It runs only on the repository-scoped staging
 runner, uses the protected `staging` Environment, and shares the
 `enterprise-doc-agent-staging` concurrency lock with deployment and rollback. It does
-not receive Kubernetes credentials and cannot read Kubernetes Secrets; it calls the
+not load Kubernetes credentials or issue cluster commands; it calls the
 public HTTPS control plane with the short-lived `STAGING_SMOKE_TOKEN` Environment
 secret.
 
-The dispatch menu defaults to `trial`, which selects the ten explicitly marked v2
+The dispatch menu defaults to `trial`, which selects the twelve explicitly marked v2
 cases. Choose `full` only after the provider route, revision, provider billing inputs,
 approved corpus scope, and human reviewer are available; it selects all 40 v2 cases.
-Each attempt uploads only the evaluator's sealed JSON report. The report carries hashed
+Each attempt uploads only its exact `rag-quality-<run-id>-<attempt>.json` file, even if
+the runner retains older files in the same temporary directory. The report carries hashed
 queries and answers, route/behavior identities, aggregate token telemetry, and quality
 diagnostics, not bearer tokens, document bodies, artifact URLs, or raw model output.
 
@@ -173,6 +174,141 @@ route. It does not by itself close M5/M7: the full quality gate also requires st
 provider revision and cost metadata, representative-corpus review, and independent
 human semantic approval. Do not run the public-reference-inspired synthetic suite
 through this workflow or represent it as provider-quality evidence.
+
+### Preconditions and configuration
+
+Use the [4C4G runbook](single-node-4c4g-staging-runbook.md) for the current host.
+The shared provisioning procedures in the tiny runbook remain useful, but its historical
+configured/missing inventory is not a current Environment audit. Check the following
+before each evaluation window:
+
+| Item | Required value or observation |
+| --- | --- |
+| Workflow revision | The workflow is published on the remote default branch; the selected branch/tag contains the reviewed evaluator and frozen dependencies. Local commits cannot be dispatched. |
+| Environment | Existing `staging` Environment with its allowed refs and review protection checked; dispatch only a reviewed ref. |
+| Runner | Repository-scoped, non-root runner online with labels `self-hosted`, `linux`, `x64`, `enterprise-doc-staging`. |
+| Toolchain and network | Python 3.12 and uv 0.11.3 at the workflow's `/opt/enterprise-doc-toolchain/python/bin/` paths; Git checkout and frozen dependency sync reachable. |
+| `STAGING_ALLOWED_HOST` | Environment variable `agent.playlab.eu.cc`, a hostname without a scheme or path. |
+| `STAGING_OBJECT_STORE_ALLOWED_HOST` | Environment variable containing the exact presigned-upload object-store hostname, without a scheme or path. |
+| `STAGING_SMOKE_TOKEN` | Environment secret for the dedicated active synthetic smoke tenant/user; valid through approval/queue delay and the evaluation window. |
+| Staging release | Latest accepted release record and immutable image identities retained; readiness and authenticated business smoke healthy. |
+
+Rotate the token through the existing administrator-operated
+[smoke token procedure](tiny-staging-runbook.md#first-rollout), immediately
+before the window. The evaluator step alone receives that secret. It does not mint
+tokens, provision membership, change model routes, or reindex existing documents.
+
+Both `trial` and `full` upload the selected synthetic documents, run ingestion/embedding,
+and create Agent runs and answer artifacts in that tenant. Cases run sequentially;
+the evaluator uses a shared 1800-second deadline and the job has a 40-minute ceiling.
+Provider calls can incur charges. Cancellation or timeout does not undo uploaded data
+or cancel already submitted server jobs; the evaluator has no automatic tenant cleanup.
+Retain failed-attempt evidence and review that tenant's data before any operator cleanup.
+
+The workflow serializes only with workflows using its concurrency group. Avoid concurrent
+manual deployment, reindex or load runs. Provider revision, billing inputs, corpus approval
+and semantic reviewer are operator prerequisites, not automatically enforced dispatch
+inputs. Review the v2 synthetic corpus before the trial; a full v2 run still does not
+establish representative enterprise-corpus quality.
+
+### Validate and dispatch from PowerShell
+
+From the repository root, these commands validate both fixed selections without using a
+token or calling staging, embedding or chat providers. Expect 12 and 40 selected cases:
+
+```powershell
+uv run python scripts/evaluate_staging_rag_quality.py `
+  --dataset evaluation/rag_quality_v2.json --validate-only --trial-only
+if ($LASTEXITCODE -ne 0) { throw 'Trial dataset validation failed' }
+uv run python scripts/evaluate_staging_rag_quality.py `
+  --dataset evaluation/rag_quality_v2.json --validate-only
+if ($LASTEXITCODE -ne 0) { throw 'Full dataset validation failed' }
+```
+
+After the reviewed workflow is available remotely and the prerequisites above hold:
+
+```powershell
+$ragRepo = 'Drew-Z/enterprise-doc-agent'
+gh workflow view evaluate-staging-rag-quality.yml --repo $ragRepo --ref main --yaml
+if ($LASTEXITCODE -ne 0) { throw 'Reviewed remote workflow is not available' }
+gh workflow run evaluate-staging-rag-quality.yml --repo $ragRepo --ref main `
+  -f evaluation_scope=trial -f staging_base_url=https://agent.playlab.eu.cc
+if ($LASTEXITCODE -ne 0) { throw 'Trial dispatch failed' }
+```
+
+Retain the returned run URL/ID and verify its commit in Actions. If the CLI does not
+return a URL, locate the exact dispatch by workflow, actor, ref and start time in Actions;
+do not assume the newest repository run is yours. After reviewing the trial and full-run
+prerequisites, dispatch the same reviewed ref with `-f evaluation_scope=full`. Preserve
+each attempt independently; a later pass does not erase a failed attempt.
+
+### Retrieve and verify the report
+
+Use the exact run ID from dispatch, wait for completion, and keep its observed attempt:
+
+```powershell
+$ragRunId = Read-Host 'Evaluation workflow run ID'
+gh run watch $ragRunId --repo $ragRepo --exit-status
+```
+
+A failed run is still worth inspecting. Retrieve its metadata and artifact separately
+after the watch command returns, including when it returns a nonzero exit code:
+
+```powershell
+$ragRunJson = gh run view $ragRunId --repo $ragRepo `
+  --json workflowName,headSha,attempt,status,conclusion,url
+if ($LASTEXITCODE -ne 0) { throw 'Could not read the selected run' }
+$ragRun = $ragRunJson | ConvertFrom-Json
+if ($ragRun.workflowName -ne 'Evaluate Staging RAG Quality' -or $ragRun.status -ne 'completed') {
+  throw 'Select a completed RAG evaluation run'
+}
+$ragAttempt = $ragRun.attempt
+$ragEvidenceDir = Join-Path $env:TEMP (
+  "enterprise-doc-rag-$ragRunId-$ragAttempt-" + [guid]::NewGuid().ToString('N')
+)
+gh run download $ragRunId --repo $ragRepo `
+  --name "staging-rag-quality-$ragRunId-$ragAttempt" --dir $ragEvidenceDir
+if ($LASTEXITCODE -ne 0) { throw 'Report unavailable; inspect the failed workflow steps' }
+$ragReportPath = Join-Path $ragEvidenceDir "rag-quality-$ragRunId-$ragAttempt.json"
+$verifyRagReport = @'
+import json
+import sys
+from pathlib import Path
+from enterprise_doc_core.evaluation import verify_report_payload
+report = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+if not verify_report_payload(report):
+    raise SystemExit("Report payload checksum mismatch")
+if report["provenance"]["commit_sha"] != sys.argv[2]:
+    raise SystemExit("Evaluator checkout SHA differs from the selected workflow run")
+print("Report checksum and evaluator checkout SHA verified")
+'@
+uv run python -c $verifyRagReport $ragReportPath $ragRun.headSha
+if ($LASTEXITCODE -ne 0) { throw 'Report verification failed' }
+```
+
+The seal verifies content integrity, not reviewer approval or a digital signature.
+`provenance.commit_sha` identifies the evaluator checkout, not the deployed server.
+Retain the run URL/attempt, evaluator SHA, accepted staging release record/image digests,
+dataset/corpus hashes, observed routes/behavior versions, and review outcome together.
+
+| Result | Interpretation and next action |
+| --- | --- |
+| `status: passed`, `coverage: bounded_sample`, `trial_only: true`, 12/40 cases | Trial thresholds passed for the selected metrics. Review all case diagnostics before requesting the full run. |
+| `status: passed`, `coverage: full`, `trial_only: false`, 40/40 cases | One synthetic v2 run met its thresholds. Verify clean provenance, dataset hashes and routes; repeatability, billing and human semantic review remain separate evidence. |
+| `status: failed` with a sealed report | Preserve failed cases, applicable targets and diagnostic codes; resolve the cause before a new recorded execution. Do not lower thresholds or rerun to select only a pass. |
+| Missing report, cancelled job, checkout/dependency error, HTTP error or deadline | Execution is incomplete. Inspect the failing step; never substitute a previous attempt's report or count this as a quality pass. |
+
+HTTP 401 requires checking the short-lived token and active smoke membership. HTTP 403
+requires distinguishing application authorization from an edge rejection; object-store
+host rejection requires reviewing the exact presign host. Diagnose provider transport,
+rate limits and timeouts separately from answer-quality failures. For incomplete runs,
+record the run URL, failed step and bounded error classification; sanitize any log excerpt.
+
+`cost_metadata.billing_amount` and `billing_currency` are currently always `null`;
+token usage may be partial or unavailable. Associate reviewed provider rates/billing and
+stable provider revision as separate evidence without modifying the sealed report.
+The report also omits raw answers, so independent semantic review needs authorized access
+to the same tenant's results. A green Actions conclusion alone cannot close M5/M7.
 
 ## v0.1.18 observation
 

@@ -31,6 +31,48 @@
   attribute deletion plus Prometheus recording and alert rules. Kubernetes leaves OTLP
   disabled until an actual collector endpoint is reviewed.
 
+## Staging RAG Artifact Contract
+
+### Scope / Trigger
+
+Self-hosted runner cleanup can leave older RAG reports in the same temporary directory.
+Each quality execution must publish only its own report.
+
+### Signatures
+
+`evaluate-staging-rag-quality.yml` invokes `evaluate_staging_rag_quality.py --report-path`
+with `$RUNNER_TEMP/enterprise-doc-rag-quality/rag-quality-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json`.
+
+### Contracts
+
+The artifact name is `staging-rag-quality-${{ github.run_id }}-${{ github.run_attempt }}`.
+Upload `path` selects that exact report file and `if-no-files-found` is `error`.
+`provenance.commit_sha` identifies the evaluator checkout; server image identity and
+independent review must be recorded separately.
+
+### Validation & Error Matrix
+
+- Current sealed report exists: upload it even if evaluation thresholds failed.
+- Current report missing: fail the upload; retain the run as incomplete.
+- Earlier reports remain: exclude them from the current attempt's artifact.
+
+### Good/Base/Bad Cases
+
+- Good: one matching run/attempt report, with intact payload hash and matching checkout SHA.
+- Base: a sealed `status: failed` report is retained for diagnosis.
+- Bad: a prior attempt's passing report is substituted after timeout or cancellation.
+
+### Tests Required
+
+`test_staging_rag_quality_upload_excludes_stale_runner_reports` fixes the exact file
+selection, single-upload boundary, missing-file error and always-upload behavior.
+Evaluator tests continue to verify the seal and credential/raw-output redaction.
+
+### Wrong vs Correct
+
+Do not upload `${{ runner.temp }}/enterprise-doc-rag-quality/` as a directory.
+Use `${{ runner.temp }}/enterprise-doc-rag-quality/rag-quality-${{ github.run_id }}-${{ github.run_attempt }}.json`.
+
 ## Proven Examples
 
 - `apps/api/tests/test_metrics.py` and `packages/core/tests/test_metrics.py` verify

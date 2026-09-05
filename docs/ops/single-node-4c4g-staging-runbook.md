@@ -128,3 +128,21 @@ expired short-lived smoke token that returned HTTP 401. The fixed smoke and
 governance memberships were revalidated, tokens were rotated in memory and piped
 directly to protected GitHub Environment secrets, and the final run passed without
 persisting or printing token values.
+
+## RAG quality evaluation
+
+After release acceptance, use the separate manual `Evaluate Staging RAG Quality`
+workflow. The [evaluation procedure](staging-observability-and-capacity.md#protected-staging-rag-quality-execution)
+contains the current Environment/runner prerequisites, PowerShell trial/full dispatch,
+exact-attempt artifact retrieval, integrity checks, and failure interpretation.
+
+This reuses the existing 4C4G runner and active synthetic smoke membership. It needs a
+fresh `STAGING_SMOKE_TOKEN`, the two host allowlists, reachable frozen dependencies,
+and an available provider budget; it does not require Prometheus or a GPU. The shared
+deployment/rollback lock and serial case execution bound overlap on this host.
+Uploaded synthetic documents and Agent results remain in the tenant after the run.
+
+The tiny runbook's configured/missing inventory is a historical bootstrap snapshot;
+reuse its administrative procedures without resetting this host to `tiny-single-node`.
+The latest release evidence above establishes staging acceptance. Real-provider quality,
+representative capacity and independent recovery still need their own evidence.

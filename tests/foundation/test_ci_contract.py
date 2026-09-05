@@ -253,6 +253,24 @@ def test_manual_staging_rag_quality_is_serialized_and_secret_scoped() -> None:
     assert "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02" in text
 
 
+def test_staging_rag_quality_upload_excludes_stale_runner_reports() -> None:
+    workflow = _workflow(STAGING_RAG_QUALITY_WORKFLOW)
+    steps = workflow["jobs"]["evaluate"]["steps"]
+    uploads = [
+        step for step in steps if step.get("uses", "").startswith("actions/upload-artifact@")
+    ]
+    assert len(uploads) == 1
+    assert uploads[0]["with"] == {
+        "name": "staging-rag-quality-${{ github.run_id }}-${{ github.run_attempt }}",
+        "path": (
+            "${{ runner.temp }}/enterprise-doc-rag-quality/"
+            "rag-quality-${{ github.run_id }}-${{ github.run_attempt }}.json"
+        ),
+        "if-no-files-found": "error",
+    }
+    assert uploads[0]["if"] == "always()"
+
+
 def test_container_pull_requests_are_path_filtered() -> None:
     workflow = _workflow(CONTAINER_WORKFLOW)
     triggers = _triggers(workflow)
