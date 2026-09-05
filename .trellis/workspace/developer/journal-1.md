@@ -73,7 +73,9 @@ Added a profile-specific 1800s Worker rollout deadline and bounded workflow wait
 
 ### Main Changes
 
-(Add details)
+- Added a profile-specific Worker rollout deadline and bounded workflow waits for the reviewed 4C4G staging host.
+- Documented the OCI relay fallback and the staging evidence collection path for migration, readiness, smoke, and provider routing.
+- Kept cloud credentials, cluster operations, and production-capacity claims behind explicit external gates.
 
 ### Git Commits
 
@@ -84,7 +86,9 @@ Added a profile-specific 1800s Worker rollout deadline and bounded workflow wait
 
 ### Testing
 
-- [OK] (Add test results)
+- [OK] 993 non-integration tests passed with deployment, lint, type, and Actionlint checks.
+- [OK] Staging run `33570932597` passed embedding, readiness, authenticated smoke, public health, and bilingual route validation.
+- [OK] Evidence was sanitized and retained under the staging delivery record; no production-capacity claim was made.
 
 ### Status
 
