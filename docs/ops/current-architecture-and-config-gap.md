@@ -237,7 +237,7 @@ presence/validation evidence.
 
 1. Keep the local regression, migration, authorization, audit, SCIM and local
    JWT revocation contracts green; the latest non-integration suite is
-   `1004 passed` (`125` integration tests deselected).
+   `1006 passed` (`125` integration tests deselected; validated 2026-09-05).
 2. Keep the passed merged `v0.1.33` 4C4G staging record reproducible, including
    immutable digests, version 3 embedding identity, authenticated smoke and
    governance smoke.

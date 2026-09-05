@@ -113,7 +113,7 @@ LangGraph 图把检索、生成、校验、审批和发布分成明确节点。�
 ## 当前可验证成果
 
 - M0-M4、M8 的核心实现和相应证据已完成。
-- 当前工作树非集成回归为 `1004 passed`（`125` 项集成测试按标记单独执行）；前端为 `31` 个测试文件、`192 passed`；成员、外部绑定、live membership、受限 SCIM 和 local JWT revocation 五条 PostgreSQL 身份集成链路为 `7 passed`，完整 integration suite 为 `125 passed`，其余集成回归按环境单独执行。
+- 当前工作树非集成回归为 `1006 passed`（`125` 项集成测试按标记单独执行，数据截至 2026-09-05）；前端为 `31` 个测试文件、`192 passed`；成员、外部绑定、live membership、受限 SCIM 和 local JWT revocation 五条 PostgreSQL 身份集成链路为 `7 passed`，完整 integration suite 为 `125 passed`，其余集成回归按环境单独执行。
 - 前端 ESLint、TypeScript、Vite production build，以及后端 Ruff 定向检查和 `mypy packages/core/src apps/api/src` 均已通过。
 - 六个产品页面已完成既有视觉检查；本轮 Identity 成员/绑定控制面另在桌面 `1440x1000` 和移动端 `390x844` 完成 Playwright 截图检查。
 - 已有非 root 容器、Kubernetes base/staging/prod manifest、迁移 Job、探针、RBAC、NetworkPolicy、PDB 和发布/回滚脚本。

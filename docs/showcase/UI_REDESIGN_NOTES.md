@@ -164,7 +164,7 @@ export is available at `D:/workspace4Cursor/offer/figma-final-handoff.png`.
 
 - Frontend tests: `192 passed` across `31` files.
 - Documents API and inventory-service focused tests: passed.
-- Non-integration backend regression: `1004 passed, 125 deselected`.
+- Non-integration backend regression: `1006 passed, 125 deselected` (validated 2026-09-05).
 - TypeScript project check: passed.
 - Frontend ESLint: passed.
 - Ruff format/check for the changed backend files: passed.

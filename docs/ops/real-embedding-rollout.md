@@ -32,6 +32,12 @@ Embedding generation version `2` prevents a completed version-1 Hash generation 
 being reused. Existing ready enterprise documents must be reindexed after deployment.
 The migration intentionally does not preserve the old 8-dimensional vector values.
 
+The original rollout used generation version `2`; the merged v0.1.33 staging release
+now uses version `3` for the reviewed 4B route. Version `2` remains historical compatibility
+evidence and must not be treated as the current staging identity.
+The dated challenger instructions below describe the historical v2-to-v3 decision; any future
+model switch from the current v3 staging identity must use version `4`.
+
 ## Provider contract
 
 The reviewed default is `Qwen/Qwen3-Embedding-4B` with MRL output reduced to 1024
@@ -62,7 +68,7 @@ The same channel also accepted a concrete two-document rerank request at
 `/v1/rerank` with `qwen3-reranker-8b` and ranked the document containing the retention-policy
 answer above an unrelated upload document.
 
-This closes only the provider compatibility probe. It does not replace the currently reviewed
+This closes only the provider compatibility probe. It does not replace the then-reviewed
 staging identity (`Qwen/Qwen3-Embedding-4B`, generation version `2`), does not prove corpus
 quality, and does not constitute a staging reindex. If a later reviewed quality decision adopts
 the Free challenger, set these as protected staging Environment variables:
@@ -138,7 +144,7 @@ independent runs used the same 40-case synthetic corpus, production parser/chunk
 - returned vectors: finite, non-zero, exactly 1024 dimensions.
 
 These are local vector-quality revalidation reports, not a new staging rollout. The
-reviewed staging identity remains `Qwen/Qwen3-Embedding-4B`, generation version `2`.
+then-reviewed staging identity remained `Qwen/Qwen3-Embedding-4B`, generation version `2`.
 The Free `qwen3-embedding-8b` challenger is intentionally deferred: no version `3`
 protected-variable change, reindex, or model switch is authorized by this decision.
 
@@ -225,7 +231,7 @@ gh variable set STAGING_EMBEDDING_BASE_URL --env staging \
 gh variable set STAGING_EMBEDDING_MODEL_NAME --env staging \
   --body 'Qwen/Qwen3-Embedding-4B'
 gh variable set STAGING_EMBEDDING_VERSION --env staging \
-  --body '2'
+  --body '3'
 ```
 
 Do not paste the API key into GitHub variables, repository files, issue comments, CI
@@ -265,7 +271,7 @@ sudo kubectl -n enterprise-doc-agent-staging get secret enterprise-doc-secrets \
 6. Stop if migration, rollout, embedding convergence, or either smoke fails.
 
 The staging deploy validates that the ConfigMap contains the provider, endpoint, model,
-dimension `1024`, and generation version `2`; prerequisite validation also requires the
+dimension `1024`, and generation version `3`; prerequisite validation also requires the
 new Secret key.
 
 ## Probe and reindex
@@ -291,7 +297,7 @@ review; collect its JSON report, Job object, Pod state, events and logs before e
 deleting it for a retry.
 
 The final single-line report must have `status=passed`, `values_redacted=true`, a probe
-with the approved provider/model, dimension `1024`, version `2`, two finite non-zero
+with the approved provider/model, dimension `1024`, version `3`, two finite non-zero
 vectors, and a completed reindex section whose final selected count is zero. The workflow
 validates this JSON before smoke and adds the sanitized report and SHA-256 to the release
 record. Vector values, API keys and database credentials are never report fields.
@@ -309,7 +315,7 @@ let the gate converge the new identity before promotion.
 - PostgreSQL reports `document_chunks.embedding` as `vector(1024)` and the HNSW index is
   valid.
 - Every ready enterprise document has one active, succeeded, ready generation with the
-  configured model, dimension `1024`, and embedding version `2`.
+  configured model, dimension `1024`, and embedding version `3`.
 - A non-sensitive upload completes ingestion and hybrid retrieval returns grounded
   citations.
 - Wrong-tenant and wrong-version retrieval tests still refuse access.
