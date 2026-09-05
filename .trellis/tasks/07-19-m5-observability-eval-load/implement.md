@@ -94,6 +94,11 @@ Rollback point: observability services are optional and independent of readiness
   rejecting directory-wide uploads and a per-workflow Actionlint pass.
 - [x] Link the 4C4G runbook to exact prerequisites, PowerShell dispatch/download
   commands, report verification, and failure-handling instructions.
+- [x] Audit live GitHub prerequisites read-only, including paginated Environment
+  variables, runner state, workflow publication and actual protection rules.
+- [ ] Apply the reviewed repository/Environment protection scope and publish the
+  local workflow after owner authorization. The 2026-09-05 API observation found
+  an unprotected `staging` Environment in the now-public repository.
 
 Validation on 2026-09-05: 1008 non-integration tests passed (125 deselected), Ruff
 format/lint and mypy passed, and `rhysd/actionlint:1.7.7` passed for the evaluation

@@ -155,8 +155,9 @@ target.
 
 `Evaluate Staging RAG Quality` is a manual GitHub Actions workflow for the reviewed
 `evaluation/rag_quality_v2.json` corpus. It runs only on the repository-scoped staging
-runner, uses the protected `staging` Environment, and shares the
-`enterprise-doc-agent-staging` concurrency lock with deployment and rollback. It does
+runner, targets the `staging` Environment, and shares the
+`enterprise-doc-agent-staging` concurrency lock with deployment and rollback. The
+Environment name alone does not configure GitHub deployment protections. The job does
 not load Kubernetes credentials or issue cluster commands; it calls the
 public HTTPS control plane with the short-lived `STAGING_SMOKE_TOKEN` Environment
 secret.
@@ -210,6 +211,45 @@ manual deployment, reindex or load runs. Provider revision, billing inputs, corp
 and semantic reviewer are operator prerequisites, not automatically enforced dispatch
 inputs. Review the v2 synthetic corpus before the trial; a full v2 run still does not
 establish representative enterprise-corpus quality.
+
+### Read-only GitHub observation on 2026-09-05
+
+The repository API returned the following state before publishing this workflow:
+
+- The repository is public. The `staging` Environment exists, but `protection_rules`
+  is empty and `deployment_branch_policy` is `null`. Environment protection is therefore
+  a pending configuration requirement, not a verified current capability.
+- `main` has neither branch protection nor repository rulesets. The repository's default
+  workflow token permission is `write`; all eight local workflows already declare their
+  own explicit permissions, including explicit package/signing grants for the image build.
+- The 4C4G staging runner is online and idle. The legacy tiny runner is offline; no runner
+  was deregistered. Labels identify a runner but do not isolate untrusted code from its host.
+- All 23 Environment variables were enumerated with pagination. The deployment profile
+  is `single-node-4c4g`; both required host allowlists exist and match the configured
+  application and object-store hosts.
+- `STAGING_SMOKE_TOKEN` exists and was last updated at `2026-09-03T16:09:27Z`. Secret
+  metadata cannot establish JWT expiry or active membership; neither was validated here.
+- The remote workflow inventory does not yet include `Evaluate Staging RAG Quality`.
+  Remote `main` is `9e9efb52a27a7a7ccf963e68d97c95722cbb72f5`, also used by the successful
+  `v0.1.33` deployment run `33777258980`. Local evaluator/docs commits are not published.
+
+Proposed publication scope, pending owner authorization:
+
+1. Change the repository default workflow token permission to `read`, preserving the
+   existing explicit workflow grants and disabled Actions approval of pull requests.
+2. Restrict the `staging` Environment to branch `main` and release tags `v*.*.*` using
+   custom deployment branch/tag policies. Preserve visibility, secrets and runner
+   registrations. This would exclude the earlier feature-branch deployment path.
+3. Keep reviewer policy explicit: ref restrictions do not add independent approval,
+   protect branch contents, or isolate the node-hosted runner. Reviewer ownership and
+   independent semantic review remain separate decisions; do not claim they are enabled.
+4. Publish the reviewed local commits as a fast-forward to `main`, verify the resulting
+   workflow and CI, then refresh the dedicated smoke token through the existing procedure
+   and execute one recorded 12-case trial. Full evaluation retains the prerequisites above.
+
+These observations are a dated snapshot, not a quality report. All GitHub calls in this
+check were read-only; no protection settings, tokens, server workloads or remote refs
+were changed. Re-read the live settings and remote SHA before applying the proposed scope.
 
 ### Validate and dispatch from PowerShell
 
