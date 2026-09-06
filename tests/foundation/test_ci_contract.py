@@ -239,7 +239,7 @@ def test_manual_staging_rag_quality_is_serialized_and_secret_scoped() -> None:
         and "STAGING_OBJECT_STORE_ALLOWED_HOST" not in evaluate["env"]
     )
     commands = _run_commands(evaluate)
-    assert '"$RUNNER_UV" sync --frozen' in commands
+    assert '"$RUNNER_UV" sync --frozen --no-dev --python "$RUNNER_PYTHON"' in commands
     evaluation = next(
         command for command in commands if "evaluate_staging_rag_quality.py" in command
     )
@@ -251,6 +251,25 @@ def test_manual_staging_rag_quality_is_serialized_and_secret_scoped() -> None:
     assert "secrets.STAGING_KUBECONFIG" not in text
     assert "STAGING_SMOKE_TOKEN" in text
     assert "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02" in text
+
+
+def test_staging_rag_quality_bounds_dependency_setup_before_token_use() -> None:
+    workflow = _workflow(STAGING_RAG_QUALITY_WORKFLOW)
+    steps = workflow["jobs"]["evaluate"]["steps"]
+    sync = next(step for step in steps if "sync --frozen" in step.get("run", ""))
+    evaluation = next(
+        step for step in steps if "evaluate_staging_rag_quality.py" in step.get("run", "")
+    )
+
+    assert sync.get("timeout-minutes") == 5
+    assert sync["run"] == '"$RUNNER_UV" sync --frozen --no-dev --python "$RUNNER_PYTHON"'
+    assert "STAGING_SMOKE_TOKEN" not in sync.get("env", {})
+    assert steps.index(sync) < steps.index(evaluation)
+    assert (
+        '"$RUNNER_UV" run --no-sync python scripts/evaluate_staging_rag_quality.py'
+        in (evaluation["run"])
+    )
+    assert "sync --frozen" not in evaluation["run"]
 
 
 def test_staging_rag_quality_upload_excludes_stale_runner_reports() -> None:

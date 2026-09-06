@@ -96,7 +96,7 @@ Rollback point: observability services are optional and independent of readiness
   commands, report verification, and failure-handling instructions.
 - [x] Audit live GitHub prerequisites read-only, including paginated Environment
   variables, runner state, workflow publication and actual protection rules.
-- [ ] Apply the reviewed repository/Environment protection scope and publish the
+- [x] Apply the reviewed repository/Environment protection scope and publish the
   local workflow after owner authorization. The 2026-09-05 API observation found
   an unprotected `staging` Environment in the now-public repository.
 
@@ -105,6 +105,24 @@ format/lint and mypy passed, and `rhysd/actionlint:1.7.7` passed for the evaluat
 workflow. Offline v2 selection is 12 trial cases and 40 full cases, with unchanged
 dataset/corpus hashes. Four PowerShell examples parsed; the documented verifier
 accepted a valid seal and rejected a mismatched evaluator SHA. No live evaluation ran.
+
+- [x] Execute the authorized single 12-case trial and preserve its terminal result:
+  run `33976542098`, attempt 1, timed out during frozen dependency sync; the evaluator
+  was skipped and no quality report was produced. Do not redispatch or count this as
+  model-quality evidence.
+- [x] Bound dependency setup to five minutes, omit development dependencies, select
+  the pre-provisioned Python, and disable implicit sync in the token-bearing step.
+  Test the workflow contract red-to-green and validate both dataset selections in an
+  isolated runtime-only environment without any staging/provider calls.
+- [x] Record the applied protections, published evaluator SHA, passing CI and failed
+  trial in append-only evidence, keeping historical full-suite results and gates intact.
+
+Validation on 2026-09-06: startup and evidence contract regressions failed for the
+expected missing controls/record, then passed after implementation. An isolated Windows
+runtime-only environment installed 110 locked packages offline, excluded Ruff/mypy, and
+passed both 12/40 dataset selections with unchanged hashes. This does not validate the
+Linux runner's cold-download throughput. Prepare that runner before a new separately
+authorized trial; do not retry the failed run to select a passing result.
 
 - [ ] Dispatch a clean full 40-case execution only after stable provider revision,
   billing metadata, approved representative corpus scope, and independent human semantic

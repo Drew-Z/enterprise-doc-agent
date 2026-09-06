@@ -73,6 +73,54 @@ Evaluator tests continue to verify the seal and credential/raw-output redaction.
 Do not upload `${{ runner.temp }}/enterprise-doc-rag-quality/` as a directory.
 Use `${{ runner.temp }}/enterprise-doc-rag-quality/rag-quality-${{ github.run_id }}-${{ github.run_attempt }}.json`.
 
+## Staging RAG Dependency Startup Contract
+
+### Scope / Trigger
+
+A cold dependency download consumed the entire 40-minute budget in trial run
+`33976542098`; no model evaluation started. Setup must fail within its own boundary.
+
+### Signatures
+
+The five-minute setup step runs
+`"$RUNNER_UV" sync --frozen --no-dev --python "$RUNNER_PYTHON"`.
+The later token-bearing step runs
+`"$RUNNER_UV" run --no-sync python scripts/evaluate_staging_rag_quality.py`.
+
+### Contracts
+
+Keep the 40-minute job ceiling and 1800-second evaluator deadline unchanged. Exclude
+development dependencies, retain the reviewed lockfile and pre-provisioned Python, and
+do not give the setup step `STAGING_SMOKE_TOKEN`. Implicit sync must not run after the
+secret becomes available. Runtime dependencies may still require cache preparation.
+
+### Validation & Error Matrix
+
+- Setup completes: run the selected evaluator without another dependency sync.
+- Setup fails or times out: skip evaluation and retain missing-report upload failure.
+- Evaluator never starts: record zero submitted cases and no quality report, not failed
+  answer metrics or successful token authentication.
+
+### Good/Base/Bad Cases
+
+- Good: runtime-only offline validation loads the unchanged 12/40 selections.
+- Base: incomplete dependency setup is indexed separately from full quality evidence.
+- Bad: a longer model timeout, disabled dependency verification, or repeated dispatch
+  is used to conceal the failed startup attempt.
+
+### Tests Required
+
+`test_staging_rag_quality_bounds_dependency_setup_before_token_use` checks the setup
+limit, runtime-only frozen install, interpreter, ordering and no-sync execution.
+`test_staging_trial_setup_failure_does_not_replace_provider_quality` keeps the failed
+attempt distinct from historical full-suite results and open external gates.
+
+### Wrong vs Correct
+
+Do not use an unbounded `uv sync --frozen` followed by an implicitly syncing `uv run`
+in the token-bearing step. Bound runtime-only setup first and use `uv run --no-sync`;
+verify runner dependency readiness separately before a newly authorized trial.
+
 ## Proven Examples
 
 - `apps/api/tests/test_metrics.py` and `packages/core/tests/test_metrics.py` verify

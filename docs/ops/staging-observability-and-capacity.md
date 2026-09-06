@@ -170,6 +170,13 @@ the runner retains older files in the same temporary directory. The report carri
 queries and answers, route/behavior identities, aggregate token telemetry, and quality
 diagnostics, not bearer tokens, document bodies, artifact URLs, or raw model output.
 
+Dependency setup has its own five-minute limit inside the 40-minute job budget. It uses
+`uv sync --frozen --no-dev --python "$RUNNER_PYTHON"`; the token-bearing evaluation step
+uses `uv run --no-sync` so it cannot implicitly reinstall development tools or resolve
+dependencies after setup. This bounds startup failure; it does not guarantee a cold
+download completes on the staging network. Prepare the exact locked runtime dependencies
+on the reviewed runner before reserving a model-evaluation window.
+
 A passing workflow proves only that selected evaluation completed against the observed
 route. It does not by itself close M5/M7: the full quality gate also requires stable
 provider revision and cost metadata, representative-corpus review, and independent
@@ -250,6 +257,50 @@ Proposed publication scope, pending owner authorization:
 These observations are a dated snapshot, not a quality report. All GitHub calls in this
 check were read-only; no protection settings, tokens, server workloads or remote refs
 were changed. Re-read the live settings and remote SHA before applying the proposed scope.
+
+### Applied publication and failed trial on 2026-09-06
+
+After owner approval, the repository default workflow permission was changed to `read`,
+with Actions PR approval still disabled. The `staging` Environment now allows only branch
+`main` and tags matching `v*.*.*`. API read-back confirmed the custom ref policy; no required
+reviewer was added and administrator bypass remains enabled. These changes do not protect
+branch contents or isolate the node-hosted runner.
+
+The 14 reviewed local commits were fast-forward published through evaluator commit
+`5bd1e6d830bc0c1737b33f899b453fd93143e0b8`. Both jobs in
+[Quality run 33976238888](https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/33976238888)
+passed. The dedicated active smoke owner's short-lived token was rotated in memory and
+the Environment secret updated at `2026-09-05T15:59:41Z`, with no token file or log output.
+
+The single authorized
+[trial run 33976542098, attempt 1](https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/33976542098)
+then exhausted its 40-minute job deadline. Frozen dependency sync ran from
+`2026-09-05T16:04:38Z` to `16:41:21Z`; the evaluator was skipped, zero cases were submitted,
+and the exact-report upload failed because no report existed. The artifact inventory is
+empty. This is a setup failure, not twelve failed answers, a token-authentication result,
+or evidence that the current models are unusable.
+
+The lockfile uses PyPI and `files.pythonhosted.org`; logs and process observations show
+ongoing ordinary Python package downloads, including development tools such as Ruff and
+mypy. A registry probe returned HTTP 200. Post-run memory availability was 1625 MiB and
+the kernel log contained no OOM match during the job window. These observations establish
+incomplete dependency setup, not the precise cause of low download throughput. All five
+application Deployments remained 1/1 Ready, the runner returned online/idle, and the API
+image still matched the accepted `v0.1.33` release. No application rollout, model change,
+swap change, or second trial was performed.
+
+The sanitized [execution failure record](../../evidence/m5/20260906-staging-rag-trial-33976542098-setup-failure.json)
+is indexed separately from historical full-suite and repeatability results. The subsequent
+startup hardening above passed workflow contract tests and local offline runtime-only
+validation of both 12/40 selections with unchanged dataset/corpus hashes. Those local
+checks do not prove Linux runner download speed or real-provider quality.
+
+Before another separately recorded trial, complete runtime-only dependency preparation
+on the runner and verify the unchanged lockfile, evaluator imports and both offline
+selections. Diagnose the package download path separately; do not silently switch package
+indexes, disable TLS/hash checks, lengthen the model budget, or use an old report. Refresh
+the dedicated token only after preparation is ready. The original failed run remains
+failed, and no full-suite gate is closed by this publication or its local checks.
 
 ### Validate and dispatch from PowerShell
 

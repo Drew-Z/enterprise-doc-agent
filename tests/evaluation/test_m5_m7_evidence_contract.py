@@ -141,6 +141,34 @@ def test_working_tree_captures_are_separate_from_formal_evidence() -> None:
         assert capture["working_tree_dirty"] is True
 
 
+def test_staging_trial_setup_failure_does_not_replace_provider_quality() -> None:
+    index = _load(ROOT / "evidence/index.json")
+    failure_path = "evidence/m5/20260906-staging-rag-trial-33976542098-setup-failure.json"
+    for entry in index["evidence"]:
+        if entry["milestone"] not in {"M5", "M7"}:
+            continue
+        assert entry["status"] == "blocked_external"
+        assert entry["latest_staging_rag_trial_setup_failure"] == failure_path
+        assert entry["latest_real_provider_quality"].endswith("v0.1.30-full-40.json")
+        assert entry["latest_repeatability_attempt"].endswith("repeat-3-full-40.json")
+
+    failure = _load(_repo_path(failure_path))
+    assert failure["status"] == "failed"
+    assert failure["failure_class"] == "evaluator_dependency_setup_timeout"
+    assert failure["workflow"]["run_id"] == 33976542098
+    assert failure["workflow"]["run_attempt"] == 1
+    assert failure["workflow"]["conclusion"] == "cancelled"
+    assert failure["execution"]["evaluation_step_conclusion"] == "skipped"
+    assert failure["execution"]["submitted_case_count"] == 0
+    assert failure["execution"]["report_produced"] is False
+    assert failure["execution"]["artifact_count"] == 0
+    assert failure["dataset"]["selected_case_count"] == 12
+    assert failure["dataset"]["total_case_count"] == 40
+    assert failure["evaluator_commit_sha"] != failure["staging_release"]["commit_sha"]
+    assert "report_payload_sha256" not in failure
+    assert "aggregate" not in failure
+
+
 def test_manual_gates_have_complete_state_records() -> None:
     index = _load(ROOT / "evidence/index.json")
     paths = index["manual_gates"]

@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "suite": "staging-real-provider-rag-quality",
+  "evidence_type": "staging-rag-trial-execution-failure",
+  "status": "failed",
+  "failure_class": "evaluator_dependency_setup_timeout",
+  "evaluator_commit_sha": "5bd1e6d830bc0c1737b33f899b453fd93143e0b8",
+  "workflow": {
+    "repository": "Drew-Z/enterprise-doc-agent",
+    "name": "Evaluate Staging RAG Quality",
+    "run_id": 33976542098,
+    "run_attempt": 1,
+    "job_id": 101334126248,
+    "ref": "main",
+    "scope": "trial",
+    "conclusion": "cancelled",
+    "created_at": "2026-09-05T16:01:00Z",
+    "started_at": "2026-09-05T16:01:08Z",
+    "completed_at": "2026-09-05T16:41:30Z",
+    "timeout_minutes": 40,
+    "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/33976542098"
+  },
+  "environment": {
+    "profile": "single-node-4c4g",
+    "namespace": "enterprise-doc-agent-staging",
+    "public_host": "agent.playlab.eu.cc",
+    "runner": "enterprise-doc-staging-4c4g-20260830"
+  },
+  "staging_release": {
+    "version": "v0.1.33",
+    "commit_sha": "9e9efb52a27a7a7ccf963e68d97c95722cbb72f5",
+    "acceptance_record": "evidence/m6/20260904-v0.1.33-staging-governance.json",
+    "observed_api_image_digest": "sha256:566f0328605382b19ee26f48fe535bfaa8c7d8295ee4f893c7a1fabbdc948fc5",
+    "application_redeployed": false
+  },
+  "dataset": {
+    "version": "enterprise-rag-quality-v2",
+    "sha256": "145df783dba7ee1c533a59de288bb1a9aff6ba3c0bdff7e4617a366dca1a9f5b",
+    "corpus_sha256": "c6887a0ca112cd62499c9d61d5caa9d87e94a4ba6c8770293f9f3a8c6cf54e36",
+    "selected_case_count": 12,
+    "total_case_count": 40,
+    "selection_source": "offline validation of the unchanged v2 dataset, not an executed quality report"
+  },
+  "execution": {
+    "dependency_command": "\"$RUNNER_UV\" sync --frozen",
+    "dependency_started_at": "2026-09-05T16:04:38Z",
+    "dependency_completed_at": "2026-09-05T16:41:21Z",
+    "dependency_step_conclusion": "cancelled",
+    "evaluation_step_conclusion": "skipped",
+    "upload_step_conclusion": "failure",
+    "submitted_case_count": 0,
+    "report_produced": false,
+    "artifact_count": 0,
+    "provider_routes_observed": false,
+    "new_token_authenticated_by_this_run": false,
+    "timeout_annotation": "The job has exceeded the maximum execution time of 40m0s"
+  },
+  "publication": {
+    "owner_authorized": true,
+    "default_workflow_permissions": "read",
+    "can_approve_pull_request_reviews": false,
+    "staging_deployment_branch_policy": {
+      "protected_branches": false,
+      "custom_branch_policies": true
+    },
+    "allowed_refs": [
+      { "name": "main", "type": "branch" },
+      { "name": "v*.*.*", "type": "tag" }
+    ],
+    "required_reviewers_configured": false,
+    "can_admins_bypass": true,
+    "ci_run_id": 33976238888,
+    "ci_conclusion": "success",
+    "ci_url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/33976238888",
+    "smoke_secret_updated_at": "2026-09-05T15:59:41Z",
+    "smoke_token_configured_ttl_seconds": 28800
+  },
+  "diagnostics": {
+    "source": "GitHub job steps, check-run annotations, logs and artifact inventory; bounded read-only SSH observations",
+    "registry_host_in_lockfile": "pypi.org",
+    "wheel_host_in_lockfile": "files.pythonhosted.org",
+    "registry_probe_http_status": 200,
+    "runtime_downloads_in_progress": true,
+    "development_tools_downloaded_or_requested": ["ruff", "mypy", "ast-serialize", "pygments"],
+    "cache_size_mib_after_run_approximate": 201,
+    "host_memory_available_mib_after_run": 1625,
+    "host_swap_mib": 0,
+    "kernel_oom_matches_during_job_window": 0,
+    "ready_deployments_after_run": 5,
+    "desired_deployments_after_run": 5,
+    "runner_online_and_idle_after_run": true,
+    "uv_process_present_after_run": false,
+    "confirmed_cause": "Frozen dependency setup did not finish before the job deadline.",
+    "unconfirmed_cause": "The exact reason for low package-download throughput was not isolated; ongoing transfers and a successful registry probe do not establish a complete network diagnosis."
+  },
+  "command_or_procedure": [
+    "Owner-authorized repository and staging Environment policy update with API read-back.",
+    "Fast-forward publish the reviewed evaluator commit and verify Quality run 33976238888.",
+    "Issue a short-lived token for the existing active dedicated smoke owner and pipe it directly to the Environment secret in memory.",
+    "Dispatch evaluate-staging-rag-quality.yml once on main with evaluation_scope=trial.",
+    "Observe the exact run/attempt to completion; query its job steps, check annotations and artifact inventory without redispatch.",
+    "Verify the live API image and workload readiness; retain metadata without fabricating a quality report."
+  ],
+  "limitations": [
+    "This file is sanitized execution metadata, not a sealed RAG quality report or a quality-threshold failure.",
+    "No synthetic documents or Agent runs were submitted by this attempt because the evaluation step was skipped.",
+    "Token rotation succeeded, but the new token was not independently authenticated by this run.",
+    "Historical full-suite and repeatability evidence remains unchanged; M5/M7 external quality gates remain open.",
+    "Ref restrictions do not supply branch-content protection, independent reviewers or isolation for the self-hosted runner.",
+    "The observations do not establish production capacity, HA, disaster recovery or provider quality."
+  ],
+  "owner": "platform owner"
+}
