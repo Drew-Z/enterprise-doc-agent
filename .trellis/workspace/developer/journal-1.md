@@ -258,3 +258,37 @@ does not verify its expiry. The evaluation workflow is still local-only.
 - No remote settings, secrets, refs or server workloads changed; no live evaluation ran.
 - No temporary files were created; existing files and registered worktrees were preserved.
 - Await explicit push authorization before executing the documented publication scope.
+
+
+## Session 7: Bound staging RAG evaluator dependency setup
+
+**Date**: 2026-09-06
+**Task**: Bound staging RAG evaluator dependency setup
+**Package**: core
+**Branch**: `feat/m4-agent-mcp-hitl`
+
+### Summary
+
+Recorded the authorized 12-case trial 33976542098 as an evaluator dependency-setup timeout with no submitted cases or report; bounded frozen runtime-only dependency setup to five minutes, disabled development dependencies and implicit sync, preserved historical M5/M7 quality gates, and verified focused plus full non-integration checks.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `1d11382` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

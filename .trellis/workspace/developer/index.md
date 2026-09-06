@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 6
-- **Last Active**: 2026-09-05
+- **Total Sessions**: 7
+- **Last Active**: 2026-09-06
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~260 | Active |
+| `journal-1.md` | ~294 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 7 | 2026-09-06 | Bound staging RAG evaluator dependency setup | `1d11382` | `feat/m4-agent-mcp-hitl` |
 | 6 | 2026-09-05 | Live staging publication prerequisite audit | `5c36592` | `main` |
 | 5 | 2026-09-05 | Staging RAG operational handoff and report isolation | `ed4fef4` | `main` |
 | 4 | 2026-09-05 | Protected staging RAG quality execution | `55660f7` | `main` |
