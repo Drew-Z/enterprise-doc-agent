@@ -36,6 +36,7 @@ jobs:
     env:
       RUNNER_PYTHON: /opt/enterprise-doc-toolchain/python/bin/python
       RUNNER_UV: /opt/enterprise-doc-toolchain/python/bin/uv
+      UV_PROJECT_ENVIRONMENT: /home/gha-staging/enterprise-doc-agent-evaluator-runtime/.venv
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
@@ -45,6 +46,7 @@ jobs:
           set -euo pipefail
           test -x "$RUNNER_PYTHON"
           test -x "$RUNNER_UV"
+          test -x "$UV_PROJECT_ENVIRONMENT/bin/python"
           test "$("$RUNNER_PYTHON" -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')" = "3.12"
           test "$("$RUNNER_UV" --version | awk '{print $2}')" = "0.11.3"
       - name: Synchronize frozen evaluator dependencies

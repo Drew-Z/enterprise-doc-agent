@@ -137,10 +137,18 @@ contains the current Environment/runner prerequisites, PowerShell trial/full dis
 exact-attempt artifact retrieval, integrity checks, and failure interpretation.
 
 This reuses the existing 4C4G runner and active synthetic smoke membership. It needs a
-fresh `STAGING_SMOKE_TOKEN`, the two host allowlists, reachable frozen dependencies,
+fresh `STAGING_SMOKE_TOKEN`, the two host allowlists, prepared frozen dependencies,
 and an available provider budget; it does not require Prometheus or a GPU. The shared
 deployment/rollback lock and serial case execution bound overlap on this host.
 Uploaded synthetic documents and Agent results remain in the tenant after the run.
+
+The evaluator uses the runner-owned persistent environment at
+`/home/gha-staging/enterprise-doc-agent-evaluator-runtime/.venv`, outside checkout.
+Follow the [offline runtime checks](staging-observability-and-capacity.md#prepared-linux-runtime-on-2026-09-07)
+before refreshing the token. Retain its verified wheelhouse as well: the prepared
+environment passed 12/40 dataset validation, but the original registry cache alone is
+not sufficient for a fresh offline rebuild. Workflow setup still has a five-minute
+limit and performs frozen runtime-only sync before the token-bearing step.
 
 The tiny runbook's configured/missing inventory is a historical bootstrap snapshot;
 reuse its administrative procedures without resetting this host to `tiny-single-node`.

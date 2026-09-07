@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "evidence_id": "20260907-staging-rag-evaluator-runtime-preparation",
+  "record_type": "evaluator-runtime-preparation",
+  "status": "prepared_offline",
+  "owner": "repository-owner-operated staging preparation",
+  "observed_at": "2026-09-07T14:24:34Z",
+  "environment": "single-node-4c4g staging evaluator runner; Ubuntu 24.04, Linux x86_64",
+  "previous_failure_record": "evidence/m5/20260906-staging-rag-trial-33976542098-setup-failure.json",
+  "provenance": {
+    "runner_checkout_sha": "5bd1e6d830bc0c1737b33f899b453fd93143e0b8",
+    "comparison_commit_sha": "a1255e809c980cb9c3eaeed35df31b93313bab8d",
+    "equivalent_paths": [
+      "uv.lock",
+      "pyproject.toml",
+      "apps/api/pyproject.toml",
+      "apps/mcp/pyproject.toml",
+      "apps/worker/pyproject.toml",
+      "packages/core/pyproject.toml",
+      "apps/api/src",
+      "apps/mcp/src",
+      "apps/worker/src",
+      "packages/core/src",
+      "scripts/evaluate_staging_rag_quality.py",
+      "scripts/staging_smoke.py",
+      "evaluation/rag_quality_v2.json",
+      "evaluation/corpus"
+    ],
+    "comparison_result": "git diff --exit-code returned 0 for the listed paths",
+    "scoped_runner_tracked_inputs_clean": true,
+    "whole_runner_checkout_clean": false,
+    "whole_checkout_limitation": "Pre-existing tracked evidence and log line-ending differences were retained; no checkout, reset or cleanup was performed."
+  },
+  "lockfile": {
+    "path": "uv.lock",
+    "sha256": "f008d334a226f6678716271578206a849ec3a509b1293ebeb9a9af05e0167638",
+    "local_and_runner_hashes_match": true
+  },
+  "runtime": {
+    "environment_path": "/home/gha-staging/enterprise-doc-agent-evaluator-runtime/.venv",
+    "wheelhouse_path": "/home/gha-staging/enterprise-doc-agent-evaluator-runtime/wheelhouse",
+    "cache_path": "/home/gha-staging/.cache/uv",
+    "owner": "gha-staging",
+    "runtime_parent_mode": "0700",
+    "wheelhouse_mode": "0700",
+    "python_version": "3.12.3",
+    "uv_version": "0.11.3",
+    "installed_package_count": 109,
+    "development_tools_absent": true,
+    "development_tools_checked": ["ruff", "mypy"]
+  },
+  "preparation": {
+    "direct_download_attempts": [
+      {
+        "budget_seconds": 300,
+        "result": "no_successful_environment_retained",
+        "observed_exit_code": null,
+        "limitation": "The interrupted terminal session was unavailable; later inspection found no uv process and no retained environment."
+      },
+      {
+        "started_at": "2026-09-07T13:04:27Z",
+        "budget_seconds": 900,
+        "result": "environment_created_but_installation_incomplete",
+        "observed_exit_code": null,
+        "limitation": "At 13:21:00Z no uv process remained and the environment was about 92 KiB; the terminal exit output was unavailable."
+      }
+    ],
+    "wheel_source": "Original files.pythonhosted.org URLs selected from uv.lock for CPython 3.12/Linux x86_64",
+    "local_and_remote_wheel_hashes_verified": true,
+    "verified_wheel_total_bytes": 35343009,
+    "verified_wheels": [
+      {
+        "filename": "uvloop-0.22.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+        "size_bytes": 4426307,
+        "sha256": "7b5b1ac819a3f946d3b2ee07f09149578ae76066d70b44df3fa990add49a82e4"
+      },
+      {
+        "filename": "botocore-1.43.50-py3-none-any.whl",
+        "size_bytes": 15394880,
+        "sha256": "4a57a1e0dd4a8be855c29183fc0e029c18e9ec84cd4ac172869f3e800f972528"
+      },
+      {
+        "filename": "lxml-6.1.1-cp312-cp312-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl",
+        "size_bytes": 5240367,
+        "sha256": "ebe6af670449830d6d9b752c256a983291c766a1365ba5d5460048f9e33a7818"
+      },
+      {
+        "filename": "cryptography-50.0.0-cp311-abi3-manylinux_2_34_x86_64.whl",
+        "size_bytes": 4734462,
+        "sha256": "82148ec5bddac30b51a5b3c1945075f896fa022cb93f8e4a01e9f6ee95292c5f"
+      },
+      {
+        "filename": "zstandard-0.25.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+        "size_bytes": 5546993,
+        "sha256": "5a56ba0db2d244117ed744dfa8f6f5b366e14148e00de44723413b2f3938a902"
+      }
+    ],
+    "transfer_procedure": "Resume bounded local HTTPS downloads as needed, verify lockfile size/SHA-256, stream the five named wheels through SSH tar, then verify against the same lockfile on the runner.",
+    "unsuccessful_find_links_sync": "Frozen offline sync with --find-links still required uncached original registry URLs; it failed before the offline seed procedure.",
+    "seed_command": "uv pip install --python <environment>/bin/python --offline --no-index --find-links <wheelhouse> --no-deps uvloop==0.22.1 botocore==1.43.50 lxml==6.1.1 cryptography==50.0.0 zstandard==0.25.0",
+    "frozen_sync_command": "timeout --foreground --signal=TERM --kill-after=10s 60s uv sync --frozen --no-dev --python /opt/enterprise-doc-toolchain/python/bin/python --no-python-downloads --offline",
+    "seed_installed_package_count": 5,
+    "frozen_sync_installed_package_count": 104,
+    "fresh_registry_cache_complete": false,
+    "fresh_environment_check": "A frozen offline dry-run for a nonexistent environment still required the five registry distributions. It did not create that environment.",
+    "lockfile_or_index_modified": false,
+    "manual_uv_cache_edits": false,
+    "tls_or_hash_verification_disabled": false
+  },
+  "verification": {
+    "started_at": "2026-09-07T14:24:31Z",
+    "completed_at": "2026-09-07T14:24:34Z",
+    "workspace_rebuild": {
+      "status": "passed",
+      "package_count": 4,
+      "packages": ["enterprise-doc-api", "enterprise-doc-core", "enterprise-doc-mcp", "enterprise-doc-worker"],
+      "command": "timeout --foreground --signal=TERM --kill-after=10s 60s uv sync --frozen --no-dev --python /opt/enterprise-doc-toolchain/python/bin/python --no-python-downloads --offline --reinstall-package enterprise-doc-api --reinstall-package enterprise-doc-core --reinstall-package enterprise-doc-mcp --reinstall-package enterprise-doc-worker",
+      "prepared_milliseconds": 479,
+      "uninstalled_milliseconds": 1,
+      "installed_milliseconds": 1
+    },
+    "frozen_offline_sync_check": "would_make_no_changes",
+    "frozen_offline_sync_check_command": "uv sync --frozen --no-dev --python /opt/enterprise-doc-toolchain/python/bin/python --offline --check",
+    "validation_procedure": "uv run --no-sync --offline python launched the evaluator with --validate-only for each selection; JSON was parsed in memory and checked with verify_report_payload, exact counts and unchanged dataset/corpus hashes.",
+    "dataset_sha256": "145df783dba7ee1c533a59de288bb1a9aff6ba3c0bdff7e4617a366dca1a9f5b",
+    "corpus_sha256": "c6887a0ca112cd62499c9d61d5caa9d87e94a4ba6c8770293f9f3a8c6cf54e36",
+    "selections": [
+      {"selection": "trial", "selected_case_count": 12, "total_case_count": 40, "status": "passed", "payload_checksum_valid": true, "duration_seconds": 0.758},
+      {"selection": "full", "selected_case_count": 40, "total_case_count": 40, "status": "passed", "payload_checksum_valid": true, "duration_seconds": 0.919}
+    ],
+    "external_model_calls": 0,
+    "submitted_case_count": 0,
+    "real_quality_report_produced": false,
+    "validation_reports_retained": false,
+    "staging_token_used_or_rotated": false
+  },
+  "workflow_change": {
+    "path": ".github/workflows/evaluate-staging-rag-quality.yml",
+    "state_at_recording": "working_tree_not_published",
+    "base_commit_sha": "a1255e809c980cb9c3eaeed35df31b93313bab8d",
+    "environment_key": "UV_PROJECT_ENVIRONMENT",
+    "environment_value": "/home/gha-staging/enterprise-doc-agent-evaluator-runtime/.venv",
+    "setup_limit_minutes": 5,
+    "job_limit_minutes": 40,
+    "evaluator_limit_seconds": 1800,
+    "new_trial_dispatched": false
+  },
+  "limitations": [
+    "This is an operator preparation record, not a sealed real-provider quality report or independent review.",
+    "The prepared environment and wheelhouse must be retained. A complete cold rebuild from the original registry cache alone has not been established.",
+    "Local workspace rebuilds passed offline at the existing checkout path; a new GitHub checkout and the edited workflow have not executed together.",
+    "Changing the lockfile, Python ABI, platform or checkout path requires a new reviewed preparation check.",
+    "No new trial, full quality execution, billing observation or token authentication took place; M5/M7 external gates remain open.",
+    "No application deployment, model route, swap, firewall, SSH policy or package index was changed to obtain this result."
+  ]
+}

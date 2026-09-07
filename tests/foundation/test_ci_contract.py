@@ -217,6 +217,7 @@ def test_manual_staging_rag_quality_is_serialized_and_secret_scoped() -> None:
     assert evaluate["env"] == {
         "RUNNER_PYTHON": "/opt/enterprise-doc-toolchain/python/bin/python",
         "RUNNER_UV": "/opt/enterprise-doc-toolchain/python/bin/uv",
+        "UV_PROJECT_ENVIRONMENT": "/home/gha-staging/enterprise-doc-agent-evaluator-runtime/.venv",
     }
     steps = evaluate["steps"]
     assert isinstance(steps, list)
@@ -270,6 +271,23 @@ def test_staging_rag_quality_bounds_dependency_setup_before_token_use() -> None:
         in (evaluation["run"])
     )
     assert "sync --frozen" not in evaluation["run"]
+
+
+def test_staging_rag_quality_reuses_prepared_runtime_outside_checkout() -> None:
+    evaluate = _workflow(STAGING_RAG_QUALITY_WORKFLOW)["jobs"]["evaluate"]
+    assert evaluate["env"].get("UV_PROJECT_ENVIRONMENT") == (
+        "/home/gha-staging/enterprise-doc-agent-evaluator-runtime/.venv"
+    )
+    steps = evaluate["steps"]
+    preflight = next(
+        step for step in steps if step.get("name") == "Validate pre-provisioned evaluator toolchain"
+    )
+    sync = next(step for step in steps if "sync --frozen" in step.get("run", ""))
+    assert 'test -x "$UV_PROJECT_ENVIRONMENT/bin/python"' in preflight["run"]
+    assert steps.index(preflight) < steps.index(sync)
+    checkout = next(step for step in steps if step.get("uses", "").startswith("actions/checkout@"))
+    assert checkout.get("with", {}).get("clean", True) is True
+    assert all("UV_PROJECT_ENVIRONMENT" not in step.get("env", {}) for step in steps)
 
 
 def test_staging_rag_quality_upload_excludes_stale_runner_reports() -> None:

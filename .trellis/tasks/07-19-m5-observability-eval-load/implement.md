@@ -128,6 +128,35 @@ authorized trial; do not retry the failed run to select a passing result.
   billing metadata, approved representative corpus scope, and independent human semantic
   reviewer are available. A workflow pass alone is not a completion claim.
 
+## Slice 9: Reuse The Prepared Linux Evaluator Runtime
+
+- [x] Add a regression requiring one job-level `UV_PROJECT_ENVIRONMENT` outside
+  checkout, a Python executable preflight before sync, and default checkout cleanup.
+  The regression failed because the workflow had no persistent environment setting.
+- [x] Point frozen sync and no-sync evaluation at the prepared runtime; retain the
+  five-minute setup ceiling, secret scope, lockfile, and shared staging concurrency.
+- [x] Verify the existing Linux environment offline, including local workspace package
+  rebuilds, unchanged 12/40 selections, and report payload integrity. Make no model calls.
+- [x] Append runtime-preparation evidence and operator/spec guidance, distinguishing a
+  prepared environment from a complete cold registry cache and from real quality results.
+- [x] Run focused and non-integration checks, Ruff, mypy, Actionlint and diff validation.
+- [x] Obtain the owner's commit confirmation. Publication and a new real trial remain
+  separately authorized actions; do not repeat trial `33976542098`.
+
+Rollback point: revert the workflow environment selection; retain the prepared runtime
+and wheelhouse for diagnosis. Do not alter deployed application images or old evidence.
+
+Validation on 2026-09-07: the workflow contract suite passed 11 tests. A new preparation
+index contract failed for the missing record, then passed after the append-only record
+was added. On Linux, all four workspace packages rebuilt offline (479 ms preparation),
+frozen sync checked 109 packages without changes, and both 12/40 selections passed payload
+and corpus checks. This used runner checkout `5bd1e6d`; scoped runtime inputs match
+`a1255e8`. No new real trial or model call ran, and publication remains pending.
+Final checks: 33 focused tests and 1012 non-integration tests passed (125 integration
+tests deselected); Ruff format/lint, mypy (161 source files), Actionlint, Trellis context
+validation and `git diff --check` passed. No application integration or browser run was
+needed for this workflow/evidence-only change.
+
 ## Full Completion Gate
 
 ```powershell

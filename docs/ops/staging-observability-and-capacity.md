@@ -177,6 +177,13 @@ dependencies after setup. This bounds startup failure; it does not guarantee a c
 download completes on the staging network. Prepare the exact locked runtime dependencies
 on the reviewed runner before reserving a model-evaluation window.
 
+Both steps share the job-level `UV_PROJECT_ENVIRONMENT` value
+`/home/gha-staging/enterprise-doc-agent-evaluator-runtime/.venv`. The toolchain preflight
+requires its Python executable before sync. This environment is outside the Actions
+checkout, so the default checkout cleanup stays enabled without deleting it. Do not
+override this path in individual steps or concurrently modify it from another workflow
+or operator session; the staging concurrency group does not serialize manual SSH work.
+
 A passing workflow proves only that selected evaluation completed against the observed
 route. It does not by itself close M5/M7: the full quality gate also requires stable
 provider revision and cost metadata, representative-corpus review, and independent
@@ -196,6 +203,7 @@ before each evaluation window:
 | Environment | Existing `staging` Environment with its allowed refs and review protection checked; dispatch only a reviewed ref. |
 | Runner | Repository-scoped, non-root runner online with labels `self-hosted`, `linux`, `x64`, `enterprise-doc-staging`. |
 | Toolchain and network | Python 3.12 and uv 0.11.3 at the workflow's `/opt/enterprise-doc-toolchain/python/bin/` paths; Git checkout and frozen dependency sync reachable. |
+| Prepared runtime | Runner-owned executable Python at `UV_PROJECT_ENVIRONMENT`; frozen runtime-only synchronization and both offline dataset selections pass for the selected lockfile. |
 | `STAGING_ALLOWED_HOST` | Environment variable `agent.playlab.eu.cc`, a hostname without a scheme or path. |
 | `STAGING_OBJECT_STORE_ALLOWED_HOST` | Environment variable containing the exact presigned-upload object-store hostname, without a scheme or path. |
 | `STAGING_SMOKE_TOKEN` | Environment secret for the dedicated active synthetic smoke tenant/user; valid through approval/queue delay and the evaluation window. |
@@ -301,6 +309,59 @@ selections. Diagnose the package download path separately; do not silently switc
 indexes, disable TLS/hash checks, lengthen the model budget, or use an old report. Refresh
 the dedicated token only after preparation is ready. The original failed run remains
 failed, and no full-suite gate is closed by this publication or its local checks.
+
+### Prepared Linux runtime on 2026-09-07
+
+The [preparation record](../../evidence/m5/20260907-staging-rag-evaluator-runtime-preparation.json)
+records 109 installed Linux runtime packages, without Ruff or mypy. Two bounded direct
+downloads did not finish installation. Five missing wheels (35,343,009 bytes) were then
+downloaded locally from the original lockfile URLs, checked for exact SHA-256 and size,
+transferred over SSH, and checked again on the runner. An offline `uv pip install
+--no-index --find-links <wheelhouse> --no-deps` seeded those exact five versions; the
+unchanged `uv sync --frozen --no-dev --offline` installed the remaining 104 packages.
+No lockfile, package index, TLS setting or internal cache file was changed.
+
+Frozen sync with `--find-links` alone had still requested missing original registry URLs.
+A later dry-run against a nonexistent environment also required those five distributions.
+The installed environment is ready, but the original registry cache is not independently
+complete. Retain both the environment and the verified wheelhouse; do not delete the
+environment to test this claim. Recovering a missing environment requires reviewed
+preparation, including rechecking the original lockfile hashes before any offline seed.
+
+The runtime parent and `wheelhouse` are owned by `gha-staging`, mode `0700`. Use that
+account, not a global Git `safe.directory` exception. In an operator Tailnet SSH session,
+with the runner idle and no concurrent manual deployment or preparation, run this Linux
+check without a token:
+
+```bash
+sudo -n -u gha-staging -H sh -s <<'RUNNER'
+set -eu
+cd /opt/actions-runner/_work/enterprise-doc-agent/enterprise-doc-agent
+export UV_PROJECT_ENVIRONMENT=/home/gha-staging/enterprise-doc-agent-evaluator-runtime/.venv
+RUNNER_UV=/opt/enterprise-doc-toolchain/python/bin/uv
+RUNNER_PYTHON=/opt/enterprise-doc-toolchain/python/bin/python
+test -x "$UV_PROJECT_ENVIRONMENT/bin/python"
+timeout --foreground --signal=TERM --kill-after=10s 60s \
+  "$RUNNER_UV" sync --frozen --no-dev --python "$RUNNER_PYTHON" --offline --check
+"$RUNNER_UV" run --no-sync --offline python scripts/evaluate_staging_rag_quality.py \
+  --dataset evaluation/rag_quality_v2.json --validate-only --trial-only
+"$RUNNER_UV" run --no-sync --offline python scripts/evaluate_staging_rag_quality.py \
+  --dataset evaluation/rag_quality_v2.json --validate-only
+RUNNER
+```
+
+The existing checkout at `5bd1e6d830bc0c1737b33f899b453fd93143e0b8` passed this offline
+check and explicit rebuilds of all four local workspace packages. Both selections passed
+with unchanged dataset/corpus hashes and valid payload checksums. Scoped Git comparisons
+confirmed those runtime inputs match `a1255e809c980cb9c3eaeed35df31b93313bab8d`; unrelated
+pre-existing evidence/log differences in the runner checkout were left intact.
+
+At recording time the workflow environment change is local and unpublished. A new Actions
+checkout and real evaluation have not run with it. Changes to the lockfile, Python ABI,
+platform or checkout path require renewed preparation. Offline validation does not prove
+token authentication, answer quality, repeatability or production capacity. Publish the
+reviewed change and verify CI, then obtain authorization for a separately recorded trial
+and refresh the short-lived token immediately before that window.
 
 ### Validate and dispatch from PowerShell
 

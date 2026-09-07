@@ -4,8 +4,10 @@ import hashlib
 import json
 import re
 import subprocess
+import tomllib
 from datetime import date, datetime
 from pathlib import Path, PurePosixPath
+from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parents[2]
 FORMAL_MANIFEST_PATTERNS = {
@@ -167,6 +169,60 @@ def test_staging_trial_setup_failure_does_not_replace_provider_quality() -> None
     assert failure["evaluator_commit_sha"] != failure["staging_release"]["commit_sha"]
     assert "report_payload_sha256" not in failure
     assert "aggregate" not in failure
+
+
+def test_staging_runtime_preparation_is_not_provider_quality_evidence() -> None:
+    index = _load(ROOT / "evidence/index.json")
+    preparation_path = "evidence/m5/20260907-staging-rag-evaluator-runtime-preparation.json"
+    for entry in index["evidence"]:
+        if entry["milestone"] not in {"M5", "M7"}:
+            continue
+        assert entry["status"] == "blocked_external"
+        assert entry["latest_staging_rag_runtime_preparation"] == preparation_path
+        assert entry["latest_real_provider_quality"].endswith("v0.1.30-full-40.json")
+        assert entry["latest_repeatability_attempt"].endswith("repeat-3-full-40.json")
+
+    preparation = _load(_repo_path(preparation_path))
+    assert preparation["status"] == "prepared_offline"
+    assert preparation["record_type"] == "evaluator-runtime-preparation"
+    assert preparation["runtime"]["installed_package_count"] == 109
+    assert preparation["runtime"]["development_tools_absent"] is True
+    assert preparation["runtime"]["environment_path"] == (
+        "/home/gha-staging/enterprise-doc-agent-evaluator-runtime/.venv"
+    )
+    assert preparation["preparation"]["fresh_registry_cache_complete"] is False
+    verification = preparation["verification"]
+    assert verification["workspace_rebuild"]["package_count"] == 4
+    assert verification["workspace_rebuild"]["status"] == "passed"
+    assert verification["frozen_offline_sync_check"] == "would_make_no_changes"
+    assert verification["external_model_calls"] == 0
+    assert verification["submitted_case_count"] == 0
+    assert verification["real_quality_report_produced"] is False
+    assert [
+        (item["selection"], item["selected_case_count"]) for item in verification["selections"]
+    ] == [
+        ("trial", 12),
+        ("full", 40),
+    ]
+    assert all(item["payload_checksum_valid"] for item in verification["selections"])
+    assert "report_payload_sha256" not in preparation
+    assert "aggregate" not in preparation
+
+    lock_bytes = _git_blob(preparation["provenance"]["runner_checkout_sha"], "uv.lock")
+    assert hashlib.sha256(lock_bytes).hexdigest() == preparation["lockfile"]["sha256"]
+    locked_wheels = {
+        PurePosixPath(urlsplit(wheel["url"]).path).name: wheel
+        for package in tomllib.loads(lock_bytes.decode("utf-8"))["package"]
+        for wheel in package.get("wheels", [])
+    }
+    wheels = preparation["preparation"]["verified_wheels"]
+    assert len(wheels) == 5
+    assert sum(wheel["size_bytes"] for wheel in wheels) == 35343009
+    for wheel in wheels:
+        locked = locked_wheels[wheel["filename"]]
+        assert urlsplit(locked["url"]).hostname == "files.pythonhosted.org"
+        assert locked["hash"] == "sha256:" + wheel["sha256"]
+        assert locked["size"] == wheel["size_bytes"]
 
 
 def test_manual_gates_have_complete_state_records() -> None:
