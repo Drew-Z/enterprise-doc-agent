@@ -193,6 +193,41 @@ deselected), along with Ruff format/lint, mypy for 161 source files, Trellis con
 validation and `git diff --check`. No integration or browser run was needed for this
 evidence-only update; no temporary files were created.
 
+## Slice 11: Reliable Hosted RAG Evaluation
+
+- [x] Review the current repository, latest failure records, release scope and live
+  readiness; write the local plan in `docs/ops/NEXT_STAGE_PLAN.md` and establish
+  the current session goal. The owner requested planning and implementation.
+- [x] Add a red workflow regression for default credential-free validation and an
+  explicit live job gated by successful validation; move to hosted jobs and make it green.
+- [x] Preserve frozen dependencies, 12/40 selection, bounded setup and execution,
+  step-scoped token/allowlists, staging concurrency and exact run/attempt artifacts.
+- [x] Execute the real offline CLI commands, verifying validation suite, selections,
+  payload integrity and zero staging/model calls; inspect clean/shallow checkout behavior.
+- [x] Update operating instructions and the executable workflow spec.
+- [x] Run focused checks, non-integration pytest, Ruff, mypy, Actionlint, Trellis and diff checks.
+- [x] Present the concrete commit/publication/single-trial action list for confirmation.
+- [x] Obtain owner confirmation for the named commit, publication and single hosted trial.
+- [ ] Publish and verify Quality for the exact SHA, then verify a hosted validate-only run.
+- [ ] Execute one authorized twelve-case trial after readiness/token review; retain the
+  terminal result and precise quality report or execution failure without redispatch.
+
+Local validation on 2026-09-08: three workflow behavior regressions failed for the
+missing mode, self-hosted runtime and missing validation upload, then passed. The
+combined workflow/evaluator suite passed 23 tests; full non-integration validation
+passed 1017 tests (125 deselected). Ruff format/lint, mypy (161 source files),
+Actionlint 1.7.7, Trellis and diff checks passed. Eight PowerShell examples parsed,
+and the documented verifier passed eleven acceptance/rejection checks using synthetic
+fixtures that were removed afterward. Both actual offline selections retained the
+canonical dataset, corpus and lockfile hashes. Their provenance records local HEAD
+`10aaebf` with dirty state; it is not hosted clean-checkout or real-provider evidence.
+Source inspection confirms only HEAD/status Git queries, so shallow checkout is
+sufficient. Publication, actual hosted validation and the new trial remain pending.
+
+Rollback point: restore the reviewed previous workflow; keep the server runtime,
+wheelhouse, existing staging release and all historical evidence. Full-suite repetition,
+provider revision/cost, independent semantic review and M6-R5 retain separate acceptance.
+
 ## Full Completion Gate
 
 ```powershell

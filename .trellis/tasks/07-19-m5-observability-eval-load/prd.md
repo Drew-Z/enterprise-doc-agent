@@ -55,6 +55,10 @@ answer quality, public deployment, or SLO attainment without matching evidence.
 - **M5-R14**: Every result records command or procedure, environment, timestamps,
   commit, artifact hashes, limitations, and owner. External-only gates remain
   `blocked_external` and never count as passed.
+- **M5-R15**: Manual staging evaluation has a default credential-free validation mode
+  that verifies both frozen v2 selections before any live execution. An explicitly
+  selected live mode runs only after successful validation, on a reproducible hosted
+  runtime with the existing token, host, timeout, concurrency and evidence boundaries.
 
 ## Acceptance Criteria
 
@@ -73,6 +77,10 @@ answer quality, public deployment, or SLO attainment without matching evidence.
 - [x] M5 manifest and index validate; targets are never reported as measured facts.
 - [x] Real-provider quality and representative production capacity remain explicit
   manual gates when credentials, hardware, or a dedicated environment are unavailable.
+- [ ] Hosted runtime validation checks both 12/40 selections without staging credentials
+  or model calls; validation artifacts are distinguishable from quality reports.
+- [ ] Live evaluation requires an explicit mode and successful prerequisite validation;
+  its first authorized twelve-case run is recorded with exact provenance and outcome.
 
 ## Out Of Scope
 

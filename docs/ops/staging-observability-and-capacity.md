@@ -154,56 +154,66 @@ target.
 ## Protected staging RAG quality execution
 
 `Evaluate Staging RAG Quality` is a manual GitHub Actions workflow for the reviewed
-`evaluation/rag_quality_v2.json` corpus. It runs only on the repository-scoped staging
-runner, targets the `staging` Environment, and shares the
-`enterprise-doc-agent-staging` concurrency lock with deployment and rollback. The
-Environment name alone does not configure GitHub deployment protections. The job does
-not load Kubernetes credentials or issue cluster commands; it calls the
-public HTTPS control plane with the short-lived `STAGING_SMOKE_TOKEN` Environment
-secret.
+`evaluation/rag_quality_v2.json` corpus. The hosted implementation uses a fresh
+`ubuntu-24.04` VM for each job and shares the `enterprise-doc-agent-staging` concurrency
+lock with deployment and rollback. Publication and live verification are tracked in
+[the next-stage plan](NEXT_STAGE_PLAN.md); local implementation does not establish that
+the remote workflow has changed or that hosted-to-staging networking works.
 
-The dispatch menu defaults to `trial`, which selects the twelve explicitly marked v2
-cases. Choose `full` only after the provider route, revision, provider billing inputs,
-approved corpus scope, and human reviewer are available; it selects all 40 v2 cases.
-Each attempt uploads only its exact `rag-quality-<run-id>-<attempt>.json` file, even if
-the runner retains older files in the same temporary directory. The report carries hashed
-queries and answers, route/behavior identities, aggregate token telemetry, and quality
-diagnostics, not bearer tokens, document bodies, artifact URLs, or raw model output.
+`execution_mode` defaults to `validate-only`. Its `validate` job has no staging
+Environment or application credentials, and checks both the twelve-case trial and the
+full forty-case selection without staging, embedding or model calls. Only explicit
+`execution_mode=evaluate` can start the live job, and only after `validate` succeeds.
+The live job alone references the `staging` Environment; its evaluation step alone
+receives the short-lived `STAGING_SMOKE_TOKEN` and both host allowlists. It calls the
+public HTTPS control plane and object store without Kubernetes or SSH credentials.
+The Environment name alone does not configure deployment protections or independent review.
 
-Dependency setup has its own five-minute limit inside the 40-minute job budget. It uses
-`uv sync --frozen --no-dev --python "$RUNNER_PYTHON"`; the token-bearing evaluation step
-uses `uv run --no-sync` so it cannot implicitly reinstall development tools or resolve
-dependencies after setup. This bounds startup failure; it does not guarantee a cold
-download completes on the staging network. Prepare the exact locked runtime dependencies
-on the reviewed runner before reserving a model-evaluation window.
+`evaluation_scope` applies to live execution and defaults to `trial`, selecting the
+twelve explicitly marked v2 cases. Choose `full` only after the provider route, revision,
+provider billing inputs, approved corpus scope and human reviewer are available.
+Validation artifacts are named `staging-rag-validation-<run-id>-<attempt>` and contain
+only the exact trial/full validation JSON files. Live artifacts retain the separate
+`staging-rag-quality-<run-id>-<attempt>` name and exact quality JSON file. Never use a
+validation report as evidence of model quality.
 
-Both steps share the job-level `UV_PROJECT_ENVIRONMENT` value
-`/home/gha-staging/enterprise-doc-agent-evaluator-runtime/.venv`. The toolchain preflight
-requires its Python executable before sync. This environment is outside the Actions
-checkout, so the default checkout cleanup stays enabled without deleting it. Do not
-override this path in individual steps or concurrently modify it from another workflow
-or operator session; the staging concurrency group does not serialize manual SSH work.
+Both jobs use pinned setup Actions, Python from `.python-version`, uv `0.11.3` and a
+lockfile-keyed dependency cache. Each frozen runtime-only sync has its own five-minute
+limit: `uv sync --frozen --no-dev --python python`. Every evaluator invocation uses
+`uv run --no-sync`. Validation has a 15-minute job limit; live evaluation retains the
+40-minute job limit and 1800-second evaluator window. Checkout fetches one commit,
+keeps default cleanup enabled and does not persist Git credentials. Provenance reads
+HEAD and dirty state only, so this evaluator does not require full Git history.
 
-A passing workflow proves only that selected evaluation completed against the observed
-route. It does not by itself close M5/M7: the full quality gate also requires stable
-provider revision and cost metadata, representative-corpus review, and independent
-human semantic approval. Do not run the public-reference-inspired synthetic suite
-through this workflow or represent it as provider-quality evidence.
+The previously prepared server environment and verified wheelhouse are retained as
+[recovery material](#prepared-linux-runtime-on-2026-09-07). Hosted jobs do not use or
+modify that environment. Setup success does not prove public API or object-store
+reachability; those boundaries still require an actual authorized trial.
+
+A passing validation workflow proves dataset/runtime preparation only. A passing live
+workflow proves the selected evaluation met its recorded thresholds on the observed
+route. Neither closes M5/M7 by itself: stable provider revision and cost metadata,
+representative-corpus review and independent human semantic approval remain required.
+Do not substitute the public-reference-inspired synthetic suite in this workflow.
+Quality reports retain hashed queries/answers, route/behavior identities, token telemetry
+and diagnostics while excluding bearer tokens, raw bodies and signed URLs.
 
 ### Preconditions and configuration
 
 Use the [4C4G runbook](single-node-4c4g-staging-runbook.md) for the current host.
 The shared provisioning procedures in the tiny runbook remain useful, but its historical
 configured/missing inventory is not a current Environment audit. Check the following
-before each evaluation window:
+before each live evaluation window. Credential-free validation does not need the
+Environment, token or live-service rows:
 
 | Item | Required value or observation |
 | --- | --- |
 | Workflow revision | The workflow is published on the remote default branch; the selected branch/tag contains the reviewed evaluator and frozen dependencies. Local commits cannot be dispatched. |
 | Environment | Existing `staging` Environment with its allowed refs and review protection checked; dispatch only a reviewed ref. |
-| Runner | Repository-scoped, non-root runner online with labels `self-hosted`, `linux`, `x64`, `enterprise-doc-staging`. |
-| Toolchain and network | Python 3.12 and uv 0.11.3 at the workflow's `/opt/enterprise-doc-toolchain/python/bin/` paths; Git checkout and frozen dependency sync reachable. |
-| Prepared runtime | Runner-owned executable Python at `UV_PROJECT_ENVIRONMENT`; frozen runtime-only synchronization and both offline dataset selections pass for the selected lockfile. |
+| Runner | GitHub-hosted `ubuntu-24.04` jobs available; no overlapping deployment, rollback or manual load/reindex work. |
+| Toolchain and setup network | Pinned Python/uv setup succeeds; GitHub, PyPI and the original lockfile download URLs are reachable within the bounded setup window. |
+| Hosted validation | Successful validate-only run for the reviewed SHA, with both 12/40 validation reports verified. Each live dispatch also repeats this prerequisite job. |
+| Live network | Public HTTPS API and exact object-store hostname accessible from the hosted VM; dataset-only validation does not establish this. |
 | `STAGING_ALLOWED_HOST` | Environment variable `agent.playlab.eu.cc`, a hostname without a scheme or path. |
 | `STAGING_OBJECT_STORE_ALLOWED_HOST` | Environment variable containing the exact presigned-upload object-store hostname, without a scheme or path. |
 | `STAGING_SMOKE_TOKEN` | Environment secret for the dedicated active synthetic smoke tenant/user; valid through approval/queue delay and the evaluation window. |
@@ -214,7 +224,7 @@ Rotate the token through the existing administrator-operated
 before the window. The evaluator step alone receives that secret. It does not mint
 tokens, provision membership, change model routes, or reindex existing documents.
 
-Both `trial` and `full` upload the selected synthetic documents, run ingestion/embedding,
+In `execution_mode=evaluate`, both `trial` and `full` upload the selected synthetic documents, run ingestion/embedding,
 and create Agent runs and answer artifacts in that tenant. Cases run sequentially;
 the evaluator uses a shared 1800-second deadline and the job has a 40-minute ceiling.
 Provider calls can incur charges. Cancellation or timeout does not undo uploaded data
@@ -397,36 +407,50 @@ change, proxy/DNS change or second trial was performed. M5/M7 gates remain open.
 
 ### Validate and dispatch from PowerShell
 
-From the repository root, these commands validate both fixed selections without using a
-token or calling staging, embedding or chat providers. Expect 12 and 40 selected cases:
+From the repository root with dependencies already installed, these commands validate
+both fixed selections without a token or staging, embedding or chat calls. Expect
+12 and 40 selected cases:
 
 ```powershell
-uv run python scripts/evaluate_staging_rag_quality.py `
+uv run --no-sync python scripts/evaluate_staging_rag_quality.py `
   --dataset evaluation/rag_quality_v2.json --validate-only --trial-only
 if ($LASTEXITCODE -ne 0) { throw 'Trial dataset validation failed' }
-uv run python scripts/evaluate_staging_rag_quality.py `
+uv run --no-sync python scripts/evaluate_staging_rag_quality.py `
   --dataset evaluation/rag_quality_v2.json --validate-only
 if ($LASTEXITCODE -ne 0) { throw 'Full dataset validation failed' }
 ```
 
-After the reviewed workflow is available remotely and the prerequisites above hold:
+After publishing the reviewed workflow and verifying Quality CI for that exact SHA,
+dispatch the hosted dataset-only preflight:
 
 ```powershell
 $ragRepo = 'Drew-Z/enterprise-doc-agent'
 gh workflow view evaluate-staging-rag-quality.yml --repo $ragRepo --ref main --yaml
 if ($LASTEXITCODE -ne 0) { throw 'Reviewed remote workflow is not available' }
 gh workflow run evaluate-staging-rag-quality.yml --repo $ragRepo --ref main `
-  -f evaluation_scope=trial -f staging_base_url=https://agent.playlab.eu.cc
-if ($LASTEXITCODE -ne 0) { throw 'Trial dispatch failed' }
+  -f execution_mode=validate-only
+if ($LASTEXITCODE -ne 0) { throw 'Validation dispatch failed' }
 ```
 
 Retain the returned run URL/ID and verify its commit in Actions. If the CLI does not
-return a URL, locate the exact dispatch by workflow, actor, ref and start time in Actions;
-do not assume the newest repository run is yours. After reviewing the trial and full-run
-prerequisites, dispatch the same reviewed ref with `-f evaluation_scope=full`. Preserve
-each attempt independently; a later pass does not erase a failed attempt.
+return a URL, locate the exact dispatch by workflow, actor, ref and start time; do not
+assume the newest repository run is yours. Verify both validation artifacts below.
+After approval for the hosted execution location and a single trial, recheck the live
+prerequisites, refresh the dedicated token and dispatch once:
 
-### Retrieve and verify the report
+```powershell
+gh workflow run evaluate-staging-rag-quality.yml --repo $ragRepo --ref main `
+  -f execution_mode=evaluate -f evaluation_scope=trial `
+  -f staging_base_url=https://agent.playlab.eu.cc
+if ($LASTEXITCODE -ne 0) { throw 'Trial dispatch failed' }
+```
+
+This live dispatch repeats the prerequisite validation job. After reviewing the trial
+and full-run prerequisites, a separately approved full dispatch also requires
+`-f execution_mode=evaluate` with `-f evaluation_scope=full`. Omitting the mode performs
+only validation. Preserve every attempt; a later pass does not erase a failed attempt.
+
+### Retrieve and verify validation or quality reports
 
 Use the exact run ID from dispatch, wait for completion, and keep its observed attempt:
 
@@ -435,8 +459,9 @@ $ragRunId = Read-Host 'Evaluation workflow run ID'
 gh run watch $ragRunId --repo $ragRepo --exit-status
 ```
 
-A failed run is still worth inspecting. Retrieve its metadata and artifact separately
-after the watch command returns, including when it returns a nonzero exit code:
+A failed run is still worth inspecting. Retrieve its metadata after the watch returns,
+including when it returns nonzero. Define the common verifier from the repository root
+using the reviewed evaluator and v2 dataset. It checks report kind as well as integrity:
 
 ```powershell
 $ragRunJson = gh run view $ragRunId --repo $ragRepo `
@@ -447,36 +472,113 @@ if ($ragRun.workflowName -ne 'Evaluate Staging RAG Quality' -or $ragRun.status -
   throw 'Select a completed RAG evaluation run'
 }
 $ragAttempt = $ragRun.attempt
-$ragEvidenceDir = Join-Path $env:TEMP (
-  "enterprise-doc-rag-$ragRunId-$ragAttempt-" + [guid]::NewGuid().ToString('N')
-)
-gh run download $ragRunId --repo $ragRepo `
-  --name "staging-rag-quality-$ragRunId-$ragAttempt" --dir $ragEvidenceDir
-if ($LASTEXITCODE -ne 0) { throw 'Report unavailable; inspect the failed workflow steps' }
-$ragReportPath = Join-Path $ragEvidenceDir "rag-quality-$ragRunId-$ragAttempt.json"
 $verifyRagReport = @'
+import hashlib
 import json
 import sys
 from pathlib import Path
 from enterprise_doc_core.evaluation import verify_report_payload
+from enterprise_doc_core.evaluation.rag_quality import load_rag_quality_dataset
+from scripts.evaluate_staging_rag_quality import EVALUATOR_VERSION, select_rag_quality_cases
+kind, scope = sys.argv[3:5]
+if kind not in {"validation", "quality"} or scope not in {"trial", "full"}:
+    raise SystemExit("Expected validation|quality and trial|full")
 report = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
 if not verify_report_payload(report):
     raise SystemExit("Report payload checksum mismatch")
 if report["provenance"]["commit_sha"] != sys.argv[2]:
     raise SystemExit("Evaluator checkout SHA differs from the selected workflow run")
-print("Report checksum and evaluator checkout SHA verified")
+if report["provenance"]["working_tree_dirty"] is not False:
+    raise SystemExit("Hosted evaluator checkout was not clean")
+validation = kind == "validation"
+suite = "staging-real-provider-rag-quality" + ("-validation" if validation else "")
+execution_scope = (
+    "local-dataset-validation" if validation else "authenticated-staging-real-provider-quality"
+)
+if report["suite"] != suite or report["evaluator_version"] != EVALUATOR_VERSION:
+    raise SystemExit("Wrong report kind or evaluator version")
+if report["provenance"]["environment"]["execution_scope"] != execution_scope:
+    raise SystemExit("Wrong execution scope")
+loaded = load_rag_quality_dataset(Path("evaluation/rag_quality_v2.json"))
+selected = select_rag_quality_cases(loaded, trial_only=scope == "trial")
+expected_ids = [case.case_id for case in selected]
+for key, expected in {
+    "dataset_version": loaded.dataset.version,
+    "dataset_sha256": loaded.dataset_sha256,
+    "corpus_sha256": loaded.corpus_sha256,
+    "selected_case_count": len(expected_ids),
+    "total_case_count": len(loaded.dataset.cases),
+}.items():
+    if report[key] != expected:
+        raise SystemExit(f"Report {key} differs from the reviewed v2 selection")
+input_hash = hashlib.sha256(
+    f"{loaded.dataset_sha256}:{loaded.corpus_sha256}".encode("ascii")
+).hexdigest()
+if report["provenance"]["input_sha256"] != input_hash:
+    raise SystemExit("Provenance input hash mismatch")
+case_ids = report["selected_case_ids"] if validation else [case["case_id"] for case in report["cases"]]
+if case_ids != expected_ids:
+    raise SystemExit("Report cases differ from the reviewed selection")
+if validation:
+    if report["status"] != "passed" or "measured" in report:
+        raise SystemExit("Invalid dataset-only report")
+else:
+    coverage = "bounded_sample" if scope == "trial" else "full"
+    if report["trial_only"] != (scope == "trial") or report["coverage"] != coverage:
+        raise SystemExit("Live report coverage mismatch")
+    if report["status"] not in {"passed", "failed"}:
+        raise SystemExit("Invalid live report status")
+print(f"Verified {kind} report for {scope}; recorded status: {report['status']}")
 '@
-uv run python -c $verifyRagReport $ragReportPath $ragRun.headSha
+```
+
+For the validation artifact, download and verify both exact files. A live dispatch also
+has this artifact from its prerequisite job:
+
+```powershell
+$ragValidationDir = Join-Path $env:TEMP (
+  "enterprise-doc-rag-validation-$ragRunId-$ragAttempt-" + [guid]::NewGuid().ToString('N')
+)
+gh run download $ragRunId --repo $ragRepo `
+  --name "staging-rag-validation-$ragRunId-$ragAttempt" --dir $ragValidationDir
+if ($LASTEXITCODE -ne 0) { throw 'Validation artifact unavailable; inspect the validate job' }
+foreach ($ragScope in @('trial', 'full')) {
+  $ragValidationPath = Join-Path $ragValidationDir "rag-validation-$ragScope-$ragRunId-$ragAttempt.json"
+  uv run --no-sync python -c $verifyRagReport $ragValidationPath $ragRun.headSha validation $ragScope
+  if ($LASTEXITCODE -ne 0) { throw 'Validation report verification failed' }
+}
+```
+
+For an explicit live dispatch, verify the separate quality artifact against the scope
+actually selected. Missing quality output is expected for validate-only runs; do not
+download a validation artifact under the quality name:
+
+```powershell
+$ragScope = Read-Host 'Selected live evaluation scope (trial or full)'
+if ($ragScope -notin @('trial', 'full')) { throw 'Expected trial or full' }
+$ragEvidenceDir = Join-Path $env:TEMP (
+  "enterprise-doc-rag-quality-$ragRunId-$ragAttempt-" + [guid]::NewGuid().ToString('N')
+)
+gh run download $ragRunId --repo $ragRepo `
+  --name "staging-rag-quality-$ragRunId-$ragAttempt" --dir $ragEvidenceDir
+if ($LASTEXITCODE -ne 0) { throw 'Quality report unavailable; inspect the evaluate job' }
+$ragReportPath = Join-Path $ragEvidenceDir "rag-quality-$ragRunId-$ragAttempt.json"
+uv run --no-sync python -c $verifyRagReport $ragReportPath $ragRun.headSha quality $ragScope
 if ($LASTEXITCODE -ne 0) { throw 'Report verification failed' }
 ```
 
 The seal verifies content integrity, not reviewer approval or a digital signature.
 `provenance.commit_sha` identifies the evaluator checkout, not the deployed server.
+Dataset SHA is the loader's canonical dataset hash, not a hash of the JSON file bytes.
+The verifier accepts structurally valid failed quality reports for diagnosis; its own
+success is not a model-quality pass. Local dirty-checkout validation remains local
+evidence and intentionally fails the hosted clean-checkout requirement.
 Retain the run URL/attempt, evaluator SHA, accepted staging release record/image digests,
 dataset/corpus hashes, observed routes/behavior versions, and review outcome together.
 
 | Result | Interpretation and next action |
 | --- | --- |
+| Validation suite, `status: passed`, 12/40 selections | Dataset/runtime preflight only. No staging/model execution or quality conclusion. |
 | `status: passed`, `coverage: bounded_sample`, `trial_only: true`, 12/40 cases | Trial thresholds passed for the selected metrics. Review all case diagnostics before requesting the full run. |
 | `status: passed`, `coverage: full`, `trial_only: false`, 40/40 cases | One synthetic v2 run met its thresholds. Verify clean provenance, dataset hashes and routes; repeatability, billing and human semantic review remain separate evidence. |
 | `status: failed` with a sealed report | Preserve failed cases, applicable targets and diagnostic codes; resolve the cause before a new recorded execution. Do not lower thresholds or rerun to select only a pass. |

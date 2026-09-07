@@ -178,12 +178,54 @@ def test_manual_self_hosted_quality_is_serial_and_secret_free() -> None:
     assert "11.9.0" in text
 
 
+def test_staging_rag_quality_validates_before_explicit_live_execution() -> None:
+    workflow = _workflow(STAGING_RAG_QUALITY_WORKFLOW)
+    inputs = _triggers(workflow)["workflow_dispatch"]["inputs"]
+    mode = inputs["execution_mode"]
+    assert mode["default"] == "validate-only"
+    assert mode["required"] is True
+    assert mode["type"] == "choice"
+    assert mode["options"] == ["validate-only", "evaluate"]
+
+    validate = workflow["jobs"]["validate"]
+    assert validate["runs-on"] == "ubuntu-24.04"
+    assert validate["timeout-minutes"] == 15
+    assert "environment" not in validate
+    assert "secrets." not in json.dumps(validate)
+    assert "STAGING_" not in json.dumps(validate)
+    validation_commands = [
+        command
+        for command in _run_commands(validate)
+        if "evaluate_staging_rag_quality.py" in command
+    ]
+    assert len(validation_commands) == 2
+    assert all("--validate-only" in command for command in validation_commands)
+    assert all("evaluation/rag_quality_v2.json" in command for command in validation_commands)
+    assert "--trial-only" in validation_commands[0]
+    assert "--trial-only" not in validation_commands[1]
+
+    evaluate = workflow["jobs"]["evaluate"]
+    assert evaluate["needs"] == "validate"
+    assert evaluate["if"] == (
+        "${{ inputs.execution_mode == 'evaluate' && needs.validate.result == 'success' }}"
+    )
+
+
 def test_manual_staging_rag_quality_is_serialized_and_secret_scoped() -> None:
     workflow = _workflow(STAGING_RAG_QUALITY_WORKFLOW)
     assert workflow["permissions"] == {"contents": "read"}
     assert _triggers(workflow) == {
         "workflow_dispatch": {
             "inputs": {
+                "execution_mode": {
+                    "description": (
+                        "validate-only checks both v2 selections; evaluate calls staging and models"
+                    ),
+                    "required": True,
+                    "default": "validate-only",
+                    "type": "choice",
+                    "options": ["validate-only", "evaluate"],
+                },
                 "evaluation_scope": {
                     "description": (
                         "trial runs the vetted subset; full runs all 40 reviewed v2 cases"
@@ -208,17 +250,12 @@ def test_manual_staging_rag_quality_is_serialized_and_secret_scoped() -> None:
     }
     jobs = workflow["jobs"]
     assert isinstance(jobs, dict)
-    assert set(jobs) == {"evaluate"}
+    assert set(jobs) == {"validate", "evaluate"}
     evaluate = jobs["evaluate"]
     assert isinstance(evaluate, dict)
-    assert evaluate["runs-on"] == ["self-hosted", "linux", "x64", "enterprise-doc-staging"]
+    assert evaluate["runs-on"] == "ubuntu-24.04"
     assert evaluate["environment"] == "staging"
     assert evaluate["timeout-minutes"] == 40
-    assert evaluate["env"] == {
-        "RUNNER_PYTHON": "/opt/enterprise-doc-toolchain/python/bin/python",
-        "RUNNER_UV": "/opt/enterprise-doc-toolchain/python/bin/uv",
-        "UV_PROJECT_ENVIRONMENT": "/home/gha-staging/enterprise-doc-agent-evaluator-runtime/.venv",
-    }
     steps = evaluate["steps"]
     assert isinstance(steps, list)
     evaluation_step = next(
@@ -234,13 +271,11 @@ def test_manual_staging_rag_quality_is_serialized_and_secret_scoped() -> None:
         "STAGING_ALLOWED_HOST": "${{ vars.STAGING_ALLOWED_HOST }}",
         "STAGING_OBJECT_STORE_ALLOWED_HOST": "${{ vars.STAGING_OBJECT_STORE_ALLOWED_HOST }}",
     }
-    assert (
-        "STAGING_SMOKE_TOKEN" not in evaluate["env"]
-        and "STAGING_ALLOWED_HOST" not in evaluate["env"]
-        and "STAGING_OBJECT_STORE_ALLOWED_HOST" not in evaluate["env"]
-    )
+    assert "STAGING_" not in json.dumps(workflow.get("env", {}))
+    assert "STAGING_" not in json.dumps(evaluate.get("env", {}))
+    assert all("secrets." not in json.dumps(step) for step in steps if step != evaluation_step)
     commands = _run_commands(evaluate)
-    assert '"$RUNNER_UV" sync --frozen --no-dev --python "$RUNNER_PYTHON"' in commands
+    assert "uv sync --frozen --no-dev --python python" in commands
     evaluation = next(
         command for command in commands if "evaluate_staging_rag_quality.py" in command
     )
@@ -256,38 +291,50 @@ def test_manual_staging_rag_quality_is_serialized_and_secret_scoped() -> None:
 
 def test_staging_rag_quality_bounds_dependency_setup_before_token_use() -> None:
     workflow = _workflow(STAGING_RAG_QUALITY_WORKFLOW)
-    steps = workflow["jobs"]["evaluate"]["steps"]
-    sync = next(step for step in steps if "sync --frozen" in step.get("run", ""))
-    evaluation = next(
-        step for step in steps if "evaluate_staging_rag_quality.py" in step.get("run", "")
-    )
+    for job in workflow["jobs"].values():
+        steps = job["steps"]
+        sync = next(step for step in steps if "sync --frozen" in step.get("run", ""))
+        evaluations = [
+            step for step in steps if "evaluate_staging_rag_quality.py" in step.get("run", "")
+        ]
+        assert sync.get("timeout-minutes") == 5
+        assert sync["run"] == "uv sync --frozen --no-dev --python python"
+        assert "STAGING_SMOKE_TOKEN" not in sync.get("env", {})
+        for evaluation in evaluations:
+            assert steps.index(sync) < steps.index(evaluation)
+            assert (
+                "uv run --no-sync python scripts/evaluate_staging_rag_quality.py"
+                in evaluation["run"]
+            )
+            assert "sync --frozen" not in evaluation["run"]
 
-    assert sync.get("timeout-minutes") == 5
-    assert sync["run"] == '"$RUNNER_UV" sync --frozen --no-dev --python "$RUNNER_PYTHON"'
-    assert "STAGING_SMOKE_TOKEN" not in sync.get("env", {})
-    assert steps.index(sync) < steps.index(evaluation)
-    assert (
-        '"$RUNNER_UV" run --no-sync python scripts/evaluate_staging_rag_quality.py'
-        in (evaluation["run"])
-    )
-    assert "sync --frozen" not in evaluation["run"]
 
-
-def test_staging_rag_quality_reuses_prepared_runtime_outside_checkout() -> None:
-    evaluate = _workflow(STAGING_RAG_QUALITY_WORKFLOW)["jobs"]["evaluate"]
-    assert evaluate["env"].get("UV_PROJECT_ENVIRONMENT") == (
-        "/home/gha-staging/enterprise-doc-agent-evaluator-runtime/.venv"
-    )
-    steps = evaluate["steps"]
-    preflight = next(
-        step for step in steps if step.get("name") == "Validate pre-provisioned evaluator toolchain"
-    )
-    sync = next(step for step in steps if "sync --frozen" in step.get("run", ""))
-    assert 'test -x "$UV_PROJECT_ENVIRONMENT/bin/python"' in preflight["run"]
-    assert steps.index(preflight) < steps.index(sync)
-    checkout = next(step for step in steps if step.get("uses", "").startswith("actions/checkout@"))
-    assert checkout.get("with", {}).get("clean", True) is True
-    assert all("UV_PROJECT_ENVIRONMENT" not in step.get("env", {}) for step in steps)
+def test_staging_rag_quality_jobs_use_isolated_pinned_hosted_runtimes() -> None:
+    jobs = _workflow(STAGING_RAG_QUALITY_WORKFLOW)["jobs"]
+    for job in jobs.values():
+        assert job["runs-on"] == "ubuntu-24.04"
+        assert "UV_PROJECT_ENVIRONMENT" not in json.dumps(job)
+        steps = job["steps"]
+        checkout = next(
+            step for step in steps if step.get("uses", "").startswith("actions/checkout@")
+        )
+        assert checkout["with"].get("clean", True) is True
+        assert checkout["with"]["fetch-depth"] == 1
+        assert checkout["with"]["persist-credentials"] is False
+        python = next(
+            step for step in steps if step.get("uses", "").startswith("actions/setup-python@")
+        )
+        assert python["uses"] == ("actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065")
+        assert python["with"] == {"python-version-file": ".python-version"}
+        uv = next(step for step in steps if step.get("uses", "").startswith("astral-sh/setup-uv@"))
+        assert uv["uses"] == "astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff"
+        assert uv["with"] == {
+            "version": "0.11.3",
+            "enable-cache": True,
+            "cache-dependency-glob": "uv.lock",
+        }
+        sync = next(step for step in steps if "sync --frozen" in step.get("run", ""))
+        assert steps.index(checkout) < steps.index(python) < steps.index(uv) < steps.index(sync)
 
 
 def test_staging_rag_quality_upload_excludes_stale_runner_reports() -> None:
@@ -306,6 +353,33 @@ def test_staging_rag_quality_upload_excludes_stale_runner_reports() -> None:
         "if-no-files-found": "error",
     }
     assert uploads[0]["if"] == "always()"
+
+
+def test_staging_rag_validation_artifacts_are_separate_and_run_scoped() -> None:
+    steps = _workflow(STAGING_RAG_QUALITY_WORKFLOW)["jobs"]["validate"]["steps"]
+    uploads = [
+        step for step in steps if step.get("uses", "").startswith("actions/upload-artifact@")
+    ]
+    assert len(uploads) == 1
+    upload = uploads[0]
+    assert upload["if"] == "always()"
+    assert upload["with"]["name"] == (
+        "staging-rag-validation-${{ github.run_id }}-${{ github.run_attempt }}"
+    )
+    assert upload["with"]["if-no-files-found"] == "error"
+    assert upload["with"]["path"].splitlines() == [
+        "${{ runner.temp }}/enterprise-doc-rag-validation/"
+        f"rag-validation-{scope}-${{{{ github.run_id }}}}-${{{{ github.run_attempt }}}}.json"
+        for scope in ("trial", "full")
+    ]
+    validations = [
+        step for step in steps if "evaluate_staging_rag_quality.py" in step.get("run", "")
+    ]
+    for scope, step in zip(("trial", "full"), validations, strict=True):
+        assert (
+            '--report-path "$RUNNER_TEMP/enterprise-doc-rag-validation/'
+            f'rag-validation-{scope}-${{GITHUB_RUN_ID}}-${{GITHUB_RUN_ATTEMPT}}.json"'
+        ) in step["run"]
 
 
 def test_container_pull_requests_are_path_filtered() -> None:

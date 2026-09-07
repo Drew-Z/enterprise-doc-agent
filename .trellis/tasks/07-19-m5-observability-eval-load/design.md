@@ -67,3 +67,38 @@ These gates are separate from local deterministic and local capacity results.
 All runtime changes are additive. Metrics and fault injection can be disabled without a
 database rollback. Existing M3/M4 evaluators remain available. Evidence is append-only;
 rollback never edits a historical report to make a later run appear successful.
+
+## Reliable Hosted Staging Evaluation
+
+The 2026-09-08 plan is maintained in `docs/ops/NEXT_STAGE_PLAN.md`. The evaluator uses
+the public HTTPS control plane and allowlisted object-store endpoints; it does not
+need the staging host's Kubernetes or SSH credentials. A prepared dependency environment
+did not prevent a later Git checkout failure on that host. Move the manual evaluator
+to fixed `ubuntu-24.04` GitHub-hosted jobs while retaining the existing server runtime
+and wheelhouse for operator recovery.
+
+`execution_mode` defaults to `validate-only`; `evaluate` is the only live mode.
+The `validate` job has no staging Environment or application secrets. It installs
+runtime-only frozen dependencies and calls the existing CLI's `--validate-only` path
+for both v2 selections. Each run/attempt gets two exact validation report paths under
+the runner temporary directory and one validation artifact. The validation suite name
+and provenance scope remain distinct from real-provider reports.
+
+The `evaluate` job requires `needs: validate` and the explicit live-mode condition.
+It uses a separate fresh hosted VM, the same fixed Python/uv Actions as normal CI, and
+the staging Environment. Its only token-bearing step receives the dedicated smoke
+token and host allowlists; checkout/setup do not receive application credentials.
+Use a one-commit checkout without persistent Git credentials: report provenance reads
+HEAD and dirty state only. Keep default checkout cleanup, frozen runtime-only sync,
+no implicit sync in evaluation, five-minute dependency setup, the forty-minute live
+job limit, the 1800-second evaluator window, and shared staging concurrency.
+
+Retain the current quality artifact name/path and always-upload behavior in the live
+job so failed reports remain inspectable. Validation output must never be downloaded
+or indexed as real quality evidence. The current thresholds, synthetic corpus,
+model routing and deployed images are unchanged. A real hosted preflight and the first
+authorized trial are required to establish network/runtime behavior; local tests alone
+do not establish it. Publication and new live calls use a concrete reviewed action list.
+
+Rollback restores the previous workflow revision and separately prepared server runtime;
+it does not delete evidence, reset application data, or remove the existing wheelhouse.

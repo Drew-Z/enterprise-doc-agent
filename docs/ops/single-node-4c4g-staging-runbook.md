@@ -133,22 +133,29 @@ persisting or printing token values.
 
 After release acceptance, use the separate manual `Evaluate Staging RAG Quality`
 workflow. The [evaluation procedure](staging-observability-and-capacity.md#protected-staging-rag-quality-execution)
-contains the current Environment/runner prerequisites, PowerShell trial/full dispatch,
-exact-attempt artifact retrieval, integrity checks, and failure interpretation.
+contains the current prerequisites, PowerShell validation/live dispatch, exact-attempt
+artifact retrieval, integrity checks and failure interpretation. See the
+[next-stage plan](NEXT_STAGE_PLAN.md) for publication and live-verification status.
 
-This reuses the existing 4C4G runner and active synthetic smoke membership. It needs a
-fresh `STAGING_SMOKE_TOKEN`, the two host allowlists, prepared frozen dependencies,
-and an available provider budget; it does not require Prometheus or a GPU. The shared
-deployment/rollback lock and serial case execution bound overlap on this host.
-Uploaded synthetic documents and Agent results remain in the tenant after the run.
+The hosted implementation defaults to `execution_mode=validate-only`, checks both
+12/40 selections on GitHub-hosted `ubuntu-24.04`, and uses no application credentials
+or model calls. Explicit `execution_mode=evaluate` requires successful validation and
+starts a separate hosted job protected by the `staging` Environment. That job reuses
+the existing active synthetic smoke membership through the public API; it requires a
+fresh `STAGING_SMOKE_TOKEN`, both host allowlists and a provider budget. Only the
+evaluation step receives those values. Prometheus, GPU and cluster credentials are
+not needed. Frozen dependency setup remains capped at five minutes in each job.
 
-The evaluator uses the runner-owned persistent environment at
-`/home/gha-staging/enterprise-doc-agent-evaluator-runtime/.venv`, outside checkout.
-Follow the [offline runtime checks](staging-observability-and-capacity.md#prepared-linux-runtime-on-2026-09-07)
-before refreshing the token. Retain its verified wheelhouse as well: the prepared
-environment passed 12/40 dataset validation, but the original registry cache alone is
-not sufficient for a fresh offline rebuild. Workflow setup still has a five-minute
-limit and performs frozen runtime-only sync before the token-bearing step.
+The shared deployment/rollback lock and serial cases bound overlap on the 4C4G host.
+Uploaded synthetic documents and Agent results remain in the tenant after live runs.
+Validation artifacts have a separate name and cannot establish quality or network
+reachability to staging. Local checks do not substitute for the first hosted trial.
+
+Retain the server-owned `/home/gha-staging/enterprise-doc-agent-evaluator-runtime/.venv`
+and its verified wheelhouse for recovery; the hosted workflow does not modify them.
+The [dated offline runtime checks](staging-observability-and-capacity.md#prepared-linux-runtime-on-2026-09-07)
+passed 12/40 dataset validation, but the original registry cache alone was insufficient
+for a fresh offline rebuild. Recheck these materials if restoring the self-hosted path.
 
 The tiny runbook's configured/missing inventory is a historical bootstrap snapshot;
 reuse its administrative procedures without resetting this host to `tiny-single-node`.

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -506,6 +507,57 @@ def test_selection_errors_before_any_staging_request(tmp_path: Path) -> None:
         )
 
     assert client.calls == []
+
+
+@pytest.mark.parametrize(("trial_only", "expected_count"), [(True, 12), (False, 40)])
+def test_validation_cli_emits_sealed_selection_without_staging_credentials_or_client(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    trial_only: bool,
+    expected_count: int,
+) -> None:
+    dataset_path = staging_quality.ROOT / "evaluation" / "rag_quality_v2.json"
+    dataset = json.loads(dataset_path.read_text(encoding="utf-8"))
+    loaded = load_rag_quality_dataset(dataset_path)
+    report_path = tmp_path / "validation.json"
+    argv = [
+        "evaluate_staging_rag_quality.py",
+        "--dataset",
+        str(dataset_path),
+        "--validate-only",
+        "--report-path",
+        str(report_path),
+    ]
+    if trial_only:
+        argv.append("--trial-only")
+    monkeypatch.setattr(sys, "argv", argv)
+    monkeypatch.delenv("STAGING_SMOKE_TOKEN", raising=False)
+
+    def reject_staging_client(*_args: object, **_kwargs: object) -> None:
+        raise AssertionError("validate-only must not construct a staging client")
+
+    monkeypatch.setattr(staging_quality, "UrlLibSmokeClient", reject_staging_client)
+
+    staging_quality.main()
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert json.loads(capsys.readouterr().out) == report
+    assert report["suite"] == "staging-real-provider-rag-quality-validation"
+    assert report["status"] == "passed"
+    assert report["selected_case_count"] == expected_count
+    assert report["total_case_count"] == 40
+    assert report["selected_case_ids"] == [
+        case["case_id"] for case in dataset["cases"] if not trial_only or case["trial"]
+    ]
+    assert report["dataset_sha256"] == loaded.dataset_sha256
+    assert report["corpus_sha256"] == loaded.corpus_sha256
+    assert report["provenance"]["environment"]["execution_scope"] == "local-dataset-validation"
+    assert report["limitations"] == [
+        "No staging, embedding, retrieval, or model call was executed."
+    ]
+    assert "measured" not in report
+    assert verify_report_payload(report)
 
 
 def test_runner_source_accepts_token_only_from_environment() -> None:

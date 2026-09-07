@@ -35,13 +35,16 @@
 
 ### Scope / Trigger
 
-Self-hosted runner cleanup can leave older RAG reports in the same temporary directory.
-Each quality execution must publish only its own report.
+The former self-hosted runner could retain older reports. Exact attempt isolation
+remains mandatory on hosted jobs, and validation reports must never become quality evidence.
 
 ### Signatures
 
 `evaluate-staging-rag-quality.yml` invokes `evaluate_staging_rag_quality.py --report-path`
 with `$RUNNER_TEMP/enterprise-doc-rag-quality/rag-quality-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json`.
+Validation instead writes two paths under `$RUNNER_TEMP/enterprise-doc-rag-validation/`:
+`rag-validation-trial-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json` and
+`rag-validation-full-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json`.
 
 ### Contracts
 
@@ -50,11 +53,23 @@ Upload `path` selects that exact report file and `if-no-files-found` is `error`.
 `provenance.commit_sha` identifies the evaluator checkout; server image identity and
 independent review must be recorded separately.
 
+The validation artifact is `staging-rag-validation-${{ github.run_id }}-${{ github.run_attempt }}`
+and lists only those two exact paths. Both jobs always attempt their own report upload;
+neither uploads a whole directory. Validation reports use suite
+`staging-real-provider-rag-quality-validation` and scope `local-dataset-validation`.
+Live reports use suite `staging-real-provider-rag-quality` and scope
+`authenticated-staging-real-provider-quality`. Operator verification must check the
+expected suite/scope, clean evaluator SHA, canonical dataset/corpus hashes, selected
+case IDs and payload integrity. A valid checksum is not a signature, quality pass or review.
+
 ### Validation & Error Matrix
 
 - Current sealed report exists: upload it even if evaluation thresholds failed.
 - Current report missing: fail the upload; retain the run as incomplete.
 - Earlier reports remain: exclude them from the current attempt's artifact.
+- Only validation reports exist: verify dataset preparation, never live quality.
+- Full-selection validation fails after trial validation: retain any current validation
+  output, keep the job failed and skip the dependent live job.
 
 ### Good/Base/Bad Cases
 
@@ -66,66 +81,69 @@ independent review must be recorded separately.
 
 `test_staging_rag_quality_upload_excludes_stale_runner_reports` fixes the exact file
 selection, single-upload boundary, missing-file error and always-upload behavior.
-Evaluator tests continue to verify the seal and credential/raw-output redaction.
+`test_staging_rag_validation_artifacts_are_separate_and_run_scoped` fixes both validation
+paths and the distinct artifact. Evaluator tests verify seals, exact 12/40 CLI selections,
+absence of staging client creation during validation and credential/raw-output redaction.
 
 ### Wrong vs Correct
 
 Do not upload `${{ runner.temp }}/enterprise-doc-rag-quality/` as a directory.
 Use `${{ runner.temp }}/enterprise-doc-rag-quality/rag-quality-${{ github.run_id }}-${{ github.run_attempt }}.json`.
 
-## Staging RAG Dependency Startup Contract
+## Staging RAG Hosted Execution And Startup Contract
 
 ### Scope / Trigger
 
-A cold dependency download consumed the entire 40-minute budget in trial run
-`33976542098`; no model evaluation started. Setup must fail within its own boundary.
-Default checkout cleanup must not discard separately prepared runtime dependencies.
-Checkout remains a separate network prerequisite: prepared dependencies do not prevent
-Git transport failure before the runtime preflight, as run `34143634860` demonstrated.
+A cold dependency download exhausted trial `33976542098`; a prepared runtime then
+could not prevent checkout failure in trial `34143634860`. Neither reached model
+evaluation. The hosted successor separates credential-free dataset preparation from
+explicit live execution while preserving bounded setup and the original failure records.
 
 ### Signatures
 
-The five-minute setup step runs
-`"$RUNNER_UV" sync --frozen --no-dev --python "$RUNNER_PYTHON"`.
-The later token-bearing step runs
-`"$RUNNER_UV" run --no-sync python scripts/evaluate_staging_rag_quality.py`.
-Both use job-level
-`UV_PROJECT_ENVIRONMENT=/home/gha-staging/enterprise-doc-agent-evaluator-runtime/.venv`.
-The toolchain preflight runs `test -x "$UV_PROJECT_ENVIRONMENT/bin/python"` before sync.
+`execution_mode` is `validate-only|evaluate`, defaulting to `validate-only`.
+Both jobs use `ubuntu-24.04`, the repository's pinned setup Actions, Python from
+`.python-version` and uv `0.11.3` with a `uv.lock` cache key. The five-minute sync step
+runs `uv sync --frozen --no-dev --python python`. Evaluator commands use
+`uv run --no-sync python scripts/evaluate_staging_rag_quality.py`.
+
+`validate` invokes `--validate-only` twice, with and without `--trial-only`, against
+`evaluation/rag_quality_v2.json`. `evaluate` declares `needs: validate` and condition
+`${{ inputs.execution_mode == 'evaluate' && needs.validate.result == 'success' }}`.
 
 ### Contracts
 
-Keep the 40-minute job ceiling and 1800-second evaluator deadline unchanged. Exclude
-development dependencies, retain the reviewed lockfile and pre-provisioned Python, and
-do not give the setup step `STAGING_SMOKE_TOKEN`. Implicit sync must not run after the
-secret becomes available. Keep the environment outside checkout with default checkout
-cleanup enabled; no step may override its path. Shared staging concurrency serializes
-workflow users, but operators must separately prevent manual concurrent environment edits.
+`validate` has a 15-minute job limit, no staging Environment and no application secrets.
+Each hosted job gets a fresh VM and its own checkout/runtime. Checkout uses depth one,
+default cleanup and `persist-credentials: false`; provenance only needs HEAD and dirty
+state. Normal Quality CI retains full history for historical-evidence checks.
 
-Preparation preserves the original lockfile and verifies transferred wheels against its
-exact hashes and sizes before using uv's offline installer. A successful frozen sync of
-an already installed environment does not prove a complete cold registry cache. Retain
-the runner-owned environment and verified wheelhouse; do not edit uv cache internals.
-Changes to locked dependencies, Python ABI, platform or checkout path require revalidation.
+Keep the live job's staging Environment, 40-minute ceiling, 1800-second evaluator window,
+serial cases and explicit `trial|full` choice. Token, base URL and host allowlists are
+step-scoped; setup receives no application credentials and evaluation cannot implicitly
+sync. Do not add Kubernetes or SSH credentials. The shared staging concurrency group
+serializes workflows, while operators separately avoid manual deployment/reindex/load
+overlap. Environment ref restrictions do not establish required-reviewer approval.
+
+Hosted publication and one authorized trial are distinct from local validation. A
+dataset-only pass does not prove hosted access to the API/object store or real quality.
+Retain the selected report even when thresholds fail; do not redispatch to select a pass.
 
 ### Validation & Error Matrix
 
-- Setup completes: run the selected evaluator without another dependency sync.
+- Default mode: validate both selections, publish validation artifacts and skip live execution.
+- Live mode with successful validation: prepare a fresh runtime, then evaluate without sync.
+- Validation or its setup/upload fails: skip the live job, with no application token use.
 - Checkout fails: retain its Git error classification and skipped downstream steps;
   do not diagnose dependency or provider failure from a missing report alone.
-- Prepared Python missing: fail preflight, prepare the runtime outside the evaluation
-  window, and do not silently fall back to a new checkout-local environment.
-- Installed environment passes but fresh offline dry-run lacks registry distributions:
-  record `fresh_registry_cache_complete: false`, not a cold-rebuild success.
 - Setup fails or times out: skip evaluation and retain missing-report upload failure.
 - Evaluator never starts: record zero submitted cases and no quality report, not failed
   answer metrics or successful token authentication.
 
 ### Good/Base/Bad Cases
 
-- Good: runtime-only offline validation loads the unchanged 12/40 selections.
-- Good: explicit offline rebuilds of the four local workspace packages pass while
-  installed third-party dependencies remain in the persistent environment.
+- Good: unchanged 12/40 selections validate without staging credentials or a network client.
+- Good: a full validation artifact cannot be mistaken for a full live quality report.
 - Base: incomplete dependency setup is indexed separately from full quality evidence.
 - Bad: a longer model timeout, disabled dependency verification, or repeated dispatch
   is used to conceal the failed startup attempt.
@@ -134,8 +152,10 @@ Changes to locked dependencies, Python ABI, platform or checkout path require re
 
 `test_staging_rag_quality_bounds_dependency_setup_before_token_use` checks the setup
 limit, runtime-only frozen install, interpreter, ordering and no-sync execution.
-`test_staging_rag_quality_reuses_prepared_runtime_outside_checkout` checks the job-level
-path, executable preflight, default cleanup and absence of step-level overrides.
+`test_staging_rag_quality_validates_before_explicit_live_execution` checks the default,
+secret-free validation job and explicit successful-predecessor condition.
+`test_staging_rag_quality_jobs_use_isolated_pinned_hosted_runtimes` checks both runners,
+fixed setup Actions, shallow cleanup, credential persistence and setup ordering.
 `test_staging_trial_setup_failure_does_not_replace_provider_quality` keeps the failed
 attempt distinct from historical full-suite results and open external gates.
 `test_staging_runtime_preparation_is_not_provider_quality_evidence` checks the separately
@@ -150,8 +170,20 @@ between operator session authentication and a skipped workflow evaluation step.
 Do not use an unbounded `uv sync --frozen` followed by an implicitly syncing `uv run`
 in the token-bearing step. Bound runtime-only setup first and use `uv run --no-sync`;
 verify runner dependency readiness separately before a newly authorized trial.
-Do not disable checkout cleanup or assume `--find-links` populates every locked registry
-URL. Reuse the verified installed environment through the one job-level path instead.
+Do not put the staging Environment or application secrets on the validation job, infer
+quality from `status: passed` alone, or disable default checkout cleanup.
+
+### Historical Runtime Recovery
+
+Keep the previously prepared server runtime at
+`/home/gha-staging/enterprise-doc-agent-evaluator-runtime/.venv` and its verified
+wheelhouse. Hosted jobs do not use or remove them. Restoring the former workflow
+requires revalidating its single job-level `UV_PROJECT_ENVIRONMENT`, executable Python
+preflight and frozen sync before token use. The preserved preparation evidence covers
+109 installed packages and offline rebuilds of four workspace packages; it does not
+prove a complete original registry cache. Changes to lockfile, Python ABI, platform or
+checkout path require renewed preparation. Check transferred wheels against original
+lockfile hashes/sizes, and never edit uv cache internals or disable TLS verification.
 
 ## Proven Examples
 
