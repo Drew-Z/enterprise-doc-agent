@@ -118,6 +118,17 @@ Each hosted job gets a fresh VM and its own checkout/runtime. Checkout uses dept
 default cleanup and `persist-credentials: false`; provenance only needs HEAD and dirty
 state. Normal Quality CI retains full history for historical-evidence checks.
 
+After frozen sync and before any evaluator, both jobs run a one-minute, credential-free
+`Require clean evaluator checkout` step: `test -z "$(git status --porcelain)"`.
+A dirty checkout must stop execution before validation or token-bearing model calls.
+Report verification still independently requires `working_tree_dirty: false`.
+
+Evidence JSON/log files use `.gitattributes` `-text`: their recorded hashes describe
+original bytes, including historical CRLF/mixed blobs. Applying `text eol=lf` to those
+blobs can make Git's clean-filter hash differ from the index even when checkout bytes
+match the stored blob. Preserve existing bytes; do not renormalize historical evidence,
+ignore dirty state, or edit sealed reports to make provenance appear clean.
+
 Keep the live job's staging Environment, 40-minute ceiling, 1800-second evaluator window,
 serial cases and explicit `trial|full` choice. Token, base URL and host allowlists are
 step-scoped; setup receives no application credentials and evaluation cannot implicitly
@@ -137,6 +148,9 @@ Retain the selected report even when thresholds fail; do not redispatch to selec
 - Checkout fails: retain its Git error classification and skipped downstream steps;
   do not diagnose dependency or provider failure from a missing report alone.
 - Setup fails or times out: skip evaluation and retain missing-report upload failure.
+- Dirty checkout after setup: fail the clean-checkout step and skip evaluators; retain
+  the provenance failure separately from quality. A successful workflow with an old
+  dirty report is still rejected by operator verification.
 - Evaluator never starts: record zero submitted cases and no quality report, not failed
   answer metrics or successful token authentication.
 
@@ -156,6 +170,11 @@ limit, runtime-only frozen install, interpreter, ordering and no-sync execution.
 secret-free validation job and explicit successful-predecessor condition.
 `test_staging_rag_quality_jobs_use_isolated_pinned_hosted_runtimes` checks both runners,
 fixed setup Actions, shallow cleanup, credential persistence and setup ordering.
+`test_staging_rag_quality_rejects_dirty_checkouts_before_any_evaluator` checks the
+credential-free guard in both jobs after sync and before every evaluator command.
+`test_evidence_checkout_round_trip_preserves_recorded_bytes` uses real Git filters and
+an isolated index for historical JSON/log blobs, requiring both byte equality and the
+same clean-filter Git blob identity after checkout.
 `test_staging_trial_setup_failure_does_not_replace_provider_quality` keeps the failed
 attempt distinct from historical full-suite results and open external gates.
 `test_staging_runtime_preparation_is_not_provider_quality_evidence` checks the separately

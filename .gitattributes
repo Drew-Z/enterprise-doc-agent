@@ -1,2 +1,3 @@
-evidence/**/*.log text eol=lf
-evidence/**/*.json text eol=lf
+# Evidence hashes describe the original bytes, including historical CRLF/mixed files.
+evidence/**/*.log -text
+evidence/**/*.json -text

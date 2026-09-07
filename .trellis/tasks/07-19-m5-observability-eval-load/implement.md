@@ -208,7 +208,14 @@ evidence-only update; no temporary files were created.
 - [x] Run focused checks, non-integration pytest, Ruff, mypy, Actionlint, Trellis and diff checks.
 - [x] Present the concrete commit/publication/single-trial action list for confirmation.
 - [x] Obtain owner confirmation for the named commit, publication and single hosted trial.
-- [ ] Publish and verify Quality for the exact SHA, then verify a hosted validate-only run.
+- [x] Publish `a0d7439` and verify both Quality jobs in run `34158239990`.
+- [x] Run hosted validate-only `34158544296`; retain its successful steps and reject
+  both original sealed reports because their provenance records a dirty checkout.
+- [x] Reproduce historical evidence clean-filter differences with an isolated Git index;
+  add red-to-green byte/identity regressions and preserve evidence JSON/log bytes with `-text`.
+- [x] Add a red-to-green workflow contract requiring a clean checkout after frozen sync
+  and before every evaluator in both jobs, without application credentials.
+- [ ] Publish the fix, verify full checkout cleanliness and Quality, and accept a new hosted preflight.
 - [ ] Execute one authorized twelve-case trial after readiness/token review; retain the
   terminal result and precise quality report or execution failure without redispatch.
 
@@ -222,7 +229,19 @@ fixtures that were removed afterward. Both actual offline selections retained th
 canonical dataset, corpus and lockfile hashes. Their provenance records local HEAD
 `10aaebf` with dirty state; it is not hosted clean-checkout or real-provider evidence.
 Source inspection confirms only HEAD/status Git queries, so shallow checkout is
-sufficient. Publication, actual hosted validation and the new trial remain pending.
+sufficient. The implementation was subsequently published as `a0d7439`; its first
+hosted preflight succeeded at dataset validation but failed operator provenance acceptance.
+The new trial remains pending until a clean preflight is accepted.
+
+The fresh-checkout diagnostic reproduced 84 dirty historical evidence paths under
+`core.autocrlf=false` / `core.eol=lf` without changing the canonical index. Git clean
+filters conflicted with stored CRLF/mixed blobs. Preserve original bytes with `-text`,
+retain both original sealed reports and their rejected execution record, and require a
+clean checkout before evaluation. Focused verification passed seven tests (the workflow
+guard plus the six evidence contracts). This does not establish repaired hosted provenance.
+Full non-integration regression passed 1021 tests (125 deselected); Ruff lint, mypy
+(161 source files), Actionlint 1.7.7, Trellis and diff checks passed. Ruff formatting
+required one assertion wrap, subsequently corrected without a behavior change.
 
 Rollback point: restore the reviewed previous workflow; keep the server runtime,
 wheelhouse, existing staging release and all historical evidence. Full-suite repetition,

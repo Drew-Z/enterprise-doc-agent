@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import subprocess
 from datetime import datetime
 from pathlib import Path, PurePosixPath
+
+import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 INDEX_PATH = ROOT / "evidence" / "index.json"
@@ -94,18 +97,45 @@ def test_every_evidence_command_and_artifact_is_materialized() -> None:
         assert item["kind"] in {"log", "screenshot", "report"}
         if item["kind"] == "log":
             assert b"\r" not in artifact_bytes
-            eol_attribute = subprocess.run(
-                ["git", "check-attr", "eol", "--", item["path"]],
-                cwd=ROOT,
-                check=True,
-                capture_output=True,
-                text=True,
-            ).stdout.strip()
-            assert eol_attribute == f"{item['path']}: eol: lf"
 
     limitations = manifest["limitations"]
     assert isinstance(limitations, list) and limitations
     assert any("M1-M7" in limitation for limitation in limitations)
+
+
+@pytest.mark.parametrize(
+    "relative_path",
+    [
+        "evidence/m1/artifacts/multipart-smoke-1g-report.json",
+        "evidence/m3/artifacts/backend-format.log",
+        "evidence/m4/20260720-054000-m4-agent-mcp-hitl.json",
+    ],
+)
+def test_evidence_checkout_round_trip_preserves_recorded_bytes(
+    tmp_path: Path, relative_path: str
+) -> None:
+    # A temporary index exercises real Git filters without changing the repository index.
+    environment = {**os.environ, "GIT_INDEX_FILE": str(tmp_path / "index")}
+    command = ["git", "-c", "core.autocrlf=false", "-c", "core.eol=lf"]
+
+    def git(*arguments: str) -> bytes:
+        return subprocess.run(
+            [*command, *arguments],
+            cwd=ROOT,
+            env=environment,
+            check=True,
+            capture_output=True,
+            timeout=30,
+        ).stdout
+
+    git("read-tree", "HEAD")
+    git("checkout-index", f"--prefix={tmp_path.as_posix()}/", "--", relative_path)
+    materialized = tmp_path / relative_path
+    assert materialized.read_bytes() == git("show", f"HEAD:{relative_path}")
+    assert (
+        git("hash-object", "--path", relative_path, str(materialized)).strip()
+        == git("rev-parse", f"HEAD:{relative_path}").strip()
+    )
 
 
 def test_dashboard_visual_gate_records_both_reviewed_viewports() -> None:

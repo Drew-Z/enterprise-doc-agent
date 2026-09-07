@@ -10,14 +10,14 @@
 
 | 范围 | 已有证据 | 尚需完成 |
 | --- | --- | --- |
-| 本地工程基线 | `10aaebf`，1013 项非集成测试通过，Ruff/mypy 通过；M0–M4/M8 已有通过的索引记录 | 变更后重新验证对应门槛 |
+| 本地工程基线 | 已发布 `a0d7439`，1017 项非集成测试通过；本次换行/工作区检查修复通过 1021 项；M0–M4/M8 已有通过的索引记录 | 新修复提交的远端 CI |
 | 当前 staging | 已验收 `v0.1.33`；2026-09-07T18:08Z 只读检查为五个 Deployment 全部 1/1，依赖全部 up，约 1598 MiB 可用内存 | 持续的质量与运行证据；单节点不能证明 HA |
 | M5/M7 模型质量 | 历史 v0.1.30 有一次 40 例基线；后续重复包含系统失败；v0.1.32 两例定向检查通过且有 token 统计 | 当前版本试跑、干净重复、稳定模型版本、费用依据、代表性语料和独立人审 |
 | 评测启动 | 已准备 109 包 Linux 运行时 | 最近两次任务分别止于依赖同步和 Git checkout，均没有进入模型评测 |
 | M6 交付与恢复 | staging 发布、治理 smoke、既有回滚/恢复记录 | 独立故障域恢复和独立复核仍开放 |
 | 企业扩展 | 最小 RBAC/ACL、受限 SCIM、OIDC JWT 校验、retention/legal hold 与归档 | 真实 IdP 接入、完整 provisioning、独立审计存储等按实际需求单独验收 |
 
-当前工作树在启动本阶段前干净；`10aaebf` 是尚未推送的失败记录提交。
+当前工作树在启动本阶段前干净；失败记录提交 `10aaebf` 已随托管实现 `a0d7439` 推送。
 常规 GitHub Quality run `34142156900` 成功，而 trial `34143634860` 在 staging
 runner 的 Git TLS/TCP 连接阶段失败。现有观测不能把该故障归因于 CPU/RAM 不足。
 PR #3 已合并，但旧任务/worktree 的登记仍在；它们属于单独整理事项，本阶段保留。
@@ -60,6 +60,8 @@ GPU/vLLM 容量遵循已有明确范围排除。本阶段不改变应用模型�
    当前 provenance 只需要 HEAD 与工作树状态，不需要完整 Git 历史。
 6. 现有服务器运行时和 wheelhouse 留作恢复材料。托管方案的可达性要由实际执行验证；
    若 API/对象存储网络仍失败，保留本次证据并诊断对应环节，不自动改变出口或重跑挑选成功结果。
+7. 两个作业在 frozen sync 后、所有 evaluator 调用前检查干净工作区。历史 evidence JSON/log
+   使用 `-text` 保留原始字节，避免旧 CRLF/mixed blob 被 clean filter 误判为修改；报告验收仍检查 dirty 标志。
 
 GitHub 的官方说明确认每个托管作业使用新 VM，Environment secret 在配置的保护规则通过后才可访问。
 当前 staging 配置只有 ref 限制，没有 required reviewer；环境名称本身不代表独立审批。
@@ -74,7 +76,9 @@ GitHub 的官方说明确认每个托管作业使用新 VM，Environment secret 
 - [x] 完成非集成测试、Ruff、mypy、Actionlint、Trellis 与 diff 校验。
 - [x] 提供具体提交及发布/单次试跑清单。
 - [x] 取得这份具体清单对应的确认。
-- [ ] 发布并验证对应 SHA 的 Quality CI；运行一次 hosted validate-only 并核验产物。
+- [x] 发布 `a0d7439` 并验证对应 SHA 的 Quality CI `34158239990`。
+- [x] 执行 hosted validate-only `34158544296`，保留成功步骤及两份 dirty 报告的拒收结论。
+- [ ] 发布换行属性与干净工作区检查修复，核验新 SHA 的 Quality 与新 hosted 预检。
 - [ ] 重新核查 staging、短期凭据和预算边界，执行一次批准的 12 例试跑。
 - [ ] 保留终态、版本、选例、报告校验和服务状态；将结果交还后续质量审阅。
 
@@ -84,7 +88,7 @@ GitHub 的官方说明确认每个托管作业使用新 VM，Environment secret 
 
 ## 本地实现与验证
 
-2026-09-08，本轮已完成工作流、回归和手册，尚未提交或发布：
+2026-09-08，发布 `a0d7439` 前完成的工作流、回归和手册验证：
 
 - 三项工作流行为分别经历红→绿：默认预检/显式 live 门槛、托管运行时、独立且精确的预检产物。
 - 23 项工作流/评测定向测试通过；全量非集成测试为 **1017 passed，125 deselected**。
@@ -96,11 +100,11 @@ GitHub 的官方说明确认每个托管作业使用新 VM，Environment secret 
 
 这些是本地工程证据。离线报告记录的 evaluator HEAD 是 `10aaebf`，`working_tree_dirty=true`，
 不会被当成已发布的托管结果。代码检查确认 provenance 仅查询 HEAD 与工作树状态，支持浅 checkout；
-实际托管运行的干净工作区、依赖下载与公网可达性仍须在发布后验收。
+首次托管运行已完成依赖下载，但干净来源验收失败；公网可达性仍须通过真实 trial 验证。
 
-## 待确认的提交与执行清单
+## 已确认的提交与执行清单
 
-拟创建一个提交：`fix: run staging RAG evaluation on hosted runners`，包含以下 10 个文件：
+已创建并推送 `a0d7439`：`fix: run staging RAG evaluation on hosted runners`，包含以下 10 个文件：
 
 ```text
 .github/workflows/evaluate-staging-rag-quality.yml
@@ -115,14 +119,14 @@ docs/ops/staging-observability-and-capacity.md
 docs/ops/single-node-4c4g-staging-runbook.md
 ```
 
-本轮未发现来源不明的脏文件。远端 `main` 回读仍为
-`c1e2ec7a6bb80da8fc68dc090d756fede8e5b716`；既有本地提交 `10aaebf` 已获先前提交授权，尚未推送。
+发布前未发现来源不明的脏文件。当时远端 `main` 回读为
+`c1e2ec7a6bb80da8fc68dc090d756fede8e5b716`；已获先前提交授权的 `10aaebf` 随本次发布推送。
 2026-09-07T19:53:21Z 的发布前只读复核确认：默认 workflow token 权限为 `read`，Actions PR
 审批关闭；staging Environment 仅允许 `main` branch 和 `v*.*.*` tag，没有 required reviewer，
 管理员仍可 bypass。当时没有 queued/in-progress 工作流。Smoke secret 的最后更新时间仍为
 `2026-09-07T16:29:24Z`；这只是元数据，不证明 token 有效期或成员状态。本次复核未修改远端。
 
-确认后按以下顺序执行，任一步失败都先保留终态并诊断：
+已确认的执行顺序如下；任一步失败都先保留终态并诊断：
 
 1. 精确暂存上述文件并创建新提交；不 amend。再单独执行发布，将 `10aaebf` 和新提交
    fast-forward 推送到 `origin/main`，推送前重新核对远端未变化。
@@ -140,6 +144,28 @@ docs/ops/single-node-4c4g-staging-runbook.md
 本次确认也覆盖短期应用令牌进入新托管执行位置及这一次可能计费的真实试跑。
 用户在审阅这份具体清单后于 2026-09-08 回复“继续”，授权按上述顺序执行。
 服务器已有运行时、wheelhouse、staging 镜像、模型路由及所有历史证据保持现状。
+
+## 首次托管预检与必要修复
+
+`a0d7439ba89b414fc74a55cf716dfcf80f2922b8` 已发布；Quality `34158239990` 的前后端
+作业均成功。托管预检 `34158544296`（attempt 1）在 2026-09-07T20:13Z 完成，
+依赖同步、12/40 数据集校验与上传均成功，`evaluate` 被跳过。
+
+两份原始 sealed JSON 的选例、数据集/语料哈希和载荷完整性均符合契约，但均记录
+`working_tree_dirty=true`，因此来源验收拒收。原报告和
+[失败记录](../../evidence/m5/20260908-staging-rag-validation-34158544296-provenance-failure.json)
+分别保留 GitHub 的 `success` 和验收的 `rejected`；没有真实模型调用。
+
+使用独立临时 Git index、原仓库对象和 Linux 换行设置 materialize 当前 HEAD，复现 84 个
+历史 evidence 文件被判脏；规范仓库 index 未变。原因是旧 CRLF/mixed blob 与 `text eol=lf`
+的 clean-filter 规则不一致。三例真实历史文件的字节/回写 Git blob 测试先失败，改用 `-text`
+后通过；新增工作流检查同样完成红→绿，要求两个作业在所有 evaluator 前拒绝脏工作区。
+
+修复后的非集成回归为 **1021 passed，125 deselected**；Ruff lint、mypy（161 个源文件）、
+Actionlint 1.7.7、Trellis 与 diff 校验通过。格式检查发现一处测试断言换行，已按 Ruff 格式修正。
+
+接下来发布这项验收所需修复并核验新的完整 checkout 与 hosted 预检。只有新报告满足干净
+来源契约后，才刷新短期 token 并使用尚未消耗的一次 12 例真实试跑授权。
 
 ## 调研依据
 

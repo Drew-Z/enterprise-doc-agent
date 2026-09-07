@@ -53,6 +53,9 @@ jobs:
       - name: Synchronize frozen evaluator dependencies
         timeout-minutes: 5
         run: uv sync --frozen --no-dev --python python
+      - name: Require clean evaluator checkout
+        timeout-minutes: 1
+        run: 'test -z "$(git status --porcelain)"'
       - name: Validate twelve-case trial selection
         run: |
           set -euo pipefail
@@ -100,6 +103,9 @@ jobs:
       - name: Synchronize frozen evaluator dependencies
         timeout-minutes: 5
         run: uv sync --frozen --no-dev --python python
+      - name: Require clean evaluator checkout
+        timeout-minutes: 1
+        run: 'test -z "$(git status --porcelain)"'
       - name: Run authenticated staging RAG quality evaluation
         env:
           EVALUATION_SCOPE: ${{ inputs.evaluation_scope }}

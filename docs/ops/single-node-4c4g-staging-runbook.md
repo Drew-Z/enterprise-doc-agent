@@ -145,6 +145,9 @@ the existing active synthetic smoke membership through the public API; it requir
 fresh `STAGING_SMOKE_TOKEN`, both host allowlists and a provider budget. Only the
 evaluation step receives those values. Prometheus, GPU and cluster credentials are
 not needed. Frozen dependency setup remains capped at five minutes in each job.
+Both jobs reject a dirty checkout after sync, before any evaluator or token use.
+Evidence JSON/log attributes preserve original bytes, including historical line endings;
+the operator must still verify clean provenance in the downloaded report.
 
 The shared deployment/rollback lock and serial cases bound overlap on the 4C4G host.
 Uploaded synthetic documents and Agent results remain in the tenant after live runs.

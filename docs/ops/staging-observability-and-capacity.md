@@ -185,6 +185,11 @@ limit: `uv sync --frozen --no-dev --python python`. Every evaluator invocation u
 keeps default cleanup enabled and does not persist Git credentials. Provenance reads
 HEAD and dirty state only, so this evaluator does not require full Git history.
 
+After sync, both jobs require a clean `git status --porcelain` before invoking any
+evaluator. The one-minute guard receives no application credentials. Historical
+evidence JSON/log files use `-text` attributes to retain their original bytes; do not
+renormalize those files or suppress dirty provenance to get a passing run.
+
 The previously prepared server environment and verified wheelhouse are retained as
 [recovery material](#prepared-linux-runtime-on-2026-09-07). Hosted jobs do not use or
 modify that environment. Setup success does not prove public API or object-store
@@ -451,6 +456,15 @@ and full-run prerequisites, a separately approved full dispatch also requires
 only validation. Preserve every attempt; a later pass does not erase a failed attempt.
 
 ### Retrieve and verify validation or quality reports
+
+The first hosted preflight, run `34158544296` at `a0d7439`, completed successfully on
+GitHub, but both sealed 12/40 reports recorded `working_tree_dirty: true` and were
+rejected by the verifier. A local fresh checkout with Linux Git settings reproduced
+84 dirty historical evidence paths caused by newline clean filters. The
+[provenance failure record](../../evidence/m5/20260908-staging-rag-validation-34158544296-provenance-failure.json)
+preserves the original reports and distinguishes that operator rejection from the
+successful dataset-only steps. No model calls ran. Publish the byte-preservation and
+clean-checkout guard fix, then accept only a new preflight with clean provenance.
 
 Use the exact run ID from dispatch, wait for completion, and keep its observed attempt:
 

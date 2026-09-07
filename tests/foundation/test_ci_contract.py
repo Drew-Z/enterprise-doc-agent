@@ -309,6 +309,24 @@ def test_staging_rag_quality_bounds_dependency_setup_before_token_use() -> None:
             assert "sync --frozen" not in evaluation["run"]
 
 
+def test_staging_rag_quality_rejects_dirty_checkouts_before_any_evaluator() -> None:
+    jobs = _workflow(STAGING_RAG_QUALITY_WORKFLOW)["jobs"]
+    for job in jobs.values():
+        steps = job["steps"]
+        guards = [step for step in steps if step.get("name") == "Require clean evaluator checkout"]
+        assert len(guards) == 1
+        guard = guards[0]
+        assert guard["run"] == 'test -z "$(git status --porcelain)"'
+        assert guard["timeout-minutes"] == 1
+        assert "env" not in guard
+        sync = next(step for step in steps if "sync --frozen" in step.get("run", ""))
+        assert steps.index(sync) < steps.index(guard)
+        evaluators = [
+            step for step in steps if "evaluate_staging_rag_quality.py" in step.get("run", "")
+        ]
+        assert all(steps.index(guard) < steps.index(step) for step in evaluators)
+
+
 def test_staging_rag_quality_jobs_use_isolated_pinned_hosted_runtimes() -> None:
     jobs = _workflow(STAGING_RAG_QUALITY_WORKFLOW)["jobs"]
     for job in jobs.values():
