@@ -70,6 +70,11 @@ case IDs and payload integrity. A valid checksum is not a signature, quality pas
 - Only validation reports exist: verify dataset preparation, never live quality.
 - Full-selection validation fails after trial validation: retain any current validation
   output, keep the job failed and skip the dependent live job.
+- Complete live report fails quality: retain its original failed status and every case;
+  clean source/report acceptance establishes execution provenance, not quality success.
+- Missing detailed failure diagnostics: report the cause as unknown. A timeout fallback
+  on another successful case cannot diagnose a failed case. Incomplete usage/billing
+  remains unavailable and must not be coerced to zero.
 
 ### Good/Base/Bad Cases
 

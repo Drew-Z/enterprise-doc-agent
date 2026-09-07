@@ -1,0 +1,657 @@
+{
+  "schema_version": 1,
+  "suite": "staging-real-provider-rag-quality",
+  "evidence_type": "hosted-staging-rag-trial-execution",
+  "status": "failed",
+  "execution_status": "completed",
+  "failure_class": "agent_execution_failures",
+  "quality_thresholds_passed": false,
+  "report_integrity_and_provenance": "verified",
+  "evaluator_version": "m5.rag-quality.v6",
+  "evaluator_commit_sha": "a790aa4d02b4301e6d85bbc25332c1b1e4e4e710",
+  "record_date_timezone": "Asia/Shanghai",
+  "workflow": {
+    "repository": "Drew-Z/enterprise-doc-agent",
+    "name": "Evaluate Staging RAG Quality",
+    "run_id": 34166173023,
+    "run_attempt": 1,
+    "ref": "main",
+    "execution_mode": "evaluate",
+    "evaluation_scope": "trial",
+    "status": "completed",
+    "conclusion": "failure",
+    "created_at": "2026-09-07T22:17:41Z",
+    "updated_at": "2026-09-07T22:32:32Z",
+    "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/34166173023",
+    "jobs": [
+      {
+        "name": "validate",
+        "job_id": 101877523163,
+        "conclusion": "success",
+        "started_at": "2026-09-07T22:17:45Z",
+        "completed_at": "2026-09-07T22:17:59Z",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success",
+            "started_at": "2026-09-07T22:17:45Z",
+            "completed_at": "2026-09-07T22:17:47Z"
+          },
+          {
+            "name": "Run actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5",
+            "conclusion": "success",
+            "started_at": "2026-09-07T22:17:47Z",
+            "completed_at": "2026-09-07T22:17:48Z"
+          },
+          {
+            "name": "Run actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
+            "conclusion": "success",
+            "started_at": "2026-09-07T22:17:48Z",
+            "completed_at": "2026-09-07T22:17:48Z"
+          },
+          {
+            "name": "Run astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff",
+            "conclusion": "success",
+            "started_at": "2026-09-07T22:17:48Z",
+            "completed_at": "2026-09-07T22:17:50Z"
+          },
+          {
+            "name": "Synchronize frozen evaluator dependencies",
+            "conclusion": "success",
+            "started_at": "2026-09-07T22:17:50Z",
+            "completed_at": "2026-09-07T22:17:52Z"
+          },
+          {
+            "name": "Require clean evaluator checkout",
+            "conclusion": "success",
+            "started_at": "2026-09-07T22:17:52Z",
+            "completed_at": "2026-09-07T22:17:52Z"
+          },
+          {
+            "name": "Validate twelve-case trial selection",
+            "conclusion": "success",
+            "started_at": "2026-09-07T22:17:52Z",
+            "completed_at": "2026-09-07T22:17:55Z"
+          },
+          {
+            "name": "Validate full forty-case selection",
+            "conclusion": "success",
+            "started_at": "2026-09-07T22:17:55Z",
+            "completed_at": "2026-09-07T22:17:56Z"
+          },
+          {
+            "name": "Run actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+            "conclusion": "success",
+            "started_at": "2026-09-07T22:17:56Z",
+            "completed_at": "2026-09-07T22:17:57Z"
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff",
+            "conclusion": "success",
+            "started_at": "2026-09-07T22:17:57Z",
+            "completed_at": "2026-09-07T22:17:57Z"
+          },
+          {
+            "name": "Post Run actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
+            "conclusion": "success",
+            "started_at": "2026-09-07T22:17:57Z",
+            "completed_at": "2026-09-07T22:17:57Z"
+          },
+          {
+            "name": "Post Run actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5",
+            "conclusion": "success",
+            "started_at": "2026-09-07T22:17:57Z",
+            "completed_at": "2026-09-07T22:17:57Z"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success",
+            "started_at": "2026-09-07T22:17:57Z",
+            "completed_at": "2026-09-07T22:17:57Z"
+          }
+        ]
+      },
+      {
+        "name": "evaluate",
+        "job_id": 101877566894,
+        "conclusion": "failure",
+        "started_at": "2026-09-07T22:18:03Z",
+        "completed_at": "2026-09-07T22:32:31Z",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success",
+            "started_at": "2026-09-07T22:18:03Z",
+            "completed_at": "2026-09-07T22:18:05Z"
+          },
+          {
+            "name": "Run actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5",
+            "conclusion": "success",
+            "started_at": "2026-09-07T22:18:05Z",
+            "completed_at": "2026-09-07T22:18:06Z"
+          },
+          {
+            "name": "Run actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
+            "conclusion": "success",
+            "started_at": "2026-09-07T22:18:06Z",
+            "completed_at": "2026-09-07T22:18:07Z"
+          },
+          {
+            "name": "Run astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff",
+            "conclusion": "success",
+            "started_at": "2026-09-07T22:18:07Z",
+            "completed_at": "2026-09-07T22:18:09Z"
+          },
+          {
+            "name": "Synchronize frozen evaluator dependencies",
+            "conclusion": "success",
+            "started_at": "2026-09-07T22:18:09Z",
+            "completed_at": "2026-09-07T22:18:11Z"
+          },
+          {
+            "name": "Require clean evaluator checkout",
+            "conclusion": "success",
+            "started_at": "2026-09-07T22:18:11Z",
+            "completed_at": "2026-09-07T22:18:11Z"
+          },
+          {
+            "name": "Run authenticated staging RAG quality evaluation",
+            "conclusion": "failure",
+            "started_at": "2026-09-07T22:18:11Z",
+            "completed_at": "2026-09-07T22:32:29Z"
+          },
+          {
+            "name": "Run actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+            "conclusion": "success",
+            "started_at": "2026-09-07T22:32:29Z",
+            "completed_at": "2026-09-07T22:32:29Z"
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff",
+            "conclusion": "skipped",
+            "started_at": "2026-09-07T22:32:29Z",
+            "completed_at": "2026-09-07T22:32:29Z"
+          },
+          {
+            "name": "Post Run actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
+            "conclusion": "skipped",
+            "started_at": "2026-09-07T22:32:29Z",
+            "completed_at": "2026-09-07T22:32:29Z"
+          },
+          {
+            "name": "Post Run actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5",
+            "conclusion": "success",
+            "started_at": "2026-09-07T22:32:29Z",
+            "completed_at": "2026-09-07T22:32:30Z"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success",
+            "started_at": "2026-09-07T22:32:30Z",
+            "completed_at": "2026-09-07T22:32:30Z"
+          }
+        ]
+      }
+    ]
+  },
+  "accepted_preflight": "evidence/m5/20260908-staging-rag-validation-34163826666-execution.json",
+  "quality_ci": {
+    "run_id": 34163699575,
+    "commit_sha": "a790aa4d02b4301e6d85bbc25332c1b1e4e4e710",
+    "conclusion": "success"
+  },
+  "staging_release": {
+    "version": "v0.1.33",
+    "application_commit_sha": "9e9efb52a27a7a7ccf963e68d97c95722cbb72f5",
+    "acceptance_record": "evidence/m6/20260904-v0.1.33-staging-governance.json",
+    "image_digests": {
+      "api": "sha256:566f0328605382b19ee26f48fe535bfaa8c7d8295ee4f893c7a1fabbdc948fc5",
+      "consumer": "sha256:94998cf53afb0b334c84df24bc93e370de3db9577294c916ad9099b3c6507b88",
+      "web": "sha256:15130a914d5a37e1059e7da1d0145c6652ae2c05ff0288d32dfa7ac8f7157b2a",
+      "worker": "sha256:d83e4db8bf199917d85e5b6ea5e8caa48a8701ab6e022783cec3be3dac13782d"
+    },
+    "application_redeployed": false
+  },
+  "authorization": {
+    "publication_and_one_trial_authorized": true,
+    "new_live_dispatch_count": 1,
+    "run_attempt": 1,
+    "automatic_rerun": false,
+    "full_forty_case_evaluation": false
+  },
+  "artifact_inventory": [
+    {
+      "digest": "sha256:f624818cd30cd45c6d988d06650986035fa39888ecb83f19894154d29f50b5ac",
+      "expired": false,
+      "id": 10034471971,
+      "name": "staging-rag-quality-34166173023-1",
+      "size_in_bytes": 3829
+    },
+    {
+      "digest": "sha256:e57b97768e2f60f61a74f2639c9f116b7f3c3624303595418d4d8c6e8ad3fc8b",
+      "expired": false,
+      "id": 10034212668,
+      "name": "staging-rag-validation-34166173023-1",
+      "size_in_bytes": 2237
+    }
+  ],
+  "reports": [
+    {
+      "kind": "quality",
+      "scope": "trial",
+      "sha256": "c87d88d29e0c257d23f9ce74fccf294957e169c87d6006f460b9c34a9f8816bd",
+      "payload_sha256": "5b728d6d081dfd13cd44d186b4984bf2abb6f6b0f72a8ad053bcc8d091de8d0b",
+      "status": "failed",
+      "selected_case_count": 12,
+      "working_tree_dirty": false,
+      "operator_verification": "Verified quality report for trial; recorded status: failed",
+      "path": "evidence/m5/20260908-staging-rag-trial-34166173023-quality.json"
+    },
+    {
+      "kind": "validation",
+      "scope": "trial",
+      "sha256": "8a778d9c80f1734443131ff09296353c8d16237d429eb4c1687954c284ef7faa",
+      "payload_sha256": "5a77ef5601824410a042615be79fb5efe13994fc7086be430e7b7c49cbae6e27",
+      "status": "passed",
+      "selected_case_count": 12,
+      "working_tree_dirty": false,
+      "operator_verification": "Verified validation report for trial; recorded status: passed",
+      "path": "evidence/m5/20260908-staging-rag-trial-34166173023-validation-trial.json"
+    },
+    {
+      "kind": "validation",
+      "scope": "full",
+      "sha256": "420493d1e79e6baa205f3b2120290f85704b77ded0582c7f6ac5e44d639b3edd",
+      "payload_sha256": "0760f2d07c8504b27827537560e34fb11615d000ac08ec4b672c95f70d3b5b8a",
+      "status": "passed",
+      "selected_case_count": 40,
+      "working_tree_dirty": false,
+      "operator_verification": "Verified validation report for full; recorded status: passed",
+      "path": "evidence/m5/20260908-staging-rag-trial-34166173023-validation-full.json"
+    }
+  ],
+  "execution": {
+    "runtime": "GitHub-hosted ubuntu-24.04",
+    "application_token_scope": "evaluate step only",
+    "checkout_and_frozen_sync": "success",
+    "clean_checkout_guard": "success",
+    "selected_case_count": 12,
+    "completed_case_count": 12,
+    "automated_case_pass_count": 9,
+    "system_failure_count": 3,
+    "quality_report_produced": true,
+    "current_attempt_upload": "success",
+    "authenticated_staging_and_object_store_calls_completed": true,
+    "exact_provider_request_count": null,
+    "synthetic_data_retained": true
+  },
+  "quality_summary": {
+    "status": "failed",
+    "coverage": "bounded_sample",
+    "selected_case_count": 12,
+    "total_case_count": 40,
+    "system_failure_count": 3,
+    "measured": {
+      "citation_precision": 0.7,
+      "citation_recall": 0.7,
+      "closed_label_fact_precision": 0.7,
+      "fact_recall": 0.7,
+      "grounded_fact_rate": 0.7,
+      "refusal_precision": 1,
+      "refusal_reason_accuracy": 1,
+      "refusal_recall": 1
+    },
+    "targets": {
+      "citation_precision": 0.95,
+      "citation_recall": 0.9,
+      "closed_label_fact_precision": 0.95,
+      "fact_recall": 0.9,
+      "grounded_fact_rate": 0.9,
+      "refusal_precision": 1,
+      "refusal_reason_accuracy": 1,
+      "refusal_recall": 1
+    },
+    "errors_by_code": {
+      "agent_execution_failed": 3,
+      "low_relevance": 2
+    },
+    "latency_ms": {
+      "max_ms": 115624.07190800013,
+      "min_ms": 13758.23097600005,
+      "p50_ms": 55383.19657699998,
+      "p95_ms": 115624.07190800013,
+      "p99_ms": 115624.07190800013,
+      "sample_count": 12
+    },
+    "provider_routes": [
+      {
+        "model_name": "grok-4.6",
+        "model_revision": null,
+        "model_version": null,
+        "provider": "openai_compatible"
+      },
+      {
+        "model_name": "deepseek-v4-flash",
+        "model_revision": null,
+        "model_version": null,
+        "provider": "openai_compatible"
+      }
+    ],
+    "behavior_versions": [
+      {
+        "graph": "m4.v2",
+        "prompt": "m4.v9",
+        "tool_schema": "m4.v2"
+      }
+    ],
+    "provider_telemetry": {
+      "breaker_states": [
+        "closed"
+      ],
+      "case_count": 12,
+      "completion_tokens": null,
+      "fallback_count": null,
+      "fallback_trigger_counts": {
+        "model_timeout": 3
+      },
+      "observed_case_count": 7,
+      "prompt_tokens": null,
+      "provider_request_count": null,
+      "repair_request_count": null,
+      "source": "agent_run_status_api",
+      "total_tokens": null,
+      "usage_request_count": null
+    },
+    "cost_metadata": {
+      "billing_amount": null,
+      "billing_currency": null,
+      "completion_tokens": null,
+      "limitation": "The evaluated Agent runs did not expose complete provider token usage or billing data.",
+      "prompt_tokens": null,
+      "source": "not_available",
+      "total_tokens": null
+    },
+    "started_at": "2026-09-07T22:18:14.853480+00:00",
+    "completed_at": "2026-09-07T22:32:28.975422+00:00",
+    "case_status_counts": {
+      "failed": 3,
+      "succeeded": 7,
+      "refused": 2
+    },
+    "case_score_pass_count": 9,
+    "unsuccessful_cases": [
+      {
+        "case_id": "fact-proc-manager",
+        "category": "fact",
+        "passed": false,
+        "terminal_status": "failed",
+        "outcome_code": "agent_execution_failed",
+        "failure_diagnostic_code": null,
+        "fallback_trigger_code": null,
+        "duration_ms": 13896.754544999965,
+        "metrics": {
+          "citation_precision": 0,
+          "citation_recall": 0,
+          "closed_label_fact_precision": 0,
+          "fact_recall": 0,
+          "grounded_fact_rate": 0,
+          "refusal_reason_correct": null
+        }
+      },
+      {
+        "case_id": "fact-employee-vacation",
+        "category": "fact",
+        "passed": false,
+        "terminal_status": "failed",
+        "outcome_code": "agent_execution_failed",
+        "failure_diagnostic_code": null,
+        "fallback_trigger_code": null,
+        "duration_ms": 13758.23097600005,
+        "metrics": {
+          "citation_precision": 0,
+          "citation_recall": 0,
+          "closed_label_fact_precision": 0,
+          "fact_recall": 0,
+          "grounded_fact_rate": 0,
+          "refusal_reason_correct": null
+        }
+      },
+      {
+        "case_id": "fact-contract-payment",
+        "category": "fact",
+        "passed": false,
+        "terminal_status": "failed",
+        "outcome_code": "agent_execution_failed",
+        "failure_diagnostic_code": null,
+        "fallback_trigger_code": null,
+        "duration_ms": 13765.623226000003,
+        "metrics": {
+          "citation_precision": 0,
+          "citation_recall": 0,
+          "closed_label_fact_precision": 0,
+          "fact_recall": 0,
+          "grounded_fact_rate": 0,
+          "refusal_reason_correct": null
+        }
+      }
+    ],
+    "fallback_affected_cases": [
+      {
+        "case_id": "hard-proc-7500",
+        "passed": true,
+        "terminal_status": "succeeded",
+        "fallback_trigger_code": "model_timeout"
+      },
+      {
+        "case_id": "citation-proc-po",
+        "passed": true,
+        "terminal_status": "succeeded",
+        "fallback_trigger_code": "model_timeout"
+      },
+      {
+        "case_id": "safety-security-injection",
+        "passed": true,
+        "terminal_status": "succeeded",
+        "fallback_trigger_code": "model_timeout"
+      }
+    ]
+  },
+  "token_preparation": {
+    "unique_active_smoke_owner": true,
+    "tenant_and_user_smoke_markers": true,
+    "membership_created": false,
+    "loopback_session_authenticated": true,
+    "session_response_validator": "enterprise_doc_api.auth.session_router.SessionResponse",
+    "owner_capabilities_verified": true,
+    "configured_ttl_seconds": 28800,
+    "issued_at": "2026-09-07T22:16:21+00:00",
+    "expires_at": "2026-09-08T06:16:21+00:00",
+    "issuer_source_sha256": "85515143b43853172fc70dd206503bae4279b2b3d03be40aaa7b98b79d05b96b",
+    "secret_name": "STAGING_SMOKE_TOKEN",
+    "environment": "staging",
+    "secret_updated": true,
+    "token_file_created": false,
+    "token_in_command_arguments": false,
+    "observed_at": "2026-09-07T22:16:24.005781+00:00",
+    "secret_updated_at": "2026-09-07T22:16:25Z"
+  },
+  "staging_before": {
+    "observed_at": "2026-09-07T22:13:19.728335+00:00",
+    "namespace": "enterprise-doc-agent-staging",
+    "deployments": [
+      {
+        "name": "enterprise-doc-api",
+        "desired": 1,
+        "ready": 1
+      },
+      {
+        "name": "enterprise-doc-consumer",
+        "desired": 1,
+        "ready": 1
+      },
+      {
+        "name": "enterprise-doc-redis",
+        "desired": 1,
+        "ready": 1
+      },
+      {
+        "name": "enterprise-doc-web",
+        "desired": 1,
+        "ready": 1
+      },
+      {
+        "name": "enterprise-doc-worker",
+        "desired": 1,
+        "ready": 1
+      }
+    ],
+    "image_digests": {
+      "api": "sha256:566f0328605382b19ee26f48fe535bfaa8c7d8295ee4f893c7a1fabbdc948fc5",
+      "consumer": "sha256:94998cf53afb0b334c84df24bc93e370de3db9577294c916ad9099b3c6507b88",
+      "web": "sha256:15130a914d5a37e1059e7da1d0145c6652ae2c05ff0288d32dfa7ac8f7157b2a",
+      "worker": "sha256:d83e4db8bf199917d85e5b6ea5e8caa48a8701ab6e022783cec3be3dac13782d"
+    },
+    "public_readiness": {
+      "http_status": 200,
+      "status": "ready",
+      "dependencies": {
+        "database": "up",
+        "redis": "up",
+        "object_store": "up"
+      }
+    },
+    "loopback_readiness": {
+      "status": "ready",
+      "dependencies": {
+        "database": "up",
+        "redis": "up",
+        "object_store": "up"
+      }
+    },
+    "memory_total_mib": 3723,
+    "memory_available_mib": 1619,
+    "swap_total_mib": 0,
+    "disk_available_bytes": 26374414336,
+    "prior_read_only_probe": {
+      "outcome": "failed",
+      "ssh_command_exit_code": 1,
+      "failure_stage": "not_captured",
+      "token_issued": false,
+      "live_dispatch_started": false
+    }
+  },
+  "staging_after": {
+    "observed_at": "2026-09-07T22:38:14.296944+00:00",
+    "namespace": "enterprise-doc-agent-staging",
+    "deployments": [
+      {
+        "name": "enterprise-doc-api",
+        "desired": 1,
+        "ready": 1
+      },
+      {
+        "name": "enterprise-doc-consumer",
+        "desired": 1,
+        "ready": 1
+      },
+      {
+        "name": "enterprise-doc-redis",
+        "desired": 1,
+        "ready": 1
+      },
+      {
+        "name": "enterprise-doc-web",
+        "desired": 1,
+        "ready": 1
+      },
+      {
+        "name": "enterprise-doc-worker",
+        "desired": 1,
+        "ready": 1
+      }
+    ],
+    "image_digests": {
+      "api": "sha256:566f0328605382b19ee26f48fe535bfaa8c7d8295ee4f893c7a1fabbdc948fc5",
+      "consumer": "sha256:94998cf53afb0b334c84df24bc93e370de3db9577294c916ad9099b3c6507b88",
+      "web": "sha256:15130a914d5a37e1059e7da1d0145c6652ae2c05ff0288d32dfa7ac8f7157b2a",
+      "worker": "sha256:d83e4db8bf199917d85e5b6ea5e8caa48a8701ab6e022783cec3be3dac13782d"
+    },
+    "public_readiness": {
+      "http_status": 200,
+      "status": "ready",
+      "dependencies": {
+        "database": "up",
+        "redis": "up",
+        "object_store": "up"
+      }
+    },
+    "loopback_readiness": {
+      "status": "ready",
+      "dependencies": {
+        "database": "up",
+        "redis": "up",
+        "object_store": "up"
+      }
+    },
+    "memory_total_mib": 3723,
+    "memory_available_mib": 1466,
+    "swap_total_mib": 0,
+    "disk_available_bytes": 26376318976
+  },
+  "post_run_synthetic_tenant_counts": {
+    "observed_at": "2026-09-07T22:38:20.855377+00:00",
+    "scope": "existing synthetic smoke tenant since live dispatch; counts are not exact case-ID attribution",
+    "since": "2026-09-07T22:17:41+00:00",
+    "document_versions": {
+      "ready": 7
+    },
+    "agent_runs": {
+      "failed": 3,
+      "refused": 2,
+      "succeeded": 7
+    },
+    "jobs": [
+      {
+        "type": "agent.execute",
+        "status": "dead",
+        "count": 3
+      },
+      {
+        "type": "agent.execute",
+        "status": "succeeded",
+        "count": 9
+      },
+      {
+        "type": "document.ingest",
+        "status": "succeeded",
+        "count": 7
+      }
+    ]
+  },
+  "limitations": [
+    "The complete, clean, sealed twelve-case report verifies the hosted execution path; quality thresholds failed and M5/M7 gates remain blocked_external.",
+    "The three failed cases report agent_execution_failed without a failure_diagnostic_code. Their underlying cause is not established by this report.",
+    "Three different cases succeeded after model_timeout fallback. Those timeout observations do not diagnose the three failed cases.",
+    "Provider telemetry is observed for 7/12 cases; aggregate request/token counts and billing are unavailable, not zero.",
+    "Observed model names grok-4.6 and deepseek-v4-flash have null immutable revision/version fields. Historical release route names are not current model-version proof.",
+    "One synthetic twelve-case trial does not establish full-suite quality, repeatability, independent semantic review, production capacity or independent recovery.",
+    "The initial repeat readiness probe exited 1 without a captured stage; later public and loopback checks passed. No root cause is claimed for that earlier read-only probe.",
+    "Post-run database counts are limited to the synthetic smoke tenant and execution time window; exact case identities and scoring come from the sealed quality report.",
+    "This sanitized execution record is separate from the original sealed quality report and the two credential-free validation reports."
+  ],
+  "next_actions": [
+    "Trace the retained failed runs for fact-proc-manager, fact-employee-vacation and fact-contract-payment; restore a bounded diagnostic code without exposing model bodies or secrets.",
+    "Complete usage coverage and provider revision/cost evidence, retaining unavailable values instead of coercing them to zero.",
+    "Obtain representative-corpus and independent semantic review, then plan separately authorized fixed-count trials/full-suite repeatability."
+  ],
+  "verification": {
+    "focused_tests_passed": 36,
+    "new_raw_reports_verified": 5,
+    "historical_index_entries_preserved": true,
+    "failed_and_timeout_fallback_cases_disjoint": true,
+    "redaction_and_document_links_valid": true,
+    "trellis_context_valid": true,
+    "diff_check_passed": true
+  },
+  "owner": "platform owner"
+}

@@ -1,0 +1,155 @@
+{
+  "schema_version": 1,
+  "suite": "staging-real-provider-rag-quality-validation",
+  "evidence_type": "hosted-staging-rag-validation-execution",
+  "status": "passed",
+  "operator_acceptance": "accepted",
+  "evaluator_commit_sha": "a790aa4d02b4301e6d85bbc25332c1b1e4e4e710",
+  "record_date_timezone": "Asia/Shanghai",
+  "workflow": {
+    "repository": "Drew-Z/enterprise-doc-agent",
+    "name": "Evaluate Staging RAG Quality",
+    "run_id": 34163826666,
+    "run_attempt": 1,
+    "execution_mode": "validate-only",
+    "ref": "main",
+    "conclusion": "success",
+    "created_at": "2026-09-07T21:37:45Z",
+    "updated_at": "2026-09-07T21:38:05Z",
+    "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/34163826666",
+    "jobs": [
+      {
+        "name": "validate",
+        "job_id": 101870834872,
+        "conclusion": "success",
+        "started_at": "2026-09-07T21:37:49Z",
+        "completed_at": "2026-09-07T21:38:04Z",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff",
+            "conclusion": "success"
+          },
+          {
+            "name": "Synchronize frozen evaluator dependencies",
+            "conclusion": "success"
+          },
+          {
+            "name": "Require clean evaluator checkout",
+            "conclusion": "success"
+          },
+          {
+            "name": "Validate twelve-case trial selection",
+            "conclusion": "success"
+          },
+          {
+            "name": "Validate full forty-case selection",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      },
+      {
+        "name": "evaluate",
+        "job_id": 101870883335,
+        "conclusion": "skipped",
+        "started_at": "2026-09-07T21:38:04Z",
+        "completed_at": "2026-09-07T21:38:04Z",
+        "steps": []
+      }
+    ]
+  },
+  "quality_ci": {
+    "run_id": 34163699575,
+    "commit_sha": "a790aa4d02b4301e6d85bbc25332c1b1e4e4e710",
+    "conclusion": "success",
+    "backend_conclusion": "success",
+    "frontend_conclusion": "success"
+  },
+  "artifact": {
+    "id": 10033486226,
+    "name": "staging-rag-validation-34163826666-1",
+    "size_in_bytes": 2237,
+    "digest": "sha256:e8d32246eb55913755f7c2798817991e4bed8884b69fa555d3999a31e77da713"
+  },
+  "reports": [
+    {
+      "scope": "trial",
+      "selected_case_count": 12,
+      "commit_sha": "a790aa4d02b4301e6d85bbc25332c1b1e4e4e710",
+      "working_tree_dirty": false,
+      "sha256": "8a778d9c80f1734443131ff09296353c8d16237d429eb4c1687954c284ef7faa",
+      "payload_sha256": "5a77ef5601824410a042615be79fb5efe13994fc7086be430e7b7c49cbae6e27",
+      "operator_verification": "Verified validation report for trial; recorded status: passed",
+      "path": "evidence/m5/20260908-staging-rag-validation-34163826666-trial.json"
+    },
+    {
+      "scope": "full",
+      "selected_case_count": 40,
+      "commit_sha": "a790aa4d02b4301e6d85bbc25332c1b1e4e4e710",
+      "working_tree_dirty": false,
+      "sha256": "420493d1e79e6baa205f3b2120290f85704b77ded0582c7f6ac5e44d639b3edd",
+      "payload_sha256": "0760f2d07c8504b27827537560e34fb11615d000ac08ec4b672c95f70d3b5b8a",
+      "operator_verification": "Verified validation report for full; recorded status: passed",
+      "path": "evidence/m5/20260908-staging-rag-validation-34163826666-full.json"
+    }
+  ],
+  "local_checkout_verification": {
+    "commit": "a790aa4d02b4301e6d85bbc25332c1b1e4e4e710",
+    "git_config": {
+      "core.autocrlf": false,
+      "core.eol": "lf"
+    },
+    "tracked_files": 1261,
+    "materialized_bytes": 10757125,
+    "dirty_path_count": 0,
+    "canonical_index_unchanged": true,
+    "clean_guard_exit_code": 0,
+    "dirty_guard_exit_code": 1,
+    "probe_removed": true
+  },
+  "previous_rejected_preflight": "evidence/m5/20260908-staging-rag-validation-34158544296-provenance-failure.json",
+  "execution": {
+    "application_credentials_used": false,
+    "submitted_live_case_count": 0,
+    "external_model_calls_by_evaluator": 0,
+    "quality_report_produced": false
+  },
+  "limitations": [
+    "This accepts clean hosted dataset/runtime preparation, not staging network reachability or model quality.",
+    "Twelve and forty denote validated selections; neither selection was executed against models by this run.",
+    "The previous successful GitHub run with dirty provenance remains rejected and its original reports are preserved.",
+    "M5/M7 quality, repeatability, model revision, cost and independent review remain separate gates."
+  ],
+  "owner": "platform owner"
+}

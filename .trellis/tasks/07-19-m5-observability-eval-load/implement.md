@@ -215,9 +215,13 @@ evidence-only update; no temporary files were created.
   add red-to-green byte/identity regressions and preserve evidence JSON/log bytes with `-text`.
 - [x] Add a red-to-green workflow contract requiring a clean checkout after frozen sync
   and before every evaluator in both jobs, without application credentials.
-- [ ] Publish the fix, verify full checkout cleanliness and Quality, and accept a new hosted preflight.
-- [ ] Execute one authorized twelve-case trial after readiness/token review; retain the
-  terminal result and precise quality report or execution failure without redispatch.
+- [x] Publish `a790aa4`, verify 1261 clean checkout files and Quality `34163699575`,
+  and accept both clean hosted reports from preflight `34163826666`.
+- [x] Verify the existing synthetic smoke owner, application readiness and release images;
+  update the eight-hour token through memory/stdin and dispatch one twelve-case trial `34166173023`.
+- [x] Retain trial `34166173023` attempt 1: all twelve cases completed and the exact
+  sealed report passed source/integrity verification, with quality status `failed`.
+  No redispatch occurred; the one-trial authorization has been consumed.
 
 Local validation on 2026-09-08: three workflow behavior regressions failed for the
 missing mode, self-hosted runtime and missing validation upload, then passed. The
@@ -231,7 +235,8 @@ canonical dataset, corpus and lockfile hashes. Their provenance records local HE
 Source inspection confirms only HEAD/status Git queries, so shallow checkout is
 sufficient. The implementation was subsequently published as `a0d7439`; its first
 hosted preflight succeeded at dataset validation but failed operator provenance acceptance.
-The new trial remains pending until a clean preflight is accepted.
+Preflight `34163826666` was subsequently accepted with both reports clean at `a790aa4`.
+The authorized live trial then completed with a verified failed quality report.
 
 The fresh-checkout diagnostic reproduced 84 dirty historical evidence paths under
 `core.autocrlf=false` / `core.eol=lf` without changing the canonical index. Git clean
@@ -242,6 +247,24 @@ guard plus the six evidence contracts). This does not establish repaired hosted 
 Full non-integration regression passed 1021 tests (125 deselected); Ruff lint, mypy
 (161 source files), Actionlint 1.7.7, Trellis and diff checks passed. Ruff formatting
 required one assertion wrap, subsequently corrected without a behavior change.
+
+Hosted acceptance on 2026-09-08: the full local checkout had 1261 clean files, the shell
+guard accepted a clean fixture and rejected a controlled dirty fixture, and both Quality
+jobs passed at `a790aa4`. The new hosted preflight passed. Live run `34166173023` completed
+at 22:32Z with 7 succeeded, 2 expected refused and 3 failed Agent cases; automated scoring
+passed 9/12. Fact/citation metrics were 0.70 against 0.90/0.95 targets. The three failed
+cases expose only `agent_execution_failed` and null detailed diagnostics. Timeout fallback
+was observed on three different successful cases. Usage was observed for 7/12; aggregate
+tokens, billing and immutable model revisions remain unavailable. Post-run readiness was
+healthy with unchanged v0.1.33 images and all synthetic-window jobs terminal.
+
+This completes Slice 11's hosted execution-path objective, not the full M5/M7 quality
+gate. `docs/ops/NEXT_STAGE_PLAN.md` prioritizes failure diagnosis and telemetry coverage
+before newly authorized full-suite/repeatability work. Keep the M5 task in progress.
+Final execution-evidence checks passed 36 focused workflow/evaluator/evidence tests,
+five new raw-report byte/payload checks, terminal classifications, historical index
+preservation, redaction and document links, Trellis context and `git diff --check`.
+No application or evaluator code changed after the 1021-test `a790aa4` verification.
 
 Rollback point: restore the reviewed previous workflow; keep the server runtime,
 wheelhouse, existing staging release and all historical evidence. Full-suite repetition,

@@ -50,7 +50,10 @@
       "latest_staging_rag_trial_setup_failure": "evidence/m5/20260906-staging-rag-trial-33976542098-setup-failure.json",
       "latest_staging_rag_runtime_preparation": "evidence/m5/20260907-staging-rag-evaluator-runtime-preparation.json",
       "latest_staging_rag_trial_checkout_failure": "evidence/m5/20260908-staging-rag-trial-34143634860-checkout-failure.json",
-      "latest_staging_rag_validation_provenance_failure": "evidence/m5/20260908-staging-rag-validation-34158544296-provenance-failure.json"
+      "latest_staging_rag_validation_provenance_failure": "evidence/m5/20260908-staging-rag-validation-34158544296-provenance-failure.json",
+      "latest_staging_rag_validation": "evidence/m5/20260908-staging-rag-validation-34163826666-execution.json",
+      "latest_staging_rag_trial_quality": "evidence/m5/20260908-staging-rag-trial-34166173023-quality.json",
+      "latest_staging_rag_trial_execution": "evidence/m5/20260908-staging-rag-trial-34166173023-execution.json"
     },
     {
       "milestone": "M6",
@@ -95,6 +98,9 @@
       "latest_staging_rag_runtime_preparation": "evidence/m5/20260907-staging-rag-evaluator-runtime-preparation.json",
       "latest_staging_rag_trial_checkout_failure": "evidence/m5/20260908-staging-rag-trial-34143634860-checkout-failure.json",
       "latest_staging_rag_validation_provenance_failure": "evidence/m5/20260908-staging-rag-validation-34158544296-provenance-failure.json",
+      "latest_staging_rag_validation": "evidence/m5/20260908-staging-rag-validation-34163826666-execution.json",
+      "latest_staging_rag_trial_quality": "evidence/m5/20260908-staging-rag-trial-34166173023-quality.json",
+      "latest_staging_rag_trial_execution": "evidence/m5/20260908-staging-rag-trial-34166173023-execution.json",
       "local_routing_revalidation": "evidence/m7/20260820-local-routing-deterministic.json",
       "local_fallback_revalidation": "evidence/m7/20260820-local-routing-fallback-contract.json"
     },

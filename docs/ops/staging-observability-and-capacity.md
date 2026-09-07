@@ -463,8 +463,20 @@ rejected by the verifier. A local fresh checkout with Linux Git settings reprodu
 84 dirty historical evidence paths caused by newline clean filters. The
 [provenance failure record](../../evidence/m5/20260908-staging-rag-validation-34158544296-provenance-failure.json)
 preserves the original reports and distinguishes that operator rejection from the
-successful dataset-only steps. No model calls ran. Publish the byte-preservation and
-clean-checkout guard fix, then accept only a new preflight with clean provenance.
+successful dataset-only steps. No model calls ran. The byte-preservation and clean-checkout
+guard fix was published as `a790aa4`; new preflight `34163826666` passed both clean reports,
+recorded in the [accepted preflight](../../evidence/m5/20260908-staging-rag-validation-34163826666-execution.json).
+
+The subsequent authorized trial `34166173023`, attempt 1, completed all twelve cases
+on that evaluator SHA and uploaded its exact sealed report. Its quality result is failed:
+7 Agent runs succeeded, 2 refused as expected, and 3 failed with `agent_execution_failed`.
+Fact/citation metrics were 0.70; the required thresholds remain 0.90/0.95. Detailed
+diagnostics for those failures are null. Three separate successful cases used
+`model_timeout` fallback, so that fallback observation is not their failure diagnosis.
+Usage coverage is 7/12 and aggregate requests/tokens/billing remain unavailable.
+See the [trial execution record](../../evidence/m5/20260908-staging-rag-trial-34166173023-execution.json)
+and [original quality report](../../evidence/m5/20260908-staging-rag-trial-34166173023-quality.json).
+The hosted path is verified; full M5/M7 quality and independent review remain open.
 
 Use the exact run ID from dispatch, wait for completion, and keep its observed attempt:
 
