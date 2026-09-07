@@ -225,6 +225,44 @@ def test_staging_runtime_preparation_is_not_provider_quality_evidence() -> None:
         assert locked["size"] == wheel["size_bytes"]
 
 
+def test_staging_trial_checkout_failure_is_not_runtime_or_model_failure() -> None:
+    index = _load(ROOT / "evidence/index.json")
+    failure_path = "evidence/m5/20260908-staging-rag-trial-34143634860-checkout-failure.json"
+    for entry in index["evidence"]:
+        if entry["milestone"] not in {"M5", "M7"}:
+            continue
+        assert entry["status"] == "blocked_external"
+        assert entry["latest_staging_rag_trial_checkout_failure"] == failure_path
+        assert entry["latest_real_provider_quality"].endswith("v0.1.30-full-40.json")
+        assert entry["latest_repeatability_attempt"].endswith("repeat-3-full-40.json")
+
+    failure = _load(_repo_path(failure_path))
+    assert failure["status"] == "failed"
+    assert failure["failure_class"] == "evaluator_checkout_network_failure"
+    assert failure["workflow"]["run_id"] == 34143634860
+    assert failure["workflow"]["run_attempt"] == 1
+    assert failure["workflow"]["conclusion"] == "failure"
+    assert failure["workflow"]["scope"] == "trial"
+    assert failure["evaluator_commit_sha"] == "c1e2ec7a6bb80da8fc68dc090d756fede8e5b716"
+    execution = failure["execution"]
+    assert execution["checkout_step_conclusion"] == "failure"
+    assert execution["git_exit_code"] == 128
+    assert execution["dependency_step_conclusion"] == "skipped"
+    assert execution["evaluation_step_conclusion"] == "skipped"
+    assert execution["submitted_case_count"] == 0
+    assert execution["report_produced"] is False
+    assert execution["artifact_count"] == 0
+    assert execution["new_token_authenticated_by_this_run"] is False
+    assert failure["preflight"]["loopback_session_authenticated"] is True
+    assert failure["preflight"]["frozen_offline_sync_check"] == "would_make_no_changes"
+    assert failure["preflight"]["installed_package_count"] == 109
+    assert failure["dataset"]["selected_case_count"] == 12
+    assert failure["dataset"]["total_case_count"] == 40
+    assert failure["runtime_after_run"]["persistent_python_present"] is True
+    assert "report_payload_sha256" not in failure
+    assert "aggregate" not in failure
+
+
 def test_manual_gates_have_complete_state_records() -> None:
     index = _load(ROOT / "evidence/index.json")
     paths = index["manual_gates"]

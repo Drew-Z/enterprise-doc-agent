@@ -157,6 +157,42 @@ tests deselected); Ruff format/lint, mypy (161 source files), Actionlint, Trelli
 validation and `git diff --check` passed. No application integration or browser run was
 needed for this workflow/evidence-only change.
 
+## Slice 10: Authorized Prepared-Runtime Trial
+
+- [x] Publish `c1e2ec7` after owner authorization and verify both jobs in Quality run
+  `34142156900` passed against that exact commit.
+- [x] Recheck Environment refs, host allowlists, the idle 4C4G runner, unchanged locked
+  runtime, twelve-case selection and live application image identities.
+- [x] Validate the unique existing active synthetic smoke owner, issue an eight-hour
+  token through the reviewed issuer, verify its loopback API session using the typed
+  `SessionResponse`, and update only the protected Environment secret through stdin.
+- [x] Dispatch one newly authorized `trial` run `34143634860`, attempt 1, at evaluator
+  commit `c1e2ec7a6bb80da8fc68dc090d756fede8e5b716`. Do not redispatch or expand to full.
+- [x] Retain the terminal run/step outcome and exact artifact inventory. If a quality
+  report exists, verify payload integrity, evaluator SHA, dataset/corpus and twelve
+  selected case identities before indexing it separately from full/repeatability evidence.
+- [x] Recheck workload readiness and document limitations.
+- [x] Validate the evidence update.
+- [x] Obtain the owner's commit confirmation for this execution record.
+
+Preparation observations on 2026-09-08 (Asia/Shanghai): local public readiness probing
+had one connection reset; the runner-host public request returned HTTP 200 with all
+dependencies up. An administrative token check initially assumed snake_case wire fields
+and stopped before updating the Secret. Reusing the API's camelCase-aware response model
+passed authentication; Secret metadata records `2026-09-07T16:29:24Z`. No token file,
+model route change, application rollout or membership creation was needed.
+
+Terminal result: checkout failed with Git exit 128 after TLS termination and GitHub
+443 connection errors. Toolchain validation, dependency sync and evaluation were all
+skipped; zero cases were submitted and the artifact inventory is empty. The runner
+returned idle and all five Deployments stayed 1/1 Ready. A separately indexed failure
+record preserves this outcome; no redispatch or model-quality conclusion was made.
+Validation: the new checkout-failure contract first failed for the missing indexed
+record, then passed. All 37 focused tests and 1013 non-integration tests passed (125
+deselected), along with Ruff format/lint, mypy for 161 source files, Trellis context
+validation and `git diff --check`. No integration or browser run was needed for this
+evidence-only update; no temporary files were created.
+
 ## Full Completion Gate
 
 ```powershell

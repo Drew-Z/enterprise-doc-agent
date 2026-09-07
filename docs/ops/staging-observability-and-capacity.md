@@ -363,6 +363,38 @@ token authentication, answer quality, repeatability or production capacity. Publ
 reviewed change and verify CI, then obtain authorization for a separately recorded trial
 and refresh the short-lived token immediately before that window.
 
+### Prepared-runtime trial checkout failure on 2026-09-08
+
+Commit `c1e2ec7a6bb80da8fc68dc090d756fede8e5b716` was published after approval;
+both jobs in [Quality run 34142156900](https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/34142156900)
+passed. The owner then authorized one new twelve-case trial. Preflight confirmed the
+109-package runtime and unchanged trial selection, active dedicated smoke ownership,
+public readiness from the runner host, and all five application Deployments at 1/1.
+The refreshed eight-hour token passed a separate loopback `/api/session` check before
+the Environment secret was updated at `2026-09-07T16:29:24Z`. Administrative checks must
+parse the camelCase wire response through `SessionResponse`, not assume snake_case keys.
+
+[Trial run 34143634860, attempt 1](https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/34143634860)
+failed after 8m20s at checkout, before toolchain validation, dependency sync or model
+evaluation. Git reported GnuTLS receive error `-110`, connection failures to GitHub port
+443 and exit code 128. The exact-report upload failed because no report existed; the
+artifact API returned zero artifacts. Zero cases were submitted, and this attempt did
+not exercise embedding, chat or the prepared dependency-sync step. This is not another
+dependency-install timeout or a model-quality result.
+
+The [checkout failure record](../../evidence/m5/20260908-staging-rag-trial-34143634860-checkout-failure.json)
+retains the run, source selection, diagnostics and preflight separately from old results.
+Afterward the runner was online/idle, all five Deployments remained Ready, and the
+original checkout and persistent Python executable still existed. A later repository
+webpage HEAD request returned 200; that does not prove the earlier Git protocol transfer
+was healthy or identify the underlying network cause.
+
+Do not redispatch unchanged or increase model budgets. First diagnose the source-fetch
+path or review a different evaluator execution location. Moving the job to a hosted
+runner also moves the short-lived credential's execution boundary and needs review;
+it is not part of this failed attempt. No runner migration, application rollout, model
+change, proxy/DNS change or second trial was performed. M5/M7 gates remain open.
+
 ### Validate and dispatch from PowerShell
 
 From the repository root, these commands validate both fixed selections without using a

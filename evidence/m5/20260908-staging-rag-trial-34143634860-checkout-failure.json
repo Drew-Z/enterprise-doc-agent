@@ -1,0 +1,159 @@
+{
+  "schema_version": 1,
+  "suite": "staging-real-provider-rag-quality",
+  "evidence_type": "staging-rag-trial-execution-failure",
+  "status": "failed",
+  "failure_class": "evaluator_checkout_network_failure",
+  "evaluator_commit_sha": "c1e2ec7a6bb80da8fc68dc090d756fede8e5b716",
+  "record_date_timezone": "Asia/Shanghai",
+  "workflow": {
+    "repository": "Drew-Z/enterprise-doc-agent",
+    "name": "Evaluate Staging RAG Quality",
+    "run_id": 34143634860,
+    "run_attempt": 1,
+    "job_id": 101810837366,
+    "ref": "main",
+    "scope": "trial",
+    "conclusion": "failure",
+    "created_at": "2026-09-07T16:31:05Z",
+    "started_at": "2026-09-07T16:31:13Z",
+    "completed_at": "2026-09-07T16:39:33Z",
+    "timeout_minutes": 40,
+    "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/34143634860"
+  },
+  "environment": {
+    "profile": "single-node-4c4g",
+    "namespace": "enterprise-doc-agent-staging",
+    "public_host": "agent.playlab.eu.cc",
+    "runner": "enterprise-doc-staging-4c4g-20260830"
+  },
+  "staging_release": {
+    "version": "v0.1.33",
+    "commit_sha": "9e9efb52a27a7a7ccf963e68d97c95722cbb72f5",
+    "acceptance_record": "evidence/m6/20260904-v0.1.33-staging-governance.json",
+    "observed_image_digests": {
+      "api": "sha256:566f0328605382b19ee26f48fe535bfaa8c7d8295ee4f893c7a1fabbdc948fc5",
+      "worker": "sha256:d83e4db8bf199917d85e5b6ea5e8caa48a8701ab6e022783cec3be3dac13782d",
+      "consumer": "sha256:94998cf53afb0b334c84df24bc93e370de3db9577294c916ad9099b3c6507b88",
+      "web": "sha256:15130a914d5a37e1059e7da1d0145c6652ae2c05ff0288d32dfa7ac8f7157b2a"
+    },
+    "application_redeployed": false
+  },
+  "dataset": {
+    "version": "enterprise-rag-quality-v2",
+    "sha256": "145df783dba7ee1c533a59de288bb1a9aff6ba3c0bdff7e4617a366dca1a9f5b",
+    "corpus_sha256": "c6887a0ca112cd62499c9d61d5caa9d87e94a4ba6c8770293f9f3a8c6cf54e36",
+    "selected_case_count": 12,
+    "total_case_count": 40,
+    "selection_source": "Pre-dispatch offline validation of the unchanged v2 trial selection, not an executed quality report."
+  },
+  "preflight": {
+    "preparation_record": "evidence/m5/20260907-staging-rag-evaluator-runtime-preparation.json",
+    "runner_checkout_sha": "5bd1e6d830bc0c1737b33f899b453fd93143e0b8",
+    "runtime_inputs_match_selected_workflow_sha": true,
+    "lockfile_sha256": "f008d334a226f6678716271578206a849ec3a509b1293ebeb9a9af05e0167638",
+    "installed_package_count": 109,
+    "frozen_offline_sync_check": "would_make_no_changes",
+    "trial_payload_checksum_valid": true,
+    "unique_active_smoke_owner": true,
+    "tenant_and_user_smoke_markers": true,
+    "membership_created": false,
+    "loopback_session_authenticated": true,
+    "session_response_validator": "enterprise_doc_api.auth.session_router.SessionResponse",
+    "administrative_guard_failure": "An initial helper expected snake_case session fields; it stopped before any Environment secret update. The typed camelCase-aware response model passed the subsequent check.",
+    "smoke_secret_updated_at": "2026-09-07T16:29:24Z",
+    "smoke_token_configured_ttl_seconds": 28800,
+    "token_file_created": false,
+    "local_public_readiness_probe": "connection_reset",
+    "runner_host_public_readiness_http_status": 200,
+    "runner_host_public_readiness_dependencies": "all_up",
+    "runner_host_public_readiness_duration_seconds": 2.499213,
+    "ready_deployments": 5,
+    "available_memory_mib": 1581,
+    "disk_available_gib_rounded": 25
+  },
+  "publication": {
+    "owner_authorized": true,
+    "ci_run_id": 34142156900,
+    "ci_commit_sha": "c1e2ec7a6bb80da8fc68dc090d756fede8e5b716",
+    "ci_conclusion": "success",
+    "allowed_refs": [
+      {"name": "main", "type": "branch"},
+      {"name": "v*.*.*", "type": "tag"}
+    ],
+    "required_reviewers_configured": false,
+    "can_admins_bypass": true
+  },
+  "execution": {
+    "new_dispatch_count": 1,
+    "setup_job_conclusion": "success",
+    "checkout_step_conclusion": "failure",
+    "checkout_started_at": "2026-09-07T16:32:21Z",
+    "checkout_completed_at": "2026-09-07T16:39:25Z",
+    "git_exit_code": 128,
+    "toolchain_preflight_conclusion": "skipped",
+    "dependency_step_conclusion": "skipped",
+    "evaluation_step_conclusion": "skipped",
+    "upload_step_conclusion": "failure",
+    "post_checkout_conclusion": "success",
+    "submitted_case_count": 0,
+    "external_model_calls_by_evaluator": 0,
+    "report_produced": false,
+    "artifact_count": 0,
+    "provider_routes_observed": false,
+    "new_token_authenticated_by_this_run": false,
+    "automatic_redispatch": false
+  },
+  "diagnostics": {
+    "source": "Terminal GitHub job steps, check annotations, empty artifact inventory, and bounded read-only runner observations.",
+    "transport_error_codes": ["gnutls_recv_minus_110", "curl_28_connect_timeout", "git_exit_128"],
+    "sanitized_annotations": [
+      "GnuTLS recv error (-110): The TLS connection was non-properly terminated.",
+      "RPC failed; curl 28 Failed to connect to github.com port 443 after 135667 ms: Couldn't connect to server",
+      "fatal: expected flush after ref listing",
+      "Failed to connect to github.com port 443 after 134539 ms: Couldn't connect to server",
+      "The process '/usr/bin/git' failed with exit code 128",
+      "No current-run report file was found; no artifacts were uploaded."
+    ],
+    "separate_github_repository_http_probe": {
+      "observed_at": "2026-09-07T16:40:10Z",
+      "status": 200,
+      "duration_seconds": 1.185228,
+      "limitation": "A later successful repository-webpage HEAD request does not prove the earlier Git smart-protocol transfer was healthy."
+    },
+    "confirmed_cause": "The checkout Git transport failed before toolchain validation, dependency sync or model evaluation.",
+    "unconfirmed_cause": "The underlying reason for intermittent TLS termination and GitHub TCP 443 connectivity failure has not been isolated. No CPU/RAM or bandwidth-cap diagnosis is established by these logs."
+  },
+  "runtime_after_run": {
+    "observed_at": "2026-09-07T16:45:17Z",
+    "checkout_sha": "5bd1e6d830bc0c1737b33f899b453fd93143e0b8",
+    "lockfile_present": true,
+    "evaluator_present": true,
+    "persistent_python_present": true,
+    "uv_running": false,
+    "host_memory_available_mib": 1600,
+    "host_swap_mib": 0,
+    "ready_deployments": 5,
+    "desired_deployments": 5,
+    "runner_online_and_idle": true
+  },
+  "command_or_procedure": [
+    "Recheck GitHub Environment refs, host allowlists, runner state and the published c1e2ec7 workflow/CI.",
+    "Validate frozen runtime-only dependencies and the exact twelve-case selection offline as gha-staging; compare scoped runtime inputs between 5bd1e6d and c1e2ec7.",
+    "Use scripts/issue_staging_smoke_token.py for the unique existing active synthetic smoke owner, validate the loopback API session and pipe the token directly to gh secret set through memory/stdin.",
+    "Dispatch evaluate-staging-rag-quality.yml once on main with evaluation_scope=trial and staging_base_url=https://agent.playlab.eu.cc.",
+    "Watch run 34143634860 to terminal failure; query its job steps and actions/runs/34143634860/artifacts without redispatch.",
+    "Recheck application Deployment readiness and retained checkout/runtime files; preserve this execution record without fabricating a quality report."
+  ],
+  "limitations": [
+    "This file is sanitized execution metadata, not a sealed RAG quality report or a quality-threshold failure.",
+    "The evaluator SHA identifies the selected workflow ref; checkout failed, and no evaluator code ran in this attempt.",
+    "No synthetic documents or Agent runs were submitted by this attempt, so there is no new provider-quality or billing result.",
+    "The fresh token passed a separate loopback API session check, but it was not used by the skipped workflow evaluation step.",
+    "Prepared Python dependencies do not remove the workflow's separate GitHub source-checkout prerequisite.",
+    "Historical full-suite, repeatability, dependency-timeout and runtime-preparation evidence remains unchanged; M5/M7 external gates stay open.",
+    "No model routes, application images, package indexes, proxy, DNS, SSH policy, firewall or swap settings were changed.",
+    "No automatic rerun, second dispatch or full forty-case evaluation was performed."
+  ],
+  "owner": "platform owner"
+}

@@ -80,6 +80,8 @@ Use `${{ runner.temp }}/enterprise-doc-rag-quality/rag-quality-${{ github.run_id
 A cold dependency download consumed the entire 40-minute budget in trial run
 `33976542098`; no model evaluation started. Setup must fail within its own boundary.
 Default checkout cleanup must not discard separately prepared runtime dependencies.
+Checkout remains a separate network prerequisite: prepared dependencies do not prevent
+Git transport failure before the runtime preflight, as run `34143634860` demonstrated.
 
 ### Signatures
 
@@ -109,6 +111,8 @@ Changes to locked dependencies, Python ABI, platform or checkout path require re
 ### Validation & Error Matrix
 
 - Setup completes: run the selected evaluator without another dependency sync.
+- Checkout fails: retain its Git error classification and skipped downstream steps;
+  do not diagnose dependency or provider failure from a missing report alone.
 - Prepared Python missing: fail preflight, prepare the runtime outside the evaluation
   window, and do not silently fall back to a new checkout-local environment.
 - Installed environment passes but fresh offline dry-run lacks registry distributions:
@@ -137,6 +141,9 @@ attempt distinct from historical full-suite results and open external gates.
 `test_staging_runtime_preparation_is_not_provider_quality_evidence` checks the separately
 indexed preparation record, zero live calls and transferred wheel hashes against the
 exact recorded lockfile commit, without replacing historical quality evidence.
+`test_staging_trial_checkout_failure_is_not_runtime_or_model_failure` preserves the
+checkout failure separately, with zero submitted cases, no report, and a distinction
+between operator session authentication and a skipped workflow evaluation step.
 
 ### Wrong vs Correct
 
