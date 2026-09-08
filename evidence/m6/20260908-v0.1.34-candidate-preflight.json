@@ -1,0 +1,696 @@
+{
+  "schema_version": 1,
+  "evidence_type": "release-candidate-supply-chain-and-deployment-preflight",
+  "evidence_id": "m6-v0.1.34-candidate-20260908",
+  "milestone": "M6",
+  "requirement_ids": [
+    "M6-R2",
+    "M6-R4"
+  ],
+  "status": "prepared",
+  "release": "v0.1.34",
+  "commit_sha": "b0dde98f69f6ed9560c3c018bff2f1b4371283d5",
+  "tag_object_sha": "3c69fe44b48a485de7ea10d8ae19e1c37943e80e",
+  "authorization": {
+    "candidate_build": "Owner agreed to prepare candidate images and deployment review, then instructed continue after the four-image build scope was stated.",
+    "deployment": "pending_review",
+    "new_real_rag_trial": "not_authorized"
+  },
+  "quality": {
+    "run_id": 34185778632,
+    "sha": "b0dde98f69f6ed9560c3c018bff2f1b4371283d5",
+    "conclusion": "success",
+    "attempt": 1
+  },
+  "workflow": {
+    "repository": "Drew-Z/enterprise-doc-agent",
+    "name": "Container Supply Chain",
+    "run_id": "34187312679",
+    "run_attempt": 1,
+    "conclusion": "success",
+    "started_at": "2026-09-08T04:31:50Z",
+    "completed_at": "2026-09-08T04:34:49Z",
+    "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/34187312679",
+    "jobs": [
+      {
+        "id": 101938142145,
+        "name": "images (web, infra/docker/Dockerfile.web)",
+        "conclusion": "success",
+        "completed_at": "2026-09-08T04:34:13Z"
+      },
+      {
+        "id": 101938142380,
+        "name": "images (consumer, infra/docker/Dockerfile.consumer)",
+        "conclusion": "success",
+        "completed_at": "2026-09-08T04:34:35Z"
+      },
+      {
+        "id": 101938142390,
+        "name": "images (api, infra/docker/Dockerfile.api)",
+        "conclusion": "success",
+        "completed_at": "2026-09-08T04:34:29Z"
+      },
+      {
+        "id": 101938142397,
+        "name": "images (worker, infra/docker/Dockerfile.worker)",
+        "conclusion": "success",
+        "completed_at": "2026-09-08T04:34:14Z"
+      },
+      {
+        "id": 101938616536,
+        "name": "release-manifest",
+        "conclusion": "success",
+        "completed_at": "2026-09-08T04:34:48Z"
+      }
+    ]
+  },
+  "release_manifest": {
+    "path": "evidence/m6/20260908-v0.1.34-release-manifest.json",
+    "sha256": "15bf0de91defaf33e61bf35ec002db0d053353ccd7fed2db1356b9ac843a5a46"
+  },
+  "supply_chain": {
+    "status": "passed",
+    "release": {
+      "commit_sha": "b0dde98f69f6ed9560c3c018bff2f1b4371283d5",
+      "ref": "refs/tags/v0.1.34",
+      "repository": "Drew-Z/enterprise-doc-agent",
+      "run_attempt": "1",
+      "run_id": "34187312679",
+      "workflow_ref": "Drew-Z/enterprise-doc-agent/.github/workflows/container.yml@refs/tags/v0.1.34"
+    },
+    "release_manifest_sha256": "15bf0de91defaf33e61bf35ec002db0d053353ccd7fed2db1356b9ac843a5a46",
+    "hashed_evidence_files_verified": 56,
+    "signature_and_attestation_crypto_verification": "passed in the exact GitHub Actions jobs; original verification outputs and identities checked locally",
+    "provenance_normalization": {
+      "signer": "cosign v2.4.3",
+      "source": "https://github.com/sigstore/cosign/blob/v2.4.3/pkg/cosign/attestation/attestation.go#L229",
+      "source_blob_sha": "e675088d58e3a609e922f37b37786c85df179378",
+      "metadata_key_rename": "invocationId to invocationID; value preserved",
+      "metadata_extensions_omitted_from_typed_attestation": [
+        "buildkit_metadata",
+        "buildkit_completeness"
+      ],
+      "all_other_predicate_fields_equal": true,
+      "raw_buildkit_evidence_hashes_verified": true
+    },
+    "images": {
+      "api": {
+        "image": "ghcr.io/drew-z/enterprise-doc-api",
+        "digest": "sha256:e2cbbc6ba1c5e7463ed21e6663c5a948d467e46bcd187a7cf8b02c50ed53bfff",
+        "signature_identity": "https://github.com/Drew-Z/enterprise-doc-agent/.github/workflows/container.yml@refs/tags/v0.1.34",
+        "signature_commit_sha": "b0dde98f69f6ed9560c3c018bff2f1b4371283d5",
+        "sbom_attestations_checked": 1,
+        "provenance_attestations_checked": 1,
+        "scan_results": 0,
+        "provenance_type": "slsaprovenance1"
+      },
+      "worker": {
+        "image": "ghcr.io/drew-z/enterprise-doc-worker",
+        "digest": "sha256:b957cdd12dff8e3151386a4a1e829b311c3970f14e22479524011f22e7d784d7",
+        "signature_identity": "https://github.com/Drew-Z/enterprise-doc-agent/.github/workflows/container.yml@refs/tags/v0.1.34",
+        "signature_commit_sha": "b0dde98f69f6ed9560c3c018bff2f1b4371283d5",
+        "sbom_attestations_checked": 1,
+        "provenance_attestations_checked": 1,
+        "scan_results": 0,
+        "provenance_type": "slsaprovenance1"
+      },
+      "consumer": {
+        "image": "ghcr.io/drew-z/enterprise-doc-consumer",
+        "digest": "sha256:ec84d7d280ff74f28147c678428cee5cfa55a5a70a6fe444a20079e616262a21",
+        "signature_identity": "https://github.com/Drew-Z/enterprise-doc-agent/.github/workflows/container.yml@refs/tags/v0.1.34",
+        "signature_commit_sha": "b0dde98f69f6ed9560c3c018bff2f1b4371283d5",
+        "sbom_attestations_checked": 1,
+        "provenance_attestations_checked": 1,
+        "scan_results": 0,
+        "provenance_type": "slsaprovenance1"
+      },
+      "web": {
+        "image": "ghcr.io/drew-z/enterprise-doc-web",
+        "digest": "sha256:618655ebcaaa3ff8af903414e348d1261b563f00becf54f06f66fad2441e3b09",
+        "signature_identity": "https://github.com/Drew-Z/enterprise-doc-agent/.github/workflows/container.yml@refs/tags/v0.1.34",
+        "signature_commit_sha": "b0dde98f69f6ed9560c3c018bff2f1b4371283d5",
+        "sbom_attestations_checked": 1,
+        "provenance_attestations_checked": 1,
+        "scan_results": 0,
+        "provenance_type": "slsaprovenance1"
+      }
+    }
+  },
+  "original_github_artifacts": [
+    {
+      "digest": "sha256:f6dab4a0d1314c1ecef682a78f0a03bbebdcb6ee86a2158f59e731ddf2a341f2",
+      "expired": false,
+      "id": 10041003289,
+      "name": "release-manifest-v0.1.34",
+      "size_in_bytes": 3002
+    },
+    {
+      "digest": "sha256:1e3a9d018cfea2a775e0f04490b896dbc2b9d9a73e17ae068e0c0b3ce91ee35c",
+      "expired": false,
+      "id": 10040997128,
+      "name": "release-supply-chain-consumer",
+      "size_in_bytes": 966397
+    },
+    {
+      "digest": "sha256:ae8c02174ad6ae574ad1bf7e346146fa78f676492e55ee55edd93d62a9591a1e",
+      "expired": false,
+      "id": 10040995624,
+      "name": "release-supply-chain-api",
+      "size_in_bytes": 967060
+    },
+    {
+      "digest": "sha256:79a8433cc1d22d6641db072dd735bd96aa310b6a4872fa711f5aab044a07022f",
+      "expired": false,
+      "id": 10040990973,
+      "name": "release-supply-chain-worker",
+      "size_in_bytes": 966332
+    },
+    {
+      "digest": "sha256:8eb5b79fba376db61fe538e9b42ef880552c984a8e608abefd683995c7c435bf",
+      "expired": false,
+      "id": 10040989628,
+      "name": "release-supply-chain-web",
+      "size_in_bytes": 321312
+    }
+  ],
+  "registry_inspection": {
+    "api": {
+      "schemaVersion": 2,
+      "mediaType": "application/vnd.oci.image.index.v1+json",
+      "digest": "sha256:e2cbbc6ba1c5e7463ed21e6663c5a948d467e46bcd187a7cf8b02c50ed53bfff",
+      "size": 857,
+      "manifests": [
+        {
+          "mediaType": "application/vnd.oci.image.manifest.v1+json",
+          "digest": "sha256:b2b64c4a9563a4e1e8583754df27d91ba29ae4a75da976eb054396831f56d0a9",
+          "size": 2002,
+          "platform": {
+            "architecture": "amd64",
+            "os": "linux"
+          }
+        },
+        {
+          "mediaType": "application/vnd.oci.image.manifest.v1+json",
+          "digest": "sha256:e395efb63c46ea0252843d681bd6b603aac758034fc926e88ba1d190ba0cfaf6",
+          "size": 1112,
+          "annotations": {
+            "vnd.docker.reference.digest": "sha256:b2b64c4a9563a4e1e8583754df27d91ba29ae4a75da976eb054396831f56d0a9",
+            "vnd.docker.reference.type": "attestation-manifest"
+          },
+          "platform": {
+            "architecture": "unknown",
+            "os": "unknown"
+          }
+        }
+      ]
+    },
+    "worker": {
+      "schemaVersion": 2,
+      "mediaType": "application/vnd.oci.image.index.v1+json",
+      "digest": "sha256:b957cdd12dff8e3151386a4a1e829b311c3970f14e22479524011f22e7d784d7",
+      "size": 857,
+      "manifests": [
+        {
+          "mediaType": "application/vnd.oci.image.manifest.v1+json",
+          "digest": "sha256:c492939e942e2609d67ddb90113ce4cfb14b17c146f53e501053e89225d50b68",
+          "size": 1624,
+          "platform": {
+            "architecture": "amd64",
+            "os": "linux"
+          }
+        },
+        {
+          "mediaType": "application/vnd.oci.image.manifest.v1+json",
+          "digest": "sha256:0dc3195de677e08a3c9a59fcdad12c5a62c7120a8fb8d4ff77837840507b9f67",
+          "size": 1112,
+          "annotations": {
+            "vnd.docker.reference.digest": "sha256:c492939e942e2609d67ddb90113ce4cfb14b17c146f53e501053e89225d50b68",
+            "vnd.docker.reference.type": "attestation-manifest"
+          },
+          "platform": {
+            "architecture": "unknown",
+            "os": "unknown"
+          }
+        }
+      ]
+    },
+    "consumer": {
+      "schemaVersion": 2,
+      "mediaType": "application/vnd.oci.image.index.v1+json",
+      "digest": "sha256:ec84d7d280ff74f28147c678428cee5cfa55a5a70a6fe444a20079e616262a21",
+      "size": 857,
+      "manifests": [
+        {
+          "mediaType": "application/vnd.oci.image.manifest.v1+json",
+          "digest": "sha256:86e26d2018bfbafd6498669d008684be7bc803581267f12ded834f6fcd8ccfe6",
+          "size": 1624,
+          "platform": {
+            "architecture": "amd64",
+            "os": "linux"
+          }
+        },
+        {
+          "mediaType": "application/vnd.oci.image.manifest.v1+json",
+          "digest": "sha256:37a2bd3fe87f441258898e5d0729e8537dc1a935fdbee3a3eb9ce8844d095141",
+          "size": 1112,
+          "annotations": {
+            "vnd.docker.reference.digest": "sha256:86e26d2018bfbafd6498669d008684be7bc803581267f12ded834f6fcd8ccfe6",
+            "vnd.docker.reference.type": "attestation-manifest"
+          },
+          "platform": {
+            "architecture": "unknown",
+            "os": "unknown"
+          }
+        }
+      ]
+    },
+    "web": {
+      "schemaVersion": 2,
+      "mediaType": "application/vnd.oci.image.index.v1+json",
+      "digest": "sha256:618655ebcaaa3ff8af903414e348d1261b563f00becf54f06f66fad2441e3b09",
+      "size": 857,
+      "manifests": [
+        {
+          "mediaType": "application/vnd.oci.image.manifest.v1+json",
+          "digest": "sha256:9977b9dcf25b5509dd97254fcdd0532a195c7f87675d83d01090695da621c8de",
+          "size": 2380,
+          "platform": {
+            "architecture": "amd64",
+            "os": "linux"
+          }
+        },
+        {
+          "mediaType": "application/vnd.oci.image.manifest.v1+json",
+          "digest": "sha256:da7a89a0109996951c13b7198c47c6b183e3d58d53276423686bce314ca9fc96",
+          "size": 1111,
+          "annotations": {
+            "vnd.docker.reference.digest": "sha256:9977b9dcf25b5509dd97254fcdd0532a195c7f87675d83d01090695da621c8de",
+            "vnd.docker.reference.type": "attestation-manifest"
+          },
+          "platform": {
+            "architecture": "unknown",
+            "os": "unknown"
+          }
+        }
+      ]
+    }
+  },
+  "deployment_preflight": {
+    "status": "passed",
+    "kustomize_version": "v5.7.1 (kubectl client)",
+    "baseline_live_prerequisites": {
+      "status": "passed",
+      "namespace": "enterprise-doc-agent-staging",
+      "approval_keys_checked": 17,
+      "live_objects_checked": 18,
+      "prerequisites_sha256": "4e9556f8e285ef34cd1273d1533455d76f352878989a5fb65b325ef2b484bd9c"
+    },
+    "candidate_simulated_prerequisites": {
+      "status": "passed",
+      "namespace": "enterprise-doc-agent-staging",
+      "approval_keys_checked": 17,
+      "live_objects_checked": 18,
+      "prerequisites_sha256": "53ea74b2f22dc2cef444b87daf40e256f9a2eb9410ed34141857a0a01d5563d3"
+    },
+    "configmap_unchanged": true,
+    "namespace_changed_annotation_keys": [
+      "enterprise-doc-agent/approved-api-images",
+      "enterprise-doc-agent/approved-consumer-images",
+      "enterprise-doc-agent/approved-web-images",
+      "enterprise-doc-agent/approved-worker-images",
+      "enterprise-doc-agent/prerequisites-sha256"
+    ],
+    "namespace_annotation_changes": {
+      "enterprise-doc-agent/approved-api-images": {
+        "before": "ghcr.io/drew-z/enterprise-doc-api@sha256:566f0328605382b19ee26f48fe535bfaa8c7d8295ee4f893c7a1fabbdc948fc5,ghcr.io/drew-z/enterprise-doc-api@sha256:5472211ba8882ffa8ed60cffbe85aab94b2712cfece28f29d6b0271f0dbdb703",
+        "after": "ghcr.io/drew-z/enterprise-doc-api@sha256:e2cbbc6ba1c5e7463ed21e6663c5a948d467e46bcd187a7cf8b02c50ed53bfff,ghcr.io/drew-z/enterprise-doc-api@sha256:566f0328605382b19ee26f48fe535bfaa8c7d8295ee4f893c7a1fabbdc948fc5"
+      },
+      "enterprise-doc-agent/approved-worker-images": {
+        "before": "ghcr.io/drew-z/enterprise-doc-worker@sha256:d83e4db8bf199917d85e5b6ea5e8caa48a8701ab6e022783cec3be3dac13782d,ghcr.io/drew-z/enterprise-doc-worker@sha256:8d85cd2ec6d26dc6a71c65bf86e0d9e7f2301596d7a8d3c3a9df6e8390682c68",
+        "after": "ghcr.io/drew-z/enterprise-doc-worker@sha256:b957cdd12dff8e3151386a4a1e829b311c3970f14e22479524011f22e7d784d7,ghcr.io/drew-z/enterprise-doc-worker@sha256:d83e4db8bf199917d85e5b6ea5e8caa48a8701ab6e022783cec3be3dac13782d"
+      },
+      "enterprise-doc-agent/approved-consumer-images": {
+        "before": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:94998cf53afb0b334c84df24bc93e370de3db9577294c916ad9099b3c6507b88,ghcr.io/drew-z/enterprise-doc-consumer@sha256:746e072e4b9f63e27438b7397984d4e85362db5d57a28c7baa40f2acfa027efd",
+        "after": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:ec84d7d280ff74f28147c678428cee5cfa55a5a70a6fe444a20079e616262a21,ghcr.io/drew-z/enterprise-doc-consumer@sha256:94998cf53afb0b334c84df24bc93e370de3db9577294c916ad9099b3c6507b88"
+      },
+      "enterprise-doc-agent/approved-web-images": {
+        "before": "ghcr.io/drew-z/enterprise-doc-web@sha256:15130a914d5a37e1059e7da1d0145c6652ae2c05ff0288d32dfa7ac8f7157b2a,ghcr.io/drew-z/enterprise-doc-web@sha256:09fbf339806364e7137c94a50783b019d946cc468e3ed83de541f5e9f5b0d2e7",
+        "after": "ghcr.io/drew-z/enterprise-doc-web@sha256:618655ebcaaa3ff8af903414e348d1261b563f00becf54f06f66fad2441e3b09,ghcr.io/drew-z/enterprise-doc-web@sha256:15130a914d5a37e1059e7da1d0145c6652ae2c05ff0288d32dfa7ac8f7157b2a"
+      },
+      "enterprise-doc-agent/prerequisites-sha256": {
+        "before": "4e9556f8e285ef34cd1273d1533455d76f352878989a5fb65b325ef2b484bd9c",
+        "after": "53ea74b2f22dc2cef444b87daf40e256f9a2eb9410ed34141857a0a01d5563d3"
+      }
+    },
+    "rollback_variable_updates": {
+      "STAGING_ROLLBACK_API_IMAGE": {
+        "before": "ghcr.io/drew-z/enterprise-doc-api@sha256:5472211ba8882ffa8ed60cffbe85aab94b2712cfece28f29d6b0271f0dbdb703",
+        "after": "ghcr.io/drew-z/enterprise-doc-api@sha256:566f0328605382b19ee26f48fe535bfaa8c7d8295ee4f893c7a1fabbdc948fc5"
+      },
+      "STAGING_ROLLBACK_WORKER_IMAGE": {
+        "before": "ghcr.io/drew-z/enterprise-doc-worker@sha256:8d85cd2ec6d26dc6a71c65bf86e0d9e7f2301596d7a8d3c3a9df6e8390682c68",
+        "after": "ghcr.io/drew-z/enterprise-doc-worker@sha256:d83e4db8bf199917d85e5b6ea5e8caa48a8701ab6e022783cec3be3dac13782d"
+      },
+      "STAGING_ROLLBACK_CONSUMER_IMAGE": {
+        "before": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:746e072e4b9f63e27438b7397984d4e85362db5d57a28c7baa40f2acfa027efd",
+        "after": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:94998cf53afb0b334c84df24bc93e370de3db9577294c916ad9099b3c6507b88"
+      },
+      "STAGING_ROLLBACK_WEB_IMAGE": {
+        "before": "ghcr.io/drew-z/enterprise-doc-web@sha256:09fbf339806364e7137c94a50783b019d946cc468e3ed83de541f5e9f5b0d2e7",
+        "after": "ghcr.io/drew-z/enterprise-doc-web@sha256:15130a914d5a37e1059e7da1d0145c6652ae2c05ff0288d32dfa7ac8f7157b2a"
+      }
+    },
+    "source_changes_since_v0_1_33": "application failure diagnostics/logging and tests; no dependency lock, Dockerfile, deployment workflow or Kubernetes config changes",
+    "live_observed_at": "2026-09-08T04:59:30.339059+00:00",
+    "mutations_performed": false,
+    "files": {
+      "candidate-configured.yaml": "d66ed0fc953282b90efaf9b411ed79cfe9e0c1481c85b512abb29ac03ead8cbd",
+      "candidate-prerequisites.yaml": "dcf70c1c187bfa0a43d70711cb00792d4294e4be4c08ca1e6f7b6405e93d4fa4",
+      "candidate-workloads.yaml": "2d0998b5f61e4a3ae850a27bdb410ccc553e3c1614470a74c4374651c41bdc14",
+      "namespace-candidate-patch.json": "1db8ad0f102379bb9abd5a7d71c9425c38ff9ef434249738ad6cf4c29b500202",
+      "deploy-staging-dispatch.json": "b44ff0b879a909d5710bca9801fc9d37eb1b56c3907fea41fad6d57f3a04b11b",
+      "rollback-variable-updates.json": "c1b06e4a68abcf50c7a812afd855a3725b9e22678c7084967bec16dfc1689be2"
+    }
+  },
+  "namespace_server_dry_run": {
+    "status": "passed",
+    "observed_at": "2026-09-08T05:22:34.383294+00:00",
+    "namespace_uid_matches": true,
+    "server_dry_run": "passed",
+    "persisted_resource_version_unchanged": true,
+    "persisted_annotations_unchanged": true,
+    "changed_annotation_keys": [
+      "enterprise-doc-agent/approved-api-images",
+      "enterprise-doc-agent/approved-consumer-images",
+      "enterprise-doc-agent/approved-web-images",
+      "enterprise-doc-agent/approved-worker-images",
+      "enterprise-doc-agent/prerequisites-sha256"
+    ],
+    "readiness": {
+      "status": "unavailable",
+      "error_class": "HTTPError"
+    }
+  },
+  "readiness_followup": {
+    "observed_at": "2026-09-08T05:28:13.382248+00:00",
+    "python_public": {
+      "http_status": 403,
+      "body_kind": "non_readiness_response"
+    },
+    "curl_public": {
+      "http_status": 200,
+      "status": "ready",
+      "checks": {
+        "database": "up",
+        "redis": "up",
+        "object_store": "up"
+      }
+    },
+    "api_pod": {
+      "http_status": 200,
+      "status": "ready",
+      "checks": {
+        "database": "up",
+        "redis": "up",
+        "object_store": "up"
+      }
+    }
+  },
+  "embedding_reindex_readonly": {
+    "report": {
+      "status": "planned",
+      "selected": 0,
+      "created": 0,
+      "replayed": 0,
+      "embedding_model": "Qwen/Qwen3-Embedding-4B",
+      "embedding_dimension": 1024,
+      "embedding_version": 3,
+      "values_redacted": true
+    },
+    "deployed_source_sha256": "3ec48826f3d58496de16d237094a9a9b93dd83822782d7a08f71fe1638f9ddf2",
+    "apply": false,
+    "observed_at": "2026-09-08T05:32:12.954940+00:00",
+    "smoke_request_readiness": {
+      "http_status": 200,
+      "status": "ready",
+      "checks": {
+        "database": "up",
+        "redis": "up",
+        "object_store": "up"
+      }
+    },
+    "provider_calls": 0,
+    "jobs_enqueued": 0
+  },
+  "current_application": {
+    "status": "passed",
+    "observed_at": "2026-09-08T04:59:30.339059+00:00",
+    "namespace_uid_matches": true,
+    "profile": "single-node-4c4g",
+    "deployments": [
+      {
+        "name": "enterprise-doc-api",
+        "replicas": 1,
+        "ready_replicas": 1,
+        "available_replicas": 1,
+        "images": [
+          "ghcr.io/drew-z/enterprise-doc-api@sha256:566f0328605382b19ee26f48fe535bfaa8c7d8295ee4f893c7a1fabbdc948fc5"
+        ],
+        "config_hash": "e802b8e7fa7179e77693b7ef9b2c17a473a61a2998d1f071fc6ddbf79e90114f"
+      },
+      {
+        "name": "enterprise-doc-consumer",
+        "replicas": 1,
+        "ready_replicas": 1,
+        "available_replicas": 1,
+        "images": [
+          "ghcr.io/drew-z/enterprise-doc-consumer@sha256:94998cf53afb0b334c84df24bc93e370de3db9577294c916ad9099b3c6507b88"
+        ],
+        "config_hash": "e802b8e7fa7179e77693b7ef9b2c17a473a61a2998d1f071fc6ddbf79e90114f"
+      },
+      {
+        "name": "enterprise-doc-redis",
+        "replicas": 1,
+        "ready_replicas": 1,
+        "available_replicas": 1,
+        "images": [
+          "redis@sha256:6ab0b6e7381779332f97b8ca76193e45b0756f38d4c0dcda72dbb3c32061ab99"
+        ],
+        "config_hash": null
+      },
+      {
+        "name": "enterprise-doc-web",
+        "replicas": 1,
+        "ready_replicas": 1,
+        "available_replicas": 1,
+        "images": [
+          "ghcr.io/drew-z/enterprise-doc-web@sha256:15130a914d5a37e1059e7da1d0145c6652ae2c05ff0288d32dfa7ac8f7157b2a"
+        ],
+        "config_hash": null
+      },
+      {
+        "name": "enterprise-doc-worker",
+        "replicas": 1,
+        "ready_replicas": 1,
+        "available_replicas": 1,
+        "images": [
+          "ghcr.io/drew-z/enterprise-doc-worker@sha256:d83e4db8bf199917d85e5b6ea5e8caa48a8701ab6e022783cec3be3dac13782d"
+        ],
+        "config_hash": "e802b8e7fa7179e77693b7ef9b2c17a473a61a2998d1f071fc6ddbf79e90114f"
+      }
+    ],
+    "fixed_jobs": [],
+    "resources": {
+      "cpu_count": 4,
+      "memory_kib": {
+        "MemTotal": 3812556,
+        "MemAvailable": 1640612,
+        "SwapTotal": 0,
+        "SwapFree": 0
+      }
+    }
+  },
+  "planned_deployment": {
+    "workflow": "Deploy Staging",
+    "request": {
+      "ref": "v0.1.34",
+      "inputs": {
+        "registry_prefix": "ghcr.io/drew-z",
+        "staging_base_url": "https://agent.playlab.eu.cc",
+        "object_store_endpoint": "https://2741446a7478f2d8a5ff31df7e077f17.r2.cloudflarestorage.com",
+        "object_store_presign_endpoint": "https://2741446a7478f2d8a5ff31df7e077f17.r2.cloudflarestorage.com",
+        "tls_secret_name": "enterprise-doc-staging-tls",
+        "api_digest": "sha256:e2cbbc6ba1c5e7463ed21e6663c5a948d467e46bcd187a7cf8b02c50ed53bfff",
+        "worker_digest": "sha256:b957cdd12dff8e3151386a4a1e829b311c3970f14e22479524011f22e7d784d7",
+        "consumer_digest": "sha256:ec84d7d280ff74f28147c678428cee5cfa55a5a70a6fe444a20079e616262a21",
+        "web_digest": "sha256:618655ebcaaa3ff8af903414e348d1261b563f00becf54f06f66fad2441e3b09",
+        "run_smoke": true
+      }
+    },
+    "guarded_namespace_json_patch": [
+      {
+        "op": "test",
+        "path": "/metadata/uid",
+        "value": "c0a5d385-0a1b-4a96-ba49-5cf48f68b544"
+      },
+      {
+        "op": "test",
+        "path": "/metadata/annotations/enterprise-doc-agent~1approved-api-images",
+        "value": "ghcr.io/drew-z/enterprise-doc-api@sha256:566f0328605382b19ee26f48fe535bfaa8c7d8295ee4f893c7a1fabbdc948fc5,ghcr.io/drew-z/enterprise-doc-api@sha256:5472211ba8882ffa8ed60cffbe85aab94b2712cfece28f29d6b0271f0dbdb703"
+      },
+      {
+        "op": "replace",
+        "path": "/metadata/annotations/enterprise-doc-agent~1approved-api-images",
+        "value": "ghcr.io/drew-z/enterprise-doc-api@sha256:e2cbbc6ba1c5e7463ed21e6663c5a948d467e46bcd187a7cf8b02c50ed53bfff,ghcr.io/drew-z/enterprise-doc-api@sha256:566f0328605382b19ee26f48fe535bfaa8c7d8295ee4f893c7a1fabbdc948fc5"
+      },
+      {
+        "op": "test",
+        "path": "/metadata/annotations/enterprise-doc-agent~1approved-consumer-images",
+        "value": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:94998cf53afb0b334c84df24bc93e370de3db9577294c916ad9099b3c6507b88,ghcr.io/drew-z/enterprise-doc-consumer@sha256:746e072e4b9f63e27438b7397984d4e85362db5d57a28c7baa40f2acfa027efd"
+      },
+      {
+        "op": "replace",
+        "path": "/metadata/annotations/enterprise-doc-agent~1approved-consumer-images",
+        "value": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:ec84d7d280ff74f28147c678428cee5cfa55a5a70a6fe444a20079e616262a21,ghcr.io/drew-z/enterprise-doc-consumer@sha256:94998cf53afb0b334c84df24bc93e370de3db9577294c916ad9099b3c6507b88"
+      },
+      {
+        "op": "test",
+        "path": "/metadata/annotations/enterprise-doc-agent~1approved-web-images",
+        "value": "ghcr.io/drew-z/enterprise-doc-web@sha256:15130a914d5a37e1059e7da1d0145c6652ae2c05ff0288d32dfa7ac8f7157b2a,ghcr.io/drew-z/enterprise-doc-web@sha256:09fbf339806364e7137c94a50783b019d946cc468e3ed83de541f5e9f5b0d2e7"
+      },
+      {
+        "op": "replace",
+        "path": "/metadata/annotations/enterprise-doc-agent~1approved-web-images",
+        "value": "ghcr.io/drew-z/enterprise-doc-web@sha256:618655ebcaaa3ff8af903414e348d1261b563f00becf54f06f66fad2441e3b09,ghcr.io/drew-z/enterprise-doc-web@sha256:15130a914d5a37e1059e7da1d0145c6652ae2c05ff0288d32dfa7ac8f7157b2a"
+      },
+      {
+        "op": "test",
+        "path": "/metadata/annotations/enterprise-doc-agent~1approved-worker-images",
+        "value": "ghcr.io/drew-z/enterprise-doc-worker@sha256:d83e4db8bf199917d85e5b6ea5e8caa48a8701ab6e022783cec3be3dac13782d,ghcr.io/drew-z/enterprise-doc-worker@sha256:8d85cd2ec6d26dc6a71c65bf86e0d9e7f2301596d7a8d3c3a9df6e8390682c68"
+      },
+      {
+        "op": "replace",
+        "path": "/metadata/annotations/enterprise-doc-agent~1approved-worker-images",
+        "value": "ghcr.io/drew-z/enterprise-doc-worker@sha256:b957cdd12dff8e3151386a4a1e829b311c3970f14e22479524011f22e7d784d7,ghcr.io/drew-z/enterprise-doc-worker@sha256:d83e4db8bf199917d85e5b6ea5e8caa48a8701ab6e022783cec3be3dac13782d"
+      },
+      {
+        "op": "test",
+        "path": "/metadata/annotations/enterprise-doc-agent~1prerequisites-sha256",
+        "value": "4e9556f8e285ef34cd1273d1533455d76f352878989a5fb65b325ef2b484bd9c"
+      },
+      {
+        "op": "replace",
+        "path": "/metadata/annotations/enterprise-doc-agent~1prerequisites-sha256",
+        "value": "53ea74b2f22dc2cef444b87daf40e256f9a2eb9410ed34141857a0a01d5563d3"
+      }
+    ],
+    "rollback_environment_variable_updates": {
+      "STAGING_ROLLBACK_API_IMAGE": {
+        "before": "ghcr.io/drew-z/enterprise-doc-api@sha256:5472211ba8882ffa8ed60cffbe85aab94b2712cfece28f29d6b0271f0dbdb703",
+        "after": "ghcr.io/drew-z/enterprise-doc-api@sha256:566f0328605382b19ee26f48fe535bfaa8c7d8295ee4f893c7a1fabbdc948fc5"
+      },
+      "STAGING_ROLLBACK_WORKER_IMAGE": {
+        "before": "ghcr.io/drew-z/enterprise-doc-worker@sha256:8d85cd2ec6d26dc6a71c65bf86e0d9e7f2301596d7a8d3c3a9df6e8390682c68",
+        "after": "ghcr.io/drew-z/enterprise-doc-worker@sha256:d83e4db8bf199917d85e5b6ea5e8caa48a8701ab6e022783cec3be3dac13782d"
+      },
+      "STAGING_ROLLBACK_CONSUMER_IMAGE": {
+        "before": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:746e072e4b9f63e27438b7397984d4e85362db5d57a28c7baa40f2acfa027efd",
+        "after": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:94998cf53afb0b334c84df24bc93e370de3db9577294c916ad9099b3c6507b88"
+      },
+      "STAGING_ROLLBACK_WEB_IMAGE": {
+        "before": "ghcr.io/drew-z/enterprise-doc-web@sha256:09fbf339806364e7137c94a50783b019d946cc468e3ed83de541f5e9f5b0d2e7",
+        "after": "ghcr.io/drew-z/enterprise-doc-web@sha256:15130a914d5a37e1059e7da1d0145c6652ae2c05ff0288d32dfa7ac8f7157b2a"
+      }
+    },
+    "protected_environment_variables": {
+      "STAGING_ALLOWED_HOST": "agent.playlab.eu.cc",
+      "STAGING_CONTROL_PLANE_APPROVED": "true",
+      "STAGING_DATABASE_EGRESS_CIDRS": "52.74.252.201/32,52.77.146.31/32,54.255.219.82/32",
+      "STAGING_DEPLOYMENT_PROFILE": "single-node-4c4g",
+      "STAGING_EMBEDDING_BASE_URL": "https://api.siliconflow.cn/v1",
+      "STAGING_EMBEDDING_MODEL_NAME": "Qwen/Qwen3-Embedding-4B",
+      "STAGING_EMBEDDING_VERSION": "3",
+      "STAGING_MODEL_BASE_URL": "https://new.lucky0625.qzz.io/v1",
+      "STAGING_MODEL_FALLBACK_BASE_URL": "https://elysia.h-e.top/v1",
+      "STAGING_MODEL_FALLBACK_NAME": "deepseek-v4-flash-0731",
+      "STAGING_MODEL_FALLBACK_TIMEOUT_SECONDS": "60",
+      "STAGING_MODEL_NAME": "grok-4.6",
+      "STAGING_OBJECT_STORE_ALLOWED_HOST": "2741446a7478f2d8a5ff31df7e077f17.r2.cloudflarestorage.com",
+      "STAGING_OBJECT_STORE_CHECKSUM_MODE": "readback_sha256",
+      "STAGING_RUN_GOVERNANCE_SMOKE": "true"
+    },
+    "existing_secret_metadata": [
+      {
+        "name": "STAGING_GOVERNANCE_MEMBER_TOKEN",
+        "updatedAt": "2026-09-03T16:09:43Z"
+      },
+      {
+        "name": "STAGING_GOVERNANCE_OWNER_TOKEN",
+        "updatedAt": "2026-09-03T16:09:35Z"
+      },
+      {
+        "name": "STAGING_KUBECONFIG",
+        "updatedAt": "2026-08-30T13:21:41Z"
+      },
+      {
+        "name": "STAGING_SMOKE_TOKEN",
+        "updatedAt": "2026-09-07T22:16:25Z"
+      }
+    ],
+    "required_token_refresh": [
+      "STAGING_SMOKE_TOKEN",
+      "STAGING_GOVERNANCE_OWNER_TOKEN",
+      "STAGING_GOVERNANCE_MEMBER_TOKEN"
+    ],
+    "model_and_embedding_routes": "unchanged",
+    "limits": {
+      "deployment_attempts": 1,
+      "workflow_timeout_minutes": 90,
+      "worker_rollout_timeout_seconds": 1800,
+      "api_consumer_web_rollout_timeout_seconds": 600,
+      "smoke_synthetic_document_uploads": 2,
+      "smoke_agent_qa_runs": 1,
+      "embedding_probe_items": 2,
+      "prerequisite_reindex_selected_expected": 0,
+      "reindex_preflight": "Repeat the read-only plan immediately before deployment; stop for review if selected is nonzero. The existing rollout job can enqueue mismatched documents if state changes after this check.",
+      "model_provider_cost_cap": null,
+      "cost_limit_interpretation": "Fixture counts and execution timeouts are not a currency spending cap; embedding, model fallback and governance uploads can incur usage.",
+      "real_rag_quality_trial_dispatches": 0
+    },
+    "operational_effects": [
+      "Update only the reviewed Namespace image approval annotations and prerequisite fingerprint, guarded by Namespace UID and old-value tests.",
+      "Set the four protected rollback image variables to the accepted v0.1.33 images.",
+      "Revalidate existing synthetic smoke memberships; refresh short-lived tokens through memory/stdin into protected Environment secrets.",
+      "Run migration, workload rollout, embedding provider/reindex gate, readiness, upload-to-Agent smoke and governance smoke with the existing 4C4G workflow.",
+      "The workflow temporarily scales application Deployments down during migration and pauses API/Web during the embedding gate; temporary staging interruption is expected.",
+      "Retain every result. Do not automatically rerun, change model routes, relax checks, broaden resources or trigger a 12/40-case real trial."
+    ],
+    "rollback_reference": "evidence/m6/20260904-v0.1.33-staging-governance.json",
+    "rollback_behavior": "Preserve the prior accepted images in the allowlist. If a deployment fails, collect its terminal diagnostics and current state before proposing recovery; no unreviewed rollback dispatch."
+  },
+  "observations_and_limits": [
+    "GitHub Packages REST returned 403 for missing read:packages. Standard OCI pulls confirmed the candidate tags were absent before build and the returned immutable indexes were readable afterward; no token scopes were changed.",
+    "Two stale SSH aliases did not identify the current cluster. The actual target was recovered from prior execution records and validated against the protected Namespace UID. No SSH configuration or host credentials were changed.",
+    "A default urllib request returned 403. Curl, the API Pod loopback request and the existing staging smoke User-Agent returned 200 with all three dependencies up. No edge policy was changed; the cause of the differing HTTP response was not established.",
+    "Cryptographic signature and attestation verification passed in the exact hosted CI jobs. Local verification checked the original verification output, exact identity/commit/digest bindings, all 56 artifact file hashes and signed payloads. The optional local Cosign download was stopped before completion and no local binary was executed.",
+    "The zero Trivy SARIF results cover only the configured CRITICAL,HIGH severities with limit-severities-for-sarif=true and ignore-unfixed=true. They do not establish that every severity or unfixed vulnerability is absent.",
+    "Cosign v2.4.3 projects BuildKit metadata into the standard SLSA v1 type. invocationId is serialized as invocationID; two BuildKit metadata extensions are omitted from the signed typed predicate. All other predicate fields match, and the raw BuildKit files remain covered by manifest hashes.",
+    "The current cluster baseline passes checks for 18 prerequisite objects and 17 approval annotations. Candidate simulation changes only five Namespace annotation values; ConfigMap content, routes and prerequisite object specs remain equal.",
+    "A server-side dry-run does not persist the Namespace patch or establish workload deployment. Namespace resourceVersion and annotations remained unchanged after the dry-run.",
+    "Historical run 34166173023 attempt 1 remains failed, its three underlying causes remain unknown, and M5/M7 remain blocked_external.",
+    "The M5 task and overall diagnosis goal remain open; successful image construction is not deployed-behavior or provider-quality evidence."
+  ],
+  "actions_by_this_stage": {
+    "candidate_tag_pushes": 1,
+    "container_supply_chain_runs": 1,
+    "application_deployments": 0,
+    "namespace_updates": 0,
+    "protected_variable_updates": 0,
+    "protected_secret_updates": 0,
+    "model_calls": 0,
+    "embedding_calls": 0,
+    "reindex_jobs_enqueued": 0,
+    "real_quality_trial_dispatches": 0
+  },
+  "owner": "platform owner"
+}

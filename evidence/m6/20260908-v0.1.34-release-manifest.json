@@ -1,0 +1,302 @@
+{
+  "generated_at": "2026-09-08T04:34:43.854652+00:00",
+  "images": {
+    "api": {
+      "digest": "sha256:e2cbbc6ba1c5e7463ed21e6663c5a948d467e46bcd187a7cf8b02c50ed53bfff",
+      "evidence": {
+        "digest": {
+          "path": "release-evidence/image-api.digest.txt",
+          "sha256": "02e8ed0936779f083864dd7cb549ce741e1542d06ca66975145e1f35935eadf5"
+        },
+        "outcomes": {
+          "path": "release-evidence/release-step-outcomes-api.json",
+          "sha256": "178094ac720e8c36cabc62ca4e42b59385b539f52f83230dc3420e9998aad89d"
+        },
+        "provenance": {
+          "path": "release-evidence/buildkit-provenance-api.json",
+          "sha256": "14486d35b9b68467f0b9c978ba59268eb5ebfb8ec7e9fe72cf007311643bfc01"
+        },
+        "provenance_attestation": {
+          "path": "release-evidence/cosign-provenance-verify-api.json",
+          "sha256": "77b0681da9f0f7e9cdbe4d874c34454f16b55287fbc85593ad2e023210e6bc7c"
+        },
+        "provenance_attestation_log": {
+          "path": "release-evidence/cosign-provenance-verify-api.log",
+          "sha256": "1e8c44926686f4540a41b6d442f1c02823e011f54647a3fcc49d7ac5904c5e65"
+        },
+        "provenance_log": {
+          "path": "release-evidence/buildkit-provenance-api.log",
+          "sha256": "bde294368bfed77c2cddf8cec271d398aee9cdbab3b26e1059281bd33adb0120"
+        },
+        "provenance_type": {
+          "path": "release-evidence/buildkit-provenance-api.type.txt",
+          "sha256": "6ec2815858e878878dfe939831113fa92c018ad488a59201bed9242c557f1a0d"
+        },
+        "sbom": {
+          "path": "release-evidence/sbom-api.spdx.json",
+          "sha256": "b7ededa4d928fea5a4a22fd0455c2785d998bb0059fbc5133cd90572ca21be1f"
+        },
+        "sbom_attestation": {
+          "path": "release-evidence/cosign-sbom-attestation-verify-api.json",
+          "sha256": "bbea332838e31190581271ae6352466c61bedfe6548d1d5ec432530223f52dda"
+        },
+        "sbom_attestation_log": {
+          "path": "release-evidence/cosign-sbom-attestation-verify-api.log",
+          "sha256": "1e8c44926686f4540a41b6d442f1c02823e011f54647a3fcc49d7ac5904c5e65"
+        },
+        "sign_log": {
+          "path": "release-evidence/cosign-sign-attest-api.log",
+          "sha256": "76c1ef94d31499e442ec38c081e5cda53e4040afcebdaf14743f3e1c605599c9"
+        },
+        "signature": {
+          "path": "release-evidence/cosign-signature-verify-api.json",
+          "sha256": "f0263a493a4caa01a3299f8f47c18e37dcfbb86046111eb83a4abd18d8f0dc9a"
+        },
+        "signature_log": {
+          "path": "release-evidence/cosign-signature-verify-api.log",
+          "sha256": "8363b41725b6aae928356ada9ca22371e93c506077dd4dedbaee71b2539eb179"
+        },
+        "trivy": {
+          "path": "release-evidence/trivy-api.sarif",
+          "sha256": "eaef951c701efe5f997b864ad9f29d98c335ad6d26445a6c1f457649bd17a0a0"
+        }
+      },
+      "image": "ghcr.io/drew-z/enterprise-doc-api",
+      "provenance_predicate_type": "slsaprovenance1",
+      "steps": {
+        "provenance": "success",
+        "push": "success",
+        "sbom": "success",
+        "scan": "success",
+        "sign": "success",
+        "verify": "success"
+      }
+    },
+    "consumer": {
+      "digest": "sha256:ec84d7d280ff74f28147c678428cee5cfa55a5a70a6fe444a20079e616262a21",
+      "evidence": {
+        "digest": {
+          "path": "release-evidence/image-consumer.digest.txt",
+          "sha256": "2dc84052af7419ceae3056adb0e1fee2d9fe3728b4fb99607a1594386c24d8e7"
+        },
+        "outcomes": {
+          "path": "release-evidence/release-step-outcomes-consumer.json",
+          "sha256": "178094ac720e8c36cabc62ca4e42b59385b539f52f83230dc3420e9998aad89d"
+        },
+        "provenance": {
+          "path": "release-evidence/buildkit-provenance-consumer.json",
+          "sha256": "1430c45d1a92fc859df2dc3f18912f55eab2aed552c8fb1f1c925eefd23672ed"
+        },
+        "provenance_attestation": {
+          "path": "release-evidence/cosign-provenance-verify-consumer.json",
+          "sha256": "d120e0cf9ca8d7899aa1c61c87feded70b8dbe3ab4c97c241060abbcad9df043"
+        },
+        "provenance_attestation_log": {
+          "path": "release-evidence/cosign-provenance-verify-consumer.log",
+          "sha256": "a0866a6e317b6e0f27cd9ea2a4bb89492002c217c3008ba8a1888b89cdbd6a2a"
+        },
+        "provenance_log": {
+          "path": "release-evidence/buildkit-provenance-consumer.log",
+          "sha256": "bde294368bfed77c2cddf8cec271d398aee9cdbab3b26e1059281bd33adb0120"
+        },
+        "provenance_type": {
+          "path": "release-evidence/buildkit-provenance-consumer.type.txt",
+          "sha256": "6ec2815858e878878dfe939831113fa92c018ad488a59201bed9242c557f1a0d"
+        },
+        "sbom": {
+          "path": "release-evidence/sbom-consumer.spdx.json",
+          "sha256": "7840b855f52858786a765fec28cec58936c53c6b47fde689abc784b674cab673"
+        },
+        "sbom_attestation": {
+          "path": "release-evidence/cosign-sbom-attestation-verify-consumer.json",
+          "sha256": "d9d274ef12a20a07e9cd8ef08ea99bfed6a36f7e0c18c8ca1a0ee367d54d8a78"
+        },
+        "sbom_attestation_log": {
+          "path": "release-evidence/cosign-sbom-attestation-verify-consumer.log",
+          "sha256": "a0866a6e317b6e0f27cd9ea2a4bb89492002c217c3008ba8a1888b89cdbd6a2a"
+        },
+        "sign_log": {
+          "path": "release-evidence/cosign-sign-attest-consumer.log",
+          "sha256": "ca9f57efd1c3dbe1e8e8f0507fbedd89c43c2c85484456c8632438920b1109bd"
+        },
+        "signature": {
+          "path": "release-evidence/cosign-signature-verify-consumer.json",
+          "sha256": "30e4a8040429461071c5ecc4337d6bbadc46422752f89e171fd173a984fd12d0"
+        },
+        "signature_log": {
+          "path": "release-evidence/cosign-signature-verify-consumer.log",
+          "sha256": "a44b191bd803b783baa1a2b1b87b295636ecf76a6184c71f4492002c6bc006a3"
+        },
+        "trivy": {
+          "path": "release-evidence/trivy-consumer.sarif",
+          "sha256": "338ff8720af052671d1f2bc7f4cd616992ba93c7182aa33a0512036d664dd245"
+        }
+      },
+      "image": "ghcr.io/drew-z/enterprise-doc-consumer",
+      "provenance_predicate_type": "slsaprovenance1",
+      "steps": {
+        "provenance": "success",
+        "push": "success",
+        "sbom": "success",
+        "scan": "success",
+        "sign": "success",
+        "verify": "success"
+      }
+    },
+    "web": {
+      "digest": "sha256:618655ebcaaa3ff8af903414e348d1261b563f00becf54f06f66fad2441e3b09",
+      "evidence": {
+        "digest": {
+          "path": "release-evidence/image-web.digest.txt",
+          "sha256": "baa272ec0ce9cf9dd8c07e3b55e73bd176e12e13cd7455b39a45f7509bcb9fb4"
+        },
+        "outcomes": {
+          "path": "release-evidence/release-step-outcomes-web.json",
+          "sha256": "178094ac720e8c36cabc62ca4e42b59385b539f52f83230dc3420e9998aad89d"
+        },
+        "provenance": {
+          "path": "release-evidence/buildkit-provenance-web.json",
+          "sha256": "6a981052cf5f502f275acc58d6ff71ad3a4b739e1ee17006da67f2bddfd30f91"
+        },
+        "provenance_attestation": {
+          "path": "release-evidence/cosign-provenance-verify-web.json",
+          "sha256": "05f4cb30b213c109749b5aac7498a20d818188d779cf9cab68d0ca00610b667b"
+        },
+        "provenance_attestation_log": {
+          "path": "release-evidence/cosign-provenance-verify-web.log",
+          "sha256": "66075c712d6cf4cfd41e613dacac23d900559d61bf101f1c05669a36dded4954"
+        },
+        "provenance_log": {
+          "path": "release-evidence/buildkit-provenance-web.log",
+          "sha256": "bde294368bfed77c2cddf8cec271d398aee9cdbab3b26e1059281bd33adb0120"
+        },
+        "provenance_type": {
+          "path": "release-evidence/buildkit-provenance-web.type.txt",
+          "sha256": "6ec2815858e878878dfe939831113fa92c018ad488a59201bed9242c557f1a0d"
+        },
+        "sbom": {
+          "path": "release-evidence/sbom-web.spdx.json",
+          "sha256": "8fca64a0d4a611f11a79361a2af9b6a25e7aca22a84a36cd90b60cca323c11e5"
+        },
+        "sbom_attestation": {
+          "path": "release-evidence/cosign-sbom-attestation-verify-web.json",
+          "sha256": "7d3decdc31001e33bb536a631f85517555f65010dd4e33eb7a20f4fa0145ecc5"
+        },
+        "sbom_attestation_log": {
+          "path": "release-evidence/cosign-sbom-attestation-verify-web.log",
+          "sha256": "66075c712d6cf4cfd41e613dacac23d900559d61bf101f1c05669a36dded4954"
+        },
+        "sign_log": {
+          "path": "release-evidence/cosign-sign-attest-web.log",
+          "sha256": "ee69fcb5ec01d1f403cc1ab3b2d77c8c10ac3f7abf63068cee8367b29a90e125"
+        },
+        "signature": {
+          "path": "release-evidence/cosign-signature-verify-web.json",
+          "sha256": "6e72274e4a4a490efa8c03445b41681fb0bb6d8653761ac4d44ad82e0e49d023"
+        },
+        "signature_log": {
+          "path": "release-evidence/cosign-signature-verify-web.log",
+          "sha256": "2b3e1749d00aa22ba7f8cb63156373011d7734cd413e620f4d48aa140561eabd"
+        },
+        "trivy": {
+          "path": "release-evidence/trivy-web.sarif",
+          "sha256": "c04fe7c4281bed0e473e0dfd24645827c25d2c66027bf935297db2f7485cf076"
+        }
+      },
+      "image": "ghcr.io/drew-z/enterprise-doc-web",
+      "provenance_predicate_type": "slsaprovenance1",
+      "steps": {
+        "provenance": "success",
+        "push": "success",
+        "sbom": "success",
+        "scan": "success",
+        "sign": "success",
+        "verify": "success"
+      }
+    },
+    "worker": {
+      "digest": "sha256:b957cdd12dff8e3151386a4a1e829b311c3970f14e22479524011f22e7d784d7",
+      "evidence": {
+        "digest": {
+          "path": "release-evidence/image-worker.digest.txt",
+          "sha256": "555c0b46e0f798fbedeb1a68be746bbe938e1c187204977e71f0459ca2e101dd"
+        },
+        "outcomes": {
+          "path": "release-evidence/release-step-outcomes-worker.json",
+          "sha256": "178094ac720e8c36cabc62ca4e42b59385b539f52f83230dc3420e9998aad89d"
+        },
+        "provenance": {
+          "path": "release-evidence/buildkit-provenance-worker.json",
+          "sha256": "975c7584b40b5e7ae417fbd81e1c36c8b4d1f4e5711b7e25655a309b7170cdcf"
+        },
+        "provenance_attestation": {
+          "path": "release-evidence/cosign-provenance-verify-worker.json",
+          "sha256": "59045d279ce0217faa5586372b0c4ce561356e6f18e4e3eb85b9f3714c0414a5"
+        },
+        "provenance_attestation_log": {
+          "path": "release-evidence/cosign-provenance-verify-worker.log",
+          "sha256": "6325a18e1c07d363109e88567f8ace1fe249ff81d85fdf505cd6dbd223f49804"
+        },
+        "provenance_log": {
+          "path": "release-evidence/buildkit-provenance-worker.log",
+          "sha256": "bde294368bfed77c2cddf8cec271d398aee9cdbab3b26e1059281bd33adb0120"
+        },
+        "provenance_type": {
+          "path": "release-evidence/buildkit-provenance-worker.type.txt",
+          "sha256": "6ec2815858e878878dfe939831113fa92c018ad488a59201bed9242c557f1a0d"
+        },
+        "sbom": {
+          "path": "release-evidence/sbom-worker.spdx.json",
+          "sha256": "bcca03e595c9142464eecd835ee78d8c64fccdfdbee0aef6ebdf24c203e0f338"
+        },
+        "sbom_attestation": {
+          "path": "release-evidence/cosign-sbom-attestation-verify-worker.json",
+          "sha256": "510e55f996f13139502b210a9b1b8f0a6bd2c9b936ae9d9cee2aeed08517efc6"
+        },
+        "sbom_attestation_log": {
+          "path": "release-evidence/cosign-sbom-attestation-verify-worker.log",
+          "sha256": "6325a18e1c07d363109e88567f8ace1fe249ff81d85fdf505cd6dbd223f49804"
+        },
+        "sign_log": {
+          "path": "release-evidence/cosign-sign-attest-worker.log",
+          "sha256": "ef5d76acd43836d68332297c96d16e74dc0da27205fc0a50696163fb03d6cdf8"
+        },
+        "signature": {
+          "path": "release-evidence/cosign-signature-verify-worker.json",
+          "sha256": "cd2a1c9e1c2267b19b0bbe5006a89a712ce2ee8760b3ed660522c391365b5270"
+        },
+        "signature_log": {
+          "path": "release-evidence/cosign-signature-verify-worker.log",
+          "sha256": "da2c8dc487f2175c4691bde983586229ef74a56a7925232d47ca8d0d8872bd0c"
+        },
+        "trivy": {
+          "path": "release-evidence/trivy-worker.sarif",
+          "sha256": "c0ceabb4a869430b7eb6f8c6bdf6dfc7ca080a837d9084c3d4ecbe95db7438f0"
+        }
+      },
+      "image": "ghcr.io/drew-z/enterprise-doc-worker",
+      "provenance_predicate_type": "slsaprovenance1",
+      "steps": {
+        "provenance": "success",
+        "push": "success",
+        "sbom": "success",
+        "scan": "success",
+        "sign": "success",
+        "verify": "success"
+      }
+    }
+  },
+  "limitations": [
+    "This manifest proves CI evidence completeness for immutable image digests; it does not prove staging or production deployment."
+  ],
+  "release": {
+    "commit_sha": "b0dde98f69f6ed9560c3c018bff2f1b4371283d5",
+    "ref": "refs/tags/v0.1.34",
+    "repository": "Drew-Z/enterprise-doc-agent",
+    "run_attempt": "1",
+    "run_id": "34187312679",
+    "workflow_ref": "Drew-Z/enterprise-doc-agent/.github/workflows/container.yml@refs/tags/v0.1.34"
+  },
+  "schema_version": 1,
+  "status": "passed"
+}

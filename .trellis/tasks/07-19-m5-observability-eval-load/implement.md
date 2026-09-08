@@ -324,6 +324,38 @@ history and `run_staging_rag_quality`. Mock only process/DB/model boundaries; us
 framework logging setup. Add one failing behavior and its implementation at a time.
 No deployed configuration, model route, threshold, retry policy or historical data changes.
 
+## Slice 12 Candidate Publication And Deployment Review
+
+- [x] Publish the approved diagnostic commit `b0dde98` and verify both Quality jobs in
+  `34185778632` attempt 1.
+- [x] Build the subsequently authorized `v0.1.34` candidate at that exact commit;
+  Container Supply Chain `34187312679` attempt 1 passed all four image jobs and manifest aggregation.
+- [x] Verify the original manifest, all 56 evidence file hashes, exact signature
+  identity/commit/digest bindings, signed SBOM/provenance and readable linux/amd64 OCI indexes.
+- [x] Match the live namespace identity and v0.1.33 images, validate all 18 existing
+  prerequisite objects and simulate the candidate change. Only four image approval
+  annotations and the prerequisite fingerprint differ; ConfigMap content is identical.
+- [x] Server-dry-run the guarded Namespace patch and prove no resourceVersion or
+  annotation was persisted. Verify public readiness with the real smoke request headers,
+  API Pod readiness and a zero-selection read-only reindex plan without provider calls.
+- [x] Record the exact six-file evidence commit and subsequent staging deployment/smoke
+  scope in `docs/ops/v0.1.34-staging-deployment-plan.md` for owner review.
+- [x] Obtain that concrete publication/deployment confirmation before applying the
+  Namespace patch, updating four rollback variables and three short-lived smoke secrets,
+  or dispatching the single staging deployment with its paid-provider smoke boundaries.
+
+The owner approved the exact six-file commit, push, CI verification and single deployment
+scope at 2026-09-08T10:47:38Z in session `01a07cf9-63aa-70b0-9e02-0aefc8433e45`.
+That turn failed before execution; the resumed session must refresh live preconditions before
+changing the reviewed Namespace annotations, rollback variables or short-lived tokens.
+The approval includes the documented provider smoke calls, not a new real RAG trial or rerun.
+The candidate is prepared, not deployed. The default urllib readiness probe returned
+403 while curl, the existing smoke User-Agent and Pod loopback returned 200; all actual
+readiness checks reported three dependencies up. The failed default probe is retained.
+CI performed cryptographic verification; local checks inspected its original results.
+The optional local Cosign binary download was stopped without executing the partial file.
+Historical root causes, M5/M7 quality and any new real RAG trial remain outside this result.
+
 ## Full Completion Gate
 
 ```powershell
