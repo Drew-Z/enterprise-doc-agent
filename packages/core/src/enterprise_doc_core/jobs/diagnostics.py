@@ -2,6 +2,22 @@ from __future__ import annotations
 
 from typing import TypeGuard
 
+UNEXPECTED_AGENT_DIAGNOSTIC_CODES = frozenset(
+    {
+        "agent.unexpected.database_error",
+        "agent.unexpected.database_integrity_error",
+        "agent.unexpected.database_operational_error",
+        "agent.unexpected.database_pool_timeout",
+        "agent.unexpected.exception_group",
+        "agent.unexpected.runtime_error",
+        "agent.unexpected.timeout",
+        "agent.unexpected.type_error",
+        "agent.unexpected.unclassified",
+        "agent.unexpected.validation_error",
+        "agent.unexpected.value_error",
+    }
+)
+
 GROUNDING_DIAGNOSTIC_CODES = frozenset(
     {
         "grounding.citation_chunk_not_in_candidates",
@@ -52,7 +68,7 @@ MCP_DIAGNOSTIC_SUBCODES = frozenset(
 def is_allowed_job_diagnostic_code(value: object) -> TypeGuard[str]:
     if not isinstance(value, str):
         return False
-    if value in GROUNDING_DIAGNOSTIC_CODES:
+    if value in GROUNDING_DIAGNOSTIC_CODES or value in UNEXPECTED_AGENT_DIAGNOSTIC_CODES:
         return True
     parts = value.split(".")
     return (
@@ -74,6 +90,7 @@ __all__ = [
     "GROUNDING_DIAGNOSTIC_CODES",
     "MCP_DIAGNOSTIC_SUBCODES",
     "MCP_TOOL_NAMES",
+    "UNEXPECTED_AGENT_DIAGNOSTIC_CODES",
     "is_allowed_job_diagnostic_code",
     "mcp_diagnostic_code",
 ]

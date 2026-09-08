@@ -7,7 +7,9 @@ from datetime import datetime
 from typing import Any, Protocol
 from uuid import UUID
 
+import psycopg
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
+from sqlalchemy import exc as sqlalchemy_errors
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -131,6 +133,37 @@ def _model_failure_metadata(error: Exception) -> dict[str, Any] | None:
         return None
     projection = _ModelFailureProjection(identity=error.identity, telemetry=error.telemetry)
     return {"model_failure": projection.model_dump(mode="json")}
+
+
+def _agent_failure_diagnostic(error: Exception) -> str | None:
+    if isinstance(error, GroundingValidationError):
+        return error.diagnostic_code
+    # Driver/ORM codes are not application error codes; classify their types too.
+    if isinstance(error, (psycopg.OperationalError, sqlalchemy_errors.OperationalError)):
+        return "agent.unexpected.database_operational_error"
+    if isinstance(error, (psycopg.IntegrityError, sqlalchemy_errors.IntegrityError)):
+        return "agent.unexpected.database_integrity_error"
+    if isinstance(error, sqlalchemy_errors.TimeoutError):
+        return "agent.unexpected.database_pool_timeout"
+    if isinstance(error, (psycopg.Error, sqlalchemy_errors.SQLAlchemyError)):
+        return "agent.unexpected.database_error"
+    # Preserve already-classified application errors without trusting arbitrary
+    # diagnostic attributes or inspecting exception text, SQL, or nested causes.
+    if getattr(error, "code", None):
+        return None
+    if isinstance(error, ValidationError):
+        return "agent.unexpected.validation_error"
+    if isinstance(error, TimeoutError):
+        return "agent.unexpected.timeout"
+    if isinstance(error, TypeError):
+        return "agent.unexpected.type_error"
+    if isinstance(error, ValueError):
+        return "agent.unexpected.value_error"
+    if isinstance(error, RuntimeError):
+        return "agent.unexpected.runtime_error"
+    if isinstance(error, ExceptionGroup):
+        return "agent.unexpected.exception_group"
+    return "agent.unexpected.unclassified"
 
 
 def _model_failure_projection(
@@ -436,9 +469,7 @@ class AgentExecutionHandler:
         except Exception as error:
             code = getattr(error, "code", None)
             retryable = bool(getattr(error, "retryable", False))
-            diagnostic_code = (
-                error.diagnostic_code if isinstance(error, GroundingValidationError) else None
-            )
+            diagnostic_code = _agent_failure_diagnostic(error)
             _LOGGER.error(
                 "agent_execution_handler_failed",
                 extra={
@@ -448,6 +479,7 @@ class AgentExecutionHandler:
                         "execution_kind": context.execution_kind,
                         "error_type": type(error).__name__,
                         "error_code": code if isinstance(code, str) else None,
+                        "diagnostic_code": diagnostic_code,
                         "cause_type": (
                             type(error.__cause__).__name__ if error.__cause__ is not None else None
                         ),

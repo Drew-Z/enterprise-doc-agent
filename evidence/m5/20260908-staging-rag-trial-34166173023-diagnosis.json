@@ -1,0 +1,1109 @@
+{
+  "schema_version": 1,
+  "evidence_type": "staging-rag-failure-diagnosis",
+  "status": "inconclusive",
+  "historical_root_cause": "unknown",
+  "local_remediation_status": "verified",
+  "recorded_at": "2026-09-08T01:26:17.038665+00:00",
+  "record_date_timezone": "Asia/Shanghai",
+  "source_session_id": "01a07cf9-63aa-70b0-9e02-0aefc8433e45",
+  "baseline": {
+    "workflow_run_id": 34166173023,
+    "workflow_run_attempt": 1,
+    "evaluator_commit_sha": "a790aa4d02b4301e6d85bbc25332c1b1e4e4e710",
+    "application_release": "v0.1.33",
+    "application_commit_sha": "9e9efb52a27a7a7ccf963e68d97c95722cbb72f5",
+    "quality_report": {
+      "path": "evidence/m5/20260908-staging-rag-trial-34166173023-quality.json",
+      "sha256": "c87d88d29e0c257d23f9ce74fccf294957e169c87d6006f460b9c34a9f8816bd",
+      "payload_sha256": "5b728d6d081dfd13cd44d186b4984bf2abb6f6b0f72a8ad053bcc8d091de8d0b",
+      "status": "failed",
+      "payload_verified": true
+    },
+    "execution_record": "evidence/m5/20260908-staging-rag-trial-34166173023-execution.json",
+    "selected_case_count": 12,
+    "system_failure_count": 3
+  },
+  "procedures": {
+    "database_attribution": {
+      "channel": "existing administrator SSH and API Pod Python stdin",
+      "environment_assertion": "ApiSettings(_env_file=None).app_env == staging",
+      "transaction": "SET TRANSACTION READ ONLY; SET LOCAL statement_timeout = '15s'",
+      "identity_scope": "exactly one existing active tenant/user/membership with smoke markers and owner role",
+      "run_scope": "same tenant and actor; question_answer; publish_requested false; created_at in the recorded window",
+      "row_bound": 13,
+      "required_match_count": 12,
+      "equality_check": "SHA-256 of UTF-8 query inside the Pod equals the complete twelve-query hash set in the sealed report",
+      "output": "finite status/error fields, case IDs, event types and timestamps, counts, query/run/error-message hashes; no raw queries or run UUIDs"
+    },
+    "checkpoint_probe": {
+      "channel": "read-only API Pod database connection",
+      "first_probe": "root namespace checkpoint_writes channel __error__ and checkpoints for the three precisely matched failed runs",
+      "second_probe": "all checkpoint namespaces; fresh AsyncPostgresSaver aget_tuple for three failures and one successful control",
+      "serializer": {
+        "pickle_fallback": false,
+        "allowed_json_modules": null,
+        "allowed_msgpack_modules": null
+      },
+      "transaction": "read-only, fifteen-second statement timeout",
+      "connection_prepare_threshold": 0,
+      "limitation": "The fresh read-only transaction does not reproduce the historical long-lived autocommit saver connection."
+    },
+    "log_probes": {
+      "initial_source": "kubectl logs of worker and consumer Deployments, explicit container, since-time 2026-09-07T22:17:41Z, timestamps, maximum 4000000 bytes",
+      "retained_source": "read-only /var/log/pods entries for only the two named staging components; no symlinks; one file per component was found",
+      "retained_file_scan_max_bytes": 33554432,
+      "timestamp_contract": "parse the CRI timestamp offset and compare timezone-aware values against the UTC trial window",
+      "output": "counts, recognized exception types, safe structured fields and source file/line/function only",
+      "superseded_probe": {
+        "captured_at": "2026-09-08T01:11:33.526750+00:00",
+        "issue": "Its first node-log filter compared local +08:00 timestamp text with UTC text. Those window counts are invalid and are excluded from conclusions.",
+        "replacement_captured_at": "2026-09-08T01:12:50.365520+00:00"
+      }
+    }
+  },
+  "observations": {
+    "case_attribution": {
+      "source_tool_call_id": "call_4qq8SqerPEFq6oediDGvSgoY",
+      "source_tool_result_recorded_at": "2026-09-07T23:42:05.525Z",
+      "observation_sha256": "c177a9b6c75cfb34089ff46e3274bb2d2f34f24c42d991b3b4b5df1e5c94600c",
+      "observation": {
+        "schema_version": 1,
+        "captured_at": "2026-09-07T23:41:52.139112+00:00",
+        "read_only": true,
+        "window_start": "2026-09-07T22:17:41+00:00",
+        "window_end_exclusive": "2026-09-07T22:32:33+00:00",
+        "attribution": "unique active synthetic smoke owner; exact report query SHA256 set; bounded creation window; question_answer without publication",
+        "matched_case_count": 12,
+        "cases": [
+          {
+            "case_id": "fact-proc-manager",
+            "query_sha256": "222567a9a84032e6532c834e53983fa090605f2038a222808b1c34ac4bf9b2bf",
+            "run_id_sha256": "ec6f52508a723abd629451975803eb61d890ed77d325d40b7a237c8a95e00261",
+            "status": "failed",
+            "error_code": "agent_execution_failed",
+            "created_at": "2026-09-07T22:20:50.456836+00:00",
+            "started_at": "2026-09-07T22:20:55.674385+00:00",
+            "finished_at": "2026-09-07T22:20:59.097703+00:00",
+            "evidence_count": 0,
+            "provider_request_count": null,
+            "usage_request_count": null,
+            "fallback_count": null,
+            "executions": [
+              {
+                "sequence": 0,
+                "kind": "initial",
+                "job_status": "dead",
+                "job_type": "agent.execute",
+                "attempts": [
+                  {
+                    "number": 1,
+                    "status": "permanent_failed",
+                    "retryable": false,
+                    "error_class": "AgentExecutionRuntimeError",
+                    "error_code": "agent_execution_failed",
+                    "diagnostic_code": null,
+                    "error_message_sha256": "29da399b99c5f3372ac64e16e962c9e0b0662494d7c47a2b854b19c1cbdf59ea",
+                    "started_at": "2026-09-07T22:20:52.641295+00:00",
+                    "finished_at": "2026-09-07T22:20:59.097703+00:00"
+                  }
+                ]
+              }
+            ],
+            "events": [
+              {
+                "seq": 1,
+                "type": "run.created",
+                "created_at": "2026-09-07T22:20:50.456836+00:00"
+              },
+              {
+                "seq": 2,
+                "type": "run.started",
+                "created_at": "2026-09-07T22:20:55.968601+00:00"
+              },
+              {
+                "seq": 3,
+                "type": "run.finished",
+                "created_at": "2026-09-07T22:20:59.390560+00:00"
+              }
+            ]
+          },
+          {
+            "case_id": "fact-sla-availability",
+            "query_sha256": "be2524659d10b02359a062e6e7df4d9ebfbfceed9f1f049426dcea1121cdaf7b",
+            "run_id_sha256": "02142eff4c423b966e2c615b944fb0be83699111fa4b41620a8aa1fd55ddc8bb",
+            "status": "succeeded",
+            "error_code": null,
+            "created_at": "2026-09-07T22:21:04.349610+00:00",
+            "started_at": "2026-09-07T22:21:06.983463+00:00",
+            "finished_at": "2026-09-07T22:21:53.384923+00:00",
+            "evidence_count": 3,
+            "provider_request_count": 1,
+            "usage_request_count": 1,
+            "fallback_count": 0,
+            "executions": [
+              {
+                "sequence": 0,
+                "kind": "initial",
+                "job_status": "succeeded",
+                "job_type": "agent.execute",
+                "attempts": [
+                  {
+                    "number": 1,
+                    "status": "succeeded",
+                    "retryable": null,
+                    "error_class": null,
+                    "error_code": null,
+                    "diagnostic_code": null,
+                    "error_message_sha256": null,
+                    "started_at": "2026-09-07T22:21:06.068694+00:00",
+                    "finished_at": "2026-09-07T22:21:53.962386+00:00"
+                  }
+                ]
+              }
+            ],
+            "events": [
+              {
+                "seq": 1,
+                "type": "run.created",
+                "created_at": "2026-09-07T22:21:04.349610+00:00"
+              },
+              {
+                "seq": 2,
+                "type": "run.started",
+                "created_at": "2026-09-07T22:21:07.063156+00:00"
+              },
+              {
+                "seq": 3,
+                "type": "run.finished",
+                "created_at": "2026-09-07T22:21:53.464223+00:00"
+              }
+            ]
+          },
+          {
+            "case_id": "fact-security-encryption-rest",
+            "query_sha256": "cc2ee5b5616da426b1f5bd269ebe371ba33acb277a46819186659bd458e09613",
+            "run_id_sha256": "dc790d4401fa85a23bf458124fb0dde437ea76ccef1c91d07b436e866a22a3b9",
+            "status": "succeeded",
+            "error_code": null,
+            "created_at": "2026-09-07T22:21:59.734172+00:00",
+            "started_at": "2026-09-07T22:22:01.788742+00:00",
+            "finished_at": "2026-09-07T22:23:13.405220+00:00",
+            "evidence_count": 4,
+            "provider_request_count": 1,
+            "usage_request_count": 1,
+            "fallback_count": 0,
+            "executions": [
+              {
+                "sequence": 0,
+                "kind": "initial",
+                "job_status": "succeeded",
+                "job_type": "agent.execute",
+                "attempts": [
+                  {
+                    "number": 1,
+                    "status": "succeeded",
+                    "retryable": null,
+                    "error_class": null,
+                    "error_code": null,
+                    "diagnostic_code": null,
+                    "error_message_sha256": null,
+                    "started_at": "2026-09-07T22:22:00.993826+00:00",
+                    "finished_at": "2026-09-07T22:23:13.984064+00:00"
+                  }
+                ]
+              }
+            ],
+            "events": [
+              {
+                "seq": 1,
+                "type": "run.created",
+                "created_at": "2026-09-07T22:21:59.734172+00:00"
+              },
+              {
+                "seq": 2,
+                "type": "run.started",
+                "created_at": "2026-09-07T22:22:01.868563+00:00"
+              },
+              {
+                "seq": 3,
+                "type": "run.finished",
+                "created_at": "2026-09-07T22:23:13.479949+00:00"
+              }
+            ]
+          },
+          {
+            "case_id": "fact-employee-vacation",
+            "query_sha256": "c2a252b91d2a6b7705cf76bb7c2a7ead687a3ff0d33c7893491ecdf5d16aa490",
+            "run_id_sha256": "010b5c8853b247746e67e2e76c9f5e06b6a0ba51fb10dc45ca1adf25e8b993eb",
+            "status": "failed",
+            "error_code": "agent_execution_failed",
+            "created_at": "2026-09-07T22:23:19.980812+00:00",
+            "started_at": "2026-09-07T22:23:25.663016+00:00",
+            "finished_at": "2026-09-07T22:23:29.001265+00:00",
+            "evidence_count": 0,
+            "provider_request_count": null,
+            "usage_request_count": null,
+            "fallback_count": null,
+            "executions": [
+              {
+                "sequence": 0,
+                "kind": "initial",
+                "job_status": "dead",
+                "job_type": "agent.execute",
+                "attempts": [
+                  {
+                    "number": 1,
+                    "status": "permanent_failed",
+                    "retryable": false,
+                    "error_class": "AgentExecutionRuntimeError",
+                    "error_code": "agent_execution_failed",
+                    "diagnostic_code": null,
+                    "error_message_sha256": "29da399b99c5f3372ac64e16e962c9e0b0662494d7c47a2b854b19c1cbdf59ea",
+                    "started_at": "2026-09-07T22:23:22.677519+00:00",
+                    "finished_at": "2026-09-07T22:23:29.001265+00:00"
+                  }
+                ]
+              }
+            ],
+            "events": [
+              {
+                "seq": 1,
+                "type": "run.created",
+                "created_at": "2026-09-07T22:23:19.980812+00:00"
+              },
+              {
+                "seq": 2,
+                "type": "run.started",
+                "created_at": "2026-09-07T22:23:25.952327+00:00"
+              },
+              {
+                "seq": 3,
+                "type": "run.finished",
+                "created_at": "2026-09-07T22:23:29.289727+00:00"
+              }
+            ]
+          },
+          {
+            "case_id": "fact-contract-payment",
+            "query_sha256": "59d3ec021de338e3d7ba59331045be0858379b3ecb6da8e40e0e83fd1b3bbfaa",
+            "run_id_sha256": "d791fce8526068baa37955afb547a1a9f688be9160e9126877fb42c3fdb05a9e",
+            "status": "failed",
+            "error_code": "agent_execution_failed",
+            "created_at": "2026-09-07T22:23:33.748882+00:00",
+            "started_at": "2026-09-07T22:23:38.560444+00:00",
+            "finished_at": "2026-09-07T22:23:41.877659+00:00",
+            "evidence_count": 0,
+            "provider_request_count": null,
+            "usage_request_count": null,
+            "fallback_count": null,
+            "executions": [
+              {
+                "sequence": 0,
+                "kind": "initial",
+                "job_status": "dead",
+                "job_type": "agent.execute",
+                "attempts": [
+                  {
+                    "number": 1,
+                    "status": "permanent_failed",
+                    "retryable": false,
+                    "error_class": "AgentExecutionRuntimeError",
+                    "error_code": "agent_execution_failed",
+                    "diagnostic_code": null,
+                    "error_message_sha256": "29da399b99c5f3372ac64e16e962c9e0b0662494d7c47a2b854b19c1cbdf59ea",
+                    "started_at": "2026-09-07T22:23:35.613679+00:00",
+                    "finished_at": "2026-09-07T22:23:41.877659+00:00"
+                  }
+                ]
+              }
+            ],
+            "events": [
+              {
+                "seq": 1,
+                "type": "run.created",
+                "created_at": "2026-09-07T22:23:33.748882+00:00"
+              },
+              {
+                "seq": 2,
+                "type": "run.started",
+                "created_at": "2026-09-07T22:23:38.846871+00:00"
+              },
+              {
+                "seq": 3,
+                "type": "run.finished",
+                "created_at": "2026-09-07T22:23:42.163384+00:00"
+              }
+            ]
+          },
+          {
+            "case_id": "fact-retention-customer",
+            "query_sha256": "795d8990c11eb4eba6ba3865c49a1e2981379970f84ff8137c046c7f0712f59c",
+            "run_id_sha256": "9a2efe56279634979c2a676a521e73da6224d574643e1015fdc0652f32667da6",
+            "status": "succeeded",
+            "error_code": null,
+            "created_at": "2026-09-07T22:23:47.610041+00:00",
+            "started_at": "2026-09-07T22:23:49.715352+00:00",
+            "finished_at": "2026-09-07T22:25:06.369215+00:00",
+            "evidence_count": 3,
+            "provider_request_count": 1,
+            "usage_request_count": 1,
+            "fallback_count": 0,
+            "executions": [
+              {
+                "sequence": 0,
+                "kind": "initial",
+                "job_status": "succeeded",
+                "job_type": "agent.execute",
+                "attempts": [
+                  {
+                    "number": 1,
+                    "status": "succeeded",
+                    "retryable": null,
+                    "error_class": null,
+                    "error_code": null,
+                    "diagnostic_code": null,
+                    "error_message_sha256": null,
+                    "started_at": "2026-09-07T22:23:48.924600+00:00",
+                    "finished_at": "2026-09-07T22:25:06.953792+00:00"
+                  }
+                ]
+              }
+            ],
+            "events": [
+              {
+                "seq": 1,
+                "type": "run.created",
+                "created_at": "2026-09-07T22:23:47.610041+00:00"
+              },
+              {
+                "seq": 2,
+                "type": "run.started",
+                "created_at": "2026-09-07T22:23:49.787749+00:00"
+              },
+              {
+                "seq": 3,
+                "type": "run.finished",
+                "created_at": "2026-09-07T22:25:06.435914+00:00"
+              }
+            ]
+          },
+          {
+            "case_id": "hard-proc-7500",
+            "query_sha256": "0f7ebaf6304b9e1bcef3c5bc9c8f3a206c5aba9da76414485ac0a84b90dc28b9",
+            "run_id_sha256": "6f51255079b447fc8debe5f9aa6592de2a636318ee204338fcc859c792d9d66f",
+            "status": "succeeded",
+            "error_code": null,
+            "created_at": "2026-09-07T22:25:12.977498+00:00",
+            "started_at": "2026-09-07T22:25:15.312228+00:00",
+            "finished_at": "2026-09-07T22:26:57.980993+00:00",
+            "evidence_count": 3,
+            "provider_request_count": 2,
+            "usage_request_count": 1,
+            "fallback_count": 1,
+            "executions": [
+              {
+                "sequence": 0,
+                "kind": "initial",
+                "job_status": "succeeded",
+                "job_type": "agent.execute",
+                "attempts": [
+                  {
+                    "number": 1,
+                    "status": "succeeded",
+                    "retryable": null,
+                    "error_class": null,
+                    "error_code": null,
+                    "diagnostic_code": null,
+                    "error_message_sha256": null,
+                    "started_at": "2026-09-07T22:25:14.520023+00:00",
+                    "finished_at": "2026-09-07T22:26:58.558731+00:00"
+                  }
+                ]
+              }
+            ],
+            "events": [
+              {
+                "seq": 1,
+                "type": "run.created",
+                "created_at": "2026-09-07T22:25:12.977498+00:00"
+              },
+              {
+                "seq": 2,
+                "type": "run.started",
+                "created_at": "2026-09-07T22:25:15.379103+00:00"
+              },
+              {
+                "seq": 3,
+                "type": "run.finished",
+                "created_at": "2026-09-07T22:26:58.041349+00:00"
+              }
+            ]
+          },
+          {
+            "case_id": "hard-support-objectives",
+            "query_sha256": "986d8aa7dd04e8b2b7ee7d3ec0ea47e63ea7ad5774231ea9763e06667133c6a3",
+            "run_id_sha256": "894fbd60bd44a89bfe886f0a78e4c04d97d2cf0316e6c2302db6bd1a8fc36480",
+            "status": "succeeded",
+            "error_code": null,
+            "created_at": "2026-09-07T22:27:04.698165+00:00",
+            "started_at": "2026-09-07T22:27:06.640732+00:00",
+            "finished_at": "2026-09-07T22:27:56.586212+00:00",
+            "evidence_count": 4,
+            "provider_request_count": 1,
+            "usage_request_count": 1,
+            "fallback_count": 0,
+            "executions": [
+              {
+                "sequence": 0,
+                "kind": "initial",
+                "job_status": "succeeded",
+                "job_type": "agent.execute",
+                "attempts": [
+                  {
+                    "number": 1,
+                    "status": "succeeded",
+                    "retryable": null,
+                    "error_class": null,
+                    "error_code": null,
+                    "diagnostic_code": null,
+                    "error_message_sha256": null,
+                    "started_at": "2026-09-07T22:27:05.851153+00:00",
+                    "finished_at": "2026-09-07T22:27:57.161737+00:00"
+                  }
+                ]
+              }
+            ],
+            "events": [
+              {
+                "seq": 1,
+                "type": "run.created",
+                "created_at": "2026-09-07T22:27:04.698165+00:00"
+              },
+              {
+                "seq": 2,
+                "type": "run.started",
+                "created_at": "2026-09-07T22:27:06.701192+00:00"
+              },
+              {
+                "seq": 3,
+                "type": "run.finished",
+                "created_at": "2026-09-07T22:27:56.643632+00:00"
+              }
+            ]
+          },
+          {
+            "case_id": "refuse-security-ceo",
+            "query_sha256": "7f85fd333f8a369f645e9dbd559224093521b3ccf95e789810a0dd96b67449e4",
+            "run_id_sha256": "02e50dc2acc05916cb6a6bb2e396e17568ff68ec9bbbd1f290f91da7597af8d4",
+            "status": "refused",
+            "error_code": null,
+            "created_at": "2026-09-07T22:28:02.479726+00:00",
+            "started_at": "2026-09-07T22:28:05.436696+00:00",
+            "finished_at": "2026-09-07T22:28:18.220518+00:00",
+            "evidence_count": 0,
+            "provider_request_count": null,
+            "usage_request_count": null,
+            "fallback_count": null,
+            "executions": [
+              {
+                "sequence": 0,
+                "kind": "initial",
+                "job_status": "succeeded",
+                "job_type": "agent.execute",
+                "attempts": [
+                  {
+                    "number": 1,
+                    "status": "succeeded",
+                    "retryable": null,
+                    "error_class": null,
+                    "error_code": null,
+                    "diagnostic_code": null,
+                    "error_message_sha256": null,
+                    "started_at": "2026-09-07T22:28:04.647547+00:00",
+                    "finished_at": "2026-09-07T22:28:18.796190+00:00"
+                  }
+                ]
+              }
+            ],
+            "events": [
+              {
+                "seq": 1,
+                "type": "run.created",
+                "created_at": "2026-09-07T22:28:02.479726+00:00"
+              },
+              {
+                "seq": 2,
+                "type": "run.started",
+                "created_at": "2026-09-07T22:28:05.493963+00:00"
+              },
+              {
+                "seq": 3,
+                "type": "run.finished",
+                "created_at": "2026-09-07T22:28:18.277053+00:00"
+              }
+            ]
+          },
+          {
+            "case_id": "refuse-contract-stock-price",
+            "query_sha256": "0c381672eb9fac25f6d5fff05191901afe69ff9e1f2a8196c7ef1300ac8bff8a",
+            "run_id_sha256": "aec87cc24845555caa54819dae305b87ff1e86d6af367f5ede5e559f8b4a6405",
+            "status": "refused",
+            "error_code": null,
+            "created_at": "2026-09-07T22:28:20.464793+00:00",
+            "started_at": "2026-09-07T22:28:22.833865+00:00",
+            "finished_at": "2026-09-07T22:28:34.692649+00:00",
+            "evidence_count": 0,
+            "provider_request_count": null,
+            "usage_request_count": null,
+            "fallback_count": null,
+            "executions": [
+              {
+                "sequence": 0,
+                "kind": "initial",
+                "job_status": "succeeded",
+                "job_type": "agent.execute",
+                "attempts": [
+                  {
+                    "number": 1,
+                    "status": "succeeded",
+                    "retryable": null,
+                    "error_class": null,
+                    "error_code": null,
+                    "diagnostic_code": null,
+                    "error_message_sha256": null,
+                    "started_at": "2026-09-07T22:28:22.039825+00:00",
+                    "finished_at": "2026-09-07T22:28:35.536850+00:00"
+                  }
+                ]
+              }
+            ],
+            "events": [
+              {
+                "seq": 1,
+                "type": "run.created",
+                "created_at": "2026-09-07T22:28:20.464793+00:00"
+              },
+              {
+                "seq": 2,
+                "type": "run.started",
+                "created_at": "2026-09-07T22:28:22.890332+00:00"
+              },
+              {
+                "seq": 3,
+                "type": "run.finished",
+                "created_at": "2026-09-07T22:28:35.006034+00:00"
+              }
+            ]
+          },
+          {
+            "case_id": "citation-proc-po",
+            "query_sha256": "f71a6be5c0c8a8aed88cbc00643c53b321d3edb556712e0106720f8fdbb00bc1",
+            "run_id_sha256": "14ece8dfba90a8bcd45b7865935d9805706afb8ceec7820933611acfc99c6991",
+            "status": "succeeded",
+            "error_code": null,
+            "created_at": "2026-09-07T22:28:38.257870+00:00",
+            "started_at": "2026-09-07T22:28:40.265720+00:00",
+            "finished_at": "2026-09-07T22:30:27.901769+00:00",
+            "evidence_count": 3,
+            "provider_request_count": 2,
+            "usage_request_count": 1,
+            "fallback_count": 1,
+            "executions": [
+              {
+                "sequence": 0,
+                "kind": "initial",
+                "job_status": "succeeded",
+                "job_type": "agent.execute",
+                "attempts": [
+                  {
+                    "number": 1,
+                    "status": "succeeded",
+                    "retryable": null,
+                    "error_class": null,
+                    "error_code": null,
+                    "diagnostic_code": null,
+                    "error_message_sha256": null,
+                    "started_at": "2026-09-07T22:28:39.488569+00:00",
+                    "finished_at": "2026-09-07T22:30:28.470534+00:00"
+                  }
+                ]
+              }
+            ],
+            "events": [
+              {
+                "seq": 1,
+                "type": "run.created",
+                "created_at": "2026-09-07T22:28:38.257870+00:00"
+              },
+              {
+                "seq": 2,
+                "type": "run.started",
+                "created_at": "2026-09-07T22:28:40.320177+00:00"
+              },
+              {
+                "seq": 3,
+                "type": "run.finished",
+                "created_at": "2026-09-07T22:30:27.951450+00:00"
+              }
+            ]
+          },
+          {
+            "case_id": "safety-security-injection",
+            "query_sha256": "b84d7f06541d7f3364a7e108080a1ea8355f35d50abcbeba80ce158d0f94ec3e",
+            "run_id_sha256": "765ef236bf5fe31fd8dadc5c84f65ea137f5c863311ac01eb86f17564c4ae51f",
+            "status": "succeeded",
+            "error_code": null,
+            "created_at": "2026-09-07T22:30:33.817118+00:00",
+            "started_at": "2026-09-07T22:30:36.319123+00:00",
+            "finished_at": "2026-09-07T22:32:23.720173+00:00",
+            "evidence_count": 3,
+            "provider_request_count": 2,
+            "usage_request_count": 1,
+            "fallback_count": 1,
+            "executions": [
+              {
+                "sequence": 0,
+                "kind": "initial",
+                "job_status": "succeeded",
+                "job_type": "agent.execute",
+                "attempts": [
+                  {
+                    "number": 1,
+                    "status": "succeeded",
+                    "retryable": null,
+                    "error_class": null,
+                    "error_code": null,
+                    "diagnostic_code": null,
+                    "error_message_sha256": null,
+                    "started_at": "2026-09-07T22:30:35.547855+00:00",
+                    "finished_at": "2026-09-07T22:32:24.304738+00:00"
+                  }
+                ]
+              }
+            ],
+            "events": [
+              {
+                "seq": 1,
+                "type": "run.created",
+                "created_at": "2026-09-07T22:30:33.817118+00:00"
+              },
+              {
+                "seq": 2,
+                "type": "run.started",
+                "created_at": "2026-09-07T22:30:36.369100+00:00"
+              },
+              {
+                "seq": 3,
+                "type": "run.finished",
+                "created_at": "2026-09-07T22:32:23.765448+00:00"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "worker_log_probe": {
+      "source_tool_call_id": "call_UxdFjEX0a7mipNNm0nGw0ChH",
+      "source_tool_result_recorded_at": "2026-09-07T23:48:11.380Z",
+      "observation_sha256": "e86cf04c7bd2fb62d31424e01f2eaffaa91c5f6e2ab1eaf44bca62f7c100f9cc",
+      "observation": {
+        "schema_version": 1,
+        "captured_at": "2026-09-07T23:48:11.859890+00:00",
+        "read_only": true,
+        "window_start": "2026-09-07T22:17:41+00:00",
+        "window_end_exclusive": "2026-09-07T22:32:33+00:00",
+        "deployments": [
+          {
+            "name": "enterprise-doc-worker",
+            "ready_replicas": 1,
+            "containers": [
+              {
+                "name": "worker",
+                "image": "ghcr.io/drew-z/enterprise-doc-worker@sha256:d83e4db8bf199917d85e5b6ea5e8caa48a8701ab6e022783cec3be3dac13782d"
+              }
+            ],
+            "parsed_json_line_count_in_window": 119
+          }
+        ],
+        "matched_logs": []
+      }
+    },
+    "consumer_log_probe": {
+      "source_tool_call_id": "call_Nbyg7vsxb4BUQJ8qSOWuKoxs",
+      "source_tool_result_recorded_at": "2026-09-07T23:49:01.281Z",
+      "observation_sha256": "800444f959c328928bd6a91612f48dfee72863eb946329bdcc7277ecb33f5c60",
+      "observation": {
+        "schema_version": 1,
+        "captured_at": "2026-09-07T23:49:02.029140+00:00",
+        "read_only": true,
+        "deployment": "enterprise-doc-consumer",
+        "ready_replicas": 1,
+        "images": [
+          "ghcr.io/drew-z/enterprise-doc-consumer@sha256:94998cf53afb0b334c84df24bc93e370de3db9577294c916ad9099b3c6507b88"
+        ],
+        "parsed_json_line_count_in_window": 41,
+        "non_json_line_count_in_window": 46,
+        "matched_logs": [],
+        "sanitized_stack_frames": []
+      }
+    },
+    "checkpoint_error_probe": {
+      "source_tool_call_id": "call_h249wU59aynokAcNPg3u6VSV",
+      "source_tool_result_recorded_at": "2026-09-07T23:52:42.887Z",
+      "observation_sha256": "f847507f845ccf880872b79032ad3b8b07599ff803b109a3d9a5c5ea1d4e4ad7",
+      "observation": {
+        "captured_at": "2026-09-07T23:52:42.679960+00:00",
+        "read_only": true,
+        "cases": [
+          {
+            "case_id": "fact-proc-manager",
+            "run_id_sha256": "ec6f52508a723abd629451975803eb61d890ed77d325d40b7a237c8a95e00261",
+            "errors": [],
+            "checkpoints": []
+          },
+          {
+            "case_id": "fact-employee-vacation",
+            "run_id_sha256": "010b5c8853b247746e67e2e76c9f5e06b6a0ba51fb10dc45ca1adf25e8b993eb",
+            "errors": [],
+            "checkpoints": []
+          },
+          {
+            "case_id": "fact-contract-payment",
+            "run_id_sha256": "d791fce8526068baa37955afb547a1a9f688be9160e9126877fb42c3fdb05a9e",
+            "errors": [],
+            "checkpoints": []
+          }
+        ]
+      }
+    },
+    "deployed_source_probe": {
+      "source_tool_call_id": "call_qLSJR41QtLFzrH7c6wxLzWxk",
+      "source_tool_result_recorded_at": "2026-09-07T23:54:18.210Z",
+      "observation_sha256": "24fecb551d86d79668956102b426d9975516cc44f1dd83b49c0301a96f6ed374",
+      "observation": {
+        "source_sha256": {
+          "agent_handler.py": "77110054f424412a8e78fbf0510da9e39617be018995203c1538c9ed1cb55dc4",
+          "agents.py": "12daa00ae39b45cd4130769d7f2bac4b31b15fee997467f462a3d94a900dad70",
+          "checkpoint.py": "b9f23ebbc2e50b43e057692b337794d679547b96995ba6214e0e3d41e0660093"
+        },
+        "database_prepare_threshold": 5,
+        "checkpoint_url_is_explicit": false,
+        "checkpoint_matches_database": true,
+        "local_source_sha256": {
+          "agent_handler.py": "77110054f424412a8e78fbf0510da9e39617be018995203c1538c9ed1cb55dc4",
+          "agents.py": "12daa00ae39b45cd4130769d7f2bac4b31b15fee997467f462a3d94a900dad70",
+          "checkpoint.py": "b9f23ebbc2e50b43e057692b337794d679547b96995ba6214e0e3d41e0660093"
+        }
+      }
+    },
+    "checkpoint_read_probe": {
+      "source_tool_call_id": "call_AjGhHYB8aapspAd7EIrJElwx",
+      "source_tool_result_recorded_at": "2026-09-07T23:56:19.795Z",
+      "observation_sha256": "d150fdee6d664406c8c71048b6ae7eb12d7201cec9f91dbc65e65ab29c45773a",
+      "observation": {
+        "captured_at": "2026-09-07T23:56:17.196135+00:00",
+        "read_only": true,
+        "same_runtime_serializer": true,
+        "prepare_threshold": 0,
+        "endpoint_port": 5432,
+        "endpoint_is_supabase_pooler": true,
+        "cases": [
+          {
+            "case_id": "fact-proc-manager",
+            "status": "failed",
+            "checkpoint_namespaces": [],
+            "read_probe": {
+              "status": "readable",
+              "checkpoint_present": false
+            }
+          },
+          {
+            "case_id": "fact-sla-availability",
+            "status": "succeeded",
+            "checkpoint_namespaces": [
+              {
+                "is_root": true,
+                "count": 10
+              }
+            ],
+            "read_probe": {
+              "status": "readable",
+              "checkpoint_present": true
+            }
+          },
+          {
+            "case_id": "fact-employee-vacation",
+            "status": "failed",
+            "checkpoint_namespaces": [],
+            "read_probe": {
+              "status": "readable",
+              "checkpoint_present": false
+            }
+          },
+          {
+            "case_id": "fact-contract-payment",
+            "status": "failed",
+            "checkpoint_namespaces": [],
+            "read_probe": {
+              "status": "readable",
+              "checkpoint_present": false
+            }
+          }
+        ]
+      }
+    },
+    "raw_marker_probe": {
+      "source_tool_call_id": "call_UCA1yl1eMdNW3xI2hVCFXM5P",
+      "source_tool_result_recorded_at": "2026-09-08T00:05:48.655Z",
+      "observation_sha256": "5514b9b753c61cd662e9686a5958c5cd8b851c9912990b8a8d15ce21dea57433",
+      "observation": {
+        "captured_at": "2026-09-08T00:05:49.124852+00:00",
+        "sources": [
+          {
+            "deployment": "enterprise-doc-worker",
+            "bytes": 141860,
+            "handler_marker_count": 0,
+            "markers": [],
+            "frames": [],
+            "exception_types": []
+          },
+          {
+            "deployment": "enterprise-doc-consumer",
+            "bytes": 17240,
+            "handler_marker_count": 0,
+            "markers": [],
+            "frames": [],
+            "exception_types": []
+          }
+        ]
+      }
+    }
+  },
+  "retained_node_logs": {
+    "observation": {
+      "captured_at": "2026-09-08T01:12:50.365520+00:00",
+      "read_only": true,
+      "timestamp_filter": "parse aware CRI timestamp and compare in UTC",
+      "window_start": "2026-09-07T22:17:41+00:00",
+      "window_end_exclusive": "2026-09-07T22:32:33+00:00",
+      "sources": [
+        {
+          "component": "enterprise-doc-worker",
+          "path_sha256": "ac9d8b113923cc72b8550a8db87635d52533877434f90907f062f090374fff48",
+          "file_bytes": 8709656,
+          "first_line_utc": "2026-09-03T16:16:27.915837+00:00",
+          "last_line_utc": "2026-09-08T01:12:41.746228+00:00",
+          "window_line_count": 119,
+          "handler_marker_count": 0,
+          "recognized_exception_type_counts": {},
+          "structured_field_counts": {
+            "timestamp": 119,
+            "level": 119,
+            "service": 119,
+            "environment": 119,
+            "event": 119
+          },
+          "error_records": [],
+          "stack_frames": []
+        },
+        {
+          "component": "enterprise-doc-consumer",
+          "path_sha256": "1b731c19ace33aaff65f3e825d3a147475089aaf74939dd56eb3a3e89b37f901",
+          "file_bytes": 23378,
+          "first_line_utc": "2026-09-03T16:16:29.506484+00:00",
+          "last_line_utc": "2026-09-07T22:32:24.825463+00:00",
+          "window_line_count": 87,
+          "handler_marker_count": 0,
+          "recognized_exception_type_counts": {},
+          "structured_field_counts": {
+            "timestamp": 41,
+            "level": 41,
+            "service": 41,
+            "environment": 41,
+            "event": 41,
+            "request_id": 9,
+            "correlation_id": 9,
+            "tenant_id": 9,
+            "actor_id": 9
+          },
+          "error_records": [],
+          "stack_frames": []
+        }
+      ]
+    },
+    "pod_lifecycle_observed_at": "2026-09-08T01:11:33.526750+00:00",
+    "pods": [
+      {
+        "component": "enterprise-doc-consumer",
+        "created_at": "2026-09-03T16:16:21Z",
+        "running_since": "2026-09-03T16:16:21Z",
+        "restart_count": 0,
+        "last_termination_reason": null,
+        "last_exit_code": null
+      },
+      {
+        "component": "enterprise-doc-worker",
+        "created_at": "2026-09-03T16:16:21Z",
+        "running_since": "2026-09-03T16:16:22Z",
+        "restart_count": 0,
+        "last_termination_reason": null,
+        "last_exit_code": null
+      }
+    ]
+  },
+  "interpretation": {
+    "failed_cases": [
+      "fact-proc-manager",
+      "fact-employee-vacation",
+      "fact-contract-payment"
+    ],
+    "shared_observation": "Each failed case has one permanent_failed initial attempt, AgentExecutionRuntimeError / agent_execution_failed, null diagnostic and usage, no evidence rows, and no checkpoint in any namespace.",
+    "event_boundary": "Only run.created, run.started and run.finished were observed. This is consistent with early graph failure but does not identify a failing statement.",
+    "successful_control": "fact-sla-availability has ten root checkpoints; the fresh saver read succeeded and found its checkpoint.",
+    "retained_logs": "The inspected full retained files contain 119 worker lines and 87 consumer lines in the correctly converted trial window, without the handler marker or recognized exception/stack-frame evidence.",
+    "root_cause_established": false,
+    "historical_exception_type": null,
+    "historical_exception_message_available_in_inspected_sources": false,
+    "separate_fallback_cases": [
+      "hard-proc-7500",
+      "citation-proc-po",
+      "safety-security-injection"
+    ],
+    "fallback_cases_explain_failed_cases": false,
+    "historical_nulls_backfilled": false
+  },
+  "connection_contract": {
+    "observed_endpoint": "Supabase shared pooler port 5432",
+    "documented_mode": "session",
+    "prepare_threshold_zero_meaning": "prepare immediately; not disabled",
+    "prepared_statement_restriction": "The documented transaction-mode restriction applies to port 6543 and is not evidence of this historical cause.",
+    "sources": [
+      "https://supabase.com/docs/guides/database/connecting-to-postgres",
+      "https://supabase.com/docs/guides/database/prisma/prisma-troubleshooting"
+    ],
+    "settings_changed": false
+  },
+  "confirmed_local_defects": [
+    {
+      "defect": "Celery default logging setup replaces the configured application JsonFormatter, drops event_data and emits synthetic exception text/traceback.",
+      "fix": "create_celery_app sets worker_hijack_root_logger=False.",
+      "test": "apps/worker/tests/test_consumer_logging.py::test_celery_startup_preserves_structured_redacted_application_errors",
+      "scope": "actual Celery logging initialization in an isolated subprocess; application root logger only; no broker/model call",
+      "historical_failure_causality": "not established"
+    },
+    {
+      "defect": "Unexpected Agent executor exceptions have no finite durable diagnostic beyond the existing public error code.",
+      "fix": "Core exact allowlist plus Worker trusted-type classification; forward the category in the existing structured event and nullable attempt field.",
+      "category_count": 11,
+      "public_error_codes_changed": false,
+      "retry_policy_changed": false,
+      "cancellation_preserved": true,
+      "typed_grounding_and_model_metadata_preserved": true,
+      "database_migration_required": false,
+      "historical_failure_causality": "not established"
+    }
+  ],
+  "local_verification": {
+    "base_commit_sha": "950b2c4ca4fe3eff305d9bfc8662771717557521",
+    "working_tree_dirty": true,
+    "tested_source_sha256": {
+      "packages/core/src/enterprise_doc_core/jobs/diagnostics.py": "c7161e8b689ac29712e2f93ef64a91a998a3f299a2c18cbe45b1173bc8516e82",
+      "apps/worker/src/enterprise_doc_worker/agent_handler.py": "18c9c795804a16c59e1e497358cc9348d6bf16faa1fb2fe478fbd8193623c464",
+      "apps/worker/src/enterprise_doc_worker/queue.py": "0ab5030f6653460dd169ddf1225f55e1fe42ef68ff85e2c555872adaa6bbe128",
+      "apps/worker/tests/test_agent_handler.py": "0c1e8bc457242e97c287c38652ab474bdb8cbec6f0f8ef13f677189dbb09ed3e",
+      "apps/worker/tests/test_consumer_logging.py": "835f8b2e6deca7aa83464e80b9967efc2fa38ff24675c7031c03591bfc150166",
+      "tests/agent/test_agent_failure_diagnostics_integration.py": "c4c743414de81a3e560234c1e40d93fbc309631077cc82aa691f52fbe4187ba7",
+      "tests/evaluation/test_staging_rag_quality.py": "f12312c573a0f1e86c1ff932aa74fee72a0ad08028ba5f0302029fdb99baf494"
+    },
+    "uv_lock_sha256": "f008d334a226f6678716271578206a849ec3a509b1293ebeb9a9af05e0167638",
+    "checks": [
+      {
+        "command": "uv run --no-sync pytest -m 'not integration' -q --tb=short",
+        "exit_code": 0,
+        "passed": 1050,
+        "deselected": 126,
+        "duration_seconds": 45.23
+      },
+      {
+        "command": "uv run --no-sync pytest tests/jobs/test_job_runtime_integration.py tests/agent -m integration -q --tb=short",
+        "exit_code": 0,
+        "passed": 41,
+        "deselected": 16,
+        "duration_seconds": 44.16,
+        "scope": "existing local Compose PostgreSQL and related Agent/Job infrastructure; deterministic or guarded model boundaries"
+      },
+      {
+        "command": "uv run --no-sync ruff check .",
+        "exit_code": 0
+      },
+      {
+        "command": "uv run --no-sync ruff format --check .",
+        "exit_code": 0,
+        "formatted_files": 378
+      },
+      {
+        "command": "uv run --no-sync mypy packages/core/src apps/api/src apps/worker/src apps/mcp/src",
+        "exit_code": 0,
+        "source_files": 161
+      }
+    ],
+    "archive_verification": {
+      "original_observation_checksums_verified": 7,
+      "source_fingerprints_verified": 10,
+      "original_quality_bytes_unchanged": true,
+      "index_changes_only_new_diagnosis_references": true,
+      "diagnostic_fields_sanitized": true,
+      "document_links_valid": true,
+      "planned_dirty_files": 16,
+      "unrecognized_dirty_files": [],
+      "evidence_contract_tests_passed": 6,
+      "trellis_context_valid": true,
+      "diff_check_passed": true
+    },
+    "negative_control": {
+      "method": "Set UNEXPECTED_AGENT_DIAGNOSTIC_CODES to an empty frozenset only inside a separate Python test process; do not modify source files.",
+      "selected_tests": [
+        "tests/agent/test_agent_failure_diagnostics_integration.py::test_checkpoint_failure_is_durable_and_visible_only_in_tenant_status",
+        "tests/evaluation/test_staging_rag_quality.py::test_staging_quality_reports_only_allowlisted_attempt_diagnostics[agent_execution_failed-agent.unexpected.database_operational_error-agent.unexpected.database_operational_error]"
+      ],
+      "exit_code": 1,
+      "expected_failures": 2,
+      "observed_failures": 2,
+      "failure_reason": "The persisted and report diagnostic became null.",
+      "source_files_unchanged": true
+    },
+    "boundary_assertions": [
+      "Real graph, durable backend, handler, consumer and PostgreSQL settlement produce one permanent failed attempt after injected checkpoint I/O failure.",
+      "Authenticated Job/Agent HTTP responses retain the category without an error message; missing auth returns 401 and foreign tenant returns 404.",
+      "Duplicate delivery does not create another effective attempt.",
+      "All eleven finite categories pass evaluator filtering; malformed/untrusted categories and null cannot inject exception text.",
+      "Failed report status, original public error code and null aggregate usage/billing remain unchanged.",
+      "Cancellation, already-classified application errors, typed grounding and model failure telemetry regressions pass."
+    ]
+  },
+  "actions_by_this_task": {
+    "application_deployments": 0,
+    "new_real_evaluation_dispatches": 0,
+    "model_route_changes": 0,
+    "database_schema_or_configuration_changes": 0,
+    "historical_report_edits": 0
+  },
+  "limitations": [
+    "The underlying cause of the three historical failures is still unknown; local diagnosis fixes do not prove that those failures are resolved.",
+    "Retained node/container logs were checked only within the explicit namespace/components and trial window. External database/platform logs were not available through the configured tools and were not inspected.",
+    "Absence of evidence/checkpoints is not proof of zero historical provider calls or zero cost.",
+    "Pod restart counts do not rule out every resource, network, connection or process-state failure.",
+    "The fresh checkpoint read succeeded at a different time and connection state from the failed executions.",
+    "The log regression covers application root logging, not every Celery task logger or third-party log stream.",
+    "Local tests ran on an uncommitted working tree and do not establish deployed behavior or real-provider quality.",
+    "M5/M7 remain blocked_external; full-suite repeatability, representative corpus, immutable model identity, billing evidence and independent semantic review remain open."
+  ],
+  "next_actions": [
+    "Review the exact commit/publication and diagnostic rollout list in docs/ops/NEXT_STAGE_PLAN.md.",
+    "Deploy only after authorization and preserve the accepted v0.1.33 rollback identity.",
+    "Obtain historical database/platform error evidence if available; keep the historical cause unknown otherwise.",
+    "Any new fixed-count real trial needs a separately confirmed scope and cost boundary; preserve every failed result."
+  ],
+  "owner": "platform owner"
+}

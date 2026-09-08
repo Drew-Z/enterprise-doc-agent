@@ -59,7 +59,7 @@ node execution but cannot override tenant, run, approval, or artifact rows.
 
 ### 1. Scope / Trigger
 
-- Trigger: grounding and MCP failures need a stable subreason for staging diagnosis without
+- Trigger: grounding, MCP and unexpected Agent failures need a stable subreason for diagnosis without
   exposing exception messages, document text, tool payloads, runtime IDs, URLs, or credentials.
 - Ownership: Core defines and persists allowlisted codes; Worker classifies typed failures; the
   authenticated Job and Agent status APIs project the stored value.
@@ -75,6 +75,11 @@ node execution but cannot override tenant, run, approval, or artifact rows.
 
 - Grounding codes are exact members of `GROUNDING_DIAGNOSTIC_CODES`.
 - MCP codes have the exact shape `mcp.<known_tool>.<allowlisted_subcode>`.
+- Unexpected Agent codes are exact members of `UNEXPECTED_AGENT_DIAGNOSTIC_CODES`,
+  with prefix `agent.unexpected.` and one of: `database_error`,
+  `database_integrity_error`, `database_operational_error`, `database_pool_timeout`,
+  `exception_group`, `runtime_error`, `timeout`, `type_error`, `unclassified`,
+  `validation_error`, or `value_error`. The prefix alone is never accepted.
 - Unknown, malformed, or oversized values persist as null. MCP tool errors with no recognized
   stable code use `mcp.<known_tool>.returned_error`.
 - Public `errorCode` and retryability remain independent from `diagnosticCode`.
@@ -86,7 +91,16 @@ node execution but cannot override tenant, run, approval, or artifact rows.
 - Typed `GroundingValidationError` with an allowlisted diagnostic -> preserve public code and
   diagnostic.
 - Arbitrary exception with a `diagnostic_code` attribute -> preserve existing public
-  classification, discard the diagnostic.
+  classification, discard that attribute. An otherwise unclassified exception can receive
+  a new category based on its trusted type only.
+- Psycopg/SQLAlchemy operational and integrity errors -> their specific database category;
+  SQLAlchemy pool timeout -> `database_pool_timeout`; other driver/ORM errors ->
+  `database_error`. Preserve existing ORM `.code` values independently.
+- Other exceptions with an existing application `.code` -> retain the existing code and
+  retryability without assigning a generic diagnostic. Typed model failure telemetry remains
+  intact. Pydantic validation is checked before `ValueError`; exception groups retain the
+  group category without inspecting nested messages or guessing one leaf as the cause.
+- `asyncio.CancelledError` -> propagate cancellation; do not turn it into an unexpected failure.
 - MCP structured `code` / `errorCode` / `error_code` with an allowlisted exact value -> bind it to
   the requested known tool.
 - MCP wrapper text `Error executing tool <requested_tool>: <allowlisted_code>` -> accept the exact
@@ -100,6 +114,11 @@ node execution but cannot override tenant, run, approval, or artifact rows.
 - Good: `grounding.citation_excerpt_not_verbatim` survives queue settlement and appears in the
   authenticated attempt history.
 - Base: old attempts and successful attempts return `diagnosticCode: null`.
+- Good: an injected initial checkpoint `OperationalError` becomes a permanent
+  `agent_execution_failed` with `agent.unexpected.database_operational_error`; the
+  authenticated tenant can read it, while foreign tenants receive 404.
+- Base: missing historical diagnostics and usage remain null. A new category does not
+  retroactively identify a historical cause or justify a retry-policy change.
 - Bad: raw provider text such as `token=... tool_input_invalid ...` is never promoted or stored.
 
 ### 6. Tests Required
@@ -111,6 +130,13 @@ node execution but cannot override tenant, run, approval, or artifact rows.
 - API tests assert camelCase projection and absence of `error_message` from attempt responses.
 - Staging evaluator tests seed secret-like values and verify only allowlisted diagnostics survive
   into a seal-valid report.
+- `test_checkpoint_failure_reaches_agent_handler_with_safe_diagnostic` exercises the real
+  LangGraph/executor with only checkpoint I/O failing, asserting bounded categories and log fields.
+- `test_checkpoint_failure_is_durable_and_visible_only_in_tenant_status` uses real PostgreSQL,
+  the durable backend/consumer and both HTTP status routes; assert one permanent attempt, safe
+  message, null unobserved usage, duplicate-delivery fencing, 401 and cross-tenant 404 responses.
+- `test_staging_quality_reports_only_allowlisted_attempt_diagnostics` covers every unexpected
+  category, malformed suffixes and null, preserving failed quality and unknown usage/cost.
 
 ### 7. Wrong vs Correct
 
@@ -123,7 +149,7 @@ diagnostic_code = str(error)
 #### Correct
 
 ```python
-diagnostic_code = (
-    error.diagnostic_code if isinstance(error, GroundingValidationError) else None
-)
+# Worker classification uses trusted types; the handler and runtime independently
+# recheck the Core allowlist before persistence. Never copy an arbitrary attribute.
+diagnostic_code = _agent_failure_diagnostic(error)
 ```

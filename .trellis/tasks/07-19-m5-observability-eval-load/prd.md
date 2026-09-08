@@ -59,6 +59,10 @@ answer quality, public deployment, or SLO attainment without matching evidence.
   that verifies both frozen v2 selections before any live execution. An explicitly
   selected live mode runs only after successful validation, on a reproducible hosted
   runtime with the existing token, host, timeout, concurrency and evidence boundaries.
+- **M5-R16**: Unexpected Agent failures retain an allowlisted exception category in
+  durable attempt history and evaluation reports without exception text. Consumer
+  startup preserves the application's structured, redacted logging contract. A missing
+  historical diagnostic remains unknown until independent evidence establishes a cause.
 
 ## Acceptance Criteria
 
@@ -77,10 +81,17 @@ answer quality, public deployment, or SLO attainment without matching evidence.
 - [x] M5 manifest and index validate; targets are never reported as measured facts.
 - [x] Real-provider quality and representative production capacity remain explicit
   manual gates when credentials, hardware, or a dedicated environment are unavailable.
-- [ ] Hosted runtime validation checks both 12/40 selections without staging credentials
+- [x] Hosted runtime validation checks both 12/40 selections without staging credentials
   or model calls; validation artifacts are distinguishable from quality reports.
-- [ ] Live evaluation requires an explicit mode and successful prerequisite validation;
+- [x] Live evaluation requires an explicit mode and successful prerequisite validation;
   its first authorized twelve-case run is recorded with exact provenance and outcome.
+- [x] Unexpected Agent exception categories survive the Worker, durable attempt and
+  evaluator boundaries; cancellation, known public errors and retryability retain their
+  existing behavior, and arbitrary exception attributes cannot inject diagnostics.
+- [x] Celery's actual logging startup preserves structured application errors and does
+  not expose exception bodies or stack traces through the application logger.
+- [x] The three failed trial cases have a sanitized, precisely attributed diagnostic
+  record that distinguishes observed facts, confirmed local defects and unresolved causes.
 
 ## Out Of Scope
 

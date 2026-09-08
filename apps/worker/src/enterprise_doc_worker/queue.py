@@ -320,6 +320,7 @@ def create_celery_app(settings: WorkerSettings | None = None) -> Celery:
         task_ignore_result=True,
         task_reject_on_worker_lost=True,
         task_serializer="json",
+        worker_hijack_root_logger=False,
     )
     return app
 

@@ -231,9 +231,12 @@ class FakeClient:
 
 
 class FailedDiagnosticClient(FakeClient):
-    def __init__(self, diagnostic_code: str) -> None:
+    def __init__(
+        self, diagnostic_code: str | None, *, error_code: str = "mcp_tool_returned_error"
+    ) -> None:
         super().__init__()
         self.diagnostic_code = diagnostic_code
+        self.error_code = error_code
 
     def request_json(
         self,
@@ -247,7 +250,7 @@ class FailedDiagnosticClient(FakeClient):
         if path == "/api/agent-runs/run-answer":
             return {
                 "status": "failed",
-                "errorCode": "mcp_tool_returned_error",
+                "errorCode": self.error_code,
                 "modelProvider": "openai_compatible",
                 "modelName": "reviewed-chat-model",
                 "modelVersion": "2026-08",
@@ -378,22 +381,44 @@ def test_staging_quality_runs_answer_and_refusal_without_leaking_runtime_data(
 
 
 @pytest.mark.parametrize(
-    ("diagnostic_code", "expected"),
+    ("error_code", "diagnostic_code", "expected"),
     [
         (
+            "mcp_tool_returned_error",
             "mcp.search_document.tool_input_invalid",
             "mcp.search_document.tool_input_invalid",
         ),
-        ("mcp.search_document.raw-mcp-secret-must-not-appear", None),
+        ("mcp_tool_returned_error", "mcp.search_document.raw-mcp-secret-must-not-appear", None),
+        *[
+            ("agent_execution_failed", f"agent.unexpected.{kind}", f"agent.unexpected.{kind}")
+            for kind in (
+                "database_error",
+                "database_integrity_error",
+                "database_operational_error",
+                "database_pool_timeout",
+                "exception_group",
+                "runtime_error",
+                "timeout",
+                "type_error",
+                "unclassified",
+                "validation_error",
+                "value_error",
+            )
+        ],
+        ("agent_execution_failed", "agent.unexpected.raw-mcp-secret-must-not-appear", None),
+        ("agent_execution_failed", "agent.unexpected.runtime_error.extra", None),
+        ("agent_execution_failed", "agent.unexpected", None),
+        ("agent_execution_failed", None, None),
     ],
 )
 def test_staging_quality_reports_only_allowlisted_attempt_diagnostics(
     tmp_path: Path,
-    diagnostic_code: str,
+    error_code: str,
+    diagnostic_code: str | None,
     expected: str | None,
 ) -> None:
     loaded = load_rag_quality_dataset(_write_dataset(tmp_path))
-    client = FailedDiagnosticClient(diagnostic_code)
+    client = FailedDiagnosticClient(diagnostic_code, error_code=error_code)
 
     report = staging_quality.run_staging_rag_quality(
         client,
@@ -410,9 +435,13 @@ def test_staging_quality_reports_only_allowlisted_attempt_diagnostics(
     assert report["system_failure_count"] == 1
     assert report["evaluator_version"] == "m5.rag-quality.v6"
     assert report["cases"][0]["failure_diagnostic_code"] == expected
+    assert report["errors_by_code"] == {error_code: 1}
     assert report["cases"][0]["citation_diagnostics"] == []
     assert report["cases"][0]["unresolved_citation_count"] == 0
     assert report["cases"][0]["unexpected_anchor_ids"] == []
+    assert report["provider_telemetry"]["provider_request_count"] is None
+    assert report["cost_metadata"]["total_tokens"] is None
+    assert report["cost_metadata"]["billing_amount"] is None
     encoded = json.dumps(report, sort_keys=True)
     assert "raw-mcp-secret-must-not-appear" not in encoded
     assert verify_report_payload(report)

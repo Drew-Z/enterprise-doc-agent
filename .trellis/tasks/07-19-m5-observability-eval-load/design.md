@@ -102,3 +102,40 @@ do not establish it. Publication and new live calls use a concrete reviewed acti
 
 Rollback restores the previous workflow revision and separately prepared server runtime;
 it does not delete evidence, reset application data, or remove the existing wheelhouse.
+
+## Unexpected Agent Failure Diagnosis
+
+Trial `34166173023` is immutable baseline evidence. Read-only queries attribute all
+twelve runs by the exact report query-hash set, the unique active synthetic smoke owner,
+and the bounded creation window. Its three failed cases each have one permanent-failed
+attempt, no evidence rows, no checkpoint and no durable diagnostic. A successful control
+has ten checkpoints; a new read-only saver can read the control and finds no checkpoint
+for the failures. These observations locate an early execution boundary but do not prove
+a database, model, resource or network root cause. The bounded container and retained node
+logs inspected in this investigation yielded no underlying exception. Both relevant Pods
+had zero restarts. Parse CRI timestamp offsets before selecting the UTC trial window;
+these observations do not cover external database/platform log stores. No historical null
+is rewritten as a known cause or zero usage.
+
+The local Celery logging bootstrap demonstrably replaces `JsonFormatter` with its
+default formatter. Preserve the already configured application root logger through
+Celery startup. Test the real Celery logging setup in an isolated local process with a
+synthetic exception body, asserting the observable JSON fields and redaction rather
+than the implementation's configuration keys. This check makes no broker or model call.
+
+Core owns a finite set of `agent.unexpected.*` diagnostic codes. Worker classification
+uses trusted exception types, including database operational/integrity/pool errors,
+validation, timeout and ordinary runtime categories. It never copies exception messages,
+SQL parameters, arbitrary diagnostic attributes or arbitrary class names into the code.
+Keep typed grounding diagnostics and existing model/graph public errors intact. Preserve
+the current public error code, retryability and cancellation semantics; an unknown root
+cause is not a reason to enable new retries. Existing nullable attempt storage and status
+API fields transport the new allowlisted values without a schema migration.
+Database types are classified before the existing application-code guard; other already
+classified errors retain their prior diagnostics. Classification does not inspect nested
+exception messages, and an exception group remains a bounded group category.
+
+The evaluator reuses the Core allowlist. A regression must prove a new category reaches
+the sealed report and an untrusted value remains excluded. Deployment and any new live
+evaluation require a concrete reviewed action list after local verification. Rollback
+restores the prior code while retaining the original failed report and diagnostic record.

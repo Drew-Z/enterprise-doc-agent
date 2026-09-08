@@ -75,6 +75,13 @@ case IDs and payload integrity. A valid checksum is not a signature, quality pas
 - Missing detailed failure diagnostics: report the cause as unknown. A timeout fallback
   on another successful case cannot diagnose a failed case. Incomplete usage/billing
   remains unavailable and must not be coerced to zero.
+- Unexpected Agent diagnostics pass through the Core exact allowlist. Persist the separately
+  attributed Job/Attempt investigation as diagnosis evidence, never as a replacement quality
+  report. A repaired diagnostic path does not prove a historical root cause or model recovery.
+- Container-log investigations state their actual source and window. Parse offset-aware CRI
+  timestamps before comparing them with UTC run times; a lexical comparison can inspect the
+  wrong eight-hour window. A missing marker in retained files is not proof that every external
+  database or logging source lacks the exception.
 
 ### Good/Base/Bad Cases
 
@@ -89,6 +96,9 @@ selection, single-upload boundary, missing-file error and always-upload behavior
 `test_staging_rag_validation_artifacts_are_separate_and_run_scoped` fixes both validation
 paths and the distinct artifact. Evaluator tests verify seals, exact 12/40 CLI selections,
 absence of staging client creation during validation and credential/raw-output redaction.
+`test_staging_quality_reports_only_allowlisted_attempt_diagnostics` requires all finite
+unexpected categories to survive in a failed, seal-valid report; unknown fields and raw
+exception text stay excluded and missing usage/billing stays null.
 
 ### Wrong vs Correct
 

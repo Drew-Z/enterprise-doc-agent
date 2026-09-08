@@ -270,6 +270,60 @@ Rollback point: restore the reviewed previous workflow; keep the server runtime,
 wheelhouse, existing staging release and all historical evidence. Full-suite repetition,
 provider revision/cost, independent semantic review and M6-R5 retain separate acceptance.
 
+## Slice 12: Unexpected Failure Diagnostics
+
+- [x] Match all twelve trial cases by query SHA, synthetic owner and the exact execution
+  window using read-only transactions. Inspect attempts, events and checkpoint presence.
+- [x] Check bounded worker/consumer logs, deployed source hashes and the session-pool
+  connection contract. Preserve the historical root cause as unresolved.
+- [x] Reproduce Celery replacing the application JSON formatter in a local startup probe.
+- [x] Add a red regression through real Celery logging setup; preserve structured,
+  redacted application errors and make the regression green without a network connection.
+- [x] Add a red Worker boundary regression for trusted unexpected-exception categories;
+  add the Core allowlist and Worker classification while preserving cancellation, known
+  typed errors, public codes and retryability.
+- [x] Prove the new code survives durable attempt/status and sealed evaluator boundaries;
+  continue rejecting arbitrary diagnostics and exception bodies.
+- [x] Record exact read-only observations and limits in separate diagnostic evidence;
+  update the index, executable specs and next-stage plan without altering old reports.
+- [x] Run focused tests, necessary local integration checks, full non-integration checks,
+  Ruff format/lint, mypy, Trellis and diff checks.
+- [x] Present one concrete commit/publication/diagnostic rollout and bounded trial plan
+  for the remaining owner review. Do not infer a new paid evaluation authorization.
+- [x] Obtain owner confirmation for the exact sixteen-file commit, its subsequent
+  fast-forward push to `origin/main` and Quality CI verification.
+
+Local verification on 2026-09-08: 1050 non-integration tests passed (126 deselected),
+and 41 related Job/Agent integration tests passed (16 deselected) on the existing local
+Compose stack. Ruff lint/format passed for 378 Python files; mypy passed for 161 source
+files. The integration regression uses the real graph, durable backend, consumer,
+PostgreSQL and authenticated HTTP routes, injecting only initial checkpoint I/O failure.
+It verifies one permanent failure, duplicate-delivery fencing, safe diagnostics, null
+unobserved usage and tenant isolation. A separate process with the new allowlist disabled
+failed both the durable and evaluator regressions at the expected null-diagnostic checks;
+no source files were changed by this negative control.
+
+The seven original sanitized tool observations were recovered from the session's actual
+tool results and archived separately from the sealed quality report. An additional
+retained-node-log scan at 2026-09-08T01:12Z correctly converts the CRI +08:00 timestamps
+to UTC; the earlier lexical-filter node counts are invalid and explicitly superseded.
+Both Pods have zero restarts. No underlying exception was found in the retained trial
+window; external database/platform logs remain uninspected. The historical cause is
+still unknown, so root-cause completion is not claimed. The next-stage plan contains the
+exact sixteen-file commit batch and subsequent image/deployment/trial review boundaries.
+Final archive checks verified all seven observation checksums, ten deployed/baseline/tested
+source fingerprints, the unchanged original quality bytes, additive-only index updates,
+sanitized fields, local document links and the exact sixteen-file dirty-state inventory.
+The six evidence-contract tests, Trellis context validation and `git diff --check` passed.
+The owner approved the exact sixteen-file commit, its subsequent push and Quality CI
+verification on 2026-09-08. Tag/image publication, application deployment and any new real
+trial remain outside this approval; no application deployment or real trial ran.
+
+Public interfaces: Celery logging startup, `AgentExecutionHandler`, authenticated attempt
+history and `run_staging_rag_quality`. Mock only process/DB/model boundaries; use actual
+framework logging setup. Add one failing behavior and its implementation at a time.
+No deployed configuration, model route, threshold, retry policy or historical data changes.
+
 ## Full Completion Gate
 
 ```powershell

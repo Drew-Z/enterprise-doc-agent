@@ -6,6 +6,10 @@ from typing import Any
 from uuid import uuid4
 
 import pytest
+from langgraph.checkpoint.memory import InMemorySaver
+from psycopg import IntegrityError, OperationalError, ProgrammingError
+from pydantic import ValidationError
+from sqlalchemy import exc as sqlalchemy_errors
 
 from enterprise_doc_core.agents import (
     GroundingValidationError,
@@ -22,6 +26,7 @@ from enterprise_doc_worker.agent_handler import (
     AgentExecutionPayloadInvalid,
     AgentExecutionRuntimeError,
 )
+from enterprise_doc_worker.agents import AgentGraphExecutor
 
 
 def _claim(**payload_overrides: Any) -> ClaimedJob:
@@ -233,6 +238,7 @@ async def test_agent_handler_preserves_sanitized_model_failure_telemetry() -> No
         }
     }
     assert "raw provider body" not in str(caught.value.failure_metadata)
+    assert caught.value.diagnostic_code is None
 
 
 @pytest.mark.asyncio
@@ -256,3 +262,102 @@ async def test_agent_handler_propagates_only_typed_grounding_diagnostics() -> No
     assert caught.value.code == "citation_not_in_candidates"
     assert caught.value.retryable is False
     assert caught.value.diagnostic_code == "grounding.citation_excerpt_not_verbatim"
+
+
+@pytest.mark.asyncio
+async def test_agent_handler_ignores_untyped_diagnostic_attributes() -> None:
+    class UntrustedDiagnostic(RuntimeError):
+        diagnostic_code = "grounding.citation_excerpt_not_verbatim"
+
+    async def failed(_: AgentExecutionContext) -> None:
+        raise UntrustedDiagnostic("synthetic-private")
+
+    claim = _claim()
+    handler = AgentExecutionHandler(loader=FakeLoader(_context(claim)), executor=failed)
+
+    with pytest.raises(AgentExecutionRuntimeError) as caught:
+        await handler(claim)
+
+    assert caught.value.code == "agent_execution_failed"
+    assert caught.value.diagnostic_code == "agent.unexpected.runtime_error"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("failure", "diagnostic"),
+    [
+        (OperationalError("synthetic-private"), "database_operational_error"),
+        (IntegrityError("synthetic-private"), "database_integrity_error"),
+        (ProgrammingError("synthetic-private"), "database_error"),
+        (sqlalchemy_errors.TimeoutError("synthetic-private"), "database_pool_timeout"),
+        (
+            sqlalchemy_errors.OperationalError(
+                "synthetic-private-query", {}, OperationalError("synthetic-private")
+            ),
+            "database_operational_error",
+        ),
+        (
+            ValidationError.from_exception_data(
+                "CheckpointState",
+                [{"type": "int_parsing", "loc": ("count",), "input": "synthetic-private"}],
+            ),
+            "validation_error",
+        ),
+        (TimeoutError("synthetic-private"), "timeout"),
+        (TypeError("synthetic-private"), "type_error"),
+        (ValueError("synthetic-private"), "value_error"),
+        (RuntimeError("synthetic-private"), "runtime_error"),
+        (ExceptionGroup("synthetic-private", [ValueError("private")]), "exception_group"),
+        (LookupError("synthetic-private"), "unclassified"),
+    ],
+    ids=[
+        "driver-operational",
+        "driver-integrity",
+        "driver-other",
+        "pool-timeout",
+        "orm-operational",
+        "validation",
+        "timeout",
+        "type",
+        "value",
+        "runtime",
+        "group",
+        "unknown",
+    ],
+)
+async def test_checkpoint_failure_reaches_agent_handler_with_safe_diagnostic(
+    failure: Exception,
+    diagnostic: str,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    class UnavailableCheckpoint(InMemorySaver):
+        async def aget_tuple(self, config: Any) -> Any:
+            raise failure
+
+    class ExecutionStore:
+        async def prepare_segment(self) -> None:
+            pass
+
+    # Keep the real graph/executor; only the durable state I/O boundary fails.
+    claim = _claim(graph_version="m4.v2")
+    context = replace(_context(claim), graph_version="m4.v2")
+    executor = AgentGraphExecutor(
+        backend_factory=lambda _: ExecutionStore(),  # type: ignore[arg-type]
+        gateway=object(),  # type: ignore[arg-type]
+        checkpointer=UnavailableCheckpoint(),
+    )
+    handler = AgentExecutionHandler(loader=FakeLoader(context), executor=executor)
+
+    with pytest.raises(AgentExecutionRuntimeError) as caught:
+        await handler(claim)
+
+    assert caught.value.code == (getattr(failure, "code", None) or "agent_execution_failed")
+    assert caught.value.retryable is False
+    assert caught.value.diagnostic_code == f"agent.unexpected.{diagnostic}"
+    assert caught.value.failure_metadata is None
+    assert "synthetic-private" not in str(caught.value)
+    record = next(
+        record for record in caplog.records if record.message == "agent_execution_handler_failed"
+    )
+    assert record.event_data["diagnostic_code"] == caught.value.diagnostic_code
+    assert "synthetic-private" not in str(record.event_data)
