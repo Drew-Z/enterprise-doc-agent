@@ -18,9 +18,42 @@
   "commit": "2ba0488572994698723aee3e67a0d14f5c304413",
   "pr_url": null,
   "subtasks": [],
-  "children": [],
+  "children": [
+    "09-09-staging-smoke-failure-evidence",
+    "09-09-delivery-staging-acceptance-plan"
+  ],
   "parent": "07-17-enterprise-document-agent-platform",
-  "relatedFiles": [".trellis/tasks/07-17-enterprise-document-agent-platform/prd.md", ".trellis/tasks/07-17-enterprise-document-agent-platform/design.md", ".trellis/tasks/07-17-enterprise-document-agent-platform/implement.md", "D:/workspace4Cursor/offer/output/企业文档Agent平台_深度面试问答.md", "D:/workspace4Cursor/offer/output/企业文档Agent平台_M5-M7深度面试问答.md"],
+  "relatedFiles": [
+    ".trellis/tasks/07-17-enterprise-document-agent-platform/prd.md",
+    ".trellis/tasks/07-17-enterprise-document-agent-platform/design.md",
+    ".trellis/tasks/07-17-enterprise-document-agent-platform/implement.md",
+    "D:/workspace4Cursor/offer/output/企业文档Agent平台_深度面试问答.md",
+    "D:/workspace4Cursor/offer/output/企业文档Agent平台_M5-M7深度面试问答.md"
+  ],
   "notes": "The merged v0.1.33 release passed the reviewed single-node-4c4g cloud staging path end to end in GitHub Actions run 33777258980, including administrator prerequisites, Alembic/checkpointer migration, immutable image rollout, version 3 Qwen/Qwen3-Embedding-4B probe and reindex, readiness, authenticated upload-to-Agent business smoke, document ACL governance, audit retention/legal-hold governance, identity-binding lifecycle, sanitized evidence and workload restoration. The release record and hashes are reconciled in evidence/m6/20260904-v0.1.33-staging-governance.json. Three earlier attempts remain recorded as strict failures: a GHCR cold-pull timeout at migration, a fail-closed stale migration Job guard, and an expired short-lived smoke token; the fixed memberships were revalidated and all smoke/governance tokens were rotated in memory without persistence or log output before the final pass. M6-R2 and M6-R4 are closed. PostgreSQL/R2 recovery, rollback and measured-objective evidence remain valid, while M6-R5 stays open solely for the explicitly deferred independent fault-domain drill and reviewer sign-off. The Free qwen3-embedding-8b challenger remains intentionally deferred; GPU/vLLM and production-capacity claims remain outside this single-node release. M5/M7 real-provider repeatability, representative-corpus, cost/revision, human-review and managed-observability gates remain open.",
-  "meta": {"milestone": "M6", "workflow": "tdd", "current_slice": 16, "completed_slices": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17], "approval_required_before_start": true}
+  "meta": {
+    "milestone": "M6",
+    "workflow": "tdd",
+    "current_slice": 16,
+    "completed_slices": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      15,
+      16,
+      17
+    ],
+    "approval_required_before_start": true
+  }
 }

@@ -1,0 +1,45 @@
+{
+  "id": "delivery-staging-acceptance-plan",
+  "name": "delivery-staging-acceptance-plan",
+  "title": "Delivery and staging acceptance plan",
+  "description": "Prepare exact local commit batches and future staging acceptance gates from validated smoke evidence and consumer attribution changes.",
+  "status": "review",
+  "dev_type": "backend",
+  "scope": "Exact local delivery batches and future staging acceptance plan",
+  "package": "infrastructure",
+  "priority": "P0",
+  "creator": "developer",
+  "assignee": "developer",
+  "createdAt": "2026-09-09",
+  "completedAt": null,
+  "branch": "main",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "07-19-m6-cicd-kubernetes",
+  "relatedFiles": [
+    ".trellis/tasks/09-09-delivery-staging-acceptance-plan/delivery-plan.md",
+    ".trellis/tasks/09-09-delivery-staging-acceptance-plan/commit-manifest.json",
+    ".trellis/tasks/07-17-enterprise-document-agent-platform/implement.md"
+  ],
+  "notes": "Cycle 3: local plan only, based on two validated children. No commit, push or external release execution has occurred.",
+  "meta": {
+    "cycle": 3,
+    "requirement_ids": [
+      "M6-R4",
+      "DR-10"
+    ],
+    "baseline_commit": "ffca3d0861ae22c857fef54260b9fc4c083e980e",
+    "depends_on_local_validation": [
+      "09-09-staging-smoke-failure-evidence",
+      "09-09-consumer-attempt-attribution"
+    ],
+    "local_validation": "passed",
+    "validation_record": ".trellis/tasks/09-09-delivery-staging-acceptance-plan/validation.json",
+    "commit_status": "awaiting_confirmation",
+    "external_execution": "not_authorized"
+  }
+}

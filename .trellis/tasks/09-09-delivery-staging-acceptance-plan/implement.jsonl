@@ -1,0 +1,4 @@
+{"file":".trellis/spec/backend/cicd-kubernetes.md","reason":"Actual staging and evidence contracts"}
+{"file":".trellis/spec/backend/logging-guidelines.md","reason":"Consumer runtime and attempt correlation acceptance"}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Required local verification and scope limits"}
+{"file":".trellis/tasks/07-17-enterprise-document-agent-platform/research/20260909-continuous-delivery.md","reason":"Continuous task selection and historical release boundaries"}

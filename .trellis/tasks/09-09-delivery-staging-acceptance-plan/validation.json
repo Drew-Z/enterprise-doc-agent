@@ -1,0 +1,268 @@
+{
+  "schema_version": 1,
+  "task": "09-09-delivery-staging-acceptance-plan",
+  "requirement_ids": [
+    "M6-R4",
+    "DR-10"
+  ],
+  "scope": "local delivery and future staging acceptance plan validation",
+  "status": "passed",
+  "recorded_at": "2026-09-09T01:20:04.105864+00:00",
+  "commit_status": "uncommitted",
+  "environment": {
+    "os": "Windows",
+    "shell": "PowerShell 7",
+    "canonical_checkout": "D:/workspace4Cursor/enterprise-doc-agent",
+    "remote_mutations": 0,
+    "provider_calls": 0
+  },
+  "reused_code_validation": {
+    "source_hashes_matched": true,
+    "smoke": ".trellis/tasks/09-09-staging-smoke-failure-evidence/validation.json",
+    "consumer": ".trellis/tasks/09-09-consumer-attempt-attribution/validation.json",
+    "final_non_integration": "1086 passed, 127 deselected",
+    "local_integration": "22 passed across the registered-adapter case and related Agent/Job files",
+    "focused_worker": "51 passed",
+    "mypy": "161 source files passed",
+    "ruff": "lint and format passed",
+    "package_contexts_reviewed": [
+      "worker/backend",
+      "foundation-tests/backend",
+      "infrastructure/backend"
+    ],
+    "rerun_decision": "No runtime source changed during this planning child; do not repeat already-passed code gates for documentation-only edits."
+  },
+  "checks": {
+    "checked_at": "2026-09-09T01:20:04.105864+00:00",
+    "status": "passed",
+    "errors": [],
+    "head": "ffca3d0861ae22c857fef54260b9fc4c083e980e",
+    "index_sha256": "9467fbe5b383d28d6339a9a504f3b0eff6f6a422472ed379cd4e08cdd77e02a1",
+    "staged_paths": [],
+    "dirty_file_count": 128,
+    "commit_file_counts": [
+      86,
+      10,
+      16,
+      16
+    ],
+    "path_coverage": {
+      "exact": true,
+      "duplicates": [],
+      "unplanned_dirty": [],
+      "planned_not_dirty": []
+    },
+    "inherited_archive": {
+      "file_count": 86,
+      "changed_paths": []
+    },
+    "tested_source": {
+      "file_count": 12,
+      "changed_paths": [],
+      "sha256": {
+        "scripts/staging_smoke.py": "8cd5b6eb6f7e3a274b5befe7033fb4f690f996491c1a250eff9336d0b82f45d2",
+        "tests/deployment/test_staging_smoke.py": "12d314951020db818ef8963e8fe229b4aa961e8706fa7e0f566d127ad62d1f93",
+        ".trellis/spec/backend/cicd-kubernetes.md": "852f0b481474ea245d6da4127e7e200c808c3d12406290f40bc4f9f054118a13",
+        "apps/worker/src/enterprise_doc_worker/consumer_main.py": "4b460db1f53eacff226d801cd9f434da6eccae8225dbc1b4a73c8bab2231f176",
+        "apps/worker/src/enterprise_doc_worker/config.py": "fd1a7433cd1c6caad2ceeca4a989ec00d18b4f3a368ead15c38a30a2514985ad",
+        "apps/worker/src/enterprise_doc_worker/queue.py": "5f6166bf1acaea5ce0459404c696374aab0a98055518da19c97085de4ab1b6de",
+        "apps/worker/src/enterprise_doc_worker/agent_handler.py": "68a0da573382a2251032c8b923bc7eccd699bfc5acb48107a2994505cc5a30f3",
+        "apps/worker/tests/test_consumer_main.py": "074bc9fac59aec25b22443e1c3d704f786b6f355c5df54341e28c503bc9d567e",
+        "apps/worker/tests/test_queue.py": "6454fcee48ae23bb58e338ac497f14758d860e592ce60b6ce597c68ef7524139",
+        "apps/worker/tests/test_agent_handler.py": "11c94068b8b5b461ca3198a5c182e0fe7f00f32623c5d6aa8377fa12f9717f2b",
+        "tests/agent/test_consumer_attempt_attribution_integration.py": "7ec2f9f7bedcc56a210690b014f67f97c5a60db95f10a24a43f6f0ed7ee827b2",
+        ".trellis/spec/backend/logging-guidelines.md": "3be4b92f8c6b2309d669de05645c33fed68e906b4e7be1546f4160e235b113ca"
+      }
+    },
+    "json_files_parsed": 55,
+    "historical_command_captures": [
+      {
+        "file": "evidence/m6/20260908-v0.1.34-staging-release/workflow/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/deployments.json",
+        "format": "mixed stdout/stderr command capture, not a pure JSON document",
+        "warning_prefix_lines": 3,
+        "collection_exit_code": 0,
+        "payload_kind": "deployment_list",
+        "payload_structure_verified": true,
+        "original_bytes_preserved": true
+      },
+      {
+        "file": "evidence/m6/20260908-v0.1.34-staging-release/workflow/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/embedding-rollout-job.json",
+        "format": "mixed stdout/stderr command capture, not a pure JSON document",
+        "warning_prefix_lines": 3,
+        "collection_exit_code": 1,
+        "payload_kind": "not_found",
+        "payload_structure_verified": true,
+        "original_bytes_preserved": true
+      },
+      {
+        "file": "evidence/m6/20260909-v0.1.34-staging-redeployment/workflow/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/deployments.json",
+        "format": "mixed stdout/stderr command capture, not a pure JSON document",
+        "warning_prefix_lines": 3,
+        "collection_exit_code": 0,
+        "payload_kind": "deployment_list",
+        "payload_structure_verified": true,
+        "original_bytes_preserved": true
+      },
+      {
+        "file": "evidence/m6/20260909-v0.1.34-staging-redeployment/workflow/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/embedding-rollout-job.json",
+        "format": "mixed stdout/stderr command capture, not a pure JSON document",
+        "warning_prefix_lines": 3,
+        "collection_exit_code": 0,
+        "payload_kind": "embedding_job",
+        "payload_structure_verified": true,
+        "original_bytes_preserved": true
+      }
+    ],
+    "jsonl_entries_parsed": 24,
+    "local_markdown_links_checked": 24,
+    "local_markdown_anchors_checked": 2,
+    "external_links_fetched": false,
+    "new_file_trailing_whitespace": [],
+    "commands": [
+      {
+        "argv": [
+          "D:\\workspace4Cursor\\enterprise-doc-agent\\.venv\\Scripts\\python.exe",
+          "-X",
+          "utf8",
+          "-B",
+          ".trellis/scripts/task.py",
+          "validate",
+          ".trellis/tasks/09-09-delivery-staging-acceptance-plan"
+        ],
+        "exit_code": 0,
+        "stdout": "\u001b[0;34m=== Validating Context Files ===\u001b[0m\nTarget dir: D:\\workspace4Cursor\\enterprise-doc-agent\\.trellis\\tasks\\09-09-delivery-staging-acceptance-plan\n\n  \u001b[0;32mimplement.jsonl: ✓ (4 entries)\u001b[0m\n  \u001b[0;32mcheck.jsonl: ✓ (4 entries)\u001b[0m\n\n\u001b[0;32m✓ All validations passed\u001b[0m\n",
+        "stderr": ""
+      },
+      {
+        "argv": [
+          "D:\\workspace4Cursor\\enterprise-doc-agent\\.venv\\Scripts\\python.exe",
+          "-X",
+          "utf8",
+          "-B",
+          ".trellis/scripts/task.py",
+          "current"
+        ],
+        "exit_code": 0,
+        "stdout": ".trellis/tasks/09-09-delivery-staging-acceptance-plan\n",
+        "stderr": ""
+      },
+      {
+        "argv": [
+          "git",
+          "diff",
+          "--check"
+        ],
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    ],
+    "review_artifact_sha256": {
+      ".trellis/spec/backend/cicd-kubernetes.md": "852f0b481474ea245d6da4127e7e200c808c3d12406290f40bc4f9f054118a13",
+      ".trellis/spec/backend/logging-guidelines.md": "3be4b92f8c6b2309d669de05645c33fed68e906b4e7be1546f4160e235b113ca",
+      ".trellis/tasks/07-17-enterprise-document-agent-platform/design.md": "b60945c569a8c313f9b4564450a2eb5f69ce67e88ca83b477089321659ed2bde",
+      ".trellis/tasks/07-17-enterprise-document-agent-platform/implement.md": "06a875ee4c6ae7808f010d3384d9f86ccb16138ff9c70499dbab3552892d8e9d",
+      ".trellis/tasks/07-17-enterprise-document-agent-platform/prd.md": "ecf243f5c12b58db219a27171a3a23d4c3f080a793bab55b233b136eb07e3dae",
+      ".trellis/tasks/07-17-enterprise-document-agent-platform/research/20260909-continuous-delivery.md": "4ade91798d54b6c479dad68e09c3d99d88290583830e2e7ee59acef9f6b7a924",
+      ".trellis/tasks/07-17-enterprise-document-agent-platform/task.json": "df385ce1e6ef9742a6bbeb7d9ed9854035c2588d5d4c88fe3e0da4b181dbe018",
+      ".trellis/tasks/07-19-m5-observability-eval-load/task.json": "55a336957fb36b8f6dbd341c5117d53f6ab69c16f0e6441e4fbd9458c6f3a004",
+      ".trellis/tasks/07-19-m6-cicd-kubernetes/task.json": "0e5ccd46683dbddd5d23a6cc210545f76813ee61aa7912ef19e819c28c98fea5",
+      ".trellis/tasks/09-09-consumer-attempt-attribution/check.jsonl": "159e771c886d629c2ba8f4f0b57dd229e0fcfc92244b209cd86b86cceabd0d86",
+      ".trellis/tasks/09-09-consumer-attempt-attribution/design.md": "f1e69953a412dcef3fac1c244c9dfb38292d2924060b464f190a23b0307093ca",
+      ".trellis/tasks/09-09-consumer-attempt-attribution/implement.jsonl": "159e771c886d629c2ba8f4f0b57dd229e0fcfc92244b209cd86b86cceabd0d86",
+      ".trellis/tasks/09-09-consumer-attempt-attribution/implement.md": "92d0b0c3c0d0153a19b541501e8390360eba30b84c47fa71da1d0b7372226f85",
+      ".trellis/tasks/09-09-consumer-attempt-attribution/prd.md": "92ff0820f1f2305a12f868d89659757f74526d5c26c7a859333afc388402c504",
+      ".trellis/tasks/09-09-consumer-attempt-attribution/task.json": "973517fc9c06692fc48bd7a03db81d3112778acc5ec447d3c19e386440ed073e",
+      ".trellis/tasks/09-09-consumer-attempt-attribution/validation.json": "f602d6f756e91a0ae3883f25522d8878e4fd047af79561e28a8ad091cd9b7b83",
+      ".trellis/tasks/09-09-delivery-staging-acceptance-plan/check.jsonl": "2c5785ac922c36be1da40fcf3d6a851d0ce22d2f684c5aa74a5869fe15fea26a",
+      ".trellis/tasks/09-09-delivery-staging-acceptance-plan/commit-manifest.json": "218430aedc37056263a79020c6dc057878717b7df75044ca1f1425490b5c944c",
+      ".trellis/tasks/09-09-delivery-staging-acceptance-plan/delivery-plan.md": "41fc18471cdc93f8a9cc923071720909008f7e3578b15a49f41eaaf2cc6ee1b1",
+      ".trellis/tasks/09-09-delivery-staging-acceptance-plan/design.md": "3b98c1f8c91201b3bdaa8e745aa30128b7c3d0f625e0611640891ac9878621b2",
+      ".trellis/tasks/09-09-delivery-staging-acceptance-plan/implement.jsonl": "2c5785ac922c36be1da40fcf3d6a851d0ce22d2f684c5aa74a5869fe15fea26a",
+      ".trellis/tasks/09-09-delivery-staging-acceptance-plan/implement.md": "9f32c83cd1f8471a2505ddb2017369bac0bf2d59fca0ab40491c1c1c5b705bb6",
+      ".trellis/tasks/09-09-delivery-staging-acceptance-plan/prd.md": "69c2abf2bfbd4ba7115c7dbd9a0992a09785caf76d93562fc69c2ffd1600c82a",
+      ".trellis/tasks/09-09-delivery-staging-acceptance-plan/task.json": "de0759beac69810c0a3d1ea5670afb1e6c2d5440c9ca5c5f0228fb367b1d75fb",
+      ".trellis/tasks/09-09-staging-smoke-failure-evidence/check.jsonl": "5927c7e0be7f9e749f1a0307c5173b1d09b22d8ea03b14e7db00579813f43a96",
+      ".trellis/tasks/09-09-staging-smoke-failure-evidence/design.md": "9ea3b13d2026d7785f1202a641c323b3a9221f124ecb54e27d38a71ae9b6b2ac",
+      ".trellis/tasks/09-09-staging-smoke-failure-evidence/implement.jsonl": "5927c7e0be7f9e749f1a0307c5173b1d09b22d8ea03b14e7db00579813f43a96",
+      ".trellis/tasks/09-09-staging-smoke-failure-evidence/implement.md": "d6ce467b6327d160ef0b3d3814132f9e7f38c0a4db1730832a95db14dd2e273d",
+      ".trellis/tasks/09-09-staging-smoke-failure-evidence/prd.md": "7955c68f7fa019e57e2e8b8e5cdc5c661e9bfb949bfa453e6da7965bdd285d08",
+      ".trellis/tasks/09-09-staging-smoke-failure-evidence/task.json": "924f8d356d4f09e62f7e1a3e4842b2dead2145a18c60e4a6545cc278b6c61e87",
+      ".trellis/tasks/09-09-staging-smoke-failure-evidence/validation.json": "6adc28bf7c2caf41795bab2e158ddb337d4b3c60bb0486bc0f42aafdbcec77b5"
+    },
+    "snapshot_note": "The validation file itself is excluded from review_artifact_sha256 to avoid self-reference. All proposed paths, including it, are included in coverage and JSON parsing."
+  },
+  "validator": {
+    "shell": "C:/Users/zhang/AppData/Local/Microsoft/WindowsApps/pwsh.exe",
+    "invocation": [
+      "D:/workspace4Cursor/enterprise-doc-agent/.venv/Scripts/python.exe",
+      "-X",
+      "utf8",
+      "-B",
+      "-"
+    ],
+    "stdin_program": "import hashlib, json, re, subprocess, sys, unicodedata\nfrom datetime import UTC, datetime\nfrom pathlib import Path\nfrom urllib.parse import unquote\n\nconfig = json.loads(r'''{\"baseline_head\":\"ffca3d0861ae22c857fef54260b9fc4c083e980e\",\"index_sha256\":\"9467fbe5b383d28d6339a9a504f3b0eff6f6a422472ed379cd4e08cdd77e02a1\",\"directory\":\".trellis/tasks/09-09-delivery-staging-acceptance-plan\",\"source_sha256\":{\"scripts/staging_smoke.py\":\"8cd5b6eb6f7e3a274b5befe7033fb4f690f996491c1a250eff9336d0b82f45d2\",\"tests/deployment/test_staging_smoke.py\":\"12d314951020db818ef8963e8fe229b4aa961e8706fa7e0f566d127ad62d1f93\",\".trellis/spec/backend/cicd-kubernetes.md\":\"852f0b481474ea245d6da4127e7e200c808c3d12406290f40bc4f9f054118a13\",\"apps/worker/src/enterprise_doc_worker/consumer_main.py\":\"4b460db1f53eacff226d801cd9f434da6eccae8225dbc1b4a73c8bab2231f176\",\"apps/worker/src/enterprise_doc_worker/config.py\":\"fd1a7433cd1c6caad2ceeca4a989ec00d18b4f3a368ead15c38a30a2514985ad\",\"apps/worker/src/enterprise_doc_worker/queue.py\":\"5f6166bf1acaea5ce0459404c696374aab0a98055518da19c97085de4ab1b6de\",\"apps/worker/src/enterprise_doc_worker/agent_handler.py\":\"68a0da573382a2251032c8b923bc7eccd699bfc5acb48107a2994505cc5a30f3\",\"apps/worker/tests/test_consumer_main.py\":\"074bc9fac59aec25b22443e1c3d704f786b6f355c5df54341e28c503bc9d567e\",\"apps/worker/tests/test_queue.py\":\"6454fcee48ae23bb58e338ac497f14758d860e592ce60b6ce597c68ef7524139\",\"apps/worker/tests/test_agent_handler.py\":\"11c94068b8b5b461ca3198a5c182e0fe7f00f32623c5d6aa8377fa12f9717f2b\",\"tests/agent/test_consumer_attempt_attribution_integration.py\":\"7ec2f9f7bedcc56a210690b014f67f97c5a60db95f10a24a43f6f0ed7ee827b2\",\".trellis/spec/backend/logging-guidelines.md\":\"3be4b92f8c6b2309d669de05645c33fed68e906b4e7be1546f4160e235b113ca\"}}''')\nroot = Path.cwd().resolve()\ndirectory = Path(config[\"directory\"])\nmanifest_path = directory / \"commit-manifest.json\"\nmanifest = json.loads(manifest_path.read_text(encoding=\"utf-8\"))\nerrors = []\ndef digest(path):\n    return hashlib.sha256(path.read_bytes()).hexdigest()\ndef git(*args):\n    return subprocess.run([\"git\", *args], capture_output=True, check=True).stdout\nhead = git(\"rev-parse\", \"HEAD\").decode().strip()\nindex = Path(git(\"rev-parse\", \"--git-path\", \"index\").decode().strip())\nif not index.is_absolute():\n    index = root / index\nindex_sha = digest(index)\nstaged = git(\"diff\", \"--cached\", \"--name-only\").decode(\"utf-8\").splitlines()\nstatus_entries = [entry for entry in git(\"status\", \"--porcelain=v1\", \"--untracked-files=all\", \"-z\").decode(\"utf-8\").split(\"\\0\") if entry]\nif any(\"R\" in entry[:2] or \"C\" in entry[:2] for entry in status_entries):\n    errors.append(\"Unexpected rename/copy requires explicit plan review.\")\ndirty = [entry[3:] for entry in status_entries]\nplanned = [path for commit in manifest[\"commits\"] for path in commit[\"files\"]]\nduplicates = sorted({path for path in planned if planned.count(path) > 1})\nmissing = sorted(set(dirty) - set(planned))\nextra = sorted(set(planned) - set(dirty))\nif duplicates or missing or extra:\n    errors.append({\"duplicates\": duplicates, \"unplanned_dirty\": missing, \"planned_not_dirty\": extra})\nif len(planned) != manifest[\"file_count\"] or len(manifest[\"commits\"]) != manifest[\"commit_count\"]:\n    errors.append(\"Manifest counts differ from actual lists.\")\nif head != config[\"baseline_head\"] or index_sha != config[\"index_sha256\"] or staged:\n    errors.append(\"HEAD or real Git index changed, or staging is not empty.\")\nif manifest[\"baseline_head\"] != head or manifest[\"unrecognized_dirty_files\"]:\n    errors.append(\"Manifest baseline or unknown-path declaration does not match.\")\narchive = manifest[\"provenance\"][\"inherited_archive_sha256\"]\narchive_changes = [p for p, expected in archive.items() if not Path(p).is_file() or digest(Path(p)) != expected]\nsource_changes = [p for p, expected in config[\"source_sha256\"].items() if not Path(p).is_file() or digest(Path(p)) != expected]\nif archive_changes or source_changes:\n    errors.append({\"archive_changes\": archive_changes, \"tested_source_changes\": source_changes})\nraw_capture_contracts = json.loads(r'''{\"evidence/m6/20260908-v0.1.34-staging-release/workflow/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/deployments.json\":{\"command_exit_code\":0,\"payload\":\"deployment_list\"},\"evidence/m6/20260908-v0.1.34-staging-release/workflow/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/embedding-rollout-job.json\":{\"command_exit_code\":1,\"payload\":\"not_found\"},\"evidence/m6/20260909-v0.1.34-staging-redeployment/workflow/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/deployments.json\":{\"command_exit_code\":0,\"payload\":\"deployment_list\"},\"evidence/m6/20260909-v0.1.34-staging-redeployment/workflow/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/embedding-rollout-job.json\":{\"command_exit_code\":0,\"payload\":\"embedding_job\"}}''')\nhistorical_captures = []\njson_count = 0\njsonl_entries = 0\nwhitespace_issues = []\nfor relative in planned:\n    path = Path(relative)\n    if not path.is_file():\n        errors.append({\"missing_file\": relative})\n        continue\n    if path.suffix == \".json\":\n        try:\n            json.loads(path.read_text(encoding=\"utf-8\"))\n            json_count += 1\n        except (ValueError, UnicodeError) as error:\n            contract = raw_capture_contracts.get(relative)\n            if contract is None or relative not in archive:\n                errors.append({\"invalid_json\": relative, \"error_type\": type(error).__name__})\n                continue\n            raw_lines = path.read_text(encoding=\"utf-8\").splitlines()\n            capture_status = dict(line.rsplit(\"=\", 1) for line in (path.parent / \"collection-status.txt\").read_text(encoding=\"utf-8\").splitlines())\n            valid_warnings = len(raw_lines) >= 4 and all('level=warning' in line and 'config.yaml.d: permission denied' in line for line in raw_lines[:3])\n            actual_exit = int(capture_status[path.name])\n            payload = \"\\n\".join(raw_lines[3:])\n            valid_payload = False\n            try:\n                if contract[\"payload\"] == \"not_found\":\n                    valid_payload = payload.startswith('Error from server (NotFound): jobs.batch \"enterprise-doc-embedding-rollout\" not found')\n                else:\n                    parsed = json.loads(payload)\n                    valid_payload = isinstance(parsed.get(\"items\"), list) if contract[\"payload\"] == \"deployment_list\" else parsed.get(\"kind\") == \"Job\"\n            except ValueError:\n                pass\n            if not valid_warnings or actual_exit != contract[\"command_exit_code\"] or not valid_payload:\n                errors.append({\"unexpected_historical_capture_format\": relative})\n            historical_captures.append({\"file\": relative, \"format\": \"mixed stdout/stderr command capture, not a pure JSON document\", \"warning_prefix_lines\": 3, \"collection_exit_code\": actual_exit, \"payload_kind\": contract[\"payload\"], \"payload_structure_verified\": valid_payload, \"original_bytes_preserved\": digest(path) == archive[relative]})\n    elif path.suffix == \".jsonl\":\n        for number, line in enumerate(path.read_text(encoding=\"utf-8\").splitlines(), 1):\n            try:\n                entry = json.loads(line)\n                if \"_example\" in entry:\n                    errors.append({\"unused_template\": relative, \"line\": number})\n                jsonl_entries += 1\n            except ValueError:\n                errors.append({\"invalid_jsonl\": relative, \"line\": number})\n    if relative not in archive:\n        content = path.read_text(encoding=\"utf-8\")\n        for number, line in enumerate(content.splitlines(), 1):\n            if line.rstrip(\" \\t\") != line:\n                whitespace_issues.append({\"file\": relative, \"line\": number})\nif whitespace_issues:\n    errors.append({\"new_file_trailing_whitespace\": whitespace_issues})\ndef slugs(content):\n    values = set()\n    seen = {}\n    for match in re.finditer(r\"(?m)^#{1,6}\\s+(.+?)\\s*#*\\s*$\", content):\n        title = match.group(1).replace(chr(96), \"\").lower()\n        title = re.sub(r\"<[^>]*>\", \"\", title)\n        slug = \"\".join(ch for ch in title if ch in \"-_ \" or unicodedata.category(ch)[0] in {\"L\", \"N\"})\n        slug = slug.replace(\" \", \"-\")\n        n = seen.get(slug, 0)\n        seen[slug] = n + 1\n        values.add(slug if n == 0 else f\"{slug}-{n}\")\n    return values\nlink_count = 0\nanchor_count = 0\nmarkdown_paths = [Path(p) for p in planned if p.endswith(\".md\") and p not in archive]\nfence = chr(96) * 3\nfor source in markdown_paths:\n    content = source.read_text(encoding=\"utf-8\")\n    content = re.sub(rf\"(?ms)^{fence}[^\\n]*\\n.*?^{fence}[ \\t]*$\", \"\", content)\n    for match in re.finditer(r\"(?<!!)\\[[^\\]]*\\]\\(([^)\\n]+)\\)\", content):\n        target = match.group(1).strip()\n        if target.startswith((\"https://\", \"http://\", \"codex://\", \"mailto:\")):\n            continue\n        target = target.strip(\"<>\")\n        path_part, _, anchor = target.partition(\"#\")\n        destination = (source.parent / unquote(path_part)).resolve() if path_part else source.resolve()\n        if not destination.exists():\n            errors.append({\"broken_link_source\": source.as_posix(), \"target\": target})\n            continue\n        link_count += 1\n        if anchor and destination.suffix == \".md\":\n            if unquote(anchor) not in slugs(destination.read_text(encoding=\"utf-8\")):\n                errors.append({\"broken_anchor_source\": source.as_posix(), \"target\": target})\n            else:\n                anchor_count += 1\ncontext_command = [sys.executable, \"-X\", \"utf8\", \"-B\", \".trellis/scripts/task.py\", \"validate\", directory.as_posix()]\ncontext = subprocess.run(context_command, capture_output=True, text=True, encoding=\"utf-8\")\ncurrent_command = [sys.executable, \"-X\", \"utf8\", \"-B\", \".trellis/scripts/task.py\", \"current\"]\ncurrent = subprocess.run(current_command, capture_output=True, text=True, encoding=\"utf-8\")\ndiff_command = [\"git\", \"diff\", \"--check\"]\ndiff = subprocess.run(diff_command, capture_output=True, text=True, encoding=\"utf-8\")\nif context.returncode or diff.returncode or current.returncode or directory.name not in current.stdout:\n    errors.append({\"context_exit\": context.returncode, \"diff_exit\": diff.returncode, \"current_exit\": current.returncode, \"current\": current.stdout})\nif config[\"baseline_head\"] != git(\"rev-parse\", \"HEAD\").decode().strip() or digest(index) != config[\"index_sha256\"]:\n    errors.append(\"Read-only validation altered Git state.\")\nreview_paths = sorted(p for p in planned if p.startswith(\".trellis/\") and p not in archive and p != (directory / \"validation.json\").as_posix())\nresult = {\n    \"checked_at\": datetime.now(UTC).isoformat(),\n    \"status\": \"passed\" if not errors else \"failed\",\n    \"errors\": errors,\n    \"head\": head,\n    \"index_sha256\": index_sha,\n    \"staged_paths\": staged,\n    \"dirty_file_count\": len(dirty),\n    \"commit_file_counts\": [len(c[\"files\"]) for c in manifest[\"commits\"]],\n    \"path_coverage\": {\"exact\": not (duplicates or missing or extra), \"duplicates\": duplicates, \"unplanned_dirty\": missing, \"planned_not_dirty\": extra},\n    \"inherited_archive\": {\"file_count\": len(archive), \"changed_paths\": archive_changes},\n    \"tested_source\": {\"file_count\": len(config[\"source_sha256\"]), \"changed_paths\": source_changes, \"sha256\": config[\"source_sha256\"]},\n    \"json_files_parsed\": json_count,\n    \"historical_command_captures\": historical_captures,\n    \"jsonl_entries_parsed\": jsonl_entries,\n    \"local_markdown_links_checked\": link_count,\n    \"local_markdown_anchors_checked\": anchor_count,\n    \"external_links_fetched\": False,\n    \"new_file_trailing_whitespace\": whitespace_issues,\n    \"commands\": [\n        {\"argv\": context_command, \"exit_code\": context.returncode, \"stdout\": context.stdout, \"stderr\": context.stderr},\n        {\"argv\": current_command, \"exit_code\": current.returncode, \"stdout\": current.stdout, \"stderr\": current.stderr},\n        {\"argv\": diff_command, \"exit_code\": diff.returncode, \"stdout\": diff.stdout, \"stderr\": diff.stderr}\n    ],\n    \"review_artifact_sha256\": {p: digest(Path(p)) for p in review_paths},\n    \"snapshot_note\": \"The validation file itself is excluded from review_artifact_sha256 to avoid self-reference. All proposed paths, including it, are included in coverage and JSON parsing.\",\n}\nprint(json.dumps(result, ensure_ascii=False))\n",
+    "persistent_temporary_script_created": false
+  },
+  "initial_validation": {
+    "status": "failed",
+    "errors": [
+      {
+        "invalid_json": "evidence/m6/20260908-v0.1.34-staging-release/workflow/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/deployments.json",
+        "error_type": "JSONDecodeError"
+      },
+      {
+        "invalid_json": "evidence/m6/20260908-v0.1.34-staging-release/workflow/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/embedding-rollout-job.json",
+        "error_type": "JSONDecodeError"
+      },
+      {
+        "invalid_json": "evidence/m6/20260909-v0.1.34-staging-redeployment/workflow/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/deployments.json",
+        "error_type": "JSONDecodeError"
+      },
+      {
+        "invalid_json": "evidence/m6/20260909-v0.1.34-staging-redeployment/workflow/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/embedding-rollout-job.json",
+        "error_type": "JSONDecodeError"
+      }
+    ],
+    "resolution": "Verified the four unchanged historical mixed stdout/stderr captures against warning prefixes, payload structures and collection-status exit codes. Retained raw bytes; all authored JSON/JSONL remains strictly parsed."
+  },
+  "tooling_issues": [
+    {
+      "stage": "validator-wrapper-construction",
+      "result": "JavaScript SyntaxError before any shell command ran",
+      "recovery": "Removed literal backticks from the Python regex embedded in the JavaScript template, then ran the validator."
+    }
+  ],
+  "approval": {
+    "local_commit_plan": "pending_user_confirmation",
+    "work_commits": 4,
+    "files": 128,
+    "source": ".trellis/workflow.md:641",
+    "push": false,
+    "tag": false,
+    "registry_write": false,
+    "deployment": false,
+    "rollback": false,
+    "formal_task_archive": false
+  },
+  "transition": {
+    "task_status": "review",
+    "parent_status": "in_progress",
+    "active_child": "09-09-delivery-staging-acceptance-plan",
+    "current_phase": "awaiting_delivery_confirmation",
+    "next_step": "Execute the exact approved local work commits; then plan candidate source and supply-chain review with its own concrete inputs."
+  },
+  "cleanup": {
+    "current_child_temporary_files_created": 0,
+    "previous_check_temporary_directories": "All successfully recorded TemporaryDirectory checks from both code children report removal.",
+    "retained": "Historical deployment/review material, existing worktrees/prunable registration, dependencies and caches of uncertain ownership, and existing synthetic local integration data.",
+    "previous_denied_cleanup_retried": false
+  },
+  "limitations": [
+    "No commit, push, tag, build, remote preflight mutation, deployment, rollback, live provider trial, formal archive or journal commit was executed by this planning child.",
+    "Future version, final source, four image digests and live before/after values remain prerequisites, not approved placeholders.",
+    "Historical v0.1.34 remains unaccepted and its Agent failure root cause unresolved.",
+    "Raw command captures can contain warnings or failed collection outcomes despite a .json filename; their original bytes and capture status remain evidence.",
+    "Local validation cannot close M5/M7 external evidence requirements or the M6 independent fault-domain recovery gate."
+  ]
+}

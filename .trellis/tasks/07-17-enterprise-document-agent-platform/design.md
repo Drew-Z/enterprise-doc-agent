@@ -98,6 +98,12 @@ Each run records code/image version plus graph, prompt, model, embedding, tool-s
 
 Database changes use expand/migrate/contract. Deployments use immutable image digests. Rollback never assumes destructive schema changes can be undone automatically.
 
+## Continuous Child Execution
+
+The existing parent owns the persistent queue; milestone tasks retain requirement ownership and may contain bounded implementation children. Only one child is implemented at a time in the canonical checkout. Each child records explicit prerequisites, changed-file scope, acceptance criteria, and executable local checks before implementation. On local validation, the parent records the outcome and selects the next independent child. A child awaiting the separately required commit confirmation stays `review` with `meta.local_validation=passed`; it is not archived or counted as released. Actual external blockers remain on the owning milestone and do not imply that local work is blocked.
+
+Historical evidence is immutable. New local validation records identify the baseline commit and changed-source hashes so an uncommitted result cannot be confused with a deployed image. The task tree and current-task pointer are navigation aids; the execution queue records dependencies and acceptance state explicitly.
+
 ## Evidence Contract
 
 Each child task writes immutable manifests under `evidence/<milestone>/<YYYYMMDD-HHMMSS>-<evidence_id>.json`, stores referenced artifacts under the same milestone directory, and updates the tracked parent index at `evidence/index.json`. The stable fields are:

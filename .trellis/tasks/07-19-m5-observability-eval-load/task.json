@@ -18,7 +18,9 @@
   "commit": "8ea488ecdc243f96bc3fa13f3a0a126693884d65",
   "pr_url": null,
   "subtasks": [],
-  "children": [],
+  "children": [
+    "09-09-consumer-attempt-attribution"
+  ],
   "parent": "07-17-enterprise-document-agent-platform",
   "relatedFiles": [
     ".trellis/tasks/07-17-enterprise-document-agent-platform/prd.md",
@@ -33,7 +35,16 @@
     "milestone": "M5",
     "workflow": "tdd",
     "current_slice": 7,
-    "completed_slices": [0, 1, 2, 3, 4, 5, 6, 7],
+    "completed_slices": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
     "approval_required_before_start": true
   }
 }

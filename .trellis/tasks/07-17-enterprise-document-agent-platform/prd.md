@@ -66,6 +66,7 @@ The platform is an engineering project first. A feature is not considered comple
 - **DR-7**: Every milestone produces a machine-readable evidence manifest that records the exact command or manual procedure, environment, commit SHA and image digest where applicable, result, artifact paths, limitations, and owner. Placeholder commands are not acceptable completion evidence.
 - **DR-8**: External manual gates use a stable record containing gate ID, requirement, owner, blocking reason, prerequisites, required evidence, state, and review date. An open gate remains blocking and cannot be counted as completed work.
 - **DR-9**: Production promotion is blocked until secret management, TLS/ingress and network boundaries, least-privilege service identities, compatible migrations, database backup/restore evidence, immutable image/SBOM/vulnerability evidence, audit access, monitoring/alerting, incident response, and rollback runbooks are reviewed.
+- **DR-10**: Maintain this parent as the continuous delivery task. Reassess current evidence, select one bounded child, record its requirements/design/validation, implement and verify it, then update the parent and plan the next child. Completed local implementation, committed delivery, and external acceptance are distinct states; an external gate must not stop unrelated authorized local work.
 
 ## Milestone Children
 
@@ -119,4 +120,5 @@ Dependencies are specified in each child's `implement.md`; tree order alone is n
 ## Notes
 
 - The parent task is an integration and acceptance owner. Child tasks own implementation.
+- The 2026-09-09 continuation explicitly authorizes ongoing local child planning, implementation, and validation within the existing release scope. The execution queue and current evidence are maintained in `implement.md` and `research/20260909-continuous-delivery.md`.
 - The bootstrap-guidelines task remains open until M0 creates real code patterns that can be documented without inventing conventions.

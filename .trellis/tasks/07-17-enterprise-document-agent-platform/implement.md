@@ -12,6 +12,27 @@
 8. Implement M7 when provider baselines and hardware constraints are known.
 9. Return to the parent task for full integration, staging, release, rollback, and documentation review.
 
+## Continuous Queue — 2026-09-09
+
+Current assessment: [continuous delivery state](research/20260909-continuous-delivery.md).
+
+| Order | Child / owner | Prerequisite | Acceptance / transition |
+|---|---|---|---|
+| 1 | `09-09-staging-smoke-failure-evidence` / M6-R4 | Existing failed-run archive and smoke contract | Local validation passed: 120 focused/related, 1077 non-integration tests, Ruff and mypy; task in review pending commit |
+| 2 | `09-09-consumer-attempt-attribution` / M5 | First child's local checks passed; consumer/attempt/log boundaries inspected | Local validation passed: 51 focused, 22 local integration, 1086 non-integration tests, Ruff and mypy; task in review pending commit |
+| 3 | `09-09-delivery-staging-acceptance-plan` / M6 | Both local fixes validated; historical archive remains separate | [Four proposed work commits and future staging acceptance gates](../09-09-delivery-staging-acceptance-plan/delivery-plan.md) validated against all 128 dirty paths; local plan in review pending commit confirmation |
+
+- [x] Reuse the existing parent and canonical `enterprise-doc-agent` checkout.
+- [x] Review parent architecture, release limits, current worktree and failed-run evidence.
+- [x] Create the first bounded child under M6 with requirements, design and validation plan.
+- [x] Complete and validate child 1 locally, record source identity and [validation result](../09-09-staging-smoke-failure-evidence/validation.json).
+- [x] Switch to planning child 2 from the current implementation and child 1 result.
+- [x] Complete child 2 locally and record [validation](../09-09-consumer-attempt-attribution/validation.json).
+- [x] Create and complete the next local delivery/acceptance-plan child.
+- [ ] Obtain the separately required commit confirmation before committing or archiving local work.
+
+The previous 86-file failure archive remains a separate pending delivery unit. No push, deployment, rollback, or real RAG evaluation follows automatically from a local child completing. M5/M7 external evidence and M6 independent recovery gates remain open.
+
 ## Parent Review Gates
 
 Every gate consumes reviewed child evidence manifests. A checklist item is not complete when its command is still a planning placeholder, its environment is unknown, or its only evidence is a chat statement. External constraints use linked manual-gate records and remain blocking until satisfied.

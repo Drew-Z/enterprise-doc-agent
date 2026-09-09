@@ -5,7 +5,7 @@
   "description": "",
   "status": "in_progress",
   "dev_type": "fullstack",
-  "scope": "M0-M8 milestone integration, evidence review, end-to-end acceptance, release and rollback ownership",
+  "scope": "M0-M8 integration, continuous child planning and local validation, evidence review, end-to-end acceptance, release and rollback ownership",
   "package": null,
   "priority": "P2",
   "creator": "developer",
@@ -37,6 +37,26 @@
   "notes": "M0-M4 and M8 are complete. The merged v0.1.33 release passed the reviewed single-node-4c4g cloud staging prerequisites, migration, immutable image rollout, version 3 embedding probe/reindex, readiness, authenticated upload-to-Agent business smoke, document ACL governance, audit retention/legal-hold governance and identity-binding lifecycle in GitHub Actions run 33777258980. The formal merged-release record is evidence/m6/20260904-v0.1.33-staging-governance.json; the earlier rc.2 record remains historical candidate evidence. M6-R2 and M6-R4 are closed. The independent fault-domain recovery drill and reviewer sign-off (M6-R5) remain open and require another server or isolated fault domain. M5/M7 real-provider repeatability, representative-corpus and human review, provider revision and billing metadata, representative capacity, and managed observability ownership remain open. The approved release scope excludes GPU/vLLM/quantization capacity work (M7-R7); the 4C4G host is bounded staging, not HA or production capacity. Server-side Claude Code is disabled; ongoing development continues from the local workspace.",
   "meta": {
     "current_milestone": "remaining-release-gates",
+    "continuous_execution": {
+      "enabled": true,
+      "requested_at": "2026-09-09",
+      "strategy": "one bounded local child at a time",
+      "active_child": "09-09-delivery-staging-acceptance-plan",
+      "current_phase": "awaiting_delivery_confirmation",
+      "locally_validated_children": [
+        "09-09-staging-smoke-failure-evidence",
+        "09-09-consumer-attempt-attribution",
+        "09-09-delivery-staging-acceptance-plan"
+      ],
+      "next_candidate": "approved local commit delivery, then candidate source and supply-chain review",
+      "queue": ".trellis/tasks/07-17-enterprise-document-agent-platform/implement.md",
+      "assessment": ".trellis/tasks/07-17-enterprise-document-agent-platform/research/20260909-continuous-delivery.md",
+      "baseline_commit": "ffca3d0861ae22c857fef54260b9fc4c083e980e",
+      "latest_candidate": "v0.1.34",
+      "latest_candidate_accepted": false,
+      "latest_deployment_run": "34248230396",
+      "latest_deployment_status": "failed"
+    },
     "completed_milestones": [
       "M0",
       "M1",
