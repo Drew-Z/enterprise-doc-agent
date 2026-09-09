@@ -1,0 +1,403 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  annotations:
+    enterprise-doc-agent/approved-api-images: ghcr.io/drew-z/enterprise-doc-api@sha256:e2cbbc6ba1c5e7463ed21e6663c5a948d467e46bcd187a7cf8b02c50ed53bfff,ghcr.io/drew-z/enterprise-doc-api@sha256:566f0328605382b19ee26f48fe535bfaa8c7d8295ee4f893c7a1fabbdc948fc5
+    enterprise-doc-agent/approved-config-sha256: e802b8e7fa7179e77693b7ef9b2c17a473a61a2998d1f071fc6ddbf79e90114f
+    enterprise-doc-agent/approved-consumer-images: ghcr.io/drew-z/enterprise-doc-consumer@sha256:ec84d7d280ff74f28147c678428cee5cfa55a5a70a6fe444a20079e616262a21,ghcr.io/drew-z/enterprise-doc-consumer@sha256:94998cf53afb0b334c84df24bc93e370de3db9577294c916ad9099b3c6507b88
+    enterprise-doc-agent/approved-database-egress-cidr: 52.74.252.201/32,52.77.146.31/32,54.255.219.82/32
+    enterprise-doc-agent/approved-embedding-base-url: https://api.siliconflow.cn/v1
+    enterprise-doc-agent/approved-embedding-dimension: '1024'
+    enterprise-doc-agent/approved-embedding-model-name: Qwen/Qwen3-Embedding-4B
+    enterprise-doc-agent/approved-embedding-version: '3'
+    enterprise-doc-agent/approved-model-base-url: https://new.lucky0625.qzz.io/v1
+    enterprise-doc-agent/approved-model-fallback-base-url: https://elysia.h-e.top/v1
+    enterprise-doc-agent/approved-model-fallback-name: deepseek-v4-flash-0731
+    enterprise-doc-agent/approved-model-fallback-provider: openai_compatible
+    enterprise-doc-agent/approved-model-fallback-secret-key: '[REDACTED]'
+    enterprise-doc-agent/approved-model-fallback-timeout-seconds: '60'
+    enterprise-doc-agent/approved-model-name: grok-4.6
+    enterprise-doc-agent/approved-model-provider: openai_compatible
+    enterprise-doc-agent/approved-object-store-endpoint: https://2741446a7478f2d8a5ff31df7e077f17.r2.cloudflarestorage.com
+    enterprise-doc-agent/approved-object-store-presign-endpoint: https://2741446a7478f2d8a5ff31df7e077f17.r2.cloudflarestorage.com
+    enterprise-doc-agent/approved-prometheus-images: quay.io/prometheus/prometheus@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996
+    enterprise-doc-agent/approved-staging-host: agent.playlab.eu.cc
+    enterprise-doc-agent/approved-tls-secret-name: '[REDACTED]'
+    enterprise-doc-agent/approved-web-images: ghcr.io/drew-z/enterprise-doc-web@sha256:618655ebcaaa3ff8af903414e348d1261b563f00becf54f06f66fad2441e3b09,ghcr.io/drew-z/enterprise-doc-web@sha256:15130a914d5a37e1059e7da1d0145c6652ae2c05ff0288d32dfa7ac8f7157b2a
+    enterprise-doc-agent/approved-web-object-store-origins: https://2741446a7478f2d8a5ff31df7e077f17.r2.cloudflarestorage.com
+    enterprise-doc-agent/approved-worker-images: ghcr.io/drew-z/enterprise-doc-worker@sha256:b957cdd12dff8e3151386a4a1e829b311c3970f14e22479524011f22e7d784d7,ghcr.io/drew-z/enterprise-doc-worker@sha256:d83e4db8bf199917d85e5b6ea5e8caa48a8701ab6e022783cec3be3dac13782d
+    enterprise-doc-agent/deployment-profile: single-node-4c4g
+    enterprise-doc-agent/prerequisites-sha256: 53ea74b2f22dc2cef444b87daf40e256f9a2eb9410ed34141857a0a01d5563d3
+  labels:
+    app.kubernetes.io/part-of: enterprise-doc-agent
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/audit-version: latest
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+  name: enterprise-doc-agent-staging
+---
+apiVersion: v1
+automountServiceAccountToken: '[REDACTED]'
+kind: ServiceAccount
+metadata:
+  name: enterprise-doc-runtime
+  namespace: enterprise-doc-agent-staging
+---
+apiVersion: v1
+data:
+  AGENT__CHECKPOINT_TIMEOUT_SECONDS: '60'
+  AGENT__EXECUTION_MAX_ATTEMPTS: '5'
+  AGENT__EXECUTION_TIMEOUT_SECONDS: '300'
+  API__HOST: 0.0.0.0
+  API__PORT: '8000'
+  API__READINESS_CACHE_TTL_SECONDS: '2'
+  APP_ENV: staging
+  AUTH__EXTERNAL_AUTH_ENABLED: 'false'
+  AUTH__EXTERNAL_MEMBER_GROUPS: '["member", "tenant-member"]'
+  AUTH__EXTERNAL_OWNER_GROUPS: '["owner", "tenant-owner"]'
+  AUTH__EXTERNAL_ROLE_CLAIM_ENABLED: 'false'
+  AUTH__SCIM_ENABLED: 'false'
+  AUTH__SCIM_ISSUER: https://idp.example.test/scim
+  AUTH__SCIM_TENANT_TOKENS: '[REDACTED]'
+  DATABASE__CONNECT_TIMEOUT_SECONDS: '15'
+  DATABASE__MAX_OVERFLOW: '0'
+  DATABASE__POOL_RECYCLE_SECONDS: '600'
+  DATABASE__POOL_SIZE: '1'
+  DATABASE__POOL_TIMEOUT_SECONDS: '10'
+  EMBEDDING__BASE_URL: https://api.siliconflow.cn/v1
+  EMBEDDING__BATCH_SIZE: '8'
+  EMBEDDING__DIMENSION: '1024'
+  EMBEDDING__INGESTION_MAX_ATTEMPTS: '5'
+  EMBEDDING__MAX_RETRIES: '2'
+  EMBEDDING__MODEL_NAME: Qwen/Qwen3-Embedding-4B
+  EMBEDDING__PROVIDER: openai_compatible
+  EMBEDDING__QUERY_INSTRUCTION: Given a user question about enterprise documents,
+    retrieve relevant passages that answer the question
+  EMBEDDING__SEND_DIMENSIONS: 'true'
+  EMBEDDING__TIMEOUT_SECONDS: '20'
+  EMBEDDING__VERSION: '3'
+  LOG_LEVEL: INFO
+  MCP__DATABASE_TRANSACTION_MODE: 'true'
+  MCP__REQUEST_TIMEOUT_SECONDS: '90'
+  MODEL__BASE_URL: https://new.lucky0625.qzz.io/v1
+  MODEL__FALLBACK_BASE_URL: https://elysia.h-e.top/v1
+  MODEL__FALLBACK_MODEL_NAME: deepseek-v4-flash-0731
+  MODEL__FALLBACK_PROVIDER: openai_compatible
+  MODEL__FALLBACK_TIMEOUT_SECONDS: '60'
+  MODEL__MODEL_NAME: grok-4.6
+  MODEL__PROVIDER: openai_compatible
+  MODEL__TIMEOUT_SECONDS: '60'
+  OBJECT_STORE__ARTIFACTS_BUCKET: artifacts
+  OBJECT_STORE__CONNECT_TIMEOUT_SECONDS: '15'
+  OBJECT_STORE__DOCUMENTS_BUCKET: documents
+  OBJECT_STORE__ENDPOINT: https://2741446a7478f2d8a5ff31df7e077f17.r2.cloudflarestorage.com
+  OBJECT_STORE__MULTIPART_CHECKSUM_MODE: readback_sha256
+  OBJECT_STORE__PRESIGN_ENDPOINT: https://2741446a7478f2d8a5ff31df7e077f17.r2.cloudflarestorage.com
+  OBJECT_STORE__SECURE: 'true'
+  OTEL__ENABLED: 'false'
+  OTEL__EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+  OTEL__METRICS_ENABLED: 'true'
+  REDIS__URL: redis://enterprise-doc-redis:6379/0
+  RETRIEVAL__REQUIRE_VECTOR_EVIDENCE: 'true'
+  WORKER__CONSUMER_METRICS_PORT: '8082'
+  WORKER__HOST: 0.0.0.0
+  WORKER__PROBE_PORT: '8081'
+kind: ConfigMap
+metadata:
+  name: enterprise-doc-config
+  namespace: enterprise-doc-agent-staging
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: enterprise-doc-api
+  namespace: enterprise-doc-agent-staging
+spec:
+  ports:
+  - name: http
+    port: 8000
+    targetPort: http
+  selector:
+    app.kubernetes.io/name: enterprise-doc-api
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: enterprise-doc-consumer
+  namespace: enterprise-doc-agent-staging
+spec:
+  ports:
+  - name: metrics
+    port: 8082
+    targetPort: metrics
+  selector:
+    app.kubernetes.io/name: enterprise-doc-consumer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: enterprise-doc-redis
+  namespace: enterprise-doc-agent-staging
+spec:
+  ports:
+  - name: redis
+    port: 6379
+    targetPort: redis
+  selector:
+    app.kubernetes.io/name: enterprise-doc-redis
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: enterprise-doc-web
+  namespace: enterprise-doc-agent-staging
+spec:
+  ports:
+  - name: http
+    port: 8080
+    targetPort: http
+  selector:
+    app.kubernetes.io/name: enterprise-doc-web
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: enterprise-doc-worker
+  namespace: enterprise-doc-agent-staging
+spec:
+  ports:
+  - name: probe
+    port: 8081
+    targetPort: probe
+  selector:
+    app.kubernetes.io/name: enterprise-doc-worker
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+  name: enterprise-doc-web
+  namespace: enterprise-doc-agent-staging
+spec:
+  ingressClassName: traefik
+  rules:
+  - host: agent.playlab.eu.cc
+    http:
+      paths:
+      - backend:
+          service:
+            name: enterprise-doc-web
+            port:
+              number: 8080
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - agent.playlab.eu.cc
+    secretName: '[REDACTED]'
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: enterprise-doc-api-ingress
+  namespace: enterprise-doc-agent-staging
+spec:
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: enterprise-doc-web
+    ports:
+    - port: 8000
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: enterprise-doc-api
+  policyTypes:
+  - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: enterprise-doc-default-deny
+  namespace: enterprise-doc-agent-staging
+spec:
+  egress:
+  - ports:
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
+    to:
+    - namespaceSelector: {}
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: enterprise-doc-external-postgres-egress
+  namespace: enterprise-doc-agent-staging
+spec:
+  egress:
+  - ports:
+    - port: 5432
+      protocol: TCP
+    - port: 6543
+      protocol: TCP
+    to:
+    - ipBlock:
+        cidr: 52.74.252.201/32
+    - ipBlock:
+        cidr: 52.77.146.31/32
+    - ipBlock:
+        cidr: 54.255.219.82/32
+  podSelector:
+    matchExpressions:
+    - key: app.kubernetes.io/name
+      operator: In
+      values:
+      - enterprise-doc-api
+      - enterprise-doc-worker
+      - enterprise-doc-consumer
+      - enterprise-doc-migrate
+      - enterprise-doc-embedding-rollout
+  policyTypes:
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: enterprise-doc-otel-collector-ingress
+  namespace: enterprise-doc-agent-staging
+spec:
+  ingress:
+  - from:
+    - namespaceSelector: {}
+    ports:
+    - port: 4317
+      protocol: TCP
+    - port: 4318
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: otel-collector
+  policyTypes:
+  - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: enterprise-doc-redis-ingress
+  namespace: enterprise-doc-agent-staging
+spec:
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: enterprise-doc-api
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: enterprise-doc-worker
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: enterprise-doc-consumer
+    ports:
+    - port: 6379
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: enterprise-doc-redis
+  policyTypes:
+  - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: enterprise-doc-runtime-egress
+  namespace: enterprise-doc-agent-staging
+spec:
+  egress:
+  - ports:
+    - port: 5432
+      protocol: TCP
+    - port: 6379
+      protocol: TCP
+    - port: 9000
+      protocol: TCP
+    - port: 4318
+      protocol: TCP
+    - port: 8000
+      protocol: TCP
+    to:
+    - podSelector: {}
+  - ports:
+    - port: 443
+      protocol: TCP
+  podSelector: {}
+  policyTypes:
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: enterprise-doc-staging-smoke-api-egress
+  namespace: enterprise-doc-agent-staging
+spec:
+  egress:
+  - ports:
+    - port: 8000
+      protocol: TCP
+    to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: enterprise-doc-api
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: m5-staging-smoke
+  policyTypes:
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: enterprise-doc-staging-smoke-api-ingress
+  namespace: enterprise-doc-agent-staging
+spec:
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: m5-staging-smoke
+    ports:
+    - port: 8000
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: enterprise-doc-api
+  policyTypes:
+  - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: enterprise-doc-web-ingress
+  namespace: enterprise-doc-agent-staging
+spec:
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+    ports:
+    - port: 8080
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: enterprise-doc-web
+  policyTypes:
+  - Ingress

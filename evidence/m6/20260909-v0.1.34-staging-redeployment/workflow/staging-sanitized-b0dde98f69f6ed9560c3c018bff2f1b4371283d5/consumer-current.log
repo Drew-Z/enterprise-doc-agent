@@ -1,0 +1,30 @@
+time="2026-09-09T00:03:26+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-09-09T00:03:26+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-09-09T00:03:26+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+[pod/enterprise-doc-consumer-69c77dff57-n7dpv/consumer]  
+[pod/enterprise-doc-consumer-69c77dff57-n7dpv/consumer]  -------------- worker-local@enterprise-doc-consumer-69c77dff57-n7dpv v5.6.3 (recovery)
+[pod/enterprise-doc-consumer-69c77dff57-n7dpv/consumer] --- ***** ----- 
+[pod/enterprise-doc-consumer-69c77dff57-n7dpv/consumer] -- ******* ---- Linux-6.8.0-138-generic-x86_64-with-glibc2.36 2026-09-08 16:02:02
+[pod/enterprise-doc-consumer-69c77dff57-n7dpv/consumer] - *** --- * --- 
+[pod/enterprise-doc-consumer-69c77dff57-n7dpv/consumer] - ** ---------- [config]
+[pod/enterprise-doc-consumer-69c77dff57-n7dpv/consumer] - ** ---------- .> app:         enterprise-doc-worker:0x706b26f27530
+[pod/enterprise-doc-consumer-69c77dff57-n7dpv/consumer] - ** ---------- .> transport:   redis://enterprise-doc-redis:6379/0
+[pod/enterprise-doc-consumer-69c77dff57-n7dpv/consumer] - ** ---------- .> results:     disabled://
+[pod/enterprise-doc-consumer-69c77dff57-n7dpv/consumer] - *** --- * --- .> concurrency: 1 (solo)
+[pod/enterprise-doc-consumer-69c77dff57-n7dpv/consumer] -- ******* ---- .> task events: OFF (enable -E to monitor tasks in this worker)
+[pod/enterprise-doc-consumer-69c77dff57-n7dpv/consumer] --- ***** ----- 
+[pod/enterprise-doc-consumer-69c77dff57-n7dpv/consumer]  -------------- [queues]
+[pod/enterprise-doc-consumer-69c77dff57-n7dpv/consumer]                 .> document-ingestion exchange=document-ingestion(direct) key=document-ingestion
+[pod/enterprise-doc-consumer-69c77dff57-n7dpv/consumer]                 
+[pod/enterprise-doc-consumer-69c77dff57-n7dpv/consumer] 
+[pod/enterprise-doc-consumer-69c77dff57-n7dpv/consumer] [tasks]
+[pod/enterprise-doc-consumer-69c77dff57-n7dpv/consumer]   . enterprise_doc_worker.execute_job
+[pod/enterprise-doc-consumer-69c77dff57-n7dpv/consumer] 
+[pod/enterprise-doc-consumer-69c77dff57-n7dpv/consumer] {"timestamp":"2026-09-08T16:02:02.240054+00:00","level":"INFO","service":"worker-consumer","environment":"staging","event":"**********"}
+[pod/enterprise-doc-consumer-69c77dff57-n7dpv/consumer] {"timestamp":"2026-09-08T16:02:02.287268+00:00","level":"INFO","service":"worker-consumer","environment":"staging","event":"mingle: searching for neighbors"}
+[pod/enterprise-doc-consumer-69c77dff57-n7dpv/consumer] {"timestamp":"2026-09-08T16:02:03.298428+00:00","level":"INFO","service":"worker-consumer","environment":"staging","event":"**********"}
+[pod/enterprise-doc-consumer-69c77dff57-n7dpv/consumer] {"timestamp":"2026-09-08T16:02:03.298528+00:00","level":"INFO","service":"worker-consumer","environment":"staging","event":"mingle: sync complete"}
+[pod/enterprise-doc-consumer-69c77dff57-n7dpv/consumer] {"timestamp":"2026-09-08T16:02:03.311195+00:00","level":"INFO","service":"worker-consumer","environment":"staging","event":"**********"}
+[pod/enterprise-doc-consumer-69c77dff57-n7dpv/consumer] {"timestamp":"2026-09-08T16:02:52.237969+00:00","level":"INFO","service":"worker-consumer","environment":"staging","event":"**********"}
+[pod/enterprise-doc-consumer-69c77dff57-n7dpv/consumer] {"timestamp":"2026-09-08T16:02:56.768784+00:00","level":"INFO","service":"worker-consumer","environment":"staging","event":"**********"}
+[pod/enterprise-doc-consumer-69c77dff57-n7dpv/consumer] {"timestamp":"2026-09-08T16:02:58.095404+00:00","level":"INFO","service":"worker-consumer","environment":"staging","event":"**********"}

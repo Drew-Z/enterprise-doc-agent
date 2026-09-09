@@ -1,0 +1,15 @@
+{
+  "observed_at": "2026-09-08T12:55:06.410163+00:00",
+  "transfers": [
+    {
+      "digest": "sha256:d2b775db5d3bf8908ced0d40e3e9e7de5a2d899375a6a8ca3a5fcc8db8b3e532",
+      "size_age": [
+        "51.38MB",
+        "31",
+        "minutes"
+      ],
+      "expected_layer_size_bytes": 78462880
+    }
+  ],
+  "total_api_layer_bytes": 123899764
+}

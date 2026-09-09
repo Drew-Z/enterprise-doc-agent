@@ -1,0 +1,4 @@
+time="2026-09-08T21:40:02+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-09-08T21:40:02+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-09-08T21:40:02+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+error: error from server (NotFound): jobs.batch "enterprise-doc-embedding-rollout" not found in namespace "enterprise-doc-agent-staging"

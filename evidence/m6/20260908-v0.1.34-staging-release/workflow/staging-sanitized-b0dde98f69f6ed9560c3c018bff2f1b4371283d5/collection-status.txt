@@ -1,0 +1,11 @@
+deployments.json=0
+migration.log=1
+embedding-rollout-job.json=1
+embedding-rollout.log=1
+worker-current.log=1
+worker-previous.log=1
+consumer-current.log=1
+consumer-previous.log=1
+ingress.yaml=0
+network-policy.yaml=0
+events.txt=0

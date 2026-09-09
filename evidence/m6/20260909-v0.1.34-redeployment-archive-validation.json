@@ -1,0 +1,211 @@
+{
+  "schema_version": 1,
+  "evidence_type": "local-deployment-archive-validation",
+  "status": "passed",
+  "recorded_at": "2026-09-08T18:16:54.841475+00:00",
+  "release": "v0.1.34",
+  "workflow_run_id": "34248230396",
+  "workflow_run_attempt": 1,
+  "validated_record": "evidence/m6/20260909-v0.1.34-staging-redeployment-failure.json",
+  "validated_record_sha256": "68d83c724e420fd6ca2e7a15029e066f26764034ac85524e93de6d7730ab50c2",
+  "source_sha": "b0dde98f69f6ed9560c3c018bff2f1b4371283d5",
+  "focused_tests": {
+    "passed": 60,
+    "files": [
+      "tests/deployment/test_staging_smoke.py",
+      "tests/deployment/test_build_staging_release_record.py",
+      "tests/foundation/test_evidence_contract.py"
+    ],
+    "summary": "60 passed in 1.17s",
+    "provider_calls": 0
+  },
+  "trellis_context_validation": "=== Validating Context Files ===\nTarget dir: D:\\workspace4Cursor\\enterprise-doc-agent\\.trellis\\tasks\\07-19-m5-observability-eval-load\n\n  implement.jsonl: ✓ (3 entries)\n  check.jsonl: ✓ (3 entries)\n\n✓ All validations passed",
+  "historical_evidence_files_unchanged": 405,
+  "first_archive_original_files_verified": 37,
+  "second_archive_original_files_verified": 40,
+  "git_byte_roundtrip": {
+    "files_verified": 79,
+    "core_autocrlf": true,
+    "temporary_directory_removed": true
+  },
+  "real_index_staged_paths": [],
+  "real_index_bytes_unchanged": true,
+  "m5_m7_entries_unchanged": true,
+  "index_change": "One additive M6 reference for the second failed deployment; previous references preserved.",
+  "local_links_verified": 31,
+  "links": [
+    {
+      "source": "docs/ops/v0.1.34-staging-deployment-plan.md",
+      "target": "../../evidence/m6/20260908-v0.1.34-candidate-preflight.json"
+    },
+    {
+      "source": "docs/ops/v0.1.34-staging-deployment-plan.md",
+      "target": "../../evidence/m6/20260908-v0.1.34-release-manifest.json"
+    },
+    {
+      "source": "docs/ops/v0.1.34-staging-deployment-plan.md",
+      "target": "../../evidence/m6/20260904-v0.1.33-staging-governance.json"
+    },
+    {
+      "source": "docs/ops/v0.1.34-staging-deployment-plan.md",
+      "target": "NEXT_STAGE_PLAN.md"
+    },
+    {
+      "source": "docs/ops/v0.1.34-staging-deployment-plan.md",
+      "target": "../../evidence/m6/20260908-v0.1.34-staging-deployment-failure.json"
+    },
+    {
+      "source": "docs/ops/v0.1.34-staging-deployment-plan.md",
+      "target": "../../evidence/m6/20260909-v0.1.34-staging-redeployment-failure.json"
+    },
+    {
+      "source": "docs/ops/v0.1.34-staging-deployment-plan.md",
+      "target": "../../.trellis/tasks/07-19-m5-observability-eval-load/research/20260909-v0.1.34-smoke-diagnosis.md"
+    },
+    {
+      "source": "docs/ops/NEXT_STAGE_PLAN.md",
+      "target": "../../evidence/index.json"
+    },
+    {
+      "source": "docs/ops/NEXT_STAGE_PLAN.md",
+      "target": "../../evidence/m6/20260904-v0.1.33-staging-governance.json"
+    },
+    {
+      "source": "docs/ops/NEXT_STAGE_PLAN.md",
+      "target": "../../evidence/m5/20260906-staging-rag-trial-33976542098-setup-failure.json"
+    },
+    {
+      "source": "docs/ops/NEXT_STAGE_PLAN.md",
+      "target": "../../evidence/m5/20260907-staging-rag-evaluator-runtime-preparation.json"
+    },
+    {
+      "source": "docs/ops/NEXT_STAGE_PLAN.md",
+      "target": "../../evidence/m5/20260908-staging-rag-trial-34143634860-checkout-failure.json"
+    },
+    {
+      "source": "docs/ops/NEXT_STAGE_PLAN.md",
+      "target": "../../evidence/gates/m5-real-provider-quality.json"
+    },
+    {
+      "source": "docs/ops/NEXT_STAGE_PLAN.md",
+      "target": "../../evidence/gates/m7-real-provider-quality.json"
+    },
+    {
+      "source": "docs/ops/NEXT_STAGE_PLAN.md",
+      "target": "../../evidence/gates/release-scope-decision-20260814.json"
+    },
+    {
+      "source": "docs/ops/NEXT_STAGE_PLAN.md",
+      "target": "../../evidence/m5/20260908-staging-rag-validation-34158544296-provenance-failure.json"
+    },
+    {
+      "source": "docs/ops/NEXT_STAGE_PLAN.md",
+      "target": "../../evidence/m5/20260908-staging-rag-validation-34163826666-execution.json"
+    },
+    {
+      "source": "docs/ops/NEXT_STAGE_PLAN.md",
+      "target": "../../evidence/m5/20260908-staging-rag-trial-34166173023-quality.json"
+    },
+    {
+      "source": "docs/ops/NEXT_STAGE_PLAN.md",
+      "target": "../../evidence/m5/20260908-staging-rag-trial-34166173023-execution.json"
+    },
+    {
+      "source": "docs/ops/NEXT_STAGE_PLAN.md",
+      "target": "../../evidence/m5/20260908-staging-rag-trial-34166173023-diagnosis.json"
+    },
+    {
+      "source": "docs/ops/NEXT_STAGE_PLAN.md",
+      "target": "v0.1.34-staging-deployment-plan.md"
+    },
+    {
+      "source": "docs/ops/NEXT_STAGE_PLAN.md",
+      "target": "../../evidence/m6/20260908-v0.1.34-candidate-preflight.json"
+    },
+    {
+      "source": "docs/ops/NEXT_STAGE_PLAN.md",
+      "target": "../../evidence/m6/20260908-v0.1.34-release-manifest.json"
+    },
+    {
+      "source": "docs/ops/NEXT_STAGE_PLAN.md",
+      "target": "../../evidence/m6/20260908-v0.1.34-staging-deployment-failure.json"
+    },
+    {
+      "source": "docs/ops/NEXT_STAGE_PLAN.md",
+      "target": "v0.1.34-staging-deployment-plan.md#已确认并执行的再次验收"
+    },
+    {
+      "source": "docs/ops/NEXT_STAGE_PLAN.md",
+      "target": "../../evidence/m6/20260909-v0.1.34-staging-redeployment-failure.json"
+    },
+    {
+      "source": "docs/ops/NEXT_STAGE_PLAN.md",
+      "target": "../../.trellis/tasks/07-19-m5-observability-eval-load/research/20260909-v0.1.34-smoke-diagnosis.md"
+    },
+    {
+      "source": "docs/ops/NEXT_STAGE_PLAN.md",
+      "target": "v0.1.34-staging-deployment-plan.md#本轮归档提交边界"
+    },
+    {
+      "source": ".trellis/tasks/07-19-m5-observability-eval-load/research/20260909-v0.1.34-smoke-diagnosis.md",
+      "target": "../../../../evidence/m6/20260909-v0.1.34-staging-redeployment-failure.json"
+    },
+    {
+      "source": ".trellis/tasks/07-19-m5-observability-eval-load/research/20260909-v0.1.34-smoke-diagnosis.md",
+      "target": "../../../../evidence/m6/20260908-v0.1.34-staging-deployment-failure.json"
+    },
+    {
+      "source": ".trellis/tasks/07-19-m5-observability-eval-load/research/20260909-v0.1.34-smoke-diagnosis.md",
+      "target": "../../../../docs/ops/v0.1.34-staging-deployment-plan.md#本轮归档提交边界"
+    }
+  ],
+  "git_diff_check": "passed",
+  "scope": "Local documentation and evidence validation. Application, workflow and test source were unchanged; no broad application rerun or live provider execution was performed.",
+  "spec_review": "No implementation contract changed. Incident observations and proposed future repairs are recorded in the task research handoff, not adopted as implemented code-spec.",
+  "owner": "platform owner",
+  "temporary_cleanup": {
+    "deleted_files": [
+      {
+        "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\eda-v0.1.34-deploy-01a080bd\\resume_20260909_archive.py",
+        "sha256": "3e3809a8d978aacc0b500dfc709d91e5561693918d74bc1f9f8c8fed52509ec5"
+      },
+      {
+        "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\eda-v0.1.34-deploy-01a080bd\\resume_20260909_validate.py",
+        "sha256": "bf6eca2e736da556953192236d9ee8c4cb69b31003e3876574f41c5351c2fca6"
+      },
+      {
+        "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\eda-v0.1.34-deploy-01a080bd\\resume-20260909-baseline.json",
+        "sha256": "9fc294374fd340c802e7c3a785b1f9d8f6cbbc1a37a7bc13bd6f27803b2ebc1c"
+      },
+      {
+        "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\eda-v0.1.34-deploy-01a080bd\\resume-20260909-archive.json",
+        "sha256": "166338d03f774b652933a805cae07b7ca8fd961e0ef97a09fb27f9394f4ed301"
+      },
+      {
+        "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\eda-v0.1.34-deploy-01a080bd\\resume-20260909-runtime-attribution.json",
+        "sha256": "c0092173551d661c6327017d330fe4edd13a85d4e638c94f5e05022d9c355e9d"
+      },
+      {
+        "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\eda-v0.1.34-deploy-01a080bd\\resume-20260909-node-inventory.json",
+        "sha256": "d65295c4008e4829499ff310bdc7811e957e30a46179fbc8dcd20d36e254343f"
+      },
+      {
+        "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\eda-v0.1.34-deploy-01a080bd\\resume-20260909-checkpoint-target.json",
+        "sha256": "45387d0a5d95bc4e840e3e543a9f19b1ee00afd2490b2f3c70f9247111bde79b"
+      },
+      {
+        "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\eda-v0.1.34-deploy-01a080bd\\resume-20260909-postflight.json",
+        "sha256": "5439e3233634f5638bde11cebe502107e431481f56059e15e6553a701101f1f3"
+      }
+    ],
+    "deleted_count": 8,
+    "observations_have_verified_repository_copies": true,
+    "prior_session_files_touched": 0,
+    "retained_for_followup": [
+      "C:\\Users\\zhang\\AppData\\Local\\Temp\\eda-v0.1.34-deploy-01a080bd\\resume_20260909_diagnosis.py",
+      "C:\\Users\\zhang\\AppData\\Local\\Temp\\eda-v0.1.34-deploy-01a080bd\\resume-20260909-postflight-live.json",
+      "C:\\Users\\zhang\\AppData\\Local\\Temp\\eda-v0.1.34-deploy-01a080bd\\resume-20260909-postflight-namespace.json",
+      "C:\\Users\\zhang\\AppData\\Local\\Temp\\eda-v0.1.34-deploy-01a080bd\\resume-20260909-postflight-prerequisites.json"
+    ]
+  }
+}

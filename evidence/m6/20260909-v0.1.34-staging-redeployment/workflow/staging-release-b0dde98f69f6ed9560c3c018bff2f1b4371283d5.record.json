@@ -1,0 +1,80 @@
+{
+  "blocking_reason": null,
+  "commit_sha": "b0dde98f69f6ed9560c3c018bff2f1b4371283d5",
+  "deployment_profile": "single-node-4c4g",
+  "embedding": {
+    "base_url": "https://api.siliconflow.cn/v1",
+    "dimension": 1024,
+    "kind": "embedding",
+    "name": "Qwen/Qwen3-Embedding-4B",
+    "provider": "openai_compatible",
+    "rollout": {
+      "dimension": 1024,
+      "model": "Qwen/Qwen3-Embedding-4B",
+      "probe_item_count": 2,
+      "provider": "openai_compatible",
+      "reindex": {
+        "apply_attempts": 0,
+        "created": 0,
+        "final_selected": 0,
+        "initial_selected": 0,
+        "replayed": 0,
+        "status": "completed"
+      },
+      "status": "validated",
+      "values_redacted": true,
+      "version": 3
+    },
+    "rollout_report": {
+      "path": "tmp/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/staging-embedding-rollout.json",
+      "sha256": "1dfcae95c43a65297c48b7192bd588320b2191bc9254a169eda9a21c6094581c"
+    },
+    "status": "validated",
+    "version": 3
+  },
+  "evidence_manifest": {
+    "path": "tmp/staging-evidence-b0dde98f69f6ed9560c3c018bff2f1b4371283d5.manifest.json",
+    "sha256": "2d0b41a43553cf01d2f1116f8df40960a052936e58426965f51c7b166a15de52"
+  },
+  "failure_reason": "One or more staging rollout or smoke steps did not succeed.",
+  "fallback_model": {
+    "base_url": "https://elysia.h-e.top/v1",
+    "name": "deepseek-v4-flash-0731",
+    "provider": "openai_compatible",
+    "status": "validated",
+    "timeout_seconds": 60.0,
+    "version": null
+  },
+  "generated_at": "2026-09-08T16:03:27.321281+00:00",
+  "governance_smoke": {
+    "outcome": "skipped",
+    "required": true
+  },
+  "image_digests": {
+    "api": "sha256:e2cbbc6ba1c5e7463ed21e6663c5a948d467e46bcd187a7cf8b02c50ed53bfff",
+    "consumer": "sha256:ec84d7d280ff74f28147c678428cee5cfa55a5a70a6fe444a20079e616262a21",
+    "web": "sha256:618655ebcaaa3ff8af903414e348d1261b563f00becf54f06f66fad2441e3b09",
+    "worker": "sha256:b957cdd12dff8e3151386a4a1e829b311c3970f14e22479524011f22e7d784d7"
+  },
+  "model": {
+    "base_url": "https://new.lucky0625.qzz.io/v1",
+    "name": "grok-4.6",
+    "provider": "openai_compatible",
+    "status": "validated"
+  },
+  "outcomes": {
+    "authenticated_smoke": "failure",
+    "cluster_smoke": "success",
+    "embedding_rollout": "success",
+    "migration": "success",
+    "prerequisites": "success",
+    "rollout": "success",
+    "workloads": "success"
+  },
+  "registry_prefix": "ghcr.io/drew-z",
+  "repository": "Drew-Z/enterprise-doc-agent",
+  "run_attempt": "1",
+  "run_id": "34248230396",
+  "schema_version": 3,
+  "status": "failed"
+}

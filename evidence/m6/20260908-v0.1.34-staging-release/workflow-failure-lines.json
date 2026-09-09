@@ -1,0 +1,14 @@
+{
+  "observed_at": "2026-09-08T14:50:26.227090+00:00",
+  "workflow_run_id": 34225700580,
+  "run_attempt": 1,
+  "selected_failure_lines": [
+    "deploy\tUNKNOWN STEP\t2026-09-08T12:23:30.1624936Z ^[[36;1m  echo \"migration Job did not complete: ${migration_result:-timeout}\" >&2^[[0m",
+    "deploy\tUNKNOWN STEP\t2026-09-08T13:09:40.4454055Z migration Job did not complete: failed",
+    "deploy\tUNKNOWN STEP\t2026-09-08T13:09:41.3389774Z ##[error]Process completed with exit code 1.",
+    "deploy\tUNKNOWN STEP\t2026-09-08T13:09:53.7487044Z deployment \"enterprise-doc-api\" successfully rolled out",
+    "deploy\tUNKNOWN STEP\t2026-09-08T13:39:42.0067847Z error: deployment \"enterprise-doc-worker\" exceeded its progress deadline",
+    "deploy\tUNKNOWN STEP\t2026-09-08T13:39:42.0117901Z ##[error]Process completed with exit code 1."
+  ],
+  "raw_workflow_log_persisted": false
+}

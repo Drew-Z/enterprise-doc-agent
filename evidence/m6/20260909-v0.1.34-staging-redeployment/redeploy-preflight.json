@@ -1,0 +1,191 @@
+{
+  "status": "passed",
+  "observed_at": "2026-09-08T15:56:05.911337+00:00",
+  "source_sha": "b0dde98f69f6ed9560c3c018bff2f1b4371283d5",
+  "refs": {
+    "refs/heads/main": "ffca3d0861ae22c857fef54260b9fc4c083e980e",
+    "refs/tags/v0.1.34": "3c69fe44b48a485de7ea10d8ae19e1c37943e80e",
+    "refs/tags/v0.1.34^{}": "b0dde98f69f6ed9560c3c018bff2f1b4371283d5"
+  },
+  "prerequisites": {
+    "status": "passed",
+    "namespace": "enterprise-doc-agent-staging",
+    "approval_keys_checked": 17,
+    "live_objects_checked": 18,
+    "prerequisites_sha256": "53ea74b2f22dc2cef444b87daf40e256f9a2eb9410ed34141857a0a01d5563d3"
+  },
+  "runner_online_idle": true,
+  "registry": {
+    "api": {
+      "schemaVersion": 2,
+      "mediaType": "application/vnd.oci.image.index.v1+json",
+      "digest": "sha256:e2cbbc6ba1c5e7463ed21e6663c5a948d467e46bcd187a7cf8b02c50ed53bfff",
+      "size": 857,
+      "manifests": [
+        {
+          "mediaType": "application/vnd.oci.image.manifest.v1+json",
+          "digest": "sha256:b2b64c4a9563a4e1e8583754df27d91ba29ae4a75da976eb054396831f56d0a9",
+          "size": 2002,
+          "platform": {
+            "architecture": "amd64",
+            "os": "linux"
+          }
+        },
+        {
+          "mediaType": "application/vnd.oci.image.manifest.v1+json",
+          "digest": "sha256:e395efb63c46ea0252843d681bd6b603aac758034fc926e88ba1d190ba0cfaf6",
+          "size": 1112,
+          "annotations": {
+            "vnd.docker.reference.digest": "sha256:b2b64c4a9563a4e1e8583754df27d91ba29ae4a75da976eb054396831f56d0a9",
+            "vnd.docker.reference.type": "attestation-manifest"
+          },
+          "platform": {
+            "architecture": "unknown",
+            "os": "unknown"
+          }
+        }
+      ]
+    },
+    "worker": {
+      "schemaVersion": 2,
+      "mediaType": "application/vnd.oci.image.index.v1+json",
+      "digest": "sha256:b957cdd12dff8e3151386a4a1e829b311c3970f14e22479524011f22e7d784d7",
+      "size": 857,
+      "manifests": [
+        {
+          "mediaType": "application/vnd.oci.image.manifest.v1+json",
+          "digest": "sha256:c492939e942e2609d67ddb90113ce4cfb14b17c146f53e501053e89225d50b68",
+          "size": 1624,
+          "platform": {
+            "architecture": "amd64",
+            "os": "linux"
+          }
+        },
+        {
+          "mediaType": "application/vnd.oci.image.manifest.v1+json",
+          "digest": "sha256:0dc3195de677e08a3c9a59fcdad12c5a62c7120a8fb8d4ff77837840507b9f67",
+          "size": 1112,
+          "annotations": {
+            "vnd.docker.reference.digest": "sha256:c492939e942e2609d67ddb90113ce4cfb14b17c146f53e501053e89225d50b68",
+            "vnd.docker.reference.type": "attestation-manifest"
+          },
+          "platform": {
+            "architecture": "unknown",
+            "os": "unknown"
+          }
+        }
+      ]
+    },
+    "consumer": {
+      "schemaVersion": 2,
+      "mediaType": "application/vnd.oci.image.index.v1+json",
+      "digest": "sha256:ec84d7d280ff74f28147c678428cee5cfa55a5a70a6fe444a20079e616262a21",
+      "size": 857,
+      "manifests": [
+        {
+          "mediaType": "application/vnd.oci.image.manifest.v1+json",
+          "digest": "sha256:86e26d2018bfbafd6498669d008684be7bc803581267f12ded834f6fcd8ccfe6",
+          "size": 1624,
+          "platform": {
+            "architecture": "amd64",
+            "os": "linux"
+          }
+        },
+        {
+          "mediaType": "application/vnd.oci.image.manifest.v1+json",
+          "digest": "sha256:37a2bd3fe87f441258898e5d0729e8537dc1a935fdbee3a3eb9ce8844d095141",
+          "size": 1112,
+          "annotations": {
+            "vnd.docker.reference.digest": "sha256:86e26d2018bfbafd6498669d008684be7bc803581267f12ded834f6fcd8ccfe6",
+            "vnd.docker.reference.type": "attestation-manifest"
+          },
+          "platform": {
+            "architecture": "unknown",
+            "os": "unknown"
+          }
+        }
+      ]
+    },
+    "web": {
+      "schemaVersion": 2,
+      "mediaType": "application/vnd.oci.image.index.v1+json",
+      "digest": "sha256:618655ebcaaa3ff8af903414e348d1261b563f00becf54f06f66fad2441e3b09",
+      "size": 857,
+      "manifests": [
+        {
+          "mediaType": "application/vnd.oci.image.manifest.v1+json",
+          "digest": "sha256:9977b9dcf25b5509dd97254fcdd0532a195c7f87675d83d01090695da621c8de",
+          "size": 2380,
+          "platform": {
+            "architecture": "amd64",
+            "os": "linux"
+          }
+        },
+        {
+          "mediaType": "application/vnd.oci.image.manifest.v1+json",
+          "digest": "sha256:da7a89a0109996951c13b7198c47c6b183e3d58d53276423686bce314ca9fc96",
+          "size": 1111,
+          "annotations": {
+            "vnd.docker.reference.digest": "sha256:9977b9dcf25b5509dd97254fcdd0532a195c7f87675d83d01090695da621c8de",
+            "vnd.docker.reference.type": "attestation-manifest"
+          },
+          "platform": {
+            "architecture": "unknown",
+            "os": "unknown"
+          }
+        }
+      ]
+    }
+  },
+  "cached_images": {
+    "api": true,
+    "worker": true,
+    "consumer": true,
+    "web": true
+  },
+  "readiness": {
+    "http_status": 200,
+    "status": "ready",
+    "checks": {
+      "database": {
+        "status": "up"
+      },
+      "redis": {
+        "status": "up"
+      },
+      "object_store": {
+        "status": "up"
+      }
+    },
+    "checked_at": "2026-09-08T15:56:07.625344Z"
+  },
+  "pod_probe": {
+    "memberships_verified": 2,
+    "roles": [
+      "owner",
+      "member"
+    ],
+    "revocations_since_token_issuance": 0,
+    "reindex": {
+      "status": "planned",
+      "selected": 0,
+      "created": 0,
+      "replayed": 0,
+      "embedding_model": "Qwen/Qwen3-Embedding-4B",
+      "embedding_dimension": 1024,
+      "embedding_version": 3,
+      "values_redacted": true
+    },
+    "reindex_source_sha256": "3ec48826f3d58496de16d237094a9a9b93dd83822782d7a08f71fe1638f9ddf2",
+    "provider_calls": 0
+  },
+  "protected_variables_unchanged": true,
+  "secret_metadata_unchanged": true,
+  "token_min_remaining_seconds": 15802,
+  "token_secret_updates": 0,
+  "token_values_retrieved": false,
+  "current_token_replay_performed": false,
+  "authentication_basis": "Prior typed session checks plus unchanged Secret metadata, current active memberships and no revocations since issuance; actual bearer replay occurs in workflow smoke.",
+  "mutations": 0,
+  "new_dispatches": 0
+}

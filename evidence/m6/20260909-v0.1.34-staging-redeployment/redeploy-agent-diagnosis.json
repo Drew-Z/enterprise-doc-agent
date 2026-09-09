@@ -1,0 +1,72 @@
+{
+  "status": "observed",
+  "observed_at": "2026-09-08T16:19:43.876899+00:00",
+  "workflow_run_id": 34248230396,
+  "workflow_run_attempt": 1,
+  "matched_synthetic_runs": 1,
+  "document_version_status": "ready",
+  "agent_run": {
+    "status": "failed",
+    "task_type": "question_answer",
+    "created_at": "2026-09-08T16:03:04.793821+00:00",
+    "started_at": "2026-09-08T16:03:12.983970+00:00",
+    "finished_at": "2026-09-08T16:03:16.897930+00:00",
+    "error_code": "agent_execution_failed",
+    "model_provider": "openai_compatible",
+    "model_name": "grok-4.6",
+    "model_version": null,
+    "model_revision": null,
+    "fallback_trigger_code": null,
+    "provider_request_count": null,
+    "provider_usage_request_count": null,
+    "prompt_tokens": null,
+    "completion_tokens": null,
+    "total_tokens": null,
+    "repair_request_count": null,
+    "fallback_count": null,
+    "breaker_state": null
+  },
+  "executions": [
+    {
+      "sequence": 0,
+      "kind": "initial",
+      "job_type": "agent.execute",
+      "job_status": "dead",
+      "job_error_code": "agent_execution_failed",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "status": "permanent_failed",
+          "retryable": false,
+          "error_class": "AgentExecutionRuntimeError",
+          "error_code": "agent_execution_failed",
+          "diagnostic_code": null,
+          "started_at": "2026-09-08T16:03:06.838471+00:00",
+          "finished_at": "2026-09-08T16:03:16.897930+00:00"
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "seq": 1,
+      "type": "run.created",
+      "created_at": "2026-09-08T16:03:04.793821+00:00"
+    },
+    {
+      "seq": 2,
+      "type": "run.started",
+      "created_at": "2026-09-08T16:03:13.237051+00:00"
+    },
+    {
+      "seq": 3,
+      "type": "run.finished",
+      "created_at": "2026-09-08T16:03:17.148630+00:00"
+    }
+  ],
+  "agent_evidence_count": 0,
+  "transaction_read_only": true,
+  "provider_calls_by_probe": 0,
+  "identifiers_persisted": false,
+  "new_uploads_by_probe": 0
+}

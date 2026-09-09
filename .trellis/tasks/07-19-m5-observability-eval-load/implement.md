@@ -356,6 +356,101 @@ CI performed cryptographic verification; local checks inspected its original res
 The optional local Cosign binary download was stopped without executing the partial file.
 Historical root causes, M5/M7 quality and any new real RAG trial remain outside this result.
 
+## Slice 12 Authorized Diagnostic Deployment
+
+- [x] Publish the approved six-file evidence batch as `ffca3d0`; verify both Quality
+  jobs in `34224086610` attempt 1 and rerun 85 focused deployment/evidence tests.
+- [x] Recheck the fixed tag/digests, unique online idle 4C4G runner, protected variables,
+  existing memberships, 18 prerequisite objects and zero-selection read-only reindex.
+- [x] Refresh exactly three eight-hour smoke tokens through memory/stdin after typed
+  session/role/capability validation; update four rollback variables and five guarded
+  Namespace annotations, then validate candidate prerequisites and workload dry-run.
+- [x] Dispatch exactly one `Deploy Staging` run `34225700580` attempt 1 at `v0.1.34`/`b0dde98`.
+- [x] Preserve its terminal outcome, original hashed artifacts and post-deployment state;
+  validate migration, rollout, embedding and both smoke outcomes without rerunning failures.
+- [x] Separately capture late recovery and deployed diagnostic source hashes without
+  converting the failed workflow or skipped gates into acceptance.
+- [x] Verify the new archive, evidence contracts, links and Git byte-preservation before
+  presenting a separate commit/recovery scope for confirmation.
+
+Run `34225700580` attempt 1 ended at 2026-09-08T13:40:15Z with `failure`. The API
+cold pull took 2744.963 seconds, exceeding the migration Job's 2700-second deadline.
+Events record the container starting and being stopped after the deadline; migration logs
+were unavailable. The existing always() restoration applied candidate images, not v0.1.33,
+and failed when the Worker exceeded its 1800-second progress deadline. All embedding,
+readiness, authenticated and governance smokes were skipped.
+
+The initial 13:44Z postflight retained Worker/Consumer unavailable. Their images finished
+pulling after the workflow, at 14:09:09Z and 14:29:15Z respectively. A separate 14:47Z
+postflight verified five Ready Deployments, exact runtime digests, unchanged prerequisites
+and protected variables, and all three diagnostic source hashes in both Worker/Consumer.
+This later readiness does not satisfy the failed migration or skipped smoke gates.
+
+The failed execution record is `evidence/m6/20260908-v0.1.34-staging-deployment-failure.json`.
+Artifact `10058749187`, its original ZIP digest, all 18 manifest file hashes and 37 archived
+original files are retained. The accepted v0.1.33 record, historical candidate and RAG trial
+bytes remain unchanged. Workflow smoke calls/uploads/QA and new RAG trials were zero;
+background activity and account-wide cost remain unmeasured.
+
+At 14:54Z all four candidate images were cached; the failed migration Job remains present
+with UID `305d2d82-20ac-4bc3-abec-d552a5fac40f`. A new deployment would hit the existing
+fail-closed stale Job guard until an operator reviews and clears this exact failed object.
+The deployment plan now separates a proposed fresh, bounded validation run from optional
+v0.1.33 rollback and the uncommitted evidence batch. None is implicitly authorized here.
+No timeout/resource expansion, relay, rollback, new dispatch or historical RAG attribution
+is claimed. M5/M7 remain `blocked_external`; the active task stays open.
+
+Post-archive validation passed: 85 focused deployment/evidence tests, Trellis implement/check
+context validation, 37 original file hashes, 38 file round trips through an isolated Git index
+with `core.autocrlf=true`, 23 local links and `git diff --check`. The temporary Git checkout
+and index were removed automatically; no real index staging or new commit occurred.
+
+## Slice 12 Authorized Second Deployment And Resumed Diagnosis
+
+- [x] Recover the owner's explicit approval from session `01a080bd-0114-7483-93f5-21c016b0f272`;
+  bind the one new deployment to the reviewed plan hash and preserve the first failed run.
+- [x] Recheck cached digests, memberships, token metadata/lifetime, unchanged protections and
+  zero-selection reindex. Reuse existing tokens; do not repeat variable or annotation updates.
+- [x] Delete only the reviewed failed migration Job with UID/resourceVersion preconditions;
+  verify absence and stop the temporary proxy.
+- [x] Dispatch `34248230396` attempt 1 at `v0.1.34`/`b0dde98` once and retain the failed outcome.
+- [x] Verify the artifact ZIP, exact source/digests, release record and 19 manifest files;
+  correlate the unique synthetic upload/QA through read-only persistent state.
+- [x] Resume after the prior session's API errors; inspect current imports, bounded logs,
+  checkpoint target, node processes and readiness without running another Agent or provider call.
+- [x] Archive 40 original files, update the additive M6 index and the owner review/handoff plan.
+- [ ] Establish the underlying QA failure and its executing process from reliable evidence;
+  a null diagnostic and missing log correlation are not a root-cause finding.
+
+Run `34248230396` was created at 2026-09-08T15:59:04Z and its job ended at 16:03:36Z.
+Migration, workloads, rollout, embedding and readiness passed. Authenticated upload-to-Agent
+smoke failed and governance was skipped; existing candidate-workload restoration passed.
+The embedding gate processed two probe inputs and zero reindex items. One synthetic document
+was ready, and its only QA attempt permanently failed with `agent_execution_failed` and a null
+diagnostic. No evidence/checkpoint rows were found for that run. QA usage and cost remain unknown.
+
+The 16:53Z fresh-interpreter probes found the released diagnostic modules, classifier, allowlist
+and field propagation in both current Pods, which had zero restarts. Their bounded logs had no
+correlated error. The 16:54Z node inventory found only the expected Kubernetes processes and
+two retained log directories. Both the attempt and current configuration use the shared default
+`worker-local`, so historical process attribution remains inconclusive. A fresh import is not a
+re-execution or proof of which process handled the failed attempt.
+
+At 17:27Z all five Deployments were ready with matching images/protections, and migration plus
+embedding Jobs were complete. This does not accept v0.1.34. The second failure is independently
+indexed at `evidence/m6/20260909-v0.1.34-staging-redeployment-failure.json`; its artifact contains
+21 original files, and the full new archive retains 40. Historical evidence and M5/M7 gates stay
+unchanged. No new deployment, real RAG trial, token refresh, route change or rollback was performed
+by the resumed investigation. The evidence commit/push remains outside the used deployment approval.
+
+Research and next observation boundaries are in
+`research/20260909-v0.1.34-smoke-diagnosis.md`. The parent M5 task remains in progress.
+
+Resumed archive verification passed 60 focused smoke/release/evidence tests, both three-entry
+Trellis contexts, 405 unchanged historical evidence hashes, 79 Git byte round trips and 31 local
+links. The real index remained unstaged; the verification's temporary test/Git directories were
+removed. Results are retained in `evidence/m6/20260909-v0.1.34-redeployment-archive-validation.json`.
+
 ## Full Completion Gate
 
 ```powershell

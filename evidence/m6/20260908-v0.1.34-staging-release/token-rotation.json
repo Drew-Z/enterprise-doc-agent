@@ -1,0 +1,44 @@
+{
+  "status": "passed",
+  "completed_at": "2026-09-08T12:18:53.140293+00:00",
+  "secrets": [
+    {
+      "name": "STAGING_GOVERNANCE_MEMBER_TOKEN",
+      "updatedAt": "2026-09-08T12:18:51Z"
+    },
+    {
+      "name": "STAGING_GOVERNANCE_OWNER_TOKEN",
+      "updatedAt": "2026-09-08T12:18:53Z"
+    },
+    {
+      "name": "STAGING_SMOKE_TOKEN",
+      "updatedAt": "2026-09-08T12:18:54Z"
+    }
+  ],
+  "token_metadata": {
+    "STAGING_SMOKE_TOKEN": {
+      "role": "owner",
+      "issued_at": "2026-09-08T12:18:48+00:00",
+      "expires_at": "2026-09-08T20:18:48+00:00",
+      "http_session_status": 200,
+      "typed_capabilities_verified": true
+    },
+    "STAGING_GOVERNANCE_OWNER_TOKEN": {
+      "role": "owner",
+      "issued_at": "2026-09-08T12:18:49+00:00",
+      "expires_at": "2026-09-08T20:18:49+00:00",
+      "http_session_status": 200,
+      "typed_capabilities_verified": true
+    },
+    "STAGING_GOVERNANCE_MEMBER_TOKEN": {
+      "role": "member",
+      "issued_at": "2026-09-08T12:18:49+00:00",
+      "expires_at": "2026-09-08T20:18:49+00:00",
+      "http_session_status": 200,
+      "typed_capabilities_verified": true
+    }
+  },
+  "memberships_modified": false,
+  "token_values_persisted_or_printed": false,
+  "new_model_calls": 0
+}

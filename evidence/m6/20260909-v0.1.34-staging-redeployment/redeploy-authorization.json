@@ -1,0 +1,19 @@
+{
+  "status": "approved",
+  "recorded_at": "2026-09-08T15:55:14.139764+00:00",
+  "thread_id": "01a080bd-0114-7483-93f5-21c016b0f272",
+  "user_reply": "可以",
+  "plan_sha256_at_approval": "d473f4a1a7385bd833bc7a59438a53980406c9b10bd96b3e1ecb53841c20b691",
+  "new_deployment_dispatches": 1,
+  "source_ref": "v0.1.34",
+  "source_sha": "b0dde98f69f6ed9560c3c018bff2f1b4371283d5",
+  "failed_job_uid_to_remove": "305d2d82-20ac-4bc3-abec-d552a5fac40f",
+  "smoke_embedding_probe_inputs": 2,
+  "smoke_synthetic_uploads": 2,
+  "smoke_qa_runs": 1,
+  "provider_calls_may_incur_charges": true,
+  "new_rag_trials": 0,
+  "rollback_authorized": false,
+  "relay_authorized": false,
+  "commit_or_push_authorized": false
+}

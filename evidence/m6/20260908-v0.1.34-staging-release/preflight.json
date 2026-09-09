@@ -1,0 +1,56 @@
+{
+  "status": "passed",
+  "observed_at": "2026-09-08T12:18:13.901264+00:00",
+  "quality_run": 34224086610,
+  "baseline": {
+    "status": "passed",
+    "namespace": "enterprise-doc-agent-staging",
+    "approval_keys_checked": 17,
+    "live_objects_checked": 18,
+    "prerequisites_sha256": "4e9556f8e285ef34cd1273d1533455d76f352878989a5fb65b325ef2b484bd9c"
+  },
+  "candidate_simulation": {
+    "status": "passed",
+    "namespace": "enterprise-doc-agent-staging",
+    "approval_keys_checked": 17,
+    "live_objects_checked": 18,
+    "prerequisites_sha256": "53ea74b2f22dc2cef444b87daf40e256f9a2eb9410ed34141857a0a01d5563d3"
+  },
+  "runner_online_idle": true,
+  "protected_configuration_unchanged": true,
+  "namespace_uid_matches": true,
+  "deployed_images_match_v0_1_33": true,
+  "readiness": {
+    "http_status": 200,
+    "status": "ready",
+    "checks": {
+      "database": {
+        "status": "up"
+      },
+      "redis": {
+        "status": "up"
+      },
+      "object_store": {
+        "status": "up"
+      }
+    },
+    "checked_at": "2026-09-08T12:18:15.248273Z"
+  },
+  "reindex": {
+    "status": "planned",
+    "selected": 0,
+    "created": 0,
+    "replayed": 0,
+    "embedding_model": "Qwen/Qwen3-Embedding-4B",
+    "embedding_dimension": 1024,
+    "embedding_version": 3,
+    "values_redacted": true
+  },
+  "synthetic_memberships_verified": 2,
+  "mutations": 0,
+  "local_probe_corrections": [
+    "Select the unique online runner; the earlier tiny runner remains offline.",
+    "Readiness dependency values are typed objects with a status field, not strings."
+  ],
+  "ssh_probe_correction": "Use the established explicit identity file; the default identity was rejected."
+}

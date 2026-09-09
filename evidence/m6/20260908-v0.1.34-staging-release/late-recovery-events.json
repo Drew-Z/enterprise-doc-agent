@@ -1,0 +1,75 @@
+{
+  "observed_at": "2026-09-08T14:49:45.627714+00:00",
+  "events": [
+    {
+      "object": "enterprise-doc-consumer-69c77dff57-dmjvg",
+      "reason": "Pulled",
+      "message": "Successfully pulled image \"ghcr.io/drew-z/enterprise-doc-consumer@sha256:ec84d7d280ff74f28147c678428cee5cfa55a5a70a6fe444a20079e616262a21\" in 1h19m33.747s (1h19m33.747s including waiting). Image size: 123901055 bytes.",
+      "first": "2026-09-08T14:29:15Z",
+      "last": "2026-09-08T14:29:15Z",
+      "count": 1
+    },
+    {
+      "object": "enterprise-doc-consumer-69c77dff57-dmjvg",
+      "reason": "Created",
+      "message": "Container created",
+      "first": "2026-09-08T14:29:15Z",
+      "last": "2026-09-08T14:29:15Z",
+      "count": 1
+    },
+    {
+      "object": "enterprise-doc-consumer-69c77dff57-dmjvg",
+      "reason": "Started",
+      "message": "Container started",
+      "first": "2026-09-08T14:29:15Z",
+      "last": "2026-09-08T14:29:15Z",
+      "count": 1
+    },
+    {
+      "object": "enterprise-doc-worker-7665578cfc-m7hwr",
+      "reason": "Pulled",
+      "message": "Successfully pulled image \"ghcr.io/drew-z/enterprise-doc-worker@sha256:b957cdd12dff8e3151386a4a1e829b311c3970f14e22479524011f22e7d784d7\" in 59m27.389s (59m27.389s including waiting). Image size: 123897587 bytes.",
+      "first": "2026-09-08T14:09:09Z",
+      "last": "2026-09-08T14:09:09Z",
+      "count": 1
+    },
+    {
+      "object": "enterprise-doc-worker-7665578cfc-m7hwr",
+      "reason": "Created",
+      "message": "Container created",
+      "first": "2026-09-08T14:09:09Z",
+      "last": "2026-09-08T14:09:09Z",
+      "count": 1
+    },
+    {
+      "object": "enterprise-doc-worker-7665578cfc-m7hwr",
+      "reason": "Started",
+      "message": "Container started",
+      "first": "2026-09-08T14:09:09Z",
+      "last": "2026-09-08T14:09:09Z",
+      "count": 1
+    }
+  ],
+  "runtime_started_at": [
+    {
+      "name": "enterprise-doc-consumer-69c77dff57-dmjvg",
+      "container_states": [
+        {
+          "running": {
+            "startedAt": "2026-09-08T14:29:15Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "enterprise-doc-worker-7665578cfc-m7hwr",
+      "container_states": [
+        {
+          "running": {
+            "startedAt": "2026-09-08T14:09:09Z"
+          }
+        }
+      ]
+    }
+  ]
+}

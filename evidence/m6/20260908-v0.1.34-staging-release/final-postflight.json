@@ -1,0 +1,170 @@
+{
+  "status": "passed",
+  "observed_at": "2026-09-08T14:47:36.844510+00:00",
+  "prerequisites": {
+    "status": "passed",
+    "namespace": "enterprise-doc-agent-staging",
+    "approval_keys_checked": 17,
+    "live_objects_checked": 18,
+    "prerequisites_sha256": "53ea74b2f22dc2cef444b87daf40e256f9a2eb9410ed34141857a0a01d5563d3"
+  },
+  "protected_variables_match": true,
+  "candidate_images_match": true,
+  "five_deployments_ready": true,
+  "runtime_digests_match": true,
+  "deployed_diagnostic_sources_match": true,
+  "expected_source_sha256": {
+    "apps/worker/src/enterprise_doc_worker/agent_handler.py": "18c9c795804a16c59e1e497358cc9348d6bf16faa1fb2fe478fbd8193623c464",
+    "apps/worker/src/enterprise_doc_worker/queue.py": "0ab5030f6653460dd169ddf1225f55e1fe42ef68ff85e2c555872adaa6bbe128",
+    "packages/core/src/enterprise_doc_core/jobs/diagnostics.py": "c7161e8b689ac29712e2f93ef64a91a998a3f299a2c18cbe45b1173bc8516e82"
+  },
+  "deployed_source_sha256": {
+    "worker": {
+      "apps/worker/src/enterprise_doc_worker/agent_handler.py": "18c9c795804a16c59e1e497358cc9348d6bf16faa1fb2fe478fbd8193623c464",
+      "apps/worker/src/enterprise_doc_worker/queue.py": "0ab5030f6653460dd169ddf1225f55e1fe42ef68ff85e2c555872adaa6bbe128",
+      "packages/core/src/enterprise_doc_core/jobs/diagnostics.py": "c7161e8b689ac29712e2f93ef64a91a998a3f299a2c18cbe45b1173bc8516e82"
+    },
+    "consumer": {
+      "apps/worker/src/enterprise_doc_worker/agent_handler.py": "18c9c795804a16c59e1e497358cc9348d6bf16faa1fb2fe478fbd8193623c464",
+      "apps/worker/src/enterprise_doc_worker/queue.py": "0ab5030f6653460dd169ddf1225f55e1fe42ef68ff85e2c555872adaa6bbe128",
+      "packages/core/src/enterprise_doc_core/jobs/diagnostics.py": "c7161e8b689ac29712e2f93ef64a91a998a3f299a2c18cbe45b1173bc8516e82"
+    }
+  },
+  "readiness": {
+    "http_status": 200,
+    "status": "ready",
+    "checks": {
+      "database": {
+        "status": "up"
+      },
+      "redis": {
+        "status": "up"
+      },
+      "object_store": {
+        "status": "up"
+      }
+    },
+    "checked_at": "2026-09-08T14:47:38.382070Z"
+  },
+  "deployments": [
+    {
+      "name": "enterprise-doc-api",
+      "replicas": 1,
+      "ready_replicas": 1,
+      "available_replicas": 1,
+      "images": [
+        "ghcr.io/drew-z/enterprise-doc-api@sha256:e2cbbc6ba1c5e7463ed21e6663c5a948d467e46bcd187a7cf8b02c50ed53bfff"
+      ],
+      "config_hash": "e802b8e7fa7179e77693b7ef9b2c17a473a61a2998d1f071fc6ddbf79e90114f"
+    },
+    {
+      "name": "enterprise-doc-consumer",
+      "replicas": 1,
+      "ready_replicas": 1,
+      "available_replicas": 1,
+      "images": [
+        "ghcr.io/drew-z/enterprise-doc-consumer@sha256:ec84d7d280ff74f28147c678428cee5cfa55a5a70a6fe444a20079e616262a21"
+      ],
+      "config_hash": "e802b8e7fa7179e77693b7ef9b2c17a473a61a2998d1f071fc6ddbf79e90114f"
+    },
+    {
+      "name": "enterprise-doc-redis",
+      "replicas": 1,
+      "ready_replicas": 1,
+      "available_replicas": 1,
+      "images": [
+        "redis@sha256:6ab0b6e7381779332f97b8ca76193e45b0756f38d4c0dcda72dbb3c32061ab99"
+      ],
+      "config_hash": null
+    },
+    {
+      "name": "enterprise-doc-web",
+      "replicas": 1,
+      "ready_replicas": 1,
+      "available_replicas": 1,
+      "images": [
+        "ghcr.io/drew-z/enterprise-doc-web@sha256:618655ebcaaa3ff8af903414e348d1261b563f00becf54f06f66fad2441e3b09"
+      ],
+      "config_hash": null
+    },
+    {
+      "name": "enterprise-doc-worker",
+      "replicas": 1,
+      "ready_replicas": 1,
+      "available_replicas": 1,
+      "images": [
+        "ghcr.io/drew-z/enterprise-doc-worker@sha256:b957cdd12dff8e3151386a4a1e829b311c3970f14e22479524011f22e7d784d7"
+      ],
+      "config_hash": "e802b8e7fa7179e77693b7ef9b2c17a473a61a2998d1f071fc6ddbf79e90114f"
+    }
+  ],
+  "pod_runtime": [
+    {
+      "component": "api",
+      "phase": "Running",
+      "containers": [
+        {
+          "image": "sha256:df13f4098780d73399c7d9ae56a6021d4d9b6b640df00c6c848111514c55da71",
+          "image_id": "ghcr.io/drew-z/enterprise-doc-api@sha256:e2cbbc6ba1c5e7463ed21e6663c5a948d467e46bcd187a7cf8b02c50ed53bfff",
+          "ready": true,
+          "restart_count": 0
+        }
+      ]
+    },
+    {
+      "component": "worker",
+      "phase": "Running",
+      "containers": [
+        {
+          "image": "sha256:0b2d9fe62a4770d3e6c99a742913e8eca11adfa3c48d5349a7f11045d4ef1fbc",
+          "image_id": "ghcr.io/drew-z/enterprise-doc-worker@sha256:b957cdd12dff8e3151386a4a1e829b311c3970f14e22479524011f22e7d784d7",
+          "ready": true,
+          "restart_count": 0
+        }
+      ]
+    },
+    {
+      "component": "consumer",
+      "phase": "Running",
+      "containers": [
+        {
+          "image": "sha256:73672ddc7af5c195cd0a7c1b79ee28caab24fbca8af2488038b26331ae04d9cb",
+          "image_id": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:ec84d7d280ff74f28147c678428cee5cfa55a5a70a6fe444a20079e616262a21",
+          "ready": true,
+          "restart_count": 0
+        }
+      ]
+    },
+    {
+      "component": "web",
+      "phase": "Running",
+      "containers": [
+        {
+          "image": "sha256:9fe92318b9ce576efa5965177ac9bc2a31b7091fd0031194282d92a66b89c038",
+          "image_id": "ghcr.io/drew-z/enterprise-doc-web@sha256:618655ebcaaa3ff8af903414e348d1261b563f00becf54f06f66fad2441e3b09",
+          "ready": true,
+          "restart_count": 0
+        }
+      ]
+    }
+  ],
+  "jobs": [
+    {
+      "name": "enterprise-doc-migrate",
+      "active": 0,
+      "succeeded": 0,
+      "failed": 1,
+      "conditions": [
+        {
+          "type": "FailureTarget",
+          "status": "True"
+        },
+        {
+          "type": "Failed",
+          "status": "True"
+        }
+      ]
+    }
+  ],
+  "new_rag_trials": 0
+}

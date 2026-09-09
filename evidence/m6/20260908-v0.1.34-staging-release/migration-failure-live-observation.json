@@ -1,0 +1,321 @@
+{
+  "observed_at": "2026-09-08T13:14:34.062458+00:00",
+  "migration": {
+    "uid": "305d2d82-20ac-4bc3-abec-d552a5fac40f",
+    "created_at": "2026-09-08T12:23:30Z",
+    "active_deadline_seconds": 2700,
+    "status": {
+      "conditions": [
+        {
+          "lastProbeTime": "2026-09-08T13:08:30Z",
+          "lastTransitionTime": "2026-09-08T13:08:30Z",
+          "message": "Job was active longer than specified deadline",
+          "reason": "DeadlineExceeded",
+          "status": "True",
+          "type": "FailureTarget"
+        },
+        {
+          "lastProbeTime": "2026-09-08T13:09:36Z",
+          "lastTransitionTime": "2026-09-08T13:09:36Z",
+          "message": "Job was active longer than specified deadline",
+          "reason": "DeadlineExceeded",
+          "status": "True",
+          "type": "Failed"
+        }
+      ],
+      "failed": 1,
+      "ready": 0,
+      "startTime": "2026-09-08T12:23:30Z",
+      "terminating": 0,
+      "uncountedTerminatedPods": {}
+    }
+  },
+  "deployments": [
+    {
+      "name": "enterprise-doc-api",
+      "replicas": 1,
+      "ready": 1,
+      "images": [
+        "ghcr.io/drew-z/enterprise-doc-api@sha256:e2cbbc6ba1c5e7463ed21e6663c5a948d467e46bcd187a7cf8b02c50ed53bfff"
+      ]
+    },
+    {
+      "name": "enterprise-doc-consumer",
+      "replicas": 1,
+      "ready": 0,
+      "images": [
+        "ghcr.io/drew-z/enterprise-doc-consumer@sha256:ec84d7d280ff74f28147c678428cee5cfa55a5a70a6fe444a20079e616262a21"
+      ]
+    },
+    {
+      "name": "enterprise-doc-redis",
+      "replicas": 1,
+      "ready": 1,
+      "images": [
+        "redis@sha256:6ab0b6e7381779332f97b8ca76193e45b0756f38d4c0dcda72dbb3c32061ab99"
+      ]
+    },
+    {
+      "name": "enterprise-doc-web",
+      "replicas": 1,
+      "ready": 1,
+      "images": [
+        "ghcr.io/drew-z/enterprise-doc-web@sha256:618655ebcaaa3ff8af903414e348d1261b563f00becf54f06f66fad2441e3b09"
+      ]
+    },
+    {
+      "name": "enterprise-doc-worker",
+      "replicas": 1,
+      "ready": 0,
+      "images": [
+        "ghcr.io/drew-z/enterprise-doc-worker@sha256:b957cdd12dff8e3151386a4a1e829b311c3970f14e22479524011f22e7d784d7"
+      ]
+    }
+  ],
+  "pods": [
+    {
+      "name": "enterprise-doc-api-6f5749fc58-xhn9m",
+      "phase": "Running",
+      "deleting": false,
+      "containers": [
+        {
+          "name": "api",
+          "ready": true,
+          "image_id": "ghcr.io/drew-z/enterprise-doc-api@sha256:e2cbbc6ba1c5e7463ed21e6663c5a948d467e46bcd187a7cf8b02c50ed53bfff",
+          "state": {
+            "running": {
+              "startedAt": "2026-09-08T13:09:42Z"
+            }
+          },
+          "restart_count": 0
+        }
+      ]
+    },
+    {
+      "name": "enterprise-doc-consumer-69c77dff57-dmjvg",
+      "phase": "Pending",
+      "deleting": false,
+      "containers": [
+        {
+          "name": "consumer",
+          "ready": false,
+          "image_id": "",
+          "state": {
+            "waiting": {
+              "reason": "ContainerCreating"
+            }
+          },
+          "restart_count": 0
+        }
+      ]
+    },
+    {
+      "name": "enterprise-doc-redis-6f7b677877-mbzrx",
+      "phase": "Running",
+      "deleting": false,
+      "containers": [
+        {
+          "name": "redis",
+          "ready": true,
+          "image_id": "docker.io/library/redis@sha256:6ab0b6e7381779332f97b8ca76193e45b0756f38d4c0dcda72dbb3c32061ab99",
+          "state": {
+            "running": {
+              "startedAt": "2026-08-30T11:23:11Z"
+            }
+          },
+          "restart_count": 0
+        }
+      ]
+    },
+    {
+      "name": "enterprise-doc-web-67895ccb9f-zxn4z",
+      "phase": "Running",
+      "deleting": false,
+      "containers": [
+        {
+          "name": "web",
+          "ready": true,
+          "image_id": "ghcr.io/drew-z/enterprise-doc-web@sha256:618655ebcaaa3ff8af903414e348d1261b563f00becf54f06f66fad2441e3b09",
+          "state": {
+            "running": {
+              "startedAt": "2026-09-08T13:12:22Z"
+            }
+          },
+          "restart_count": 0
+        }
+      ]
+    },
+    {
+      "name": "enterprise-doc-worker-7665578cfc-m7hwr",
+      "phase": "Pending",
+      "deleting": false,
+      "containers": [
+        {
+          "name": "worker",
+          "ready": false,
+          "image_id": "",
+          "state": {
+            "waiting": {
+              "reason": "ContainerCreating"
+            }
+          },
+          "restart_count": 0
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "object": "enterprise-doc-api-6f5749fc58-xhn9m",
+      "reason": "Pulled",
+      "message": "Container image \"ghcr.io/drew-z/enterprise-doc-api@sha256:e2cbbc6ba1c5e7463ed21e6663c5a948d467e46bcd187a7cf8b02c50ed53bfff\" already present on machine and can be accessed by the pod",
+      "first": "2026-09-08T13:09:42Z",
+      "last": "2026-09-08T13:09:42Z",
+      "count": 1
+    },
+    {
+      "object": "enterprise-doc-api-6f5749fc58-xhn9m",
+      "reason": "Created",
+      "message": "Container created",
+      "first": "2026-09-08T13:09:42Z",
+      "last": "2026-09-08T13:09:42Z",
+      "count": 1
+    },
+    {
+      "object": "enterprise-doc-api-6f5749fc58-xhn9m",
+      "reason": "Started",
+      "message": "Container started",
+      "first": "2026-09-08T13:09:42Z",
+      "last": "2026-09-08T13:09:42Z",
+      "count": 1
+    },
+    {
+      "object": "enterprise-doc-api-db85b4868-vjlm4",
+      "reason": "Killing",
+      "message": "Stopping container api",
+      "first": "2026-09-08T12:23:30Z",
+      "last": "2026-09-08T12:23:30Z",
+      "count": 1
+    },
+    {
+      "object": "enterprise-doc-consumer-5459699d84-z7jnl",
+      "reason": "Killing",
+      "message": "Stopping container consumer",
+      "first": "2026-09-08T12:23:30Z",
+      "last": "2026-09-08T12:23:30Z",
+      "count": 1
+    },
+    {
+      "object": "enterprise-doc-consumer-69c77dff57-dmjvg",
+      "reason": "Pulling",
+      "message": "Pulling image \"ghcr.io/drew-z/enterprise-doc-consumer@sha256:ec84d7d280ff74f28147c678428cee5cfa55a5a70a6fe444a20079e616262a21\"",
+      "first": "2026-09-08T13:09:42Z",
+      "last": "2026-09-08T13:09:42Z",
+      "count": 1
+    },
+    {
+      "object": "enterprise-doc-migrate-99gxl",
+      "reason": "Pulling",
+      "message": "Pulling image \"ghcr.io/drew-z/enterprise-doc-api@sha256:e2cbbc6ba1c5e7463ed21e6663c5a948d467e46bcd187a7cf8b02c50ed53bfff\"",
+      "first": "2026-09-08T12:23:31Z",
+      "last": "2026-09-08T12:23:31Z",
+      "count": 1
+    },
+    {
+      "object": "enterprise-doc-migrate-99gxl",
+      "reason": "Pulled",
+      "message": "Successfully pulled image \"ghcr.io/drew-z/enterprise-doc-api@sha256:e2cbbc6ba1c5e7463ed21e6663c5a948d467e46bcd187a7cf8b02c50ed53bfff\" in 45m44.963s (45m44.965s including waiting). Image size: 123910377 bytes.",
+      "first": "2026-09-08T13:09:16Z",
+      "last": "2026-09-08T13:09:16Z",
+      "count": 1
+    },
+    {
+      "object": "enterprise-doc-migrate-99gxl",
+      "reason": "Created",
+      "message": "Container created",
+      "first": "2026-09-08T13:09:16Z",
+      "last": "2026-09-08T13:09:16Z",
+      "count": 1
+    },
+    {
+      "object": "enterprise-doc-migrate-99gxl",
+      "reason": "Started",
+      "message": "Container started",
+      "first": "2026-09-08T13:09:16Z",
+      "last": "2026-09-08T13:09:16Z",
+      "count": 1
+    },
+    {
+      "object": "enterprise-doc-migrate-99gxl",
+      "reason": "Killing",
+      "message": "Stopping container migrate",
+      "first": "2026-09-08T13:09:16Z",
+      "last": "2026-09-08T13:09:16Z",
+      "count": 1
+    },
+    {
+      "object": "enterprise-doc-migrate",
+      "reason": "DeadlineExceeded",
+      "message": "Job was active longer than specified deadline",
+      "first": "2026-09-08T13:09:36Z",
+      "last": "2026-09-08T13:09:36Z",
+      "count": 1
+    },
+    {
+      "object": "enterprise-doc-web-569b99b87c-kn96j",
+      "reason": "Killing",
+      "message": "Stopping container web",
+      "first": "2026-09-08T12:23:30Z",
+      "last": "2026-09-08T12:23:30Z",
+      "count": 1
+    },
+    {
+      "object": "enterprise-doc-web-67895ccb9f-zxn4z",
+      "reason": "Pulling",
+      "message": "Pulling image \"ghcr.io/drew-z/enterprise-doc-web@sha256:618655ebcaaa3ff8af903414e348d1261b563f00becf54f06f66fad2441e3b09\"",
+      "first": "2026-09-08T13:09:42Z",
+      "last": "2026-09-08T13:09:42Z",
+      "count": 1
+    },
+    {
+      "object": "enterprise-doc-web-67895ccb9f-zxn4z",
+      "reason": "Pulled",
+      "message": "Successfully pulled image \"ghcr.io/drew-z/enterprise-doc-web@sha256:618655ebcaaa3ff8af903414e348d1261b563f00becf54f06f66fad2441e3b09\" in 2m40.045s (2m40.045s including waiting). Image size: 30176792 bytes.",
+      "first": "2026-09-08T13:12:22Z",
+      "last": "2026-09-08T13:12:22Z",
+      "count": 1
+    },
+    {
+      "object": "enterprise-doc-web-67895ccb9f-zxn4z",
+      "reason": "Created",
+      "message": "Container created",
+      "first": "2026-09-08T13:12:22Z",
+      "last": "2026-09-08T13:12:22Z",
+      "count": 1
+    },
+    {
+      "object": "enterprise-doc-web-67895ccb9f-zxn4z",
+      "reason": "Started",
+      "message": "Container started",
+      "first": "2026-09-08T13:12:22Z",
+      "last": "2026-09-08T13:12:22Z",
+      "count": 1
+    },
+    {
+      "object": "enterprise-doc-worker-577448769f-2bxq9",
+      "reason": "Killing",
+      "message": "Stopping container worker",
+      "first": "2026-09-08T12:23:30Z",
+      "last": "2026-09-08T12:23:30Z",
+      "count": 1
+    },
+    {
+      "object": "enterprise-doc-worker-7665578cfc-m7hwr",
+      "reason": "Pulling",
+      "message": "Pulling image \"ghcr.io/drew-z/enterprise-doc-worker@sha256:b957cdd12dff8e3151386a4a1e829b311c3970f14e22479524011f22e7d784d7\"",
+      "first": "2026-09-08T13:09:42Z",
+      "last": "2026-09-08T13:09:42Z",
+      "count": 1
+    }
+  ]
+}

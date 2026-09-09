@@ -1,0 +1,32 @@
+time="2026-09-08T21:40:03+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-09-08T21:40:03+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-09-08T21:40:03+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+LAST SEEN   TYPE      REASON              OBJECT                                          MESSAGE
+30m         Normal    Scheduled           pod/enterprise-doc-consumer-69c77dff57-dmjvg    Successfully assigned enterprise-doc-agent-staging/enterprise-doc-consumer-69c77dff57-dmjvg to vm-4-7-ubuntu
+30m         Normal    Scheduled           pod/enterprise-doc-worker-7665578cfc-m7hwr      Successfully assigned enterprise-doc-agent-staging/enterprise-doc-worker-7665578cfc-m7hwr to vm-4-7-ubuntu
+30m         Normal    Scheduled           pod/enterprise-doc-web-67895ccb9f-zxn4z         Successfully assigned enterprise-doc-agent-staging/enterprise-doc-web-67895ccb9f-zxn4z to vm-4-7-ubuntu
+30m         Normal    Scheduled           pod/enterprise-doc-api-6f5749fc58-xhn9m         Successfully assigned enterprise-doc-agent-staging/enterprise-doc-api-6f5749fc58-xhn9m to vm-4-7-ubuntu
+31m         Normal    SuccessfulDelete    job/enterprise-doc-migrate                      Deleted pod: enterprise-doc-migrate-99gxl
+30m         Normal    Killing             pod/enterprise-doc-migrate-99gxl                Stopping container migrate
+30m         Normal    Pulled              pod/enterprise-doc-migrate-99gxl                Successfully pulled image "ghcr.io/drew-z/enterprise-doc-api@sha256:e2cbbc6ba1c5e7463ed21e6663c5a948d467e46bcd187a7cf8b02c50ed53bfff" in 45m44.963s (45m44.965s including waiting). Image size: 123910377 bytes.
+30m         Normal    Started             pod/enterprise-doc-migrate-99gxl                Container started
+30m         Normal    Created             pod/enterprise-doc-migrate-99gxl                Container created
+30m         Warning   DeadlineExceeded    job/enterprise-doc-migrate                      Job was active longer than specified deadline
+30m         Normal    ScalingReplicaSet   deployment/enterprise-doc-consumer              Scaled up replica set enterprise-doc-consumer-69c77dff57 from 0 to 1
+30m         Normal    SuccessfulCreate    replicaset/enterprise-doc-consumer-69c77dff57   Created pod: enterprise-doc-consumer-69c77dff57-dmjvg
+30m         Normal    ScalingReplicaSet   deployment/enterprise-doc-worker                Scaled up replica set enterprise-doc-worker-7665578cfc from 0 to 1
+30m         Normal    SuccessfulCreate    replicaset/enterprise-doc-api-6f5749fc58        Created pod: enterprise-doc-api-6f5749fc58-xhn9m
+30m         Normal    SuccessfulCreate    replicaset/enterprise-doc-worker-7665578cfc     Created pod: enterprise-doc-worker-7665578cfc-m7hwr
+30m         Normal    ScalingReplicaSet   deployment/enterprise-doc-web                   Scaled up replica set enterprise-doc-web-67895ccb9f from 0 to 1
+30m         Normal    ScalingReplicaSet   deployment/enterprise-doc-api                   Scaled up replica set enterprise-doc-api-6f5749fc58 from 0 to 1
+30m         Normal    SuccessfulCreate    replicaset/enterprise-doc-web-67895ccb9f        Created pod: enterprise-doc-web-67895ccb9f-zxn4z
+30m         Normal    Pulling             pod/enterprise-doc-web-67895ccb9f-zxn4z         Pulling image "ghcr.io/drew-z/enterprise-doc-web@sha256:618655ebcaaa3ff8af903414e348d1261b563f00becf54f06f66fad2441e3b09"
+30m         Normal    Created             pod/enterprise-doc-api-6f5749fc58-xhn9m         Container created
+30m         Normal    Started             pod/enterprise-doc-api-6f5749fc58-xhn9m         Container started
+30m         Normal    Pulled              pod/enterprise-doc-api-6f5749fc58-xhn9m         Container image "ghcr.io/drew-z/enterprise-doc-api@sha256:e2cbbc6ba1c5e7463ed21e6663c5a948d467e46bcd187a7cf8b02c50ed53bfff" already present on machine and can be accessed by the pod
+30m         Normal    Pulling             pod/enterprise-doc-worker-7665578cfc-m7hwr      Pulling image "ghcr.io/drew-z/enterprise-doc-worker@sha256:b957cdd12dff8e3151386a4a1e829b311c3970f14e22479524011f22e7d784d7"
+30m         Normal    Pulling             pod/enterprise-doc-consumer-69c77dff57-dmjvg    Pulling image "ghcr.io/drew-z/enterprise-doc-consumer@sha256:ec84d7d280ff74f28147c678428cee5cfa55a5a70a6fe444a20079e616262a21"
+30m         Warning   Unhealthy           pod/enterprise-doc-api-6f5749fc58-xhn9m         Startup probe failed: Get "http://10.42.0.206:8000/health/live": dial tcp 10.42.0.206:8000: connect: connection refused
+27m         Normal    Pulled              pod/enterprise-doc-web-67895ccb9f-zxn4z         Successfully pulled image "ghcr.io/drew-z/enterprise-doc-web@sha256:618655ebcaaa3ff8af903414e348d1261b563f00becf54f06f66fad2441e3b09" in 2m40.045s (2m40.045s including waiting). Image size: 30176792 bytes.
+27m         Normal    Created             pod/enterprise-doc-web-67895ccb9f-zxn4z         Container created
+27m         Normal    Started             pod/enterprise-doc-web-67895ccb9f-zxn4z         Container started

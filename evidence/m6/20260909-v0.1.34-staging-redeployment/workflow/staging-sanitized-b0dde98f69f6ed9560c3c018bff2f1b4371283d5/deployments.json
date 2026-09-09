@@ -1,0 +1,878 @@
+time="2026-09-09T00:03:25+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-09-09T00:03:25+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-09-09T00:03:25+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+{
+    "apiVersion": "v1",
+    "items": [
+        {
+            "apiVersion": "apps/v1",
+            "kind": "Deployment",
+            "metadata": {
+                "annotations": {
+                    "deployment.kubernetes.io/revision": "7",
+                    "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"labels\":{\"app.kubernetes.io/name\":\"enterprise-doc-api\",\"app.kubernetes.io/part-of\":\"enterprise-doc-agent\"},\"name\":\"enterprise-doc-api\",\"namespace\":\"enterprise-doc-agent-staging\"},\"spec\":{\"replicas\":1,\"selector\":{\"matchLabels\":{\"app.kubernetes.io/name\":\"enterprise-doc-api\"}},\"strategy\":{\"rollingUpdate\":{\"maxSurge\":0,\"maxUnavailable\":1},\"type\":\"RollingUpdate\"},\"template\":{\"metadata\":{\"annotations\":{\"enterprise-doc-agent/config-sha256\":\"e802b8e7fa7179e77693b7ef9b2c17a473a61a2998d1f071fc6ddbf79e90114f\"},\"labels\":{\"app.kubernetes.io/name\":\"enterprise-doc-api\",\"app.kubernetes.io/part-of\":\"enterprise-doc-agent\"}},\"spec\":{\"containers\":[{\"envFrom\":[{\"configMapRef\":{\"name\":\"enterprise-doc-config\"}},{\"secretRef\":{\"name\":\"enterprise-doc-secrets\"}}],\"image\":\"ghcr.io/drew-z/enterprise-doc-api@sha256:e2cbbc6ba1c5e7463ed21e6663c5a948d467e46bcd187a7cf8b02c50ed53bfff\",\"imagePullPolicy\":\"IfNotPresent\",\"lifecycle\":{\"preStop\":{\"exec\":{\"command\":[\"/bin/sh\",\"-c\",\"sleep 5\"]}}},\"livenessProbe\":{\"httpGet\":{\"path\":\"/health/live\",\"port\":\"http\"},\"periodSeconds\":10,\"timeoutSeconds\":3},\"name\":\"api\",\"ports\":[{\"containerPort\":8000,\"name\":\"http\"}],\"readinessProbe\":{\"failureThreshold\":6,\"httpGet\":{\"path\":\"/health/ready\",\"port\":\"http\"},\"periodSeconds\":20,\"timeoutSeconds\":20},\"resources\":{\"limits\":{\"cpu\":\"600m\",\"memory\":\"512Mi\"},\"requests\":{\"cpu\":\"150m\",\"memory\":\"256Mi\"}},\"securityContext\":{\"allowPrivilegeEscalation\":false,\"capabilities\":{\"drop\":[\"ALL\"]},\"readOnlyRootFilesystem\":true},\"startupProbe\":{\"failureThreshold\":30,\"httpGet\":{\"path\":\"/health/live\",\"port\":\"http\"},\"periodSeconds\":5}}],\"imagePullSecrets\":[{\"name\":\"enterprise-doc-registry\"}],\"securityContext\":{\"runAsGroup\":10001,\"runAsNonRoot\":true,\"runAsUser\":10001,\"seccompProfile\":{\"type\":\"RuntimeDefault\"}},\"serviceAccountName\":\"enterprise-doc-runtime\",\"terminationGracePeriodSeconds\":30}}}}\n"
+                },
+                "creationTimestamp": "2026-08-30T11:18:47Z",
+                "generation": 60,
+                "labels": {
+                    "app.kubernetes.io/name": "enterprise-doc-api",
+                    "app.kubernetes.io/part-of": "enterprise-doc-agent"
+                },
+                "name": "enterprise-doc-api",
+                "namespace": "enterprise-doc-agent-staging",
+                "resourceVersion": "344024",
+                "uid": "f31cc6e2-8f8a-4d2b-b54f-4e959271b210"
+            },
+            "spec": {
+                "progressDeadlineSeconds": 600,
+                "replicas": 1,
+                "revisionHistoryLimit": 10,
+                "selector": {
+                    "matchLabels": {
+                        "app.kubernetes.io/name": "enterprise-doc-api"
+                    }
+                },
+                "strategy": {
+                    "rollingUpdate": {
+                        "maxSurge": 0,
+                        "maxUnavailable": 1
+                    },
+                    "type": "RollingUpdate"
+                },
+                "template": {
+                    "metadata": {
+                        "annotations": {
+                            "enterprise-doc-agent/config-sha256": "e802b8e7fa7179e77693b7ef9b2c17a473a61a2998d1f071fc6ddbf79e90114f"
+                        },
+                        "labels": {
+                            "app.kubernetes.io/name": "enterprise-doc-api",
+                            "app.kubernetes.io/part-of": "enterprise-doc-agent"
+                        }
+                    },
+                    "spec": {
+                        "containers": [
+                            {
+                                "envFrom": [
+                                    {
+                                        "configMapRef": {
+                                            "name": "enterprise-doc-config"
+                                        }
+                                    },
+                                    {
+                                        "secretRef": {
+                                            "name": "enterprise-doc-secrets"
+                                        }
+                                    }
+                                ],
+                                "image": "ghcr.io/drew-z/enterprise-doc-api@sha256:e2cbbc6ba1c5e7463ed21e6663c5a948d467e46bcd187a7cf8b02c50ed53bfff",
+                                "imagePullPolicy": "IfNotPresent",
+                                "lifecycle": {
+                                    "preStop": {
+                                        "exec": {
+                                            "command": [
+                                                "/bin/sh",
+                                                "-c",
+                                                "sleep 5"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "livenessProbe": {
+                                    "failureThreshold": 3,
+                                    "httpGet": {
+                                        "path": "/health/live",
+                                        "port": "http",
+                                        "scheme": "HTTP"
+                                    },
+                                    "periodSeconds": 10,
+                                    "successThreshold": 1,
+                                    "timeoutSeconds": 3
+                                },
+                                "name": "api",
+                                "ports": [
+                                    {
+                                        "containerPort": 8000,
+                                        "name": "http",
+                                        "protocol": "TCP"
+                                    }
+                                ],
+                                "readinessProbe": {
+                                    "failureThreshold": 6,
+                                    "httpGet": {
+                                        "path": "/health/ready",
+                                        "port": "http",
+                                        "scheme": "HTTP"
+                                    },
+                                    "periodSeconds": 20,
+                                    "successThreshold": 1,
+                                    "timeoutSeconds": 20
+                                },
+                                "resources": {
+                                    "limits": {
+                                        "cpu": "600m",
+                                        "memory": "512Mi"
+                                    },
+                                    "requests": {
+                                        "cpu": "150m",
+                                        "memory": "256Mi"
+                                    }
+                                },
+                                "securityContext": {
+                                    "allowPrivilegeEscalation": false,
+                                    "capabilities": {
+                                        "drop": [
+                                            "ALL"
+                                        ]
+                                    },
+                                    "readOnlyRootFilesystem": true
+                                },
+                                "startupProbe": {
+                                    "failureThreshold": 30,
+                                    "httpGet": {
+                                        "path": "/health/live",
+                                        "port": "http",
+                                        "scheme": "HTTP"
+                                    },
+                                    "periodSeconds": 5,
+                                    "successThreshold": 1,
+                                    "timeoutSeconds": 1
+                                },
+                                "terminationMessagePath": "/dev/termination-log",
+                                "terminationMessagePolicy": "File"
+                            }
+                        ],
+                        "dnsPolicy": "ClusterFirst",
+                        "imagePullSecrets": [
+                            {
+                                "name": "enterprise-doc-registry"
+                            }
+                        ],
+                        "restartPolicy": "Always",
+                        "schedulerName": "default-scheduler",
+                        "securityContext": {
+                            "runAsGroup": 10001,
+                            "runAsNonRoot": true,
+                            "runAsUser": 10001,
+                            "seccompProfile": {
+                                "type": "RuntimeDefault"
+                            }
+                        },
+                        "serviceAccount": "enterprise-doc-runtime",
+                        "serviceAccountName": "enterprise-doc-runtime",
+                        "terminationGracePeriodSeconds": 30
+                    }
+                }
+            },
+            "status": {
+                "availableReplicas": 1,
+                "conditions": [
+                    {
+                        "lastTransitionTime": "2026-08-30T11:18:47Z",
+                        "lastUpdateTime": "2026-08-30T11:18:47Z",
+                        "message": "Deployment has minimum availability.",
+                        "reason": "MinimumReplicasAvailable",
+                        "status": "True",
+                        "type": "Available"
+                    },
+                    {
+                        "lastTransitionTime": "2026-08-30T11:18:47Z",
+                        "lastUpdateTime": "2026-09-08T13:09:53Z",
+                        "message": "ReplicaSet \"enterprise-doc-api-6f5749fc58\" has successfully progressed.",
+                        "reason": "NewReplicaSetAvailable",
+                        "status": "True",
+                        "type": "Progressing"
+                    }
+                ],
+                "observedGeneration": 60,
+                "readyReplicas": 1,
+                "replicas": 1,
+                "terminatingReplicas": 0,
+                "updatedReplicas": 1
+            }
+        },
+        {
+            "apiVersion": "apps/v1",
+            "kind": "Deployment",
+            "metadata": {
+                "annotations": {
+                    "deployment.kubernetes.io/revision": "7",
+                    "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"labels\":{\"app.kubernetes.io/name\":\"enterprise-doc-consumer\",\"app.kubernetes.io/part-of\":\"enterprise-doc-agent\"},\"name\":\"enterprise-doc-consumer\",\"namespace\":\"enterprise-doc-agent-staging\"},\"spec\":{\"replicas\":1,\"selector\":{\"matchLabels\":{\"app.kubernetes.io/name\":\"enterprise-doc-consumer\"}},\"strategy\":{\"rollingUpdate\":{\"maxSurge\":0,\"maxUnavailable\":1},\"type\":\"RollingUpdate\"},\"template\":{\"metadata\":{\"annotations\":{\"enterprise-doc-agent/config-sha256\":\"e802b8e7fa7179e77693b7ef9b2c17a473a61a2998d1f071fc6ddbf79e90114f\"},\"labels\":{\"app.kubernetes.io/name\":\"enterprise-doc-consumer\",\"app.kubernetes.io/part-of\":\"enterprise-doc-agent\"}},\"spec\":{\"containers\":[{\"envFrom\":[{\"configMapRef\":{\"name\":\"enterprise-doc-config\"}},{\"secretRef\":{\"name\":\"enterprise-doc-secrets\"}}],\"image\":\"ghcr.io/drew-z/enterprise-doc-consumer@sha256:ec84d7d280ff74f28147c678428cee5cfa55a5a70a6fe444a20079e616262a21\",\"livenessProbe\":{\"periodSeconds\":10,\"tcpSocket\":{\"port\":\"metrics\"}},\"name\":\"consumer\",\"ports\":[{\"containerPort\":8082,\"name\":\"metrics\"}],\"readinessProbe\":{\"periodSeconds\":5,\"tcpSocket\":{\"port\":\"metrics\"}},\"resources\":{\"limits\":{\"cpu\":\"500m\",\"memory\":\"384Mi\"},\"requests\":{\"cpu\":\"100m\",\"memory\":\"192Mi\"}},\"securityContext\":{\"allowPrivilegeEscalation\":false,\"capabilities\":{\"drop\":[\"ALL\"]},\"readOnlyRootFilesystem\":true},\"startupProbe\":{\"failureThreshold\":30,\"periodSeconds\":5,\"tcpSocket\":{\"port\":\"metrics\"}}}],\"imagePullSecrets\":[{\"name\":\"enterprise-doc-registry\"}],\"securityContext\":{\"runAsGroup\":10001,\"runAsNonRoot\":true,\"runAsUser\":10001,\"seccompProfile\":{\"type\":\"RuntimeDefault\"}},\"serviceAccountName\":\"enterprise-doc-runtime\",\"terminationGracePeriodSeconds\":60}}}}\n"
+                },
+                "creationTimestamp": "2026-08-30T11:18:47Z",
+                "generation": 60,
+                "labels": {
+                    "app.kubernetes.io/name": "enterprise-doc-consumer",
+                    "app.kubernetes.io/part-of": "enterprise-doc-agent"
+                },
+                "name": "enterprise-doc-consumer",
+                "namespace": "enterprise-doc-agent-staging",
+                "resourceVersion": "344000",
+                "uid": "484c883a-4ee6-410b-9b6f-35004f961431"
+            },
+            "spec": {
+                "progressDeadlineSeconds": 600,
+                "replicas": 1,
+                "revisionHistoryLimit": 10,
+                "selector": {
+                    "matchLabels": {
+                        "app.kubernetes.io/name": "enterprise-doc-consumer"
+                    }
+                },
+                "strategy": {
+                    "rollingUpdate": {
+                        "maxSurge": 0,
+                        "maxUnavailable": 1
+                    },
+                    "type": "RollingUpdate"
+                },
+                "template": {
+                    "metadata": {
+                        "annotations": {
+                            "enterprise-doc-agent/config-sha256": "e802b8e7fa7179e77693b7ef9b2c17a473a61a2998d1f071fc6ddbf79e90114f"
+                        },
+                        "labels": {
+                            "app.kubernetes.io/name": "enterprise-doc-consumer",
+                            "app.kubernetes.io/part-of": "enterprise-doc-agent"
+                        }
+                    },
+                    "spec": {
+                        "containers": [
+                            {
+                                "envFrom": [
+                                    {
+                                        "configMapRef": {
+                                            "name": "enterprise-doc-config"
+                                        }
+                                    },
+                                    {
+                                        "secretRef": {
+                                            "name": "enterprise-doc-secrets"
+                                        }
+                                    }
+                                ],
+                                "image": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:ec84d7d280ff74f28147c678428cee5cfa55a5a70a6fe444a20079e616262a21",
+                                "imagePullPolicy": "IfNotPresent",
+                                "livenessProbe": {
+                                    "failureThreshold": 3,
+                                    "periodSeconds": 10,
+                                    "successThreshold": 1,
+                                    "tcpSocket": {
+                                        "port": "metrics"
+                                    },
+                                    "timeoutSeconds": 1
+                                },
+                                "name": "consumer",
+                                "ports": [
+                                    {
+                                        "containerPort": 8082,
+                                        "name": "metrics",
+                                        "protocol": "TCP"
+                                    }
+                                ],
+                                "readinessProbe": {
+                                    "failureThreshold": 3,
+                                    "periodSeconds": 5,
+                                    "successThreshold": 1,
+                                    "tcpSocket": {
+                                        "port": "metrics"
+                                    },
+                                    "timeoutSeconds": 1
+                                },
+                                "resources": {
+                                    "limits": {
+                                        "cpu": "500m",
+                                        "memory": "384Mi"
+                                    },
+                                    "requests": {
+                                        "cpu": "100m",
+                                        "memory": "192Mi"
+                                    }
+                                },
+                                "securityContext": {
+                                    "allowPrivilegeEscalation": false,
+                                    "capabilities": {
+                                        "drop": [
+                                            "ALL"
+                                        ]
+                                    },
+                                    "readOnlyRootFilesystem": true
+                                },
+                                "startupProbe": {
+                                    "failureThreshold": 30,
+                                    "periodSeconds": 5,
+                                    "successThreshold": 1,
+                                    "tcpSocket": {
+                                        "port": "metrics"
+                                    },
+                                    "timeoutSeconds": 1
+                                },
+                                "terminationMessagePath": "/dev/termination-log",
+                                "terminationMessagePolicy": "File"
+                            }
+                        ],
+                        "dnsPolicy": "ClusterFirst",
+                        "imagePullSecrets": [
+                            {
+                                "name": "enterprise-doc-registry"
+                            }
+                        ],
+                        "restartPolicy": "Always",
+                        "schedulerName": "default-scheduler",
+                        "securityContext": {
+                            "runAsGroup": 10001,
+                            "runAsNonRoot": true,
+                            "runAsUser": 10001,
+                            "seccompProfile": {
+                                "type": "RuntimeDefault"
+                            }
+                        },
+                        "serviceAccount": "enterprise-doc-runtime",
+                        "serviceAccountName": "enterprise-doc-runtime",
+                        "terminationGracePeriodSeconds": 60
+                    }
+                }
+            },
+            "status": {
+                "availableReplicas": 1,
+                "conditions": [
+                    {
+                        "lastTransitionTime": "2026-09-08T14:29:26Z",
+                        "lastUpdateTime": "2026-09-08T14:29:26Z",
+                        "message": "ReplicaSet \"enterprise-doc-consumer-69c77dff57\" has successfully progressed.",
+                        "reason": "NewReplicaSetAvailable",
+                        "status": "True",
+                        "type": "Progressing"
+                    },
+                    {
+                        "lastTransitionTime": "2026-09-08T16:02:04Z",
+                        "lastUpdateTime": "2026-09-08T16:02:04Z",
+                        "message": "Deployment has minimum availability.",
+                        "reason": "MinimumReplicasAvailable",
+                        "status": "True",
+                        "type": "Available"
+                    }
+                ],
+                "observedGeneration": 60,
+                "readyReplicas": 1,
+                "replicas": 1,
+                "terminatingReplicas": 0,
+                "updatedReplicas": 1
+            }
+        },
+        {
+            "apiVersion": "apps/v1",
+            "kind": "Deployment",
+            "metadata": {
+                "annotations": {
+                    "deployment.kubernetes.io/revision": "1",
+                    "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"labels\":{\"app.kubernetes.io/name\":\"enterprise-doc-redis\",\"app.kubernetes.io/part-of\":\"enterprise-doc-agent\"},\"name\":\"enterprise-doc-redis\",\"namespace\":\"enterprise-doc-agent-staging\"},\"spec\":{\"replicas\":1,\"selector\":{\"matchLabels\":{\"app.kubernetes.io/name\":\"enterprise-doc-redis\"}},\"strategy\":{\"type\":\"Recreate\"},\"template\":{\"metadata\":{\"labels\":{\"app.kubernetes.io/name\":\"enterprise-doc-redis\",\"app.kubernetes.io/part-of\":\"enterprise-doc-agent\"}},\"spec\":{\"automountServiceAccountToken\":false,\"containers\":[{\"args\":[\"redis-server\",\"--save\",\"\",\"--appendonly\",\"no\",\"--maxmemory\",\"128mb\",\"--maxmemory-policy\",\"noeviction\"],\"image\":\"redis@sha256:6ab0b6e7381779332f97b8ca76193e45b0756f38d4c0dcda72dbb3c32061ab99\",\"livenessProbe\":{\"exec\":{\"command\":[\"redis-cli\",\"ping\"]},\"periodSeconds\":10,\"timeoutSeconds\":2},\"name\":\"redis\",\"ports\":[{\"containerPort\":6379,\"name\":\"redis\"}],\"readinessProbe\":{\"exec\":{\"command\":[\"redis-cli\",\"ping\"]},\"periodSeconds\":5,\"timeoutSeconds\":2},\"resources\":{\"limits\":{\"cpu\":\"200m\",\"memory\":\"192Mi\"},\"requests\":{\"cpu\":\"50m\",\"memory\":\"128Mi\"}},\"securityContext\":{\"allowPrivilegeEscalation\":false,\"capabilities\":{\"drop\":[\"ALL\"]},\"readOnlyRootFilesystem\":true},\"startupProbe\":{\"exec\":{\"command\":[\"redis-cli\",\"ping\"]},\"failureThreshold\":30,\"periodSeconds\":2},\"volumeMounts\":[{\"mountPath\":\"/data\",\"name\":\"data\"}]}],\"securityContext\":{\"fsGroup\":1000,\"runAsGroup\":1000,\"runAsNonRoot\":true,\"runAsUser\":999,\"seccompProfile\":{\"type\":\"RuntimeDefault\"}},\"volumes\":[{\"emptyDir\":{},\"name\":\"data\"}]}}}}\n"
+                },
+                "creationTimestamp": "2026-08-30T11:18:47Z",
+                "generation": 1,
+                "labels": {
+                    "app.kubernetes.io/name": "enterprise-doc-redis",
+                    "app.kubernetes.io/part-of": "enterprise-doc-agent"
+                },
+                "name": "enterprise-doc-redis",
+                "namespace": "enterprise-doc-agent-staging",
+                "resourceVersion": "15930",
+                "uid": "36e46873-ce76-499c-a0bb-2ff123aeb716"
+            },
+            "spec": {
+                "progressDeadlineSeconds": 600,
+                "replicas": 1,
+                "revisionHistoryLimit": 10,
+                "selector": {
+                    "matchLabels": {
+                        "app.kubernetes.io/name": "enterprise-doc-redis"
+                    }
+                },
+                "strategy": {
+                    "type": "Recreate"
+                },
+                "template": {
+                    "metadata": {
+                        "labels": {
+                            "app.kubernetes.io/name": "enterprise-doc-redis",
+                            "app.kubernetes.io/part-of": "enterprise-doc-agent"
+                        }
+                    },
+                    "spec": {
+                        "automountServiceAccountToken": false,
+                        "containers": [
+                            {
+                                "args": [
+                                    "redis-server",
+                                    "--save",
+                                    "",
+                                    "--appendonly",
+                                    "no",
+                                    "--maxmemory",
+                                    "128mb",
+                                    "--maxmemory-policy",
+                                    "noeviction"
+                                ],
+                                "image": "redis@sha256:6ab0b6e7381779332f97b8ca76193e45b0756f38d4c0dcda72dbb3c32061ab99",
+                                "imagePullPolicy": "IfNotPresent",
+                                "livenessProbe": {
+                                    "exec": {
+                                        "command": [
+                                            "redis-cli",
+                                            "ping"
+                                        ]
+                                    },
+                                    "failureThreshold": 3,
+                                    "periodSeconds": 10,
+                                    "successThreshold": 1,
+                                    "timeoutSeconds": 2
+                                },
+                                "name": "redis",
+                                "ports": [
+                                    {
+                                        "containerPort": 6379,
+                                        "name": "redis",
+                                        "protocol": "TCP"
+                                    }
+                                ],
+                                "readinessProbe": {
+                                    "exec": {
+                                        "command": [
+                                            "redis-cli",
+                                            "ping"
+                                        ]
+                                    },
+                                    "failureThreshold": 3,
+                                    "periodSeconds": 5,
+                                    "successThreshold": 1,
+                                    "timeoutSeconds": 2
+                                },
+                                "resources": {
+                                    "limits": {
+                                        "cpu": "200m",
+                                        "memory": "192Mi"
+                                    },
+                                    "requests": {
+                                        "cpu": "50m",
+                                        "memory": "128Mi"
+                                    }
+                                },
+                                "securityContext": {
+                                    "allowPrivilegeEscalation": false,
+                                    "capabilities": {
+                                        "drop": [
+                                            "ALL"
+                                        ]
+                                    },
+                                    "readOnlyRootFilesystem": true
+                                },
+                                "startupProbe": {
+                                    "exec": {
+                                        "command": [
+                                            "redis-cli",
+                                            "ping"
+                                        ]
+                                    },
+                                    "failureThreshold": 30,
+                                    "periodSeconds": 2,
+                                    "successThreshold": 1,
+                                    "timeoutSeconds": 1
+                                },
+                                "terminationMessagePath": "/dev/termination-log",
+                                "terminationMessagePolicy": "File",
+                                "volumeMounts": [
+                                    {
+                                        "mountPath": "/data",
+                                        "name": "data"
+                                    }
+                                ]
+                            }
+                        ],
+                        "dnsPolicy": "ClusterFirst",
+                        "restartPolicy": "Always",
+                        "schedulerName": "default-scheduler",
+                        "securityContext": {
+                            "fsGroup": 1000,
+                            "runAsGroup": 1000,
+                            "runAsNonRoot": true,
+                            "runAsUser": 999,
+                            "seccompProfile": {
+                                "type": "RuntimeDefault"
+                            }
+                        },
+                        "terminationGracePeriodSeconds": 30,
+                        "volumes": [
+                            {
+                                "emptyDir": {},
+                                "name": "data"
+                            }
+                        ]
+                    }
+                }
+            },
+            "status": {
+                "availableReplicas": 1,
+                "conditions": [
+                    {
+                        "lastTransitionTime": "2026-08-30T11:23:12Z",
+                        "lastUpdateTime": "2026-08-30T11:23:12Z",
+                        "message": "Deployment has minimum availability.",
+                        "reason": "MinimumReplicasAvailable",
+                        "status": "True",
+                        "type": "Available"
+                    },
+                    {
+                        "lastTransitionTime": "2026-08-30T11:18:47Z",
+                        "lastUpdateTime": "2026-08-30T11:23:12Z",
+                        "message": "ReplicaSet \"enterprise-doc-redis-6f7b677877\" has successfully progressed.",
+                        "reason": "NewReplicaSetAvailable",
+                        "status": "True",
+                        "type": "Progressing"
+                    }
+                ],
+                "observedGeneration": 1,
+                "readyReplicas": 1,
+                "replicas": 1,
+                "terminatingReplicas": 0,
+                "updatedReplicas": 1
+            }
+        },
+        {
+            "apiVersion": "apps/v1",
+            "kind": "Deployment",
+            "metadata": {
+                "annotations": {
+                    "deployment.kubernetes.io/revision": "6",
+                    "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"labels\":{\"app.kubernetes.io/name\":\"enterprise-doc-web\",\"app.kubernetes.io/part-of\":\"enterprise-doc-agent\"},\"name\":\"enterprise-doc-web\",\"namespace\":\"enterprise-doc-agent-staging\"},\"spec\":{\"replicas\":1,\"selector\":{\"matchLabels\":{\"app.kubernetes.io/name\":\"enterprise-doc-web\"}},\"strategy\":{\"rollingUpdate\":{\"maxSurge\":0,\"maxUnavailable\":1},\"type\":\"RollingUpdate\"},\"template\":{\"metadata\":{\"labels\":{\"app.kubernetes.io/name\":\"enterprise-doc-web\",\"app.kubernetes.io/part-of\":\"enterprise-doc-agent\"}},\"spec\":{\"containers\":[{\"image\":\"ghcr.io/drew-z/enterprise-doc-web@sha256:618655ebcaaa3ff8af903414e348d1261b563f00becf54f06f66fad2441e3b09\",\"livenessProbe\":{\"httpGet\":{\"path\":\"/health/live\",\"port\":\"http\"},\"periodSeconds\":10},\"name\":\"web\",\"ports\":[{\"containerPort\":8080,\"name\":\"http\"}],\"readinessProbe\":{\"httpGet\":{\"path\":\"/health/live\",\"port\":\"http\"},\"periodSeconds\":5},\"resources\":{\"limits\":{\"cpu\":\"150m\",\"memory\":\"128Mi\"},\"requests\":{\"cpu\":\"25m\",\"memory\":\"64Mi\"}},\"securityContext\":{\"allowPrivilegeEscalation\":false,\"capabilities\":{\"drop\":[\"ALL\"]}},\"startupProbe\":{\"failureThreshold\":30,\"httpGet\":{\"path\":\"/health/live\",\"port\":\"http\"},\"periodSeconds\":5}}],\"imagePullSecrets\":[{\"name\":\"enterprise-doc-registry\"}],\"securityContext\":{\"runAsGroup\":101,\"runAsNonRoot\":true,\"runAsUser\":101,\"seccompProfile\":{\"type\":\"RuntimeDefault\"}},\"serviceAccountName\":\"enterprise-doc-runtime\"}}}}\n"
+                },
+                "creationTimestamp": "2026-08-30T11:18:47Z",
+                "generation": 60,
+                "labels": {
+                    "app.kubernetes.io/name": "enterprise-doc-web",
+                    "app.kubernetes.io/part-of": "enterprise-doc-agent"
+                },
+                "name": "enterprise-doc-web",
+                "namespace": "enterprise-doc-agent-staging",
+                "resourceVersion": "344014",
+                "uid": "4f5a6dfc-1d6c-4382-8907-f31f29b0c08e"
+            },
+            "spec": {
+                "progressDeadlineSeconds": 600,
+                "replicas": 1,
+                "revisionHistoryLimit": 10,
+                "selector": {
+                    "matchLabels": {
+                        "app.kubernetes.io/name": "enterprise-doc-web"
+                    }
+                },
+                "strategy": {
+                    "rollingUpdate": {
+                        "maxSurge": 0,
+                        "maxUnavailable": 1
+                    },
+                    "type": "RollingUpdate"
+                },
+                "template": {
+                    "metadata": {
+                        "labels": {
+                            "app.kubernetes.io/name": "enterprise-doc-web",
+                            "app.kubernetes.io/part-of": "enterprise-doc-agent"
+                        }
+                    },
+                    "spec": {
+                        "containers": [
+                            {
+                                "image": "ghcr.io/drew-z/enterprise-doc-web@sha256:618655ebcaaa3ff8af903414e348d1261b563f00becf54f06f66fad2441e3b09",
+                                "imagePullPolicy": "IfNotPresent",
+                                "livenessProbe": {
+                                    "failureThreshold": 3,
+                                    "httpGet": {
+                                        "path": "/health/live",
+                                        "port": "http",
+                                        "scheme": "HTTP"
+                                    },
+                                    "periodSeconds": 10,
+                                    "successThreshold": 1,
+                                    "timeoutSeconds": 1
+                                },
+                                "name": "web",
+                                "ports": [
+                                    {
+                                        "containerPort": 8080,
+                                        "name": "http",
+                                        "protocol": "TCP"
+                                    }
+                                ],
+                                "readinessProbe": {
+                                    "failureThreshold": 3,
+                                    "httpGet": {
+                                        "path": "/health/live",
+                                        "port": "http",
+                                        "scheme": "HTTP"
+                                    },
+                                    "periodSeconds": 5,
+                                    "successThreshold": 1,
+                                    "timeoutSeconds": 1
+                                },
+                                "resources": {
+                                    "limits": {
+                                        "cpu": "150m",
+                                        "memory": "128Mi"
+                                    },
+                                    "requests": {
+                                        "cpu": "25m",
+                                        "memory": "64Mi"
+                                    }
+                                },
+                                "securityContext": {
+                                    "allowPrivilegeEscalation": false,
+                                    "capabilities": {
+                                        "drop": [
+                                            "ALL"
+                                        ]
+                                    }
+                                },
+                                "startupProbe": {
+                                    "failureThreshold": 30,
+                                    "httpGet": {
+                                        "path": "/health/live",
+                                        "port": "http",
+                                        "scheme": "HTTP"
+                                    },
+                                    "periodSeconds": 5,
+                                    "successThreshold": 1,
+                                    "timeoutSeconds": 1
+                                },
+                                "terminationMessagePath": "/dev/termination-log",
+                                "terminationMessagePolicy": "File"
+                            }
+                        ],
+                        "dnsPolicy": "ClusterFirst",
+                        "imagePullSecrets": [
+                            {
+                                "name": "enterprise-doc-registry"
+                            }
+                        ],
+                        "restartPolicy": "Always",
+                        "schedulerName": "default-scheduler",
+                        "securityContext": {
+                            "runAsGroup": 101,
+                            "runAsNonRoot": true,
+                            "runAsUser": 101,
+                            "seccompProfile": {
+                                "type": "RuntimeDefault"
+                            }
+                        },
+                        "serviceAccount": "enterprise-doc-runtime",
+                        "serviceAccountName": "enterprise-doc-runtime",
+                        "terminationGracePeriodSeconds": 30
+                    }
+                }
+            },
+            "status": {
+                "availableReplicas": 1,
+                "conditions": [
+                    {
+                        "lastTransitionTime": "2026-08-30T11:18:47Z",
+                        "lastUpdateTime": "2026-08-30T11:18:47Z",
+                        "message": "Deployment has minimum availability.",
+                        "reason": "MinimumReplicasAvailable",
+                        "status": "True",
+                        "type": "Available"
+                    },
+                    {
+                        "lastTransitionTime": "2026-08-30T11:18:47Z",
+                        "lastUpdateTime": "2026-09-08T13:12:27Z",
+                        "message": "ReplicaSet \"enterprise-doc-web-67895ccb9f\" has successfully progressed.",
+                        "reason": "NewReplicaSetAvailable",
+                        "status": "True",
+                        "type": "Progressing"
+                    }
+                ],
+                "observedGeneration": 60,
+                "readyReplicas": 1,
+                "replicas": 1,
+                "terminatingReplicas": 0,
+                "updatedReplicas": 1
+            }
+        },
+        {
+            "apiVersion": "apps/v1",
+            "kind": "Deployment",
+            "metadata": {
+                "annotations": {
+                    "deployment.kubernetes.io/revision": "7",
+                    "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"labels\":{\"app.kubernetes.io/name\":\"enterprise-doc-worker\",\"app.kubernetes.io/part-of\":\"enterprise-doc-agent\"},\"name\":\"enterprise-doc-worker\",\"namespace\":\"enterprise-doc-agent-staging\"},\"spec\":{\"progressDeadlineSeconds\":1800,\"replicas\":1,\"selector\":{\"matchLabels\":{\"app.kubernetes.io/name\":\"enterprise-doc-worker\"}},\"strategy\":{\"rollingUpdate\":{\"maxSurge\":0,\"maxUnavailable\":1},\"type\":\"RollingUpdate\"},\"template\":{\"metadata\":{\"annotations\":{\"enterprise-doc-agent/config-sha256\":\"e802b8e7fa7179e77693b7ef9b2c17a473a61a2998d1f071fc6ddbf79e90114f\"},\"labels\":{\"app.kubernetes.io/name\":\"enterprise-doc-worker\",\"app.kubernetes.io/part-of\":\"enterprise-doc-agent\"}},\"spec\":{\"containers\":[{\"envFrom\":[{\"configMapRef\":{\"name\":\"enterprise-doc-config\"}},{\"secretRef\":{\"name\":\"enterprise-doc-secrets\"}}],\"image\":\"ghcr.io/drew-z/enterprise-doc-worker@sha256:b957cdd12dff8e3151386a4a1e829b311c3970f14e22479524011f22e7d784d7\",\"livenessProbe\":{\"httpGet\":{\"path\":\"/health/live\",\"port\":\"probe\"},\"periodSeconds\":10},\"name\":\"worker\",\"ports\":[{\"containerPort\":8081,\"name\":\"probe\"}],\"readinessProbe\":{\"httpGet\":{\"path\":\"/health/ready\",\"port\":\"probe\"},\"periodSeconds\":30,\"timeoutSeconds\":70},\"resources\":{\"limits\":{\"cpu\":\"700m\",\"memory\":\"640Mi\"},\"requests\":{\"cpu\":\"150m\",\"memory\":\"256Mi\"}},\"securityContext\":{\"allowPrivilegeEscalation\":false,\"capabilities\":{\"drop\":[\"ALL\"]},\"readOnlyRootFilesystem\":true},\"startupProbe\":{\"failureThreshold\":60,\"httpGet\":{\"path\":\"/health/live\",\"port\":\"probe\"},\"periodSeconds\":5}}],\"imagePullSecrets\":[{\"name\":\"enterprise-doc-registry\"}],\"securityContext\":{\"runAsGroup\":10001,\"runAsNonRoot\":true,\"runAsUser\":10001,\"seccompProfile\":{\"type\":\"RuntimeDefault\"}},\"serviceAccountName\":\"enterprise-doc-runtime\",\"terminationGracePeriodSeconds\":45}}}}\n"
+                },
+                "creationTimestamp": "2026-08-30T11:18:47Z",
+                "generation": 40,
+                "labels": {
+                    "app.kubernetes.io/name": "enterprise-doc-worker",
+                    "app.kubernetes.io/part-of": "enterprise-doc-agent"
+                },
+                "name": "enterprise-doc-worker",
+                "namespace": "enterprise-doc-agent-staging",
+                "resourceVersion": "343784",
+                "uid": "0b394cd2-eac9-4937-99bd-5b071d18648d"
+            },
+            "spec": {
+                "progressDeadlineSeconds": 1800,
+                "replicas": 1,
+                "revisionHistoryLimit": 10,
+                "selector": {
+                    "matchLabels": {
+                        "app.kubernetes.io/name": "enterprise-doc-worker"
+                    }
+                },
+                "strategy": {
+                    "rollingUpdate": {
+                        "maxSurge": 0,
+                        "maxUnavailable": 1
+                    },
+                    "type": "RollingUpdate"
+                },
+                "template": {
+                    "metadata": {
+                        "annotations": {
+                            "enterprise-doc-agent/config-sha256": "e802b8e7fa7179e77693b7ef9b2c17a473a61a2998d1f071fc6ddbf79e90114f"
+                        },
+                        "labels": {
+                            "app.kubernetes.io/name": "enterprise-doc-worker",
+                            "app.kubernetes.io/part-of": "enterprise-doc-agent"
+                        }
+                    },
+                    "spec": {
+                        "containers": [
+                            {
+                                "envFrom": [
+                                    {
+                                        "configMapRef": {
+                                            "name": "enterprise-doc-config"
+                                        }
+                                    },
+                                    {
+                                        "secretRef": {
+                                            "name": "enterprise-doc-secrets"
+                                        }
+                                    }
+                                ],
+                                "image": "ghcr.io/drew-z/enterprise-doc-worker@sha256:b957cdd12dff8e3151386a4a1e829b311c3970f14e22479524011f22e7d784d7",
+                                "imagePullPolicy": "IfNotPresent",
+                                "livenessProbe": {
+                                    "failureThreshold": 3,
+                                    "httpGet": {
+                                        "path": "/health/live",
+                                        "port": "probe",
+                                        "scheme": "HTTP"
+                                    },
+                                    "periodSeconds": 10,
+                                    "successThreshold": 1,
+                                    "timeoutSeconds": 1
+                                },
+                                "name": "worker",
+                                "ports": [
+                                    {
+                                        "containerPort": 8081,
+                                        "name": "probe",
+                                        "protocol": "TCP"
+                                    }
+                                ],
+                                "readinessProbe": {
+                                    "failureThreshold": 3,
+                                    "httpGet": {
+                                        "path": "/health/ready",
+                                        "port": "probe",
+                                        "scheme": "HTTP"
+                                    },
+                                    "periodSeconds": 30,
+                                    "successThreshold": 1,
+                                    "timeoutSeconds": 70
+                                },
+                                "resources": {
+                                    "limits": {
+                                        "cpu": "700m",
+                                        "memory": "640Mi"
+                                    },
+                                    "requests": {
+                                        "cpu": "150m",
+                                        "memory": "256Mi"
+                                    }
+                                },
+                                "securityContext": {
+                                    "allowPrivilegeEscalation": false,
+                                    "capabilities": {
+                                        "drop": [
+                                            "ALL"
+                                        ]
+                                    },
+                                    "readOnlyRootFilesystem": true
+                                },
+                                "startupProbe": {
+                                    "failureThreshold": 60,
+                                    "httpGet": {
+                                        "path": "/health/live",
+                                        "port": "probe",
+                                        "scheme": "HTTP"
+                                    },
+                                    "periodSeconds": 5,
+                                    "successThreshold": 1,
+                                    "timeoutSeconds": 1
+                                },
+                                "terminationMessagePath": "/dev/termination-log",
+                                "terminationMessagePolicy": "File"
+                            }
+                        ],
+                        "dnsPolicy": "ClusterFirst",
+                        "imagePullSecrets": [
+                            {
+                                "name": "enterprise-doc-registry"
+                            }
+                        ],
+                        "restartPolicy": "Always",
+                        "schedulerName": "default-scheduler",
+                        "securityContext": {
+                            "runAsGroup": 10001,
+                            "runAsNonRoot": true,
+                            "runAsUser": 10001,
+                            "seccompProfile": {
+                                "type": "RuntimeDefault"
+                            }
+                        },
+                        "serviceAccount": "enterprise-doc-runtime",
+                        "serviceAccountName": "enterprise-doc-runtime",
+                        "terminationGracePeriodSeconds": 45
+                    }
+                }
+            },
+            "status": {
+                "availableReplicas": 1,
+                "conditions": [
+                    {
+                        "lastTransitionTime": "2026-08-30T11:18:47Z",
+                        "lastUpdateTime": "2026-08-30T11:18:47Z",
+                        "message": "Deployment has minimum availability.",
+                        "reason": "MinimumReplicasAvailable",
+                        "status": "True",
+                        "type": "Available"
+                    },
+                    {
+                        "lastTransitionTime": "2026-09-08T14:09:20Z",
+                        "lastUpdateTime": "2026-09-08T14:09:20Z",
+                        "message": "ReplicaSet \"enterprise-doc-worker-7665578cfc\" has successfully progressed.",
+                        "reason": "NewReplicaSetAvailable",
+                        "status": "True",
+                        "type": "Progressing"
+                    }
+                ],
+                "observedGeneration": 40,
+                "readyReplicas": 1,
+                "replicas": 1,
+                "terminatingReplicas": 0,
+                "updatedReplicas": 1
+            }
+        }
+    ],
+    "kind": "List",
+    "metadata": {
+        "resourceVersion": ""
+    }
+}

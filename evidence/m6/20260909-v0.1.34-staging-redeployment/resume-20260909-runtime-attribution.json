@@ -1,0 +1,108 @@
+{
+  "observed_at": "2026-09-08T16:53:02.993472+00:00",
+  "database": {
+    "matched_runs": 1,
+    "run_status": "failed",
+    "job_status": "dead",
+    "attempt_status": "permanent_failed",
+    "attempt_worker_id": "worker-local",
+    "attempt_started_at": "2026-09-08T16:03:06.838471+00:00",
+    "attempt_finished_at": "2026-09-08T16:03:16.897930+00:00",
+    "diagnostic_code": null,
+    "checkpoint_count_all_namespaces": 0,
+    "transaction_read_only": true,
+    "correlation_sha256": {
+      "run": "602e45c43c3ab4504d531484f45f27faa8539c255e308e85d21acc7039abada8",
+      "job": "275710cbc21a01f5070f7d5afe64b0fa338f19c0b04a88632468cecba3db55a2",
+      "attempt": "c2986063be00335511bc953bf47bc63b0c4c3ac2d0f665d385b8f58fc51f85a2"
+    }
+  },
+  "pods": [
+    {
+      "name": "enterprise-doc-consumer-69c77dff57-n7dpv",
+      "uid": "3e0e19b3-a940-4869-9aea-a7691e7834ad",
+      "phase": "Running",
+      "started_at": "2026-09-08T16:01:54Z",
+      "containers": [
+        {
+          "name": "consumer",
+          "image": "sha256:73672ddc7af5c195cd0a7c1b79ee28caab24fbca8af2488038b26331ae04d9cb",
+          "ready": true,
+          "restarts": 0
+        }
+      ],
+      "window_log_lines": 3,
+      "window_correlation_matches": 0,
+      "safe_errors": [],
+      "fresh_interpreter_import_probe": {
+        "environment": "staging",
+        "configured_worker_id": "worker-local",
+        "modules": {
+          "agent_handler": {
+            "path": "/app/.venv/lib/python3.12/site-packages/enterprise_doc_worker/agent_handler.py",
+            "sha256": "18c9c795804a16c59e1e497358cc9348d6bf16faa1fb2fe478fbd8193623c464"
+          },
+          "queue": {
+            "path": "/app/.venv/lib/python3.12/site-packages/enterprise_doc_worker/queue.py",
+            "sha256": "0ab5030f6653460dd169ddf1225f55e1fe42ef68ff85e2c555872adaa6bbe128"
+          },
+          "diagnostics": {
+            "path": "/app/.venv/lib/python3.12/site-packages/enterprise_doc_core/jobs/diagnostics.py",
+            "sha256": "c7161e8b689ac29712e2f93ef64a91a998a3f299a2c18cbe45b1173bc8516e82"
+          }
+        },
+        "classifier_loaded": true,
+        "handler_references_classifier": true,
+        "runtime_diagnostic_allowed": true,
+        "runtime_diagnostic_preserved": "agent.unexpected.runtime_error",
+        "provider_calls": 0
+      }
+    },
+    {
+      "name": "enterprise-doc-worker-7665578cfc-bq6bk",
+      "uid": "6571545a-e771-41ee-ab08-dc9f1c0b7495",
+      "phase": "Running",
+      "started_at": "2026-09-08T16:01:40Z",
+      "containers": [
+        {
+          "name": "worker",
+          "image": "sha256:0b2d9fe62a4770d3e6c99a742913e8eca11adfa3c48d5349a7f11045d4ef1fbc",
+          "ready": true,
+          "restarts": 0
+        }
+      ],
+      "window_log_lines": 12,
+      "window_correlation_matches": 0,
+      "safe_errors": [],
+      "fresh_interpreter_import_probe": {
+        "environment": "staging",
+        "configured_worker_id": "worker-local",
+        "modules": {
+          "agent_handler": {
+            "path": "/app/.venv/lib/python3.12/site-packages/enterprise_doc_worker/agent_handler.py",
+            "sha256": "18c9c795804a16c59e1e497358cc9348d6bf16faa1fb2fe478fbd8193623c464"
+          },
+          "queue": {
+            "path": "/app/.venv/lib/python3.12/site-packages/enterprise_doc_worker/queue.py",
+            "sha256": "0ab5030f6653460dd169ddf1225f55e1fe42ef68ff85e2c555872adaa6bbe128"
+          },
+          "diagnostics": {
+            "path": "/app/.venv/lib/python3.12/site-packages/enterprise_doc_core/jobs/diagnostics.py",
+            "sha256": "c7161e8b689ac29712e2f93ef64a91a998a3f299a2c18cbe45b1173bc8516e82"
+          }
+        },
+        "classifier_loaded": true,
+        "handler_references_classifier": true,
+        "runtime_diagnostic_allowed": true,
+        "runtime_diagnostic_preserved": "agent.unexpected.runtime_error",
+        "provider_calls": 0
+      }
+    }
+  ],
+  "provider_calls_by_probe": 0,
+  "mutations_by_probe": 0,
+  "raw_exception_text_retained": false,
+  "workflow_run_id": 34248230396,
+  "workflow_run_attempt": 1,
+  "collected_at": "2026-09-08T16:53:00.956039+00:00"
+}

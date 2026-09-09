@@ -1,0 +1,499 @@
+{
+  "schema_version": 1,
+  "evidence_type": "staging-deployment-execution-failure",
+  "evidence_id": "m6-staging-deployment-20260908-v0.1.34-run-34225700580",
+  "milestone": "M6",
+  "requirement_ids": [
+    "M6-R2",
+    "M6-R4"
+  ],
+  "status": "failed",
+  "release": "v0.1.34",
+  "commit_sha": "b0dde98f69f6ed9560c3c018bff2f1b4371283d5",
+  "recorded_at": "2026-09-08T14:55:29.260936+00:00",
+  "authorization": {
+    "source_thread_id": "01a07cf9-63aa-70b0-9e02-0aefc8433e45",
+    "approved_at": "2026-09-08T10:47:38Z",
+    "status": "executed_once",
+    "plan": "docs/ops/v0.1.34-staging-deployment-plan.md",
+    "approved_document_commit": "ffca3d0861ae22c857fef54260b9fc4c083e980e",
+    "document_quality_run_id": "34224086610",
+    "document_quality_conclusion": "success",
+    "deployment_dispatches": 1,
+    "workflow_reruns": 0,
+    "rollback_dispatches": 0,
+    "image_relays": 0,
+    "new_real_rag_trials": 0,
+    "post_deployment_evidence_commit": "not_authorized_or_created"
+  },
+  "workflow": {
+    "repository": "Drew-Z/enterprise-doc-agent",
+    "name": "Deploy Staging",
+    "run_id": "34225700580",
+    "run_attempt": 1,
+    "job_id": "102059174225",
+    "ref": "v0.1.34",
+    "conclusion": "failure",
+    "created_at": "2026-09-08T12:22:21Z",
+    "started_at": "2026-09-08T12:22:27Z",
+    "completed_at": "2026-09-08T13:40:15Z",
+    "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/34225700580"
+  },
+  "environment": {
+    "profile": "single-node-4c4g",
+    "namespace": "enterprise-doc-agent-staging",
+    "namespace_uid": "c0a5d385-0a1b-4a96-ba49-5cf48f68b544",
+    "public_host": "agent.playlab.eu.cc"
+  },
+  "image_digests": {
+    "api": "sha256:e2cbbc6ba1c5e7463ed21e6663c5a948d467e46bcd187a7cf8b02c50ed53bfff",
+    "worker": "sha256:b957cdd12dff8e3151386a4a1e829b311c3970f14e22479524011f22e7d784d7",
+    "consumer": "sha256:ec84d7d280ff74f28147c678428cee5cfa55a5a70a6fe444a20079e616262a21",
+    "web": "sha256:618655ebcaaa3ff8af903414e348d1261b563f00becf54f06f66fad2441e3b09"
+  },
+  "preparation": {
+    "status": "passed",
+    "rollback_variables_updated": 4,
+    "namespace_annotations_updated": 5,
+    "prerequisites": {
+      "status": "passed",
+      "namespace": "enterprise-doc-agent-staging",
+      "approval_keys_checked": 17,
+      "live_objects_checked": 18,
+      "prerequisites_sha256": "53ea74b2f22dc2cef444b87daf40e256f9a2eb9410ed34141857a0a01d5563d3"
+    },
+    "reindex": {
+      "status": "planned",
+      "selected": 0,
+      "created": 0,
+      "replayed": 0,
+      "embedding_model": "Qwen/Qwen3-Embedding-4B",
+      "embedding_dimension": 1024,
+      "embedding_version": 3,
+      "values_redacted": true
+    },
+    "model_routes_unchanged": true,
+    "smoke_secrets_refreshed": 3,
+    "memberships_modified": false,
+    "token_values_persisted_or_printed": false
+  },
+  "gates": {
+    "authenticated_smoke": "skipped",
+    "cluster_smoke": "skipped",
+    "embedding_rollout": "skipped",
+    "migration": "failure",
+    "prerequisites": "success",
+    "rollout": "skipped",
+    "workloads": "skipped",
+    "governance_smoke": "skipped"
+  },
+  "failure": {
+    "gate": "migration",
+    "reason": "DeadlineExceeded",
+    "active_deadline_seconds": 2700,
+    "job_started_at": "2026-09-08T12:23:30Z",
+    "failure_target_at": "2026-09-08T13:08:30Z",
+    "job_failed_at": "2026-09-08T13:09:36Z",
+    "api_image_pull_started_at": "2026-09-08T12:23:31Z",
+    "api_image_pull_completed_at": "2026-09-08T13:09:16Z",
+    "api_image_pull_duration_seconds": 2744.963,
+    "migration_container_started_and_stopped_at": "2026-09-08T13:09:16Z",
+    "diagnosis": "The immutable API image cold pull exceeded the migration Job deadline. Events record container start and immediate termination after the deadline; successful migration execution is not established.",
+    "restore_failure": "The Worker exceeded its 1800-second progress deadline at 2026-09-08T13:39:42Z.",
+    "migration_logs_available": false,
+    "not_a_provider_or_historical_rag_failure": true
+  },
+  "restoration": {
+    "step_outcome": "failure",
+    "behavior": "The existing always() restoration applied candidate workload manifests, not the accepted v0.1.33 images.",
+    "initial_postflight": {
+      "observed_at": "2026-09-08T13:44:20.529957+00:00",
+      "status": "failed",
+      "five_deployments_ready": false,
+      "worker_ready_replicas": 0,
+      "consumer_ready_replicas": 0
+    },
+    "late_runtime_start_events": [
+      {
+        "name": "enterprise-doc-consumer-69c77dff57-dmjvg",
+        "container_states": [
+          {
+            "running": {
+              "startedAt": "2026-09-08T14:29:15Z"
+            }
+          }
+        ]
+      },
+      {
+        "name": "enterprise-doc-worker-7665578cfc-m7hwr",
+        "container_states": [
+          {
+            "running": {
+              "startedAt": "2026-09-08T14:09:09Z"
+            }
+          }
+        ]
+      }
+    ],
+    "postflight_status": "passed",
+    "candidate_images_match": true,
+    "five_deployments_ready": true,
+    "runtime_digests_match": true,
+    "deployed_diagnostic_sources_match": true,
+    "diagnostic_source_observation": "see_final_postflight",
+    "observed_at": "2026-09-08T14:47:36.844510+00:00",
+    "deployments": [
+      {
+        "name": "enterprise-doc-api",
+        "replicas": 1,
+        "ready_replicas": 1,
+        "available_replicas": 1,
+        "images": [
+          "ghcr.io/drew-z/enterprise-doc-api@sha256:e2cbbc6ba1c5e7463ed21e6663c5a948d467e46bcd187a7cf8b02c50ed53bfff"
+        ],
+        "config_hash": "e802b8e7fa7179e77693b7ef9b2c17a473a61a2998d1f071fc6ddbf79e90114f"
+      },
+      {
+        "name": "enterprise-doc-consumer",
+        "replicas": 1,
+        "ready_replicas": 1,
+        "available_replicas": 1,
+        "images": [
+          "ghcr.io/drew-z/enterprise-doc-consumer@sha256:ec84d7d280ff74f28147c678428cee5cfa55a5a70a6fe444a20079e616262a21"
+        ],
+        "config_hash": "e802b8e7fa7179e77693b7ef9b2c17a473a61a2998d1f071fc6ddbf79e90114f"
+      },
+      {
+        "name": "enterprise-doc-redis",
+        "replicas": 1,
+        "ready_replicas": 1,
+        "available_replicas": 1,
+        "images": [
+          "redis@sha256:6ab0b6e7381779332f97b8ca76193e45b0756f38d4c0dcda72dbb3c32061ab99"
+        ],
+        "config_hash": null
+      },
+      {
+        "name": "enterprise-doc-web",
+        "replicas": 1,
+        "ready_replicas": 1,
+        "available_replicas": 1,
+        "images": [
+          "ghcr.io/drew-z/enterprise-doc-web@sha256:618655ebcaaa3ff8af903414e348d1261b563f00becf54f06f66fad2441e3b09"
+        ],
+        "config_hash": null
+      },
+      {
+        "name": "enterprise-doc-worker",
+        "replicas": 1,
+        "ready_replicas": 1,
+        "available_replicas": 1,
+        "images": [
+          "ghcr.io/drew-z/enterprise-doc-worker@sha256:b957cdd12dff8e3151386a4a1e829b311c3970f14e22479524011f22e7d784d7"
+        ],
+        "config_hash": "e802b8e7fa7179e77693b7ef9b2c17a473a61a2998d1f071fc6ddbf79e90114f"
+      }
+    ],
+    "readiness": {
+      "http_status": 200,
+      "status": "ready",
+      "checks": {
+        "database": {
+          "status": "up"
+        },
+        "redis": {
+          "status": "up"
+        },
+        "object_store": {
+          "status": "up"
+        }
+      },
+      "checked_at": "2026-09-08T14:47:38.382070Z"
+    },
+    "release_accepted": false
+  },
+  "bounded_effects": {
+    "smoke_embedding_probe_inputs": 0,
+    "smoke_synthetic_uploads": 0,
+    "smoke_qa_agent_runs": 0,
+    "new_real_rag_trials": 0,
+    "basis": "Embedding, authenticated upload/Agent and governance steps were skipped.",
+    "background_provider_calls_and_account_cost": null
+  },
+  "artifact": {
+    "status": "verified",
+    "artifact_id": 10058749187,
+    "artifact_name": "staging-release-b0dde98f69f6ed9560c3c018bff2f1b4371283d5",
+    "zip_sha256": "ec90f3f529eafe8bf7e091d87dd26e21a471a8336c10ed1255f8a04b5ac7ff6d",
+    "zip_bytes": 26266,
+    "file_count": 20,
+    "created_at": "2026-09-08T13:40:06Z",
+    "expires_at": "2026-12-07T12:22:22Z",
+    "manifest_files_verified": 18,
+    "release_record_sha256": "b41a79c0d704fab405a494d5393a4327cf5033737b231e799b82c3fd29824342",
+    "evidence_manifest_sha256": "2014acf25d3a0485669b07d1573b78279268114edd8218157530129520382887",
+    "original_download_retained": true,
+    "repository_files": [
+      {
+        "path": "evidence/m6/20260908-v0.1.34-staging-release/workflow/staging-evidence-b0dde98f69f6ed9560c3c018bff2f1b4371283d5.manifest.json",
+        "sha256": "2014acf25d3a0485669b07d1573b78279268114edd8218157530129520382887",
+        "size_bytes": 5485
+      },
+      {
+        "path": "evidence/m6/20260908-v0.1.34-staging-release/workflow/staging-release-b0dde98f69f6ed9560c3c018bff2f1b4371283d5.record.json",
+        "sha256": "b41a79c0d704fab405a494d5393a4327cf5033737b231e799b82c3fd29824342",
+        "size_bytes": 2028
+      },
+      {
+        "path": "evidence/m6/20260908-v0.1.34-staging-release/workflow/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/collection-status.txt",
+        "sha256": "bb5e28dbe11a44f8d531e8ff04d0f85210937bbaac115a709304a5a9d78df3c2",
+        "size_bytes": 228
+      },
+      {
+        "path": "evidence/m6/20260908-v0.1.34-staging-release/workflow/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/consumer-current.log",
+        "sha256": "d64f13840cd1eb4c57cd3cf2703941fbb918074940713b307c2d1fe0e7dfc31e",
+        "size_bytes": 466
+      },
+      {
+        "path": "evidence/m6/20260908-v0.1.34-staging-release/workflow/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/consumer-previous.log",
+        "sha256": "a90e0d67e48ddd686174d291dbb307bca1015cb2ab3424a50d284c48a8cec070",
+        "size_bytes": 457
+      },
+      {
+        "path": "evidence/m6/20260908-v0.1.34-staging-release/workflow/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/deployment-profile.txt",
+        "sha256": "eb0bfcd563c4b6eb9d2cc86c52decc14e100804ccfe52eba550647ee43427703",
+        "size_bytes": 17
+      },
+      {
+        "path": "evidence/m6/20260908-v0.1.34-staging-release/workflow/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/deployments.json",
+        "sha256": "68f7cb2942de156e00b3047723b1bc6ddf5ea76653eda78f3753c1221977e254",
+        "size_bytes": 50190
+      },
+      {
+        "path": "evidence/m6/20260908-v0.1.34-staging-release/workflow/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/embedding-rollout-job.json",
+        "sha256": "273fafc7ba4c2fa518f8f54e57100fcd679db9f81ef32153daf62b6ed25630b9",
+        "size_bytes": 410
+      },
+      {
+        "path": "evidence/m6/20260908-v0.1.34-staging-release/workflow/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/embedding-rollout.log",
+        "sha256": "33adb6a0a19ff4e7e6d5be83ec3f4f18ea5fe0a34403e63456147956879a5fb2",
+        "size_bytes": 461
+      },
+      {
+        "path": "evidence/m6/20260908-v0.1.34-staging-release/workflow/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/events.txt",
+        "sha256": "6b483ddeb03b3b999df7d6d0dc9899e1aeb3ae47a9f9f184eb428ce21af94cb4",
+        "size_bytes": 5148
+      },
+      {
+        "path": "evidence/m6/20260908-v0.1.34-staging-release/workflow/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/ingress.yaml",
+        "sha256": "1be8d2358909a5e1592dbe610f2426d155df8086939e3010db3e6af8dddc91f4",
+        "size_bytes": 1372
+      },
+      {
+        "path": "evidence/m6/20260908-v0.1.34-staging-release/workflow/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/migration.log",
+        "sha256": "90861d87a7d6cb38f02068b696ed144cc3fb1353b18a60a956754addcb02aa5c",
+        "size_bytes": 367
+      },
+      {
+        "path": "evidence/m6/20260908-v0.1.34-staging-release/workflow/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/network-policy.yaml",
+        "sha256": "becf63dcd6f139779ac1115e9592c71472a67a2f8ed8ded803dcef9376e0596a",
+        "size_bytes": 10976
+      },
+      {
+        "path": "evidence/m6/20260908-v0.1.34-staging-release/workflow/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/staging-rendered-staging-embedding-rollout.yaml",
+        "sha256": "c2cfcf377f310fb4ce58200875e0d7875a995ac07364ce7ce26a95ce23728085",
+        "size_bytes": 1570
+      },
+      {
+        "path": "evidence/m6/20260908-v0.1.34-staging-release/workflow/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/staging-rendered-staging-migration.yaml",
+        "sha256": "844a9edfd0e3a7f866f7496f8610aec9fed1c4ac14ab5281da7b64440c1526d8",
+        "size_bytes": 1611
+      },
+      {
+        "path": "evidence/m6/20260908-v0.1.34-staging-release/workflow/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/staging-rendered-staging-prerequisites.yaml",
+        "sha256": "aab45c2800a69863fb9d329baa4a3e47db30624149c7874ffdd53ce1238627c8",
+        "size_bytes": 12018
+      },
+      {
+        "path": "evidence/m6/20260908-v0.1.34-staging-release/workflow/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/staging-rendered-staging-workloads.yaml",
+        "sha256": "ca094db1ef1dcce8d3c37051c3a3c94112ae0d3d16bb346cff6f91780c07bc86",
+        "size_bytes": 10240
+      },
+      {
+        "path": "evidence/m6/20260908-v0.1.34-staging-release/workflow/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/staging-rendered-staging.yaml",
+        "sha256": "590fd39df29ead4628917cff936677d0e724660b1b7e26bc973e59c8677a2fac",
+        "size_bytes": 25447
+      },
+      {
+        "path": "evidence/m6/20260908-v0.1.34-staging-release/workflow/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/worker-current.log",
+        "sha256": "068fb7293a546f926b4bfcf6850607c900770da31e05ad98490ec7451e8cd8b7",
+        "size_bytes": 462
+      },
+      {
+        "path": "evidence/m6/20260908-v0.1.34-staging-release/workflow/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/worker-previous.log",
+        "sha256": "0d9358276d7c75080b5fccf75b1ff68a82b431472a2c73d39ae32f2fa0dbf54d",
+        "size_bytes": 453
+      },
+      {
+        "path": "evidence/m6/20260908-v0.1.34-staging-release/deployment-terminal.json",
+        "sha256": "57a09faebca659f6deb32a79b3a699f264f49b2f446d41dd13726a3d1ff881cd",
+        "size_bytes": 6517
+      },
+      {
+        "path": "evidence/m6/20260908-v0.1.34-staging-release/artifact-inventory.json",
+        "sha256": "7d2812c722da33f0d0afbbd7fb9386ec55659496458932d42ca14f332e5946b9",
+        "size_bytes": 948
+      },
+      {
+        "path": "evidence/m6/20260908-v0.1.34-staging-release/artifact-download.json",
+        "sha256": "3c54900d8b6ffc5a2f9215672481e6d50238f6eed42ba0aa7c50112547dd05e9",
+        "size_bytes": 342
+      },
+      {
+        "path": "evidence/m6/20260908-v0.1.34-staging-release/artifact-verification.json",
+        "sha256": "b7fccd6266421d59149dad4ba9685a67bfc42e526cd7df7d5a4dbdfb15ba6e2f",
+        "size_bytes": 2919
+      },
+      {
+        "path": "evidence/m6/20260908-v0.1.34-staging-release/preflight.json",
+        "sha256": "35f95156be6614e88f89516c81dd66ea32d9cfd224c8e00a24984cf0bac91af6",
+        "size_bytes": 1681
+      },
+      {
+        "path": "evidence/m6/20260908-v0.1.34-staging-release/preparation.json",
+        "sha256": "47b355408e6e7984f7250c8c7270900e5adf23ac5fdf8de7fb69fc2fa6f5a678",
+        "size_bytes": 1354
+      },
+      {
+        "path": "evidence/m6/20260908-v0.1.34-staging-release/token-rotation.json",
+        "sha256": "6a948ecdb4416dbfd3e853709eeaaa3d4bb76b882253de2c473e5a68c7f928a9",
+        "size_bytes": 1246
+      },
+      {
+        "path": "evidence/m6/20260908-v0.1.34-staging-release/migration-pull-observation-1255.json",
+        "sha256": "6a5d92bd8b5e97fa6c58ce9c9b0a467ff134bd71087100f5dc2d62d2a122d801",
+        "size_bytes": 343
+      },
+      {
+        "path": "evidence/m6/20260908-v0.1.34-staging-release/migration-pull-observation-1302.json",
+        "sha256": "ee207a3f9e26913daf4a650f7c38ae2ac4f6aefada64a89f56c525ac9e23d8a9",
+        "size_bytes": 412
+      },
+      {
+        "path": "evidence/m6/20260908-v0.1.34-staging-release/migration-failure-live-observation.json",
+        "sha256": "dc5c1c89a58460992d9f0bc5c7f7e92cc131f5057e15e9fe808f5feaaeaf2638",
+        "size_bytes": 9812
+      },
+      {
+        "path": "evidence/m6/20260908-v0.1.34-staging-release/restore-pull-observation.json",
+        "sha256": "8cb139ca4f3b8a73af0653985ec5a17770aad7f04ccf838a60394e37b379b51f",
+        "size_bytes": 6117
+      },
+      {
+        "path": "evidence/m6/20260908-v0.1.34-staging-release/postflight.json",
+        "sha256": "fda269924424e1ab6cb785dd4d6eb95387e17ddcecf4876c836ef79f27268959",
+        "size_bytes": 4769
+      },
+      {
+        "path": "evidence/m6/20260908-v0.1.34-staging-release/final-postflight.json",
+        "sha256": "05ad344d6ebe3fd7093be49b4e0c06762eef139444d55893fb89ce5f703a2489",
+        "size_bytes": 5736
+      },
+      {
+        "path": "evidence/m6/20260908-v0.1.34-staging-release/rollback-read-only-preflight.json",
+        "sha256": "218ece9bbe5a5fde15ef68d983efcc4200355828bc146f60a31b45fc3b595193",
+        "size_bytes": 2012
+      },
+      {
+        "path": "evidence/m6/20260908-v0.1.34-staging-release/redeploy-read-only-preflight.json",
+        "sha256": "949727b6f8e7a9a1b72cbfa9a484f441c44c18fe7fbb79f97f8d17daa723301f",
+        "size_bytes": 1090
+      },
+      {
+        "path": "evidence/m6/20260908-v0.1.34-staging-release/late-recovery-events.json",
+        "sha256": "5923d7dc2b69cf3944662177f367365d10694fb16e96bfaf3c50d14a8a5e15d9",
+        "size_bytes": 2304
+      },
+      {
+        "path": "evidence/m6/20260908-v0.1.34-staging-release/workflow-failure-lines.json",
+        "sha256": "97ec119650b2c9c252c4054f6d0a8775daedaaa29c671d1ac000248c48c3378a",
+        "size_bytes": 882
+      }
+    ]
+  },
+  "recovery_preflight": {
+    "observed_at": "2026-09-08T13:29:53.149706+00:00",
+    "authorization": "pending_review",
+    "mutations": 0,
+    "rollback_release": "v0.1.33",
+    "rollback_revisions": {
+      "enterprise-doc-api": 6,
+      "enterprise-doc-worker": 6,
+      "enterprise-doc-consumer": 6,
+      "enterprise-doc-web": 5
+    },
+    "rollback_images_cached": {
+      "enterprise-doc-api": true,
+      "enterprise-doc-worker": true,
+      "enterprise-doc-consumer": true,
+      "enterprise-doc-web": true
+    },
+    "database": {
+      "revisions": [
+        "20260827_0020"
+      ],
+      "transaction_read_only": "on"
+    },
+    "migration_source_changes": [],
+    "database_matches_source_head": true,
+    "failed_migration_job_preserved": true
+  },
+  "redeployment_preflight": {
+    "observed_at": "2026-09-08T14:54:57.492648+00:00",
+    "candidate_images_cached": {
+      "api": true,
+      "worker": true,
+      "consumer": true,
+      "web": true
+    },
+    "failed_migration_job": {
+      "name": "enterprise-doc-migrate",
+      "namespace": "enterprise-doc-agent-staging",
+      "uid": "305d2d82-20ac-4bc3-abec-d552a5fac40f",
+      "resource_version": "339243",
+      "active": 0,
+      "succeeded": 0,
+      "failed": 1,
+      "conditions": [
+        {
+          "lastProbeTime": "2026-09-08T13:08:30Z",
+          "lastTransitionTime": "2026-09-08T13:08:30Z",
+          "message": "Job was active longer than specified deadline",
+          "reason": "DeadlineExceeded",
+          "status": "True",
+          "type": "FailureTarget"
+        },
+        {
+          "lastProbeTime": "2026-09-08T13:09:36Z",
+          "lastTransitionTime": "2026-09-08T13:09:36Z",
+          "message": "Job was active longer than specified deadline",
+          "reason": "DeadlineExceeded",
+          "status": "True",
+          "type": "Failed"
+        }
+      ]
+    },
+    "mutations": 0,
+    "new_dispatches": 0,
+    "authorization": "pending_review"
+  },
+  "limitations": [
+    "This run failed and does not accept v0.1.34, even if readiness subsequently recovers.",
+    "Public readiness only checks API dependencies; it does not prove Worker or Consumer availability.",
+    "Current Alembic head and unchanged migration sources do not turn the failed migration Job into a passed gate.",
+    "Historical trial 34166173023 remains unchanged: three failures have unknown root causes and incomplete cost telemetry.",
+    "M5/M7 remain blocked_external. No new 12-case or 40-case real-provider evaluation ran.",
+    "Rollback, failed Job removal, OCI relay and a new deployment require separately reviewed authorization."
+  ],
+  "owner": "platform owner"
+}

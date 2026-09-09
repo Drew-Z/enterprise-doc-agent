@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "files": [
+    {
+      "source": "tmp/staging-raw-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/collection-status.txt",
+      "path": "tmp/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/collection-status.txt",
+      "sha256": "607fd80fca8a4e73c2059d15efeee99708cbf06461e00ee7bf13b5648bf819bd"
+    },
+    {
+      "source": "tmp/staging-raw-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/consumer-current.log",
+      "path": "tmp/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/consumer-current.log",
+      "sha256": "b47cd142f3f0a8454384cf584416fafbe40d0c20fe7404fdebf1f916fbd80bba"
+    },
+    {
+      "source": "tmp/staging-raw-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/consumer-previous.log",
+      "path": "tmp/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/consumer-previous.log",
+      "sha256": "cbe250b8c05f091bba1ccb91cc73da9664e56effe04501060a00112fb5811da8"
+    },
+    {
+      "source": "tmp/staging-raw-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/deployment-profile.txt",
+      "path": "tmp/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/deployment-profile.txt",
+      "sha256": "eb0bfcd563c4b6eb9d2cc86c52decc14e100804ccfe52eba550647ee43427703"
+    },
+    {
+      "source": "tmp/staging-raw-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/deployments.json",
+      "path": "tmp/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/deployments.json",
+      "sha256": "a47995c807d150e04981d37587901babd3ea96340f0bd01851ad5d6ee7a15e97"
+    },
+    {
+      "source": "tmp/staging-raw-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/embedding-rollout-job.json",
+      "path": "tmp/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/embedding-rollout-job.json",
+      "sha256": "3997ac1fc7e5f4b80edc3dd65f1a919b845632d830749b255e9e1ca808cd2a24"
+    },
+    {
+      "source": "tmp/staging-raw-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/embedding-rollout.log",
+      "path": "tmp/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/embedding-rollout.log",
+      "sha256": "1a68a2b01404436e838297b4fb06bb7c7ca76fb1b09494cd5a0cf1b021f487cd"
+    },
+    {
+      "source": "tmp/staging-raw-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/events.txt",
+      "path": "tmp/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/events.txt",
+      "sha256": "969ef233a7e33cfb129ac11ddae4d88c26aba2bd2febe542380cf39421cd986f"
+    },
+    {
+      "source": "tmp/staging-raw-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/ingress.yaml",
+      "path": "tmp/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/ingress.yaml",
+      "sha256": "f3ad7b96e835de1b6bd2e3a02f728b0b2093fe3b9402256a17b8426001dd3c72"
+    },
+    {
+      "source": "tmp/staging-raw-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/migration.log",
+      "path": "tmp/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/migration.log",
+      "sha256": "1966e528ea0559a2615e7cbcb1ae912ac821719d17ebfaff8dd2dda798a91e60"
+    },
+    {
+      "source": "tmp/staging-raw-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/network-policy.yaml",
+      "path": "tmp/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/network-policy.yaml",
+      "sha256": "e9137c056468128aa86e3cb4a12a33ab3646dae3cf18837d2c2bc3648e3b3407"
+    },
+    {
+      "source": "tmp/staging-raw-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/staging-embedding-rollout.json",
+      "path": "tmp/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/staging-embedding-rollout.json",
+      "sha256": "1dfcae95c43a65297c48b7192bd588320b2191bc9254a169eda9a21c6094581c"
+    },
+    {
+      "source": "tmp/staging-raw-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/staging-rendered-staging-embedding-rollout.yaml",
+      "path": "tmp/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/staging-rendered-staging-embedding-rollout.yaml",
+      "sha256": "c2cfcf377f310fb4ce58200875e0d7875a995ac07364ce7ce26a95ce23728085"
+    },
+    {
+      "source": "tmp/staging-raw-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/staging-rendered-staging-migration.yaml",
+      "path": "tmp/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/staging-rendered-staging-migration.yaml",
+      "sha256": "844a9edfd0e3a7f866f7496f8610aec9fed1c4ac14ab5281da7b64440c1526d8"
+    },
+    {
+      "source": "tmp/staging-raw-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/staging-rendered-staging-prerequisites.yaml",
+      "path": "tmp/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/staging-rendered-staging-prerequisites.yaml",
+      "sha256": "aab45c2800a69863fb9d329baa4a3e47db30624149c7874ffdd53ce1238627c8"
+    },
+    {
+      "source": "tmp/staging-raw-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/staging-rendered-staging-workloads.yaml",
+      "path": "tmp/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/staging-rendered-staging-workloads.yaml",
+      "sha256": "ca094db1ef1dcce8d3c37051c3a3c94112ae0d3d16bb346cff6f91780c07bc86"
+    },
+    {
+      "source": "tmp/staging-raw-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/staging-rendered-staging.yaml",
+      "path": "tmp/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/staging-rendered-staging.yaml",
+      "sha256": "590fd39df29ead4628917cff936677d0e724660b1b7e26bc973e59c8677a2fac"
+    },
+    {
+      "source": "tmp/staging-raw-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/worker-current.log",
+      "path": "tmp/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/worker-current.log",
+      "sha256": "83c8143bf78fd06b0cef1e140f1a9b87c5ad16551ab2c382bb57e6a5b0516add"
+    },
+    {
+      "source": "tmp/staging-raw-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/worker-previous.log",
+      "path": "tmp/staging-sanitized-b0dde98f69f6ed9560c3c018bff2f1b4371283d5/worker-previous.log",
+      "sha256": "bd8be366e6131d2095e140403c635266d9c4be327e636ebbc90def438e1e94eb"
+    }
+  ]
+}

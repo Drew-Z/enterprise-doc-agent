@@ -1,0 +1,22 @@
+{
+  "observed_at": "2026-09-08T13:04:42.281708+00:00",
+  "transfers": [
+    {
+      "digest": "sha256:d2b775db5d3bf8908ced0d40e3e9e7de5a2d899375a6a8ca3a5fcc8db8b3e532",
+      "size_age": [
+        "70.25MB",
+        "41",
+        "minutes"
+      ]
+    }
+  ],
+  "jobs": [
+    {
+      "name": "enterprise-doc-migrate",
+      "active": 1,
+      "succeeded": 0,
+      "failed": 0,
+      "conditions": []
+    }
+  ]
+}

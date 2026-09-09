@@ -1,0 +1,10 @@
+{
+  "status": "verified",
+  "artifact_id": 10065067237,
+  "artifact_name": "staging-release-b0dde98f69f6ed9560c3c018bff2f1b4371283d5",
+  "zip_sha256": "a67aa756bbb0fae1581a127fcb7351ed771cd4be01f816ab8e434fa7c62f3c20",
+  "zip_bytes": 30451,
+  "file_count": 21,
+  "created_at": "2026-09-08T16:03:31Z",
+  "expires_at": "2026-12-07T15:59:06Z"
+}

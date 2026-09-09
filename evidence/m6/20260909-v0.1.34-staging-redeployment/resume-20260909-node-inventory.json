@@ -1,0 +1,76 @@
+{
+  "observed_at": "2026-09-08T16:54:54.993891+00:00",
+  "pods": [
+    {
+      "name": "enterprise-doc-consumer-69c77dff57-n7dpv",
+      "phase": "Running",
+      "deleting": false
+    },
+    {
+      "name": "enterprise-doc-worker-7665578cfc-bq6bk",
+      "phase": "Running",
+      "deleting": false
+    }
+  ],
+  "cri_containers": [
+    {
+      "pod": "enterprise-doc-consumer-69c77dff57-n7dpv",
+      "container": "consumer",
+      "state": "CONTAINER_RUNNING",
+      "created_at": "1788883314484184092",
+      "image_ref": "sha256:73672ddc7af5c195cd0a7c1b79ee28caab24fbca8af2488038b26331ae04d9cb"
+    },
+    {
+      "pod": "enterprise-doc-worker-7665578cfc-bq6bk",
+      "container": "worker",
+      "state": "CONTAINER_RUNNING",
+      "created_at": "1788883301089678845",
+      "image_ref": "sha256:0b2d9fe62a4770d3e6c99a742913e8eca11adfa3c48d5349a7f11045d4ef1fbc"
+    }
+  ],
+  "node": {
+    "processes": [
+      {
+        "pid": 194712,
+        "roles": [
+          "enterprise-doc-worker"
+        ],
+        "inside_kubernetes": true,
+        "inside_docker": false,
+        "executable": "python3.12"
+      },
+      {
+        "pid": 195869,
+        "roles": [
+          "enterprise-doc-worker-consumer",
+          "enterprise-doc-worker"
+        ],
+        "inside_kubernetes": true,
+        "inside_docker": false,
+        "executable": "python3.12"
+      }
+    ],
+    "retained_logs": [
+      {
+        "pod_directory": "enterprise-doc-agent-staging_enterprise-doc-consumer-69c77dff57-n7dpv_3e0e19b3-a940-4869-9aea-a7691e7834ad",
+        "files": [
+          {
+            "path": "/var/log/pods/enterprise-doc-agent-staging_enterprise-doc-consumer-69c77dff57-n7dpv_3e0e19b3-a940-4869-9aea-a7691e7834ad/consumer/0.log",
+            "size": 3076
+          }
+        ]
+      },
+      {
+        "pod_directory": "enterprise-doc-agent-staging_enterprise-doc-worker-7665578cfc-bq6bk_6571545a-e771-41ee-ab08-dc9f1c0b7495",
+        "files": [
+          {
+            "path": "/var/log/pods/enterprise-doc-agent-staging_enterprise-doc-worker-7665578cfc-bq6bk_6571545a-e771-41ee-ab08-dc9f1c0b7495/worker/0.log",
+            "size": 74729
+          }
+        ]
+      }
+    ]
+  },
+  "mutations": 0,
+  "provider_calls": 0
+}

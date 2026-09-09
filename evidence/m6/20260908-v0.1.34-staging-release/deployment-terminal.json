@@ -1,0 +1,201 @@
+{
+  "attempt": 1,
+  "conclusion": "failure",
+  "createdAt": "2026-09-08T12:22:21Z",
+  "databaseId": 34225700580,
+  "headBranch": "v0.1.34",
+  "headSha": "b0dde98f69f6ed9560c3c018bff2f1b4371283d5",
+  "jobs": [
+    {
+      "completedAt": "2026-09-08T13:40:15Z",
+      "conclusion": "failure",
+      "databaseId": 102059174225,
+      "name": "deploy",
+      "startedAt": "2026-09-08T12:22:27Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completedAt": "2026-09-08T12:23:13Z",
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "startedAt": "2026-09-08T12:22:37Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-09-08T12:23:13Z",
+          "conclusion": "success",
+          "name": "Validate staging dispatch gate",
+          "number": 2,
+          "startedAt": "2026-09-08T12:23:13Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-09-08T12:23:26Z",
+          "conclusion": "success",
+          "name": "Download exact source archive",
+          "number": 3,
+          "startedAt": "2026-09-08T12:23:13Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-09-08T12:23:26Z",
+          "conclusion": "success",
+          "name": "Validate pre-provisioned runner toolchain",
+          "number": 4,
+          "startedAt": "2026-09-08T12:23:26Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-09-08T12:23:27Z",
+          "conclusion": "success",
+          "name": "Configure cluster credentials",
+          "number": 5,
+          "startedAt": "2026-09-08T12:23:26Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-09-08T12:23:28Z",
+          "conclusion": "success",
+          "name": "Validate deployment profile ownership",
+          "number": 6,
+          "startedAt": "2026-09-08T12:23:27Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-09-08T12:23:28Z",
+          "conclusion": "success",
+          "name": "Bind exact image digests",
+          "number": 7,
+          "startedAt": "2026-09-08T12:23:28Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-09-08T12:23:29Z",
+          "conclusion": "success",
+          "name": "Render and validate staging manifests",
+          "number": 8,
+          "startedAt": "2026-09-08T12:23:28Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-09-08T12:23:30Z",
+          "conclusion": "success",
+          "name": "Verify administrator-owned staging prerequisites",
+          "number": 9,
+          "startedAt": "2026-09-08T12:23:29Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-09-08T13:09:41Z",
+          "conclusion": "failure",
+          "name": "Apply migration job before rollout",
+          "number": 10,
+          "startedAt": "2026-09-08T12:23:30Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-09-08T13:09:41Z",
+          "conclusion": "skipped",
+          "name": "Apply workloads after migration",
+          "number": 11,
+          "startedAt": "2026-09-08T13:09:41Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-09-08T13:09:41Z",
+          "conclusion": "skipped",
+          "name": "Wait for workloads",
+          "number": 12,
+          "startedAt": "2026-09-08T13:09:41Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-09-08T13:09:41Z",
+          "conclusion": "skipped",
+          "name": "Run embedding provider and reindex gate",
+          "number": 13,
+          "startedAt": "2026-09-08T13:09:41Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-09-08T13:09:41Z",
+          "conclusion": "skipped",
+          "name": "Run in-cluster readiness smoke",
+          "number": 14,
+          "startedAt": "2026-09-08T13:09:41Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-09-08T13:09:41Z",
+          "conclusion": "success",
+          "name": "Clean up readiness smoke",
+          "number": 15,
+          "startedAt": "2026-09-08T13:09:41Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-09-08T13:09:41Z",
+          "conclusion": "skipped",
+          "name": "Run authenticated upload to Agent smoke",
+          "number": 16,
+          "startedAt": "2026-09-08T13:09:41Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-09-08T13:09:41Z",
+          "conclusion": "skipped",
+          "name": "Run staging governance smoke",
+          "number": 17,
+          "startedAt": "2026-09-08T13:09:41Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-09-08T13:39:42Z",
+          "conclusion": "failure",
+          "name": "Restore tiny workloads after deployment attempt",
+          "number": 18,
+          "startedAt": "2026-09-08T13:09:41Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-09-08T13:40:03Z",
+          "conclusion": "success",
+          "name": "Collect sanitized release evidence",
+          "number": 19,
+          "startedAt": "2026-09-08T13:39:42Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-09-08T13:40:07Z",
+          "conclusion": "success",
+          "name": "Run actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "number": 20,
+          "startedAt": "2026-09-08T13:40:03Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-09-08T13:40:07Z",
+          "conclusion": "success",
+          "name": "Clean up cluster credentials",
+          "number": 21,
+          "startedAt": "2026-09-08T13:40:07Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-09-08T13:40:07Z",
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 22,
+          "startedAt": "2026-09-08T13:40:07Z",
+          "status": "completed"
+        }
+      ],
+      "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/34225700580/job/102059174225"
+    }
+  ],
+  "startedAt": "2026-09-08T12:22:21Z",
+  "status": "completed",
+  "updatedAt": "2026-09-08T13:40:16Z",
+  "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/34225700580"
+}

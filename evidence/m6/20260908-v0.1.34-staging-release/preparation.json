@@ -1,0 +1,38 @@
+{
+  "status": "passed",
+  "completed_at": "2026-09-08T12:22:16.146414+00:00",
+  "variables_updated": 4,
+  "annotations_updated": 5,
+  "candidate_prerequisites": {
+    "status": "passed",
+    "namespace": "enterprise-doc-agent-staging",
+    "approval_keys_checked": 17,
+    "live_objects_checked": 18,
+    "prerequisites_sha256": "53ea74b2f22dc2cef444b87daf40e256f9a2eb9410ed34141857a0a01d5563d3"
+  },
+  "changed_annotation_keys": [
+    "enterprise-doc-agent/approved-api-images",
+    "enterprise-doc-agent/approved-consumer-images",
+    "enterprise-doc-agent/approved-web-images",
+    "enterprise-doc-agent/approved-worker-images",
+    "enterprise-doc-agent/prerequisites-sha256"
+  ],
+  "workload_server_dry_run": [
+    "deployment.apps/enterprise-doc-api configured (server dry run)",
+    "deployment.apps/enterprise-doc-consumer configured (server dry run)",
+    "deployment.apps/enterprise-doc-redis unchanged (server dry run)",
+    "deployment.apps/enterprise-doc-web configured (server dry run)",
+    "deployment.apps/enterprise-doc-worker configured (server dry run)"
+  ],
+  "reindex": {
+    "status": "planned",
+    "selected": 0,
+    "created": 0,
+    "replayed": 0,
+    "embedding_model": "Qwen/Qwen3-Embedding-4B",
+    "embedding_dimension": 1024,
+    "embedding_version": 3,
+    "values_redacted": true
+  },
+  "model_routes_unchanged": true
+}

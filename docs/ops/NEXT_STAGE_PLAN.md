@@ -1,6 +1,6 @@
 # 下一阶段计划：staging RAG 执行诊断
 
-更新日期：2026-09-08，Asia/Shanghai。执行任务沿用
+更新日期：2026-09-09，Asia/Shanghai。执行任务沿用
 `.trellis/tasks/07-19-m5-observability-eval-load`；本阶段是 M5/M7 验收的前置交付。
 
 ## 当前判断
@@ -13,8 +13,8 @@
 
 | 范围 | 已有证据 | 尚需完成 |
 | --- | --- | --- |
-| 本地工程基线 | 诊断修复 `b0dde98` 已推送，Quality `34185778632` 通过；本地 1050 项非集成、41 项相关集成测试及 Ruff/mypy 通过 | 审阅已构建的 v0.1.34 镜像并验证实际部署行为 |
-| 当前 staging | 已验收 `v0.1.33`；2026-09-07T22:38Z 试跑后五个 Deployment 全部 1/1，依赖全部 up，约 1466 MiB 可用内存 | 持续的质量与运行证据；单节点不能证明 HA |
+| 本地工程基线 | 诊断修复 `b0dde98` 已推送，Quality `34185778632` 通过；本地 1050 项非集成、41 项相关集成测试及 Ruff/mypy 通过 | 实际 QA 仍出现空诊断，须继续定位执行进程与异常路径 |
+| 当前 staging | v0.1.34 候选运行中；第二次部署 `34248230396` 的迁移、rollout、embedding、readiness 通过，upload→Agent 失败，治理 smoke 跳过；2026-09-08T17:27Z 五个 Deployment 均 1/1 | v0.1.34 尚未验收；v0.1.33 是最近已验收版本，当前就绪不能补记缺失 gate |
 | M5/M7 模型质量 | 当前 12 例试跑完成：7 个成功、2 个预期拒答、3 个执行失败；完整报告已保留，质量门槛失败 | 定位三个执行失败、补齐 7/12 用量覆盖缺口、稳定模型版本/费用依据、完整重复性和独立人审 |
 | 评测启动 | 托管运行器完成干净预检及一次 12 例真实评测，精确报告上传成功；旧运行时保留 | 后续优先处理 Agent 失败及质量证据缺口 |
 | M6 交付与恢复 | staging 发布、治理 smoke、既有回滚/恢复记录 | 独立故障域恢复和独立复核仍开放 |
@@ -341,8 +341,54 @@ ConfigMap、模型/embedding 路由和其他前置资源保持相同。
 
 用户于 2026-09-08T10:47:38Z 审阅准确清单后回复“可以”，已确认六文件提交、推送、CI 核验和一次部署，
 包括两份合成上传、一例 QA、两个 embedding probe 输入，以及三份短期令牌、四个回滚变量和五项
-Namespace annotation 更新。原会话执行前出错，新会话从重新核查现场开始继续；尚未实际部署。
+Namespace annotation 更新。原会话执行前出错，新会话重新核查现场后执行；结果见下方记录。
 后续真实 RAG trial 仍需独立范围确认；历史根因未知、M5/M7 `blocked_external` 和当前目标保持开放。
+
+### 已授权部署失败与后续就绪
+
+六文件提交 `ffca3d0` 已推送，Quality `34224086610` attempt 1 前后端通过；本地部署/证据定向
+测试 85 项通过。三份短期令牌、四个回滚变量及五项 Namespace annotation 已按批准范围更新，
+18 个候选前置资源与 workload 服务端 dry-run 通过，紧接部署前只读 reindex 仍选中零项。
+首次部署 `34225700580` attempt 1 于 `2026-09-08T12:22:21Z` 启动，固定 `v0.1.34`/`b0dde98`。
+该作业于 `13:40:15Z` 以 `failure` 结束：API 冷拉取 `2744.963` 秒超过迁移 Job 的 2700 秒期限，
+恢复步骤又因 Worker 超过 1800 秒 progress deadline 失败。embedding、readiness、upload→Agent
+和治理 smoke 全部跳过，没有新增真实 RAG trial。
+
+Worker/Consumer 在工作流结束后才拉取完成；`14:47Z` 的只读快照确认五个 Deployment 均 1/1 Ready，
+四个候选运行镜像、Worker/Consumer 的三份诊断源码哈希均匹配 `b0dde98`，保护配置无漂移。
+候选版本虽然已运行，迁移及 smoke 仍未验收，不能将后续 readiness 改写成部署成功。
+[失败执行记录](../../evidence/m6/20260908-v0.1.34-staging-deployment-failure.json) 保留终态、
+37 份原始文件的哈希及前后现场快照；历史三例失败根因和 M5/M7 门槛仍保持开放。
+
+用户随后批准 [再次验收清单](v0.1.34-staging-deployment-plan.md#已确认并执行的再次验收)。
+该一次授权已执行，结果如下；首次失败仍独立保留，新证据批次尚未提交或推送。
+
+### 第二次部署失败与当前调查
+
+重新预检通过后，按 UID/resourceVersion 条件删除了唯一指定的失败 migration Job，
+于 `2026-09-08T15:59:04Z` 创建新部署 `34248230396` attempt 1，使用同一 `v0.1.34`/`b0dde98`
+和四个 digest。未重复刷新令牌、修改变量或 Namespace 注解。作业于 `16:03:36Z` 失败：
+迁移、workload、rollout、embedding 和 readiness 通过，upload→Agent 失败，治理 smoke 跳过；
+原有候选 workload 恢复步骤成功。
+
+本次两个 embedding probe 输入通过，reindex 全程选中零项；一份合成文档已 Ready，唯一 QA
+为 `agent_execution_failed`，其一次 initial attempt 为 permanent_failed，诊断及用量仍为空。
+没有 Agent evidence 或 checkpoint。失败发生在 smoke 成功 JSON 写出前，原工作流日志和
+持久化诊断补充了这份缺失报告，不能因文件缺失而把真实上传/QA 计作零。
+
+`16:53Z` 的当前 Worker/Consumer 导入探针确认诊断源码、分类器、allowlist 和异常字段传递存在；
+没有执行 Agent 或调用提供方。当前日志窗口未找到对应关联或结构化错误，节点 inventory 只有
+预期两个工作进程；共享默认 `worker-local` 不能证明历史 attempt 的进程归属。这些观测不建立
+模型超时、数据库或另一个执行端的根因，历史三例 RAG 失败仍不可追溯归因。
+
+`17:27Z` 现场的五个 Deployment、四个运行 digest、保护变量和 18 个前置资源均正常，
+v0.1.34 仍未验收。[第二次失败记录](../../evidence/m6/20260909-v0.1.34-staging-redeployment-failure.json)
+保留 40 份原始文件，含 21 个逐字节核验的 artifact 文件和 19 项内部 manifest 哈希。
+实际费用未知；治理上传未执行，没有新增真实 RAG trial、第三次部署、relay 或回滚。
+
+后续按[诊断交接](../../.trellis/tasks/07-19-m5-observability-eval-load/research/20260909-v0.1.34-smoke-diagnosis.md)
+先补执行归属和失败报告的观测，再形成可复现、可审阅的修复范围。待确认的文档/证据提交清单在
+[部署计划](v0.1.34-staging-deployment-plan.md#本轮归档提交边界)，不包含任何新部署或计费试跑。
 
 ## 调研依据
 

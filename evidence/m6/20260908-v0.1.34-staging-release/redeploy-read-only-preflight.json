@@ -1,0 +1,39 @@
+{
+  "observed_at": "2026-09-08T14:54:57.492648+00:00",
+  "candidate_images_cached": {
+    "api": true,
+    "worker": true,
+    "consumer": true,
+    "web": true
+  },
+  "failed_migration_job": {
+    "name": "enterprise-doc-migrate",
+    "namespace": "enterprise-doc-agent-staging",
+    "uid": "305d2d82-20ac-4bc3-abec-d552a5fac40f",
+    "resource_version": "339243",
+    "active": 0,
+    "succeeded": 0,
+    "failed": 1,
+    "conditions": [
+      {
+        "lastProbeTime": "2026-09-08T13:08:30Z",
+        "lastTransitionTime": "2026-09-08T13:08:30Z",
+        "message": "Job was active longer than specified deadline",
+        "reason": "DeadlineExceeded",
+        "status": "True",
+        "type": "FailureTarget"
+      },
+      {
+        "lastProbeTime": "2026-09-08T13:09:36Z",
+        "lastTransitionTime": "2026-09-08T13:09:36Z",
+        "message": "Job was active longer than specified deadline",
+        "reason": "DeadlineExceeded",
+        "status": "True",
+        "type": "Failed"
+      }
+    ]
+  },
+  "mutations": 0,
+  "new_dispatches": 0,
+  "authorization": "pending_review"
+}

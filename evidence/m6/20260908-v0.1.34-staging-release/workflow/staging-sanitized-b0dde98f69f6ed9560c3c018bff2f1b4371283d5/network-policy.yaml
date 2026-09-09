@@ -1,0 +1,274 @@
+apiVersion: v1
+items:
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"name":"enterprise-doc-api-ingress","namespace":"enterprise-doc-agent-staging"},"spec":{"ingress":[{"from":[{"podSelector":{"matchLabels":{"app.kubernetes.io/name":"enterprise-doc-web"}}}],"ports":[{"port":8000,"protocol":"TCP"}]}],"podSelector":{"matchLabels":{"app.kubernetes.io/name":"enterprise-doc-api"}},"policyTypes":["Ingress"]}}
+
+        '
+    creationTimestamp: '2026-08-30T03:35:46Z'
+    generation: 1
+    name: enterprise-doc-api-ingress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '4433'
+    uid: d1471d56-7f55-439e-b392-22e8573b5bd4
+  spec:
+    ingress:
+    - from:
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/name: enterprise-doc-web
+      ports:
+      - port: 8000
+        protocol: TCP
+    podSelector:
+      matchLabels:
+        app.kubernetes.io/name: enterprise-doc-api
+    policyTypes:
+    - Ingress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"name":"enterprise-doc-default-deny","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":53,"protocol":"UDP"},{"port":53,"protocol":"TCP"}],"to":[{"namespaceSelector":{}}]}],"podSelector":{},"policyTypes":["Ingress","Egress"]}}
+
+        '
+    creationTimestamp: '2026-08-30T03:35:46Z'
+    generation: 1
+    name: enterprise-doc-default-deny
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '4434'
+    uid: 37b511a3-93a8-4462-b8dc-4609e195fec3
+  spec:
+    egress:
+    - ports:
+      - port: 53
+        protocol: UDP
+      - port: 53
+        protocol: TCP
+      to:
+      - namespaceSelector: {}
+    podSelector: {}
+    policyTypes:
+    - Ingress
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"name":"enterprise-doc-external-postgres-egress","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":5432,"protocol":"TCP"},{"port":6543,"protocol":"TCP"}],"to":[{"ipBlock":{"cidr":"52.74.252.201/32"}},{"ipBlock":{"cidr":"52.77.146.31/32"}},{"ipBlock":{"cidr":"54.255.219.82/32"}}]}],"podSelector":{"matchExpressions":[{"key":"app.kubernetes.io/name","operator":"In","values":["enterprise-doc-api","enterprise-doc-worker","enterprise-doc-consumer","enterprise-doc-migrate","enterprise-doc-embedding-rollout"]}]},"policyTypes":["Egress"]}}
+
+        '
+    creationTimestamp: '2026-08-30T03:35:46Z'
+    generation: 3
+    name: enterprise-doc-external-postgres-egress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '98334'
+    uid: 2cb0fe9b-3fbf-4cd6-bacc-a97cd216c0fd
+  spec:
+    egress:
+    - ports:
+      - port: 5432
+        protocol: TCP
+      - port: 6543
+        protocol: TCP
+      to:
+      - ipBlock:
+          cidr: 52.74.252.201/32
+      - ipBlock:
+          cidr: 52.77.146.31/32
+      - ipBlock:
+          cidr: 54.255.219.82/32
+    podSelector:
+      matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: In
+        values:
+        - enterprise-doc-api
+        - enterprise-doc-worker
+        - enterprise-doc-consumer
+        - enterprise-doc-migrate
+        - enterprise-doc-embedding-rollout
+    policyTypes:
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"name":"enterprise-doc-otel-collector-ingress","namespace":"enterprise-doc-agent-staging"},"spec":{"ingress":[{"from":[{"namespaceSelector":{}}],"ports":[{"port":4317,"protocol":"TCP"},{"port":4318,"protocol":"TCP"}]}],"podSelector":{"matchLabels":{"app.kubernetes.io/name":"otel-collector"}},"policyTypes":["Ingress"]}}
+
+        '
+    creationTimestamp: '2026-08-30T03:35:46Z'
+    generation: 1
+    name: enterprise-doc-otel-collector-ingress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '4436'
+    uid: 20b18ddf-5288-4014-b80f-8e6a5a61959f
+  spec:
+    ingress:
+    - from:
+      - namespaceSelector: {}
+      ports:
+      - port: 4317
+        protocol: TCP
+      - port: 4318
+        protocol: TCP
+    podSelector:
+      matchLabels:
+        app.kubernetes.io/name: otel-collector
+    policyTypes:
+    - Ingress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"name":"enterprise-doc-redis-ingress","namespace":"enterprise-doc-agent-staging"},"spec":{"ingress":[{"from":[{"podSelector":{"matchLabels":{"app.kubernetes.io/name":"enterprise-doc-api"}}},{"podSelector":{"matchLabels":{"app.kubernetes.io/name":"enterprise-doc-worker"}}},{"podSelector":{"matchLabels":{"app.kubernetes.io/name":"enterprise-doc-consumer"}}}],"ports":[{"port":6379,"protocol":"TCP"}]}],"podSelector":{"matchLabels":{"app.kubernetes.io/name":"enterprise-doc-redis"}},"policyTypes":["Ingress"]}}
+
+        '
+    creationTimestamp: '2026-08-30T03:35:46Z'
+    generation: 1
+    name: enterprise-doc-redis-ingress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '4437'
+    uid: 790c4faa-b60e-4257-ba1f-dd484eb98cd3
+  spec:
+    ingress:
+    - from:
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/name: enterprise-doc-api
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/name: enterprise-doc-worker
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/name: enterprise-doc-consumer
+      ports:
+      - port: 6379
+        protocol: TCP
+    podSelector:
+      matchLabels:
+        app.kubernetes.io/name: enterprise-doc-redis
+    policyTypes:
+    - Ingress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"name":"enterprise-doc-runtime-egress","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":5432,"protocol":"TCP"},{"port":6379,"protocol":"TCP"},{"port":9000,"protocol":"TCP"},{"port":4318,"protocol":"TCP"},{"port":8000,"protocol":"TCP"}],"to":[{"podSelector":{}}]},{"ports":[{"port":443,"protocol":"TCP"}]}],"podSelector":{},"policyTypes":["Egress"]}}
+
+        '
+    creationTimestamp: '2026-08-30T03:35:46Z'
+    generation: 1
+    name: enterprise-doc-runtime-egress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '4438'
+    uid: 3b7c29a5-cdec-4057-baf4-4d63f8f1520b
+  spec:
+    egress:
+    - ports:
+      - port: 5432
+        protocol: TCP
+      - port: 6379
+        protocol: TCP
+      - port: 9000
+        protocol: TCP
+      - port: 4318
+        protocol: TCP
+      - port: 8000
+        protocol: TCP
+      to:
+      - podSelector: {}
+    - ports:
+      - port: 443
+        protocol: TCP
+    podSelector: {}
+    policyTypes:
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"name":"enterprise-doc-staging-smoke-api-egress","namespace":"enterprise-doc-agent-staging"},"spec":{"egress":[{"ports":[{"port":8000,"protocol":"TCP"}],"to":[{"podSelector":{"matchLabels":{"app.kubernetes.io/name":"enterprise-doc-api"}}}]}],"podSelector":{"matchLabels":{"app.kubernetes.io/name":"m5-staging-smoke"}},"policyTypes":["Egress"]}}
+
+        '
+    creationTimestamp: '2026-08-30T03:35:46Z'
+    generation: 1
+    name: enterprise-doc-staging-smoke-api-egress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '4439'
+    uid: f147ed36-99f2-46b3-8e25-7ab94a727931
+  spec:
+    egress:
+    - ports:
+      - port: 8000
+        protocol: TCP
+      to:
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/name: enterprise-doc-api
+    podSelector:
+      matchLabels:
+        app.kubernetes.io/name: m5-staging-smoke
+    policyTypes:
+    - Egress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"name":"enterprise-doc-staging-smoke-api-ingress","namespace":"enterprise-doc-agent-staging"},"spec":{"ingress":[{"from":[{"podSelector":{"matchLabels":{"app.kubernetes.io/name":"m5-staging-smoke"}}}],"ports":[{"port":8000,"protocol":"TCP"}]}],"podSelector":{"matchLabels":{"app.kubernetes.io/name":"enterprise-doc-api"}},"policyTypes":["Ingress"]}}
+
+        '
+    creationTimestamp: '2026-08-30T03:35:46Z'
+    generation: 1
+    name: enterprise-doc-staging-smoke-api-ingress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '4440'
+    uid: 58b7362e-bf83-4976-9861-6740fd2a1dcf
+  spec:
+    ingress:
+    - from:
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/name: m5-staging-smoke
+      ports:
+      - port: 8000
+        protocol: TCP
+    podSelector:
+      matchLabels:
+        app.kubernetes.io/name: enterprise-doc-api
+    policyTypes:
+    - Ingress
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"name":"enterprise-doc-web-ingress","namespace":"enterprise-doc-agent-staging"},"spec":{"ingress":[{"from":[{"namespaceSelector":{"matchLabels":{"kubernetes.io/metadata.name":"kube-system"}}}],"ports":[{"port":8080,"protocol":"TCP"}]}],"podSelector":{"matchLabels":{"app.kubernetes.io/name":"enterprise-doc-web"}},"policyTypes":["Ingress"]}}
+
+        '
+    creationTimestamp: '2026-08-30T03:35:46Z'
+    generation: 1
+    name: enterprise-doc-web-ingress
+    namespace: enterprise-doc-agent-staging
+    resourceVersion: '4441'
+    uid: 81c388b2-a4c3-44bb-b559-1f902860c5e8
+  spec:
+    ingress:
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: kube-system
+      ports:
+      - port: 8080
+        protocol: TCP
+    podSelector:
+      matchLabels:
+        app.kubernetes.io/name: enterprise-doc-web
+    policyTypes:
+    - Ingress
+kind: List
+metadata:
+  resourceVersion: ''
+time="2026-09-08T21:40:03+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission
+  denied"

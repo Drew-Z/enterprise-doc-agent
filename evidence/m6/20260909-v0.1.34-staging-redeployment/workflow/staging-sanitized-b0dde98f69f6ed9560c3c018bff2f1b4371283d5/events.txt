@@ -1,0 +1,103 @@
+time="2026-09-09T00:03:26+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-09-09T00:03:26+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-09-09T00:03:26+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+LAST SEEN   TYPE      REASON              OBJECT                                          MESSAGE
+92s         Normal    Scheduled           pod/enterprise-doc-consumer-69c77dff57-gq57z    Successfully assigned enterprise-doc-agent-staging/enterprise-doc-consumer-69c77dff57-gq57z to vm-4-7-ubuntu
+106s        Normal    Scheduled           pod/enterprise-doc-consumer-69c77dff57-grfkx    Successfully assigned enterprise-doc-agent-staging/enterprise-doc-consumer-69c77dff57-grfkx to vm-4-7-ubuntu
+92s         Normal    Scheduled           pod/enterprise-doc-consumer-69c77dff57-fwnjl    Successfully assigned enterprise-doc-agent-staging/enterprise-doc-consumer-69c77dff57-fwnjl to vm-4-7-ubuntu
+64s         Normal    Scheduled           pod/enterprise-doc-web-67895ccb9f-sbxdn         Successfully assigned enterprise-doc-agent-staging/enterprise-doc-web-67895ccb9f-sbxdn to vm-4-7-ubuntu
+106s        Normal    Scheduled           pod/enterprise-doc-web-67895ccb9f-sct9p         Successfully assigned enterprise-doc-agent-staging/enterprise-doc-web-67895ccb9f-sct9p to vm-4-7-ubuntu
+106s        Normal    Scheduled           pod/enterprise-doc-api-6f5749fc58-rd4vh         Successfully assigned enterprise-doc-agent-staging/enterprise-doc-api-6f5749fc58-rd4vh to vm-4-7-ubuntu
+64s         Normal    Scheduled           pod/enterprise-doc-api-6f5749fc58-csbwf         Successfully assigned enterprise-doc-agent-staging/enterprise-doc-api-6f5749fc58-csbwf to vm-4-7-ubuntu
+81s         Normal    Scheduled           pod/enterprise-doc-embedding-rollout-x9tpt      Successfully assigned enterprise-doc-agent-staging/enterprise-doc-embedding-rollout-x9tpt to vm-4-7-ubuntu
+51s         Normal    Scheduled           pod/m5-staging-smoke-f99m8                      Successfully assigned enterprise-doc-agent-staging/m5-staging-smoke-f99m8 to vm-4-7-ubuntu
+106s        Normal    Scheduled           pod/enterprise-doc-worker-7665578cfc-bq6bk      Successfully assigned enterprise-doc-agent-staging/enterprise-doc-worker-7665578cfc-bq6bk to vm-4-7-ubuntu
+2m12s       Normal    Scheduled           pod/enterprise-doc-migrate-cdhww                Successfully assigned enterprise-doc-agent-staging/enterprise-doc-migrate-cdhww to vm-4-7-ubuntu
+92s         Normal    Scheduled           pod/enterprise-doc-consumer-69c77dff57-n7dpv    Successfully assigned enterprise-doc-agent-staging/enterprise-doc-consumer-69c77dff57-n7dpv to vm-4-7-ubuntu
+42m         Warning   Unhealthy           pod/enterprise-doc-api-6f5749fc58-xhn9m         Readiness probe failed: HTTP probe failed with statuscode: 503
+2m14s       Normal    ScalingReplicaSet   deployment/enterprise-doc-worker                Scaled down replica set enterprise-doc-worker-7665578cfc from 1 to 0
+2m13s       Normal    ScalingReplicaSet   deployment/enterprise-doc-consumer              Scaled down replica set enterprise-doc-consumer-69c77dff57 from 1 to 0
+2m13s       Normal    Killing             pod/enterprise-doc-web-67895ccb9f-zxn4z         Stopping container web
+2m13s       Normal    SuccessfulDelete    replicaset/enterprise-doc-worker-7665578cfc     Deleted pod: enterprise-doc-worker-7665578cfc-m7hwr
+2m13s       Normal    Killing             pod/enterprise-doc-worker-7665578cfc-m7hwr      Stopping container worker
+2m13s       Normal    SuccessfulDelete    replicaset/enterprise-doc-web-67895ccb9f        Deleted pod: enterprise-doc-web-67895ccb9f-zxn4z
+2m13s       Normal    Killing             pod/enterprise-doc-consumer-69c77dff57-dmjvg    Stopping container consumer
+2m13s       Normal    SuccessfulDelete    replicaset/enterprise-doc-api-6f5749fc58        Deleted pod: enterprise-doc-api-6f5749fc58-xhn9m
+2m13s       Normal    Killing             pod/enterprise-doc-api-6f5749fc58-xhn9m         Stopping container api
+2m13s       Normal    SuccessfulDelete    replicaset/enterprise-doc-consumer-69c77dff57   Deleted pod: enterprise-doc-consumer-69c77dff57-dmjvg
+2m12s       Normal    Pulled              pod/enterprise-doc-migrate-cdhww                Container image "ghcr.io/drew-z/enterprise-doc-api@sha256:e2cbbc6ba1c5e7463ed21e6663c5a948d467e46bcd187a7cf8b02c50ed53bfff" already present on machine and can be accessed by the pod
+2m12s       Normal    Created             pod/enterprise-doc-migrate-cdhww                Container created
+2m12s       Normal    Started             pod/enterprise-doc-migrate-cdhww                Container started
+2m12s       Normal    SuccessfulCreate    job/enterprise-doc-migrate                      Created pod: enterprise-doc-migrate-cdhww
+109s        Normal    Completed           job/enterprise-doc-migrate                      Job completed
+106s        Normal    Created             pod/enterprise-doc-consumer-69c77dff57-grfkx    Container created
+106s        Normal    Created             pod/enterprise-doc-api-6f5749fc58-rd4vh         Container created
+106s        Normal    ScalingReplicaSet   deployment/enterprise-doc-consumer              Scaled up replica set enterprise-doc-consumer-69c77dff57 from 0 to 1
+106s        Normal    SuccessfulCreate    replicaset/enterprise-doc-consumer-69c77dff57   Created pod: enterprise-doc-consumer-69c77dff57-grfkx
+106s        Normal    ScalingReplicaSet   deployment/enterprise-doc-worker                Scaled up replica set enterprise-doc-worker-7665578cfc from 0 to 1
+106s        Normal    Pulled              pod/enterprise-doc-consumer-69c77dff57-grfkx    Container image "ghcr.io/drew-z/enterprise-doc-consumer@sha256:ec84d7d280ff74f28147c678428cee5cfa55a5a70a6fe444a20079e616262a21" already present on machine and can be accessed by the pod
+106s        Normal    SuccessfulCreate    replicaset/enterprise-doc-worker-7665578cfc     Created pod: enterprise-doc-worker-7665578cfc-bq6bk
+106s        Normal    SuccessfulCreate    replicaset/enterprise-doc-api-6f5749fc58        Created pod: enterprise-doc-api-6f5749fc58-rd4vh
+106s        Normal    Pulled              pod/enterprise-doc-api-6f5749fc58-rd4vh         Container image "ghcr.io/drew-z/enterprise-doc-api@sha256:e2cbbc6ba1c5e7463ed21e6663c5a948d467e46bcd187a7cf8b02c50ed53bfff" already present on machine and can be accessed by the pod
+106s        Normal    SuccessfulCreate    replicaset/enterprise-doc-web-67895ccb9f        Created pod: enterprise-doc-web-67895ccb9f-sct9p
+105s        Normal    Pulled              pod/enterprise-doc-worker-7665578cfc-bq6bk      Container image "ghcr.io/drew-z/enterprise-doc-worker@sha256:b957cdd12dff8e3151386a4a1e829b311c3970f14e22479524011f22e7d784d7" already present on machine and can be accessed by the pod
+105s        Normal    Started             pod/enterprise-doc-api-6f5749fc58-rd4vh         Container started
+105s        Normal    Pulled              pod/enterprise-doc-web-67895ccb9f-sct9p         Container image "ghcr.io/drew-z/enterprise-doc-web@sha256:618655ebcaaa3ff8af903414e348d1261b563f00becf54f06f66fad2441e3b09" already present on machine and can be accessed by the pod
+105s        Normal    Created             pod/enterprise-doc-web-67895ccb9f-sct9p         Container created
+105s        Normal    Started             pod/enterprise-doc-web-67895ccb9f-sct9p         Container started
+105s        Normal    Started             pod/enterprise-doc-consumer-69c77dff57-grfkx    Container started
+105s        Normal    Created             pod/enterprise-doc-worker-7665578cfc-bq6bk      Container created
+105s        Normal    Started             pod/enterprise-doc-worker-7665578cfc-bq6bk      Container started
+101s        Warning   Unhealthy           pod/enterprise-doc-worker-7665578cfc-bq6bk      Startup probe failed: Get "http://10.42.0.213:8081/health/live": dial tcp 10.42.0.213:8081: connect: connection refused
+101s        Warning   Unhealthy           pod/enterprise-doc-api-6f5749fc58-rd4vh         Startup probe failed: Get "http://10.42.0.210:8000/health/live": dial tcp 10.42.0.210:8000: connect: connection refused
+101s        Warning   Unhealthy           pod/enterprise-doc-consumer-69c77dff57-grfkx    Startup probe failed: dial tcp 10.42.0.211:8082: connect: connection refused
+93s         Normal    Killing             pod/enterprise-doc-web-67895ccb9f-sct9p         Stopping container web
+93s         Normal    SuccessfulDelete    replicaset/enterprise-doc-web-67895ccb9f        Deleted pod: enterprise-doc-web-67895ccb9f-sct9p
+93s         Normal    ScalingReplicaSet   deployment/enterprise-doc-web                   Scaled down replica set enterprise-doc-web-67895ccb9f from 1 to 0
+93s         Normal    Killing             pod/enterprise-doc-api-6f5749fc58-rd4vh         Stopping container api
+93s         Normal    SuccessfulDelete    replicaset/enterprise-doc-api-6f5749fc58        Deleted pod: enterprise-doc-api-6f5749fc58-rd4vh
+93s         Normal    ScalingReplicaSet   deployment/enterprise-doc-api                   Scaled down replica set enterprise-doc-api-6f5749fc58 from 1 to 0
+92s         Normal    Pulled              pod/enterprise-doc-consumer-69c77dff57-fwnjl    Container image "ghcr.io/drew-z/enterprise-doc-consumer@sha256:ec84d7d280ff74f28147c678428cee5cfa55a5a70a6fe444a20079e616262a21" already present on machine and can be accessed by the pod
+92s         Normal    Created             pod/enterprise-doc-consumer-69c77dff57-fwnjl    Container created
+92s         Normal    SuccessfulCreate    replicaset/enterprise-doc-consumer-69c77dff57   Created pod: enterprise-doc-consumer-69c77dff57-n7dpv
+92s         Normal    Started             pod/enterprise-doc-consumer-69c77dff57-fwnjl    Container started
+92s         Normal    Started             pod/enterprise-doc-consumer-69c77dff57-n7dpv    Container started
+92s         Normal    Created             pod/enterprise-doc-consumer-69c77dff57-n7dpv    Container created
+92s         Normal    ScalingReplicaSet   deployment/enterprise-doc-consumer              Scaled up replica set enterprise-doc-consumer-69c77dff57 from 1 to 4
+92s         Normal    SuccessfulCreate    replicaset/enterprise-doc-consumer-69c77dff57   Created pod: enterprise-doc-consumer-69c77dff57-gq57z
+92s         Normal    Pulled              pod/enterprise-doc-consumer-69c77dff57-n7dpv    Container image "ghcr.io/drew-z/enterprise-doc-consumer@sha256:ec84d7d280ff74f28147c678428cee5cfa55a5a70a6fe444a20079e616262a21" already present on machine and can be accessed by the pod
+92s         Normal    Started             pod/enterprise-doc-consumer-69c77dff57-gq57z    Container started
+92s         Normal    SuccessfulCreate    replicaset/enterprise-doc-consumer-69c77dff57   Created pod: enterprise-doc-consumer-69c77dff57-fwnjl
+92s         Normal    Pulled              pod/enterprise-doc-consumer-69c77dff57-gq57z    Container image "ghcr.io/drew-z/enterprise-doc-consumer@sha256:ec84d7d280ff74f28147c678428cee5cfa55a5a70a6fe444a20079e616262a21" already present on machine and can be accessed by the pod
+92s         Normal    Created             pod/enterprise-doc-consumer-69c77dff57-gq57z    Container created
+87s         Warning   Unhealthy           pod/enterprise-doc-consumer-69c77dff57-fwnjl    Startup probe failed: dial tcp 10.42.0.214:8082: connect: connection refused
+87s         Warning   Unhealthy           pod/enterprise-doc-consumer-69c77dff57-n7dpv    Startup probe failed: dial tcp 10.42.0.215:8082: connect: connection refused
+87s         Warning   Unhealthy           pod/enterprise-doc-consumer-69c77dff57-gq57z    Startup probe failed: dial tcp 10.42.0.216:8082: connect: connection refused
+81s         Normal    Pulled              pod/enterprise-doc-embedding-rollout-x9tpt      Container image "ghcr.io/drew-z/enterprise-doc-api@sha256:e2cbbc6ba1c5e7463ed21e6663c5a948d467e46bcd187a7cf8b02c50ed53bfff" already present on machine and can be accessed by the pod
+81s         Normal    SuccessfulCreate    job/enterprise-doc-embedding-rollout            Created pod: enterprise-doc-embedding-rollout-x9tpt
+81s         Normal    Started             pod/enterprise-doc-embedding-rollout-x9tpt      Container started
+81s         Normal    Created             pod/enterprise-doc-embedding-rollout-x9tpt      Container created
+70s         Normal    Completed           job/enterprise-doc-embedding-rollout            Job completed
+64s         Normal    SuccessfulDelete    replicaset/enterprise-doc-consumer-69c77dff57   Deleted pod: enterprise-doc-consumer-69c77dff57-gq57z
+64s         Normal    Killing             pod/enterprise-doc-consumer-69c77dff57-gq57z    Stopping container consumer
+64s         Normal    SuccessfulDelete    replicaset/enterprise-doc-consumer-69c77dff57   Deleted pod: enterprise-doc-consumer-69c77dff57-grfkx
+64s         Normal    SuccessfulDelete    replicaset/enterprise-doc-consumer-69c77dff57   Deleted pod: enterprise-doc-consumer-69c77dff57-fwnjl
+64s         Normal    SuccessfulCreate    replicaset/enterprise-doc-web-67895ccb9f        Created pod: enterprise-doc-web-67895ccb9f-sbxdn
+64s         Normal    ScalingReplicaSet   deployment/enterprise-doc-web                   Scaled up replica set enterprise-doc-web-67895ccb9f from 0 to 1
+64s         Normal    Pulled              pod/enterprise-doc-api-6f5749fc58-csbwf         Container image "ghcr.io/drew-z/enterprise-doc-api@sha256:e2cbbc6ba1c5e7463ed21e6663c5a948d467e46bcd187a7cf8b02c50ed53bfff" already present on machine and can be accessed by the pod
+64s         Normal    Created             pod/enterprise-doc-web-67895ccb9f-sbxdn         Container created
+64s         Normal    Killing             pod/enterprise-doc-consumer-69c77dff57-grfkx    Stopping container consumer
+64s         Normal    ScalingReplicaSet   deployment/enterprise-doc-consumer              Scaled down replica set enterprise-doc-consumer-69c77dff57 from 4 to 1
+64s         Normal    Started             pod/enterprise-doc-web-67895ccb9f-sbxdn         Container started
+64s         Normal    Killing             pod/enterprise-doc-consumer-69c77dff57-fwnjl    Stopping container consumer
+64s         Normal    ScalingReplicaSet   deployment/enterprise-doc-api                   Scaled up replica set enterprise-doc-api-6f5749fc58 from 0 to 1
+64s         Normal    SuccessfulCreate    replicaset/enterprise-doc-api-6f5749fc58        Created pod: enterprise-doc-api-6f5749fc58-csbwf
+64s         Normal    Pulled              pod/enterprise-doc-web-67895ccb9f-sbxdn         Container image "ghcr.io/drew-z/enterprise-doc-web@sha256:618655ebcaaa3ff8af903414e348d1261b563f00becf54f06f66fad2441e3b09" already present on machine and can be accessed by the pod
+64s         Normal    Started             pod/enterprise-doc-api-6f5749fc58-csbwf         Container started
+64s         Normal    Created             pod/enterprise-doc-api-6f5749fc58-csbwf         Container created
+59s         Warning   Unhealthy           pod/enterprise-doc-api-6f5749fc58-csbwf         Startup probe failed: Get "http://10.42.0.218:8000/health/live": dial tcp 10.42.0.218:8000: connect: connection refused
+51s         Normal    Pulled              pod/m5-staging-smoke-f99m8                      Container image "curlimages/curl@sha256:94e9e444bcba979c2ea12e27ae39bee4cd10bc7041a472c4727a558e213744e6" already present on machine and can be accessed by the pod
+51s         Normal    Created             pod/m5-staging-smoke-f99m8                      Container created
+51s         Normal    SuccessfulCreate    job/m5-staging-smoke                            Created pod: m5-staging-smoke-f99m8
+50s         Normal    Started             pod/m5-staging-smoke-f99m8                      Container started
+47s         Normal    Completed           job/m5-staging-smoke                            Job completed

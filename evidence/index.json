@@ -79,6 +79,8 @@
       "latest_staging_governance_v0_1_33": "evidence/m6/20260904-v0.1.33-staging-governance.json",
       "latest_release_candidate_v0_1_34": "evidence/m6/20260908-v0.1.34-candidate-preflight.json",
       "latest_release_manifest_v0_1_34": "evidence/m6/20260908-v0.1.34-release-manifest.json",
+      "latest_staging_deployment_v0_1_34_failure": "evidence/m6/20260908-v0.1.34-staging-deployment-failure.json",
+      "latest_staging_redeployment_v0_1_34_failure": "evidence/m6/20260909-v0.1.34-staging-redeployment-failure.json",
       "latest_staging_governance_v0_1_33_candidate": "evidence/m6/20260902-v0.1.33-rc.2-staging-governance.json",
       "tiny_resource_envelope_verification": "evidence/m6/20260820-v0.1.32-tiny-resource-envelope.json",
       "reviewed_4b_revalidation": "evidence/m6/20260820-local-embedding-reviewed4b-v2.json",

@@ -1,0 +1,22 @@
+{
+  "recorded_at": "2026-09-08T15:59:00.338928+00:00",
+  "request": {
+    "ref": "v0.1.34",
+    "inputs": {
+      "registry_prefix": "ghcr.io/drew-z",
+      "staging_base_url": "https://agent.playlab.eu.cc",
+      "object_store_endpoint": "https://2741446a7478f2d8a5ff31df7e077f17.r2.cloudflarestorage.com",
+      "object_store_presign_endpoint": "https://2741446a7478f2d8a5ff31df7e077f17.r2.cloudflarestorage.com",
+      "tls_secret_name": "enterprise-doc-staging-tls",
+      "api_digest": "sha256:e2cbbc6ba1c5e7463ed21e6663c5a948d467e46bcd187a7cf8b02c50ed53bfff",
+      "worker_digest": "sha256:b957cdd12dff8e3151386a4a1e829b311c3970f14e22479524011f22e7d784d7",
+      "consumer_digest": "sha256:ec84d7d280ff74f28147c678428cee5cfa55a5a70a6fe444a20079e616262a21",
+      "web_digest": "sha256:618655ebcaaa3ff8af903414e348d1261b563f00becf54f06f66fad2441e3b09",
+      "run_smoke": true
+    }
+  },
+  "new_dispatches_authorized": 1,
+  "prior_failed_run_id": 34225700580,
+  "prior_failed_run_reruns": 0,
+  "new_rag_trials": 0
+}

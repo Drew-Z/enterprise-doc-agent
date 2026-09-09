@@ -1,0 +1,154 @@
+time="2026-09-09T00:03:25+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-09-09T00:03:25+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-09-09T00:03:25+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+{
+    "apiVersion": "batch/v1",
+    "kind": "Job",
+    "metadata": {
+        "annotations": {
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"batch/v1\",\"kind\":\"Job\",\"metadata\":{\"annotations\":{},\"name\":\"enterprise-doc-embedding-rollout\",\"namespace\":\"enterprise-doc-agent-staging\"},\"spec\":{\"activeDeadlineSeconds\":3060,\"backoffLimit\":0,\"template\":{\"metadata\":{\"annotations\":{\"enterprise-doc-agent/config-sha256\":\"e802b8e7fa7179e77693b7ef9b2c17a473a61a2998d1f071fc6ddbf79e90114f\"},\"labels\":{\"app.kubernetes.io/name\":\"enterprise-doc-embedding-rollout\"}},\"spec\":{\"automountServiceAccountToken\":false,\"containers\":[{\"args\":[\"--limit\",\"1000\",\"--deadline-seconds\",\"3000\",\"--poll-seconds\",\"5\"],\"command\":[\"enterprise-doc-embedding-rollout\"],\"envFrom\":[{\"configMapRef\":{\"name\":\"enterprise-doc-config\"}},{\"secretRef\":{\"name\":\"enterprise-doc-secrets\"}}],\"image\":\"ghcr.io/drew-z/enterprise-doc-api@sha256:e2cbbc6ba1c5e7463ed21e6663c5a948d467e46bcd187a7cf8b02c50ed53bfff\",\"name\":\"embedding-rollout\",\"resources\":{\"limits\":{\"cpu\":\"500m\",\"memory\":\"512Mi\"},\"requests\":{\"cpu\":\"50m\",\"memory\":\"128Mi\"}},\"securityContext\":{\"allowPrivilegeEscalation\":false,\"capabilities\":{\"drop\":[\"ALL\"]},\"readOnlyRootFilesystem\":true}}],\"imagePullSecrets\":[{\"name\":\"enterprise-doc-registry\"}],\"restartPolicy\":\"Never\",\"securityContext\":{\"runAsGroup\":10001,\"runAsNonRoot\":true,\"runAsUser\":10001,\"seccompProfile\":{\"type\":\"RuntimeDefault\"}},\"serviceAccountName\":\"enterprise-doc-runtime\"}},\"ttlSecondsAfterFinished\":86400}}\n"
+        },
+        "creationTimestamp": "2026-09-08T16:02:05Z",
+        "generation": 1,
+        "labels": {
+            "app.kubernetes.io/name": "enterprise-doc-embedding-rollout",
+            "batch.kubernetes.io/controller-uid": "d99bad64-7f87-4ea4-aad6-3cfb0991021e",
+            "batch.kubernetes.io/job-name": "enterprise-doc-embedding-rollout",
+            "controller-uid": "d99bad64-7f87-4ea4-aad6-3cfb0991021e",
+            "job-name": "enterprise-doc-embedding-rollout"
+        },
+        "name": "enterprise-doc-embedding-rollout",
+        "namespace": "enterprise-doc-agent-staging",
+        "resourceVersion": "343922",
+        "uid": "d99bad64-7f87-4ea4-aad6-3cfb0991021e"
+    },
+    "spec": {
+        "activeDeadlineSeconds": 3060,
+        "backoffLimit": 0,
+        "completionMode": "NonIndexed",
+        "completions": 1,
+        "manualSelector": false,
+        "parallelism": 1,
+        "podReplacementPolicy": "TerminatingOrFailed",
+        "selector": {
+            "matchLabels": {
+                "batch.kubernetes.io/controller-uid": "d99bad64-7f87-4ea4-aad6-3cfb0991021e"
+            }
+        },
+        "suspend": false,
+        "template": {
+            "metadata": {
+                "annotations": {
+                    "enterprise-doc-agent/config-sha256": "e802b8e7fa7179e77693b7ef9b2c17a473a61a2998d1f071fc6ddbf79e90114f"
+                },
+                "labels": {
+                    "app.kubernetes.io/name": "enterprise-doc-embedding-rollout",
+                    "batch.kubernetes.io/controller-uid": "d99bad64-7f87-4ea4-aad6-3cfb0991021e",
+                    "batch.kubernetes.io/job-name": "enterprise-doc-embedding-rollout",
+                    "controller-uid": "d99bad64-7f87-4ea4-aad6-3cfb0991021e",
+                    "job-name": "enterprise-doc-embedding-rollout"
+                }
+            },
+            "spec": {
+                "automountServiceAccountToken": false,
+                "containers": [
+                    {
+                        "args": [
+                            "--limit",
+                            "1000",
+                            "--deadline-seconds",
+                            "3000",
+                            "--poll-seconds",
+                            "5"
+                        ],
+                        "command": [
+                            "enterprise-doc-embedding-rollout"
+                        ],
+                        "envFrom": [
+                            {
+                                "configMapRef": {
+                                    "name": "enterprise-doc-config"
+                                }
+                            },
+                            {
+                                "secretRef": {
+                                    "name": "enterprise-doc-secrets"
+                                }
+                            }
+                        ],
+                        "image": "ghcr.io/drew-z/enterprise-doc-api@sha256:e2cbbc6ba1c5e7463ed21e6663c5a948d467e46bcd187a7cf8b02c50ed53bfff",
+                        "imagePullPolicy": "IfNotPresent",
+                        "name": "embedding-rollout",
+                        "resources": {
+                            "limits": {
+                                "cpu": "500m",
+                                "memory": "512Mi"
+                            },
+                            "requests": {
+                                "cpu": "50m",
+                                "memory": "128Mi"
+                            }
+                        },
+                        "securityContext": {
+                            "allowPrivilegeEscalation": false,
+                            "capabilities": {
+                                "drop": [
+                                    "ALL"
+                                ]
+                            },
+                            "readOnlyRootFilesystem": true
+                        },
+                        "terminationMessagePath": "/dev/termination-log",
+                        "terminationMessagePolicy": "File"
+                    }
+                ],
+                "dnsPolicy": "ClusterFirst",
+                "imagePullSecrets": [
+                    {
+                        "name": "enterprise-doc-registry"
+                    }
+                ],
+                "restartPolicy": "Never",
+                "schedulerName": "default-scheduler",
+                "securityContext": {
+                    "runAsGroup": 10001,
+                    "runAsNonRoot": true,
+                    "runAsUser": 10001,
+                    "seccompProfile": {
+                        "type": "RuntimeDefault"
+                    }
+                },
+                "serviceAccount": "enterprise-doc-runtime",
+                "serviceAccountName": "enterprise-doc-runtime",
+                "terminationGracePeriodSeconds": 30
+            }
+        },
+        "ttlSecondsAfterFinished": 86400
+    },
+    "status": {
+        "completionTime": "2026-09-08T16:02:16Z",
+        "conditions": [
+            {
+                "lastProbeTime": "2026-09-08T16:02:16Z",
+                "lastTransitionTime": "2026-09-08T16:02:16Z",
+                "message": "Reached expected number of succeeded pods",
+                "reason": "CompletionsReached",
+                "status": "True",
+                "type": "SuccessCriteriaMet"
+            },
+            {
+                "lastProbeTime": "2026-09-08T16:02:16Z",
+                "lastTransitionTime": "2026-09-08T16:02:16Z",
+                "message": "Reached expected number of succeeded pods",
+                "reason": "CompletionsReached",
+                "status": "True",
+                "type": "Complete"
+            }
+        ],
+        "ready": 0,
+        "startTime": "2026-09-08T16:02:05Z",
+        "succeeded": 1,
+        "terminating": 0,
+        "uncountedTerminatedPods": {}
+    }
+}

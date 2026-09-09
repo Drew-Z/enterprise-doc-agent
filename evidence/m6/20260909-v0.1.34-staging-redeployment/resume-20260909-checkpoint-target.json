@@ -1,0 +1,8 @@
+{
+  "checkpoint_target_matches_application_database": true,
+  "separate_checkpoint_url_configured": false,
+  "connection_values_retained": false,
+  "provider_calls": 0,
+  "database_queries": 0,
+  "observed_at": "2026-09-08T17:32:15.645963+00:00"
+}

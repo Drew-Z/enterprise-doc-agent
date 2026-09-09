@@ -1,0 +1,239 @@
+{
+  "observed_at": "2026-09-08T13:22:52.029909+00:00",
+  "containerd_active": "REF\t\t\t\t\t\t\t\t\t\tSIZE\tAGE\t\t\nlayer-sha256:770bc611f4906f65c459d406f6bba24d65f459586f34e4fe6277d481661188e1\t12.58MB\t13 minutes\t\nlayer-sha256:b07794b7879bddaad6c3989b689ae43baf8a9cfa7b48c860bdad78b8e90275a8\t25.17MB\t13 minutes\t\n",
+  "pods": [
+    {
+      "name": "enterprise-doc-api-6f5749fc58-xhn9m",
+      "phase": "Running",
+      "conditions": [
+        {
+          "type": "PodReadyToStartContainers",
+          "status": "True"
+        },
+        {
+          "type": "Initialized",
+          "status": "True"
+        },
+        {
+          "type": "Ready",
+          "status": "True"
+        },
+        {
+          "type": "ContainersReady",
+          "status": "True"
+        },
+        {
+          "type": "PodScheduled",
+          "status": "True"
+        }
+      ],
+      "container_states": [
+        {
+          "running": {
+            "startedAt": "2026-09-08T13:09:42Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "enterprise-doc-consumer-69c77dff57-dmjvg",
+      "phase": "Pending",
+      "conditions": [
+        {
+          "type": "PodReadyToStartContainers",
+          "status": "True"
+        },
+        {
+          "type": "Initialized",
+          "status": "True"
+        },
+        {
+          "type": "Ready",
+          "status": "False"
+        },
+        {
+          "type": "ContainersReady",
+          "status": "False"
+        },
+        {
+          "type": "PodScheduled",
+          "status": "True"
+        }
+      ],
+      "container_states": [
+        {
+          "waiting": {
+            "reason": "ContainerCreating"
+          }
+        }
+      ]
+    },
+    {
+      "name": "enterprise-doc-redis-6f7b677877-mbzrx",
+      "phase": "Running",
+      "conditions": [
+        {
+          "type": "PodReadyToStartContainers",
+          "status": "True"
+        },
+        {
+          "type": "Initialized",
+          "status": "True"
+        },
+        {
+          "type": "Ready",
+          "status": "True"
+        },
+        {
+          "type": "ContainersReady",
+          "status": "True"
+        },
+        {
+          "type": "PodScheduled",
+          "status": "True"
+        }
+      ],
+      "container_states": [
+        {
+          "running": {
+            "startedAt": "2026-08-30T11:23:11Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "enterprise-doc-web-67895ccb9f-zxn4z",
+      "phase": "Running",
+      "conditions": [
+        {
+          "type": "PodReadyToStartContainers",
+          "status": "True"
+        },
+        {
+          "type": "Initialized",
+          "status": "True"
+        },
+        {
+          "type": "Ready",
+          "status": "True"
+        },
+        {
+          "type": "ContainersReady",
+          "status": "True"
+        },
+        {
+          "type": "PodScheduled",
+          "status": "True"
+        }
+      ],
+      "container_states": [
+        {
+          "running": {
+            "startedAt": "2026-09-08T13:12:22Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "enterprise-doc-worker-7665578cfc-m7hwr",
+      "phase": "Pending",
+      "conditions": [
+        {
+          "type": "PodReadyToStartContainers",
+          "status": "True"
+        },
+        {
+          "type": "Initialized",
+          "status": "True"
+        },
+        {
+          "type": "Ready",
+          "status": "False"
+        },
+        {
+          "type": "ContainersReady",
+          "status": "False"
+        },
+        {
+          "type": "PodScheduled",
+          "status": "True"
+        }
+      ],
+      "container_states": [
+        {
+          "waiting": {
+            "reason": "ContainerCreating"
+          }
+        }
+      ]
+    }
+  ],
+  "registry_layers": {
+    "worker": {
+      "manifest_digest": "sha256:c492939e942e2609d67ddb90113ce4cfb14b17c146f53e501053e89225d50b68",
+      "layers": [
+        {
+          "digest": "sha256:597c6c618d36213af657a6a8444a5d87801f9a219682b206ad21ccb8f3e57bbd",
+          "size_bytes": 28232643
+        },
+        {
+          "digest": "sha256:91b8d4ab0a8cb4e27109badf9069959686507d54115420b7b9bb2ed6169e6477",
+          "size_bytes": 3520786
+        },
+        {
+          "digest": "sha256:278c43479e93864332983d99faf4c21bec1c9b5275e193e1323206cccec888e8",
+          "size_bytes": 13668370
+        },
+        {
+          "digest": "sha256:b7e97db3511b734f0730a7f3463aaa2199624896a51294e231a742039c1c4086",
+          "size_bytes": 249
+        },
+        {
+          "digest": "sha256:43449e78c5339b86ba8785982c47390b27452b49b5d88a563fc1a8aa0c726ff7",
+          "size_bytes": 3316
+        },
+        {
+          "digest": "sha256:b2abf1a4a948dd52c0836e18b66fb0b21d304fe6a102a0d2101647fe38281ca9",
+          "size_bytes": 93
+        },
+        {
+          "digest": "sha256:b07794b7879bddaad6c3989b689ae43baf8a9cfa7b48c860bdad78b8e90275a8",
+          "size_bytes": 78462451
+        }
+      ]
+    },
+    "consumer": {
+      "manifest_digest": "sha256:86e26d2018bfbafd6498669d008684be7bc803581267f12ded834f6fcd8ccfe6",
+      "layers": [
+        {
+          "digest": "sha256:597c6c618d36213af657a6a8444a5d87801f9a219682b206ad21ccb8f3e57bbd",
+          "size_bytes": 28232643
+        },
+        {
+          "digest": "sha256:91b8d4ab0a8cb4e27109badf9069959686507d54115420b7b9bb2ed6169e6477",
+          "size_bytes": 3520786
+        },
+        {
+          "digest": "sha256:278c43479e93864332983d99faf4c21bec1c9b5275e193e1323206cccec888e8",
+          "size_bytes": 13668370
+        },
+        {
+          "digest": "sha256:b7e97db3511b734f0730a7f3463aaa2199624896a51294e231a742039c1c4086",
+          "size_bytes": 249
+        },
+        {
+          "digest": "sha256:02472ff610ec5bf767db2163ce2f15db0f50ede294c3c59842e539d484f4599a",
+          "size_bytes": 3308
+        },
+        {
+          "digest": "sha256:e5dbabb716716e473a574050f88ef29b44a672c1d07c60dab57013f288dbcc5d",
+          "size_bytes": 93
+        },
+        {
+          "digest": "sha256:770bc611f4906f65c459d406f6bba24d65f459586f34e4fe6277d481661188e1",
+          "size_bytes": 78465904
+        }
+      ]
+    }
+  }
+}

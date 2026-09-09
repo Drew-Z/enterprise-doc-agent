@@ -1,0 +1,62 @@
+{
+  "status": "verified",
+  "verified_at": "2026-09-08T16:07:26.981523+00:00",
+  "workflow_conclusion": "failure",
+  "release_record_status": "failed",
+  "manifest_files_verified": 19,
+  "release_record_sha256": "97a698def0258cbaebc3ffe62bc4739c176a35e68871aa439b9779860a303ef4",
+  "evidence_manifest_sha256": "2d0b41a43553cf01d2f1116f8df40960a052936e58426965f51c7b166a15de52",
+  "artifact_file_sha256": {
+    "collection-status.txt": "607fd80fca8a4e73c2059d15efeee99708cbf06461e00ee7bf13b5648bf819bd",
+    "consumer-current.log": "b47cd142f3f0a8454384cf584416fafbe40d0c20fe7404fdebf1f916fbd80bba",
+    "consumer-previous.log": "cbe250b8c05f091bba1ccb91cc73da9664e56effe04501060a00112fb5811da8",
+    "deployment-profile.txt": "eb0bfcd563c4b6eb9d2cc86c52decc14e100804ccfe52eba550647ee43427703",
+    "deployments.json": "a47995c807d150e04981d37587901babd3ea96340f0bd01851ad5d6ee7a15e97",
+    "embedding-rollout-job.json": "3997ac1fc7e5f4b80edc3dd65f1a919b845632d830749b255e9e1ca808cd2a24",
+    "embedding-rollout.log": "1a68a2b01404436e838297b4fb06bb7c7ca76fb1b09494cd5a0cf1b021f487cd",
+    "events.txt": "969ef233a7e33cfb129ac11ddae4d88c26aba2bd2febe542380cf39421cd986f",
+    "ingress.yaml": "f3ad7b96e835de1b6bd2e3a02f728b0b2093fe3b9402256a17b8426001dd3c72",
+    "migration.log": "1966e528ea0559a2615e7cbcb1ae912ac821719d17ebfaff8dd2dda798a91e60",
+    "network-policy.yaml": "e9137c056468128aa86e3cb4a12a33ab3646dae3cf18837d2c2bc3648e3b3407",
+    "staging-embedding-rollout.json": "1dfcae95c43a65297c48b7192bd588320b2191bc9254a169eda9a21c6094581c",
+    "staging-rendered-staging-embedding-rollout.yaml": "c2cfcf377f310fb4ce58200875e0d7875a995ac07364ce7ce26a95ce23728085",
+    "staging-rendered-staging-migration.yaml": "844a9edfd0e3a7f866f7496f8610aec9fed1c4ac14ab5281da7b64440c1526d8",
+    "staging-rendered-staging-prerequisites.yaml": "aab45c2800a69863fb9d329baa4a3e47db30624149c7874ffdd53ce1238627c8",
+    "staging-rendered-staging-workloads.yaml": "ca094db1ef1dcce8d3c37051c3a3c94112ae0d3d16bb346cff6f91780c07bc86",
+    "staging-rendered-staging.yaml": "590fd39df29ead4628917cff936677d0e724660b1b7e26bc973e59c8677a2fac",
+    "worker-current.log": "83c8143bf78fd06b0cef1e140f1a9b87c5ad16551ab2c382bb57e6a5b0516add",
+    "worker-previous.log": "bd8be366e6131d2095e140403c635266d9c4be327e636ebbc90def438e1e94eb"
+  },
+  "outcomes": {
+    "authenticated_smoke": "failure",
+    "cluster_smoke": "success",
+    "embedding_rollout": "success",
+    "migration": "success",
+    "prerequisites": "success",
+    "rollout": "success",
+    "workloads": "success"
+  },
+  "governance_outcome": "skipped",
+  "smoke": null,
+  "governance": null,
+  "embedding": {
+    "status": "validated",
+    "provider": "openai_compatible",
+    "model": "Qwen/Qwen3-Embedding-4B",
+    "dimension": 1024,
+    "version": 3,
+    "probe_item_count": 2,
+    "reindex": {
+      "status": "completed",
+      "initial_selected": 0,
+      "apply_attempts": 0,
+      "created": 0,
+      "replayed": 0,
+      "final_selected": 0
+    },
+    "values_redacted": true
+  },
+  "record_path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\eda-v0.1.34-deploy-01a080bd\\redeploy-artifacts\\staging-release-b0dde98f69f6ed9560c3c018bff2f1b4371283d5.record.json",
+  "manifest_path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\eda-v0.1.34-deploy-01a080bd\\redeploy-artifacts\\staging-evidence-b0dde98f69f6ed9560c3c018bff2f1b4371283d5.manifest.json",
+  "values_redacted": true
+}

@@ -1,0 +1,16 @@
+{
+  "status": "deleted",
+  "observed_at": "2026-09-08T15:58:55.661385+00:00",
+  "namespace": "enterprise-doc-agent-staging",
+  "job": "enterprise-doc-migrate",
+  "preconditions": {
+    "uid": "305d2d82-20ac-4bc3-abec-d552a5fac40f",
+    "resourceVersion": "339243"
+  },
+  "http_status": 200,
+  "absence_confirmed": true,
+  "proxy_stopped": true,
+  "deleted_jobs": 1,
+  "other_kubernetes_mutations": 0,
+  "database_or_object_store_mutations": 0
+}

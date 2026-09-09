@@ -1,0 +1,145 @@
+{
+  "apiVersion": "batch/v1",
+  "kind": "Job",
+  "metadata": {
+    "annotations": {
+      "argocd.argoproj.io/hook": "PreSync",
+      "argocd.argoproj.io/hook-delete-policy": "BeforeHookCreation",
+      "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"batch/v1\",\"kind\":\"Job\",\"metadata\":{\"annotations\":{\"argocd.argoproj.io/hook\":\"PreSync\",\"argocd.argoproj.io/hook-delete-policy\":\"BeforeHookCreation\"},\"name\":\"enterprise-doc-migrate\",\"namespace\":\"enterprise-doc-agent-staging\"},\"spec\":{\"activeDeadlineSeconds\":2700,\"backoffLimit\":3,\"template\":{\"metadata\":{\"annotations\":{\"enterprise-doc-agent/config-sha256\":\"e802b8e7fa7179e77693b7ef9b2c17a473a61a2998d1f071fc6ddbf79e90114f\"},\"labels\":{\"app.kubernetes.io/name\":\"enterprise-doc-migrate\"}},\"spec\":{\"containers\":[{\"command\":[\"sh\",\"-ec\",\"alembic upgrade head\\nenterprise-doc-checkpointer-setup --setup\\nenterprise-doc-checkpointer-setup --check\\n\"],\"envFrom\":[{\"configMapRef\":{\"name\":\"enterprise-doc-config\"}},{\"secretRef\":{\"name\":\"enterprise-doc-secrets\"}}],\"image\":\"ghcr.io/drew-z/enterprise-doc-api@sha256:e2cbbc6ba1c5e7463ed21e6663c5a948d467e46bcd187a7cf8b02c50ed53bfff\",\"name\":\"migrate\",\"resources\":{\"limits\":{\"cpu\":\"500m\",\"memory\":\"384Mi\"},\"requests\":{\"cpu\":\"100m\",\"memory\":\"192Mi\"}},\"securityContext\":{\"allowPrivilegeEscalation\":false,\"capabilities\":{\"drop\":[\"ALL\"]},\"readOnlyRootFilesystem\":true}}],\"imagePullSecrets\":[{\"name\":\"enterprise-doc-registry\"}],\"restartPolicy\":\"OnFailure\",\"securityContext\":{\"runAsGroup\":10001,\"runAsNonRoot\":true,\"runAsUser\":10001,\"seccompProfile\":{\"type\":\"RuntimeDefault\"}},\"serviceAccountName\":\"enterprise-doc-runtime\"}},\"ttlSecondsAfterFinished\":86400}}\n"
+    },
+    "creationTimestamp": "2026-09-08T12:23:30Z",
+    "generation": 1,
+    "labels": {
+      "app.kubernetes.io/name": "enterprise-doc-migrate",
+      "batch.kubernetes.io/controller-uid": "305d2d82-20ac-4bc3-abec-d552a5fac40f",
+      "batch.kubernetes.io/job-name": "enterprise-doc-migrate",
+      "controller-uid": "305d2d82-20ac-4bc3-abec-d552a5fac40f",
+      "job-name": "enterprise-doc-migrate"
+    },
+    "name": "enterprise-doc-migrate",
+    "namespace": "enterprise-doc-agent-staging",
+    "resourceVersion": "339243",
+    "uid": "305d2d82-20ac-4bc3-abec-d552a5fac40f"
+  },
+  "spec": {
+    "activeDeadlineSeconds": 2700,
+    "backoffLimit": 3,
+    "completionMode": "NonIndexed",
+    "completions": 1,
+    "manualSelector": false,
+    "parallelism": 1,
+    "podReplacementPolicy": "TerminatingOrFailed",
+    "selector": {
+      "matchLabels": {
+        "batch.kubernetes.io/controller-uid": "305d2d82-20ac-4bc3-abec-d552a5fac40f"
+      }
+    },
+    "suspend": false,
+    "template": {
+      "metadata": {
+        "annotations": {
+          "enterprise-doc-agent/config-sha256": "e802b8e7fa7179e77693b7ef9b2c17a473a61a2998d1f071fc6ddbf79e90114f"
+        },
+        "labels": {
+          "app.kubernetes.io/name": "enterprise-doc-migrate",
+          "batch.kubernetes.io/controller-uid": "305d2d82-20ac-4bc3-abec-d552a5fac40f",
+          "batch.kubernetes.io/job-name": "enterprise-doc-migrate",
+          "controller-uid": "305d2d82-20ac-4bc3-abec-d552a5fac40f",
+          "job-name": "enterprise-doc-migrate"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "command": [
+              "sh",
+              "-ec",
+              "alembic upgrade head\nenterprise-doc-checkpointer-setup --setup\nenterprise-doc-checkpointer-setup --check\n"
+            ],
+            "envFrom": [
+              {
+                "configMapRef": {
+                  "name": "enterprise-doc-config"
+                }
+              },
+              {
+                "secretRef": {
+                  "name": "enterprise-doc-secrets"
+                }
+              }
+            ],
+            "image": "ghcr.io/drew-z/enterprise-doc-api@sha256:e2cbbc6ba1c5e7463ed21e6663c5a948d467e46bcd187a7cf8b02c50ed53bfff",
+            "imagePullPolicy": "IfNotPresent",
+            "name": "migrate",
+            "resources": {
+              "limits": {
+                "cpu": "500m",
+                "memory": "384Mi"
+              },
+              "requests": {
+                "cpu": "100m",
+                "memory": "192Mi"
+              }
+            },
+            "securityContext": {
+              "allowPrivilegeEscalation": false,
+              "capabilities": {
+                "drop": [
+                  "ALL"
+                ]
+              },
+              "readOnlyRootFilesystem": true
+            },
+            "terminationMessagePath": "/dev/termination-log",
+            "terminationMessagePolicy": "File"
+          }
+        ],
+        "dnsPolicy": "ClusterFirst",
+        "imagePullSecrets": [
+          {
+            "name": "enterprise-doc-registry"
+          }
+        ],
+        "restartPolicy": "OnFailure",
+        "schedulerName": "default-scheduler",
+        "securityContext": {
+          "runAsGroup": 10001,
+          "runAsNonRoot": true,
+          "runAsUser": 10001,
+          "seccompProfile": {
+            "type": "RuntimeDefault"
+          }
+        },
+        "serviceAccount": "enterprise-doc-runtime",
+        "serviceAccountName": "enterprise-doc-runtime",
+        "terminationGracePeriodSeconds": 30
+      }
+    },
+    "ttlSecondsAfterFinished": 86400
+  },
+  "status": {
+    "conditions": [
+      {
+        "lastProbeTime": "2026-09-08T13:08:30Z",
+        "lastTransitionTime": "2026-09-08T13:08:30Z",
+        "message": "Job was active longer than specified deadline",
+        "reason": "DeadlineExceeded",
+        "status": "True",
+        "type": "FailureTarget"
+      },
+      {
+        "lastProbeTime": "2026-09-08T13:09:36Z",
+        "lastTransitionTime": "2026-09-08T13:09:36Z",
+        "message": "Job was active longer than specified deadline",
+        "reason": "DeadlineExceeded",
+        "status": "True",
+        "type": "Failed"
+      }
+    ],
+    "failed": 1,
+    "ready": 0,
+    "startTime": "2026-09-08T12:23:30Z",
+    "terminating": 0,
+    "uncountedTerminatedPods": {}
+  }
+}

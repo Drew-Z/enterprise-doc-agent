@@ -1,0 +1,23 @@
+time="2026-09-09T00:03:26+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-09-09T00:03:26+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-09-09T00:03:26+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+[pod/enterprise-doc-worker-7665578cfc-bq6bk/worker] {"timestamp":"2026-09-08T16:01:47.289724+00:00","level":"INFO","service":"worker","environment":"staging","event":"**********"}
+[pod/enterprise-doc-worker-7665578cfc-bq6bk/worker] {"timestamp":"2026-09-08T16:01:47.289827+00:00","level":"INFO","service":"worker","environment":"staging","event":"Waiting for application startup."}
+[pod/enterprise-doc-worker-7665578cfc-bq6bk/worker] {"timestamp":"2026-09-08T16:01:47.289989+00:00","level":"INFO","service":"worker","environment":"staging","event":"worker_started"}
+[pod/enterprise-doc-worker-7665578cfc-bq6bk/worker] {"timestamp":"2026-09-08T16:01:47.317423+00:00","level":"INFO","service":"worker","environment":"staging","event":"Application startup complete."}
+[pod/enterprise-doc-worker-7665578cfc-bq6bk/worker] {"timestamp":"2026-09-08T16:01:47.317771+00:00","level":"INFO","service":"worker","environment":"staging","event":"**********"}
+[pod/enterprise-doc-worker-7665578cfc-bq6bk/worker] {"timestamp":"2026-09-08T16:01:50.837301+00:00","level":"INFO","service":"worker","environment":"staging","event":"**********"}
+[pod/enterprise-doc-worker-7665578cfc-bq6bk/worker] {"timestamp":"2026-09-08T16:01:53.026697+00:00","level":"INFO","service":"worker","environment":"staging","event":"**********"}
+[pod/enterprise-doc-worker-7665578cfc-bq6bk/worker] {"timestamp":"2026-09-08T16:01:54.049099+00:00","level":"INFO","service":"worker","environment":"staging","event":"**********"}
+[pod/enterprise-doc-worker-7665578cfc-bq6bk/worker] {"timestamp":"2026-09-08T16:02:00.836686+00:00","level":"INFO","service":"worker","environment":"staging","event":"**********"}
+[pod/enterprise-doc-worker-7665578cfc-bq6bk/worker] {"timestamp":"2026-09-08T16:02:10.836741+00:00","level":"INFO","service":"worker","environment":"staging","event":"**********"}
+[pod/enterprise-doc-worker-7665578cfc-bq6bk/worker] {"timestamp":"2026-09-08T16:02:20.836257+00:00","level":"INFO","service":"worker","environment":"staging","event":"**********"}
+[pod/enterprise-doc-worker-7665578cfc-bq6bk/worker] {"timestamp":"2026-09-08T16:02:24.010860+00:00","level":"INFO","service":"worker","environment":"staging","event":"**********"}
+[pod/enterprise-doc-worker-7665578cfc-bq6bk/worker] {"timestamp":"2026-09-08T16:02:30.836311+00:00","level":"INFO","service":"worker","environment":"staging","event":"**********"}
+[pod/enterprise-doc-worker-7665578cfc-bq6bk/worker] {"timestamp":"2026-09-08T16:02:40.836583+00:00","level":"INFO","service":"worker","environment":"staging","event":"**********"}
+[pod/enterprise-doc-worker-7665578cfc-bq6bk/worker] {"timestamp":"2026-09-08T16:02:50.836426+00:00","level":"INFO","service":"worker","environment":"staging","event":"**********"}
+[pod/enterprise-doc-worker-7665578cfc-bq6bk/worker] {"timestamp":"2026-09-08T16:02:54.503902+00:00","level":"INFO","service":"worker","environment":"staging","event":"**********"}
+[pod/enterprise-doc-worker-7665578cfc-bq6bk/worker] {"timestamp":"2026-09-08T16:03:00.836695+00:00","level":"INFO","service":"worker","environment":"staging","event":"**********"}
+[pod/enterprise-doc-worker-7665578cfc-bq6bk/worker] {"timestamp":"2026-09-08T16:03:10.836018+00:00","level":"INFO","service":"worker","environment":"staging","event":"**********"}
+[pod/enterprise-doc-worker-7665578cfc-bq6bk/worker] {"timestamp":"2026-09-08T16:03:20.836243+00:00","level":"INFO","service":"worker","environment":"staging","event":"**********"}
+[pod/enterprise-doc-worker-7665578cfc-bq6bk/worker] {"timestamp":"2026-09-08T16:03:24.289584+00:00","level":"INFO","service":"worker","environment":"staging","event":"**********"}
