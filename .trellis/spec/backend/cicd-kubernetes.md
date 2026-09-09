@@ -95,6 +95,14 @@
   per-request transport budget. The transport budget must cover measured external database and
   ingestion latency without turning a completed request into a client timeout, while remaining
   bounded below the end-to-end gate.
+- Authenticated smoke schema version 2 records both passed and failed execution. The library
+  still raises `StagingSmokeFailure` on failure and attaches its sanitized `report`; the CLI
+  writes/prints that report before exiting 1. Only completed steps and hashed observed IDs
+  are retained, with a canonical terminal state and finite failure code. `sample_count`
+  counts confirmed Agent-run creation, not provider calls, usage or cost. Report-file I/O
+  failure preserves stdout JSON and the original execution failure while still failing the
+  process. The workflow's existing `always()` collector includes the report without changing
+  outcome-based release acceptance.
 - Smoke and governance bearer tokens are short-lived protected-environment credentials. Before a
   deployment window, revalidate the fixed synthetic memberships and issue fresh tokens from the
   current Ready API Pod, piping them directly to the protected GitHub Environment secrets. An
@@ -363,3 +371,66 @@ symptom by granting the Actions runner unrestricted access to containerd.
 Use the profile-specific 1800-second cap for the measured 4C4G cold pull. If it still
 fails, stop the release, validate the receipt-bound OCI relay archive out of band, import
 it with the reviewed receiver, and rerun the unchanged immutable deployment workflow.
+
+## Scenario: Authenticated Smoke Fails Before Acceptance
+
+### 1. Scope / Trigger
+
+A configuration, upload, ingestion, Agent, or artifact validation fails after CLI parsing.
+The failed deployment must retain a machine-readable report without exposing protected data.
+
+### 2. Signatures
+
+- Library: `run_staging_smoke(client, *, timeout_seconds, monotonic, sleep)` returns a passed
+  report or raises `StagingSmokeFailure` with `.report` populated.
+- CLI: `scripts/staging_smoke.py ... --report-path <path>` writes and prints JSON; failure
+  exits 1. `STAGING_SMOKE_TOKEN` remains environment-only.
+
+### 3. Contracts
+
+- `schema_version=2`; `steps` contains confirmed completions only. Artifact listing,
+  downloading, byte/hash verification and citation verification are separate steps.
+- `correlation_sha256` contains only hashes of observed upload-session, document-version,
+  Agent-run and artifact IDs. Raw IDs and raw exceptions/responses never enter the report.
+- `agent_terminal_status` is a known terminal value or null. `sample_count` is 1 only after
+  confirmed Agent-run creation, including a subsequently failed run; otherwise it is 0.
+- `failure` contains `step`, `code`, and nullable `http_status`. Codes are
+  `invalid_configuration`, `http_error`, `transport_error`, `timeout`, `unexpected_error`,
+  `agent_terminal_status`, `contract_validation_failed`, or `report_write_failed`.
+- A failed file write adds `report_output={status: failed, code: report_write_failed}`. It
+  preserves an existing business failure; a previously passed business path becomes a failed
+  report at `report_write`. Stdout JSON remains available, stderr uses a fixed message, and
+  the process exits 1. A writable file is required for the file artifact guarantee.
+- No retries, diagnostic API calls or provider calls are added. Missing diagnostics, request
+  counts and cost remain unmeasured. Existing HTTPS/allowlists, artifact gates and deployment
+  acceptance conditions remain enforced. Timeouts must be finite and positive.
+
+### 4. Validation & Error Matrix
+
+- Upload HTTP 401 -> empty completed steps, sample count 0, HTTP metadata without body/token.
+- Ingestion or Agent polling timeout -> only confirmed earlier steps, terminal state null.
+- Agent failed/refused/cancelled/expired/rejected -> failed report, no artifact fetch.
+- Agent succeeded but artifact bytes/citation invalid -> failed report retaining the Agent
+  success and only completed artifact checks.
+- Malformed response or invalid artifact encoding -> `contract_validation_failed`, no raw text.
+- Missing token or invalid timeout/endpoint -> configuration failure before upload.
+- File write failure -> preserved stdout evidence and nonzero exit.
+
+### 5. Good / Base / Bad
+
+Good: archive the failed report alongside the workflow's failed outcome and keep the release
+unaccepted. Base: one synthetic successful run still follows the same ten client operations.
+Bad: copy exception text or signed URLs, claim an unverified phase completed, treat unknown cost
+as zero, or change the workflow to succeed because a report now exists.
+
+### 6. Tests Required
+
+`tests/deployment/test_staging_smoke.py` exercises CLI output/exit, transport boundaries,
+timeouts, malformed responses, artifact failures and the unchanged success path. Related
+governance smoke, staging RAG evaluator and release-record tests protect imported contracts.
+
+### 7. Limits
+
+Argument-parser rejection, forced process termination and an unwritable output path cannot
+guarantee a file report. Local regression does not prove a staging release passed and does not
+establish the cause of historical Agent failures.

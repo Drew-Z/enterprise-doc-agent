@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/cicd-kubernetes.md", "reason": "Staging smoke and release evidence contract"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Nonzero exit and secret-safe failure boundaries"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Required validation gates"}
+{"file": ".trellis/tasks/07-19-m5-observability-eval-load/research/20260909-v0.1.34-smoke-diagnosis.md", "reason": "Observed missing failure report and root cause limits"}

@@ -1,0 +1,42 @@
+{
+  "id": "staging-smoke-failure-evidence",
+  "name": "staging-smoke-failure-evidence",
+  "title": "Staging smoke failure evidence",
+  "description": "Persist sanitized smoke failure reports while preserving nonzero exit and release gates.",
+  "status": "review",
+  "dev_type": "backend",
+  "scope": "scripts/staging_smoke.py; offline deployment tests; CI/CD report contract",
+  "package": "infrastructure",
+  "priority": "P0",
+  "creator": "developer",
+  "assignee": "developer",
+  "createdAt": "2026-09-09",
+  "completedAt": null,
+  "branch": "main",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "07-19-m6-cicd-kubernetes",
+  "relatedFiles": [
+    "scripts/staging_smoke.py",
+    "tests/deployment/test_staging_smoke.py",
+    ".trellis/spec/backend/cicd-kubernetes.md",
+    ".trellis/tasks/07-17-enterprise-document-agent-platform/implement.md"
+  ],
+  "notes": "Cycle 1 of the user-authorized continuous Trellis main task. Local implementation and validation are authorized; delivery and release acceptance remain separate.",
+  "meta": {
+    "cycle": 1,
+    "requirement_ids": [
+      "M6-R4",
+      "DR-7",
+      "DR-10"
+    ],
+    "baseline_commit": "ffca3d0861ae22c857fef54260b9fc4c083e980e",
+    "local_validation": "passed",
+    "validation_record": ".trellis/tasks/09-09-staging-smoke-failure-evidence/validation.json",
+    "commit_status": "awaiting_confirmation"
+  }
+}

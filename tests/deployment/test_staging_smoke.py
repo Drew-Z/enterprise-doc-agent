@@ -7,7 +7,7 @@ from importlib.util import module_from_spec, spec_from_file_location
 from io import BytesIO
 from pathlib import Path
 from typing import Any
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 from urllib.request import Request
 from urllib.response import addinfourl
 
@@ -22,8 +22,9 @@ SPEC.loader.exec_module(staging_smoke)
 
 
 class FakeClient:
-    def __init__(self) -> None:
+    def __init__(self, *, run_status: str = "succeeded") -> None:
         self.calls: list[tuple[str, str]] = []
+        self.run_status = run_status
         self.artifact_body = json.dumps(
             {
                 "schema_version": 1,
@@ -62,7 +63,7 @@ class FakeClient:
         if path == "/api/agent-runs":
             return {"runId": "run-1"}
         if path == "/api/agent-runs/run-1":
-            return {"status": "succeeded"}
+            return {"status": self.run_status}
         if path == "/api/agent-runs/run-1/artifacts":
             return [
                 {
@@ -319,3 +320,361 @@ def test_staging_smoke_rejects_tampered_artifact_download() -> None:
             monotonic=lambda: 1.0,
             sleep=lambda _: None,
         )
+
+
+def _configure_cli(
+    monkeypatch: pytest.MonkeyPatch,
+    report_path: Path,
+    client: FakeClient,
+) -> None:
+    monkeypatch.setenv("STAGING_SMOKE_TOKEN", "test-only-bearer-secret")
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            str(SCRIPT),
+            "--base-url",
+            "https://staging.example",
+            "--allowed-host",
+            "staging.example",
+            "--allowed-object-store-host",
+            "objects.example",
+            "--report-path",
+            str(report_path),
+        ],
+    )
+    monkeypatch.setattr(staging_smoke, "UrlLibSmokeClient", lambda **_: client)
+
+
+@pytest.mark.parametrize(
+    "terminal_status", ["cancelled", "expired", "failed", "refused", "rejected"]
+)
+def test_main_writes_failed_agent_report_before_exiting(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    terminal_status: str,
+) -> None:
+    class FailedAgentClient(FakeClient):
+        def request_json(self, method: str, path: str, **kwargs: Any) -> Any:
+            result = super().request_json(method, path, **kwargs)
+            if path == "/api/agent-runs/run-1":
+                return {
+                    "status": terminal_status,
+                    "error": "https://objects.example/private?signature=unsafe-secret",
+                    "diagnosticCode": None,
+                    "inputText": "private prompt",
+                }
+            return result
+
+    client = FailedAgentClient()
+    report_path = tmp_path / "nested" / "smoke.json"
+    _configure_cli(monkeypatch, report_path, client)
+
+    with pytest.raises(SystemExit) as stopped:
+        staging_smoke.main()
+
+    assert stopped.value.code == 1
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    captured = capsys.readouterr()
+    assert json.loads(captured.out) == report
+    assert captured.err == ""
+    assert report["schema_version"] == 2
+    assert report["status"] == "failed"
+    assert report["steps"] == [
+        "upload_session_created",
+        "object_uploaded",
+        "upload_completed",
+        "document_ready",
+        "agent_run_created",
+    ]
+    assert report["failure"] == {
+        "step": "agent_run_succeeded",
+        "code": "agent_terminal_status",
+        "http_status": None,
+    }
+    assert report["sample_count"] == 1
+    assert report["agent_terminal_status"] == terminal_status
+    assert report["correlation_sha256"] == {
+        "upload_session_id": hashlib.sha256(b"session-1").hexdigest(),
+        "document_version_id": hashlib.sha256(b"version-1").hexdigest(),
+        "agent_run_id": hashlib.sha256(b"run-1").hexdigest(),
+    }
+    assert client.calls[-1] == ("GET", "/api/agent-runs/run-1")
+    assert len(client.calls) == 7
+    for private_value in (
+        "session-1",
+        "version-1",
+        "run-1",
+        "unsafe-secret",
+        "private prompt",
+        "test-only-bearer-secret",
+    ):
+        assert private_value not in captured.out
+
+
+@pytest.mark.parametrize(
+    ("failure_kind", "expected_code", "http_status"),
+    [
+        ("http", "http_error", 401),
+        ("network", "transport_error", None),
+        ("timeout", "timeout", None),
+        ("io", "transport_error", None),
+        ("unexpected", "unexpected_error", None),
+    ],
+)
+def test_smoke_failure_reports_only_bounded_transport_metadata(
+    monkeypatch: pytest.MonkeyPatch,
+    failure_kind: str,
+    expected_code: str,
+    http_status: int | None,
+) -> None:
+    private_message = "Bearer secret-token https://private.example/?signature=secret-signature"
+    failures = {
+        "http": HTTPError(
+            "https://private.example/?signature=secret-signature",
+            401,
+            private_message,
+            {},
+            BytesIO(b"private response body"),
+        ),
+        "network": URLError(private_message),
+        "timeout": TimeoutError(private_message),
+        "io": OSError(private_message),
+        "unexpected": RuntimeError(private_message),
+    }
+    requests: list[Request] = []
+
+    def failed_urlopen(request: Request, *, timeout: float) -> None:
+        del timeout
+        requests.append(request)
+        raise failures[failure_kind]
+
+    monkeypatch.setattr(staging_smoke, "_open_url_no_redirect", failed_urlopen)
+    client = staging_smoke.UrlLibSmokeClient(
+        base_url="https://staging.example",
+        token="secret-token",
+        allowed_control_plane_hosts=("staging.example",),
+    )
+
+    with pytest.raises(staging_smoke.StagingSmokeFailure) as stopped:
+        staging_smoke.run_staging_smoke(client, timeout_seconds=30)
+
+    report = stopped.value.report
+    assert report is not None
+    assert report["status"] == "failed"
+    assert report["steps"] == []
+    assert report["sample_count"] == 0
+    assert report["correlation_sha256"] == {}
+    assert report["agent_terminal_status"] is None
+    assert report["failure"] == {
+        "step": "upload_session_created",
+        "code": expected_code,
+        "http_status": http_status,
+    }
+    assert len(requests) == 1
+    rendered = json.dumps(report)
+    for private_value in ("secret-token", "secret-signature", "private response body"):
+        assert private_value not in rendered
+
+
+@pytest.mark.parametrize("waiting_for", ["document", "agent"])
+def test_timeout_report_keeps_only_confirmed_progress(waiting_for: str) -> None:
+    class WaitingClient(FakeClient):
+        def request_json(self, method: str, path: str, **kwargs: Any) -> Any:
+            result = super().request_json(method, path, **kwargs)
+            if waiting_for == "document" and path == "/api/agent-runs/ready-document-versions":
+                return []
+            if waiting_for == "agent" and path == "/api/agent-runs/run-1":
+                return {"status": "running", "diagnosticCode": None}
+            return result
+
+    elapsed = 0.0
+
+    def sleep(seconds: float) -> None:
+        nonlocal elapsed
+        elapsed += seconds
+
+    client = WaitingClient()
+    with pytest.raises(staging_smoke.StagingSmokeFailure) as stopped:
+        staging_smoke.run_staging_smoke(
+            client, timeout_seconds=1, monotonic=lambda: elapsed, sleep=sleep
+        )
+
+    report = stopped.value.report
+    assert report is not None
+    assert report["status"] == "failed"
+    assert report["failure"] == {
+        "step": "document_ready" if waiting_for == "document" else "agent_run_succeeded",
+        "code": "timeout",
+        "http_status": None,
+    }
+    assert report["agent_terminal_status"] is None
+    assert report["sample_count"] == (0 if waiting_for == "document" else 1)
+    assert ("document_ready" in report["steps"]) == (waiting_for == "agent")
+    assert not any("artifacts" in path for _, path in client.calls)
+    assert client.calls.count(("POST", "/api/agent-runs")) == report["sample_count"]
+
+
+@pytest.mark.parametrize("invalid", ["missing_token", "zero", "nan", "inf", "url"])
+def test_main_configuration_failure_writes_empty_progress_report(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    invalid: str,
+) -> None:
+    client = FakeClient()
+    client_factory = staging_smoke.UrlLibSmokeClient
+    report_path = tmp_path / "smoke.json"
+    _configure_cli(monkeypatch, report_path, client)
+    if invalid == "missing_token":
+        monkeypatch.delenv("STAGING_SMOKE_TOKEN")
+    elif invalid == "url":
+        monkeypatch.setattr(staging_smoke, "UrlLibSmokeClient", client_factory)
+        monkeypatch.setattr(sys, "argv", [*sys.argv[:2], "http://staging.example", *sys.argv[3:]])
+    else:
+        timeout = "0" if invalid == "zero" else invalid
+        monkeypatch.setattr(sys, "argv", [*sys.argv, "--timeout-seconds", timeout])
+
+    with pytest.raises(SystemExit) as stopped:
+        staging_smoke.main()
+
+    assert stopped.value.code == 1
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert json.loads(capsys.readouterr().out) == report
+    assert report["status"] == "failed"
+    assert report["steps"] == []
+    assert report["correlation_sha256"] == {}
+    assert report["sample_count"] == 0
+    assert report["agent_terminal_status"] is None
+    assert report["failure"] == {
+        "step": "configuration",
+        "code": "invalid_configuration",
+        "http_status": None,
+    }
+    assert client.calls == []
+
+
+@pytest.mark.parametrize("run_status", ["succeeded", "failed"])
+def test_main_report_write_failure_keeps_stdout_report_and_nonzero_exit(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    run_status: str,
+) -> None:
+    # An existing directory cannot be used as the report file on Windows or POSIX.
+    _configure_cli(monkeypatch, tmp_path, FakeClient(run_status=run_status))
+
+    with pytest.raises(SystemExit) as stopped:
+        staging_smoke.main()
+
+    assert stopped.value.code == 1
+    captured = capsys.readouterr()
+    report = json.loads(captured.out)
+    assert report["status"] == "failed"
+    assert report["agent_terminal_status"] == run_status
+    assert report["report_output"] == {"status": "failed", "code": "report_write_failed"}
+    assert report["failure"]["code"] == (
+        "report_write_failed" if run_status == "succeeded" else "agent_terminal_status"
+    )
+    assert ("answer_citation_verified" in report["steps"]) == (run_status == "succeeded")
+    assert captured.err == "Staging smoke report could not be written.\n"
+    assert str(tmp_path) not in captured.out + captured.err
+
+
+@pytest.mark.parametrize("malformed_at", ["upload", "ready", "run"])
+def test_malformed_response_does_not_invent_progress_or_copy_response_text(
+    malformed_at: str,
+) -> None:
+    class MalformedClient(FakeClient):
+        def request_json(self, method: str, path: str, **kwargs: Any) -> Any:
+            result = super().request_json(method, path, **kwargs)
+            if malformed_at == "upload" and path == "/api/upload-sessions":
+                return {"error": "private-response-text"}
+            if malformed_at == "ready" and path == "/api/agent-runs/ready-document-versions":
+                return ["private-response-text"]
+            if malformed_at == "run" and path == "/api/agent-runs/run-1":
+                return {"status": {"body": "private-response-text"}}
+            return result
+
+    with pytest.raises(staging_smoke.StagingSmokeFailure) as stopped:
+        staging_smoke.run_staging_smoke(MalformedClient(), timeout_seconds=1)
+
+    report = stopped.value.report
+    assert report["failure"] == {
+        "step": {
+            "upload": "upload_session_created",
+            "ready": "document_ready",
+            "run": "agent_run_succeeded",
+        }[malformed_at],
+        "code": "contract_validation_failed",
+        "http_status": None,
+    }
+    assert report["sample_count"] == (1 if malformed_at == "run" else 0)
+    assert report["agent_terminal_status"] is None
+    assert "agent_run_succeeded" not in report["steps"]
+    assert "private-response-text" not in json.dumps(report)
+
+
+@pytest.mark.parametrize("artifact_failure", ["sha256", "json", "encoding", "citation"])
+def test_failed_artifact_report_preserves_completed_validation_steps(artifact_failure: str) -> None:
+    class ArtifactClient(FakeClient):
+        def get_bytes(self, url: str) -> bytes:
+            body = super().get_bytes(url)
+            return b"X" * len(body) if artifact_failure == "sha256" else body
+
+    client = ArtifactClient()
+    if artifact_failure == "json":
+        client.artifact_body = b"private invalid json"
+    elif artifact_failure == "encoding":
+        client.artifact_body = b"\xffprivate invalid encoding"
+    elif artifact_failure == "citation":
+        payload = json.loads(client.artifact_body)
+        payload["citations"][0]["excerpt"] = "private unsupported citation"
+        client.artifact_body = json.dumps(payload).encode()
+
+    with pytest.raises(staging_smoke.StagingSmokeFailure) as stopped:
+        staging_smoke.run_staging_smoke(client, timeout_seconds=30)
+
+    report = stopped.value.report
+    assert report["status"] == "failed"
+    assert report["agent_terminal_status"] == "succeeded"
+    assert "answer_artifact_downloaded" in report["steps"]
+    assert ("answer_artifact_sha256_verified" in report["steps"]) == (artifact_failure != "sha256")
+    assert "answer_citation_verified" not in report["steps"]
+    assert report["failure"]["code"] == "contract_validation_failed"
+    assert report["failure"]["step"] == (
+        "answer_artifact_sha256_verified"
+        if artifact_failure == "sha256"
+        else "answer_citation_verified"
+    )
+    assert report["correlation_sha256"]["artifact_id"] == hashlib.sha256(b"artifact-1").hexdigest()
+    assert "private" not in json.dumps(report)
+
+
+def test_main_success_writes_the_same_passed_report_to_file_and_stdout(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    report_path = tmp_path / "smoke.json"
+    client = FakeClient()
+    _configure_cli(monkeypatch, report_path, client)
+
+    staging_smoke.main()
+
+    captured = capsys.readouterr()
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert json.loads(captured.out) == report
+    assert captured.err == ""
+    assert report["status"] == "passed"
+    assert report["sample_count"] == 1
+    assert report["agent_terminal_status"] == "succeeded"
+    assert "failure" not in report
+    assert report["steps"][-4:] == [
+        "answer_artifact_listed",
+        "answer_artifact_downloaded",
+        "answer_artifact_sha256_verified",
+        "answer_citation_verified",
+    ]
+    assert len(client.calls) == 10
