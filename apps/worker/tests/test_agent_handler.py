@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
+import logging
 from dataclasses import replace
 from typing import Any
 from uuid import uuid4
@@ -361,3 +363,40 @@ async def test_checkpoint_failure_reaches_agent_handler_with_safe_diagnostic(
     )
     assert record.event_data["diagnostic_code"] == caught.value.diagnostic_code
     assert "synthetic-private" not in str(record.event_data)
+    for name, value in (
+        ("run", context.run_id),
+        ("execution", context.execution_id),
+        ("job", claim.job_id),
+        ("attempt", claim.attempt_id),
+    ):
+        assert record.event_data[f"{name}_ref"] == hashlib.sha256(str(value).encode()).hexdigest()
+        assert str(value) not in str(record.event_data)
+    assert record.event_data["worker_id"] == claim.worker_id
+
+
+async def test_agent_error_logging_failure_preserves_the_original_diagnostic(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    class BrokenHandler(logging.Handler):
+        def emit(self, record: logging.LogRecord) -> None:
+            raise RuntimeError("synthetic-log-sink-unavailable")
+
+    logger = logging.getLogger("enterprise_doc_worker.agent_handler")
+    caplog.set_level(logging.ERROR, logger=logger.name)
+    monkeypatch.setattr(logger, "handlers", [BrokenHandler()])
+    monkeypatch.setattr(logger, "propagate", False)
+    claim = _claim()
+
+    async def failed(_: AgentExecutionContext) -> None:
+        raise OperationalError("synthetic-private-database-detail")
+
+    handler = AgentExecutionHandler(loader=FakeLoader(_context(claim)), executor=failed)
+
+    with pytest.raises(AgentExecutionRuntimeError) as stopped:
+        await handler(claim)
+
+    assert stopped.value.diagnostic_code == "agent.unexpected.database_operational_error"
+    assert stopped.value.code == "agent_execution_failed"
+    assert isinstance(stopped.value.__cause__, OperationalError)
+    assert stopped.value.retryable is False

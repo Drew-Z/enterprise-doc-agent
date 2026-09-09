@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import hashlib
 import logging
 from collections.abc import Mapping
+from contextlib import suppress
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Protocol
@@ -470,26 +472,40 @@ class AgentExecutionHandler:
             code = getattr(error, "code", None)
             retryable = bool(getattr(error, "retryable", False))
             diagnostic_code = _agent_failure_diagnostic(error)
-            _LOGGER.error(
-                "agent_execution_handler_failed",
-                extra={
-                    "event_data": {
-                        "run_id": str(context.run_id),
-                        "execution_id": str(context.execution_id),
-                        "execution_kind": context.execution_kind,
-                        "error_type": type(error).__name__,
-                        "error_code": code if isinstance(code, str) else None,
-                        "diagnostic_code": diagnostic_code,
-                        "cause_type": (
-                            type(error.__cause__).__name__ if error.__cause__ is not None else None
-                        ),
-                        "exception_group_leaf_count": (
-                            len(error.exceptions) if isinstance(error, ExceptionGroup) else None
-                        ),
-                    }
-                },
-                exc_info=True,
-            )
+            with suppress(Exception):
+                _LOGGER.error(
+                    "agent_execution_handler_failed",
+                    extra={
+                        "event_data": {
+                            "run_ref": hashlib.sha256(
+                                str(context.run_id).encode("utf-8")
+                            ).hexdigest(),
+                            "execution_ref": hashlib.sha256(
+                                str(context.execution_id).encode("utf-8")
+                            ).hexdigest(),
+                            "job_ref": hashlib.sha256(
+                                str(claim.job_id).encode("utf-8")
+                            ).hexdigest(),
+                            "attempt_ref": hashlib.sha256(
+                                str(claim.attempt_id).encode("utf-8")
+                            ).hexdigest(),
+                            "worker_id": claim.worker_id,
+                            "execution_kind": context.execution_kind,
+                            "error_type": type(error).__name__,
+                            "error_code": code if isinstance(code, str) else None,
+                            "diagnostic_code": diagnostic_code,
+                            "cause_type": (
+                                type(error.__cause__).__name__
+                                if error.__cause__ is not None
+                                else None
+                            ),
+                            "exception_group_leaf_count": (
+                                len(error.exceptions) if isinstance(error, ExceptionGroup) else None
+                            ),
+                        }
+                    },
+                    exc_info=True,
+                )
             raise AgentExecutionRuntimeError(
                 code=code,
                 retryable=retryable,

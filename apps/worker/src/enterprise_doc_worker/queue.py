@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
+import logging
 import threading
 from collections.abc import Callable, Coroutine, Mapping
+from contextlib import suppress
 from time import perf_counter
 from typing import Any, Protocol, TypeVar
 from uuid import UUID
@@ -25,6 +28,7 @@ from enterprise_doc_worker.config import WorkerSettings
 JOB_TASK_NAME = "enterprise_doc_worker.execute_job"
 JOB_QUEUE_NAME = "document-ingestion"
 _ResultT = TypeVar("_ResultT")
+_logger = logging.getLogger(__name__)
 
 
 class JobMessage(BaseModel):
@@ -164,6 +168,7 @@ class JobDeliveryConsumer:
         if self.metrics is not None:
             self.metrics.observe_job_claim(job_type=claim.job_type, result="claimed")
 
+        self._log_attempt("job_attempt_claimed", claim)
         try:
             outcome = await self._handle_claim(claim)
         except asyncio.CancelledError:
@@ -174,6 +179,26 @@ class JobDeliveryConsumer:
             raise
         self._observe_job(claim, outcome=outcome, started=started)
         return outcome
+
+    @staticmethod
+    def _log_attempt(event: str, claim: ClaimedJob, **details: object) -> None:
+        # Telemetry failure cannot interrupt a claimed job or undo durable settlement.
+        with suppress(Exception):
+            _logger.info(
+                event,
+                extra={
+                    "event_data": {
+                        "job_ref": hashlib.sha256(str(claim.job_id).encode("utf-8")).hexdigest(),
+                        "attempt_ref": hashlib.sha256(
+                            str(claim.attempt_id).encode("utf-8")
+                        ).hexdigest(),
+                        "attempt_number": claim.attempt_number,
+                        "job_type": claim.job_type,
+                        "worker_id": claim.worker_id,
+                        **details,
+                    }
+                },
+            )
 
     async def _handle_claim(self, claim: ClaimedJob) -> str:
 
@@ -299,6 +324,16 @@ class JobDeliveryConsumer:
                 error_class=type(error).__name__,
                 diagnostic_code=diagnostic_code,
                 failure_metadata=failure_metadata,
+            )
+            self._log_attempt(
+                "job_attempt_failure_recorded",
+                claim,
+                job_status=failure.status,
+                error_code=error_code,
+                error_type=type(error).__name__,
+                diagnostic_code=(
+                    diagnostic_code if is_allowed_job_diagnostic_code(diagnostic_code) else None
+                ),
             )
             return "cancelled" if failure.status == JobStatus.CANCELLED.value else "failed"
         final_status = await self.runtime.succeed(claim)

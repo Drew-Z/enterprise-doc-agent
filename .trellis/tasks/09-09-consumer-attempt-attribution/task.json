@@ -1,0 +1,51 @@
+{
+  "id": "consumer-attempt-attribution",
+  "name": "consumer-attempt-attribution",
+  "title": "Consumer attempt attribution",
+  "description": "Bind each consumer runtime to durable attempts and safe structured failure events, validated with local synthetic failures.",
+  "status": "review",
+  "dev_type": "backend",
+  "scope": "Worker consumer identity, safe attempt events and local composition/persistence regression",
+  "package": "worker",
+  "priority": "P0",
+  "creator": "developer",
+  "assignee": "developer",
+  "createdAt": "2026-09-09",
+  "completedAt": null,
+  "branch": "main",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "07-19-m5-observability-eval-load",
+  "relatedFiles": [
+    "apps/worker/src/enterprise_doc_worker/consumer_main.py",
+    "apps/worker/src/enterprise_doc_worker/queue.py",
+    "apps/worker/src/enterprise_doc_worker/config.py",
+    "apps/worker/src/enterprise_doc_worker/agent_handler.py",
+    "apps/worker/tests/test_consumer_main.py",
+    "apps/worker/tests/test_queue.py",
+    "apps/worker/tests/test_agent_handler.py",
+    "tests/agent/test_consumer_attempt_attribution_integration.py",
+    ".trellis/spec/backend/logging-guidelines.md",
+    ".trellis/tasks/07-17-enterprise-document-agent-platform/implement.md"
+  ],
+  "notes": "Cycle 2 of the user-authorized continuous main task, selected after smoke-failure-report local validation. No historical root-cause or release acceptance claim.",
+  "meta": {
+    "cycle": 2,
+    "requirement_ids": [
+      "M5-R1",
+      "M5-R2",
+      "M5-R4",
+      "M5-R16",
+      "DR-10"
+    ],
+    "baseline_commit": "ffca3d0861ae22c857fef54260b9fc4c083e980e",
+    "depends_on_local_validation": "09-09-staging-smoke-failure-evidence",
+    "local_validation": "passed",
+    "validation_record": ".trellis/tasks/09-09-consumer-attempt-attribution/validation.json",
+    "commit_status": "awaiting_confirmation"
+  }
+}

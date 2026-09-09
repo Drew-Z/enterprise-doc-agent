@@ -1,6 +1,11 @@
 from __future__ import annotations
 
 import asyncio
+import logging
+import os
+import socket
+from contextlib import suppress
+from uuid import uuid4
 
 from celery import Celery
 from prometheus_client import start_http_server
@@ -26,6 +31,13 @@ from enterprise_doc_worker.queue import (
     register_job_task,
 )
 
+_logger = logging.getLogger(__name__)
+
+
+def _new_consumer_worker_id(settings: WorkerSettings) -> str:
+    suffix = f"-{uuid4().hex}"
+    return f"{settings.worker.worker_id[: 200 - len(suffix)]}{suffix}"
+
 
 def _resolve_process_metrics(
     resources: FoundationResources | None,
@@ -47,12 +59,14 @@ def build_consumer_app(
     async_runner: AsyncTaskRunner | None = None,
     agent_handler: AsyncJobHandler | None = None,
     metrics: MetricsRuntime | None = None,
+    worker_id: str | None = None,
 ) -> tuple[Celery, FoundationResources, AsyncTaskRunner]:
     """Build a Celery app that has the real document handler registered.
 
     The probe/publisher process intentionally remains separate. This entrypoint
     is the actual queue consumer and can be scaled independently.
     """
+    resolved_worker_id = worker_id if worker_id is not None else _new_consumer_worker_id(settings)
     resolved_metrics = _resolve_process_metrics(resources, metrics)
     resolved_resources = resources or build_foundation_resources(
         settings,
@@ -73,7 +87,7 @@ def build_consumer_app(
             session_factory=session_factory,
             object_store=resolved_resources.multipart_object_store,
             documents_bucket=settings.object_store.documents_bucket,
-            worker_id=settings.worker.worker_id,
+            worker_id=resolved_worker_id,
             agent_handler=agent_handler,
             metrics=resolved_metrics,
             fault_injection=settings.fault_injection,
@@ -81,10 +95,22 @@ def build_consumer_app(
         ),
         async_runner=resolved_runner,
     )
+    # A failed logging sink or host lookup must not prevent an otherwise valid startup.
+    with suppress(Exception):
+        _logger.info(
+            "worker_consumer_configured",
+            extra={
+                "event_data": {
+                    "worker_id": resolved_worker_id,
+                    "process_id": os.getpid(),
+                    "hostname": socket.gethostname(),
+                }
+            },
+        )
     return app, resolved_resources, resolved_runner
 
 
-def consumer_worker_argv(settings: WorkerSettings) -> list[str]:
+def consumer_worker_argv(settings: WorkerSettings, *, worker_id: str | None = None) -> list[str]:
     return [
         "worker",
         "--loglevel",
@@ -96,13 +122,14 @@ def consumer_worker_argv(settings: WorkerSettings) -> list[str]:
         "--queues",
         JOB_QUEUE_NAME,
         "--hostname",
-        f"{settings.worker.worker_id}@%h",
+        f"{worker_id if worker_id is not None else settings.worker.worker_id}@%h",
     ]
 
 
 def main() -> None:
     ensure_asyncio_compatibility()
     settings = WorkerSettings()
+    worker_id = _new_consumer_worker_id(settings)
     configure_logging(
         service="worker-consumer",
         environment=settings.app_env.value,
@@ -139,8 +166,9 @@ def main() -> None:
             async_runner=async_runner,
             agent_handler=agent_handler,
             metrics=metrics,
+            worker_id=worker_id,
         )
-        app.worker_main(consumer_worker_argv(settings))
+        app.worker_main(consumer_worker_argv(settings, worker_id=worker_id))
     finally:
         if metrics_server is not None:
             metrics_server.shutdown()

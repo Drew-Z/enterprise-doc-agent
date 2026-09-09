@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
+import json
+import logging
 from dataclasses import dataclass, field
 from typing import Any
 from uuid import uuid4
@@ -9,7 +12,8 @@ import pytest
 from pydantic import ValidationError
 
 from enterprise_doc_core.documents.ingestion_service import DocumentIngestionError
-from enterprise_doc_core.jobs import ClaimedJob, JobFailureResult, RetryDisposition
+from enterprise_doc_core.jobs import ClaimedJob, JobFailureResult, JobLeaseLost, RetryDisposition
+from enterprise_doc_core.logging import JsonFormatter
 from enterprise_doc_core.telemetry import MetricsRuntime
 from enterprise_doc_worker.config import WorkerSettings
 from enterprise_doc_worker.queue import (
@@ -122,7 +126,7 @@ async def test_celery_dispatcher_uses_stable_event_id_as_task_id() -> None:
     ]
 
 
-async def test_duplicate_delivery_does_not_call_handler() -> None:
+async def test_duplicate_delivery_does_not_call_handler(caplog: pytest.LogCaptureFixture) -> None:
     runtime = FakeRuntime(None)
     handler_calls = 0
 
@@ -137,8 +141,10 @@ async def test_duplicate_delivery_does_not_call_handler() -> None:
     )
     message = JobMessage(job_id=uuid4(), tenant_id=uuid4(), event_id=uuid4())
 
-    assert await consumer.handle(message) == "duplicate_or_not_claimable"
+    with caplog.at_level(logging.INFO, logger="enterprise_doc_worker.queue"):
+        assert await consumer.handle(message) == "duplicate_or_not_claimable"
     assert handler_calls == 0
+    assert not any(record.msg == "job_attempt_claimed" for record in caplog.records)
 
 
 async def test_consumer_records_bounded_job_metrics() -> None:
@@ -372,3 +378,136 @@ def test_async_task_runner_reuses_one_event_loop() -> None:
     finally:
         runner.close()
         runner.close()
+
+
+async def test_confirmed_attempt_events_correlate_safe_diagnostic_without_raw_values(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    claim = _claim()
+    runtime = FakeRuntime(claim)
+    metrics = MetricsRuntime.create()
+
+    class DiagnosticFailure(JobHandlerError):
+        code = "agent_execution_failed"
+
+    async def handler(_: ClaimedJob) -> None:
+        raise DiagnosticFailure(
+            "synthetic-private-error-text",
+            diagnostic_code="agent.unexpected.runtime_error",
+            failure_metadata={"model_failure": {"raw_output": "synthetic-private-output"}},
+        )
+
+    consumer = JobDeliveryConsumer(
+        runtime=runtime,  # type: ignore[arg-type]
+        worker_id=claim.worker_id,
+        handler=handler,
+        classify_error=lambda _: RetryDisposition.PERMANENT,
+        metrics=metrics,
+    )
+    with caplog.at_level(logging.INFO, logger="enterprise_doc_worker.queue"):
+        assert (
+            await consumer.handle(
+                JobMessage(job_id=claim.job_id, tenant_id=claim.tenant_id, event_id=uuid4())
+            )
+            == "failed"
+        )
+
+    formatter = JsonFormatter(service="worker-consumer", environment="local")
+    records = [
+        json.loads(formatter.format(record))
+        for record in caplog.records
+        if record.name == "enterprise_doc_worker.queue"
+    ]
+    assert [record["event"] for record in records] == [
+        "job_attempt_claimed",
+        "job_attempt_failure_recorded",
+    ]
+    for record in records:
+        assert record["job_ref"] == hashlib.sha256(str(claim.job_id).encode()).hexdigest()
+        assert record["attempt_ref"] == hashlib.sha256(str(claim.attempt_id).encode()).hexdigest()
+        assert record["attempt_number"] == claim.attempt_number
+        assert record["worker_id"] == claim.worker_id
+    failure = records[1]
+    assert failure["job_status"] == "retry_wait"
+    assert failure["error_code"] == "agent_execution_failed"
+    assert failure["error_type"] == "DiagnosticFailure"
+    assert failure["diagnostic_code"] == "agent.unexpected.runtime_error"
+    rendered = json.dumps(records)
+    for excluded in (
+        str(claim.job_id),
+        str(claim.attempt_id),
+        str(claim.tenant_id),
+        str(claim.lease_token),
+        "fencing_token",
+        "synthetic-private",
+        "failure_metadata",
+    ):
+        assert excluded not in rendered
+    metric_text = metrics.render().decode()
+    assert claim.worker_id not in metric_text
+    assert records[0]["job_ref"] not in metric_text
+    assert records[0]["attempt_ref"] not in metric_text
+
+
+async def test_failed_settlement_does_not_claim_failure_was_recorded(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    class LostLeaseRuntime(FakeRuntime):
+        async def fail(self, claim: ClaimedJob, **kwargs: Any) -> JobFailureResult:
+            raise JobLeaseLost()
+
+    claim = _claim()
+
+    async def handler(_: ClaimedJob) -> None:
+        raise JobHandlerError("synthetic-private-error-text")
+
+    consumer = JobDeliveryConsumer(
+        runtime=LostLeaseRuntime(claim),  # type: ignore[arg-type]
+        worker_id=claim.worker_id,
+        handler=handler,
+    )
+    with caplog.at_level(logging.INFO, logger="enterprise_doc_worker.queue"):
+        with pytest.raises(JobLeaseLost):
+            await consumer.handle(
+                JobMessage(job_id=claim.job_id, tenant_id=claim.tenant_id, event_id=uuid4())
+            )
+
+    assert [
+        record.msg for record in caplog.records if record.name == "enterprise_doc_worker.queue"
+    ] == ["job_attempt_claimed"]
+
+
+@pytest.mark.parametrize("failed_event", ["job_attempt_claimed", "job_attempt_failure_recorded"])
+async def test_attempt_logging_failure_does_not_change_business_settlement(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+    failed_event: str,
+) -> None:
+    class BrokenHandler(logging.Handler):
+        def emit(self, record: logging.LogRecord) -> None:
+            if record.msg == failed_event:
+                raise RuntimeError("synthetic-log-sink-unavailable")
+
+    logger = logging.getLogger("enterprise_doc_worker.queue")
+    caplog.set_level(logging.INFO, logger=logger.name)
+    monkeypatch.setattr(logger, "handlers", [BrokenHandler()])
+    monkeypatch.setattr(logger, "propagate", False)
+    claim = _claim()
+    runtime = FakeRuntime(claim)
+
+    async def handler(_: ClaimedJob) -> None:
+        raise JobHandlerError("synthetic-private-error-text")
+
+    consumer = JobDeliveryConsumer(
+        runtime=runtime,  # type: ignore[arg-type]
+        worker_id=claim.worker_id,
+        handler=handler,
+        classify_error=lambda _: RetryDisposition.PERMANENT,
+    )
+    assert (
+        await consumer.handle(
+            JobMessage(job_id=claim.job_id, tenant_id=claim.tenant_id, event_id=uuid4())
+        )
+        == "failed"
+    )
+    assert runtime.failed == [(claim, RetryDisposition.PERMANENT)]
