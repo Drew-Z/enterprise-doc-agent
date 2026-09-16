@@ -1,0 +1,88 @@
+{
+  "status": "passed",
+  "observed_at": "2026-09-16T04:20:56.556817+00:00",
+  "boundary": "local workerd + D1 SQLite + real Chromium",
+  "source_commit": "39db6bad4377dfb3d1d67d71bd589597dff3c352",
+  "source_release": "v1.12.0",
+  "source_files_verified": 210,
+  "source_unchanged": true,
+  "build": {
+    "status": "passed",
+    "run": "04",
+    "manifest_files_excluding_self": 37,
+    "node": "v24.14.0",
+    "pnpm": "10.10.0",
+    "wrangler": "4.129.0",
+    "manifest_sha256": "48ce026cc9360c5644b8b36c4c42fa6b5f72648e39daf96e7d8c176b5cb63f21",
+    "package_inputs_match_repository": true,
+    "build_copy_overrides": [
+      {
+        "path": "frontend/index.html",
+        "reason": "Remove unconditional Turnstile request; this private package disables captcha",
+        "source_sha256": "6e1a389a5a039ae2d9672a40e1364f541ce75a6d1318e9fb4d85991bc8826635",
+        "build_copy_sha256": "683cc86bf2f957ffa0384244c90f9f8a54bc3b65bbf185c8dc432ab3358f1259"
+      }
+    ]
+  },
+  "deployment": {
+    "public_routes_enabled": false,
+    "receive_only": true,
+    "d1_id_placeholder": true,
+    "secrets_absent_from_vars": true,
+    "current_api_token_absent": true,
+    "jwt_pattern_absent": true,
+    "zip_byte_verified": true
+  },
+  "archive": {
+    "path": "delivery/docagent-private-mail-v1.12.0.zip",
+    "bytes": 1772272,
+    "sha256": "47e0999fd25ab1d8dfe76072e617c5cc90bdba62aa1b1d46b55d634e29536e62",
+    "entries": 38
+  },
+  "local_acceptance": {
+    "status": "passed",
+    "report": "evidence/run-04/report.json",
+    "checks": 29,
+    "screenshots_reviewed": 3,
+    "external_requests": 0,
+    "browser_errors": 0,
+    "addresses": 2,
+    "messages": 2,
+    "sends": 0,
+    "resources_stopped": true
+  },
+  "quality": {
+    "status": "passed",
+    "ruff_files": 510,
+    "app_mypy_files": 219,
+    "mail_mypy_files": 3,
+    "backend_passed": 1335,
+    "backend_deselected": 312,
+    "backend_seconds": 63.61,
+    "build_guard_tests_included_in_backend": 10,
+    "node_behavior_passed": 16,
+    "node_behavior_failed": 0,
+    "local_worker_syntax": "passed",
+    "typescript_private_handler": "passed",
+    "note": "Initial combined mypy invocation failed on namespace mapping; --explicit-package-bases passed without code or config suppression."
+  },
+  "preserved_failure_runs": {
+    "build-01": "missing root tsc shim; direct frozen compiler passed",
+    "local-run-01": "unsupported compatibility date; HTTP acceptance never began; cleanup reported failure",
+    "local-run-02": "two unwanted external requests after otherwise passing browser login",
+    "local-run-03": "diagnostics confirmed challenges.cloudflare.com; final build removes unconditional script"
+  },
+  "public_deployment_performed": false,
+  "dns_written": false,
+  "real_email_sent": false,
+  "product_http_identity_journey_verified": false,
+  "commercial_release_ready": false,
+  "completed_at": "2026-09-16T04:49:37.770089+00:00",
+  "cleanup": {
+    "status": "completed",
+    "report": "cleanup-report.json"
+  },
+  "file_protection_status": "scoped_source_preserved_with_preexisting_windows_cache_drift_recorded",
+  "file_protection_report": "workspace-protection.json",
+  "spec_update": ".trellis/spec/infrastructure/backend/cloudflare-mail.md"
+}

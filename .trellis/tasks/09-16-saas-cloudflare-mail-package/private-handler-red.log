@@ -1,0 +1,38 @@
+✖ missing private configuration rejects HTTP and email before upstream access (18.5876ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 99.4781
+
+✖ failing tests:
+
+test at tests\cloudflare_mail\private-handler.test.mjs:5:1
+✖ missing private configuration rejects HTTP and email before upstream access (18.5876ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+  +   emailCalls: 1,
+  +   fetchCalls: 1,
+  +   rejection: undefined,
+  +   status: 200
+  -   emailCalls: 0,
+  -   fetchCalls: 0,
+  -   rejection: 'Mail service unavailable',
+  -   status: 503
+    }
+  
+      at TestContext.<anonymous> (file:///D:/workspace4Cursor/enterprise-doc-agent/tests/cloudflare_mail/private-handler.test.mjs:15:10)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { status: 200, fetchCalls: 1, emailCalls: 1, rejection: undefined },
+    expected: { status: 503, fetchCalls: 0, emailCalls: 0, rejection: 'Mail service unavailable' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

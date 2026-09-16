@@ -1,0 +1,84 @@
+{
+  "observed_at": "2026-09-16T04:35:25.568555+00:00",
+  "status": "ready_for_exact_cleanup",
+  "task_owned_temporary_root": "C:\\Users\\zhang\\AppData\\Local\\Temp\\cf-mail-package-42isorz6",
+  "resolved_root_verified": true,
+  "regular_files": 557269,
+  "apparent_bytes_not_unique_disk_usage": 3714897679,
+  "internal_links": 11872,
+  "outside_links": [],
+  "owned_global_wrangler_logs": [
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Roaming\\xdg.config\\.wrangler\\logs\\wrangler-2026-09-16_03-05-08_887.log",
+      "bytes": 764,
+      "sha256": "d233a726ad33d16dbbd82f7fa9f3fd5c9b61a6294bd094803fa46fbdace9064b",
+      "ownership": [
+        "build-01"
+      ]
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Roaming\\xdg.config\\.wrangler\\logs\\wrangler-2026-09-16_03-05-09_947.log",
+      "bytes": 10134,
+      "sha256": "72b7cf355ccdaf5491c617968ac94c3653c8d48667f3d08a9bfb448168433606",
+      "ownership": [
+        "build-01"
+      ]
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Roaming\\xdg.config\\.wrangler\\logs\\wrangler-2026-09-16_03-05-25_535.log",
+      "bytes": 5604,
+      "sha256": "9f73d893611fb6e3223474ad5cad2613af0ed4adb30736439827c0dc77ab31e4",
+      "ownership": [
+        "build-01"
+      ]
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Roaming\\xdg.config\\.wrangler\\logs\\wrangler-2026-09-16_03-10-00_806.log",
+      "bytes": 764,
+      "sha256": "403a1435ec6b34cc44c50f55df278f980a5391320f400308303297fb0b61206d",
+      "ownership": [
+        "build-02"
+      ]
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Roaming\\xdg.config\\.wrangler\\logs\\wrangler-2026-09-16_03-10-01_879.log",
+      "bytes": 10036,
+      "sha256": "6f50053e2892c646267f28ffcd955f811df3976534ab1356ed23d3df245dad90",
+      "ownership": [
+        "build-02"
+      ]
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Roaming\\xdg.config\\.wrangler\\logs\\wrangler-2026-09-16_03-10-07_855.log",
+      "bytes": 5712,
+      "sha256": "3f813ce22794e518ef5beda52bf1c53af9ac2f571107f1aed53106ac681f6ac7",
+      "ownership": [
+        "build-02"
+      ]
+    }
+  ],
+  "delivery_preserved": "D:\\workspace4Cursor\\enterprise-doc-agent\\.trellis\\tasks\\09-16-saas-cloudflare-mail-package\\delivery",
+  "recovery": "Pinned build recipe and final bundle/evidence retained; local synthetic D1 and dependency caches are expendable.",
+  "retained_candidates": [
+    {
+      "path": "D:\\workspace4Cursor\\enterprise-doc-agent\\%SystemDrive%",
+      "reason": "Pre-existing Windows cache directory; version/content changes observed, origin of writes not determined; no deletion or restoration."
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Roaming\\xdg.config\\.wrangler\\logs",
+      "reason": "Only six logs proven to belong to this task are cleanup candidates; all other files retained."
+    },
+    {
+      "path": "D:\\workspace4Cursor\\enterprise-doc-agent\\tmp\\admin-prereq-v0.1.8-29972941762",
+      "reason": "Existing registered/prunable worktree metadata, outside this task."
+    },
+    {
+      "path": "D:\\workspace4Cursor\\enterprise-doc-agent-actions-minutes",
+      "reason": "Existing clean but unmerged worktree."
+    },
+    {
+      "path": "D:\\workspace4Cursor\\enterprise-doc-agent-admin-v014",
+      "reason": "Existing dirty worktree, outside this task."
+    }
+  ]
+}

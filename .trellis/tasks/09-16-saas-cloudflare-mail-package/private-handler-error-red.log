@@ -1,0 +1,43 @@
+✔ missing private configuration rejects HTTP and email before upstream access (18.3875ms)
+✔ missing site password fails closed for both handlers (0.8616ms)
+✔ missing admin password fails closed for both handlers (0.3315ms)
+✔ missing signing key fails closed for both handlers (0.2949ms)
+✔ malformed JSON fails closed for both handlers (0.3608ms)
+✔ empty array fails closed for both handlers (0.2625ms)
+✔ object instead of list fails closed for both handlers (0.232ms)
+✔ null instead of list fails closed for both handlers (0.2016ms)
+✔ non-string item fails closed for both handlers (0.7038ms)
+✔ short password fails closed for both handlers (0.6469ms)
+✔ whitespace in signing key fails closed for both handlers (0.278ms)
+✔ non-ASCII signing key fails closed for both handlers (0.2213ms)
+✔ same secret across roles fails closed for both handlers (0.1723ms)
+✔ admin bypass enabled fails closed for both handlers (0.1006ms)
+✔ valid independent secrets preserve upstream request, message and execution context (0.7267ms)
+✖ upstream failures are fixed responses without exception or response-body disclosure (0.6833ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 15
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 110.5493
+
+✖ failing tests:
+
+test at tests\cloudflare_mail\private-handler.test.mjs:86:1
+✖ upstream failures are fixed responses without exception or response-body disclosure (0.6833ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  500 !== 503
+  
+      at TestContext.<anonymous> (file:///D:/workspace4Cursor/enterprise-doc-agent/tests/cloudflare_mail/private-handler.test.mjs:93:10)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 500,
+    expected: 503,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

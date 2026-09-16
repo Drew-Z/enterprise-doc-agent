@@ -1,0 +1,66 @@
+
+ ⛅️ wrangler 4.129.0 (update available 4.132.0)
+───────────────────────────────────────────────
+Generating project types...
+
+interface __BaseEnv_Env {
+	DB: D1Database;
+	ASSETS: Fetcher;
+	DEFAULT_LANG: "zh";
+	TITLE: "DocAgent 私有试用邮箱";
+	PREFIX: "";
+	DEFAULT_DOMAINS: ["mailtest.ciallobill.ccwu.cc"];
+	DOMAINS: ["mailtest.ciallobill.ccwu.cc","notify.ciallobill.ccwu.cc"];
+	FRONTEND_URL: "https://inbox.ciallobill.ccwu.cc";
+	BACKEND_URL: "https://inbox.ciallobill.ccwu.cc";
+	DISABLE_ADMIN_PASSWORD_CHECK: false;
+	ENABLE_USER_CREATE_EMAIL: false;
+	DISABLE_ANONYMOUS_USER_CREATE_EMAIL: true;
+	ENABLE_USER_DELETE_EMAIL: false;
+	ENABLE_AUTO_REPLY: false;
+	ENABLE_WEBHOOK: false;
+	ENABLE_ADDRESS_PASSWORD: false;
+	ENABLE_AGENT_EMAIL_INFO: false;
+	ENABLE_REDEEM_CODE: false;
+	ENABLE_AI_EMAIL_EXTRACT: false;
+	ENABLE_ANOTHER_WORKER: false;
+	ENABLE_MAIL_GZIP: false;
+	ENABLE_MAIL_READ_STATUS: true;
+	ENABLE_CREATE_ADDRESS_SUBDOMAIN_MATCH: false;
+	FORWARD_ADDRESS_LIST: [];
+	SUBDOMAIN_FORWARD_ADDRESS_LIST: [];
+	DEFAULT_SEND_BALANCE: 0;
+	ENABLE_INDEX_ABOUT: false;
+	PASSWORDS: string;
+	ADMIN_PASSWORDS: string;
+	JWT_SECRET: string;
+}
+declare namespace Cloudflare {
+	interface GlobalProps {
+		mainModule: typeof import("./private-entry");
+	}
+	interface Env extends __BaseEnv_Env {}
+}
+interface Env extends __BaseEnv_Env {}
+type StringifyValues<EnvType extends Record<string, unknown>> = {
+	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
+};
+declare namespace NodeJS {
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "DEFAULT_LANG" | "TITLE" | "PREFIX" | "DEFAULT_DOMAINS" | "DOMAINS" | "FRONTEND_URL" | "BACKEND_URL" | "DISABLE_ADMIN_PASSWORD_CHECK" | "ENABLE_USER_CREATE_EMAIL" | "DISABLE_ANONYMOUS_USER_CREATE_EMAIL" | "ENABLE_USER_DELETE_EMAIL" | "ENABLE_AUTO_REPLY" | "ENABLE_WEBHOOK" | "ENABLE_ADDRESS_PASSWORD" | "ENABLE_AGENT_EMAIL_INFO" | "ENABLE_REDEEM_CODE" | "ENABLE_AI_EMAIL_EXTRACT" | "ENABLE_ANOTHER_WORKER" | "ENABLE_MAIL_GZIP" | "ENABLE_MAIL_READ_STATUS" | "ENABLE_CREATE_ADDRESS_SUBDOMAIN_MATCH" | "FORWARD_ADDRESS_LIST" | "SUBDOMAIN_FORWARD_ADDRESS_LIST" | "DEFAULT_SEND_BALANCE" | "ENABLE_INDEX_ABOUT" | "PASSWORDS" | "ADMIN_PASSWORDS" | "JWT_SECRET">> {}
+}
+
+Generating runtime types...
+
+Runtime types generated.
+
+
+✨ Types written to C:\Users\zhang\AppData\Local\Temp\cf-mail-package-42isorz6\build-04\upstream\worker\worker-configuration.d.ts
+
+Action required Migrate from @cloudflare/workers-types to generated runtime types
+`wrangler types` now generates runtime types and supersedes @cloudflare/workers-types.
+You should now uninstall @cloudflare/workers-types and remove it from your tsconfig.json.
+
+📖 Read about runtime types
+https://developers.cloudflare.com/workers/languages/typescript/#generate-types
+📣 Remember to rerun 'wrangler types' after you change your wrangler.jsonc file.
+

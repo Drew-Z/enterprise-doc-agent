@@ -1,0 +1,20 @@
+{
+  "reviewed_at": "2026-09-16T04:20:56.531175+00:00",
+  "status": "passed",
+  "method": "Primary agent visually viewed each final Chromium PNG",
+  "screenshots": [
+    {
+      "path": "run-04/private-site-gate.png",
+      "sha256": "47eae609d61a264e48f04cf9a848665dd60e92784e79cfa5036b49b2b12824b1"
+    },
+    {
+      "path": "run-04/mailbox-credential-gate.png",
+      "sha256": "d5c7328cb83c869e75ecf175bcf48a17fe749ab54498d049ddcb8c757bfa0773"
+    },
+    {
+      "path": "run-04/private-owner-inbox.png",
+      "sha256": "7c2fa8bb2038f0eb0ee5a3788107fd87b6be40bc23ee8ba9fee6f52facb7631d"
+    }
+  ],
+  "findings": "Empty site/address credential gates and owner-only synthetic inbox render legibly; no credentials or browser address bar captured."
+}

@@ -1,0 +1,87 @@
+{
+  "status": "completed",
+  "verified_at": "2026-09-16T04:49:37.770089+00:00",
+  "temporary_root_removed": "C:\\Users\\zhang\\AppData\\Local\\Temp\\cf-mail-package-42isorz6",
+  "removed_global_log_paths": [
+    "C:\\Users\\zhang\\AppData\\Roaming\\xdg.config\\.wrangler\\logs\\wrangler-2026-09-16_03-05-08_887.log",
+    "C:\\Users\\zhang\\AppData\\Roaming\\xdg.config\\.wrangler\\logs\\wrangler-2026-09-16_03-05-09_947.log",
+    "C:\\Users\\zhang\\AppData\\Roaming\\xdg.config\\.wrangler\\logs\\wrangler-2026-09-16_03-05-25_535.log",
+    "C:\\Users\\zhang\\AppData\\Roaming\\xdg.config\\.wrangler\\logs\\wrangler-2026-09-16_03-10-00_806.log",
+    "C:\\Users\\zhang\\AppData\\Roaming\\xdg.config\\.wrangler\\logs\\wrangler-2026-09-16_03-10-01_879.log",
+    "C:\\Users\\zhang\\AppData\\Roaming\\xdg.config\\.wrangler\\logs\\wrangler-2026-09-16_03-10-07_855.log"
+  ],
+  "temporary_root_absent": true,
+  "global_logs_absent": true,
+  "recorded_ports_closed": [
+    1718,
+    1747,
+    2752,
+    2776,
+    13960,
+    14668
+  ],
+  "task_matching_process_count": 0,
+  "process_evidence": "evidence/final-process-check.json",
+  "method": "PowerShell Remove-Item -LiteralPath; task root used -Recurse; no Force or shell switching",
+  "outside_link_targets": [],
+  "retained_candidates": [
+    {
+      "path": "D:\\workspace4Cursor\\enterprise-doc-agent\\%SystemDrive%",
+      "reason": "Pre-existing Windows cache directory; version/content changes observed, origin of writes not determined; no deletion or restoration."
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Roaming\\xdg.config\\.wrangler\\logs",
+      "reason": "Only six logs proven to belong to this task are cleanup candidates; all other files retained."
+    },
+    {
+      "path": "D:\\workspace4Cursor\\enterprise-doc-agent\\tmp\\admin-prereq-v0.1.8-29972941762",
+      "reason": "Existing registered/prunable worktree metadata, outside this task."
+    },
+    {
+      "path": "D:\\workspace4Cursor\\enterprise-doc-agent-actions-minutes",
+      "reason": "Existing clean but unmerged worktree."
+    },
+    {
+      "path": "D:\\workspace4Cursor\\enterprise-doc-agent-admin-v014",
+      "reason": "Existing dirty worktree, outside this task."
+    }
+  ],
+  "user_images_retained": [
+    "C:\\Users\\zhang\\AppData\\Local\\Temp\\codex-clipboard-d6aae2d9-0748-445a-8156-2a621d630737.png",
+    "C:\\Users\\zhang\\AppData\\Local\\Temp\\codex-clipboard-f1aecf96-44d6-46fb-825f-1bd18934d941.png"
+  ],
+  "historical_ignored_logs_preserved": [
+    {
+      "path": ".trellis/tasks/09-15-saas-first-use-acceptance/evidence/quality/backend-integration.log",
+      "sha256": "1cea137a9e2a5e32c42341853747b3e297aea859541771e5121aa531b43078fb",
+      "matches_frozen_manifest": true
+    },
+    {
+      "path": ".trellis/tasks/09-15-saas-first-use-acceptance/evidence/quality/backend-unit.log",
+      "sha256": "31b5cc86f58b374b70997a2de6d956667a3fbb2c1776c887a87f627547398c53",
+      "matches_frozen_manifest": true
+    },
+    {
+      "path": ".trellis/tasks/09-15-saas-first-use-acceptance/evidence/quality/web-build.log",
+      "sha256": "190441508727421103c700ee458a8a8a08f1bcc1a45fdfd2a022026a7648a5ef",
+      "matches_frozen_manifest": true
+    },
+    {
+      "path": ".trellis/tasks/09-15-saas-first-use-acceptance/evidence/quality/web-lint.log",
+      "sha256": "de4c2d33ac0a00177a615cf6e1cb3347de25b0a6b888e2b8642a3cb690846f89",
+      "matches_frozen_manifest": true
+    },
+    {
+      "path": ".trellis/tasks/09-15-saas-first-use-acceptance/evidence/quality/web-tests.log",
+      "sha256": "663c18d732237e927e65d02d62ffe140e885c93678a619d4131ca2e567b62841",
+      "matches_frozen_manifest": true
+    },
+    {
+      "path": ".trellis/tasks/09-15-saas-first-use-acceptance/evidence/quality/web-typecheck.log",
+      "sha256": "ed4e17001e6980582bd5fa1401ce20af086aa65365443063efe443da83b8465d",
+      "matches_frozen_manifest": true
+    }
+  ],
+  "failure_report_note": "run-01 still records its original failed cleanup; the later resource check does not rewrite that result.",
+  "delivery_and_evidence_retained": true
+}

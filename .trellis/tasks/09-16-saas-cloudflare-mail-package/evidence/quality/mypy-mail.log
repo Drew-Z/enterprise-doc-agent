@@ -1,0 +1,6 @@
+infra\cloudflare_mail\build.py: error: Source file found twice under different module names: "cloudflare_mail.build" and "infra.cloudflare_mail.build"
+infra\cloudflare_mail\build.py: note: See https://mypy.readthedocs.io/en/stable/running_mypy.html#mapping-file-paths-to-modules for more info
+infra\cloudflare_mail\build.py: note: Common resolutions include:
+infra\cloudflare_mail\build.py: note:     a) adding `__init__.py` somewhere,
+infra\cloudflare_mail\build.py: note:     b) using `--explicit-package-bases` or adjusting `MYPYPATH`
+Found 1 error in 1 file (errors prevented further checking)

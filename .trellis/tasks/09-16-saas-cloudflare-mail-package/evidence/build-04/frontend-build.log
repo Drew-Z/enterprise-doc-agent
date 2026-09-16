@@ -1,0 +1,41 @@
+vite v7.3.6 building client environment for pages...
+transforming...
+✓ 15132 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/registerSW.js                                 0.13 kB
+dist/manifest.webmanifest                          0.28 kB
+dist/index.html                                    1.11 kB │ gzip:   0.50 kB
+dist/assets/mail_parser_wasm_bg-42G7xZO-.wasm    360.60 kB │ gzip: 199.17 kB
+dist/assets/Mail-ZAkRaohU.css                      0.11 kB │ gzip:   0.12 kB
+dist/assets/SendMail-BiDabsrJ.css                  2.10 kB │ gzip:   0.67 kB
+dist/assets/Redeem-B89UJ_db.css                    2.47 kB │ gzip:   0.79 kB
+dist/assets/SendMail-0r4tEGDO.css                  2.74 kB │ gzip:   0.82 kB
+dist/assets/SendMail--jt2Z9VH.css                  2.74 kB │ gzip:   0.82 kB
+dist/assets/Admin-Bju3525J.css                     4.16 kB │ gzip:   1.05 kB
+dist/assets/index-DZ__RPQ7.css                    11.11 kB │ gzip:   2.47 kB
+dist/assets/index-BHtaHxM4.css                    14.76 kB │ gzip:   2.83 kB
+dist/assets/SendOutlined-DilGdSF9.js               0.43 kB │ gzip:   0.33 kB
+dist/assets/Mail-CYPHRmkH.js                       1.31 kB │ gzip:   0.72 kB
+dist/assets/SendMail-BNzwWWSo.js                   6.18 kB │ gzip:   2.33 kB
+dist/assets/SendMail-CfWb0uRx.js                   6.83 kB │ gzip:   2.59 kB
+dist/assets/mail_parser_wasm-cz1zJ7S0.js           7.02 kB │ gzip:   1.95 kB
+dist/assets/SendMail-DMwscubk.js                   7.32 kB │ gzip:   2.81 kB
+dist/assets/Redeem-bzpbw1nu.js                    12.47 kB │ gzip:   3.94 kB
+dist/assets/jszip.min-CLYaVBvx.js                 97.15 kB │ gzip:  30.09 kB
+dist/assets/Admin-BSisj_Z_.js                    257.62 kB │ gzip:  59.54 kB
+dist/assets/index.esm-CU3a6hEP.js                805.83 kB │ gzip: 278.66 kB
+dist/assets/index-Cw8ojkc0.js                  1,653.55 kB │ gzip: 478.89 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 1m 38s
+
+PWA v1.3.0
+mode      generateSW
+precache  2 entries (0.00 KiB)
+files generated
+  dist/sw.js
+  dist/workbox-d1213528.js

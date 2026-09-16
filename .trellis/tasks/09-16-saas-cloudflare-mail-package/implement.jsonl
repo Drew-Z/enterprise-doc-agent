@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/infrastructure/backend/index.md", "reason": "Infrastructure ownership and quality scope"}
+{"file": ".trellis/spec/infrastructure/backend/identity-mail.md", "reason": "Private native mail and existing identity boundary"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Applicable quality checks and secret handling"}
+{"file": ".trellis/tasks/09-16-saas-cloudflare-mail-package/design.md", "reason": "Pinned source, private entry and local delivery boundary"}

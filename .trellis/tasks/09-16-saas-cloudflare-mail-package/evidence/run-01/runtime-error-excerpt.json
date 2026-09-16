@@ -1,0 +1,19 @@
+{
+  "source_sha256": "532a1d9cbf1531be1b7932dfbed662f538eb2aa4584553cfc54761ea92685801",
+  "source_path_at_observation": "C:\\Users\\zhang\\AppData\\Local\\Temp\\cf-mail-package-42isorz6\\local-run-01\\wrangler-logs\\wrangler-2026-09-16_03-16-59_548.log",
+  "excerpt": [
+    {
+      "line": 171,
+      "text": "X [ERROR] service core:user:docagent-mail-local-0d91df6184de: This Worker requires compatibility date \"2026-09-16\", but the newest date supported by this server binary is \"2026-09-10\"."
+    },
+    {
+      "line": 178,
+      "text": " MiniflareCoreError [ERR_RUNTIME_FAILURE]: The Workers runtime failed to start. There was likely a problem with the workerd binary or your configuration."
+    },
+    {
+      "line": 180,
+      "text": "{\"timestamp\":\"1789528628626\",\"level\":\"error\",\"source\":\"src/workerd/server/json-logger.c++:127\",\"message\":\"service core:user:docagent-mail-local-0d91df6184de: This Worker requires compatibility date \\\"2026-09-16\\\", but the newest date supported by this server binary is \\\"2026-09-10\\\".\",\"context_depth\":0}"
+    }
+  ],
+  "full_runtime_log_not_retained": true
+}

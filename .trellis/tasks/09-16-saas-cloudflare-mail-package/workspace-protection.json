@@ -1,0 +1,125 @@
+{
+  "status": "scoped_sources_preserved_cache_drift_recorded",
+  "observed_at": "2026-09-16T04:49:37.770089+00:00",
+  "baseline_paths": 1128,
+  "unchanged_paths": 1121,
+  "intentional_changes": [
+    {
+      "path": ".trellis/spec/foundation-tests/backend/index.md",
+      "baseline_sha256": "639ab0c2a1557d93f26c8307c5bd3f6361f4cd5f2a41bfa34201cc052b2575a1",
+      "current_sha256": "3ec9e8170f75fec7a055390c541334085388ba74b6443fa32e38a6d1f733d491",
+      "exists_now": true,
+      "baseline_git_status": " M"
+    },
+    {
+      "path": ".trellis/spec/infrastructure/backend/index.md",
+      "baseline_sha256": "b88521473aa98800d225ab1a8e6c3ff09f91021abe13e2d0bb04776c4576ef86",
+      "current_sha256": "c40fbba6d830f2f80074be4d13e1edbef24faf856631654964d7feb52ece5619",
+      "exists_now": true,
+      "baseline_git_status": " M"
+    },
+    {
+      "path": ".trellis/tasks/09-11-saas-first-use/task.json",
+      "baseline_sha256": "a3d452dd75db2105b74b66c9a8a7bc7fbfade262c04972aa0d027579f07e3d61",
+      "current_sha256": "00294737f5972476f9aec0ab3a4d5657afe756368750ef0486b4eb82999b202c",
+      "exists_now": true,
+      "baseline_git_status": "??"
+    }
+  ],
+  "unexpected_business_source_changes": [],
+  "preexisting_windows_cache_drift": [
+    {
+      "path": "%SystemDrive%/ProgramData/Microsoft/Windows/Caches/cversions.2.db",
+      "baseline_sha256": "8cab65ec2c95c67d50a9bd42cd154cfa8d91453f4745cc20096fc606d2396f48",
+      "current_sha256": "e264ca0f9b4daf65d80ce8d7156dbb9b7f41b324f2af312691490652cf07ff44",
+      "exists_now": true,
+      "baseline_git_status": "??"
+    },
+    {
+      "path": "%SystemDrive%/ProgramData/Microsoft/Windows/Caches/{6AF0698E-D558-4F6E-9B3C-3716689AF493}.2.ver0x0000000000000001.db",
+      "baseline_sha256": "662001e0e385ce5f91bae8ff06125407495d76b90aa2af9c7e3da33e56836232",
+      "current_sha256": null,
+      "exists_now": false,
+      "baseline_git_status": "??"
+    },
+    {
+      "path": "%SystemDrive%/ProgramData/Microsoft/Windows/Caches/{9424DEC8-7D4E-483E-B34C-73258E7C5390}.2.ver0x0000000000000001.db",
+      "baseline_sha256": "6d2d14653ea800197e3a6ef7425bd1521e170ac17c6c89cc16b487bb9fd47b12",
+      "current_sha256": null,
+      "exists_now": false,
+      "baseline_git_status": "??"
+    },
+    {
+      "path": "%SystemDrive%/ProgramData/Microsoft/Windows/Caches/{DDF571F2-BE98-426D-8288-1A9A39C3FDA2}.2.ver0x0000000000000001.db",
+      "baseline_sha256": "375e11d25904ebfb5684ddcc0d8389d94346c3a16cfade6bb625bfd77fa36d3b",
+      "current_sha256": null,
+      "exists_now": false,
+      "baseline_git_status": "??"
+    }
+  ],
+  "current_cache_files_retained": [
+    {
+      "path": "%SystemDrive%/ProgramData/Microsoft/Windows/Caches/cversions.2.db",
+      "bytes": 16384,
+      "sha256": "e264ca0f9b4daf65d80ce8d7156dbb9b7f41b324f2af312691490652cf07ff44"
+    },
+    {
+      "path": "%SystemDrive%/ProgramData/Microsoft/Windows/Caches/{6AF0698E-D558-4F6E-9B3C-3716689AF493}.2.ver0x0000000000000002.db",
+      "bytes": 309256,
+      "sha256": "3f57f6ca8d99e69f62a59bc44cab95719c9e00adcd7c834f01df8403db6f351c"
+    },
+    {
+      "path": "%SystemDrive%/ProgramData/Microsoft/Windows/Caches/{9424DEC8-7D4E-483E-B34C-73258E7C5390}.2.ver0x0000000000000002.db",
+      "bytes": 1240,
+      "sha256": "950202694533d3c32bc0b6ccf39065e71021e2b1f697d2e63a8fce79114d3c2a"
+    },
+    {
+      "path": "%SystemDrive%/ProgramData/Microsoft/Windows/Caches/{DDF571F2-BE98-426D-8288-1A9A39C3FDA2}.2.ver0x0000000000000002.db",
+      "bytes": 662848,
+      "sha256": "0f1acd43b652efff2653cf8c7e734be89c2157d0d5b6c989929be8ff0f57c49a"
+    }
+  ],
+  "cache_write_origin_verified": false,
+  "cache_restoration_or_deletion_performed": false,
+  "head": "3e0c015a10992006d0bc531c8928e68c4284d7f6",
+  "head_matches_baseline": true,
+  "index_sha256": "cab2b0df834444222dcb3e1a3ba82f2f8b4b2297d60f0eaa6dcd143e16939059",
+  "index_matches_baseline": true,
+  "root_env_remains_absent": true,
+  "historical_ignored_logs_preserved": [
+    {
+      "path": ".trellis/tasks/09-15-saas-first-use-acceptance/evidence/quality/backend-integration.log",
+      "sha256": "1cea137a9e2a5e32c42341853747b3e297aea859541771e5121aa531b43078fb",
+      "matches_frozen_manifest": true
+    },
+    {
+      "path": ".trellis/tasks/09-15-saas-first-use-acceptance/evidence/quality/backend-unit.log",
+      "sha256": "31b5cc86f58b374b70997a2de6d956667a3fbb2c1776c887a87f627547398c53",
+      "matches_frozen_manifest": true
+    },
+    {
+      "path": ".trellis/tasks/09-15-saas-first-use-acceptance/evidence/quality/web-build.log",
+      "sha256": "190441508727421103c700ee458a8a8a08f1bcc1a45fdfd2a022026a7648a5ef",
+      "matches_frozen_manifest": true
+    },
+    {
+      "path": ".trellis/tasks/09-15-saas-first-use-acceptance/evidence/quality/web-lint.log",
+      "sha256": "de4c2d33ac0a00177a615cf6e1cb3347de25b0a6b888e2b8642a3cb690846f89",
+      "matches_frozen_manifest": true
+    },
+    {
+      "path": ".trellis/tasks/09-15-saas-first-use-acceptance/evidence/quality/web-tests.log",
+      "sha256": "663c18d732237e927e65d02d62ffe140e885c93678a619d4131ca2e567b62841",
+      "matches_frozen_manifest": true
+    },
+    {
+      "path": ".trellis/tasks/09-15-saas-first-use-acceptance/evidence/quality/web-typecheck.log",
+      "sha256": "ed4e17001e6980582bd5fa1401ce20af086aa65365443063efe443da83b8465d",
+      "matches_frozen_manifest": true
+    }
+  ],
+  "worktrees": "worktree D:/workspace4Cursor/enterprise-doc-agent\nHEAD 3e0c015a10992006d0bc531c8928e68c4284d7f6\nbranch refs/heads/main\n\nworktree D:/workspace4Cursor/enterprise-doc-agent/tmp/admin-prereq-v0.1.8-29972941762\nHEAD 98c2403799aabcb247d179cc900ad2b6448772e3\ndetached\nprunable gitdir file points to non-existent location\n\nworktree D:/workspace4Cursor/enterprise-doc-agent-actions-minutes\nHEAD e87b8ecf7ff1abb1001181cd995715bf50781f92\nbranch refs/heads/codex/actions-minute-optimization\n\nworktree D:/workspace4Cursor/enterprise-doc-agent-admin-v014\nHEAD 430212b45be1a381012eb69a869acc5d8e5ad76b\ndetached",
+  "worktree_changes_performed": false,
+  "old_delivery_manifests_rewritten": false,
+  "historical_manifest_note": "Prior native-mail snapshot includes parent/spec-index files legitimately changed by this successor; do not claim every old manifest entry still equals current bytes."
+}

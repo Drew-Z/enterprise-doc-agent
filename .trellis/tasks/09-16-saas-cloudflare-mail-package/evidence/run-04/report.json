@@ -1,0 +1,166 @@
+{
+  "status": "passed",
+  "started_at": "2026-09-16T04:03:06.908Z",
+  "checks": [
+    {
+      "name": "receive_only_config",
+      "passed": true
+    },
+    {
+      "name": "schema.sql_initialized",
+      "passed": true
+    },
+    {
+      "name": "private-settings.sql_initialized",
+      "passed": true
+    },
+    {
+      "name": "real_worker_missing_config_returns_503",
+      "passed": true,
+      "http": 503
+    },
+    {
+      "name": "real_worker_missing_config_rejects_email",
+      "passed": true
+    },
+    {
+      "name": "site_password_required",
+      "passed": true,
+      "http": 401
+    },
+    {
+      "name": "wrong_site_password_rejected",
+      "passed": true,
+      "http": 401
+    },
+    {
+      "name": "address_credential_required",
+      "passed": true,
+      "http": 401
+    },
+    {
+      "name": "wrong_address_credential_rejected",
+      "passed": true,
+      "http": 401
+    },
+    {
+      "name": "admin_password_required",
+      "passed": true,
+      "http": 401
+    },
+    {
+      "name": "wrong_admin_password_rejected",
+      "passed": true,
+      "http": 401
+    },
+    {
+      "name": "private_site_and_disabled_features_advertised",
+      "passed": true
+    },
+    {
+      "name": "public_user_registration_disabled",
+      "passed": true,
+      "http": 403
+    },
+    {
+      "name": "public_address_creation_disabled",
+      "passed": true,
+      "http": 403
+    },
+    {
+      "name": "admin_creates_owner01",
+      "passed": true,
+      "http": 200
+    },
+    {
+      "name": "admin_creates_member01",
+      "passed": true,
+      "http": 200
+    },
+    {
+      "name": "unknown_mailbox_rejected",
+      "passed": true,
+      "http": 400
+    },
+    {
+      "name": "local_receive_OWNER_ONLY",
+      "passed": true,
+      "http": 200
+    },
+    {
+      "name": "local_receive_MEMBER_ONLY",
+      "passed": true,
+      "http": 200
+    },
+    {
+      "name": "owner_inbox_isolated",
+      "passed": true
+    },
+    {
+      "name": "member_inbox_isolated",
+      "passed": true
+    },
+    {
+      "name": "member_cannot_fetch_owner_mail_by_id",
+      "passed": true
+    },
+    {
+      "name": "initial_send_balance_zero",
+      "passed": true
+    },
+    {
+      "name": "browser_site_password_accepted",
+      "passed": true
+    },
+    {
+      "name": "browser_address_credential_accepted",
+      "passed": true
+    },
+    {
+      "name": "browser_shows_only_owner_mail",
+      "passed": true
+    },
+    {
+      "name": "browser_has_no_uncaught_errors",
+      "passed": true,
+      "count": 0
+    },
+    {
+      "name": "browser_requires_no_external_requests",
+      "passed": true,
+      "count": 0,
+      "origins": {}
+    },
+    {
+      "name": "persisted_d1_has_only_expected_data",
+      "passed": true,
+      "counts": {
+        "mails": 2,
+        "addresses": 2,
+        "sent": 0
+      }
+    }
+  ],
+  "boundary": "local workerd + D1 SQLite + real Chromium",
+  "public_deployment_performed": false,
+  "real_email_sent": false,
+  "cloudflare_credentials_in_child": false,
+  "secrets_written_to_deployable_bundle": false,
+  "cleanup": {
+    "browser_closed": true,
+    "dev_stopped": true,
+    "proxy_disposed": true,
+    "ports_closed": true
+  },
+  "runtime_config": {
+    "local": true,
+    "d1_remote": false,
+    "compatibility_date": "2026-09-10"
+  },
+  "local_ports": [
+    2752,
+    2776
+  ],
+  "missing_config_email_simulator_http": 400,
+  "finished_at": "2026-09-16T04:03:20.408Z"
+}

@@ -1,0 +1,36 @@
+
+ ⛅️ wrangler 4.129.0 (update available 4.132.0)
+───────────────────────────────────────────────
+✨ Read 28 files from the assets directory C:\Users\zhang\AppData\Local\Temp\cf-mail-package-42isorz6\build-04\upstream\frontend\dist
+Total Upload: 1767.01 KiB / gzip: 512.78 KiB
+Your Worker has access to the following bindings:
+Binding                                                                                   Resource                  
+env.DB (docagent-private-mail)                                                            D1 Database               
+env.ASSETS                                                                                Assets                    
+env.DEFAULT_LANG ("zh")                                                                   Environment Variable      
+env.TITLE ("DocAgent 私有试用邮箱")                                                             Environment Variable      
+env.PREFIX ("")                                                                           Environment Variable      
+env.DEFAULT_DOMAINS (["mailtest.ciallobill.ccwu.cc"])                                     Environment Variable      
+env.DOMAINS (["mailtest.ciallobill.ccwu.cc","notif...)                                    Environment Variable      
+env.FRONTEND_URL ("https://inbox.ciallobill.ccwu.cc")                                     Environment Variable      
+env.BACKEND_URL ("https://inbox.ciallobill.ccwu.cc")                                      Environment Variable      
+env.DISABLE_ADMIN_PASSWORD_CHECK (false)                                                  Environment Variable      
+env.ENABLE_USER_CREATE_EMAIL (false)                                                      Environment Variable      
+env.DISABLE_ANONYMOUS_USER_CREATE_EMAIL (true)                                            Environment Variable      
+env.ENABLE_USER_DELETE_EMAIL (false)                                                      Environment Variable      
+env.ENABLE_AUTO_REPLY (false)                                                             Environment Variable      
+env.ENABLE_WEBHOOK (false)                                                                Environment Variable      
+env.ENABLE_ADDRESS_PASSWORD (false)                                                       Environment Variable      
+env.ENABLE_AGENT_EMAIL_INFO (false)                                                       Environment Variable      
+env.ENABLE_REDEEM_CODE (false)                                                            Environment Variable      
+env.ENABLE_AI_EMAIL_EXTRACT (false)                                                       Environment Variable      
+env.ENABLE_ANOTHER_WORKER (false)                                                         Environment Variable      
+env.ENABLE_MAIL_GZIP (false)                                                              Environment Variable      
+env.ENABLE_MAIL_READ_STATUS (true)                                                        Environment Variable      
+env.ENABLE_CREATE_ADDRESS_SUBDOMAIN_MATCH (false)                                         Environment Variable      
+env.FORWARD_ADDRESS_LIST ([])                                                             Environment Variable      
+env.SUBDOMAIN_FORWARD_ADDRESS_LIST ([])                                                   Environment Variable      
+env.DEFAULT_SEND_BALANCE (0)                                                              Environment Variable      
+env.ENABLE_INDEX_ABOUT (false)                                                            Environment Variable      
+
+--dry-run: exiting now.

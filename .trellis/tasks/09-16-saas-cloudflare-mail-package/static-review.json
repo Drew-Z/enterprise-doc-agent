@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "observed_at": "2026-09-16T04:49:37.770089+00:00",
+  "current_token_found": false,
+  "jwt_pattern_found": false,
+  "parsed_json_files": 34,
+  "package_manifest_hashes_match": true,
+  "package_inputs_match": true,
+  "archive_matches_extracted_bundle": true,
+  "local_markdown_links": {
+    "status": "passed",
+    "checked": 28
+  }
+}

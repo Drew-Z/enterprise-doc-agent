@@ -1,0 +1,214 @@
+{
+  "source_commit": "39db6bad4377dfb3d1d67d71bd589597dff3c352",
+  "source_release": "v1.12.0",
+  "node_version": "v24.14.0",
+  "pnpm_version": "10.10.0",
+  "wrangler_version": "4.129.0",
+  "dependency_install_scripts_enabled": false,
+  "receive_only": true,
+  "public_routes_enabled": false,
+  "real_email_sent": false,
+  "cloudflare_resources_created": false,
+  "build_copy_overrides": [
+    {
+      "path": "frontend/index.html",
+      "reason": "Remove unconditional Turnstile request; this private package disables captcha",
+      "source_sha256": "6e1a389a5a039ae2d9672a40e1364f541ce75a6d1318e9fb4d85991bc8826635",
+      "build_copy_sha256": "683cc86bf2f957ffa0384244c90f9f8a54bc3b65bbf185c8dc432ab3358f1259"
+    }
+  ],
+  "package_inputs": {
+    "build.py": "7efc6ea72d0f0b97abf59bc858f59f2bfd5acdddf261f8379975abfe008b6a1c",
+    "private-handler.mjs": "fb587d805aef7eb6556a4f2825b9c8576ba928a413e89ec7e79932bb760484f8",
+    "private-entry.mjs": "23da930350bc28c0d69d90c63e92fb7c0a691b4b929911000e30db8b72d26144",
+    "wrangler.jsonc": "fe51d55a7b9201cf18dca7b598716106fac9ea14832a6507b0d3b3f05f5399b9",
+    "private-settings.sql": "aea1e9248537beb4cf948dad2de9160425932dd470916629a205e124712a4f18"
+  },
+  "files": [
+    {
+      "path": "assets/assets/Admin-Bju3525J.css",
+      "bytes": 4158,
+      "sha256": "5f190c4acb6ac26c01e0e21c9923f676eeaf3fe2ccba09fa01cce8ea29f191f4"
+    },
+    {
+      "path": "assets/assets/Admin-BSisj_Z_.js",
+      "bytes": 257622,
+      "sha256": "dc6dd93585c06a2fb18998ef3c978135136dcf17fa42d90499a7869bb97837a3"
+    },
+    {
+      "path": "assets/assets/index-BHtaHxM4.css",
+      "bytes": 14758,
+      "sha256": "6d1e225aa21fa65aab7b9e0db3b82be9f5cd33b6167cd20e75ab64193ab297af"
+    },
+    {
+      "path": "assets/assets/index-Cw8ojkc0.js",
+      "bytes": 1653545,
+      "sha256": "5895eefffe9f690221bd9c7ece32b2fe60b69231fad11faffaec175989fc4db1"
+    },
+    {
+      "path": "assets/assets/index-DZ__RPQ7.css",
+      "bytes": 11109,
+      "sha256": "9a40e8436bbe4fa5df85324449c533bd9aa9111a9491e14dc3d89798a2858e55"
+    },
+    {
+      "path": "assets/assets/index.esm-CU3a6hEP.js",
+      "bytes": 805827,
+      "sha256": "755b6885a6f9d94ed24d14594bde8a84d0bf3c4b4ce6cf7e4058010ba665f5e9"
+    },
+    {
+      "path": "assets/assets/jszip.min-CLYaVBvx.js",
+      "bytes": 97147,
+      "sha256": "575c350ee6227742117c7f85f98eb19a00b024c552e0486e7519f397e911703f"
+    },
+    {
+      "path": "assets/assets/Mail-CYPHRmkH.js",
+      "bytes": 1308,
+      "sha256": "74d61f1026ab3ed04bf9b03634e88b9337a63ca63abedc7ee304f5327eb774ec"
+    },
+    {
+      "path": "assets/assets/Mail-ZAkRaohU.css",
+      "bytes": 109,
+      "sha256": "fcf0d23a483adffee1dc10161d4fe349083a3a6387b7736d43689d8a0a1418f4"
+    },
+    {
+      "path": "assets/assets/mail_parser_wasm-cz1zJ7S0.js",
+      "bytes": 7019,
+      "sha256": "fd2a8f2996678a599f9bfe889e2b97ced45692fe3bd37e5312988b63da5d8630"
+    },
+    {
+      "path": "assets/assets/mail_parser_wasm_bg-42G7xZO-.wasm",
+      "bytes": 360603,
+      "sha256": "7c6aa8b83be17cea23f08493a8216725dccfab15a8b1198a2bb35cdd6081ddb1"
+    },
+    {
+      "path": "assets/assets/Redeem-B89UJ_db.css",
+      "bytes": 2465,
+      "sha256": "03cd7a0a63f9e3d7d50caffca0cf7258ddbad5ae9b53ebd77219b866818a9278"
+    },
+    {
+      "path": "assets/assets/Redeem-bzpbw1nu.js",
+      "bytes": 12468,
+      "sha256": "aaca51c6db2b086ad7729eed7c2c552f52f7d57709ab377891710e6fb9560a1f"
+    },
+    {
+      "path": "assets/assets/SendMail--jt2Z9VH.css",
+      "bytes": 2742,
+      "sha256": "650b1605d842c1b50541e1e65d4a6e3882f776ad6a2978dd2a0d61b9369dfe5f"
+    },
+    {
+      "path": "assets/assets/SendMail-0r4tEGDO.css",
+      "bytes": 2742,
+      "sha256": "2452f948c0560cb948f82da230e11bd45b234f989be4b3020b715da1e6f3f55c"
+    },
+    {
+      "path": "assets/assets/SendMail-BiDabsrJ.css",
+      "bytes": 2096,
+      "sha256": "ab37d1d8bc07cb5d0e575387fe4125a544f931c917562d9d182ec18ad0103322"
+    },
+    {
+      "path": "assets/assets/SendMail-BNzwWWSo.js",
+      "bytes": 6182,
+      "sha256": "f43815fffc5cee55ceefe024963764c93f8307e268ff40796b285d506e05f3e1"
+    },
+    {
+      "path": "assets/assets/SendMail-CfWb0uRx.js",
+      "bytes": 6832,
+      "sha256": "a9a4565a2a70a127d7edc0ca3775106a3398d87fb0022135f64a491583a8b9d3"
+    },
+    {
+      "path": "assets/assets/SendMail-DMwscubk.js",
+      "bytes": 7317,
+      "sha256": "99fac87680e680c31160a1d6f62c8d3b1f7fd063321f565a510373fb9203ffe0"
+    },
+    {
+      "path": "assets/assets/SendOutlined-DilGdSF9.js",
+      "bytes": 428,
+      "sha256": "8f69f4c41c89f19b0d542da5ef27fe464a36bea403b5cc30405f2624d61ec590"
+    },
+    {
+      "path": "assets/favicon.ico",
+      "bytes": 4286,
+      "sha256": "db74ab0b78338c1f778f8398c45f4103c99aea0e845a3118a7750b4eeafd3445"
+    },
+    {
+      "path": "assets/index.html",
+      "bytes": 1112,
+      "sha256": "68a53a302f9fd8298ab6d443072d4b20612f5787733c523233f7d97141f4e4db"
+    },
+    {
+      "path": "assets/logo.png",
+      "bytes": 5789,
+      "sha256": "c14d80049b77268a7c4f2c4f2f06c60a88e6267323780db570dc0d34a9182aac"
+    },
+    {
+      "path": "assets/manifest.webmanifest",
+      "bytes": 276,
+      "sha256": "01e1c21dc7fe010309adab9c428030860102a969af21f3be7e9277b64159234d"
+    },
+    {
+      "path": "assets/registerSW.js",
+      "bytes": 134,
+      "sha256": "9742073ef7fc795e7673d98f272992843298426a0ffd8cb3507784df5143608b"
+    },
+    {
+      "path": "assets/sw.js",
+      "bytes": 940,
+      "sha256": "4d24d867fc902619475d7e5de782b56b220a106e3caa7f145d7aba0e8af6b9ec"
+    },
+    {
+      "path": "assets/workbox-d1213528.js",
+      "bytes": 14617,
+      "sha256": "4066903f105a9de9e7b7a74d9a62fc3478634945c9bddf8497affb4150d22041"
+    },
+    {
+      "path": "LICENSE.upstream",
+      "bytes": 1069,
+      "sha256": "849b1edb1863d340b536f439ca5b61c8c782453abbbc5b90146a04a268c76597"
+    },
+    {
+      "path": "private-settings.sql",
+      "bytes": 415,
+      "sha256": "aea1e9248537beb4cf948dad2de9160425932dd470916629a205e124712a4f18"
+    },
+    {
+      "path": "provenance/frontend-pnpm-lock.yaml",
+      "bytes": 234853,
+      "sha256": "ace7146e4b7b24c1f6b34d2057532c4f78b80f9c1292439f4801403c5a35d0aa"
+    },
+    {
+      "path": "provenance/source.lock.json",
+      "bytes": 49802,
+      "sha256": "992ca99257b89cf86b18f6d22171fa59e95474e12563227fbf3152283617cf4b"
+    },
+    {
+      "path": "provenance/worker-pnpm-lock.yaml",
+      "bytes": 120058,
+      "sha256": "6884ef731c6ad494cc7e9477b29ee6ca3a261a8a3a6b4825973057637e3bb2e8"
+    },
+    {
+      "path": "provenance/wrangler-config-schema.json",
+      "bytes": 353999,
+      "sha256": "3bfa003469906de7d3543c671ab1d8618577aa6d46bdf7e27efc4e5cfed74b92"
+    },
+    {
+      "path": "README.md",
+      "bytes": 6920,
+      "sha256": "e1469f344230078257dcd3cef93b21653d3073009d54e87ef28105a7cd8b4d2d"
+    },
+    {
+      "path": "schema.sql",
+      "bytes": 4174,
+      "sha256": "47028dc0d9fe216abe1b176e29d0d31e15850a6988f7cff6474e55057242c89f"
+    },
+    {
+      "path": "worker.js",
+      "bytes": 1809416,
+      "sha256": "dfbd83c94768744e4cd79d296c6d922680541440d52ac1e8cd6eeb3fe6a5cdf3"
+    },
+    {
+      "path": "wrangler.jsonc",
+      "bytes": 1912,
+      "sha256": "fe51d55a7b9201cf18dca7b598716106fac9ea14832a6507b0d3b3f05f5399b9"
+    }
+  ]
+}

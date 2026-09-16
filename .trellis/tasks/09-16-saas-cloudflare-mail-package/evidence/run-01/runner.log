@@ -1,0 +1,1 @@
+{"status":"failed","checks":3,"failed_stage":"missing_configuration_on_real_worker","cleanup":{"browser_closed":true,"dev_stopped":false,"proxy_disposed":true,"ports_closed":true}}

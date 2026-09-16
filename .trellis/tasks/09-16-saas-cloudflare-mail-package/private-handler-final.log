@@ -1,0 +1,24 @@
+✔ missing private configuration rejects HTTP and email before upstream access (18.9961ms)
+✔ missing site password fails closed for both handlers (0.8349ms)
+✔ missing admin password fails closed for both handlers (0.3223ms)
+✔ missing signing key fails closed for both handlers (0.2912ms)
+✔ malformed JSON fails closed for both handlers (0.3208ms)
+✔ empty array fails closed for both handlers (0.2423ms)
+✔ object instead of list fails closed for both handlers (0.4143ms)
+✔ null instead of list fails closed for both handlers (0.4039ms)
+✔ non-string item fails closed for both handlers (0.4075ms)
+✔ short password fails closed for both handlers (0.5324ms)
+✔ whitespace in signing key fails closed for both handlers (0.3879ms)
+✔ non-ASCII signing key fails closed for both handlers (0.261ms)
+✔ same secret across roles fails closed for both handlers (0.1655ms)
+✔ admin bypass enabled fails closed for both handlers (0.1067ms)
+✔ valid independent secrets preserve upstream request, message and execution context (0.6815ms)
+✔ upstream failures are fixed responses without exception or response-body disclosure (0.3919ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 16
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 127.6941

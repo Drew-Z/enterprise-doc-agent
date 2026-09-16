@@ -1,0 +1,39 @@
+{
+  "status": "failed",
+  "started_at": "2026-09-16T03:17:01.610Z",
+  "checks": [
+    {
+      "name": "receive_only_config",
+      "passed": true
+    },
+    {
+      "name": "schema.sql_initialized",
+      "passed": true
+    },
+    {
+      "name": "private-settings.sql_initialized",
+      "passed": true
+    }
+  ],
+  "boundary": "local workerd + D1 SQLite + real Chromium",
+  "public_deployment_performed": false,
+  "real_email_sent": false,
+  "cloudflare_credentials_in_child": false,
+  "secrets_written_to_deployable_bundle": false,
+  "cleanup": {
+    "browser_closed": true,
+    "dev_stopped": false,
+    "proxy_disposed": true,
+    "ports_closed": true
+  },
+  "runtime_config": {
+    "local": true,
+    "d1_remote": false,
+    "compatibility_date": "2026-09-16"
+  },
+  "failed_stage": "missing_configuration_on_real_worker",
+  "error_name": "TimeoutError",
+  "error_summary": "The operation was aborted due to timeout",
+  "cleanup_failed": true,
+  "finished_at": "2026-09-16T03:17:18.592Z"
+}

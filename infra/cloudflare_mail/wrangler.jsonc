@@ -1,0 +1,73 @@
+{
+  "$schema": "./provenance/wrangler-config-schema.json",
+  "name": "docagent-private-mail",
+  "main": "worker.js",
+  "account_id": "2741446a7478f2d8a5ff31df7e077f17",
+  "compatibility_date": "2026-09-10",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [],
+  "keep_vars": false,
+  "observability": {
+    "enabled": false
+  },
+  "upload_source_maps": false,
+  "assets": {
+    "directory": "./assets",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "docagent-private-mail",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "remote": false
+    }
+  ],
+  "triggers": {
+    "crons": []
+  },
+  "vars": {
+    "DEFAULT_LANG": "zh",
+    "TITLE": "DocAgent 私有试用邮箱",
+    "PREFIX": "",
+    "DEFAULT_DOMAINS": [
+      "mailtest.ciallobill.ccwu.cc"
+    ],
+    "DOMAINS": [
+      "mailtest.ciallobill.ccwu.cc",
+      "notify.ciallobill.ccwu.cc"
+    ],
+    "FRONTEND_URL": "https://inbox.ciallobill.ccwu.cc",
+    "BACKEND_URL": "https://inbox.ciallobill.ccwu.cc",
+    "DISABLE_ADMIN_PASSWORD_CHECK": false,
+    "ENABLE_USER_CREATE_EMAIL": false,
+    "DISABLE_ANONYMOUS_USER_CREATE_EMAIL": true,
+    "ENABLE_USER_DELETE_EMAIL": false,
+    "ENABLE_AUTO_REPLY": false,
+    "ENABLE_WEBHOOK": false,
+    "ENABLE_ADDRESS_PASSWORD": false,
+    "ENABLE_AGENT_EMAIL_INFO": false,
+    "ENABLE_REDEEM_CODE": false,
+    "ENABLE_AI_EMAIL_EXTRACT": false,
+    "ENABLE_ANOTHER_WORKER": false,
+    "ENABLE_MAIL_GZIP": false,
+    "ENABLE_MAIL_READ_STATUS": true,
+    "ENABLE_CREATE_ADDRESS_SUBDOMAIN_MATCH": false,
+    "FORWARD_ADDRESS_LIST": [],
+    "SUBDOMAIN_FORWARD_ADDRESS_LIST": [],
+    "DEFAULT_SEND_BALANCE": 0,
+    "ENABLE_INDEX_ABOUT": false
+  },
+  "secrets": {
+    "required": [
+      "PASSWORDS",
+      "ADMIN_PASSWORDS",
+      "JWT_SECRET"
+    ]
+  }
+}
