@@ -1,0 +1,20 @@
+{
+  "checked_at": "2026-09-16T07:06:54.817214+00:00",
+  "http": 200,
+  "bundle_html_bytes": 1112,
+  "public_html_bytes": 1112,
+  "bundle_html_sha256": "68a53a302f9fd8298ab6d443072d4b20612f5787733c523233f7d97141f4e4db",
+  "public_html_sha256": "68a53a302f9fd8298ab6d443072d4b20612f5787733c523233f7d97141f4e4db",
+  "same_bytes": true,
+  "scripts": [
+    {
+      "source": "[inline]"
+    },
+    {
+      "source": "/assets/index-Cw8ojkc0.js"
+    },
+    {
+      "source": "/registerSW.js"
+    }
+  ]
+}

@@ -1,0 +1,94 @@
+{
+  "files": [
+    {
+      "file": "evidence/quality/deployment-tests.txt",
+      "bytes": 101,
+      "sha256": "cfcdb00e2a2de6cd8079b7d7e765d416d01e8ff13e6e5032e44e6b008b226f51"
+    },
+    {
+      "file": "evidence/quality/ruff-format.txt",
+      "bytes": 29,
+      "sha256": "bd43ae7f50f6e4467d59ca01a06695bafe769968fd357fd00f6ea67fb364b3e4"
+    },
+    {
+      "file": "evidence/quality/ruff-check.txt",
+      "bytes": 20,
+      "sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0"
+    },
+    {
+      "file": "evidence/quality/application-mypy.txt",
+      "bytes": 46,
+      "sha256": "740b6f6d73760bcb916de78fcedb7518e2de9958cb382f405d09228001134c3a"
+    },
+    {
+      "file": "evidence/quality/mail-mypy.txt",
+      "bytes": 44,
+      "sha256": "718df785efbbd4b57e63b5f64aff2c5b5592e433447681f759b307f97a3ec96a"
+    },
+    {
+      "file": "evidence/quality/backend-tests.txt",
+      "bytes": 1666,
+      "sha256": "1f9193e06deb9cf1877da824d6cfc106b86f04aba09dc3aaa693aa340dd7d8d2"
+    },
+    {
+      "file": "evidence/quality/version-readback-red.txt",
+      "bytes": 3006,
+      "sha256": "7700e087fba4e070a7400b285f613cf4da3d30dd798196659b0e6bbd0f1500f6"
+    },
+    {
+      "file": "evidence/quality/version-readback-green.txt",
+      "bytes": 101,
+      "sha256": "b669517d1d00486f4388859d8c72b85e8dfe359d2028572009483cbf592a6085"
+    },
+    {
+      "file": "evidence/quality/logs-disable-red.txt",
+      "bytes": 4568,
+      "sha256": "42586021f04ceb86eb662881c5a6ffb1732fc65eec6f36c5967607fc5228856b"
+    },
+    {
+      "file": "evidence/quality/logs-disable-green.txt",
+      "bytes": 101,
+      "sha256": "11e985644f9e8eb5333994b307083fd7f25d21b67cca84f332404312ae9386cf"
+    },
+    {
+      "file": "evidence/quality/publication-red.txt",
+      "bytes": 1382,
+      "sha256": "a85cb76aa35839f446013a1213afdb852c43271287146adb62b4f3f3b2d9ca86"
+    },
+    {
+      "file": "evidence/quality/publication-green.txt",
+      "bytes": 101,
+      "sha256": "aa97abb19785ff917fab43fce2f5456f1911fca4b3a2cc4eb8536d835da8aed1"
+    },
+    {
+      "file": "evidence/quality/publication-boundaries.txt",
+      "bytes": 101,
+      "sha256": "662a0ddc24e375d08bc039acdf55d884974bbe95ec3ad73f110401fd9d463ff9"
+    },
+    {
+      "file": "evidence/quality/final-ruff-format.txt",
+      "bytes": 29,
+      "sha256": "bd43ae7f50f6e4467d59ca01a06695bafe769968fd357fd00f6ea67fb364b3e4"
+    },
+    {
+      "file": "evidence/quality/final-ruff-check.txt",
+      "bytes": 20,
+      "sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0"
+    },
+    {
+      "file": "evidence/quality/final-application-mypy.txt",
+      "bytes": 46,
+      "sha256": "740b6f6d73760bcb916de78fcedb7518e2de9958cb382f405d09228001134c3a"
+    },
+    {
+      "file": "evidence/quality/final-mail-mypy.txt",
+      "bytes": 44,
+      "sha256": "718df785efbbd4b57e63b5f64aff2c5b5592e433447681f759b307f97a3ec96a"
+    },
+    {
+      "file": "evidence/quality/final-backend-tests.txt",
+      "bytes": 14273,
+      "sha256": "8a7b6edd18d83c10fe350a1bc2f3b5e7376d7958bda0bcc90f100867b04f46f1"
+    }
+  ]
+}

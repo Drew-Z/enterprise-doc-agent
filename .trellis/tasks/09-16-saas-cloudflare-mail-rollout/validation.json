@@ -1,0 +1,121 @@
+{
+  "validated_at": "2026-09-16T07:43:11.761235+00:00",
+  "status": "passed_for_private_mailbox_HTTPS_foundation",
+  "scope": "Real public HTTPS/API/Chromium with synthetic empty mailboxes; not mail delivery or SaaS commercial acceptance",
+  "source_package_commit": "eca462385da540fef163e80d90e82e55383f05d4",
+  "fixed_manifest_sha256": "48ce026cc9360c5644b8b36c4c42fa6b5f72648e39daf96e7d8c176b5cb63f21",
+  "public_acceptance": {
+    "report": "evidence/public-02/report.json",
+    "checks_passed": 21,
+    "external_requests": 0,
+    "page_errors": 0,
+    "browser_closed": true,
+    "mailbox_creation_evidence": "evidence/public-01/report.json",
+    "first_failed_report_preserved": true,
+    "final_screenshots_reviewed": 3
+  },
+  "cloud_verification": "cloudflare-final-verification.json",
+  "database_counts": {
+    "addresses": 2,
+    "mails": 0,
+    "sent": 0
+  },
+  "worker_logging": {
+    "disable_request_acknowledged": true,
+    "observability_readback": null,
+    "logpush": false,
+    "tail_consumers": null,
+    "report": "publication-01.json"
+  },
+  "web_analytics": {
+    "selected_zone_enabled": false,
+    "other_sites_unchanged": 5,
+    "report": "web-analytics-disable-01.json",
+    "failed_exclusion_report": "web-analytics-exclusion-01.json",
+    "rejection_diagnostic": "web-analytics-rule-diagnostic.json"
+  },
+  "region": {
+    "primary_location_hint": "apac",
+    "read_replication": "disabled",
+    "jurisdiction": null,
+    "observed_query_region": "APAC",
+    "observed_query_colo": "SIN",
+    "fixed_processing_region_guaranteed": false
+  },
+  "quality": {
+    "deployment_boundary_tests": {
+      "passed": 21,
+      "included_in_backend_total": true,
+      "log": "evidence/quality/publication-boundaries.txt"
+    },
+    "backend": {
+      "passed": 1356,
+      "deselected": 312,
+      "seconds": 75.45,
+      "log": "evidence/quality/final-backend-tests.txt"
+    },
+    "ruff_format": {
+      "passed": true,
+      "files": 512,
+      "log": "evidence/quality/final-ruff-format.txt"
+    },
+    "ruff_check": {
+      "passed": true,
+      "log": "evidence/quality/final-ruff-check.txt"
+    },
+    "application_mypy": {
+      "passed": true,
+      "files": 219,
+      "log": "evidence/quality/final-application-mypy.txt"
+    },
+    "mail_mypy": {
+      "passed": true,
+      "files": 5,
+      "log": "evidence/quality/final-mail-mypy.txt"
+    },
+    "node_syntax": true,
+    "powershell_syntax_and_dacl": "credential-acl-final.json"
+  },
+  "tdd_evidence": {
+    "active_version_endpoint": {
+      "red": "evidence/quality/version-readback-red.txt",
+      "green": "evidence/quality/version-readback-green.txt"
+    },
+    "explicit_logging_disable": {
+      "red": "evidence/quality/logs-disable-red.txt",
+      "green": "evidence/quality/logs-disable-green.txt"
+    },
+    "existing_worker_publication": {
+      "red": "evidence/quality/publication-red.txt",
+      "green": "evidence/quality/publication-green.txt"
+    }
+  },
+  "previous_package": {
+    "files_checked": 124,
+    "byte_mismatches": 0,
+    "report": "workspace-preservation.json"
+  },
+  "worktree_protection": {
+    "baseline_paths": 1128,
+    "unchanged_paths": 1125,
+    "intentional_existing_changes": 3,
+    "unexpected_changes": 0,
+    "report": "workspace-preservation.json"
+  },
+  "cleanup": "cleanup-report.json",
+  "recovery": "recovery-reference.json",
+  "not_completed": [
+    "Email Routing subdomain onboarding and actual receipt",
+    "Email Sending onboarding and authorized real send",
+    "Long-lived HTTPS Keycloak and identity hosting region",
+    "Full product OIDC HTTP/session acceptance with Keycloak",
+    "Message retention/deletion and full processing-region decisions",
+    "Real customer pilot and commercial release"
+  ],
+  "real_email_sent": false,
+  "real_email_received_verified": false,
+  "commercial_release_ready": false,
+  "git_commit_executed": false,
+  "pushed": false,
+  "archived": false
+}

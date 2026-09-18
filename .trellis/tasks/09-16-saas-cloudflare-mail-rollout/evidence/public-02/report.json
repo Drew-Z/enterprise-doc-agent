@@ -1,0 +1,110 @@
+{
+  "started_at": "2026-09-16T07:17:47.840Z",
+  "origin": "https://inbox.ciallobill.ccwu.cc",
+  "status": "passed",
+  "boundary": "real_public_HTTPS_API_Chromium_no_mail_delivery",
+  "checks": [
+    {
+      "name": "public_https_available",
+      "passed": true,
+      "http": 200
+    },
+    {
+      "name": "site_password_required",
+      "passed": true,
+      "http": 401
+    },
+    {
+      "name": "wrong_site_password_rejected",
+      "passed": true,
+      "http": 401
+    },
+    {
+      "name": "address_credential_required",
+      "passed": true,
+      "http": 401
+    },
+    {
+      "name": "wrong_address_credential_rejected",
+      "passed": true,
+      "http": 401
+    },
+    {
+      "name": "admin_password_required",
+      "passed": true,
+      "http": 401
+    },
+    {
+      "name": "wrong_admin_password_rejected",
+      "passed": true,
+      "http": 401
+    },
+    {
+      "name": "private_receive_only_features",
+      "passed": true
+    },
+    {
+      "name": "public_user_registration_disabled",
+      "passed": true,
+      "http": 403
+    },
+    {
+      "name": "public_address_creation_disabled",
+      "passed": true,
+      "http": 403
+    },
+    {
+      "name": "expected_owner01_address",
+      "passed": true,
+      "created_this_run": false
+    },
+    {
+      "name": "owner01_empty_authenticated_inbox",
+      "passed": true
+    },
+    {
+      "name": "owner01_zero_send_balance",
+      "passed": true
+    },
+    {
+      "name": "expected_member01_address",
+      "passed": true,
+      "created_this_run": false
+    },
+    {
+      "name": "member01_empty_authenticated_inbox",
+      "passed": true
+    },
+    {
+      "name": "member01_zero_send_balance",
+      "passed": true
+    },
+    {
+      "name": "browser_site_login",
+      "passed": true
+    },
+    {
+      "name": "browser_mailbox_login",
+      "passed": true
+    },
+    {
+      "name": "browser_owner_inbox_visible",
+      "passed": true
+    },
+    {
+      "name": "browser_no_external_requests",
+      "passed": true,
+      "count": 0,
+      "origins": []
+    },
+    {
+      "name": "browser_no_page_errors",
+      "passed": true,
+      "count": 0
+    }
+  ],
+  "real_email_sent": false,
+  "real_email_received_verified": false,
+  "browser_closed": true,
+  "finished_at": "2026-09-16T07:18:05.944Z"
+}

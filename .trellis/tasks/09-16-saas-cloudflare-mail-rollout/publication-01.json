@@ -1,0 +1,335 @@
+{
+  "status": "deployed_pending_https_validation",
+  "operation": "publish_existing_worker",
+  "started_at": "2026-09-16T07:02:11.183411+00:00",
+  "plan": {
+    "account_id": "2741446a7478f2d8a5ff31df7e077f17",
+    "zone_id": "5c093bf35698435cee3dff437c4e3545",
+    "zone_name": "ciallobill.ccwu.cc",
+    "worker_name": "docagent-private-mail",
+    "database_name": "docagent-private-mail",
+    "hostname": "inbox.ciallobill.ccwu.cc",
+    "manifest_sha256": "48ce026cc9360c5644b8b36c4c42fa6b5f72648e39daf96e7d8c176b5cb63f21",
+    "worker_sha256": "dfbd83c94768744e4cd79d296c6d922680541440d52ac1e8cd6eeb3fe6a5cdf3",
+    "asset_count": 27,
+    "primary_location_hint": "apac",
+    "read_replication": {
+      "mode": "disabled"
+    },
+    "fixed_processing_region_guaranteed": false,
+    "receive_only": true,
+    "email_routing_changed": false,
+    "real_email_sent": false
+  },
+  "database_id": "8521706f-87c6-43af-8866-cc0ce95dd5d9",
+  "worker_name": "docagent-private-mail",
+  "source": {
+    "path": "D:\\workspace4Cursor\\enterprise-doc-agent\\.trellis\\tasks\\09-16-saas-cloudflare-mail-rollout\\deployment-resume-03.json",
+    "sha256": "f955064e520c30f9f709c48da6eca942b20dd3755c8b3ede0570e23388b2a3f4"
+  },
+  "expected_worker": {
+    "version_id": "a7b3cb12-0210-4050-bfb6-a4acb69d679c",
+    "deployment_id": "88f4b6ef-1f81-45b7-8e39-37355e05189e",
+    "script_etag": "3271be04ec968e4d884cea1cf15e1ba72aaf39edd2ef140038c99b328e78fd07"
+  },
+  "steps": [
+    {
+      "name": "verify_owned_resources_and_free_hostname",
+      "status": "succeeded"
+    },
+    {
+      "name": "verify_recorded_database",
+      "status": "succeeded"
+    },
+    {
+      "name": "verify_initialized_database",
+      "status": "succeeded"
+    },
+    {
+      "name": "verify_inspected_worker_version",
+      "status": "succeeded"
+    },
+    {
+      "name": "disable_persistent_logging",
+      "status": "succeeded"
+    },
+    {
+      "name": "verify_worker_configuration",
+      "status": "succeeded"
+    },
+    {
+      "name": "attach_web_custom_domain",
+      "status": "succeeded"
+    }
+  ],
+  "api_events": [
+    {
+      "method": "GET",
+      "path": "/zones/5c093bf35698435cee3dff437c4e3545",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/d1/database?per_page=100&page=1",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts?per_page=100&page=1",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/domains?per_page=100&page=1",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/zones/5c093bf35698435cee3dff437c4e3545/dns_records?per_page=100&page=1",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/d1/database/8521706f-87c6-43af-8866-cc0ce95dd5d9",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "POST",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/d1/database/8521706f-87c6-43af-8866-cc0ce95dd5d9/query",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts/docagent-private-mail/deployments",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts/docagent-private-mail/versions/a7b3cb12-0210-4050-bfb6-a4acb69d679c",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts/docagent-private-mail/subdomain",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "PATCH",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts/docagent-private-mail/script-settings",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts/docagent-private-mail/subdomain",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts/docagent-private-mail/deployments",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts/docagent-private-mail/versions/a7b3cb12-0210-4050-bfb6-a4acb69d679c",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts/docagent-private-mail/script-settings",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts/docagent-private-mail/deployments",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/domains?per_page=100&page=1",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/zones/5c093bf35698435cee3dff437c4e3545/dns_records?per_page=100&page=1",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts/docagent-private-mail/deployments",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "PUT",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/domains",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    }
+  ],
+  "real_email_sent": false,
+  "email_routing_changed": false,
+  "resource_creation_replayed": false,
+  "secret_upload_replayed": false,
+  "preflight": {
+    "account_id": "2741446a7478f2d8a5ff31df7e077f17",
+    "zone_id": "5c093bf35698435cee3dff437c4e3545",
+    "zone_status": "active",
+    "existing_database_count": 4,
+    "existing_worker_count": 2,
+    "existing_custom_domain_count": 1,
+    "zone_dns_record_count": 0,
+    "target_names_available": false,
+    "web_hostname_available": true,
+    "recorded_worker_matched": true
+  },
+  "database_verification": {
+    "counts": {
+      "mails": 0,
+      "addresses": 0,
+      "sent": 0
+    },
+    "settings_match_fixed_package": true,
+    "query_metadata": [
+      {
+        "served_by_region": "APAC",
+        "served_by_colo": "SIN",
+        "served_by_primary": true,
+        "changed_db": false,
+        "rows_written": 0
+      },
+      {
+        "served_by_region": "APAC",
+        "served_by_colo": "SIN",
+        "served_by_primary": true,
+        "changed_db": false,
+        "rows_written": 0
+      }
+    ]
+  },
+  "logging_disable": {
+    "requested": {
+      "logpush": false,
+      "tail_consumers": [],
+      "observability": {
+        "enabled": false,
+        "head_sampling_rate": 0,
+        "logs": {
+          "enabled": false,
+          "invocation_logs": false,
+          "persist": false,
+          "head_sampling_rate": 0,
+          "destinations": []
+        },
+        "traces": {
+          "enabled": false,
+          "persist": false,
+          "head_sampling_rate": 0,
+          "destinations": []
+        }
+      }
+    },
+    "acknowledged": true
+  },
+  "worker_verification": {
+    "deployment_id": "88f4b6ef-1f81-45b7-8e39-37355e05189e",
+    "version_id": "a7b3cb12-0210-4050-bfb6-a4acb69d679c",
+    "script_etag": "3271be04ec968e4d884cea1cf15e1ba72aaf39edd2ef140038c99b328e78fd07",
+    "compatibility_date": "2026-09-10",
+    "compatibility_flags": [
+      "nodejs_compat"
+    ],
+    "handlers": [
+      "email",
+      "fetch"
+    ],
+    "binding_names": [
+      "ADMIN_PASSWORDS",
+      "ASSETS",
+      "BACKEND_URL",
+      "DB",
+      "DEFAULT_DOMAINS",
+      "DEFAULT_LANG",
+      "DEFAULT_SEND_BALANCE",
+      "DISABLE_ADMIN_PASSWORD_CHECK",
+      "DISABLE_ANONYMOUS_USER_CREATE_EMAIL",
+      "DOMAINS",
+      "ENABLE_ADDRESS_PASSWORD",
+      "ENABLE_AGENT_EMAIL_INFO",
+      "ENABLE_AI_EMAIL_EXTRACT",
+      "ENABLE_ANOTHER_WORKER",
+      "ENABLE_AUTO_REPLY",
+      "ENABLE_CREATE_ADDRESS_SUBDOMAIN_MATCH",
+      "ENABLE_INDEX_ABOUT",
+      "ENABLE_MAIL_GZIP",
+      "ENABLE_MAIL_READ_STATUS",
+      "ENABLE_REDEEM_CODE",
+      "ENABLE_USER_CREATE_EMAIL",
+      "ENABLE_USER_DELETE_EMAIL",
+      "ENABLE_WEBHOOK",
+      "FORWARD_ADDRESS_LIST",
+      "FRONTEND_URL",
+      "JWT_SECRET",
+      "PASSWORDS",
+      "PREFIX",
+      "SUBDOMAIN_FORWARD_ADDRESS_LIST",
+      "TITLE"
+    ],
+    "dedicated_database_binding_verified": true,
+    "private_secret_bindings_verified": true,
+    "receive_only_bindings_verified": true,
+    "assets_run_worker_first": true,
+    "workers_dev": false,
+    "preview_urls": false,
+    "persistent_worker_logs": false,
+    "observability_readback": null,
+    "logging_disable_acknowledged": true,
+    "logpush": false,
+    "tail_consumers": null
+  },
+  "custom_domain": {
+    "id": "feeff2ffd2c527db565b63384a634477f5634066",
+    "hostname": "inbox.ciallobill.ccwu.cc",
+    "service": "docagent-private-mail",
+    "zone_id": "5c093bf35698435cee3dff437c4e3545",
+    "cert_id": "18204717-cd89-4ac9-8f04-3f87739ee375"
+  },
+  "finished_at": "2026-09-16T07:02:43.275177+00:00"
+}

@@ -1,0 +1,84 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+___ test_null_logging_readback_requires_explicit_disable_before_publication ___
+
+bundle = (WindowsPath('C:/Users/zhang/AppData/Local/Temp/docagent-mail-rollout-vnbff6f5/pytest-logs-disable-red/test_null_logging_readback_req0/synthetic-bundle'), 'a789823125ec89d732a7c8c346f8296fd271d247b932402b421091b2ac7a96bb')
+tmp_path = WindowsPath('C:/Users/zhang/AppData/Local/Temp/docagent-mail-rollout-vnbff6f5/pytest-logs-disable-red/test_null_logging_readback_req0')
+
+    def test_null_logging_readback_requires_explicit_disable_before_publication(
+        bundle: tuple[Path, str], tmp_path: Path
+    ) -> None:
+        from infra.cloudflare_mail.deploy import Api, deploy, prepare
+    
+        fake = FakeCloudflare()
+        fake.script_settings["observability"] = None
+    
+        def respond(request: httpx.Request) -> httpx.Response:
+            response = fake(request)
+            if request.url.path.endswith("/script-settings"):
+                payload = response.json()
+                payload["result"]["observability"] = None
+                return httpx.Response(200, json=payload)
+            return response
+    
+        root, digest = bundle
+        credentials = {
+            "PASSWORDS": json.dumps(["S" * 64]),
+            "ADMIN_PASSWORDS": json.dumps(["A" * 64]),
+            "JWT_SECRET": "J" * 64,
+        }
+        with httpx.Client(transport=httpx.MockTransport(respond)) as client:
+>           state = deploy(
+                prepare(root, manifest_sha256=digest), Api(client, "api-token"),
+                credentials, tmp_path / "state.json"
+            )
+
+tests\cloudflare_mail\test_mail_deploy.py:555: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+infra\cloudflare_mail\deploy.py:735: in deploy
+    state["worker_verification"] = step(
+infra\cloudflare_mail\deploy.py:560: in step
+    result = action()
+             ^^^^^^^^
+infra\cloudflare_mail\deploy.py:736: in <lambda>
+    "verify_worker_configuration", lambda: verify_worker(api, package, database_id)
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+api = <infra.cloudflare_mail.deploy.Api object at 0x000001D9B62DF560>
+package = PreparedPackage(config={'$schema': './provenance/wrangler-config-schema.json', 'name': 'docagent-private-mail', 'main'...thetic deployment fixture</html>'}, manifest_sha256='a789823125ec89d732a7c8c346f8296fd271d247b932402b421091b2ac7a96bb')
+database_id = '11111111-1111-4111-8111-111111111111'
+logging_disable_acknowledged = False
+
+    def verify_worker(
+        api: Api,
+        package: PreparedPackage,
+        database_id: str,
+        *,
+        logging_disable_acknowledged: bool = False,
+    ) -> Json:
+        script = f"/accounts/{ACCOUNT_ID}/workers/scripts/{WORKER_NAME}"
+        subdomain = api.object("GET", script + "/subdomain")
+        if subdomain.get("enabled") is not False or subdomain.get("previews_enabled") is not False:
+            raise DeploymentError("Worker alternate public entrances are not disabled")
+        verified = verify_worker_version(api, package, database_id)
+        settings = api.object("GET", script + "/script-settings")
+        observability = settings.get("observability")
+        # A null response alone does not prove the logging default. Accept it only
+        # after this operation has acknowledged an explicit script-settings disable.
+        disabled = (
+            observability is None and "observability" in settings and logging_disable_acknowledged
+        ) or (isinstance(observability, dict) and observability.get("enabled") is False)
+        if (
+            settings.get("logpush") is not False
+            or "tail_consumers" not in settings
+            or settings["tail_consumers"] not in (None, [])
+            or not disabled
+        ):
+>           raise DeploymentError("Worker persistent logging is not disabled")
+E           infra.cloudflare_mail.deploy.DeploymentError: Worker persistent logging is not disabled
+
+infra\cloudflare_mail\deploy.py:475: DeploymentError
+=========================== short test summary info ===========================
+FAILED tests/cloudflare_mail/test_mail_deploy.py::test_null_logging_readback_requires_explicit_disable_before_publication
+1 failed in 0.51s

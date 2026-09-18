@@ -1,0 +1,237 @@
+{
+  "observed_at": "2026-09-16T05:40:15.501593+00:00",
+  "account_id": "2741446a7478f2d8a5ff31df7e077f17",
+  "zone_id": "5c093bf35698435cee3dff437c4e3545",
+  "zone_name": "ciallobill.ccwu.cc",
+  "reads": {
+    "token": {
+      "path": "/user/tokens/verify",
+      "http": 200,
+      "success": true,
+      "errors": [],
+      "result": {
+        "status": "active"
+      },
+      "result_info": null
+    },
+    "zone": {
+      "path": "/zones/5c093bf35698435cee3dff437c4e3545",
+      "http": 200,
+      "success": true,
+      "errors": [],
+      "result": {
+        "id": "5c093bf35698435cee3dff437c4e3545",
+        "name": "ciallobill.ccwu.cc",
+        "status": "active",
+        "paused": false,
+        "type": "full",
+        "name_servers": [
+          "sue.ns.cloudflare.com",
+          "tim.ns.cloudflare.com"
+        ],
+        "original_name_servers": null
+      },
+      "result_info": null
+    },
+    "dns": {
+      "path": "/zones/5c093bf35698435cee3dff437c4e3545/dns_records?per_page=100",
+      "http": 200,
+      "success": true,
+      "errors": [],
+      "result": [],
+      "result_info": {
+        "page": 1,
+        "per_page": 100,
+        "count": 0,
+        "total_count": 0,
+        "total_pages": 1
+      }
+    },
+    "routing": {
+      "path": "/zones/5c093bf35698435cee3dff437c4e3545/email/routing",
+      "http": 200,
+      "success": true,
+      "errors": [],
+      "result": {
+        "id": "5c093bf35698435cee3dff437c4e3545",
+        "tag": "5c093bf35698435cee3dff437c4e3545",
+        "name": "ciallobill.ccwu.cc",
+        "enabled": false,
+        "created": "2026-09-16T01:07:46.691313Z",
+        "modified": "2026-09-16T01:07:46.691313Z",
+        "skip_wizard": false,
+        "support_subaddress": false,
+        "synced": true,
+        "admin_locked": false,
+        "status": "unconfigured"
+      },
+      "result_info": null
+    },
+    "routing_rules": {
+      "path": "/zones/5c093bf35698435cee3dff437c4e3545/email/routing/rules?per_page=100",
+      "http": 200,
+      "success": true,
+      "errors": [],
+      "result": [
+        {
+          "id": "f7eeee04a8c44c7eb3cbd31c2f82a57c",
+          "tag": "f7eeee04a8c44c7eb3cbd31c2f82a57c",
+          "name": "",
+          "matchers": [
+            {
+              "type": "all"
+            }
+          ],
+          "actions": [
+            {
+              "type": "drop"
+            }
+          ],
+          "enabled": false,
+          "priority": 2147483647,
+          "source": "api"
+        }
+      ],
+      "result_info": {
+        "page": 1,
+        "per_page": 50,
+        "count": 1,
+        "total_count": 1
+      }
+    },
+    "catch_all": {
+      "path": "/zones/5c093bf35698435cee3dff437c4e3545/email/routing/rules/catch_all",
+      "http": 200,
+      "success": true,
+      "errors": [],
+      "result": {
+        "id": "f7eeee04a8c44c7eb3cbd31c2f82a57c",
+        "tag": "f7eeee04a8c44c7eb3cbd31c2f82a57c",
+        "name": "",
+        "matchers": [
+          {
+            "type": "all"
+          }
+        ],
+        "actions": [
+          {
+            "type": "drop"
+          }
+        ],
+        "enabled": false,
+        "priority": 2147483647,
+        "source": "api"
+      },
+      "result_info": null
+    },
+    "databases": {
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/d1/database?per_page=100",
+      "http": 200,
+      "success": true,
+      "errors": [],
+      "result": [
+        {
+          "uuid": "e0864e6e-7d0d-4aa7-83a0-b5e01c9a6d72",
+          "name": "img_d1",
+          "created_at": "2026-08-06T02:38:30.204Z",
+          "version": "production",
+          "num_tables": 0,
+          "file_size": 126976,
+          "jurisdiction": null
+        },
+        {
+          "uuid": "34b77797-a2c9-4cd9-b82a-0d46c5eae318",
+          "name": "dev",
+          "created_at": "2026-03-24T11:25:11.153Z",
+          "version": "production",
+          "num_tables": 0,
+          "file_size": 245760,
+          "jurisdiction": null
+        },
+        {
+          "uuid": "a717117b-7c7d-4b93-8797-34c0457a34ef",
+          "name": "grok2api",
+          "created_at": "2026-03-10T04:35:13.379Z",
+          "version": "production",
+          "num_tables": 0,
+          "file_size": 163840,
+          "jurisdiction": null
+        }
+      ],
+      "result_info": {
+        "count": 3,
+        "page": 1,
+        "per_page": 100,
+        "total_count": 3
+      }
+    },
+    "workers": {
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts",
+      "http": 200,
+      "success": true,
+      "errors": [],
+      "result": [
+        {
+          "id": "polished-heart-b217",
+          "created_on": "2026-03-31T08:34:11.041815Z",
+          "modified_on": "2026-08-18T02:04:23.406797Z",
+          "etag": "0627799a2ac2640fc6ea4679c4a49f7c7a8b5c541016c5d05c275e628647a699",
+          "has_assets": false,
+          "has_modules": true,
+          "handlers": [
+            "fetch"
+          ]
+        }
+      ],
+      "result_info": null
+    },
+    "custom_domains": {
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/domains",
+      "http": 200,
+      "success": true,
+      "errors": null,
+      "result": [
+        {
+          "id": "9504f5b377d766cb89dcc083df9f6cc888b7d6f2",
+          "zone_id": "0571a2a649556dfa2be68c08ef6deb03",
+          "zone_name": "mut.ccwu.cc",
+          "hostname": "heart.mut.ccwu.cc",
+          "service": "polished-heart-b217",
+          "environment": "production",
+          "cert_id": "381b4eb4-01f7-4d9a-b092-368fa66031f4",
+          "previews_enabled": false,
+          "enabled": true
+        }
+      ],
+      "result_info": {
+        "page": 1,
+        "per_page": 1,
+        "count": 1,
+        "total_count": 1
+      }
+    },
+    "routes": {
+      "path": "/zones/5c093bf35698435cee3dff437c4e3545/workers/routes",
+      "http": 200,
+      "success": true,
+      "errors": [],
+      "result": [],
+      "result_info": null
+    },
+    "sending": {
+      "path": "/zones/5c093bf35698435cee3dff437c4e3545/email/sending/subdomains",
+      "http": 401,
+      "success": false,
+      "errors": [
+        {
+          "code": 2036,
+          "message": "Unauthorized"
+        }
+      ],
+      "result": null,
+      "result_info": null
+    }
+  },
+  "mutations_performed": false,
+  "real_email_sent": false
+}

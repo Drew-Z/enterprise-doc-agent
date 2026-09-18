@@ -1,0 +1,40 @@
+{
+  "status": "failed_needs_inspection",
+  "started_at": "2026-09-16T07:13:36.671582+00:00",
+  "source_plan_sha256": "844e942decf7326f16f0e03c9d68e4192485eced5c78445a00eebf937d0e346e",
+  "request": {
+    "host": "inbox.ciallobill.ccwu.cc",
+    "paths": [
+      "*"
+    ],
+    "inclusive": false,
+    "is_paused": false
+  },
+  "ruleset_id": "ca50d3f0-8d97-417d-91f5-61d68932b9ef",
+  "steps": [
+    {
+      "name": "add_hostname_exclusion",
+      "status": "started"
+    }
+  ],
+  "api_events": [
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/rum/v2/ca50d3f0-8d97-417d-91f5-61d68932b9ef/rules",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "POST",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/rum/v2/ca50d3f0-8d97-417d-91f5-61d68932b9ef/rule",
+      "http": 409,
+      "success": false,
+      "error_codes": [
+        10012
+      ]
+    }
+  ],
+  "error": "Cloudflare request failed (HTTP 409, codes [10012])",
+  "finished_at": "2026-09-16T07:13:40.337676+00:00"
+}

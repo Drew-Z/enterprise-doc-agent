@@ -1,0 +1,43 @@
+{
+  "checked_at": "2026-09-16T07:12:15.303439+00:00",
+  "ruleset_id": "ca50d3f0-8d97-417d-91f5-61d68932b9ef",
+  "current": {
+    "ruleset": {
+      "zone_tag": "5c093bf35698435cee3dff437c4e3545",
+      "zone_name": "ciallobill.ccwu.cc",
+      "enabled": true,
+      "id": "ca50d3f0-8d97-417d-91f5-61d68932b9ef",
+      "lite": true
+    },
+    "rules": [
+      {
+        "host": "*",
+        "paths": [
+          "*"
+        ],
+        "inclusive": true,
+        "created": "2026-03-10T03:07:17.772034Z",
+        "is_paused": false,
+        "priority": 1000,
+        "id": "b74d7156-61bd-45da-a32c-b5aa348a93e9"
+      }
+    ]
+  },
+  "api_events": [
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/rum/v2/ca50d3f0-8d97-417d-91f5-61d68932b9ef/rules",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    }
+  ],
+  "proposed_addition": {
+    "host": "inbox.ciallobill.ccwu.cc",
+    "paths": [
+      "*"
+    ],
+    "inclusive": false,
+    "is_paused": false
+  }
+}

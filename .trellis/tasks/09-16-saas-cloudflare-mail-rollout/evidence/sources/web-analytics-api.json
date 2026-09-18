@@ -1,0 +1,19 @@
+{
+  "ok": true,
+  "url": "https://developers.cloudflare.com/api/resources/rum/",
+  "provider": "tavily",
+  "content": "![](/api/_astro/logo.DMYpXs3t.svg)\n\n# RUM\n\n#### RUMSite Info\n\n##### [List Web Analytics sites](/api/resources/rum/subresources/site_info/methods/list)\n\n##### [Get a Web Analytics site](/api/resources/rum/subresources/site_info/methods/get)\n\n##### [Create a Web Analytics site](/api/resources/rum/subresources/site_info/methods/create)\n\n##### [Update a Web Analytics site](/api/resources/rum/subresources/site_info/methods/update)\n\n##### [Delete a Web Analytics site](/api/resources/rum/subresources/site_info/methods/delete)\n\n##### ModelsExpand Collapse\n\nIf enabled, the JavaScript snippet is automatically injected for orange-clouded sites.\n\nA list of rules.\n\nThe Web Analytics rule identifier.\n\nThe hostname the rule will be applied to.\n\nWhether the rule includes or excludes traffic from being measured.\n\nWhether the rule is paused or not.\n\nThe paths the rule will be applied to.\n\nThe Web Analytics ruleset identifier.\n\nWhether the ruleset is enabled.\n\nThe zone identifier.\n\nThe Web Analytics site identifier.\n\nThe Web Analytics site token.\n\nEncoded JavaScript snippet.\n\nThe Web Analytics site identifier.\n\n#### RUMRules\n\n##### [List rules in Web Analytics ruleset](/api/resources/rum/subresources/rules/methods/list)\n\n##### [Create a Web Analytics rule](/api/resources/rum/subresources/rules/methods/create)\n\n##### [Update a Web Analytics rule](/api/resources/rum/subresources/rules/methods/update)\n\n##### [Delete a Web Analytics rule](/api/resources/rum/subresources/rules/methods/delete)\n\n##### [Update Web Analytics rules](/api/resources/rum/subresources/rules/methods/bulk_create)\n\n##### ModelsExpand Collapse\n\nThe Web Analytics rule identifier.\n\nThe hostname the rule will be applied to.\n\nWhether the rule includes or excludes traffic from being measured.\n\nWhether the rule is paused or not.\n\nThe paths the rule will be applied to.\n\nA list of rules.\n\nThe Web Analytics rule identifier.\n\nThe hostname the rule will be applied to.\n\nWhether the rule includes or excludes traffic from being measured.\n\nWhether the rule is paused or not.\n\nThe paths the rule will be applied to.\n\nThe Web Analytics ruleset identifier.\n\nWhether the ruleset is enabled.\n\nThe zone identifier.\n\nThe Web Analytics rule identifier.\n\nA list of rules.\n\nThe Web Analytics rule identifier.\n\nThe hostname the rule will be applied to.\n\nWhether the rule includes or excludes traffic from being measured.\n\nWhether the rule is paused or not.\n\nThe paths the rule will be applied to.\n\nThe Web Analytics ruleset identifier.\n\nWhether the ruleset is enabled.\n\nThe zone identifier.\n\n## Fields\n\n## Site Info\n\n## On this page",
+  "provider_attempts": [
+    {
+      "capability": "web_fetch",
+      "provider": "tavily",
+      "status": "ok",
+      "error_type": "",
+      "error": "",
+      "elapsed_ms": 5054.45,
+      "result_count": 1
+    }
+  ],
+  "fallback_used": false,
+  "elapsed_ms": 5054.46
+}

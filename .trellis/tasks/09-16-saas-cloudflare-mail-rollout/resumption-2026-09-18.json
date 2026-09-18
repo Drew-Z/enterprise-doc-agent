@@ -1,0 +1,206 @@
+{
+  "schema_version": 1,
+  "resumed_at": "2026-09-18T01:19:08.749Z",
+  "source_thread_id": "01a09fbf-ec25-75a2-b40a-3f2bf3cee1d9",
+  "continuation_thread_id": "01a0b20d-7d2c-7730-8a8e-1c0b65de3361",
+  "task": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout",
+  "repository": "D:\\workspace4Cursor\\enterprise-doc-agent",
+  "scope": "Complete missing change inventory and commit plan; read-only live refresh; rerun focused deployment tests",
+  "implementation_changes": false,
+  "cloud_mutations_performed": false,
+  "email_sent": false,
+  "git_commit_executed": false,
+  "pushed": false,
+  "archived": false,
+  "local_audit": {
+    "head": "eca462385da540fef163e80d90e82e55383f05d4",
+    "index_sha256": "1e9e407acae25bfa833b45d4196248748edd0233cc9098fc0c62a8cf3de4184b",
+    "staged_empty": true,
+    "dirty_count": 1225,
+    "baseline_count": 1128,
+    "baseline_unchanged": 1125,
+    "baseline_changed": [
+      {
+        "path": ".trellis/spec/foundation-tests/backend/index.md",
+        "fields": [
+          "bytes",
+          "sha256"
+        ],
+        "after": {
+          "exists": true,
+          "status": " M",
+          "bytes": 3397,
+          "sha256": "0e610710da28859014c26677f12589feb155a0bf8c7a1572d756977e8f5a9b17"
+        }
+      },
+      {
+        "path": ".trellis/spec/infrastructure/backend/index.md",
+        "fields": [
+          "bytes",
+          "sha256"
+        ],
+        "after": {
+          "exists": true,
+          "status": " M",
+          "bytes": 828,
+          "sha256": "35cf168d7734ae75916482c1f18d458dcf1191279c0664a5ddf0a1a88e7c0e24"
+        }
+      },
+      {
+        "path": ".trellis/tasks/09-11-saas-first-use/task.json",
+        "fields": [
+          "bytes",
+          "sha256"
+        ],
+        "after": {
+          "exists": true,
+          "status": "??",
+          "bytes": 15636,
+          "sha256": "9aec4cf4b34b25166e6439656ca5910a74fc8c05c416a021bb53411bc41030a1"
+        }
+      }
+    ],
+    "unexpected_changes": [],
+    "unexpected_new_paths": [],
+    "old_package_files": 124,
+    "old_package_mismatches": [],
+    "evidence_indices": [
+      {
+        "index": "quality-evidence-index.json",
+        "checked": 18,
+        "mismatches": []
+      },
+      {
+        "index": "source-index.json",
+        "checked": 26,
+        "mismatches": []
+      }
+    ],
+    "recovery_checked": 4,
+    "recovery_mismatches": [],
+    "missing_referenced_files": [
+      "changed-files.json",
+      "commit-plan.md"
+    ],
+    "new_files_on_resume": 97
+  },
+  "evidence": {
+    "previous_validation_date": "2026-09-16",
+    "previous_full_backend_result": "1356 passed, 312 deselected",
+    "previous_public_checks": 21,
+    "previous_browser_external_requests": 0,
+    "previous_browser_page_errors": 0,
+    "note": "Previous results checked against preserved evidence and hashes; full backend and browser suites not rerun during this continuation"
+  },
+  "live_readback": {
+    "checked_at": "2026-09-18T01:14:23.591703+00:00",
+    "public_checks": [
+      {
+        "path": "/zh/",
+        "status": 200,
+        "tls_verification": true
+      },
+      {
+        "path": "/api/mails?limit=1&offset=0",
+        "status": 401,
+        "tls_verification": true
+      }
+    ],
+    "cloudflare_token_present": true,
+    "routing": {
+      "http_status": 200,
+      "success": true,
+      "settings": {
+        "enabled": false,
+        "status": "unconfigured",
+        "name": "ciallobill.ccwu.cc"
+      }
+    },
+    "dns": {
+      "http_status": 200,
+      "success": true,
+      "records": [
+        {
+          "type": "AAAA",
+          "name": "inbox.ciallobill.ccwu.cc",
+          "proxied": true
+        }
+      ]
+    },
+    "deployments": {
+      "http_status": 200,
+      "success": true,
+      "latest": [
+        {
+          "id": "88f4b6ef-1f81-45b7-8e39-37355e05189e",
+          "versions": [
+            {
+              "version_id": "a7b3cb12-0210-4050-bfb6-a4acb69d679c",
+              "percentage": 100
+            }
+          ],
+          "created_on": "2026-09-16T06:27:50.443302Z"
+        }
+      ]
+    }
+  },
+  "focused_test": {
+    "command": "python -X utf8 -B -m pytest tests/cloudflare_mail/test_mail_deploy.py -q -p no:cacheprovider --basetemp <new task-owned temp>/pytest",
+    "exit_code": 0,
+    "passed": 21,
+    "elapsed_seconds": 2.21,
+    "log": "evidence/quality/resumption-2026-09-18-deployment-tests.txt"
+  },
+  "implementation_file_hashes": [
+    {
+      "path": "infra/cloudflare_mail/deploy.py",
+      "status": "??",
+      "bytes": 48241,
+      "sha256": "c1b82d5bbdf37cff34ab8998eb2e5896b9cbdd4327f769a83d521ceb26bee530"
+    },
+    {
+      "path": "infra/cloudflare_mail/new-credentials.ps1",
+      "status": "??",
+      "bytes": 4337,
+      "sha256": "ef91976853be488c25d36a663110e0d59843d96ab29833774e64c687ace06b27"
+    },
+    {
+      "path": "tests/cloudflare_mail/public-site.mjs",
+      "status": "??",
+      "bytes": 9743,
+      "sha256": "fc3d2a2514816c1e2e1f48734a290d5b7b3cc8acde340b6d0e7dad378156b0ef"
+    },
+    {
+      "path": "tests/cloudflare_mail/test_mail_deploy.py",
+      "status": "??",
+      "bytes": 28656,
+      "sha256": "6e505268fdfd2d4ae2f7b8994a9822844573e0755010e0035079b8645a134bcb"
+    }
+  ],
+  "secret_scan": {
+    "scope": "Exact site/admin/signing/API secrets and mailbox JWTs compared locally; public email addresses excluded; no values written to output",
+    "files_scanned": 97,
+    "matched_paths": []
+  },
+  "cleanup": {
+    "temporary_root": "C:\\Users\\zhang\\AppData\\Local\\Temp\\docagent-rollout-resume-6y6l5sik",
+    "files_removed": 123,
+    "directories_under_root": 52,
+    "bytes_before_removal": 181505,
+    "removed": true,
+    "method": "PowerShell 7 Remove-Item -LiteralPath <verified exact root> -Recurse; no Force",
+    "retained_legacy_candidate": "D:\\workspace4Cursor\\enterprise-doc-agent\\%SystemDrive%",
+    "reason": "Pre-existing untracked directory; ownership and future use unknown"
+  },
+  "recovery": {
+    "manifest": "D:\\Agent\\codex\\backups\\tasks\\20260916T054248.861Z-saas-cloudflare-mail-rollout\\manifest.json",
+    "existing_group_reused": true,
+    "verified_entities": 4,
+    "new_backup_copies": 0,
+    "note": "Only new task management deliverables added; original baselines retained"
+  },
+  "next_actions": [
+    "Review the exact local commit plan; await one-shot confirmation required by repository workflow Phase 3.4",
+    "Cloudflare Dashboard onboarding for mailtest subdomain remains necessary before routing and delivery validation"
+  ]
+}

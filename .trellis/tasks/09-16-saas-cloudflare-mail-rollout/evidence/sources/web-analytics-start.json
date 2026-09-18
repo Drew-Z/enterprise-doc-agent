@@ -1,0 +1,19 @@
+{
+  "ok": true,
+  "url": "https://developers.cloudflare.com/web-analytics/get-started/",
+  "provider": "tavily",
+  "content": "[Skip to content](#main-content)\n> Documentation Index  \n> Fetch the complete documentation index at: https://developers.cloudflare.com/web-analytics/llms.txt  \n> Use this file to discover all available pages before exploring further.\n\n[![](/_astro/logo.te5VL_aD.svg)Docs](/)\n\n[Log inDashboard](https://dash.cloudflare.com/)\n\n# Get started\n\nLast updated ||[View as Markdown](index.md)|[Agent setup](/agent-setup/)\n\n## Sites not proxied through Cloudflare\n\n1. In the Cloudflare dashboard, go to the **Web Analytics** page.\n\n   [Go to **Web analytics** ↗](https://dash.cloudflare.com/?to=/:account/web-analytics)\n2. Select **Add a site**.\n3. In **Set up hostname**, write your website's hostname.\n4. Select the message box that appears to choose the hostname you have input and select **Done**.\n5. Copy the JS snippet from **Manage site**. This is also where you can later edit the hostname you have just added.\n6. (Optional) Select **View Analytics sites** to go back on the Web Analytics interface. If you prefer to continue setting up Web Analytics website, continue reading.\n7. Add the JS snippet to any of your website’s HTML pages before the ending body tag.\n\nWeb analytics is now set up on your website, but it may take a few minutes for Web Analytics data to appear.\n\nRepeat steps 3-7 for all the websites you want to track with Web Analytics by selecting **Add a site** from Web Analytics. In **Web Analytics Sites**, select **Manage site** inside each website's card to adjust Web Analytics for your site at any time.\n\nFor more information on how many sites you can track, refer to [Limits](/web-analytics/limits/).\n\n---\n\n## Sites proxied through Cloudflare\n\n1. In the Cloudflare dashboard, go to the **Web Analytics** page.\n\n   [Go to **Web analytics** ↗](https://dash.cloudflare.com/?to=/:account/web-analytics)\n2. Select **Add a site**.\n3. Select a hostname from the drop-down menu > **Done**.\n\nYour website is now using Web Analytics through the automatic setup, which is enabled by default.\n\nYou always have the option to go to **Manage Site** and change the automatic setup to one of the following:\n\n* **Enable, excluding visitor data in the EU** - The JS Snippet will not be injected for visitors from the EU.\n* **Enable with JS Snippet installation** - The JS Snippet needs to be installed manually.\n* **Disable** - The JS Snippet will not be injected and has been disabled.\n\nRepeat these steps for all of the websites you want to track with Web Analytics. Web Analytics is enabled by default for sites proxied through Cloudflare that previously used Browser Insights. Adjust Web Analytics for your site at any time by selecting **Manage site** from Web Analytics.\n\nFor more information on how many sites you can track, refer to [Limits](/web-analytics/limits/).\n\nFor more information on how to configure which sites or pages you track with Web Analytics, refer to [Rules](/web-analytics/configuration-options/rules/).\n\n---\n\n## Pages projects\n\nCloudflare Pages offers a one-click setup for Web Analytics:\n\n1. In the Cloudflare dashboard, go to the **Workers & Pages** page.\n\n   [Go to **Workers & Pages** ↗](https://dash.cloudflare.com/?to=/:account/workers-and-pages)\n2. Select your Pages project.\n3. Go to **Metrics** and select **Enable** under Web Analytics.\n\nCloudflare will automatically add the JavaScript snippet to your Pages site on the next deployment.\n\nWas this helpful?",
+  "provider_attempts": [
+    {
+      "capability": "web_fetch",
+      "provider": "tavily",
+      "status": "ok",
+      "error_type": "",
+      "error": "",
+      "elapsed_ms": 1528.31,
+      "result_count": 1
+    }
+  ],
+  "fallback_used": false,
+  "elapsed_ms": 1528.32
+}

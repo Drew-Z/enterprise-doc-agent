@@ -1,0 +1,108 @@
+{
+  "status": "disabled_pending_browser_verification",
+  "started_at": "2026-09-16T07:16:49.591396+00:00",
+  "site_id": "48eb1f16b7814d1a9e64e13883801134",
+  "zone_id": "5c093bf35698435cee3dff437c4e3545",
+  "zone_name": "ciallobill.ccwu.cc",
+  "request": {
+    "auto_install": true,
+    "enabled": false,
+    "lite": true,
+    "zone_tag": "5c093bf35698435cee3dff437c4e3545"
+  },
+  "scope": "Only the selected mailbox zone; other zones unchanged",
+  "steps": [
+    {
+      "name": "disable_selected_zone_web_analytics",
+      "status": "succeeded"
+    }
+  ],
+  "api_events": [
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/rum/site_info/list?per_page=100&page=1",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/zones/5c093bf35698435cee3dff437c4e3545/dns_records?per_page=100&page=1",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/rum/v2/ca50d3f0-8d97-417d-91f5-61d68932b9ef/rules",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "PUT",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/rum/site_info/48eb1f16b7814d1a9e64e13883801134",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/rum/site_info/list?per_page=100&page=1",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/rum/v2/ca50d3f0-8d97-417d-91f5-61d68932b9ef/rules",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    }
+  ],
+  "recovery": {
+    "manifest": "D:\\Agent\\codex\\backups\\tasks\\20260916T054248.861Z-saas-cloudflare-mail-rollout\\manifest.json",
+    "snapshot": "D:\\Agent\\codex\\backups\\tasks\\20260916T054248.861Z-saas-cloudflare-mail-rollout\\files\\cloudflare\\ciallobill.ccwu.cc\\web-analytics.json",
+    "sha256": "8f4b83307edddeadadc56e0883917d857f4078acfeb22bcbec59c814250479a2"
+  },
+  "response": {
+    "site_tag": "48eb1f16b7814d1a9e64e13883801134",
+    "auto_install": true,
+    "ruleset": {
+      "zone_tag": "5c093bf35698435cee3dff437c4e3545",
+      "zone_name": "ciallobill.ccwu.cc",
+      "enabled": false,
+      "id": "ca50d3f0-8d97-417d-91f5-61d68932b9ef",
+      "lite": true
+    },
+    "rules": [
+      {
+        "host": "*",
+        "paths": [
+          "*"
+        ],
+        "inclusive": true,
+        "created": "2026-03-10T03:07:17.772034Z",
+        "is_paused": false,
+        "priority": 1000,
+        "id": "b74d7156-61bd-45da-a32c-b5aa348a93e9"
+      }
+    ]
+  },
+  "selected_site_readback": {
+    "site_tag": "48eb1f16b7814d1a9e64e13883801134",
+    "auto_install": true,
+    "ruleset": {
+      "zone_tag": "5c093bf35698435cee3dff437c4e3545",
+      "zone_name": "ciallobill.ccwu.cc",
+      "enabled": false,
+      "id": "ca50d3f0-8d97-417d-91f5-61d68932b9ef",
+      "lite": true
+    },
+    "rules": null
+  },
+  "other_sites_unchanged": true,
+  "existing_rules_unchanged": true,
+  "finished_at": "2026-09-16T07:16:59.542175+00:00"
+}

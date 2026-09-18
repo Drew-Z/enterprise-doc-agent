@@ -1,0 +1,39 @@
+{
+  "completed_at": "2026-09-16T07:43:11.761235+00:00",
+  "status": "completed",
+  "removed_temporary_roots": [
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\docagent-mail-rollout-vnbff6f5",
+      "regular_file_count": 2528,
+      "regular_file_bytes": 4849682,
+      "directory_count": 1137
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\pytest-of-zhang\\pytest-254",
+      "regular_file_count": 6,
+      "regular_file_bytes": 2706,
+      "directory_count": 3
+    }
+  ],
+  "regular_files_removed": 2534,
+  "regular_file_bytes_before_removal": 4852388,
+  "links_or_git_repositories_encountered": false,
+  "evidence_hashes_rechecked": true,
+  "retained_out_of_scope": [
+    {
+      "path": "D:\\workspace4Cursor\\enterprise-doc-agent\\%SystemDrive%",
+      "reason": "Pre-existing untracked runtime directory; creator and future use unknown"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\codex-clipboard-d6aae2d9-0748-445a-8156-2a621d630737.png",
+      "reason": "User attachment"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\codex-clipboard-f1aecf96-44d6-46fb-825f-1bd18934d941.png",
+      "reason": "User attachment"
+    }
+  ],
+  "credentials_and_cloud_resources_retained": true,
+  "delete_method": "PowerShell 7 Remove-Item -LiteralPath <each exact inspected path> -Recurse; no Force",
+  "backup_manifest": "D:\\Agent\\codex\\backups\\tasks\\20260916T054248.861Z-saas-cloudflare-mail-rollout\\manifest.json"
+}

@@ -1,0 +1,18 @@
+{
+  "checked_at": "2026-09-16T07:03:56.096946+00:00",
+  "hostname": "inbox.ciallobill.ccwu.cc",
+  "resolved_addresses": [
+    "104.21.66.231",
+    "172.67.209.27",
+    "2606:4700:3033::6815:42e7",
+    "2606:4700:3036::ac43:d11b"
+  ],
+  "https": {
+    "status": 200,
+    "tls_verification_enabled": true,
+    "content_type": "text/html",
+    "bytes": 1112,
+    "elapsed_seconds": 1.578,
+    "cf_ray": "a3be03b0df3ca07b-SIN"
+  }
+}

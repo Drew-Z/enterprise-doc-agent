@@ -1,0 +1,206 @@
+{
+  "observed_at": "2026-09-16T06:28:42.187024+00:00",
+  "settings": {
+    "placement": {},
+    "compatibility_date": "2026-09-10",
+    "compatibility_flags": [
+      "nodejs_compat"
+    ],
+    "usage_model": "standard",
+    "tags": [],
+    "tail_consumers": [],
+    "logpush": false,
+    "annotations": {
+      "workers/triggered_by": "secret"
+    },
+    "bindings": [
+      {
+        "name": "ADMIN_PASSWORDS",
+        "type": "secret_text"
+      },
+      {
+        "name": "ASSETS",
+        "type": "assets"
+      },
+      {
+        "name": "BACKEND_URL",
+        "type": "plain_text"
+      },
+      {
+        "database_id": "8521706f-87c6-43af-8866-cc0ce95dd5d9",
+        "id": "8521706f-87c6-43af-8866-cc0ce95dd5d9",
+        "name": "DB",
+        "type": "d1"
+      },
+      {
+        "name": "DEFAULT_DOMAINS",
+        "type": "json"
+      },
+      {
+        "name": "DEFAULT_LANG",
+        "type": "plain_text"
+      },
+      {
+        "name": "DEFAULT_SEND_BALANCE",
+        "type": "json"
+      },
+      {
+        "name": "DISABLE_ADMIN_PASSWORD_CHECK",
+        "type": "json"
+      },
+      {
+        "name": "DISABLE_ANONYMOUS_USER_CREATE_EMAIL",
+        "type": "json"
+      },
+      {
+        "name": "DOMAINS",
+        "type": "json"
+      },
+      {
+        "name": "ENABLE_ADDRESS_PASSWORD",
+        "type": "json"
+      },
+      {
+        "name": "ENABLE_AGENT_EMAIL_INFO",
+        "type": "json"
+      },
+      {
+        "name": "ENABLE_AI_EMAIL_EXTRACT",
+        "type": "json"
+      },
+      {
+        "name": "ENABLE_ANOTHER_WORKER",
+        "type": "json"
+      },
+      {
+        "name": "ENABLE_AUTO_REPLY",
+        "type": "json"
+      },
+      {
+        "name": "ENABLE_CREATE_ADDRESS_SUBDOMAIN_MATCH",
+        "type": "json"
+      },
+      {
+        "name": "ENABLE_INDEX_ABOUT",
+        "type": "json"
+      },
+      {
+        "name": "ENABLE_MAIL_GZIP",
+        "type": "json"
+      },
+      {
+        "name": "ENABLE_MAIL_READ_STATUS",
+        "type": "json"
+      },
+      {
+        "name": "ENABLE_REDEEM_CODE",
+        "type": "json"
+      },
+      {
+        "name": "ENABLE_USER_CREATE_EMAIL",
+        "type": "json"
+      },
+      {
+        "name": "ENABLE_USER_DELETE_EMAIL",
+        "type": "json"
+      },
+      {
+        "name": "ENABLE_WEBHOOK",
+        "type": "json"
+      },
+      {
+        "name": "FORWARD_ADDRESS_LIST",
+        "type": "json"
+      },
+      {
+        "name": "FRONTEND_URL",
+        "type": "plain_text"
+      },
+      {
+        "name": "JWT_SECRET",
+        "type": "secret_text"
+      },
+      {
+        "name": "PASSWORDS",
+        "type": "secret_text"
+      },
+      {
+        "name": "PREFIX",
+        "type": "plain_text"
+      },
+      {
+        "name": "SUBDOMAIN_FORWARD_ADDRESS_LIST",
+        "type": "json"
+      },
+      {
+        "name": "TITLE",
+        "type": "plain_text"
+      }
+    ]
+  },
+  "deployments": {
+    "deployments": [
+      {
+        "id": "88f4b6ef-1f81-45b7-8e39-37355e05189e",
+        "source": "api",
+        "strategy": "percentage",
+        "annotations": {
+          "workers/triggered_by": "secret"
+        },
+        "versions": [
+          {
+            "version_id": "a7b3cb12-0210-4050-bfb6-a4acb69d679c",
+            "percentage": 100
+          }
+        ],
+        "created_on": "2026-09-16T06:27:50.443302Z"
+      },
+      {
+        "id": "211053f2-5436-48b9-ad31-704e12580b8e",
+        "source": "api",
+        "strategy": "percentage",
+        "annotations": {
+          "workers/triggered_by": "secret"
+        },
+        "versions": [
+          {
+            "version_id": "9f37fef3-7df7-45a4-a3a6-97d2e0a88c4a",
+            "percentage": 100
+          }
+        ],
+        "created_on": "2026-09-16T06:27:48.445501Z"
+      },
+      {
+        "id": "d04d0cae-f42b-4302-b418-4177f11de909",
+        "source": "api",
+        "strategy": "percentage",
+        "annotations": {
+          "workers/triggered_by": "secret"
+        },
+        "versions": [
+          {
+            "version_id": "2589e7d1-4590-496c-9c60-af1f46032f67",
+            "percentage": 100
+          }
+        ],
+        "created_on": "2026-09-16T06:27:46.217152Z"
+      },
+      {
+        "id": "0ccb574c-ec24-4b0f-a96c-2d32829debdc",
+        "source": "api",
+        "strategy": "percentage",
+        "annotations": {
+          "workers/message": "Automatic deployment on upload.",
+          "workers/triggered_by": "upload"
+        },
+        "versions": [
+          {
+            "version_id": "0e019574-5661-4e9b-a7e9-82015026cab9",
+            "percentage": 100
+          }
+        ],
+        "created_on": "2026-09-16T06:27:40.589211Z"
+      }
+    ]
+  }
+}

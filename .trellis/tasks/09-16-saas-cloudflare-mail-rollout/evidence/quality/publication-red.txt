@@ -1,0 +1,19 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+_ test_existing_worker_publication_does_not_replay_resource_or_secret_writes __
+
+bundle = (WindowsPath('C:/Users/zhang/AppData/Local/Temp/docagent-mail-rollout-vnbff6f5/pytest-publication-red/test_existing_worker_publicati0/synthetic-bundle'), 'a789823125ec89d732a7c8c346f8296fd271d247b932402b421091b2ac7a96bb')
+tmp_path = WindowsPath('C:/Users/zhang/AppData/Local/Temp/docagent-mail-rollout-vnbff6f5/pytest-publication-red/test_existing_worker_publicati0')
+
+    def test_existing_worker_publication_does_not_replay_resource_or_secret_writes(
+        bundle: tuple[Path, str], tmp_path: Path
+    ) -> None:
+>       from infra.cloudflare_mail.deploy import (
+            WORKER_NAME, Api, DeploymentError, deploy, prepare, publish_existing,
+        )
+E       ImportError: cannot import name 'publish_existing' from 'infra.cloudflare_mail.deploy' (D:\workspace4Cursor\enterprise-doc-agent\infra\cloudflare_mail\deploy.py)
+
+tests\cloudflare_mail\test_mail_deploy.py:575: ImportError
+=========================== short test summary info ===========================
+FAILED tests/cloudflare_mail/test_mail_deploy.py::test_existing_worker_publication_does_not_replay_resource_or_secret_writes
+1 failed in 0.40s

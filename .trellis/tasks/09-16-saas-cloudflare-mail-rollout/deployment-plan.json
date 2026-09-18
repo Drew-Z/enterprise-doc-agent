@@ -1,0 +1,25 @@
+{
+  "account_id": "2741446a7478f2d8a5ff31df7e077f17",
+  "zone_id": "5c093bf35698435cee3dff437c4e3545",
+  "zone_name": "ciallobill.ccwu.cc",
+  "worker_name": "docagent-private-mail",
+  "database_name": "docagent-private-mail",
+  "hostname": "inbox.ciallobill.ccwu.cc",
+  "manifest_sha256": "48ce026cc9360c5644b8b36c4c42fa6b5f72648e39daf96e7d8c176b5cb63f21",
+  "worker_sha256": "dfbd83c94768744e4cd79d296c6d922680541440d52ac1e8cd6eeb3fe6a5cdf3",
+  "asset_count": 27,
+  "primary_location_hint": "apac",
+  "read_replication": {
+    "mode": "disabled"
+  },
+  "fixed_processing_region_guaranteed": false,
+  "receive_only": true,
+  "email_routing_changed": false,
+  "real_email_sent": false,
+  "prepared_at": "2026-09-16T06:00:53.693851+00:00",
+  "input_commit": "eca462385da540fef163e80d90e82e55383f05d4",
+  "secrets_path": "D:\\Agent\\codex\\secrets\\docagent-private-mail\\credentials.json",
+  "cloud_mutations_performed_at_plan_creation": false,
+  "preflight_record": "cloudflare-preflight.json",
+  "review": "primary_agent_reviewed_new_resources_only_under_existing_user_continue_authorization"
+}

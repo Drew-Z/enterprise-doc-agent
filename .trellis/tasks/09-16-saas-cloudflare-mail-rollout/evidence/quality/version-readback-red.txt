@@ -1,0 +1,55 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+_____ test_successful_deployment_uploads_closed_worker_before_publishing ______
+
+bundle = (WindowsPath('C:/Users/zhang/AppData/Local/Temp/docagent-mail-rollout-vnbff6f5/pytest-version-readback-red/test_successful_deployment_upl0/synthetic-bundle'), 'a789823125ec89d732a7c8c346f8296fd271d247b932402b421091b2ac7a96bb')
+tmp_path = WindowsPath('C:/Users/zhang/AppData/Local/Temp/docagent-mail-rollout-vnbff6f5/pytest-version-readback-red/test_successful_deployment_upl0')
+
+    def test_successful_deployment_uploads_closed_worker_before_publishing(
+        bundle: tuple[Path, str], tmp_path: Path
+    ) -> None:
+        from infra.cloudflare_mail.deploy import Api, deploy, prepare
+    
+        root, digest = bundle
+        fake = FakeCloudflare()
+        credentials = {
+            "PASSWORDS": json.dumps(["S" * 64]),
+            "ADMIN_PASSWORDS": json.dumps(["A" * 64]),
+            "JWT_SECRET": "J" * 64,
+        }
+        state_path = tmp_path / "deployment-state.json"
+        with httpx.Client(transport=httpx.MockTransport(fake)) as client:
+>           result = deploy(
+                prepare(root, manifest_sha256=digest), Api(client, "api-token"), credentials, state_path
+            )
+
+tests\cloudflare_mail\test_mail_deploy.py:299: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+infra\cloudflare_mail\deploy.py:643: in deploy
+    state["worker_verification"] = step(
+infra\cloudflare_mail\deploy.py:468: in step
+    result = action()
+             ^^^^^^^^
+infra\cloudflare_mail\deploy.py:644: in <lambda>
+    "verify_worker_configuration", lambda: verify_worker(api, package, database_id)
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+infra\cloudflare_mail\deploy.py:354: in verify_worker
+    settings = api.object("GET", script + "/settings")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <infra.cloudflare_mail.deploy.Api object at 0x000001DC45B1E600>
+method = 'GET'
+path = '/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts/docagent-private-mail/settings'
+body = None
+
+    def object(self, method: str, path: str, *, body: Json | None = None) -> Json:
+        result = self.request(method, path, body=body).get("result")
+        if not isinstance(result, dict):
+>           raise DeploymentError("Cloudflare result is not an object")
+E           infra.cloudflare_mail.deploy.DeploymentError: Cloudflare result is not an object
+
+infra\cloudflare_mail\deploy.py:203: DeploymentError
+=========================== short test summary info ===========================
+FAILED tests/cloudflare_mail/test_mail_deploy.py::test_successful_deployment_uploads_closed_worker_before_publishing
+1 failed in 0.47s

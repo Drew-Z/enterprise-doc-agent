@@ -1,0 +1,152 @@
+{
+  "id": "a7b3cb12-0210-4050-bfb6-a4acb69d679c",
+  "number": 4,
+  "annotations": {
+    "workers/triggered_by": "secret"
+  },
+  "resources": {
+    "script": {
+      "etag": "3271be04ec968e4d884cea1cf15e1ba72aaf39edd2ef140038c99b328e78fd07",
+      "handlers": [
+        "fetch",
+        "email"
+      ],
+      "last_deployed_from": "api"
+    },
+    "script_runtime": {
+      "assets": {
+        "serve_directly": false,
+        "raw_run_worker_first": true
+      },
+      "compatibility_date": "2026-09-10",
+      "compatibility_flags": [
+        "nodejs_compat"
+      ],
+      "usage_model": "standard"
+    },
+    "bindings": [
+      {
+        "name": "ADMIN_PASSWORDS",
+        "type": "secret_text"
+      },
+      {
+        "name": "ASSETS",
+        "type": "assets"
+      },
+      {
+        "name": "BACKEND_URL",
+        "type": "plain_text"
+      },
+      {
+        "database_id": "8521706f-87c6-43af-8866-cc0ce95dd5d9",
+        "id": "8521706f-87c6-43af-8866-cc0ce95dd5d9",
+        "name": "DB",
+        "type": "d1"
+      },
+      {
+        "name": "DEFAULT_DOMAINS",
+        "type": "json"
+      },
+      {
+        "name": "DEFAULT_LANG",
+        "type": "plain_text"
+      },
+      {
+        "name": "DEFAULT_SEND_BALANCE",
+        "type": "json"
+      },
+      {
+        "name": "DISABLE_ADMIN_PASSWORD_CHECK",
+        "type": "json"
+      },
+      {
+        "name": "DISABLE_ANONYMOUS_USER_CREATE_EMAIL",
+        "type": "json"
+      },
+      {
+        "name": "DOMAINS",
+        "type": "json"
+      },
+      {
+        "name": "ENABLE_ADDRESS_PASSWORD",
+        "type": "json"
+      },
+      {
+        "name": "ENABLE_AGENT_EMAIL_INFO",
+        "type": "json"
+      },
+      {
+        "name": "ENABLE_AI_EMAIL_EXTRACT",
+        "type": "json"
+      },
+      {
+        "name": "ENABLE_ANOTHER_WORKER",
+        "type": "json"
+      },
+      {
+        "name": "ENABLE_AUTO_REPLY",
+        "type": "json"
+      },
+      {
+        "name": "ENABLE_CREATE_ADDRESS_SUBDOMAIN_MATCH",
+        "type": "json"
+      },
+      {
+        "name": "ENABLE_INDEX_ABOUT",
+        "type": "json"
+      },
+      {
+        "name": "ENABLE_MAIL_GZIP",
+        "type": "json"
+      },
+      {
+        "name": "ENABLE_MAIL_READ_STATUS",
+        "type": "json"
+      },
+      {
+        "name": "ENABLE_REDEEM_CODE",
+        "type": "json"
+      },
+      {
+        "name": "ENABLE_USER_CREATE_EMAIL",
+        "type": "json"
+      },
+      {
+        "name": "ENABLE_USER_DELETE_EMAIL",
+        "type": "json"
+      },
+      {
+        "name": "ENABLE_WEBHOOK",
+        "type": "json"
+      },
+      {
+        "name": "FORWARD_ADDRESS_LIST",
+        "type": "json"
+      },
+      {
+        "name": "FRONTEND_URL",
+        "type": "plain_text"
+      },
+      {
+        "name": "JWT_SECRET",
+        "type": "secret_text"
+      },
+      {
+        "name": "PASSWORDS",
+        "type": "secret_text"
+      },
+      {
+        "name": "PREFIX",
+        "type": "plain_text"
+      },
+      {
+        "name": "SUBDOMAIN_FORWARD_ADDRESS_LIST",
+        "type": "json"
+      },
+      {
+        "name": "TITLE",
+        "type": "plain_text"
+      }
+    ]
+  }
+}

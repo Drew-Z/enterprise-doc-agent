@@ -1,0 +1,88 @@
+{
+  "checked_at": "2026-09-16T07:10:08.977866+00:00",
+  "operation": "read_only_web_analytics_inventory",
+  "site_count": 6,
+  "sites": [
+    {
+      "site_tag": "75bf54e93c47427eb6bac60964e844b3",
+      "auto_install": true,
+      "ruleset": {
+        "zone_tag": "458e3fee2e200f6e3035e77911ea91f6",
+        "zone_name": "biau.de5.net",
+        "enabled": true,
+        "id": "2bebd244-5a7d-4c75-a4a2-ed9b0ae45585",
+        "lite": true
+      },
+      "rules": null
+    },
+    {
+      "site_tag": "48eb1f16b7814d1a9e64e13883801134",
+      "auto_install": true,
+      "ruleset": {
+        "zone_tag": "5c093bf35698435cee3dff437c4e3545",
+        "zone_name": "ciallobill.ccwu.cc",
+        "enabled": true,
+        "id": "ca50d3f0-8d97-417d-91f5-61d68932b9ef",
+        "lite": true
+      },
+      "rules": null
+    },
+    {
+      "site_tag": "997d01c414474bcbb1f6eb10bf57c990",
+      "auto_install": true,
+      "ruleset": {
+        "zone_tag": "7510ec09f1e5869be86327d89301874b",
+        "zone_name": "ciallobill.us.ci",
+        "enabled": true,
+        "id": "b6db2600-e9bb-4ac1-a792-8b876f77ea9f",
+        "lite": true
+      },
+      "rules": null
+    },
+    {
+      "site_tag": "5f0ae155242240fabe5f7bd01f7bb0a8",
+      "auto_install": true,
+      "ruleset": {
+        "zone_tag": "174ae1e640e35e7afb2383881d1f0e64",
+        "zone_name": "mcv.qzz.io",
+        "enabled": true,
+        "id": "b280b95c-9f31-408b-9701-4520eaa78ff4",
+        "lite": true
+      },
+      "rules": null
+    },
+    {
+      "site_tag": "a835758683f44c38a780a5947682aa32",
+      "auto_install": true,
+      "ruleset": {
+        "zone_tag": "0571a2a649556dfa2be68c08ef6deb03",
+        "zone_name": "mut.ccwu.cc",
+        "enabled": true,
+        "id": "1ac5783a-9059-4e0e-9904-508dd1542da9",
+        "lite": true
+      },
+      "rules": null
+    },
+    {
+      "site_tag": "468eefbce97549c99448c40de1e77125",
+      "auto_install": true,
+      "ruleset": {
+        "zone_tag": "187c28a106d86033822f804cc37d1128",
+        "zone_name": "playlab.eu.cc",
+        "enabled": true,
+        "id": "07f92ac0-61e5-4a20-b59a-7b1e2e43be01",
+        "lite": false
+      },
+      "rules": null
+    }
+  ],
+  "api_events": [
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/rum/site_info/list?per_page=100&page=1",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    }
+  ]
+}

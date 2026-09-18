@@ -1,0 +1,174 @@
+{
+  "status": "failed_needs_inspection",
+  "started_at": "2026-09-16T06:23:38.857347+00:00",
+  "plan": {
+    "account_id": "2741446a7478f2d8a5ff31df7e077f17",
+    "zone_id": "5c093bf35698435cee3dff437c4e3545",
+    "zone_name": "ciallobill.ccwu.cc",
+    "worker_name": "docagent-private-mail",
+    "database_name": "docagent-private-mail",
+    "hostname": "inbox.ciallobill.ccwu.cc",
+    "manifest_sha256": "48ce026cc9360c5644b8b36c4c42fa6b5f72648e39daf96e7d8c176b5cb63f21",
+    "worker_sha256": "dfbd83c94768744e4cd79d296c6d922680541440d52ac1e8cd6eeb3fe6a5cdf3",
+    "asset_count": 27,
+    "primary_location_hint": "apac",
+    "read_replication": {
+      "mode": "disabled"
+    },
+    "fixed_processing_region_guaranteed": false,
+    "receive_only": true,
+    "email_routing_changed": false,
+    "real_email_sent": false
+  },
+  "preflight": {
+    "account_id": "2741446a7478f2d8a5ff31df7e077f17",
+    "zone_id": "5c093bf35698435cee3dff437c4e3545",
+    "zone_status": "active",
+    "existing_database_count": 4,
+    "existing_worker_count": 1,
+    "existing_custom_domain_count": 1,
+    "zone_dns_record_count": 0,
+    "target_names_available": true
+  },
+  "steps": [
+    {
+      "name": "verify_recorded_database",
+      "status": "succeeded"
+    },
+    {
+      "name": "verify_initialized_database",
+      "status": "succeeded"
+    },
+    {
+      "name": "register_assets",
+      "status": "succeeded"
+    },
+    {
+      "name": "upload_asset_bucket_1_file_1",
+      "status": "succeeded"
+    },
+    {
+      "name": "upload_asset_bucket_1_file_2",
+      "status": "succeeded"
+    },
+    {
+      "name": "upload_asset_bucket_1_file_3",
+      "status": "started"
+    }
+  ],
+  "api_events": [
+    {
+      "method": "GET",
+      "path": "/zones/5c093bf35698435cee3dff437c4e3545",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/d1/database?per_page=100&page=1",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts?per_page=100&page=1",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/domains?per_page=100&page=1",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/zones/5c093bf35698435cee3dff437c4e3545/dns_records?per_page=100&page=1",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/d1/database/8521706f-87c6-43af-8866-cc0ce95dd5d9",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "POST",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/d1/database/8521706f-87c6-43af-8866-cc0ce95dd5d9/query",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "POST",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts/docagent-private-mail/assets-upload-session",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "POST",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/assets/upload?base64=true",
+      "http": 202,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "POST",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/assets/upload?base64=true",
+      "http": 202,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "POST",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/assets/upload?base64=true",
+      "http": null,
+      "success": false,
+      "transport_error": true,
+      "transport_error_type": "RemoteProtocolError",
+      "mutation_outcome_unknown": true
+    }
+  ],
+  "real_email_sent": false,
+  "email_routing_changed": false,
+  "resume_source": {
+    "path": "D:\\workspace4Cursor\\enterprise-doc-agent\\.trellis\\tasks\\09-16-saas-cloudflare-mail-rollout\\deployment-resume-01.json",
+    "sha256": "db965f40c7de75700c745b780c90e962be5368e8f634d4435f2d1a53d44d1a35"
+  },
+  "database_id": "8521706f-87c6-43af-8866-cc0ce95dd5d9",
+  "database": {
+    "name": "docagent-private-mail",
+    "uuid": "8521706f-87c6-43af-8866-cc0ce95dd5d9",
+    "jurisdiction": null,
+    "read_replication": {
+      "mode": "disabled"
+    }
+  },
+  "observed_query_regions": [
+    "APAC"
+  ],
+  "database_initialized": true,
+  "asset_upload_files": [
+    {
+      "hash": "d92009f0d36a781390129c25baf111bf",
+      "base64_bytes": 180
+    },
+    {
+      "hash": "d38ab17368c6ed2eca5661e46c9b8dd9",
+      "base64_bytes": 1484
+    },
+    {
+      "hash": "74a6b15dd20e782822fc0163f3d049b0",
+      "base64_bytes": 3656
+    }
+  ],
+  "error": "Cloudflare transport failed; inspect state before retry"
+}

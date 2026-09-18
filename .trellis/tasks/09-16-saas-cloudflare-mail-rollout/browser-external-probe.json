@@ -1,0 +1,26 @@
+{
+  "checked_at": "2026-09-16T07:07:26.944Z",
+  "origin": "https://inbox.ciallobill.ccwu.cc",
+  "external_requests": [
+    {
+      "origin": "https://static.cloudflareinsights.com",
+      "path": "/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
+      "type": "script"
+    }
+  ],
+  "scripts": [
+    {
+      "origin": "https://inbox.ciallobill.ccwu.cc",
+      "path": "/assets/index-Cw8ojkc0.js"
+    },
+    {
+      "origin": "https://inbox.ciallobill.ccwu.cc",
+      "path": "/registerSW.js"
+    },
+    {
+      "origin": "https://static.cloudflareinsights.com",
+      "path": "/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495"
+    }
+  ],
+  "browser_closed": true
+}

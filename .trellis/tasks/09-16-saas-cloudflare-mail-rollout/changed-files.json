@@ -1,0 +1,783 @@
+{
+  "schema_version": 1,
+  "prepared_at": "2026-09-18T01:20:08.144Z",
+  "repository": "D:\\workspace4Cursor\\enterprise-doc-agent",
+  "task": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout",
+  "baseline_commit": "eca462385da540fef163e80d90e82e55383f05d4",
+  "scope": "Continuation of Cloudflare private mailbox rollout; exact local commit allowlist and excluded pre-existing WIP",
+  "proposed_commit_message": "feat: deploy private Cloudflare mailbox HTTPS foundation",
+  "proposed_commit_file_count": 101,
+  "git_commit_executed": false,
+  "pushed": false,
+  "archived": false,
+  "source_thread_id": "01a09fbf-ec25-75a2-b40a-3f2bf3cee1d9",
+  "continuation_thread_id": "01a0b20d-7d2c-7730-8a8e-1c0b65de3361",
+  "files": [
+    {
+      "path": ".trellis/spec/infrastructure/backend/cloudflare-mail-rollout.md",
+      "status": "??",
+      "bytes": 9750,
+      "sha256": "317f0aebd9418eb19db01e1cf50e8728b58c40da7717680007f8b01fb29c18b8",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/README.md",
+      "status": "??",
+      "bytes": 5270,
+      "sha256": "6bc4afa0e37a96cf20f2b9a5147a4db15e19f4c77dc087288b01f0e53a52c514",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/active-version-inspection.json",
+      "status": "??",
+      "bytes": 3283,
+      "sha256": "4cd8047d43567dbfa1ab2350ab41e2aa475ac46df4b64420194dd0f259bd9c9d",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/browser-external-probe.json",
+      "status": "??",
+      "bytes": 692,
+      "sha256": "b8069bd8d4b7c2fe6c83832e67b8581c7d1506010d6d44415a57775554b744f3",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/check.jsonl",
+      "status": "??",
+      "bytes": 254,
+      "sha256": "b07d08d236963962b98f02165f5c31eaaf15c70072b474458f952f1421887f6b",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/cleanup-plan.json",
+      "status": "??",
+      "bytes": 384048,
+      "sha256": "ae8f31ac1acfb14830fce4dfe8243c87fad3ecbd8962d71e34fe293f86d85776",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/cleanup-report.json",
+      "status": "??",
+      "bytes": 1532,
+      "sha256": "80e61b240a6780ab7fb255b07d65f61a5df95032bc51bcbdeb61b22f449d663e",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/cloudflare-final-verification.json",
+      "status": "??",
+      "bytes": 7672,
+      "sha256": "5712d8ae0b447d669babd428bf4a5b942299d52a11db617f419fea114bd84183",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/cloudflare-preflight.json",
+      "status": "??",
+      "bytes": 6522,
+      "sha256": "852fd47bf228faed9eefaebc9f3a7b71518ea5d493451248a07373386f02c894",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/commit-plan.md",
+      "status": "??",
+      "bytes": 11059,
+      "sha256": "fbab37c7d6513b446dfea1bfed5b1000aa1ae3d886c694e5ef9d880f9bf8ff4d",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/credential-acl-final.json",
+      "status": "??",
+      "bytes": 646,
+      "sha256": "f5c6d736d062869cd3cb02a6bf459f298f1f3f113c0b3c83261a733b1f81a7b5",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/credential-acl.json",
+      "status": "??",
+      "bytes": 612,
+      "sha256": "3b2c300735a4899d4fa4df89bdbf92d3ef61174eff6de074c5fd9ba70b1c282b",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/deployment-plan.json",
+      "status": "??",
+      "bytes": 1120,
+      "sha256": "353a50d096f4cac0e661405c00d35a4f49b4eb52010ed2e66f5ce51382853917",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/deployment-resume-01.json",
+      "status": "??",
+      "bytes": 4375,
+      "sha256": "db965f40c7de75700c745b780c90e962be5368e8f634d4435f2d1a53d44d1a35",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/deployment-resume-02.json",
+      "status": "??",
+      "bytes": 4984,
+      "sha256": "b084bcbac376cef07a180dc43ebee73b9d501dfdde84a6eee951d2d3d82ac1af",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/deployment-resume-03.json",
+      "status": "??",
+      "bytes": 12181,
+      "sha256": "f955064e520c30f9f709c48da6eca942b20dd3755c8b3ede0570e23388b2a3f4",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/deployment-state.json",
+      "status": "??",
+      "bytes": 4349,
+      "sha256": "0a1a2f5a459c2931d2a48299171314fa9f6577b18a9c7549d3c1b10c4cdb49e5",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/design.md",
+      "status": "??",
+      "bytes": 5012,
+      "sha256": "5d75df18fed26c01a355f307f5961f1a98c8ae50c98597f85cebec2be5db1403",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/dns-https-01.json",
+      "status": "??",
+      "bytes": 447,
+      "sha256": "9639369813cdf82c8ed48e97dbf829d4745d47b6467752629760c1a5a8851a2e",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/public-01/mailbox-credential-gate.png",
+      "status": "??",
+      "bytes": 27368,
+      "sha256": "ca6fbae56559ae6aa3fc9ebea88601bd6d8b248d79c7afe0a665a6616f2b1efd",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/public-01/private-owner-empty-inbox.png",
+      "status": "??",
+      "bytes": 37770,
+      "sha256": "8fefac7b27374dc0d31b23af8e3b0e470b4c0de3071c16d4a5a0fd5280873c47",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/public-01/private-site-gate.png",
+      "status": "??",
+      "bytes": 32367,
+      "sha256": "47eae609d61a264e48f04cf9a848665dd60e92784e79cfa5036b49b2b12824b1",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/public-01/report.json",
+      "status": "??",
+      "bytes": 2418,
+      "sha256": "0c100042098fef11ad292736629bc0e0812c767d2486cfd6228d772b7e0fe63f",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/public-02/mailbox-credential-gate.png",
+      "status": "??",
+      "bytes": 26438,
+      "sha256": "d5c7328cb83c869e75ecf175bcf48a17fe749ab54498d049ddcb8c757bfa0773",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/public-02/private-owner-empty-inbox.png",
+      "status": "??",
+      "bytes": 37770,
+      "sha256": "8fefac7b27374dc0d31b23af8e3b0e470b4c0de3071c16d4a5a0fd5280873c47",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/public-02/private-site-gate.png",
+      "status": "??",
+      "bytes": 32367,
+      "sha256": "47eae609d61a264e48f04cf9a848665dd60e92784e79cfa5036b49b2b12824b1",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/public-02/report.json",
+      "status": "??",
+      "bytes": 2287,
+      "sha256": "f2d7fb0574552f8cc09b726d7fc0bb7e3116e9ad2ff61fb05afe8fe2b899c8c7",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/quality/application-mypy.txt",
+      "status": "??",
+      "bytes": 46,
+      "sha256": "740b6f6d73760bcb916de78fcedb7518e2de9958cb382f405d09228001134c3a",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/quality/backend-tests.txt",
+      "status": "??",
+      "bytes": 1666,
+      "sha256": "1f9193e06deb9cf1877da824d6cfc106b86f04aba09dc3aaa693aa340dd7d8d2",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/quality/deployment-tests.txt",
+      "status": "??",
+      "bytes": 101,
+      "sha256": "cfcdb00e2a2de6cd8079b7d7e765d416d01e8ff13e6e5032e44e6b008b226f51",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/quality/final-application-mypy.txt",
+      "status": "??",
+      "bytes": 46,
+      "sha256": "740b6f6d73760bcb916de78fcedb7518e2de9958cb382f405d09228001134c3a",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/quality/final-backend-tests.txt",
+      "status": "??",
+      "bytes": 14273,
+      "sha256": "8a7b6edd18d83c10fe350a1bc2f3b5e7376d7958bda0bcc90f100867b04f46f1",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/quality/final-mail-mypy.txt",
+      "status": "??",
+      "bytes": 44,
+      "sha256": "718df785efbbd4b57e63b5f64aff2c5b5592e433447681f759b307f97a3ec96a",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/quality/final-ruff-check.txt",
+      "status": "??",
+      "bytes": 20,
+      "sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/quality/final-ruff-format.txt",
+      "status": "??",
+      "bytes": 29,
+      "sha256": "bd43ae7f50f6e4467d59ca01a06695bafe769968fd357fd00f6ea67fb364b3e4",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/quality/logs-disable-green.txt",
+      "status": "??",
+      "bytes": 101,
+      "sha256": "11e985644f9e8eb5333994b307083fd7f25d21b67cca84f332404312ae9386cf",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/quality/logs-disable-red.txt",
+      "status": "??",
+      "bytes": 4568,
+      "sha256": "42586021f04ceb86eb662881c5a6ffb1732fc65eec6f36c5967607fc5228856b",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/quality/mail-mypy.txt",
+      "status": "??",
+      "bytes": 44,
+      "sha256": "718df785efbbd4b57e63b5f64aff2c5b5592e433447681f759b307f97a3ec96a",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/quality/publication-boundaries.txt",
+      "status": "??",
+      "bytes": 101,
+      "sha256": "662a0ddc24e375d08bc039acdf55d884974bbe95ec3ad73f110401fd9d463ff9",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/quality/publication-green.txt",
+      "status": "??",
+      "bytes": 101,
+      "sha256": "aa97abb19785ff917fab43fce2f5456f1911fca4b3a2cc4eb8536d835da8aed1",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/quality/publication-red.txt",
+      "status": "??",
+      "bytes": 1382,
+      "sha256": "a85cb76aa35839f446013a1213afdb852c43271287146adb62b4f3f3b2d9ca86",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/quality/resumption-2026-09-18-deployment-tests.txt",
+      "status": "??",
+      "bytes": 99,
+      "sha256": "c17bb409eacf426effdc47581faa3c757ed721f9f81d585e40bf7f1ae085a718",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/quality/ruff-check.txt",
+      "status": "??",
+      "bytes": 20,
+      "sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/quality/ruff-format.txt",
+      "status": "??",
+      "bytes": 29,
+      "sha256": "bd43ae7f50f6e4467d59ca01a06695bafe769968fd357fd00f6ea67fb364b3e4",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/quality/version-readback-green.txt",
+      "status": "??",
+      "bytes": 101,
+      "sha256": "b669517d1d00486f4388859d8c72b85e8dfe359d2028572009483cbf592a6085",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/quality/version-readback-red.txt",
+      "status": "??",
+      "bytes": 3006,
+      "sha256": "7700e087fba4e070a7400b285f613cf4da3d30dd798196659b0e6bbd0f1500f6",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/sources/d1-create.json",
+      "status": "??",
+      "bytes": 7801,
+      "sha256": "bb8631c37544e0909646d64b87dedf5d6fb59a4a74007cb37bc987319452e2e5",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/sources/d1-limits.json",
+      "status": "??",
+      "bytes": 7039,
+      "sha256": "9f41033fd17105e19504be5308a77ade4809384909a42a39bbfa382d5741e5c3",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/sources/d1-location.json",
+      "status": "??",
+      "bytes": 5638,
+      "sha256": "c6c599bb0ffd1fa6c0fd34196cd5793badf1d74b819ec4b367ade6c53d1196d1",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/sources/d1-query.json",
+      "status": "??",
+      "bytes": 8511,
+      "sha256": "92af6254a132a245c97fca3415e06a258f71731a2ed17c61490f766ba0fc2d21",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/sources/email-api.json",
+      "status": "??",
+      "bytes": 15693,
+      "sha256": "a16496ed3b6a77236086d3ec860769324a64a942e36977b31b2cdeb72b472f2d",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/sources/email-dns-create.json",
+      "status": "??",
+      "bytes": 6424,
+      "sha256": "5e7325e0b25bf31731188cda5d18ce6b1bb59ddfe2beb90e305d0594ffde76e8",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/sources/email-dns-get.json",
+      "status": "??",
+      "bytes": 6595,
+      "sha256": "6619461c18df80889df1baf1113fdea548ad8d5680882f7385ca9ff7150c18e3",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/sources/email-subdomains.json",
+      "status": "??",
+      "bytes": 3387,
+      "sha256": "ddb08669c7c4994168ccfd3fae99f55d306036c46cba37857ef076c89be34e72",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/sources/static-assets.json",
+      "status": "??",
+      "bytes": 47842,
+      "sha256": "498986484b08dd7c4e99ecdb35df4cfce8c090f5750357e4eb625c8baca68d89",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/sources/web-analytics-api.json",
+      "status": "??",
+      "bytes": 3112,
+      "sha256": "b80bed62eb9c8f19a28525846bee69ace3eb08fb021e0e4e15fe70ed239ffab3",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/sources/web-analytics-rule-create.json",
+      "status": "??",
+      "bytes": 3297,
+      "sha256": "8887645c4cc21f814827772adb89a9b31be5c01254f82303f3d6614aef2bf5f0",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/sources/web-analytics-rule-list.json",
+      "status": "??",
+      "bytes": 6810,
+      "sha256": "04502e038f84632156fe2f78f6c5439ab77613dc8b5ab2569fd08387c3309767",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/sources/web-analytics-rules.json",
+      "status": "??",
+      "bytes": 1708,
+      "sha256": "db024e8c3443d27273a606876d816538a21d9345299dd662fc8cdfb291ed69ab",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/sources/web-analytics-site-list.json",
+      "status": "??",
+      "bytes": 9291,
+      "sha256": "879618cbc3d2a8bbd88d96488d8379154b852b6a816b91dc1f607f206756764c",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/sources/web-analytics-site-update.json",
+      "status": "??",
+      "bytes": 9025,
+      "sha256": "a60b2040c605304d9b635208a812c0671baac9c35036485f42ad22b24170dcf6",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/sources/web-analytics-start.json",
+      "status": "??",
+      "bytes": 3898,
+      "sha256": "a722f6790991397a0490936cfd9032229aab3326cdd80ca0df9f13286d1e79b6",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/sources/worker-deployments-get.json",
+      "status": "??",
+      "bytes": 6807,
+      "sha256": "255f950033c8e471eb502b87b737405113c256ddd1f25a176172a77d0eafb21d",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/sources/worker-deployments-list.json",
+      "status": "??",
+      "bytes": 6940,
+      "sha256": "cf08db8bf1c8ec3d71d0ce2fc3006f53ff54b02dc145740796cc21bbd93c3b4a",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/sources/worker-domain-update.json",
+      "status": "??",
+      "bytes": 6795,
+      "sha256": "545658ee19e473e33694a1efe78665b35f6f06f9c5747e126e10f875d978702b",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/sources/worker-logs.json",
+      "status": "??",
+      "bytes": 11290,
+      "sha256": "4e07b2321112374a6c57ef2cfd721dcf264e46e216555ede9c4343d8c298e31a",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/sources/worker-secret.json",
+      "status": "??",
+      "bytes": 8273,
+      "sha256": "4c8d51bef7124c59ac84f8aeffdfd08592ad9b3b7abe4880f230f86b351464a0",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/sources/worker-settings-edit.json",
+      "status": "??",
+      "bytes": 12840,
+      "sha256": "ab74a47002c7162f2f8114bfb8df558a4aae3b5406b6227ff06729f63c22ccd4",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/sources/worker-settings.json",
+      "status": "??",
+      "bytes": 9795,
+      "sha256": "caca1cdf84954936730c508859016d5c7bcdfd1ab8cecedf0afd17f148f5a65d",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/sources/worker-subdomain.json",
+      "status": "??",
+      "bytes": 5145,
+      "sha256": "8352627ff0b74887d15c1baee240bdb7df1b4cd8b9b7eaf6359dae11e24d33f1",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/sources/worker-upload.json",
+      "status": "??",
+      "bytes": 73727,
+      "sha256": "b86c68a1c756814ad51f8be51b92aad2c4921a3d45e6df4f54b53ba4e89589cc",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/evidence/sources/worker-version-get.json",
+      "status": "??",
+      "bytes": 17531,
+      "sha256": "b32fbd8abd91faa3016cdf0ce5e05f43d97d0ff1d43a825876c41c8834308863",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/implement.jsonl",
+      "status": "??",
+      "bytes": 254,
+      "sha256": "b07d08d236963962b98f02165f5c31eaaf15c70072b474458f952f1421887f6b",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/implement.md",
+      "status": "??",
+      "bytes": 3169,
+      "sha256": "1bf4b9c1bb66d6c978d08f20ce5f6bfa5682952fc53358ef42282d4c30245b05",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/next-steps.md",
+      "status": "??",
+      "bytes": 3159,
+      "sha256": "13b7bc95cb36094e5e10958c6d732fb0749949c2c274d8df0875593a7a51e075",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/prd.md",
+      "status": "??",
+      "bytes": 3426,
+      "sha256": "c966c0dbe493d8adbaf7a0be29e9c66655d625ebc0d015c6dd4cd6759e155826",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/prepublication-inspection.json",
+      "status": "??",
+      "bytes": 4849,
+      "sha256": "0ff2546f16f1d2853fdad5ca0533fe1d032e647ef41dcfea206c56734ad3f6a3",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/public-asset-inspection.json",
+      "status": "??",
+      "bytes": 516,
+      "sha256": "e0dc99e01062ddfe94541130feac4bbb33d5658f0bb3bf5bb9746ddf7b51ddbc",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/publication-01.json",
+      "status": "??",
+      "bytes": 9820,
+      "sha256": "5cf06cc7e6bcdd04ac8a7ac20903efde492ada027de6aba4904d61e4e8ea3227",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/publication-preflight.json",
+      "status": "??",
+      "bytes": 4105,
+      "sha256": "6034121e6c214c852c70230061e571e1d245ad167a6dc7184e2afae8cbaa49e0",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/quality-evidence-index.json",
+      "status": "??",
+      "bytes": 3196,
+      "sha256": "434a7286d085f516d0f9f8b18fce91e087a4e2fc2161a3da518c15205d1faa9c",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/recovery-reference.json",
+      "status": "??",
+      "bytes": 224,
+      "sha256": "3b496c429cb43aabd4b26952d0f5894a6ab4184860cf771c30213ef2be602058",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/research.md",
+      "status": "??",
+      "bytes": 6386,
+      "sha256": "46eff3cd00f0fe630ee29d3dc486a078824400373e82439f536135a1a684f9e6",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/resume-inspection.json",
+      "status": "??",
+      "bytes": 3273,
+      "sha256": "fbd387a5bb20de80a34258c292992a7b0f4a1824d17bf24946e7cc40578daf6e",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/resumption-2026-09-18.json",
+      "status": "??",
+      "bytes": 6519,
+      "sha256": "a8dd2b06d7d5f754eeabe85966bea43b8a407552c5677ebd964e657952e5f513",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/script-settings-inspection.json",
+      "status": "??",
+      "bytes": 96,
+      "sha256": "9b0c93d15e09f89038cf484c954b21f4adb352400095d02315913535094bdb5e",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/source-index.json",
+      "status": "??",
+      "bytes": 7690,
+      "sha256": "d891ada0d5c12cbc5ebadd5431fe45164337e5a45707a4e0364000fc5ec19c92",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/task.json",
+      "status": "??",
+      "bytes": 3288,
+      "sha256": "47a3fa7832ef1f45fb4bc3f56afcb9b69bd02289cbdef3c8808bbfda0b6ce79f",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/validation.json",
+      "status": "??",
+      "bytes": 4050,
+      "sha256": "ea1007dfdc8bf60b3b689cc51f3e6ed19e7ce4820d6fbaf86c4415b9a0485e94",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/web-analytics-disable-01.json",
+      "status": "??",
+      "bytes": 3255,
+      "sha256": "c4c793eb60e2ca0eafb5f30ba67c377948b9c75f8731da8f7e49d7f426fc6698",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/web-analytics-exclusion-01.json",
+      "status": "??",
+      "bytes": 1064,
+      "sha256": "5ea45a99ddd43205ca638fcb9f650865a628539439f6b273e669546bd8d64265",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/web-analytics-exclusion-plan.json",
+      "status": "??",
+      "bytes": 1056,
+      "sha256": "844e942decf7326f16f0e03c9d68e4192485eced5c78445a00eebf937d0e346e",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/web-analytics-inventory.json",
+      "status": "??",
+      "bytes": 2479,
+      "sha256": "898120a1c3e6385aef1b994845c635c2dab0c70217ca497c7fd6e0f848b4d5ea",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/web-analytics-rule-diagnostic.json",
+      "status": "??",
+      "bytes": 896,
+      "sha256": "5f1363026386d6387ac0d7804759ea353e348980b06db9c95665d10dc015c432",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/workspace-baseline.json",
+      "status": "??",
+      "bytes": 296238,
+      "sha256": "4ac56fc91f75ee2760b745ec5597b305dcad604225fc4ffb121b0876aa5b7dd0",
+      "commit_included": true
+    },
+    {
+      "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/workspace-preservation.json",
+      "status": "??",
+      "bytes": 10280,
+      "sha256": "1b996b42c1aa59a1d12d22e6ca856548263c53251f1b11ea7b3df134375514f0",
+      "commit_included": true
+    },
+    {
+      "path": "infra/cloudflare_mail/deploy.py",
+      "status": "??",
+      "bytes": 48241,
+      "sha256": "c1b82d5bbdf37cff34ab8998eb2e5896b9cbdd4327f769a83d521ceb26bee530",
+      "commit_included": true
+    },
+    {
+      "path": "infra/cloudflare_mail/new-credentials.ps1",
+      "status": "??",
+      "bytes": 4337,
+      "sha256": "ef91976853be488c25d36a663110e0d59843d96ab29833774e64c687ace06b27",
+      "commit_included": true
+    },
+    {
+      "path": "tests/cloudflare_mail/public-site.mjs",
+      "status": "??",
+      "bytes": 9743,
+      "sha256": "fc3d2a2514816c1e2e1f48734a290d5b7b3cc8acde340b6d0e7dad378156b0ef",
+      "commit_included": true
+    },
+    {
+      "path": "tests/cloudflare_mail/test_mail_deploy.py",
+      "status": "??",
+      "bytes": 28656,
+      "sha256": "6e505268fdfd2d4ae2f7b8994a9822844573e0755010e0035079b8645a134bcb",
+      "commit_included": true
+    }
+  ],
+  "self": {
+    "path": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/changed-files.json",
+    "commit_included": true,
+    "sha256": null,
+    "reason": "No recursive self hash; hash is checked externally immediately before approval execution"
+  },
+  "excluded_existing_wip": {
+    "count": 1128,
+    "paths_source": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/workspace-baseline.json",
+    "paths_field": "paths",
+    "unchanged_from_original_baseline": 1125,
+    "intentional_changes": [
+      {
+        "path": ".trellis/spec/foundation-tests/backend/index.md",
+        "fields": [
+          "bytes",
+          "sha256"
+        ],
+        "after": {
+          "exists": true,
+          "status": " M",
+          "bytes": 3397,
+          "sha256": "0e610710da28859014c26677f12589feb155a0bf8c7a1572d756977e8f5a9b17"
+        },
+        "commit_included": false
+      },
+      {
+        "path": ".trellis/spec/infrastructure/backend/index.md",
+        "fields": [
+          "bytes",
+          "sha256"
+        ],
+        "after": {
+          "exists": true,
+          "status": " M",
+          "bytes": 828,
+          "sha256": "35cf168d7734ae75916482c1f18d458dcf1191279c0664a5ddf0a1a88e7c0e24"
+        },
+        "commit_included": false
+      },
+      {
+        "path": ".trellis/tasks/09-11-saas-first-use/task.json",
+        "fields": [
+          "bytes",
+          "sha256"
+        ],
+        "after": {
+          "exists": true,
+          "status": "??",
+          "bytes": 15636,
+          "sha256": "9aec4cf4b34b25166e6439656ca5910a74fc8c05c416a021bb53411bc41030a1"
+        },
+        "commit_included": false
+      }
+    ],
+    "unexpected_changes": []
+  },
+  "preservation": {
+    "continuation_entry_rollout_files": 97,
+    "continuation_entry_rollout_files_unchanged": true,
+    "prior_package_files_checked": 124,
+    "prior_package_mismatches": 0,
+    "real_index_sha256_on_resume": "1e9e407acae25bfa833b45d4196248748edd0233cc9098fc0c62a8cf3de4184b"
+  },
+  "recovery_manifest": "D:\\Agent\\codex\\backups\\tasks\\20260916T054248.861Z-saas-cloudflare-mail-rollout\\manifest.json",
+  "validation_report": ".trellis/tasks/09-16-saas-cloudflare-mail-rollout/resumption-2026-09-18.json"
+}

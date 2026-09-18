@@ -1,0 +1,19 @@
+{
+  "ok": true,
+  "url": "https://developers.cloudflare.com/api/resources/rum/subresources/rules/methods/create/",
+  "provider": "tavily",
+  "content": "![](/api/_astro/logo.DMYpXs3t.svg)\n\n# Create a Web Analytics rule\n\nCreates a new rule in a Web Analytics ruleset.\n\n##### Security\n\nThe preferred authorization scheme for interacting with the Cloudflare API. [Create a token](https://developers.cloudflare.com/fundamentals/api/get-started/create-token/).\n\n`Authorization: Bearer Sn3lZJTBX6kkg7OdcBUAxOO963GEIyGQqnFTOFYY`\n\nThe previous authorization scheme for interacting with the Cloudflare API, used in conjunction with a Global API key.\n\n`X-Auth-Email: user@example.com`\n\nThe previous authorization scheme for interacting with the Cloudflare API. When possible, use API tokens instead of Global API keys.\n\n`X-Auth-Key: 144c9defac04969c7bfad8efaa8ea194`\n\n##### Path ParametersExpand Collapse\n\nIdentifier.\n\nThe Web Analytics ruleset identifier.\n\n##### Body ParametersJSONExpand Collapse\n\nWhether the rule includes or excludes traffic from being measured.\n\nWhether the rule is paused or not.\n\n##### ReturnsExpand Collapse\n\nWhether the API call was successful.\n\nThe Web Analytics rule identifier.\n\nThe hostname the rule will be applied to.\n\nWhether the rule includes or excludes traffic from being measured.\n\nWhether the rule is paused or not.\n\nThe paths the rule will be applied to.\n\n### Create a Web Analytics rule\n\n`curl https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/rum/v2/$RULESET_ID/rule \\\n -H 'Content-Type: application/json' \\\n -H \"Authorization: Bearer $CLOUDFLARE_API_TOKEN\" \\\n -d '{\n \"host\": \"example.com\",\n \"inclusive\": true,\n \"paths\": [\n \"*\"\n ]\n }'`\n`{\n \"errors\": [\n {\n \"code\": 1000,\n \"message\": \"message\",\n \"documentation_url\": \"documentation_url\",\n \"source\": {\n \"pointer\": \"pointer\"\n }\n }\n ],\n \"messages\": [\n {\n \"code\": 1000,\n \"message\": \"message\",\n \"documentation_url\": \"documentation_url\",\n \"source\": {\n \"pointer\": \"pointer\"\n }\n }\n ],\n \"success\": true,\n \"result\": {\n \"id\": \"f174e90a-fafe-4643-bbbc-4a0ed4fc8415\",\n \"created\": \"2014-01-01T05:20:00.12345Z\",\n \"host\": \"example.com\",\n \"inclusive\": true,\n \"is_paused\": false,\n \"paths\": [\n \"*\"\n ],\n \"priority\": 1000\n }\n}`\n\n##### Returns Examples\n\n`{\n \"errors\": [\n {\n \"code\": 1000,\n \"message\": \"message\",\n \"documentation_url\": \"documentation_url\",\n \"source\": {\n \"pointer\": \"pointer\"\n }\n }\n ],\n \"messages\": [\n {\n \"code\": 1000,\n \"message\": \"message\",\n \"documentation_url\": \"documentation_url\",\n \"source\": {\n \"pointer\": \"pointer\"\n }\n }\n ],\n \"success\": true,\n \"result\": {\n \"id\": \"f174e90a-fafe-4643-bbbc-4a0ed4fc8415\",\n \"created\": \"2014-01-01T05:20:00.12345Z\",\n \"host\": \"example.com\",\n \"inclusive\": true,\n \"is_paused\": false,\n \"paths\": [\n \"*\"\n ],\n \"priority\": 1000\n }\n}`",
+  "provider_attempts": [
+    {
+      "capability": "web_fetch",
+      "provider": "tavily",
+      "status": "ok",
+      "error_type": "",
+      "error": "",
+      "elapsed_ms": 6394.33,
+      "result_count": 1
+    }
+  ],
+  "fallback_used": false,
+  "elapsed_ms": 6394.35
+}

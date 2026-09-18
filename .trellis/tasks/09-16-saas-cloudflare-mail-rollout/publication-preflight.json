@@ -1,0 +1,140 @@
+{
+  "checked_at": "2026-09-16T07:00:49.949331+00:00",
+  "operation": "read_only_publication_preflight",
+  "preflight": {
+    "account_id": "2741446a7478f2d8a5ff31df7e077f17",
+    "zone_id": "5c093bf35698435cee3dff437c4e3545",
+    "zone_status": "active",
+    "existing_database_count": 4,
+    "existing_worker_count": 2,
+    "existing_custom_domain_count": 1,
+    "zone_dns_record_count": 0,
+    "target_names_available": false,
+    "web_hostname_available": true,
+    "recorded_worker_matched": true
+  },
+  "version": {
+    "deployment_id": "88f4b6ef-1f81-45b7-8e39-37355e05189e",
+    "version_id": "a7b3cb12-0210-4050-bfb6-a4acb69d679c",
+    "script_etag": "3271be04ec968e4d884cea1cf15e1ba72aaf39edd2ef140038c99b328e78fd07",
+    "compatibility_date": "2026-09-10",
+    "compatibility_flags": [
+      "nodejs_compat"
+    ],
+    "handlers": [
+      "email",
+      "fetch"
+    ],
+    "binding_names": [
+      "ADMIN_PASSWORDS",
+      "ASSETS",
+      "BACKEND_URL",
+      "DB",
+      "DEFAULT_DOMAINS",
+      "DEFAULT_LANG",
+      "DEFAULT_SEND_BALANCE",
+      "DISABLE_ADMIN_PASSWORD_CHECK",
+      "DISABLE_ANONYMOUS_USER_CREATE_EMAIL",
+      "DOMAINS",
+      "ENABLE_ADDRESS_PASSWORD",
+      "ENABLE_AGENT_EMAIL_INFO",
+      "ENABLE_AI_EMAIL_EXTRACT",
+      "ENABLE_ANOTHER_WORKER",
+      "ENABLE_AUTO_REPLY",
+      "ENABLE_CREATE_ADDRESS_SUBDOMAIN_MATCH",
+      "ENABLE_INDEX_ABOUT",
+      "ENABLE_MAIL_GZIP",
+      "ENABLE_MAIL_READ_STATUS",
+      "ENABLE_REDEEM_CODE",
+      "ENABLE_USER_CREATE_EMAIL",
+      "ENABLE_USER_DELETE_EMAIL",
+      "ENABLE_WEBHOOK",
+      "FORWARD_ADDRESS_LIST",
+      "FRONTEND_URL",
+      "JWT_SECRET",
+      "PASSWORDS",
+      "PREFIX",
+      "SUBDOMAIN_FORWARD_ADDRESS_LIST",
+      "TITLE"
+    ],
+    "dedicated_database_binding_verified": true,
+    "private_secret_bindings_verified": true,
+    "receive_only_bindings_verified": true,
+    "assets_run_worker_first": true
+  },
+  "script_settings": {
+    "logpush": false,
+    "tags": null,
+    "tail_consumers": null,
+    "observability": null
+  },
+  "alternate_entrances": {
+    "enabled": false,
+    "previews_enabled": false
+  },
+  "api_events": [
+    {
+      "method": "GET",
+      "path": "/zones/5c093bf35698435cee3dff437c4e3545",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/d1/database?per_page=100&page=1",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts?per_page=100&page=1",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/domains?per_page=100&page=1",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/zones/5c093bf35698435cee3dff437c4e3545/dns_records?per_page=100&page=1",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts/docagent-private-mail/deployments",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts/docagent-private-mail/versions/a7b3cb12-0210-4050-bfb6-a4acb69d679c",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts/docagent-private-mail/script-settings",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts/docagent-private-mail/subdomain",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    }
+  ]
+}

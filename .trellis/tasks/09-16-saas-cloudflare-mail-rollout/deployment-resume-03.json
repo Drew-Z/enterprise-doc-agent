@@ -1,0 +1,455 @@
+{
+  "status": "failed_needs_inspection",
+  "started_at": "2026-09-16T06:26:48.373571+00:00",
+  "plan": {
+    "account_id": "2741446a7478f2d8a5ff31df7e077f17",
+    "zone_id": "5c093bf35698435cee3dff437c4e3545",
+    "zone_name": "ciallobill.ccwu.cc",
+    "worker_name": "docagent-private-mail",
+    "database_name": "docagent-private-mail",
+    "hostname": "inbox.ciallobill.ccwu.cc",
+    "manifest_sha256": "48ce026cc9360c5644b8b36c4c42fa6b5f72648e39daf96e7d8c176b5cb63f21",
+    "worker_sha256": "dfbd83c94768744e4cd79d296c6d922680541440d52ac1e8cd6eeb3fe6a5cdf3",
+    "asset_count": 27,
+    "primary_location_hint": "apac",
+    "read_replication": {
+      "mode": "disabled"
+    },
+    "fixed_processing_region_guaranteed": false,
+    "receive_only": true,
+    "email_routing_changed": false,
+    "real_email_sent": false
+  },
+  "preflight": {
+    "account_id": "2741446a7478f2d8a5ff31df7e077f17",
+    "zone_id": "5c093bf35698435cee3dff437c4e3545",
+    "zone_status": "active",
+    "existing_database_count": 4,
+    "existing_worker_count": 1,
+    "existing_custom_domain_count": 1,
+    "zone_dns_record_count": 0,
+    "target_names_available": true
+  },
+  "steps": [
+    {
+      "name": "verify_recorded_database",
+      "status": "succeeded"
+    },
+    {
+      "name": "verify_initialized_database",
+      "status": "succeeded"
+    },
+    {
+      "name": "register_assets",
+      "status": "succeeded"
+    },
+    {
+      "name": "upload_asset_bucket_1_file_1",
+      "status": "succeeded"
+    },
+    {
+      "name": "upload_asset_bucket_1_file_2",
+      "status": "succeeded"
+    },
+    {
+      "name": "upload_asset_bucket_1_file_3",
+      "status": "succeeded"
+    },
+    {
+      "name": "upload_asset_bucket_1_file_4",
+      "status": "succeeded"
+    },
+    {
+      "name": "upload_asset_bucket_1_file_5",
+      "status": "succeeded"
+    },
+    {
+      "name": "upload_asset_bucket_1_file_6",
+      "status": "succeeded"
+    },
+    {
+      "name": "upload_asset_bucket_2_file_1",
+      "status": "succeeded"
+    },
+    {
+      "name": "upload_asset_bucket_2_file_2",
+      "status": "succeeded"
+    },
+    {
+      "name": "upload_asset_bucket_2_file_3",
+      "status": "succeeded"
+    },
+    {
+      "name": "upload_asset_bucket_2_file_4",
+      "status": "succeeded"
+    },
+    {
+      "name": "upload_asset_bucket_2_file_5",
+      "status": "succeeded"
+    },
+    {
+      "name": "upload_asset_bucket_3_file_1",
+      "status": "succeeded"
+    },
+    {
+      "name": "upload_asset_bucket_3_file_2",
+      "status": "succeeded"
+    },
+    {
+      "name": "upload_asset_bucket_3_file_3",
+      "status": "succeeded"
+    },
+    {
+      "name": "upload_asset_bucket_3_file_4",
+      "status": "succeeded"
+    },
+    {
+      "name": "upload_asset_bucket_3_file_5",
+      "status": "succeeded"
+    },
+    {
+      "name": "upload_closed_worker",
+      "status": "succeeded"
+    },
+    {
+      "name": "disable_workers_dev_and_previews",
+      "status": "succeeded"
+    },
+    {
+      "name": "install_secret_ADMIN_PASSWORDS",
+      "status": "succeeded"
+    },
+    {
+      "name": "install_secret_JWT_SECRET",
+      "status": "succeeded"
+    },
+    {
+      "name": "install_secret_PASSWORDS",
+      "status": "succeeded"
+    },
+    {
+      "name": "verify_worker_configuration",
+      "status": "started"
+    }
+  ],
+  "api_events": [
+    {
+      "method": "GET",
+      "path": "/zones/5c093bf35698435cee3dff437c4e3545",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/d1/database?per_page=100&page=1",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts?per_page=100&page=1",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/domains?per_page=100&page=1",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/zones/5c093bf35698435cee3dff437c4e3545/dns_records?per_page=100&page=1",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/d1/database/8521706f-87c6-43af-8866-cc0ce95dd5d9",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "POST",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/d1/database/8521706f-87c6-43af-8866-cc0ce95dd5d9/query",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "POST",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts/docagent-private-mail/assets-upload-session",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "POST",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/assets/upload?base64=true",
+      "http": 202,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "POST",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/assets/upload?base64=true",
+      "http": 202,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "POST",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/assets/upload?base64=true",
+      "http": 202,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "POST",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/assets/upload?base64=true",
+      "http": 202,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "POST",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/assets/upload?base64=true",
+      "http": 202,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "POST",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/assets/upload?base64=true",
+      "http": 202,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "POST",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/assets/upload?base64=true",
+      "http": 202,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "POST",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/assets/upload?base64=true",
+      "http": 202,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "POST",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/assets/upload?base64=true",
+      "http": 202,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "POST",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/assets/upload?base64=true",
+      "http": 202,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "POST",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/assets/upload?base64=true",
+      "http": 202,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "POST",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/assets/upload?base64=true",
+      "http": 202,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "POST",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/assets/upload?base64=true",
+      "http": 202,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "POST",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/assets/upload?base64=true",
+      "http": 202,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "POST",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/assets/upload?base64=true",
+      "http": 202,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "POST",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/assets/upload?base64=true",
+      "http": 201,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts?per_page=100&page=1",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "PUT",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts/docagent-private-mail",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "POST",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts/docagent-private-mail/subdomain",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts/docagent-private-mail/subdomain",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "PUT",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts/docagent-private-mail/secrets",
+      "http": 201,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "PUT",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts/docagent-private-mail/secrets",
+      "http": 201,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "PUT",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts/docagent-private-mail/secrets",
+      "http": 201,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts/docagent-private-mail/subdomain",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts/docagent-private-mail/settings",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    }
+  ],
+  "real_email_sent": false,
+  "email_routing_changed": false,
+  "resume_source": {
+    "path": "D:\\workspace4Cursor\\enterprise-doc-agent\\.trellis\\tasks\\09-16-saas-cloudflare-mail-rollout\\deployment-resume-02.json",
+    "sha256": "b084bcbac376cef07a180dc43ebee73b9d501dfdde84a6eee951d2d3d82ac1af"
+  },
+  "database_id": "8521706f-87c6-43af-8866-cc0ce95dd5d9",
+  "database": {
+    "name": "docagent-private-mail",
+    "uuid": "8521706f-87c6-43af-8866-cc0ce95dd5d9",
+    "jurisdiction": null,
+    "read_replication": {
+      "mode": "disabled"
+    }
+  },
+  "observed_query_regions": [
+    "APAC"
+  ],
+  "database_initialized": true,
+  "asset_upload_files": [
+    {
+      "hash": "9c05c3fd28fea9034be2fdbdcbd3610e",
+      "base64_bytes": 368
+    },
+    {
+      "hash": "e47f244d463101203960c118a05c4bec",
+      "base64_bytes": 3288
+    },
+    {
+      "hash": "86104292feac6f3b25ab1ce3009e71e5",
+      "base64_bytes": 7720
+    },
+    {
+      "hash": "575aa3928bc71a8302d3f59047334aa1",
+      "base64_bytes": 9756
+    },
+    {
+      "hash": "e0f312713d5b5bc030c2a940ef574b8d",
+      "base64_bytes": 129532
+    },
+    {
+      "hash": "54964d8df42a99146a9b185cfd1b511b",
+      "base64_bytes": 2204728
+    },
+    {
+      "hash": "909671911b213e8f176b05093320d26c",
+      "base64_bytes": 1256
+    },
+    {
+      "hash": "74a6b15dd20e782822fc0163f3d049b0",
+      "base64_bytes": 3656
+    },
+    {
+      "hash": "0e5429c46ca9243eb2a0278203975b3e",
+      "base64_bytes": 8244
+    },
+    {
+      "hash": "e6291ec6756825fcfba410a7a39655a2",
+      "base64_bytes": 16624
+    },
+    {
+      "hash": "073ffdaccd422583fc524dcd4c0c1d6a",
+      "base64_bytes": 343496
+    },
+    {
+      "hash": "902187c288d930399f728a4cc0fc4ceb",
+      "base64_bytes": 2796
+    },
+    {
+      "hash": "fa236312776b98eb35522cce2acfb5f3",
+      "base64_bytes": 5544
+    },
+    {
+      "hash": "7ef717ba4a8e97e10bde1e9eb6543697",
+      "base64_bytes": 9360
+    },
+    {
+      "hash": "ee553558d2b7bf733ee472c67aeaa787",
+      "base64_bytes": 19492
+    },
+    {
+      "hash": "61fa20e834abc36a0e828511d590ef43",
+      "base64_bytes": 1074436
+    }
+  ],
+  "worker_name": "docagent-private-mail",
+  "error": "Worker assets are not configured to run the private entry first"
+}

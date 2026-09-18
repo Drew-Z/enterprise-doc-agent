@@ -1,0 +1,162 @@
+{
+  "retrieved_at": "2026-09-16T05:49:21.427353+00:00",
+  "sources": [
+    {
+      "file": "evidence/sources/d1-location.json",
+      "url": "https://developers.cloudflare.com/d1/configuration/data-location/",
+      "sha256": "c6c599bb0ffd1fa6c0fd34196cd5793badf1d74b819ec4b367ade6c53d1196d1",
+      "provider": "tavily"
+    },
+    {
+      "file": "evidence/sources/d1-create.json",
+      "url": "https://developers.cloudflare.com/api/resources/d1/subresources/database/methods/create/",
+      "sha256": "bb8631c37544e0909646d64b87dedf5d6fb59a4a74007cb37bc987319452e2e5",
+      "provider": "tavily"
+    },
+    {
+      "file": "evidence/sources/email-subdomains.json",
+      "url": "https://developers.cloudflare.com/email-service/configuration/subdomains/",
+      "sha256": "ddb08669c7c4994168ccfd3fae99f55d306036c46cba37857ef076c89be34e72",
+      "provider": "tavily"
+    },
+    {
+      "file": "evidence/sources/worker-upload.json",
+      "url": "https://developers.cloudflare.com/api/resources/workers/subresources/scripts/methods/update/",
+      "sha256": "b86c68a1c756814ad51f8be51b92aad2c4921a3d45e6df4f54b53ba4e89589cc",
+      "provider": "tavily"
+    },
+    {
+      "file": "evidence/sources/email-api.json",
+      "url": "https://developers.cloudflare.com/api/resources/email_routing/",
+      "sha256": "a16496ed3b6a77236086d3ec860769324a64a942e36977b31b2cdeb72b472f2d",
+      "provider": "tavily"
+    },
+    {
+      "file": "evidence/sources/email-dns-create.json",
+      "url": "https://developers.cloudflare.com/api/resources/email_routing/subresources/dns/methods/create/",
+      "sha256": "5e7325e0b25bf31731188cda5d18ce6b1bb59ddfe2beb90e305d0594ffde76e8",
+      "provider": "tavily"
+    },
+    {
+      "file": "evidence/sources/email-dns-get.json",
+      "url": "https://developers.cloudflare.com/api/resources/email_routing/subresources/dns/methods/get/",
+      "sha256": "6619461c18df80889df1baf1113fdea548ad8d5680882f7385ca9ff7150c18e3",
+      "provider": "tavily"
+    },
+    {
+      "file": "evidence/sources/worker-domain-update.json",
+      "url": "https://developers.cloudflare.com/api/resources/workers/subresources/domains/methods/update/",
+      "sha256": "545658ee19e473e33694a1efe78665b35f6f06f9c5747e126e10f875d978702b",
+      "provider": "tavily"
+    },
+    {
+      "file": "evidence/sources/static-assets.json",
+      "url": "https://developers.cloudflare.com/workers/static-assets/direct-upload/",
+      "sha256": "498986484b08dd7c4e99ecdb35df4cfce8c090f5750357e4eb625c8baca68d89",
+      "provider": "tavily"
+    },
+    {
+      "file": "evidence/sources/d1-limits.json",
+      "url": "https://developers.cloudflare.com/d1/platform/limits/",
+      "sha256": "9f41033fd17105e19504be5308a77ade4809384909a42a39bbfa382d5741e5c3",
+      "provider": "tavily"
+    },
+    {
+      "file": "evidence/sources/worker-secret.json",
+      "url": "https://developers.cloudflare.com/api/resources/workers/subresources/scripts/subresources/secrets/methods/update/",
+      "sha256": "4c8d51bef7124c59ac84f8aeffdfd08592ad9b3b7abe4880f230f86b351464a0",
+      "provider": "tavily"
+    },
+    {
+      "file": "evidence/sources/worker-subdomain.json",
+      "url": "https://developers.cloudflare.com/api/resources/workers/subresources/scripts/subresources/subdomain/methods/create/",
+      "sha256": "8352627ff0b74887d15c1baee240bdb7df1b4cd8b9b7eaf6359dae11e24d33f1",
+      "provider": "tavily"
+    },
+    {
+      "file": "evidence/sources/d1-query.json",
+      "url": "https://developers.cloudflare.com/api/resources/d1/subresources/database/methods/query/",
+      "sha256": "92af6254a132a245c97fca3415e06a258f71731a2ed17c61490f766ba0fc2d21",
+      "provider": "tavily"
+    },
+    {
+      "file": "evidence/sources/worker-settings.json",
+      "url": "https://developers.cloudflare.com/api/resources/workers/subresources/scripts/subresources/settings/methods/get/",
+      "sha256": "caca1cdf84954936730c508859016d5c7bcdfd1ab8cecedf0afd17f148f5a65d",
+      "provider": "tavily"
+    },
+    {
+      "file": "evidence/sources/worker-version-get.json",
+      "url": "https://developers.cloudflare.com/api/resources/workers/subresources/scripts/subresources/versions/methods/get/",
+      "sha256": "b32fbd8abd91faa3016cdf0ce5e05f43d97d0ff1d43a825876c41c8834308863",
+      "provider": "tavily"
+    },
+    {
+      "file": "evidence/sources/worker-deployments-get.json",
+      "url": "https://developers.cloudflare.com/api/resources/workers/subresources/scripts/subresources/deployments/methods/get/",
+      "sha256": "255f950033c8e471eb502b87b737405113c256ddd1f25a176172a77d0eafb21d",
+      "provider": "tavily"
+    },
+    {
+      "file": "evidence/sources/worker-logs.json",
+      "url": "https://developers.cloudflare.com/workers/observability/logs/workers-logs/",
+      "sha256": "4e07b2321112374a6c57ef2cfd721dcf264e46e216555ede9c4343d8c298e31a",
+      "provider": "tavily"
+    },
+    {
+      "file": "evidence/sources/worker-deployments-list.json",
+      "url": "https://developers.cloudflare.com/api/resources/workers/subresources/scripts/subresources/deployments/methods/list/",
+      "sha256": "cf08db8bf1c8ec3d71d0ce2fc3006f53ff54b02dc145740796cc21bbd93c3b4a",
+      "provider": "tavily"
+    },
+    {
+      "file": "evidence/sources/worker-settings-edit.json",
+      "url": "https://developers.cloudflare.com/api/resources/workers/subresources/scripts/subresources/settings/methods/edit/",
+      "sha256": "ab74a47002c7162f2f8114bfb8df558a4aae3b5406b6227ff06729f63c22ccd4",
+      "provider": "tavily"
+    },
+    {
+      "file": "evidence/sources/web-analytics-start.json",
+      "url": "https://developers.cloudflare.com/web-analytics/get-started/",
+      "sha256": "a722f6790991397a0490936cfd9032229aab3326cdd80ca0df9f13286d1e79b6",
+      "provider": "tavily"
+    },
+    {
+      "file": "evidence/sources/web-analytics-api.json",
+      "url": "https://developers.cloudflare.com/api/resources/rum/",
+      "sha256": "b80bed62eb9c8f19a28525846bee69ace3eb08fb021e0e4e15fe70ed239ffab3",
+      "provider": "tavily"
+    },
+    {
+      "file": "evidence/sources/web-analytics-rules.json",
+      "url": "https://developers.cloudflare.com/web-analytics/configuration-options/rules/",
+      "sha256": "db024e8c3443d27273a606876d816538a21d9345299dd662fc8cdfb291ed69ab",
+      "provider": "tavily"
+    },
+    {
+      "file": "evidence/sources/web-analytics-site-list.json",
+      "url": "https://developers.cloudflare.com/api/resources/rum/subresources/site_info/methods/list/",
+      "sha256": "879618cbc3d2a8bbd88d96488d8379154b852b6a816b91dc1f607f206756764c",
+      "provider": "tavily"
+    },
+    {
+      "file": "evidence/sources/web-analytics-rule-create.json",
+      "url": "https://developers.cloudflare.com/api/resources/rum/subresources/rules/methods/create/",
+      "sha256": "8887645c4cc21f814827772adb89a9b31be5c01254f82303f3d6614aef2bf5f0",
+      "provider": "tavily"
+    },
+    {
+      "file": "evidence/sources/web-analytics-rule-list.json",
+      "url": "https://developers.cloudflare.com/api/resources/rum/subresources/rules/methods/list/",
+      "sha256": "04502e038f84632156fe2f78f6c5439ab77613dc8b5ab2569fd08387c3309767",
+      "provider": "tavily"
+    },
+    {
+      "file": "evidence/sources/web-analytics-site-update.json",
+      "url": "https://developers.cloudflare.com/api/resources/rum/subresources/site_info/methods/update/",
+      "sha256": "a60b2040c605304d9b635208a812c0671baac9c35036485f42ad22b24170dcf6",
+      "provider": "tavily"
+    }
+  ],
+  "updated_at": "2026-09-16T07:24:40.130326+00:00"
+}

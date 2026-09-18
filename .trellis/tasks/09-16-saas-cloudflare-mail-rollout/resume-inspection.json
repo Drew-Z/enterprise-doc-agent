@@ -1,0 +1,126 @@
+{
+  "observed_at": "2026-09-16T06:13:15.954413+00:00",
+  "previous_attempt": "deployment-state.json",
+  "database": {
+    "uuid": "8521706f-87c6-43af-8866-cc0ce95dd5d9",
+    "name": "docagent-private-mail",
+    "jurisdiction": null,
+    "read_replication": {
+      "mode": "disabled"
+    },
+    "version": "production",
+    "file_size": 176128
+  },
+  "target_worker_present": false,
+  "web_domain_present": false,
+  "dns_records": [],
+  "database_checks": [
+    {
+      "results": [
+        {
+          "mails": 0,
+          "addresses": 0,
+          "sent": 0
+        }
+      ],
+      "success": true,
+      "meta": {
+        "served_by": "v3-prod",
+        "served_by_region": "APAC",
+        "served_by_colo": "SIN",
+        "served_by_primary": true,
+        "timings": {
+          "sql_duration_ms": 0.6692
+        },
+        "duration": 0.6692,
+        "changes": 0,
+        "last_row_id": 0,
+        "changed_db": false,
+        "size_after": 176128,
+        "rows_read": 0,
+        "rows_written": 0,
+        "total_attempts": 1
+      }
+    },
+    {
+      "results": [
+        {
+          "key": "db_version",
+          "value": "v0.0.9"
+        },
+        {
+          "key": "email_rule_settings",
+          "value": "{\"blockReceiveUnknowAddressEmail\":true}"
+        },
+        {
+          "key": "no_limit_send_address_list",
+          "value": "[]"
+        },
+        {
+          "key": "user_settings",
+          "value": "{\"enable\":false,\"enableMailVerify\":false}"
+        },
+        {
+          "key": "verified_address_list",
+          "value": "[]"
+        }
+      ],
+      "success": true,
+      "meta": {
+        "served_by": "v3-prod",
+        "served_by_region": "APAC",
+        "served_by_colo": "SIN",
+        "served_by_primary": true,
+        "timings": {
+          "sql_duration_ms": 0.3597
+        },
+        "duration": 0.3597,
+        "changes": 0,
+        "last_row_id": 0,
+        "changed_db": false,
+        "size_after": 176128,
+        "rows_read": 5,
+        "rows_written": 0,
+        "total_attempts": 1
+      }
+    }
+  ],
+  "api_events": [
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/d1/database/8521706f-87c6-43af-8866-cc0ce95dd5d9",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts?per_page=100&page=1",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/zones/5c093bf35698435cee3dff437c4e3545/dns_records?per_page=100&page=1",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/domains?per_page=100&page=1",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "POST",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/d1/database/8521706f-87c6-43af-8866-cc0ce95dd5d9/query",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    }
+  ],
+  "new_cloud_mutations_performed": false
+}

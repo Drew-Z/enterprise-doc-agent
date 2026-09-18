@@ -1,0 +1,29 @@
+{
+  "checked_at": "2026-09-16T07:14:48.719826+00:00",
+  "purpose": "Inspect unchanged rules after 409, then explicitly reproduce the rejected non-secret rule request once to retain its diagnostic",
+  "prior_request_left_rules_unchanged": true,
+  "http": 409,
+  "errors": [
+    {
+      "code": 10012,
+      "message": "web_analytics.configuration.api.maxRulesError"
+    }
+  ],
+  "rules_unchanged_after_diagnostic": true,
+  "api_events": [
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/rum/v2/ca50d3f0-8d97-417d-91f5-61d68932b9ef/rules",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/rum/v2/ca50d3f0-8d97-417d-91f5-61d68932b9ef/rules",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    }
+  ]
+}
