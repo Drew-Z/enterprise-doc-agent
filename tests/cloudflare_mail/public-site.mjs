@@ -5,7 +5,11 @@ import { resolve, join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 const args = new Map();
+const accepted = new Set(['--repo', '--credentials', '--mailboxes', '--evidence', '--domain', '--address-prefix']);
 for (let index = 2; index < process.argv.length; index += 2) {
+  if (!accepted.has(process.argv[index]) || args.has(process.argv[index]) || process.argv[index + 1] === undefined) {
+    throw new Error('Unknown, duplicate or incomplete argument');
+  }
   args.set(process.argv[index], process.argv[index + 1]);
 }
 for (const required of ['--repo', '--credentials', '--mailboxes', '--evidence']) {
@@ -15,6 +19,11 @@ const repo = resolve(args.get('--repo'));
 const credentialsPath = resolve(args.get('--credentials'));
 const mailboxesPath = resolve(args.get('--mailboxes'));
 const evidence = resolve(args.get('--evidence'));
+const domain = args.get('--domain') ?? 'mailtest.ciallobill.ccwu.cc';
+const addressPrefix = args.get('--address-prefix') ?? '';
+if (domain.length > 253 || domain.split('.').length < 2
+  || !domain.split('.').every(label => /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label))
+  || !/^[a-z0-9]{0,22}$/.test(addressPrefix)) throw new Error('Invalid mailbox domain or prefix');
 const base = 'https://inbox.ciallobill.ccwu.cc';
 const require = createRequire(join(repo, 'apps/web/package.json'));
 const { chromium } = require('@playwright/test');
@@ -34,7 +43,8 @@ const siteSecret = JSON.parse(privateValues.PASSWORDS)[0];
 const adminSecret = JSON.parse(privateValues.ADMIN_PASSWORDS)[0];
 const mailboxes = JSON.parse(await readFile(mailboxesPath, 'utf8'));
 const report = { started_at: new Date().toISOString(), origin: base, status: 'running',
-  boundary: 'real_public_HTTPS_API_Chromium_no_mail_delivery', checks: [],
+  boundary: 'real_public_HTTPS_API_Chromium_no_mail_delivery', domain, address_prefix: addressPrefix,
+  checks: [], mutations: [],
   real_email_sent: false, real_email_received_verified: false, browser_closed: false };
 let stage = 'https';
 let browser;
@@ -82,20 +92,27 @@ try {
   const register = await request('/user_api/register', { method: 'POST', headers: siteHeaders, body: '{}' });
   check('public_user_registration_disabled', register.status === 403, { http: register.status });
   const create = await request('/api/new_address', { method: 'POST', headers: siteHeaders,
-    body: JSON.stringify({ name: 'disallowed', domain: 'mailtest.ciallobill.ccwu.cc' }) });
+    body: JSON.stringify({ name: 'disallowed', domain }) });
   check('public_address_creation_disabled', create.status === 403, { http: create.status });
   stage = 'synthetic_mailboxes';
   for (const name of ['owner01', 'member01']) {
-    const expectedAddress = name + '@mailtest.ciallobill.ccwu.cc';
+    const localName = addressPrefix + name;
+    const expectedAddress = localName + '@' + domain;
     let created = false;
     if (!mailboxes[name]) {
+      const mutation = { address: expectedAddress, status: 'started', started_at: new Date().toISOString() };
+      report.mutations.push(mutation);
+      await writeFile(join(evidence, 'report.json'), JSON.stringify(report, null, 2) + '\n');
       const response = await request('/admin/new_address', { method: 'POST', headers: adminHeaders,
-        body: JSON.stringify({ name, domain: 'mailtest.ciallobill.ccwu.cc', enablePrefix: false }) });
+        body: JSON.stringify({ name: localName, domain, enablePrefix: false }) });
       check('admin_creates_' + name, response.status === 200 && typeof response.data?.jwt === 'string'
         && response.data.address === expectedAddress, { http: response.status });
       mailboxes[name] = { address: response.data.address, jwt: response.data.jwt };
       // Write the existing protected file in place; retain its explicit DACL.
       await writeFile(mailboxesPath, JSON.stringify(mailboxes, null, 2));
+      mutation.status = 'succeeded';
+      mutation.finished_at = new Date().toISOString();
+      await writeFile(join(evidence, 'report.json'), JSON.stringify(report, null, 2) + '\n');
       created = true;
     }
     const mailbox = mailboxes[name];

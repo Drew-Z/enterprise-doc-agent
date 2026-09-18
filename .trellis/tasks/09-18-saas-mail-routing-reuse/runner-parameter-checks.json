@@ -1,0 +1,27 @@
+{
+  "syntax_check_passed": true,
+  "parameter_checks": [
+    {
+      "name": "invalid_domain",
+      "passed": true
+    },
+    {
+      "name": "invalid_prefix",
+      "passed": true
+    },
+    {
+      "name": "unknown_argument",
+      "passed": true
+    },
+    {
+      "name": "missing_value",
+      "passed": true
+    },
+    {
+      "name": "duplicate_argument",
+      "passed": true
+    }
+  ],
+  "cloud_calls": 0,
+  "files_created_by_cases": false
+}

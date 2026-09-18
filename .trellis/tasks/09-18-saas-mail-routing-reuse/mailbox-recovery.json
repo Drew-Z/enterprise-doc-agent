@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "created_address_inspected_in_d1": true,
+  "recovered_id": 3,
+  "address": "docagentowner01@playarchive.eu.cc",
+  "method": "existing_authenticated_admin_show_password",
+  "inbox_authentication_http": 200,
+  "cloud_mutations": 0,
+  "original_failed_creation_report_preserved": true
+}

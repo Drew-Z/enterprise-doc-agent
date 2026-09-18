@@ -1,0 +1,142 @@
+{
+  "status": "passed",
+  "asset_count": 27,
+  "checks": [
+    {
+      "path": "assets/assets/Admin-Bju3525J.css",
+      "http": 200,
+      "passed": true
+    },
+    {
+      "path": "assets/assets/Admin-BSisj_Z_.js",
+      "http": 200,
+      "passed": true
+    },
+    {
+      "path": "assets/assets/index-BHtaHxM4.css",
+      "http": 200,
+      "passed": true
+    },
+    {
+      "path": "assets/assets/index-Cw8ojkc0.js",
+      "http": 200,
+      "passed": true
+    },
+    {
+      "path": "assets/assets/index-DZ__RPQ7.css",
+      "http": 200,
+      "passed": true
+    },
+    {
+      "path": "assets/assets/index.esm-CU3a6hEP.js",
+      "http": 200,
+      "passed": true
+    },
+    {
+      "path": "assets/assets/jszip.min-CLYaVBvx.js",
+      "http": 200,
+      "passed": true
+    },
+    {
+      "path": "assets/assets/Mail-CYPHRmkH.js",
+      "http": 200,
+      "passed": true
+    },
+    {
+      "path": "assets/assets/Mail-ZAkRaohU.css",
+      "http": 200,
+      "passed": true
+    },
+    {
+      "path": "assets/assets/mail_parser_wasm-cz1zJ7S0.js",
+      "http": 200,
+      "passed": true
+    },
+    {
+      "path": "assets/assets/mail_parser_wasm_bg-42G7xZO-.wasm",
+      "http": 200,
+      "passed": true
+    },
+    {
+      "path": "assets/assets/Redeem-B89UJ_db.css",
+      "http": 200,
+      "passed": true
+    },
+    {
+      "path": "assets/assets/Redeem-bzpbw1nu.js",
+      "http": 200,
+      "passed": true
+    },
+    {
+      "path": "assets/assets/SendMail--jt2Z9VH.css",
+      "http": 200,
+      "passed": true
+    },
+    {
+      "path": "assets/assets/SendMail-0r4tEGDO.css",
+      "http": 200,
+      "passed": true
+    },
+    {
+      "path": "assets/assets/SendMail-BiDabsrJ.css",
+      "http": 200,
+      "passed": true
+    },
+    {
+      "path": "assets/assets/SendMail-BNzwWWSo.js",
+      "http": 200,
+      "passed": true
+    },
+    {
+      "path": "assets/assets/SendMail-CfWb0uRx.js",
+      "http": 200,
+      "passed": true
+    },
+    {
+      "path": "assets/assets/SendMail-DMwscubk.js",
+      "http": 200,
+      "passed": true
+    },
+    {
+      "path": "assets/assets/SendOutlined-DilGdSF9.js",
+      "http": 200,
+      "passed": true
+    },
+    {
+      "path": "assets/favicon.ico",
+      "http": 200,
+      "passed": true
+    },
+    {
+      "path": "assets/index.html",
+      "http": 200,
+      "passed": true
+    },
+    {
+      "path": "assets/logo.png",
+      "http": 200,
+      "passed": true
+    },
+    {
+      "path": "assets/manifest.webmanifest",
+      "http": 200,
+      "passed": true
+    },
+    {
+      "path": "assets/registerSW.js",
+      "http": 200,
+      "passed": true
+    },
+    {
+      "path": "assets/sw.js",
+      "http": 200,
+      "passed": true
+    },
+    {
+      "path": "assets/workbox-d1213528.js",
+      "http": 200,
+      "passed": true
+    }
+  ],
+  "credential_headers_used": false
+}

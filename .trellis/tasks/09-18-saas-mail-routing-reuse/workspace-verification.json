@@ -1,0 +1,171 @@
+{
+  "baseline_dirty_paths": 1129,
+  "existing_paths_changed": [
+    {
+      "path": ".trellis/tasks/09-11-saas-first-use/task.json",
+      "allowed": true
+    }
+  ],
+  "unexpected_changes": [],
+  "new_dirty_paths": [
+    {
+      "path": ".trellis/spec/infrastructure/backend/cloudflare-mail-rollout.md",
+      "owned": true
+    },
+    {
+      "path": "infra/cloudflare_mail/README.md",
+      "owned": true
+    },
+    {
+      "path": "tests/cloudflare_mail/public-site.mjs",
+      "owned": true
+    },
+    {
+      "path": ".trellis/tasks/09-18-saas-mail-routing-reuse/address-creation-inspection.json",
+      "owned": true
+    },
+    {
+      "path": ".trellis/tasks/09-18-saas-mail-routing-reuse/assets-verified.json",
+      "owned": true
+    },
+    {
+      "path": ".trellis/tasks/09-18-saas-mail-routing-reuse/check.jsonl",
+      "owned": true
+    },
+    {
+      "path": ".trellis/tasks/09-18-saas-mail-routing-reuse/cloud-preflight.json",
+      "owned": true
+    },
+    {
+      "path": ".trellis/tasks/09-18-saas-mail-routing-reuse/cloud_operations.py",
+      "owned": true
+    },
+    {
+      "path": ".trellis/tasks/09-18-saas-mail-routing-reuse/design.md",
+      "owned": true
+    },
+    {
+      "path": ".trellis/tasks/09-18-saas-mail-routing-reuse/implement.jsonl",
+      "owned": true
+    },
+    {
+      "path": ".trellis/tasks/09-18-saas-mail-routing-reuse/implement.md",
+      "owned": true
+    },
+    {
+      "path": ".trellis/tasks/09-18-saas-mail-routing-reuse/mailbox-recovery.json",
+      "owned": true
+    },
+    {
+      "path": ".trellis/tasks/09-18-saas-mail-routing-reuse/prd.md",
+      "owned": true
+    },
+    {
+      "path": ".trellis/tasks/09-18-saas-mail-routing-reuse/public-legacy/mailbox-credential-gate.png",
+      "owned": true
+    },
+    {
+      "path": ".trellis/tasks/09-18-saas-mail-routing-reuse/public-legacy/private-owner-empty-inbox.png",
+      "owned": true
+    },
+    {
+      "path": ".trellis/tasks/09-18-saas-mail-routing-reuse/public-legacy/private-site-gate.png",
+      "owned": true
+    },
+    {
+      "path": ".trellis/tasks/09-18-saas-mail-routing-reuse/public-legacy/report.json",
+      "owned": true
+    },
+    {
+      "path": ".trellis/tasks/09-18-saas-mail-routing-reuse/public-new-domain-02/mailbox-credential-gate.png",
+      "owned": true
+    },
+    {
+      "path": ".trellis/tasks/09-18-saas-mail-routing-reuse/public-new-domain-02/private-owner-empty-inbox.png",
+      "owned": true
+    },
+    {
+      "path": ".trellis/tasks/09-18-saas-mail-routing-reuse/public-new-domain-02/private-site-gate.png",
+      "owned": true
+    },
+    {
+      "path": ".trellis/tasks/09-18-saas-mail-routing-reuse/public-new-domain-02/report.json",
+      "owned": true
+    },
+    {
+      "path": ".trellis/tasks/09-18-saas-mail-routing-reuse/public-new-domain/report.json",
+      "owned": true
+    },
+    {
+      "path": ".trellis/tasks/09-18-saas-mail-routing-reuse/quality-mail-mypy.txt",
+      "owned": true
+    },
+    {
+      "path": ".trellis/tasks/09-18-saas-mail-routing-reuse/quality-mypy-corrected.txt",
+      "owned": true
+    },
+    {
+      "path": ".trellis/tasks/09-18-saas-mail-routing-reuse/quality-mypy.txt",
+      "owned": true
+    },
+    {
+      "path": ".trellis/tasks/09-18-saas-mail-routing-reuse/quality-pytest.txt",
+      "owned": true
+    },
+    {
+      "path": ".trellis/tasks/09-18-saas-mail-routing-reuse/quality-ruff-format.txt",
+      "owned": true
+    },
+    {
+      "path": ".trellis/tasks/09-18-saas-mail-routing-reuse/quality-ruff.txt",
+      "owned": true
+    },
+    {
+      "path": ".trellis/tasks/09-18-saas-mail-routing-reuse/research.md",
+      "owned": true
+    },
+    {
+      "path": ".trellis/tasks/09-18-saas-mail-routing-reuse/routing-apply.json",
+      "owned": true
+    },
+    {
+      "path": ".trellis/tasks/09-18-saas-mail-routing-reuse/runner-parameter-checks-final.json",
+      "owned": true
+    },
+    {
+      "path": ".trellis/tasks/09-18-saas-mail-routing-reuse/runner-parameter-checks.json",
+      "owned": true
+    },
+    {
+      "path": ".trellis/tasks/09-18-saas-mail-routing-reuse/source-multipart.json",
+      "owned": true
+    },
+    {
+      "path": ".trellis/tasks/09-18-saas-mail-routing-reuse/source-routing-create.json",
+      "owned": true
+    },
+    {
+      "path": ".trellis/tasks/09-18-saas-mail-routing-reuse/source-worker-update.json",
+      "owned": true
+    },
+    {
+      "path": ".trellis/tasks/09-18-saas-mail-routing-reuse/task.json",
+      "owned": true
+    },
+    {
+      "path": ".trellis/tasks/09-18-saas-mail-routing-reuse/temporary-resources.json",
+      "owned": true
+    },
+    {
+      "path": ".trellis/tasks/09-18-saas-mail-routing-reuse/worker-apply.json",
+      "owned": true
+    },
+    {
+      "path": ".trellis/tasks/09-18-saas-mail-routing-reuse/worker-plan.json",
+      "owned": true
+    }
+  ],
+  "unexpected_new_paths": [],
+  "index_empty": true,
+  "head": "e301adecf4eccf1220083f09167bf8537eb20460"
+}

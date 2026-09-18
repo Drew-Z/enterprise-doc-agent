@@ -11,6 +11,10 @@ The rollout targets the selected account, `ciallobill.ccwu.cc`, dedicated Worker
 access does not establish Email Routing/Sending, durable Keycloak hosting, the
 complete product HTTP/session journey, customer trials, or fixed processing regions.
 
+Existing-domain reuse may attach exact recipients on an already enabled zone while
+keeping the web hostname separate. The 2026-09-18 receipt uses playarchive.eu.cc;
+its configuration verification does not establish actual public delivery.
+
 ## 2. Signatures
 
 ```powershell
@@ -29,6 +33,9 @@ complete product HTTP/session journey, customer trials, or fixed processing regi
 
 & .\infra\cloudflare_mail\new-credentials.ps1 -CheckOnly -Path $privateFile
 & node .\tests\cloudflare_mail\public-site.mjs --repo $repo --credentials $privateFile --mailboxes $mailboxFile --evidence $newEvidence
+
+# Existing enabled receiving domain; the web origin is still fixed.
+& node .\tests\cloudflare_mail\public-site.mjs --repo $repo --credentials $privateFile --mailboxes $newMailboxFile --evidence $newEvidence --domain playarchive.eu.cc --address-prefix docagent
 ```
 
 The CLI uses `CLOUDFLARE_API_TOKEN` from the process only. `prepare(bundle)` verifies
@@ -88,6 +95,31 @@ fixtures; the CLI provides no alternate trust anchor.
 - Email Routing subdomain onboarding follows the supported Dashboard flow. Do not
   use the deprecated `subdomain` DNS query parameter, infer a creation endpoint,
   copy root MX/SPF/DKIM, or guess MX priorities. Keep delivery and Sending separate.
+- Existing-domain reuse first snapshots active deployment/version, settings, D1,
+  DNS and full old rules into a private centralized recovery group. Forwarding
+  destinations are private even when the rest of the API response is not a secret.
+  Require Routing enabled/status=ready; `/email/routing/dns` returns a record list,
+  while readiness comes from `/email/routing`. DMARC and DNS Locked are not errors.
+- Updating vars requires Worker multipart PUT, not `/script-settings` PATCH.
+  Validate the frozen package, deepcopy a runtime overlay, retain old allowed
+  domains, and review exactly which vars change. `keep_assets=true` retains assets;
+  `keep_bindings=["secret_text"]` retains secrets. Keep explicit
+  `assets.config.run_worker_first=true`, omit the old assets JWT, and re-verify
+  assets runtime fields, script etag, all bindings and old credential authentication.
+  Do not modify the immutable bundle or replay first provisioning for this change.
+- Create and verify owned mailbox credentials before activating exact rules.
+  `POST /zones/{zone}/email/routing/rules` takes enabled=true,
+  matchers=[{type:literal,field:to,value:complete-address}] and
+  actions=[{type:worker,value:[worker-name]}]. Read the created rule back. Compare
+  original DNS/rules/catch-all exactly; do not replace catch-all or delete old setup.
+- The public runner accepts --domain and --address-prefix, retaining old defaults.
+  Domain labels follow lowercase DNS syntax; prefix is lowercase alphanumeric,
+  at most 22 characters to fit member01 within the upstream 30-character limit.
+  Upstream v1.12.0 strips /[^a-z0-9]/g even in admin creation: a hyphenated requested
+  address is not proof that the stored address contains a hyphen. Require exact
+  returned address equality. Save started before creation and succeeded after the
+  protected JWT file is written. Inspect D1 before any retry; the authenticated
+  admin show_password endpoint can recover a verified task-owned mailbox's JWT.
 - D1 hint and observed SIN/APAC queries do not promise fixed processing or retention.
   Disabling logging/statistics does not remove mailbox bodies from D1.
 
@@ -108,6 +140,9 @@ fixtures; the CLI provides no alternate trust anchor.
 | Public registration/address creation | 403 |
 | Browser attempts any external request or has a page error | Harness fails; retains report and closes browser |
 | Cleanup fails | Harness cannot mark passed |
+| Domain/prefix malformed, duplicate/unknown/incomplete CLI argument | Reject before credentials or network access |
+| Creation returns 200 with normalized unexpected address | Fail; inspect owned D1 row and recover, do not blindly recreate |
+| Worker deployment, old DNS or routing rule drifts | Stop before the next mutation |
 
 ## 5. Good / Base / Bad Cases
 
@@ -118,6 +153,8 @@ fixtures; the CLI provides no alternate trust anchor.
 - Bad: rerunning first deployment after partial success; accepting mock-only API
   shapes; treating null as proof; silently allowing the analytics beacon; enabling
   Sending for a smoke check or treating verified destinations as send permission.
+- Good reuse: two exact recipients on an enabled domain, unchanged catch-all and
+  assets, real new/legacy inbox login evidence, public delivery explicitly pending.
 
 ## 6. Tests Required
 
@@ -132,6 +169,12 @@ and existing-Worker publication with version drift, conflicts, split traffic and
 logging failures. Assert old reports remain byte-identical and no creation/secret
 write is replayed. Verify final D1 counts/settings separately through the real API.
 
+For domain reuse, also validate CLI rejection before network calls, actual stored
+addresses, protected credential recovery, exact routing readback, unchanged original
+rules/DNS, and all retained asset hashes. Application mypy uses the repository's
+normal command; `--explicit-package-bases` is for the separate mailbox modules,
+not the application source roots without a matching MYPYPATH.
+
 ## 7. Wrong vs Correct
 
 Wrong: upload and GET settings share identical field paths; unit tests prove real
@@ -145,3 +188,7 @@ configure its own control, and retain the failed run.
 Wrong: recover any failure by rerunning `--apply`, or close the task by deleting
 new resources. Correct: inspect outcome, select the narrow recovery phase, retain
 resource IDs and failure evidence; deletion requires a separate concrete scope.
+
+Wrong: a requested address with punctuation is the final mailbox identity.
+Correct: check the actual response/D1 identity, use a compatible alphanumeric
+prefix, and bind Routing to the verified stored address.

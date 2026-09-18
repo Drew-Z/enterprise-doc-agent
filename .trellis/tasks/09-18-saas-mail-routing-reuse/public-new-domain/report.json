@@ -1,0 +1,77 @@
+{
+  "started_at": "2026-09-18T04:37:02.768Z",
+  "origin": "https://inbox.ciallobill.ccwu.cc",
+  "status": "failed",
+  "boundary": "real_public_HTTPS_API_Chromium_no_mail_delivery",
+  "domain": "playarchive.eu.cc",
+  "address_prefix": "docagent-",
+  "checks": [
+    {
+      "name": "public_https_available",
+      "passed": true,
+      "http": 200
+    },
+    {
+      "name": "site_password_required",
+      "passed": true,
+      "http": 401
+    },
+    {
+      "name": "wrong_site_password_rejected",
+      "passed": true,
+      "http": 401
+    },
+    {
+      "name": "address_credential_required",
+      "passed": true,
+      "http": 401
+    },
+    {
+      "name": "wrong_address_credential_rejected",
+      "passed": true,
+      "http": 401
+    },
+    {
+      "name": "admin_password_required",
+      "passed": true,
+      "http": 401
+    },
+    {
+      "name": "wrong_admin_password_rejected",
+      "passed": true,
+      "http": 401
+    },
+    {
+      "name": "private_receive_only_features",
+      "passed": true
+    },
+    {
+      "name": "public_user_registration_disabled",
+      "passed": true,
+      "http": 403
+    },
+    {
+      "name": "public_address_creation_disabled",
+      "passed": true,
+      "http": 403
+    },
+    {
+      "name": "admin_creates_owner01",
+      "passed": false,
+      "http": 200
+    }
+  ],
+  "mutations": [
+    {
+      "address": "docagent-owner01@playarchive.eu.cc",
+      "status": "started",
+      "started_at": "2026-09-18T04:37:07.524Z"
+    }
+  ],
+  "real_email_sent": false,
+  "real_email_received_verified": false,
+  "browser_closed": true,
+  "failed_stage": "synthetic_mailboxes",
+  "error_name": "Error",
+  "finished_at": "2026-09-18T04:37:08.314Z"
+}

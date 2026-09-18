@@ -28,16 +28,27 @@ $bundlePath = Join-Path $env:TEMP ('docagent-mail-bundle-' + [guid]::NewGuid().T
 
 manifest.json 记录所有部署文件的 SHA-256（排除其自身）和工具版本。构建日志保存在工作目录 logs；验收或故障排查完成后再按精确路径删除任务自有临时目录。
 
-## 公网接入顺序（尚未执行）
+## 当前公网状态（2026-09-18）
 
-1. 使用已盘点账号 2741446a7478f2d8a5ff31df7e077f17；为 docagent-private-mail 创建全新的 D1，选择并记录地区/所在地约束。不能复用 img_d1、dev 或 grok2api。
-2. 将真实 D1 ID 写入此包的 wrangler.jsonc；先对新库执行 schema.sql，再执行 private-settings.sql。维持 routes=[] 和 workers_dev=false。
-3. 上传尚无公共路由的 Worker，通过 secrets 注入三个独立密钥。缺少任一密钥时入口保持关闭。固定 site/admin 密码不等于 CF API Token，JWT_SECRET 不等于 Address JWT。
-4. 为 inbox.ciallobill.ccwu.cc 设置 Worker custom domain；在 Email Routing Settings > Subdomains 为 mailtest.ciallobill.ccwu.cc 和 notify.ciallobill.ccwu.cc 分别完成配置。采用各子域的实际 DNS 要求，不复制根域记录或猜 MX priority。
-5. 管理员通过受控入口建立测试邮箱；仅把这些精确收件地址的 Email Routing 规则指向本 Worker，不开 catch-all。首次公网检查仍使用合成内容。
-6. 真正发信另行配置 SEND_MAIL 的明确 verified-destination 名单和发件域，并仅为 noreply 地址开启发送资格。需先明确获准的真实收件地址，再接现有 Keycloak 私有 SMTP/API 适配器。当前包未启用此步骤。
+网页/API 为 https://inbox.ciallobill.ccwu.cc/zh/。既有 Worker 与 D1 均为 docagent-private-mail，D1 UUID 为 8521706f-87c6-43af-8866-cc0ce95dd5d9；三组秘密保存在本机受保护文件中。首次 HTTPS 部署已完成，不能重跑首次初始化。
 
-域名规划：inbox.ciallobill.ccwu.cc 为网页/API，mailtest.ciallobill.ccwu.cc 为测试收件域，notify.ciallobill.ccwu.cc 为身份发件域。当前没有这些公网邮箱，包也没有任何真实收件人或身份链接。
+收件域已按用户要求复用开通 Email Routing 的 playarchive.eu.cc。两个地址 docagentowner01@playarchive.eu.cc、docagentmember01@playarchive.eu.cc 已建立，各有一条启用的精确规则指向现有 Worker。原域名 DNS、兜底转发及其他六域路由均保留。DMARC Management 不是收信开通页，Locked 不表示 Routing 故障。
+
+新域 22 项、旧邮箱 21 项真实 HTTPS/API/Chromium 检查通过，全部 27 个线上 assets 与固定包哈希相同。原 owner01/member01@mailtest.ciallobill.ccwu.cc 凭据仍有效，但旧域未接入 Routing。当前是收件配置就绪，尚未做真实公网投递；发送功能仍关闭。详见 [本次接入报告](../../.trellis/tasks/09-18-saas-mail-routing-reuse/report.md)。
+
+固定构建包仍保留原始 mailtest/notify 模板；本次通过已验证程序的运行时 overlay 更新 DEFAULT_DOMAINS 与 DOMAINS，保留旧两域，不改固定包、不重新初始化 D1。复用 Worker 时使用 keep_assets 与 keep_bindings=[secret_text]，随后严格回读唯一 active version 与私有边界。
+
+## 重跑新域公网验收（PowerShell）
+
+~~~powershell
+$privateRoot = Join-Path $env:CODEX_HOME 'secrets\docagent-private-mail'
+$publicEvidence = Join-Path $env:TEMP ('docagent-mail-public-' + [guid]::NewGuid().ToString('N'))
+& node ./tests/cloudflare_mail/public-site.mjs --repo $PWD --credentials (Join-Path $privateRoot 'credentials.json') --mailboxes (Join-Path $privateRoot 'mailboxes-playarchive.eu.cc.json') --evidence $publicEvidence --domain playarchive.eu.cc --address-prefix docagent
+~~~
+
+凭据文件必须先受保护，证据目录必须不存在。省略新参数仍检查旧域。前缀只接受最多 22 个小写字母或数字；上游管理员建址也会去掉其他字符，连字符会改变实际地址。首次带连字符请求的失败记录已保留，通过既有管理员接口恢复本任务已创建邮箱的 JWT，未删除或重复创建。
+
+真实发信仍需单独配置资格、明确获准的收件地址与 SEND_MAIL binding，再接 Keycloak 私有 SMTP/API 适配器；账号已有 verified destination 不代表允许自动发测试邮件。长期身份服务、完整产品会话、正文保留期与处理地区仍待后续验证。
 
 ## 官方依据
 

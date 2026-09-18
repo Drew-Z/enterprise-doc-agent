@@ -1,0 +1,155 @@
+{
+  "checked_at": "2026-09-18T05:17:01.017069+00:00",
+  "status": "passed",
+  "boundary": "configuration_HTTPS_API_Chromium_no_actual_mail_delivery",
+  "worker": {
+    "deployment_id": "425bc489-6905-4833-a61c-29d0e187a58e",
+    "version_id": "a313c1c2-9e6c-4f0e-950d-756e0df4e5be",
+    "script_etag": "3271be04ec968e4d884cea1cf15e1ba72aaf39edd2ef140038c99b328e78fd07",
+    "compatibility_date": "2026-09-10",
+    "compatibility_flags": [
+      "nodejs_compat"
+    ],
+    "handlers": [
+      "email",
+      "fetch"
+    ],
+    "binding_names": [
+      "ADMIN_PASSWORDS",
+      "ASSETS",
+      "BACKEND_URL",
+      "DB",
+      "DEFAULT_DOMAINS",
+      "DEFAULT_LANG",
+      "DEFAULT_SEND_BALANCE",
+      "DISABLE_ADMIN_PASSWORD_CHECK",
+      "DISABLE_ANONYMOUS_USER_CREATE_EMAIL",
+      "DOMAINS",
+      "ENABLE_ADDRESS_PASSWORD",
+      "ENABLE_AGENT_EMAIL_INFO",
+      "ENABLE_AI_EMAIL_EXTRACT",
+      "ENABLE_ANOTHER_WORKER",
+      "ENABLE_AUTO_REPLY",
+      "ENABLE_CREATE_ADDRESS_SUBDOMAIN_MATCH",
+      "ENABLE_INDEX_ABOUT",
+      "ENABLE_MAIL_GZIP",
+      "ENABLE_MAIL_READ_STATUS",
+      "ENABLE_REDEEM_CODE",
+      "ENABLE_USER_CREATE_EMAIL",
+      "ENABLE_USER_DELETE_EMAIL",
+      "ENABLE_WEBHOOK",
+      "FORWARD_ADDRESS_LIST",
+      "FRONTEND_URL",
+      "JWT_SECRET",
+      "PASSWORDS",
+      "PREFIX",
+      "SUBDOMAIN_FORWARD_ADDRESS_LIST",
+      "TITLE"
+    ],
+    "dedicated_database_binding_verified": true,
+    "private_secret_bindings_verified": true,
+    "receive_only_bindings_verified": true,
+    "assets_run_worker_first": true,
+    "workers_dev": false,
+    "preview_urls": false,
+    "persistent_worker_logs": false,
+    "observability_readback": null,
+    "logging_disable_acknowledged": true,
+    "logpush": false,
+    "tail_consumers": null
+  },
+  "exact_rules": [
+    {
+      "id": "2c73f9a615eb41d7905b4c1792f71661",
+      "tag": "2c73f9a615eb41d7905b4c1792f71661",
+      "name": "DocAgent member01 private mailbox",
+      "matchers": [
+        {
+          "type": "literal",
+          "field": "to",
+          "value": "docagentmember01@playarchive.eu.cc"
+        }
+      ],
+      "actions": [
+        {
+          "type": "worker",
+          "value": [
+            "docagent-private-mail"
+          ]
+        }
+      ],
+      "enabled": true,
+      "priority": 0,
+      "source": "api"
+    },
+    {
+      "id": "69511fcbcd6848f9aedbb42a996caaa9",
+      "tag": "69511fcbcd6848f9aedbb42a996caaa9",
+      "name": "DocAgent owner01 private mailbox",
+      "matchers": [
+        {
+          "type": "literal",
+          "field": "to",
+          "value": "docagentowner01@playarchive.eu.cc"
+        }
+      ],
+      "actions": [
+        {
+          "type": "worker",
+          "value": [
+            "docagent-private-mail"
+          ]
+        }
+      ],
+      "enabled": true,
+      "priority": 0,
+      "source": "api"
+    }
+  ],
+  "database_counts": [
+    {
+      "mails": 0,
+      "addresses": 4,
+      "sent": 0
+    }
+  ],
+  "new_domain_checks": 22,
+  "legacy_checks": 21,
+  "assets_matching": 27,
+  "parameter_rejections_passed": 7,
+  "pytest": {
+    "passed": 1356,
+    "deselected": 312,
+    "subtests_passed": 23,
+    "seconds": 60.92
+  },
+  "quality": {
+    "ruff_format_files": 512,
+    "ruff_check": "passed",
+    "application_mypy_files": 219,
+    "mail_and_task_mypy_files": 4,
+    "node_syntax": "passed",
+    "git_diff_check": "passed",
+    "trellis_context": "passed"
+  },
+  "recovery_hashes_verified": true,
+  "private_credential_dacl_verified": true,
+  "cloud_snapshot_acl_private": true,
+  "original_wip_paths_verified_unchanged": 1128,
+  "parent_wip_updated_and_excluded_from_commit": true,
+  "original_dns_rules_unchanged": true,
+  "other_six_zones_routing_unchanged": true,
+  "cleanup": {
+    "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\docagent-routing-pytest-49a29f6b2c464d37a2f05966fae1275a",
+    "purpose": "pytest basetemp for mail routing reuse",
+    "originally_existed": false,
+    "status": "deleted_verified_absent"
+  },
+  "real_email_sent": false,
+  "real_email_received_verified": false,
+  "initial_failures_retained": [
+    "public-new-domain/report.json",
+    "quality-mypy.txt",
+    "quality-mail-mypy.txt"
+  ]
+}

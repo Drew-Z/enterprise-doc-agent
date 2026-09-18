@@ -1,0 +1,318 @@
+{
+  "action": "verify",
+  "started_at": "2026-09-18T04:58:53.420396+00:00",
+  "status": "passed",
+  "operations": [],
+  "real_email_sent": false,
+  "real_email_received_verified": false,
+  "result": {
+    "worker": {
+      "deployment_id": "425bc489-6905-4833-a61c-29d0e187a58e",
+      "version_id": "a313c1c2-9e6c-4f0e-950d-756e0df4e5be",
+      "script_etag": "3271be04ec968e4d884cea1cf15e1ba72aaf39edd2ef140038c99b328e78fd07",
+      "compatibility_date": "2026-09-10",
+      "compatibility_flags": [
+        "nodejs_compat"
+      ],
+      "handlers": [
+        "email",
+        "fetch"
+      ],
+      "binding_names": [
+        "ADMIN_PASSWORDS",
+        "ASSETS",
+        "BACKEND_URL",
+        "DB",
+        "DEFAULT_DOMAINS",
+        "DEFAULT_LANG",
+        "DEFAULT_SEND_BALANCE",
+        "DISABLE_ADMIN_PASSWORD_CHECK",
+        "DISABLE_ANONYMOUS_USER_CREATE_EMAIL",
+        "DOMAINS",
+        "ENABLE_ADDRESS_PASSWORD",
+        "ENABLE_AGENT_EMAIL_INFO",
+        "ENABLE_AI_EMAIL_EXTRACT",
+        "ENABLE_ANOTHER_WORKER",
+        "ENABLE_AUTO_REPLY",
+        "ENABLE_CREATE_ADDRESS_SUBDOMAIN_MATCH",
+        "ENABLE_INDEX_ABOUT",
+        "ENABLE_MAIL_GZIP",
+        "ENABLE_MAIL_READ_STATUS",
+        "ENABLE_REDEEM_CODE",
+        "ENABLE_USER_CREATE_EMAIL",
+        "ENABLE_USER_DELETE_EMAIL",
+        "ENABLE_WEBHOOK",
+        "FORWARD_ADDRESS_LIST",
+        "FRONTEND_URL",
+        "JWT_SECRET",
+        "PASSWORDS",
+        "PREFIX",
+        "SUBDOMAIN_FORWARD_ADDRESS_LIST",
+        "TITLE"
+      ],
+      "dedicated_database_binding_verified": true,
+      "private_secret_bindings_verified": true,
+      "receive_only_bindings_verified": true,
+      "assets_run_worker_first": true,
+      "workers_dev": false,
+      "preview_urls": false,
+      "persistent_worker_logs": false,
+      "observability_readback": null,
+      "logging_disable_acknowledged": true,
+      "logpush": false,
+      "tail_consumers": null
+    },
+    "database_counts": [
+      {
+        "mails": 0,
+        "addresses": 4,
+        "sent": 0
+      }
+    ],
+    "addresses": [
+      "owner01@mailtest.ciallobill.ccwu.cc",
+      "member01@mailtest.ciallobill.ccwu.cc",
+      "docagentowner01@playarchive.eu.cc",
+      "docagentmember01@playarchive.eu.cc"
+    ],
+    "exact_rules": [
+      {
+        "id": "2c73f9a615eb41d7905b4c1792f71661",
+        "tag": "2c73f9a615eb41d7905b4c1792f71661",
+        "name": "DocAgent member01 private mailbox",
+        "matchers": [
+          {
+            "type": "literal",
+            "field": "to",
+            "value": "docagentmember01@playarchive.eu.cc"
+          }
+        ],
+        "actions": [
+          {
+            "type": "worker",
+            "value": [
+              "docagent-private-mail"
+            ]
+          }
+        ],
+        "enabled": true,
+        "priority": 0,
+        "source": "api"
+      },
+      {
+        "id": "69511fcbcd6848f9aedbb42a996caaa9",
+        "tag": "69511fcbcd6848f9aedbb42a996caaa9",
+        "name": "DocAgent owner01 private mailbox",
+        "matchers": [
+          {
+            "type": "literal",
+            "field": "to",
+            "value": "docagentowner01@playarchive.eu.cc"
+          }
+        ],
+        "actions": [
+          {
+            "type": "worker",
+            "value": [
+              "docagent-private-mail"
+            ]
+          }
+        ],
+        "enabled": true,
+        "priority": 0,
+        "source": "api"
+      }
+    ],
+    "original_dns_and_rules_unchanged": true,
+    "other_six_zones_routing_unchanged": true,
+    "d1_settings_unchanged": true,
+    "d1_identity_and_replication_unchanged": true,
+    "worker_domains_and_schedules_unchanged": true,
+    "original_catch_all_sha256": "a9b009de13e39a110f0d109bfc9410cbc573c109e15c535c62dacb788cb99bdf"
+  },
+  "finished_at": "2026-09-18T04:59:46.700129+00:00",
+  "api_events": [
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts/docagent-private-mail/subdomain",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts/docagent-private-mail/deployments",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts/docagent-private-mail/versions/a313c1c2-9e6c-4f0e-950d-756e0df4e5be",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts/docagent-private-mail/script-settings",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts/docagent-private-mail/deployments",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "POST",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/d1/database/8521706f-87c6-43af-8866-cc0ce95dd5d9/query",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/d1/database/8521706f-87c6-43af-8866-cc0ce95dd5d9",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/zones/18d121f8bd5d2692d448ebdbe7ea3071/email/routing",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/zones/18d121f8bd5d2692d448ebdbe7ea3071/dns_records?per_page=100&page=1",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/zones/18d121f8bd5d2692d448ebdbe7ea3071/email/routing/rules/catch_all",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/zones/18d121f8bd5d2692d448ebdbe7ea3071/email/routing/rules?per_page=100&page=1",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/zones/faa5b43791f48f5b11b97dfe157d1f95/email/routing/rules?per_page=100&page=1",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/zones/faa5b43791f48f5b11b97dfe157d1f95/email/routing/rules/catch_all",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/zones/79bfb443bc019a54655b9a1371dee2aa/email/routing/rules?per_page=100&page=1",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/zones/79bfb443bc019a54655b9a1371dee2aa/email/routing/rules/catch_all",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/zones/80ef0b59c5658a7a7fce4dc591bb6ac1/email/routing/rules?per_page=100&page=1",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/zones/80ef0b59c5658a7a7fce4dc591bb6ac1/email/routing/rules/catch_all",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/zones/174ae1e640e35e7afb2383881d1f0e64/email/routing/rules?per_page=100&page=1",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/zones/174ae1e640e35e7afb2383881d1f0e64/email/routing/rules/catch_all",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/zones/0571a2a649556dfa2be68c08ef6deb03/email/routing/rules?per_page=100&page=1",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/zones/0571a2a649556dfa2be68c08ef6deb03/email/routing/rules/catch_all",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/zones/187c28a106d86033822f804cc37d1128/email/routing/rules?per_page=100&page=1",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/zones/187c28a106d86033822f804cc37d1128/email/routing/rules/catch_all",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts/docagent-private-mail/schedules",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/domains?per_page=100&page=1",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/2741446a7478f2d8a5ff31df7e077f17/workers/scripts/docagent-private-mail/deployments",
+      "http": 200,
+      "success": true,
+      "error_codes": []
+    }
+  ]
+}
