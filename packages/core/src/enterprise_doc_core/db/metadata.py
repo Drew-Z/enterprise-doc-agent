@@ -1,6 +1,11 @@
 from collections.abc import MutableMapping
 from typing import Literal
 
+from enterprise_doc_core.admission.models import (
+    TenantAdmissionEvent,
+    TenantAdmissionGrant,
+    TenantInitialEntitlement,
+)
 from enterprise_doc_core.agents.models import (
     AgentArtifact,
     AgentRun,
@@ -17,6 +22,12 @@ from enterprise_doc_core.audit.models import (
     AuditRetentionPolicy,
 )
 from enterprise_doc_core.auth.models import LocalTokenRevocation
+from enterprise_doc_core.billing.models import TenantEntitlement, UsageEvent, UsageReservation
+from enterprise_doc_core.browser_sessions.models import (
+    BrowserLoginAttempt,
+    BrowserSession,
+    BrowserSessionEvent,
+)
 from enterprise_doc_core.db.base import Base
 from enterprise_doc_core.documents.models import (
     Document,
@@ -26,10 +37,32 @@ from enterprise_doc_core.documents.models import (
     DocumentVersion,
 )
 from enterprise_doc_core.identity.models import ExternalIdentityBinding, Membership, Tenant, User
+from enterprise_doc_core.invitations.models import MembershipInvitation, MembershipInvitationEvent
 from enterprise_doc_core.jobs.models import Job, JobAttempt, JobEvent, OutboxEvent
+from enterprise_doc_core.presales.models import (
+    PresalesAttempt,
+    PresalesPacket,
+    PresalesReview,
+    PresalesRow,
+)
 from enterprise_doc_core.uploads.models import UploadPart, UploadSession
 
 REGISTERED_MODELS = (
+    TenantEntitlement,
+    UsageReservation,
+    UsageEvent,
+    MembershipInvitation,
+    MembershipInvitationEvent,
+    BrowserLoginAttempt,
+    BrowserSession,
+    BrowserSessionEvent,
+    TenantAdmissionEvent,
+    TenantAdmissionGrant,
+    TenantInitialEntitlement,
+    PresalesAttempt,
+    PresalesPacket,
+    PresalesReview,
+    PresalesRow,
     LocalTokenRevocation,
     AuditEvent,
     AuditArchiveBatch,

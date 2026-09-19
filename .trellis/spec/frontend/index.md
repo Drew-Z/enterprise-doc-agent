@@ -15,6 +15,7 @@ dashboard and the transport-independent M1 browser multipart modules.
 | [Type Safety](./type-safety.md) | Runtime boundary validation | Adopted in M0 |
 | [Browser Multipart Upload](./browser-multipart-upload.md) | Hashing, transfer, state, recovery, operational UI | Adopted in M1 Slices 8-9 |
 | [Agent Run Workspace](./agent-workspace.md) | Typed run form, fetch-SSE, approval, artifact recovery | Adopted in M4 Slice 7 |
+| [Enterprise Usage](./tenant-usage.md) | Owner capacity/resources, precise costs, current-context queries | Local S4.2 delivery |
 
 Future interfaces must extend these guidelines only after their real code and tests exist.
 

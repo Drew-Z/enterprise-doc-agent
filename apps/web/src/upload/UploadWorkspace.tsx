@@ -22,7 +22,8 @@ import {
   type UploadWorkspaceDependencies,
 } from "./controller";
 import { uploadPartWithXhr } from "./transfer/xhrUploadPart";
-import { useT } from "../i18n";
+import { useLocale, useT } from "../i18n";
+import { isBrowserAuthentication } from "../auth/transport";
 import { formatApiError } from "../api/errorDisplay";
 
 const localObjectStoreOrigins = (
@@ -145,14 +146,16 @@ export function UploadWorkspace({
   canUpload = true,
 }: UploadWorkspaceProps) {
   const t = useT();
+  const locale = useLocale();
+  const browserMode = isBrowserAuthentication();
   const controller = useUploadController(dependencies, storage);
-  const [tokenDraft, setTokenDraft] = useState(controller.token ?? "");
+  const [tokenDraft, setTokenDraft] = useState(typeof controller.token === "string" ? controller.token : "");
   const [inputError, setInputError] = useState<string | null>(null);
   const progress = useMemo(() => progressForState(controller.state, t), [controller.state, t]);
   const state = controller.state;
 
   useEffect(() => {
-    setTokenDraft(controller.token ?? "");
+    setTokenDraft(typeof controller.token === "string" ? controller.token : "");
   }, [controller.token]);
 
   useEffect(() => {
@@ -197,11 +200,11 @@ export function UploadWorkspace({
         </div>
         <span className={`token-state ${tokenConnected ? "connected" : "disconnected"}`}>
           <KeyRound aria-hidden="true" />
-          {tokenConnected ? t("upload.tokenSaved") : t("upload.tokenRequired")}
+          {browserMode ? (locale === "zh" ? "已登录" : "Signed in") : tokenConnected ? t("upload.tokenSaved") : t("upload.tokenRequired")}
         </span>
       </div>
 
-      <div className="auth-strip">
+      {!browserMode && <div className="auth-strip">
         <label htmlFor="local-api-token">{t("upload.localToken")}</label>
         <div className="auth-controls">
           <input
@@ -238,7 +241,7 @@ export function UploadWorkspace({
           </button>
         </div>
         <small className="auth-boundary">{t("upload.localTokenDetail")}</small>
-      </div>
+      </div>}
 
       <div className="upload-command-bar">
         <div className="file-picker">
@@ -349,7 +352,7 @@ export function UploadWorkspace({
         </div>
       )}
 
-      {state.completion !== null && (
+      {!browserMode && state.completion !== null && (
         <dl className="completion-result">
           <div>
             <dt>{t("upload.documentId")}</dt>

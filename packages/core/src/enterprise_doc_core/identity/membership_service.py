@@ -17,6 +17,7 @@ from enterprise_doc_core.identity.models import (
     Tenant,
     User,
 )
+from enterprise_doc_core.identity.seats import ensure_membership_capacity
 
 _EMAIL_PATTERN = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
@@ -134,6 +135,8 @@ class MembershipAdministrationService:
                 )
                 action: str | None = None
                 previous_role: str | None = None
+                if membership is None or not membership.is_active:
+                    await ensure_membership_capacity(session, tenant_id)
                 if membership is None:
                     membership = Membership(
                         tenant_id=tenant_id,
@@ -300,6 +303,7 @@ class MembershipAdministrationService:
                 raise MembershipAdministrationConflict()
             if membership.is_active:
                 return self._result(membership, email=email)
+            await ensure_membership_capacity(session, tenant_id)
             membership.is_active = True
             await session.flush()
             await session.refresh(membership, attribute_names=["updated_at"])

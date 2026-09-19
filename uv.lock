@@ -403,7 +403,7 @@ dependencies = [
     { name = "enterprise-doc-core" },
     { name = "fastapi" },
     { name = "opentelemetry-instrumentation-fastapi" },
-    { name = "pyjwt" },
+    { name = "pyjwt", extra = ["crypto"] },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -412,7 +412,7 @@ requires-dist = [
     { name = "enterprise-doc-core", editable = "packages/core" },
     { name = "fastapi", specifier = ">=0.116.1" },
     { name = "opentelemetry-instrumentation-fastapi", specifier = ">=0.57b0" },
-    { name = "pyjwt", specifier = ">=2.10.1" },
+    { name = "pyjwt", extras = ["crypto"], specifier = ">=2.10.1" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.35.0" },
 ]
 

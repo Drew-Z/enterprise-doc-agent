@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { scopedRecoveryKey } from "../auth/transport";
 
 import { sha256HexSchema } from "./api/schemas";
 import type { PersistedUploadSession } from "./state/types";
@@ -39,7 +40,7 @@ export interface UploadTokenStore {
 
 export function createUploadRecoveryStore(
   storage: Storage,
-  key = UPLOAD_RECOVERY_STORAGE_KEY,
+  key = scopedRecoveryKey(UPLOAD_RECOVERY_STORAGE_KEY),
 ): UploadRecoveryStore {
   return {
     load() {

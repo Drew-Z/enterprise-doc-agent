@@ -11,6 +11,7 @@ from enterprise_doc_api.auth.jwt import JwtTokenCodec
 from enterprise_doc_api.config import ApiSettings
 from enterprise_doc_core.config import AppEnvironment
 from enterprise_doc_core.identity import Membership, MembershipRole, Tenant, User
+from enterprise_doc_core.identity.seats import ensure_membership_capacity
 
 _SLUG_PATTERN = re.compile(r"^[a-z0-9][a-z0-9_-]{1,62}[a-z0-9]$")
 _EMAIL_PATTERN = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
@@ -66,7 +67,9 @@ async def bootstrap_principal(
         raise ValueError("quota bytes must be positive")
 
     async with session_factory.begin() as session:
-        tenant = await session.scalar(select(Tenant).where(Tenant.slug == normalized_slug))
+        tenant = await session.scalar(
+            select(Tenant).where(Tenant.slug == normalized_slug).with_for_update()
+        )
         if tenant is None:
             tenant = Tenant(
                 name=tenant_name.strip(),
@@ -81,7 +84,9 @@ async def bootstrap_principal(
                 raise ValueError("quota cannot be lower than current storage counters")
             tenant.quota_bytes = quota_bytes
 
-        user = await session.scalar(select(User).where(User.email == normalized_email))
+        user = await session.scalar(
+            select(User).where(User.email == normalized_email).with_for_update()
+        )
         if user is None:
             user = User(email=normalized_email)
             session.add(user)
@@ -90,11 +95,15 @@ async def bootstrap_principal(
         await session.flush()
 
         membership = await session.scalar(
-            select(Membership).where(
+            select(Membership)
+            .where(
                 Membership.tenant_id == tenant.id,
                 Membership.user_id == user.id,
             )
+            .with_for_update()
         )
+        if membership is None or not membership.is_active:
+            await ensure_membership_capacity(session, tenant.id)
         if membership is None:
             membership = Membership(
                 tenant_id=tenant.id,

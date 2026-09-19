@@ -1,3 +1,4 @@
+import { authenticatedFetch, type ApiCredential } from "../auth/transport";
 import { z, type ZodType } from "zod";
 
 import { errorResponseSchema } from "../agent/api/schemas";
@@ -49,15 +50,14 @@ export class IdentityBindingApiError extends Error {
 }
 
 async function requestJson<T>(
-  token: string,
+  token: ApiCredential,
   path: string,
   schema: ZodType<T>,
   init: RequestInit = {},
 ): Promise<T> {
   const headers = new Headers(init.headers);
   headers.set("Accept", "application/json");
-  headers.set("Authorization", `Bearer ${token}`);
-  const response = await fetch(`${normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL)}${path}`, {
+  const response = await authenticatedFetch(`${normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL)}${path}`, token, {
     ...init,
     headers,
   });
@@ -75,12 +75,12 @@ async function requestJson<T>(
   return parsed.data;
 }
 
-export function fetchIdentityBindings(token: string, signal?: AbortSignal): Promise<IdentityBinding[]> {
+export function fetchIdentityBindings(token: ApiCredential, signal?: AbortSignal): Promise<IdentityBinding[]> {
   return requestJson(token, "/api/identity-bindings", z.array(identityBindingSchema), { signal });
 }
 
 export function fetchIdentityMembers(
-  token: string,
+  token: ApiCredential,
   query = "",
   signal?: AbortSignal,
 ): Promise<IdentityMember[]> {
@@ -92,7 +92,7 @@ export function fetchIdentityMembers(
 }
 
 export function createIdentityBinding(
-  token: string,
+  token: ApiCredential,
   request: IdentityBindingCreateRequest,
   signal?: AbortSignal,
 ): Promise<IdentityBinding> {
@@ -106,7 +106,7 @@ export function createIdentityBinding(
 }
 
 export function deactivateIdentityBinding(
-  token: string,
+  token: ApiCredential,
   bindingId: string,
   signal?: AbortSignal,
 ): Promise<IdentityBinding> {
@@ -115,7 +115,7 @@ export function deactivateIdentityBinding(
 }
 
 export function activateIdentityBinding(
-  token: string,
+  token: ApiCredential,
   bindingId: string,
   signal?: AbortSignal,
 ): Promise<IdentityBinding> {

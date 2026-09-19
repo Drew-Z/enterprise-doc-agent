@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Archive, CircleAlert, Clock3, Download, Fingerprint, Gavel, LoaderCircle, Plus, RefreshCw, ShieldCheck, Trash2, CheckCircle2 } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 
-import { createUploadTokenStore } from "../upload/persistence";
+import { createApplicationCredentialStore } from "../auth/credentialStore";
 import { formatApiError } from "../api/errorDisplay";
 import { useLocale, useT } from "../i18n";
 import {
@@ -44,7 +44,7 @@ export function AuditGovernancePanel({ showcaseMode = false, canManage = false }
   const t = useT();
   const locale = useLocale();
   const queryClient = useQueryClient();
-  const tokenStore = useMemo(() => createUploadTokenStore(sessionStorage), []);
+  const tokenStore = useMemo(() => createApplicationCredentialStore(sessionStorage), []);
   const token = tokenStore.load() ?? "";
   const enabled = showcaseMode || (token !== "" && canManage);
   const [retentionDays, setRetentionDays] = useState(365);

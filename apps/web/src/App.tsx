@@ -4,6 +4,7 @@ import {
   ArrowRight,
   ChevronDown,
   Files,
+  Gauge,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -20,16 +21,19 @@ import {
 import { fetchReadiness } from "./api/health";
 import { formatApiError } from "./api/errorDisplay";
 import { AgentWorkspace } from "./agent";
+import { PresalesWorkspace } from "./presales/PresalesWorkspace";
 import { DocumentsPage } from "./product/DocumentsPage";
 import { AuditPage } from "./product/AuditPage";
 import { RuntimeOverview } from "./product/RuntimeOverview";
 import { IdentityPage } from "./product/IdentityPage";
+import { TenantUsagePage } from "./product/TenantUsagePage";
 import { fetchProductSession, logoutProductSession, ProductSessionApiError, type ProductSession } from "./product/sessionApi";
 import { useProductRoute, type ProductRoute } from "./product/routes";
 import { showcaseAgentWorkspaceDependencies } from "./product/showcaseAgentClient";
 import { showcaseReadiness, showcaseRunId } from "./product/showcaseData";
 import { isShowcaseMode } from "./product/showcase";
-import { createUploadTokenStore } from "./upload/persistence";
+import { createApplicationCredentialStore } from "./auth/credentialStore";
+import type { BrowserWorkspaceSession } from "./auth/BrowserSessionBoundary";
 import { setLocale, useLocale, useT } from "./i18n";
 import "./styles.css";
 import "./product/product.css";
@@ -43,9 +47,11 @@ const workflowSteps = [
 const navigationItems: Array<{ route: ProductRoute; icon: typeof Files }> = [
   { route: "overview", icon: LayoutDashboard },
   { route: "documents", icon: Files },
+  { route: "presales", icon: ShieldCheck },
   { route: "agent-runs", icon: Sparkles },
   { route: "audit", icon: ShieldCheck },
   { route: "identity", icon: KeyRound },
+  { route: "usage", icon: Gauge },
 ];
 
 const showcaseSession: ProductSession = {
@@ -66,13 +72,14 @@ function shortTenantId(tenantId: string): string {
   return tenantId.slice(0, 8);
 }
 
-export function App() {
+export function App({ browserSession }: { browserSession?: BrowserWorkspaceSession } = {}) {
   const [route, navigate] = useProductRoute();
   const t = useT();
   const locale = useLocale();
   const showcaseMode = isShowcaseMode();
-  const tokenStore = useMemo(() => createUploadTokenStore(sessionStorage), []);
+  const tokenStore = useMemo(() => createApplicationCredentialStore(sessionStorage), []);
   const [authRevision, setAuthRevision] = useState(0);
+  const [presalesEntry, setPresalesEntry] = useState<{ contextKey: string; versionId: string } | null>(null);
   const [isCommandOpen, setIsCommandOpen] = useState(false);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [commandQuery, setCommandQuery] = useState("");
@@ -97,7 +104,9 @@ export function App() {
     staleTime: showcaseMode ? Infinity : 30_000,
   });
   const currentSession = session.data;
-  const refreshSession = () => setAuthRevision((current) => current + 1);
+  const canViewUsage = !showcaseMode && hasToken && session.isSuccess && currentSession?.role === "owner";
+  const presalesContextKey = [currentSession?.tenantId, currentSession?.actorId, authRevision].join(":");
+  const refreshSession = () => { setPresalesEntry(null); setAuthRevision((current) => current + 1); };
 
   useEffect(() => {
     if (showcaseMode || !hasToken || !(session.error instanceof ProductSessionApiError) || session.error.status !== 401) {
@@ -113,8 +122,9 @@ export function App() {
   }, [session.data]);
 
   const handleLogout = async () => {
+    if (browserSession) { browserSession.logout(); return; }
     const token = tokenStore.load();
-    if (!token || isLoggingOut || showcaseMode) return;
+    if (!token || typeof token !== "string" || isLoggingOut || showcaseMode) return;
     setIsLoggingOut(true);
     setLogoutUnconfirmed(false);
     setSessionExpired(false);
@@ -228,7 +238,7 @@ export function App() {
     <>
       <div className="sidebar-section-label">{t("nav.workspace")}</div>
       <nav className="primary-nav" aria-label={t("nav.workspace")}>
-        {navigationItems.map(({ route: itemRoute, icon: Icon }) => (
+        {navigationItems.filter(item => item.route !== "usage" || canViewUsage).map(({ route: itemRoute, icon: Icon }) => (
           <button
             key={itemRoute}
             type="button"
@@ -237,7 +247,7 @@ export function App() {
             onClick={() => goTo(itemRoute)}
           >
             <Icon aria-hidden="true" />
-          {itemRoute === "overview" ? t("nav.overview") : itemRoute === "documents" ? t("nav.documents") : itemRoute === "agent-runs" ? t("nav.agentRuns") : itemRoute === "audit" ? t("nav.audit") : t("nav.identity")}
+          {itemRoute === "overview" ? t("nav.overview") : itemRoute === "documents" ? t("nav.documents") : itemRoute === "presales" ? (locale === "zh" ? "售前响应" : "Presales responses") : itemRoute === "agent-runs" ? t("nav.agentRuns") : itemRoute === "audit" ? t("nav.audit") : itemRoute === "usage" ? (locale === "zh" ? "企业用量" : "Enterprise usage") : t("nav.identity")}
           </button>
         ))}
       </nav>
@@ -261,10 +271,10 @@ export function App() {
     <div className="app-shell">
       <aside className="app-sidebar" aria-label={t("nav.workspace")}>
         <Brand />
-        <div className="workspace-switcher" aria-label={t("nav.workspace")}>
+        {browserSession ? <button type="button" className="workspace-switcher browser-workspace-switch" aria-label={locale === "zh" ? "切换企业" : "Switch enterprise"} onClick={browserSession.chooseTenant}><span><small>{t("nav.workspace")}</small>{browserSession.tenant.name}</span><ChevronDown aria-hidden="true" /></button> : <div className="workspace-switcher" aria-label={t("nav.workspace")}>
           <span><small>{t("nav.workspace")}</small>{t("workspace.operations")}</span>
           <ChevronDown aria-hidden="true" />
-        </div>
+        </div>}
         {navigation}
         <div className="sidebar-spacer" />
         <RuntimeStatus runtimeLabel={runtimeLabel} isHealthy={isHealthy} isDegraded={isDegraded} showcaseMode={showcaseMode} />
@@ -293,18 +303,18 @@ export function App() {
                 <span className="showcase-pill-compact">{t("showcase.pillCompact")}</span>
               </span>
             )}
-            <span className="environment-label">{t("session.local")}</span>
+            {!browserSession && <span className="environment-label">{t("session.local")}</span>}
             <button className="locale-button" type="button" aria-label={t("locale.label")} onClick={() => setLocale(locale === "zh" ? "en" : "zh")}>
               {t("locale.switch")}
             </button>
             {currentSession !== undefined && (
-              <span className="session-identity" title={`${t("session.tenant")} ${currentSession.tenantId}`}>
-                <strong>{t("session.tenant")} {shortTenantId(currentSession.tenantId)}</strong>
+              <span className="session-identity" title={browserSession?.email ?? `${t("session.tenant")} ${currentSession.tenantId}`}>
+                <strong className="browser-enterprise-name">{browserSession ? browserSession.tenant.name : `${t("session.tenant")} ${shortTenantId(currentSession.tenantId)}`}</strong>
                 <small>{currentSession.role === "owner" ? t("session.owner") : t("session.member")}</small>
               </span>
             )}
             {session.isError && hasToken && !showcaseMode && <span className="session-error" title={formatApiError(session.error, t("session.unavailable"), t("common.requestId"))}>{t("session.unavailable")}</span>}
-            <span className="avatar-badge" role="img" aria-label={currentSession?.role === "owner" ? t("session.owner") : t("session.local")} title={currentSession?.role === "owner" ? t("session.owner") : t("session.local")}>ZB</span>
+            <span className="avatar-badge" role="img" aria-label={browserSession?.email ?? (currentSession?.role === "owner" ? t("session.owner") : t("session.local"))} title={browserSession?.email ?? t("session.local")}>{browserSession ? browserSession.email.slice(0, 1).toUpperCase() : "ZB"}</span>
             {!showcaseMode && hasToken && (
               <button
                 className="session-logout"
@@ -407,11 +417,35 @@ export function App() {
             </>
           )}
 
-          {route === "documents" && <DocumentsPage navigate={goTo} showcaseMode={showcaseMode} canWrite={currentSession?.capabilities.documentWrite ?? false} onSessionChange={refreshSession} />}
+          {route === "documents" && <DocumentsPage navigate={goTo} showcaseMode={showcaseMode} canWrite={currentSession?.capabilities.documentWrite ?? false} onSessionChange={refreshSession} contextKey={presalesContextKey} onStartPresales={currentSession && !session.isError && !showcaseMode ? versionId => { setPresalesEntry({ contextKey: presalesContextKey, versionId }); goTo("presales"); } : undefined} />}
+
+          {route === "presales" && <PresalesWorkspace
+            key={presalesContextKey}
+            contextKey={presalesContextKey}
+            storageKey={"enterprise.presales.active:" + [currentSession?.tenantId, currentSession?.actorId].join(":")}
+            token={currentSession && !session.isError ? tokenStore.load() : null}
+            openDocuments={() => goTo("documents")}
+            readOnly={showcaseMode}
+            initialVersionId={presalesEntry?.contextKey === presalesContextKey ? presalesEntry.versionId : undefined}
+            onInitialVersionConsumed={() => setPresalesEntry(null)}
+          />}
 
           {route === "audit" && <AuditPage navigate={goTo} showcaseMode={showcaseMode} canExport={currentSession?.capabilities.auditExport ?? false} canManageGovernance={currentSession?.role === "owner"} />}
 
           {route === "identity" && <IdentityPage showcaseMode={showcaseMode} canManage={currentSession?.role === "owner"} currentActorId={currentSession?.actorId} />}
+
+          {route === "usage" && <TenantUsagePage
+            key={presalesContextKey}
+            contextKey={presalesContextKey}
+            tenantId={currentSession?.tenantId}
+            credential={hasToken && session.isSuccess ? tokenStore.load() : null}
+            canView={canViewUsage}
+            sessionPending={hasToken && session.isPending}
+            sessionError={hasToken && session.isError}
+            showcaseMode={showcaseMode}
+            onSessionRefresh={refreshSession}
+            navigate={goTo}
+          />}
 
           {route === "agent-runs" && (
             <>
@@ -446,7 +480,7 @@ export function App() {
         }}>
           <aside className="mobile-nav-drawer" aria-label={t("nav.mobile")}>
             <div className="mobile-nav-heading"><Brand compact /><button className="icon-button" type="button" aria-label={t("nav.close")} onClick={() => setIsMobileNavOpen(false)}><X aria-hidden="true" /></button></div>
-            <div className="workspace-switcher"><span><small>{t("nav.workspace")}</small>{t("workspace.operations")}</span><ChevronDown aria-hidden="true" /></div>
+            {browserSession ? <button type="button" className="workspace-switcher browser-workspace-switch" aria-label={locale === "zh" ? "切换企业" : "Switch enterprise"} onClick={browserSession.chooseTenant}><span><small>{t("nav.workspace")}</small>{browserSession.tenant.name}</span><ChevronDown aria-hidden="true" /></button> : <div className="workspace-switcher"><span><small>{t("nav.workspace")}</small>{t("workspace.operations")}</span><ChevronDown aria-hidden="true" /></div>}
             {navigation}
             <div className="sidebar-spacer" />
             <RuntimeStatus runtimeLabel={runtimeLabel} isHealthy={isHealthy} isDegraded={isDegraded} showcaseMode={showcaseMode} />

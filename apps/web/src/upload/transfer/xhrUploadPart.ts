@@ -1,3 +1,5 @@
+import { isBrowserAuthentication } from "../../auth/transport";
+
 export type XhrUploadFailureCode =
   | "aborted"
   | "http_error"
@@ -27,6 +29,7 @@ export interface XhrLike {
   readonly upload: XhrUploadTargetLike;
   status: number;
   timeout: number;
+  withCredentials: boolean;
   onload: (() => void) | null;
   onerror: (() => void) | null;
   onabort: (() => void) | null;
@@ -63,6 +66,12 @@ export function uploadPartWithXhr(options: UploadPartWithXhrOptions): XhrUploadH
     const parsedUrl = new URL(options.url);
     if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
       throw new TypeError("Part upload URL must use HTTP(S).");
+    }
+    if (parsedUrl.username || parsedUrl.password || (isBrowserAuthentication() && parsedUrl.origin === window.location.origin)) {
+      throw new TypeError("Object transfers must use a separate origin without application credentials.");
+    }
+    if (Object.keys(options.headers).some(name => /^(authorization|cookie|x-session-context|x-csrf-token)$/i.test(name))) {
+      throw new TypeError("Object transfers cannot carry application authentication headers.");
     }
     if (
       options.timeoutMs !== undefined &&
@@ -156,6 +165,7 @@ export function uploadPartWithXhr(options: UploadPartWithXhrOptions): XhrUploadH
 
     try {
       xhr.open("PUT", options.url, true);
+      xhr.withCredentials = false;
       xhr.timeout = options.timeoutMs ?? 0;
       for (const [name, value] of Object.entries(options.headers)) {
         xhr.setRequestHeader(name, value);

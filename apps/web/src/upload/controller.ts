@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createApplicationCredentialStore } from "../auth/credentialStore";
+import type { ApiCredential } from "../auth/transport";
 
 import {
   UploadApiError,
@@ -18,7 +20,6 @@ import type {
 import { HashWorkerClientError, type HashJob, type StartHashJobOptions } from "./hashing/client";
 import {
   createUploadRecoveryStore,
-  createUploadTokenStore,
   UploadPersistenceError,
 } from "./persistence";
 import { initialUploadState, reduceUpload } from "./state/reducer";
@@ -52,7 +53,7 @@ export interface UploadApiPort {
 }
 
 export interface UploadWorkspaceDependencies {
-  createApiClient: (getToken: () => string | null) => UploadApiPort;
+  createApiClient: (getToken: () => ApiCredential | null) => UploadApiPort;
   startHashJob: (file: File, options: StartHashJobOptions) => HashJob;
   uploadPart: (options: UploadPartWithXhrOptions) => XhrUploadHandle;
   idempotencyKeyFactory: () => string;
@@ -61,7 +62,7 @@ export interface UploadWorkspaceDependencies {
 
 export interface UploadController {
   state: UploadMachineState;
-  token: string | null;
+  token: ApiCredential | null;
   runtimeError: string | null;
   dispatch(action: UploadAction): boolean;
   saveToken(token: string): boolean;
@@ -108,7 +109,7 @@ export function useUploadController(
   const stores = useMemo(
     () => ({
       recovery: createUploadRecoveryStore(storage),
-      token: createUploadTokenStore(storage),
+      token: createApplicationCredentialStore(storage),
     }),
     [storage],
   );
@@ -119,10 +120,11 @@ export function useUploadController(
       return null;
     }
   }, [stores]);
-  const [token, setToken] = useState<string | null>(initialToken);
+  const [token, setToken] = useState<ApiCredential | null>(initialToken);
   const [state, setState] = useState<UploadMachineState>(initialUploadState);
   const [runtimeError, setRuntimeError] = useState<string | null>(null);
-  const tokenRef = useRef<string | null>(initialToken);
+  const tokenRef = useRef<ApiCredential | null>(initialToken);
+  const mountedRef = useRef(true);
   const stateRef = useRef<UploadMachineState>(initialUploadState);
   const hashJobRef = useRef<HashJob | null>(null);
   const activeTransfersRef = useRef(new Map<string, ActiveTransfer>());
@@ -140,6 +142,7 @@ export function useUploadController(
   );
 
   const dispatch = useCallback((action: UploadAction): boolean => {
+    if (!mountedRef.current || (typeof tokenRef.current === "object" && tokenRef.current?.signal.aborted)) return false;
     const transition = reduceUpload(stateRef.current, action);
     if (!transition.accepted) {
       return false;
@@ -393,14 +396,22 @@ export function useUploadController(
   useEffect(
     () => {
       const activeTransfers = activeTransfersRef.current;
+      mountedRef.current = true;
       schedulerRef.current?.resume();
-      return () => {
+      const cancelWork = () => {
         hashJobRef.current?.cancel();
         for (const transfer of activeTransfers.values()) {
           transfer.controller.abort();
           transfer.handle.abort();
         }
         schedulerRef.current?.pause(true);
+      };
+      const signal = typeof tokenRef.current === "object" ? tokenRef.current?.signal : undefined;
+      signal?.addEventListener("abort", cancelWork, { once: true });
+      return () => {
+        mountedRef.current = false;
+        signal?.removeEventListener("abort", cancelWork);
+        cancelWork();
       };
     },
     [],

@@ -208,6 +208,14 @@ class DocumentIngestionService:
                 finally:
                     spool.close()
 
+                content_sha256 = hashlib.sha256(data).hexdigest()
+                if content_sha256 != version.declared_sha256:
+                    raise DocumentIngestionError(
+                        "document_sha256_mismatch",
+                        "document content does not match its declared SHA-256",
+                        retryable=False,
+                    )
+
                 current_stage = DocumentIngestionStage.PARSE
                 await self._checkpoint(generation_id, DocumentIngestionStage.PARSE)
                 sections = parse_document_bytes(
@@ -226,6 +234,7 @@ class DocumentIngestionService:
                     document_version_id=document_version_id,
                     generation_id=generation_id,
                     chunks=chunks,
+                    verified_content_sha256=content_sha256,
                 )
             current_stage = DocumentIngestionStage.EMBED
             embeddings = await self.embedding_provider.embed(tuple(chunk.text for chunk in chunks))
@@ -360,7 +369,10 @@ class DocumentIngestionService:
                 return generation.id, version, DocumentIngestionStage.READY, True
             else:
                 resume_stage = DocumentIngestionStage(generation.stage)
-                if resume_stage is not DocumentIngestionStage.EMBED:
+                if (
+                    resume_stage is not DocumentIngestionStage.EMBED
+                    or version.content_sha256_verified_at is None
+                ):
                     await session.execute(
                         delete(DocumentChunk).where(DocumentChunk.generation_id == generation.id)
                     )
@@ -415,8 +427,17 @@ class DocumentIngestionService:
         document_version_id: UUID,
         generation_id: UUID,
         chunks: tuple[ParsedChunk, ...],
+        verified_content_sha256: str,
     ) -> None:
         async with self.session_factory() as session, session.begin():
+            version = await session.scalar(
+                select(DocumentVersion)
+                .where(
+                    DocumentVersion.id == document_version_id,
+                    DocumentVersion.tenant_id == tenant_id,
+                )
+                .with_for_update()
+            )
             generation = await session.scalar(
                 select(DocumentIngestionGeneration)
                 .where(
@@ -426,9 +447,15 @@ class DocumentIngestionService:
                 )
                 .with_for_update()
             )
-            if generation is None:
+            if version is None or generation is None:
                 raise DocumentIngestionError(
                     "ingestion_target_missing", "ingestion target was not found", retryable=False
+                )
+            if version.declared_sha256 != verified_content_sha256:
+                raise DocumentIngestionError(
+                    "document_sha256_mismatch",
+                    "document content does not match its declared SHA-256",
+                    retryable=False,
                 )
             await session.execute(
                 delete(DocumentChunk).where(DocumentChunk.generation_id == generation_id)
@@ -456,6 +483,8 @@ class DocumentIngestionService:
             generation.status = DocumentIngestionStatus.RUNNING.value
             generation.chunk_count = len(chunks)
             generation.embedded_count = 0
+            if version.content_sha256_verified_at is None:
+                version.content_sha256_verified_at = func.now()
 
     async def _load_persisted_chunks(
         self,
@@ -562,7 +591,8 @@ class DocumentIngestionService:
                     "ingestion_target_missing", "ingestion target was not found", retryable=False
                 )
             if (
-                generation.stage != DocumentIngestionStage.EMBED.value
+                version.content_sha256_verified_at is None
+                or generation.stage != DocumentIngestionStage.EMBED.value
                 or generation.chunk_count != len(chunks)
                 or len(rows) != len(chunks)
                 or any(

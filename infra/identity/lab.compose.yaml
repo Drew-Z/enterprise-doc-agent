@@ -1,0 +1,71 @@
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak@sha256:26939e1318d6f008fc2ee6e10cec1cf8f1ba8a21846c1bc81b91ed0506bc2a7a
+    platform: linux/amd64
+    command: ["start-dev", "--http-access-log-enabled=false"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${LAB_ADMIN_USERNAME:?}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${LAB_ADMIN_PASSWORD:?}
+      KC_HOSTNAME: http://${LAB_KEYCLOAK_HOST:-127.0.0.1}:${LAB_KEYCLOAK_PORT:?}
+      KC_LOG_LEVEL: "OFF"
+    ports:
+      - "127.0.0.1:${LAB_KEYCLOAK_PORT:?}:8080"
+    tmpfs:
+      - /opt/keycloak/data:uid=1000,gid=0,mode=0700,size=128m
+    mem_limit: 1g
+    cpus: 2
+    logging:
+      driver: none
+    networks: [lab]
+
+  relay:
+    image: ghcr.io/dreamhunter2333/cloudflare_temp_email/smtp_proxy_server@sha256:02146a8d21a5c4488e7217bb3dc065eaccc7b1cecab27019c7dcd0c33866bb3a
+    platform: linux/amd64
+    entrypoint: ["python3", "-B", "/lab/mail_relay.py"]
+    user: "65532:65532"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    volumes:
+      - ./mail_relay.py:/lab/mail_relay.py:ro
+    environment:
+      MAIL_RELAY_WORKER_ORIGIN: http://capture:8080
+      MAIL_RELAY_TEST_CAPTURE: "true"
+      MAIL_RELAY_SENDER: noreply@notify.ciallobill.ccwu.cc
+      MAIL_RELAY_RECIPIENTS: ${LAB_RECIPIENTS:?}
+      MAIL_RELAY_SITE_PASSWORD: ${LAB_SITE_PASSWORD:?}
+      MAIL_RELAY_ADDRESS_TOKEN: ${LAB_ADDRESS_TOKEN:?}
+      MAIL_RELAY_SMTP_PASSWORD: ${LAB_SMTP_PASSWORD:?}
+    ports:
+      - "127.0.0.1:${LAB_SMTP_PORT:?}:8025"
+    mem_limit: 128m
+    logging:
+      driver: none
+    networks: [lab]
+
+  capture:
+    image: ghcr.io/dreamhunter2333/cloudflare_temp_email/smtp_proxy_server@sha256:02146a8d21a5c4488e7217bb3dc065eaccc7b1cecab27019c7dcd0c33866bb3a
+    platform: linux/amd64
+    entrypoint: ["python3", "-B", "/lab/capture_api.py"]
+    user: "65532:65532"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    volumes:
+      - ../../tests/identity_provider/capture_api.py:/lab/capture_api.py:ro
+    environment:
+      LAB_RECIPIENTS: ${LAB_RECIPIENTS:?}
+      LAB_SITE_PASSWORD: ${LAB_SITE_PASSWORD:?}
+      LAB_ADDRESS_TOKEN: ${LAB_ADDRESS_TOKEN:?}
+      LAB_CAPTURE_KEY: ${LAB_CAPTURE_KEY:?}
+    ports:
+      - "127.0.0.1:${LAB_CAPTURE_PORT:?}:8080"
+    mem_limit: 128m
+    logging:
+      driver: none
+    networks: [lab]
+
+networks:
+  # Docker Desktop does not publish ports on an internal-only bridge.
+  # All published listeners remain on loopback; email targets the capture service.
+  lab: {}

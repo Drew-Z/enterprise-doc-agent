@@ -1,3 +1,4 @@
+import { authenticatedFetch, type ApiCredential } from "../auth/transport";
 import { z, type ZodType } from "zod";
 
 import {
@@ -18,11 +19,11 @@ function normalizeBaseUrl(value: string | undefined): string {
 }
 
 export async function fetchDocumentInventory(
-  token: string,
+  token: ApiCredential,
   signal?: AbortSignal,
 ): Promise<DocumentInventoryItem[]> {
-  const response = await fetch(`${normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL)}/api/documents?limit=200`, {
-    headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
+  const response = await authenticatedFetch(`${normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL)}/api/documents?limit=200`, token, {
+    headers: { Accept: "application/json" },
     signal,
   });
   if (!response.ok) {
@@ -58,15 +59,14 @@ function documentPath(documentId: string): string {
 }
 
 async function requestJson<T>(
-  token: string,
+  token: ApiCredential,
   path: string,
   schema: ZodType<T>,
   init: RequestInit = {},
 ): Promise<T> {
   const headers = new Headers(init.headers);
   headers.set("Accept", "application/json");
-  headers.set("Authorization", `Bearer ${token}`);
-  const response = await fetch(`${normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL)}${path}`, {
+  const response = await authenticatedFetch(`${normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL)}${path}`, token, {
     ...init,
     headers,
   });
@@ -85,7 +85,7 @@ async function requestJson<T>(
 }
 
 export function fetchDocumentAccess(
-  token: string,
+  token: ApiCredential,
   documentId: string,
   signal?: AbortSignal,
 ): Promise<DocumentAccessResponse> {
@@ -93,7 +93,7 @@ export function fetchDocumentAccess(
 }
 
 export function updateDocumentAccess(
-  token: string,
+  token: ApiCredential,
   documentId: string,
   accessMode: DocumentAccessMode,
   signal?: AbortSignal,
@@ -107,7 +107,7 @@ export function updateDocumentAccess(
 }
 
 export function fetchDocumentGrants(
-  token: string,
+  token: ApiCredential,
   documentId: string,
   signal?: AbortSignal,
 ): Promise<DocumentGrantResponse[]> {
@@ -115,7 +115,7 @@ export function fetchDocumentGrants(
 }
 
 export function createDocumentGrant(
-  token: string,
+  token: ApiCredential,
   documentId: string,
   request: DocumentGrantCreateRequest,
   signal?: AbortSignal,
@@ -130,15 +130,15 @@ export function createDocumentGrant(
 }
 
 export async function deleteDocumentGrant(
-  token: string,
+  token: ApiCredential,
   documentId: string,
   grantId: string,
   signal?: AbortSignal,
 ): Promise<void> {
   const path = `${documentPath(documentId)}/grants/${encodeURIComponent(z.string().uuid().parse(grantId))}`;
-  const response = await fetch(`${normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL)}${path}`, {
+  const response = await authenticatedFetch(`${normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL)}${path}`, token, {
     method: "DELETE",
-    headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
+    headers: { Accept: "application/json" },
     signal,
   });
   if (!response.ok) {

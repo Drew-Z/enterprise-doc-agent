@@ -1,3 +1,4 @@
+import { authenticatedFetch, type ApiCredential } from "../auth/transport";
 import { z, type ZodType } from "zod";
 
 import { errorResponseSchema } from "../agent/api/schemas";
@@ -41,15 +42,14 @@ export class MembersApiError extends Error {
 }
 
 async function requestJson<T>(
-  token: string,
+  token: ApiCredential,
   path: string,
   schema: ZodType<T>,
   init: RequestInit = {},
 ): Promise<T> {
   const headers = new Headers(init.headers);
   headers.set("Accept", "application/json");
-  headers.set("Authorization", `Bearer ${token}`);
-  const response = await fetch(`${normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL)}${path}`, {
+  const response = await authenticatedFetch(`${normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL)}${path}`, token, {
     ...init,
     headers,
   });
@@ -68,7 +68,7 @@ async function requestJson<T>(
 }
 
 export function fetchTenantMembers(
-  token: string,
+  token: ApiCredential,
   query = "",
   signal?: AbortSignal,
 ): Promise<TenantMember[]> {
@@ -78,7 +78,7 @@ export function fetchTenantMembers(
 }
 
 export function provisionTenantMember(
-  token: string,
+  token: ApiCredential,
   email: string,
   role: TenantMemberRole,
 ): Promise<TenantMember> {
@@ -91,7 +91,7 @@ export function provisionTenantMember(
 }
 
 export function changeTenantMemberRole(
-  token: string,
+  token: ApiCredential,
   membershipId: string,
   role: TenantMemberRole,
 ): Promise<TenantMember> {
@@ -103,12 +103,12 @@ export function changeTenantMemberRole(
   });
 }
 
-export function deactivateTenantMember(token: string, membershipId: string): Promise<TenantMember> {
+export function deactivateTenantMember(token: ApiCredential, membershipId: string): Promise<TenantMember> {
   const path = `/api/members/${encodeURIComponent(uuidSchema.parse(membershipId))}`;
   return requestJson(token, path, tenantMemberSchema, { method: "DELETE" });
 }
 
-export function activateTenantMember(token: string, membershipId: string): Promise<TenantMember> {
+export function activateTenantMember(token: ApiCredential, membershipId: string): Promise<TenantMember> {
   const path = `/api/members/${encodeURIComponent(uuidSchema.parse(membershipId))}/activate`;
   return requestJson(token, path, tenantMemberSchema, { method: "POST" });
 }

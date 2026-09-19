@@ -25,6 +25,8 @@ def main() -> None:
         port=settings.api.port,
         loop="enterprise_doc_core.db.engine:selector_event_loop_factory",
         log_config=None,
+        access_log=False,
+        proxy_headers=False,
     )
     telemetry.shutdown()
 

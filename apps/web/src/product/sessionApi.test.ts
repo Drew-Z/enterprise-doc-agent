@@ -1,3 +1,4 @@
+import { headersContaining } from "../test/httpHeaders";
 import { describe, expect, it, vi } from "vitest";
 
 import { fetchProductSession, logoutProductSession } from "./sessionApi";
@@ -24,7 +25,7 @@ describe("fetchProductSession", () => {
     await expect(fetchProductSession("local-token")).resolves.toEqual(payload);
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/session",
-      expect.objectContaining({ headers: { Accept: "application/json", Authorization: "Bearer local-token" } }),
+      expect.objectContaining({ headers: headersContaining({ Accept: "application/json", Authorization: "Bearer local-token" }) }),
     );
   });
 });
@@ -47,7 +48,7 @@ describe("logoutProductSession", () => {
       "/api/session/logout",
       expect.objectContaining({
         method: "POST",
-        headers: { Accept: "application/json", Authorization: "Bearer local-token" },
+        headers: headersContaining({ Accept: "application/json", Authorization: "Bearer local-token" }),
       }),
     );
   });

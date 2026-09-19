@@ -1,3 +1,4 @@
+import { headersContaining } from "../test/httpHeaders";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { exportAuditEvents, fetchAuditEvents } from "./auditApi";
@@ -32,7 +33,7 @@ describe("fetchAuditEvents", () => {
     await expect(fetchAuditEvents("local-token", { action: "agent_run.finished", resourceType: "agent_run" })).resolves.toEqual(page);
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/audit-events?limit=100&action=agent_run.finished&resourceType=agent_run",
-      expect.objectContaining({ headers: { Accept: "application/json", Authorization: "Bearer local-token" } }),
+      expect.objectContaining({ headers: headersContaining({ Accept: "application/json", Authorization: "Bearer local-token" }) }),
     );
   });
 
@@ -60,7 +61,7 @@ describe("exportAuditEvents", () => {
     })).resolves.toBeInstanceOf(Blob);
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/audit-events/export.csv?limit=2000&action=agent_run.finished&resourceType=agent_run&from=2026-08-01T00%3A00%3A00Z&to=2026-08-25T23%3A59%3A59Z",
-      expect.objectContaining({ headers: { Accept: "text/csv", Authorization: "Bearer local-token" } }),
+      expect.objectContaining({ headers: headersContaining({ Accept: "text/csv", Authorization: "Bearer local-token" }) }),
     );
   });
 

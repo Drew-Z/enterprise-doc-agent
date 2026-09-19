@@ -12,7 +12,17 @@ export default defineConfig({
   server: {
     host: "127.0.0.1",
     port: 5173,
+    headers: {
+      "Cache-Control": "no-store",
+      "Referrer-Policy": "no-referrer",
+      "X-Content-Type-Options": "nosniff",
+      "Content-Security-Policy": "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'",
+    },
     proxy: {
+      "/auth": {
+        target: "http://127.0.0.1:8000",
+        changeOrigin: true,
+      },
       "/health": {
         target: "http://127.0.0.1:8000",
         changeOrigin: true,

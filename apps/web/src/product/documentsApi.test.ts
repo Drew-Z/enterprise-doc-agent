@@ -1,3 +1,4 @@
+import { headersContaining } from "../test/httpHeaders";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -43,7 +44,7 @@ describe("fetchDocumentInventory", () => {
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/documents?limit=200",
       expect.objectContaining({
-        headers: { Accept: "application/json", Authorization: "Bearer local-token" },
+        headers: headersContaining({ Accept: "application/json", Authorization: "Bearer local-token" }),
       }),
     );
   });

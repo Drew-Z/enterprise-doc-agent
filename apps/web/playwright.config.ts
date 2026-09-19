@@ -48,6 +48,7 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
       env: {
+        VITE_AUTH_MODE: "bearer",
         // Use the Vite same-origin proxy so browser E2E requests remain mockable
         // without a cross-origin preflight against the locally running API.
         VITE_API_BASE_URL: "",

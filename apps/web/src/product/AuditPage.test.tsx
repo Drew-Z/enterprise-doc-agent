@@ -1,3 +1,4 @@
+import { headersContaining } from "../test/httpHeaders";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -43,7 +44,7 @@ describe("AuditPage", () => {
     expect(await screen.findByText("Current tenant")).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/audit-events?limit=100",
-      expect.objectContaining({ headers: { Accept: "application/json", Authorization: "Bearer local-token" } }),
+      expect.objectContaining({ headers: headersContaining({ Accept: "application/json", Authorization: "Bearer local-token" }) }),
     );
   });
 
@@ -61,7 +62,7 @@ describe("AuditPage", () => {
     expect((await screen.findAllByText("Status: pending")).length).toBeGreaterThan(0);
     expect(fetchMock).toHaveBeenLastCalledWith(
       "/api/audit-events?limit=100&cursor=cursor-1",
-      expect.objectContaining({ headers: { Accept: "application/json", Authorization: "Bearer local-token" } }),
+      expect.objectContaining({ headers: headersContaining({ Accept: "application/json", Authorization: "Bearer local-token" }) }),
     );
   });
 });

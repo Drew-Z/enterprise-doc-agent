@@ -1,3 +1,4 @@
+import { authenticatedFetch, type ApiCredential } from "../auth/transport";
 import { z, type ZodType } from "zod";
 
 import { errorResponseSchema } from "../agent/api/schemas";
@@ -114,15 +115,14 @@ export class AuditGovernanceApiError extends Error {
 }
 
 async function requestJson<T>(
-  token: string,
+  token: ApiCredential,
   path: string,
   schema: ZodType<T>,
   init: RequestInit = {},
 ): Promise<T> {
   const headers = new Headers(init.headers);
   headers.set("Accept", "application/json");
-  headers.set("Authorization", `Bearer ${token}`);
-  const response = await fetch(`${normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL)}${path}`, {
+  const response = await authenticatedFetch(`${normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL)}${path}`, token, {
     ...init,
     headers,
   });
@@ -140,12 +140,12 @@ async function requestJson<T>(
   return parsed.data;
 }
 
-export function fetchAuditRetentionPolicy(token: string, signal?: AbortSignal): Promise<AuditRetentionPolicy> {
+export function fetchAuditRetentionPolicy(token: ApiCredential, signal?: AbortSignal): Promise<AuditRetentionPolicy> {
   return requestJson(token, "/api/audit-governance/retention-policy", auditRetentionPolicySchema, { signal });
 }
 
 export function updateAuditRetentionPolicy(
-  token: string,
+  token: ApiCredential,
   request: Pick<AuditRetentionPolicy, "retentionDays" | "isEnabled">,
   signal?: AbortSignal,
 ): Promise<AuditRetentionPolicy> {
@@ -158,12 +158,12 @@ export function updateAuditRetentionPolicy(
   });
 }
 
-export function fetchAuditRetentionPreview(token: string, signal?: AbortSignal): Promise<AuditRetentionPreview> {
+export function fetchAuditRetentionPreview(token: ApiCredential, signal?: AbortSignal): Promise<AuditRetentionPreview> {
   return requestJson(token, "/api/audit-governance/retention-preview", auditRetentionPreviewSchema, { signal });
 }
 
 export function fetchAuditRetentionPlan(
-  token: string,
+  token: ApiCredential,
   limit = 100,
   signal?: AbortSignal,
 ): Promise<AuditRetentionPlan> {
@@ -177,7 +177,7 @@ export function fetchAuditRetentionPlan(
 }
 
 export function archiveAuditRetentionPlan(
-  token: string,
+  token: ApiCredential,
   limit = 100,
   signal?: AbortSignal,
 ): Promise<AuditArchiveBatch> {
@@ -191,7 +191,7 @@ export function archiveAuditRetentionPlan(
 }
 
 export function fetchAuditArchiveBatches(
-  token: string,
+  token: ApiCredential,
   limit = 25,
   signal?: AbortSignal,
 ): Promise<AuditArchiveBatch[]> {
@@ -205,7 +205,7 @@ export function fetchAuditArchiveBatches(
 }
 
 export function verifyAuditArchiveBatch(
-  token: string,
+  token: ApiCredential,
   batchId: string,
   signal?: AbortSignal,
 ): Promise<AuditArchiveVerification> {
@@ -214,7 +214,7 @@ export function verifyAuditArchiveBatch(
 }
 
 export function fetchAuditArchiveDownload(
-  token: string,
+  token: ApiCredential,
   batchId: string,
   expiresInSeconds = 300,
   signal?: AbortSignal,
@@ -224,12 +224,12 @@ export function fetchAuditArchiveDownload(
   return requestJson(token, path, auditArchiveDownloadSchema, { signal });
 }
 
-export function fetchAuditLegalHolds(token: string, signal?: AbortSignal): Promise<AuditLegalHold[]> {
+export function fetchAuditLegalHolds(token: ApiCredential, signal?: AbortSignal): Promise<AuditLegalHold[]> {
   return requestJson(token, "/api/audit-governance/legal-holds", z.array(auditLegalHoldSchema), { signal });
 }
 
 export function createAuditLegalHold(
-  token: string,
+  token: ApiCredential,
   request: AuditLegalHoldCreateRequest,
   signal?: AbortSignal,
 ): Promise<AuditLegalHold> {
@@ -242,7 +242,7 @@ export function createAuditLegalHold(
   });
 }
 
-export function releaseAuditLegalHold(token: string, holdId: string, signal?: AbortSignal): Promise<AuditLegalHold> {
+export function releaseAuditLegalHold(token: ApiCredential, holdId: string, signal?: AbortSignal): Promise<AuditLegalHold> {
   const path = `/api/audit-governance/legal-holds/${encodeURIComponent(uuidSchema.parse(holdId))}`;
   return requestJson(token, path, auditLegalHoldSchema, { method: "DELETE", signal });
 }

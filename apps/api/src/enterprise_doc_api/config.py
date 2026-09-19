@@ -5,7 +5,10 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, SecretStr, model_validator
 
+from enterprise_doc_api.browser_auth.settings import BrowserAuthSettings
 from enterprise_doc_core.config import AppEnvironment, FoundationSettings
+from enterprise_doc_core.invitations.contracts import InvitationSettings
+from enterprise_doc_core.presales.settings import PresalesSettings
 
 
 class ApiServerSettings(BaseModel):
@@ -114,11 +117,17 @@ class AuthSettings(BaseModel):
 
 
 class ApiSettings(FoundationSettings):
+    browser_auth: BrowserAuthSettings = Field(default_factory=BrowserAuthSettings)
+    invitations: InvitationSettings = Field(default_factory=InvitationSettings)
+    presales: PresalesSettings = Field(default_factory=PresalesSettings)
     api: ApiServerSettings = Field(default_factory=ApiServerSettings)
     auth: AuthSettings = Field(default_factory=AuthSettings)
 
     @model_validator(mode="after")
     def reject_development_auth_key_outside_local_or_test(self) -> Self:
+        self.browser_auth.validate_environment(self.app_env)
+        if self.invitations.enabled and not self.browser_auth.enabled:
+            raise ValueError("invitations require browser authentication")
         if self.app_env in {AppEnvironment.LOCAL, AppEnvironment.TEST}:
             return self
         if "enterprise_doc_local" in self.auth.signing_key.get_secret_value():

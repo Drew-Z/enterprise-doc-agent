@@ -1,8 +1,9 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createUploadTokenStore } from "../upload/persistence";
+import { activateBrowserCredential, configureAuthentication } from "../auth/transport";
 import { IdentityPage } from "./IdentityPage";
 
 const binding = {
@@ -26,9 +27,29 @@ beforeEach(() => {
   createUploadTokenStore(sessionStorage).save("local-token");
 });
 
-afterEach(() => { cleanup(); vi.restoreAllMocks(); });
+afterEach(() => { cleanup(); vi.restoreAllMocks(); configureAuthentication("bearer"); });
 
 describe("IdentityPage", () => {
+  it("puts browser invitations and membership first and loads identity bindings only when advanced management opens", async () => {
+    configureAuthentication("browser");
+    activateBrowserCredential({ tenantId: binding.tenantId, actorId: binding.userId, contextVersion: "a".repeat(32) + ".1", csrfToken: "c".repeat(64) });
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation((input) => Promise.resolve(new Response(JSON.stringify(
+      requestPath(input) === "/api/invitations"
+        ? { items: [], seats: { active: 1, limit: 3, remaining: 2 }, eligible: true, hasMore: false }
+        : [],
+    ))));
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(<QueryClientProvider client={queryClient}><IdentityPage canManage /></QueryClientProvider>);
+    expect(await screen.findByRole("heading", { name: "Invite colleagues" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Member directory" })).toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: "Issuer URL" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Provision member" })).not.toBeInTheDocument();
+    expect(fetchMock.mock.calls.some(([input]) => requestPath(input).includes("identity-bindings"))).toBe(false);
+    fireEvent.click(screen.getByText("Advanced identity management"));
+    expect(await screen.findByRole("textbox", { name: "Issuer URL" })).toBeInTheDocument();
+    expect(fetchMock.mock.calls.some(([input]) => requestPath(input).includes("identity-bindings"))).toBe(true);
+  });
+
   it("searches members and manages the binding lifecycle", async () => {
     const inactiveBinding = {
       ...binding,
@@ -62,7 +83,8 @@ describe("IdentityPage", () => {
     const fetchMock = vi.spyOn(globalThis, "fetch");
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
     render(<QueryClientProvider client={queryClient}><IdentityPage showcaseMode canManage /></QueryClientProvider>);
-    expect(await screen.findByText("former.member@example.com")).toBeInTheDocument();
+    const bindings = await screen.findByRole("region", { name: "Explicit subject bindings" });
+    expect(await within(bindings).findByText("former.member@example.com")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Create binding" })).toBeDisabled();
     expect(fetchMock).not.toHaveBeenCalled();
   });

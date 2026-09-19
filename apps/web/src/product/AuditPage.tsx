@@ -2,7 +2,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Activity, ArrowRight, CalendarDays, CircleAlert, Download, Filter, LoaderCircle, RefreshCw, Search, ShieldCheck, UserRound } from "lucide-react";
 
-import { createUploadTokenStore } from "../upload/persistence";
+import { createApplicationCredentialStore } from "../auth/credentialStore";
 import { formatApiError } from "../api/errorDisplay";
 import type { ProductRoute } from "./routes";
 import { exportAuditEvents, fetchAuditEvents, type AuditEvent } from "./auditApi";
@@ -92,7 +92,7 @@ function EventIcon({ event }: { event: AuditEvent }) {
 export function AuditPage({ navigate, showcaseMode = false, canExport = true, canManageGovernance = false }: AuditPageProps) {
   const t = useT();
   const locale = useLocale();
-  const tokenStore = useMemo(() => createUploadTokenStore(sessionStorage), []);
+  const tokenStore = useMemo(() => createApplicationCredentialStore(sessionStorage), []);
   const [query, setQuery] = useState("");
   const [action, setAction] = useState("");
   const [resourceType, setResourceType] = useState("");

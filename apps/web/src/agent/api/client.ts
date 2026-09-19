@@ -1,4 +1,5 @@
 import { z, type ZodType } from "zod";
+import { authenticatedFetch, type ApiCredential } from "../../auth/transport";
 
 import {
   agentArtifactDownloadResponseSchema,
@@ -63,7 +64,7 @@ export class AgentNetworkError extends Error {
 
 export interface AgentApiClientOptions {
   baseUrl?: string;
-  getToken: () => string | null;
+  getToken: () => ApiCredential | null;
   fetcher?: Fetcher;
 }
 
@@ -284,18 +285,17 @@ export class AgentApiClient implements AgentApiClientProtocol {
 
   private async authorizedFetch(path: string, init: RequestInit = {}): Promise<Response> {
     const token = this.options.getToken();
-    if (token === null || token.trim() === "") {
+    if (token === null || (typeof token === "string" && token.trim() === "")) {
       throw new AgentAuthenticationError();
     }
     const headers = new Headers(init.headers);
     headers.set("Accept", headers.get("Accept") ?? "application/json");
-    headers.set("Authorization", `Bearer ${token}`);
     try {
       // Keep the native fetch receiver unbound. Calling `this.fetcher(...)`
       // makes Chromium treat the client instance as `this` and throws
       // `Illegal invocation` before a request is sent.
       const fetcher = this.fetcher;
-      const response = await fetcher(`${this.baseUrl}${path}`, { ...init, headers });
+      const response = await authenticatedFetch(`${this.baseUrl}${path}`, token, { ...init, headers }, fetcher);
       return response;
     } catch (error) {
       if (init.signal?.aborted === true || (error instanceof DOMException && error.name === "AbortError")) {

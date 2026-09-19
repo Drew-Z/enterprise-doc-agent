@@ -1,0 +1,29 @@
+# Attach to the same private Docker network as Keycloak after the mailbox is provisioned.
+# No host SMTP port is published. This file does not create Cloudflare resources.
+services:
+  mail-relay:
+    image: ghcr.io/dreamhunter2333/cloudflare_temp_email/smtp_proxy_server@sha256:02146a8d21a5c4488e7217bb3dc065eaccc7b1cecab27019c7dcd0c33866bb3a
+    platform: linux/amd64
+    entrypoint: ["python3", "-B", "/identity/mail_relay.py"]
+    user: "65532:65532"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    volumes:
+      - ./mail_relay.py:/identity/mail_relay.py:ro
+    environment:
+      MAIL_RELAY_WORKER_ORIGIN: https://inbox.ciallobill.ccwu.cc
+      MAIL_RELAY_SENDER: noreply@notify.ciallobill.ccwu.cc
+      MAIL_RELAY_RECIPIENTS: ${CLOUDFLARE_MAIL_VERIFIED_RECIPIENTS:?Supply a verified recipient JSON array}
+      MAIL_RELAY_SITE_PASSWORD: ${CLOUDFLARE_MAIL_SITE_PASSWORD:?Supply the private mailbox site password}
+      MAIL_RELAY_ADDRESS_TOKEN: ${CLOUDFLARE_MAIL_ADDRESS_TOKEN:?Supply the sender Address JWT}
+      MAIL_RELAY_SMTP_PASSWORD: ${IDENTITY_SMTP_PASSWORD:?Supply a separate SMTP password}
+    mem_limit: 128m
+    logging:
+      driver: none
+    networks: [identity]
+
+networks:
+  identity:
+    external: true
+    name: ${IDENTITY_PRIVATE_NETWORK:?Supply the existing private Keycloak network}

@@ -1,5 +1,6 @@
 import type { PersistedAgentRun } from "./api/schemas";
 import { persistedAgentRunSchema } from "./api/schemas";
+import { scopedRecoveryKey } from "../auth/transport";
 
 export const AGENT_RUN_STORAGE_KEY = "enterprise-doc.agent-run.v1";
 
@@ -18,7 +19,7 @@ export interface AgentRunRecoveryStore {
 
 export function createAgentRunRecoveryStore(
   storage: Storage,
-  key = AGENT_RUN_STORAGE_KEY,
+  key = scopedRecoveryKey(AGENT_RUN_STORAGE_KEY),
 ): AgentRunRecoveryStore {
   return {
     load() {

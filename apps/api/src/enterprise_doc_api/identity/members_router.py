@@ -21,6 +21,7 @@ from enterprise_doc_core.identity.membership_service import (
     MembershipLastOwnerRequired,
     MembershipSelfMutationForbidden,
 )
+from enterprise_doc_core.identity.seats import MembershipSeatLimitReached
 
 
 class MembershipAdministrationServiceProtocol(Protocol):
@@ -86,7 +87,7 @@ async def list_members(
             query=q,
             limit=100,
         )
-    except MembershipAdministrationError as error:
+    except (MembershipAdministrationError, MembershipSeatLimitReached) as error:
         raise _api_error(error) from error
     return [MemberResponse.model_validate(member, from_attributes=True) for member in members]
 
@@ -120,7 +121,7 @@ async def provision_member(
             request_id=context.request_id if context else None,
             correlation_id=context.correlation_id if context else None,
         )
-    except MembershipAdministrationError as error:
+    except (MembershipAdministrationError, MembershipSeatLimitReached) as error:
         raise _api_error(error) from error
     return MemberResponse.model_validate(member, from_attributes=True)
 
@@ -220,7 +221,7 @@ async def _mutate_member(
         kwargs["member_role"] = member_role
     try:
         member = await getattr(service, method)(**kwargs)
-    except MembershipAdministrationError as error:
+    except (MembershipAdministrationError, MembershipSeatLimitReached) as error:
         raise _api_error(error) from error
     return MemberResponse.model_validate(member, from_attributes=True)
 
@@ -245,7 +246,13 @@ def _require_owner(principal: PrincipalContext) -> None:
         raise _api_error(error) from error
 
 
-def _api_error(error: MembershipAdministrationError) -> ApiError:
+def _api_error(error: MembershipAdministrationError | MembershipSeatLimitReached) -> ApiError:
+    if isinstance(error, MembershipSeatLimitReached):
+        return ApiError(
+            status_code=409,
+            code=error.code,
+            message="The enterprise member seat limit is reached.",
+        )
     if isinstance(error, MembershipAdministrationForbidden):
         return ApiError(
             status_code=403,

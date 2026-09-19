@@ -38,6 +38,9 @@ from enterprise_doc_api.auth.session_router import (
 from enterprise_doc_api.auth.session_router import (
     router as session_router,
 )
+from enterprise_doc_api.browser_auth.http import BrowserResponseSecurityMiddleware
+from enterprise_doc_api.browser_auth.oidc import OidcClient
+from enterprise_doc_api.browser_auth.router import router as browser_auth_router
 from enterprise_doc_api.config import ApiSettings
 from enterprise_doc_api.documents import router as document_router
 from enterprise_doc_api.documents.router import (
@@ -62,22 +65,32 @@ from enterprise_doc_api.identity.scim_router import (
 from enterprise_doc_api.identity.scim_router import (
     router as scim_router,
 )
+from enterprise_doc_api.invitations.router import auth_router as invitation_auth_router
+from enterprise_doc_api.invitations.router import router as invitation_router
 from enterprise_doc_api.jobs import router as jobs_router
 from enterprise_doc_api.middleware import (
     ApiAuthenticationMiddleware,
     MetricsMiddleware,
     RequestContextMiddleware,
 )
+from enterprise_doc_api.presales.router import PresalesServiceProtocol
+from enterprise_doc_api.presales.router import router as presales_router
+from enterprise_doc_api.tenant_usage.router import router as tenant_usage_router
 from enterprise_doc_api.uploads import router as upload_router
 from enterprise_doc_api.uploads.router import (
     UploadCreationServiceProtocol,
     UploadSessionServiceProtocol,
 )
+from enterprise_doc_core.admission.service import TenantAdmissionService
 from enterprise_doc_core.agents import AgentArtifactService, AgentRunService, ApprovalService
 from enterprise_doc_core.audit import AuditEventService, AuditGovernanceService
 from enterprise_doc_core.auth import LocalTokenRevocationService
+from enterprise_doc_core.billing import EntitlementUsageService
+from enterprise_doc_core.browser_sessions.service import BrowserSessionService
 from enterprise_doc_core.db import create_database_engine, create_session_factory
 from enterprise_doc_core.documents import DocumentInventoryService, DocumentPolicyService
+from enterprise_doc_core.documents.embedding_provider import build_embedding_provider
+from enterprise_doc_core.documents.retrieval_service import HybridRetrievalService
 from enterprise_doc_core.health import (
     ComponentStatus,
     HealthChecker,
@@ -92,12 +105,15 @@ from enterprise_doc_core.identity.membership_service import (
 )
 from enterprise_doc_core.identity.scim_service import ScimProvisioningService
 from enterprise_doc_core.identity.service import ExternalIdentityBindingService
+from enterprise_doc_core.invitations.service import MembershipInvitationService
 from enterprise_doc_core.jobs import JobRuntimeService
 from enterprise_doc_core.object_store import (
     Boto3ArtifactObjectStore,
     Boto3MultipartObjectStore,
     MultipartObjectStore,
 )
+from enterprise_doc_core.presales.gateway import OpenAICompatiblePresalesGateway
+from enterprise_doc_core.presales.service import PresalesService
 from enterprise_doc_core.telemetry import (
     MetricsRuntime,
     TelemetryRuntime,
@@ -132,6 +148,9 @@ def _sanitize_request_span(span: Span, scope: dict[str, Any]) -> None:
     sanitized_url = f"{scheme}://{authority}"
     span.set_attribute("http.url", sanitized_url)
     span.set_attribute("url.full", sanitized_url)
+    span.set_attribute("url.query", "")
+    span.set_attribute("url.path", "/")
+    span.set_attribute("http.target", "/")
 
 
 def default_checkers() -> list[HealthChecker]:
@@ -164,6 +183,9 @@ def create_app(
     membership_administration_service: MembershipAdministrationServiceProtocol | None = None,
     scim_provisioning_service: ScimProvisioningServiceProtocol | None = None,
     token_revocation_service: LocalTokenRevocationServiceProtocol | None = None,
+    presales_service: PresalesServiceProtocol | None = None,
+    usage_service: EntitlementUsageService | None = None,
+    browser_oidc_client: OidcClient | None = None,
     metrics: MetricsRuntime | None = None,
 ) -> FastAPI:
     resolved_settings = settings if settings is not None else ApiSettings()
@@ -205,6 +227,8 @@ def create_app(
         or membership_administration_service is None
         or (resolved_settings.auth.scim_enabled and scim_provisioning_service is None)
         or token_revocation_service is None
+        or presales_service is None
+        or resolved_settings.browser_auth.enabled
     )
     needs_default_object_store = upload_creation_service is None or upload_session_service is None
     owned_database_engine: AsyncEngine | None = None
@@ -233,6 +257,13 @@ def create_app(
     session_factory = (
         create_session_factory(business_database_engine)
         if business_database_engine is not None
+        else None
+    )
+    resolved_usage_service = (
+        usage_service
+        if usage_service is not None
+        else EntitlementUsageService(session_factory=session_factory)
+        if session_factory is not None
         else None
     )
     if (
@@ -285,6 +316,7 @@ def create_app(
         lifespan=lifespan,
     )
     app.add_middleware(ApiAuthenticationMiddleware)
+    app.add_middleware(BrowserResponseSecurityMiddleware)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=resolved_settings.api.cors_origins,
@@ -316,6 +348,31 @@ def create_app(
         )
     )
     app.state.auth_settings = resolved_settings.auth
+    app.state.browser_auth_settings = resolved_settings.browser_auth
+    app.state.browser_session_service = None
+    app.state.browser_oidc_client = None
+    app.state.browser_admission_service = None
+    app.state.membership_invitation_service = None
+    if resolved_settings.invitations.enabled:
+        app.state.membership_invitation_service = MembershipInvitationService(
+            session_factory=_required_session_factory(session_factory),
+            settings=resolved_settings.invitations,
+            trusted_issuer=str(resolved_settings.browser_auth.issuer),
+        )
+    if resolved_settings.browser_auth.enabled:
+        browser = resolved_settings.browser_auth
+        app.state.browser_session_service = BrowserSessionService(
+            session_factory=_required_session_factory(session_factory),
+            trusted_issuer=str(browser.issuer),
+            login_ttl_seconds=browser.login_ttl_seconds,
+            session_ttl_seconds=browser.session_ttl_seconds,
+            login_limit_per_minute=browser.login_limit_per_minute,
+        )
+        app.state.browser_oidc_client = browser_oidc_client or OidcClient(browser)
+        app.state.browser_admission_service = TenantAdmissionService(
+            session_factory=_required_session_factory(session_factory),
+            trusted_issuers=frozenset({str(browser.issuer)}),
+        )
     app.state.metrics = resolved_metrics
     app.state.readiness_cache = readiness_cache
     app.state.upload_creation_service = (
@@ -449,6 +506,30 @@ def create_app(
         else None
     )
     app.include_router(upload_router)
+    if presales_service is None:
+        embedding_provider, embedding_model, embedding_dimension = build_embedding_provider(
+            resolved_settings.embedding
+        )
+        app.state.presales_service = PresalesService(
+            session_factory=_required_session_factory(session_factory),
+            retriever=HybridRetrievalService(
+                session_factory=_required_session_factory(session_factory),
+                embedding_provider=embedding_provider,
+                embedding_model=embedding_model,
+                embedding_dimension=embedding_dimension,
+                query_instruction=resolved_settings.embedding.query_instruction,
+                require_vector_evidence=resolved_settings.retrieval.require_vector_evidence,
+                metrics=resolved_metrics,
+            ),
+            gateway=OpenAICompatiblePresalesGateway(resolved_settings.model),
+            settings=resolved_settings.presales,
+            usage_service=resolved_usage_service,
+        )
+    else:
+        app.state.presales_service = presales_service
+    app.state.usage_service = resolved_usage_service
+    app.include_router(presales_router)
+    app.include_router(tenant_usage_router)
     app.include_router(document_router)
     app.include_router(jobs_router)
     app.include_router(agent_router)
@@ -457,6 +538,9 @@ def create_app(
     app.include_router(audit_router)
     app.include_router(governance_router)
     app.include_router(session_router)
+    app.include_router(browser_auth_router)
+    app.include_router(invitation_router)
+    app.include_router(invitation_auth_router)
     app.include_router(identity_router)
     app.include_router(members_router)
     app.include_router(scim_router)

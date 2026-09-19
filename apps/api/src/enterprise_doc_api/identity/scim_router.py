@@ -18,6 +18,7 @@ from enterprise_doc_api.schemas import ApiModel
 from enterprise_doc_core.context import get_request_context
 from enterprise_doc_core.identity.scim_service import ScimProvisioningError
 from enterprise_doc_core.identity.scim_types import ScimUserPage, ScimUserResult
+from enterprise_doc_core.identity.seats import MembershipSeatLimitReached
 
 SCIM_USER_SCHEMA = "urn:ietf:params:scim:schemas:core:2.0:User"
 SCIM_LIST_RESPONSE_SCHEMA = "urn:ietf:params:scim:api:messages:2.0:ListResponse"
@@ -399,7 +400,7 @@ async def get_scim_user(
             issuer=issuer,
             subject=subject.strip(),
         )
-    except ScimProvisioningError as error:
+    except (ScimProvisioningError, MembershipSeatLimitReached) as error:
         raise _api_error(error) from error
     if result is None:
         raise ApiError(
@@ -447,7 +448,7 @@ async def list_scim_users(
             user_name=user_name_filter,
             external_id=external_id_filter,
         )
-    except ScimProvisioningError as error:
+    except (ScimProvisioningError, MembershipSeatLimitReached) as error:
         raise _api_error(error) from error
     if page is None:
         raise ApiError(
@@ -498,7 +499,7 @@ async def patch_scim_user(
             issuer=issuer,
             subject=normalized_subject,
         )
-    except ScimProvisioningError as error:
+    except (ScimProvisioningError, MembershipSeatLimitReached) as error:
         raise _api_error(error) from error
     if current is None:
         raise ApiError(
@@ -558,7 +559,7 @@ async def patch_scim_user(
             request_id=context.request_id if context else None,
             correlation_id=context.correlation_id if context else None,
         )
-    except ScimProvisioningError as error:
+    except (ScimProvisioningError, MembershipSeatLimitReached) as error:
         raise _api_error(error) from error
     if result is None:
         raise ApiError(
@@ -706,7 +707,7 @@ async def upsert_scim_user(
             request_id=context.request_id if context else None,
             correlation_id=context.correlation_id if context else None,
         )
-    except ScimProvisioningError as error:
+    except (ScimProvisioningError, MembershipSeatLimitReached) as error:
         raise _api_error(error) from error
     if result is None:
         raise ApiError(
@@ -754,7 +755,7 @@ async def delete_scim_user(
             request_id=context.request_id if context else None,
             correlation_id=context.correlation_id if context else None,
         )
-    except ScimProvisioningError as error:
+    except (ScimProvisioningError, MembershipSeatLimitReached) as error:
         raise _api_error(error) from error
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -1032,7 +1033,13 @@ def _bulk_error(
     )
 
 
-def _api_error(error: ScimProvisioningError) -> ApiError:
+def _api_error(error: ScimProvisioningError | MembershipSeatLimitReached) -> ApiError:
+    if isinstance(error, MembershipSeatLimitReached):
+        return ApiError(
+            status_code=409,
+            code=error.code,
+            message="The enterprise member seat limit is reached.",
+        )
     if error.code == "scim_provisioning_not_found":
         return ApiError(
             status_code=404, code=error.code, message="The SCIM resource was not found."

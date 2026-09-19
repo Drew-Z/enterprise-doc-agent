@@ -4,7 +4,8 @@ import { useMemo, useState, type FormEvent } from "react";
 
 import { useLocale, useT } from "../i18n";
 import { formatApiError } from "../api/errorDisplay";
-import { createUploadTokenStore } from "../upload/persistence";
+import { createApplicationCredentialStore } from "../auth/credentialStore";
+import { InvitationPanel } from "../invitations/InvitationPanel";
 import {
   activateIdentityBinding,
   createIdentityBinding,
@@ -37,9 +38,11 @@ export function IdentityPage({ showcaseMode = false, canManage = false, currentA
   const t = useT();
   const locale = useLocale();
   const queryClient = useQueryClient();
-  const tokenStore = useMemo(() => createUploadTokenStore(sessionStorage), []);
+  const tokenStore = useMemo(() => createApplicationCredentialStore(sessionStorage), []);
   const token = tokenStore.load() ?? "";
-  const enabled = showcaseMode || (token !== "" && canManage);
+  const browser = typeof token !== "string" && !showcaseMode;
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const enabled = (showcaseMode || (token !== "" && canManage)) && (!browser || advancedOpen);
   const [issuer, setIssuer] = useState("");
   const [subject, setSubject] = useState("");
   const [memberSearch, setMemberSearch] = useState("");
@@ -136,6 +139,15 @@ export function IdentityPage({ showcaseMode = false, canManage = false, currentA
         </div>
       </header>
 
+      {browser && <InvitationPanel credential={token} canManage={canManage} />}
+      <MemberDirectoryPanel
+        showcaseMode={showcaseMode}
+        canManage={canManage}
+        currentActorId={currentActorId}
+      />
+
+      <details className="identity-advanced" open={!browser || advancedOpen} onToggle={event => setAdvancedOpen(event.currentTarget.open)}>
+      <summary>{locale === "zh" ? "高级身份管理" : "Advanced identity management"}</summary>
       <div className="identity-metrics" aria-label={t("identity.title")}>
         <div><span>{t("identity.total")}</span><strong>{enabled && bindings.data ? items.length : "-"}</strong></div>
         <div><span>{t("identity.active")}</span><strong>{enabled && bindings.data ? activeCount : "-"}</strong></div>
@@ -201,12 +213,7 @@ export function IdentityPage({ showcaseMode = false, canManage = false, currentA
           </>
         )}
       </section>
-
-      <MemberDirectoryPanel
-        showcaseMode={showcaseMode}
-        canManage={canManage}
-        currentActorId={currentActorId}
-      />
+      </details>
     </>
   );
 }

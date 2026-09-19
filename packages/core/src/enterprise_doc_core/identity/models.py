@@ -11,6 +11,7 @@ from sqlalchemy import (
     Index,
     String,
     UniqueConstraint,
+    func,
     text,
 )
 from sqlalchemy.orm import Mapped, mapped_column
@@ -67,6 +68,8 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         server_default=text("true"),
     )
 
+    __table_args__ = (Index("ix_users_normalized_email", func.lower(email)),)
+
 
 class ExternalIdentityBinding(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     """Explicit issuer/subject binding for external IdP identities."""
@@ -84,6 +87,12 @@ class ExternalIdentityBinding(UUIDPrimaryKeyMixin, TimestampMixin, Base):
             "tenant_id",
             "user_id",
             "is_active",
+        ),
+        Index(
+            "ix_external_identity_bindings_issuer_subject_user_id",
+            "issuer",
+            "subject",
+            "user_id",
         ),
     )
 

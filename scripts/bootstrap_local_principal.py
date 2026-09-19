@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import sys
 
 from enterprise_doc_api.auth.bootstrap import (
     BootstrapResult,
@@ -16,6 +17,7 @@ from enterprise_doc_core.db import (
     ensure_asyncio_compatibility,
 )
 from enterprise_doc_core.identity import MembershipRole
+from enterprise_doc_core.identity.seats import MembershipSeatLimitReached
 
 
 async def _run(args: argparse.Namespace) -> BootstrapResult:
@@ -52,7 +54,14 @@ def main() -> None:
     args = parser.parse_args()
 
     ensure_asyncio_compatibility()
-    result = asyncio.run(_run(args))
+    try:
+        result = asyncio.run(_run(args))
+    except MembershipSeatLimitReached:
+        print(
+            json.dumps({"error": "membership_seat_limit_reached"}, separators=(",", ":")),
+            file=sys.stderr,
+        )
+        raise SystemExit(1) from None
     print(
         json.dumps(
             {

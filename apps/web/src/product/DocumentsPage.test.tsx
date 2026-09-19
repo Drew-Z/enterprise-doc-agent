@@ -1,3 +1,4 @@
+import { headersContaining } from "../test/httpHeaders";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -24,11 +25,11 @@ import { DocumentsPage } from "./DocumentsPage";
   updatedAt: "2026-08-24T05:45:00Z",
 };
 
-function renderDocuments(navigate = vi.fn(), showcaseMode = false) {
+function renderDocuments(navigate = vi.fn(), showcaseMode = false, onStartPresales = vi.fn()) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
   render(
     <QueryClientProvider client={queryClient}>
-      <DocumentsPage navigate={navigate} showcaseMode={showcaseMode} />
+      <DocumentsPage navigate={navigate} showcaseMode={showcaseMode} onStartPresales={onStartPresales} />
     </QueryClientProvider>,
   );
   return navigate;
@@ -44,6 +45,62 @@ afterEach(() => {
 });
 
 describe("DocumentsPage", () => {
+  it("hands off only ready indexed versions from desktop and mobile actions", async () => {
+    createUploadTokenStore(sessionStorage).save("local-token");
+    const items = [inventoryItem,
+      { ...inventoryItem, versionId: "55555555-5555-4555-8555-555555555555", versionStatus: "uploaded", ingestionStatus: "running", ingestionStage: "parse", generationId: null },
+      { ...inventoryItem, versionId: "66666666-6666-4666-8666-666666666666", versionStatus: "failed", ingestionStatus: "failed", generationId: null },
+      { ...inventoryItem, versionId: "77777777-7777-4777-8777-777777777777", generationId: null },
+    ];
+    vi.spyOn(globalThis, "fetch").mockImplementation(() => Promise.resolve(new Response(JSON.stringify(items), { status: 200 })));
+    const start = vi.fn();
+    renderDocuments(vi.fn(), false, start);
+
+    const desktop = await screen.findByRole("table");
+    const mobile = screen.getByLabelText("Document inventory list");
+    for (const surface of [desktop, mobile]) {
+      const actions = within(surface).getAllByRole("button", { name: "Start response sheet" });
+      expect(actions).toHaveLength(4);
+      expect(actions[0]).toBeEnabled();
+      actions.slice(1).forEach(action => expect(action).toBeDisabled());
+      fireEvent.click(actions[0]);
+    }
+    expect(start.mock.calls).toEqual([[inventoryItem.versionId], [inventoryItem.versionId]]);
+  });
+
+  it("automatically refreshes processing uploads and stops when they become ready", async () => {
+    createUploadTokenStore(sessionStorage).save("local-token");
+    const processing = { ...inventoryItem, versionStatus: "uploaded", ingestionStatus: null, ingestionStage: null, generationId: null };
+    const fetchMock = vi.spyOn(globalThis, "fetch")
+      .mockImplementationOnce(() => Promise.resolve(new Response(JSON.stringify([processing]), { status: 200 })))
+      .mockImplementation(() => Promise.resolve(new Response(JSON.stringify([inventoryItem]), { status: 200 })));
+    renderDocuments();
+
+    const table = await screen.findByRole("table");
+    expect(within(table).getByText("Processing")).toBeInTheDocument();
+    await waitFor(() => expect(within(table).getByText("Ready")).toBeInTheDocument(), { timeout: 4000 });
+    expect(screen.getByText("Ready assets").parentElement).toHaveTextContent("1");
+    await new Promise(resolve => window.setTimeout(resolve, 2200));
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  }, 10_000);
+
+  it("stops automatic refresh after a read failure and permits explicit recovery", async () => {
+    createUploadTokenStore(sessionStorage).save("local-token");
+    const processing = { ...inventoryItem, versionStatus: "uploaded", ingestionStatus: "running", ingestionStage: "parse" };
+    const fetchMock = vi.spyOn(globalThis, "fetch")
+      .mockImplementationOnce(() => Promise.resolve(new Response(JSON.stringify([processing]), { status: 200 })))
+      .mockImplementationOnce(() => Promise.resolve(new Response(null, { status: 503 })))
+      .mockImplementation(() => Promise.resolve(new Response(JSON.stringify([inventoryItem]), { status: 200 })));
+    renderDocuments();
+
+    await screen.findByRole("table");
+    await waitFor(() => expect(screen.getByRole("alert")).toBeInTheDocument(), { timeout: 4000 });
+    await new Promise(resolve => window.setTimeout(resolve, 2200));
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    await waitFor(() => expect(screen.getByText("Ready assets").parentElement).toHaveTextContent("1"));
+  }, 10_000);
+
   it("renders only API-backed authorized document versions and filters them", async () => {
     createUploadTokenStore(sessionStorage).save("local-token");
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
@@ -56,7 +113,7 @@ describe("DocumentsPage", () => {
     expect(globalThis.fetch).toHaveBeenCalledWith(
       "/api/documents?limit=200",
       expect.objectContaining({
-        headers: { Accept: "application/json", Authorization: "Bearer local-token" },
+        headers: headersContaining({ Accept: "application/json", Authorization: "Bearer local-token" }),
       }),
     );
     expect(screen.getByText("Ready assets").parentElement).toHaveTextContent("1");

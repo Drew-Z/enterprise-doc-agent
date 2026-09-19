@@ -1,4 +1,5 @@
 import type { ZodType } from "zod";
+import { authenticatedFetch, type ApiCredential } from "../../auth/transport";
 
 import {
   completeUploadRequestSchema,
@@ -57,7 +58,7 @@ export class UploadNetworkError extends Error {
 
 export interface UploadApiClientOptions {
   baseUrl?: string;
-  getToken: () => string | null;
+  getToken: () => ApiCredential | null;
   fetcher?: Fetcher;
   allowedObjectStoreOrigins: readonly string[];
 }
@@ -245,15 +246,14 @@ export class UploadApiClient {
 
   private async authorizedFetch(path: string, init: RequestInit = {}): Promise<Response> {
     const token = this.options.getToken();
-    if (token === null || token.trim() === "") {
+    if (token === null || (typeof token === "string" && token.trim() === "")) {
       throw new UploadAuthenticationError();
     }
     const headers = new Headers(init.headers);
     headers.set("Accept", "application/json");
-    headers.set("Authorization", `Bearer ${token}`);
     try {
       const fetcher = this.fetcher;
-      return await fetcher(`${this.baseUrl}${path}`, { ...init, headers });
+      return await authenticatedFetch(`${this.baseUrl}${path}`, token, { ...init, headers }, fetcher);
     } catch (error) {
       if (init.signal?.aborted === true || (error instanceof DOMException && error.name === "AbortError")) {
         throw new UploadNetworkError("aborted", "Upload API request was canceled.", { cause: error });

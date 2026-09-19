@@ -47,8 +47,12 @@ The request contains an ordered `parts` array. Every item contains `partNumber`,
 - Finalization locks tenant then session, inserts the preallocated Document and Version,
   converts reserved bytes to used bytes, sets the unique reverse version link, and marks
   the session completed in one PostgreSQL transaction.
-- `declared_sha256` remains unverified and `content_sha256_verified_at` remains null.
-  The object-store transport checksum is stored separately.
+- At the end of upload completion, `declared_sha256` remains unverified and
+  `content_sha256_verified_at` remains null. The object-store transport checksum is
+  stored separately. Downstream document ingestion verifies the complete spooled
+  bytes before parsing, records the marker with the chunk checkpoint and requires
+  it for activation. This later Worker contract does not change completion's
+  bounded envelope checks; see [presales ingestion](../foundation-tests/backend/presales-ingestion.md).
 - Completed replay and final COMMIT acknowledgement loss reread the same durable version
   without calling object-store completion or changing quota again.
 - Invalid completed objects are deleted only after server metadata proves ownership.

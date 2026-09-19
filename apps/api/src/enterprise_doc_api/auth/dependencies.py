@@ -5,6 +5,12 @@ from typing import Annotated, Protocol, cast
 from fastapi import Request, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from enterprise_doc_api.browser_auth.http import (
+    SESSION_COOKIE,
+    cookie_value,
+    invalid_credentials,
+    resolve_browser_principal,
+)
 from enterprise_doc_api.errors import ApiError
 from enterprise_doc_core.context import PrincipalContext, enrich_request_principal
 
@@ -51,6 +57,11 @@ async def get_current_principal(
 
 async def resolve_request_principal(request: Request) -> PrincipalContext:
     authorization_values = request.headers.getlist("Authorization")
+    browser_credential = cookie_value(request, SESSION_COOKIE)
+    if authorization_values and browser_credential is not None:
+        raise invalid_credentials()
+    if browser_credential is not None:
+        return await resolve_browser_principal(request, browser_credential)
     if not authorization_values:
         raise MissingBearerToken()
     if len(authorization_values) != 1:

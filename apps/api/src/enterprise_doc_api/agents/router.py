@@ -12,6 +12,7 @@ from pydantic import Field, StrictBool
 from starlette.responses import StreamingResponse
 
 from enterprise_doc_api.auth import get_current_principal
+from enterprise_doc_api.auth.dependencies import resolve_request_principal
 from enterprise_doc_api.errors import ApiError, ErrorResponse
 from enterprise_doc_api.schemas import ApiModel
 from enterprise_doc_core.agents import (
@@ -358,6 +359,13 @@ async def stream_agent_run_events(
         )
     except AgentRunError as error:
         raise _agent_run_api_error(error) from error
+
+    async def still_authorized() -> bool:
+        try:
+            return await resolve_request_principal(request) == principal
+        except ApiError:
+            return False
+
     return StreamingResponse(
         _stream_agent_run_events(
             service=service,
@@ -367,6 +375,7 @@ async def stream_agent_run_events(
             actor_id=actor_id,
             after_seq=cursor,
             initial_status=initial_status.status,
+            authorize=still_authorized,
         ),
         media_type="text/event-stream",
         headers={
@@ -412,6 +421,7 @@ async def _stream_agent_run_events(
     actor_id: UUID,
     after_seq: int,
     initial_status: str,
+    authorize: Callable[[], Awaitable[bool]] | None = None,
     sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
     monotonic: Callable[[], float] = time.monotonic,
     initial_poll_seconds: float = _SSE_INITIAL_POLL_SECONDS,
@@ -425,6 +435,8 @@ async def _stream_agent_run_events(
     while True:
         if await request.is_disconnected():
             return
+        if authorize is not None and not await authorize():
+            return
         events = await service.list_events(
             run_id=run_id,
             tenant_id=tenant_id,
@@ -437,6 +449,8 @@ async def _stream_agent_run_events(
             for event in events:
                 if event.seq <= cursor:
                     continue
+                if authorize is not None and not await authorize():
+                    return
                 yield encode_agent_sse_event(event)
                 cursor = event.seq
                 if is_terminal_agent_event(event):

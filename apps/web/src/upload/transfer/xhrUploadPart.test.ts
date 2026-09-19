@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { uploadPartWithXhr, type XhrLike } from "./xhrUploadPart";
+import { configureAuthentication } from "../../auth/transport";
 
 class FakeXhr implements XhrLike {
   readonly upload = { onprogress: null as ((event: ProgressEvent<EventTarget>) => void) | null };
@@ -8,6 +9,7 @@ class FakeXhr implements XhrLike {
   readonly abort = vi.fn(() => this.onabort?.());
   status = 0;
   timeout = 0;
+  withCredentials = true;
   etag: string | null = null;
   onload: (() => void) | null = null;
   onerror: (() => void) | null = null;
@@ -26,6 +28,17 @@ class FakeXhr implements XhrLike {
 }
 
 describe("uploadPartWithXhr", () => {
+  it.each(["application-origin", "authorization", "cookie"])("rejects %s object requests before sending", async kind => {
+    configureAuthentication("browser");
+    const xhr = new FakeXhr();
+    xhr.status = 200;
+    xhr.etag = "etag";
+    xhr.send.mockImplementation(() => xhr.onload?.());
+    const handle = uploadPartWithXhr({ url: kind === "application-origin" ? window.location.origin + "/object" : "http://object.test/signed", headers: kind === "authorization" ? { Authorization: "Bearer forbidden" } : kind === "cookie" ? { Cookie: "forbidden=1" } : {}, body: new Blob(["data"]), xhrFactory: () => xhr });
+    await expect(handle.result).rejects.toMatchObject({ code: "setup_error" });
+    expect(xhr.send).not.toHaveBeenCalled();
+  });
+
   it("copies only presign headers, reports progress, and preserves the opaque ETag", async () => {
     const xhr = new FakeXhr();
     const onProgress = vi.fn();
@@ -52,6 +65,7 @@ describe("uploadPartWithXhr", () => {
     ]);
     expect(xhr.headers.some(([name]) => name.toLowerCase() === "authorization")).toBe(false);
     expect(xhr.timeout).toBe(5_000);
+    expect(xhr.withCredentials).toBe(false);
     expect(onProgress).toHaveBeenCalledWith(3, 3);
   });
 

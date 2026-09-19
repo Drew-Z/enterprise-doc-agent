@@ -18,7 +18,8 @@ import {
 
 import type { DocumentInventoryItem } from "../agent/api/schemas";
 import { UploadWorkspace } from "../upload/UploadWorkspace";
-import { createUploadRecoveryStore, createUploadTokenStore } from "../upload/persistence";
+import { createUploadRecoveryStore } from "../upload/persistence";
+import { createApplicationCredentialStore } from "../auth/credentialStore";
 import { DocumentAccessDrawer } from "./DocumentAccessDrawer";
 import { fetchDocumentInventory } from "./documentsApi";
 import type { ProductRoute } from "./routes";
@@ -31,6 +32,8 @@ interface DocumentsPageProps {
   showcaseMode?: boolean;
   canWrite?: boolean;
   onSessionChange?: () => void;
+  onStartPresales?: (versionId: string) => void;
+  contextKey?: string;
 }
 
 function formatBytes(value: number): string {
@@ -76,6 +79,13 @@ function statusLabel(status: ReturnType<typeof displayStatus>, translate: Return
   return status === "ready" ? translate("documents.ready") : status === "failed" ? translate("documents.failed") : translate("documents.processing");
 }
 
+function PresalesAction({ document, onStart }: { document: DocumentInventoryItem; onStart?: (versionId: string) => void }) {
+  const t = useT();
+  return <button className="table-action" type="button" disabled={!onStart || displayStatus(document) !== "ready" || document.generationId === null} onClick={() => onStart?.(document.versionId)}>
+    {t("documents.usePresales")} <ArrowRight aria-hidden="true" />
+  </button>;
+}
+
 type InventoryFilter = "all" | ReturnType<typeof displayStatus>;
 
 function DocumentStatus({ document }: { document: DocumentInventoryItem }) {
@@ -115,10 +125,10 @@ function hasRecoverableUpload(storage: Storage): boolean {
   }
 }
 
-export function DocumentsPage({ navigate, showcaseMode = false, canWrite = true, onSessionChange }: DocumentsPageProps) {
+export function DocumentsPage({ navigate, showcaseMode = false, canWrite = true, onSessionChange, onStartPresales, contextKey = "local" }: DocumentsPageProps) {
   const t = useT();
   const locale = useLocale();
-  const tokenStore = useMemo(() => createUploadTokenStore(sessionStorage), []);
+  const tokenStore = useMemo(() => createApplicationCredentialStore(sessionStorage), []);
   const [authRevision, setAuthRevision] = useState(0);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<InventoryFilter>("all");
@@ -128,13 +138,14 @@ export function DocumentsPage({ navigate, showcaseMode = false, canWrite = true,
   const [accessDocument, setAccessDocument] = useState<DocumentInventoryItem | null>(null);
   const hasToken = showcaseMode || tokenStore.load() !== null;
   const documents = useQuery({
-    queryKey: ["document-inventory", showcaseMode ? "showcase" : authRevision],
+    queryKey: ["document-inventory", showcaseMode ? "showcase" : authRevision, contextKey],
     queryFn: ({ signal }) => showcaseMode
       ? Promise.resolve([...showcaseInventory])
       : fetchDocumentInventory(tokenStore.load() ?? "", signal),
     enabled: hasToken,
     retry: false,
     staleTime: 10_000,
+    refetchInterval: (queryState) => !showcaseMode && queryState.state.status === "success" && queryState.state.data?.some(document => displayStatus(document) === "uploaded") ? 2000 : false,
   });
 
   const filteredDocuments = useMemo(() => {
@@ -299,6 +310,7 @@ export function DocumentsPage({ navigate, showcaseMode = false, canWrite = true,
                             <Settings2 aria-hidden="true" />
                           </button>
                         )}
+                        <PresalesAction document={document} onStart={showcaseMode ? undefined : onStartPresales} />
                         <button className="table-action" type="button" onClick={() => navigate("agent-runs")}>
                           {t("documents.useAgent")} <ArrowRight aria-hidden="true" />
                         </button>
@@ -330,6 +342,7 @@ export function DocumentsPage({ navigate, showcaseMode = false, canWrite = true,
                         <Settings2 aria-hidden="true" />
                       </button>
                     )}
+                    <PresalesAction document={document} onStart={showcaseMode ? undefined : onStartPresales} />
                     <button className="table-action" type="button" onClick={() => navigate("agent-runs")}>
                       {t("documents.useAgent")} <ArrowRight aria-hidden="true" />
                     </button>

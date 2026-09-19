@@ -36,7 +36,8 @@ import {
   type CreateAgentRunRequest,
   type ReadyDocumentVersion,
 } from "./api/schemas";
-import { createUploadTokenStore } from "../upload/persistence";
+import { createApplicationCredentialStore } from "../auth/credentialStore";
+import type { ApiCredential } from "../auth/transport";
 import { type MessageKey, useLocale, useT } from "../i18n";
 import { formatApiError } from "../api/errorDisplay";
 import { createAgentRunRecoveryStore, type AgentRunRecoveryStore } from "./persistence";
@@ -123,7 +124,7 @@ const approvalStatuses = new Set<ApprovalRequestResponse["status"]>([
 ]);
 
 export interface AgentWorkspaceDependencies {
-  createApiClient: (getToken: () => string | null) => AgentApiClientProtocol;
+  createApiClient: (getToken: () => ApiCredential | null) => AgentApiClientProtocol;
   idempotencyKeyFactory: () => string;
   openExternal: (url: string) => void;
 }
@@ -246,7 +247,7 @@ export function AgentWorkspace({
 }: AgentWorkspaceProps) {
   const t = useT();
   const locale = useLocale();
-  const tokenStore = useMemo(() => createUploadTokenStore(tokenStorage), [tokenStorage]);
+  const tokenStore = useMemo(() => createApplicationCredentialStore(tokenStorage), [tokenStorage]);
   const recoveryStore = useMemo<AgentRunRecoveryStore>(
     () => createAgentRunRecoveryStore(recoveryStorage),
     [recoveryStorage],

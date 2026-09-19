@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import type { DocumentAccessMode, DocumentInventoryItem } from "../agent/api/schemas";
+import type { ApiCredential } from "../auth/transport";
 import { formatApiError } from "../api/errorDisplay";
 import { useT } from "../i18n";
 import {
@@ -25,7 +26,7 @@ import {
 
 interface DocumentAccessDrawerProps {
   document: DocumentInventoryItem;
-  token: string;
+  token: ApiCredential;
   onClose: () => void;
   onUpdated: () => void;
 }

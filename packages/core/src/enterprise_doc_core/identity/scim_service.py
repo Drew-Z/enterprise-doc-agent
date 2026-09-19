@@ -15,6 +15,7 @@ from enterprise_doc_core.identity.models import (
     User,
 )
 from enterprise_doc_core.identity.scim_types import ScimUserPage, ScimUserResult
+from enterprise_doc_core.identity.seats import ensure_membership_capacity
 
 _EMAIL_PATTERN = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
@@ -319,6 +320,8 @@ class ScimProvisioningService:
                 raise ScimProvisioningInvalid()
             role_value = normalized_role
             membership_action: str | None = None
+            if membership is None or not membership.is_active:
+                await ensure_membership_capacity(session, tenant_id)
             if membership is None:
                 membership = Membership(
                     tenant_id=tenant_id,

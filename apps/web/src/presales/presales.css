@@ -1,0 +1,75 @@
+.presales-workspace { --ps-ink: #203340; --ps-muted: #586c79; --ps-line: #dce5e9; color: var(--ps-ink); }
+.presales-workspace button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 9px 13px; border: 1px solid var(--ps-line); border-radius: 7px; background: #fff; color: var(--ps-ink); font: inherit; font-size: 13px; cursor: pointer; }
+.presales-workspace button:hover:not(:disabled) { background: #eff6f8; border-color: #8aaab7; }
+.presales-workspace button:disabled { cursor: not-allowed; opacity: .5; }
+.presales-workspace button:focus-visible, .presales-workspace summary:focus-visible, .presales-workspace input:focus-visible, .presales-workspace textarea:focus-visible, .presales-workspace select:focus-visible { outline: 3px solid #3687a3; outline-offset: 2px; }
+.presales-workspace button svg { width: 16px; height: 16px; flex: 0 0 auto; }
+.presales-workspace button.presales-primary { color: #fff; background: #145d76; border-color: #145d76; }
+.presales-workspace button.presales-primary:hover:not(:disabled) { background: #104d63; }
+.presales-layout { display: grid; grid-template-columns: 235px minmax(0, 1fr); gap: 26px; align-items: start; }
+.presales-sidebar { min-width: 0; border-right: 1px solid var(--ps-line); padding-right: 20px; }
+.presales-sidebar-heading, .presales-packet-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+.presales-sidebar h2 { font-size: 14px; margin: 9px 0 18px; }
+.presales-main { min-width: 0; }
+.presales-main h2 { font-size: 22px; line-height: 1.4; margin: 0 0 18px; overflow-wrap: anywhere; }
+.presales-workspace .presales-icon { padding: 8px; flex: 0 0 auto; }
+.presales-workspace .presales-new { width: 100%; justify-content: flex-start; margin-bottom: 16px; }
+.presales-workspace .presales-packet-link { display: flex; flex-direction: column; align-items: flex-start; text-align: left; width: 100%; background: transparent; border-color: transparent; margin-bottom: 8px; overflow-wrap: anywhere; }
+.presales-packet-link small { color: var(--ps-muted); font-size: 11px; }
+.presales-workspace .presales-packet-link.selected { background: #eaf2f5; border-color: #cadde4; }
+.presales-hint { font-size: 12px; color: var(--ps-muted); line-height: 1.7; margin: 8px 0; }
+.presales-form { display: grid; gap: 24px; }
+.presales-form fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
+.presales-form legend { font-weight: 650; font-size: 15px; padding: 0; }
+.presales-field { display: flex; flex-direction: column; gap: 7px; font-size: 13px; font-weight: 600; min-width: 0; }
+.presales-workspace input:not([type="checkbox"]), .presales-workspace textarea, .presales-workspace select { width: 100%; box-sizing: border-box; border: 1px solid #c5d3db; border-radius: 6px; background: #fff; padding: 10px 12px; color: var(--ps-ink); font: inherit; font-size: 14px; line-height: 1.6; }
+.presales-workspace textarea { resize: vertical; min-height: 80px; }
+.presales-workspace input[type="checkbox"] { width: 17px; height: 17px; accent-color: #145d76; flex-shrink: 0; }
+.presales-source-options { display: grid; gap: 0; border: 1px solid var(--ps-line); border-radius: 8px; margin: 14px 0 18px; max-height: 285px; overflow: auto; }
+.presales-source-option { display: flex; align-items: center; gap: 11px; padding: 13px 14px; border-bottom: 1px solid var(--ps-line); font-size: 13px; cursor: pointer; }
+.presales-source-option:last-child { border-bottom: 0; }
+.presales-source-option span { min-width: 0; overflow-wrap: anywhere; }
+.presales-source-option small { display: block; color: var(--ps-muted); margin-top: 3px; }
+.presales-confirm { display: flex; align-items: flex-start; gap: 9px; font-size: 12px; line-height: 1.7; margin-top: 14px; }
+.presales-form-footer, .presales-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.presales-form-footer { border-top: 1px solid var(--ps-line); padding-top: 14px; }
+.presales-toolbar { justify-content: flex-start; margin: 20px 0 12px; }
+.presales-empty { background: #f4f8fa; padding: 25px; border-radius: 8px; line-height: 1.7; font-size: 14px; }
+.presales-error, .presales-notice { padding: 12px 15px; background: #fff4ef; color: #874020; border-left: 3px solid #c57043; font-size: 13px; line-height: 1.7; overflow-wrap: anywhere; margin: 12px 0; }
+.presales-error button { margin: 8px; }
+.presales-saved, .presales-reviewed { color: #16664e; font-size: 12px; }
+.presales-saved { padding: 10px 14px; background: #eef8f2; border-radius: 6px; }
+.presales-sources { background: #f2f6f8; border-radius: 7px; padding: 12px 15px; font-size: 12px; overflow-wrap: anywhere; }
+.presales-sources summary, .presales-original summary { cursor: pointer; font-weight: 600; padding: 3px 0; }
+.presales-sources > div { border-top: 1px solid var(--ps-line); padding: 10px 0; }
+.presales-sources p { margin: 5px 0; }
+.presales-rows { display: grid; gap: 17px; margin-top: 18px; }
+.presales-row { border: 1px solid var(--ps-line); background: #fff; border-radius: 8px; padding: 18px 20px; overflow: hidden; }
+.presales-row-header { display: flex; align-items: flex-start; gap: 10px; }
+.presales-row-header > div { min-width: 0; flex: 1; }
+.presales-row-number { font-size: 11px; padding: 5px 6px; border-radius: 4px; color: #366578; background: #edf5f8; font-weight: 700; }
+.presales-row h3 { font-size: 15px; font-weight: 600; line-height: 1.6; margin: 1px 0; overflow-wrap: anywhere; }
+.presales-state { white-space: nowrap; border-radius: 4px; font-size: 11px; font-weight: 600; padding: 5px 8px; background: #eef1f4; color: #586875; }
+.presales-state.supported { background: #eaf7ef; color: #27603d; }
+.presales-state.conditional, .presales-state.insufficient_evidence { background: #fff4db; color: #785409; }
+.presales-state.contradicted, .presales-state.conflicting_evidence, .presales-state.failed { background: #fbeeed; color: #984b45; }
+.presales-answer { font-size: 14px; line-height: 1.8; margin: 16px 0 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.presales-row-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 9px; }
+.presales-row-details { border-top: 1px solid var(--ps-line); margin-top: 12px; padding-top: 11px; }
+.presales-row-details > summary { cursor: pointer; font-size: 13px; color: #145d76; font-weight: 600; padding: 3px 0 7px; }
+.presales-row h4 { font-size: 13px; margin: 14px 0 8px; }
+.presales-two-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
+.presales-two-fields li, .presales-evidence p { font-size: 13px; line-height: 1.7; overflow-wrap: anywhere; }
+.presales-two-fields ul { padding-left: 18px; }
+.presales-evidence { margin: 16px 0; }
+.presales-evidence figure { margin: 13px 0; border-left: 3px solid #bacfd9; padding: 3px 14px; }
+.presales-evidence blockquote { font-size: 13px; line-height: 1.8; margin: 0 0 8px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.presales-evidence figcaption { color: var(--ps-muted); font-size: 11px; line-height: 1.7; overflow-wrap: anywhere; }
+.presales-evidence small { display: block; }
+.presales-review-form { display: grid; gap: 14px; padding-top: 15px; border-top: 1px solid var(--ps-line); }
+.presales-review-form h4, .presales-review-form .presales-hint { margin: 0; }
+.presales-review-form > button { justify-self: start; }
+.presales-original { border-top: 1px solid var(--ps-line); margin-top: 16px; padding-top: 12px; font-size: 12px; line-height: 1.8; overflow-wrap: anywhere; white-space: pre-wrap; }
+.presales-original > div { margin: 12px 0; }
+@media (max-width: 1050px) { .presales-layout { grid-template-columns: minmax(0, 1fr); gap: 22px; } .presales-sidebar { border-right: 0; border-bottom: 1px solid var(--ps-line); padding: 0 0 16px; } .presales-sidebar .presales-packet-link { max-width: 100%; } }
+@media (max-width: 620px) { .presales-workspace .product-page-header { align-items: flex-start; flex-direction: column; gap: 12px; } .presales-two-fields { grid-template-columns: minmax(0, 1fr); gap: 12px; } .presales-row { padding: 14px 12px; } .presales-row-header { flex-wrap: wrap; } .presales-row-header > div { flex-basis: calc(100% - 50px); } .presales-state { margin-left: 36px; } .presales-toolbar button { flex: 1 1 100%; } .presales-form-footer > button { width: 100%; } .presales-workspace input:not([type="checkbox"]), .presales-workspace textarea, .presales-workspace select { font-size: 16px; } }

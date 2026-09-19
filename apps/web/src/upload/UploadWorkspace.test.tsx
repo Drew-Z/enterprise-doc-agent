@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { StrictMode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -15,6 +15,7 @@ import {
 } from ".";
 import { UploadWorkspace } from "./UploadWorkspace";
 import { UploadApiError } from "./api/client";
+import { activateBrowserCredential, configureAuthentication, retireBrowserCredential } from "../auth/transport";
 
 const SESSION_ID = "11111111-1111-4111-8111-111111111111";
 const DOCUMENT_ID = "22222222-2222-4222-8222-222222222222";
@@ -112,6 +113,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  configureAuthentication("bearer");
   vi.restoreAllMocks();
 });
 
@@ -192,5 +194,36 @@ describe("UploadWorkspace", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Upload service unavailable. (upload_session_unavailable · Request ID: req-upload-1)",
     );
+  });
+
+  it("cancels hashing when the browser session retires and ignores a late hash result", async () => {
+    configureAuthentication("browser");
+    activateBrowserCredential({ contextVersion: "a".repeat(32) + ".1", csrfToken: "c".repeat(64), tenantId: "tenant-a", actorId: "actor-a" });
+    let finish!: (value: HashResult) => void;
+    const cancel = vi.fn();
+    const { api, dependencies } = createDependencies({ startHashJob: () => ({ jobId: "pending-hash", result: new Promise(resolve => { finish = resolve; }), cancel }) });
+    render(<UploadWorkspace dependencies={dependencies} storage={sessionStorage} />);
+    expect(screen.queryByLabelText("Local API token")).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Choose document"), { target: { files: [new File(["12345678"], "notes.txt", { type: "text/plain" })] } });
+    act(() => { retireBrowserCredential(); });
+    expect(cancel).toHaveBeenCalled();
+    await act(async () => { finish(completedHash(8)); await Promise.resolve(); });
+    expect(api.createSession).not.toHaveBeenCalled();
+  });
+
+  it("aborts active object transfers on enterprise change and never completes from their late results", async () => {
+    configureAuthentication("browser");
+    activateBrowserCredential({ contextVersion: "a".repeat(32) + ".1", csrfToken: "c".repeat(64), tenantId: "tenant-a", actorId: "actor-a" });
+    const abort = vi.fn();
+    const transfers: { signal?: AbortSignal; finish: (value: { etag: string }) => void }[] = [];
+    const { api, dependencies } = createDependencies({ uploadPart: options => ({ abort, result: new Promise(resolve => { transfers.push({ signal: options.signal, finish: resolve }); }) }) });
+    render(<UploadWorkspace dependencies={dependencies} storage={sessionStorage} />);
+    fireEvent.change(screen.getByLabelText("Choose document"), { target: { files: [new File(["12345678"], "notes.txt", { type: "text/plain" })] } });
+    await waitFor(() => expect(transfers).toHaveLength(2));
+    act(() => { activateBrowserCredential({ contextVersion: "b".repeat(32) + ".2", csrfToken: "d".repeat(64), tenantId: "tenant-b", actorId: "actor-a" }); });
+    expect(abort).toHaveBeenCalledTimes(2);
+    expect(transfers.every(item => item.signal?.aborted)).toBe(true);
+    await act(async () => { for (const item of transfers) item.finish({ etag: "stale-result" }); await Promise.resolve(); });
+    expect(api.completeSession).not.toHaveBeenCalled();
   });
 });

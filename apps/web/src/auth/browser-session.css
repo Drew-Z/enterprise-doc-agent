@@ -1,0 +1,46 @@
+.browser-entry { min-height: 100dvh; padding: 30px clamp(24px, 6vw, 96px); color: #182a40; background: radial-gradient(ellipse at 12% 38%, #e8f0fb 0, transparent 55%), #f5f7fa; display: flex; flex-direction: column; }
+.browser-entry-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.browser-entry-brand { display: flex; align-items: center; gap: 12px; font-size: 15px; }
+.browser-entry-brand > span { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; background: #244968; color: white; font-size: 13px; font-weight: 800; letter-spacing: 1px; }
+.browser-entry-layout { flex: 1; width: 100%; max-width: 1120px; margin: 64px auto; display: grid; grid-template-columns: 1.15fr 1fr; gap: clamp(32px, 6vw, 104px); align-items: center; }
+.browser-entry-eyebrow { color: #427087; font-size: 12px; font-weight: 700; letter-spacing: 2px; }
+.browser-entry-intro h1 { font-size: clamp(32px, 3.6vw, 52px); line-height: 1.45; letter-spacing: -1.5px; margin: 24px 0; font-weight: 650; }
+.browser-entry-intro > p { color: #65798b; font-size: 16px; line-height: 1.9; max-width: 440px; }
+.browser-entry-assurance { margin-top: 38px; display: flex; gap: 10px; align-items: center; font-size: 13px; color: #517487; line-height: 1.6; }
+.browser-entry-assurance svg { flex-shrink: 0; width: 20px; }
+.browser-entry-card { min-width: 0; padding: clamp(24px, 3vw, 40px); background: #fff; border: 1px solid #e0e7ed; border-radius: 24px; box-shadow: 0 18px 60px #20374f0a; }
+.browser-entry-card h2 { font-size: 23px; line-height: 1.4; margin: 8px 0 12px; }
+.browser-entry-card p { line-height: 1.8; color: #607589; font-size: 14px; }
+.browser-card-icon { display: inline-flex; padding: 12px; border-radius: 14px; background: #eef4f8; color: #426c86; margin-bottom: 12px; }
+.browser-primary, .browser-secondary { width: 100%; min-height: 46px; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 16px; border: 1px solid #285472; background: #285472; color: #fff; font: inherit; font-size: 14px; font-weight: 600; text-decoration: none; cursor: pointer; margin-top: 22px; text-align: center; }
+.browser-primary:hover { background: #1d425e; }
+.browser-secondary { background: #fff; color: #285472; border-color: #d4dfe7; margin-top: 12px; }
+.browser-primary svg { width: 17px; flex-shrink: 0; }
+.browser-entry button:focus-visible, .browser-entry a:focus-visible, .browser-entry summary:focus-visible, .browser-entry input:focus-visible { outline: 3px solid #83b5d2; outline-offset: 3px; }
+.browser-entry-card .browser-notice { border-radius: 10px; padding: 12px 14px; background: #f3f6f9; color: #36566b; font-size: 13px; margin: 0 0 20px; overflow-wrap: anywhere; }
+.browser-wait { padding: 30px 0; text-align: center; color: #52728a; }
+.browser-wait svg { width: 26px; height: 26px; }
+.browser-wait h2 { font-size: 17px; margin-top: 20px; }
+.browser-entry-card .browser-account { overflow-wrap: anywhere; font-size: 13px; margin-bottom: 20px; }
+.browser-tenant-list { display: grid; gap: 10px; max-height: min(440px, 48vh); overflow-y: auto; padding: 3px; }
+.browser-tenant { display: flex; align-items: center; gap: 13px; text-align: left; padding: 17px 14px; border: 1px solid #dce5ec; border-radius: 12px; background: #fff; color: #294c63; cursor: pointer; font: inherit; }
+.browser-tenant:hover { background: #f1f6fa; border-color: #92afc2; }
+.browser-tenant > svg { width: 20px; flex-shrink: 0; }
+.browser-tenant > span { flex: 1; min-width: 0; }
+.browser-tenant strong { display: block; font-size: 14px; overflow-wrap: anywhere; line-height: 1.5; }
+.browser-tenant small { display: block; font-size: 12px; color: #7a8e9e; margin-top: 5px; }
+.browser-empty { padding: 8px 0; }
+.browser-admission { border-top: 1px solid #e8edf2; padding-top: 20px; margin-top: 24px; font-size: 14px; }
+.browser-admission summary { cursor: pointer; color: #375d76; padding: 6px 0; }
+.browser-admission form { margin-top: 18px; display: grid; gap: 15px; }
+.browser-admission label { display: grid; gap: 8px; font-size: 13px; color: #5b7285; }
+.browser-admission input { width: 100%; min-width: 0; padding: 12px; border: 1px solid #d3dfe8; border-radius: 8px; font: inherit; color: #20394d; background: #fbfcfe; }
+.browser-admission .browser-primary { margin-top: 0; }
+.browser-card-actions { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; margin-top: 24px; }
+.browser-text-link { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 0; border: 0; background: none; color: #4f6f85; font: inherit; font-size: 13px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.browser-text-link svg { width: 14px; }
+.browser-entry-footer { text-align: center; font-size: 12px; color: #8293a1; padding: 18px 0 0; }
+.browser-workspace-switch { cursor: pointer; width: 100%; font: inherit; text-align: left; }
+.browser-enterprise-name { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 760px) { .browser-entry { padding: 22px; } .browser-entry-layout { grid-template-columns: 1fr; gap: 24px; margin: 36px auto 22px; max-width: 500px; } .browser-entry-intro h1 { font-size: 31px; line-height: 1.5; margin: 12px 0 14px; } .browser-entry-intro > p { font-size: 14px; margin-bottom: 0; } .browser-entry-assurance { display: none; } .browser-entry-card { padding: 25px; border-radius: 18px; } .browser-entry-card h2 { font-size: 21px; } .browser-enterprise-name { max-width: 100px; } }
+@media (prefers-reduced-motion: reduce) { .browser-entry .spin { animation: none; } }

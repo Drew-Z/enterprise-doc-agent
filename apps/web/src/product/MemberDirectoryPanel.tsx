@@ -4,7 +4,7 @@ import { useMemo, useState, type FormEvent } from "react";
 
 import { useLocale, useT } from "../i18n";
 import { formatApiError } from "../api/errorDisplay";
-import { createUploadTokenStore } from "../upload/persistence";
+import { createApplicationCredentialStore } from "../auth/credentialStore";
 import { showcaseMembers } from "./memberData";
 import {
   activateTenantMember,
@@ -41,12 +41,14 @@ export function MemberDirectoryPanel({
   const t = useT();
   const locale = useLocale();
   const queryClient = useQueryClient();
-  const tokenStore = useMemo(() => createUploadTokenStore(sessionStorage), []);
+  const tokenStore = useMemo(() => createApplicationCredentialStore(sessionStorage), []);
   const token = tokenStore.load() ?? "";
+  const browser = typeof token !== "string" && !showcaseMode;
   const enabled = showcaseMode || (token !== "" && canManage);
   const [query, setQuery] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<TenantMemberRole>("member");
+  const [provisionOpen, setProvisionOpen] = useState(false);
 
   const members = useQuery({
     queryKey: ["tenant-members", showcaseMode ? "showcase" : "live", query.trim()],
@@ -106,11 +108,15 @@ export function MemberDirectoryPanel({
       {unavailable && <p className="permission-notice"><UsersRound aria-hidden="true" />{unavailable}</p>}
       {enabled && (
         <>
-          <form className="identity-binding-form member-provision-form" onSubmit={submitProvision}>
+          <details className="identity-advanced-provision" open={!browser || provisionOpen} onToggle={event => setProvisionOpen(event.currentTarget.open)}>
+          <summary>{locale === "zh" ? "高级操作：手动录入成员" : "Advanced: provision a member manually"}</summary>
+          <p>{locale === "zh" ? "仅用于由管理员维护身份绑定的账号。普通同事请通过邀请链接加入。" : "For accounts with identity bindings maintained by an administrator. Invite colleagues with a link for normal onboarding."}</p>
+          {(!browser || provisionOpen) && <form className="identity-binding-form member-provision-form" onSubmit={submitProvision}>
             <label className="access-field"><span>{t("identity.memberEmail")}</span><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="person@company.com" disabled={showcaseMode || provisionMutation.isPending} /></label>
             <label className="access-field"><span>{t("identity.memberRole")}</span><select value={role} onChange={(event) => setRole(event.target.value as TenantMemberRole)} disabled={showcaseMode || provisionMutation.isPending}><option value="member">{t("session.member")}</option><option value="owner">{t("session.owner")}</option></select></label>
             <button className="secondary-button identity-create-button" type="submit" disabled={showcaseMode || provisionMutation.isPending || !email.trim()}><Plus aria-hidden="true" />{provisionMutation.isPending ? t("identity.provisioning") : t("identity.provision")}</button>
-          </form>
+          </form>}
+          </details>
           <label className="access-field directory-search"><span>{t("identity.directorySearch")}</span><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("identity.directorySearchPlaceholder")} disabled={showcaseMode || memberMutation.isPending} /></label>
 
           {members.isPending && <div className="identity-state" role="status">{t("identity.membersLoading")}</div>}
@@ -125,7 +131,7 @@ export function MemberDirectoryPanel({
                 return (
                   <article className={member.isActive ? "identity-binding-row" : "identity-binding-row inactive"} key={member.membershipId}>
                     <div className="identity-binding-icon"><UsersRound aria-hidden="true" /></div>
-                    <div className="identity-binding-user"><strong>{member.email}</strong><small>{member.userId}</small></div>
+                    <div className="identity-binding-user"><strong>{member.email}</strong>{!browser && <small>{member.userId}</small>}</div>
                     <div className="identity-binding-provider"><span>{t("identity.memberRole")}</span><code>{member.role === "owner" ? t("session.owner") : t("session.member")}</code></div>
                     <div className="identity-binding-state"><span className={member.isActive ? "status-badge status-ready" : "status-badge"}>{member.isActive ? t("identity.memberActive") : t("identity.memberInactive")}</span><small>{isCurrent ? t("identity.currentSession") : formatDate(member.updatedAt, locale)}</small></div>
                     <div className="identity-binding-action">
@@ -148,4 +154,5 @@ function invalidateIdentityQueries(queryClient: ReturnType<typeof useQueryClient
   void queryClient.invalidateQueries({ queryKey: ["identity-members"] });
   void queryClient.invalidateQueries({ queryKey: ["identity-bindings"] });
   void queryClient.invalidateQueries({ queryKey: ["audit-events"] });
+  void queryClient.invalidateQueries({ queryKey: ["membership-invitations"] });
 }

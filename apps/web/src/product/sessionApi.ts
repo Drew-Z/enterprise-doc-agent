@@ -1,3 +1,4 @@
+import { authenticatedFetch, type ApiCredential } from "../auth/transport";
 import { z } from "zod";
 
 import { errorResponseSchema } from "../agent/api/schemas";
@@ -35,9 +36,9 @@ function normalizeBaseUrl(value: string | undefined): string {
   return (value ?? "").replace(/\/+$/, "");
 }
 
-export async function fetchProductSession(token: string, signal?: AbortSignal): Promise<ProductSession> {
-  const response = await fetch(`${normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL)}/api/session`, {
-    headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
+export async function fetchProductSession(token: ApiCredential, signal?: AbortSignal): Promise<ProductSession> {
+  const response = await authenticatedFetch(`${normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL)}/api/session`, token, {
+    headers: { Accept: "application/json" },
     signal,
   });
   if (!response.ok) {
@@ -54,9 +55,9 @@ export async function fetchProductSession(token: string, signal?: AbortSignal): 
 }
 
 export async function logoutProductSession(token: string, signal?: AbortSignal): Promise<void> {
-  const response = await fetch(`${normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL)}/api/session/logout`, {
+  const response = await authenticatedFetch(`${normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL)}/api/session/logout`, token, {
     method: "POST",
-    headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
+    headers: { Accept: "application/json" },
     signal,
   });
   if (!response.ok) throw new Error(`Logout request failed (${response.status}).`);

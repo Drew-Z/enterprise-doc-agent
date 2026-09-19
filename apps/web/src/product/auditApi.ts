@@ -1,3 +1,4 @@
+import { authenticatedFetch, type ApiCredential } from "../auth/transport";
 import { z } from "zod";
 
 const auditEventSchema = z.object({
@@ -46,13 +47,13 @@ function buildAuditParams(query: AuditQuery): URLSearchParams {
 }
 
 export async function fetchAuditEvents(
-  token: string,
+  token: ApiCredential,
   query: AuditQuery = {},
   signal?: AbortSignal,
 ): Promise<AuditPage> {
   const params = buildAuditParams(query);
-  const response = await fetch(`${normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL)}/api/audit-events?${params}`, {
-    headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
+  const response = await authenticatedFetch(`${normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL)}/api/audit-events?${params}`, token, {
+    headers: { Accept: "application/json" },
     signal,
   });
   if (!response.ok) throw new Error(`Audit log request failed (${response.status}).`);
@@ -62,13 +63,13 @@ export async function fetchAuditEvents(
 }
 
 export async function exportAuditEvents(
-  token: string,
+  token: ApiCredential,
   query: AuditQuery = {},
   signal?: AbortSignal,
 ): Promise<Blob> {
   const params = buildAuditParams({ ...query, limit: query.limit ?? 2000 });
-  const response = await fetch(`${normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL)}/api/audit-events/export.csv?${params}`, {
-    headers: { Accept: "text/csv", Authorization: `Bearer ${token}` },
+  const response = await authenticatedFetch(`${normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL)}/api/audit-events/export.csv?${params}`, token, {
+    headers: { Accept: "text/csv" },
     signal,
   });
   if (!response.ok) throw new Error(`Audit export request failed (${response.status}).`);

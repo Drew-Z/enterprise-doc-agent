@@ -664,6 +664,12 @@ body.overlay-open {
   height: 14px;
 }
 
+.table-action:disabled {
+  color: var(--color-text-muted);
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
 .document-actions,
 .mobile-document-actions {
   display: flex;
