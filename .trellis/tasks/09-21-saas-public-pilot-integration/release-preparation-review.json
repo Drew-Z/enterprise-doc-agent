@@ -1,0 +1,43 @@
+{
+  "completed_at": "2026-09-21T11:13:49.325608+00:00",
+  "task_status": "in_progress",
+  "review_status": "completed",
+  "additional_servers_contacted": false,
+  "expansion_cancelled": true,
+  "git_head_unchanged": true,
+  "git_index_unchanged": true,
+  "preexisting_dirty_entries_preserved": 1908,
+  "recovery_snapshots_reverified": 2,
+  "runtime_source_edits_this_stage": false,
+  "new_functional_tests_run": false,
+  "documentation_and_json_validation": "passed",
+  "temporary_cleanup": {
+    "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\docagent-pilot-release-pqpaphdr",
+    "files_removed": 500,
+    "bytes_removed": 3728196,
+    "removed": true
+  },
+  "local_images_observed": {
+    "api": {
+      "tag": "docagent-pilot-api:local-71cad2b23aec",
+      "image_id": "sha256:3007eca589c79bdd57bc8114355500e1b9c686c4cab7145a24b2dc0848b70209"
+    },
+    "worker": {
+      "tag": "docagent-pilot-worker:local-71cad2b23aec",
+      "image_id": "sha256:0aa21f88fab2f63e185e3eba3c4332ff2237ff01a53fe3aa941fb433ed3e02ea"
+    },
+    "consumer": {
+      "tag": "docagent-pilot-consumer:local-71cad2b23aec",
+      "image_id": "sha256:3bfa5c9a4c370667dbb76fb6a3c14e66d09b2c007c4fcb5a777c0a64ee41a912"
+    },
+    "web": {
+      "tag": "docagent-pilot-web:local-71cad2b23aec",
+      "image_id": "sha256:02057a8129b4b704895d92695468062b3f116d2389bd9919de053f4ff95a9c96"
+    }
+  },
+  "web_build_exit_code": 124,
+  "web_image_observed_after_timeout": true,
+  "containers_runtime_verified": false,
+  "remote_publication": false,
+  "public_deployment": false
+}

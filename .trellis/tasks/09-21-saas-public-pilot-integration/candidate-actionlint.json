@@ -1,0 +1,11 @@
+{
+  "tool": "actionlint",
+  "version": "1.7.7",
+  "official_checksum_verified": true,
+  "archive_sha256": "7f12f1801bca3d480d67aaf7774f4c2a6359a3ca8eebe382c95c10c9704aa731",
+  "workflow": ".github/workflows/deploy-staging.yml",
+  "exit_code": 0,
+  "shellcheck": "not_run_separate_bash_syntax_previously_passed",
+  "pyflakes": "not_run",
+  "diagnostics": ""
+}

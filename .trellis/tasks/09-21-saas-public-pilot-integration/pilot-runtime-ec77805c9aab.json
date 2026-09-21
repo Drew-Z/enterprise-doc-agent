@@ -1,0 +1,205 @@
+{
+  "run_id": "pilot-runtime-ec77805c9aab",
+  "started_at": "2026-09-21T19:35:25.589792+00:00",
+  "scope": "local_recorded_image_runtime",
+  "real_identity_verified": false,
+  "external_requests": false,
+  "public_deployment": false,
+  "checks": [
+    {
+      "name": "candidate_identity",
+      "status": "passed",
+      "image_count": 4
+    },
+    {
+      "name": "isolated_dependencies",
+      "status": "passed",
+      "internal_network": true,
+      "persistent_host_data_used": false
+    },
+    {
+      "name": "migration",
+      "status": "passed"
+    },
+    {
+      "name": "checkpointer_setup",
+      "status": "passed"
+    },
+    {
+      "name": "checkpointer_check",
+      "status": "passed"
+    },
+    {
+      "name": "object_store_buckets",
+      "status": "passed"
+    },
+    {
+      "name": "application_start",
+      "status": "passed"
+    },
+    {
+      "name": "application_readiness",
+      "status": "passed",
+      "api": {
+        "http_status": 200,
+        "body": {
+          "status": "ready",
+          "checks": {
+            "database": {
+              "status": "up"
+            },
+            "redis": {
+              "status": "up"
+            },
+            "object_store": {
+              "status": "up"
+            }
+          },
+          "checked_at": "2026-09-21T19:35:39.960066Z"
+        }
+      },
+      "worker": {
+        "http_status": 200,
+        "body": {
+          "status": "ready",
+          "checks": {
+            "database": {
+              "status": "up"
+            },
+            "redis": {
+              "status": "up"
+            },
+            "object_store": {
+              "status": "up"
+            },
+            "langgraph_checkpoint": {
+              "status": "up"
+            }
+          },
+          "checked_at": "2026-09-21T19:35:41.253036Z"
+        }
+      },
+      "web": {
+        "http_status": 200,
+        "body": {
+          "status": "ready",
+          "checks": {
+            "database": {
+              "status": "up"
+            },
+            "redis": {
+              "status": "up"
+            },
+            "object_store": {
+              "status": "up"
+            }
+          },
+          "checked_at": "2026-09-21T19:35:39.960066Z"
+        }
+      }
+    },
+    {
+      "name": "consumer_queue_connection",
+      "status": "passed",
+      "responding_consumers": 1
+    },
+    {
+      "name": "web_auth_routing",
+      "status": "passed",
+      "anonymous_session_json": true,
+      "login_status": 303,
+      "exact_callback": true,
+      "pkce": "S256",
+      "nonce_and_state_present": true,
+      "login_cookie_flags_valid": true,
+      "web_html_served": true,
+      "identity_provider_contacted": false
+    },
+    {
+      "name": "browser_anonymous_render",
+      "status": "passed",
+      "sign_in_page_rendered": true,
+      "login_link_correct": true,
+      "page_errors": 0,
+      "session_http_200": 1,
+      "screenshot": "pilot-runtime-ec77805c9aab-signin.png"
+    },
+    {
+      "name": "operations_packaged_preview",
+      "status": "passed",
+      "operation_status": "preview",
+      "database_write": false,
+      "credential_file_created": false
+    }
+  ],
+  "images": {
+    "api": {
+      "tag": "docagent-pilot-api:local-71cad2b23aec",
+      "image_id": "sha256:3007eca589c79bdd57bc8114355500e1b9c686c4cab7145a24b2dc0848b70209"
+    },
+    "worker": {
+      "tag": "docagent-pilot-worker:local-71cad2b23aec",
+      "image_id": "sha256:0aa21f88fab2f63e185e3eba3c4332ff2237ff01a53fe3aa941fb433ed3e02ea"
+    },
+    "consumer": {
+      "tag": "docagent-pilot-consumer:local-71cad2b23aec",
+      "image_id": "sha256:3bfa5c9a4c370667dbb76fb6a3c14e66d09b2c007c4fcb5a777c0a64ee41a912"
+    },
+    "web": {
+      "tag": "docagent-pilot-web:local-71cad2b23aec",
+      "image_id": "sha256:02057a8129b4b704895d92695468062b3f116d2389bd9919de053f4ff95a9c96"
+    }
+  },
+  "status": "passed",
+  "cleanup": {
+    "containers": [
+      {
+        "name": "pilot-runtime-ec77805c9aab-web",
+        "removed": true
+      },
+      {
+        "name": "pilot-runtime-ec77805c9aab-consumer",
+        "removed": true
+      },
+      {
+        "name": "pilot-runtime-ec77805c9aab-worker",
+        "removed": true
+      },
+      {
+        "name": "pilot-runtime-ec77805c9aab-api",
+        "removed": true
+      },
+      {
+        "name": "pilot-runtime-ec77805c9aab-buckets",
+        "removed": true
+      },
+      {
+        "name": "pilot-runtime-ec77805c9aab-checkpointer_check",
+        "removed": true
+      },
+      {
+        "name": "pilot-runtime-ec77805c9aab-checkpointer_setup",
+        "removed": true
+      },
+      {
+        "name": "pilot-runtime-ec77805c9aab-migration",
+        "removed": true
+      },
+      {
+        "name": "pilot-runtime-ec77805c9aab-minio",
+        "removed": true
+      },
+      {
+        "name": "pilot-runtime-ec77805c9aab-redis",
+        "removed": true
+      },
+      {
+        "name": "pilot-runtime-ec77805c9aab-postgres",
+        "removed": true
+      }
+    ],
+    "network_removed": true
+  },
+  "completed_at": "2026-09-21T19:35:53.390094+00:00",
+  "script_sha256": "e8804e05b127e1ac6898ea3bfa246f197e1099ae16f7b64f94233e618c318714"
+}
