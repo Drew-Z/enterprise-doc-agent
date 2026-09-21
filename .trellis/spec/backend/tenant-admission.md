@@ -81,6 +81,12 @@ remains `prepared`: its existence never proves database issuance. A failed or
 unknown commit returns not_confirmed with grantId and retains the file. Query
 show before deciding a recovery action; there is no automatic retry or revoke.
 
+Keep the entire Windows-only ctypes/msvcrt implementation inside an explicit
+`sys.platform == "win32"` branch so Linux type checking does not resolve its symbols.
+Use an explicit else error: an early platform rejection followed by these imports
+triggers `warn_unreachable` on Linux. Check this module with both `mypy --platform linux`
+and `--platform win32`; the real-file test verifies exclusive creation and permissions.
+
 ## Validation & Error Matrix
 
 | Input / state | Result |
