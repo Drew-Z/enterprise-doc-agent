@@ -21,3 +21,8 @@ per-event authorization follow `.trellis/spec/backend/browser-sessions.md`.
 Commercial period configuration, tenant locks, lifecycle gating, usage accounting,
 authoritative storage/seat summaries and local operator recovery follow
 `.trellis/spec/backend/entitlements-usage.md`.
+
+The packaged private operator entry is `python -m enterprise_doc_core.operations`.
+Formal environment targets, process settings, existing administrator authorization,
+credential files and uncertain-result recovery follow `tenant-admission.md` and
+`entitlements-usage.md`; existing local/test scripts retain their restrictions.

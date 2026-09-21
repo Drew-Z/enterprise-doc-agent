@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 import sys
 from importlib.util import module_from_spec, spec_from_file_location
@@ -151,6 +152,245 @@ def _write_template(path: Path) -> None:
         },
     ]
     path.write_text(yaml.safe_dump_all(documents, sort_keys=False), encoding="utf-8")
+
+
+def _render_browser_manifest(tmp_path: Path, **overrides: str | None) -> list[dict]:
+    source = tmp_path / "browser-template.yaml"
+    destination = tmp_path / "browser-staging.yaml"
+    if not source.exists():
+        _write_template(source)
+    configure_staging_manifest.configure_manifest(
+        source,
+        destination,
+        staging_base_url="https://staging.example.com",
+        object_store_endpoint="https://objects.example.com",
+        object_store_presign_endpoint="https://objects.example.com",
+        tls_secret_name="enterprise-doc-staging-tls",
+        web_object_store_origins="https://objects.example.com",
+        database_egress_cidr="8.8.8.8/32",
+        model_provider="openai_compatible",
+        model_base_url="https://model.example.com/v1",
+        model_name="staging-model",
+        **overrides,
+    )
+    return [item for item in yaml.safe_load_all(destination.read_text(encoding="utf-8")) if item]
+
+
+def test_configure_manifest_binds_browser_login_to_application_settings(tmp_path: Path) -> None:
+    from pydantic import SecretStr
+
+    from enterprise_doc_api.browser_auth.settings import BrowserAuthSettings
+    from enterprise_doc_core.config import AppEnvironment
+
+    documents = _render_browser_manifest(
+        tmp_path,
+        browser_auth_issuer="https://auth.example.com/realms/docagent",
+        browser_auth_client_id="docagent-web",
+    )
+    data = next(item for item in documents if item["kind"] == "ConfigMap")["data"]
+    values = {
+        key.removeprefix("BROWSER_AUTH__").lower(): value
+        for key, value in data.items()
+        if key.startswith("BROWSER_AUTH__")
+    }
+    values["algorithms"] = json.loads(values["algorithms"])
+    settings = BrowserAuthSettings(**values, client_secret=SecretStr("test-only-secret"))
+    settings.validate_environment(AppEnvironment.STAGING)
+    assert settings.enabled
+    assert settings.redirect_uri == "https://staging.example.com/auth/callback"
+    assert settings.token_endpoint == (
+        "https://auth.example.com/realms/docagent/protocol/openid-connect/token"
+    )
+    assert "BROWSER_AUTH__CLIENT_SECRET" not in data
+    assert data.get("PRESALES__GENERATION_ENABLED", "false") == "false"
+    namespace = next(item for item in documents if item["kind"] == "Namespace")
+    assert (
+        namespace["metadata"]["annotations"]["enterprise-doc-agent/approved-browser-auth-issuer"]
+        == settings.issuer
+    )
+
+
+@pytest.mark.parametrize(
+    "issuer",
+    [
+        "http://auth.example.com/realms/docagent",
+        "https://user:secret@auth.example.com/realms/docagent",
+        "https://auth.example.com/realms/master",
+        "https://auth.example.com/realms/docagent/",
+        "https://auth.example.com/realms/docagent?token=private",
+        "https://auth.example.com/realms/docagent;ignored",
+        "https://auth.example.com/realms/%64ocagent",
+        "https://staging.example.com/realms/docagent",
+    ],
+)
+def test_browser_config_rejects_incompatible_issuer_before_output(
+    tmp_path: Path, issuer: str
+) -> None:
+    with pytest.raises(ValueError):
+        _render_browser_manifest(tmp_path, browser_auth_issuer=issuer)
+    assert not (tmp_path / "browser-staging.yaml").exists()
+
+
+@pytest.mark.parametrize(
+    "issuer,authorization,token,jwks,algorithm",
+    [
+        (
+            "https://team.cloudflareaccess.com/cdn-cgi/access/sso/oidc/client-id",
+            "/authorization",
+            "/token",
+            "/jwks",
+            "RS256",
+        ),
+        (
+            "https://project.supabase.co/auth/v1",
+            "/oauth/authorize",
+            "/oauth/token",
+            "/.well-known/jwks.json",
+            "ES256",
+        ),
+    ],
+    ids=["cloudflare-access", "supabase"],
+)
+def test_manifest_accepts_explicit_hosted_oidc_contract(
+    tmp_path: Path, issuer: str, authorization: str, token: str, jwks: str, algorithm: str
+) -> None:
+    from pydantic import SecretStr
+
+    from enterprise_doc_api.browser_auth.settings import BrowserAuthSettings
+    from enterprise_doc_core.config import AppEnvironment
+
+    documents = _render_browser_manifest(
+        tmp_path,
+        browser_auth_issuer=issuer,
+        browser_auth_client_id="configured-client-id",
+        browser_auth_oidc_config=json.dumps(
+            {
+                "authorization_endpoint": issuer + authorization,
+                "token_endpoint": issuer + token,
+                "jwks_uri": issuer + jwks,
+                "algorithms": [algorithm],
+            }
+        ),
+    )
+    data = next(item for item in documents if item["kind"] == "ConfigMap")["data"]
+    values = {
+        key.removeprefix("BROWSER_AUTH__").lower(): value
+        for key, value in data.items()
+        if key.startswith("BROWSER_AUTH__")
+    }
+    values["algorithms"] = json.loads(values["algorithms"])
+    settings = BrowserAuthSettings(**values, client_secret=SecretStr("test-only-secret"))
+    settings.validate_environment(AppEnvironment.STAGING)
+    assert settings.issuer == issuer
+    assert settings.authorization_endpoint == issuer + authorization
+    assert settings.token_endpoint == issuer + token
+    assert settings.jwks_url == issuer + jwks
+    assert settings.algorithms == (algorithm,)
+    assert settings.redirect_uri == "https://staging.example.com/auth/callback"
+    assert "BROWSER_AUTH__CLIENT_SECRET" not in data
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"algorithms": ["HS256"]},
+        {"algorithms": []},
+        {"algorithms": "ES256"},
+        {"algorithms": ["ES256", "ES256"]},
+        {"client_secret": "must-not-echo"},
+        {"token_endpoint": "https://other.example.com/token"},
+        {"token_endpoint": "http://project.supabase.co/token"},
+        {"token_endpoint": "https://project.supabase.co/token?secret=must-not-echo"},
+        {"token_endpoint": "https://user:must-not-echo@project.supabase.co/token"},
+        {"token_endpoint": None},
+    ],
+)
+def test_hosted_oidc_configuration_rejects_unsafe_or_incomplete_profile(
+    tmp_path: Path, changes: dict
+) -> None:
+    issuer = "https://project.supabase.co/auth/v1"
+    config = {
+        "authorization_endpoint": issuer + "/oauth/authorize",
+        "token_endpoint": issuer + "/oauth/token",
+        "jwks_uri": issuer + "/.well-known/jwks.json",
+        "algorithms": ["ES256"],
+        **changes,
+    }
+    with pytest.raises(ValueError) as caught:
+        _render_browser_manifest(
+            tmp_path,
+            browser_auth_issuer=issuer,
+            browser_auth_client_id="configured-client-id",
+            browser_auth_oidc_config=json.dumps(config),
+        )
+    assert not (tmp_path / "browser-staging.yaml").exists()
+    assert "must-not-echo" not in str(caught.value)
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {"browser_auth_oidc_config": "{}"},
+        {
+            "browser_auth_issuer": "https://project.supabase.co/auth/v1",
+            "browser_auth_oidc_config": "{}",
+        },
+        {
+            "browser_auth_issuer": "https://project.supabase.co/auth/v1",
+            "browser_auth_client_id": "configured-client-id",
+            "browser_auth_oidc_config": "{}",
+        },
+        {
+            "browser_auth_issuer": "https://project.supabase.co/auth/v1",
+            "browser_auth_client_id": "configured-client-id",
+            "browser_auth_oidc_config": "must-not-echo-invalid-json",
+        },
+    ],
+)
+def test_hosted_oidc_configuration_requires_explicit_issuer_client_and_endpoints(
+    tmp_path: Path, overrides: dict
+) -> None:
+    with pytest.raises(ValueError) as caught:
+        _render_browser_manifest(tmp_path, **overrides)
+    assert not (tmp_path / "browser-staging.yaml").exists()
+    assert "must-not-echo" not in str(caught.value)
+
+
+def test_browser_config_disable_clears_old_endpoints_and_changes_restart_hash(
+    tmp_path: Path,
+) -> None:
+    enabled = _render_browser_manifest(
+        tmp_path, browser_auth_issuer="https://auth.example.com/realms/docagent"
+    )
+    (tmp_path / "browser-template.yaml").write_text(yaml.safe_dump_all(enabled), encoding="utf-8")
+    disabled = _render_browser_manifest(tmp_path)
+    config = next(item for item in disabled if item["kind"] == "ConfigMap")["data"]
+    assert {key: value for key, value in config.items() if key.startswith("BROWSER_AUTH__")} == {
+        "BROWSER_AUTH__ENABLED": "false"
+    }
+    annotations = [
+        next(item for item in docs if item["kind"] == "Namespace")["metadata"]["annotations"]
+        for docs in (enabled, disabled)
+    ]
+    assert (
+        annotations[0]["enterprise-doc-agent/approved-config-sha256"]
+        != annotations[1]["enterprise-doc-agent/approved-config-sha256"]
+    )
+    assert "enterprise-doc-agent/approved-browser-auth-issuer" not in annotations[1]
+
+
+def test_browser_config_rejects_plaintext_secret_without_echoing_it(tmp_path: Path) -> None:
+    source = tmp_path / "browser-template.yaml"
+    _write_template(source)
+    documents = list(yaml.safe_load_all(source.read_text()))
+    next(item for item in documents if item["kind"] == "ConfigMap")["data"][
+        "BROWSER_AUTH__CLIENT_SECRET"
+    ] = "never-echo-this-test-value"
+    source.write_text(yaml.safe_dump_all(documents), encoding="utf-8")
+    with pytest.raises(ValueError, match="client secret") as caught:
+        _render_browser_manifest(tmp_path)
+    assert "never-echo-this-test-value" not in str(caught.value)
+    assert not (tmp_path / "browser-staging.yaml").exists()
 
 
 def test_configure_manifest_binds_https_hosts_without_secret_data(tmp_path: Path) -> None:

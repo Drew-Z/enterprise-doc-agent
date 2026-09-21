@@ -2,10 +2,12 @@
 
 ## Scope / Trigger
 
-Core `admission` provisions a new enterprise from a one-time grant. The current
-adapter is a local/test operator CLI restricted to a loopback database. There is
-no public admission HTTP route, accept CLI, browser login or production platform
-RBAC in this slice. An owner role does not grant platform admission authority.
+Core `admission` provisions a new enterprise from a one-time grant. The original
+local/test CLI remains restricted to a loopback database. The separate private
+`python -m enterprise_doc_core.operations` adapter supports explicit staging/production
+targets through an already-authorized administrative process and database credentials.
+It adds no public platform-operator HTTP route or tenant-role authorization. Browser
+login and admission acceptance follow the separate browser-session contract.
 
 ## Signatures
 
@@ -133,3 +135,72 @@ database issuance. File and database writes remain separate failure domains.
 - `scripts/manage_tenant_admission.py`
 - `tests/admission/test_admission_concurrency_integration.py`
 - `tests/admission/test_admission_cli_integration.py`
+
+## Private operator adapter
+
+### Scope / Trigger
+
+Use for issuing/querying/revoking grants through an authorized host or administrative
+container. The Core wheel includes the module; API containers with a read-only root
+need a separately reviewed writable private mount or an external management environment.
+Do not expand deployer RBAC or reinterpret a tenant owner's role as operator authority.
+
+### Signatures
+
+`python -m enterprise_doc_core.operations --environment staging|production
+--database-host HOST [--database-port PORT] --database-name NAME --operator LABEL
+--reason TEXT admission issue|show|revoke ...`
+
+Issue takes the local adapter's email/expiry/quota/seat/credential-file fields but no
+issuer argument. Show/revoke take grant-id. Issue/revoke require --execute to mutate.
+The sibling `entitlement configure|show|list` subcommands use existing period contracts.
+
+### Contracts
+
+APP_ENV and DATABASE__URL are required process settings, with no .env or URL default.
+Require postgresql+psycopg and match environment/host/port/database to the explicit
+target. Reject host/hostaddr/port/dbname/service/servicefile URL query overrides and
+PGHOSTADDR/PGPORT/PGSERVICE/PGSERVICEFILE environment overrides. This is an accidental
+target-mismatch check; database/OS authorization and actual deployment identity remain
+administrative prerequisites. Operator labels are attribution only.
+
+Issuance requires BROWSER_AUTH__ENABLED and a precise HTTPS BROWSER_AUTH__ISSUER without
+userinfo/query/fragment. It reuses private credential creation and TenantAdmissionService.
+Preview returns databaseValidated=false and creates neither an engine nor a file.
+The 30-second database-operation deadline does not imply rollback after a timeout.
+Retain prepared files and stable grantId on failure. Do not print secrets or exceptions.
+
+### Validation & Error Matrix
+
+| Condition | Result |
+| --- | --- |
+| Missing configuration/invalid input | exit 2, operations_invalid_configuration / operations_invalid_arguments |
+| local/test or target mismatch | operations_environment_forbidden / operations_target_mismatch, before I/O |
+| Connection target override | operations_database_override_forbidden, before I/O |
+| Disabled/invalid configured issuer on issue | operations_browser_identity_unavailable, before file creation |
+| Existing/unwritable credential file | exit 1, file_failed, databaseWriteAttempted=false |
+| Issue/revoke failure or timeout | exit 1, not_confirmed, grantId retained; query before recovery |
+| Show failure | exit 1, failed; not evidence that the grant is absent |
+
+### Good / Base / Bad Cases
+
+Good: preview exact staging target, issue once, lose the commit acknowledgement, then
+show the same grant and use its retained private file. Base: query/revoke remain usable
+when browser login is disabled. Bad: treating a preview/file as confirmation, printing
+the token into a Kubernetes Job log, or using the operator label as a permission check.
+
+### Tests Required
+
+The module subprocess verifies required settings, target matching, production preview,
+no .env loading, no secret echo, preserved files, and a real refused connection.
+Isolated PostgreSQL verifies module issuance, domain acceptance, tenant resolution,
+revocation and audit. A psycopg commit-boundary fault occurs after a real commit and
+show resolves the resulting pending grant. Domain services must not be mocked.
+
+### Wrong vs Correct
+
+Wrong: set APP_ENV=local to reach a formal DB, seed a verified identity, or issue a new
+grant immediately after an uncertain result. Correct: use the separately packaged
+private operator module, preserve actual environment/target, and query the stable ID.
+
+Operational examples and recovery: `docs/ops/platform-operations.md`.

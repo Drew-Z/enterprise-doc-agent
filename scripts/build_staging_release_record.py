@@ -291,6 +291,8 @@ def build_record(
     fallback_model_timeout_seconds: str | None = None,
     governance_smoke_required: bool = False,
     governance_smoke_outcome: str = "skipped",
+    browser_identity_required: bool = False,
+    browser_identity_outcome: str = "skipped",
 ) -> dict[str, Any]:
     if deployment_profile not in DEPLOYMENT_PROFILES:
         raise StagingReleaseRecordError("deployment profile is not reviewed")
@@ -313,6 +315,8 @@ def build_record(
         raise StagingReleaseRecordError("workflow outcomes contain an invalid value")
     if governance_smoke_outcome not in OUTCOME_VALUES:
         raise StagingReleaseRecordError("governance smoke outcome is invalid")
+    if browser_identity_outcome not in OUTCOME_VALUES:
+        raise StagingReleaseRecordError("browser identity outcome is invalid")
     model, model_error = _model_metadata(
         model_provider=model_provider,
         model_base_url=model_base_url,
@@ -335,10 +339,15 @@ def build_record(
     rollout_ok = all(outcomes[name] == "success" for name in ROLLOUT_STEPS)
     smoke_ok = all(outcomes[name] == "success" for name in SMOKE_STEPS)
     governance_ok = not governance_smoke_required or governance_smoke_outcome == "success"
+    browser_identity_ok = not browser_identity_required or browser_identity_outcome == "success"
     if model_error is not None or fallback_model_error is not None or embedding_error is not None:
         status = "failed"
         blocking_reason = None
         failure_reason = "Model routing validation failed before staging rollout."
+    elif not browser_identity_ok:
+        status = "failed"
+        blocking_reason = None
+        failure_reason = "Browser identity entry check did not succeed."
     elif rollout_ok and smoke_required and smoke_ok and governance_ok:
         status = "passed"
         blocking_reason = None
@@ -372,6 +381,10 @@ def build_record(
         "governance_smoke": {
             "required": governance_smoke_required,
             "outcome": governance_smoke_outcome,
+        },
+        "browser_identity": {
+            "required": browser_identity_required,
+            "outcome": browser_identity_outcome,
         },
         "evidence_manifest": {
             "path": evidence_manifest.as_posix(),
@@ -407,6 +420,10 @@ def main() -> None:
     parser.add_argument("--embedding-rollout-report", type=Path, required=True)
     parser.add_argument("--smoke-required", choices=("true", "false"), required=True)
     parser.add_argument("--governance-smoke-required", choices=("true", "false"), default="false")
+    parser.add_argument("--browser-identity-required", choices=("true", "false"), default="false")
+    parser.add_argument(
+        "--browser-identity-outcome", choices=sorted(OUTCOME_VALUES), default="skipped"
+    )
     parser.add_argument(
         "--governance-smoke-outcome", choices=sorted(OUTCOME_VALUES), default="skipped"
     )
@@ -441,6 +458,8 @@ def main() -> None:
             smoke_required=args.smoke_required == "true",
             governance_smoke_required=args.governance_smoke_required == "true",
             governance_smoke_outcome=args.governance_smoke_outcome,
+            browser_identity_required=args.browser_identity_required == "true",
+            browser_identity_outcome=args.browser_identity_outcome,
             output=args.output,
         )
     except (OSError, json.JSONDecodeError, StagingReleaseRecordError) as error:

@@ -241,6 +241,9 @@ jobs:
           OBJECT_STORE_PRESIGN_ENDPOINT: ${{ inputs.object_store_presign_endpoint }}
           OBJECT_STORE_CHECKSUM_MODE: ${{ vars.STAGING_OBJECT_STORE_CHECKSUM_MODE }}
           TLS_SECRET_NAME: ${{ inputs.tls_secret_name }}
+          BROWSER_AUTH_ISSUER: ${{ vars.STAGING_BROWSER_AUTH_ISSUER }}
+          BROWSER_AUTH_CLIENT_ID: ${{ vars.STAGING_BROWSER_AUTH_CLIENT_ID }}
+          BROWSER_AUTH_OIDC_CONFIG: ${{ vars.STAGING_BROWSER_AUTH_OIDC_CONFIG }}
           VITE_OBJECT_STORE_ORIGINS: ${{ vars.VITE_OBJECT_STORE_ORIGINS }}
           DATABASE_EGRESS_CIDR: ${{ vars.STAGING_DATABASE_EGRESS_CIDRS || vars.STAGING_DATABASE_EGRESS_CIDR }}
           MODEL_PROVIDER: openai_compatible
@@ -271,6 +274,16 @@ jobs:
           test -n "$EMBEDDING_BASE_URL"
           test -n "$EMBEDDING_MODEL_NAME"
           test -n "$EMBEDDING_VERSION"
+          browser_auth_args=()
+          if test -n "$BROWSER_AUTH_ISSUER"; then
+            browser_auth_args+=(--browser-auth-issuer "$BROWSER_AUTH_ISSUER")
+          fi
+          if test -n "$BROWSER_AUTH_CLIENT_ID"; then
+            browser_auth_args+=(--browser-auth-client-id "$BROWSER_AUTH_CLIENT_ID")
+          fi
+          if test -n "$BROWSER_AUTH_OIDC_CONFIG"; then
+            browser_auth_args+=(--browser-auth-oidc-config "$BROWSER_AUTH_OIDC_CONFIG")
+          fi
           fallback_args=()
           if test -n "$MODEL_FALLBACK_BASE_URL" || test -n "$MODEL_FALLBACK_NAME"; then
             if test -z "$MODEL_FALLBACK_BASE_URL" || test -z "$MODEL_FALLBACK_NAME"; then
@@ -304,6 +317,7 @@ jobs:
             --model-provider "$MODEL_PROVIDER" \
             --model-base-url "$MODEL_BASE_URL" \
             --model-name "$MODEL_NAME" \
+            "${browser_auth_args[@]}" \
             --embedding-base-url "$EMBEDDING_BASE_URL" \
             --embedding-model-name "$EMBEDDING_MODEL_NAME" \
             --embedding-version "$EMBEDDING_VERSION" \
@@ -454,6 +468,29 @@ jobs:
           if kubectl -n enterprise-doc-agent-staging get deployment enterprise-doc-prometheus >/dev/null 2>&1; then
             kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-prometheus --timeout=300s
           fi
+      - name: Verify public browser login entry
+        id: browser_identity
+        if: vars.STAGING_BROWSER_AUTH_ISSUER != ''
+        timeout-minutes: 2
+        env:
+          STAGING_BASE_URL: ${{ inputs.staging_base_url }}
+          BROWSER_AUTH_ISSUER: ${{ vars.STAGING_BROWSER_AUTH_ISSUER }}
+          BROWSER_AUTH_CLIENT_ID: ${{ vars.STAGING_BROWSER_AUTH_CLIENT_ID }}
+          BROWSER_AUTH_OIDC_CONFIG: ${{ vars.STAGING_BROWSER_AUTH_OIDC_CONFIG }}
+        run: |
+          set -euo pipefail
+          browser_auth_args=()
+          if test -n "$BROWSER_AUTH_CLIENT_ID"; then
+            browser_auth_args+=(--client-id "$BROWSER_AUTH_CLIENT_ID")
+          fi
+          if test -n "$BROWSER_AUTH_OIDC_CONFIG"; then
+            browser_auth_args+=(--oidc-config "$BROWSER_AUTH_OIDC_CONFIG")
+          fi
+          "$RUNNER_PYTHON" scripts/browser_identity_smoke.py \
+            --web-origin "$STAGING_BASE_URL" \
+            --issuer "$BROWSER_AUTH_ISSUER" \
+            "${browser_auth_args[@]}" \
+            --output "$RUNNER_TEMP/staging-browser-identity-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"
       - name: Run embedding provider and reindex gate
         id: embedding_rollout
         env:
@@ -669,6 +706,8 @@ jobs:
           AUTHENTICATED_SMOKE_OUTCOME: ${{ steps.authenticated_smoke.outcome }}
           GOVERNANCE_SMOKE_REQUIRED: ${{ vars.STAGING_RUN_GOVERNANCE_SMOKE == 'true' }}
           GOVERNANCE_SMOKE_OUTCOME: ${{ steps.governance_smoke.outcome || 'skipped' }}
+          BROWSER_IDENTITY_REQUIRED: ${{ vars.STAGING_BROWSER_AUTH_ISSUER != '' }}
+          BROWSER_IDENTITY_OUTCOME: ${{ steps.browser_identity.outcome || 'skipped' }}
         run: |
           set -euo pipefail
           mkdir -p tmp
@@ -701,6 +740,10 @@ jobs:
           if test -f "$RUNNER_TEMP/staging-embedding-rollout.json"; then
             cp "$RUNNER_TEMP/staging-embedding-rollout.json" \
               "$raw_dir/staging-embedding-rollout.json"
+          fi
+          browser_report="$RUNNER_TEMP/staging-browser-identity-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"
+          if test -f "$browser_report"; then
+            cp "$browser_report" "$raw_dir/staging-browser-identity.json"
           fi
           printf '%s\n' "$DEPLOYMENT_PROFILE" > "$raw_dir/deployment-profile.txt"
           capture deployments.json kubectl -n enterprise-doc-agent-staging get deploy -o json
@@ -762,6 +805,8 @@ jobs:
             --smoke-required "$RUN_SMOKE" \
             --governance-smoke-required "$GOVERNANCE_SMOKE_REQUIRED" \
             --governance-smoke-outcome "$GOVERNANCE_SMOKE_OUTCOME" \
+            --browser-identity-required "$BROWSER_IDENTITY_REQUIRED" \
+            --browser-identity-outcome "$BROWSER_IDENTITY_OUTCOME" \
             --output "tmp/staging-release-${evidence_id}.record.json"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
@@ -775,3 +820,6 @@ jobs:
       - name: Clean up cluster credentials
         if: always()
         run: rm -f "${KUBECONFIG:-$RUNNER_TEMP/enterprise-doc-kubeconfig-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}}"
+      - name: Clean up browser entry report
+        if: always()
+        run: rm -f "$RUNNER_TEMP/staging-browser-identity-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"

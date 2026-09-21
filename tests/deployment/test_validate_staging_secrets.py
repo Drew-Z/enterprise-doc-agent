@@ -135,6 +135,27 @@ def test_validate_staging_secrets_rejects_wrong_tls_host() -> None:
         )
 
 
+def test_browser_login_requires_private_client_secret_without_disclosing_it() -> None:
+    payload = _payload()
+    with pytest.raises(StagingSecretValidationError, match="BROWSER_AUTH__CLIENT_SECRET"):
+        validate_staging_secrets(
+            payload,
+            staging_host="staging.example.com",
+            tls_secret_name="enterprise-doc-staging-tls",
+            require_browser_auth_client_secret=True,
+        )
+    payload["items"][0]["data"]["BROWSER_AUTH__CLIENT_SECRET"] = _b64(b"private-test-client-secret")
+    report = validate_staging_secrets(
+        payload,
+        staging_host="staging.example.com",
+        tls_secret_name="enterprise-doc-staging-tls",
+        require_browser_auth_client_secret=True,
+    )
+    assert report["status"] == "passed"
+    assert "private-test-client-secret" not in json.dumps(report)
+    assert _b64(b"private-test-client-secret") not in json.dumps(report)
+
+
 def test_validate_staging_secrets_accepts_single_label_wildcard_san() -> None:
     payload = _payload()
     payload["items"][-1] = _tls_secret(dns_name="*.example.com")  # type: ignore[index]

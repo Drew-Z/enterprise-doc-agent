@@ -32,6 +32,13 @@ are copied, then the actual 0023 migration runs through Alembic Operations.
   inspect the real protected DACL and OWNER RIGHTS SID, not just POSIX mode bits.
 - Lost acknowledgement testing first commits through the real issue method,
   then injects a transport-like failure; show must resolve the persisted grant.
+- Formal operator tests use the actual packaged module subprocess and process-only
+  settings against the fixture's isolated local database. A staging/production
+  configuration under test does not mean a live environment was contacted.
+- Period integration adds the real 0026 migration to the owned admission schema;
+  domain acceptance opens the company, then the operator configures the period.
+  Verify consumed quota survives identical replay and only one configuration audit
+  exists. Keep real services; inject lost acknowledgement at psycopg's commit boundary.
 
 ## Validation & Error Matrix
 
@@ -71,3 +78,5 @@ reflection, run real migration operations and verify cleanup.
 - `tests/admission/test_admission_migration_integration.py`
 - `tests/admission/test_admission_concurrency_integration.py`
 - `tests/admission/test_admission_cli.py`
+- `tests/admission/test_platform_operations_cli.py`
+- `tests/admission/test_platform_operations_integration.py`

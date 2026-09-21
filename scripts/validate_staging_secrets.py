@@ -13,6 +13,7 @@ from cryptography.hazmat.primitives import serialization
 APP_SECRET_NAME = "enterprise-doc-secrets"
 REGISTRY_SECRET_NAME = "enterprise-doc-registry"
 MODEL_FALLBACK_SECRET_KEY = "MODEL__FALLBACK_API_KEY"
+BROWSER_AUTH_SECRET_KEY = "BROWSER_AUTH__CLIENT_SECRET"
 APP_SECRET_KEYS = {
     "DATABASE__URL",
     "DATABASE__PASSWORD",
@@ -144,6 +145,7 @@ def validate_staging_secrets(
     staging_host: str,
     tls_secret_name: str,
     require_model_fallback_api_key: bool = False,
+    require_browser_auth_client_secret: bool = False,
 ) -> dict[str, Any]:
     by_name = {item["metadata"]["name"]: _secret_map(item) for item in _items(payload)}
     required = {APP_SECRET_NAME, REGISTRY_SECRET_NAME, tls_secret_name}
@@ -159,11 +161,15 @@ def validate_staging_secrets(
     required_app_keys = set(APP_SECRET_KEYS)
     if require_model_fallback_api_key:
         required_app_keys.add(MODEL_FALLBACK_SECRET_KEY)
+    if require_browser_auth_client_secret:
+        required_app_keys.add(BROWSER_AUTH_SECRET_KEY)
     missing_app = required_app_keys - app_data.keys()
     if missing_app:
         raise StagingSecretValidationError(
             "application Secret missing key(s): " + ", ".join(sorted(missing_app))
         )
+    if require_browser_auth_client_secret and not app_data[BROWSER_AUTH_SECRET_KEY].strip():
+        raise StagingSecretValidationError(f"{BROWSER_AUTH_SECRET_KEY} must not be blank")
     registry = by_name[REGISTRY_SECRET_NAME]
     _require_type(registry, "kubernetes.io/dockerconfigjson")
     registry_data = _decode_data(registry)
@@ -204,6 +210,7 @@ def main() -> None:
     parser.add_argument("--staging-host", required=True)
     parser.add_argument("--tls-secret-name", required=True)
     parser.add_argument("--require-model-fallback-api-key", action="store_true")
+    parser.add_argument("--require-browser-auth-client-secret", action="store_true")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     try:
@@ -212,6 +219,7 @@ def main() -> None:
             staging_host=args.staging_host,
             tls_secret_name=args.tls_secret_name,
             require_model_fallback_api_key=args.require_model_fallback_api_key,
+            require_browser_auth_client_secret=args.require_browser_auth_client_secret,
         )
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(

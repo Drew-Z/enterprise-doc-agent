@@ -90,6 +90,8 @@ def _build(
     embedding_version: int = 2,
     governance_smoke_required: bool = False,
     governance_smoke_outcome: str = "skipped",
+    browser_identity_required: bool = False,
+    browser_identity_outcome: str = "skipped",
 ) -> dict[str, object]:
     return build_record(
         _manifest(tmp_path / "evidence.json"),
@@ -115,6 +117,8 @@ def _build(
         smoke_required=smoke_required,
         governance_smoke_required=governance_smoke_required,
         governance_smoke_outcome=governance_smoke_outcome,
+        browser_identity_required=browser_identity_required,
+        browser_identity_outcome=browser_identity_outcome,
         output=tmp_path / "record.json",
     )
 
@@ -161,6 +165,21 @@ def test_optional_governance_smoke_is_recorded_as_skipped(tmp_path: Path) -> Non
     record = _build(tmp_path, outcomes=_outcomes(), smoke_required=True)
     assert record["status"] == "passed"
     assert record["governance_smoke"] == {"required": False, "outcome": "skipped"}
+
+
+@pytest.mark.parametrize("outcome", ["failure", "skipped", "cancelled", "success"])
+def test_browser_identity_result_controls_public_release_acceptance(
+    tmp_path: Path, outcome: str
+) -> None:
+    record = _build(
+        tmp_path,
+        outcomes=_outcomes(),
+        smoke_required=True,
+        browser_identity_required=True,
+        browser_identity_outcome=outcome,
+    )
+    assert record["status"] == ("passed" if outcome == "success" else "failed")
+    assert record["browser_identity"] == {"required": True, "outcome": outcome}
 
 
 def test_staging_record_preserves_alternate_embedding_version(tmp_path: Path) -> None:

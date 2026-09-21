@@ -182,6 +182,93 @@ def _dns_hostname(value: str, *, description: str) -> str:
     return value
 
 
+def _browser_oidc_url(value: str, *, description: str) -> ParseResult:
+    parsed = _https_url(value, description=description)
+    _dns_hostname(parsed.hostname or "", description=description)
+    if (
+        len(value) > 2048
+        or any(ord(character) <= 32 for character in value)
+        or "\\" in value
+        or value != f"https://{parsed.netloc}{parsed.path}"
+        or parsed.params
+        or parsed.query
+        or parsed.fragment
+    ):
+        raise ValueError(f"{description} must be an exact HTTPS URL without query or credentials")
+    return parsed
+
+
+def browser_auth_environment(
+    web_origin: str,
+    issuer: str | None,
+    client_id: str | None = None,
+    *,
+    oidc_config: str | None = None,
+) -> dict[str, str]:
+    """Bind explicit hosted OIDC endpoints or the existing Keycloak convention."""
+    if not issuer:
+        if client_id or oidc_config is not None:
+            raise ValueError("browser client ID and OIDC configuration require an issuer")
+        return {"BROWSER_AUTH__ENABLED": "false"}
+    if web_origin != _exact_origin(web_origin, description="browser Web origin"):
+        raise ValueError("browser Web origin must be exact")
+    parsed = _browser_oidc_url(issuer, description="browser issuer")
+    if len(issuer) > 512:
+        raise ValueError("browser issuer must contain at most 512 characters")
+    if parsed.hostname == urlparse(web_origin).hostname:
+        raise ValueError("browser issuer must use a separate identity hostname")
+    if oidc_config is None:
+        realm = re.fullmatch(r"/realms/([A-Za-z0-9_-]{1,128})", parsed.path)
+        if realm is None or realm.group(1).lower() == "master":
+            raise ValueError("browser issuer must be an exact HTTPS Keycloak application realm")
+        endpoints = {
+            "authorization_endpoint": issuer + "/protocol/openid-connect/auth",
+            "token_endpoint": issuer + "/protocol/openid-connect/token",
+            "jwks_uri": issuer + "/protocol/openid-connect/certs",
+        }
+        algorithms = ["RS256"]
+    else:
+        if not client_id or len(oidc_config) > 8192:
+            raise ValueError("explicit OIDC configuration requires a client ID and bounded JSON")
+        try:
+            explicit = json.loads(oidc_config)
+        except ValueError:
+            raise ValueError("browser OIDC configuration must be valid JSON") from None
+        required = {"authorization_endpoint", "token_endpoint", "jwks_uri", "algorithms"}
+        if not isinstance(explicit, dict) or set(explicit) != required:
+            raise ValueError("browser OIDC configuration requires exactly endpoints and algorithms")
+        algorithms = explicit["algorithms"]
+        if (
+            not isinstance(algorithms, list)
+            or not algorithms
+            or any(algorithm not in ("RS256", "ES256") for algorithm in algorithms)
+            or len(algorithms) != len(set(algorithms))
+        ):
+            raise ValueError("browser OIDC algorithms must select RS256 and/or ES256")
+        endpoints = {}
+        for key in ("authorization_endpoint", "token_endpoint", "jwks_uri"):
+            value = explicit[key]
+            if not isinstance(value, str):
+                raise ValueError("browser OIDC endpoints must be HTTPS URLs")
+            endpoint = _browser_oidc_url(value, description="browser OIDC endpoint")
+            if endpoint.netloc != parsed.netloc:
+                raise ValueError("browser OIDC endpoints must share the issuer origin")
+            endpoints[key] = value
+    selected_client = "docagent-web" if client_id is None else client_id
+    if not re.fullmatch(r"[A-Za-z0-9_.-]{1,128}", selected_client):
+        raise ValueError("browser client ID must be an exact non-empty identifier")
+    return {
+        "BROWSER_AUTH__ENABLED": "true",
+        "BROWSER_AUTH__WEB_ORIGIN": web_origin,
+        "BROWSER_AUTH__ISSUER": issuer,
+        "BROWSER_AUTH__AUTHORIZATION_ENDPOINT": endpoints["authorization_endpoint"],
+        "BROWSER_AUTH__TOKEN_ENDPOINT": endpoints["token_endpoint"],
+        "BROWSER_AUTH__JWKS_URL": endpoints["jwks_uri"],
+        "BROWSER_AUTH__CLIENT_ID": selected_client,
+        "BROWSER_AUTH__ALGORITHMS": json.dumps(algorithms),
+    }
+
+
 def _global_host_cidr(value: str, *, description: str) -> str:
     try:
         network = ipaddress.ip_network(value, strict=True)
@@ -238,9 +325,11 @@ def _container_image(document: dict[str, Any], *, description: str) -> str:
     if not isinstance(containers, list) or len(containers) != 1:
         raise ValueError(f"{description} must contain exactly one container")
     container = containers[0]
-    if not isinstance(container, dict) or not isinstance(container.get("image"), str):
+    if not isinstance(container, dict):
         raise ValueError(f"{description} container image must be a string")
-    image = container["image"]
+    image = container.get("image")
+    if not isinstance(image, str):
+        raise ValueError(f"{description} container image must be a string")
     if not IMMUTABLE_IMAGE.fullmatch(image):
         raise ValueError(f"{description} image must use an immutable sha256 digest")
     return image
@@ -296,6 +385,9 @@ def configure_manifest(
     model_provider: str,
     model_base_url: str,
     model_name: str,
+    browser_auth_issuer: str | None = None,
+    browser_auth_client_id: str | None = None,
+    browser_auth_oidc_config: str | None = None,
     fallback_model_base_url: str | None = None,
     fallback_model_name: str | None = None,
     fallback_model_version: str | None = None,
@@ -364,6 +456,12 @@ def configure_manifest(
     normalized_embedding_model_name = _model_name(embedding_model_name)
     normalized_embedding_version = _embedding_version(embedding_version)
     normalized_checksum_mode = _object_store_checksum_mode(object_store_checksum_mode)
+    browser_config = browser_auth_environment(
+        staging_base_url,
+        browser_auth_issuer,
+        browser_auth_client_id,
+        oidc_config=browser_auth_oidc_config,
+    )
 
     documents = [
         document
@@ -376,6 +474,20 @@ def configure_manifest(
     data = config.setdefault("data", {})
     if not isinstance(data, dict):
         raise ValueError(f"ConfigMap/{CONFIG_NAME} data must be a mapping")
+    if "BROWSER_AUTH__CLIENT_SECRET" in data:
+        raise ValueError("browser client secret must come only from enterprise-doc-secrets")
+    for key in (
+        "ENABLED",
+        "WEB_ORIGIN",
+        "ISSUER",
+        "AUTHORIZATION_ENDPOINT",
+        "TOKEN_ENDPOINT",
+        "JWKS_URL",
+        "CLIENT_ID",
+        "ALGORITHMS",
+    ):
+        data.pop(f"BROWSER_AUTH__{key}", None)
+    data.update(browser_config)
     data["OBJECT_STORE__ENDPOINT"] = object_store_endpoint
     data["OBJECT_STORE__PRESIGN_ENDPOINT"] = object_store_presign_endpoint
     data["OBJECT_STORE__SECURE"] = "true"
@@ -546,6 +658,9 @@ def configure_manifest(
         "web": rollback_web_image,
     }
     approval_annotations = {
+        f"{APPROVAL_ANNOTATION_PREFIX}browser-auth-enabled": browser_config[
+            "BROWSER_AUTH__ENABLED"
+        ],
         f"{APPROVAL_ANNOTATION_PREFIX}staging-host": staging_hostname,
         f"{APPROVAL_ANNOTATION_PREFIX}tls-secret-name": tls_secret_name,
         f"{APPROVAL_ANNOTATION_PREFIX}database-egress-cidr": ",".join(database_cidrs),
@@ -564,6 +679,22 @@ def configure_manifest(
         f"{APPROVAL_ANNOTATION_PREFIX}config-sha256": config_digest,
         f"{APPROVAL_ANNOTATION_PREFIX}prometheus-images": PROMETHEUS_IMAGE,
     }
+    for suffix in ("issuer", "client-id", "client-secret-key"):
+        namespace_annotations.pop(f"{APPROVAL_ANNOTATION_PREFIX}browser-auth-{suffix}", None)
+    if browser_config["BROWSER_AUTH__ENABLED"] == "true":
+        approval_annotations.update(
+            {
+                f"{APPROVAL_ANNOTATION_PREFIX}browser-auth-issuer": browser_config[
+                    "BROWSER_AUTH__ISSUER"
+                ],
+                f"{APPROVAL_ANNOTATION_PREFIX}browser-auth-client-id": browser_config[
+                    "BROWSER_AUTH__CLIENT_ID"
+                ],
+                f"{APPROVAL_ANNOTATION_PREFIX}browser-auth-client-secret-key": (
+                    "BROWSER_AUTH__CLIENT_SECRET"
+                ),
+            }
+        )
     fallback_approval_keys = {
         f"{APPROVAL_ANNOTATION_PREFIX}model-fallback-provider",
         f"{APPROVAL_ANNOTATION_PREFIX}model-fallback-base-url",
@@ -631,6 +762,9 @@ def main() -> None:
     parser.add_argument("--model-provider", required=True)
     parser.add_argument("--model-base-url", required=True)
     parser.add_argument("--model-name", required=True)
+    parser.add_argument("--browser-auth-issuer")
+    parser.add_argument("--browser-auth-client-id")
+    parser.add_argument("--browser-auth-oidc-config")
     parser.add_argument("--fallback-model-base-url")
     parser.add_argument("--fallback-model-name")
     parser.add_argument("--fallback-model-version")
@@ -656,6 +790,9 @@ def main() -> None:
         model_provider=args.model_provider,
         model_base_url=args.model_base_url,
         model_name=args.model_name,
+        browser_auth_issuer=args.browser_auth_issuer,
+        browser_auth_client_id=args.browser_auth_client_id,
+        browser_auth_oidc_config=args.browser_auth_oidc_config,
         fallback_model_base_url=args.fallback_model_base_url,
         fallback_model_name=args.fallback_model_name,
         fallback_model_version=args.fallback_model_version,

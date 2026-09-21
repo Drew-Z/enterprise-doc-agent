@@ -7,8 +7,10 @@ operator configuration, explicit lifecycle states and Presales/API error contrac
 and by `09-15-saas-tenant-usage-workspace` with authoritative resource summaries
 and the owner usage page.
 Core owns `billing/`; API owns the HTTP projection; the operator adapter is
-`scripts/manage_tenant_entitlements.py`. There is no payment integration or
-production operator authorization. Web behavior is specified in
+`scripts/manage_tenant_entitlements.py`. The separately packaged private
+`python -m enterprise_doc_core.operations` supports formal environment configuration
+under existing host/cluster and database administrative authorization. It does not
+provide public platform RBAC or payment integration. Web behavior is specified in
 `../frontend/tenant-usage.md`.
 
 Reuse `tenant_entitlements`, `usage_reservations`, `usage_events` and `audit_events`.
@@ -124,6 +126,19 @@ query failures use `status=failed`. Invalid arguments/environment use exit 2.
 Only stable codes are printed, never raw exceptions or unknown argument contents.
 On uncertain acknowledgement, show the same tenant/ID before deciding to replay.
 
+The formal adapter uses `entitlement configure|show|list` after the common explicit
+environment/database target and operator/reason options documented in
+`tenant-admission.md`. Its required process settings have no .env/URL default; old
+local CLI guards remain unchanged. Configure defaults to databaseValidated=false
+preview, list checks its 1-100 bound before connecting, and execution is bounded by
+30 seconds. Required inputs, period validation, stable receipts and audit stay in
+EntitlementAdministrationService; the adapter does not change quota or lifecycle rules.
+
+Admission acceptance and period configuration are separate transactions. The initial
+pilot must keep generation disabled until its configured active period is confirmed.
+This operator workflow does not solve atomic paid onboarding: unconfigured tenants
+still retain legacy behavior. A future self-service flow needs a separate design.
+
 ## 4. Validation & Error Matrix
 
 | Condition | Stable outcome |
@@ -176,6 +191,11 @@ review and export retain their authorization rules and remain available after ex
   through ASGI with owner/member and a forged tenant query parameter. Fixture-owned
   initial entitlements are removed before their restricted grant FK; owned Users
   and Tenants are cleaned precisely.
+- `tests/admission/test_platform_operations_integration.py` adds real 0026 tables to
+  the fixture-owned admission schema. It opens a company through admission, configures
+  a period through the formal adapter, consumes one request, and replays the exact
+  configuration. Verify one configuration audit, unchanged consumption, show/list and
+  remaining quota. This is controlled local infrastructure, not a public pilot.
 
 ## 7. Wrong vs Correct
 

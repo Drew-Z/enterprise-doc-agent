@@ -50,6 +50,40 @@
   ConfigMap, ServiceAccount, Service, Ingress, NetworkPolicy, PDB and Secret prerequisites;
   the deployer verifies those objects, then owns migration-before-workload ordering and
   redacted rollout evidence without reading or committing Secret values.
+- Browser login is explicitly selected by `STAGING_BROWSER_AUTH_ISSUER` and optional
+  `STAGING_BROWSER_AUTH_CLIENT_ID`. Hosted providers require an explicit client ID and
+  `STAGING_BROWSER_AUTH_OIDC_CONFIG`: a JSON object containing exactly
+  `authorization_endpoint`, `token_endpoint`, `jwks_uri`, and `algorithms`. Endpoints must
+  be exact HTTPS URLs on the issuer origin; algorithms must select RS256 and/or ES256.
+  Without the JSON profile, the existing Keycloak application realm convention and
+  `docagent-web`/RS256 defaults remain available. The renderer binds the Web callback and OIDC
+  endpoints, and includes them in the existing configuration/prerequisite fingerprints.
+  `BROWSER_AUTH__CLIENT_SECRET` comes only from the private application Secret; the admin
+  secret validator requires it when `--require-browser-auth-client-secret` is selected.
+  Login configuration does not enable presales model calls or member invitations.
+- `browser_identity_smoke.py` checks the public anonymous `/auth/session` JSON and exact
+  Code/S256 OIDC metadata, every configured asymmetric algorithm and `client_secret_basic`
+  (the OIDC discovery default when its supported-methods field is omitted). HTML fallback,
+  disabled login, redirects, incompatible client authentication and mismatched
+  endpoints fail without retaining response bodies. Deploy runs it whenever an issuer is
+  selected, independently of the legacy bearer smoke switch. Its result is archived and
+  a required failed/skipped/cancelled check prevents a passed release record. This is an
+  anonymous-entry check, not evidence of authenticated login, email delivery or a business
+  journey. See `docs/ops/public-pilot-runbook.md` for the remaining pilot operations.
+  Discovery can remain available while a provider's OAuth server is disabled; check the
+  actual authorization flow separately. Never automatically enable a shared project's
+  OAuth server, change its Site URL, accept HS256, or weaken nonce/verified-email checks
+  just to make a hosted provider pass.
+- Cloudflare Access currently omits `code_challenge_methods_supported` and uses
+  `token_endpoint_auth_methods` without the standard `_supported` suffix. The smoke
+  accepts the latter alias only when the standard field is absent. Missing S256 method
+  metadata is tolerated only for an issuer under `.cloudflareaccess.com` whose path
+  exactly binds the configured client ID at `/cdn-cgi/access/sso/oidc/<client_id>` and
+  whose only advertised grant is `authorization_code_with_pkce`. It records the missing
+  method advertisement explicitly; an advertised list without S256 still fails. The
+  application continues to send S256 and require `client_secret_basic`, verified email,
+  nonce, issuer/audience and signature validation. Real code exchange remains a separate
+  acceptance gate; metadata compatibility does not prove those claims or email delivery.
 - Staging fixes the model provider to `openai_compatible`, reads the non-secret HTTPS
   `/v1` base URL and exact model name from protected GitHub Environment variables,
   and reads only the API key from `enterprise-doc-secrets`. Model route changes hash
