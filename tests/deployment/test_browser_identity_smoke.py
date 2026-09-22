@@ -109,6 +109,58 @@ def test_browser_entry_accepts_real_http_json_contract_without_retaining_body(
     assert "must-not-be-recorded" not in json.dumps(report)
 
 
+def test_github_smoke_checks_provider_without_claiming_oidc_or_real_login(
+    http_boundary: Any,
+) -> None:
+    from scripts.browser_identity_smoke import run_smoke
+
+    routes, transport, requests = http_boundary
+    routes["/auth/session"] = (
+        200,
+        "application/json",
+        {"status": "anonymous", "loginProvider": "github"},
+        {},
+    )
+    report = run_smoke(
+        WEB_ORIGIN,
+        "https://github.com",
+        provider="github",
+        client_id="github-client",
+        opener=urllib.request.build_opener(transport),
+    )
+    assert report["status"] == "passed"
+    assert report["scope"] == "anonymous_session_and_github_provider_not_authenticated_journey"
+    assert report["checks"] == ["anonymous_browser_session", "github_provider_selected"]
+    assert requests == ["/auth/session"]
+
+
+@pytest.mark.parametrize(
+    "session",
+    [
+        {"status": "anonymous"},
+        {"status": "anonymous", "loginProvider": "oidc"},
+        {"status": "disabled"},
+    ],
+)
+def test_github_smoke_rejects_disabled_or_mismatched_provider(
+    http_boundary: Any, session: dict
+) -> None:
+    from scripts.browser_identity_smoke import BrowserIdentitySmokeFailure, run_smoke
+
+    routes, transport, requests = http_boundary
+    routes["/auth/session"] = (200, "application/json", session, {})
+    with pytest.raises(BrowserIdentitySmokeFailure) as caught:
+        run_smoke(
+            WEB_ORIGIN,
+            "https://github.com",
+            provider="github",
+            client_id="github-client",
+            opener=urllib.request.build_opener(transport),
+        )
+    assert caught.value.report["failure"]["code"] == "browser_login_unavailable"
+    assert requests == ["/auth/session"]
+
+
 @pytest.mark.parametrize("status", ["disabled", "authenticated"])
 def test_browser_entry_requires_anonymous_enabled_session(http_boundary: Any, status: str) -> None:
     from scripts.browser_identity_smoke import BrowserIdentitySmokeFailure, run_smoke

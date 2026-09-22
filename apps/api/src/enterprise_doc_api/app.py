@@ -38,8 +38,10 @@ from enterprise_doc_api.auth.session_router import (
 from enterprise_doc_api.auth.session_router import (
     router as session_router,
 )
+from enterprise_doc_api.browser_auth.github import GitHubClient
 from enterprise_doc_api.browser_auth.http import BrowserResponseSecurityMiddleware
 from enterprise_doc_api.browser_auth.oidc import OidcClient
+from enterprise_doc_api.browser_auth.provider import BrowserIdentityClient
 from enterprise_doc_api.browser_auth.router import router as browser_auth_router
 from enterprise_doc_api.config import ApiSettings
 from enterprise_doc_api.documents import router as document_router
@@ -186,9 +188,14 @@ def create_app(
     presales_service: PresalesServiceProtocol | None = None,
     usage_service: EntitlementUsageService | None = None,
     browser_oidc_client: OidcClient | None = None,
+    browser_identity_client: BrowserIdentityClient | None = None,
     metrics: MetricsRuntime | None = None,
 ) -> FastAPI:
     resolved_settings = settings if settings is not None else ApiSettings()
+    if browser_oidc_client is not None and (
+        browser_identity_client is not None or resolved_settings.browser_auth.provider != "oidc"
+    ):
+        raise ValueError("inject one identity client matching the configured provider")
     if (
         resolved_settings.auth.external_auth_enabled
         and external_principal_resolver is None
@@ -350,7 +357,7 @@ def create_app(
     app.state.auth_settings = resolved_settings.auth
     app.state.browser_auth_settings = resolved_settings.browser_auth
     app.state.browser_session_service = None
-    app.state.browser_oidc_client = None
+    app.state.browser_identity_client = None
     app.state.browser_admission_service = None
     app.state.membership_invitation_service = None
     if resolved_settings.invitations.enabled:
@@ -368,7 +375,11 @@ def create_app(
             session_ttl_seconds=browser.session_ttl_seconds,
             login_limit_per_minute=browser.login_limit_per_minute,
         )
-        app.state.browser_oidc_client = browser_oidc_client or OidcClient(browser)
+        app.state.browser_identity_client = (
+            browser_identity_client
+            or browser_oidc_client
+            or (GitHubClient(browser) if browser.provider == "github" else OidcClient(browser))
+        )
         app.state.browser_admission_service = TenantAdmissionService(
             session_factory=_required_session_factory(session_factory),
             trusted_issuers=frozenset({str(browser.issuer)}),

@@ -20,6 +20,14 @@ never reads a saved bearer as a fallback.
 
 ## Contracts
 
+Session JSON optionally identifies GitHub with `loginProvider: "github"`; no field
+means the original OIDC UI. The controller keeps this metadata in memory across
+logout/expiry, including when restored directly into an authenticated session.
+GitHub displays “使用 GitHub 登录” at the same `/auth/login` entry. The exact fragment
+`#/signin?error=github_email_required` is consumed once and shows a fixed primary-email
+verification instruction and the official GitHub email-settings link. Never echo
+provider query text or accept an arbitrary login URL from session metadata.
+
 The immutable browser credential contains context, CSRF, tenant/actor IDs and an
 abort signal. It is never stored or broadcast. A client captures one object; old
 clients cannot adopt a new enterprise's credential. Requests are same-origin under
@@ -68,6 +76,8 @@ cookies even with `withCredentials=false`. Use a separate approved object origin
 | State / failure | Observable behavior |
 |---|---|
 | Anonymous / disabled / unavailable | Sign-in, administrator guidance or explicit retry |
+| GitHub anonymous / expired / logged out | GitHub sign-in label; same fixed application entry |
+| Fixed GitHub email-verification failure | Verify primary email at GitHub, then sign in again |
 | Authenticated but unselected | Authorized enterprises or empty-list/admission UI |
 | Expired / server-revoked session | Workspace closed; reauthentication entry |
 | Switch result unknown | Workspace closed; explicit verification, no automatic write retry |
@@ -83,6 +93,7 @@ cookies even with `withCredentials=false`. Use a separate approved object origin
 - Base: valid login with no bindings presents admission without business access.
 - Bad: read a new global credential from an old callback, carry cached evidence
   between companies or declare a failed logout completed.
+- Bad: require a provider-specific error to display raw upstream text or persist tokens.
 
 ## Tests Required
 
@@ -94,6 +105,8 @@ switch/logout and a delayed real response. Check actual object request headers a
 desktop/narrow-screen fit. Initiated requests canceled before sending are recorded
 separately from responses; a missing Cookie is only acceptable with an observed
 `net::ERR_ABORTED` and no response.
+GitHub UI tests use only HTTP boundary responses. Cover anonymous metadata, restored
+authenticated-session logout, fixed error consumption and the existing OIDC label.
 
 ## Wrong vs Correct
 

@@ -241,6 +241,7 @@ jobs:
           OBJECT_STORE_PRESIGN_ENDPOINT: ${{ inputs.object_store_presign_endpoint }}
           OBJECT_STORE_CHECKSUM_MODE: ${{ vars.STAGING_OBJECT_STORE_CHECKSUM_MODE }}
           TLS_SECRET_NAME: ${{ inputs.tls_secret_name }}
+          BROWSER_AUTH_PROVIDER: ${{ vars.STAGING_BROWSER_AUTH_PROVIDER || 'oidc' }}
           BROWSER_AUTH_ISSUER: ${{ vars.STAGING_BROWSER_AUTH_ISSUER }}
           BROWSER_AUTH_CLIENT_ID: ${{ vars.STAGING_BROWSER_AUTH_CLIENT_ID }}
           BROWSER_AUTH_OIDC_CONFIG: ${{ vars.STAGING_BROWSER_AUTH_OIDC_CONFIG }}
@@ -274,7 +275,7 @@ jobs:
           test -n "$EMBEDDING_BASE_URL"
           test -n "$EMBEDDING_MODEL_NAME"
           test -n "$EMBEDDING_VERSION"
-          browser_auth_args=()
+          browser_auth_args=(--browser-auth-provider "$BROWSER_AUTH_PROVIDER")
           if test -n "$BROWSER_AUTH_ISSUER"; then
             browser_auth_args+=(--browser-auth-issuer "$BROWSER_AUTH_ISSUER")
           fi
@@ -474,12 +475,13 @@ jobs:
         timeout-minutes: 2
         env:
           STAGING_BASE_URL: ${{ inputs.staging_base_url }}
+          BROWSER_AUTH_PROVIDER: ${{ vars.STAGING_BROWSER_AUTH_PROVIDER || 'oidc' }}
           BROWSER_AUTH_ISSUER: ${{ vars.STAGING_BROWSER_AUTH_ISSUER }}
           BROWSER_AUTH_CLIENT_ID: ${{ vars.STAGING_BROWSER_AUTH_CLIENT_ID }}
           BROWSER_AUTH_OIDC_CONFIG: ${{ vars.STAGING_BROWSER_AUTH_OIDC_CONFIG }}
         run: |
           set -euo pipefail
-          browser_auth_args=()
+          browser_auth_args=(--provider "$BROWSER_AUTH_PROVIDER")
           if test -n "$BROWSER_AUTH_CLIENT_ID"; then
             browser_auth_args+=(--client-id "$BROWSER_AUTH_CLIENT_ID")
           fi

@@ -204,10 +204,13 @@ def browser_auth_environment(
     client_id: str | None = None,
     *,
     oidc_config: str | None = None,
+    provider: str = "oidc",
 ) -> dict[str, str]:
-    """Bind explicit hosted OIDC endpoints or the existing Keycloak convention."""
+    """Bind the selected protocol; GitHub uses official OAuth, not OIDC discovery."""
+    if provider not in {"oidc", "github"}:
+        raise ValueError("unsupported browser identity provider")
     if not issuer:
-        if client_id or oidc_config is not None:
+        if client_id or oidc_config is not None or provider != "oidc":
             raise ValueError("browser client ID and OIDC configuration require an issuer")
         return {"BROWSER_AUTH__ENABLED": "false"}
     if web_origin != _exact_origin(web_origin, description="browser Web origin"):
@@ -217,6 +220,23 @@ def browser_auth_environment(
         raise ValueError("browser issuer must contain at most 512 characters")
     if parsed.hostname == urlparse(web_origin).hostname:
         raise ValueError("browser issuer must use a separate identity hostname")
+    selected_client = "docagent-web" if client_id is None else client_id
+    if not re.fullmatch(r"[A-Za-z0-9_.-]{1,128}", selected_client):
+        raise ValueError("browser client ID must be an exact non-empty identifier")
+    if provider == "github":
+        if issuer != "https://github.com" or not client_id or oidc_config is not None:
+            raise ValueError(
+                "GitHub requires its official issuer, client ID and no OIDC configuration"
+            )
+        return {
+            "BROWSER_AUTH__ENABLED": "true",
+            "BROWSER_AUTH__PROVIDER": "github",
+            "BROWSER_AUTH__WEB_ORIGIN": web_origin,
+            "BROWSER_AUTH__ISSUER": issuer,
+            "BROWSER_AUTH__AUTHORIZATION_ENDPOINT": issuer + "/login/oauth/authorize",
+            "BROWSER_AUTH__TOKEN_ENDPOINT": issuer + "/login/oauth/access_token",
+            "BROWSER_AUTH__CLIENT_ID": selected_client,
+        }
     if oidc_config is None:
         realm = re.fullmatch(r"/realms/([A-Za-z0-9_-]{1,128})", parsed.path)
         if realm is None or realm.group(1).lower() == "master":
@@ -254,9 +274,6 @@ def browser_auth_environment(
             if endpoint.netloc != parsed.netloc:
                 raise ValueError("browser OIDC endpoints must share the issuer origin")
             endpoints[key] = value
-    selected_client = "docagent-web" if client_id is None else client_id
-    if not re.fullmatch(r"[A-Za-z0-9_.-]{1,128}", selected_client):
-        raise ValueError("browser client ID must be an exact non-empty identifier")
     return {
         "BROWSER_AUTH__ENABLED": "true",
         "BROWSER_AUTH__WEB_ORIGIN": web_origin,
@@ -388,6 +405,7 @@ def configure_manifest(
     browser_auth_issuer: str | None = None,
     browser_auth_client_id: str | None = None,
     browser_auth_oidc_config: str | None = None,
+    browser_auth_provider: str = "oidc",
     fallback_model_base_url: str | None = None,
     fallback_model_name: str | None = None,
     fallback_model_version: str | None = None,
@@ -461,6 +479,7 @@ def configure_manifest(
         browser_auth_issuer,
         browser_auth_client_id,
         oidc_config=browser_auth_oidc_config,
+        provider=browser_auth_provider,
     )
 
     documents = [
@@ -478,6 +497,7 @@ def configure_manifest(
         raise ValueError("browser client secret must come only from enterprise-doc-secrets")
     for key in (
         "ENABLED",
+        "PROVIDER",
         "WEB_ORIGIN",
         "ISSUER",
         "AUTHORIZATION_ENDPOINT",
@@ -679,11 +699,12 @@ def configure_manifest(
         f"{APPROVAL_ANNOTATION_PREFIX}config-sha256": config_digest,
         f"{APPROVAL_ANNOTATION_PREFIX}prometheus-images": PROMETHEUS_IMAGE,
     }
-    for suffix in ("issuer", "client-id", "client-secret-key"):
+    for suffix in ("provider", "issuer", "client-id", "client-secret-key"):
         namespace_annotations.pop(f"{APPROVAL_ANNOTATION_PREFIX}browser-auth-{suffix}", None)
     if browser_config["BROWSER_AUTH__ENABLED"] == "true":
         approval_annotations.update(
             {
+                f"{APPROVAL_ANNOTATION_PREFIX}browser-auth-provider": browser_auth_provider,
                 f"{APPROVAL_ANNOTATION_PREFIX}browser-auth-issuer": browser_config[
                     "BROWSER_AUTH__ISSUER"
                 ],
@@ -765,6 +786,7 @@ def main() -> None:
     parser.add_argument("--browser-auth-issuer")
     parser.add_argument("--browser-auth-client-id")
     parser.add_argument("--browser-auth-oidc-config")
+    parser.add_argument("--browser-auth-provider", choices=("oidc", "github"), default="oidc")
     parser.add_argument("--fallback-model-base-url")
     parser.add_argument("--fallback-model-name")
     parser.add_argument("--fallback-model-version")
@@ -793,6 +815,7 @@ def main() -> None:
         browser_auth_issuer=args.browser_auth_issuer,
         browser_auth_client_id=args.browser_auth_client_id,
         browser_auth_oidc_config=args.browser_auth_oidc_config,
+        browser_auth_provider=args.browser_auth_provider,
         fallback_model_base_url=args.fallback_model_base_url,
         fallback_model_name=args.fallback_model_name,
         fallback_model_version=args.fallback_model_version,

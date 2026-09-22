@@ -1,17 +1,22 @@
 from __future__ import annotations
 
-from typing import Self
+from typing import Literal, Self
 from urllib.parse import urlsplit
 
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 
 from enterprise_doc_core.config import AppEnvironment
 
+GITHUB_ISSUER = "https://github.com"
+GITHUB_AUTHORIZATION_ENDPOINT = GITHUB_ISSUER + "/login/oauth/authorize"
+GITHUB_TOKEN_ENDPOINT = GITHUB_ISSUER + "/login/oauth/access_token"
+
 
 class BrowserAuthSettings(BaseModel):
     model_config = ConfigDict(extra="forbid", hide_input_in_errors=True)
 
     enabled: bool = False
+    provider: Literal["oidc", "github"] = "oidc"
     web_origin: str = "http://localhost:5173"
     issuer: str | None = Field(default=None, max_length=512)
     authorization_endpoint: str | None = Field(default=None, max_length=2048)
@@ -32,17 +37,28 @@ class BrowserAuthSettings(BaseModel):
 
     @model_validator(mode="after")
     def validate_trust_configuration(self) -> Self:
+        if self.provider == "github":
+            for field, expected in (
+                ("issuer", GITHUB_ISSUER),
+                ("authorization_endpoint", GITHUB_AUTHORIZATION_ENDPOINT),
+                ("token_endpoint", GITHUB_TOKEN_ENDPOINT),
+            ):
+                if getattr(self, field) not in (None, expected):
+                    raise ValueError("GitHub authentication requires its official OAuth endpoints")
+                setattr(self, field, expected)
+            if self.jwks_url is not None:
+                raise ValueError("GitHub OAuth does not use OIDC signing keys")
+            if self.enabled and self.client_secret is None:
+                raise ValueError("GitHub OAuth requires a confidential client secret")
         values = (
             self.issuer,
             self.authorization_endpoint,
             self.token_endpoint,
-            self.jwks_url,
             self.client_id,
+            *((self.jwks_url,) if self.provider == "oidc" else ()),
         )
         if self.enabled and any(not value for value in values):
-            raise ValueError(
-                "browser authentication requires explicit OIDC endpoints and client ID"
-            )
+            raise ValueError("browser authentication requires provider endpoints and client ID")
         for value in (self.web_origin, *values):
             if value is not None and (
                 not value
@@ -90,7 +106,8 @@ class BrowserAuthSettings(BaseModel):
             self.token_endpoint,
             self.jwks_url,
         ):
-            assert value is not None
+            if value is None:
+                continue
             parsed = urlsplit(value)
             if parsed.scheme != "https" and not (
                 local and parsed.hostname in {"127.0.0.1", "localhost", "::1"}

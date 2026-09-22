@@ -56,7 +56,8 @@
   the deployer verifies those objects, then owns migration-before-workload ordering and
   redacted rollout evidence without reading or committing Secret values.
 - Browser login is explicitly selected by `STAGING_BROWSER_AUTH_ISSUER` and optional
-  `STAGING_BROWSER_AUTH_CLIENT_ID`. Hosted providers require an explicit client ID and
+  `STAGING_BROWSER_AUTH_CLIENT_ID`. `STAGING_BROWSER_AUTH_PROVIDER` defaults to `oidc`.
+  Hosted OIDC providers require an explicit client ID and
   `STAGING_BROWSER_AUTH_OIDC_CONFIG`: a JSON object containing exactly
   `authorization_endpoint`, `token_endpoint`, `jwks_uri`, and `algorithms`. Endpoints must
   be exact HTTPS URLs on the issuer origin; algorithms must select RS256 and/or ES256.
@@ -66,6 +67,16 @@
   `BROWSER_AUTH__CLIENT_SECRET` comes only from the private application Secret; the admin
   secret validator requires it when `--require-browser-auth-client-secret` is selected.
   Login configuration does not enable presales model calls or member invitations.
+- For `STAGING_BROWSER_AUTH_PROVIDER=github`, use issuer `https://github.com`, an explicit
+  OAuth App client ID, and no OIDC JSON. Renderer `--browser-auth-provider github` fixes
+  official authorization/token endpoints, removes stale JWKS/algorithm configuration,
+  and binds provider into the config hash and administrator approval annotation.
+  Disabling browser login clears provider too. The smoke receives `--provider github`,
+  requires exactly `{"status":"anonymous","loginProvider":"github"}`, and never calls
+  OIDC discovery. Its scope is explicitly anonymous provider selection, not an actual
+  OAuth sign-in. Tests cover mismatched/disabled responses, mixed OIDC settings, and
+  GitHub-to-disabled cleanup. Wrong: reuse a previous provider secret/JSON silently;
+  correct: configure the matching private client secret and review the new manifest.
 - `browser_identity_smoke.py` checks the public anonymous `/auth/session` JSON and exact
   Code/S256 OIDC metadata, every configured asymmetric algorithm and `client_secret_basic`
   (the OIDC discovery default when its supported-methods field is omitted). HTML fallback,

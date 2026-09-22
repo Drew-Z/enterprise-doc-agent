@@ -210,6 +210,74 @@ def test_configure_manifest_binds_browser_login_to_application_settings(tmp_path
     )
 
 
+def test_configure_manifest_github_uses_official_oauth_and_clears_stale_oidc(
+    tmp_path: Path,
+) -> None:
+    from enterprise_doc_api.browser_auth.settings import BrowserAuthSettings
+    from enterprise_doc_core.config import AppEnvironment
+
+    _render_browser_manifest(
+        tmp_path, browser_auth_issuer="https://auth.example.com/realms/docagent"
+    )
+    source = tmp_path / "browser-template.yaml"
+    source.write_bytes((tmp_path / "browser-staging.yaml").read_bytes())
+    documents = _render_browser_manifest(
+        tmp_path,
+        browser_auth_provider="github",
+        browser_auth_issuer="https://github.com",
+        browser_auth_client_id="github-client",
+    )
+    data = next(item for item in documents if item["kind"] == "ConfigMap")["data"]
+    values = {
+        key.removeprefix("BROWSER_AUTH__").lower(): value
+        for key, value in data.items()
+        if key.startswith("BROWSER_AUTH__")
+    }
+    settings = BrowserAuthSettings(**values, client_secret="test-only-secret")
+    settings.validate_environment(AppEnvironment.STAGING)
+    assert settings.provider == "github"
+    assert settings.issuer == "https://github.com"
+    assert settings.authorization_endpoint == "https://github.com/login/oauth/authorize"
+    assert settings.token_endpoint == "https://github.com/login/oauth/access_token"
+    assert "BROWSER_AUTH__JWKS_URL" not in data
+    assert "BROWSER_AUTH__ALGORITHMS" not in data
+    assert "BROWSER_AUTH__CLIENT_SECRET" not in data
+    namespace = next(item for item in documents if item["kind"] == "Namespace")
+    assert (
+        namespace["metadata"]["annotations"]["enterprise-doc-agent/approved-browser-auth-provider"]
+        == "github"
+    )
+    source.write_bytes((tmp_path / "browser-staging.yaml").read_bytes())
+    disabled = _render_browser_manifest(tmp_path)
+    data = next(item for item in disabled if item["kind"] == "ConfigMap")["data"]
+    assert {k: v for k, v in data.items() if k.startswith("BROWSER_AUTH__")} == {
+        "BROWSER_AUTH__ENABLED": "false"
+    }
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {"browser_auth_issuer": None},
+        {"browser_auth_issuer": "https://github.com/"},
+        {"browser_auth_client_id": None},
+        {"browser_auth_oidc_config": "{}"},
+        {"browser_auth_provider": "unknown"},
+    ],
+)
+def test_github_manifest_rejects_incomplete_or_mixed_provider_settings(
+    tmp_path: Path, overrides: dict
+) -> None:
+    config = {
+        "browser_auth_provider": "github",
+        "browser_auth_issuer": "https://github.com",
+        "browser_auth_client_id": "github-client",
+    } | overrides
+    with pytest.raises(ValueError):
+        _render_browser_manifest(tmp_path, **config)
+    assert not (tmp_path / "browser-staging.yaml").exists()
+
+
 @pytest.mark.parametrize(
     "issuer",
     [

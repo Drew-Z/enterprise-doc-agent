@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">Enterprise Docs Auth</title>
+  <desc id="desc">A folded document shaped like a shield, with a keyhole, on a deep blue square.</desc>
+  <rect width="512" height="512" rx="112" fill="#193C55"/>
+  <path d="M156 112H282L364 194V282C364 341 321 382 256 410C191 382 148 341 148 282V120C148 115.6 151.6 112 156 112Z" fill="#F3F8FA"/>
+  <path d="M282 112V176C282 185.9 290.1 194 300 194H364L282 112Z" fill="#68D9C1"/>
+  <path d="M190 163H238M190 195H224" stroke="#193C55" stroke-width="14" stroke-linecap="round"/>
+  <path d="M278 277.1A31 31 0 1 0 234 277.1L225 315C223.5 321.3 228.3 327 234.5 327H277.5C283.7 327 288.5 321.3 287 315L278 277.1Z" fill="#193C55"/>
+</svg>

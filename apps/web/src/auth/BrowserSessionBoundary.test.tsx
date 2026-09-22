@@ -81,3 +81,25 @@ it("consumes an admission fragment immediately without preserving it across sign
   expect(window.location.hash).toBe("");
   expect(consumeAuthEntry().admissionToken).toBeNull();
 });
+
+it("shows the configured GitHub sign-in and a verified primary email action", async () => {
+  vi.stubGlobal("fetch", vi.fn<Fetcher>().mockResolvedValue(json({ status: "anonymous", loginProvider: "github" })));
+  window.history.replaceState(null, "", "/#/signin?error=github_email_required");
+  const entry = consumeAuthEntry();
+  const client = new QueryClient();
+  render(<QueryClientProvider client={client}><BrowserSessionBoundary entry={entry}>{() => <p>工作资料</p>}</BrowserSessionBoundary></QueryClientProvider>);
+  expect(await screen.findByRole("link", { name: "使用 GitHub 登录" })).toHaveAttribute("href", "/auth/login");
+  expect(screen.getByText("请先在 GitHub 邮箱设置中验证主邮箱，再重新登录。")).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "打开 GitHub 邮箱设置" })).toHaveAttribute("href", "https://github.com/settings/emails");
+  expect(window.location.hash).toBe("");
+});
+
+it("keeps GitHub sign-in after a restored authenticated session logs out", async () => {
+  vi.stubGlobal("fetch", vi.fn<Fetcher>(url => Promise.resolve(json(
+    url === "/auth/logout" ? { revoked: true } : { ...session, loginProvider: "github", currentTenant: tenant },
+  ))));
+  show();
+  fireEvent.click(await screen.findByRole("button", { name: "退出登录" }));
+  expect(await screen.findByRole("link", { name: "使用 GitHub 登录" })).toHaveAttribute("href", "/auth/login");
+  expect(screen.queryByText(/工作资料/)).not.toBeInTheDocument();
+});

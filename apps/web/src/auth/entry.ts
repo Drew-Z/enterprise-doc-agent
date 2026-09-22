@@ -2,6 +2,7 @@ export interface AuthEntry {
   readonly admissionToken: string | null;
   readonly invitationToken?: string | null;
   signInFailed: boolean;
+  signInError?: "sign_in_failed" | "github_email_required" | null;
   admissionLink: boolean;
   invitationLink?: boolean;
   releaseSecrets?(): void;
@@ -12,7 +13,9 @@ export function consumeAuthEntry(): AuthEntry {
   const hash = window.location.hash;
   const admissionLink = hash.startsWith("#/admission?");
   const invitationLink = hash === "#/invitation" || hash.startsWith("#/invitation?");
-  const signInFailed = hash === "#/signin?error=sign_in_failed";
+  const signInError = hash === "#/signin?error=sign_in_failed" ? "sign_in_failed"
+    : hash === "#/signin?error=github_email_required" ? "github_email_required" : null;
+  const signInFailed = signInError !== null;
   const params = new URLSearchParams(hash.includes("?") ? hash.slice(hash.indexOf("?") + 1) : "");
   const tokens = params.getAll("token");
   const candidate = tokens[0] ?? "";
@@ -25,7 +28,7 @@ export function consumeAuthEntry(): AuthEntry {
   return {
     get admissionToken() { return admissionToken; },
     get invitationToken() { return invitationToken; },
-    signInFailed, admissionLink, invitationLink,
+    signInFailed, signInError, admissionLink, invitationLink,
     releaseSecrets() { admissionToken = null; invitationToken = null; },
   };
 }

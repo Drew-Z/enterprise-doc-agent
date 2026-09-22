@@ -6,7 +6,7 @@ import { activateBrowserCredential, onBrowserCredentialInvalidated, retireBrowse
 import { errorResponseSchema } from "../agent/api/schemas";
 import { invitationInputSchema, invitationPreviewSchema, invitationReceiptSchema, type InvitationPreview } from "../invitations/schemas";
 
-export type BrowserNotice = "expired" | "session_changed" | "service_unavailable" | "selection_unconfirmed" | "admission_failed" | "admission_complete" | "signed_out" | "sign_in_failed"
+export type BrowserNotice = "expired" | "session_changed" | "service_unavailable" | "selection_unconfirmed" | "admission_failed" | "admission_complete" | "signed_out" | "sign_in_failed" | "github_email_required"
   | "invitation_failed" | "invitation_complete" | "invitation_full" | "invitation_account_conflict" | "invitation_conflict" | "invitation_unavailable" | "invitation_unconfirmed";
 export interface BrowserSessionState {
   phase: "loading" | "anonymous" | "disabled" | "unavailable" | "choosing" | "working" | "busy" | "logout-unconfirmed";
@@ -15,6 +15,7 @@ export interface BrowserSessionState {
   notice: BrowserNotice | null;
   workspaceKey: number;
   verifying: boolean;
+  loginProvider: "oidc" | "github";
 }
 
 interface Dependencies {
@@ -32,7 +33,7 @@ class BrowserRequestError extends Error {
 }
 
 export class BrowserSessionController {
-  private state: BrowserSessionState = { phase: "loading", session: null, tenants: [], notice: null, workspaceKey: 0, verifying: false };
+  private state: BrowserSessionState = { phase: "loading", session: null, tenants: [], notice: null, workspaceKey: 0, verifying: false, loginProvider: "oidc" };
   private listeners = new Set<() => void>();
   private session: BrowserAuthenticatedSession | null = null;
   private logoutSnapshot: BrowserAuthenticatedSession | null = null;
@@ -138,6 +139,7 @@ export class BrowserSessionController {
     try {
       const session = browserSessionSchema.parse(await this.request("/auth/session", operation));
       if (!this.current(operation)) return;
+      this.publish({ loginProvider: "loginProvider" in session ? session.loginProvider ?? "oidc" : "oidc" });
       if (session.status !== "authenticated") {
         if (preserveWorkspace) this.clearWorkspace();
         this.session = null;

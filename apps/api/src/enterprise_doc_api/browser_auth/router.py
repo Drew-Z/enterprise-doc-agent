@@ -10,6 +10,7 @@ from fastapi import APIRouter, Request, Response
 from pydantic import Field, SecretStr
 from starlette.responses import RedirectResponse
 
+from enterprise_doc_api.browser_auth.github import GitHubEmailRequired, GitHubFailure
 from enterprise_doc_api.browser_auth.http import (
     LOGIN_COOKIE,
     SESSION_COOKIE,
@@ -22,7 +23,8 @@ from enterprise_doc_api.browser_auth.http import (
     verify_context,
     verify_site,
 )
-from enterprise_doc_api.browser_auth.oidc import OidcClient, OidcFailure
+from enterprise_doc_api.browser_auth.oidc import OidcFailure
+from enterprise_doc_api.browser_auth.provider import BrowserIdentityClient
 from enterprise_doc_api.errors import ApiError
 from enterprise_doc_api.schemas import ApiModel
 from enterprise_doc_core.admission.errors import (
@@ -47,6 +49,11 @@ class BrowserAnonymousResponse(ApiModel):
     status: Literal["disabled", "anonymous"]
 
 
+class BrowserGitHubAnonymousResponse(ApiModel):
+    status: Literal["anonymous"] = "anonymous"
+    login_provider: Literal["github"] = "github"
+
+
 class BrowserTenantResponse(ApiModel):
     tenant_id: UUID
     name: str
@@ -61,6 +68,16 @@ class BrowserAuthenticatedResponse(ApiModel):
     context_version: str
     csrf_token: str
     current_tenant: BrowserTenantResponse | None
+
+
+class BrowserGitHubAuthenticatedResponse(BrowserAuthenticatedResponse):
+    login_provider: Literal["github"] = "github"
+
+
+BrowserVerifiedResponse = BrowserAuthenticatedResponse | BrowserGitHubAuthenticatedResponse
+BrowserSessionResponse = (
+    BrowserVerifiedResponse | BrowserAnonymousResponse | BrowserGitHubAnonymousResponse
+)
 
 
 class SelectTenantRequest(ApiModel):
@@ -87,9 +104,10 @@ def _tenant(choice: BrowserTenantChoice) -> BrowserTenantResponse:
 
 
 def _snapshot(
-    snapshot: BrowserSessionSnapshot, credential: SecretStr
-) -> BrowserAuthenticatedResponse:
-    return BrowserAuthenticatedResponse(
+    snapshot: BrowserSessionSnapshot, credential: SecretStr, *, github: bool = False
+) -> BrowserVerifiedResponse:
+    response_type = BrowserGitHubAuthenticatedResponse if github else BrowserAuthenticatedResponse
+    return response_type(
         email=snapshot.identity.email,
         expires_at=snapshot.expires_at,
         context_version=snapshot.context_version,
@@ -111,25 +129,30 @@ def _set_session(response: Response, issued: IssuedBrowserSession) -> None:
     )
 
 
-@router.get("/session", response_model=BrowserAuthenticatedResponse | BrowserAnonymousResponse)
+@router.get("/session", response_model=BrowserSessionResponse)
 async def session_status(
     request: Request,
-) -> BrowserAuthenticatedResponse | BrowserAnonymousResponse:
+) -> BrowserSessionResponse:
     if request.headers.getlist("Authorization"):
         raise invalid_credentials()
     verify_site(request)
     if not settings_for(request).enabled:
         return BrowserAnonymousResponse(status="disabled")
+    anonymous: BrowserSessionResponse = (
+        BrowserGitHubAnonymousResponse()
+        if settings_for(request).provider == "github"
+        else BrowserAnonymousResponse(status="anonymous")
+    )
     credential = cookie_value(request, SESSION_COOKIE)
     if credential is None:
-        return BrowserAnonymousResponse(status="anonymous")
+        return anonymous
     try:
         snapshot = await service_for(request).get_session(credential=credential)
     except BrowserSessionInvalid:
-        return BrowserAnonymousResponse(status="anonymous")
+        return anonymous
     except BrowserSessionError as error:
         raise browser_error(error) from None
-    return _snapshot(snapshot, credential)
+    return _snapshot(snapshot, credential, github=settings_for(request).provider == "github")
 
 
 @router.get("/login")
@@ -156,8 +179,10 @@ async def login(request: Request) -> RedirectResponse:
         )
     except BrowserSessionError as error:
         raise browser_error(error) from None
-    oidc = cast(OidcClient, request.app.state.browser_oidc_client)
-    target = oidc.authorization_url(state=start.state, nonce=start.nonce, verifier=start.verifier)
+    identity_client = cast(BrowserIdentityClient, request.app.state.browser_identity_client)
+    target = identity_client.authorization_url(
+        state=start.state, nonce=start.nonce, verifier=start.verifier
+    )
     response = RedirectResponse(target, status_code=303)
     response.set_cookie(
         LOGIN_COOKIE,
@@ -195,8 +220,8 @@ async def callback(request: Request) -> RedirectResponse:
         )
         if request.query_params.getlist("error") or len(codes) != 1:
             return failure
-        oidc = cast(OidcClient, request.app.state.browser_oidc_client)
-        identity = await oidc.exchange(
+        identity_client = cast(BrowserIdentityClient, request.app.state.browser_identity_client)
+        identity = await identity_client.exchange(
             code=SecretStr(codes[0]),
             verifier=verifier,
             nonce_digest=claim.nonce_digest,
@@ -205,7 +230,11 @@ async def callback(request: Request) -> RedirectResponse:
         issued = await service.complete_login(
             attempt_id=claim.attempt_id, identity=identity, previous_credential=previous
         )
-    except (ApiError, BrowserSessionError, OidcFailure):
+    except GitHubEmailRequired:
+        return RedirectResponse(
+            settings.web_origin + "/#/signin?error=github_email_required", status_code=303
+        )
+    except (ApiError, BrowserSessionError, OidcFailure, GitHubFailure):
         return failure
     response = RedirectResponse(settings.web_origin + "/", status_code=303)
     _set_session(response, issued)
@@ -226,10 +255,10 @@ async def tenants(request: Request) -> list[BrowserTenantResponse]:
     return [_tenant(choice) for choice in choices]
 
 
-@router.post("/tenant", response_model=BrowserAuthenticatedResponse)
+@router.post("/tenant", response_model=BrowserVerifiedResponse)
 async def select_tenant(
     payload: SelectTenantRequest, request: Request, response: Response
-) -> BrowserAuthenticatedResponse:
+) -> BrowserVerifiedResponse:
     credential = require_browser_credential(request)
     try:
         version = verify_context(request, credential, mutation=True)
@@ -239,7 +268,9 @@ async def select_tenant(
     except BrowserSessionError as error:
         raise browser_error(error) from None
     _set_session(response, issued)
-    return _snapshot(issued.snapshot, issued.credential)
+    return _snapshot(
+        issued.snapshot, issued.credential, github=settings_for(request).provider == "github"
+    )
 
 
 @router.post("/logout")

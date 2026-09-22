@@ -41,6 +41,7 @@ def run_smoke(
     *,
     client_id: str | None = None,
     oidc_config: str | None = None,
+    provider: str = "oidc",
     timeout_seconds: float = 15,
     opener: urllib.request.OpenerDirector | None = None,
 ) -> dict[str, Any]:
@@ -50,7 +51,11 @@ def run_smoke(
         "status": "failed",
         "checks": [],
         "failure": None,
-        "scope": "anonymous_session_and_oidc_metadata_not_authenticated_journey",
+        "scope": (
+            "anonymous_session_and_github_provider_not_authenticated_journey"
+            if provider == "github"
+            else "anonymous_session_and_oidc_metadata_not_authenticated_journey"
+        ),
     }
 
     def fail(step: str, code: str, status: int | None = None) -> NoReturn:
@@ -60,7 +65,9 @@ def run_smoke(
     try:
         if not math.isfinite(timeout_seconds) or not 0 < timeout_seconds <= 30:
             raise ValueError("invalid transport timeout")
-        config = browser_auth_environment(web_origin, issuer, client_id, oidc_config=oidc_config)
+        config = browser_auth_environment(
+            web_origin, issuer, client_id, oidc_config=oidc_config, provider=provider
+        )
         if config["BROWSER_AUTH__ENABLED"] != "true":
             raise ValueError("issuer required")
     except ValueError:
@@ -108,9 +115,16 @@ def run_smoke(
         return value
 
     session = read_json(web_origin + "/auth/session", "browser_session")
-    if session != {"status": "anonymous"}:
+    expected_session = {"status": "anonymous"}
+    if provider == "github":
+        expected_session["loginProvider"] = "github"
+    if session != expected_session:
         fail("browser_session", "browser_login_unavailable", 200)
     report["checks"].append("anonymous_browser_session")
+    if provider == "github":
+        report["checks"].append("github_provider_selected")
+        report["status"] = "passed"
+        return report
     discovery = read_json(issuer.rstrip("/") + "/.well-known/openid-configuration", "oidc_metadata")
     expected = {
         "issuer": issuer,
@@ -162,6 +176,7 @@ def main() -> int:
     parser.add_argument("--issuer", required=True)
     parser.add_argument("--client-id")
     parser.add_argument("--oidc-config")
+    parser.add_argument("--provider", choices=("oidc", "github"), default="oidc")
     parser.add_argument("--timeout-seconds", type=float, default=15)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
@@ -171,6 +186,7 @@ def main() -> int:
             args.issuer,
             client_id=args.client_id,
             oidc_config=args.oidc_config,
+            provider=args.provider,
             timeout_seconds=args.timeout_seconds,
         )
     except BrowserIdentitySmokeFailure as error:

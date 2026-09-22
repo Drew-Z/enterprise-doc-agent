@@ -11,11 +11,13 @@ export const browserAuthenticatedSchema = z.object({
   contextVersion: z.string().regex(/^[0-9a-f]{32}\.[1-9][0-9]{0,18}$/),
   csrfToken: z.string().regex(/^[0-9a-f]{64}$/),
   currentTenant: browserTenantSchema.nullable(),
+  loginProvider: z.literal("github").optional(),
 }).strict();
 
 export const browserSessionSchema = z.union([
   browserAuthenticatedSchema,
-  z.object({ status: z.enum(["anonymous", "disabled"]) }).strict(),
+  z.object({ status: z.literal("anonymous"), loginProvider: z.literal("github").optional() }).strict(),
+  z.object({ status: z.literal("disabled") }).strict(),
 ]);
 export const browserTenantsSchema = z.array(browserTenantSchema).max(1000);
 export const admissionInputSchema = z.object({

@@ -2,7 +2,7 @@
 
 ## Scope / Trigger
 
-Use this contract when changing browser OIDC, tenant selection, admission HTTP,
+Use this contract when changing browser OIDC/OAuth, tenant selection, admission HTTP,
 cookie authentication, session rotation or authorization of long-lived responses.
 API owns the external protocol and HTTP. Core owns durable identity/session state.
 The existing local and external machine bearer resolvers remain separate.
@@ -13,6 +13,9 @@ The existing local and external machine bearer resolvers remain separate.
   token and JWKS endpoint, client ID and fixed `web_origin + /auth/callback`.
 - `OidcClient.authorization_url(...)`, `exchange(...)`: Authorization Code + PKCE
   S256 and verified `VerifiedAdmissionIdentity`, without tenant/group authority.
+- `BrowserIdentityClient` is the shared protocol; `GitHubClient` implements official
+  GitHub OAuth. `provider` defaults to `oidc`; `github` fixes the issuer/endpoints and
+  requires a client secret in every environment, with no JWKS setting.
 - `BrowserSessionService.begin_login`, `claim_login`, `complete_login`,
   `get_session`, `list_tenants`, `select_tenant`, `authorize`, `logout`.
 - `GET /auth/login`, `/auth/callback`, `/auth/session`, `/auth/tenants`;
@@ -28,6 +31,21 @@ Token/JWKS exchanges have a total timeout and bounded response size. PyJWT with
 the crypto extra verifies RS256/ES256, key selection, issuer/audience, iat/exp/nbf,
 nonce and azp. Verified email must be literal true. Access/refresh/ID tokens are
 transient and never returned to the browser or saved as credentials.
+
+GitHub requests `read:user user:email`, uses state/S256 and the same callback, then
+queries `/user` and `/user/emails` with each newly exchanged bearer token. Subject
+is the positive integer GitHub ID rendered as a string; username and public email
+are not identifiers or email-verification evidence. Exactly one primary email must
+have literal `primary=true` and `verified=true`. Email pages are limited to ten
+fixed-origin requests of 100 entries within the exchange's total deadline. No
+provider-supplied pagination URL receives credentials. GitHub does not use OIDC
+nonce/ID tokens; the existing OIDC nonce and strict claim checks remain unchanged.
+The existing core state consumption, expiry, rotation and explicit bindings apply
+to both providers. A new issuer/subject never inherits same-email membership.
+
+Only GitHub session responses additionally contain `loginProvider: "github"`, both
+anonymous and authenticated (including selection). OIDC/disabled JSON stays unchanged;
+an unselected authenticated response still explicitly contains `currentTenant: null`.
 
 State, nonce and PKCE verifier are independent 256-bit random values; only digests
 are stored. The verifier is an HttpOnly login cookie. Claim locks and consumes the
@@ -81,6 +99,8 @@ an operational policy. There is no automatic purge.
 | Invalid CSRF/Origin/fetch site | 403, including non-ASCII malformed inputs |
 | Duplicate or mixed credential modes | 400 |
 | OIDC verification/exchange failure | Fixed sign-in failure redirect; no provider text |
+| GitHub missing/unverified/ambiguous primary email | Fixed `github_email_required` sign-in redirect; no session |
+| GitHub malformed token/ID/email, HTTP/timeout/response limit | Fixed `sign_in_failed`; no retry or raw provider text |
 | Database service unavailable | Safe 503 without SQL parameters |
 
 `/auth/` and `/api/` use no-store, no-referrer and nosniff. Anonymous session
@@ -96,6 +116,7 @@ logging is disabled. Trace URL/query/target attributes are sanitized.
 - Good: verified subject with explicit active bindings selects a named enterprise;
   each request and later SSE event revalidates that selection.
 - Base: a newly verified user has no enterprise and may present an admission code.
+- GitHub base: successful provider login alone does not create an enterprise or membership.
 - Bad: same-email linking, role/group claim authority, trusting a posted identity,
   replaying a consumed callback or allowing a stale context after rotation.
 
@@ -108,6 +129,11 @@ admission and per-event SSE revocation. Keep machine bearer regression coverage.
 Migration 0024 is additive after 0023. Test schemas explicitly create prior tables
 with `checkfirst=False`; never reset public. Snapshot old public rows around local
 upgrade and preserve earlier delivery manifests.
+For GitHub, inject only HTTP transport: verify Code/S256, fresh `/user` and verified
+primary email, bounded pagination, invalid flag types, malformed responses, timeout,
+redirect rejection and no retries. Real PostgreSQL/HTTP tests must cover successful
+admission/selection/logout, state/cookie rejection, replay before exchange and a
+second GitHub ID with the same email receiving no existing enterprise access.
 
 ## Wrong vs Correct
 
@@ -119,6 +145,10 @@ explicit database relationships, rotate under locks and report logout only after
 the durable revoke succeeds. Rollback disables browser authentication and retains
 data; production revocation, TLS, provider and retention operations need their own
 reviewed deployment procedure.
+
+Wrong: fabricate `email_verified` from a missing claim or treat GitHub as an OIDC
+server. Correct: use GitHub's official authenticated email endpoint and keep the
+generic OIDC verifier strict. Missing primary verification leads to user guidance.
 
 ## Proven Examples
 
