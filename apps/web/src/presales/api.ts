@@ -33,7 +33,7 @@ const base = () => (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/+$/, "")
 async function check(response: Response): Promise<void> {
   if (response.ok) return;
   const error = errorResponseSchema.safeParse(await response.json().catch(() => null));
-  throw new PresalesApiError(response.status, error.success ? error.data.error.code : "presales_request_failed", error.success ? error.data.error.message : "Request failed.", error.success ? error.data.error.requestId : null);
+  throw new PresalesApiError(response.status, error.success ? error.data.error.code : `presales_http_${response.status}`, error.success ? error.data.error.message : `Request failed (HTTP ${response.status}).`, error.success ? error.data.error.requestId : response.headers.get("X-Request-ID"));
 }
 
 export function presalesApi(token: ApiCredential) {

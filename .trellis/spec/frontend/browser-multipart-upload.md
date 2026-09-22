@@ -18,8 +18,9 @@ their React integration and real browser workflow.
   selected a part size. The client therefore performs a bounded whole-file pass, creates
   the session, then performs a second bounded pass using the returned part size to
   produce canonical base64 per-part checksums.
-- Recovery already knows the persisted server part size, so one bounded pass verifies
-  filename, size, whole SHA-256, and every part checksum before session reconciliation.
+- Recovery first reads session status without requesting a file. A completed receipt
+  needs no hash pass. An active session still requires a bounded pass verifying
+  filename, size, whole SHA-256 and part checksums before reconciling parts for transfer.
 - Worker construction, startup, runtime, unreadable-message, malformed-response,
   read, hash, and cancellation failures settle the job with a typed error and terminate
   the Worker. A job cannot remain pending after a Worker protocol failure.
@@ -56,9 +57,11 @@ their React integration and real browser workflow.
 - Cancel aborts local work, clears recovery metadata, and calls server DELETE when a
   session is known. If create succeeds after local cancellation, the stale success is
   converted into a compensating server abort instead of losing the new session ID.
-- A failed completion retains its session and can only retry completion. It cannot be
-  cleared or canceled into an apparently terminal local state while the server may be
-  `completing`.
+- A failed completion first performs one read-only session reconciliation. Completed
+  restores success; active/completing retain the original error and explicit retry.
+  Reads never dispatch completion a second time on this path. Cancellation/reselection
+  are rejected while reconciling or when the observed session is completing. Confirmed
+  failed/aborted/expired sessions release local recovery metadata without another DELETE.
 
 ### 5. Scheduling And Progress
 
@@ -91,10 +94,21 @@ remove the record. JWTs use a separate session-storage key. Signed URLs, signed 
 object keys, object-store upload IDs, bearer tokens, and file bodies are never written to
 the recovery record.
 
-After refresh, filename and size are checked before hashing. The complete SHA-256 is
-then checked before `GET /api/upload-sessions/{id}`. Only after server identity and
-server-observed part metadata also match can a `queue_parts` effect be emitted. A
-different file therefore cannot cause a new presign request.
+After refresh, `GET /api/upload-sessions/{id}` checks server identity and status first.
+A completed session clears recovery metadata and enables the next file immediately.
+For an active session, reselect the original file and verify filename/size/SHA-256,
+then read server-observed parts again before any `queue_parts` effect. A different
+file cannot cause presign/PUT/complete; the file picker stays available to correct it
+without navigation or another refresh.
+
+The workspace offers multi-select and `webkitdirectory`, with at most 100 queue
+entries and one active file. TXT/PDF/DOCX are accepted; unsupported/empty files are
+reported and skipped. Every file gets a distinct idempotency key and upload session,
+including equal basenames from separate folders. Relative paths are local display
+labels; only `File.name` reaches the API. Pending entries can be removed and finished
+entries cleared. Failure waits for explicit retry/cancel before the queue advances.
+File references stay in memory and are released from finished entries; refresh
+requires reselecting pending files. Starting the next file resumes the part scheduler.
 
 ### 7. React Effect Interpreter And Browser Contract
 
@@ -133,8 +147,12 @@ different file therefore cannot cause a new presign request.
 - Testing Library coverage for local token gating, complete two-pass upload, StrictMode
   scheduler activation, recovery restore, and same-name/same-size content mismatch.
 - Playwright coverage for real session creation, presign, held PUT pause, reload,
-  wrong-content rejection before GET, second reload, missing-part reconciliation,
+  wrong-content rejection before presign, immediate reselection, missing-part reconciliation,
   completion, 1440x900 and 390x844 screenshots, overflow, and major-band overlap.
+- Inject one Worker load failure and one lost response after real completion. Assert
+  explicit retry, read-only completion recovery, subsequent queue progress, independent
+  versions for same-named folder files and no horizontal overflow. At mobile widths,
+  file pickers must not inherit a 320px vertical flex basis.
 
 Run:
 

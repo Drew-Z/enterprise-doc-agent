@@ -1652,9 +1652,10 @@ async def _completed_result(
         version is None
         or version.id != upload_session.pending_version_id
         or version.document_id != upload_session.pending_document_id
-        or version.status != DocumentVersionStatus.UPLOADED.value
     ):
         raise UploadCompletionStateInvalid()
+    # Ingestion may already have advanced to ready/failed before a completion
+    # acknowledgement is retried. The immutable links identify the upload result.
     return _result_from_completed_models(
         upload_session=upload_session,
         version=version,

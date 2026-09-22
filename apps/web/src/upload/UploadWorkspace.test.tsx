@@ -15,6 +15,7 @@ import {
 } from ".";
 import { UploadWorkspace } from "./UploadWorkspace";
 import { UploadApiError } from "./api/client";
+import type { CompleteUploadResponse, CreateUploadResponse } from "./api/schemas";
 import { activateBrowserCredential, configureAuthentication, retireBrowserCredential } from "../auth/transport";
 
 const SESSION_ID = "11111111-1111-4111-8111-111111111111";
@@ -101,7 +102,7 @@ function createDependencies(overrides: Partial<UploadWorkspaceDependencies> = {}
       options.onProgress?.(options.body.size, options.body.size);
       return { result: Promise.resolve({ etag: `"etag-${options.body.size}"` }), abort: vi.fn() };
     }),
-    idempotencyKeyFactory: () => "test-idempotency-key",
+    idempotencyKeyFactory: () => crypto.randomUUID(),
     ...overrides,
   };
   return { api, dependencies };
@@ -153,7 +154,7 @@ describe("UploadWorkspace", () => {
     expect(sessionStorage.getItem(UPLOAD_RECOVERY_STORAGE_KEY)).toBeNull();
   });
 
-  it("restores a session but rejects same-size different content before reconciliation", async () => {
+  it("checks recovery read-only but rejects different content before any transfer", async () => {
     const recovery: PersistedUploadSession = {
       version: 1,
       sessionId: SESSION_ID,
@@ -170,14 +171,42 @@ describe("UploadWorkspace", () => {
     });
     render(<UploadWorkspace dependencies={dependencies} storage={sessionStorage} />);
 
-    expect(screen.getByText("Reselect original file")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByLabelText("Choose original document")).toBeEnabled());
     const wrongFile = new File(["abcdefgh"], "notes.txt", { type: "text/plain" });
     fireEvent.change(screen.getByLabelText("Choose original document"), {
       target: { files: [wrongFile] },
     });
 
     expect(await screen.findByRole("alert")).toHaveTextContent("does not match the upload session");
-    await waitFor(() => expect(api.getSession).not.toHaveBeenCalled());
+    expect(api.getSession).toHaveBeenCalledTimes(1);
+    expect(api.presignPart).not.toHaveBeenCalled();
+    expect(screen.getByLabelText("Choose original document")).toBeEnabled();
+  });
+
+  it("recovers a completed upload after reload without requiring a file or hash", async () => {
+    sessionStorage.setItem(UPLOAD_TOKEN_STORAGE_KEY, "header.payload.signature");
+    sessionStorage.setItem(UPLOAD_RECOVERY_STORAGE_KEY, JSON.stringify({ version: 1, sessionId: SESSION_ID, filename: "notes.txt", sizeBytes: 8, declaredSha256: WHOLE_SHA256, partSizeBytes: 4, expiresAt: "2026-07-19T08:00:00+00:00" }));
+    const { api, dependencies } = createDependencies();
+    api.getSession.mockResolvedValue({ ...(await api.getSession()), status: "completed" });
+    render(<UploadWorkspace dependencies={dependencies} storage={sessionStorage} />);
+    expect(await screen.findByText("Upload complete")).toBeInTheDocument();
+    expect(dependencies.startHashJob).not.toHaveBeenCalled();
+    expect(api.createSession).not.toHaveBeenCalled();
+    expect(sessionStorage.getItem(UPLOAD_RECOVERY_STORAGE_KEY)).toBeNull();
+    expect(screen.getByLabelText("Choose document")).toBeEnabled();
+  });
+
+  it("reconciles a lost completion response instead of trapping the next upload", async () => {
+    sessionStorage.setItem(UPLOAD_TOKEN_STORAGE_KEY, "header.payload.signature");
+    const { api, dependencies } = createDependencies();
+    api.getSession.mockResolvedValue({ ...(await api.getSession()), status: "completed" });
+    api.completeSession.mockRejectedValueOnce(new UploadApiError(500, "upload_completion_state_invalid", "Inconsistent state.", "req-complete"));
+    render(<UploadWorkspace dependencies={dependencies} storage={sessionStorage} />);
+    fireEvent.change(screen.getByLabelText("Choose document"), { target: { files: [new File(["12345678"], "notes.txt")] } });
+    expect(await screen.findByText("Upload complete")).toBeInTheDocument();
+    expect(api.completeSession).toHaveBeenCalledTimes(1);
+    expect(api.createSession).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
   it("surfaces the server request id when session creation fails", async () => {
@@ -194,6 +223,49 @@ describe("UploadWorkspace", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Upload service unavailable. (upload_session_unavailable · Request ID: req-upload-1)",
     );
+  });
+
+  it("uploads multiple files sequentially with separate sessions and continues after a retry", async () => {
+    sessionStorage.setItem(UPLOAD_TOKEN_STORAGE_KEY, "header.payload.signature");
+    const { api, dependencies } = createDependencies();
+    const baseline = await api.createSession() as CreateUploadResponse;
+    api.createSession.mockClear();
+    api.createSession.mockImplementation((request: { filename: string }) => Promise.resolve({ ...baseline, filename: request.filename, sessionId: request.filename === "notes.txt" ? SESSION_ID : DOCUMENT_ID }));
+    const result = await api.completeSession() as CompleteUploadResponse;
+    api.completeSession.mockClear();
+    api.completeSession.mockImplementation((sessionId: string) => Promise.resolve({ ...result, sessionId }));
+    let first = true;
+    dependencies.startHashJob = vi.fn((_file: File, options: StartHashJobOptions) => {
+      if (first) { first = false; return { jobId: "failed", result: Promise.reject(new Error("Hash unavailable")), cancel: vi.fn() }; }
+      return resolvedHashJob(completedHash(options.partSizeBytes));
+    });
+    render(<UploadWorkspace dependencies={dependencies} storage={sessionStorage} />);
+    expect(screen.getByLabelText("Choose document")).toHaveAttribute("multiple");
+    fireEvent.change(screen.getByLabelText("Choose document"), { target: { files: [new File(["12345678"], "notes.txt"), new File(["abcdefgh"], "next.txt")] } });
+    await screen.findByRole("alert");
+    expect(api.createSession).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Retry upload" }));
+    await waitFor(() => expect(api.completeSession).toHaveBeenCalledTimes(2));
+    expect(api.createSession).toHaveBeenNthCalledWith(1, expect.objectContaining({ filename: "notes.txt" }), expect.any(String));
+    expect(api.createSession).toHaveBeenNthCalledWith(2, expect.objectContaining({ filename: "next.txt" }), expect.any(String));
+    expect(api.completeSession).toHaveBeenNthCalledWith(1, SESSION_ID, expect.any(Object));
+    expect(api.completeSession).toHaveBeenNthCalledWith(2, DOCUMENT_ID, expect.any(Object));
+    expect(sessionStorage.getItem(UPLOAD_RECOVERY_STORAGE_KEY)).toBeNull();
+  });
+
+  it("accepts a folder and shows unsupported and empty files without blocking valid files", async () => {
+    sessionStorage.setItem(UPLOAD_TOKEN_STORAGE_KEY, "header.payload.signature");
+    const { api, dependencies } = createDependencies();
+    render(<UploadWorkspace dependencies={dependencies} storage={sessionStorage} />);
+    const good = new File(["12345678"], "notes.txt");
+    Object.defineProperty(good, "webkitRelativePath", { value: "sources/notes.txt" });
+    const picker = screen.getByLabelText("Choose folder");
+    expect(picker).toHaveAttribute("webkitdirectory");
+    fireEvent.change(picker, { target: { files: [good, new File(["image"], "photo.png"), new File([], "empty.txt")] } });
+    await waitFor(() => expect(api.completeSession).toHaveBeenCalledOnce());
+    expect(screen.getByText("sources/notes.txt")).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("photo.png");
+    expect(screen.getByRole("alert")).toHaveTextContent("empty.txt");
   });
 
   it("cancels hashing when the browser session retires and ignores a late hash result", async () => {

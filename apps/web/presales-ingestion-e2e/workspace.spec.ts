@@ -1,6 +1,7 @@
 import { expect, test, type APIRequestContext, type Locator, type Page } from "@playwright/test";
 import { createHash, randomUUID } from "node:crypto";
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import path from "node:path";
 
 const api = "http://127.0.0.1:18766";
 const testHeaders = { "X-Presales-Test": "presales-ingestion" };
@@ -95,9 +96,67 @@ test.afterEach(async ({ page }) => {
   });
 });
 
+test("batch and folder uploads recover a failed worker and a lost completion response", async ({ page, request }, info) => {
+  const context = await getContext(request);
+  const before = await snapshot(request);
+  const file = await request.get(api + "/__ingestion_test__/files/txt", { headers: testHeaders });
+  const buffer = await file.body();
+  await connect(page, context);
+  await page.getByRole("button", { name: "上传文档", exact: true }).first().click();
+  const drawer = page.getByRole("dialog", { name: "上传文档" });
+  await drawer.getByLabel("本地 API 令牌").fill("");
+  let workerFailed = false;
+  await page.route("**/*hash.worker*", async route => {
+    if (!workerFailed) { workerFailed = true; await route.abort("failed"); }
+    else await route.continue();
+  });
+  let completionLost = false;
+  await page.route("**/api/upload-sessions/*/complete", async route => {
+    if (completionLost) { await route.continue(); return; }
+    const response = await route.fetch();
+    expect(response.ok()).toBeTruthy();
+    completionLost = true;
+    await route.fulfill({ status: 504, contentType: "text/html", body: "Gateway Timeout" });
+  });
+  const suffix = randomUUID().slice(0, 8);
+  const names = [`batch-${suffix}-1.txt`, `batch-${suffix}-2.txt`];
+  await drawer.getByLabel("选择文档", { exact: true }).setInputFiles(names.map(name => ({ name, mimeType: "text/plain", buffer })));
+  await expect(drawer.getByRole("alert")).toContainText("worker_error");
+  await drawer.getByRole("button", { name: "重试上传", exact: true }).click();
+  await expect(drawer.locator(".upload-queue li").filter({ hasText: "已上传" })).toHaveCount(2);
+  expect(workerFailed && completionLost).toBe(true);
+  await noOverflow(page);
+  await page.screenshot({ path: info.outputPath("batch-recovered.png"), fullPage: true });
+
+  const folder = info.outputPath("folder-input");
+  mkdirSync(path.join(folder, "nested"), { recursive: true });
+  const folderName = `folder-${suffix}.txt`;
+  writeFileSync(path.join(folder, folderName), buffer);
+  writeFileSync(path.join(folder, "nested", folderName), buffer);
+  writeFileSync(path.join(folder, "skip.png"), "unsupported");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await drawer.getByLabel("选择文件夹").setInputFiles(folder);
+  await expect(drawer.locator(".upload-queue li").filter({ hasText: "已上传" })).toHaveCount(4);
+  await expect(drawer.getByRole("alert")).toContainText("skip.png");
+  await expect(drawer.locator(".upload-queue")).toContainText(`nested/${folderName}`);
+  await noOverflow(page);
+  for (const picker of await drawer.locator(".file-picker").all()) {
+    expect((await picker.boundingBox())?.height).toBeLessThan(160);
+  }
+  await page.screenshot({ path: info.outputPath("folder-upload-mobile.png"), fullPage: true });
+  const after = await snapshot(request);
+  const newUploads = after.uploads.filter(item => !before.uploads.some(old => old.id === item.id));
+  expect(newUploads).toHaveLength(4);
+  expect(newUploads.every(item => item.status === "completed")).toBe(true);
+  expect(new Set(newUploads.map(item => item.versionId)).size).toBe(4);
+  assertSentinel(after);
+  writeFileSync(info.outputPath("batch-evidence.json"), JSON.stringify({ newUploads, workerFailed, completionLost }, null, 2));
+});
+
 test("desktop: real TXT PDF DOCX ingestion, evidence, review, recovery and tenant boundary", async ({ page, request }, info) => {
   const context = await getContext(request);
   await publish(request, "pause");
+  const before = await snapshot(request);
   const errors: string[] = [];
   const workers: string[] = [];
   const uploads: { filename: string; sha256: string }[] = [];
@@ -121,10 +180,13 @@ test("desktop: real TXT PDF DOCX ingestion, evidence, review, recovery and tenan
     await expect(row.getByRole("button", { name: "创建响应表" })).toBeDisabled();
   }
   const pending = await snapshot(request);
-  expect(pending.versions).toHaveLength(3);
-  expect(pending.generations).toHaveLength(0);
-  expect(pending.jobs.every(job => job.status === "pending" && job.attempts === 0)).toBe(true);
-  expect(pending.outbox.every(event => event.status === "pending" && event.attempts === 0)).toBe(true);
+  const ownVersions = new Set(Object.values(ids));
+  const ownJobs = pending.jobs.filter(job => ownVersions.has(job.versionId));
+  const ownJobIds = new Set(ownJobs.map(job => job.id));
+  expect(pending.versions.filter(version => ownVersions.has(version.id))).toHaveLength(3);
+  expect(pending.generations.filter(generation => ownVersions.has(generation.versionId))).toHaveLength(0);
+  expect(ownJobs.every(job => job.status === "pending" && job.attempts === 0)).toBe(true);
+  expect(pending.outbox.filter(event => ownJobIds.has(event.jobId)).every(event => event.status === "pending" && event.attempts === 0)).toBe(true);
   assertSentinel(pending);
   const denied = await request.post(api + "/api/presales", {
     headers: { Authorization: "Bearer " + context.token, "Idempotency-Key": randomUUID() },
@@ -202,7 +264,7 @@ test("desktop: real TXT PDF DOCX ingestion, evidence, review, recovery and tenan
   await expect(page.locator(".presales-reviewed")).toHaveCount(3);
   await expect(page.getByRole("button", { name: "导出已复核 CSV" })).toBeEnabled();
   const final = await snapshot(request);
-  expect(final.mockModelRequests).toHaveLength(3); assertSentinel(final); expect(errors).toEqual([]);
+  expect(final.mockModelRequests.length - before.mockModelRequests.length).toBe(3); assertSentinel(final); expect(errors).toEqual([]);
   writeFileSync(info.outputPath("pipeline-evidence.json"), JSON.stringify({ pipeline: final, packet, browser: { workers, uploads, successfulObjectPuts, pageErrors: errors }, rejections: { pendingSource: denied.status(), foreignSource: foreignSource.status(), foreignPacket: foreignPacket.status() } }, null, 2));
 });
 

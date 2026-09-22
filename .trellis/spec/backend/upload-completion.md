@@ -55,6 +55,9 @@ The request contains an ordered `parts` array. Every item contains `partNumber`,
   bounded envelope checks; see [presales ingestion](../foundation-tests/backend/presales-ingestion.md).
 - Completed replay and final COMMIT acknowledgement loss reread the same durable version
   without calling object-store completion or changing quota again.
+  Validate immutable tenant/session/version/document links, not the version's mutable
+  status: ingestion keeps it `uploaded` while processing, then advances it to `ready`
+  or `failed`. All three states retain the same successful upload receipt.
 - Invalid completed objects are deleted only after server metadata proves ownership.
   The failed session releases its reservation once and remains visible to cleanup if
   deletion fails or ownership is ambiguous.
@@ -72,6 +75,8 @@ The request contains an ordered `parts` array. Every item contains `partNumber`,
 - Missing multipart/object during an unreconciled state -> `409` object-store error.
 - Object-store unavailable -> `503`; protocol violation -> `502`.
 - Broken completed/link invariant or unrecovered finalization -> typed `500`.
+- A completed session linked to a ready/failed version -> `200`, same IDs and
+  completedAt, `replayed=true`; this is not `upload_completion_state_invalid`.
 
 ### 5. Good/Base/Bad Cases
 
@@ -95,8 +100,15 @@ The request contains an ordered `parts` array. Every item contains `partNumber`,
   acknowledgement recovery return the same pending version ID.
 - Invalid completed object tests proving identity-gated deletion and exactly-once quota
   release.
+- Advance the linked version to ready/failed in PostgreSQL, replay complete and assert
+  unchanged document/version/completion time, used/reserved bytes, version count and
+  object-store completion-call count.
 
 ### 7. Wrong vs Correct
+
+Wrong: reject a completed receipt when `version.status != "uploaded"`.
+Correct: verify the immutable completion links; downstream ingestion status does not
+invalidate the upload receipt or authorize a second quota conversion.
 
 #### Wrong
 

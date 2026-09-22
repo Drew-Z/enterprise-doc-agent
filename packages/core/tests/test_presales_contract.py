@@ -21,6 +21,7 @@ from enterprise_doc_core.presales.schemas import (
     RequirementInput,
     SourceSnapshot,
 )
+from enterprise_doc_core.presales.settings import PresalesSettings
 
 
 def draft_payload() -> dict:
@@ -236,3 +237,62 @@ async def test_gateway_timeout_has_no_retry_and_deterministic_mode_never_fakes_r
     assert calls == 1
     with pytest.raises(PresalesError, match="presales_model_not_configured"):
         await OpenAICompatiblePresalesGateway(ModelSettings()).generate(payload)
+
+
+@pytest.mark.parametrize("route", ["primary", "fallback"])
+async def test_explicit_presales_route_is_one_request_with_its_own_deadline(route: str) -> None:
+    requests: list[httpx.Request] = []
+
+    async def timeout(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        raise httpx.ReadTimeout("remote outcome unknown", request=request)
+
+    model = ModelSettings(
+        provider=ModelProvider.OPENAI_COMPATIBLE,
+        base_url="https://primary.example/v1",
+        api_key=SecretStr("primary-secret"),
+        model_name="primary-model",
+        model_revision="primary-revision",
+        timeout_seconds=0.01,
+        route_deadline_seconds=0.01,
+        fallback_provider=ModelProvider.OPENAI_COMPATIBLE,
+        fallback_base_url="https://fallback.example/v1",
+        fallback_api_key=SecretStr("fallback-secret"),
+        fallback_model_name="fallback-model",
+        fallback_model_version="fallback-version",
+    )
+    settings = PresalesSettings.model_validate(
+        {"model_route": route, "model_timeout_seconds": 120, "row_timeout_seconds": 150}
+    )
+    gateway = OpenAICompatiblePresalesGateway(
+        model, presales_settings=settings, transport=httpx.MockTransport(timeout)
+    )
+    payload = GenerationInput(
+        requirement=RequirementInput(key="R1", text="Requirement"), sources=[], evidence=[]
+    )
+    with pytest.raises(PresalesError, match="presales_model_timeout") as error:
+        await gateway.generate(payload)
+    assert error.value.provider_requests == 1
+    assert len(requests) == 1
+    assert str(requests[0].url) == f"https://{route}.example/v1/chat/completions"
+    assert requests[0].headers["Authorization"] == f"Bearer {route}-secret"
+    assert json.loads(requests[0].content)["model"] == f"{route}-model"
+    assert requests[0].extensions["timeout"]["read"] == 120
+    assert gateway.settings.route_deadline_seconds == 120
+    assert gateway.model_name == f"{route}-model"
+    assert gateway.provenance["configuredModelRevision"] == (
+        "primary-revision" if route == "primary" else None
+    )
+    assert model.timeout_seconds == 0.01
+
+
+def test_presales_route_rejects_missing_configuration_and_invalid_wait_budget() -> None:
+    with pytest.raises(ValueError, match="fallback"):
+        OpenAICompatiblePresalesGateway(
+            ModelSettings(),
+            presales_settings=PresalesSettings.model_validate({"model_route": "fallback"}),
+        )
+    with pytest.raises(ValueError, match="model_timeout_seconds"):
+        PresalesSettings.model_validate({"model_timeout_seconds": 120, "row_timeout_seconds": 90})
+    with pytest.raises(ValueError):
+        PresalesSettings.model_validate({"model_route": "automatic"})

@@ -532,7 +532,9 @@ def create_app(
                 require_vector_evidence=resolved_settings.retrieval.require_vector_evidence,
                 metrics=resolved_metrics,
             ),
-            gateway=OpenAICompatiblePresalesGateway(resolved_settings.model),
+            gateway=OpenAICompatiblePresalesGateway(
+                resolved_settings.model, presales_settings=resolved_settings.presales
+            ),
             settings=resolved_settings.presales,
             usage_service=resolved_usage_service,
         )

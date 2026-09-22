@@ -167,7 +167,7 @@ describe("PresalesWorkspace HTTP boundary", () => {
     await screen.findByText("Connection lost");
     expect(keys).toHaveLength(1);
     fireEvent.click(screen.getByRole("button", { name: "Generate response" }));
-    await screen.findByText(/model request timed out/);
+    await screen.findByText(/provider may still complete and charge/);
     expect(keys[1]).toBe(keys[0]);
     fireEvent.click(screen.getByRole("button", { name: "Retry this row" }));
     await screen.findByText("The source states 30 days.", { selector: "p" });
@@ -220,6 +220,41 @@ describe("PresalesWorkspace HTTP boundary", () => {
     fireEvent.click(screen.getByRole("button", { name: "Export reviewed CSV" }));
     await waitFor(() => expect(exports).toEqual(["/api/presales/" + packetId + "/export?mode=reviewed"]));
     expect(createObjectURL).toHaveBeenCalledOnce();
+  });
+
+  it("reads the durable result after a proxy timeout without repeating generation", async () => {
+    sessionStorage.setItem(storageKey, packetId);
+    let current = makePacket();
+    const calls: string[] = [];
+    mockApi(() => current, path => {
+      calls.push(path);
+      current = makePacket(true);
+      current.rows[0].attempts = [attempt("succeeded")];
+      return new Response("<html>Gateway Timeout</html>", { status: 504 });
+    });
+    mount();
+    fireEvent.click(await screen.findByRole("button", { name: "Generate response" }));
+    await screen.findByText("The source states 30 days.", { selector: "p" });
+    expect(calls).toHaveLength(1);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("shows the actual saved model failure after a lost HTTP response", async () => {
+    sessionStorage.setItem(storageKey, packetId);
+    const current = makePacket();
+    const calls: string[] = [];
+    mockApi(() => current, path => {
+      calls.push(path);
+      current.rows[0].state = "failed";
+      current.rows[0].attempts = [attempt("failed")];
+      return new Response("Gateway Timeout", { status: 504 });
+    });
+    mount();
+    fireEvent.click(await screen.findByRole("button", { name: "Generate response" }));
+    await screen.findByText(/provider may still complete and charge/);
+    expect(screen.getByRole("button", { name: "Retry this row" })).toBeEnabled();
+    expect(calls).toHaveLength(1);
+    expect(screen.queryByText(/Request failed/)).not.toBeInTheDocument();
   });
 
   it("hides cached evidence immediately when export observes source revocation", async () => {

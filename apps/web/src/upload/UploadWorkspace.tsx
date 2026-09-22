@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Check,
   CircleX,
   FileText,
+  FolderOpen,
   KeyRound,
   LoaderCircle,
   Pause,
@@ -25,6 +26,7 @@ import { uploadPartWithXhr } from "./transfer/xhrUploadPart";
 import { useLocale, useT } from "../i18n";
 import { isBrowserAuthentication } from "../auth/transport";
 import { formatApiError } from "../api/errorDisplay";
+import "./workspace.css";
 
 const localObjectStoreOrigins = (
   import.meta.env.VITE_OBJECT_STORE_ORIGINS ?? "http://127.0.0.1:9000"
@@ -127,8 +129,17 @@ function partStatusLabel(status: string, t: ReturnType<typeof useT>): string {
 function canCancel(state: UploadMachineState): boolean {
   return (
     ["awaiting_file", "hashing", "creating", "uploading", "paused", "failed"].includes(state.phase) &&
+    !state.reconciling && state.failure?.code !== "session_completing" &&
     !(state.phase === "failed" && state.failure?.stage === "complete")
   );
+}
+
+interface QueuedFile {
+  id: string;
+  file: File | null;
+  label: string;
+  mediaType: string;
+  status: "queued" | "active" | "completed" | "canceled";
 }
 
 function canClear(state: UploadMachineState): boolean {
@@ -149,44 +160,79 @@ export function UploadWorkspace({
   const locale = useLocale();
   const browserMode = isBrowserAuthentication();
   const controller = useUploadController(dependencies, storage);
+  const { dispatch, token } = controller;
   const [tokenDraft, setTokenDraft] = useState(typeof controller.token === "string" ? controller.token : "");
   const [inputError, setInputError] = useState<string | null>(null);
+  const [queue, setQueue] = useState<QueuedFile[]>([]);
+  const activeFile = useRef<string | null>(null);
+  const notifiedCompletion = useRef<string | null>(null);
   const progress = useMemo(() => progressForState(controller.state, t), [controller.state, t]);
   const state = controller.state;
+  const choosingOriginal = state.phase === "awaiting_file" || (state.phase === "failed" && state.failure?.stage === "file_identity");
+  const copy = locale === "zh" ? {
+    folder: "选择文件夹", queue: "上传队列", hint: "可多选文件或选择文件夹。文件依次上传；失败后可重试或取消当前文件，再继续队列。刷新页面后，未上传的文件需要重新选择。",
+    invalid: "已跳过不支持的类型或空文件：", limit: "每批最多 100 个文件，请分批选择。", queued: "等待上传", completed: "已上传", canceled: "已取消", remove: "移出队列", clear: "清除已结束记录", checking: "正在核对上传结果…",
+  } : {
+    folder: "Choose folder", queue: "Upload queue", hint: "Select multiple files or a folder. Files upload one at a time; retry or cancel a failed file to continue. After reload, select pending files again.",
+    invalid: "Skipped unsupported or empty files: ", limit: "Select up to 100 files per batch.", queued: "Queued", completed: "Done", canceled: "Canceled", remove: "Remove from queue", clear: "Clear finished entries", checking: "Checking upload result…",
+  };
 
   useEffect(() => {
     setTokenDraft(typeof controller.token === "string" ? controller.token : "");
   }, [controller.token]);
 
   useEffect(() => {
-    if (state.phase === "completed") onCompleted?.();
-  }, [onCompleted, state.phase]);
+    if (state.phase === "completed" && state.session !== null && notifiedCompletion.current !== state.session.sessionId) {
+      notifiedCompletion.current = state.session.sessionId;
+      onCompleted?.();
+    }
+  }, [onCompleted, state.phase, state.session]);
 
-  const handleFile = (file: File | undefined): void => {
-    if (file === undefined || !canUpload) {
+  useEffect(() => {
+    if (!["idle", "completed", "canceled"].includes(state.phase)) return;
+    if (activeFile.current !== null) {
+      const finished = activeFile.current;
+      activeFile.current = null;
+      setQueue(current => current.map(item => item.id === finished ? { ...item, file: null, status: state.phase === "completed" ? "completed" : "canceled" } : item));
+      return;
+    }
+    if (!canUpload || token === null) return;
+    const next = queue.find(item => item.status === "queued");
+    if (!next?.file) return;
+    activeFile.current = next.id;
+    if (dispatch({ type: "select_file", file: next.file, mediaType: next.mediaType, idempotencyKey: next.id })) {
+      setQueue(current => current.map(item => item.id === next.id ? { ...item, status: "active" } : item));
+    } else activeFile.current = null;
+  }, [canUpload, dispatch, token, queue, state.phase]);
+
+  const handleFiles = (files: File[]): void => {
+    if (files.length === 0 || !canUpload) {
       return;
     }
     setInputError(null);
-    if (state.phase === "awaiting_file") {
-      controller.dispatch({ type: "reselect_file", file });
+    if (choosingOriginal) {
+      controller.dispatch({ type: "reselect_file", file: files[0] });
       return;
     }
-    const mediaType = mediaTypeForFilename(file.name);
-    if (mediaType === null) {
-      setInputError(t("upload.error.fileType"));
+    if (files.length + queue.length > 100) {
+      setInputError(copy.limit);
       return;
     }
-    controller.dispatch({
-      type: "select_file",
-      file,
-      mediaType,
-      idempotencyKey: dependencies.idempotencyKeyFactory(),
-    });
+    const added: QueuedFile[] = [];
+    const skipped: string[] = [];
+    for (const file of files) {
+      const mediaType = mediaTypeForFilename(file.name);
+      const label = file.webkitRelativePath || file.name;
+      if (mediaType === null || file.size === 0) { skipped.push(label); continue; }
+      added.push({ id: dependencies.idempotencyKeyFactory(), file, label, mediaType, status: "queued" });
+    }
+    if (skipped.length > 0) setInputError(copy.invalid + skipped.slice(0, 10).join(", ") + (skipped.length > 10 ? "…" : ""));
+    setQueue(current => [...current, ...added]);
   };
 
   const tokenConnected = controller.token !== null;
   const fileInputDisabled =
-    !canUpload || !tokenConnected || !["idle", "awaiting_file", "completed", "canceled"].includes(state.phase);
+    !canUpload || !tokenConnected || (choosingOriginal && state.reconciling);
   const alertMessage = inputError ?? (state.failure !== null
     ? formatApiError(state.failure, t("upload.requestFailed"), t("common.requestId"))
     : controller.runtimeError);
@@ -247,16 +293,24 @@ export function UploadWorkspace({
         <div className="file-picker">
           <FileText aria-hidden="true" />
           <label htmlFor="upload-file">
-            {state.phase === "awaiting_file" ? t("upload.chooseOriginal") : t("upload.chooseDocument")}
+            {choosingOriginal ? t("upload.chooseOriginal") : t("upload.chooseDocument")}
           </label>
           <input
             id="upload-file"
             type="file"
+            multiple={!choosingOriginal}
             accept=".txt,.pdf,.docx,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             disabled={fileInputDisabled}
-            onChange={(event) => handleFile(event.currentTarget.files?.[0])}
+            onChange={(event) => { handleFiles(Array.from(event.currentTarget.files ?? [])); event.currentTarget.value = ""; }}
           />
         </div>
+
+        {!choosingOriginal && <div className="file-picker folder-picker">
+          <FolderOpen aria-hidden="true" />
+          <label htmlFor="upload-folder">{copy.folder}</label>
+          <input id="upload-folder" type="file" multiple {...{ webkitdirectory: "" }} disabled={fileInputDisabled}
+            onChange={event => { handleFiles(Array.from(event.currentTarget.files ?? [])); event.currentTarget.value = ""; }} />
+        </div>}
 
         <div className="upload-actions" aria-label={t("upload.actions")}>
           {state.phase === "uploading" && !state.reconciling && (
@@ -281,7 +335,7 @@ export function UploadWorkspace({
               <Play aria-hidden="true" />
             </button>
           )}
-          {state.phase === "failed" && state.failure?.retryable === true && (
+          {state.phase === "failed" && state.failure?.retryable === true && !state.reconciling && (
             <button
               className="icon-button"
               type="button"
@@ -317,6 +371,20 @@ export function UploadWorkspace({
         </div>
       </div>
 
+      <p className="upload-queue-hint">{copy.hint}</p>
+      {queue.length > 0 && <section className="upload-queue" aria-label={copy.queue}>
+        <div className="section-heading"><h2>{copy.queue} ({queue.length})</h2>
+          <button type="button" className="command-button" disabled={!queue.some(item => ["completed", "canceled"].includes(item.status))}
+            onClick={() => setQueue(current => current.filter(item => ["queued", "active"].includes(item.status)))}>{copy.clear}</button>
+        </div>
+        <ul>{queue.map(item => <li key={item.id}>
+          <span>{item.label}</span>
+          <small>{item.status === "active" ? `${t(phaseLabelKeys[state.phase])} · ${Math.round(progress.percent)}%` : copy[item.status]}</small>
+          {item.status === "queued" && <button type="button" className="icon-button" aria-label={`${copy.remove}: ${item.label}`}
+            onClick={() => setQueue(current => current.filter(entry => entry.id !== item.id))}><Trash2 aria-hidden="true" /></button>}
+        </li>)}</ul>
+      </section>}
+
       <div className="upload-status" aria-live="polite">
         <div className="status-line">
           <div className="status-icon" aria-hidden="true">
@@ -329,7 +397,7 @@ export function UploadWorkspace({
             )}
           </div>
           <div>
-            <h2>{t(phaseLabelKeys[state.phase])}</h2>
+            <h2>{state.reconciling ? copy.checking : t(phaseLabelKeys[state.phase])}</h2>
             <p>
               {state.fileIdentity?.filename ?? state.file?.name ?? t("upload.noDocument")}
               {(state.fileIdentity?.sizeBytes ?? state.file?.size) !== undefined

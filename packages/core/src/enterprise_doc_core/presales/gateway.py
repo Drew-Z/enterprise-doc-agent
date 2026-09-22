@@ -11,6 +11,7 @@ from pydantic import ValidationError
 from enterprise_doc_core.config import ModelProvider, ModelSettings
 from enterprise_doc_core.presales.errors import PresalesError
 from enterprise_doc_core.presales.schemas import GeneratedDraft, GenerationInput, ModelDraft
+from enterprise_doc_core.presales.settings import PresalesSettings
 
 PROMPT_VERSION = "presales.v1"
 SYSTEM_PROMPT = """你是售前需求响应助手。只依据本次已授权的证据逐项判断当前要求。
@@ -41,11 +42,34 @@ class PresalesGateway(Protocol):
 
 
 class OpenAICompatiblePresalesGateway:
-    """One bounded primary-route request. No tools, repairs, fallback or retries."""
+    """One bounded, explicitly selected route. No tools, repairs, failover or retries."""
 
     def __init__(
-        self, settings: ModelSettings, *, transport: httpx.AsyncBaseTransport | None = None
+        self,
+        settings: ModelSettings,
+        *,
+        presales_settings: PresalesSettings | None = None,
+        transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
+        if presales_settings is not None and presales_settings.model_route == "fallback":
+            if settings.fallback_provider is None:
+                raise ValueError("Presales fallback route requires a configured fallback provider")
+            settings = ModelSettings(
+                provider=settings.fallback_provider,
+                base_url=settings.fallback_base_url,
+                api_key=settings.fallback_api_key,
+                model_name=settings.fallback_model_name,
+                model_version=settings.fallback_model_version,
+                timeout_seconds=settings.fallback_timeout_seconds or settings.timeout_seconds,
+                max_output_bytes=settings.max_output_bytes,
+            )
+        if presales_settings is not None and presales_settings.model_timeout_seconds is not None:
+            settings = settings.model_copy(
+                update={
+                    "timeout_seconds": presales_settings.model_timeout_seconds,
+                    "route_deadline_seconds": presales_settings.model_timeout_seconds,
+                }
+            )
         self.settings = settings
         self.transport = transport
 

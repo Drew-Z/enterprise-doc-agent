@@ -109,7 +109,7 @@ test("interrupts, reloads, rejects a wrong file, resumes missing parts, and comp
   await expect(page.getByRole("button", { name: "Pause upload" })).toBeVisible();
   await expect.poll(() => interceptedPuts).toBeGreaterThan(0);
   await page.getByRole("button", { name: "Pause upload" }).click();
-  await expect(page.getByText("Upload paused")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Upload paused", exact: true })).toBeVisible();
   releaseUploads();
   await expectStableLayout(page);
   await captureEvidenceScreenshot(page, testInfo.outputPath("upload-paused-1440x900.png"));
@@ -117,17 +117,18 @@ test("interrupts, reloads, rejects a wrong file, resumes missing parts, and comp
   await page.reload();
   await expect(page.getByText("Reselect original file")).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator("#upload-file")).toBeEnabled();
   await page.locator("#upload-file").setInputFiles(wrongPath);
   await expect(page.getByRole("alert")).toContainText("does not match the upload session");
   await expectStableLayout(page);
   await captureEvidenceScreenshot(page, testInfo.outputPath("wrong-file-390x844.png"));
 
-  await page.reload();
-  await expect(page.getByText("Reselect original file")).toBeVisible();
+  await expect(page.getByLabel("Choose original document")).toBeEnabled();
   await page.setViewportSize({ width: 1440, height: 900 });
+  await expect(page.locator("#upload-file")).toBeEnabled();
   await page.locator("#upload-file").setInputFiles(originalPath);
 
-  await expect(page.getByText("Upload complete")).toBeVisible({ timeout: 120_000 });
+  await expect(page.getByRole("heading", { name: "Upload complete", exact: true })).toBeVisible({ timeout: 120_000 });
   await expect(page.getByText("Document ID")).toBeVisible();
   await expect(page.getByText("Version ID")).toBeVisible();
   await expectStableLayout(page);

@@ -78,7 +78,17 @@ export function PresalesWorkspace({ token, contextKey, storageKey, openDocuments
   const generate = (value: Packet, rows: PresalesRow[]) => void run(rows.length === 1 ? rows[0].id : "all", async signal => {
     for (const row of rows) {
       if (signal.aborted) return;
-      const next = await api.generate(value.id, row.id, keyFor("generate:" + row.id, { attempts: row.attempts.length, state: row.state }), signal);
+      let next: Packet;
+      try {
+        next = await api.generate(value.id, row.id, keyFor("generate:" + row.id, { attempts: row.attempts.length, state: row.state }), signal);
+      } catch (failure) {
+        if (signal.aborted || !alive.current || (failure instanceof PresalesApiError && failure.status < 500)) throw failure;
+        // The request may still be running or already saved after a proxy/network
+        // failure. Only read here: never dispatch another billable attempt.
+        next = await api.get(value.id, signal);
+        saveResult(next, signal);
+        if (next.rows.find(r => r.id === row.id)?.state === "pending") throw failure;
+      }
       saveResult(next, signal);
       if (next.rows.find(r => r.id === row.id)?.state === "failed") throw new Error(c.rowError);
       if (next.rows.find(r => r.id === row.id)?.state !== "drafted") return c.waiting;

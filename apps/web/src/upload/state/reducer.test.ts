@@ -88,8 +88,10 @@ function stateForPhase(phase: UploadPhase): UploadMachineState {
   switch (phase) {
     case "idle":
       return initialUploadState;
-    case "awaiting_file":
-      return reduceUpload(initialUploadState, { type: "restore_session", session: persisted }).state;
+    case "awaiting_file": {
+      const restored = reduceUpload(initialUploadState, { type: "restore_session", session: persisted });
+      return reduceUpload(restored.state, { type: "session_reconciled", generation: 1, session: { ...created, uploadedParts: [] } }).state;
+    }
     case "hashing":
       return reduceUpload(initialUploadState, {
         type: "select_file",
@@ -140,6 +142,7 @@ describe("reduceUpload", () => {
     });
     expect(selected.state.phase).toBe("hashing");
     expect(selected.effects).toEqual([
+      { type: "resume_scheduler" },
       expect.objectContaining({ type: "hash_file", mode: "initial", partSizeBytes: file.size }),
     ]);
 
@@ -282,24 +285,13 @@ describe("reduceUpload", () => {
   });
 
   it("rejects a different recovery file before any server or presign effect", () => {
-    const persisted: PersistedUploadSession = {
-      version: 1,
-      sessionId,
-      filename: "contract.pdf",
-      sizeBytes: 5,
-      declaredSha256: wholeSha256,
-      partSizeBytes: 3,
-      expiresAt: "2026-07-18T00:00:00Z",
-    };
-    const restored = reduceUpload(initialUploadState, { type: "restore_session", session: persisted });
-    const wrong = reduceUpload(restored.state, { type: "reselect_file", file: new File(["wrong"], "other.pdf") });
+    const wrong = reduceUpload(stateForPhase("awaiting_file"), { type: "reselect_file", file: new File(["wrong"], "other.pdf") });
     expect(wrong.state).toMatchObject({ phase: "failed", failure: { code: "different_file" } });
     expect(wrong.effects).toEqual([]);
   });
 
-  it("hash-verifies the recovery file before fetching server state", () => {
-    const restored = reduceUpload(initialUploadState, { type: "restore_session", session: persisted });
-    const selected = reduceUpload(restored.state, { type: "reselect_file", file });
+  it("hash-verifies the recovery file before reconciling server parts for transfer", () => {
+    const selected = reduceUpload(stateForPhase("awaiting_file"), { type: "reselect_file", file });
     expect(selected.effects[0]).toMatchObject({ type: "hash_file", mode: "resume" });
 
     const mismatch = reduceUpload(selected.state, {
@@ -410,9 +402,33 @@ describe("reduceUpload", () => {
       code: "network_error",
       message: "Failed.",
     });
-    expect(reduceUpload(completeFailure.state, { type: "retry" }).effects[0]).toMatchObject({ type: "complete_session" });
+    expect(reduceUpload(completeFailure.state, { type: "retry" }).accepted).toBe(false);
+    const checked = reduceUpload(completeFailure.state, { type: "session_reconciled", generation: 1, session: { ...created, uploadedParts: [] } });
+    expect(reduceUpload(checked.state, { type: "retry" }).effects[0]).toMatchObject({ type: "complete_session" });
     expect(reduceUpload(completeFailure.state, { type: "cancel" }).accepted).toBe(false);
     expect(reduceUpload(completeFailure.state, { type: "clear" }).accepted).toBe(false);
+  });
+
+  it.each(["failed", "aborted", "expired"] as const)("releases a confirmed %s recovery session without deleting it again", status => {
+    const restored = reduceUpload(initialUploadState, { type: "restore_session", session: persisted });
+    expect(restored.effects).toEqual([{ type: "fetch_session", generation: 1, sessionId }]);
+    expect(reduceUpload(restored.state, { type: "cancel" }).accepted).toBe(false);
+    expect(reduceUpload(restored.state, { type: "reselect_file", file }).accepted).toBe(false);
+    const checked = reduceUpload(restored.state, { type: "session_reconciled", generation: 1, session: { ...created, status, uploadedParts: [] } });
+    expect(checked.state).toMatchObject({ phase: "failed", session: null, failure: { code: `session_${status}` } });
+    expect(checked.effects).toEqual([{ type: "clear_persistence" }]);
+    const canceled = reduceUpload(checked.state, { type: "cancel" });
+    expect(canceled.state.phase).toBe("canceled");
+    expect(canceled.effects.some(effect => effect.type === "abort_session")).toBe(false);
+    expect(reduceUpload(canceled.state, { type: "select_file", file, mediaType: "application/pdf", idempotencyKey: "next" }).effects[0]).toEqual({ type: "resume_scheduler" });
+  });
+
+  it("retains a completing recovery session until a read confirms its outcome", () => {
+    const restored = reduceUpload(initialUploadState, { type: "restore_session", session: persisted });
+    const checked = reduceUpload(restored.state, { type: "session_reconciled", generation: 1, session: { ...created, status: "completing", uploadedParts: [] } });
+    expect(reduceUpload(checked.state, { type: "cancel" }).accepted).toBe(false);
+    expect(reduceUpload(checked.state, { type: "clear" }).accepted).toBe(false);
+    expect(reduceUpload(checked.state, { type: "retry" }).effects).toEqual([{ type: "fetch_session", generation: 1, sessionId }]);
   });
 
   it("aborts an active server session when create identity validation fails", () => {

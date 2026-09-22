@@ -47,6 +47,17 @@ are reused after uncertain create/generate/review responses. Failed recorded
 attempts receive a new key only for an explicit retry. These keys are not a browser
 durable queue; after reload, recover the existing server sheet and its attempts.
 
+For a generate network/5xx/response-parse failure, read the same sheet once without
+another POST. A drafted row restores its saved result; a running row uses the existing
+2.5s read polling; a failed row displays the recorded error and an explicit retry.
+A still-pending row keeps its original operation key and uncertainty. Authorization
+and business 4xx responses retain their normal failure path. Non-JSON errors preserve
+HTTP status (`presales_http_<status>`) and a safe `X-Request-ID` fallback.
+Timeout copy says that the application did not save a result while the provider may
+still complete/charge, and that retry sends a new request. No synthetic draft or billing
+correction is inferred from a provider dashboard. Tests must assert exactly one POST
+when a 504 is followed by either a persisted draft or a persisted model timeout.
+
 Query keys include tenant/actor/auth revision. App remounts the workspace when its
 authentication context changes. Unmount aborts the operation and removes queries;
 late results cannot update cache or storage. A rejected source/author/tenant

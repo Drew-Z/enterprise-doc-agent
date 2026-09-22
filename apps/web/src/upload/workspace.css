@@ -1,0 +1,15 @@
+.upload-workspace .upload-command-bar { flex-wrap: wrap; }
+.upload-workspace .file-picker { flex: 1 1 320px; grid-template-columns: 20px minmax(0, 1fr); }
+.upload-workspace .file-picker input { grid-column: 1 / -1; width: 100%; }
+.upload-queue-hint { color: #59676e; font-size: 13px; line-height: 1.6; }
+.upload-queue { padding: 12px 0; border-top: 1px solid #d4dadd; }
+.upload-queue .section-heading { gap: 12px; flex-wrap: wrap; }
+.upload-queue ul { list-style: none; padding: 0; margin: 12px 0 0; max-height: 260px; overflow: auto; }
+.upload-queue li { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-top: 1px solid #e7ecef; }
+.upload-queue li > span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.upload-queue li > small { max-width: 45%; color: #59676e; }
+.upload-queue li .icon-button { flex: 0 0 auto; }
+
+@media (max-width: 760px) {
+  .upload-workspace .file-picker { flex: 0 0 auto; width: 100%; }
+}

@@ -1006,6 +1006,60 @@ async def test_completion_recovers_after_object_completion_before_database_final
 
 
 @pytest.mark.integration
+@pytest.mark.parametrize("version_status", ["ready", "failed"])
+async def test_completed_upload_replays_after_ingestion_advances(version_status: str) -> None:
+    settings = ApiSettings(_env_file=None)
+    engine = create_database_engine(settings.database)
+    session_factory = create_session_factory(engine)
+    seeded = await _seed_upload(session_factory, content=b"%PDF-1.7")
+    store = CompletionObjectStore(seeded)
+    service = UploadSessionService(
+        session_factory=session_factory,
+        object_store=store,
+        documents_bucket=settings.object_store.documents_bucket,
+        settings=settings.upload,
+    )
+    try:
+        first = await service.complete(
+            principal=seeded.principal.context,
+            session_id=seeded.session_id,
+            request=_completion_request(seeded.parts),
+        )
+        async with session_factory.begin() as database:
+            await database.execute(
+                update(DocumentVersion)
+                .where(DocumentVersion.id == first.version_id)
+                .values(status=version_status)
+            )
+        replay = await service.complete(
+            principal=seeded.principal.context,
+            session_id=seeded.session_id,
+            request=_completion_request(seeded.parts),
+        )
+        assert replay.replayed is True
+        assert replay.version_id == first.version_id
+        assert replay.document_id == first.document_id
+        assert replay.completed_at == first.completed_at
+        assert store.complete_calls == 1
+        async with session_factory() as database:
+            tenant = await database.get(Tenant, seeded.principal.tenant_id)
+            assert tenant is not None
+            assert tenant.reserved_storage_bytes == 0
+            assert tenant.used_storage_bytes == len(seeded.content)
+            assert (
+                await database.scalar(
+                    select(func.count())
+                    .select_from(DocumentVersion)
+                    .where(DocumentVersion.upload_session_id == seeded.session_id)
+                )
+                == 1
+            )
+    finally:
+        await _cleanup_seeded(session_factory, seeded)
+        await engine.dispose()
+
+
+@pytest.mark.integration
 async def test_completion_recovers_finalization_commit_acknowledgement_loss() -> None:
     settings = ApiSettings(_env_file=None)
     engine = create_database_engine(settings.database)

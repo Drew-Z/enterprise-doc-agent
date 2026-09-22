@@ -81,7 +81,7 @@ call the provider again. Default limits: 3 attempts per row, 2 live attempts per
 tenant, 100 attempts per UTC day; failures count toward these development budgets.
 
 `ApiSettings.presales.generation_enabled` defaults to false. Enabling generation
-requires an OpenAI-compatible primary model configuration; deterministic mode
+requires an OpenAI-compatible selected model configuration; deterministic mode
 returns `presales_model_not_configured`. No fake model answer is used in product
 mode. Default row deadline is 90 seconds (maximum configurable 180 seconds).
 
@@ -95,7 +95,36 @@ The dedicated Chat Completions adapter sends one system/user pair, JSON mode,
 tools=[], tool_choice=none, stream=false and max_tokens=4000. The serialized
 request is capped at 128 KiB and the response at ModelSettings.max_output_bytes.
 Only one completed stop choice is accepted. Tool calls, refusal, truncation,
-invalid JSON/schema or citations fail the row. No repair, fallback or retry occurs.
+invalid JSON/schema or citations fail the row. No repair, automatic failover or retry occurs.
+
+## Explicit route and timeout contract
+
+1. **Scope:** choose a proven configured route for Presales without changing the Agent
+   gateway or automatically issuing another potentially billable request.
+2. **Signature:** `OpenAICompatiblePresalesGateway(model, presales_settings=...)`, wired
+   by the production API factory. The generate HTTP API and attempt schema are unchanged.
+3. **Environment:** `PRESALES__MODEL_ROUTE=primary|fallback` (default primary), optional
+   `PRESALES__MODEL_TIMEOUT_SECONDS` (>0, less than `PRESALES__ROW_TIMEOUT_SECONDS`,
+   maximum row budget 180). The override sets both the HTTP timeout and total model
+   deadline. If absent, preserve the selected route's existing timeout. Fallback
+   selection uses the existing `MODEL__FALLBACK_*` credentials/name/version; it never
+   copies primary revision metadata. Keep `PRESALES__GENERATION_ENABLED` explicit.
+4. **Errors:** unknown route, missing selected fallback configuration or invalid wait
+   budget rejects configuration. Runtime timeout records `presales_model_timeout` with
+   one observed dispatch, without another provider request. The Web nginx `/api/`
+   proxy waits 210s, covering the bounded row execution plus result handling, and
+   returns one request ID even for proxy-generated errors.
+5. **Cases:** default preserves the primary route; explicit fallback sends only to
+   that route; either route timing out must not trigger the other. A browser/proxy
+   disconnect and an upstream completed/billed record can coexist.
+6. **Tests:** inspect actual HTTP boundary URL, credentials, model, timeout and call
+   count for both selections; reject incomplete configuration; verify unchanged
+   shared ModelSettings and selected-route provenance. Exercise PostgreSQL generation
+   and a real nginx upstream response delayed past the old 60s boundary.
+7. **Wrong vs correct:** wrong: retry/fail over after an uncertain timeout because
+   the UI has no draft. Correct: read the existing sheet, keep attempt history, and
+   require an explicit new attempt. Provider billing is not inferred from local status;
+   a receipt without response content cannot reconstruct an unsaved draft.
 
 Statuses: supported, conditional, contradicted, insufficient_evidence,
 conflicting_evidence. Conditional needs conditions; insufficient evidence needs

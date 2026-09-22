@@ -314,6 +314,7 @@ export function reduceUpload(state: UploadMachineState, action: UploadAction): U
         hashMode: "initial",
       };
       return accept(nextState, [
+        { type: "resume_scheduler" },
         { type: "hash_file", generation, mode: "initial", file: action.file, partSizeBytes: action.file.size },
       ]);
     }
@@ -326,6 +327,7 @@ export function reduceUpload(state: UploadMachineState, action: UploadAction): U
       return accept({
         ...initialUploadState,
         phase: "awaiting_file",
+        reconciling: true,
         generation,
         fileIdentity: {
           filename: action.session.filename,
@@ -333,11 +335,11 @@ export function reduceUpload(state: UploadMachineState, action: UploadAction): U
           declaredSha256: action.session.declaredSha256,
         },
         session: action.session,
-      });
+      }, [{ type: "fetch_session", generation, sessionId: action.session.sessionId }]);
     }
 
     case "reselect_file": {
-      if (state.phase !== "awaiting_file" || state.fileIdentity === null || state.session === null) {
+      if (state.reconciling || (state.phase !== "awaiting_file" && !(state.phase === "failed" && state.failure?.stage === "file_identity")) || state.fileIdentity === null || state.session === null) {
         return reject(state);
       }
       if (compareFileMetadata(state.fileIdentity, action.file) !== null) {
@@ -357,6 +359,7 @@ export function reduceUpload(state: UploadMachineState, action: UploadAction): U
           file: action.file,
           hashMode: "resume",
           hashProcessedBytes: 0,
+          reconciling: false,
           failure: null,
         },
         [
@@ -461,7 +464,7 @@ export function reduceUpload(state: UploadMachineState, action: UploadAction): U
     }
 
     case "session_reconciled": {
-      if (state.phase !== "uploading" || !state.reconciling || !isCurrent(state, action.generation) || state.session === null) {
+      if (!["uploading", "awaiting_file", "failed"].includes(state.phase) || !state.reconciling || !isCurrent(state, action.generation) || state.session === null) {
         return reject(state);
       }
       if (
@@ -470,7 +473,7 @@ export function reduceUpload(state: UploadMachineState, action: UploadAction): U
         action.session.sizeBytes !== state.session.sizeBytes ||
         action.session.declaredSha256 !== state.session.declaredSha256 ||
         action.session.partSizeBytes !== state.session.partSizeBytes ||
-        action.session.expectedPartCount !== state.parts.length
+        action.session.expectedPartCount !== Math.ceil(state.session.sizeBytes / state.session.partSizeBytes)
       ) {
         return fail(state, {
           stage: "reconcile",
@@ -480,15 +483,22 @@ export function reduceUpload(state: UploadMachineState, action: UploadAction): U
         });
       }
       if (action.session.status === "completed") {
-        return accept({ ...state, phase: "completed", reconciling: false }, [{ type: "clear_persistence" }]);
+        return accept({ ...state, phase: "completed", reconciling: false, failure: null }, [{ type: "clear_persistence" }]);
+      }
+      if (state.failure?.stage === "complete" && ["active", "completing"].includes(action.session.status)) {
+        return accept({ ...state, reconciling: false });
       }
       if (action.session.status !== "active") {
-        return fail(state, {
+        const terminal = ["failed", "aborted", "expired"].includes(action.session.status);
+        return fail(terminal ? { ...state, session: null } : state, {
           stage: "reconcile",
           code: `session_${action.session.status}`,
           message: "Server upload session is not resumable.",
-          retryable: false,
-        });
+          retryable: action.session.status === "completing",
+        }, terminal ? [{ type: "clear_persistence" }] : []);
+      }
+      if (state.file === null || state.parts.length === 0) {
+        return accept({ ...state, phase: "awaiting_file", reconciling: false, failure: null });
       }
       const parts = reconcileParts(state.parts, action.session.uploadedParts);
       if (parts === null) {
@@ -509,9 +519,10 @@ export function reduceUpload(state: UploadMachineState, action: UploadAction): U
     }
 
     case "session_reconcile_failed": {
-      if (state.phase !== "uploading" || !state.reconciling || !isCurrent(state, action.generation)) {
+      if (!["uploading", "awaiting_file", "failed"].includes(state.phase) || !state.reconciling || !isCurrent(state, action.generation)) {
         return reject(state);
       }
+      if (state.failure?.stage === "complete") return accept({ ...state, reconciling: false });
       return fail(state, { stage: "reconcile", code: action.code, message: action.message, retryable: true, requestId: action.requestId });
     }
 
@@ -636,7 +647,7 @@ export function reduceUpload(state: UploadMachineState, action: UploadAction): U
     }
 
     case "retry": {
-      if (state.phase !== "failed" || state.failure?.retryable !== true) {
+      if (state.phase !== "failed" || state.failure?.retryable !== true || state.reconciling) {
         return reject(state);
       }
       if (state.failure.stage === "hash" && state.file !== null && state.hashMode !== null) {
@@ -678,7 +689,7 @@ export function reduceUpload(state: UploadMachineState, action: UploadAction): U
       }
       if (state.failure.stage === "reconcile" && state.session !== null) {
         return accept(
-          { ...state, phase: "uploading", reconciling: true, failure: null },
+          { ...state, phase: state.file === null ? "awaiting_file" : "uploading", reconciling: true, failure: null },
           [{ type: "fetch_session", generation: state.generation, sessionId: state.session.sessionId }],
         );
       }
@@ -709,12 +720,16 @@ export function reduceUpload(state: UploadMachineState, action: UploadAction): U
       if (state.phase !== "completing" || !isCurrent(state, action.generation)) {
         return reject(state);
       }
-      return fail(state, { stage: "complete", code: action.code, message: action.message, retryable: true, requestId: action.requestId });
+      return accept(
+        { ...state, phase: "failed", reconciling: true, failure: { stage: "complete", code: action.code, message: action.message, retryable: true, requestId: action.requestId } },
+        state.session === null ? [] : [{ type: "fetch_session", generation: state.generation, sessionId: state.session.sessionId }],
+      );
     }
 
     case "cancel": {
       if (
         !["awaiting_file", "hashing", "creating", "uploading", "paused", "failed"].includes(state.phase) ||
+        state.reconciling || state.failure?.code === "session_completing" ||
         (state.phase === "failed" && state.failure?.stage === "complete")
       ) {
         return reject(state);

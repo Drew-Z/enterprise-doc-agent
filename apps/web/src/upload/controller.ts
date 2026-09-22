@@ -64,7 +64,7 @@ export interface UploadController {
   state: UploadMachineState;
   token: ApiCredential | null;
   runtimeError: string | null;
-  dispatch(action: UploadAction): boolean;
+  dispatch: (action: UploadAction) => boolean;
   saveToken(token: string): boolean;
   clearToken(): void;
 }
