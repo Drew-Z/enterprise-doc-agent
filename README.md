@@ -1,193 +1,224 @@
-# Enterprise Document Agent Platform
+<div align="center">
+  <img src="apps/web/public/auth-app-icon.svg" width="80" height="80" alt="DocAgent 文档盾牌图标" />
+  <h1>DocAgent · 企业文档 Agent</h1>
+  <p><strong>把企业资料变成有出处、可复核、可交付的售前响应。</strong></p>
+  <p>文档上传与检索 · 售前问卷 · Agent 工作流 · 人工复核 · 租户权限</p>
 
-## Project Showcase
+  <p>
+    <a href="https://github.com/Drew-Z/enterprise-doc-agent/actions/workflows/quality.yml"><img src="https://github.com/Drew-Z/enterprise-doc-agent/actions/workflows/quality.yml/badge.svg?branch=main" alt="Quality CI" /></a>
+    <img src="https://img.shields.io/badge/status-public%20pilot-2563eb" alt="Public pilot" />
+    <img src="https://img.shields.io/badge/Python-3.12-3776AB?logo=python&amp;logoColor=white" alt="Python 3.12" />
+    <img src="https://img.shields.io/badge/React-19-149ECA?logo=react&amp;logoColor=white" alt="React 19" />
+    <img src="https://img.shields.io/badge/PostgreSQL-pgvector-4169E1?logo=postgresql&amp;logoColor=white" alt="PostgreSQL with pgvector" />
+  </p>
 
-For a concise project overview, architecture diagram, verified capabilities, and
-explicit production boundaries, see
-[docs/showcase/PROJECT_SHOWCASE.md](docs/showcase/PROJECT_SHOWCASE.md). The
-five-minute interview demo flow is documented in
-[docs/showcase/INTERVIEW_DEMO_SCRIPT.md](docs/showcase/INTERVIEW_DEMO_SCRIPT.md).
-The UI redesign rationale and editable Figma handoff are documented in
-[docs/showcase/UI_REDESIGN_NOTES.md](docs/showcase/UI_REDESIGN_NOTES.md).
-The enterprise authorization, SSO, audit-retention, and deployment boundaries
-are documented in
-[docs/showcase/ENTERPRISE_READINESS.md](docs/showcase/ENTERPRISE_READINESS.md).
+  <p>
+    <a href="https://agent.playlab.eu.cc">试点站点</a> ·
+    <a href="#quick-start">快速开始</a> ·
+    <a href="#features">功能</a> ·
+    <a href="#architecture">架构</a> ·
+    <a href="#documentation">文档</a> ·
+    <a href="https://github.com/Drew-Z/enterprise-doc-agent/issues">反馈问题</a>
+  </p>
+</div>
 
-This repository is a modular monorepo for a tenant-scoped enterprise document Agent
-platform. M1-M7 is the repository milestone envelope. M1 provides resumable direct-to-object-store upload, M2 provides durable
-Job/Attempt/Outbox execution, and M3 provides deterministic parsing plus PostgreSQL
-FTS/pgvector hybrid retrieval.
+DocAgent 面向售前、安全问卷和企业知识核验场景。上传产品说明、制度或技术文档后，选择已就绪的资料建立响应表，逐条生成带原文引用的草稿，人工确认判断与措辞，再导出 CSV。需要多步处理时，可以使用带工具调用、执行记录和审批环节的 Agent 工作流。
 
-M4 adds a controlled local Agent workflow: a fixed LangGraph graph with the official
-PostgreSQL checkpointer, deterministic and OpenAI-compatible model gateways, strict
-grounded citation validation, a five-tool MCP stdio server, exact-target owner approval,
-ordered SSE replay, verified artifacts, and a typed React run workspace. The local
-deterministic provider proves orchestration and policy contracts. It is not production
-model-quality, public MCP, capacity, Kubernetes, or deployment evidence.
+**当前阶段：受邀公网试点。** 2026-09-22 已部署 [v0.1.40](https://github.com/Drew-Z/enterprise-doc-agent/tree/v0.1.40)，完成服务就绪、匿名登录入口与既有业务数据保留检查；本次修复后的完整公网业务流程仍待验收。站点使用 GitHub 登录，企业访问需要准入或邀请。当前采用 4 核 4 GB 单节点，数据库、对象存储和模型服务外置，适合低并发试用。
 
-M5 now adds process-local Prometheus metrics, local/test-only deterministic fault
-injection, a unified RAG/Agent evaluation report, and a bounded HTTP load runner. M6
-adds non-root service Dockerfiles, Kubernetes base/staging/prod manifests, migration,
-probe, RBAC/NetworkPolicy/PDB contracts, supply-chain workflows, and guarded backup/
-restore/rollback scripts. M7 adds provider route metadata, retryable-only fallback,
-CLOSED/OPEN/HALF_OPEN circuit breaking, a shared primary/fallback route deadline,
-embedding-dimension checks, and deterministic
-benchmark reports. These are implementation and local-contract facts. A bounded
-cloud-hosted single-node staging acceptance for the merged `v0.1.33` is recorded
-separately; production-capacity, managed-observability, independent recovery, and
-GPU/vLLM evidence remain open external gates.
+## 界面预览
 
-## Prerequisites
+![文档工作区中的多文件、文件夹选择与上传队列](docs/showcase/upload-queue.png)
 
-- Python 3.12
-- uv 0.11.3
-- Node.js 24
-- pnpm 11.9.0
-- Docker with Compose v2
+<details>
+<summary>查看售前响应：原文证据、人工复核与历史草稿</summary>
 
-## Locked Installation
+![售前响应的引用与复核面板](docs/showcase/presales-review.png)
 
-Run from the repository root:
+</details>
+
+截图来自真实浏览器的**本地集成验收**，使用合成资料与受控模型，展示实际产品界面；不包含客户文档，也不代表公网模型质量评测。
+
+<a id="features"></a>
+## 可以做什么
+
+| 能力 | 当前实现 |
+| --- | --- |
+| 文档接入 | TXT、PDF、DOCX；多文件与文件夹选择；顺序上传队列；不支持或空文件给出跳过原因 |
+| 上传恢复 | 分片直传对象存储、校验和、暂停与续传；刷新后先查询服务端状态，已完成会话不必重新选择文件 |
+| 资料检索 | PostgreSQL 全文检索与 pgvector 向量召回，通过 RRF 合并；检索结果受租户与文档权限约束 |
+| 售前响应 | 选择就绪文档、粘贴要求、逐条生成结构化草稿；查看出处、补充条件与待补材料；保留原草稿和复核历史；导出 CSV |
+| 生成恢复 | 网络或代理报错后查询原响应状态；已保存的结果可恢复；不会自动重复提交模型请求 |
+| Agent 执行 | 固定 LangGraph 流程、PostgreSQL checkpoint、内部 MCP 工具、SSE 事件恢复、人工审批与可验证产物 |
+| 登录与协作 | GitHub OAuth 浏览器登录；应用会话与退出；企业准入、成员邀请、owner/member 权限、受限文档授权 |
+| 用量与治理 | 企业试用周期与生成额度；用量记录；审计查询与 CSV 导出；保留策略、legal hold 与可验证归档 |
+| 模型接入 | OpenAI-compatible Chat 与 Embedding 接口；Agent 主备路由与熔断；售前可独立选定路由和超时预算 |
+| 交付与运维 | Docker 镜像、Kubernetes/K3s 清单、健康探针、GitHub Actions、镜像 digest、签名、SBOM 与发布证据 |
+
+**典型操作路径**
+
+1. GitHub 登录后接受准入或成员邀请，进入企业空间。
+2. 上传资料，等待文档状态变为 **Ready / 就绪**。
+3. 从文档创建售前响应表，录入需要逐条回应的要求。
+4. 显式生成草稿，打开引用核对原文，再保存人工复核。
+5. 导出草稿 CSV 或已复核 CSV，用于后续交付。
+
+上传完成表示文件已收到，解析与索引仍可能继续。刷新页面后尚未上传的队列文件需要重新选择；文件夹路径只用于本地展示，不会创建服务端目录树。
+
+<a id="quick-start"></a>
+## 快速开始
+
+### 先看界面
+
+只需 Node.js 24 与 pnpm 11.9.0，在仓库根目录执行：
+
+```powershell
+pnpm install --frozen-lockfile
+pnpm dev:web
+```
+
+打开 [本地只读演示](http://127.0.0.1:5173/?showcase=1#/overview)。页面会标注 `Showcase snapshot`，不需要数据库或模型服务，上传、生成、审批与下载等写操作不可用。
+
+### 启动完整开发环境
+
+前置依赖：**Python 3.12、uv 0.11.3、Node.js 24、pnpm 11.9.0、Docker 与 Compose v2**。以下命令使用 PowerShell，在仓库根目录执行。
+
+安装锁定版本的依赖；首次配置时复制示例，保留已有 `.env`：
 
 ```powershell
 uv sync --frozen
 pnpm install --frozen-lockfile
-```
-
-The root Python project depends on the API, MCP, Worker, and Core workspace packages,
-so the plain `uv sync --frozen` command installs the complete backend environment.
-
-## Local Configuration
-
-The local defaults are development-only. To override them, create an untracked
-`.env` from `.env.example`. Non-local environments reject the known development
-credentials.
-
-Validate the Compose model and local prerequisites:
-
-```powershell
+if (-not (Test-Path -LiteralPath .env)) { Copy-Item .env.example .env }
 docker compose -f infra/compose/docker-compose.yml config
 uv run python scripts/foundation_smoke.py --preflight
 ```
 
-## Complete Foundation Smoke
+启动 PostgreSQL/pgvector、Redis、MinIO，初始化对象桶和数据库：
 
-The smoke command starts healthy infrastructure, initializes the MinIO buckets,
-applies the migration, starts API, Worker, and Web, verifies their real endpoints,
-and then cleans up its application processes and Compose services without deleting
-named volumes:
+```powershell
+docker compose -f infra/compose/docker-compose.yml up -d --wait
+docker compose -f infra/compose/docker-compose.yml --profile init run --rm minio-init
+uv run alembic upgrade head
+uv run enterprise-doc-checkpointer-setup --setup
+uv run enterprise-doc-checkpointer-setup --check
+```
+
+分别在四个终端运行：
+
+```powershell
+# 终端 1：API
+uv run enterprise-doc-api
+
+# 终端 2：Worker 探针与 Outbox 发布
+uv run enterprise-doc-worker
+
+# 终端 3：任务消费者
+uv run enterprise-doc-worker-consumer
+
+# 终端 4：Web
+pnpm dev:web
+```
+
+| 入口 | 地址 |
+| --- | --- |
+| Web 工作区 | [127.0.0.1:5173](http://127.0.0.1:5173) |
+| API readiness | [127.0.0.1:8000/health/ready](http://127.0.0.1:8000/health/ready) |
+| Worker readiness | [127.0.0.1:8081/health/ready](http://127.0.0.1:8081/health/ready) |
+| API metrics | [127.0.0.1:8000/metrics](http://127.0.0.1:8000/metrics) |
+
+这会启动开发服务，**不会自动创建可登录的试点企业或接通真实模型**。本地默认使用开发认证、确定性模型和 hash embedding；真实业务需要配置身份提供方、模型与 embedding，以及企业准入和额度。配置字段见 [环境示例](.env.example)、[浏览器认证契约](.trellis/spec/backend/browser-sessions.md)和[平台运营手册](docs/ops/platform-operations.md)。
+
+也可以单独执行完整基础设施烟测：
 
 ```powershell
 uv run python scripts/foundation_smoke.py --run
 ```
 
-The command exits non-zero if any tool, port, migration, process, readiness check,
-or Web availability check fails.
+烟测会自行启动并检查依赖、迁移和应用端点，结束后停止其管理的进程与 Compose 服务，保留命名卷。应与手动启动模式分开使用。
 
-## M1 Multipart Smoke
-
-The M1 smoke generates deterministic TXT bytes without materializing a source file,
-creates a tenant-scoped upload session, sends each part directly to MinIO through a
-checksum-bound presigned URL, stops and restarts the API after the configured number
-of parts, reconciles the stored parts, completes the upload, and retries completion.
-
-Check tools, ports, host free space, and Docker availability:
-
-```powershell
-uv run python scripts/multipart_smoke.py --preflight --size-bytes 1073741824 --interrupt-after-parts 2
-```
-
-Compose host-port overrides are supported. Override the matching application URL at
-the same time; for example, use `REDIS_PORT=6380` together with
-`REDIS__URL=redis://127.0.0.1:6380/0` when the default host port is occupied.
-
-Run the required 1 GiB evidence path and record sanitized API RSS measurements:
-
-```powershell
-uv run python scripts/multipart_smoke.py --run --size-bytes 1073741824 --interrupt-after-parts 2 --measure-api-rss --report-path tmp/m1-multipart-smoke-report.json
-```
-
-The command owns local Compose and API processes, stops them without deleting named
-volumes, and retains raw API logs only on failure. Its report excludes credentials,
-signed URLs, object-store identifiers, user filenames, and content hashes. One local
-1 GiB run is evidence for that execution only; it is not a load test or a production
-capacity claim.
-
-## Manual Development
-
-Start infrastructure and initialize buckets:
-
-```powershell
-docker compose -f infra/compose/docker-compose.yml up -d --wait
-docker compose -f infra/compose/docker-compose.yml --profile init run --rm minio-init
-```
-
-Manage the M0 migration:
-
-```powershell
-uv run alembic upgrade head
-uv run alembic downgrade base
-uv run alembic upgrade head
-```
-
-Initialize and verify the official LangGraph PostgreSQL checkpoint schema:
-
-```powershell
-uv run enterprise-doc-checkpointer-setup --setup
-uv run enterprise-doc-checkpointer-setup --check
-```
-
-Run each application in a separate terminal:
-
-```powershell
-uv run enterprise-doc-api
-uv run enterprise-doc-worker
-uv run enterprise-doc-worker-consumer
-pnpm dev:web
-```
-
-`enterprise-doc-worker` owns the probe and Outbox publisher. The separate
-`enterprise-doc-worker-consumer` process is the Celery consumer that executes queued
-jobs; run at least one consumer alongside the publisher. The current consumer uses
-Celery's serialized `solo` pool for the asynchronous handler; scaling out is done by
-starting additional consumer processes.
-
-The Agent Worker launches `enterprise-doc-mcp --stdio` as an internal subprocess with
-a signed, short-lived execution context. Running `uv run enterprise-doc-mcp --stdio`
-directly is intended for protocol diagnostics; stdout is reserved for MCP frames and
-operational JSON logs go to stderr.
-
-The local endpoints are:
-
-- API live: `http://127.0.0.1:8000/health/live`
-- API ready: `http://127.0.0.1:8000/health/ready`
-- Worker live: `http://127.0.0.1:8081/health/live`
-- Worker ready: `http://127.0.0.1:8081/health/ready`
-- API metrics: `http://127.0.0.1:8000/metrics`
-- Worker metrics: `http://127.0.0.1:8081/metrics`
-- Consumer metrics: `http://127.0.0.1:8082/metrics`
-- Web dashboard: `http://127.0.0.1:5173`
-
-The Web app stores the local bearer token only in session storage. Agent SSE uses an
-authenticated fetch stream and `Last-Event-ID`; it does not place the token in a URL.
-Only `{version, runId, lastSequence}` is persisted for run recovery. Artifact downloads
-always request a fresh short-lived URL after database/object metadata verification.
-
-Stop infrastructure without deleting volumes:
+停止手动开发环境的基础设施：
 
 ```powershell
 docker compose -f infra/compose/docker-compose.yml down
 ```
 
-## Quality Gates
+<a id="architecture"></a>
+## 架构
 
-Run the complete backend and frontend matrix:
-
-```powershell
-pnpm quality
+```mermaid
+flowchart LR
+    Browser[React 工作区] -->|会话与控制请求| API[FastAPI]
+    Browser -->|预签名分片直传| Store[(S3 / R2 / MinIO)]
+    API --> DB[(PostgreSQL + pgvector)]
+    Publisher[Worker / Outbox] -->|读取持久任务| DB
+    Publisher --> Redis[(Redis / Celery)]
+    Redis --> Consumer[任务消费者]
+    Consumer -->|解析与索引| DB
+    Consumer --> Store
+    Consumer --> Graph[LangGraph + 内部 MCP]
+    Graph -->|检索 / checkpoint| DB
+    Graph --> Model[模型与 Embedding 服务]
+    Consumer -->|Embedding| Model
+    API -->|售前逐行生成| Model
 ```
 
-The individual backend commands are:
+- **API 管控制与权限，文件直传对象存储。** 上传内容不需要经过 API 进程中转。
+- **PostgreSQL 保存业务事实。** Job、Attempt、Outbox、文档版本、权限和执行状态持久化；Redis 用于任务投递与唤醒。
+- **任务可恢复，结果有归属。** 租约、心跳和 fencing 约束重复执行；模型草稿与引用绑定到具体文档版本。
+- **人工复核是独立记录。** 原始草稿与复核内容分别保留，模型输出不自动成为已复核结论。
+
+| 目录 | 职责 |
+| --- | --- |
+| `apps/web` | React、TypeScript、Vite；文档、售前、Agent、成员、用量和审计工作区 |
+| `apps/api` | FastAPI 路由、认证会话、请求与权限边界 |
+| `apps/worker` | Outbox 发布、进程生命周期与探针 |
+| `apps/mcp` | 内部 MCP stdio 协议与工具适配 |
+| `packages/core` | 上传、入库、检索、Agent、售前、身份、权益与审计领域逻辑 |
+| `infra` | 本地 Compose、容器镜像、Kubernetes overlays 与部署配置 |
+| `scripts` / `tests` | 烟测、评估、发布校验、回归与集成验收 |
+| `docs` / `evidence` | 操作手册、设计说明及带版本的验收证据 |
+
+## 配置与部署
+
+当前试点使用 **GitHub OAuth + 应用自身会话**，无需同机运行 Keycloak。代码还支持严格的 OIDC 校验；新增身份提供方需要单独验证协议、已验证邮箱声明和应用会话流程。
+
+| 配置域 | 要点 |
+| --- | --- |
+| 身份 | GitHub OAuth App 使用准确的 `/auth/callback`；Client Secret 仅放服务端；登录后继续核验企业成员身份 |
+| 存储 | PostgreSQL/pgvector 保存状态；S3-compatible 存储保存文档和产物；浏览器需要可达的预签名地址与匹配的 CORS |
+| 模型 | 分别配置 Chat 与 Embedding；维度和索引版本必须一致；更换 embedding 需按手册重建索引 |
+| 售前 | `PRESALES__GENERATION_ENABLED` 控制生成；`PRESALES__MODEL_ROUTE` 选择 `primary` 或 `fallback`；模型超时小于整行超时 |
+| 运营 | 准入、邀请、试用期限与额度通过正式运营入口管理；凭据不放前端或版本库 |
+
+`PRESALES__MODEL_ROUTE=fallback` 表示本次售前请求直接使用已配置的备用路由，并非先调用主模型失败后再自动调用一次。模型超时后，上游仍可能完成并计费；没有保存到应用的正文无法只凭供应商账单恢复，手动重试会发起新请求。
+
+部署从 [4C4G 单节点手册](docs/ops/single-node-4c4g-staging-runbook.md)开始，使用已核验的镜像 digest 和配置清单。该 profile 将数据库、对象存储和推理外置，采用单副本及零 surge 更新；升级可能短暂中断服务。仓库还保留其他部署 overlay，不能把它们的资源预算当作当前主机配置。
+
+发布链路：**Quality → Container Supply Chain → 镜像与配置核验 → staging 部署 → readiness 与业务验收**。签名、SBOM 和来源证明描述镜像构建与来源；它们不等于生产容量或模型效果保证。
+
+## 开发与验证
+
+```powershell
+# 后端与前端基础质量检查
+pnpm quality
+
+# 单独运行前端检查
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+
+# 浏览器回归（先安装 Chromium）
+pnpm --filter web exec playwright install chromium
+pnpm --filter web test:e2e
+```
+
+基础 CI 与使用真实 PostgreSQL/Redis/对象存储的集成测试分别执行。浏览器、真实模型调用、外部部署和容量测试也有各自的环境要求；`pnpm quality` 不代替这些验收。
+
+<details>
+<summary>更多工程检查与历史里程碑</summary>
+
+后端静态检查和非集成回归：
 
 ```powershell
 uv run ruff format --check .
@@ -196,270 +227,48 @@ uv run mypy packages/core/src apps/api/src apps/worker/src apps/mcp/src
 uv run pytest -m "not integration"
 ```
 
-The individual frontend commands are:
+断点续传、Agent 安全与模型路由的独立验证入口：
 
 ```powershell
-pnpm lint
-pnpm typecheck
-pnpm test
-pnpm build
-pnpm --filter web test:e2e
-```
-
-Run the M4 deterministic safety contract:
-
-```powershell
+uv run python scripts/multipart_smoke.py --preflight --size-bytes 1073741824 --interrupt-after-parts 2
 uv run python scripts/evaluate_m4_agent.py
-uv run pytest tests/security tests/contracts -q
-```
-
-Run M5/M7 local evaluation and bounded load contracts:
-
-```powershell
 uv run python scripts/evaluate_m5.py
-uv run python scripts/load_m5.py --scenario health --requests 20 --concurrency 4
-uv run python scripts/load_m5.py --scenario ready --requests 1000 --concurrency 20 --sample-resources --resource-sample-interval-seconds 0.1 --report-path evidence/m5/20260719-m5-local-ready-resource-load.json
 uv run python scripts/benchmark_m7.py --scenario deterministic --iterations 20
-uv run python scripts/benchmark_m7.py --scenario fallback-contract --iterations 20
-uv run python scripts/run_application_capacity.py --config infra/capacity/application-capacity.example.yaml
-uv run python scripts/run_model_capacity.py --config infra/capacity/model-capacity.example.yaml
-```
-
-Authenticated load scenarios read the bearer token from
-`ENTERPRISE_DOC_LOAD_TOKEN`; the token is not accepted as a command-line argument.
-`agent-create`, `duplicate-agent-create`, and `end-to-end` also require an authorized
-`--document-version-id`. Every report separates targets from measured values and states
-that a bounded local run is not production capacity.
-
-The two capacity-matrix commands are dry-run by default. `--execute` runs all required
-phases and repetitions, stores request samples plus Prometheus query-range snapshots,
-and emits a report accepted by the shared evidence validator. An external capacity
-claim additionally requires `--external-execution --confirm-external`, immutable image
-digests and provider/region/cluster identity. The model runner uses OpenAI-compatible
-streaming usage to measure TTFT and TPOT, saves vLLM `/metrics` and `nvidia-smi`
-samples, and fails an external run when exact token usage or GPU/KV/queue telemetry is
-missing.
-
-Fault injection is disabled by default and rejected outside local/test. It is selected
-only through `FAULT_INJECTION__*` process settings at the Worker composition root; API
-requests cannot turn it on. Supported boundaries include handler, model, MCP, and
-multipart object-store operations.
-
-Run the optional local Prometheus/Grafana profile while the API, Worker probe, and
-consumer are running on the host:
-
-```powershell
-docker compose -f infra/compose/docker-compose.yml --profile observability up -d
-```
-
-Prometheus is available at `http://127.0.0.1:9090`, Grafana at
-`http://127.0.0.1:3000`, and the local OTLP collector at ports `4317`/`4318`. The
-collector deletes principal/request correlation attributes before its local debug
-exporter; Prometheus evaluates repository-owned recording and alert rules. This profile
-is local-only, has no Alertmanager delivery proof, and telemetry failure does not gate
-business requests. Kubernetes keeps OTLP disabled until a reviewed collector or managed
-endpoint is provisioned.
-
-Plan or run a guarded local dependency outage drill. The command refuses staging and
-production environments and requires an explicit confirmation for execution:
-
-```powershell
-uv run python scripts/fault_drill.py --scenario redis --plan
-uv run python scripts/fault_drill.py --scenario minio --plan
-uv run python scripts/fault_drill.py --scenario redis --run --confirm local-fault-drill --report-path tmp/redis-drill.json
-```
-
-The worker lease drill remains an operator procedure because killing an unspecified
-consumer would be unsafe. Use `--plan`, hard-kill the active consumer, wait beyond its
-lease, then verify the attempt history and fencing fields in PostgreSQL. Redis recovery
-must allow the Outbox publishing lease to expire before expecting a republish. The
-automated Redis/MinIO drill itself is readiness-only: it does not execute Outbox
-republish verification or MinIO object-content reconciliation.
-
-Render the Kubernetes contracts and inspect safe release tooling:
-
-```powershell
-kubectl kustomize infra/k8s/base
-kubectl kustomize infra/k8s/overlays/staging
-kubectl kustomize infra/k8s/overlays/tiny-single-node
 kubectl kustomize infra/k8s/overlays/single-node-4c4g
-kubectl kustomize infra/k8s/overlays/single-node-4c8g
-uv run python scripts/backup_database.py --help
-uv run python scripts/restore_database.py --help
-uv run python scripts/rollback_release.py --reason validation-only --revision enterprise-doc-api=1
-uv run python scripts/local_recovery_drill.py --help
 ```
 
-Rollback validation requires an explicit positive Deployment revision for each target
-(or a JSON revision map in `ROLLBACK_REVISIONS_JSON`); it does not infer an implicit
-“previous” revision. `--migration-revision` is recorded separately and is not a
-replacement for the Deployment revision.
+历史 **M1-M7** 分别覆盖上传、持久任务、检索、Agent、观测评估、交付部署和模型路由。证据中的提交、环境、日期和验收范围共同决定结论；本地或确定性结果不能当作公网模型质量、生产负载或灾备结果。
 
-`tiny-single-node` is the reviewed 2-vCPU/2-GiB K3s staging profile. It keeps one
-replica of each application process, removes single-node PDBs, selects Traefik,
-and adds a bounded ephemeral Redis delivery layer. Its application-container
-peak is 992 MiB when the migration Job overlaps the existing workloads, and
-application rollouts use `maxSurge: 0`. PostgreSQL/pgvector, object storage,
-model providers, and retained observability stay external. This profile is for
-staging evidence and recovery drills; it is not an HA or production topology.
-The migration Job runs Alembic, LangGraph checkpointer setup, and a schema check
-before rollout; measured external-dependency budgets are isolated to staging.
+迁移回退 `uv run alembic downgrade base` 仅用于可丢弃的本地数据库往返验证，会撤销全部迁移；不是线上发布的常规步骤。恢复与回滚见部署手册。
 
-`single-node-4c8g` is the reviewed 4-vCPU/8-GiB successor for the rebuilt staging host.
-It inherits the same external-state, Traefik, Redis, NetworkPolicy and zero-surge
-contracts, adds two API and two Web replicas for concurrency drills, and keeps Worker,
-consumer and Redis singletons. It remains a single failure domain with no PDB. Application
-plus migration limits stay below 6 GiB so K3s, the runner, cloudflared and host daemons
-retain headroom. See `docs/ops/single-node-4c8g-staging-runbook.md`.
+</details>
 
-`single-node-4c4g` is the reviewed profile for the current 4-vCPU/4-GiB host. It keeps one
-replica of each application process, caps Redis at 128 MiB, omits Prometheus, uses zero-surge
-rollouts, and scales application replicas to zero while migration or embedding jobs run.
-PostgreSQL/pgvector, object storage, chat and embedding providers remain external. It is
-appropriate for low-concurrency demonstrations and bounded staging evidence, but not HA
-or production capacity claims. See `docs/ops/single-node-4c4g-staging-runbook.md`.
+<a id="documentation"></a>
+## 文档导航
 
-The staging environment requires `STAGING_DEPLOYMENT_PROFILE` (default
-`single-node-4c4g`) and `STAGING_DATABASE_EGRESS_CIDRS` (with the singular
-`STAGING_DATABASE_EGRESS_CIDR` retained as a compatibility fallback). The database
-value is a comma-separated allowlist of public global-unicast host CIDRs: IPv4 `/32`
-or IPv6 `/128`. Resolve and review every managed database address immediately before
-deployment; duplicates are removed, while private, loopback, documentation, and broad
-CIDRs are rejected. The selected profile is recorded on
-the Namespace as `enterprise-doc-agent/deployment-profile`. An existing unannotated
-Namespace or a Namespace owned by another profile is rejected before any apply;
-adopt an old environment only after manually confirming and removing incompatible
-workloads. CI and deploy both use standalone Kustomize 5.7.1 because 5.6.0 panics on
-the tiny overlay's multi-document delete patch.
+| 你想了解 | 入口 |
+| --- | --- |
+| 上传协议、恢复状态与批量队列 | [浏览器上传](.trellis/spec/frontend/browser-multipart-upload.md) · [服务端完成语义](.trellis/spec/backend/upload-completion.md) |
+| 售前响应与复核行为 | [前端工作区](.trellis/spec/frontend/presales-workspace.md) · [后端契约](.trellis/spec/backend/presales-workspace.md) |
+| 登录、准入与企业运营 | [浏览器会话](.trellis/spec/backend/browser-sessions.md) · [平台运营](docs/ops/platform-operations.md) |
+| 当前主机部署与模型配置 | [4C4G 手册](docs/ops/single-node-4c4g-staging-runbook.md) · [真实 Embedding 上线](docs/ops/real-embedding-rollout.md) |
+| 设计取舍与历史展示 | [项目说明](docs/showcase/PROJECT_SHOWCASE.md) · [UI 设计](docs/showcase/UI_REDESIGN_NOTES.md) · [企业化边界](docs/showcase/ENTERPRISE_READINESS.md) |
+| 回归与发布执行记录 | [GitHub Actions](https://github.com/Drew-Z/enterprise-doc-agent/actions) · [版本标签](https://github.com/Drew-Z/enterprise-doc-agent/tags) · [证据目录](evidence) |
 
-`local_recovery_drill.py` is also dry-run by default. With `--confirm-local` it creates
-a custom-format PostgreSQL backup, restores only into a database whose name starts with
-`enterprise_doc_restore_`, compares Alembic revisions and all public-table row counts,
-and hashes the backup, inventories and command log. Its report remains
-`blocked_external` because it does not restore object-store versions or execute a real
-Kubernetes rollback and authenticated smoke.
+历史展示稿和验收报告保留各自的日期与版本；当前功能以源码、配置和对应部署记录为准。
 
-The restore and rollback scripts are dry-run/validation paths unless `--confirm` is
-provided. Actual registry push, digest promotion, cluster apply, TLS/secret-manager
-review, backup restore and rollback drills require external credentials and immutable
-evidence. The staging workflow now has an authenticated main-path smoke that performs
-upload -> direct object PUT -> ingestion-ready -> Agent run; it requires a dedicated
-staging token, an externally reachable API base URL, and a presign endpoint reachable
-from the runner.
+## 当前边界与后续工作
 
-Recovery and capacity reports use one deterministic contract before they can be treated
-as gate evidence. Validate a report and its repository-relative artifact hashes with:
+- [x] 真实 GitHub 登录、企业空间与文档入库已在试点使用。
+- [x] 多文件/文件夹队列、上传状态恢复、售前生成恢复与独立模型路由已实现并完成本地回归。
+- [ ] 在公网试点完成本次上传修复及整张响应表的生成、引用复核与导出验收。
+- [ ] 扩充代表性业务资料和真实模型重复评测，验证质量、时延与成本。
+- [ ] 完成独立故障域恢复、外部监控告警及实际容量验收。
 
-```powershell
-uv run python scripts/validate_recovery_capacity_evidence.py --input evidence/delivery/recovery-report.json --root .
-```
+完整 SCIM/ABAC、外部内容连接器、公开远程 MCP 和 GPU/vLLM 部署尚未实现（not implemented）。现有受限 SCIM、文档 ACL、内部 MCP 与单节点 staging 各有明确范围。项目目前不承诺高可用、生产 QPS、WORM 合规或零停机升级。
 
-Executed reports must identify the external environment and cluster, reviewed commit,
-immutable image digest(s), operator, timezone-aware time bounds, measured results and
-artifact SHA-256 values. A passed recovery report additionally requires RPO/RTO objectives
-approved before execution, a fault-domain-isolated recovery scope that does not mutate the
-live environment, failure/recovery timestamps from which the reported values are derived,
-an independent post-run reviewer, backup/restore/rollback timings and data/application
-smoke checks. Application-capacity reports require
-ramp/steady/burst/recovery repetitions, latency percentiles, errors, throughput and
-dependency telemetry; model-capacity reports require warm-up, TTFT/TPOT, token
-throughput, GPU/KV-cache telemetry and headroom. When the required external target or
-measurements do not exist, the report must be `blocked_external` with a blocking reason
-and prerequisites; a blocked capacity record still names its planned profile, phases
-and repetition count. A local workstation run cannot be promoted to `passed`.
+## 反馈与贡献
 
-`evidence/m4/20260720-054000-m4-agent-mcp-hitl.json` is the reviewed M4 manifest. It
-records implementation commit `70f5644`, evidence commit `6a53dd9`, Git-blob SHA-256
-values, the full local quality matrix, Agent/MCP integration, safety evaluation and
-Playwright results. M4 is `passed`; the former reviewed-immutable-evidence gate is
-closed. Historical dirty working-tree captures remain indexed separately and are not
-used as formal evidence.
+欢迎通过 [GitHub Issues](https://github.com/Drew-Z/enterprise-doc-agent/issues)提供可复现的问题、使用场景或文档改进。提交问题时附上版本、操作步骤、错误码和请求编号；去除令牌、cookie 与真实企业文档正文。代码修改请附相关测试结果；新增能力同时更新对应文档。
 
-The commit fields have separate roles. `reviewed_commit` (also recorded as
-`commit_sha`) identifies the reviewed implementation, `evidence_commit` contains the
-sanitized logs and reports whose Git blobs are hashed by the manifests, and
-`manifest_commit` identifies the status snapshot that first published the manifest
-path and status with a null self-pointer. The later binding commit only writes that
-snapshot SHA back into the manifest and index. This intentionally non-self-referential
-publication pointer proves that the path and status existed in the referenced commit,
-while artifact immutability remains anchored to the reviewed and evidence commits.
-
-M4 and M8 remain anchored to status snapshot `57200dd`. The refreshed M5/M6/M7
-manifests use implementation commit `8ea488e`, evidence commit `c6f9d28`, and status
-snapshot `8983107`; they remain `blocked_external`. Their successful local artifacts do
-not satisfy the individual gate records under `evidence/gates/`:
-
-- The latest M5 bundle records 13 deterministic Agent safety cases, controlled RAG
-  recall and ranking checks, four synthetic fault-wrapper drills, and a 40-request
-  bounded health run with p95 11.3919 ms. The canonical report hashes passed, but the
-  results are still local deterministic and workstation evidence, not real-provider
-  quality, production capacity, managed-service failover, or an SLO.
-- The latest M7 bundle records 20 deterministic samples and 20 synthetic timeout-to-
-  fallback samples with explicit primary and fallback identities, plus 14 routing
-  tests. These are not real-provider quality, cost, GPU, vLLM, or production-capacity
-  evidence.
-- The latest immutable M6 bundle records 63 deployment tests, containerized Actionlint,
-  Compose validation, and base/staging/prod Kustomize renders. The merged `v0.1.33`
-  release also has a separate cloud-hosted single-node staging acceptance record,
-  including immutable image rollout, migration, embedding reindex, authenticated
-  business smoke, and governance smoke. That acceptance does not close the formal
-  production gates: registry signing, external TLS/secrets, versioned object-store
-  restore, Kubernetes rollback, independent fault-domain recovery and production
-  RPO/RTO remain external gates.
-
-`evidence/m8/20260720-054000-m8-end-to-end-model-deadline.json` supersedes the earlier
-local M8 record. It includes the route-budget boundary fix, the same status-snapshot
-publication pointer, and immutable artifact evidence for 30 repeated exhausted-budget
-tests, the complete routing suite and the full backend regression.
-
-GitHub Actions runs independent backend and frontend jobs from `uv.lock` and
-`pnpm-lock.yaml`. The `m1-integration` job starts real PostgreSQL and MinIO, runs the
-multipart integration suite, then executes a two-part restart/resume smoke.
-`m4-integration` runs the full marked integration suite with PostgreSQL/Redis/MinIO,
-checkpoint setup, and the M4 safety command. `web-e2e` installs Chromium and runs the
-upload-recovery and Agent approval/download workflows.
-The smaller CI payload is a fast regression gate and does not replace the required
-local 1 GiB evidence run. No job has an allow-failure or retry-to-green path.
-
-## Repository Boundaries
-
-- `apps/api`: FastAPI routes and request middleware
-- `apps/mcp`: stable v1 MCP stdio server and protocol adapter
-- `apps/worker`: long-running Worker lifecycle and internal probes
-- `apps/web`: React upload and Agent run workspaces
-- `packages/core`: shared platform, document, Job, Agent, approval, tool, and artifact contracts
-- `infra/compose`: PostgreSQL/pgvector, Redis, MinIO, bucket initialization
-- `infra/docker`: non-root API, Worker, consumer, and Web image definitions
-- `infra/k8s`: base and environment overlays with migration/probe/security contracts
-- `tests/foundation`: repository, migration, runtime, CI, documentation, and M0 evidence contracts
-- `tests/multipart`: M1 unit, API, PostgreSQL/MinIO, recovery, cleanup, and evidence contracts
-- `tests/agent`: run, graph, checkpoint, SSE, approval, Worker, and recovery integration
-- `tests/mcp`: PostgreSQL/MinIO and stdio tool-policy integration
-- `tests/security` and `tests/contracts`: injection, authorization, and M4 evaluation contracts
-
-The API and Worker may depend on Core. They do not import each other. Web uses the
-API control plane while document bytes travel directly to the configured object store.
-
-## Known Production Gaps
-
-- No production semantic embedding or real chat-model quality benchmark is claimed.
-- MCP is local stdio, not a public authenticated remote MCP deployment.
-- Server-enforced document ACL supports `tenant`/`restricted` visibility plus user and tenant-role grants across inventory, retrieval, Agent runs/tools, and artifacts. Arbitrary ABAC expressions and an external PDP are not implemented.
-- External authentication remains disabled by default. When enabled, the API can verify asymmetric OIDC JWTs through a configured JWKS URL (algorithm/`kid`/issuer/audience/time claims), resolve non-UUID subjects through explicit issuer/subject bindings, normalize tenant and actor claims, map explicitly configured owner/member groups with startup validation and ambiguity rejection, and re-check the resulting role against active database membership. Direct role claims remain opt-in. Authentication failures emit bounded structured security logs without credentials; successful stateless bearer requests are not mislabeled as login events. Local JWT sessions can be revoked server-side through `POST /api/session/logout`; revocations are tenant-scoped, audited, and purged after token expiry. External OIDC logout remains an explicit integration gate because the application cannot revoke tokens issued by an external IdP. The owner-only API and Web control plane now supports bounded member search, manual email provisioning, role changes, membership deactivate/reactivate, last-owner and self-mutation safeguards, binding deactivate/reactivate, and audit events. Membership deactivation also revokes that tenant's active external bindings; reactivation does not silently restore them. The SCIM surface now exposes constrained ServiceProviderConfig/ResourceTypes/Schemas discovery, tenant-scoped Users list pagination and `userName`/`externalId` equality filters, a bounded sequential Bulk endpoint (up to 50 `POST`/`PUT`/`PATCH`/`DELETE` User operations), and single-user GET/upsert/deprovision plus a bounded PATCH supporting only `replace` of `active` or `userName`; it is not a complete SCIM server or IdP integration. Batch IdP/SCIM synchronization, full PATCH semantics, PATCH/bulkId reference replacement, complex filters, OAuth authorization server, first-login provisioning, SAML, and real-IdP end-to-end acceptance remain deployment gates.
-- Tenant-scoped audit events support cursor pagination, bounded CSV export, an owner-only retention/legal-hold governance control plane, and verified non-destructive JSON archive snapshots (`POST /api/audit-governance/retention-archive`). Recent archive batches can be listed, re-verified, and downloaded through a short-lived signed URL (`GET /api/audit-governance/retention-archives`, `POST /api/audit-governance/retention-archives/{batch_id}/verify`, `GET /api/audit-governance/retention-archives/{batch_id}/download`). Source events are not deleted; WORM/independent audit storage, automated cross-region recovery, deletion proof, and production export governance are not claimed.
-- The reviewed 4C4G single-node profile has completed a real cloud-hosted K3s
-  staging rollout through the HTTPS public endpoint, including migrations,
-  immutable-image rollout, embedding probe/reindex, readiness, authenticated
-  upload/ingestion/Agent/artifact/citation smoke, restricted-document ACL
-  grant/revoke, audit retention/legal-hold governance, and identity-binding
-  lifecycle checks. The merged-release record is
-  `evidence/m6/20260904-v0.1.33-staging-governance.json`; the earlier
-  `20260902-v0.1.33-rc.2-staging-governance.json` remains historical candidate
-  evidence. ACL and retention results validate the implemented control plane,
-  not arbitrary ABAC or WORM compliance. This remains single-node staging
-  evidence: production QPS, standby-node or multi-region recovery, independent
-  fault-domain RPO/RTO, production secret-manager review, and high availability
-  are not claimed.
-- No GPU/vLLM/quantization throughput or memory result is claimed; M7 reports only the
-  deterministic local routing and fallback contract until hardware evidence exists.
-- The deterministic safety corpus is a repeatable regression set, not complete adversarial certification.
+**许可证：** 当前仓库尚未提供 `LICENSE` 文件，暂未声明开源使用授权；请勿将公开可读等同于 MIT 或 Apache 许可。
