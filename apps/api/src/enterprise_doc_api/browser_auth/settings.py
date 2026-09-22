@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from enterprise_doc_core.config import AppEnvironment
 
 GITHUB_ISSUER = "https://github.com"
+GITHUB_AUTHORIZATION_ISSUER = GITHUB_ISSUER + "/login/oauth"
 GITHUB_AUTHORIZATION_ENDPOINT = GITHUB_ISSUER + "/login/oauth/authorize"
 GITHUB_TOKEN_ENDPOINT = GITHUB_ISSUER + "/login/oauth/access_token"
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import logging
 from datetime import UTC, datetime
 from typing import Literal, cast
 from uuid import UUID
@@ -25,6 +26,7 @@ from enterprise_doc_api.browser_auth.http import (
 )
 from enterprise_doc_api.browser_auth.oidc import OidcFailure
 from enterprise_doc_api.browser_auth.provider import BrowserIdentityClient
+from enterprise_doc_api.browser_auth.settings import GITHUB_AUTHORIZATION_ISSUER
 from enterprise_doc_api.errors import ApiError
 from enterprise_doc_api.schemas import ApiModel
 from enterprise_doc_core.admission.errors import (
@@ -43,6 +45,7 @@ from enterprise_doc_core.browser_sessions.contracts import (
 from enterprise_doc_core.browser_sessions.errors import BrowserSessionError, BrowserSessionInvalid
 
 router = APIRouter(prefix="/auth", tags=["browser-auth"])
+_LOGGER = logging.getLogger("enterprise_doc_api.browser_auth")
 
 
 class BrowserAnonymousResponse(ApiModel):
@@ -203,23 +206,40 @@ async def callback(request: Request) -> RedirectResponse:
     failure = RedirectResponse(
         settings.web_origin + "/#/signin?error=sign_in_failed", status_code=303
     )
+
+    def reject(reason: str) -> RedirectResponse:
+        _LOGGER.warning(
+            "browser_sign_in_failed",
+            extra={"event_data": {"provider": settings.provider, "reason": reason}},
+        )
+        return failure
+
     # Never copy provider text, authorization codes, or state to a response body.
     try:
         if request.headers.getlist("Authorization"):
-            return failure
+            return reject("unexpected_authorization_header")
         states, codes = request.query_params.getlist("state"), request.query_params.getlist("code")
         issuers = request.query_params.getlist("iss")
-        if len(states) != 1 or (issuers and issuers != [settings.issuer]):
-            return failure
+        # RFC 9207 identifies the OAuth authorization server. The persisted GitHub
+        # identity namespace remains https://github.com for existing bindings.
+        response_issuer = (
+            GITHUB_AUTHORIZATION_ISSUER if settings.provider == "github" else settings.issuer
+        )
+        if len(states) != 1:
+            return reject("invalid_state_count")
+        if issuers and issuers != [response_issuer]:
+            return reject("issuer_mismatch")
         verifier = cookie_value(request, LOGIN_COOKIE)
         if verifier is None:
-            return failure
+            return reject("missing_login_cookie")
         previous = cookie_value(request, SESSION_COOKIE)
         claim = await service.claim_login(
             state=SecretStr(states[0]), verifier=verifier, previous_credential=previous
         )
-        if request.query_params.getlist("error") or len(codes) != 1:
-            return failure
+        if request.query_params.getlist("error"):
+            return reject("provider_error")
+        if len(codes) != 1:
+            return reject("invalid_code_count")
         identity_client = cast(BrowserIdentityClient, request.app.state.browser_identity_client)
         identity = await identity_client.exchange(
             code=SecretStr(codes[0]),
@@ -234,8 +254,8 @@ async def callback(request: Request) -> RedirectResponse:
         return RedirectResponse(
             settings.web_origin + "/#/signin?error=github_email_required", status_code=303
         )
-    except (ApiError, BrowserSessionError, OidcFailure, GitHubFailure):
-        return failure
+    except (ApiError, BrowserSessionError, OidcFailure, GitHubFailure) as error:
+        return reject(type(error).__name__)
     response = RedirectResponse(settings.web_origin + "/", status_code=303)
     _set_session(response, issued)
     # A stale callback must not delete a newer login attempt's cookie. It expires naturally.

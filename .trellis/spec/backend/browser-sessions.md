@@ -43,6 +43,15 @@ nonce/ID tokens; the existing OIDC nonce and strict claim checks remain unchange
 The existing core state consumption, expiry, rotation and explicit bindings apply
 to both providers. A new issuer/subject never inherits same-email membership.
 
+GitHub's optional RFC 9207 callback `iss` identifies its authorization server:
+`https://github.com/login/oauth`, as published in GitHub's OAuth metadata. Compare
+that exact value when present; reject other values and duplicates before consuming
+the login attempt. This differs from the persisted `https://github.com` identity
+namespace, which remains stable for existing sessions, grants and bindings. OIDC
+callbacks continue to compare their configured issuer. Callback failure logs use
+only fixed reason labels and provider names, never query values, cookies or errors
+copied from the provider.
+
 Only GitHub session responses additionally contain `loginProvider: "github"`, both
 anonymous and authenticated (including selection). OIDC/disabled JSON stays unchanged;
 an unselected authenticated response still explicitly contains `currentTenant: null`.

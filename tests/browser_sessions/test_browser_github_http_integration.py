@@ -46,7 +46,11 @@ class GitHubEndpoint:
         assert query["code_challenge_method"] == ["S256"]
         code = uuid4().hex
         self.codes[code] = query
-        return {"code": code, "state": query["state"][0]}
+        return {
+            "code": code,
+            "state": query["state"][0],
+            "iss": "https://github.com/login/oauth",
+        }
 
     def respond(self, request: httpx.Request) -> httpx.Response:
         self.requests += 1
@@ -216,3 +220,48 @@ async def test_github_wrong_state_or_missing_cookie_does_not_exchange(github_htt
     missing = await client.get("/auth/callback", params=params)
     assert missing.headers["location"].endswith("error=sign_in_failed")
     assert endpoint.requests == 0
+
+
+async def test_github_callback_without_optional_issuer_remains_supported(
+    github_http: tuple,
+) -> None:
+    client, endpoint = github_http
+    start = await client.get("/auth/login")
+    params = endpoint.authorize(start.headers["location"])
+    params.pop("iss")
+    done = await client.get("/auth/callback", params=params)
+    assert done.headers["location"] == ORIGIN + "/"
+    assert (await client.get("/auth/session")).json()["status"] == "authenticated"
+    assert endpoint.requests == 3
+
+
+@pytest.mark.parametrize(
+    "issuers",
+    [
+        ["https://github.com"],
+        ["https://github.com/login/oauth/"],
+        ["https://untrusted.example/login/oauth"],
+        ["https://github.com/login/oauth", "https://github.com/login/oauth"],
+    ],
+)
+async def test_github_callback_rejects_wrong_or_duplicate_issuer_without_consuming_attempt(
+    github_http: tuple, issuers: list[str], caplog: pytest.LogCaptureFixture
+) -> None:
+    client, endpoint = github_http
+    start = await client.get("/auth/login")
+    params = endpoint.authorize(start.headers["location"])
+    query = [(key, value) for key, value in params.items() if key != "iss"]
+    query.extend(("iss", value) for value in issuers)
+    rejected = await client.get("/auth/callback", params=query)
+    assert rejected.headers["location"].endswith("error=sign_in_failed")
+    assert "set-cookie" not in rejected.headers
+    assert endpoint.requests == 0
+    events = [
+        record.event_data for record in caplog.records if record.msg == "browser_sign_in_failed"
+    ]
+    assert events == [{"provider": "github", "reason": "issuer_mismatch"}]
+    assert params["state"] not in caplog.text
+    assert params["code"] not in caplog.text
+    done = await client.get("/auth/callback", params=params)
+    assert done.headers["location"] == ORIGIN + "/"
+    assert endpoint.requests == 3
