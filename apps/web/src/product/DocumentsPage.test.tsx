@@ -176,12 +176,36 @@ describe("DocumentsPage", () => {
       partSizeBytes: 5_242_880,
       expiresAt: "2026-08-27T00:00:00+00:00",
     });
-    vi.spyOn(globalThis, "fetch").mockImplementation(() => new Promise(() => undefined));
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+      const path = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+      const body = path === "/api/upload-sessions/77777777-7777-4777-8777-777777777777"
+        ? {
+            sessionId: "77777777-7777-4777-8777-777777777777",
+            status: "active",
+            filename: "recoverable.pdf",
+            extension: ".pdf",
+            mediaType: "application/pdf",
+            sizeBytes: 5_242_880,
+            declaredSha256: "a".repeat(64),
+            partSizeBytes: 5_242_880,
+            expectedPartCount: 1,
+            expiresAt: "2026-08-27T00:00:00+00:00",
+            uploadedParts: [],
+          }
+        : [];
+      return Promise.resolve(new Response(JSON.stringify(body), { status: 200 }));
+    });
 
     renderDocuments();
 
     expect(await screen.findByRole("dialog", { name: "Upload document" })).toBeInTheDocument();
     expect(await screen.findByText("Reselect original file")).toBeInTheDocument();
+    expect(screen.getByLabelText("Choose original document")).toBeEnabled();
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/upload-sessions/77777777-7777-4777-8777-777777777777",
+      expect.objectContaining({ headers: headersContaining({ Authorization: "Bearer local-token" }) }),
+    );
+    expect(fetchMock.mock.calls.every(([, init]) => (init?.method ?? "GET") === "GET")).toBe(true);
   });
 
   it("renders a read-only local showcase without requesting the API", async () => {
