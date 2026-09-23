@@ -112,3 +112,24 @@ public evaluator. H1 is now a known regression corpus. Freeze H2 and its gold ha
 before first inference; retain initial failures separately from deterministic decoder
 replay. Never present a replay as an extra successful live inference or independent
 adjudication. Inspect meaning/conditions in addition to labels and exact quotations.
+
+## Ordered decision regression and original-outcome scoring
+
+`presales.v5` explicitly orders unresolved source conflict, direct counterevidence,
+proof shortage, established enabling conditions, and full support. H1/H2 are known
+regressions; H3 and its separate gold are frozen before v5 calls. Include contrasting
+absent-vs-explicitly-unobtained certificates and limited-vs-no-priority clauses.
+Do not change gold after seeing outputs. A timeout is retained in the full planned
+denominator; unknown token usage for that attempt makes the aggregate unknown.
+
+`python -m scripts.score_presales_gateway --input <input> --gold <gold> --run <run>
+--output <new-score>` scores original `presales-gateway-run-v1` results offline.
+It checks dataset/gold hashes, unique planned rows, requirement text, version/hash/
+scope bindings, evidence text, and citation identity against the actual offered
+fragments. Rejected drafts do not become successes by decoding their raw responses.
+All observed requests, including rejected output, contribute usage when known.
+
+Wrong: count only accepted drafts or present deterministic replay as first-attempt
+success. Correct: keep rejection and semantic errors in the denominator, check
+both exact quotations and meaning, and record unverified billing as null. Tests
+use the frozen failed v4 run to guard this distinction and reject tampered bindings.

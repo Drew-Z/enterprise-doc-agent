@@ -401,7 +401,10 @@ async def test_concurrent_requests_cannot_resolve_each_others_references() -> No
     )
 
 
-async def test_conflicting_selections_keep_both_source_versions_and_original_order() -> None:
+@pytest.mark.parametrize("clarification", [[], ["请确认两份附件的优先级或适用范围。"]])
+async def test_conflicting_selections_require_clarification_and_keep_both_versions(
+    clarification: list[str],
+) -> None:
     payload = evidence_payload("必须在境内保存。")
     other = evidence_payload("必须向境外复制。")
     payload.sources.extend(other.sources)
@@ -412,8 +415,14 @@ async def test_conflicting_selections_keep_both_source_versions_and_original_ord
         return model_response(
             [{"citationId": item["citationId"]} for item in reversed(sent["evidence"])],
             status="conflicting_evidence",
+            missingInformation=clarification,
         )
 
+    if not clarification:
+        with pytest.raises(PresalesError, match=r"^presales_invalid_model_output$") as error:
+            await gateway(httpx.MockTransport(respond)).generate(payload)
+        assert error.value.provider_requests == 1
+        return
     output = await gateway(httpx.MockTransport(respond)).generate(payload)
     assert output.draft.status == "conflicting_evidence"
     assert [c.excerpt for c in output.draft.citations] == ["必须向境外复制。", "必须在境内保存。"]

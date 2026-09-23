@@ -155,7 +155,7 @@ async def main() -> None:
                     if status == "conditional"
                     else [],
                     "missingInformation": ["请补充当前有效的证明材料。"]
-                    if status == "insufficient_evidence"
+                    if status in {"insufficient_evidence", "conflicting_evidence"}
                     else [],
                     "citations": citations,
                 }

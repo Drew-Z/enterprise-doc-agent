@@ -35,6 +35,8 @@ class SelectionDraft(ResponseText):
 
     @model_validator(mode="after")
     def consistent_prerequisites(self) -> Self:
+        if self.status == "conflicting_evidence" and not self.missing_information:
+            raise ValueError("conflicting evidence requires a clarification question")
         outstanding = {item.condition for item in self.prerequisites if item.state != "met"}
         if self.status == "supported" and outstanding:
             raise ValueError("supported requires all stated prerequisites to be met")

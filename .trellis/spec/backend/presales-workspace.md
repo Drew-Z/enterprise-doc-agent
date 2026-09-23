@@ -203,6 +203,34 @@ do not prove logical entailment or complete capture of contractual conditions.
    consistency and exact source identity, then evaluate semantic correctness with
    frozen data. Preserve failed original outputs separately from decoder replay.
 
+## Decision precedence and actionable conditions
+
+`presales.v5` keeps the v4 model/public structures. The prompt defines an ordered
+assessment: unresolved contradictions between applicable sources take precedence
+over selecting one side's hard limit; after resolving source priority, an explicit
+negative fact is contradicted; a missing proof is insufficient evidence; a proven
+capability with an explicit enabling path is conditional; otherwise all requirements
+and prerequisites must be proven for supported.
+
+Absent reports/certificates do not prove nonexistence. A direct statement that a
+required certification has not been obtained is different from an omitted attachment.
+An explicit priority applies only to its stated subject/scope, not all provisions.
+This is a model instruction, not a deterministic semantic guarantee. Do not use
+keyword rewriting to make outputs agree with reference labels.
+
+`SelectionDraft` additionally rejects `conflicting_evidence` without nonempty
+`missingInformation` as `presales_invalid_model_output`, with one dispatch and no
+repair/retry. Original `ModelDraft`, saved drafts and human review validation are
+unchanged. HTTP boundary tests cover both accepted questions and missing-question
+rejection with two valid source versions. Conflicting browser/DB fixtures must
+include a clarification item so citation and authorization tests reach those checks.
+
+Good: cite both applicable sides and request priority/scope clarification. Base:
+request a missing certificate and its coverage/validity. Bad: use a prohibition's
+stronger wording to silently override an equally applicable promise. Unmet/unknown
+prerequisites use actionable Chinese wording, such as "需配置保留策略"; never present
+them as already completed facts. Satisfied prerequisites remain out of the action list.
+
 Attempts store model provider/name, pipeline and prompt versions, prompt SHA,
 configured model version/revision and returned model/response ID when available.
 Configured or returned identifiers do not authenticate upstream model weights.

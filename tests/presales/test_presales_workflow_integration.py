@@ -739,6 +739,7 @@ async def test_selection_adapter_preserves_persistence_export_and_authorization(
                                     "status": "conflicting_evidence",
                                     "prerequisites": [],
                                     "answer": "两份条款的保留期限冲突。",
+                                    "missingInformation": ["请确认适用条款的优先级。"],
                                     "citations": references,
                                 }
                             )
@@ -778,7 +779,7 @@ async def test_selection_adapter_preserves_persistence_export_and_authorization(
         )
         row = generated.rows[0]
         assert row.attempts[0].provider_request_count == 1
-        assert row.attempts[0].provenance["promptVersion"] == "presales.v4"
+        assert row.attempts[0].provenance["promptVersion"] == "presales.v5"
         if change == "unknown_reference":
             assert row.draft is None and row.attempts[0].error_code == "presales_invalid_citation"
         else:
