@@ -971,7 +971,8 @@ def test_cluster_mutating_workflows_download_the_exact_source_archive() -> None:
         assert "Authorization: Bearer %s" in command
         assert 'chmod 600 "$curl_config"' in command
         assert "--proto '=https' --proto-redir '=https'" in command
-        assert "--connect-timeout 15 --max-time 240" in command
+        assert "--connect-timeout 15 --max-time 900" in command
+        assert "--retry-max-time 120" in command
         assert "--retry 4 --retry-delay 3 --retry-all-errors" in command
         assert 'case "$repo_dir" in' in command
         assert 'rm -rf -- "$repo_dir" "$staging_dir"' in command

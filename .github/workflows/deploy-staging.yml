@@ -104,7 +104,8 @@ jobs:
           curl --config "$curl_config" \
             --fail --silent --show-error --location \
             --proto '=https' --proto-redir '=https' \
-            --connect-timeout 15 --max-time 240 \
+            --connect-timeout 15 --max-time 900 \
+            --retry-max-time 120 \
             --retry 4 --retry-delay 3 --retry-all-errors \
             --header 'Accept: application/vnd.github+json' \
             --header 'X-GitHub-Api-Version: 2022-11-28' \
