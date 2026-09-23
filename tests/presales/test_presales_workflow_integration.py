@@ -702,7 +702,9 @@ async def test_expired_entitlement_keeps_draft_read_review_export_and_generation
         )
 
 
-@pytest.mark.parametrize("change", ["none", "unknown_reference", "revoked", "stale_source"])
+@pytest.mark.parametrize(
+    "change", ["none", "projection", "unknown_reference", "revoked", "stale_source"]
+)
 async def test_selection_adapter_preserves_persistence_export_and_authorization(
     workspace, change
 ) -> None:
@@ -712,8 +714,9 @@ async def test_selection_adapter_preserves_persistence_export_and_authorization(
     async def model_response(request: httpx.Request) -> httpx.Response:
         sent = json.loads(json.loads(request.content)["messages"][1]["content"])
         calls.append(sent)
-        assert {e["documentVersionId"] for e in sent["evidence"]} == {
-            str(s.version_id) for s in payload.sources
+        assert {e["source"]["label"] for e in sent["evidence"]} == {"来源 1", "来源 2"}
+        assert {e["source"]["applicability"] for e in sent["evidence"]} == {
+            s.applicability for s in payload.sources
         }
         references = [{"citationId": item["citationId"]} for item in sent["evidence"]]
         if change == "unknown_reference":
@@ -736,8 +739,19 @@ async def test_selection_adapter_preserves_persistence_export_and_authorization(
                         "message": {
                             "content": json.dumps(
                                 {
-                                    "status": "conflicting_evidence",
-                                    "prerequisites": [],
+                                    "status": "conditional"
+                                    if change == "projection"
+                                    else "conflicting_evidence",
+                                    "prerequisites": [
+                                        {"condition": text, "state": state, "citations": references}
+                                        for text, state in [
+                                            ("已采购。", "met"),
+                                            ("需配置。", "unmet"),
+                                            ("需确认验收结果。", "unknown"),
+                                        ]
+                                    ]
+                                    if change == "projection"
+                                    else [],
                                     "answer": "两份条款的保留期限冲突。",
                                     "missingInformation": ["请确认适用条款的优先级。"],
                                     "citations": references,
@@ -779,7 +793,7 @@ async def test_selection_adapter_preserves_persistence_export_and_authorization(
         )
         row = generated.rows[0]
         assert row.attempts[0].provider_request_count == 1
-        assert row.attempts[0].provenance["promptVersion"] == "presales.v5"
+        assert row.attempts[0].provenance["promptVersion"] == "presales.v7"
         if change == "unknown_reference":
             assert row.draft is None and row.attempts[0].error_code == "presales_invalid_citation"
         else:
@@ -789,14 +803,24 @@ async def test_selection_adapter_preserves_persistence_export_and_authorization(
                 "Retention is 90 days.",
             }
             assert "citationId" not in row.model_dump_json(by_alias=True)
+            if change == "projection":
+                assert row.draft.conditions == ["需配置。", "需确认验收结果。"]
+                saved = await service.get(context.principal, packet.id)
+                assert saved.rows[0].draft == row.draft
+                assert "prerequisites" not in saved.rows[0].model_dump_json()
+                draft_csv = (await service.export(context.principal, packet.id, "draft")).decode(
+                    "utf-8-sig"
+                )
+                assert "需配置。" in draft_csv and "需确认验收结果。" in draft_csv
             reviewed = await service.review(
                 context.principal,
                 packet.id,
                 row_id,
                 ReviewInput(
                     expected_revision=1,
-                    status="conflicting_evidence",
+                    status="conditional" if change == "projection" else "conflicting_evidence",
                     answer="已逐字核对。需确认条款优先级。",
+                    conditions=["复核后仍需确认验收结果。"] if change == "projection" else [],
                 ),
                 "selection-review",
             )
@@ -806,6 +830,8 @@ async def test_selection_adapter_preserves_persistence_export_and_authorization(
             )
             assert "Retention is 30 days." in csv_content and "Retention is 90 days." in csv_content
             assert "已逐字核对" in csv_content and "已复核" in csv_content
+            if change == "projection":
+                assert "复核后仍需确认验收结果。" in csv_content
             with pytest.raises(PresalesError, match="presales_not_found"):
                 await service.get(other.principal, packet.id)
         await service.generate(context.principal, packet.id, row_id, "selection-generate")

@@ -26,7 +26,7 @@ from enterprise_doc_core.presales.errors import PresalesError
 from enterprise_doc_core.presales.gateway import OpenAICompatiblePresalesGateway
 from enterprise_doc_core.presales.schemas import GenerationInput, SourceSnapshot
 from enterprise_doc_core.presales.settings import PresalesSettings
-from scripts.evaluate_presales_quality import load_dataset, write_json
+from scripts.evaluate_presales_quality import Dataset, load_dataset, write_json
 
 
 class RecordingTransport(httpx.AsyncBaseTransport):
@@ -95,14 +95,10 @@ class RecordingTransport(httpx.AsyncBaseTransport):
         await self.inner.aclose()
 
 
-async def collect(
-    dataset_path: Path,
-    output: Path,
-    settings: ModelSettings,
-    *,
-    transport: httpx.AsyncBaseTransport | None = None,
-) -> dict[str, Any]:
-    dataset, digest = load_dataset(dataset_path)
+def synthetic_sources(
+    dataset: Dataset,
+    digest: str,
+) -> tuple[list[SourceSnapshot], list[dict[str, str]]]:
     if any(len(source.content) > 1800 for source in dataset.sources):
         raise ValueError("direct_evidence_source_too_long")
     snapshots = [
@@ -129,8 +125,20 @@ async def collect(
         }
         for source, snapshot in zip(dataset.sources, snapshots, strict=True)
     ]
+    return snapshots, evidence
+
+
+async def collect(
+    dataset_path: Path,
+    output: Path,
+    settings: ModelSettings,
+    *,
+    transport: httpx.AsyncBaseTransport | None = None,
+) -> dict[str, Any]:
+    dataset, digest = load_dataset(dataset_path)
+    snapshots, evidence = synthetic_sources(dataset, digest)
     report: dict[str, Any] = {
-        "schemaVersion": "presales-gateway-run-v1",
+        "schemaVersion": "presales-gateway-run-v2",
         "scope": "generation_only_with_complete_synthetic_sources; no_retrieval_or_persistence",
         "datasetSha256": digest,
         "runnerSha256": hashlib.sha256(
@@ -156,19 +164,21 @@ async def collect(
                 ),
                 transport=recorder,
             )
+            source_input = GenerationInput(
+                requirement=requirement, sources=snapshots, evidence=evidence
+            )
             observation: dict[str, Any] = {
                 "key": requirement.key,
                 "startedAt": datetime.now(UTC).isoformat(),
                 "state": "dispatching",
                 "provenance": gateway.provenance,
+                "sourceInput": source_input.model_dump(mode="json", by_alias=True),
             }
             report["observations"].append(observation)
             write_json(output, report)
             started = time.monotonic()
             try:
-                result = await gateway.generate(
-                    GenerationInput(requirement=requirement, sources=snapshots, evidence=evidence)
-                )
+                result = await gateway.generate(source_input)
                 observation.update(
                     state="succeeded", result=result.model_dump(mode="json", by_alias=True)
                 )

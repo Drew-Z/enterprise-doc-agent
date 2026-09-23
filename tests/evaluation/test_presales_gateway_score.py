@@ -4,8 +4,13 @@ import copy
 import json
 from pathlib import Path
 
+import httpx
 import pytest
+from pydantic import SecretStr
+from scripts.evaluate_presales_gateway import collect
 from scripts.score_presales_gateway import score
+
+from enterprise_doc_core.config import ModelProvider, ModelSettings
 
 
 def test_gateway_score_keeps_initial_rejections_and_classifier_errors() -> None:
@@ -34,3 +39,102 @@ def test_gateway_score_rejects_changed_trial_bindings(change: str) -> None:
         first["traces"][0]["input"]["requirement"]["text"] = "Different requirement."
     with pytest.raises(ValueError):
         score(root.with_suffix(".json"), root.with_suffix(".gold.json"), report)
+
+
+@pytest.fixture
+async def projected_run(tmp_path):
+    async def respond(request):
+        wire = json.loads(json.loads(request.content)["messages"][1]["content"])
+        return httpx.Response(
+            200,
+            json={
+                "choices": [
+                    {
+                        "finish_reason": "stop",
+                        "message": {
+                            "content": json.dumps(
+                                {
+                                    "status": "conditional",
+                                    "answer": "需确认前提。",
+                                    "prerequisites": [
+                                        {
+                                            "condition": "需确认验收结果。",
+                                            "state": "unknown",
+                                            "citations": [
+                                                {"citationId": wire["evidence"][0]["citationId"]}
+                                            ],
+                                        }
+                                    ],
+                                }
+                            )
+                        },
+                    }
+                ]
+            },
+        )
+
+    return await collect(
+        Path("evaluation/presales_quality_holdout_v4.json"),
+        tmp_path / "run.json",
+        ModelSettings(
+            fallback_provider=ModelProvider.OPENAI_COMPATIBLE,
+            fallback_base_url="https://model.invalid/v1",
+            fallback_api_key=SecretStr("test-only"),
+            fallback_model_name="test-model",
+        ),
+        transport=httpx.MockTransport(respond),
+    )
+
+
+async def test_projected_run_keeps_exact_wire_binding_and_original_failure(projected_run):
+    root = Path("evaluation/presales_quality_holdout_v4")
+    result = score(root.with_suffix(".json"), root.with_suffix(".gold.json"), projected_run)
+    assert result["acceptedDrafts"] == result["validCitations"] == 6
+    assert result["usage"]["total_tokens"] is None
+    first = projected_run["observations"][0]
+    first["state"] = "failed"
+    first.pop("result")
+    result = score(root.with_suffix(".json"), root.with_suffix(".gold.json"), projected_run)
+    assert result["acceptedDrafts"] == 5 and result["realProviderRequests"] == 6
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        "source",
+        "scope",
+        "text",
+        "label",
+        "reference",
+        "duplicate_reference",
+        "omitted",
+        "result",
+        "raw_output",
+    ],
+)
+async def test_projected_run_rejects_changed_source_wire_or_result(projected_run, change):
+    first = projected_run["observations"][0]
+    wire = first["traces"][0]["input"]["evidence"]
+    if change == "source":
+        first["sourceInput"]["evidence"][0]["chunkId"] = first["sourceInput"]["evidence"][1][
+            "chunkId"
+        ]
+    elif change == "scope":
+        wire[0]["source"]["applicability"] = "篡改范围"
+    elif change == "text":
+        wire[0]["text"] = "虚构原文"
+    elif change == "label":
+        wire[0]["source"]["label"] = wire[1]["source"]["label"]
+    elif change == "reference":
+        wire[0]["citationId"] = first["sourceInput"]["evidence"][0]["chunkId"]
+    elif change == "duplicate_reference":
+        wire[1]["citationId"] = wire[0]["citationId"]
+    elif change == "omitted":
+        wire.pop()
+    elif change == "result":
+        first["result"]["draft"]["conditions"] = ["已经完成。"]
+    else:
+        first["traces"][0]["response"]["choices"][0]["message"]["content"] = "{}"
+    root = Path("evaluation/presales_quality_holdout_v4")
+    with pytest.raises(ValueError):
+        score(root.with_suffix(".json"), root.with_suffix(".gold.json"), projected_run)

@@ -5,12 +5,45 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import statistics
 from pathlib import Path
 from typing import Any
 
-from enterprise_doc_core.presales.schemas import GeneratedDraft, GenerationInput
+from enterprise_doc_core.presales.citation_selection import (
+    SelectionInput,
+    prepare_citations,
+    resolve_selection,
+)
+from enterprise_doc_core.presales.errors import PresalesError
+from enterprise_doc_core.presales.schemas import CitationInput, GeneratedDraft, GenerationInput
+from scripts.evaluate_presales_gateway import synthetic_sources
 from scripts.evaluate_presales_quality import Gold, load_dataset, write_json
+
+
+def bind_projected_input(
+    wire: dict[str, Any], source_input: GenerationInput
+) -> dict[str, CitationInput]:
+    """Verify the recorded wire projection, without decoding any failed response."""
+    offered = SelectionInput.model_validate(wire)
+    expected, identities = prepare_citations(source_input)
+    if offered.requirement != expected.requirement or len(offered.evidence) != len(
+        expected.evidence
+    ):
+        raise ValueError("wire_projection_mismatch")
+    catalog: dict[str, CitationInput] = {}
+    prefix = offered.evidence[0].citation_id.rsplit("_", 1)[0] if offered.evidence else ""
+    if offered.evidence and not re.fullmatch(r"cite_[0-9a-f]{12}", prefix):
+        raise ValueError("wire_reference_mismatch")
+    for index, (actual, wanted, identity) in enumerate(
+        zip(offered.evidence, expected.evidence, identities.values(), strict=True), start=1
+    ):
+        if actual.citation_id != f"{prefix}_{index}" or actual.model_dump(
+            exclude={"citation_id"}
+        ) != wanted.model_dump(exclude={"citation_id"}):
+            raise ValueError("wire_projection_mismatch")
+        catalog[actual.citation_id] = identity
+    return catalog
 
 
 def score(dataset_path: Path, gold_path: Path, report: dict[str, Any]) -> dict[str, Any]:
@@ -18,8 +51,9 @@ def score(dataset_path: Path, gold_path: Path, report: dict[str, Any]) -> dict[s
     gold = Gold.model_validate_json(gold_path.read_bytes())
     if digest != gold.dataset_sha256 or digest != report["datasetSha256"]:
         raise ValueError("dataset_hash_mismatch")
-    if report["schemaVersion"] != "presales-gateway-run-v1":
+    if report["schemaVersion"] not in {"presales-gateway-run-v1", "presales-gateway-run-v2"}:
         raise ValueError("invalid_report_scope")
+    projected = report["schemaVersion"] == "presales-gateway-run-v2"
     requirements = {r.key: r for r in dataset.requirements}
     sources = {s.key: s for s in dataset.sources}
     expected = {r.key: r for r in gold.rows}
@@ -35,13 +69,20 @@ def score(dataset_path: Path, gold_path: Path, report: dict[str, Any]) -> dict[s
     reverse = {value: key for key, value in versions.items()}
     if set(versions) != set(sources) or len(reverse) != len(sources):
         raise ValueError("source_binding_mismatch")
+    snapshots, complete_evidence = synthetic_sources(dataset, digest)
+    if projected and versions != {
+        source.key: str(snapshot.version_id)
+        for source, snapshot in zip(dataset.sources, snapshots, strict=True)
+    }:
+        raise ValueError("source_binding_mismatch")
     observations = {row["key"]: row for row in report["observations"]}
     if (
         len(observations) != len(report["observations"])
         or not set(observations) <= requirements.keys()
     ):
         raise ValueError("unexpected_or_duplicate_row")
-    rows, usages, latencies = [], [], []
+    rows: list[dict[str, Any]] = []
+    usages, latencies = [], []
     requests = 0
     for key, target in expected.items():
         observation = observations.get(key, {})
@@ -52,8 +93,18 @@ def score(dataset_path: Path, gold_path: Path, report: dict[str, Any]) -> dict[s
         if observation.get("elapsedSeconds") is not None:
             latencies.append(observation["elapsedSeconds"])
         evidence = []
+        catalog = {}
         for trace in traces:
-            payload = GenerationInput.model_validate(trace["input"])
+            payload = GenerationInput.model_validate(
+                observation["sourceInput"] if projected else trace["input"]
+            )
+            if projected:
+                expected_input = GenerationInput(
+                    requirement=requirements[key], sources=snapshots, evidence=complete_evidence
+                )
+                if payload != expected_input:
+                    raise ValueError("source_binding_mismatch")
+                catalog = bind_projected_input(trace["input"], payload)
             if payload.requirement != requirements[key]:
                 raise ValueError("requirement_mismatch")
             if {str(s.version_id) for s in payload.sources} != set(reverse):
@@ -65,6 +116,15 @@ def score(dataset_path: Path, gold_path: Path, report: dict[str, Any]) -> dict[s
                 if snapshot.applicability != source.applicability:
                     raise ValueError("source_scope_mismatch")
             evidence = payload.evidence
+            if projected:
+                evidence = [
+                    {
+                        "chunkId": str(c.chunk_id),
+                        "documentVersionId": str(c.document_version_id),
+                        "text": c.excerpt,
+                    }
+                    for c in catalog.values()
+                ]
             if any(
                 item["documentVersionId"] not in reverse
                 or item["text"] not in sources[reverse[item["documentVersionId"]]].content
@@ -77,6 +137,13 @@ def score(dataset_path: Path, gold_path: Path, report: dict[str, Any]) -> dict[s
             if len(traces) != 1 or traces[0]["httpStatus"] != 200:
                 raise ValueError("success_without_response")
             draft = GeneratedDraft.model_validate(observation["result"]).draft
+            if projected:
+                try:
+                    original = trace["response"]["choices"][0]["message"]["content"]
+                    if resolve_selection(original, catalog) != draft:
+                        raise ValueError("result_binding_mismatch")
+                except (KeyError, IndexError, TypeError, PresalesError) as error:
+                    raise ValueError("result_binding_mismatch") from error
         valid = (
             [
                 citation

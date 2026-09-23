@@ -39,6 +39,14 @@ async def test_gateway_trial_preserves_failed_output_and_refuses_overwrite(tmp_p
     )
     report = await collect(dataset, output, settings, transport=httpx.MockTransport(respond))
     assert report["status"] == "collected" and len(calls) == 6
+    assert report["schemaVersion"] == "presales-gateway-run-v2"
+    for row, sent in zip(report["observations"], calls, strict=True):
+        wire = row["traces"][0]["input"]
+        assert wire == json.loads(sent["messages"][1]["content"])
+        assert "sources" not in wire
+        assert "sources" in row["sourceInput"]
+        assert "chunkId" in row["sourceInput"]["evidence"][0]
+        assert "chunkId" not in wire["evidence"][0]
     assert all(
         r["state"] == "failed" and r["providerRequests"] == 1 for r in report["observations"]
     )

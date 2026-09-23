@@ -166,3 +166,25 @@ which network intermediary failed or whether the provider completed and billed w
 Public `collect()` boundary tests cover ConnectError redaction/no retry, partial 200
 body failure/stream closure and interrupted collection. They test diagnostics, not
 model semantics; frozen raw v5 failures provide the actual semantic regression cases.
+
+## Projected input reports (v7)
+
+The collector now writes `presales-gateway-run-v2`. Each observation's `sourceInput`
+is the complete synthetic internal GenerationInput actually passed to the gateway;
+`traces[].input` is still exactly the JSON sent to the provider, now SelectionInput.
+Never inject hidden UUIDs into a recorded wire request for scorer convenience.
+
+The offline scorer supports historical run-v1 unchanged. For run-v2, it checks the
+deterministic dataset-to-source bindings (including UUIDs, full content, filenames,
+scope and versions), then verifies every projected fragment, display label and
+request-local citation ID against that input. It checks that an accepted draft
+matches its original selected references and projected conditions. Failed rows stay
+failed even when their raw response could be decoded; no replay becomes a success.
+Tests mutate internal source IDs, source scope, source labels, fragment text,
+references, fragment coverage, accepted conditions and raw output to verify rejection.
+
+Run the real PostgreSQL and both presales browser suites when changing this protocol:
+wire fixtures must consume SelectionInput, not GenerationInput. A fixture cannot
+recover internal chunk/version IDs from provider input; check those identities in
+saved public evidence and the actual database chunks instead. Browser model-call
+records describe only the offered reference/source and retain the dispatch count.

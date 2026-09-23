@@ -31,10 +31,9 @@ from enterprise_doc_core.documents import Document, DocumentVersion, HashEmbeddi
 from enterprise_doc_core.documents.models import DocumentGrant
 from enterprise_doc_core.documents.retrieval_service import HybridRetrievalService
 from enterprise_doc_core.identity import Membership, Tenant, User
-from enterprise_doc_core.presales.citation_selection import SelectionDraft
+from enterprise_doc_core.presales.citation_selection import SelectionDraft, SelectionInput
 from enterprise_doc_core.presales.gateway import OpenAICompatiblePresalesGateway
 from enterprise_doc_core.presales.models import PresalesPacket
-from enterprise_doc_core.presales.schemas import GenerationInput
 from enterprise_doc_core.presales.service import PresalesService
 from enterprise_doc_core.presales.settings import PresalesSettings
 from tests.agent.test_agent_run_integration import SeededAgentContext, _seed_agent_context
@@ -127,7 +126,7 @@ async def main() -> None:
 
         async def model_response(request: httpx.Request) -> httpx.Response:
             envelope = json.loads(request.content)
-            payload = GenerationInput.model_validate_json(envelope["messages"][1]["content"])
+            payload = SelectionInput.model_validate_json(envelope["messages"][1]["content"])
             text = payload.requirement.text
             calls[text] += 1
             if "timeout-once" in text and calls[text] == 1:
@@ -141,7 +140,7 @@ async def main() -> None:
             ):
                 if "[" + name + "]" in text:
                     status = name
-            citations = [{"citationId": evidence["citationId"]} for evidence in payload.evidence]
+            citations = [{"citationId": evidence.citation_id} for evidence in payload.evidence]
             if status != "conflicting_evidence":
                 citations = citations[:1]
             if status == "insufficient_evidence":
@@ -149,11 +148,16 @@ async def main() -> None:
             draft = SelectionDraft.model_validate(
                 {
                     "status": status,
-                    "prerequisites": [],
-                    "answer": "受控浏览器验收输出。请核对合成资料中的保留期限。",
-                    "conditions": ["需采用指定配置并确认合同范围。"]
+                    "prerequisites": [
+                        {
+                            "condition": "需采用指定配置并确认合同范围。",
+                            "state": "unknown",
+                            "citations": citations,
+                        }
+                    ]
                     if status == "conditional"
                     else [],
+                    "answer": "受控浏览器验收输出。请核对合成资料中的保留期限。",
                     "missingInformation": ["请补充当前有效的证明材料。"]
                     if status in {"insufficient_evidence", "conflicting_evidence"}
                     else [],

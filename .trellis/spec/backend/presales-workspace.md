@@ -137,7 +137,7 @@ do not prove logical entailment or complete capture of contractual conditions.
 1. **Scope:** `presales.v3` replaces model-transcribed quotes with request-local
    references. It does not adopt the rejected v2 classification prompt. Saved
    drafts, public API fields, reviews, CSV, schema and existing rows are unchanged.
-2. **Signatures:** `prepare_citations(GenerationInput) -> (GenerationInput, catalog)`
+2. **Signatures:** `prepare_citations(GenerationInput) -> (SelectionInput, catalog)`
    and `resolve_selection(content, catalog) -> ModelDraft` live in
    `presales/citation_selection.py`; only the HTTP gateway uses `SelectionDraft`.
 3. **Contracts:** add `citationId` to each model-facing evidence fragment. Model
@@ -178,8 +178,8 @@ do not prove logical entailment or complete capture of contractual conditions.
    (0–12 items), each prerequisite selects 1–12 offered references. No relevant
    prerequisite means an explicit empty list, never an omitted field.
 3. **Contracts:** `supported` forbids unmet/unknown prerequisites. `conditional`
-   retains each outstanding condition verbatim in `conditions`; satisfied ones
-   need not be repeated. Resolve the ordered union of conclusion and prerequisite
+   retains each outstanding condition in public `conditions` (v4/v5 required duplicate
+   model text; v7 projects it as described below). Resolve the ordered union of conclusion and prerequisite
    selections; shared references across these positions are materialized once.
    Do not require the model to repeat prerequisite references at top level.
    The final public draft still has at most 12 exact citations.
@@ -195,7 +195,7 @@ do not prove logical entailment or complete capture of contractual conditions.
    business prose. A Han-character presence check only detects wholly non-Chinese
    text; it is not complete language identification or factual verification.
 6. **Tests:** HTTP-boundary regressions cover outstanding vs met prerequisites,
-   omitted condition, reference union and foreign IDs, wholly English fields,
+   omitted prerequisite, reference union and foreign IDs, wholly English fields,
    Chinese text with SAML/product names and intact English citations. Existing
    PostgreSQL/browser tests retain persistence, reviews, export and revocation.
 7. **Wrong vs correct:** wrong: keyword-match a contract to rewrite its conclusion,
@@ -234,7 +234,8 @@ them as already completed facts. Satisfied prerequisites remain out of the actio
 The rejected `presales.v6` prompt trial tried more explicit prose/source-relation and
 unknown-state instructions, but still marked an unrecorded acceptance state unmet.
 It also returned chunk UUIDs as citationId and mismatched duplicated condition text.
-Its prompt is withdrawn; the branch still uses v5 and the deployment still uses v3.
+Its prompt was withdrawn back to v5; the deployment still uses v3. The v7 protocol
+candidate below removes the duplicate fields instead of adopting the v6 prompt.
 Retain the frozen v6 prompt and raw results as evidence, not active runtime behavior.
 Do not repair UUID references or relax condition checks to relabel failed attempts.
 
@@ -242,6 +243,37 @@ Semantic review must distinguish evidence about completion from production eligi
 missing records do not prove non-completion. A correct conflict label can accompany
 incorrect prose about which source agrees with the requirement. Additional imperative
 prompt text does not guarantee either distinction; test exact original responses.
+
+## Single-source model protocol (v7 candidate)
+
+1. **Scope:** model-facing input/output only; public `GenerationInput`, `ModelDraft`,
+   saved drafts, reviews, CSV and database schema remain compatible. v7 remains a
+   candidate until the separate live semantic/release gate passes.
+2. **Input:** `SelectionInput(requirement, evidence)` explicitly projects each fragment
+   to `citationId`, exact `text`, `source: {label, filename, applicability,
+   versionNumber, latestVersionNumber}`, `heading`, `pageNumber`. Source information
+   comes from the authorized snapshot, not copied arbitrary evidence metadata.
+   Display labels distinguish source versions even with identical filenames; they
+   are not selectable citation IDs. Internal UUIDs/hashes remain on the server.
+3. **Output:** `SelectionDraft` requires structured prerequisites, never a `conditions`
+   field. `resolve_selection` projects conditions from every unmet/unknown prerequisite,
+   preserving text/order and removing exact duplicate text. Met items stay out of the
+   action list. All statuses retain outstanding prerequisites; supported forbids them
+   and conditional requires at least one. Unknown is not converted to unmet.
+4. **Errors:** old duplicate `conditions` fields are extra-field errors. Conditional
+   without outstanding prerequisites, English-only prerequisite text (including met),
+   invalid state or missing questions remain invalid output. Internal UUIDs are not
+   aliases for citation IDs. Duplicate/foreign/cross-request IDs, same-version conflict,
+   tenant/generation/substrings and commit-time authorization remain enforced.
+5. **Cases:** a purchased module plus unfinished configuration and unrecorded acceptance
+   becomes two pending conditions, with all explicitly selected evidence retained.
+   An old version remains identifiable through its version/latest-version metadata.
+   Wrong: accept a chunk UUID or rewrite condition prose after failure. Correct: define
+   the projection before inference and reject outputs outside the new contract.
+6. **Validation:** real HTTP adapter tests exercise input minimization and condition
+   projection; PostgreSQL tests check persistence, unchanged original drafts, reviewed
+   vs draft CSV, idempotency and revocation. Both browser harnesses consume SelectionInput
+   and produce SelectionDraft. These controlled tests do not prove model semantics.
 
 Attempts store model provider/name, pipeline and prompt versions, prompt SHA,
 configured model version/revision and returned model/response ID when available.

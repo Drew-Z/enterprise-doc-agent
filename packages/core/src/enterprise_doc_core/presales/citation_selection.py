@@ -12,7 +12,8 @@ from enterprise_doc_core.presales.schemas import (
     GenerationInput,
     ModelDraft,
     PresalesModel,
-    ResponseText,
+    RequirementInput,
+    Status,
     TextItem,
 )
 
@@ -21,15 +22,40 @@ class CitationReference(PresalesModel):
     citation_id: str = Field(min_length=1, max_length=64)
 
 
+class SelectionSource(PresalesModel):
+    label: str
+    filename: str
+    applicability: str
+    version_number: int
+    latest_version_number: int
+
+
+class SelectionEvidence(CitationReference):
+    text: str = Field(min_length=1, max_length=600)
+    source: SelectionSource
+    heading: str = ""
+    page_number: str = ""
+
+
+class SelectionInput(PresalesModel):
+    """Provider view; internal source identities remain in the call-local catalog."""
+
+    requirement: RequirementInput
+    evidence: list[SelectionEvidence]
+
+
 class Prerequisite(PresalesModel):
     condition: TextItem
     state: Literal["met", "unmet", "unknown"]
     citations: list[CitationReference] = Field(min_length=1, max_length=12)
 
 
-class SelectionDraft(ResponseText):
+class SelectionDraft(PresalesModel):
     """Model-facing selection only; never persisted or exposed as the public draft."""
 
+    status: Status
+    answer: str = Field(min_length=1, max_length=4000)
+    missing_information: list[TextItem] = Field(default_factory=list, max_length=12)
     prerequisites: list[Prerequisite] = Field(max_length=12)
     citations: list[CitationReference] = Field(default_factory=list, max_length=12)
 
@@ -37,11 +63,13 @@ class SelectionDraft(ResponseText):
     def consistent_prerequisites(self) -> Self:
         if self.status == "conflicting_evidence" and not self.missing_information:
             raise ValueError("conflicting evidence requires a clarification question")
+        if self.status == "insufficient_evidence" and not self.missing_information:
+            raise ValueError("insufficient evidence requires a follow-up question")
         outstanding = {item.condition for item in self.prerequisites if item.state != "met"}
         if self.status == "supported" and outstanding:
             raise ValueError("supported requires all stated prerequisites to be met")
-        if self.status == "conditional" and not outstanding.issubset(self.conditions):
-            raise ValueError("conditions must retain every outstanding prerequisite verbatim")
+        if self.status == "conditional" and not outstanding:
+            raise ValueError("conditional requires an unmet or unknown prerequisite")
         for item in self.prerequisites:
             references = [citation.citation_id for citation in item.citations]
             if len(set(references)) != len(references):
@@ -52,7 +80,11 @@ class SelectionDraft(ResponseText):
     def chinese_business_prose(self) -> Self:
         # Detect wholly non-Chinese prose; do not rewrite English source quotations
         # or pretend this is full language identification / semantic validation.
-        for text in [self.answer, *self.conditions, *self.missing_information]:
+        for text in [
+            self.answer,
+            *(item.condition for item in self.prerequisites),
+            *self.missing_information,
+        ]:
             if not re.search(r"[\u3400-\u4dbf\u4e00-\u9fff\U00020000-\U0002fa1f]", text):
                 raise ValueError("generated business prose must include Chinese text")
         return self
@@ -81,10 +113,21 @@ def split_excerpts(text: str) -> list[str]:
     return excerpts
 
 
-def prepare_citations(payload: GenerationInput) -> tuple[GenerationInput, dict[str, CitationInput]]:
+def prepare_citations(payload: GenerationInput) -> tuple[SelectionInput, dict[str, CitationInput]]:
     """Bind this call's references to source text supplied by authorized retrieval."""
     prefix = "cite_" + uuid4().hex[:12]
-    versions = {source.version_id for source in payload.sources}
+    sources = {
+        source.version_id: SelectionSource(
+            label=f"来源 {index + 1}",
+            filename=source.filename,
+            applicability=source.applicability,
+            version_number=source.version_number,
+            latest_version_number=source.latest_version_number,
+        )
+        for index, source in enumerate(payload.sources)
+    }
+    if len(sources) != len(payload.sources):
+        raise PresalesError("presales_invalid_evidence")
     seen: set[tuple[UUID, UUID]] = set()
     catalog: dict[str, CitationInput] = {}
     evidence = []
@@ -95,7 +138,7 @@ def prepare_citations(payload: GenerationInput) -> tuple[GenerationInput, dict[s
             if len(item["text"]) > 1800:
                 raise PresalesError("presales_input_too_large")
             chunk, version = UUID(item["chunkId"]), UUID(item["documentVersionId"])
-            if version not in versions or (chunk, version) in seen:
+            if version not in sources or (chunk, version) in seen:
                 raise PresalesError("presales_invalid_evidence")
             seen.add((chunk, version))
             for excerpt in split_excerpts(item["text"]):
@@ -104,10 +147,18 @@ def prepare_citations(payload: GenerationInput) -> tuple[GenerationInput, dict[s
                 )
                 reference = f"{prefix}_{len(catalog) + 1}"
                 catalog[reference] = citation
-                evidence.append({**item, "text": citation.excerpt, "citationId": reference})
+                evidence.append(
+                    SelectionEvidence(
+                        citation_id=reference,
+                        text=citation.excerpt,
+                        source=sources[version],
+                        heading=item.get("heading", ""),
+                        page_number=item.get("pageNumber", ""),
+                    )
+                )
     except (KeyError, ValueError, ValidationError) as error:
         raise PresalesError("presales_invalid_evidence") from error
-    return payload.model_copy(update={"evidence": evidence}), catalog
+    return SelectionInput(requirement=payload.requirement, evidence=evidence), catalog
 
 
 def resolve_selection(content: str, catalog: dict[str, CitationInput]) -> ModelDraft:
@@ -125,5 +176,8 @@ def resolve_selection(content: str, catalog: dict[str, CitationInput]) -> ModelD
     references = list(dict.fromkeys([*references, *prerequisite_references]))
     return ModelDraft(
         **selected.model_dump(exclude={"citations", "prerequisites"}),
+        conditions=list(
+            dict.fromkeys(item.condition for item in selected.prerequisites if item.state != "met")
+        ),
         citations=[catalog[key] for key in references],
     )

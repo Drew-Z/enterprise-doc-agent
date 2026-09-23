@@ -28,7 +28,6 @@ def draft_payload() -> dict:
     return {
         "status": "insufficient_evidence",
         "answer": "现有片段不能证明该能力。",
-        "conditions": [],
         "missingInformation": ["请补充有效能力证明。"],
         "citations": [],
         "prerequisites": [],
@@ -160,9 +159,10 @@ async def test_gateway_is_one_request_and_rejects_truncation_tools_and_bad_schem
         gateway.provenance["promptSha256"]
         == hashlib.sha256(requests[0]["messages"][0]["content"].encode()).hexdigest()
     )
-    assert json.loads(requests[0]["messages"][1]["content"]) == payload.model_dump(
-        mode="json", by_alias=True
-    )
+    assert json.loads(requests[0]["messages"][1]["content"]) == {
+        "requirement": payload.requirement.model_dump(mode="json", by_alias=True),
+        "evidence": [],
+    }
     for change in ["length", "tool", "approved", "multiple"]:
         reply = {
             "choices": [
