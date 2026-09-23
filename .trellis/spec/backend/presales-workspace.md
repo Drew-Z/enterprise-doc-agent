@@ -231,6 +231,18 @@ stronger wording to silently override an equally applicable promise. Unmet/unkno
 prerequisites use actionable Chinese wording, such as "需配置保留策略"; never present
 them as already completed facts. Satisfied prerequisites remain out of the action list.
 
+The rejected `presales.v6` prompt trial tried more explicit prose/source-relation and
+unknown-state instructions, but still marked an unrecorded acceptance state unmet.
+It also returned chunk UUIDs as citationId and mismatched duplicated condition text.
+Its prompt is withdrawn; the branch still uses v5 and the deployment still uses v3.
+Retain the frozen v6 prompt and raw results as evidence, not active runtime behavior.
+Do not repair UUID references or relax condition checks to relabel failed attempts.
+
+Semantic review must distinguish evidence about completion from production eligibility:
+missing records do not prove non-completion. A correct conflict label can accompany
+incorrect prose about which source agrees with the requirement. Additional imperative
+prompt text does not guarantee either distinction; test exact original responses.
+
 Attempts store model provider/name, pipeline and prompt versions, prompt SHA,
 configured model version/revision and returned model/response ID when available.
 Configured or returned identifiers do not authenticate upstream model weights.

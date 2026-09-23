@@ -142,3 +142,27 @@ states explicitly; do not infer semantic correctness from a valid schema or labe
 Clarifications must ask for missing facts or revised terms, not facts already stated
 by the cited sources (H1-R4). Preserve required-anchor gaps even when another source
 contains a similar fact (H1-R2); changing gold after inference hides the observation.
+
+## Semantic grounding and transport diagnostics
+
+The v6 candidate keeps the selection schema unchanged. H1/H2/H3 are known regressions;
+H4 is frozen separately before its first use and remains assistant-authored material.
+Review every prerequisite state and the answer's source-to-requirement relation,
+not only final classification. Predeclare dataset order, request cap and stop rules;
+an unattempted gated dataset is not a successful test. Never silently continue sampling
+after a declared stop or describe assistant review as independent adjudication.
+
+`RecordingTransport` adds optional `transportFailure: {type, phase}` to synthetic
+generation reports. Types are fixed HTTPX library names or HTTPError; cancellations
+use CancelledError. Phases distinguish awaiting_response_headers from
+reading_response_body (including stream cleanup). Exception messages, URLs, headers,
+partial response bodies and credentials are excluded. A received HTTP 200 followed
+by a body read failure is still a failed generation with unknown usage. Always close
+received streams; rethrow rather than repairing or retrying. External cancellation
+leaves the row/run interrupted and saves the trace; the gateway's own deadline still
+maps to its existing presales_model_timeout. These client observations cannot identify
+which network intermediary failed or whether the provider completed and billed work.
+
+Public `collect()` boundary tests cover ConnectError redaction/no retry, partial 200
+body failure/stream closure and interrupted collection. They test diagnostics, not
+model semantics; frozen raw v5 failures provide the actual semantic regression cases.

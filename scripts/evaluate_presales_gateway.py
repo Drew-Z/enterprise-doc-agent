@@ -39,16 +39,48 @@ class RecordingTransport(httpx.AsyncBaseTransport):
         self.records.append(record)
         # Only synthetic model input and bounded output, never headers or credentials.
         record["input"] = json.loads(json.loads(request.content)["messages"][1]["content"])
-        response = await self.inner.handle_async_request(request)
-        record["httpStatus"] = response.status_code
-        body = bytearray()
-        async for part in response.aiter_bytes():
-            if len(body) + len(part) > 128 * 1024:
+        phase = "awaiting_response_headers"
+        try:
+            response = await self.inner.handle_async_request(request)
+            record["httpStatus"] = response.status_code
+            phase = "reading_response_body"
+            body = bytearray()
+            try:
+                async for part in response.aiter_bytes():
+                    if len(body) + len(part) > 128 * 1024:
+                        record["outputTooLarge"] = True
+                        raise PresalesError("presales_output_too_large", provider_requests=1)
+                    body.extend(part)
+            finally:
                 await response.aclose()
-                record["outputTooLarge"] = True
-                raise PresalesError("presales_output_too_large", provider_requests=1)
-            body.extend(part)
-        await response.aclose()
+        except httpx.HTTPError as error:
+            # Use fixed library names, never exception text, URLs or custom class names.
+            error_type = next(
+                (
+                    kind.__name__
+                    for kind in (
+                        httpx.ConnectTimeout,
+                        httpx.ReadTimeout,
+                        httpx.WriteTimeout,
+                        httpx.PoolTimeout,
+                        httpx.ConnectError,
+                        httpx.ReadError,
+                        httpx.WriteError,
+                        httpx.CloseError,
+                        httpx.ProxyError,
+                        httpx.RemoteProtocolError,
+                        httpx.LocalProtocolError,
+                        httpx.UnsupportedProtocol,
+                    )
+                    if isinstance(error, kind)
+                ),
+                "HTTPError",
+            )
+            record["transportFailure"] = {"type": error_type, "phase": phase}
+            raise
+        except asyncio.CancelledError:
+            record["transportFailure"] = {"type": "CancelledError", "phase": phase}
+            raise
         if response.status_code == 200:
             try:
                 raw = json.loads(body)
@@ -142,6 +174,9 @@ async def collect(
                 )
             except PresalesError as error:
                 observation.update(state="failed", errorCode=error.code)
+            except asyncio.CancelledError:
+                observation.update(state="interrupted", errorCode="evaluation_cancelled")
+                raise
             finally:
                 observation.update(
                     elapsedSeconds=round(time.monotonic() - started, 3),
@@ -154,7 +189,7 @@ async def collect(
                 flush=True,
             )
         report["status"] = "collected"
-    except Exception:
+    except (Exception, asyncio.CancelledError):
         report["status"] = "interrupted"
         raise
     finally:
