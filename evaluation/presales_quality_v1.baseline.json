@@ -1,0 +1,1432 @@
+{
+  "schemaVersion": "presales-quality-run-v1",
+  "datasetSha256": "0dd5e9f6cedcc5ddf75613b3d1f5cd63e9006c05790c4d85f56275e8323e0281",
+  "runnerSha256": "979d072602ca64c6b3f995a89fe81124cafdfa6d7249aba697b1521de86e9064",
+  "baseUrl": "https://agent.playlab.eu.cc",
+  "startedAt": "2026-09-23T08:45:19.983963+00:00",
+  "plannedRepeats": 2,
+  "maxGenerationAttempts": 12,
+  "automaticRetries": 0,
+  "syntheticOnly": true,
+  "runs": [
+    {
+      "repeat": 1,
+      "versions": {
+        "C1-Q": "6e28edf6-97a7-44de-b2d4-cd2218e298c3",
+        "C1-TECH": "ff4534e9-748f-43a5-8df2-de2a3afca844",
+        "C1-KEY": "f63afac6-ed03-4961-9ef3-e92b869bbd68",
+        "C1-SUP": "ed68e715-5a0b-4c03-879f-b022f9b0ad02",
+        "C1-DPA": "1e48a975-9e3c-4bf2-a28c-0749dfe49466",
+        "C1-SUB": "1b4eab1d-88eb-48f8-8873-1b91a383c4da"
+      },
+      "observations": [
+        {
+          "key": "C1-R01",
+          "startedAt": "2026-09-23T08:46:36.714499+00:00",
+          "state": "observed",
+          "httpStatus": 200,
+          "elapsedSeconds": 65.828
+        },
+        {
+          "key": "C1-R02",
+          "startedAt": "2026-09-23T08:47:46.043277+00:00",
+          "state": "observed",
+          "httpStatus": 200,
+          "elapsedSeconds": 107.578
+        },
+        {
+          "key": "C1-R03",
+          "startedAt": "2026-09-23T08:49:37.185954+00:00",
+          "state": "observed",
+          "httpStatus": 200,
+          "elapsedSeconds": 75.265
+        },
+        {
+          "key": "C1-R04",
+          "startedAt": "2026-09-23T08:50:56.488496+00:00",
+          "state": "observed",
+          "httpStatus": 200,
+          "elapsedSeconds": 83.578
+        },
+        {
+          "key": "C1-R05",
+          "startedAt": "2026-09-23T08:52:25.143113+00:00",
+          "state": "observed",
+          "httpStatus": 200,
+          "elapsedSeconds": 69.39
+        },
+        {
+          "key": "C1-R07",
+          "startedAt": "2026-09-23T08:53:38.076990+00:00",
+          "state": "observed",
+          "httpStatus": 200,
+          "elapsedSeconds": 56.125
+        }
+      ],
+      "tenantId": "6857888b-df7f-4125-a93b-22f7ce2a3351",
+      "expiresAt": "2026-09-23T10:45:23.319951Z",
+      "packet": {
+        "id": "30e30a34-c3c8-405a-81a7-e9c5eb2b1416",
+        "title": "青岚云应用：华东企业版采购",
+        "createdAt": "2026-09-23T08:46:34.344909Z",
+        "rowCount": 6,
+        "staleSources": false,
+        "sources": [
+          {
+            "versionId": "6e28edf6-97a7-44de-b2d4-cd2218e298c3",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "54162c1a-99c0-4e0c-9cfc-76f5f313c21a",
+            "generationId": "33130922-4f83-4c7b-9a1c-fe9d9e2161c5",
+            "filename": "C1-Q-v3.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "1ccf357df4b9662a46a2a01b04018ac545edf6dbd4785d8ba8561ce4e6ae2633"
+          },
+          {
+            "versionId": "ff4534e9-748f-43a5-8df2-de2a3afca844",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "da067e80-42c8-40f6-a0a5-84fada023bff",
+            "generationId": "4fe8bf32-3ace-4e25-ad81-255a65afe702",
+            "filename": "C1-TECH-v5.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "5a58ad1e1918e03724d74a8c3d8cfd0ce1764929031b9b48c50fedf34128a018"
+          },
+          {
+            "versionId": "f63afac6-ed03-4961-9ef3-e92b869bbd68",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "98ac02af-9952-49ef-a507-f374cbbe956e",
+            "generationId": "e6e740c1-b0cb-4fa2-b410-f1e5ebb53bcb",
+            "filename": "C1-KEY-v2.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "3d6e9e2c7c038ad36bac54cc3453e17aed9da9b07953e436f93d92b8dbfb72c7"
+          },
+          {
+            "versionId": "ed68e715-5a0b-4c03-879f-b022f9b0ad02",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "b843d8a7-206b-4bba-8ff7-430cc58788b3",
+            "generationId": "721cb1ba-7e9d-4671-9548-5f4f5f5c3c8e",
+            "filename": "C1-SUP-v2.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "f54e55e093a606779632dca1d60777b19aca8d1a1102fabbd041441c9c11e9e5"
+          },
+          {
+            "versionId": "1e48a975-9e3c-4bf2-a28c-0749dfe49466",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "cc5cc7c9-5526-4804-8600-358e38249507",
+            "generationId": "5838be0e-83a7-4dfd-9095-2c7ea0ebe507",
+            "filename": "C1-DPA-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "96e9dbb1abd6d0a5b0c6ade0055b1072853bc813530d86aac32336ccd66b395f"
+          },
+          {
+            "versionId": "1b4eab1d-88eb-48f8-8873-1b91a383c4da",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "9835583f-42ae-4f2d-9df0-8e95fdd7997b",
+            "generationId": "d0776e4a-fdd0-44da-99aa-3dd582825bd1",
+            "filename": "C1-SUB-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "3587c057598899983ca962933651f950785d7d1bd32574dc4f74997b630667ce"
+          }
+        ],
+        "rows": [
+          {
+            "id": "92e01935-b3a0-4ff4-8b55-daba9b8846fc",
+            "requirement": {
+              "key": "C1-R01",
+              "text": "本次报价已包含审计日志至少保存 400 天，且保存期内管理员也不能删除日志。",
+              "sourceLocation": "客户需求表第 1 项"
+            },
+            "revision": 1,
+            "state": "drafted",
+            "draft": {
+              "status": "supported",
+              "answer": "是的，本次报价已包含审计日志至少保存 400 天，且保存期内管理员也不能删除日志。证据支持该要求。",
+              "conditions": [],
+              "missingInformation": [],
+              "citations": [
+                {
+                  "chunkId": "00ffacc9-f26e-49f2-aedb-56377a13b16b",
+                  "documentVersionId": "ff4534e9-748f-43a5-8df2-de2a3afca844",
+                  "excerpt": "企业版基础审计日志保留 90 天。WORM400 选项将保留期设为 400 天；在保留期届满前，包括租户管理员在内的任何账号均不能删除已写入日志。",
+                  "filename": "C1-TECH-v5.txt",
+                  "pageNumber": null,
+                  "heading": "T-AUDIT",
+                  "startOffset": 36,
+                  "endOffset": 109
+                },
+                {
+                  "chunkId": "a51180eb-6e26-49f7-b31e-c477c7d60acd",
+                  "documentVersionId": "6e28edf6-97a7-44de-b2d4-cd2218e298c3",
+                  "excerpt": "项目 | 型号或选项 | 单位 | 已购数量\n数据节点 | X250 | 台 | 4\n审计保留与防删 | WORM400 | 套 | 1\n客户主密钥管理 | BYOK | 套 | 0\n独享密钥硬件 | HSM-D | 套 | 0\n双站点自动切换 | DUAL | 套 | 0",
+                  "filename": "C1-Q-v3.txt",
+                  "pageNumber": null,
+                  "heading": "Q-LINES",
+                  "startOffset": 102,
+                  "endOffset": 239
+                }
+              ],
+              "retrieval": [
+                {
+                  "versionId": "6e28edf6-97a7-44de-b2d4-cd2218e298c3",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "ff4534e9-748f-43a5-8df2-de2a3afca844",
+                  "retrievedCount": 3,
+                  "usedCount": 2,
+                  "truncated": true
+                },
+                {
+                  "versionId": "f63afac6-ed03-4961-9ef3-e92b869bbd68",
+                  "retrievedCount": 2,
+                  "usedCount": 2,
+                  "truncated": false
+                },
+                {
+                  "versionId": "ed68e715-5a0b-4c03-879f-b022f9b0ad02",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "1e48a975-9e3c-4bf2-a28c-0749dfe49466",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "1b4eab1d-88eb-48f8-8873-1b91a383c4da",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                }
+              ]
+            },
+            "review": null,
+            "reviewHistory": [],
+            "attempts": [
+              {
+                "id": "67345733-ef99-4fc9-a553-cbcf80112deb",
+                "number": 1,
+                "state": "succeeded",
+                "errorCode": null,
+                "modelProvider": "openai_compatible",
+                "modelName": "grok-4.6",
+                "providerRequestCount": 1,
+                "provenance": {
+                  "promptSha256": "bbd209f04258fb0f5ac658a3fcb7fb90b3d3e59d0eef2917cad29d49891d2fa8",
+                  "promptVersion": "presales.v1",
+                  "returnedModel": "grok-4.6",
+                  "pipelineVersion": "presales-workspace.v1",
+                  "providerResponseId": "b918d9f9-4785-9637-9b73-bb46533a9c8a",
+                  "configuredModelVersion": null,
+                  "configuredModelRevision": null
+                },
+                "usage": {
+                  "total_tokens": 5866,
+                  "prompt_tokens": 3307,
+                  "completion_tokens": 2559
+                },
+                "createdAt": "2026-09-23T08:46:40.168197Z",
+                "finishedAt": "2026-09-23T08:47:39.753220Z",
+                "deadlineAt": "2026-09-23T08:49:10.168197Z"
+              }
+            ]
+          },
+          {
+            "id": "d52436a3-76c2-409c-a3df-2093d95a83a3",
+            "requirement": {
+              "key": "C1-R02",
+              "text": "客户能够自行管理加密主密钥，且该主密钥运行在独享 HSM 中。",
+              "sourceLocation": "客户需求表第 2 项"
+            },
+            "revision": 1,
+            "state": "drafted",
+            "draft": {
+              "status": "contradicted",
+              "answer": "证据明确显示，BYOK允许客户生成轮换撤销加密主密钥且HSM-D使主密钥在独享HSM中运行，但两项必须配套采购完成，且启用前须完成密钥托管交接和恢复演练；当前订单BYOK与HSM-D均未购（数量0），无法承诺已具备可用客户主密钥服务。",
+              "conditions": [],
+              "missingInformation": [],
+              "citations": [
+                {
+                  "chunkId": "6d4cbac4-ed6e-49be-b3d4-2a1ce2d9cf31",
+                  "documentVersionId": "f63afac6-ed03-4961-9ef3-e92b869bbd68",
+                  "excerpt": "BYOK 允许客户生成、轮换和撤销加密主密钥；HSM-D 使该客户的主密钥在独享 HSM 中运行。两项必须配套采购，企业版 E 可以选购。",
+                  "filename": "C1-KEY-v2.txt",
+                  "pageNumber": null,
+                  "heading": "K-ABILITY",
+                  "startOffset": 42,
+                  "endOffset": 111
+                },
+                {
+                  "chunkId": "d93671f4-781b-4f76-8e26-40714813e009",
+                  "documentVersionId": "f63afac6-ed03-4961-9ef3-e92b869bbd68",
+                  "excerpt": "除 BYOK 与 HSM-D 采购完成外，启用前还必须由客户完成密钥托管交接和恢复演练；未完成这两项验收不能承诺已具备可用的客户主密钥服务。",
+                  "filename": "C1-KEY-v2.txt",
+                  "pageNumber": null,
+                  "heading": "K-ENABLE",
+                  "startOffset": 125,
+                  "endOffset": 195
+                },
+                {
+                  "chunkId": "a51180eb-6e26-49f7-b31e-c477c7d60acd",
+                  "documentVersionId": "6e28edf6-97a7-44de-b2d4-cd2218e298c3",
+                  "excerpt": "客户主密钥管理 | BYOK | 套 | 0",
+                  "filename": "C1-Q-v3.txt",
+                  "pageNumber": null,
+                  "heading": "Q-LINES",
+                  "startOffset": 102,
+                  "endOffset": 239
+                }
+              ],
+              "retrieval": [
+                {
+                  "versionId": "6e28edf6-97a7-44de-b2d4-cd2218e298c3",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "ff4534e9-748f-43a5-8df2-de2a3afca844",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "f63afac6-ed03-4961-9ef3-e92b869bbd68",
+                  "retrievedCount": 2,
+                  "usedCount": 2,
+                  "truncated": false
+                },
+                {
+                  "versionId": "ed68e715-5a0b-4c03-879f-b022f9b0ad02",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "1e48a975-9e3c-4bf2-a28c-0749dfe49466",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "1b4eab1d-88eb-48f8-8873-1b91a383c4da",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                }
+              ]
+            },
+            "review": null,
+            "reviewHistory": [],
+            "attempts": [
+              {
+                "id": "ae3c5009-be69-4785-a7f7-86d65a6948d7",
+                "number": 1,
+                "state": "succeeded",
+                "errorCode": null,
+                "modelProvider": "openai_compatible",
+                "modelName": "grok-4.6",
+                "providerRequestCount": 1,
+                "provenance": {
+                  "promptSha256": "bbd209f04258fb0f5ac658a3fcb7fb90b3d3e59d0eef2917cad29d49891d2fa8",
+                  "promptVersion": "presales.v1",
+                  "returnedModel": "grok-4.6",
+                  "pipelineVersion": "presales-workspace.v1",
+                  "providerResponseId": "0fd2e365-9561-96dc-b273-e0625aa1bda9",
+                  "configuredModelVersion": null,
+                  "configuredModelRevision": null
+                },
+                "usage": {
+                  "total_tokens": 6215,
+                  "prompt_tokens": 3192,
+                  "completion_tokens": 3023
+                },
+                "createdAt": "2026-09-23T08:47:49.500087Z",
+                "finishedAt": "2026-09-23T08:49:31.604283Z",
+                "deadlineAt": "2026-09-23T08:50:19.500087Z"
+              }
+            ]
+          },
+          {
+            "id": "41ad9e8f-778e-460f-a3dc-4c153bfce84d",
+            "requirement": {
+              "key": "C1-R03",
+              "text": "本次四节点合计提供不少于 1 TiB 可用容量；允许将四个节点的可用容量直接相加。",
+              "sourceLocation": "客户需求表第 3 项"
+            },
+            "revision": 1,
+            "state": "drafted",
+            "draft": {
+              "status": "contradicted",
+              "answer": "证据显示本次四节点合计可用容量为 4 台 X250 节点 × 250 GiB = 1000 GiB（已扣除系统保留空间），小于 1 TiB（1 TiB = 1024 GiB）。尽管允许四个节点的可用容量直接相加，但合计容量不足 1 TiB，证据明确不满足本次四节点合计提供不少于 1 TiB 可用容量的要求。",
+              "conditions": [],
+              "missingInformation": [],
+              "citations": [
+                {
+                  "chunkId": "47442a0f-88f1-48be-9649-a9779532ce53",
+                  "documentVersionId": "ff4534e9-748f-43a5-8df2-de2a3afca844",
+                  "excerpt": "X250 每台节点提供 250 GiB 可用容量，四台容量可相加，已扣除系统保留空间。本型号的可用容量是固定上限，当前无节点内扩容或额外容量选项。本文件采用 1 TiB = 1024 GiB。",
+                  "filename": "C1-TECH-v5.txt",
+                  "pageNumber": null,
+                  "heading": "T-CAPACITY",
+                  "startOffset": 125,
+                  "endOffset": 221
+                },
+                {
+                  "chunkId": "a51180eb-6e26-49f7-b31e-c477c7d60acd",
+                  "documentVersionId": "6e28edf6-97a7-44de-b2d4-cd2218e298c3",
+                  "excerpt": "项目 | 型号或选项 | 单位 | 已购数量\n数据节点 | X250 | 台 | 4\n审计保留与防删 | WORM400 | 套 | 1\n客户主密钥管理 | BYOK | 套 | 0\n独享密钥硬件 | HSM-D | 套 | 0\n双站点自动切换 | DUAL | 套 | 0",
+                  "filename": "C1-Q-v3.txt",
+                  "pageNumber": null,
+                  "heading": "Q-LINES",
+                  "startOffset": 102,
+                  "endOffset": 239
+                }
+              ],
+              "retrieval": [
+                {
+                  "versionId": "6e28edf6-97a7-44de-b2d4-cd2218e298c3",
+                  "retrievedCount": 3,
+                  "usedCount": 2,
+                  "truncated": true
+                },
+                {
+                  "versionId": "ff4534e9-748f-43a5-8df2-de2a3afca844",
+                  "retrievedCount": 5,
+                  "usedCount": 2,
+                  "truncated": true
+                },
+                {
+                  "versionId": "f63afac6-ed03-4961-9ef3-e92b869bbd68",
+                  "retrievedCount": 2,
+                  "usedCount": 2,
+                  "truncated": false
+                },
+                {
+                  "versionId": "ed68e715-5a0b-4c03-879f-b022f9b0ad02",
+                  "retrievedCount": 2,
+                  "usedCount": 2,
+                  "truncated": false
+                },
+                {
+                  "versionId": "1e48a975-9e3c-4bf2-a28c-0749dfe49466",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "1b4eab1d-88eb-48f8-8873-1b91a383c4da",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                }
+              ]
+            },
+            "review": null,
+            "reviewHistory": [],
+            "attempts": [
+              {
+                "id": "bd24d4b4-188a-4fa8-8268-c2623a1adc1f",
+                "number": 1,
+                "state": "succeeded",
+                "errorCode": null,
+                "modelProvider": "openai_compatible",
+                "modelName": "grok-4.6",
+                "providerRequestCount": 1,
+                "provenance": {
+                  "promptSha256": "bbd209f04258fb0f5ac658a3fcb7fb90b3d3e59d0eef2917cad29d49891d2fa8",
+                  "promptVersion": "presales.v1",
+                  "returnedModel": "grok-4.6",
+                  "pipelineVersion": "presales-workspace.v1",
+                  "providerResponseId": "501646f8-4e6f-9333-a5c8-ccab893895e8",
+                  "configuredModelVersion": null,
+                  "configuredModelRevision": null
+                },
+                "usage": {
+                  "total_tokens": 6718,
+                  "prompt_tokens": 3568,
+                  "completion_tokens": 3150
+                },
+                "createdAt": "2026-09-23T08:49:40.650914Z",
+                "finishedAt": "2026-09-23T08:50:50.515758Z",
+                "deadlineAt": "2026-09-23T08:52:10.650914Z"
+              }
+            ]
+          },
+          {
+            "id": "c1e280e0-0653-4074-a4c3-0279bea4683f",
+            "requirement": {
+              "key": "C1-R04",
+              "text": "本次方案同时保证恢复时间 RTO 不超过 15 分钟、恢复点 RPO 不超过 5 分钟。",
+              "sourceLocation": "客户需求表第 4 项"
+            },
+            "revision": 1,
+            "state": "drafted",
+            "draft": {
+              "status": "conditional",
+              "answer": "RPO 支持不超过 5 分钟，但 RTO 未提供不超过 15 分钟的保证。",
+              "conditions": [
+                "RTO 未提供不超过 15 分钟的保证"
+              ],
+              "missingInformation": [],
+              "citations": [
+                {
+                  "chunkId": "e60f5c04-651a-4280-af18-d5b6975b5ed2",
+                  "documentVersionId": "ff4534e9-748f-43a5-8df2-de2a3afca844",
+                  "excerpt": "华东企业版当前保证 RPO 不超过 5 分钟。本节描述复制间隔和数据丢失窗口，不给出 RTO 保证。",
+                  "filename": "C1-TECH-v5.txt",
+                  "pageNumber": null,
+                  "heading": "T-DR",
+                  "startOffset": 231,
+                  "endOffset": 281
+                }
+              ],
+              "retrieval": [
+                {
+                  "versionId": "6e28edf6-97a7-44de-b2d4-cd2218e298c3",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "ff4534e9-748f-43a5-8df2-de2a3afca844",
+                  "retrievedCount": 4,
+                  "usedCount": 2,
+                  "truncated": true
+                },
+                {
+                  "versionId": "f63afac6-ed03-4961-9ef3-e92b869bbd68",
+                  "retrievedCount": 2,
+                  "usedCount": 2,
+                  "truncated": false
+                },
+                {
+                  "versionId": "ed68e715-5a0b-4c03-879f-b022f9b0ad02",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "1e48a975-9e3c-4bf2-a28c-0749dfe49466",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "1b4eab1d-88eb-48f8-8873-1b91a383c4da",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                }
+              ]
+            },
+            "review": null,
+            "reviewHistory": [],
+            "attempts": [
+              {
+                "id": "d5437ec6-5210-4dd1-85cd-56af0278221a",
+                "number": 1,
+                "state": "succeeded",
+                "errorCode": null,
+                "modelProvider": "openai_compatible",
+                "modelName": "grok-4.6",
+                "providerRequestCount": 1,
+                "provenance": {
+                  "promptSha256": "bbd209f04258fb0f5ac658a3fcb7fb90b3d3e59d0eef2917cad29d49891d2fa8",
+                  "promptVersion": "presales.v1",
+                  "returnedModel": "grok-4.6",
+                  "pipelineVersion": "presales-workspace.v1",
+                  "providerResponseId": "2a1a9d2f-7993-93dd-8c25-d7ad1c73218d",
+                  "configuredModelVersion": null,
+                  "configuredModelRevision": null
+                },
+                "usage": {
+                  "total_tokens": 6498,
+                  "prompt_tokens": 3306,
+                  "completion_tokens": 3192
+                },
+                "createdAt": "2026-09-23T08:50:59.941976Z",
+                "finishedAt": "2026-09-23T08:52:16.090570Z",
+                "deadlineAt": "2026-09-23T08:53:29.941976Z"
+              }
+            ]
+          },
+          {
+            "id": "cae73dbe-6cc0-4685-bb65-ae02c067ec28",
+            "requirement": {
+              "key": "C1-R05",
+              "text": "本次订单保证的月度可用性不低于 99.95%。",
+              "sourceLocation": "客户需求表第 5 项"
+            },
+            "revision": 1,
+            "state": "drafted",
+            "draft": {
+              "status": "supported",
+              "answer": "根据提供的证据，本次订单华东企业版 E 的月度可用性保证为 99.95%，满足‘本次订单保证的月度可用性不低于 99.95%’的要求。",
+              "conditions": [],
+              "missingInformation": [],
+              "citations": [
+                {
+                  "chunkId": "685de31e-9c26-4576-a40d-1244d3d12775",
+                  "documentVersionId": "ed68e715-5a0b-4c03-879f-b022f9b0ad02",
+                  "excerpt": "本订单华东企业版 E 的月度可用性保证为 99.95%。",
+                  "filename": "C1-SUP-v2.txt",
+                  "pageNumber": null,
+                  "heading": "S-SLA",
+                  "startOffset": 109,
+                  "endOffset": 137
+                },
+                {
+                  "chunkId": "6a634cee-3349-498e-87f1-f3bf0d42bff9",
+                  "documentVersionId": "ed68e715-5a0b-4c03-879f-b022f9b0ad02",
+                  "excerpt": "本协议已由双方签认。仅当本订单月度可用性条款与 C1-TECH v5 不同时，以本协议为准；本协议不规定其他附件的优先级。",
+                  "filename": "C1-SUP-v2.txt",
+                  "pageNumber": null,
+                  "heading": "S-PRIORITY",
+                  "startOffset": 37,
+                  "endOffset": 98
+                }
+              ],
+              "retrieval": [
+                {
+                  "versionId": "6e28edf6-97a7-44de-b2d4-cd2218e298c3",
+                  "retrievedCount": 3,
+                  "usedCount": 2,
+                  "truncated": true
+                },
+                {
+                  "versionId": "ff4534e9-748f-43a5-8df2-de2a3afca844",
+                  "retrievedCount": 5,
+                  "usedCount": 2,
+                  "truncated": true
+                },
+                {
+                  "versionId": "f63afac6-ed03-4961-9ef3-e92b869bbd68",
+                  "retrievedCount": 2,
+                  "usedCount": 2,
+                  "truncated": false
+                },
+                {
+                  "versionId": "ed68e715-5a0b-4c03-879f-b022f9b0ad02",
+                  "retrievedCount": 2,
+                  "usedCount": 2,
+                  "truncated": false
+                },
+                {
+                  "versionId": "1e48a975-9e3c-4bf2-a28c-0749dfe49466",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "1b4eab1d-88eb-48f8-8873-1b91a383c4da",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                }
+              ]
+            },
+            "review": null,
+            "reviewHistory": [],
+            "attempts": [
+              {
+                "id": "1541fa39-8aa5-4fac-a560-5b71d484460b",
+                "number": 1,
+                "state": "succeeded",
+                "errorCode": null,
+                "modelProvider": "openai_compatible",
+                "modelName": "grok-4.6",
+                "providerRequestCount": 1,
+                "provenance": {
+                  "promptSha256": "bbd209f04258fb0f5ac658a3fcb7fb90b3d3e59d0eef2917cad29d49891d2fa8",
+                  "promptVersion": "presales.v1",
+                  "returnedModel": "grok-4.6",
+                  "pipelineVersion": "presales-workspace.v1",
+                  "providerResponseId": "ad20374e-d88b-916f-bdce-9db6287a0ea7",
+                  "configuredModelVersion": null,
+                  "configuredModelRevision": null
+                },
+                "usage": {
+                  "total_tokens": 6400,
+                  "prompt_tokens": 3514,
+                  "completion_tokens": 2886
+                },
+                "createdAt": "2026-09-23T08:52:28.610655Z",
+                "finishedAt": "2026-09-23T08:53:32.590722Z",
+                "deadlineAt": "2026-09-23T08:54:58.610655Z"
+              }
+            ]
+          },
+          {
+            "id": "078b5b19-81d9-43da-80fe-52532a785e0c",
+            "requirement": {
+              "key": "C1-R07",
+              "text": "业务数据和备份始终位于中国内地，不允许在境外保留副本。",
+              "sourceLocation": "客户需求表第 7 项"
+            },
+            "revision": 1,
+            "state": "drafted",
+            "draft": {
+              "status": "conflicting_evidence",
+              "answer": "客户要求‘业务数据和备份始终位于中国内地，不允许在境外保留副本’与C1-DPA-v1.txt中‘本订单华东企业版 E 的全部业务数据及其备份均只在中国内地存储和处理，不建立境外副本。’一致，但与C1-SUB-v1.txt中‘生产库位于上海，夜间完整备份须额外复制一份至新加坡备份中心并保留 7 天。’存在直接冲突。新加坡位于境外。C1-DPA-v1与C1-SUB-v1均已签认、同日生效，未约定优先级。",
+              "conditions": [],
+              "missingInformation": [
+                "C1-DPA-v1与C1-SUB-v1之间是否存在明确优先级约定？"
+              ],
+              "citations": [
+                {
+                  "chunkId": "8708178a-b7f8-43f3-947d-5c72a62a2588",
+                  "documentVersionId": "1e48a975-9e3c-4bf2-a28c-0749dfe49466",
+                  "excerpt": "本订单华东企业版 E 的全部业务数据及其备份均只在中国内地存储和处理，不建立境外副本。",
+                  "filename": "C1-DPA-v1.txt",
+                  "pageNumber": null,
+                  "heading": "D-LOCATION",
+                  "startOffset": 37,
+                  "endOffset": 80
+                },
+                {
+                  "chunkId": "3e7778dc-56e3-43fc-918d-f6a43de7e835",
+                  "documentVersionId": "1b4eab1d-88eb-48f8-8873-1b91a383c4da",
+                  "excerpt": "适用范围为本订单华东企业版 E。生产库位于上海，夜间完整备份须额外复制一份至新加坡备份中心并保留 7 天。",
+                  "filename": "C1-SUB-v1.txt",
+                  "pageNumber": null,
+                  "heading": "B-LOCATION",
+                  "startOffset": 38,
+                  "endOffset": 91
+                }
+              ],
+              "retrieval": [
+                {
+                  "versionId": "6e28edf6-97a7-44de-b2d4-cd2218e298c3",
+                  "retrievedCount": 3,
+                  "usedCount": 2,
+                  "truncated": true
+                },
+                {
+                  "versionId": "ff4534e9-748f-43a5-8df2-de2a3afca844",
+                  "retrievedCount": 3,
+                  "usedCount": 2,
+                  "truncated": true
+                },
+                {
+                  "versionId": "f63afac6-ed03-4961-9ef3-e92b869bbd68",
+                  "retrievedCount": 2,
+                  "usedCount": 2,
+                  "truncated": false
+                },
+                {
+                  "versionId": "ed68e715-5a0b-4c03-879f-b022f9b0ad02",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "1e48a975-9e3c-4bf2-a28c-0749dfe49466",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "1b4eab1d-88eb-48f8-8873-1b91a383c4da",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                }
+              ]
+            },
+            "review": null,
+            "reviewHistory": [],
+            "attempts": [
+              {
+                "id": "3412f458-4bf4-46e3-b315-80ddbe9236f3",
+                "number": 1,
+                "state": "succeeded",
+                "errorCode": null,
+                "modelProvider": "openai_compatible",
+                "modelName": "grok-4.6",
+                "providerRequestCount": 1,
+                "provenance": {
+                  "promptSha256": "bbd209f04258fb0f5ac658a3fcb7fb90b3d3e59d0eef2917cad29d49891d2fa8",
+                  "promptVersion": "presales.v1",
+                  "returnedModel": "grok-4.6",
+                  "pipelineVersion": "presales-workspace.v1",
+                  "providerResponseId": "a157ffd9-2c3e-9300-80ed-e32df7aa68bf",
+                  "configuredModelVersion": null,
+                  "configuredModelRevision": null
+                },
+                "usage": {
+                  "total_tokens": 5850,
+                  "prompt_tokens": 3440,
+                  "completion_tokens": 2410
+                },
+                "createdAt": "2026-09-23T08:53:41.523984Z",
+                "finishedAt": "2026-09-23T08:54:32.177992Z",
+                "deadlineAt": "2026-09-23T08:56:11.523984Z"
+              }
+            ]
+          }
+        ]
+      },
+      "demoUsage": {
+        "attemptsUsed": 6,
+        "attemptLimit": 6,
+        "uploadLimit": 6,
+        "maxFileBytes": 2097152,
+        "storageBytes": 10485760
+      },
+      "signedOut": true
+    },
+    {
+      "repeat": 2,
+      "versions": {
+        "C1-Q": "80a5e462-5373-4e48-850d-a6fb716ff0b3",
+        "C1-TECH": "d0394183-a4d3-4328-9b9d-0f2fd6a7cc9d",
+        "C1-KEY": "0e3f5105-5f60-48e6-872d-849b27159c2d",
+        "C1-SUP": "80941991-a739-407e-8aba-1a9c7da5198b",
+        "C1-DPA": "6dfe8a8e-9263-4a7c-ba85-7697ab8ba1cd",
+        "C1-SUB": "27f04e31-fe88-4cac-ab89-807783541ac1"
+      },
+      "observations": [
+        {
+          "key": "C1-R01",
+          "startedAt": "2026-09-23T08:55:51.144182+00:00",
+          "state": "observed",
+          "httpStatus": 200,
+          "elapsedSeconds": 73.469
+        },
+        {
+          "key": "C1-R02",
+          "startedAt": "2026-09-23T08:57:08.055687+00:00",
+          "state": "observed",
+          "httpStatus": 200,
+          "elapsedSeconds": 89.906
+        },
+        {
+          "key": "C1-R03",
+          "startedAt": "2026-09-23T08:58:41.410063+00:00",
+          "state": "observed",
+          "httpStatus": 200,
+          "elapsedSeconds": 86.047
+        },
+        {
+          "key": "C1-R04",
+          "startedAt": "2026-09-23T09:00:10.893782+00:00",
+          "state": "observed",
+          "httpStatus": 200,
+          "elapsedSeconds": 59.89
+        },
+        {
+          "key": "C1-R05",
+          "startedAt": "2026-09-23T09:01:14.234498+00:00",
+          "state": "observed",
+          "httpStatus": 200,
+          "elapsedSeconds": 63.312
+        },
+        {
+          "key": "C1-R07",
+          "startedAt": "2026-09-23T09:02:21.393985+00:00",
+          "state": "observed",
+          "httpStatus": 502,
+          "elapsedSeconds": 4.547
+        }
+      ],
+      "tenantId": "2e1aff12-8403-4291-83fd-7b39c13faea7",
+      "expiresAt": "2026-09-23T10:54:42.276895Z",
+      "packet": {
+        "id": "77818831-e875-4bed-a420-1a2ba5cc85f7",
+        "title": "青岚云应用：华东企业版采购",
+        "createdAt": "2026-09-23T08:55:48.755493Z",
+        "rowCount": 6,
+        "staleSources": false,
+        "sources": [
+          {
+            "versionId": "80a5e462-5373-4e48-850d-a6fb716ff0b3",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "6af77f71-b452-4901-9840-12e19e7f2ad9",
+            "generationId": "3c2f459b-1e76-4a64-ab10-844a715199db",
+            "filename": "C1-Q-v3.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "1ccf357df4b9662a46a2a01b04018ac545edf6dbd4785d8ba8561ce4e6ae2633"
+          },
+          {
+            "versionId": "d0394183-a4d3-4328-9b9d-0f2fd6a7cc9d",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "d6ab8690-a9b2-4733-9431-f530cfb68a66",
+            "generationId": "7e4b02cc-3ae5-4d40-ab77-ec0a52fbade6",
+            "filename": "C1-TECH-v5.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "5a58ad1e1918e03724d74a8c3d8cfd0ce1764929031b9b48c50fedf34128a018"
+          },
+          {
+            "versionId": "0e3f5105-5f60-48e6-872d-849b27159c2d",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "37273a75-4889-4ea2-a6d4-6c5517424611",
+            "generationId": "e6697c7d-df1f-48d7-bea6-28bd0141d508",
+            "filename": "C1-KEY-v2.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "3d6e9e2c7c038ad36bac54cc3453e17aed9da9b07953e436f93d92b8dbfb72c7"
+          },
+          {
+            "versionId": "80941991-a739-407e-8aba-1a9c7da5198b",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "5747fd98-7d95-482c-9f0f-1a28bf094655",
+            "generationId": "5fb5d23e-6968-4427-bb9b-e159f7b6b69c",
+            "filename": "C1-SUP-v2.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "f54e55e093a606779632dca1d60777b19aca8d1a1102fabbd041441c9c11e9e5"
+          },
+          {
+            "versionId": "6dfe8a8e-9263-4a7c-ba85-7697ab8ba1cd",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "242d0f8a-d5f7-4e0b-8b6f-644931dddea4",
+            "generationId": "717b11df-92aa-4d07-ba84-6b3fbd0ab37a",
+            "filename": "C1-DPA-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "96e9dbb1abd6d0a5b0c6ade0055b1072853bc813530d86aac32336ccd66b395f"
+          },
+          {
+            "versionId": "27f04e31-fe88-4cac-ab89-807783541ac1",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "babe5a50-e486-4d17-80d0-08587c99109f",
+            "generationId": "2d737b90-b7c0-4ff5-8289-967e317c1294",
+            "filename": "C1-SUB-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "3587c057598899983ca962933651f950785d7d1bd32574dc4f74997b630667ce"
+          }
+        ],
+        "rows": [
+          {
+            "id": "2673339b-52d7-4480-a5a9-059f0efafb3f",
+            "requirement": {
+              "key": "C1-R01",
+              "text": "本次报价已包含审计日志至少保存 400 天，且保存期内管理员也不能删除日志。",
+              "sourceLocation": "客户需求表第 1 项"
+            },
+            "revision": 1,
+            "state": "drafted",
+            "draft": {
+              "status": "supported",
+              "answer": "本次报价已包含审计日志至少保存 400 天，且保存期内管理员也不能删除日志。华东区企业版 E 订单中 WORM400 选项已购置，技术文档明确规定启用 WORM400 后审计日志保留期设为 400 天，在保留期届满前包括租户管理员在内的任何账号均不能删除已写入日志。",
+              "conditions": [],
+              "missingInformation": [],
+              "citations": [
+                {
+                  "chunkId": "90e4cbf2-ae1f-496f-bc3f-21955523a0d0",
+                  "documentVersionId": "d0394183-a4d3-4328-9b9d-0f2fd6a7cc9d",
+                  "excerpt": "企业版基础审计日志保留 90 天。WORM400 选项将保留期设为 400 天；在保留期届满前，包括租户管理员在内的任何账号均不能删除已写入日志。",
+                  "filename": "C1-TECH-v5.txt",
+                  "pageNumber": null,
+                  "heading": "T-AUDIT",
+                  "startOffset": 36,
+                  "endOffset": 109
+                },
+                {
+                  "chunkId": "1cbbbc7e-418e-4c19-877d-6a33f3e481b9",
+                  "documentVersionId": "80a5e462-5373-4e48-850d-a6fb716ff0b3",
+                  "excerpt": "审计保留与防删 | WORM400 | 套 | 1",
+                  "filename": "C1-Q-v3.txt",
+                  "pageNumber": null,
+                  "heading": "Q-LINES",
+                  "startOffset": 102,
+                  "endOffset": 239
+                }
+              ],
+              "retrieval": [
+                {
+                  "versionId": "80a5e462-5373-4e48-850d-a6fb716ff0b3",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "d0394183-a4d3-4328-9b9d-0f2fd6a7cc9d",
+                  "retrievedCount": 3,
+                  "usedCount": 2,
+                  "truncated": true
+                },
+                {
+                  "versionId": "0e3f5105-5f60-48e6-872d-849b27159c2d",
+                  "retrievedCount": 2,
+                  "usedCount": 2,
+                  "truncated": false
+                },
+                {
+                  "versionId": "80941991-a739-407e-8aba-1a9c7da5198b",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "6dfe8a8e-9263-4a7c-ba85-7697ab8ba1cd",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "27f04e31-fe88-4cac-ab89-807783541ac1",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                }
+              ]
+            },
+            "review": null,
+            "reviewHistory": [],
+            "attempts": [
+              {
+                "id": "11281fc5-35d9-4671-873c-e5e698300da5",
+                "number": 1,
+                "state": "succeeded",
+                "errorCode": null,
+                "modelProvider": "openai_compatible",
+                "modelName": "grok-4.6",
+                "providerRequestCount": 1,
+                "provenance": {
+                  "promptSha256": "bbd209f04258fb0f5ac658a3fcb7fb90b3d3e59d0eef2917cad29d49891d2fa8",
+                  "promptVersion": "presales.v1",
+                  "returnedModel": "grok-4.6",
+                  "pipelineVersion": "presales-workspace.v1",
+                  "providerResponseId": "f8d297f8-5cb0-9ac2-a7a6-d4ec66b1dc5b",
+                  "configuredModelVersion": null,
+                  "configuredModelRevision": null
+                },
+                "usage": {
+                  "total_tokens": 5572,
+                  "prompt_tokens": 3306,
+                  "completion_tokens": 2266
+                },
+                "createdAt": "2026-09-23T08:55:54.546197Z",
+                "finishedAt": "2026-09-23T08:57:02.747165Z",
+                "deadlineAt": "2026-09-23T08:58:24.546197Z"
+              }
+            ]
+          },
+          {
+            "id": "1ebbd7c3-bff1-42d8-9f29-09b5e264972b",
+            "requirement": {
+              "key": "C1-R02",
+              "text": "客户能够自行管理加密主密钥，且该主密钥运行在独享 HSM 中。",
+              "sourceLocation": "客户需求表第 2 项"
+            },
+            "revision": 1,
+            "state": "drafted",
+            "draft": {
+              "status": "conditional",
+              "answer": "要求部分满足，客户可通过采购 BYOK 与 HSM-D 选项并完成密钥托管交接及恢复演练后，实现自行管理加密主密钥且该主密钥运行在独享 HSM 中的能力。",
+              "conditions": [
+                "BYOK 与 HSM-D 选项必须采购完成",
+                "客户需完成密钥托管交接和恢复演练"
+              ],
+              "missingInformation": [],
+              "citations": [
+                {
+                  "chunkId": "1cbbbc7e-418e-4c19-877d-6a33f3e481b9",
+                  "documentVersionId": "80a5e462-5373-4e48-850d-a6fb716ff0b3",
+                  "excerpt": "项目 | 型号或选项 | 单位 | 已购数量\n数据节点 | X250 | 台 | 4\n审计保留与防删 | WORM400 | 套 | 1\n客户主密钥管理 | BYOK | 套 | 0\n独享密钥硬件 | HSM-D | 套 | 0\n双站点自动切换 | DUAL | 套 | 0",
+                  "filename": "C1-Q-v3.txt",
+                  "pageNumber": null,
+                  "heading": "Q-LINES",
+                  "startOffset": 102,
+                  "endOffset": 239
+                },
+                {
+                  "chunkId": "397c17a1-b00e-47f3-9fb8-766b9d806d54",
+                  "documentVersionId": "0e3f5105-5f60-48e6-872d-849b27159c2d",
+                  "excerpt": "BYOK 允许客户生成、轮换和撤销加密主密钥；HSM-D 使该客户的主密钥在独享 HSM 中运行。两项必须配套采购，企业版 E 可以选购。",
+                  "filename": "C1-KEY-v2.txt",
+                  "pageNumber": null,
+                  "heading": "K-ABILITY",
+                  "startOffset": 42,
+                  "endOffset": 111
+                },
+                {
+                  "chunkId": "267849be-ad8c-47c6-8562-e318f202037b",
+                  "documentVersionId": "0e3f5105-5f60-48e6-872d-849b27159c2d",
+                  "excerpt": "除 BYOK 与 HSM-D 采购完成外，启用前还必须由客户完成密钥托管交接和恢复演练；未完成这两项验收不能承诺已具备可用的客户主密钥服务。",
+                  "filename": "C1-KEY-v2.txt",
+                  "pageNumber": null,
+                  "heading": "K-ENABLE",
+                  "startOffset": 125,
+                  "endOffset": 195
+                }
+              ],
+              "retrieval": [
+                {
+                  "versionId": "80a5e462-5373-4e48-850d-a6fb716ff0b3",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "d0394183-a4d3-4328-9b9d-0f2fd6a7cc9d",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "0e3f5105-5f60-48e6-872d-849b27159c2d",
+                  "retrievedCount": 2,
+                  "usedCount": 2,
+                  "truncated": false
+                },
+                {
+                  "versionId": "80941991-a739-407e-8aba-1a9c7da5198b",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "6dfe8a8e-9263-4a7c-ba85-7697ab8ba1cd",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "27f04e31-fe88-4cac-ab89-807783541ac1",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                }
+              ]
+            },
+            "review": null,
+            "reviewHistory": [],
+            "attempts": [
+              {
+                "id": "a5040d69-d2b4-49c7-ac7f-a70cfcf83c61",
+                "number": 1,
+                "state": "succeeded",
+                "errorCode": null,
+                "modelProvider": "openai_compatible",
+                "modelName": "grok-4.6",
+                "providerRequestCount": 1,
+                "provenance": {
+                  "promptSha256": "bbd209f04258fb0f5ac658a3fcb7fb90b3d3e59d0eef2917cad29d49891d2fa8",
+                  "promptVersion": "presales.v1",
+                  "returnedModel": "grok-4.6",
+                  "pipelineVersion": "presales-workspace.v1",
+                  "providerResponseId": "e647f93b-e88a-9875-a21d-c8e8c6208698",
+                  "configuredModelVersion": null,
+                  "configuredModelRevision": null
+                },
+                "usage": {
+                  "total_tokens": 6558,
+                  "prompt_tokens": 3190,
+                  "completion_tokens": 3368
+                },
+                "createdAt": "2026-09-23T08:57:11.472647Z",
+                "finishedAt": "2026-09-23T08:58:36.105570Z",
+                "deadlineAt": "2026-09-23T08:59:41.472647Z"
+              }
+            ]
+          },
+          {
+            "id": "99be45bb-f10c-43bb-831d-fe120dd4995a",
+            "requirement": {
+              "key": "C1-R03",
+              "text": "本次四节点合计提供不少于 1 TiB 可用容量；允许将四个节点的可用容量直接相加。",
+              "sourceLocation": "客户需求表第 3 项"
+            },
+            "revision": 1,
+            "state": "drafted",
+            "draft": {
+              "status": "contradicted",
+              "answer": "四节点合计可用容量为4×250 GiB=1000 GiB，不满足不少于1 TiB（1024 GiB）的要求。",
+              "conditions": [],
+              "missingInformation": [],
+              "citations": [
+                {
+                  "chunkId": "1cbbbc7e-418e-4c19-877d-6a33f3e481b9",
+                  "documentVersionId": "80a5e462-5373-4e48-850d-a6fb716ff0b3",
+                  "excerpt": "项目 | 型号或选项 | 单位 | 已购数量\n数据节点 | X250 | 台 | 4\n审计保留与防删 | WORM400 | 套 | 1\n客户主密钥管理 | BYOK | 套 | 0\n独享密钥硬件 | HSM-D | 套 | 0\n双站点自动切换 | DUAL | 套 | 0",
+                  "filename": "C1-Q-v3.txt",
+                  "pageNumber": null,
+                  "heading": "Q-LINES",
+                  "startOffset": 102,
+                  "endOffset": 239
+                },
+                {
+                  "chunkId": "1f5d408c-2e7a-4d20-b58c-68522dfbceb6",
+                  "documentVersionId": "d0394183-a4d3-4328-9b9d-0f2fd6a7cc9d",
+                  "excerpt": "X250 每台节点提供 250 GiB 可用容量，四台容量可相加，已扣除系统保留空间。本型号的可用容量是固定上限，当前无节点内扩容或额外容量选项。本文件采用 1 TiB = 1024 GiB。",
+                  "filename": "C1-TECH-v5.txt",
+                  "pageNumber": null,
+                  "heading": "T-CAPACITY",
+                  "startOffset": 125,
+                  "endOffset": 221
+                }
+              ],
+              "retrieval": [
+                {
+                  "versionId": "80a5e462-5373-4e48-850d-a6fb716ff0b3",
+                  "retrievedCount": 3,
+                  "usedCount": 2,
+                  "truncated": true
+                },
+                {
+                  "versionId": "d0394183-a4d3-4328-9b9d-0f2fd6a7cc9d",
+                  "retrievedCount": 5,
+                  "usedCount": 2,
+                  "truncated": true
+                },
+                {
+                  "versionId": "0e3f5105-5f60-48e6-872d-849b27159c2d",
+                  "retrievedCount": 2,
+                  "usedCount": 2,
+                  "truncated": false
+                },
+                {
+                  "versionId": "80941991-a739-407e-8aba-1a9c7da5198b",
+                  "retrievedCount": 2,
+                  "usedCount": 2,
+                  "truncated": false
+                },
+                {
+                  "versionId": "6dfe8a8e-9263-4a7c-ba85-7697ab8ba1cd",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "27f04e31-fe88-4cac-ab89-807783541ac1",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                }
+              ]
+            },
+            "review": null,
+            "reviewHistory": [],
+            "attempts": [
+              {
+                "id": "cf8ee74e-6904-412f-9476-90d7c26ef63e",
+                "number": 1,
+                "state": "succeeded",
+                "errorCode": null,
+                "modelProvider": "openai_compatible",
+                "modelName": "grok-4.6",
+                "providerRequestCount": 1,
+                "provenance": {
+                  "promptSha256": "bbd209f04258fb0f5ac658a3fcb7fb90b3d3e59d0eef2917cad29d49891d2fa8",
+                  "promptVersion": "presales.v1",
+                  "returnedModel": "grok-4.6",
+                  "pipelineVersion": "presales-workspace.v1",
+                  "providerResponseId": "7a1eab72-29be-95fd-b991-4fcda05c6e18",
+                  "configuredModelVersion": null,
+                  "configuredModelRevision": null
+                },
+                "usage": {
+                  "total_tokens": 6676,
+                  "prompt_tokens": 3567,
+                  "completion_tokens": 3109
+                },
+                "createdAt": "2026-09-23T08:58:44.810821Z",
+                "finishedAt": "2026-09-23T09:00:05.577973Z",
+                "deadlineAt": "2026-09-23T09:01:14.810821Z"
+              }
+            ]
+          },
+          {
+            "id": "7c06c3af-061f-47f0-a751-6851e5a8d28f",
+            "requirement": {
+              "key": "C1-R04",
+              "text": "本次方案同时保证恢复时间 RTO 不超过 15 分钟、恢复点 RPO 不超过 5 分钟。",
+              "sourceLocation": "客户需求表第 4 项"
+            },
+            "revision": 1,
+            "state": "drafted",
+            "draft": {
+              "status": "contradicted",
+              "answer": "证据明确指出华东企业版当前保证 RPO 不超过 5 分钟，但不给出 RTO 保证。本次方案未同时满足恢复时间 RTO 不超过 15 分钟的要求。",
+              "conditions": [],
+              "missingInformation": [],
+              "citations": [
+                {
+                  "chunkId": "fd778b45-9d7e-4530-b07e-138673561958",
+                  "documentVersionId": "d0394183-a4d3-4328-9b9d-0f2fd6a7cc9d",
+                  "excerpt": "华东企业版当前保证 RPO 不超过 5 分钟。本节描述复制间隔和数据丢失窗口，不给出 RTO 保证。",
+                  "filename": "C1-TECH-v5.txt",
+                  "pageNumber": null,
+                  "heading": "T-DR",
+                  "startOffset": 231,
+                  "endOffset": 281
+                }
+              ],
+              "retrieval": [
+                {
+                  "versionId": "80a5e462-5373-4e48-850d-a6fb716ff0b3",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "d0394183-a4d3-4328-9b9d-0f2fd6a7cc9d",
+                  "retrievedCount": 4,
+                  "usedCount": 2,
+                  "truncated": true
+                },
+                {
+                  "versionId": "0e3f5105-5f60-48e6-872d-849b27159c2d",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "80941991-a739-407e-8aba-1a9c7da5198b",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "6dfe8a8e-9263-4a7c-ba85-7697ab8ba1cd",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "27f04e31-fe88-4cac-ab89-807783541ac1",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                }
+              ]
+            },
+            "review": null,
+            "reviewHistory": [],
+            "attempts": [
+              {
+                "id": "5f1765d2-dcdf-4ed7-bcb4-f31ce8f590f9",
+                "number": 1,
+                "state": "succeeded",
+                "errorCode": null,
+                "modelProvider": "openai_compatible",
+                "modelName": "grok-4.6",
+                "providerRequestCount": 1,
+                "provenance": {
+                  "promptSha256": "bbd209f04258fb0f5ac658a3fcb7fb90b3d3e59d0eef2917cad29d49891d2fa8",
+                  "promptVersion": "presales.v1",
+                  "returnedModel": "grok-4.6",
+                  "pipelineVersion": "presales-workspace.v1",
+                  "providerResponseId": "5dfb8803-14e5-9fbf-ae73-bd705d0b202a",
+                  "configuredModelVersion": null,
+                  "configuredModelRevision": null
+                },
+                "usage": {
+                  "total_tokens": 5297,
+                  "prompt_tokens": 3180,
+                  "completion_tokens": 2117
+                },
+                "createdAt": "2026-09-23T09:00:14.301533Z",
+                "finishedAt": "2026-09-23T09:01:08.798629Z",
+                "deadlineAt": "2026-09-23T09:02:44.301533Z"
+              }
+            ]
+          },
+          {
+            "id": "b0bf225a-f760-4b1a-9ac9-41271b638bd0",
+            "requirement": {
+              "key": "C1-R05",
+              "text": "本次订单保证的月度可用性不低于 99.95%。",
+              "sourceLocation": "客户需求表第 5 项"
+            },
+            "revision": 0,
+            "state": "failed",
+            "draft": null,
+            "review": null,
+            "reviewHistory": [],
+            "attempts": [
+              {
+                "id": "59a4b0fe-f645-4595-ac23-7bcef398bdd8",
+                "number": 1,
+                "state": "failed",
+                "errorCode": "presales_invalid_citation",
+                "modelProvider": "openai_compatible",
+                "modelName": "grok-4.6",
+                "providerRequestCount": 1,
+                "provenance": {
+                  "promptSha256": "bbd209f04258fb0f5ac658a3fcb7fb90b3d3e59d0eef2917cad29d49891d2fa8",
+                  "promptVersion": "presales.v1",
+                  "returnedModel": null,
+                  "pipelineVersion": "presales-workspace.v1",
+                  "providerResponseId": null,
+                  "configuredModelVersion": null,
+                  "configuredModelRevision": null
+                },
+                "usage": null,
+                "createdAt": "2026-09-23T09:01:17.640948Z",
+                "finishedAt": "2026-09-23T09:02:15.604189Z",
+                "deadlineAt": "2026-09-23T09:03:47.640948Z"
+              }
+            ]
+          },
+          {
+            "id": "c9fbd911-731f-4bb7-93bb-6359029a57ac",
+            "requirement": {
+              "key": "C1-R07",
+              "text": "业务数据和备份始终位于中国内地，不允许在境外保留副本。",
+              "sourceLocation": "客户需求表第 7 项"
+            },
+            "revision": 0,
+            "state": "failed",
+            "draft": null,
+            "review": null,
+            "reviewHistory": [],
+            "attempts": [
+              {
+                "id": "103d23a1-cecc-4f0a-b08f-fcbce50ba4b4",
+                "number": 1,
+                "state": "failed",
+                "errorCode": "presales_generation_failed",
+                "modelProvider": "openai_compatible",
+                "modelName": "grok-4.6",
+                "providerRequestCount": 0,
+                "provenance": {
+                  "promptSha256": "bbd209f04258fb0f5ac658a3fcb7fb90b3d3e59d0eef2917cad29d49891d2fa8",
+                  "promptVersion": "presales.v1",
+                  "returnedModel": null,
+                  "pipelineVersion": "presales-workspace.v1",
+                  "providerResponseId": null,
+                  "configuredModelVersion": null,
+                  "configuredModelRevision": null
+                },
+                "usage": null,
+                "createdAt": "2026-09-23T09:02:24.805171Z",
+                "finishedAt": "2026-09-23T09:02:38.971931Z",
+                "deadlineAt": "2026-09-23T09:04:54.805171Z"
+              }
+            ]
+          }
+        ]
+      },
+      "signedOut": true
+    }
+  ],
+  "status": "reconciled_read_only",
+  "error": "generation_outcome_uncertain_stop",
+  "finishedAt": "2026-09-23T09:02:36.083253+00:00",
+  "initialStatus": "interrupted",
+  "reconciliation": {
+    "readOnlyDatabase": true,
+    "sourceSha256": "9b0cf21fe9f839ce41d3c410469e73edd53ffdacc39c8933a1a4894ef5e74944",
+    "recordedAt": "2026-09-23T09:15:24.904278+00:00",
+    "additionalGenerationRequests": 0
+  },
+  "deployedRelease": "v0.1.43",
+  "deployedSourceCommit": "7fbbfe927ac213a0d589192569383769735ef02c",
+  "apiImageDigest": "sha256:f03c5290cf5b2236dbf46370276fcaa8fef3c2ce0538d7717d1db67ce8c09a40"
+}

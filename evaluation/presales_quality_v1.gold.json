@@ -1,0 +1,120 @@
+{
+  "schemaVersion": "presales-quality-gold-v1",
+  "datasetSha256": "0dd5e9f6cedcc5ddf75613b3d1f5cd63e9006c05790c4d85f56275e8323e0281",
+  "reviewStatus": "assistant_authored_and_self_reviewed_before_model_request; no independent domain expert review",
+  "rows": [
+    {
+      "key": "C1-R01",
+      "status": "supported",
+      "requiredEvidence": [
+        {
+          "sourceKey": "C1-Q",
+          "excerpt": "审计保留与防删 | WORM400 | 套 | 1"
+        },
+        {
+          "sourceKey": "C1-TECH",
+          "excerpt": "WORM400 选项将保留期设为 400 天；在保留期届满前，包括租户管理员在内的任何账号均不能删除已写入日志。"
+        }
+      ],
+      "referenceAnswer": "本报价已购 WORM400，日志保留 400 天，期间管理员也不能删除，符合要求。",
+      "reviewPoints": [
+        "已购数量为1，不能把手册中的选项字样误作尚未采购。",
+        "同时覆盖保留时长和管理员不可删除，不把基础90天当本订单结论。"
+      ]
+    },
+    {
+      "key": "C1-R02",
+      "status": "conditional",
+      "requiredEvidence": [
+        {
+          "sourceKey": "C1-Q",
+          "excerpt": "客户主密钥管理 | BYOK | 套 | 0\n独享密钥硬件 | HSM-D | 套 | 0"
+        },
+        {
+          "sourceKey": "C1-KEY",
+          "excerpt": "BYOK 允许客户生成、轮换和撤销加密主密钥；HSM-D 使该客户的主密钥在独享 HSM 中运行。两项必须配套采购，企业版 E 可以选购。"
+        },
+        {
+          "sourceKey": "C1-KEY",
+          "excerpt": "启用前还必须由客户完成密钥托管交接和恢复演练"
+        }
+      ],
+      "referenceAnswer": "有条件支持：需同时增购 BYOK 与 HSM-D，并完成客户密钥托管交接和恢复演练；当前订单两项数量均为0，不能承诺已具备。",
+      "reviewPoints": [
+        "条件须包含两个选项和两个启用前验收项。",
+        "不可把一般加密或共享HSM等同客户独享主密钥服务。"
+      ]
+    },
+    {
+      "key": "C1-R03",
+      "status": "contradicted",
+      "requiredEvidence": [
+        {
+          "sourceKey": "C1-Q",
+          "excerpt": "数据节点 | X250 | 台 | 4"
+        },
+        {
+          "sourceKey": "C1-TECH",
+          "excerpt": "X250 每台节点提供 250 GiB 可用容量，四台容量可相加"
+        },
+        {
+          "sourceKey": "C1-TECH",
+          "excerpt": "当前无节点内扩容或额外容量选项。本文件采用 1 TiB = 1024 GiB。"
+        }
+      ],
+      "referenceAnswer": "不满足：4×250=1000 GiB，小于1 TiB即1024 GiB，少24 GiB；本型号没有额外容量选项。",
+      "reviewPoints": [
+        "必须按明确给出的二进制单位计算，不能把1000GiB写成1TiB。",
+        "不要凭空提出资料中不存在的扩容选项并将状态改成conditional。"
+      ]
+    },
+    {
+      "key": "C1-R04",
+      "status": "insufficient_evidence",
+      "requiredEvidence": [],
+      "referenceAnswer": "当前资料只保证RPO不超过5分钟，未提供RTO不超过15分钟的保证，无法完整确认这项复合要求；需补充本方案的RTO承诺。",
+      "reviewPoints": [
+        "RPO和RTO不得互换。",
+        "不因DUAL描述自动切换就推断15分钟恢复上限；不能将未给保证直接等同明确不支持。"
+      ]
+    },
+    {
+      "key": "C1-R05",
+      "status": "supported",
+      "requiredEvidence": [
+        {
+          "sourceKey": "C1-SUP",
+          "excerpt": "仅当本订单月度可用性条款与 C1-TECH v5 不同时，以本协议为准"
+        },
+        {
+          "sourceKey": "C1-SUP",
+          "excerpt": "本订单华东企业版 E 的月度可用性保证为 99.95%。"
+        }
+      ],
+      "referenceAnswer": "支持：已签认补充协议在本订单的月度可用性条款上优先，保证99.95%；通用模板99.90%不形成未解决冲突。",
+      "reviewPoints": [
+        "依据明确优先级，不靠新旧发布日期猜测。",
+        "补充协议只覆盖可用性，不能把它的优先级扩张到数据地域条款。"
+      ]
+    },
+    {
+      "key": "C1-R07",
+      "status": "conflicting_evidence",
+      "requiredEvidence": [
+        {
+          "sourceKey": "C1-DPA",
+          "excerpt": "本订单华东企业版 E 的全部业务数据及其备份均只在中国内地存储和处理，不建立境外副本。"
+        },
+        {
+          "sourceKey": "C1-SUB",
+          "excerpt": "生产库位于上海，夜间完整备份须额外复制一份至新加坡备份中心并保留 7 天。"
+        }
+      ],
+      "referenceAnswer": "资料冲突：数据处理说明禁止境外副本，备份附件却要求向新加坡复制完整备份；两份附件同范围有效且无优先级，应澄清后再作承诺。",
+      "reviewPoints": [
+        "两侧证据必须保留。",
+        "生产库在上海不能证明所有备份也在境内；SLA补充协议不解决此处优先级。"
+      ]
+    }
+  ]
+}

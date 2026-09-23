@@ -14,6 +14,10 @@ Real requests against the frozen synthetic input follow the separate
 [model trial contract](./presales-model-trial.md), including transport failures,
 immutable output evidence, unknown costs and independent review boundaries.
 
+Deployed Presales API repeat runs use the [public-demo quality contract](./presales-quality.md):
+fixed input/gold separation, real uploads, independent demo enterprises, no retries,
+source-bound scoring and unknown billing amounts. This is separate from browser UX acceptance.
+
 Real file uploads through local JWT authentication, MinIO, tenant-scoped Outbox
 delivery and Redis/Celery follow the [presales ingestion contract](./presales-ingestion.md).
 It records full-file SHA verification, browser source entry, failure recovery and

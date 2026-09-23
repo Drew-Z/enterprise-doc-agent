@@ -1,0 +1,95 @@
+{
+  "reviewerKind": "assistant",
+  "blindReview": false,
+  "independentDomainAdjudication": false,
+  "businessApproval": false,
+  "originalDraftsModified": false,
+  "baselineSha256": "f52ae8a905fc83e20b103884161b5d0c860ab0c9ef93022064d66a1a8e4329cf",
+  "reviewedDrafts": 10,
+  "rows": [
+    {
+      "repeat": 1,
+      "key": "C1-R01",
+      "reviewed": true,
+      "classificationCorrect": true,
+      "note": "已购数量和 400 天防删除两项证据齐全，分类与承诺一致。"
+    },
+    {
+      "repeat": 1,
+      "key": "C1-R02",
+      "reviewed": true,
+      "classificationCorrect": false,
+      "note": "错误地把有明确增购和验收路径的能力判为不满足；回答提到四项条件但结构化 conditions 为空，引用漏了 HSM-D 未购行。"
+    },
+    {
+      "repeat": 1,
+      "key": "C1-R03",
+      "reviewed": true,
+      "classificationCorrect": true,
+      "note": "按资料规定进行 4×250=1000 GiB 与 1024 GiB 比较，无虚构扩容路径。"
+    },
+    {
+      "repeat": 1,
+      "key": "C1-R04",
+      "reviewed": true,
+      "classificationCorrect": false,
+      "note": "事实描述承认缺少 RTO 保证，但 conditional 标签不成立；缺失的保证不能作为已知可行的启用条件，需要提出补充证明。"
+    },
+    {
+      "repeat": 1,
+      "key": "C1-R05",
+      "reviewed": true,
+      "classificationCorrect": true,
+      "note": "99.95% 数值正确，引用包含明确签认的限定优先条款。"
+    },
+    {
+      "repeat": 1,
+      "key": "C1-R07",
+      "reviewed": true,
+      "classificationCorrect": true,
+      "note": "保留境内存储与新加坡完整副本两侧冲突，没有用 SLA 优先级覆盖地域条款。可把追问改为要求双方澄清或补充签认。"
+    },
+    {
+      "repeat": 2,
+      "key": "C1-R01",
+      "reviewed": true,
+      "classificationCorrect": true,
+      "note": "当前采购范围、保留期与管理员不可删除均有引用支撑。"
+    },
+    {
+      "repeat": 2,
+      "key": "C1-R02",
+      "reviewed": true,
+      "classificationCorrect": true,
+      "note": "条件覆盖两个选项及交接、恢复演练，未承诺当前已具备。建议将“部分满足”改为更清楚的“有条件支持”。"
+    },
+    {
+      "repeat": 2,
+      "key": "C1-R03",
+      "reviewed": true,
+      "classificationCorrect": true,
+      "note": "容量计算及不满足结论准确。"
+    },
+    {
+      "repeat": 2,
+      "key": "C1-R04",
+      "reviewed": true,
+      "classificationCorrect": false,
+      "note": "将本节未给出 RTO 保证扩大为明确不满足，缺少针对 RTO 的补资料问题。"
+    },
+    {
+      "repeat": 2,
+      "key": "C1-R05",
+      "reviewed": false,
+      "classificationCorrect": false,
+      "note": "没有可用草稿，原文引用校验拒绝；不编造语义评分。"
+    },
+    {
+      "repeat": 2,
+      "key": "C1-R07",
+      "reviewed": false,
+      "classificationCorrect": false,
+      "note": "请求在模型派发前失败，没有模型草稿；不编造语义评分。"
+    }
+  ]
+}

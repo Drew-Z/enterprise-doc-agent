@@ -1,0 +1,1615 @@
+{
+  "schemaVersion": "presales-quality-prompt-diagnostic-v1",
+  "datasetSha256": "0dd5e9f6cedcc5ddf75613b3d1f5cd63e9006c05790c4d85f56275e8323e0281",
+  "scope": "Fresh live public uploads and production retrieval plus isolated read-only-process gateway diagnostics; no generated draft saved through public API",
+  "publicApiChanged": false,
+  "databaseReadOnly": true,
+  "candidateDisposition": "rejected_not_published",
+  "candidatePromptVersion": "presales.v2",
+  "promptSha256": "c6e64b9b8ac88638972308c7804789ba35c8b0cac6c8895e7917979b4b5dd5d7",
+  "workspaceSignedOut": true,
+  "modelRequests": 6,
+  "completedProviderResponses": 6,
+  "validatedDrafts": 5,
+  "statusMatches": 4,
+  "results": [
+    {
+      "key": "C1-R01",
+      "state": "succeeded",
+      "expectedStatus": "supported",
+      "predictedStatus": "supported",
+      "statusMatch": true,
+      "error": null,
+      "citations": 2,
+      "validCitations": 2,
+      "requiredEvidence": 2,
+      "coveredRequiredEvidence": 2
+    },
+    {
+      "key": "C1-R02",
+      "state": "succeeded",
+      "expectedStatus": "conditional",
+      "predictedStatus": "conditional",
+      "statusMatch": true,
+      "error": null,
+      "citations": 3,
+      "validCitations": 3,
+      "requiredEvidence": 3,
+      "coveredRequiredEvidence": 3
+    },
+    {
+      "key": "C1-R03",
+      "state": "succeeded",
+      "expectedStatus": "contradicted",
+      "predictedStatus": "contradicted",
+      "statusMatch": true,
+      "error": null,
+      "citations": 2,
+      "validCitations": 2,
+      "requiredEvidence": 3,
+      "coveredRequiredEvidence": 3
+    },
+    {
+      "key": "C1-R04",
+      "state": "succeeded",
+      "expectedStatus": "insufficient_evidence",
+      "predictedStatus": "contradicted",
+      "statusMatch": false,
+      "error": null,
+      "citations": 1,
+      "validCitations": 1,
+      "requiredEvidence": 0,
+      "coveredRequiredEvidence": 0
+    },
+    {
+      "key": "C1-R05",
+      "state": "failed",
+      "expectedStatus": "supported",
+      "predictedStatus": null,
+      "statusMatch": false,
+      "error": "presales_invalid_citation",
+      "citations": 0,
+      "validCitations": 0,
+      "requiredEvidence": 2,
+      "coveredRequiredEvidence": 0
+    },
+    {
+      "key": "C1-R07",
+      "state": "succeeded",
+      "expectedStatus": "conflicting_evidence",
+      "predictedStatus": "conflicting_evidence",
+      "statusMatch": true,
+      "error": null,
+      "citations": 3,
+      "validCitations": 3,
+      "requiredEvidence": 2,
+      "coveredRequiredEvidence": 2
+    }
+  ],
+  "events": [
+    {
+      "type": "binding",
+      "datasetSha256": "0dd5e9f6cedcc5ddf75613b3d1f5cd63e9006c05790c4d85f56275e8323e0281",
+      "baselineSha256": "9720c6eb4e01944b4960c1fd41f50304fe764ceb6652a7301cc9dd978c80b681",
+      "scriptSha256": "237ead30d9e78be5beba5b6d77f3682e8e59a508a43b4e5fcd7ce631bb127fcd",
+      "gatewaySha256": "076e2c7ae812f6aeb9d094330170fd02d9a0d55bbfbc51c22e972f3be7cc1338",
+      "diagnosticOnly": true,
+      "publicApiChanged": false
+    },
+    {
+      "type": "started",
+      "provenance": {
+        "promptVersion": "presales.v2",
+        "promptSha256": "c6e64b9b8ac88638972308c7804789ba35c8b0cac6c8895e7917979b4b5dd5d7",
+        "configuredModelVersion": null,
+        "configuredModelRevision": null,
+        "providerResponseId": null,
+        "returnedModel": null
+      },
+      "model": "grok-4.6",
+      "readOnlyDatabase": true,
+      "maximumModelRequests": 6
+    },
+    {
+      "type": "dispatch",
+      "key": "C1-R01",
+      "evidenceCount": 8
+    },
+    {
+      "type": "case",
+      "key": "C1-R01",
+      "providerRequestCount": 1,
+      "startedAt": "2026-09-23T09:25:03.221092+00:00",
+      "retrievalSeconds": 6.818,
+      "input": {
+        "requirement": {
+          "key": "C1-R01",
+          "text": "本次报价已包含审计日志至少保存 400 天，且保存期内管理员也不能删除日志。",
+          "sourceLocation": "客户需求表第 1 项"
+        },
+        "sources": [
+          {
+            "versionId": "da3866f0-7219-4231-a392-549db0f794e1",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "e34f48c5-2ad9-4e2c-ac3b-fb9f824c0081",
+            "generationId": "42f3f326-4dee-480d-9105-39cf3fb65c1b",
+            "filename": "C1-Q-v3.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "1ccf357df4b9662a46a2a01b04018ac545edf6dbd4785d8ba8561ce4e6ae2633"
+          },
+          {
+            "versionId": "b9d94a27-10d2-4c72-9c8d-637976f12efe",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "152c5723-c468-42f1-bca1-2569ae0ddea9",
+            "generationId": "75907f93-d965-4e7d-9639-f0c53e8fc5ac",
+            "filename": "C1-TECH-v5.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "5a58ad1e1918e03724d74a8c3d8cfd0ce1764929031b9b48c50fedf34128a018"
+          },
+          {
+            "versionId": "50483a62-5034-4611-83de-84634a605bd2",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "2d4f5d06-7fd6-4ad9-b0d0-3d34d87a5e0a",
+            "generationId": "39b1c23c-3989-46ec-9e3b-16755c24277f",
+            "filename": "C1-KEY-v2.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "3d6e9e2c7c038ad36bac54cc3453e17aed9da9b07953e436f93d92b8dbfb72c7"
+          },
+          {
+            "versionId": "0d93a290-9052-4774-8be8-6b74881e29b6",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "368f28ab-802c-41c2-8171-5ceb19a120a9",
+            "generationId": "d8af70ef-7188-44d6-9e3d-2948731d19b1",
+            "filename": "C1-SUP-v2.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "f54e55e093a606779632dca1d60777b19aca8d1a1102fabbd041441c9c11e9e5"
+          },
+          {
+            "versionId": "fac950e7-09a3-4269-82d3-1a5a9b777fd3",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "b8966a19-af1b-42c6-8c5f-d816b8a58b3d",
+            "generationId": "ffa0b1b2-ebdf-4930-8c29-90a5672bb238",
+            "filename": "C1-DPA-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "96e9dbb1abd6d0a5b0c6ade0055b1072853bc813530d86aac32336ccd66b395f"
+          },
+          {
+            "versionId": "1d3d624b-94b5-4a1e-80dd-cbe82d49a359",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "9ed3cfed-88b7-4739-a6ed-a4163972194c",
+            "generationId": "a7e96069-d3c0-455a-9a2e-866a1c0f27a6",
+            "filename": "C1-SUB-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "3587c057598899983ca962933651f950785d7d1bd32574dc4f74997b630667ce"
+          }
+        ],
+        "evidence": [
+          {
+            "chunkId": "31bda38b-cc29-4d3e-9e68-5871ef873a91",
+            "documentVersionId": "da3866f0-7219-4231-a392-549db0f794e1",
+            "text": "项目 | 型号或选项 | 单位 | 已购数量\n数据节点 | X250 | 台 | 4\n审计保留与防删 | WORM400 | 套 | 1\n客户主密钥管理 | BYOK | 套 | 0\n独享密钥硬件 | HSM-D | 套 | 0\n双站点自动切换 | DUAL | 套 | 0",
+            "filename": "C1-Q-v3.txt",
+            "heading": "Q-LINES",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "5f37b350-e40a-4418-8294-3807514ea8a9",
+            "documentVersionId": "b9d94a27-10d2-4c72-9c8d-637976f12efe",
+            "text": "企业版基础审计日志保留 90 天。WORM400 选项将保留期设为 400 天；在保留期届满前，包括租户管理员在内的任何账号均不能删除已写入日志。",
+            "filename": "C1-TECH-v5.txt",
+            "heading": "T-AUDIT",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "29ca2813-a8fe-40e5-a4b1-f13f334b67c2",
+            "documentVersionId": "b9d94a27-10d2-4c72-9c8d-637976f12efe",
+            "text": "通用企业版模板的月度可用性保证为 99.90%。如订单存在已签认且明确覆盖本条的补充协议，应按补充协议执行。",
+            "filename": "C1-TECH-v5.txt",
+            "heading": "T-SLA",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "ea4b5b8d-a614-4a40-9977-32d81854590e",
+            "documentVersionId": "50483a62-5034-4611-83de-84634a605bd2",
+            "text": "除 BYOK 与 HSM-D 采购完成外，启用前还必须由客户完成密钥托管交接和恢复演练；未完成这两项验收不能承诺已具备可用的客户主密钥服务。",
+            "filename": "C1-KEY-v2.txt",
+            "heading": "K-ENABLE",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "d468f286-e38f-4ed9-b3bb-2a85151a5848",
+            "documentVersionId": "50483a62-5034-4611-83de-84634a605bd2",
+            "text": "BYOK 允许客户生成、轮换和撤销加密主密钥；HSM-D 使该客户的主密钥在独享 HSM 中运行。两项必须配套采购，企业版 E 可以选购。",
+            "filename": "C1-KEY-v2.txt",
+            "heading": "K-ABILITY",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "e75f6f13-2bb3-49d6-b44d-66417dd6d47d",
+            "documentVersionId": "0d93a290-9052-4774-8be8-6b74881e29b6",
+            "text": "本订单华东企业版 E 的月度可用性保证为 99.95%。",
+            "filename": "C1-SUP-v2.txt",
+            "heading": "S-SLA",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "f3ffc7b1-d656-46b4-a3c3-7192f6da2231",
+            "documentVersionId": "fac950e7-09a3-4269-82d3-1a5a9b777fd3",
+            "text": "本订单华东企业版 E 的全部业务数据及其备份均只在中国内地存储和处理，不建立境外副本。",
+            "filename": "C1-DPA-v1.txt",
+            "heading": "D-LOCATION",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "44064981-6627-46e5-9fed-44bfa8378283",
+            "documentVersionId": "1d3d624b-94b5-4a1e-80dd-cbe82d49a359",
+            "text": "适用范围为本订单华东企业版 E。生产库位于上海，夜间完整备份须额外复制一份至新加坡备份中心并保留 7 天。",
+            "filename": "C1-SUB-v1.txt",
+            "heading": "B-LOCATION",
+            "pageNumber": ""
+          }
+        ]
+      },
+      "inputSha256": "0953a4cd4a8039dbc149fc298b7b8aeea040c94e4653b27e6c68f31509cc2d7e",
+      "modelSeconds": 61.962,
+      "modelOutput": {
+        "draft": {
+          "status": "supported",
+          "answer": "根据证据，本次报价已包含审计保留与防删 WORM400 选项（已购数量 1 套），审计日志保存期设为 400 天，且保存期内包括管理员在内的任何账号均不能删除已写入日志。需求得到支持。",
+          "conditions": [],
+          "missingInformation": [],
+          "citations": [
+            {
+              "chunkId": "31bda38b-cc29-4d3e-9e68-5871ef873a91",
+              "documentVersionId": "da3866f0-7219-4231-a392-549db0f794e1",
+              "excerpt": "审计保留与防删 | WORM400 | 套 | 1"
+            },
+            {
+              "chunkId": "5f37b350-e40a-4418-8294-3807514ea8a9",
+              "documentVersionId": "b9d94a27-10d2-4c72-9c8d-637976f12efe",
+              "excerpt": "企业版基础审计日志保留 90 天。WORM400 选项将保留期设为 400 天；在保留期届满前，包括租户管理员在内的任何账号均不能删除已写入日志。"
+            }
+          ]
+        },
+        "usage": {
+          "prompt_tokens": 3540,
+          "completion_tokens": 2590,
+          "total_tokens": 6130
+        },
+        "returnedModel": "grok-4.6",
+        "providerResponseId": "0ac2a979-515d-92d3-9a6f-623f5e41a7a5"
+      },
+      "draft": {
+        "status": "supported",
+        "answer": "根据证据，本次报价已包含审计保留与防删 WORM400 选项（已购数量 1 套），审计日志保存期设为 400 天，且保存期内包括管理员在内的任何账号均不能删除已写入日志。需求得到支持。",
+        "conditions": [],
+        "missingInformation": [],
+        "citations": [
+          {
+            "chunkId": "31bda38b-cc29-4d3e-9e68-5871ef873a91",
+            "documentVersionId": "da3866f0-7219-4231-a392-549db0f794e1",
+            "excerpt": "审计保留与防删 | WORM400 | 套 | 1",
+            "filename": "C1-Q-v3.txt",
+            "pageNumber": null,
+            "heading": "Q-LINES",
+            "startOffset": 102,
+            "endOffset": 239
+          },
+          {
+            "chunkId": "5f37b350-e40a-4418-8294-3807514ea8a9",
+            "documentVersionId": "b9d94a27-10d2-4c72-9c8d-637976f12efe",
+            "excerpt": "企业版基础审计日志保留 90 天。WORM400 选项将保留期设为 400 天；在保留期届满前，包括租户管理员在内的任何账号均不能删除已写入日志。",
+            "filename": "C1-TECH-v5.txt",
+            "pageNumber": null,
+            "heading": "T-AUDIT",
+            "startOffset": 36,
+            "endOffset": 109
+          }
+        ],
+        "retrieval": [
+          {
+            "versionId": "da3866f0-7219-4231-a392-549db0f794e1",
+            "retrievedCount": 1,
+            "usedCount": 1,
+            "truncated": false
+          },
+          {
+            "versionId": "b9d94a27-10d2-4c72-9c8d-637976f12efe",
+            "retrievedCount": 3,
+            "usedCount": 2,
+            "truncated": true
+          },
+          {
+            "versionId": "50483a62-5034-4611-83de-84634a605bd2",
+            "retrievedCount": 2,
+            "usedCount": 2,
+            "truncated": false
+          },
+          {
+            "versionId": "0d93a290-9052-4774-8be8-6b74881e29b6",
+            "retrievedCount": 1,
+            "usedCount": 1,
+            "truncated": false
+          },
+          {
+            "versionId": "fac950e7-09a3-4269-82d3-1a5a9b777fd3",
+            "retrievedCount": 1,
+            "usedCount": 1,
+            "truncated": false
+          },
+          {
+            "versionId": "1d3d624b-94b5-4a1e-80dd-cbe82d49a359",
+            "retrievedCount": 1,
+            "usedCount": 1,
+            "truncated": false
+          }
+        ]
+      },
+      "status": "succeeded",
+      "elapsedSeconds": 68.78
+    },
+    {
+      "type": "dispatch",
+      "key": "C1-R02",
+      "evidenceCount": 7
+    },
+    {
+      "type": "case",
+      "key": "C1-R02",
+      "providerRequestCount": 1,
+      "startedAt": "2026-09-23T09:26:12.001084+00:00",
+      "retrievalSeconds": 8.269,
+      "input": {
+        "requirement": {
+          "key": "C1-R02",
+          "text": "客户能够自行管理加密主密钥，且该主密钥运行在独享 HSM 中。",
+          "sourceLocation": "客户需求表第 2 项"
+        },
+        "sources": [
+          {
+            "versionId": "da3866f0-7219-4231-a392-549db0f794e1",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "e34f48c5-2ad9-4e2c-ac3b-fb9f824c0081",
+            "generationId": "42f3f326-4dee-480d-9105-39cf3fb65c1b",
+            "filename": "C1-Q-v3.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "1ccf357df4b9662a46a2a01b04018ac545edf6dbd4785d8ba8561ce4e6ae2633"
+          },
+          {
+            "versionId": "b9d94a27-10d2-4c72-9c8d-637976f12efe",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "152c5723-c468-42f1-bca1-2569ae0ddea9",
+            "generationId": "75907f93-d965-4e7d-9639-f0c53e8fc5ac",
+            "filename": "C1-TECH-v5.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "5a58ad1e1918e03724d74a8c3d8cfd0ce1764929031b9b48c50fedf34128a018"
+          },
+          {
+            "versionId": "50483a62-5034-4611-83de-84634a605bd2",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "2d4f5d06-7fd6-4ad9-b0d0-3d34d87a5e0a",
+            "generationId": "39b1c23c-3989-46ec-9e3b-16755c24277f",
+            "filename": "C1-KEY-v2.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "3d6e9e2c7c038ad36bac54cc3453e17aed9da9b07953e436f93d92b8dbfb72c7"
+          },
+          {
+            "versionId": "0d93a290-9052-4774-8be8-6b74881e29b6",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "368f28ab-802c-41c2-8171-5ceb19a120a9",
+            "generationId": "d8af70ef-7188-44d6-9e3d-2948731d19b1",
+            "filename": "C1-SUP-v2.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "f54e55e093a606779632dca1d60777b19aca8d1a1102fabbd041441c9c11e9e5"
+          },
+          {
+            "versionId": "fac950e7-09a3-4269-82d3-1a5a9b777fd3",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "b8966a19-af1b-42c6-8c5f-d816b8a58b3d",
+            "generationId": "ffa0b1b2-ebdf-4930-8c29-90a5672bb238",
+            "filename": "C1-DPA-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "96e9dbb1abd6d0a5b0c6ade0055b1072853bc813530d86aac32336ccd66b395f"
+          },
+          {
+            "versionId": "1d3d624b-94b5-4a1e-80dd-cbe82d49a359",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "9ed3cfed-88b7-4739-a6ed-a4163972194c",
+            "generationId": "a7e96069-d3c0-455a-9a2e-866a1c0f27a6",
+            "filename": "C1-SUB-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "3587c057598899983ca962933651f950785d7d1bd32574dc4f74997b630667ce"
+          }
+        ],
+        "evidence": [
+          {
+            "chunkId": "31bda38b-cc29-4d3e-9e68-5871ef873a91",
+            "documentVersionId": "da3866f0-7219-4231-a392-549db0f794e1",
+            "text": "项目 | 型号或选项 | 单位 | 已购数量\n数据节点 | X250 | 台 | 4\n审计保留与防删 | WORM400 | 套 | 1\n客户主密钥管理 | BYOK | 套 | 0\n独享密钥硬件 | HSM-D | 套 | 0\n双站点自动切换 | DUAL | 套 | 0",
+            "filename": "C1-Q-v3.txt",
+            "heading": "Q-LINES",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "5f37b350-e40a-4418-8294-3807514ea8a9",
+            "documentVersionId": "b9d94a27-10d2-4c72-9c8d-637976f12efe",
+            "text": "企业版基础审计日志保留 90 天。WORM400 选项将保留期设为 400 天；在保留期届满前，包括租户管理员在内的任何账号均不能删除已写入日志。",
+            "filename": "C1-TECH-v5.txt",
+            "heading": "T-AUDIT",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "d468f286-e38f-4ed9-b3bb-2a85151a5848",
+            "documentVersionId": "50483a62-5034-4611-83de-84634a605bd2",
+            "text": "BYOK 允许客户生成、轮换和撤销加密主密钥；HSM-D 使该客户的主密钥在独享 HSM 中运行。两项必须配套采购，企业版 E 可以选购。",
+            "filename": "C1-KEY-v2.txt",
+            "heading": "K-ABILITY",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "ea4b5b8d-a614-4a40-9977-32d81854590e",
+            "documentVersionId": "50483a62-5034-4611-83de-84634a605bd2",
+            "text": "除 BYOK 与 HSM-D 采购完成外，启用前还必须由客户完成密钥托管交接和恢复演练；未完成这两项验收不能承诺已具备可用的客户主密钥服务。",
+            "filename": "C1-KEY-v2.txt",
+            "heading": "K-ENABLE",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "e75f6f13-2bb3-49d6-b44d-66417dd6d47d",
+            "documentVersionId": "0d93a290-9052-4774-8be8-6b74881e29b6",
+            "text": "本订单华东企业版 E 的月度可用性保证为 99.95%。",
+            "filename": "C1-SUP-v2.txt",
+            "heading": "S-SLA",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "f3ffc7b1-d656-46b4-a3c3-7192f6da2231",
+            "documentVersionId": "fac950e7-09a3-4269-82d3-1a5a9b777fd3",
+            "text": "本订单华东企业版 E 的全部业务数据及其备份均只在中国内地存储和处理，不建立境外副本。",
+            "filename": "C1-DPA-v1.txt",
+            "heading": "D-LOCATION",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "44064981-6627-46e5-9fed-44bfa8378283",
+            "documentVersionId": "1d3d624b-94b5-4a1e-80dd-cbe82d49a359",
+            "text": "适用范围为本订单华东企业版 E。生产库位于上海，夜间完整备份须额外复制一份至新加坡备份中心并保留 7 天。",
+            "filename": "C1-SUB-v1.txt",
+            "heading": "B-LOCATION",
+            "pageNumber": ""
+          }
+        ]
+      },
+      "inputSha256": "f2467be9974e1a66822a7bbc2168271b3c56da9754e97d35e309ea48580e2056",
+      "modelSeconds": 77.349,
+      "modelOutput": {
+        "draft": {
+          "status": "conditional",
+          "answer": "当前尚未满足。客户需求表第 2 项要求客户能够自行管理加密主密钥，且该主密钥运行在独享 HSM 中，但当前订单中 BYOK 和 HSM-D 均未购买。同时，启用前还必须由客户完成密钥托管交接和恢复演练；未完成这两项验收不能承诺已具备可用的客户主密钥服务。",
+          "conditions": [
+            "BYOK 选项未购买",
+            "HSM-D 选项未购买",
+            "未完成密钥托管交接",
+            "未完成恢复演练"
+          ],
+          "missingInformation": [],
+          "citations": [
+            {
+              "chunkId": "31bda38b-cc29-4d3e-9e68-5871ef873a91",
+              "documentVersionId": "da3866f0-7219-4231-a392-549db0f794e1",
+              "excerpt": "客户主密钥管理 | BYOK | 套 | 0\n独享密钥硬件 | HSM-D | 套 | 0"
+            },
+            {
+              "chunkId": "d468f286-e38f-4ed9-b3bb-2a85151a5848",
+              "documentVersionId": "50483a62-5034-4611-83de-84634a605bd2",
+              "excerpt": "BYOK 允许客户生成、轮换和撤销加密主密钥；HSM-D 使该客户的主密钥在独享 HSM 中运行。两项必须配套采购，企业版 E 可以选购。"
+            },
+            {
+              "chunkId": "ea4b5b8d-a614-4a40-9977-32d81854590e",
+              "documentVersionId": "50483a62-5034-4611-83de-84634a605bd2",
+              "excerpt": "除 BYOK 与 HSM-D 采购完成外，启用前还必须由客户完成密钥托管交接和恢复演练；未完成这两项验收不能承诺已具备可用的客户主密钥服务。"
+            }
+          ]
+        },
+        "usage": {
+          "prompt_tokens": 3423,
+          "completion_tokens": 3210,
+          "total_tokens": 6633
+        },
+        "returnedModel": "grok-4.6",
+        "providerResponseId": "ea491e6b-77f3-9e78-91c2-c1c5d8881444"
+      },
+      "draft": {
+        "status": "conditional",
+        "answer": "当前尚未满足。客户需求表第 2 项要求客户能够自行管理加密主密钥，且该主密钥运行在独享 HSM 中，但当前订单中 BYOK 和 HSM-D 均未购买。同时，启用前还必须由客户完成密钥托管交接和恢复演练；未完成这两项验收不能承诺已具备可用的客户主密钥服务。",
+        "conditions": [
+          "BYOK 选项未购买",
+          "HSM-D 选项未购买",
+          "未完成密钥托管交接",
+          "未完成恢复演练"
+        ],
+        "missingInformation": [],
+        "citations": [
+          {
+            "chunkId": "31bda38b-cc29-4d3e-9e68-5871ef873a91",
+            "documentVersionId": "da3866f0-7219-4231-a392-549db0f794e1",
+            "excerpt": "客户主密钥管理 | BYOK | 套 | 0\n独享密钥硬件 | HSM-D | 套 | 0",
+            "filename": "C1-Q-v3.txt",
+            "pageNumber": null,
+            "heading": "Q-LINES",
+            "startOffset": 102,
+            "endOffset": 239
+          },
+          {
+            "chunkId": "d468f286-e38f-4ed9-b3bb-2a85151a5848",
+            "documentVersionId": "50483a62-5034-4611-83de-84634a605bd2",
+            "excerpt": "BYOK 允许客户生成、轮换和撤销加密主密钥；HSM-D 使该客户的主密钥在独享 HSM 中运行。两项必须配套采购，企业版 E 可以选购。",
+            "filename": "C1-KEY-v2.txt",
+            "pageNumber": null,
+            "heading": "K-ABILITY",
+            "startOffset": 42,
+            "endOffset": 111
+          },
+          {
+            "chunkId": "ea4b5b8d-a614-4a40-9977-32d81854590e",
+            "documentVersionId": "50483a62-5034-4611-83de-84634a605bd2",
+            "excerpt": "除 BYOK 与 HSM-D 采购完成外，启用前还必须由客户完成密钥托管交接和恢复演练；未完成这两项验收不能承诺已具备可用的客户主密钥服务。",
+            "filename": "C1-KEY-v2.txt",
+            "pageNumber": null,
+            "heading": "K-ENABLE",
+            "startOffset": 125,
+            "endOffset": 195
+          }
+        ],
+        "retrieval": [
+          {
+            "versionId": "da3866f0-7219-4231-a392-549db0f794e1",
+            "retrievedCount": 1,
+            "usedCount": 1,
+            "truncated": false
+          },
+          {
+            "versionId": "b9d94a27-10d2-4c72-9c8d-637976f12efe",
+            "retrievedCount": 1,
+            "usedCount": 1,
+            "truncated": false
+          },
+          {
+            "versionId": "50483a62-5034-4611-83de-84634a605bd2",
+            "retrievedCount": 2,
+            "usedCount": 2,
+            "truncated": false
+          },
+          {
+            "versionId": "0d93a290-9052-4774-8be8-6b74881e29b6",
+            "retrievedCount": 1,
+            "usedCount": 1,
+            "truncated": false
+          },
+          {
+            "versionId": "fac950e7-09a3-4269-82d3-1a5a9b777fd3",
+            "retrievedCount": 1,
+            "usedCount": 1,
+            "truncated": false
+          },
+          {
+            "versionId": "1d3d624b-94b5-4a1e-80dd-cbe82d49a359",
+            "retrievedCount": 1,
+            "usedCount": 1,
+            "truncated": false
+          }
+        ]
+      },
+      "status": "succeeded",
+      "elapsedSeconds": 85.618
+    },
+    {
+      "type": "dispatch",
+      "key": "C1-R03",
+      "evidenceCount": 10
+    },
+    {
+      "type": "case",
+      "key": "C1-R03",
+      "providerRequestCount": 1,
+      "startedAt": "2026-09-23T09:27:37.619596+00:00",
+      "retrievalSeconds": 6.775,
+      "input": {
+        "requirement": {
+          "key": "C1-R03",
+          "text": "本次四节点合计提供不少于 1 TiB 可用容量；允许将四个节点的可用容量直接相加。",
+          "sourceLocation": "客户需求表第 3 项"
+        },
+        "sources": [
+          {
+            "versionId": "da3866f0-7219-4231-a392-549db0f794e1",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "e34f48c5-2ad9-4e2c-ac3b-fb9f824c0081",
+            "generationId": "42f3f326-4dee-480d-9105-39cf3fb65c1b",
+            "filename": "C1-Q-v3.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "1ccf357df4b9662a46a2a01b04018ac545edf6dbd4785d8ba8561ce4e6ae2633"
+          },
+          {
+            "versionId": "b9d94a27-10d2-4c72-9c8d-637976f12efe",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "152c5723-c468-42f1-bca1-2569ae0ddea9",
+            "generationId": "75907f93-d965-4e7d-9639-f0c53e8fc5ac",
+            "filename": "C1-TECH-v5.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "5a58ad1e1918e03724d74a8c3d8cfd0ce1764929031b9b48c50fedf34128a018"
+          },
+          {
+            "versionId": "50483a62-5034-4611-83de-84634a605bd2",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "2d4f5d06-7fd6-4ad9-b0d0-3d34d87a5e0a",
+            "generationId": "39b1c23c-3989-46ec-9e3b-16755c24277f",
+            "filename": "C1-KEY-v2.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "3d6e9e2c7c038ad36bac54cc3453e17aed9da9b07953e436f93d92b8dbfb72c7"
+          },
+          {
+            "versionId": "0d93a290-9052-4774-8be8-6b74881e29b6",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "368f28ab-802c-41c2-8171-5ceb19a120a9",
+            "generationId": "d8af70ef-7188-44d6-9e3d-2948731d19b1",
+            "filename": "C1-SUP-v2.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "f54e55e093a606779632dca1d60777b19aca8d1a1102fabbd041441c9c11e9e5"
+          },
+          {
+            "versionId": "fac950e7-09a3-4269-82d3-1a5a9b777fd3",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "b8966a19-af1b-42c6-8c5f-d816b8a58b3d",
+            "generationId": "ffa0b1b2-ebdf-4930-8c29-90a5672bb238",
+            "filename": "C1-DPA-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "96e9dbb1abd6d0a5b0c6ade0055b1072853bc813530d86aac32336ccd66b395f"
+          },
+          {
+            "versionId": "1d3d624b-94b5-4a1e-80dd-cbe82d49a359",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "9ed3cfed-88b7-4739-a6ed-a4163972194c",
+            "generationId": "a7e96069-d3c0-455a-9a2e-866a1c0f27a6",
+            "filename": "C1-SUB-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "3587c057598899983ca962933651f950785d7d1bd32574dc4f74997b630667ce"
+          }
+        ],
+        "evidence": [
+          {
+            "chunkId": "31bda38b-cc29-4d3e-9e68-5871ef873a91",
+            "documentVersionId": "da3866f0-7219-4231-a392-549db0f794e1",
+            "text": "项目 | 型号或选项 | 单位 | 已购数量\n数据节点 | X250 | 台 | 4\n审计保留与防删 | WORM400 | 套 | 1\n客户主密钥管理 | BYOK | 套 | 0\n独享密钥硬件 | HSM-D | 套 | 0\n双站点自动切换 | DUAL | 套 | 0",
+            "filename": "C1-Q-v3.txt",
+            "heading": "Q-LINES",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "accf8d4a-6b64-4d35-b447-148e3be1915a",
+            "documentVersionId": "da3866f0-7219-4231-a392-549db0f794e1",
+            "text": "采购对象为青岚云应用企业版 E，部署地域为华东。下表数量是已购数量，0 表示本订单未采购；未列明的选项不视为已购。",
+            "filename": "C1-Q-v3.txt",
+            "heading": "Q-SCOPE",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "3b6fdfbf-432b-4e9a-975c-c44fbd232deb",
+            "documentVersionId": "b9d94a27-10d2-4c72-9c8d-637976f12efe",
+            "text": "X250 每台节点提供 250 GiB 可用容量，四台容量可相加，已扣除系统保留空间。本型号的可用容量是固定上限，当前无节点内扩容或额外容量选项。本文件采用 1 TiB = 1024 GiB。",
+            "filename": "C1-TECH-v5.txt",
+            "heading": "T-CAPACITY",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "29ca2813-a8fe-40e5-a4b1-f13f334b67c2",
+            "documentVersionId": "b9d94a27-10d2-4c72-9c8d-637976f12efe",
+            "text": "通用企业版模板的月度可用性保证为 99.90%。如订单存在已签认且明确覆盖本条的补充协议，应按补充协议执行。",
+            "filename": "C1-TECH-v5.txt",
+            "heading": "T-SLA",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "ea4b5b8d-a614-4a40-9977-32d81854590e",
+            "documentVersionId": "50483a62-5034-4611-83de-84634a605bd2",
+            "text": "除 BYOK 与 HSM-D 采购完成外，启用前还必须由客户完成密钥托管交接和恢复演练；未完成这两项验收不能承诺已具备可用的客户主密钥服务。",
+            "filename": "C1-KEY-v2.txt",
+            "heading": "K-ENABLE",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "d468f286-e38f-4ed9-b3bb-2a85151a5848",
+            "documentVersionId": "50483a62-5034-4611-83de-84634a605bd2",
+            "text": "BYOK 允许客户生成、轮换和撤销加密主密钥；HSM-D 使该客户的主密钥在独享 HSM 中运行。两项必须配套采购，企业版 E 可以选购。",
+            "filename": "C1-KEY-v2.txt",
+            "heading": "K-ABILITY",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "e75f6f13-2bb3-49d6-b44d-66417dd6d47d",
+            "documentVersionId": "0d93a290-9052-4774-8be8-6b74881e29b6",
+            "text": "本订单华东企业版 E 的月度可用性保证为 99.95%。",
+            "filename": "C1-SUP-v2.txt",
+            "heading": "S-SLA",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "e9574acc-17cf-43f1-b829-afdd0d0c5951",
+            "documentVersionId": "0d93a290-9052-4774-8be8-6b74881e29b6",
+            "text": "本协议已由双方签认。仅当本订单月度可用性条款与 C1-TECH v5 不同时，以本协议为准；本协议不规定其他附件的优先级。",
+            "filename": "C1-SUP-v2.txt",
+            "heading": "S-PRIORITY",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "f3ffc7b1-d656-46b4-a3c3-7192f6da2231",
+            "documentVersionId": "fac950e7-09a3-4269-82d3-1a5a9b777fd3",
+            "text": "本订单华东企业版 E 的全部业务数据及其备份均只在中国内地存储和处理，不建立境外副本。",
+            "filename": "C1-DPA-v1.txt",
+            "heading": "D-LOCATION",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "44064981-6627-46e5-9fed-44bfa8378283",
+            "documentVersionId": "1d3d624b-94b5-4a1e-80dd-cbe82d49a359",
+            "text": "适用范围为本订单华东企业版 E。生产库位于上海，夜间完整备份须额外复制一份至新加坡备份中心并保留 7 天。",
+            "filename": "C1-SUB-v1.txt",
+            "heading": "B-LOCATION",
+            "pageNumber": ""
+          }
+        ]
+      },
+      "inputSha256": "ae2d944d4b5c2628b99318f7e1adb469b5258d38d448df2f6cda534ae6904acf",
+      "modelSeconds": 112.395,
+      "modelOutput": {
+        "draft": {
+          "status": "contradicted",
+          "answer": "四台 X250 节点合计可用容量为 1000 GiB，不满足不少于 1 TiB（1024 GiB）的要求。",
+          "conditions": [
+            "每台 X250 节点提供 250 GiB 可用容量",
+            "四台容量可相加",
+            "当前无节点内扩容或额外容量选项",
+            "1 TiB = 1024 GiB"
+          ],
+          "missingInformation": [],
+          "citations": [
+            {
+              "chunkId": "3b6fdfbf-432b-4e9a-975c-c44fbd232deb",
+              "documentVersionId": "b9d94a27-10d2-4c72-9c8d-637976f12efe",
+              "excerpt": "X250 每台节点提供 250 GiB 可用容量，四台容量可相加，已扣除系统保留空间。本型号的可用容量是固定上限，当前无节点内扩容或额外容量选项。本文件采用 1 TiB = 1024 GiB。"
+            },
+            {
+              "chunkId": "31bda38b-cc29-4d3e-9e68-5871ef873a91",
+              "documentVersionId": "da3866f0-7219-4231-a392-549db0f794e1",
+              "excerpt": "项目 | 型号或选项 | 单位 | 已购数量\n数据节点 | X250 | 台 | 4"
+            }
+          ]
+        },
+        "usage": {
+          "prompt_tokens": 3798,
+          "completion_tokens": 5014,
+          "total_tokens": 8812
+        },
+        "returnedModel": "grok-4.6",
+        "providerResponseId": "a0f5d437-9b44-9fa6-8527-12eaabd9fd22"
+      },
+      "draft": {
+        "status": "contradicted",
+        "answer": "四台 X250 节点合计可用容量为 1000 GiB，不满足不少于 1 TiB（1024 GiB）的要求。",
+        "conditions": [
+          "每台 X250 节点提供 250 GiB 可用容量",
+          "四台容量可相加",
+          "当前无节点内扩容或额外容量选项",
+          "1 TiB = 1024 GiB"
+        ],
+        "missingInformation": [],
+        "citations": [
+          {
+            "chunkId": "3b6fdfbf-432b-4e9a-975c-c44fbd232deb",
+            "documentVersionId": "b9d94a27-10d2-4c72-9c8d-637976f12efe",
+            "excerpt": "X250 每台节点提供 250 GiB 可用容量，四台容量可相加，已扣除系统保留空间。本型号的可用容量是固定上限，当前无节点内扩容或额外容量选项。本文件采用 1 TiB = 1024 GiB。",
+            "filename": "C1-TECH-v5.txt",
+            "pageNumber": null,
+            "heading": "T-CAPACITY",
+            "startOffset": 125,
+            "endOffset": 221
+          },
+          {
+            "chunkId": "31bda38b-cc29-4d3e-9e68-5871ef873a91",
+            "documentVersionId": "da3866f0-7219-4231-a392-549db0f794e1",
+            "excerpt": "项目 | 型号或选项 | 单位 | 已购数量\n数据节点 | X250 | 台 | 4",
+            "filename": "C1-Q-v3.txt",
+            "pageNumber": null,
+            "heading": "Q-LINES",
+            "startOffset": 102,
+            "endOffset": 239
+          }
+        ],
+        "retrieval": [
+          {
+            "versionId": "da3866f0-7219-4231-a392-549db0f794e1",
+            "retrievedCount": 3,
+            "usedCount": 2,
+            "truncated": true
+          },
+          {
+            "versionId": "b9d94a27-10d2-4c72-9c8d-637976f12efe",
+            "retrievedCount": 5,
+            "usedCount": 2,
+            "truncated": true
+          },
+          {
+            "versionId": "50483a62-5034-4611-83de-84634a605bd2",
+            "retrievedCount": 2,
+            "usedCount": 2,
+            "truncated": false
+          },
+          {
+            "versionId": "0d93a290-9052-4774-8be8-6b74881e29b6",
+            "retrievedCount": 2,
+            "usedCount": 2,
+            "truncated": false
+          },
+          {
+            "versionId": "fac950e7-09a3-4269-82d3-1a5a9b777fd3",
+            "retrievedCount": 1,
+            "usedCount": 1,
+            "truncated": false
+          },
+          {
+            "versionId": "1d3d624b-94b5-4a1e-80dd-cbe82d49a359",
+            "retrievedCount": 1,
+            "usedCount": 1,
+            "truncated": false
+          }
+        ]
+      },
+      "status": "succeeded",
+      "elapsedSeconds": 119.17
+    },
+    {
+      "type": "dispatch",
+      "key": "C1-R04",
+      "evidenceCount": 8
+    },
+    {
+      "type": "case",
+      "key": "C1-R04",
+      "providerRequestCount": 1,
+      "startedAt": "2026-09-23T09:29:36.789707+00:00",
+      "retrievalSeconds": 8.086,
+      "input": {
+        "requirement": {
+          "key": "C1-R04",
+          "text": "本次方案同时保证恢复时间 RTO 不超过 15 分钟、恢复点 RPO 不超过 5 分钟。",
+          "sourceLocation": "客户需求表第 4 项"
+        },
+        "sources": [
+          {
+            "versionId": "da3866f0-7219-4231-a392-549db0f794e1",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "e34f48c5-2ad9-4e2c-ac3b-fb9f824c0081",
+            "generationId": "42f3f326-4dee-480d-9105-39cf3fb65c1b",
+            "filename": "C1-Q-v3.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "1ccf357df4b9662a46a2a01b04018ac545edf6dbd4785d8ba8561ce4e6ae2633"
+          },
+          {
+            "versionId": "b9d94a27-10d2-4c72-9c8d-637976f12efe",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "152c5723-c468-42f1-bca1-2569ae0ddea9",
+            "generationId": "75907f93-d965-4e7d-9639-f0c53e8fc5ac",
+            "filename": "C1-TECH-v5.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "5a58ad1e1918e03724d74a8c3d8cfd0ce1764929031b9b48c50fedf34128a018"
+          },
+          {
+            "versionId": "50483a62-5034-4611-83de-84634a605bd2",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "2d4f5d06-7fd6-4ad9-b0d0-3d34d87a5e0a",
+            "generationId": "39b1c23c-3989-46ec-9e3b-16755c24277f",
+            "filename": "C1-KEY-v2.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "3d6e9e2c7c038ad36bac54cc3453e17aed9da9b07953e436f93d92b8dbfb72c7"
+          },
+          {
+            "versionId": "0d93a290-9052-4774-8be8-6b74881e29b6",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "368f28ab-802c-41c2-8171-5ceb19a120a9",
+            "generationId": "d8af70ef-7188-44d6-9e3d-2948731d19b1",
+            "filename": "C1-SUP-v2.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "f54e55e093a606779632dca1d60777b19aca8d1a1102fabbd041441c9c11e9e5"
+          },
+          {
+            "versionId": "fac950e7-09a3-4269-82d3-1a5a9b777fd3",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "b8966a19-af1b-42c6-8c5f-d816b8a58b3d",
+            "generationId": "ffa0b1b2-ebdf-4930-8c29-90a5672bb238",
+            "filename": "C1-DPA-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "96e9dbb1abd6d0a5b0c6ade0055b1072853bc813530d86aac32336ccd66b395f"
+          },
+          {
+            "versionId": "1d3d624b-94b5-4a1e-80dd-cbe82d49a359",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "9ed3cfed-88b7-4739-a6ed-a4163972194c",
+            "generationId": "a7e96069-d3c0-455a-9a2e-866a1c0f27a6",
+            "filename": "C1-SUB-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "3587c057598899983ca962933651f950785d7d1bd32574dc4f74997b630667ce"
+          }
+        ],
+        "evidence": [
+          {
+            "chunkId": "31bda38b-cc29-4d3e-9e68-5871ef873a91",
+            "documentVersionId": "da3866f0-7219-4231-a392-549db0f794e1",
+            "text": "项目 | 型号或选项 | 单位 | 已购数量\n数据节点 | X250 | 台 | 4\n审计保留与防删 | WORM400 | 套 | 1\n客户主密钥管理 | BYOK | 套 | 0\n独享密钥硬件 | HSM-D | 套 | 0\n双站点自动切换 | DUAL | 套 | 0",
+            "filename": "C1-Q-v3.txt",
+            "heading": "Q-LINES",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "4e2cc926-79c5-4171-b5d1-808fab5a2d3a",
+            "documentVersionId": "b9d94a27-10d2-4c72-9c8d-637976f12efe",
+            "text": "华东企业版当前保证 RPO 不超过 5 分钟。本节描述复制间隔和数据丢失窗口，不给出 RTO 保证。",
+            "filename": "C1-TECH-v5.txt",
+            "heading": "T-DR",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "5f37b350-e40a-4418-8294-3807514ea8a9",
+            "documentVersionId": "b9d94a27-10d2-4c72-9c8d-637976f12efe",
+            "text": "企业版基础审计日志保留 90 天。WORM400 选项将保留期设为 400 天；在保留期届满前，包括租户管理员在内的任何账号均不能删除已写入日志。",
+            "filename": "C1-TECH-v5.txt",
+            "heading": "T-AUDIT",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "ea4b5b8d-a614-4a40-9977-32d81854590e",
+            "documentVersionId": "50483a62-5034-4611-83de-84634a605bd2",
+            "text": "除 BYOK 与 HSM-D 采购完成外，启用前还必须由客户完成密钥托管交接和恢复演练；未完成这两项验收不能承诺已具备可用的客户主密钥服务。",
+            "filename": "C1-KEY-v2.txt",
+            "heading": "K-ENABLE",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "d468f286-e38f-4ed9-b3bb-2a85151a5848",
+            "documentVersionId": "50483a62-5034-4611-83de-84634a605bd2",
+            "text": "BYOK 允许客户生成、轮换和撤销加密主密钥；HSM-D 使该客户的主密钥在独享 HSM 中运行。两项必须配套采购，企业版 E 可以选购。",
+            "filename": "C1-KEY-v2.txt",
+            "heading": "K-ABILITY",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "e75f6f13-2bb3-49d6-b44d-66417dd6d47d",
+            "documentVersionId": "0d93a290-9052-4774-8be8-6b74881e29b6",
+            "text": "本订单华东企业版 E 的月度可用性保证为 99.95%。",
+            "filename": "C1-SUP-v2.txt",
+            "heading": "S-SLA",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "f3ffc7b1-d656-46b4-a3c3-7192f6da2231",
+            "documentVersionId": "fac950e7-09a3-4269-82d3-1a5a9b777fd3",
+            "text": "本订单华东企业版 E 的全部业务数据及其备份均只在中国内地存储和处理，不建立境外副本。",
+            "filename": "C1-DPA-v1.txt",
+            "heading": "D-LOCATION",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "44064981-6627-46e5-9fed-44bfa8378283",
+            "documentVersionId": "1d3d624b-94b5-4a1e-80dd-cbe82d49a359",
+            "text": "适用范围为本订单华东企业版 E。生产库位于上海，夜间完整备份须额外复制一份至新加坡备份中心并保留 7 天。",
+            "filename": "C1-SUB-v1.txt",
+            "heading": "B-LOCATION",
+            "pageNumber": ""
+          }
+        ]
+      },
+      "inputSha256": "ce8ef56d04093a0eeb3803b5037f598d2088f729cd59226e41c8ab2a9c113d7f",
+      "modelSeconds": 50.601,
+      "modelOutput": {
+        "draft": {
+          "status": "contradicted",
+          "answer": "不支持。证据明确指出华东企业版当前仅保证 RPO 不超过 5 分钟，且不给出 RTO 保证。要求同时保证 RTO 不超过 15 分钟，因此不满足。",
+          "conditions": [],
+          "missingInformation": [],
+          "citations": [
+            {
+              "chunkId": "4e2cc926-79c5-4171-b5d1-808fab5a2d3a",
+              "documentVersionId": "b9d94a27-10d2-4c72-9c8d-637976f12efe",
+              "excerpt": "华东企业版当前保证 RPO 不超过 5 分钟。本节描述复制间隔和数据丢失窗口，不给出 RTO 保证。"
+            }
+          ]
+        },
+        "usage": {
+          "prompt_tokens": 3541,
+          "completion_tokens": 2242,
+          "total_tokens": 5783
+        },
+        "returnedModel": "grok-4.6",
+        "providerResponseId": "cc4b404a-fe1e-9691-8e15-55faccfc87ec"
+      },
+      "draft": {
+        "status": "contradicted",
+        "answer": "不支持。证据明确指出华东企业版当前仅保证 RPO 不超过 5 分钟，且不给出 RTO 保证。要求同时保证 RTO 不超过 15 分钟，因此不满足。",
+        "conditions": [],
+        "missingInformation": [],
+        "citations": [
+          {
+            "chunkId": "4e2cc926-79c5-4171-b5d1-808fab5a2d3a",
+            "documentVersionId": "b9d94a27-10d2-4c72-9c8d-637976f12efe",
+            "excerpt": "华东企业版当前保证 RPO 不超过 5 分钟。本节描述复制间隔和数据丢失窗口，不给出 RTO 保证。",
+            "filename": "C1-TECH-v5.txt",
+            "pageNumber": null,
+            "heading": "T-DR",
+            "startOffset": 231,
+            "endOffset": 281
+          }
+        ],
+        "retrieval": [
+          {
+            "versionId": "da3866f0-7219-4231-a392-549db0f794e1",
+            "retrievedCount": 1,
+            "usedCount": 1,
+            "truncated": false
+          },
+          {
+            "versionId": "b9d94a27-10d2-4c72-9c8d-637976f12efe",
+            "retrievedCount": 4,
+            "usedCount": 2,
+            "truncated": true
+          },
+          {
+            "versionId": "50483a62-5034-4611-83de-84634a605bd2",
+            "retrievedCount": 2,
+            "usedCount": 2,
+            "truncated": false
+          },
+          {
+            "versionId": "0d93a290-9052-4774-8be8-6b74881e29b6",
+            "retrievedCount": 1,
+            "usedCount": 1,
+            "truncated": false
+          },
+          {
+            "versionId": "fac950e7-09a3-4269-82d3-1a5a9b777fd3",
+            "retrievedCount": 1,
+            "usedCount": 1,
+            "truncated": false
+          },
+          {
+            "versionId": "1d3d624b-94b5-4a1e-80dd-cbe82d49a359",
+            "retrievedCount": 1,
+            "usedCount": 1,
+            "truncated": false
+          }
+        ]
+      },
+      "status": "succeeded",
+      "elapsedSeconds": 58.688
+    },
+    {
+      "type": "dispatch",
+      "key": "C1-R05",
+      "evidenceCount": 10
+    },
+    {
+      "type": "case",
+      "key": "C1-R05",
+      "providerRequestCount": 1,
+      "startedAt": "2026-09-23T09:30:35.477518+00:00",
+      "retrievalSeconds": 6.952,
+      "input": {
+        "requirement": {
+          "key": "C1-R05",
+          "text": "本次订单保证的月度可用性不低于 99.95%。",
+          "sourceLocation": "客户需求表第 5 项"
+        },
+        "sources": [
+          {
+            "versionId": "da3866f0-7219-4231-a392-549db0f794e1",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "e34f48c5-2ad9-4e2c-ac3b-fb9f824c0081",
+            "generationId": "42f3f326-4dee-480d-9105-39cf3fb65c1b",
+            "filename": "C1-Q-v3.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "1ccf357df4b9662a46a2a01b04018ac545edf6dbd4785d8ba8561ce4e6ae2633"
+          },
+          {
+            "versionId": "b9d94a27-10d2-4c72-9c8d-637976f12efe",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "152c5723-c468-42f1-bca1-2569ae0ddea9",
+            "generationId": "75907f93-d965-4e7d-9639-f0c53e8fc5ac",
+            "filename": "C1-TECH-v5.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "5a58ad1e1918e03724d74a8c3d8cfd0ce1764929031b9b48c50fedf34128a018"
+          },
+          {
+            "versionId": "50483a62-5034-4611-83de-84634a605bd2",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "2d4f5d06-7fd6-4ad9-b0d0-3d34d87a5e0a",
+            "generationId": "39b1c23c-3989-46ec-9e3b-16755c24277f",
+            "filename": "C1-KEY-v2.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "3d6e9e2c7c038ad36bac54cc3453e17aed9da9b07953e436f93d92b8dbfb72c7"
+          },
+          {
+            "versionId": "0d93a290-9052-4774-8be8-6b74881e29b6",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "368f28ab-802c-41c2-8171-5ceb19a120a9",
+            "generationId": "d8af70ef-7188-44d6-9e3d-2948731d19b1",
+            "filename": "C1-SUP-v2.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "f54e55e093a606779632dca1d60777b19aca8d1a1102fabbd041441c9c11e9e5"
+          },
+          {
+            "versionId": "fac950e7-09a3-4269-82d3-1a5a9b777fd3",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "b8966a19-af1b-42c6-8c5f-d816b8a58b3d",
+            "generationId": "ffa0b1b2-ebdf-4930-8c29-90a5672bb238",
+            "filename": "C1-DPA-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "96e9dbb1abd6d0a5b0c6ade0055b1072853bc813530d86aac32336ccd66b395f"
+          },
+          {
+            "versionId": "1d3d624b-94b5-4a1e-80dd-cbe82d49a359",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "9ed3cfed-88b7-4739-a6ed-a4163972194c",
+            "generationId": "a7e96069-d3c0-455a-9a2e-866a1c0f27a6",
+            "filename": "C1-SUB-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "3587c057598899983ca962933651f950785d7d1bd32574dc4f74997b630667ce"
+          }
+        ],
+        "evidence": [
+          {
+            "chunkId": "978d8e8c-26ed-40af-8dd4-15f003c49e4f",
+            "documentVersionId": "da3866f0-7219-4231-a392-549db0f794e1",
+            "text": "C1-SUP v2 仅就月度可用性条款优先于 C1-TECH v5。数据处理说明 C1-DPA v1 与备份处理方附件 C1-SUB v1 均已签认、同日生效，两者之间未约定优先级。其他条款不因该补充协议而整体失效。",
+            "filename": "C1-Q-v3.txt",
+            "heading": "Q-ORDER",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "accf8d4a-6b64-4d35-b447-148e3be1915a",
+            "documentVersionId": "da3866f0-7219-4231-a392-549db0f794e1",
+            "text": "采购对象为青岚云应用企业版 E，部署地域为华东。下表数量是已购数量，0 表示本订单未采购；未列明的选项不视为已购。",
+            "filename": "C1-Q-v3.txt",
+            "heading": "Q-SCOPE",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "29ca2813-a8fe-40e5-a4b1-f13f334b67c2",
+            "documentVersionId": "b9d94a27-10d2-4c72-9c8d-637976f12efe",
+            "text": "通用企业版模板的月度可用性保证为 99.90%。如订单存在已签认且明确覆盖本条的补充协议，应按补充协议执行。",
+            "filename": "C1-TECH-v5.txt",
+            "heading": "T-SLA",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "4e2cc926-79c5-4171-b5d1-808fab5a2d3a",
+            "documentVersionId": "b9d94a27-10d2-4c72-9c8d-637976f12efe",
+            "text": "华东企业版当前保证 RPO 不超过 5 分钟。本节描述复制间隔和数据丢失窗口，不给出 RTO 保证。",
+            "filename": "C1-TECH-v5.txt",
+            "heading": "T-DR",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "ea4b5b8d-a614-4a40-9977-32d81854590e",
+            "documentVersionId": "50483a62-5034-4611-83de-84634a605bd2",
+            "text": "除 BYOK 与 HSM-D 采购完成外，启用前还必须由客户完成密钥托管交接和恢复演练；未完成这两项验收不能承诺已具备可用的客户主密钥服务。",
+            "filename": "C1-KEY-v2.txt",
+            "heading": "K-ENABLE",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "d468f286-e38f-4ed9-b3bb-2a85151a5848",
+            "documentVersionId": "50483a62-5034-4611-83de-84634a605bd2",
+            "text": "BYOK 允许客户生成、轮换和撤销加密主密钥；HSM-D 使该客户的主密钥在独享 HSM 中运行。两项必须配套采购，企业版 E 可以选购。",
+            "filename": "C1-KEY-v2.txt",
+            "heading": "K-ABILITY",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "e75f6f13-2bb3-49d6-b44d-66417dd6d47d",
+            "documentVersionId": "0d93a290-9052-4774-8be8-6b74881e29b6",
+            "text": "本订单华东企业版 E 的月度可用性保证为 99.95%。",
+            "filename": "C1-SUP-v2.txt",
+            "heading": "S-SLA",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "e9574acc-17cf-43f1-b829-afdd0d0c5951",
+            "documentVersionId": "0d93a290-9052-4774-8be8-6b74881e29b6",
+            "text": "本协议已由双方签认。仅当本订单月度可用性条款与 C1-TECH v5 不同时，以本协议为准；本协议不规定其他附件的优先级。",
+            "filename": "C1-SUP-v2.txt",
+            "heading": "S-PRIORITY",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "f3ffc7b1-d656-46b4-a3c3-7192f6da2231",
+            "documentVersionId": "fac950e7-09a3-4269-82d3-1a5a9b777fd3",
+            "text": "本订单华东企业版 E 的全部业务数据及其备份均只在中国内地存储和处理，不建立境外副本。",
+            "filename": "C1-DPA-v1.txt",
+            "heading": "D-LOCATION",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "44064981-6627-46e5-9fed-44bfa8378283",
+            "documentVersionId": "1d3d624b-94b5-4a1e-80dd-cbe82d49a359",
+            "text": "适用范围为本订单华东企业版 E。生产库位于上海，夜间完整备份须额外复制一份至新加坡备份中心并保留 7 天。",
+            "filename": "C1-SUB-v1.txt",
+            "heading": "B-LOCATION",
+            "pageNumber": ""
+          }
+        ]
+      },
+      "inputSha256": "5ed887e62a83a219d5d8fba44db0f7256ca71ff06bd9dc6a38f22e851ae1e016",
+      "modelSeconds": 113.051,
+      "modelOutput": {
+        "draft": {
+          "status": "supported",
+          "answer": "支持。本订单华东企业版 E 的月度可用性保证为 99.95%，该条款优先于 C1-TECH v5 中的通用模板保证 99.90%。其他附件不影响此条款。",
+          "conditions": [],
+          "missingInformation": [],
+          "citations": [
+            {
+              "chunkId": "e75f6f13-2bb3-49d6-b44d-66417dd6d47d",
+              "documentVersionId": "0d93a290-9052-4774-8be8-6b74881e29b6",
+              "excerpt": "本订单华东企业版 E 的月度可用性保证为 99.95%."
+            },
+            {
+              "chunkId": "e9574acc-17cf-43f1-b829-afdd0d0c5951",
+              "documentVersionId": "0d93a290-9052-4774-8be8-6b74881e29b6",
+              "excerpt": "本协议已由双方签认。仅当本订单月度可用性条款与 C1-TECH v5 不同时，以本协议为准；本协议不规定其他附件的优先级。"
+            },
+            {
+              "chunkId": "29ca2813-a8fe-40e5-a4b1-f13f334b67c2",
+              "documentVersionId": "b9d94a27-10d2-4c72-9c8d-637976f12efe",
+              "excerpt": "通用企业版模板的月度可用性保证为 99.90%。如订单存在已签认且明确覆盖本条的补充协议，应按补充协议执行。"
+            },
+            {
+              "chunkId": "978d8e8c-26ed-40af-8dd4-15f003c49e4f",
+              "documentVersionId": "da3866f0-7219-4231-a392-549db0f794e1",
+              "excerpt": "C1-SUP v2 仅就月度可用性条款优先于 C1-TECH v5。数据处理说明 C1-DPA v1 与备份处理方附件 C1-SUB v1 均已签认、同日生效，两者之间未约定优先级。其他条款不因该补充协议而整体失效。"
+            }
+          ]
+        },
+        "usage": {
+          "prompt_tokens": 3751,
+          "completion_tokens": 4232,
+          "total_tokens": 7983
+        },
+        "returnedModel": "grok-4.6",
+        "providerResponseId": "41f57fe4-b462-942f-86cf-c280d2a986b0"
+      },
+      "status": "failed",
+      "error": "presales_invalid_citation",
+      "elapsedSeconds": 120.004
+    },
+    {
+      "type": "dispatch",
+      "key": "C1-R07",
+      "evidenceCount": 9
+    },
+    {
+      "type": "case",
+      "key": "C1-R07",
+      "providerRequestCount": 1,
+      "startedAt": "2026-09-23T09:32:35.481429+00:00",
+      "retrievalSeconds": 6.887,
+      "input": {
+        "requirement": {
+          "key": "C1-R07",
+          "text": "业务数据和备份始终位于中国内地，不允许在境外保留副本。",
+          "sourceLocation": "客户需求表第 7 项"
+        },
+        "sources": [
+          {
+            "versionId": "da3866f0-7219-4231-a392-549db0f794e1",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "e34f48c5-2ad9-4e2c-ac3b-fb9f824c0081",
+            "generationId": "42f3f326-4dee-480d-9105-39cf3fb65c1b",
+            "filename": "C1-Q-v3.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "1ccf357df4b9662a46a2a01b04018ac545edf6dbd4785d8ba8561ce4e6ae2633"
+          },
+          {
+            "versionId": "b9d94a27-10d2-4c72-9c8d-637976f12efe",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "152c5723-c468-42f1-bca1-2569ae0ddea9",
+            "generationId": "75907f93-d965-4e7d-9639-f0c53e8fc5ac",
+            "filename": "C1-TECH-v5.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "5a58ad1e1918e03724d74a8c3d8cfd0ce1764929031b9b48c50fedf34128a018"
+          },
+          {
+            "versionId": "50483a62-5034-4611-83de-84634a605bd2",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "2d4f5d06-7fd6-4ad9-b0d0-3d34d87a5e0a",
+            "generationId": "39b1c23c-3989-46ec-9e3b-16755c24277f",
+            "filename": "C1-KEY-v2.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "3d6e9e2c7c038ad36bac54cc3453e17aed9da9b07953e436f93d92b8dbfb72c7"
+          },
+          {
+            "versionId": "0d93a290-9052-4774-8be8-6b74881e29b6",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "368f28ab-802c-41c2-8171-5ceb19a120a9",
+            "generationId": "d8af70ef-7188-44d6-9e3d-2948731d19b1",
+            "filename": "C1-SUP-v2.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "f54e55e093a606779632dca1d60777b19aca8d1a1102fabbd041441c9c11e9e5"
+          },
+          {
+            "versionId": "fac950e7-09a3-4269-82d3-1a5a9b777fd3",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "b8966a19-af1b-42c6-8c5f-d816b8a58b3d",
+            "generationId": "ffa0b1b2-ebdf-4930-8c29-90a5672bb238",
+            "filename": "C1-DPA-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "96e9dbb1abd6d0a5b0c6ade0055b1072853bc813530d86aac32336ccd66b395f"
+          },
+          {
+            "versionId": "1d3d624b-94b5-4a1e-80dd-cbe82d49a359",
+            "applicability": "评估日 2026-09-12。仅评估已签认订单 C1-Q v3 的华东区企业版 E、当前正式版本：四台 X250 节点，WORM400 已购，BYOK、HSM-D 与 DUAL 均未购。当前附件的差异仅按明确约定的优先级处理，不从发布日期推断效力。资料均为虚构。 当前有效资料；须按正文的地域、套餐、主体和条款范围使用。",
+            "documentId": "9ed3cfed-88b7-4739-a6ed-a4163972194c",
+            "generationId": "a7e96069-d3c0-455a-9a2e-866a1c0f27a6",
+            "filename": "C1-SUB-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "3587c057598899983ca962933651f950785d7d1bd32574dc4f74997b630667ce"
+          }
+        ],
+        "evidence": [
+          {
+            "chunkId": "31bda38b-cc29-4d3e-9e68-5871ef873a91",
+            "documentVersionId": "da3866f0-7219-4231-a392-549db0f794e1",
+            "text": "项目 | 型号或选项 | 单位 | 已购数量\n数据节点 | X250 | 台 | 4\n审计保留与防删 | WORM400 | 套 | 1\n客户主密钥管理 | BYOK | 套 | 0\n独享密钥硬件 | HSM-D | 套 | 0\n双站点自动切换 | DUAL | 套 | 0",
+            "filename": "C1-Q-v3.txt",
+            "heading": "Q-LINES",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "978d8e8c-26ed-40af-8dd4-15f003c49e4f",
+            "documentVersionId": "da3866f0-7219-4231-a392-549db0f794e1",
+            "text": "C1-SUP v2 仅就月度可用性条款优先于 C1-TECH v5。数据处理说明 C1-DPA v1 与备份处理方附件 C1-SUB v1 均已签认、同日生效，两者之间未约定优先级。其他条款不因该补充协议而整体失效。",
+            "filename": "C1-Q-v3.txt",
+            "heading": "Q-ORDER",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "4e2cc926-79c5-4171-b5d1-808fab5a2d3a",
+            "documentVersionId": "b9d94a27-10d2-4c72-9c8d-637976f12efe",
+            "text": "华东企业版当前保证 RPO 不超过 5 分钟。本节描述复制间隔和数据丢失窗口，不给出 RTO 保证。",
+            "filename": "C1-TECH-v5.txt",
+            "heading": "T-DR",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "5f37b350-e40a-4418-8294-3807514ea8a9",
+            "documentVersionId": "b9d94a27-10d2-4c72-9c8d-637976f12efe",
+            "text": "企业版基础审计日志保留 90 天。WORM400 选项将保留期设为 400 天；在保留期届满前，包括租户管理员在内的任何账号均不能删除已写入日志。",
+            "filename": "C1-TECH-v5.txt",
+            "heading": "T-AUDIT",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "ea4b5b8d-a614-4a40-9977-32d81854590e",
+            "documentVersionId": "50483a62-5034-4611-83de-84634a605bd2",
+            "text": "除 BYOK 与 HSM-D 采购完成外，启用前还必须由客户完成密钥托管交接和恢复演练；未完成这两项验收不能承诺已具备可用的客户主密钥服务。",
+            "filename": "C1-KEY-v2.txt",
+            "heading": "K-ENABLE",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "d468f286-e38f-4ed9-b3bb-2a85151a5848",
+            "documentVersionId": "50483a62-5034-4611-83de-84634a605bd2",
+            "text": "BYOK 允许客户生成、轮换和撤销加密主密钥；HSM-D 使该客户的主密钥在独享 HSM 中运行。两项必须配套采购，企业版 E 可以选购。",
+            "filename": "C1-KEY-v2.txt",
+            "heading": "K-ABILITY",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "e75f6f13-2bb3-49d6-b44d-66417dd6d47d",
+            "documentVersionId": "0d93a290-9052-4774-8be8-6b74881e29b6",
+            "text": "本订单华东企业版 E 的月度可用性保证为 99.95%。",
+            "filename": "C1-SUP-v2.txt",
+            "heading": "S-SLA",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "f3ffc7b1-d656-46b4-a3c3-7192f6da2231",
+            "documentVersionId": "fac950e7-09a3-4269-82d3-1a5a9b777fd3",
+            "text": "本订单华东企业版 E 的全部业务数据及其备份均只在中国内地存储和处理，不建立境外副本。",
+            "filename": "C1-DPA-v1.txt",
+            "heading": "D-LOCATION",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "44064981-6627-46e5-9fed-44bfa8378283",
+            "documentVersionId": "1d3d624b-94b5-4a1e-80dd-cbe82d49a359",
+            "text": "适用范围为本订单华东企业版 E。生产库位于上海，夜间完整备份须额外复制一份至新加坡备份中心并保留 7 天。",
+            "filename": "C1-SUB-v1.txt",
+            "heading": "B-LOCATION",
+            "pageNumber": ""
+          }
+        ]
+      },
+      "inputSha256": "b2b272533893c63256db679dfb887461b27bfac4c09cc0727ca03050712ab793",
+      "modelSeconds": 68.837,
+      "modelOutput": {
+        "draft": {
+          "status": "conflicting_evidence",
+          "answer": "证据存在冲突，无法确定是否满足要求。C1-DPA v1 明确规定本订单华东企业版 E 的全部业务数据及其备份均只在中国内地存储和处理，不建立境外副本；C1-SUB v1 要求生产库位于上海，夜间完整备份须额外复制一份至新加坡备份中心并保留 7 天。C1-DPA v1 与 C1-SUB v1 均已签认、同日生效，两者之间未约定优先级。",
+          "conditions": [
+            "C1-DPA v1 与 C1-SUB v1 之间未约定优先级"
+          ],
+          "missingInformation": [],
+          "citations": [
+            {
+              "chunkId": "f3ffc7b1-d656-46b4-a3c3-7192f6da2231",
+              "documentVersionId": "fac950e7-09a3-4269-82d3-1a5a9b777fd3",
+              "excerpt": "本订单华东企业版 E 的全部业务数据及其备份均只在中国内地存储和处理，不建立境外副本。"
+            },
+            {
+              "chunkId": "44064981-6627-46e5-9fed-44bfa8378283",
+              "documentVersionId": "1d3d624b-94b5-4a1e-80dd-cbe82d49a359",
+              "excerpt": "适用范围为本订单华东企业版 E。生产库位于上海，夜间完整备份须额外复制一份至新加坡备份中心并保留 7 天。"
+            },
+            {
+              "chunkId": "978d8e8c-26ed-40af-8dd4-15f003c49e4f",
+              "documentVersionId": "da3866f0-7219-4231-a392-549db0f794e1",
+              "excerpt": "C1-SUP v2 仅就月度可用性条款优先于 C1-TECH v5。数据处理说明 C1-DPA v1 与备份处理方附件 C1-SUB v1 均已签认、同日生效，两者之间未约定优先级。其他条款不因该补充协议而整体失效。"
+            }
+          ]
+        },
+        "usage": {
+          "prompt_tokens": 3678,
+          "completion_tokens": 3149,
+          "total_tokens": 6827
+        },
+        "returnedModel": "grok-4.6",
+        "providerResponseId": "e727f15a-ec4b-9df8-b2f5-d37693557b98"
+      },
+      "draft": {
+        "status": "conflicting_evidence",
+        "answer": "证据存在冲突，无法确定是否满足要求。C1-DPA v1 明确规定本订单华东企业版 E 的全部业务数据及其备份均只在中国内地存储和处理，不建立境外副本；C1-SUB v1 要求生产库位于上海，夜间完整备份须额外复制一份至新加坡备份中心并保留 7 天。C1-DPA v1 与 C1-SUB v1 均已签认、同日生效，两者之间未约定优先级。",
+        "conditions": [
+          "C1-DPA v1 与 C1-SUB v1 之间未约定优先级"
+        ],
+        "missingInformation": [],
+        "citations": [
+          {
+            "chunkId": "f3ffc7b1-d656-46b4-a3c3-7192f6da2231",
+            "documentVersionId": "fac950e7-09a3-4269-82d3-1a5a9b777fd3",
+            "excerpt": "本订单华东企业版 E 的全部业务数据及其备份均只在中国内地存储和处理，不建立境外副本。",
+            "filename": "C1-DPA-v1.txt",
+            "pageNumber": null,
+            "heading": "D-LOCATION",
+            "startOffset": 37,
+            "endOffset": 80
+          },
+          {
+            "chunkId": "44064981-6627-46e5-9fed-44bfa8378283",
+            "documentVersionId": "1d3d624b-94b5-4a1e-80dd-cbe82d49a359",
+            "excerpt": "适用范围为本订单华东企业版 E。生产库位于上海，夜间完整备份须额外复制一份至新加坡备份中心并保留 7 天。",
+            "filename": "C1-SUB-v1.txt",
+            "pageNumber": null,
+            "heading": "B-LOCATION",
+            "startOffset": 38,
+            "endOffset": 91
+          },
+          {
+            "chunkId": "978d8e8c-26ed-40af-8dd4-15f003c49e4f",
+            "documentVersionId": "da3866f0-7219-4231-a392-549db0f794e1",
+            "excerpt": "C1-SUP v2 仅就月度可用性条款优先于 C1-TECH v5。数据处理说明 C1-DPA v1 与备份处理方附件 C1-SUB v1 均已签认、同日生效，两者之间未约定优先级。其他条款不因该补充协议而整体失效。",
+            "filename": "C1-Q-v3.txt",
+            "pageNumber": null,
+            "heading": "Q-ORDER",
+            "startOffset": 252,
+            "endOffset": 360
+          }
+        ],
+        "retrieval": [
+          {
+            "versionId": "da3866f0-7219-4231-a392-549db0f794e1",
+            "retrievedCount": 3,
+            "usedCount": 2,
+            "truncated": true
+          },
+          {
+            "versionId": "b9d94a27-10d2-4c72-9c8d-637976f12efe",
+            "retrievedCount": 3,
+            "usedCount": 2,
+            "truncated": true
+          },
+          {
+            "versionId": "50483a62-5034-4611-83de-84634a605bd2",
+            "retrievedCount": 2,
+            "usedCount": 2,
+            "truncated": false
+          },
+          {
+            "versionId": "0d93a290-9052-4774-8be8-6b74881e29b6",
+            "retrievedCount": 1,
+            "usedCount": 1,
+            "truncated": false
+          },
+          {
+            "versionId": "fac950e7-09a3-4269-82d3-1a5a9b777fd3",
+            "retrievedCount": 1,
+            "usedCount": 1,
+            "truncated": false
+          },
+          {
+            "versionId": "1d3d624b-94b5-4a1e-80dd-cbe82d49a359",
+            "retrievedCount": 1,
+            "usedCount": 1,
+            "truncated": false
+          }
+        ]
+      },
+      "status": "succeeded",
+      "elapsedSeconds": 75.724
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 21731,
+    "completion_tokens": 20437,
+    "total_tokens": 42168
+  },
+  "costAmount": null,
+  "costCurrency": null,
+  "medianModelSeconds": 73.093,
+  "failedPreliminaryDiagnostic": {
+    "reason": "Logged-out demo actor produced empty retrieval; excluded from quality comparison",
+    "completedModelResponses": 3,
+    "additionalDispatchUncertain": 1,
+    "qualityScore": null,
+    "costAmount": null
+  },
+  "limitations": [
+    "Assistant-authored synthetic labels, not blind or independent domain review",
+    "Candidate tuned after seeing baseline cases, not a holdout measurement",
+    "One candidate pass is not equivalent to two public API baseline rounds",
+    "Remaining RTO classification error and one exact-quote rejection; candidate not approved for deployment"
+  ]
+}
