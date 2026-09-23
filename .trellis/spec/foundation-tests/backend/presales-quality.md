@@ -133,3 +133,12 @@ Wrong: count only accepted drafts or present deterministic replay as first-attem
 success. Correct: keep rejection and semantic errors in the denominator, check
 both exact quotations and meaning, and record unverified billing as null. Tests
 use the frozen failed v4 run to guard this distinction and reject tampered bindings.
+
+The v5 trial demonstrates why label and citation success are insufficient. H3-R3
+selected both conflict sides with the expected label, but inverted which source
+agreed with the requirement in its answer. H3-R5 labeled an unrecorded acceptance
+state as unmet instead of unknown. Review these propositions and prerequisite
+states explicitly; do not infer semantic correctness from a valid schema or label.
+Clarifications must ask for missing facts or revised terms, not facts already stated
+by the cited sources (H1-R4). Preserve required-anchor gaps even when another source
+contains a similar fact (H1-R2); changing gold after inference hides the observation.

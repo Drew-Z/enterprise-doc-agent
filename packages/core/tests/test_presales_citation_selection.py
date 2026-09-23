@@ -346,7 +346,11 @@ async def test_bad_selections_are_rejected_without_repair_or_retry(kind: str) ->
                 ]
             )
         if kind == "same_version_conflict":
-            return model_response([reference], status="conflicting_evidence")
+            return model_response(
+                [reference],
+                status="conflicting_evidence",
+                missingInformation=["请确认冲突条款的适用范围。"],
+            )
         return model_response([])
 
     code = (
