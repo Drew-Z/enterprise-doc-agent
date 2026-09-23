@@ -1,0 +1,103 @@
+{
+  "schemaVersion": "presales-gateway-score-v1",
+  "scope": "original_generation_only_outcomes",
+  "datasetSha256": "260759bf6314153a9ca48ff80c9e6dbd148b917e828fefb57e1db3c9852d33a6",
+  "expectedRows": 6,
+  "rows": [
+    {
+      "key": "H3-R1",
+      "expectedStatus": "insufficient_evidence",
+      "predictedStatus": null,
+      "acceptedDraft": false,
+      "statusMatch": false,
+      "unsafeAffirmative": false,
+      "citations": 0,
+      "validCitations": 0,
+      "requiredEvidence": 0,
+      "coveredRequiredEvidence": 0
+    },
+    {
+      "key": "H3-R2",
+      "expectedStatus": "contradicted",
+      "predictedStatus": null,
+      "acceptedDraft": false,
+      "statusMatch": false,
+      "unsafeAffirmative": false,
+      "citations": 0,
+      "validCitations": 0,
+      "requiredEvidence": 1,
+      "coveredRequiredEvidence": 0
+    },
+    {
+      "key": "H3-R3",
+      "expectedStatus": "conflicting_evidence",
+      "predictedStatus": null,
+      "acceptedDraft": false,
+      "statusMatch": false,
+      "unsafeAffirmative": false,
+      "citations": 0,
+      "validCitations": 0,
+      "requiredEvidence": 2,
+      "coveredRequiredEvidence": 0
+    },
+    {
+      "key": "H3-R4",
+      "expectedStatus": "supported",
+      "predictedStatus": "supported",
+      "acceptedDraft": true,
+      "statusMatch": true,
+      "unsafeAffirmative": false,
+      "citations": 3,
+      "validCitations": 3,
+      "requiredEvidence": 1,
+      "coveredRequiredEvidence": 1
+    },
+    {
+      "key": "H3-R5",
+      "expectedStatus": "conditional",
+      "predictedStatus": "conditional",
+      "acceptedDraft": true,
+      "statusMatch": true,
+      "unsafeAffirmative": false,
+      "citations": 2,
+      "validCitations": 2,
+      "requiredEvidence": 3,
+      "coveredRequiredEvidence": 3
+    },
+    {
+      "key": "H3-R6",
+      "expectedStatus": "contradicted",
+      "predictedStatus": "contradicted",
+      "acceptedDraft": true,
+      "statusMatch": true,
+      "unsafeAffirmative": false,
+      "citations": 1,
+      "validCitations": 1,
+      "requiredEvidence": 2,
+      "coveredRequiredEvidence": 2
+    }
+  ],
+  "realProviderRequests": 6,
+  "semanticReviewRequired": true,
+  "independentDomainReview": false,
+  "usage": {
+    "prompt_tokens": null,
+    "completion_tokens": null,
+    "total_tokens": null
+  },
+  "costAmount": null,
+  "costReason": "No verified unit price or invoice",
+  "latencySeconds": {
+    "min": 9.234,
+    "median": 23.8515,
+    "max": 120.016
+  },
+  "acceptedDrafts": 3,
+  "statusMatches": 3,
+  "unsafeAffirmatives": 0,
+  "citations": 6,
+  "validCitations": 6,
+  "requiredEvidence": 9,
+  "coveredRequiredEvidence": 6,
+  "originalRunSha256": "e549e52e84fa050278f2252d08692b1160ce7d5c67688598ad1696ca49f5ea40"
+}

@@ -205,3 +205,10 @@ channel/model with the unchanged prompt and cases, keep original-channel failure
 and retain the semantic release gate. A new channel's result is a separate experiment,
 not a retry that makes the original attempt successful. No automatic route switching
 is added to evaluation or the product.
+
+When the user updates the local file, identify the selected endpoint, model and
+protocol again; a stale PROVIDER_NAME label does not select the route. Create a new
+freeze and output path for a different designated channel. Preserve an interrupted
+candidate's original bytes and record cancellation uncertainty separately. A 200
+model catalog listing proves discovery only; a generation 200 without the standard
+choices envelope is still an invalid response, not a draft or semantic score.
