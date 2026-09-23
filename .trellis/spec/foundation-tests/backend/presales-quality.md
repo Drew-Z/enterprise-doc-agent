@@ -89,3 +89,26 @@ tuning on its results may be reported as a holdout measurement.
 Keep model-protocol/real-database/browser correctness separate from live semantic
 quality. A rejected reference or classifier error remains a failure in the planned
 denominator. Unknown billing remains null.
+
+## Prerequisites and generation-only trials
+
+`presales.v4` fixtures explicitly return `prerequisites: []` when none apply.
+Use the real gateway at the HTTP boundary to verify unmet/unknown prerequisites
+cannot accompany supported, conditional output retains every outstanding condition,
+and prerequisite-only citation selections resolve without requiring duplicate
+top-level selections. Wrong: deleting valid citations to satisfy the adapter.
+Correct: resolve the ordered union of explicit references with the same catalog.
+
+`python -m scripts.evaluate_presales_gateway --input <dataset.json> --output
+<new-run.json> --provider-env <local-env>` makes one call per requirement, at most
+six, using the configured fallback route and a 120-second deadline. It never reads
+gold or writes tenants. Sources must each fit the 1800-character evidence bound.
+Existing output files fail before dispatch; raw bounded responses and usage survive
+invalid draft/schema results. Secrets/headers and non-200 bodies are not recorded.
+
+These `presales-gateway-run-v1` reports are generation-only observations with complete
+synthetic sources, not public retrieval/persistence results or equivalents of the
+public evaluator. H1 is now a known regression corpus. Freeze H2 and its gold hash
+before first inference; retain initial failures separately from deterministic decoder
+replay. Never present a replay as an extra successful live inference or independent
+adjudication. Inspect meaning/conditions in addition to labels and exact quotations.

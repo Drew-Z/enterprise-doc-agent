@@ -71,6 +71,7 @@ def model_response(citations: list[dict], **changes) -> httpx.Response:
                                 "status": "supported",
                                 "answer": "按原文核对。",
                                 "citations": citations,
+                                "prerequisites": [],
                                 **changes,
                             },
                             ensure_ascii=False,
@@ -118,6 +119,169 @@ async def test_model_selects_reference_and_server_returns_exact_authorized_sourc
     )
     saved = resolve_draft(output.draft, (candidate,), payload.sources, tenant_id, [])
     assert saved.citations[0].excerpt == original and saved.citations[0].page_number == 2
+
+
+async def test_prerequisites_resolve_to_compatible_public_draft() -> None:
+    payload = evidence_payload("SSO 必须先采购。本订单尚未采购。")
+
+    async def respond(request: httpx.Request) -> httpx.Response:
+        sent = json.loads(json.loads(request.content)["messages"][1]["content"])
+        reference = {"citationId": sent["evidence"][0]["citationId"]}
+        return model_response(
+            [reference],
+            prerequisites=[
+                {"condition": "需采购 SSO。", "state": "unmet", "citations": [reference]}
+            ],
+            status="conditional",
+            answer="采购后方可启用。目前尚未采购。",
+            conditions=["需采购 SSO。"],
+        )
+
+    output = await gateway(httpx.MockTransport(respond)).generate(payload)
+    assert output.draft.status == "conditional"
+    assert output.draft.conditions == ["需采购 SSO。"]
+    assert output.draft.citations[0].excerpt == payload.evidence[0]["text"]
+    assert "prerequisites" not in output.draft.model_dump()
+
+
+@pytest.mark.parametrize("state", ["unmet", "unknown"])
+async def test_supported_cannot_omit_outstanding_prerequisites(state: str) -> None:
+    calls = []
+
+    async def respond(request: httpx.Request) -> httpx.Response:
+        sent = json.loads(json.loads(request.content)["messages"][1]["content"])
+        reference = {"citationId": sent["evidence"][0]["citationId"]}
+        calls.append(sent)
+        return model_response(
+            [reference],
+            prerequisites=[{"condition": "需采购 SSO。", "state": state, "citations": [reference]}],
+        )
+
+    with pytest.raises(PresalesError, match=r"^presales_invalid_model_output$") as error:
+        await gateway(httpx.MockTransport(respond)).generate(evidence_payload("需先采购 SSO。"))
+    assert len(calls) == 1 and error.value.provider_requests == 1
+
+
+@pytest.mark.parametrize("kind", ["omitted_condition", "duplicate_source"])
+async def test_prerequisites_preserve_each_condition_and_selected_evidence(kind: str) -> None:
+    payload = evidence_payload("需先采购和验收。")
+    payload.evidence.extend(evidence_payload("当前未验收。").evidence)
+    payload.evidence[1]["documentVersionId"] = str(payload.sources[0].version_id)
+
+    async def respond(request: httpx.Request) -> httpx.Response:
+        sent = json.loads(json.loads(request.content)["messages"][1]["content"])
+        refs = [{"citationId": item["citationId"]} for item in sent["evidence"]]
+        bound = [refs[0]]
+        if kind == "duplicate_source":
+            bound *= 2
+        return model_response(
+            [refs[0]],
+            status="conditional",
+            conditions=["需采购。"],
+            prerequisites=[
+                {
+                    "condition": "需验收。" if kind == "omitted_condition" else "需采购。",
+                    "state": "unmet",
+                    "citations": bound,
+                }
+            ],
+        )
+
+    with pytest.raises(PresalesError, match=r"^presales_invalid_model_output$"):
+        await gateway(httpx.MockTransport(respond)).generate(payload)
+
+
+@pytest.mark.parametrize("include_final_references", [True, False])
+async def test_prerequisite_references_are_materialized_without_repeating_them(
+    include_final_references: bool,
+) -> None:
+    payload = evidence_payload("签署协议后保证可用性 99.97%。")
+    other = evidence_payload("本订单已签署上述协议。")
+    payload.sources.extend(other.sources)
+    payload.evidence.extend(other.evidence)
+
+    async def respond(request: httpx.Request) -> httpx.Response:
+        sent = json.loads(json.loads(request.content)["messages"][1]["content"])
+        refs = [{"citationId": item["citationId"]} for item in sent["evidence"]]
+        return model_response(
+            refs[:1] if include_final_references else [],
+            prerequisites=[{"condition": "需签署协议。", "state": "met", "citations": refs}],
+        )
+
+    output = await gateway(httpx.MockTransport(respond)).generate(payload)
+    assert output.draft.status == "supported"
+    assert [c.excerpt for c in output.draft.citations] == [e["text"] for e in payload.evidence]
+
+
+async def test_unknown_prerequisite_reference_is_rejected_without_repair() -> None:
+    async def respond(request: httpx.Request) -> httpx.Response:
+        return model_response(
+            [],
+            prerequisites=[
+                {
+                    "condition": "需签署协议。",
+                    "state": "met",
+                    "citations": [{"citationId": "foreign-request"}],
+                }
+            ],
+        )
+
+    with pytest.raises(PresalesError, match=r"^presales_invalid_citation$"):
+        await gateway(httpx.MockTransport(respond)).generate(evidence_payload("已签署。"))
+
+
+@pytest.mark.parametrize("field", ["answer", "conditions", "missingInformation"])
+async def test_generated_business_prose_cannot_be_english_only(field: str) -> None:
+    calls = []
+
+    async def respond(request: httpx.Request) -> httpx.Response:
+        sent = json.loads(json.loads(request.content)["messages"][1]["content"])
+        calls.append(sent)
+        changes = {field: "Supported." if field == "answer" else ["Purchase SSO first."]}
+        if field == "conditions":
+            changes["status"] = "conditional"
+        return model_response([{"citationId": sent["evidence"][0]["citationId"]}], **changes)
+
+    with pytest.raises(PresalesError, match=r"^presales_invalid_model_output$") as error:
+        await gateway(httpx.MockTransport(respond)).generate(
+            evidence_payload("Retention: 30 days.")
+        )
+    assert len(calls) == 1 and error.value.provider_requests == 1
+
+
+@pytest.mark.parametrize("state,status", [("met", "supported"), ("unknown", "conditional")])
+async def test_prerequisite_states_keep_chinese_prose_and_english_sources(state, status) -> None:
+    original = "Enable SAML 2.0 after purchase and verification."
+
+    async def respond(request: httpx.Request) -> httpx.Response:
+        sent = json.loads(json.loads(request.content)["messages"][1]["content"])
+        reference = {"citationId": sent["evidence"][0]["citationId"]}
+        condition = "需采购 SAML 2.0 并验证。"
+        return model_response(
+            [reference],
+            prerequisites=[{"condition": condition, "state": state, "citations": [reference]}],
+            status=status,
+            answer="已確認 SAML 2.0 的適用條件。",
+            conditions=[condition] if status == "conditional" else [],
+        )
+
+    output = await gateway(httpx.MockTransport(respond)).generate(evidence_payload(original))
+    assert output.draft.status == status
+    assert output.draft.citations[0].excerpt == original
+
+
+async def test_model_must_explicitly_assess_prerequisites_even_when_none_apply() -> None:
+    async def respond(request: httpx.Request) -> httpx.Response:
+        sent = json.loads(json.loads(request.content)["messages"][1]["content"])
+        response = model_response([{"citationId": sent["evidence"][0]["citationId"]}])
+        body = response.json()
+        draft = json.loads(body["choices"][0]["message"]["content"])
+        del draft["prerequisites"]
+        body["choices"][0]["message"]["content"] = json.dumps(draft)
+        return httpx.Response(200, json=body)
+
+    with pytest.raises(PresalesError, match=r"^presales_invalid_model_output$"):
+        await gateway(httpx.MockTransport(respond)).generate(evidence_payload("无启用前提。"))
 
 
 @pytest.mark.parametrize(

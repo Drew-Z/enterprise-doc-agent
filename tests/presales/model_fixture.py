@@ -52,6 +52,7 @@ class UploadedEvidenceModel:
         draft = SelectionDraft.model_validate(
             {
                 "status": "supported",
+                "prerequisites": [],
                 "answer": "受控验收输出: " + fixture.excerpt,
                 "conditions": [],
                 "missingInformation": [],

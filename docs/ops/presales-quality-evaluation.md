@@ -139,3 +139,40 @@ H1-R2 的引文自身包含全部前置条件，答案仍遗漏它们，说明**
   --gold evaluation/presales_quality_holdout_v1.gold.json `
   --run "$env:TEMP\presales-h1-run.json" --output "$env:TEMP\presales-h1-score.json"
 ```
+
+## 前置条件候选 v4（未发布）
+
+`presales.v4` 增加带引用的前置条件及 met/unmet/unknown 状态，校验未满足条件与支持结论的一致性，并拒绝全文非中文的生成正文。该语言检查只检查汉字是否存在，允许产品名、技术词和英文原文引用；它不等于完整语言识别。公开草稿、历史数据、人工复核与 CSV 契约不变。
+
+使用原 H1 作为**已知回归集**，另冻结 [H2 输入](../../evaluation/presales_quality_holdout_v2.json)及 [H2 参考标注](../../evaluation/presales_quality_holdout_v2.gold.json)。H2 覆盖已完成、未完成、状态未知的启用条件，以及导出硬上限、报告缺失和服务窗口冲突。全部由助手编写和自审，不是独立专家审定。
+
+这次从本地候选代码调用同一 `grok-4.6` 售前路由，直接提供完整的短篇合成证据，每题一次、共 12 次，不涉及上传、检索、企业数据、额度或公网持久化。不能把该结果当作公网端到端准确率，也不能与上次 HTTP 耗时直接比较。
+
+| 项目 | H1 已知回归 | H2 新合成样例 |
+|---|---:|---:|
+| 实际模型请求，无重试 | 6 | 6 |
+| 初始候选接受的草稿 | 5 | 5 |
+| 修正解码后原始响应重放成功 | 6 | 6 |
+| 重放草稿分类匹配 | 6/6 | 4/6 |
+| 错误肯定分类 | 0 | 0 |
+| 必要原文证据覆盖 | 11/11 | 10/10 |
+| 原文引用数量（均逐字有效） | 12 | 11 |
+| 全部请求最短 / 中位 / 最长（秒） | 42.844 / 60.430 / 82.563 | 53.968 / 64.875 / 81.250 |
+| 输入 / 输出 / 总 token | 22,399 / 24,093 / 46,492 | 19,161 / 24,041 / 43,202 |
+
+初始 H1-R5、H2-R3 的模型在前置条件中明确选择了有效引用，但未在顶层再次重复，初始适配器因重复要求而拒绝。修正后对所有原始响应重放同一解码器，按顺序合并两个位置的明确选择，继续检查请求内编号、准确原文和最终条数；没有改写分类、补造引文或再次调用模型。**初始 10/12 与重放 12/12 分别保留**，重放不算新真实调用。
+
+原始响应：[H1](../../evaluation/presales_quality_holdout_v1.v4-gateway.json)、[H2](../../evaluation/presales_quality_holdout_v2.v4-gateway.json)；解码重放及评分：[H1](../../evaluation/presales_quality_holdout_v1.v4-gateway.replay.json)、[H2](../../evaluation/presales_quality_holdout_v2.v4-gateway.replay.json)；[逐项审阅](../../evaluation/presales_quality_v4.review.json)。费用金额未知：提供方返回了计价刻度字段，但单位与账单未经核实，不能据此报告金额。
+
+H1 的采购、域名验证、联调条件现在完整保留，冲突回答也使用中文并提出澄清问题。然而 H2-R5 把“未提供 SOC 2 Type II 报告”判为不满足，而证据明确不证明公司是否持有报告；H2-R6 看到了冲突双方仍判为不满足，未保留资料冲突状态和澄清问题。H2-R2 的条件采用“已购买 / 已完成”的表达，也应改为明确待办措辞，避免被读成已完成事实。
+
+**处理决定：维持草案，不合并、不部署。** 下一步需要解决“缺少证明”和“证据相互矛盾”的判定顺序与交付措辞，再使用新的冻结资料验证；不修改 H2 标注或反复重跑同题挑选成功结果。线上继续 v0.1.44。
+
+复现单次生成（会产生真实模型用量；输出路径必须尚不存在）：
+
+```powershell
+& .\.venv\Scripts\python.exe -B -X utf8 -m scripts.evaluate_presales_gateway `
+  --input evaluation/presales_quality_holdout_v2.json `
+  --provider-env D:\path\to\provider.local.env `
+  --output "$env:TEMP\presales-h2-gateway-new-run.json"
+```

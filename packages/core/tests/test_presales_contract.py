@@ -31,6 +31,7 @@ def draft_payload() -> dict:
         "conditions": [],
         "missingInformation": ["请补充有效能力证明。"],
         "citations": [],
+        "prerequisites": [],
     }
 
 

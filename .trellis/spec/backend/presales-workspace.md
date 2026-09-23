@@ -168,6 +168,41 @@ do not prove logical entailment or complete capture of contractual conditions.
    then retain the existing tenant/version/substring and commit-time authorization
    checks. Source-backed text alone does not prove that the answer is correct.
 
+## Prerequisite assessment and generated language
+
+1. **Scope:** `presales.v4` addresses capability being confused with current order
+   readiness, and wholly English business prose. It extends only `SelectionDraft`;
+   existing `ModelDraft`, stored drafts, human reviews and CSV remain compatible.
+2. **Signatures:** `Prerequisite(condition: TextItem, state: met|unmet|unknown,
+   citations: list[CitationReference])`; `SelectionDraft.prerequisites` is required
+   (0–12 items), each prerequisite selects 1–12 offered references. No relevant
+   prerequisite means an explicit empty list, never an omitted field.
+3. **Contracts:** `supported` forbids unmet/unknown prerequisites. `conditional`
+   retains each outstanding condition verbatim in `conditions`; satisfied ones
+   need not be repeated. Resolve the ordered union of conclusion and prerequisite
+   selections; shared references across these positions are materialized once.
+   Do not require the model to repeat prerequisite references at top level.
+   The final public draft still has at most 12 exact citations.
+4. **Errors:** missing prerequisite assessment, internal classification/condition
+   inconsistency, duplicates within a prerequisite, or wholly non-Chinese answer,
+   condition or follow-up prose -> `presales_invalid_model_output`. Unknown IDs at
+   either selection location -> `presales_invalid_citation`. One observed request,
+   no repair, translation, classification rewriting or extra model call.
+5. **Cases:** good: an explicitly purchased/accepted module can be supported;
+   base: a module awaiting validation is conditional with the validation step;
+   bad: calling optional capability enabled without purchase/completion evidence.
+   English technical names and original citations remain valid within Chinese
+   business prose. A Han-character presence check only detects wholly non-Chinese
+   text; it is not complete language identification or factual verification.
+6. **Tests:** HTTP-boundary regressions cover outstanding vs met prerequisites,
+   omitted condition, reference union and foreign IDs, wholly English fields,
+   Chinese text with SAML/product names and intact English citations. Existing
+   PostgreSQL/browser tests retain persistence, reviews, export and revocation.
+7. **Wrong vs correct:** wrong: keyword-match a contract to rewrite its conclusion,
+   or claim the assessment proves no facts were omitted. Correct: check internal
+   consistency and exact source identity, then evaluate semantic correctness with
+   frozen data. Preserve failed original outputs separately from decoder replay.
+
 Attempts store model provider/name, pipeline and prompt versions, prompt SHA,
 configured model version/revision and returned model/response ID when available.
 Configured or returned identifiers do not authenticate upstream model weights.

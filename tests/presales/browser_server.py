@@ -149,6 +149,7 @@ async def main() -> None:
             draft = SelectionDraft.model_validate(
                 {
                     "status": status,
+                    "prerequisites": [],
                     "answer": "受控浏览器验收输出。请核对合成资料中的保留期限。",
                     "conditions": ["需采用指定配置并确认合同范围。"]
                     if status == "conditional"
