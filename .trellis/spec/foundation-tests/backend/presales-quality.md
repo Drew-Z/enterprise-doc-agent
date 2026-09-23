@@ -100,8 +100,9 @@ top-level selections. Wrong: deleting valid citations to satisfy the adapter.
 Correct: resolve the ordered union of explicit references with the same catalog.
 
 `python -m scripts.evaluate_presales_gateway --input <dataset.json> --output
-<new-run.json> --provider-env <local-env>` makes one call per requirement, at most
-six, using the configured fallback route and a 120-second deadline. It never reads
+<new-run.json> --provider-env <local-env> [--model-route primary|fallback]` makes one
+call per requirement, at most six, using the explicitly selected route and a
+120-second deadline. The default remains fallback. It never reads
 gold or writes tenants. Sources must each fit the 1800-character evidence bound.
 Existing output files fail before dispatch; raw bounded responses and usage survive
 invalid draft/schema results. Secrets/headers and non-200 bodies are not recorded.
@@ -188,3 +189,19 @@ wire fixtures must consume SelectionInput, not GenerationInput. A fixture cannot
 recover internal chunk/version IDs from provider input; check those identities in
 saved public evidence and the actual database chunks instead. Browser model-call
 records describe only the offered reference/source and retain the dispatch count.
+
+## Explicit alternate-channel trials
+
+`load_route_settings(provider_env, model_route)` selects BASE_URL/API_KEY/MODEL_NAME
+for primary and the FALLBACK_ fields for fallback; unselected credentials need not
+be present. It does not rewrite the file or swap route names. The collector records
+selectedRoute and configuredModelName, passes the explicit route to the same gateway
+and preserves single attempts, the deadline and unknown usage. Tests inspect actual
+HTTP URL, authorization, model and dispatch count for each route, including failures.
+
+Identify the route actually in use before interpreting "backup": presales can already
+be using configured fallback, making primary the available alternate. Freeze the new
+channel/model with the unchanged prompt and cases, keep original-channel failures,
+and retain the semantic release gate. A new channel's result is a separate experiment,
+not a retry that makes the original attempt successful. No automatic route switching
+is added to evaluation or the product.

@@ -7,7 +7,7 @@ from pathlib import Path
 import httpx
 import pytest
 from pydantic import SecretStr
-from scripts.evaluate_presales_gateway import collect
+from scripts.evaluate_presales_gateway import collect, load_route_settings
 
 from enterprise_doc_core.config import ModelProvider, ModelSettings
 
@@ -40,6 +40,8 @@ async def test_gateway_trial_preserves_failed_output_and_refuses_overwrite(tmp_p
     report = await collect(dataset, output, settings, transport=httpx.MockTransport(respond))
     assert report["status"] == "collected" and len(calls) == 6
     assert report["schemaVersion"] == "presales-gateway-run-v2"
+    assert report["selectedRoute"] == "fallback"
+    assert report["configuredModelName"] == "test-model"
     for row, sent in zip(report["observations"], calls, strict=True):
         wire = row["traces"][0]["input"]
         assert wire == json.loads(sent["messages"][1]["content"])
@@ -173,3 +175,65 @@ async def test_partial_response_failure_retains_status_not_body_and_closes(tmp_p
         }
     stored = output.read_text(encoding="utf-8")
     assert "partial-private-body" not in stored and "private-exception-text" not in stored
+
+
+@pytest.mark.parametrize("model_route", ["primary", "fallback"])
+async def test_trial_uses_only_explicit_route_without_failover(tmp_path, model_route):
+    requests = []
+
+    async def fail(request):
+        requests.append(request)
+        assert str(request.url) == f"https://{model_route}.invalid/v1/chat/completions"
+        assert request.headers["Authorization"] == f"Bearer {model_route}-private-key"
+        assert json.loads(request.content)["model"] == f"{model_route}-model"
+        assert request.extensions["timeout"]["read"] == 120
+        raise httpx.ConnectError("private-exception-not-for-report", request=request)
+
+    settings = ModelSettings(
+        provider=ModelProvider.OPENAI_COMPATIBLE,
+        base_url="https://primary.invalid/v1",
+        api_key=SecretStr("primary-private-key"),
+        model_name="primary-model",
+        fallback_provider=ModelProvider.OPENAI_COMPATIBLE,
+        fallback_base_url="https://fallback.invalid/v1",
+        fallback_api_key=SecretStr("fallback-private-key"),
+        fallback_model_name="fallback-model",
+    )
+    output = tmp_path / "selected-route.json"
+    result = await collect(
+        Path("evaluation/presales_quality_holdout_v3.json"),
+        output,
+        settings,
+        model_route=model_route,
+        transport=httpx.MockTransport(fail),
+    )
+    assert len(requests) == 6
+    assert result["selectedRoute"] == model_route
+    assert result["configuredModelName"] == f"{model_route}-model"
+    assert all(
+        row["state"] == "failed" and row["providerRequests"] == 1 for row in result["observations"]
+    )
+    stored = output.read_text(encoding="utf-8")
+    assert "private-key" not in stored and "private-exception-not-for-report" not in stored
+
+
+@pytest.mark.parametrize("route", ["primary", "fallback"])
+def test_cli_settings_load_only_selected_environment_fields(tmp_path, route):
+    prefix = "FALLBACK_" if route == "fallback" else ""
+    path = tmp_path / "provider.env"
+    path.write_text(
+        f"{prefix}BASE_URL=https://{route}.invalid/v1\n"
+        f"{prefix}API_KEY=fixture-secret\n{prefix}MODEL_NAME={route}-model\n",
+        encoding="utf-8",
+    )
+    before = path.read_bytes()
+    settings = load_route_settings(path, route)
+    assert path.read_bytes() == before
+    if route == "primary":
+        assert settings.model_name == "primary-model"
+        assert settings.api_key.get_secret_value() == "fixture-secret"
+        assert settings.fallback_api_key is None
+    else:
+        assert settings.fallback_model_name == "fallback-model"
+        assert settings.fallback_api_key.get_secret_value() == "fixture-secret"
+        assert settings.api_key is None

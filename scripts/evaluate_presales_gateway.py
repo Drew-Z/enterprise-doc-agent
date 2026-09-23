@@ -13,7 +13,7 @@ import json
 import time
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 from uuid import NAMESPACE_URL, uuid5
 
 import httpx
@@ -27,6 +27,26 @@ from enterprise_doc_core.presales.gateway import OpenAICompatiblePresalesGateway
 from enterprise_doc_core.presales.schemas import GenerationInput, SourceSnapshot
 from enterprise_doc_core.presales.settings import PresalesSettings
 from scripts.evaluate_presales_quality import Dataset, load_dataset, write_json
+
+ModelRoute = Literal["primary", "fallback"]
+
+
+def load_route_settings(provider_env: Path, model_route: ModelRoute) -> ModelSettings:
+    """Load only the explicitly selected route; never exchange stored credentials."""
+    if model_route not in {"primary", "fallback"}:
+        raise ValueError("invalid_model_route")
+    values = dotenv_values(provider_env)
+    prefix = "FALLBACK_" if model_route == "fallback" else ""
+    selected = {
+        "provider": ModelProvider.OPENAI_COMPATIBLE,
+        "base_url": values[prefix + "BASE_URL"],
+        "api_key": SecretStr(values[prefix + "API_KEY"] or ""),
+        "model_name": values[prefix + "MODEL_NAME"],
+        "timeout_seconds": 120,
+    }
+    if model_route == "fallback":
+        selected = {"fallback_" + key: value for key, value in selected.items()}
+    return ModelSettings.model_validate(selected)
 
 
 class RecordingTransport(httpx.AsyncBaseTransport):
@@ -133,6 +153,7 @@ async def collect(
     output: Path,
     settings: ModelSettings,
     *,
+    model_route: ModelRoute = "fallback",
     transport: httpx.AsyncBaseTransport | None = None,
 ) -> dict[str, Any]:
     dataset, digest = load_dataset(dataset_path)
@@ -147,6 +168,10 @@ async def collect(
         "startedAt": datetime.now(UTC).isoformat(),
         "maxGenerationAttempts": len(dataset.requirements),
         "automaticRetries": 0,
+        "selectedRoute": model_route,
+        "configuredModelName": settings.fallback_model_name
+        if model_route == "fallback"
+        else settings.model_name,
         "versions": {
             s.key: str(v.version_id) for s, v in zip(dataset.sources, snapshots, strict=True)
         },
@@ -160,7 +185,7 @@ async def collect(
             gateway = OpenAICompatiblePresalesGateway(
                 settings,
                 presales_settings=PresalesSettings(
-                    model_route="fallback", model_timeout_seconds=120, row_timeout_seconds=150
+                    model_route=model_route, model_timeout_seconds=120, row_timeout_seconds=150
                 ),
                 transport=recorder,
             )
@@ -213,17 +238,12 @@ def main() -> None:
     parser.add_argument("--input", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--provider-env", type=Path, required=True)
+    parser.add_argument("--model-route", choices=("primary", "fallback"), default="fallback")
     args = parser.parse_args()
-    values = dotenv_values(args.provider_env)
-    settings = ModelSettings(
-        fallback_provider=ModelProvider.OPENAI_COMPATIBLE,
-        fallback_base_url=values["FALLBACK_BASE_URL"],
-        fallback_api_key=SecretStr(values["FALLBACK_API_KEY"] or ""),
-        fallback_model_name=values["FALLBACK_MODEL_NAME"],
-        fallback_timeout_seconds=120,
-    )
+    settings = load_route_settings(args.provider_env, args.model_route)
     asyncio.run(
-        collect(args.input, args.output, settings), loop_factory=selector_event_loop_factory
+        collect(args.input, args.output, settings, model_route=args.model_route),
+        loop_factory=selector_event_loop_factory,
     )
 
 
