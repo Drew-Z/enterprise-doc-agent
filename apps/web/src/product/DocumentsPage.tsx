@@ -30,6 +30,7 @@ import { formatApiError } from "../api/errorDisplay";
 interface DocumentsPageProps {
   navigate: (route: ProductRoute) => void;
   showcaseMode?: boolean;
+  demoMode?: boolean;
   canWrite?: boolean;
   onSessionChange?: () => void;
   onStartPresales?: (versionId: string) => void;
@@ -125,7 +126,7 @@ function hasRecoverableUpload(storage: Storage): boolean {
   }
 }
 
-export function DocumentsPage({ navigate, showcaseMode = false, canWrite = true, onSessionChange, onStartPresales, contextKey = "local" }: DocumentsPageProps) {
+export function DocumentsPage({ navigate, showcaseMode = false, demoMode = false, canWrite = true, onSessionChange, onStartPresales, contextKey = "local" }: DocumentsPageProps) {
   const t = useT();
   const locale = useLocale();
   const tokenStore = useMemo(() => createApplicationCredentialStore(sessionStorage), []);
@@ -305,15 +306,15 @@ export function DocumentsPage({ navigate, showcaseMode = false, canWrite = true,
                     <td>{formatBytes(document.sizeBytes)}</td>
                     <td>
                       <span className="document-actions">
-                        {document.canManage && !showcaseMode && (
+                        {document.canManage && !showcaseMode && !demoMode && (
                           <button className="icon-button" type="button" aria-label={t("documents.access.manage")} title={t("documents.access.manage")} onClick={() => setAccessDocument(document)}>
                             <Settings2 aria-hidden="true" />
                           </button>
                         )}
                         <PresalesAction document={document} onStart={showcaseMode ? undefined : onStartPresales} />
-                        <button className="table-action" type="button" onClick={() => navigate("agent-runs")}>
+                        {!demoMode && <button className="table-action" type="button" onClick={() => navigate("agent-runs")}>
                           {t("documents.useAgent")} <ArrowRight aria-hidden="true" />
-                        </button>
+                        </button>}
                       </span>
                     </td>
                   </tr>
@@ -337,15 +338,15 @@ export function DocumentsPage({ navigate, showcaseMode = false, canWrite = true,
                     <div><dt>{t("documents.access.mode")}</dt><dd><DocumentAccess document={document} /></dd></div>
                   </dl>
                   <div className="mobile-document-actions">
-                    {document.canManage && !showcaseMode && (
+                    {document.canManage && !showcaseMode && !demoMode && (
                       <button className="icon-button" type="button" aria-label={t("documents.access.manage")} title={t("documents.access.manage")} onClick={() => setAccessDocument(document)}>
                         <Settings2 aria-hidden="true" />
                       </button>
                     )}
                     <PresalesAction document={document} onStart={showcaseMode ? undefined : onStartPresales} />
-                    <button className="table-action" type="button" onClick={() => navigate("agent-runs")}>
+                    {!demoMode && <button className="table-action" type="button" onClick={() => navigate("agent-runs")}>
                       {t("documents.useAgent")} <ArrowRight aria-hidden="true" />
-                    </button>
+                    </button>}
                   </div>
                 </article>
               ))}
@@ -361,7 +362,7 @@ export function DocumentsPage({ navigate, showcaseMode = false, canWrite = true,
         }}>
           <section className="product-drawer" role="dialog" aria-modal="true" aria-label={t("documents.upload")}>
             <div className="product-drawer-heading">
-              <div><p className="eyebrow">{t("documents.localDevelopment")}</p><h2>{t("documents.openUpload")}</h2></div>
+              <div><p className="eyebrow">{demoMode ? (locale === "zh" ? "演示企业资料" : "Demo enterprise documents") : t("documents.localDevelopment")}</p><h2>{t("documents.openUpload")}</h2></div>
               <button className="icon-button" type="button" aria-label={t("documents.closeUpload")} title={t("documents.closeUpload")} onClick={() => setIsUploadOpen(false)}><X aria-hidden="true" /></button>
             </div>
             <UploadWorkspace canUpload={canWrite} onTokenChange={handleTokenChange} onCompleted={refreshInventory} />

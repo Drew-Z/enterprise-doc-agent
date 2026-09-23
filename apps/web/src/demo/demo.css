@@ -1,0 +1,32 @@
+.browser-demo-entry { border-bottom: 1px solid #e1e7ef; margin-bottom: 28px; padding-bottom: 28px; }
+.public-demo-shell { min-height: 100vh; background: #f5f7fa; color: #182539; }
+.public-demo-topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 5%; background: #fff; border-bottom: 1px solid #e1e7ef; }
+.public-demo-brand { font-weight: 750; color: #162e4e; text-decoration: none; display: flex; gap: 14px; align-items: center; }
+.public-demo-topbar > div { display: flex; align-items: center; gap: 14px; }
+.public-demo-topbar .session-logout { display: flex; gap: 6px; align-items: center; width: auto; padding: 0 9px; white-space: nowrap; }
+.public-demo-content { max-width: 1280px; margin: auto; padding: 32px 24px 72px; }
+.public-demo-guide { border: 1px solid #dce6ed; border-radius: 16px; background: #fff; padding: 28px; margin-bottom: 28px; }
+.public-demo-guide h1 { font-size: clamp(24px, 3vw, 34px); margin: 12px 0; letter-spacing: -.04em; }
+.public-demo-guide p { color: #586878; font-size: 14px; line-height: 1.75; }
+.public-demo-limits { display: flex; flex-wrap: wrap; gap: 10px 24px; font-size: 13px; padding: 14px 16px; background: #eef7f3; color: #22674f; border-radius: 8px; margin-top: 20px; }
+.public-demo-limits span { align-self: center; }
+.public-demo-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; padding: 24px 0 0 20px; margin: 0; }
+.public-demo-steps li { padding-left: 6px; }
+.public-demo-steps li::marker { color: #31785d; font-weight: 700; }
+.public-demo-steps p { margin: 10px 0; }
+.public-demo-steps a, .public-demo-steps button { color: #206e66; font-size: 13px; margin-right: 12px; }
+.public-demo-downloads { display: flex; gap: 10px; flex-wrap: wrap; }
+.public-demo-downloads a { display: inline-flex; align-items: center; gap: 5px; }
+.public-demo-downloads svg { width: 14px; height: 14px; }
+.public-demo-nav { display: flex; gap: 8px; border-bottom: 1px solid #dce6ed; margin-bottom: 28px; }
+.public-demo-nav button { display: inline-flex; align-items: center; gap: 8px; padding: 14px 20px; border: 0; background: transparent; color: #657180; border-bottom: 3px solid transparent; cursor: pointer; }
+.public-demo-nav button[aria-current="page"] { color: #195e54; border-bottom-color: #247c6f; font-weight: 700; }
+.public-demo-nav svg { width: 18px; height: 18px; }
+@media (max-width: 720px) {
+  .public-demo-topbar { padding: 14px 16px; flex-wrap: wrap; }
+  .public-demo-brand { font-size: 14px; gap: 10px; }
+  .public-demo-content { padding: 20px 14px 48px; }
+  .public-demo-guide { padding: 20px; }
+  .public-demo-steps { grid-template-columns: 1fr; gap: 20px; }
+  .public-demo-nav button { padding: 12px 8px; font-size: 13px; }
+}

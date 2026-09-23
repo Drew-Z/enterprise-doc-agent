@@ -1,3 +1,5 @@
+import { demoErrorMessage } from "../demo/messages";
+
 export interface ApiErrorMetadata {
   code: string | null;
   requestId: string | null;
@@ -21,6 +23,8 @@ export function formatApiError(error: unknown, fallback: string, requestIdLabel:
       ? error.message
       : fallback;
   const metadata = readMetadata(error);
+  const demoMessage = demoErrorMessage(metadata.code);
+  if (demoMessage) return metadata.requestId ? `${demoMessage} (${requestIdLabel}: ${metadata.requestId})` : demoMessage;
   const details = [metadata.code, metadata.requestId ? `${requestIdLabel}: ${metadata.requestId}` : null].filter(
     (value): value is string => value !== null,
   );

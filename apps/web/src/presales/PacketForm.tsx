@@ -4,7 +4,7 @@ import { useLocale } from "../i18n";
 import { createPacketSchema, type CreatePacket } from "./api";
 import { presalesCopy } from "./copy";
 
-export function PacketForm({ documents, busy, onCreate, openDocuments, initialVersionId }: { documents: DocumentInventoryItem[]; busy: boolean; onCreate: (payload: CreatePacket) => void; openDocuments: () => void; initialVersionId?: string }) {
+export function PacketForm({ documents, busy, onCreate, openDocuments, initialVersionId, maxRequirements = 12 }: { documents: DocumentInventoryItem[]; busy: boolean; onCreate: (payload: CreatePacket) => void; openDocuments: () => void; initialVersionId?: string; maxRequirements?: number }) {
   const c = presalesCopy(useLocale());
   const ready = documents.filter(d => d.versionStatus === "ready" && d.ingestionStatus === "succeeded" && d.ingestionStage === "ready" && d.generationId !== null);
   const [title, setTitle] = useState("");
@@ -19,7 +19,7 @@ export function PacketForm({ documents, busy, onCreate, openDocuments, initialVe
       title: title.trim(), sources: selected.map(versionId => ({ versionId, applicability: scope.trim() })),
       requirements: requirements.split(/\r?\n/).map(line => line.trim()).filter(Boolean).map((line, index) => { const [text, ...location] = line.split("\t"); return { key: "R" + (index + 1), text: text.trim(), sourceLocation: location.join(" ").trim() }; }),
     });
-    if (!confirmed || !parsed.success || selected.some(id => !ready.some(d => d.versionId === id))) { setError(c.invalid); return; }
+    if (!confirmed || !parsed.success || parsed.data.requirements.length > maxRequirements || selected.some(id => !ready.some(d => d.versionId === id))) { setError(c.invalid.replace("12", String(maxRequirements))); return; }
     setError(""); onCreate(parsed.data);
   };
   return <form className="presales-form" onSubmit={submit}>
@@ -30,7 +30,7 @@ export function PacketForm({ documents, busy, onCreate, openDocuments, initialVe
       <label className="presales-field">{c.scope}<textarea value={scope} onChange={e => { setScope(e.target.value); setConfirmed(false); }} maxLength={500} rows={2} placeholder={c.scopePlaceholder} required /></label>
       <label className="presales-confirm"><input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} />{c.confirmSources}</label>
     </fieldset>
-    <fieldset disabled={busy}><legend>{c.requirements}</legend><p className="presales-hint" id="requirements-help">{c.requirementsHelp}</p><textarea aria-label={c.requirements} aria-describedby="requirements-help" value={requirements} onChange={e => setRequirements(e.target.value)} rows={7} maxLength={28000} placeholder={c.requirementsPlaceholder} required /></fieldset>
+    <fieldset disabled={busy}><legend>{c.requirements}</legend><p className="presales-hint" id="requirements-help">{c.requirementsHelp.replace("12", String(maxRequirements))}</p><textarea aria-label={c.requirements} aria-describedby="requirements-help" value={requirements} onChange={e => setRequirements(e.target.value)} rows={7} maxLength={28000} placeholder={c.requirementsPlaceholder} required /></fieldset>
     {error && <p role="alert" className="presales-error">{error}</p>}
     <div className="presales-form-footer"><p className="presales-hint">{c.createHelp}</p><button className="presales-primary" type="submit" disabled={busy || ready.length === 0}>{busy ? c.loading : c.create}</button></div>
   </form>;

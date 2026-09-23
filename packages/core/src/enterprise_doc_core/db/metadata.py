@@ -29,6 +29,7 @@ from enterprise_doc_core.browser_sessions.models import (
     BrowserSessionEvent,
 )
 from enterprise_doc_core.db.base import Base
+from enterprise_doc_core.demo.models import DemoDay, DemoWorkspace
 from enterprise_doc_core.documents.models import (
     Document,
     DocumentChunk,
@@ -48,6 +49,8 @@ from enterprise_doc_core.presales.models import (
 from enterprise_doc_core.uploads.models import UploadPart, UploadSession
 
 REGISTERED_MODELS = (
+    DemoDay,
+    DemoWorkspace,
     TenantEntitlement,
     UsageReservation,
     UsageEvent,

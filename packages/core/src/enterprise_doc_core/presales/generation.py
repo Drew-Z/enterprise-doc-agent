@@ -14,6 +14,7 @@ from enterprise_doc_core.audit import append_audit_event
 from enterprise_doc_core.billing import EntitlementUsageService
 from enterprise_doc_core.billing.errors import UsageError
 from enterprise_doc_core.context import PrincipalContext, get_request_context
+from enterprise_doc_core.demo.limits import active_workspace, finish_attempt, reserve_attempt
 from enterprise_doc_core.documents.retrieval import (
     Citation,
     CitationValidationError,
@@ -161,6 +162,7 @@ class GenerationService:
                 ):
                     raise PresalesError("presales_attempt_expired", provider_requests=1)
                 attempt.state, attempt.finished_at = "succeeded", self.clock()
+                await finish_attempt(session, tenant_id, attempt_id)
                 attempt.provider_request_count, attempt.usage = 1, generated.usage
                 if self.usage_service is not None:
                     try:
@@ -265,6 +267,13 @@ class GenerationService:
             if (active_count or 0) >= self.settings.concurrent_attempt_limit:
                 raise PresalesError("presales_generation_busy")
             attempt_id = uuid4()
+            await reserve_attempt(
+                session,
+                packet.tenant_id,
+                attempt_id,
+                now,
+                now + timedelta(seconds=self.settings.row_timeout_seconds),
+            )
             session.add(
                 PresalesAttempt(
                     id=attempt_id,
@@ -351,6 +360,7 @@ class GenerationService:
     ) -> None:
         async with self.session_factory.begin() as session:
             packet = await load_packet(session, principal, packet_id, lock=True)
+            await active_workspace(session, packet.tenant_id, self.clock())
             row = await load_row(session, packet, row_id)
             attempt = await session.get(PresalesAttempt, attempt_id, with_for_update=True)
             if (
@@ -368,6 +378,7 @@ class GenerationService:
             attempt = await session.get(PresalesAttempt, attempt_id, with_for_update=True)
             if attempt is not None:
                 tenant_id = attempt.tenant_id
+                await finish_attempt(session, tenant_id, attempt_id)
             if attempt is not None and attempt.state == "running":
                 attempt.state = "expired" if attempt.deadline_at <= self.clock() else "failed"
                 attempt.error_code, attempt.finished_at = code, self.clock()

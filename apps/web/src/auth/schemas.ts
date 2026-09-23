@@ -5,7 +5,7 @@ export const browserTenantSchema = z.object({
   actorId: z.string().uuid(), role: z.enum(["owner", "member"]),
 }).strict();
 
-export const browserAuthenticatedSchema = z.object({
+const verifiedAuthenticatedSchema = z.object({
   status: z.literal("authenticated"), email: z.string().email().max(320),
   expiresAt: z.iso.datetime({ offset: true }),
   contextVersion: z.string().regex(/^[0-9a-f]{32}\.[1-9][0-9]{0,18}$/),
@@ -14,9 +14,15 @@ export const browserAuthenticatedSchema = z.object({
   loginProvider: z.literal("github").optional(),
 }).strict();
 
+export const demoAuthenticatedSchema = verifiedAuthenticatedSchema.extend({
+  email: z.null(), demo: z.literal(true), currentTenant: browserTenantSchema,
+  loginProvider: z.enum(["github", "oidc"]),
+}).strict();
+export const browserAuthenticatedSchema = z.union([verifiedAuthenticatedSchema, demoAuthenticatedSchema]);
+
 export const browserSessionSchema = z.union([
   browserAuthenticatedSchema,
-  z.object({ status: z.literal("anonymous"), loginProvider: z.literal("github").optional() }).strict(),
+  z.object({ status: z.literal("anonymous"), loginProvider: z.enum(["github", "oidc"]).optional(), demoAvailable: z.literal(true).optional() }).strict(),
   z.object({ status: z.literal("disabled") }).strict(),
 ]);
 export const browserTenantsSchema = z.array(browserTenantSchema).max(1000);

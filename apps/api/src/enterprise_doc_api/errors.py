@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from enterprise_doc_core.context import get_request_context
+from enterprise_doc_core.demo.settings import DemoError
 
 _LOGGER = logging.getLogger("enterprise_doc_api.errors")
 
@@ -72,6 +73,17 @@ def unexpected_error_response(error: Exception) -> JSONResponse:
 
 
 def register_error_handlers(app: FastAPI) -> None:
+    @app.exception_handler(DemoError)
+    async def handle_demo_error(_: Request, error: DemoError) -> JSONResponse:
+        return api_error_response(
+            ApiError(
+                status_code=error.status,
+                code=error.code,
+                message="The public demo request could not be completed.",
+                headers={"Retry-After": "60"} if error.status == 429 else None,
+            )
+        )
+
     @app.exception_handler(ApiError)
     async def handle_api_error(_: Request, error: ApiError) -> JSONResponse:
         return api_error_response(error)

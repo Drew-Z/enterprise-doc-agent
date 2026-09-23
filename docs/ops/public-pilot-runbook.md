@@ -1,14 +1,16 @@
 # 公网试点：登录与业务发布
 
 目标是让获准的试用者在正式网页登录，上传资料，生成并复核售前响应，导出 CSV。
-以下准备包含 2026-09-22 已获准的 GitHub OAuth 接入；它不是公网试点已上线的回执。
+当前记录更新至 2026-09-23：v0.1.40 已部署到固定 4C4G 主机，GitHub 登录、真实 owner
+准入和 7 天 100 次有限权益已启用；四份演示资料 ready。上传恢复、批量/文件夹队列与
+生成等待时限修复已上线，完整公网响应生成、引用复核及 CSV 导出仍待验收。
 
 当前选择：优先 GitHub 标准 OAuth，后续评估 LINUX DO，保留现有 Cloudflare Access 资源。
 真实 Access 换码已成功，但令牌缺少本产品要求的 `email_verified`；不能据此推断邮箱已验证。
-相关临时推导补丁已撤回，原 OIDC 校验保持严格。v0.1.37 已发布并核验，尚未部署，且不含
-本次 GitHub 改动；本次必须使用新的源码及镜像候选。下面的历史观察不代表当前公网验收。
+相关临时推导补丁已撤回，原 OIDC 校验保持严格。下方早期环境观察保留原始时点，
+不代表当前线上版本；当前运行和发布证据见本任务的 `upload-generation-final-verification.json`。
 
-## 现状与部署顺序
+## 早期环境观察（历史记录）
 
 - `https://agent.playlab.eu.cc` 及 readiness 正常，五个业务 Deployment 均 Ready；
   四项应用镜像与 2026-09-08 v0.1.34 发布记录一致，尚未包含后续首次使用能力。
@@ -37,7 +39,7 @@ API/Worker/Web readiness、消费者队列连接、Web 匿名会话 JSON、准�
 ## 接入本次新增的发布配置
 
 管理员和 Deploy Staging 必须使用同一版源码、相同的正式应用镜像 digest，以及相同
-的非秘密参数生成清单；旧 v0.1.34 镜像不能因加入以下配置就被当成支持新功能。
+的非秘密参数生成清单；旧镜像不能因加入以下配置就被当成支持新功能。
 
 在 staging Environment 配置：
 
@@ -141,16 +143,84 @@ S256，真实换码及 nonce、email_verified 等验证必须另行通过。
 尤其注意：Supabase 即使 OAuth server 未启用也会返回 discovery；需要验证实际授权端点，
 不能仅凭元数据通过就宣布可以登录。原生 OTP 不依赖 OAuth server，但需单独产品适配。
 
-## 完整试点仍需完成的操作
+## 发布时保留售前生成配置
 
-1. 发布包含首次使用能力的新业务镜像，按原流程完成实际数据库迁移；保存当前
-   v0.1.34 的镜像与配置恢复依据。未验证时不能直接把旧版作为新客户的可兼容回滚。
+GitHub staging Environment 的下列非秘密变量与管理员渲染参数必须一致。仅启用登录
+不会打开生成。当前 v0.1.40 的四个值通过管理员清单部署；后续标准发布使用本节入口，
+上线前须把相同值写入受保护 Environment，并采用包含这些 CLI 参数的发布脚本。
+
+| Environment 变量 | 默认值 | 当前试点值 |
+| --- | --- | --- |
+| `STAGING_PRESALES_GENERATION_ENABLED` | `false` | `true` |
+| `STAGING_PRESALES_MODEL_ROUTE` | `primary` | `fallback` |
+| `STAGING_PRESALES_MODEL_TIMEOUT_SECONDS` | 留空，沿用所选模型路由等待设置 | `120` |
+| `STAGING_PRESALES_ROW_TIMEOUT_SECONDS` | `90` | `150` |
+
+管理员将以下参数加入现有完整的 `configure_staging_manifest.py` 调用：
+
+```powershell
+$presalesArgs = @('--presales-generation-enabled', 'true',
+  '--presales-model-route', 'fallback', '--presales-model-timeout-seconds', '120',
+  '--presales-row-timeout-seconds', '150')
+# 将 @presalesArgs 与已有 @browserArgs、模型路由、存储、镜像等参数一起传入。
+```
+
+`fallback` 直接选择已配置的备用模型，并非失败后自动多调用一次；同时需要原有
+`STAGING_MODEL_FALLBACK_BASE_URL`、`STAGING_MODEL_FALLBACK_NAME` 及私有备用 API Key。
+模型等待必须小于整行等待，两个值均为有限正数且不超过 180 秒；当前 Web 镜像的
+Nginx 等待为 210 秒。调用超时仍可能在供应商侧产生费用，不能自动重发来证明成功。
+
+每次渲染都会重设这四项管理范围内的配置，留空模型等待会清除旧覆盖值。未配置时
+生成保持关闭；想恢复默认时显式使用 `false`、`primary`、空模型等待和 `90`。
+ConfigMap 内容进入工作负载及前置资源 hash，若与线上管理员清单不同，标准发布
+会在 rollout 前拒绝。先审阅准确差异并按原流程更新 prerequisites，不绕过此检查。
+渲染清单随现有部署证据保留；设置 Environment 变量本身不改变当前运行服务。
+
+## 公开演示企业
+
+2026-09-23：代码已实现，并在独立本地环境完成真实上传、解析/嵌入、模型生成、
+引用核查、三条复核与已复核 CSV 导出；公网仍为 v0.1.40，尚未启用本节入口。
+实测共 5 次模型请求，3 次成功、2 次等待超时。超时没有自动重发或返还演示次数。
+第二个浏览器进入了不同企业，资料为空，读取第一家企业的响应表为 404；刷新保留原企业和复核结果。
+
+发布包含迁移 `20260923_0027` 的 API / Worker / Consumer / Web 镜像，保持
+固定 4C4G profile。管理员完整渲染调用增加 `--demo-enabled true`，受保护
+staging Environment 设置 `STAGING_DEMO_ENABLED=true`，并同步上节四个售前参数。
+生成器要求浏览器会话和售前生成均开启，否则在写清单前拒绝。先执行迁移，再滚动应用；
+没有额外身份服务、部署或常驻清理进程，也没有新增邮件投递。
+
+| 边界 | 默认值 |
+| --- | --- |
+| 企业分配 | 每位访客独立 Tenant、guest User、owner Membership 和演示权益；网页展示“演示企业” |
+| 会话 | 2 小时；同一 cookie 重入复用原企业；正式登录会话不会被演示入口覆盖 |
+| 上传 | 6 个文件；单个 2 MiB；总存储 10 MiB；支持原有 TXT / PDF / DOCX |
+| 响应表 | 3 份；每份最多 6 条要求；全部生成尝试累计最多 6 次，失败和超时也计入 |
+| 全站 | 最多 6 个尚未清理企业；每 UTC 日 24 次创建、40 次生成；演示生成并发 1 |
+| 访问 | 上传、资料、任务状态、售前生成、复核和导出；没有成员管理、邀请或 Agent 调用入口 |
+
+数据库内部的 `guest-<uuid>@demo.invalid` 只作标识，既不发邮件，也不表示邮箱已验证。
+演示企业与原有受邀演示 owner 企业独立，原有企业、准入及 GitHub 身份保持原归属。
+
+退出或到期即拒绝访问。现有 API 生命周期每 5 分钟清理：退役权限，等待至少
+1 小时的签名 URL / 在途请求宽限，跳过活跃任务租约，核对对象归属后先删对象、再删企业数据。
+对象存储失败保留归属记录并重试；清理回执和全站日额度保留 7 天。关闭新演示时将
+`STAGING_DEMO_ENABLED=false` 并走同样发布流程；保持浏览器认证开启，清理仍继续。
+不要为了关闭演示删除迁移表或扩大清理范围。
+
+公网验收从匿名页点击“一键进入演示”，使用页面提供的虚构公开 TXT 资料。核对
+`currentTenant`、原文引用、用量、复核 CSV、第二浏览器企业隔离、退出与到期行为。
+只读 `?showcase=1` 不会执行真实流程，不能替代这项验收。
+
+## 首次开通流程与完整试点验收
+
+1. 发布包含首次使用能力的业务镜像，按原流程核对实际数据库迁移；保存升级前的
+   镜像与有效配置恢复依据。当前试点已完成此步骤；v0.1.40 升级没有新增迁移。
 2. 在新版站点通过 GitHub 完成真实登录并核对企业准入身份。演示 owner 使用本人可控的
    GitHub 账号及其真实已验证主邮箱；原 Access 测试邮箱不能被假定为这个 GitHub 身份。
    GitHub 网页自行要求的登录/二次验证由用户完成；不使用 PAT 或开发 token 代替。
 3. 新版已提供私有 `python -m enterprise_doc_core.operations`，按
    [平台运营步骤](platform-operations.md) 为获准试用者签发准入，并查询接受后的 tenant_id
-   配置有限周期。其本地真实数据库验证已完成，实际线上执行仍待新版及身份接入；旧本地
+   配置有限周期。当前演示 owner 已完成准入与周期配置；旧本地
    CLI 保持 local/test 限制。首批试点在有效周期确认前保持生成关闭，避免接受准入与配置
    周期之间的 legacy 空档。不要通过修改 APP_ENV、seed 身份或开发 token 开户。
 4. 获准模型调用后显式启用 `PRESALES__GENERATION_ENABLED`，成员邀请另启用
@@ -161,7 +231,7 @@ S256，真实换码及 nonce、email_verified 等验证必须另行通过。
 
 用户提出的默认演示账号采用独立“DocAgent 演示空间”和两个受控身份，owner 演示管理员，
 member 演示普通成员。初始资料使用现有 Metabase 公开样例，按上述正式准入与权益步骤
-开通；目前仅完成准备，尚未创建线上演示企业。细节见
+开通；当前线上演示企业和真实 GitHub owner 已就绪，第二成员不是单人演示前置条件。细节见
 [演示账号准备](../../.trellis/tasks/09-21-saas-public-pilot-integration/demo-account-plan.md)。
 
 ## 回滚

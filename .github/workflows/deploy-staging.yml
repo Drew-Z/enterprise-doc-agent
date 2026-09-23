@@ -246,6 +246,11 @@ jobs:
           BROWSER_AUTH_CLIENT_ID: ${{ vars.STAGING_BROWSER_AUTH_CLIENT_ID }}
           BROWSER_AUTH_OIDC_CONFIG: ${{ vars.STAGING_BROWSER_AUTH_OIDC_CONFIG }}
           VITE_OBJECT_STORE_ORIGINS: ${{ vars.VITE_OBJECT_STORE_ORIGINS }}
+          DEMO_ENABLED: ${{ vars.STAGING_DEMO_ENABLED || 'false' }}
+          PRESALES_GENERATION_ENABLED: ${{ vars.STAGING_PRESALES_GENERATION_ENABLED || 'false' }}
+          PRESALES_MODEL_ROUTE: ${{ vars.STAGING_PRESALES_MODEL_ROUTE || 'primary' }}
+          PRESALES_MODEL_TIMEOUT_SECONDS: ${{ vars.STAGING_PRESALES_MODEL_TIMEOUT_SECONDS }}
+          PRESALES_ROW_TIMEOUT_SECONDS: ${{ vars.STAGING_PRESALES_ROW_TIMEOUT_SECONDS || '90' }}
           DATABASE_EGRESS_CIDR: ${{ vars.STAGING_DATABASE_EGRESS_CIDRS || vars.STAGING_DATABASE_EGRESS_CIDR }}
           MODEL_PROVIDER: openai_compatible
           MODEL_BASE_URL: ${{ vars.STAGING_MODEL_BASE_URL }}
@@ -319,6 +324,11 @@ jobs:
             --model-base-url "$MODEL_BASE_URL" \
             --model-name "$MODEL_NAME" \
             "${browser_auth_args[@]}" \
+            --presales-generation-enabled "$PRESALES_GENERATION_ENABLED" \
+            --presales-model-route "$PRESALES_MODEL_ROUTE" \
+            --presales-model-timeout-seconds "$PRESALES_MODEL_TIMEOUT_SECONDS" \
+            --presales-row-timeout-seconds "$PRESALES_ROW_TIMEOUT_SECONDS" \
+            --demo-enabled "$DEMO_ENABLED" \
             --embedding-base-url "$EMBEDDING_BASE_URL" \
             --embedding-model-name "$EMBEDDING_MODEL_NAME" \
             --embedding-version "$EMBEDDING_VERSION" \

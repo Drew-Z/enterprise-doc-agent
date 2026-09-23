@@ -141,6 +141,51 @@ def _model_timeout_seconds(value: str) -> str:
     return format(timeout, "g")
 
 
+def _presales_environment(
+    *,
+    generation_enabled: str,
+    model_route: str,
+    model_timeout_seconds: str | None,
+    row_timeout_seconds: str,
+    fallback_configured: bool,
+) -> dict[str, str]:
+    enabled = generation_enabled.strip()
+    route = model_route.strip()
+    if enabled not in {"true", "false"}:
+        raise ValueError("presales generation enabled must be true or false")
+    if route not in {"primary", "fallback"}:
+        raise ValueError("presales model route must be primary or fallback")
+    if route == "fallback" and not fallback_configured:
+        raise ValueError("presales fallback selection requires a configured fallback model route")
+
+    def timeout(value: str, description: str) -> str:
+        normalized = value.strip()
+        try:
+            seconds = float(normalized)
+        except ValueError as error:
+            raise ValueError(
+                f"presales {description} must be finite, greater than 0 and at most 180"
+            ) from error
+        if not math.isfinite(seconds) or not 0 < seconds <= 180:
+            raise ValueError(
+                f"presales {description} must be finite, greater than 0 and at most 180"
+            )
+        return normalized
+
+    row_timeout = timeout(row_timeout_seconds, "row timeout")
+    result = {
+        "PRESALES__GENERATION_ENABLED": enabled,
+        "PRESALES__MODEL_ROUTE": route,
+        "PRESALES__ROW_TIMEOUT_SECONDS": row_timeout,
+    }
+    if model_timeout_seconds and model_timeout_seconds.strip():
+        model_timeout = timeout(model_timeout_seconds, "model timeout")
+        if float(model_timeout) >= float(row_timeout):
+            raise ValueError("presales model timeout must be less than the row timeout")
+        result["PRESALES__MODEL_TIMEOUT_SECONDS"] = model_timeout
+    return result
+
+
 def _embedding_version(value: str) -> str:
     normalized = value.strip()
     if not normalized.isdigit() or not 1 <= int(normalized) <= 1000:
@@ -410,6 +455,11 @@ def configure_manifest(
     fallback_model_name: str | None = None,
     fallback_model_version: str | None = None,
     fallback_model_timeout_seconds: str | None = None,
+    presales_generation_enabled: str = "false",
+    presales_model_route: str = "primary",
+    presales_model_timeout_seconds: str | None = None,
+    presales_row_timeout_seconds: str = "90",
+    demo_enabled: str = "false",
     embedding_base_url: str = "https://embedding.example.invalid/v1",
     embedding_model_name: str = "staging-embedding",
     embedding_version: str = EMBEDDING_VERSION,
@@ -470,6 +520,13 @@ def configure_manifest(
     normalized_fallback_timeout = (
         _model_timeout_seconds(fallback_timeout_value) if fallback_timeout_value else None
     )
+    presales_config = _presales_environment(
+        generation_enabled=presales_generation_enabled,
+        model_route=presales_model_route,
+        model_timeout_seconds=presales_model_timeout_seconds,
+        row_timeout_seconds=presales_row_timeout_seconds,
+        fallback_configured=normalized_fallback_base_url is not None,
+    )
     normalized_embedding_base_url = _embedding_base_url(embedding_base_url)
     normalized_embedding_model_name = _model_name(embedding_model_name)
     normalized_embedding_version = _embedding_version(embedding_version)
@@ -481,6 +538,14 @@ def configure_manifest(
         oidc_config=browser_auth_oidc_config,
         provider=browser_auth_provider,
     )
+    demo_enabled = demo_enabled.strip().lower()
+    if demo_enabled not in {"true", "false"}:
+        raise ValueError("demo enabled must be true or false")
+    if demo_enabled == "true" and (
+        browser_config.get("BROWSER_AUTH__ENABLED") != "true"
+        or presales_config["PRESALES__GENERATION_ENABLED"] != "true"
+    ):
+        raise ValueError("demo requires browser sessions and presales generation")
 
     documents = [
         document
@@ -531,6 +596,9 @@ def configure_manifest(
             data["MODEL__FALLBACK_MODEL_VERSION"] = normalized_fallback_version
         if normalized_fallback_timeout is not None:
             data["MODEL__FALLBACK_TIMEOUT_SECONDS"] = normalized_fallback_timeout
+    data.pop("PRESALES__MODEL_TIMEOUT_SECONDS", None)
+    data.update(presales_config)
+    data["DEMO__ENABLED"] = demo_enabled
     data["EMBEDDING__PROVIDER"] = "openai_compatible"
     data["EMBEDDING__BASE_URL"] = normalized_embedding_base_url
     data["EMBEDDING__MODEL_NAME"] = normalized_embedding_model_name
@@ -791,6 +859,13 @@ def main() -> None:
     parser.add_argument("--fallback-model-name")
     parser.add_argument("--fallback-model-version")
     parser.add_argument("--fallback-model-timeout-seconds")
+    parser.add_argument("--presales-generation-enabled", choices=("true", "false"), default="false")
+    parser.add_argument(
+        "--presales-model-route", choices=("primary", "fallback"), default="primary"
+    )
+    parser.add_argument("--presales-model-timeout-seconds")
+    parser.add_argument("--presales-row-timeout-seconds", default="90")
+    parser.add_argument("--demo-enabled", choices=("true", "false"), default="false")
     parser.add_argument("--embedding-base-url", required=True)
     parser.add_argument("--embedding-model-name", required=True)
     parser.add_argument("--embedding-version", default=EMBEDDING_VERSION)
@@ -820,6 +895,11 @@ def main() -> None:
         fallback_model_name=args.fallback_model_name,
         fallback_model_version=args.fallback_model_version,
         fallback_model_timeout_seconds=args.fallback_model_timeout_seconds,
+        presales_generation_enabled=args.presales_generation_enabled,
+        presales_model_route=args.presales_model_route,
+        presales_model_timeout_seconds=args.presales_model_timeout_seconds,
+        presales_row_timeout_seconds=args.presales_row_timeout_seconds,
+        demo_enabled=args.demo_enabled,
         embedding_base_url=args.embedding_base_url,
         embedding_model_name=args.embedding_model_name,
         embedding_version=args.embedding_version,

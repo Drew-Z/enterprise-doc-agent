@@ -176,6 +176,221 @@ def _render_browser_manifest(tmp_path: Path, **overrides: str | None) -> list[di
     return [item for item in yaml.safe_load_all(destination.read_text(encoding="utf-8")) if item]
 
 
+def test_configure_manifest_preserves_explicit_presales_route_and_wait_budget(
+    tmp_path: Path,
+) -> None:
+    from enterprise_doc_core.presales.settings import PresalesSettings
+
+    documents = _render_browser_manifest(
+        tmp_path,
+        presales_generation_enabled="true",
+        presales_model_route="fallback",
+        presales_model_timeout_seconds="120",
+        presales_row_timeout_seconds="150",
+        fallback_model_base_url="https://fallback.example.com/v1",
+        fallback_model_name="presales-model",
+    )
+    data = next(item for item in documents if item["kind"] == "ConfigMap")["data"]
+    assert {key: value for key, value in data.items() if key.startswith("PRESALES__")} == {
+        "PRESALES__GENERATION_ENABLED": "true",
+        "PRESALES__MODEL_ROUTE": "fallback",
+        "PRESALES__MODEL_TIMEOUT_SECONDS": "120",
+        "PRESALES__ROW_TIMEOUT_SECONDS": "150",
+    }
+    settings = PresalesSettings.model_validate(
+        {
+            key.removeprefix("PRESALES__").lower(): value
+            for key, value in data.items()
+            if key.startswith("PRESALES__")
+        }
+    )
+    assert settings.generation_enabled and settings.model_route == "fallback"
+    assert settings.model_timeout_seconds == 120 and settings.row_timeout_seconds == 150
+    namespace = next(item for item in documents if item["kind"] == "Namespace")
+    config_hash = namespace["metadata"]["annotations"][
+        "enterprise-doc-agent/approved-config-sha256"
+    ]
+    for item in documents:
+        identity = (item["kind"], item["metadata"]["name"])
+        if identity in configure_staging_manifest.CONFIG_CONSUMERS:
+            assert (
+                item["spec"]["template"]["metadata"]["annotations"][
+                    "enterprise-doc-agent/config-sha256"
+                ]
+                == config_hash
+            )
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {"presales_generation_enabled": "yes"},
+        {"presales_generation_enabled": ""},
+        {"presales_model_route": "automatic"},
+        {"presales_model_route": "fallback"},
+        {"presales_model_timeout_seconds": "NaN"},
+        {"presales_model_timeout_seconds": "inf"},
+        {"presales_model_timeout_seconds": "0"},
+        {"presales_model_timeout_seconds": "181"},
+        {"presales_model_timeout_seconds": "90"},
+        {"presales_model_timeout_seconds": "not-a-number"},
+        {"presales_row_timeout_seconds": "NaN"},
+        {"presales_row_timeout_seconds": "inf"},
+        {"presales_row_timeout_seconds": "0"},
+        {"presales_row_timeout_seconds": "181"},
+        {"presales_row_timeout_seconds": ""},
+    ],
+)
+def test_invalid_presales_release_settings_fail_before_output(
+    tmp_path: Path, overrides: dict[str, str]
+) -> None:
+    with pytest.raises(ValueError, match="presales"):
+        _render_browser_manifest(tmp_path, **overrides)
+    assert not (tmp_path / "browser-staging.yaml").exists()
+
+
+def test_presales_defaults_disable_generation_and_clear_old_model_override(tmp_path: Path) -> None:
+    documents = _render_browser_manifest(
+        tmp_path,
+        presales_generation_enabled="true",
+        presales_model_route="fallback",
+        presales_model_timeout_seconds="120",
+        presales_row_timeout_seconds="150",
+        fallback_model_base_url="https://fallback.example.com/v1",
+        fallback_model_name="presales-model",
+    )
+    enabled_annotations = next(item for item in documents if item["kind"] == "Namespace")[
+        "metadata"
+    ]["annotations"]
+    (tmp_path / "browser-template.yaml").write_bytes(
+        (tmp_path / "browser-staging.yaml").read_bytes()
+    )
+    disabled = _render_browser_manifest(tmp_path)
+    data = next(item for item in disabled if item["kind"] == "ConfigMap")["data"]
+    assert {key: value for key, value in data.items() if key.startswith("PRESALES__")} == {
+        "PRESALES__GENERATION_ENABLED": "false",
+        "PRESALES__MODEL_ROUTE": "primary",
+        "PRESALES__ROW_TIMEOUT_SECONDS": "90",
+    }
+    disabled_annotations = next(item for item in disabled if item["kind"] == "Namespace")[
+        "metadata"
+    ]["annotations"]
+    for key in (
+        "enterprise-doc-agent/approved-config-sha256",
+        "enterprise-doc-agent/prerequisites-sha256",
+    ):
+        assert disabled_annotations[key] != enabled_annotations[key]
+
+
+def test_presales_cli_binds_approved_pilot_configuration(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = tmp_path / "template.yaml"
+    output = tmp_path / "rendered.yaml"
+    _write_template(source)
+    arguments = {
+        "input": str(source),
+        "output": str(output),
+        "staging-base-url": "https://staging.example.com",
+        "object-store-endpoint": "https://objects.example.com",
+        "object-store-presign-endpoint": "https://objects.example.com",
+        "tls-secret-name": "enterprise-doc-staging-tls",
+        "web-object-store-origins": "https://objects.example.com",
+        "database-egress-cidr": "8.8.8.8/32",
+        "model-provider": "openai_compatible",
+        "model-base-url": "https://model.example.com/v1",
+        "model-name": "primary-model",
+        "fallback-model-base-url": "https://fallback.example.com/v1",
+        "fallback-model-name": "fallback-model",
+        "embedding-base-url": "https://embedding.example.com/v1",
+        "embedding-model-name": "embedding-model",
+        "presales-generation-enabled": "true",
+        "presales-model-route": "fallback",
+        "presales-model-timeout-seconds": "120",
+        "presales-row-timeout-seconds": "150",
+    }
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [str(SCRIPT), *(arg for key, value in arguments.items() for arg in (f"--{key}", value))],
+    )
+    configure_staging_manifest.main()
+    documents = list(yaml.safe_load_all(output.read_text(encoding="utf-8")))
+    data = next(item for item in documents if item["kind"] == "ConfigMap")["data"]
+    assert {key: value for key, value in data.items() if key.startswith("PRESALES__")} == {
+        "PRESALES__GENERATION_ENABLED": "true",
+        "PRESALES__MODEL_ROUTE": "fallback",
+        "PRESALES__MODEL_TIMEOUT_SECONDS": "120",
+        "PRESALES__ROW_TIMEOUT_SECONDS": "150",
+    }
+
+
+def test_staging_workflow_passes_presales_environment_to_the_renderer() -> None:
+    workflow = yaml.safe_load(
+        (SCRIPT.parents[1] / ".github/workflows/deploy-staging.yml").read_text(encoding="utf-8")
+    )
+    step = next(
+        step
+        for job in workflow["jobs"].values()
+        for step in job["steps"]
+        if "scripts/configure_staging_manifest.py" in step.get("run", "")
+    )
+    expected = {
+        "DEMO_ENABLED": "${{ vars.STAGING_DEMO_ENABLED || 'false' }}",
+        "PRESALES_GENERATION_ENABLED": "${{ vars.STAGING_PRESALES_GENERATION_ENABLED || 'false' }}",
+        "PRESALES_MODEL_ROUTE": "${{ vars.STAGING_PRESALES_MODEL_ROUTE || 'primary' }}",
+        "PRESALES_MODEL_TIMEOUT_SECONDS": "${{ vars.STAGING_PRESALES_MODEL_TIMEOUT_SECONDS }}",
+        "PRESALES_ROW_TIMEOUT_SECONDS": "${{ vars.STAGING_PRESALES_ROW_TIMEOUT_SECONDS || '90' }}",
+    }
+    for name, expression in expected.items():
+        assert step["env"].get(name) == expression
+        assert f'--{name.lower().replace("_", "-")} "${name}"' in step["run"]
+    assert len(workflow[True]["workflow_dispatch"]["inputs"]) == 10
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {"demo_enabled": "yes"},
+        {"demo_enabled": "true"},
+        {"demo_enabled": "true", "presales_generation_enabled": "true"},
+        {
+            "demo_enabled": "true",
+            "browser_auth_issuer": "https://auth.example.com/realms/docagent",
+            "browser_auth_client_id": "docagent-web",
+        },
+    ],
+)
+def test_demo_release_requires_browser_sessions_and_generation(
+    tmp_path: Path, overrides: dict[str, str]
+) -> None:
+    with pytest.raises(ValueError, match="demo"):
+        _render_browser_manifest(tmp_path, **overrides)
+    assert not (tmp_path / "browser-staging.yaml").exists()
+
+
+def test_demo_can_be_enabled_and_is_explicitly_disabled_by_default(tmp_path: Path) -> None:
+    documents = _render_browser_manifest(
+        tmp_path,
+        demo_enabled="true",
+        presales_generation_enabled="true",
+        browser_auth_issuer="https://auth.example.com/realms/docagent",
+        browser_auth_client_id="docagent-web",
+    )
+    assert (
+        next(item for item in documents if item["kind"] == "ConfigMap")["data"]["DEMO__ENABLED"]
+        == "true"
+    )
+    (tmp_path / "browser-template.yaml").write_bytes(
+        (tmp_path / "browser-staging.yaml").read_bytes()
+    )
+    disabled = _render_browser_manifest(tmp_path)
+    assert (
+        next(item for item in disabled if item["kind"] == "ConfigMap")["data"]["DEMO__ENABLED"]
+        == "false"
+    )
+
+
 def test_configure_manifest_binds_browser_login_to_application_settings(tmp_path: Path) -> None:
     from pydantic import SecretStr
 

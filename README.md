@@ -26,6 +26,18 @@ DocAgent 面向售前、安全问卷和企业知识核验场景。上传产品�
 
 **当前阶段：受邀公网试点。** 2026-09-22 已部署 [v0.1.40](https://github.com/Drew-Z/enterprise-doc-agent/tree/v0.1.40)，完成服务就绪、匿名登录入口与既有业务数据保留检查；本次修复后的完整公网业务流程仍待验收。站点使用 GitHub 登录，企业访问需要准入或邀请。当前采用 4 核 4 GB 单节点，数据库、对象存储和模型服务外置，适合低并发试用。
 
+**公开演示企业已实现，尚未发布到公网。** 2026-09-23 在独立本地环境通过真实浏览器完成了多文件上传、解析、外部模型生成、引用核查、逐行复核和已复核 CSV 导出。三条回应共发起 5 次生成，其中 2 次上游超时后手动重试；该结果证明流程可用，模型时延仍有波动。
+
+### 一键体验演示企业
+
+启用后，登录页同时提供“一键进入演示”和 GitHub 登录。每位访客自动获得独立的**演示企业**，资料、响应表、额度均归属该企业；同一浏览器刷新后可以继续，其他访客无法访问。
+
+1. 点击“一键进入演示”，下载 [产品说明](apps/web/public/demo/product-guide.txt)、[交付说明](apps/web/public/demo/delivery-guide.txt)和[示例问卷](apps/web/public/demo/requirements.txt)。
+2. 将两份资料一起上传，等待就绪；选择资料建立响应表，粘贴示例问卷。
+3. 生成回应，展开原文证据、逐条保存复核，再导出 CSV。
+
+演示企业有效期 2 小时，支持 6 个文件（单个 2 MiB、总计 10 MiB）、3 份响应表（每表最多 6 条要求）、6 次生成尝试，失败同样计数。退出或到期后无法继续访问，数据随后自动清理；请使用公开资料并及时导出结果。部署开关及全站预算见[公开演示手册](docs/ops/public-pilot-runbook.md#公开演示企业)。
+
 ## 界面预览
 
 ![文档工作区中的多文件、文件夹选择与上传队列](docs/showcase/upload-queue.png)
@@ -51,6 +63,7 @@ DocAgent 面向售前、安全问卷和企业知识核验场景。上传产品�
 | 生成恢复 | 网络或代理报错后查询原响应状态；已保存的结果可恢复；不会自动重复提交模型请求 |
 | Agent 执行 | 固定 LangGraph 流程、PostgreSQL checkpoint、内部 MCP 工具、SSE 事件恢复、人工审批与可验证产物 |
 | 登录与协作 | GitHub OAuth 浏览器登录；应用会话与退出；企业准入、成员邀请、owner/member 权限、受限文档授权 |
+| 公开演示企业 | 一键进入、每位访客独立企业、示例资料与真实业务流程；有期限与额度，自动清理；默认关闭、公网待发布 |
 | 用量与治理 | 企业试用周期与生成额度；用量记录；审计查询与 CSV 导出；保留策略、legal hold 与可验证归档 |
 | 模型接入 | OpenAI-compatible Chat 与 Embedding 接口；Agent 主备路由与熔断；售前可独立选定路由和超时预算 |
 | 交付与运维 | Docker 镜像、Kubernetes/K3s 清单、健康探针、GitHub Actions、镜像 digest、签名、SBOM 与发布证据 |
@@ -188,6 +201,7 @@ flowchart LR
 | 存储 | PostgreSQL/pgvector 保存状态；S3-compatible 存储保存文档和产物；浏览器需要可达的预签名地址与匹配的 CORS |
 | 模型 | 分别配置 Chat 与 Embedding；维度和索引版本必须一致；更换 embedding 需按手册重建索引 |
 | 售前 | `PRESALES__GENERATION_ENABLED` 控制生成；`PRESALES__MODEL_ROUTE` 选择 `primary` 或 `fallback`；模型超时小于整行超时 |
+| 演示 | `DEMO__ENABLED` 默认关闭；标准发布还要求启用浏览器会话及售前生成；无需新增常驻服务 |
 | 运营 | 准入、邀请、试用期限与额度通过正式运营入口管理；凭据不放前端或版本库 |
 
 `PRESALES__MODEL_ROUTE=fallback` 表示本次售前请求直接使用已配置的备用路由，并非先调用主模型失败后再自动调用一次。模型超时后，上游仍可能完成并计费；没有保存到应用的正文无法只凭供应商账单恢复，手动重试会发起新请求。
@@ -251,6 +265,7 @@ kubectl kustomize infra/k8s/overlays/single-node-4c4g
 | 上传协议、恢复状态与批量队列 | [浏览器上传](.trellis/spec/frontend/browser-multipart-upload.md) · [服务端完成语义](.trellis/spec/backend/upload-completion.md) |
 | 售前响应与复核行为 | [前端工作区](.trellis/spec/frontend/presales-workspace.md) · [后端契约](.trellis/spec/backend/presales-workspace.md) |
 | 登录、准入与企业运营 | [浏览器会话](.trellis/spec/backend/browser-sessions.md) · [平台运营](docs/ops/platform-operations.md) |
+| 公开演示企业与资源限制 | [演示契约](.trellis/spec/backend/public-demo.md) · [启用与回收](docs/ops/public-pilot-runbook.md#公开演示企业) |
 | 当前主机部署与模型配置 | [4C4G 手册](docs/ops/single-node-4c4g-staging-runbook.md) · [真实 Embedding 上线](docs/ops/real-embedding-rollout.md) |
 | 设计取舍与历史展示 | [项目说明](docs/showcase/PROJECT_SHOWCASE.md) · [UI 设计](docs/showcase/UI_REDESIGN_NOTES.md) · [企业化边界](docs/showcase/ENTERPRISE_READINESS.md) |
 | 回归与发布执行记录 | [GitHub Actions](https://github.com/Drew-Z/enterprise-doc-agent/actions) · [版本标签](https://github.com/Drew-Z/enterprise-doc-agent/tags) · [证据目录](evidence) |
@@ -261,6 +276,8 @@ kubectl kustomize infra/k8s/overlays/single-node-4c4g
 
 - [x] 真实 GitHub 登录、企业空间与文档入库已在试点使用。
 - [x] 多文件/文件夹队列、上传状态恢复、售前生成恢复与独立模型路由已实现并完成本地回归。
+- [x] 独立演示企业、真实模型生成及已复核 CSV 导出完成本地实测；第二访客隔离与刷新恢复通过。
+- [ ] 发布一键演示入口，并在公网环境复验相同流程。
 - [ ] 在公网试点完成本次上传修复及整张响应表的生成、引用复核与导出验收。
 - [ ] 扩充代表性业务资料和真实模型重复评测，验证质量、时延与成本。
 - [ ] 完成独立故障域恢复、外部监控告警及实际容量验收。

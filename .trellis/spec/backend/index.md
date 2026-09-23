@@ -18,6 +18,7 @@ These guidelines record backend conventions proven by implemented milestones.
 | [Observability Evaluation And Load](./observability-eval-load.md) | Metrics, fault injection, eval and bounded load reports | Adopted in M5 worktree |
 | [CI/CD And Kubernetes](./cicd-kubernetes.md) | Images, manifests, supply chain, backup and rollback | Adopted in M6 worktree |
 | [Model Routing](./model-routing.md) | Fallback, circuit breaking, route identity and embedding dimensions | Adopted in M7 worktree |
+| [Public Demo Enterprises](./public-demo.md) | Guest tenant binding, cost limits, scoped access and cleanup | Implemented; local live-provider acceptance |
 
 Only implemented behavior belongs here. Worktree-adopted M5-M7 patterns are not
 reviewed release or external deployment evidence.

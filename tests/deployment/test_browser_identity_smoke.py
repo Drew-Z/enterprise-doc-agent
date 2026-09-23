@@ -134,12 +134,52 @@ def test_github_smoke_checks_provider_without_claiming_oidc_or_real_login(
     assert requests == ["/auth/session"]
 
 
+@pytest.mark.parametrize("provider", ["github", "oidc"])
+def test_entry_smoke_accepts_demo_metadata_without_creating_guest_or_calling_models(
+    http_boundary: Any, provider: str
+) -> None:
+    from scripts.browser_identity_smoke import run_smoke
+
+    routes, transport, requests = http_boundary
+    routes["/auth/session"] = (
+        200,
+        "application/json",
+        {"status": "anonymous", "loginProvider": provider, "demoAvailable": True},
+        {},
+    )
+    routes["/realms/docagent/.well-known/openid-configuration"] = (
+        200,
+        "application/json",
+        _identity_metadata(),
+        {},
+    )
+    report = run_smoke(
+        WEB_ORIGIN,
+        "https://github.com" if provider == "github" else ISSUER,
+        provider=provider,
+        client_id="test-client",
+        opener=urllib.request.build_opener(transport),
+    )
+    assert report["status"] == "passed"
+    assert "public_demo_advertised" in report["checks"]
+    assert "/auth/demo" not in requests
+    assert requests == (
+        ["/auth/session"]
+        if provider == "github"
+        else ["/auth/session", "/realms/docagent/.well-known/openid-configuration"]
+    )
+
+
 @pytest.mark.parametrize(
     "session",
     [
         {"status": "anonymous"},
         {"status": "anonymous", "loginProvider": "oidc"},
         {"status": "disabled"},
+        {"status": "anonymous", "loginProvider": "oidc", "demoAvailable": True},
+        {"status": "anonymous", "loginProvider": "github", "demoAvailable": "true"},
+        {"status": "anonymous", "loginProvider": "github", "demoAvailable": 1},
+        {"status": "anonymous", "loginProvider": "github", "demoAvailable": True, "email": "guest"},
     ],
 )
 def test_github_smoke_rejects_disabled_or_mismatched_provider(

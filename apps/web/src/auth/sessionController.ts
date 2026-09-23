@@ -1,12 +1,13 @@
 import {
   admissionInputSchema, admissionReceiptSchema, browserAuthenticatedSchema, browserLogoutSchema,
-  browserSessionSchema, browserTenantsSchema, type BrowserAuthenticatedSession, type BrowserTenant,
+  browserSessionSchema, browserTenantsSchema, demoAuthenticatedSchema, type BrowserAuthenticatedSession, type BrowserTenant,
 } from "./schemas";
 import { activateBrowserCredential, onBrowserCredentialInvalidated, retireBrowserCredential, type Fetcher } from "./transport";
 import { errorResponseSchema } from "../agent/api/schemas";
 import { invitationInputSchema, invitationPreviewSchema, invitationReceiptSchema, type InvitationPreview } from "../invitations/schemas";
 
 export type BrowserNotice = "expired" | "session_changed" | "service_unavailable" | "selection_unconfirmed" | "admission_failed" | "admission_complete" | "signed_out" | "sign_in_failed" | "github_email_required"
+  | "demo_full" | "demo_daily_limit" | "demo_start_unconfirmed" | "demo_signout_required"
   | "invitation_failed" | "invitation_complete" | "invitation_full" | "invitation_account_conflict" | "invitation_conflict" | "invitation_unavailable" | "invitation_unconfirmed";
 export interface BrowserSessionState {
   phase: "loading" | "anonymous" | "disabled" | "unavailable" | "choosing" | "working" | "busy" | "logout-unconfirmed";
@@ -16,6 +17,7 @@ export interface BrowserSessionState {
   workspaceKey: number;
   verifying: boolean;
   loginProvider: "oidc" | "github";
+  demoAvailable: boolean;
 }
 
 interface Dependencies {
@@ -33,7 +35,7 @@ class BrowserRequestError extends Error {
 }
 
 export class BrowserSessionController {
-  private state: BrowserSessionState = { phase: "loading", session: null, tenants: [], notice: null, workspaceKey: 0, verifying: false, loginProvider: "oidc" };
+  private state: BrowserSessionState = { phase: "loading", session: null, tenants: [], notice: null, workspaceKey: 0, verifying: false, loginProvider: "oidc", demoAvailable: false };
   private listeners = new Set<() => void>();
   private session: BrowserAuthenticatedSession | null = null;
   private logoutSnapshot: BrowserAuthenticatedSession | null = null;
@@ -140,6 +142,7 @@ export class BrowserSessionController {
       const session = browserSessionSchema.parse(await this.request("/auth/session", operation));
       if (!this.current(operation)) return;
       this.publish({ loginProvider: "loginProvider" in session ? session.loginProvider ?? "oidc" : "oidc" });
+      this.publish({ demoAvailable: "demoAvailable" in session ? session.demoAvailable === true : "demo" in session && session.demo === true });
       if (session.status !== "authenticated") {
         if (preserveWorkspace) this.clearWorkspace();
         this.session = null;
@@ -170,6 +173,26 @@ export class BrowserSessionController {
     this.begin("loading", "session_changed");
   }
 
+  async startDemo(): Promise<void> {
+    if (this.state.phase !== "anonymous" || !this.state.demoAvailable) return;
+    const operation = this.begin("busy");
+    try {
+      const session = demoAuthenticatedSchema.parse(await this.request("/auth/demo", operation, null, {}));
+      if (!this.current(operation)) return;
+      this.install(session);
+      this.dependencies.broadcast();
+    } catch (error) {
+      if (!this.current(operation)) return;
+      if (error instanceof BrowserRequestError && error.code === "demo_capacity_reached") {
+        this.publish({ phase: "anonymous", notice: "demo_full" });
+      } else if (error instanceof BrowserRequestError && error.code === "demo_daily_limit") {
+        this.publish({ phase: "anonymous", notice: "demo_daily_limit" });
+      } else {
+        this.publish({ phase: "unavailable", notice: error instanceof BrowserRequestError && error.code === "demo_signout_required" ? "demo_signout_required" : "demo_start_unconfirmed" });
+      }
+    }
+  }
+
   private async loadTenants(operation: Operation, session: BrowserAuthenticatedSession, notice: BrowserNotice | null = null): Promise<void> {
     const tenants = browserTenantsSchema.parse(await this.request("/auth/tenants", operation, session));
     if (this.current(operation)) this.publish({ phase: "choosing", session, tenants, notice });
@@ -177,6 +200,7 @@ export class BrowserSessionController {
 
   async showTenants(): Promise<void> {
     const session = this.session;
+    if (session && "demo" in session) return;
     if (!session || this.logoutUnconfirmed) return;
     const operation = this.begin("loading");
     try { await this.loadTenants(operation, session); }

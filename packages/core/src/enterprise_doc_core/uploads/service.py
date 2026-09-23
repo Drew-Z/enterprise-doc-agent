@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from enterprise_doc_core.config import UploadSettings
 from enterprise_doc_core.context import PrincipalContext
+from enterprise_doc_core.demo.limits import check_upload
 from enterprise_doc_core.identity import Membership, Tenant, User
 from enterprise_doc_core.object_store import MultipartObjectStore
 from enterprise_doc_core.uploads.models import UploadSession, UploadSessionStatus
@@ -183,6 +184,7 @@ class UploadCreationService:
                         request_fingerprint=metadata.request_fingerprint,
                     )
                 else:
+                    await check_upload(session, tenant_id, metadata.size_bytes)
                     projected_storage = (
                         tenant.used_storage_bytes
                         + tenant.reserved_storage_bytes

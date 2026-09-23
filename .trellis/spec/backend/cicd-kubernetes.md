@@ -106,6 +106,9 @@
   the complete ConfigMap into API, Worker, consumer and migration Pod templates so a
   route update cannot leave stale processes running. The non-secret route is retained
   in the release record; the API key is never evidence.
+- Presales enablement, selected route and wait budgets have explicit protected Environment
+  and renderer inputs, independent of browser login and Agent routing. See the Presales
+  release configuration scenario below; omitted inputs never inherit a prior enablement.
 - Staging and rollback target the fixed `enterprise-doc-staging` self-hosted runner
   label. The runner is repository-scoped, runs as a dedicated non-root user, and is
   installed on the private K3s node; GitHub-hosted runners cannot reach the private
@@ -484,3 +487,52 @@ governance smoke, staging RAG evaluator and release-record tests protect importe
 Argument-parser rejection, forced process termination and an unwritable output path cannot
 guarantee a file report. Local regression does not prove a staging release passed and does not
 establish the cause of historical Agent failures.
+
+## Scenario: Preserve Presales Configuration Across Standard Releases
+
+### 1. Scope / Trigger
+
+An administrator-enabled pilot must retain its reviewed Presales settings when a later
+release renders from the repository overlay instead of copying the live ConfigMap.
+
+### 2. Signatures
+
+`configure_staging_manifest.py --presales-generation-enabled true --presales-model-route
+fallback --presales-model-timeout-seconds 120 --presales-row-timeout-seconds 150`, alongside
+the existing required endpoint, image, identity and fallback model arguments.
+
+### 3. Contracts
+
+The matching protected Environment variables are `STAGING_PRESALES_GENERATION_ENABLED`
+(default `false`), `STAGING_PRESALES_MODEL_ROUTE` (`primary`),
+`STAGING_PRESALES_MODEL_TIMEOUT_SECONDS` (empty: no override), and
+`STAGING_PRESALES_ROW_TIMEOUT_SECONDS` (`90`). Administrators and the workflow use the same
+values; the workflow still has ten dispatch inputs. Each render overwrites the three required
+ConfigMap keys and clears a stale optional model timeout. Values enter the existing config,
+workload and prerequisite hashes and retained rendered-manifest evidence.
+
+### 4. Validation & Error Matrix
+
+- Unknown boolean/route or a fallback selection without a configured fallback -> `ValueError`.
+- Non-finite, non-positive, over-180-second timeout or model timeout >= row timeout -> `ValueError`.
+- Invalid input -> no destination write; prior output remains intact.
+- Protected Environment and approved live prerequisites differ -> reject before rollout.
+
+### 5. Good / Base / Bad Cases
+
+Good: explicit enabled/fallback/120/150 with the matching configured fallback route.
+Base: omitted values disable generation, choose primary and reset to the default row budget.
+Bad: editing only the live ConfigMap and assuming the next repository render will remember it.
+
+### 6. Tests Required
+
+`tests/deployment/test_configure_staging_manifest.py` checks public rendering and CLI behavior,
+application `PresalesSettings` compatibility, invalid input before output, default reset,
+hash changes and Environment-to-CLI wiring. Validate the actual workflow render step with
+Kustomize 5.7.1, plus Actionlint and shell syntax; these are local checks, not deployment.
+
+### 7. Wrong vs Correct
+
+Wrong: infer model enablement from successful GitHub login or bypass a prerequisite mismatch.
+Correct: preserve the explicit reviewed generation and timeout settings in both the protected
+Environment and administrator render, then keep the normal prerequisite and rollout gates.

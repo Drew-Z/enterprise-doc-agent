@@ -115,12 +115,16 @@ def run_smoke(
         return value
 
     session = read_json(web_origin + "/auth/session", "browser_session")
-    expected_session = {"status": "anonymous"}
+    expected_session: dict[str, object] = {"status": "anonymous"}
     if provider == "github":
         expected_session["loginProvider"] = "github"
+    if session.get("demoAvailable") is True:
+        expected_session.update(loginProvider=provider, demoAvailable=True)
     if session != expected_session:
         fail("browser_session", "browser_login_unavailable", 200)
     report["checks"].append("anonymous_browser_session")
+    if session.get("demoAvailable") is True:
+        report["checks"].append("public_demo_advertised")
     if provider == "github":
         report["checks"].append("github_provider_selected")
         report["status"] = "passed"

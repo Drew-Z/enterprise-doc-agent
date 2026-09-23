@@ -34,6 +34,7 @@ import { showcaseReadiness, showcaseRunId } from "./product/showcaseData";
 import { isShowcaseMode } from "./product/showcase";
 import { createApplicationCredentialStore } from "./auth/credentialStore";
 import type { BrowserWorkspaceSession } from "./auth/BrowserSessionBoundary";
+import { PublicDemoWorkspace } from "./demo/PublicDemoWorkspace";
 import { setLocale, useLocale, useT } from "./i18n";
 import "./styles.css";
 import "./product/product.css";
@@ -73,6 +74,10 @@ function shortTenantId(tenantId: string): string {
 }
 
 export function App({ browserSession }: { browserSession?: BrowserWorkspaceSession } = {}) {
+  return browserSession?.demo ? <PublicDemoWorkspace session={browserSession} /> : <ProductApp browserSession={browserSession} />;
+}
+
+function ProductApp({ browserSession }: { browserSession?: BrowserWorkspaceSession }) {
   const [route, navigate] = useProductRoute();
   const t = useT();
   const locale = useLocale();

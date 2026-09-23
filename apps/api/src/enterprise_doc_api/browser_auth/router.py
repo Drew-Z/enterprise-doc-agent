@@ -11,6 +11,12 @@ from fastapi import APIRouter, Request, Response
 from pydantic import Field, SecretStr
 from starlette.responses import RedirectResponse
 
+from enterprise_doc_api.browser_auth.demo import (
+    DemoAnonymousResponse,
+    DemoAuthenticatedResponse,
+    demo_response,
+    demo_service,
+)
 from enterprise_doc_api.browser_auth.github import GitHubEmailRequired, GitHubFailure
 from enterprise_doc_api.browser_auth.http import (
     LOGIN_COOKIE,
@@ -79,7 +85,11 @@ class BrowserGitHubAuthenticatedResponse(BrowserAuthenticatedResponse):
 
 BrowserVerifiedResponse = BrowserAuthenticatedResponse | BrowserGitHubAuthenticatedResponse
 BrowserSessionResponse = (
-    BrowserVerifiedResponse | BrowserAnonymousResponse | BrowserGitHubAnonymousResponse
+    BrowserVerifiedResponse
+    | BrowserAnonymousResponse
+    | BrowserGitHubAnonymousResponse
+    | DemoAnonymousResponse
+    | DemoAuthenticatedResponse
 )
 
 
@@ -141,8 +151,11 @@ async def session_status(
     verify_site(request)
     if not settings_for(request).enabled:
         return BrowserAnonymousResponse(status="disabled")
+    demo = demo_service(request)
     anonymous: BrowserSessionResponse = (
-        BrowserGitHubAnonymousResponse()
+        DemoAnonymousResponse(login_provider=settings_for(request).provider)
+        if demo is not None and demo.settings.enabled
+        else BrowserGitHubAnonymousResponse()
         if settings_for(request).provider == "github"
         else BrowserAnonymousResponse(status="anonymous")
     )
@@ -150,6 +163,10 @@ async def session_status(
     if credential is None:
         return anonymous
     try:
+        demo = demo_service(request)
+        guest = await demo.get(credential) if demo is not None else None
+        if guest is not None:
+            return demo_response(guest, credential, settings_for(request).provider)
         snapshot = await service_for(request).get_session(credential=credential)
     except BrowserSessionInvalid:
         return anonymous
@@ -298,7 +315,9 @@ async def logout(request: Request, response: Response) -> dict[str, bool]:
     credential = require_browser_credential(request)
     try:
         version = verify_context(request, credential, mutation=True)
-        await service_for(request).logout(credential=credential, context_version=version)
+        demo = demo_service(request)
+        if demo is None or not await demo.logout(credential, version):
+            await service_for(request).logout(credential=credential, context_version=version)
     except BrowserSessionError as error:
         raise browser_error(error) from None
     response.delete_cookie(SESSION_COOKIE, path="/", secure=True, httponly=True, samesite="lax")

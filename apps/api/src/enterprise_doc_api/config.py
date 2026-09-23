@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field, SecretStr, model_validator
 
 from enterprise_doc_api.browser_auth.settings import BrowserAuthSettings
 from enterprise_doc_core.config import AppEnvironment, FoundationSettings
+from enterprise_doc_core.demo.settings import DemoSettings
 from enterprise_doc_core.invitations.contracts import InvitationSettings
 from enterprise_doc_core.presales.settings import PresalesSettings
 
@@ -117,6 +118,7 @@ class AuthSettings(BaseModel):
 
 
 class ApiSettings(FoundationSettings):
+    demo: DemoSettings = Field(default_factory=DemoSettings)
     browser_auth: BrowserAuthSettings = Field(default_factory=BrowserAuthSettings)
     invitations: InvitationSettings = Field(default_factory=InvitationSettings)
     presales: PresalesSettings = Field(default_factory=PresalesSettings)
@@ -126,6 +128,8 @@ class ApiSettings(FoundationSettings):
     @model_validator(mode="after")
     def reject_development_auth_key_outside_local_or_test(self) -> Self:
         self.browser_auth.validate_environment(self.app_env)
+        if self.demo.enabled and not self.browser_auth.enabled:
+            raise ValueError("public demo requires the browser session origin configuration")
         if self.invitations.enabled and not self.browser_auth.enabled:
             raise ValueError("invitations require browser authentication")
         if self.app_env in {AppEnvironment.LOCAL, AppEnvironment.TEST}:

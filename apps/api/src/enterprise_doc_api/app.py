@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncIterator, Sequence
 from contextlib import asynccontextmanager
 from typing import Any
@@ -38,6 +39,7 @@ from enterprise_doc_api.auth.session_router import (
 from enterprise_doc_api.auth.session_router import (
     router as session_router,
 )
+from enterprise_doc_api.browser_auth.demo import router as demo_router
 from enterprise_doc_api.browser_auth.github import GitHubClient
 from enterprise_doc_api.browser_auth.http import BrowserResponseSecurityMiddleware
 from enterprise_doc_api.browser_auth.oidc import OidcClient
@@ -90,6 +92,8 @@ from enterprise_doc_core.auth import LocalTokenRevocationService
 from enterprise_doc_core.billing import EntitlementUsageService
 from enterprise_doc_core.browser_sessions.service import BrowserSessionService
 from enterprise_doc_core.db import create_database_engine, create_session_factory
+from enterprise_doc_core.demo.cleanup import DemoCleanupService
+from enterprise_doc_core.demo.service import DemoService
 from enterprise_doc_core.documents import DocumentInventoryService, DocumentPolicyService
 from enterprise_doc_core.documents.embedding_provider import build_embedding_provider
 from enterprise_doc_core.documents.retrieval_service import HybridRetrievalService
@@ -237,7 +241,11 @@ def create_app(
         or presales_service is None
         or resolved_settings.browser_auth.enabled
     )
-    needs_default_object_store = upload_creation_service is None or upload_session_service is None
+    needs_default_object_store = (
+        upload_creation_service is None
+        or upload_session_service is None
+        or resolved_settings.browser_auth.enabled
+    )
     owned_database_engine: AsyncEngine | None = None
     owned_multipart_object_store: Boto3MultipartObjectStore | None = None
     owned_artifact_object_store: Boto3ArtifactObjectStore | None = None
@@ -304,9 +312,22 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+        cleanup_stop = asyncio.Event()
+        cleanup_task: asyncio.Task[None] | None = None
+        if resolved_settings.browser_auth.enabled:
+            cleaner = DemoCleanupService(
+                session_factory=_required_session_factory(session_factory),
+                object_store=_required_object_store(business_object_store),
+                documents_bucket=resolved_settings.object_store.documents_bucket,
+            )
+            cleanup_task = asyncio.create_task(cleaner.run(cleanup_stop))
         try:
             yield
         finally:
+            if cleanup_task is not None:
+                cleanup_stop.set()
+                cleanup_task.cancel()
+                await asyncio.gather(cleanup_task, return_exceptions=True)
             if resources is not None:
                 await resources.close()
             else:
@@ -356,6 +377,14 @@ def create_app(
     )
     app.state.auth_settings = resolved_settings.auth
     app.state.browser_auth_settings = resolved_settings.browser_auth
+    app.state.demo_service = (
+        DemoService(
+            session_factory=_required_session_factory(session_factory),
+            settings=resolved_settings.demo,
+        )
+        if resolved_settings.demo.enabled
+        else None
+    )
     app.state.browser_session_service = None
     app.state.browser_identity_client = None
     app.state.browser_admission_service = None
@@ -552,6 +581,7 @@ def create_app(
     app.include_router(governance_router)
     app.include_router(session_router)
     app.include_router(browser_auth_router)
+    app.include_router(demo_router)
     app.include_router(invitation_router)
     app.include_router(invitation_auth_router)
     app.include_router(identity_router)

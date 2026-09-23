@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from enterprise_doc_core.audit import append_audit_event
 from enterprise_doc_core.billing import EntitlementUsageService
 from enterprise_doc_core.context import PrincipalContext, get_request_context
+from enterprise_doc_core.demo.limits import check_packet
 from enterprise_doc_core.presales.access import (
     authorize_principal,
     check_key,
@@ -90,6 +91,7 @@ class PresalesService:
                     raise PresalesError("presales_idempotency_conflict")
                 packet_id = packet.id
             else:
+                await check_packet(session, tenant_id, len(payload.requirements), self.clock())
                 sources = await source_snapshots(session, tenant_id, actor_id, payload.sources)
                 packet_id = uuid4()
                 session.add(

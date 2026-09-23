@@ -103,3 +103,36 @@ it("keeps GitHub sign-in after a restored authenticated session logs out", async
   expect(await screen.findByRole("link", { name: "使用 GitHub 登录" })).toHaveAttribute("href", "/auth/login");
   expect(screen.queryByText(/工作资料/)).not.toBeInTheDocument();
 });
+
+it("enters an isolated demo without OAuth and preserves it on foreground verification", async () => {
+  let active = false;
+  const guest = { ...session, email: null, demo: true, loginProvider: "github", currentTenant: { ...tenant, name: "演示企业" } };
+  const fetcher = vi.fn<Fetcher>(url => {
+    if (url === "/auth/demo") { active = true; return Promise.resolve(json(guest)); }
+    if (url === "/auth/logout") { active = false; return Promise.resolve(json({ revoked: true })); }
+    return Promise.resolve(json(active ? guest : { status: "anonymous", demoAvailable: true, loginProvider: "github" }));
+  });
+  vi.stubGlobal("fetch", fetcher);
+  const client = show();
+  fireEvent.click(await screen.findByRole("button", { name: "一键进入演示" }));
+  await screen.findByText("工作资料：演示企业");
+  client.setQueryData(["demo-draft"], "draft");
+  fireEvent(window, new Event("pageshow"));
+  await waitFor(() => expect(screen.getByText("工作资料：演示企业")).toBeVisible());
+  expect(client.getQueryData(["demo-draft"])).toBe("draft");
+  expect(fetcher.mock.calls.some(([url]) => url === "/auth/login" || url === "/auth/tenants")).toBe(false);
+  fireEvent.click(screen.getByRole("button", { name: "退出登录" }));
+  await screen.findByRole("link", { name: "使用 GitHub 登录" });
+  expect(client.getQueryData(["demo-draft"])).toBeUndefined();
+});
+
+it("shows full demo capacity without retrying workspace creation automatically", async () => {
+  const fetcher = vi.fn<Fetcher>(url => Promise.resolve(url === "/auth/demo"
+    ? new Response(JSON.stringify({ error: { code: "demo_capacity_reached", message: "Full", requestId: null } }), { status: 429 })
+    : json({ status: "anonymous", demoAvailable: true, loginProvider: "github" })));
+  vi.stubGlobal("fetch", fetcher);
+  show();
+  fireEvent.click(await screen.findByRole("button", { name: "一键进入演示" }));
+  await screen.findByText("演示空间当前已满，请稍后再试。");
+  expect(fetcher.mock.calls.filter(([url]) => url === "/auth/demo")).toHaveLength(1);
+});

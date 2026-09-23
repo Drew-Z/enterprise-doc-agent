@@ -122,7 +122,16 @@ async def resolve_browser_principal(request: Request, credential: SecretStr) -> 
         version = verify_context(
             request, credential, mutation=request.method not in {"GET", "HEAD", "OPTIONS"}
         )
-        principal = await service.authorize(credential=credential, context_version=version)
+        # Import locally: the demo HTTP adapter reuses the cookie/CSRF helpers above.
+        from enterprise_doc_api.browser_auth.demo import allow_demo_operation, demo_service
+
+        demo = demo_service(request)
+        guest = await demo.get(credential, version) if demo is not None else None
+        if guest is not None:
+            allow_demo_operation(request.method, request.url.path)
+            principal = guest.principal
+        else:
+            principal = await service.authorize(credential=credential, context_version=version)
     except BrowserSessionError as error:
         raise browser_error(error) from None
     request.state.browser_credential = credential
