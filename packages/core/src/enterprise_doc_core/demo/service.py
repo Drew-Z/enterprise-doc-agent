@@ -100,6 +100,8 @@ class DemoService:
                     period_start=now,
                     period_end=expiry,
                     provider_request_limit=ATTEMPT_LIMIT,
+                    created_at=now,
+                    updated_at=now,
                 )
             )
             workspace = DemoWorkspace(

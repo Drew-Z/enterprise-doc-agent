@@ -142,8 +142,10 @@ async def test_global_daily_budget_does_not_reset_with_new_visitor(
             )
 
 
-def migrate(connection: Connection, direction: str) -> None:
-    module = import_module("enterprise_doc_core.db.migrations.versions.20260923_0027_public_demo")
+def migrate(
+    connection: Connection, direction: str, revision: str = "20260923_0027_public_demo"
+) -> None:
+    module = import_module(f"enterprise_doc_core.db.migrations.versions.{revision}")
     with Operations.context(MigrationContext.configure(connection)):
         getattr(module, direction)()
 
@@ -155,3 +157,26 @@ async def test_migration_round_trip(demo_db: BrowserDatabase) -> None:
     service = DemoService(session_factory=demo_db.sessions, settings=DemoSettings(enabled=True))
     issued = await service.start()
     assert await service.get(issued.credential) == issued.snapshot
+
+
+async def test_start_with_migrated_entitlement_tables(demo_db: BrowserDatabase) -> None:
+    # The deployed migration has no timestamp defaults, unlike metadata.create_all.
+    async with demo_db.engine.begin() as connection:
+        await connection.run_sync(migrate, "downgrade", "20260914_0026_entitlements_usage")
+        await connection.run_sync(migrate, "upgrade", "20260914_0026_entitlements_usage")
+    now = datetime.now(UTC)
+    service = DemoService(
+        session_factory=demo_db.sessions, settings=DemoSettings(enabled=True), clock=lambda: now
+    )
+    issued = await service.start()
+    assert await service.get(issued.credential) == issued.snapshot
+    async with demo_db.sessions() as session:
+        entitlement = await session.scalar(
+            select(TenantEntitlement).where(
+                TenantEntitlement.tenant_id == issued.snapshot.tenant_id
+            )
+        )
+        assert entitlement is not None and entitlement.plan_code == "public-demo"
+        assert entitlement.created_at == entitlement.updated_at == now
+        assert entitlement.period_start == now
+        assert entitlement.period_end == issued.snapshot.expires_at
