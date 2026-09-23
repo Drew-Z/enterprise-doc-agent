@@ -1,0 +1,113 @@
+{
+  "schemaVersion": "presales-quality-score-v1",
+  "datasetSha256": "804a70dcbeea86e34381cdbc4664ca722e74288657766a4a5995136d96fa12ca",
+  "syntheticOnly": true,
+  "independentDomainReview": false,
+  "semanticReviewRequired": true,
+  "expectedRows": 6,
+  "rows": [
+    {
+      "repeat": 1,
+      "key": "H1-R1",
+      "expectedStatus": "supported",
+      "predictedStatus": "supported",
+      "statusMatch": true,
+      "unsafeAffirmative": false,
+      "missingDraft": false,
+      "citations": 2,
+      "validCitations": 2,
+      "requiredEvidence": 2,
+      "coveredRequiredEvidence": 2
+    },
+    {
+      "repeat": 1,
+      "key": "H1-R2",
+      "expectedStatus": "conditional",
+      "predictedStatus": "supported",
+      "statusMatch": false,
+      "unsafeAffirmative": true,
+      "missingDraft": false,
+      "citations": 1,
+      "validCitations": 1,
+      "requiredEvidence": 3,
+      "coveredRequiredEvidence": 2
+    },
+    {
+      "repeat": 1,
+      "key": "H1-R3",
+      "expectedStatus": "contradicted",
+      "predictedStatus": "contradicted",
+      "statusMatch": true,
+      "unsafeAffirmative": false,
+      "missingDraft": false,
+      "citations": 1,
+      "validCitations": 1,
+      "requiredEvidence": 2,
+      "coveredRequiredEvidence": 2
+    },
+    {
+      "repeat": 1,
+      "key": "H1-R4",
+      "expectedStatus": "insufficient_evidence",
+      "predictedStatus": "insufficient_evidence",
+      "statusMatch": true,
+      "unsafeAffirmative": false,
+      "missingDraft": false,
+      "citations": 2,
+      "validCitations": 2,
+      "requiredEvidence": 0,
+      "coveredRequiredEvidence": 0
+    },
+    {
+      "repeat": 1,
+      "key": "H1-R5",
+      "expectedStatus": "supported",
+      "predictedStatus": "supported",
+      "statusMatch": true,
+      "unsafeAffirmative": false,
+      "missingDraft": false,
+      "citations": 2,
+      "validCitations": 2,
+      "requiredEvidence": 2,
+      "coveredRequiredEvidence": 2
+    },
+    {
+      "repeat": 1,
+      "key": "H1-R6",
+      "expectedStatus": "conflicting_evidence",
+      "predictedStatus": "conflicting_evidence",
+      "statusMatch": true,
+      "unsafeAffirmative": false,
+      "missingDraft": false,
+      "citations": 3,
+      "validCitations": 3,
+      "requiredEvidence": 2,
+      "coveredRequiredEvidence": 2
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 18733,
+    "completion_tokens": 16931,
+    "total_tokens": 35664
+  },
+  "attemptsWithUsage": 6,
+  "observedAttempts": 6,
+  "providerRequestCount": 6,
+  "costAmount": null,
+  "costCurrency": null,
+  "costReason": "No verified route price or bill",
+  "latencySeconds": {
+    "sampleCount": 6,
+    "min": 56.937,
+    "median": 65.391,
+    "max": 94.531,
+    "scope": "All observed generation HTTP attempts, including failures"
+  },
+  "statusMatches": 5,
+  "missingDrafts": 0,
+  "unsafeAffirmatives": 1,
+  "citations": 11,
+  "validCitations": 11,
+  "requiredEvidence": 11,
+  "coveredRequiredEvidence": 10
+}

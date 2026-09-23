@@ -1,0 +1,779 @@
+{
+  "schemaVersion": "presales-quality-run-v1",
+  "datasetSha256": "804a70dcbeea86e34381cdbc4664ca722e74288657766a4a5995136d96fa12ca",
+  "runnerSha256": "979d072602ca64c6b3f995a89fe81124cafdfa6d7249aba697b1521de86e9064",
+  "baseUrl": "https://agent.playlab.eu.cc",
+  "startedAt": "2026-09-23T11:28:18.061123+00:00",
+  "plannedRepeats": 1,
+  "maxGenerationAttempts": 6,
+  "automaticRetries": 0,
+  "syntheticOnly": true,
+  "runs": [
+    {
+      "repeat": 1,
+      "versions": {
+        "H1-ORDER": "087fd64c-826e-4d36-9c27-0ddb4ddd4736",
+        "H1-TECH": "5e3b0b80-1fa9-45fe-ae31-2ced97b34b23",
+        "H1-SSO": "279f3584-d797-489d-8e68-07befb40aafc",
+        "H1-SLA": "f312743a-185a-40ae-98e7-ecb736b0ab93",
+        "H1-ERASE": "b43e0394-8aa9-4070-bedc-1c800a383da6",
+        "H1-BACKUP": "92b92204-c5b3-4446-9d3b-d87969831eb9"
+      },
+      "observations": [
+        {
+          "key": "H1-R1",
+          "startedAt": "2026-09-23T11:29:30.687126+00:00",
+          "state": "observed",
+          "httpStatus": 200,
+          "elapsedSeconds": 81.968
+        },
+        {
+          "key": "H1-R2",
+          "startedAt": "2026-09-23T11:30:56.014505+00:00",
+          "state": "observed",
+          "httpStatus": 200,
+          "elapsedSeconds": 94.531
+        },
+        {
+          "key": "H1-R3",
+          "startedAt": "2026-09-23T11:32:33.889057+00:00",
+          "state": "observed",
+          "httpStatus": 200,
+          "elapsedSeconds": 57.406
+        },
+        {
+          "key": "H1-R4",
+          "startedAt": "2026-09-23T11:33:34.648708+00:00",
+          "state": "observed",
+          "httpStatus": 200,
+          "elapsedSeconds": 62.141
+        },
+        {
+          "key": "H1-R5",
+          "startedAt": "2026-09-23T11:34:40.140308+00:00",
+          "state": "observed",
+          "httpStatus": 200,
+          "elapsedSeconds": 56.937
+        },
+        {
+          "key": "H1-R6",
+          "startedAt": "2026-09-23T11:35:41.085652+00:00",
+          "state": "observed",
+          "httpStatus": 200,
+          "elapsedSeconds": 68.641
+        }
+      ],
+      "tenantId": "b07c6e84-a437-4eaf-bdd5-7c179377c33b",
+      "expiresAt": "2026-09-23T13:28:21.579065Z",
+      "packet": {
+        "id": "594e9a2d-78d4-4e91-a590-b00dff76b045",
+        "title": "星舟工单企业版新资料验证",
+        "createdAt": "2026-09-23T11:29:28.640061Z",
+        "rowCount": 6,
+        "staleSources": false,
+        "sources": [
+          {
+            "versionId": "087fd64c-826e-4d36-9c27-0ddb4ddd4736",
+            "applicability": "仅评估已签署 H1-ORDER 的星舟工单企业版当前正式版本。未购选项不能当作已购；只按正文明确优先级处理差异。H1-ERASE 与 H1-BACKUP 同日生效、覆盖同一企业数据和备份，互不优先，均未约定例外。全部资料虚构。",
+            "documentId": "e7754eef-f783-4729-88ab-ace2c5338886",
+            "generationId": "bdbe5c18-c11c-4d92-881b-fd3721c7e9d4",
+            "filename": "H1-ORDER-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "9608bf366230bfe37718dbcf5fe74711f7f65163704089229c1716bc62d9cc60"
+          },
+          {
+            "versionId": "5e3b0b80-1fa9-45fe-ae31-2ced97b34b23",
+            "applicability": "仅评估已签署 H1-ORDER 的星舟工单企业版当前正式版本。未购选项不能当作已购；只按正文明确优先级处理差异。H1-ERASE 与 H1-BACKUP 同日生效、覆盖同一企业数据和备份，互不优先，均未约定例外。全部资料虚构。",
+            "documentId": "cf6b6106-1c8c-4278-9a41-b62dcb7430a8",
+            "generationId": "c5a3f7e5-01f5-48fc-b594-286451cfc7dc",
+            "filename": "H1-TECH-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "0e2b7a99156e35b5f940deb23e4266e0518480afea67dd7075b14b7edbeef07f"
+          },
+          {
+            "versionId": "279f3584-d797-489d-8e68-07befb40aafc",
+            "applicability": "仅评估已签署 H1-ORDER 的星舟工单企业版当前正式版本。未购选项不能当作已购；只按正文明确优先级处理差异。H1-ERASE 与 H1-BACKUP 同日生效、覆盖同一企业数据和备份，互不优先，均未约定例外。全部资料虚构。",
+            "documentId": "da69ff05-3b9f-4de5-b1c0-ca55b9f01056",
+            "generationId": "20c42733-2348-4461-9c99-61a2b2fcd7be",
+            "filename": "H1-SSO-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "afb04ad40476de09c569840e415297cb9eb707de26cc93be17bceeb0495e9c5f"
+          },
+          {
+            "versionId": "f312743a-185a-40ae-98e7-ecb736b0ab93",
+            "applicability": "仅评估已签署 H1-ORDER 的星舟工单企业版当前正式版本。未购选项不能当作已购；只按正文明确优先级处理差异。H1-ERASE 与 H1-BACKUP 同日生效、覆盖同一企业数据和备份，互不优先，均未约定例外。全部资料虚构。",
+            "documentId": "ef206afb-0e54-493e-922e-16a9635087b4",
+            "generationId": "8bcf1633-cc0b-4e6c-a28c-18f2b51d14a1",
+            "filename": "H1-SLA-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "2a4806e73ca650659e0d4106a17ed662174c6dc23ea9e44729bc4cacdfe81d5b"
+          },
+          {
+            "versionId": "b43e0394-8aa9-4070-bedc-1c800a383da6",
+            "applicability": "仅评估已签署 H1-ORDER 的星舟工单企业版当前正式版本。未购选项不能当作已购；只按正文明确优先级处理差异。H1-ERASE 与 H1-BACKUP 同日生效、覆盖同一企业数据和备份，互不优先，均未约定例外。全部资料虚构。",
+            "documentId": "03d20170-982e-4b19-89c7-3c47a36766d1",
+            "generationId": "0cf931c7-49d1-4d9b-ac5c-ad117ac61ec4",
+            "filename": "H1-ERASE-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "d2f04c643c70e1f644359d5eb8fb7613fa508d5939299e74b6d556c2f7ab76f4"
+          },
+          {
+            "versionId": "92b92204-c5b3-4446-9d3b-d87969831eb9",
+            "applicability": "仅评估已签署 H1-ORDER 的星舟工单企业版当前正式版本。未购选项不能当作已购；只按正文明确优先级处理差异。H1-ERASE 与 H1-BACKUP 同日生效、覆盖同一企业数据和备份，互不优先，均未约定例外。全部资料虚构。",
+            "documentId": "5644f103-d863-4071-9305-4d81eac6b8b3",
+            "generationId": "1af66106-459c-41e2-9b0c-50334a4b130d",
+            "filename": "H1-BACKUP-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "1c0e92e5409771b00e523220704f63f60768dd4365fba5804cbce41b4b07fa74"
+          }
+        ],
+        "rows": [
+          {
+            "id": "1254eafa-a668-4bab-aa5f-a616a5b51a86",
+            "requirement": {
+              "key": "H1-R1",
+              "text": "本订单已包含审计记录至少保存 360 天，且企业管理员在此期间也不能删除。",
+              "sourceLocation": "新验证集第 1 项"
+            },
+            "revision": 1,
+            "state": "drafted",
+            "draft": {
+              "status": "supported",
+              "answer": "证据明确支持该要求。本订单已包含审计记录至少保存 360 天，且企业管理员在此期间也不能删除。该承诺由已签署的 H1-ORDER 订购单明确列出，已采购 A360 模块将审计记录保存期延长到 360 天，期间任何企业账号均不能提前删除记录。H1-ORDER 确认 A360 已采购，H1-TECH 详细描述该延长机制。",
+              "conditions": [],
+              "missingInformation": [],
+              "citations": [
+                {
+                  "chunkId": "d5319bcd-fad5-457e-8304-939d82d78861",
+                  "documentVersionId": "087fd64c-826e-4d36-9c27-0ddb4ddd4736",
+                  "excerpt": "本订单采购星舟工单企业版，审计归档 A360 的已购数量为 1，单点登录 SSO-BIZ 的已购数量为 0。\n本订单明确引用 H1-SLA 的月度可用性约定；它在该项指标上优先于 H1-TECH 通用说明。该优先级仅适用于月度可用性，不能用于解释其他附件。\nH1-ERASE 与 H1-BACKUP 均已签署，适用于本企业的数据与全部备份，同日生效且没有优先级或例外条款。",
+                  "filename": "H1-ORDER-v1.txt",
+                  "pageNumber": null,
+                  "heading": "H1-ORDER 已签署订购单",
+                  "startOffset": 18,
+                  "endOffset": 204
+                },
+                {
+                  "chunkId": "de227068-764a-484b-9bd5-be022a957edb",
+                  "documentVersionId": "5e3b0b80-1fa9-45fe-ae31-2ced97b34b23",
+                  "excerpt": "基础套餐的审计记录保存 30 天。已购买的 A360 将审计记录保存期延长到 360 天，期间任何企业账号均不能提前删除记录。",
+                  "filename": "H1-TECH-v1.txt",
+                  "pageNumber": null,
+                  "heading": "审计归档",
+                  "startOffset": 26,
+                  "endOffset": 89
+                }
+              ],
+              "retrieval": [
+                {
+                  "versionId": "087fd64c-826e-4d36-9c27-0ddb4ddd4736",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "5e3b0b80-1fa9-45fe-ae31-2ced97b34b23",
+                  "retrievedCount": 3,
+                  "usedCount": 2,
+                  "truncated": true
+                },
+                {
+                  "versionId": "279f3584-d797-489d-8e68-07befb40aafc",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "f312743a-185a-40ae-98e7-ecb736b0ab93",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "b43e0394-8aa9-4070-bedc-1c800a383da6",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "92b92204-c5b3-4446-9d3b-d87969831eb9",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                }
+              ]
+            },
+            "review": null,
+            "reviewHistory": [],
+            "attempts": [
+              {
+                "id": "4da3c6ee-0007-4fff-aeb9-8665a047fa47",
+                "number": 1,
+                "state": "succeeded",
+                "errorCode": null,
+                "modelProvider": "openai_compatible",
+                "modelName": "grok-4.6",
+                "providerRequestCount": 1,
+                "provenance": {
+                  "promptSha256": "e57a44e3cee541d96fff774d1289ea0f4673d13eae63260bf2d56d1d292f2114",
+                  "promptVersion": "presales.v3",
+                  "returnedModel": "grok-4.6",
+                  "pipelineVersion": "presales-workspace.v1",
+                  "providerResponseId": "712bcc63-e9e8-9056-94e1-cc5b34843908",
+                  "configuredModelVersion": null,
+                  "configuredModelRevision": null
+                },
+                "usage": {
+                  "total_tokens": 6616,
+                  "prompt_tokens": 3334,
+                  "completion_tokens": 3282
+                },
+                "createdAt": "2026-09-23T11:29:34.231840Z",
+                "finishedAt": "2026-09-23T11:30:51.083626Z",
+                "deadlineAt": "2026-09-23T11:32:04.231840Z"
+              }
+            ]
+          },
+          {
+            "id": "6e95d717-3a2e-4a36-87e4-5421123cfd1e",
+            "requirement": {
+              "key": "H1-R2",
+              "text": "企业可通过 SAML 2.0 使用客户自有身份提供方进行单点登录。",
+              "sourceLocation": "新验证集第 2 项"
+            },
+            "revision": 1,
+            "state": "drafted",
+            "draft": {
+              "status": "supported",
+              "answer": "此要求已获得支持。H1-SSO 文档明确说明 SSO-BIZ 是企业版可选购的 SAML 2.0 单点登录模块，能接入客户自有身份提供方。",
+              "conditions": [],
+              "missingInformation": [],
+              "citations": [
+                {
+                  "chunkId": "368bdde6-8c91-46e0-8e1d-adf6b8e8fd89",
+                  "documentVersionId": "279f3584-d797-489d-8e68-07befb40aafc",
+                  "excerpt": "SSO-BIZ 是企业版可选购的 SAML 2.0 单点登录模块，能接入客户自有身份提供方。\n启用前必须购买 SSO-BIZ、完成企业域名归属验证并通过双方联调验收；三项均完成后才能用于正式登录。本订单目前未购买该模块，域名验证和联调验收也未完成。",
+                  "filename": "H1-SSO-v1.txt",
+                  "pageNumber": null,
+                  "heading": "H1-SSO 单点登录规格",
+                  "startOffset": 16,
+                  "endOffset": 140
+                }
+              ],
+              "retrieval": [
+                {
+                  "versionId": "087fd64c-826e-4d36-9c27-0ddb4ddd4736",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "5e3b0b80-1fa9-45fe-ae31-2ced97b34b23",
+                  "retrievedCount": 0,
+                  "usedCount": 0,
+                  "truncated": false
+                },
+                {
+                  "versionId": "279f3584-d797-489d-8e68-07befb40aafc",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "f312743a-185a-40ae-98e7-ecb736b0ab93",
+                  "retrievedCount": 0,
+                  "usedCount": 0,
+                  "truncated": false
+                },
+                {
+                  "versionId": "b43e0394-8aa9-4070-bedc-1c800a383da6",
+                  "retrievedCount": 0,
+                  "usedCount": 0,
+                  "truncated": false
+                },
+                {
+                  "versionId": "92b92204-c5b3-4446-9d3b-d87969831eb9",
+                  "retrievedCount": 0,
+                  "usedCount": 0,
+                  "truncated": false
+                }
+              ]
+            },
+            "review": null,
+            "reviewHistory": [],
+            "attempts": [
+              {
+                "id": "648c0bb8-d817-4b9c-8c4a-8c962c1158f9",
+                "number": 1,
+                "state": "succeeded",
+                "errorCode": null,
+                "modelProvider": "openai_compatible",
+                "modelName": "grok-4.6",
+                "providerRequestCount": 1,
+                "provenance": {
+                  "promptSha256": "e57a44e3cee541d96fff774d1289ea0f4673d13eae63260bf2d56d1d292f2114",
+                  "promptVersion": "presales.v3",
+                  "returnedModel": "grok-4.6",
+                  "pipelineVersion": "presales-workspace.v1",
+                  "providerResponseId": "b0d49955-0647-9ad2-aec6-4f291f76bdb6",
+                  "configuredModelVersion": null,
+                  "configuredModelRevision": null
+                },
+                "usage": {
+                  "total_tokens": 6525,
+                  "prompt_tokens": 2569,
+                  "completion_tokens": 3956
+                },
+                "createdAt": "2026-09-23T11:30:59.769002Z",
+                "finishedAt": "2026-09-23T11:32:28.971076Z",
+                "deadlineAt": "2026-09-23T11:33:29.769002Z"
+              }
+            ]
+          },
+          {
+            "id": "28e7973f-e7ff-441a-a220-64da18627dd8",
+            "requirement": {
+              "key": "H1-R3",
+              "text": "当前正式版本须允许单次 API 请求提交 20 MiB 报文，不接受拆分提交。",
+              "sourceLocation": "新验证集第 3 项"
+            },
+            "revision": 1,
+            "state": "drafted",
+            "draft": {
+              "status": "contradicted",
+              "answer": "证据明确指出企业版单次 API 报文硬上限为 16 MiB，当前正式版本没有任何配置或选购项可提高至 20 MiB，且分多次提交不属于单次报文。要求不被满足。",
+              "conditions": [],
+              "missingInformation": [],
+              "citations": [
+                {
+                  "chunkId": "4106c96a-eb0e-42bf-9b4c-2de5d4e2fda4",
+                  "documentVersionId": "5e3b0b80-1fa9-45fe-ae31-2ced97b34b23",
+                  "excerpt": "企业版接收的单次 API 报文硬上限为 16 MiB，1 MiB = 1048576 字节。当前正式版本没有提高单次报文上限的配置或选购项。分多次提交不属于单次报文。",
+                  "filename": "H1-TECH-v1.txt",
+                  "pageNumber": null,
+                  "heading": "单次 API 报文",
+                  "startOffset": 103,
+                  "endOffset": 186
+                }
+              ],
+              "retrieval": [
+                {
+                  "versionId": "087fd64c-826e-4d36-9c27-0ddb4ddd4736",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "5e3b0b80-1fa9-45fe-ae31-2ced97b34b23",
+                  "retrievedCount": 3,
+                  "usedCount": 2,
+                  "truncated": true
+                },
+                {
+                  "versionId": "279f3584-d797-489d-8e68-07befb40aafc",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "f312743a-185a-40ae-98e7-ecb736b0ab93",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "b43e0394-8aa9-4070-bedc-1c800a383da6",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "92b92204-c5b3-4446-9d3b-d87969831eb9",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                }
+              ]
+            },
+            "review": null,
+            "reviewHistory": [],
+            "attempts": [
+              {
+                "id": "6dde16c3-2496-4b9c-afb0-e932f5b938f9",
+                "number": 1,
+                "state": "succeeded",
+                "errorCode": null,
+                "modelProvider": "openai_compatible",
+                "modelName": "grok-4.6",
+                "providerRequestCount": 1,
+                "provenance": {
+                  "promptSha256": "e57a44e3cee541d96fff774d1289ea0f4673d13eae63260bf2d56d1d292f2114",
+                  "promptVersion": "presales.v3",
+                  "returnedModel": "grok-4.6",
+                  "pipelineVersion": "presales-workspace.v1",
+                  "providerResponseId": "10c8f9c8-11ad-9675-9654-25dc0b51baa9",
+                  "configuredModelVersion": null,
+                  "configuredModelRevision": null
+                },
+                "usage": {
+                  "total_tokens": 5498,
+                  "prompt_tokens": 3355,
+                  "completion_tokens": 2143
+                },
+                "createdAt": "2026-09-23T11:32:37.440580Z",
+                "finishedAt": "2026-09-23T11:33:29.728758Z",
+                "deadlineAt": "2026-09-23T11:35:07.440580Z"
+              }
+            ]
+          },
+          {
+            "id": "d734ec0e-e59d-4aa6-859d-cb7172545dd8",
+            "requirement": {
+              "key": "H1-R4",
+              "text": "普通查询响应时间的 P99 必须不超过 500 毫秒。",
+              "sourceLocation": "新验证集第 4 项"
+            },
+            "revision": 1,
+            "state": "drafted",
+            "draft": {
+              "status": "insufficient_evidence",
+              "answer": "当前证据中未提供普通查询响应时间的 P99 测试结果或供应商承诺。H1-TECH 仅提及平均响应时间 180 毫秒，并明确表示平均值不能说明 P99，且当前附件无 P99 结果或承诺。H1-SLA 协议明确不规定响应时间 P99，仅覆盖可用性指标。本订单引用 H1-SLA 也仅优先适用于可用性，不能用于响应时间。无法确认是否满足 P99 不超过 500 毫秒的要求。",
+              "conditions": [],
+              "missingInformation": [
+                "普通查询响应时间 P99 的具体测试报告或供应商正式承诺"
+              ],
+              "citations": [
+                {
+                  "chunkId": "8e07fb0f-5978-40d9-909f-98531ebe83ad",
+                  "documentVersionId": "5e3b0b80-1fa9-45fe-ae31-2ced97b34b23",
+                  "excerpt": "通用套餐月度可用性为 99.80%。已签署订单明确引用其他可用性协议时，按订单指定协议执行。\n压测报告给出普通查询平均响应时间 180 毫秒。平均值不能说明尾部百分位；当前附件没有 P99 响应时间测试结果或承诺。",
+                  "filename": "H1-TECH-v1.txt",
+                  "pageNumber": null,
+                  "heading": "通用服务指标",
+                  "startOffset": 197,
+                  "endOffset": 304
+                },
+                {
+                  "chunkId": "392c5927-a06a-4be5-a4a8-249c17bfd0fa",
+                  "documentVersionId": "f312743a-185a-40ae-98e7-ecb736b0ab93",
+                  "excerpt": "本协议已签署，覆盖 H1-ORDER 采购的星舟工单企业版。\n本订单的月度可用性承诺为 99.97%。\nH1-ORDER 明确约定本协议的可用性指标优先于 H1-TECH 通用指标。本协议不规定响应时间 P99，也不覆盖数据删除附件的优先级。",
+                  "filename": "H1-SLA-v1.txt",
+                  "pageNumber": null,
+                  "heading": "H1-SLA 本订单可用性协议",
+                  "startOffset": 18,
+                  "endOffset": 139
+                }
+              ],
+              "retrieval": [
+                {
+                  "versionId": "087fd64c-826e-4d36-9c27-0ddb4ddd4736",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "5e3b0b80-1fa9-45fe-ae31-2ced97b34b23",
+                  "retrievedCount": 3,
+                  "usedCount": 2,
+                  "truncated": true
+                },
+                {
+                  "versionId": "279f3584-d797-489d-8e68-07befb40aafc",
+                  "retrievedCount": 0,
+                  "usedCount": 0,
+                  "truncated": false
+                },
+                {
+                  "versionId": "f312743a-185a-40ae-98e7-ecb736b0ab93",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "b43e0394-8aa9-4070-bedc-1c800a383da6",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "92b92204-c5b3-4446-9d3b-d87969831eb9",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                }
+              ]
+            },
+            "review": null,
+            "reviewHistory": [],
+            "attempts": [
+              {
+                "id": "2c427a8b-7359-45c8-b296-d9ad5abc38e1",
+                "number": 1,
+                "state": "succeeded",
+                "errorCode": null,
+                "modelProvider": "openai_compatible",
+                "modelName": "grok-4.6",
+                "providerRequestCount": 1,
+                "provenance": {
+                  "promptSha256": "e57a44e3cee541d96fff774d1289ea0f4673d13eae63260bf2d56d1d292f2114",
+                  "promptVersion": "presales.v3",
+                  "returnedModel": "grok-4.6",
+                  "pipelineVersion": "presales-workspace.v1",
+                  "providerResponseId": "50a9ea89-e1d4-9062-bbbe-ad58f82c06d2",
+                  "configuredModelVersion": null,
+                  "configuredModelRevision": null
+                },
+                "usage": {
+                  "total_tokens": 5650,
+                  "prompt_tokens": 3181,
+                  "completion_tokens": 2469
+                },
+                "createdAt": "2026-09-23T11:33:38.399018Z",
+                "finishedAt": "2026-09-23T11:34:35.222410Z",
+                "deadlineAt": "2026-09-23T11:36:08.399018Z"
+              }
+            ]
+          },
+          {
+            "id": "42e98392-5ee1-4826-8d54-94c94407da39",
+            "requirement": {
+              "key": "H1-R5",
+              "text": "本订单月度可用性承诺不得低于 99.97%。",
+              "sourceLocation": "新验证集第 5 项"
+            },
+            "revision": 1,
+            "state": "drafted",
+            "draft": {
+              "status": "supported",
+              "answer": "本订单月度可用性承诺为 99.97%，符合不得低于 99.97% 的要求。H1-SLA 明确规定本订单的月度可用性承诺为 99.97%，H1-ORDER 确认该协议的可用性指标优先于 H1-TECH 通用指标。",
+              "conditions": [],
+              "missingInformation": [],
+              "citations": [
+                {
+                  "chunkId": "392c5927-a06a-4be5-a4a8-249c17bfd0fa",
+                  "documentVersionId": "f312743a-185a-40ae-98e7-ecb736b0ab93",
+                  "excerpt": "本协议已签署，覆盖 H1-ORDER 采购的星舟工单企业版。\n本订单的月度可用性承诺为 99.97%。\nH1-ORDER 明确约定本协议的可用性指标优先于 H1-TECH 通用指标。本协议不规定响应时间 P99，也不覆盖数据删除附件的优先级。",
+                  "filename": "H1-SLA-v1.txt",
+                  "pageNumber": null,
+                  "heading": "H1-SLA 本订单可用性协议",
+                  "startOffset": 18,
+                  "endOffset": 139
+                },
+                {
+                  "chunkId": "d5319bcd-fad5-457e-8304-939d82d78861",
+                  "documentVersionId": "087fd64c-826e-4d36-9c27-0ddb4ddd4736",
+                  "excerpt": "本订单采购星舟工单企业版，审计归档 A360 的已购数量为 1，单点登录 SSO-BIZ 的已购数量为 0。\n本订单明确引用 H1-SLA 的月度可用性约定；它在该项指标上优先于 H1-TECH 通用说明。该优先级仅适用于月度可用性，不能用于解释其他附件。\nH1-ERASE 与 H1-BACKUP 均已签署，适用于本企业的数据与全部备份，同日生效且没有优先级或例外条款。",
+                  "filename": "H1-ORDER-v1.txt",
+                  "pageNumber": null,
+                  "heading": "H1-ORDER 已签署订购单",
+                  "startOffset": 18,
+                  "endOffset": 204
+                }
+              ],
+              "retrieval": [
+                {
+                  "versionId": "087fd64c-826e-4d36-9c27-0ddb4ddd4736",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "5e3b0b80-1fa9-45fe-ae31-2ced97b34b23",
+                  "retrievedCount": 3,
+                  "usedCount": 2,
+                  "truncated": true
+                },
+                {
+                  "versionId": "279f3584-d797-489d-8e68-07befb40aafc",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "f312743a-185a-40ae-98e7-ecb736b0ab93",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "b43e0394-8aa9-4070-bedc-1c800a383da6",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "92b92204-c5b3-4446-9d3b-d87969831eb9",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                }
+              ]
+            },
+            "review": null,
+            "reviewHistory": [],
+            "attempts": [
+              {
+                "id": "68015834-427d-4d7e-9857-74155178005d",
+                "number": 1,
+                "state": "succeeded",
+                "errorCode": null,
+                "modelProvider": "openai_compatible",
+                "modelName": "grok-4.6",
+                "providerRequestCount": 1,
+                "provenance": {
+                  "promptSha256": "e57a44e3cee541d96fff774d1289ea0f4673d13eae63260bf2d56d1d292f2114",
+                  "promptVersion": "presales.v3",
+                  "returnedModel": "grok-4.6",
+                  "pipelineVersion": "presales-workspace.v1",
+                  "providerResponseId": "559484a0-ae65-9de6-9b0f-2331320afa5b",
+                  "configuredModelVersion": null,
+                  "configuredModelRevision": null
+                },
+                "usage": {
+                  "total_tokens": 5815,
+                  "prompt_tokens": 3315,
+                  "completion_tokens": 2500
+                },
+                "createdAt": "2026-09-23T11:34:43.688287Z",
+                "finishedAt": "2026-09-23T11:35:35.516427Z",
+                "deadlineAt": "2026-09-23T11:37:13.688287Z"
+              }
+            ]
+          },
+          {
+            "id": "cea5efb7-fd84-4281-a437-1e556185e2e1",
+            "requirement": {
+              "key": "H1-R6",
+              "text": "企业注销完成后的 14 个自然日内必须删除业务数据及全部备份。",
+              "sourceLocation": "新验证集第 6 项"
+            },
+            "revision": 1,
+            "state": "drafted",
+            "draft": {
+              "status": "conflicting_evidence",
+              "answer": "Requirement not supported. H1-ERASE requires deletion of all business data and all backup copies within 14 natural days after cancellation with no retention exceptions, while H1-BACKUP requires retention of all backup copies for 90 natural days with deletion prohibited beforehand. H1-ORDER states H1-ERASE and H1-BACKUP are non-priority and cover identical data and backup scope.",
+              "conditions": [],
+              "missingInformation": [],
+              "citations": [
+                {
+                  "chunkId": "d5319bcd-fad5-457e-8304-939d82d78861",
+                  "documentVersionId": "087fd64c-826e-4d36-9c27-0ddb4ddd4736",
+                  "excerpt": "本订单采购星舟工单企业版，审计归档 A360 的已购数量为 1，单点登录 SSO-BIZ 的已购数量为 0。\n本订单明确引用 H1-SLA 的月度可用性约定；它在该项指标上优先于 H1-TECH 通用说明。该优先级仅适用于月度可用性，不能用于解释其他附件。\nH1-ERASE 与 H1-BACKUP 均已签署，适用于本企业的数据与全部备份，同日生效且没有优先级或例外条款。",
+                  "filename": "H1-ORDER-v1.txt",
+                  "pageNumber": null,
+                  "heading": "H1-ORDER 已签署订购单",
+                  "startOffset": 18,
+                  "endOffset": 204
+                },
+                {
+                  "chunkId": "39eb291b-8a96-436f-a740-104eafce120f",
+                  "documentVersionId": "b43e0394-8aa9-4070-bedc-1c800a383da6",
+                  "excerpt": "企业注销完成后，全部业务数据和全部备份副本均须在 14 个自然日内删除，不存在保留例外。\n本附件与 H1-BACKUP 同日生效，覆盖相同数据范围，两者均已签署且互不优先。",
+                  "filename": "H1-ERASE-v1.txt",
+                  "pageNumber": null,
+                  "heading": "H1-ERASE 数据删除承诺",
+                  "startOffset": 18,
+                  "endOffset": 104
+                },
+                {
+                  "chunkId": "6bb17cc1-00de-4211-9d6c-c3deee6ebb64",
+                  "documentVersionId": "92b92204-c5b3-4446-9d3b-d87969831eb9",
+                  "excerpt": "企业注销完成后，其全部备份副本必须继续保留 90 个自然日；在第 90 日届满前禁止删除任何该企业备份副本。\n本附件与 H1-ERASE 同日生效，覆盖相同数据范围，两者均已签署且互不优先。",
+                  "filename": "H1-BACKUP-v1.txt",
+                  "pageNumber": null,
+                  "heading": "H1-BACKUP 备份生命周期附件",
+                  "startOffset": 21,
+                  "endOffset": 116
+                }
+              ],
+              "retrieval": [
+                {
+                  "versionId": "087fd64c-826e-4d36-9c27-0ddb4ddd4736",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "5e3b0b80-1fa9-45fe-ae31-2ced97b34b23",
+                  "retrievedCount": 2,
+                  "usedCount": 2,
+                  "truncated": false
+                },
+                {
+                  "versionId": "279f3584-d797-489d-8e68-07befb40aafc",
+                  "retrievedCount": 0,
+                  "usedCount": 0,
+                  "truncated": false
+                },
+                {
+                  "versionId": "f312743a-185a-40ae-98e7-ecb736b0ab93",
+                  "retrievedCount": 0,
+                  "usedCount": 0,
+                  "truncated": false
+                },
+                {
+                  "versionId": "b43e0394-8aa9-4070-bedc-1c800a383da6",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                },
+                {
+                  "versionId": "92b92204-c5b3-4446-9d3b-d87969831eb9",
+                  "retrievedCount": 1,
+                  "usedCount": 1,
+                  "truncated": false
+                }
+              ]
+            },
+            "review": null,
+            "reviewHistory": [],
+            "attempts": [
+              {
+                "id": "ab4eefd0-61c9-43f3-9af6-217c79376780",
+                "number": 1,
+                "state": "succeeded",
+                "errorCode": null,
+                "modelProvider": "openai_compatible",
+                "modelName": "grok-4.6",
+                "providerRequestCount": 1,
+                "provenance": {
+                  "promptSha256": "e57a44e3cee541d96fff774d1289ea0f4673d13eae63260bf2d56d1d292f2114",
+                  "promptVersion": "presales.v3",
+                  "returnedModel": "grok-4.6",
+                  "pipelineVersion": "presales-workspace.v1",
+                  "providerResponseId": "53e73fce-60c2-9e66-ae45-32c5905494a7",
+                  "configuredModelVersion": null,
+                  "configuredModelRevision": null
+                },
+                "usage": {
+                  "total_tokens": 5560,
+                  "prompt_tokens": 2979,
+                  "completion_tokens": 2581
+                },
+                "createdAt": "2026-09-23T11:35:44.642489Z",
+                "finishedAt": "2026-09-23T11:36:47.745225Z",
+                "deadlineAt": "2026-09-23T11:38:14.642489Z"
+              }
+            ]
+          }
+        ]
+      },
+      "demoUsage": {
+        "attemptsUsed": 6,
+        "attemptLimit": 6,
+        "uploadLimit": 6,
+        "maxFileBytes": 2097152,
+        "storageBytes": 10485760
+      },
+      "signedOut": true
+    }
+  ],
+  "status": "collected",
+  "finishedAt": "2026-09-23T11:36:56.041328+00:00"
+}

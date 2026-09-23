@@ -1,0 +1,59 @@
+{
+  "reviewerKind": "assistant",
+  "blindReview": false,
+  "independentDomainAdjudication": false,
+  "businessApproval": false,
+  "originalDraftsModified": false,
+  "datasetAuthorship": "assistant authored and self-reviewed before first live request",
+  "release": "v0.1.44",
+  "sourceCommit": "9a65a72d65f45ae66906b4a1a0065f12984e1b48",
+  "deploymentRun": 35853410044,
+  "promptVersion": "presales.v3",
+  "baselineSha256": "d00af8491fab17006aceacf9455190abecde441dfd54ed31a8fc437c92c097f7",
+  "reviewedAt": "2026-09-23T11:46:32.165705+00:00",
+  "reviewedDrafts": 6,
+  "rows": [
+    {
+      "repeat": 1,
+      "key": "H1-R1",
+      "reviewed": true,
+      "classificationCorrect": true,
+      "note": "已购 A360 和 360 天期间不可删除的两项证据齐全。答案将细则笼统归于订购单，精确出处应区分 H1-ORDER 的已购数量与 H1-TECH 的能力条款。"
+    },
+    {
+      "repeat": 1,
+      "key": "H1-R2",
+      "reviewed": true,
+      "classificationCorrect": false,
+      "note": "错误肯定：资料明确说明未采购、未完成域名归属验证及联调，答案却判 supported 且 conditions 为空。所选引文含全部前置条件，故不能归因为引文不存在；订单未购数量锚点也未引用。"
+    },
+    {
+      "repeat": 1,
+      "key": "H1-R3",
+      "reviewed": true,
+      "classificationCorrect": true,
+      "note": "正确区分单次 16 MiB 硬上限与 20 MiB 要求；没有把拆分或虚构选购项当作解决条件。"
+    },
+    {
+      "repeat": 1,
+      "key": "H1-R4",
+      "reviewed": true,
+      "classificationCorrect": true,
+      "note": "正确识别平均值不等于 P99，并要求补充测试或承诺；没有将缺失指标扩大为已知不满足。"
+    },
+    {
+      "repeat": 1,
+      "key": "H1-R5",
+      "reviewed": true,
+      "classificationCorrect": true,
+      "note": "99.97% 与订单限定优先级均有引用支撑，引用保留百分数及中文句号。"
+    },
+    {
+      "repeat": 1,
+      "key": "H1-R6",
+      "reviewed": true,
+      "classificationCorrect": true,
+      "note": "分类与两个互不优先的 14 日/90 日条款一致，引用覆盖冲突双方。中文要求却输出英文，且正文以 not supported 开头、未提出明确澄清问题，交付措辞仍需改善。"
+    }
+  ]
+}

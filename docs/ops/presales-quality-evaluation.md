@@ -95,6 +95,47 @@
 
 ## 受控引用改进与新资料验证
 
-`presales.v3` 已实现“模型选择本次提供的引用编号、服务端返回对应原文”，减少标点和转写错误。每段最长 600 字符，长文本沿原文顺序分段；未知、重复、跨请求编号和夹带改写引文的输出会被拒绝。原有企业/版本校验、生成后再次授权、复核与 CSV 格式保留，旧草稿不会被改写。本地协议、数据库及浏览器验收不代表该版本已在线部署。
+`presales.v3` 随 [v0.1.44 部署](https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/35853410044)上线：“模型选择本次提供的引用编号、服务端返回对应原文”，减少标点和转写错误。每段最长 600 字符，长文本沿原文顺序分段；未知、重复、跨请求编号和夹带改写引文的输出会被拒绝。原有企业/版本校验、生成后再次授权、复核与 CSV 格式保留，旧草稿不会被改写。线上模块哈希与发布提交 `9a65a72` 一致，原企业业务记录保留；模型路由、超时与服务器配置未变。
 
-分类规则没有采用上次被拒绝的 v2 候选。后续实测使用新冻结的 [H1 资料](../../evaluation/presales_quality_holdout_v1.json)和[独立存放的参考标注](../../evaluation/presales_quality_holdout_v1.gold.json)，覆盖已购归档、未购单点登录、报文上限、平均值与 P99、可用性优先级及删除期限冲突。资料和标注在首次请求前冻结；均由助手编写并自审，不能称为独立专家盲评。原 C1 基线、失败和用量记录保持不变。
+分类规则没有采用上次被拒绝的 v2 候选。实测使用新冻结的 [H1 资料](../../evaluation/presales_quality_holdout_v1.json)和[独立存放的参考标注](../../evaluation/presales_quality_holdout_v1.gold.json)，覆盖已购归档、未购单点登录、报文上限、平均值与 P99、可用性优先级及删除期限冲突。资料和标注在首次请求前冻结；均由助手编写并自审，不能称为独立专家盲评。原 C1 基线、失败和用量记录保持不变。
+
+2026-09-23，新建独立演示企业上传六份 TXT，通过公开 API 生成六次，全部 HTTP 200 并保存草稿；没有自动重试，演示额度为 6/6，结束后已退出。保存[原始响应](../../evaluation/presales_quality_holdout_v1.v0144.json)、[离线评分](../../evaluation/presales_quality_holdout_v1.v0144.score.json)及[助手逐条审阅](../../evaluation/presales_quality_holdout_v1.v0144.review.json)，原草稿没有修改，也没有被标记为客户复核通过。
+
+| 项目 | H1 单轮观察结果 |
+|---|---:|
+| 计划 / 实际生成 / 有效草稿 | 6 / 6 / 6 |
+| 状态匹配 | 5 / 6 |
+| 错误肯定分类 | 1 |
+| 有效原文引文 | 11 / 11 |
+| 必要证据锚点覆盖 | 10 / 11 |
+| 最短 / 中位 / 最长 HTTP 耗时 | 56.9 / 65.4 / 94.5 秒 |
+| 应用观察到的提供方请求 / 有 token 记录 | 6 / 6 |
+| 输入 / 输出 / 总 token | 18,733 / 16,931 / 35,664 |
+| 金额 | 未知 |
+
+| 要求 | 参考分类 | 实际分类 | 审阅结果 |
+|---|---|---|---|
+| H1-R1 已购 A360 | 支持 | 支持 | 引用覆盖已购数量与保留期；答案对条款出处的归因可更精确 |
+| H1-R2 未购 SSO-BIZ | 有条件支持 | 支持 | 错误肯定，采购、域名验证和联调条件均未列出 |
+| H1-R3 单次报文上限 | 不满足 | 不满足 | 正确识别 16 MiB 硬上限，未虚构提升方案 |
+| H1-R4 平均值与 P99 | 证据不足 | 证据不足 | 正确要求补充 P99 测试或承诺 |
+| H1-R5 可用性优先级 | 支持 | 支持 | 99.97% 与限定优先级均有逐字引用 |
+| H1-R6 删除期限冲突 | 资料冲突 | 资料冲突 | 保留冲突双方；中文问题返回英文，且未提出明确澄清问题 |
+
+H1-R2 的引文自身包含全部前置条件，答案仍遗漏它们，说明**逐字引用正确不能保证判断正确**。本次未出现引用校验失败，只能支持这六次调用的观察结果；不能据此保证此后零失败，也不能与不同资料的 C1 两轮结果直接比较准确率或速度。优先继续处理采购范围与前提条件、答案语言和交付措辞，随后需要新的独立审定资料验证。
+
+本次六条售前请求的 token 均有记录，但入口价格及账单未核实，金额保持 `null`。标准部署另有 Agent、Embedding 与治理检查，其用量不包含在上述六次统计内；标准 smoke 未测量模型成本。
+
+复现 H1 时显式选择输入与 gold，不使用默认的 C1 参数：
+
+```powershell
+& .\.venv\Scripts\python.exe -B -X utf8 -m scripts.evaluate_presales_quality run `
+  --input evaluation/presales_quality_holdout_v1.json `
+  --base-url https://agent.playlab.eu.cc --object-host YOUR_R2_HOST `
+  --repeats 1 --output "$env:TEMP\presales-h1-run.json"
+
+& .\.venv\Scripts\python.exe -B -X utf8 -m scripts.evaluate_presales_quality score `
+  --input evaluation/presales_quality_holdout_v1.json `
+  --gold evaluation/presales_quality_holdout_v1.gold.json `
+  --run "$env:TEMP\presales-h1-run.json" --output "$env:TEMP\presales-h1-score.json"
+```
