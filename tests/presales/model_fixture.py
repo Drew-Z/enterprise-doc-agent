@@ -8,7 +8,8 @@ from uuid import uuid4
 
 import httpx
 
-from enterprise_doc_core.presales.schemas import GenerationInput, ModelDraft
+from enterprise_doc_core.presales.citation_selection import SelectionDraft
+from enterprise_doc_core.presales.schemas import GenerationInput
 from tests.presales.ingestion_fixtures import UploadFixture
 
 
@@ -48,13 +49,13 @@ class UploadedEvidenceModel:
             "excerpt": fixture.excerpt,
         }
         self.calls.append({"requirementKey": payload.requirement.key, "citation": citation})
-        draft = ModelDraft.model_validate(
+        draft = SelectionDraft.model_validate(
             {
                 "status": "supported",
                 "answer": "受控验收输出: " + fixture.excerpt,
                 "conditions": [],
                 "missingInformation": [],
-                "citations": [citation],
+                "citations": [{"citationId": evidence["citationId"]}],
             }
         )
         return httpx.Response(

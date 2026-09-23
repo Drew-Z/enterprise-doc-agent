@@ -3,11 +3,14 @@ from __future__ import annotations
 import asyncio
 import csv
 import io
+import json
 from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
+import httpx
 import pytest
 from httpx import ASGITransport, AsyncClient
+from pydantic import SecretStr
 from sqlalchemy import delete, func, select
 
 from enterprise_doc_api.app import create_app
@@ -15,7 +18,7 @@ from enterprise_doc_api.config import ApiSettings
 from enterprise_doc_core.audit.models import AuditEvent
 from enterprise_doc_core.billing import EntitlementUsageService
 from enterprise_doc_core.billing.models import TenantEntitlement, UsageEvent, UsageReservation
-from enterprise_doc_core.config import DatabaseSettings, ModelSettings
+from enterprise_doc_core.config import DatabaseSettings, ModelProvider, ModelSettings
 from enterprise_doc_core.context import PrincipalContext
 from enterprise_doc_core.db import create_database_engine, create_session_factory
 from enterprise_doc_core.documents import DocumentVersion, HashEmbeddingProvider
@@ -697,3 +700,111 @@ async def test_expired_entitlement_keeps_draft_read_review_export_and_generation
             )
             == 1
         )
+
+
+@pytest.mark.parametrize("change", ["none", "unknown_reference", "revoked", "stale_source"])
+async def test_selection_adapter_preserves_persistence_export_and_authorization(
+    workspace, change
+) -> None:
+    service, sessions, context, other, _, payload = workspace
+    calls = []
+
+    async def model_response(request: httpx.Request) -> httpx.Response:
+        sent = json.loads(json.loads(request.content)["messages"][1]["content"])
+        calls.append(sent)
+        assert {e["documentVersionId"] for e in sent["evidence"]} == {
+            str(s.version_id) for s in payload.sources
+        }
+        references = [{"citationId": item["citationId"]} for item in sent["evidence"]]
+        if change == "unknown_reference":
+            references[0]["citationId"] = "foreign-request-reference"
+        elif change in {"revoked", "stale_source"}:
+            async with sessions.begin() as session:
+                if change == "revoked":
+                    membership = await session.get(Membership, context.membership_id)
+                    membership.is_active = False
+                else:
+                    version = await session.get(DocumentVersion, context.document_version_id)
+                    version.version_number += 1
+        return httpx.Response(
+            200,
+            json={
+                "choices": [
+                    {
+                        "index": 0,
+                        "finish_reason": "stop",
+                        "message": {
+                            "content": json.dumps(
+                                {
+                                    "status": "conflicting_evidence",
+                                    "answer": "两份条款的保留期限冲突。",
+                                    "citations": references,
+                                }
+                            )
+                        },
+                    }
+                ]
+            },
+        )
+
+    service.generation.gateway = OpenAICompatiblePresalesGateway(
+        ModelSettings(
+            provider=ModelProvider.OPENAI_COMPATIBLE,
+            base_url="https://selection.invalid/v1",
+            api_key=SecretStr("test-only"),
+            model_name="selection-integration",
+        ),
+        transport=httpx.MockTransport(model_response),
+    )
+    packet = await service.create(context.principal, payload, "selection-create")
+    row_id = packet.rows[0].id
+    if change in {"revoked", "stale_source"}:
+        code = "presales_forbidden" if change == "revoked" else "presales_stale_sources"
+        with pytest.raises(PresalesError, match=code):
+            await service.generate(context.principal, packet.id, row_id, "selection-generate")
+        with pytest.raises(PresalesError, match=code):
+            await service.export(context.principal, packet.id, "draft")
+        async with sessions() as session:
+            row = await session.get(PresalesRow, row_id)
+            assert row.draft is None
+            attempt = await session.scalar(
+                select(PresalesAttempt).where(PresalesAttempt.row_id == row_id)
+            )
+            assert attempt.state == "failed" and attempt.provider_request_count == 1
+    else:
+        generated = await service.generate(
+            context.principal, packet.id, row_id, "selection-generate"
+        )
+        row = generated.rows[0]
+        assert row.attempts[0].provider_request_count == 1
+        assert row.attempts[0].provenance["promptVersion"] == "presales.v3"
+        if change == "unknown_reference":
+            assert row.draft is None and row.attempts[0].error_code == "presales_invalid_citation"
+        else:
+            assert row.draft is not None
+            assert {c.excerpt for c in row.draft.citations} == {
+                "Retention is 30 days.",
+                "Retention is 90 days.",
+            }
+            assert "citationId" not in row.model_dump_json(by_alias=True)
+            reviewed = await service.review(
+                context.principal,
+                packet.id,
+                row_id,
+                ReviewInput(
+                    expected_revision=1,
+                    status="conflicting_evidence",
+                    answer="已逐字核对。需确认条款优先级。",
+                ),
+                "selection-review",
+            )
+            assert reviewed.rows[0].draft == row.draft
+            csv_content = (await service.export(context.principal, packet.id, "reviewed")).decode(
+                "utf-8-sig"
+            )
+            assert "Retention is 30 days." in csv_content and "Retention is 90 days." in csv_content
+            assert "已逐字核对" in csv_content and "已复核" in csv_content
+            with pytest.raises(PresalesError, match="presales_not_found"):
+                await service.get(other.principal, packet.id)
+        await service.generate(context.principal, packet.id, row_id, "selection-generate")
+    assert len(calls) == 1

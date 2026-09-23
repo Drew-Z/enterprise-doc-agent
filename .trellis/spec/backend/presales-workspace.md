@@ -129,8 +129,44 @@ invalid JSON/schema or citations fail the row. No repair, automatic failover or 
 Statuses: supported, conditional, contradicted, insufficient_evidence,
 conflicting_evidence. Conditional needs conditions; insufficient evidence needs
 missingInformation; other statuses need citations; conflict needs two versions.
-`validate_citations` binds exact excerpts to authorized candidates. These checks
+`validate_citations` binds exact server-resolved excerpts to authorized candidates. These checks
 do not prove logical entailment or complete capture of contractual conditions.
+
+## Controlled citation selection
+
+1. **Scope:** `presales.v3` replaces model-transcribed quotes with request-local
+   references. It does not adopt the rejected v2 classification prompt. Saved
+   drafts, public API fields, reviews, CSV, schema and existing rows are unchanged.
+2. **Signatures:** `prepare_citations(GenerationInput) -> (GenerationInput, catalog)`
+   and `resolve_selection(content, catalog) -> ModelDraft` live in
+   `presales/citation_selection.py`; only the HTTP gateway uses `SelectionDraft`.
+3. **Contracts:** add `citationId` to each model-facing evidence fragment. Model
+   citations contain only `{"citationId": "cite_<request-prefix>_<number>"}`.
+   The call-local catalog holds the original chunk/version/text. Split at most
+   twelve 1800-character candidates into ordered substrings of at most 600
+   characters, preferring punctuation/whitespace boundaries in the latter half
+   of a window. Trim only edge whitespace; do not rewrite punctuation or omit
+   non-whitespace characters. Both original input and final request remain
+   bounded by 128 KiB. At most twelve selections may be returned.
+4. **Errors:** unknown, duplicate or other-request references produce
+   `presales_invalid_citation` with one observed dispatch. Legacy excerpt/UUID
+   fields, invalid statuses or one-version conflicts produce
+   `presales_invalid_model_output`. Unselected versions, invalid UUIDs or duplicate
+   candidates fail before dispatch as `presales_invalid_evidence`; excessive
+   input fails as `presales_input_too_large`. None triggers repair or retry.
+5. **Cases:** good: select two authorized versions and persist both exact quotes.
+   Base: evidence shortage still permits an uncited `insufficient_evidence` result
+   with follow-up questions. Bad: accepting a valid-looking reference from another
+   simultaneous request, or treating two fragments of one version as a conflict.
+6. **Tests:** `test_presales_citation_selection.py` exercises the real gateway HTTP
+   boundary, long multilingual sources, immutable inputs and concurrency.
+   `test_presales_workflow_integration.py` uses real PostgreSQL and retrieval to
+   verify persistence/review/export, idempotency, revocation and stale snapshots.
+   Both browser harnesses emit references through their controlled HTTP model.
+7. **Wrong vs correct:** wrong: tolerate changed punctuation or search all documents
+   for an approximate quote. Correct: resolve only this request's offered fragment,
+   then retain the existing tenant/version/substring and commit-time authorization
+   checks. Source-backed text alone does not prove that the answer is correct.
 
 Attempts store model provider/name, pipeline and prompt versions, prompt SHA,
 configured model version/revision and returned model/response ID when available.

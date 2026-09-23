@@ -70,3 +70,22 @@ active until its reads finish; assert nonempty evidence before model dispatch.
 Logout retires access through the existing cleanup lifecycle. Never reactivate a
 retired tenant or weaken authorization for a test. A read-only terminal snapshot
 may reconcile explicitly owned attempt IDs, preserving the original HTTP report.
+
+## Citation protocol and fresh holdout
+
+`presales.v3` changes only the model-facing citation contract. HTTP fixtures must
+return offered `citationId` selections; public saved drafts continue to carry exact
+excerpts and source metadata. Unknown/duplicate/cross-request selections, legacy
+quote fields and same-version conflicts are negative cases. Do not relax final
+substring/tenant/version validation to make model responses pass.
+
+The separate `evaluation/presales_quality_holdout_v1.json` and `.gold.json` contain
+six new fictional H1 requirements frozen before their first model request. Use
+explicit `--input` and `--gold` paths with the existing evaluator; the default C1
+baseline and all its failures remain immutable. This is new assistant-authored
+material, not independent expert adjudication or customer validation. No prompt
+tuning on its results may be reported as a holdout measurement.
+
+Keep model-protocol/real-database/browser correctness separate from live semantic
+quality. A rejected reference or classifier error remains a failure in the planned
+denominator. Unknown billing remains null.

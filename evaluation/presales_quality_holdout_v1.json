@@ -1,0 +1,76 @@
+{
+  "schemaVersion": "presales-quality-input-v1",
+  "synthetic": true,
+  "provenance": "New fictional H1 corpus frozen before any live request or output review on 2026-09-23. Separate from C1 prompt-development examples; assistant-authored and self-reviewed, not an independent expert or customer benchmark. No classifier prompt tuning is based on these results.",
+  "title": "星舟工单企业版新资料验证",
+  "sources": [
+    {
+      "key": "H1-ORDER",
+      "filename": "H1-ORDER-v1.txt",
+      "applicability": "仅评估已签署 H1-ORDER 的星舟工单企业版当前正式版本。未购选项不能当作已购；只按正文明确优先级处理差异。H1-ERASE 与 H1-BACKUP 同日生效、覆盖同一企业数据和备份，互不优先，均未约定例外。全部资料虚构。",
+      "content": "# H1-ORDER 已签署订购单\n本订单采购星舟工单企业版，审计归档 A360 的已购数量为 1，单点登录 SSO-BIZ 的已购数量为 0。\n本订单明确引用 H1-SLA 的月度可用性约定；它在该项指标上优先于 H1-TECH 通用说明。该优先级仅适用于月度可用性，不能用于解释其他附件。\nH1-ERASE 与 H1-BACKUP 均已签署，适用于本企业的数据与全部备份，同日生效且没有优先级或例外条款。\n"
+    },
+    {
+      "key": "H1-TECH",
+      "filename": "H1-TECH-v1.txt",
+      "applicability": "仅评估已签署 H1-ORDER 的星舟工单企业版当前正式版本。未购选项不能当作已购；只按正文明确优先级处理差异。H1-ERASE 与 H1-BACKUP 同日生效、覆盖同一企业数据和备份，互不优先，均未约定例外。全部资料虚构。",
+      "content": "# H1-TECH 企业版能力说明\n## 审计归档\n基础套餐的审计记录保存 30 天。已购买的 A360 将审计记录保存期延长到 360 天，期间任何企业账号均不能提前删除记录。\n## 单次 API 报文\n企业版接收的单次 API 报文硬上限为 16 MiB，1 MiB = 1048576 字节。当前正式版本没有提高单次报文上限的配置或选购项。分多次提交不属于单次报文。\n## 通用服务指标\n通用套餐月度可用性为 99.80%。已签署订单明确引用其他可用性协议时，按订单指定协议执行。\n压测报告给出普通查询平均响应时间 180 毫秒。平均值不能说明尾部百分位；当前附件没有 P99 响应时间测试结果或承诺。\n"
+    },
+    {
+      "key": "H1-SSO",
+      "filename": "H1-SSO-v1.txt",
+      "applicability": "仅评估已签署 H1-ORDER 的星舟工单企业版当前正式版本。未购选项不能当作已购；只按正文明确优先级处理差异。H1-ERASE 与 H1-BACKUP 同日生效、覆盖同一企业数据和备份，互不优先，均未约定例外。全部资料虚构。",
+      "content": "# H1-SSO 单点登录规格\nSSO-BIZ 是企业版可选购的 SAML 2.0 单点登录模块，能接入客户自有身份提供方。\n启用前必须购买 SSO-BIZ、完成企业域名归属验证并通过双方联调验收；三项均完成后才能用于正式登录。本订单目前未购买该模块，域名验证和联调验收也未完成。\n"
+    },
+    {
+      "key": "H1-SLA",
+      "filename": "H1-SLA-v1.txt",
+      "applicability": "仅评估已签署 H1-ORDER 的星舟工单企业版当前正式版本。未购选项不能当作已购；只按正文明确优先级处理差异。H1-ERASE 与 H1-BACKUP 同日生效、覆盖同一企业数据和备份，互不优先，均未约定例外。全部资料虚构。",
+      "content": "# H1-SLA 本订单可用性协议\n本协议已签署，覆盖 H1-ORDER 采购的星舟工单企业版。\n本订单的月度可用性承诺为 99.97%。\nH1-ORDER 明确约定本协议的可用性指标优先于 H1-TECH 通用指标。本协议不规定响应时间 P99，也不覆盖数据删除附件的优先级。\n"
+    },
+    {
+      "key": "H1-ERASE",
+      "filename": "H1-ERASE-v1.txt",
+      "applicability": "仅评估已签署 H1-ORDER 的星舟工单企业版当前正式版本。未购选项不能当作已购；只按正文明确优先级处理差异。H1-ERASE 与 H1-BACKUP 同日生效、覆盖同一企业数据和备份，互不优先，均未约定例外。全部资料虚构。",
+      "content": "# H1-ERASE 数据删除承诺\n企业注销完成后，全部业务数据和全部备份副本均须在 14 个自然日内删除，不存在保留例外。\n本附件与 H1-BACKUP 同日生效，覆盖相同数据范围，两者均已签署且互不优先。\n"
+    },
+    {
+      "key": "H1-BACKUP",
+      "filename": "H1-BACKUP-v1.txt",
+      "applicability": "仅评估已签署 H1-ORDER 的星舟工单企业版当前正式版本。未购选项不能当作已购；只按正文明确优先级处理差异。H1-ERASE 与 H1-BACKUP 同日生效、覆盖同一企业数据和备份，互不优先，均未约定例外。全部资料虚构。",
+      "content": "# H1-BACKUP 备份生命周期附件\n企业注销完成后，其全部备份副本必须继续保留 90 个自然日；在第 90 日届满前禁止删除任何该企业备份副本。\n本附件与 H1-ERASE 同日生效，覆盖相同数据范围，两者均已签署且互不优先。\n"
+    }
+  ],
+  "requirements": [
+    {
+      "key": "H1-R1",
+      "text": "本订单已包含审计记录至少保存 360 天，且企业管理员在此期间也不能删除。",
+      "sourceLocation": "新验证集第 1 项"
+    },
+    {
+      "key": "H1-R2",
+      "text": "企业可通过 SAML 2.0 使用客户自有身份提供方进行单点登录。",
+      "sourceLocation": "新验证集第 2 项"
+    },
+    {
+      "key": "H1-R3",
+      "text": "当前正式版本须允许单次 API 请求提交 20 MiB 报文，不接受拆分提交。",
+      "sourceLocation": "新验证集第 3 项"
+    },
+    {
+      "key": "H1-R4",
+      "text": "普通查询响应时间的 P99 必须不超过 500 毫秒。",
+      "sourceLocation": "新验证集第 4 项"
+    },
+    {
+      "key": "H1-R5",
+      "text": "本订单月度可用性承诺不得低于 99.97%。",
+      "sourceLocation": "新验证集第 5 项"
+    },
+    {
+      "key": "H1-R6",
+      "text": "企业注销完成后的 14 个自然日内必须删除业务数据及全部备份。",
+      "sourceLocation": "新验证集第 6 项"
+    }
+  ]
+}

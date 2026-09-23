@@ -31,9 +31,10 @@ from enterprise_doc_core.documents import Document, DocumentVersion, HashEmbeddi
 from enterprise_doc_core.documents.models import DocumentGrant
 from enterprise_doc_core.documents.retrieval_service import HybridRetrievalService
 from enterprise_doc_core.identity import Membership, Tenant, User
+from enterprise_doc_core.presales.citation_selection import SelectionDraft
 from enterprise_doc_core.presales.gateway import OpenAICompatiblePresalesGateway
 from enterprise_doc_core.presales.models import PresalesPacket
-from enterprise_doc_core.presales.schemas import GenerationInput, ModelDraft
+from enterprise_doc_core.presales.schemas import GenerationInput
 from enterprise_doc_core.presales.service import PresalesService
 from enterprise_doc_core.presales.settings import PresalesSettings
 from tests.agent.test_agent_run_integration import SeededAgentContext, _seed_agent_context
@@ -140,19 +141,12 @@ async def main() -> None:
             ):
                 if "[" + name + "]" in text:
                     status = name
-            citations = [
-                {
-                    "chunkId": evidence["chunkId"],
-                    "documentVersionId": evidence["documentVersionId"],
-                    "excerpt": evidence["text"].split(".")[0] + ".",
-                }
-                for evidence in payload.evidence
-            ]
+            citations = [{"citationId": evidence["citationId"]} for evidence in payload.evidence]
             if status != "conflicting_evidence":
                 citations = citations[:1]
             if status == "insufficient_evidence":
                 citations = []
-            draft = ModelDraft.model_validate(
+            draft = SelectionDraft.model_validate(
                 {
                     "status": status,
                     "answer": "受控浏览器验收输出。请核对合成资料中的保留期限。",

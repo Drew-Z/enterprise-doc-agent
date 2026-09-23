@@ -1,0 +1,116 @@
+{
+  "schemaVersion": "presales-quality-gold-v1",
+  "datasetSha256": "804a70dcbeea86e34381cdbc4664ca722e74288657766a4a5995136d96fa12ca",
+  "reviewStatus": "assistant_authored_and_self_reviewed_before_first_model_request; no independent domain adjudication; keep raw outputs and errors",
+  "rows": [
+    {
+      "key": "H1-R1",
+      "status": "supported",
+      "requiredEvidence": [
+        {
+          "sourceKey": "H1-ORDER",
+          "excerpt": "审计归档 A360 的已购数量为 1"
+        },
+        {
+          "sourceKey": "H1-TECH",
+          "excerpt": "已购买的 A360 将审计记录保存期延长到 360 天，期间任何企业账号均不能提前删除记录。"
+        }
+      ],
+      "referenceAnswer": "已购 A360，保存 360 天且期间任何企业账号不能提前删除，符合要求。",
+      "reviewPoints": [
+        "区分已购归档与基础套餐。",
+        "同时核实保留时长和管理员不可删除。"
+      ]
+    },
+    {
+      "key": "H1-R2",
+      "status": "conditional",
+      "requiredEvidence": [
+        {
+          "sourceKey": "H1-SSO",
+          "excerpt": "SSO-BIZ 是企业版可选购的 SAML 2.0 单点登录模块，能接入客户自有身份提供方。"
+        },
+        {
+          "sourceKey": "H1-SSO",
+          "excerpt": "启用前必须购买 SSO-BIZ、完成企业域名归属验证并通过双方联调验收"
+        },
+        {
+          "sourceKey": "H1-ORDER",
+          "excerpt": "单点登录 SSO-BIZ 的已购数量为 0"
+        }
+      ],
+      "referenceAnswer": "需购买 SSO-BIZ，并完成域名归属验证和双方联调验收后才能正式使用；当前三项均未完成。",
+      "reviewPoints": [
+        "列出三项前提。",
+        "不能把可选能力说成当前已开通，亦不能忽略明确可行路径。"
+      ]
+    },
+    {
+      "key": "H1-R3",
+      "status": "contradicted",
+      "requiredEvidence": [
+        {
+          "sourceKey": "H1-TECH",
+          "excerpt": "单次 API 报文硬上限为 16 MiB"
+        },
+        {
+          "sourceKey": "H1-TECH",
+          "excerpt": "当前正式版本没有提高单次报文上限的配置或选购项。"
+        }
+      ],
+      "referenceAnswer": "不满足：单次报文硬上限 16 MiB 小于 20 MiB，资料没有可行提升选项，拆分不符合要求。",
+      "reviewPoints": [
+        "硬上限不是缺失证明。",
+        "不能编造升级方案或用分次上传替代单次要求。"
+      ]
+    },
+    {
+      "key": "H1-R4",
+      "status": "insufficient_evidence",
+      "requiredEvidence": [],
+      "referenceAnswer": "现有平均值 180 毫秒不能证明 P99 不超过 500 毫秒；需补充适用负载下的 P99 测试结果或明确承诺。",
+      "reviewPoints": [
+        "平均数不能替代 P99。",
+        "未提供指标不等同已知超标或已知可配置实现。"
+      ]
+    },
+    {
+      "key": "H1-R5",
+      "status": "supported",
+      "requiredEvidence": [
+        {
+          "sourceKey": "H1-SLA",
+          "excerpt": "本订单的月度可用性承诺为 99.97%。"
+        },
+        {
+          "sourceKey": "H1-SLA",
+          "excerpt": "H1-ORDER 明确约定本协议的可用性指标优先于 H1-TECH 通用指标。"
+        }
+      ],
+      "referenceAnswer": "已签署且被订单明确指定优先的 H1-SLA 承诺 99.97%，符合要求。",
+      "reviewPoints": [
+        "依据明确限定的优先级。",
+        "引文必须保留原始百分数和中文句号。"
+      ]
+    },
+    {
+      "key": "H1-R6",
+      "status": "conflicting_evidence",
+      "requiredEvidence": [
+        {
+          "sourceKey": "H1-ERASE",
+          "excerpt": "全部业务数据和全部备份副本均须在 14 个自然日内删除，不存在保留例外。"
+        },
+        {
+          "sourceKey": "H1-BACKUP",
+          "excerpt": "其全部备份副本必须继续保留 90 个自然日；在第 90 日届满前禁止删除任何该企业备份副本。"
+        }
+      ],
+      "referenceAnswer": "两份同范围且互不优先的生效附件分别要求 14 日内删除全部备份和禁止 90 日前删除，需澄清或修订附件后才能承诺。",
+      "reviewPoints": [
+        "保留两个不同来源的冲突引文。",
+        "不能套用只适用于可用性的优先条款。"
+      ]
+    }
+  ]
+}
