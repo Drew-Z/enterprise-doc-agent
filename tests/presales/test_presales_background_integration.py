@@ -242,6 +242,7 @@ def valid_response(request):
     payload = json.loads(json.loads(request.content)["messages"][1]["content"])
     return httpx.Response(
         200,
+        headers={"x-request-id": "test-request"},
         json={
             "id": "test-response",
             "model": "test-model",
@@ -302,6 +303,7 @@ async def test_worker_delivers_one_draft_and_one_charge_after_enqueue(background
             )
         ).all()
         assert len(calls) == 1 and calls[0].state == "succeeded"
+        assert calls[0].provider_request_id == "test-request"
         assert calls[0].usage["total_tokens"] == 50
         reservation = (
             await session.scalars(
@@ -331,9 +333,11 @@ async def test_transient_failure_switches_once_and_keeps_two_internal_calls(back
                 raise httpx.ReadTimeout("controlled timeout", request=request)
             if fault == "error_envelope":
                 return httpx.Response(
-                    200, json={"error": {"type": "upstream_error", "message": "private diagnostic"}}
+                    200,
+                    headers={"x-request-id": "req-primary"},
+                    json={"error": {"type": "upstream_error", "message": "private diagnostic"}},
                 )
-            return httpx.Response(503)
+            return httpx.Response(503, headers={"x-request-id": "req-primary"})
         return valid_response(request)
 
     primary = b.service.generation.gateway.settings
@@ -364,7 +368,15 @@ async def test_transient_failure_switches_once_and_keeps_two_internal_calls(back
         assert [c.state for c in calls] == ["failed", "succeeded"]
         assert calls[0].usage is None
         assert calls[1].usage["total_tokens"] == 50
+        assert calls[0].provider_request_id == (None if fault == "timeout" else "req-primary")
+        assert calls[1].provider_request_id == "test-request"
         assert "private diagnostic" not in str(result.model_dump())
+    report = await reconciliation_report(b)
+    assert [call.route for call in report.provider_calls] == ["primary", "fallback"]
+    assert len(report.business_events) == 1 and report.business_events[0].quantity == 1
+    assert report.summary.unknown_cost_records == 2
+    assert report.summary.unresolved_records == (1 if fault == "timeout" else 0)
+    assert report.legacy_presales_attempts == ()
 
 
 def configured_worker(b, respond, **settings):
@@ -670,16 +682,21 @@ async def test_background_migration_round_trip_and_refuses_discarding_history(br
     module = import_module(
         "enterprise_doc_core.db.migrations.versions.20260924_0028_presales_background"
     )
+    identifiers = import_module(
+        "enterprise_doc_core.db.migrations.versions.20260924_0031_provider_reconciliation"
+    )
 
     def migrate(connection):
         with Operations.context(
             MigrationContext.configure(connection, opts={"target_metadata": metadata})
         ):
+            identifiers.downgrade()
             module.downgrade()
             assert "job_id" not in {
                 c["name"] for c in inspect(connection).get_columns("presales_attempts")
             }
             module.upgrade()
+            identifiers.upgrade()
             assert "presales_provider_calls" in inspect(connection).get_table_names()
             savepoint = connection.begin_nested()
             try:
@@ -839,6 +856,7 @@ async def test_observed_but_expired_response_keeps_usage_without_saving_a_draft(
         call = (await session.scalars(select(PresalesProviderCall))).one()
         assert call.usage["total_tokens"] == 50
         assert call.provider_response_id == "test-response"
+        assert call.provider_request_id == "test-request"
 
 
 async def test_validation_before_http_does_not_count_as_a_provider_request(background):
@@ -860,3 +878,129 @@ async def test_validation_before_http_does_not_count_as_a_provider_request(backg
             )
         ).all()
         assert [c.state for c in calls] == ["failed", "not_sent"]
+    report = await reconciliation_report(b)
+    assert report.summary.provider_records == 2
+    assert report.summary.potentially_billable_records == 1
+    assert report.summary.unknown_cost_records == 1
+
+
+async def reconciliation_report(b, **values):
+    from enterprise_doc_core.billing.administration_contracts import PlatformEntitlementOperator
+    from enterprise_doc_core.billing.reconciliation import UsageReconciliationService
+    from enterprise_doc_core.billing.reconciliation_contracts import UsageExportWindow
+
+    now = datetime.now(UTC)
+    return await UsageReconciliationService(session_factory=b.sessions).export(
+        tenant_id=b.context.tenant_id,
+        operator=PlatformEntitlementOperator("reconciliation-test", "Synthetic ledger review"),
+        window=UsageExportWindow(
+            start=now - timedelta(hours=1), end=now + timedelta(hours=1), **values
+        ),
+    )
+
+
+async def test_export_exposes_legacy_synchronous_coverage_gap(background):
+    b = background
+    b.settings.background_generation_enabled = False
+    b.service.generation.gateway = OpenAICompatiblePresalesGateway(
+        b.service.generation.gateway.settings, transport=httpx.MockTransport(valid_response)
+    )
+    packet = await b.service.create(b.context.principal, b.payload, "legacy-create")
+    result = await b.service.generate(b.context.principal, packet.id, packet.rows[0].id, "legacy")
+    assert result.rows[0].state == "drafted"
+    report = await reconciliation_report(b)
+    assert report.provider_calls == ()
+    assert len(report.business_events) == 1
+    assert len(report.legacy_presales_attempts) == 1
+    assert report.legacy_presales_attempts[0].provider_request_count == 1
+    assert report.legacy_presales_attempts[0].provider_response_id == "test-response"
+    assert "legacy_presales_has_no_per_call_ledger" in report.warnings
+
+
+async def test_export_presales_tenant_window_and_independent_source_limits(background):
+    from dataclasses import asdict
+
+    from enterprise_doc_core.billing.administration_contracts import PlatformEntitlementOperator
+    from enterprise_doc_core.billing.errors import UsageError
+    from enterprise_doc_core.billing.reconciliation import UsageReconciliationService
+    from enterprise_doc_core.billing.reconciliation_contracts import UsageExportWindow
+    from enterprise_doc_core.presales.models import PresalesProviderCall
+
+    b = background
+    start = datetime.now(UTC)
+    end = start + timedelta(hours=1)
+    # Each tenant has calls at both edges and a legacy aggregate. An attempt
+    # is not a legacy gap merely because its call is outside the time window.
+    for context in (b.context, b.other):
+        payload = b.payload.model_copy(
+            update={
+                "sources": [
+                    SourceInput(version_id=context.document_version_id, applicability="Test")
+                ],
+                "requirements": [
+                    RequirementInput(key=f"R{i}", text="private requirement") for i in range(3)
+                ],
+            }
+        )
+        packet = await b.service.create(context.principal, payload, "export-source-fixture")
+        async with b.sessions.begin() as session:
+            for index, when in enumerate((start, end, start)):
+                operation = PresalesAttempt(
+                    id=uuid4(),
+                    tenant_id=context.tenant_id,
+                    row_id=packet.rows[index].id,
+                    number=1,
+                    idempotency_key="export-once",
+                    state="failed",
+                    model_provider="test",
+                    model_name="test",
+                    provider_request_count=1 if index < 2 else None,
+                    provenance={"providerResponseId": "legacy-id", "private": "do-not-export"},
+                    deadline_at=end,
+                    created_at=when,
+                    updated_at=when,
+                )
+                session.add(operation)
+                await session.flush()
+                if index == 2:
+                    # INSERT defaults to zero; an unobserved dispatch explicitly
+                    # updates the durable attempt to SQL NULL after creation.
+                    operation.provider_request_count = None
+                if index < 2:
+                    session.add(
+                        PresalesProviderCall(
+                            tenant_id=context.tenant_id,
+                            operation_id=operation.id,
+                            number=1,
+                            route="primary",
+                            route_key="f" * 64,
+                            fencing_token=1,
+                            state="unknown",
+                            model_provider="test",
+                            model_name="test",
+                            started_at=when,
+                            provider_request_id=f"req-{context.tenant_id}",
+                            usage=None,
+                        )
+                    )
+    service = UsageReconciliationService(session_factory=b.sessions)
+    operator = PlatformEntitlementOperator("test", "Read-only source isolation")
+    report = await service.export(
+        tenant_id=b.context.tenant_id,
+        operator=operator,
+        window=UsageExportWindow(start=start, end=end, limit_per_source=1),
+    )
+    assert len(report.provider_calls) == len(report.legacy_presales_attempts) == 1
+    assert report.provider_calls[0].provider_request_id == f"req-{b.context.tenant_id}"
+    assert report.legacy_presales_attempts[0].provider_request_count is None
+    serialized = json.dumps(asdict(report), default=str)
+    assert str(b.other.tenant_id) not in serialized
+    assert "do-not-export" not in serialized and "private requirement" not in serialized
+    with pytest.raises(UsageError, match="reconciliation_export_limit_exceeded"):
+        await service.export(
+            tenant_id=b.context.tenant_id,
+            operator=operator,
+            window=UsageExportWindow(
+                start=start, end=end + timedelta(microseconds=1), limit_per_source=1
+            ),
+        )

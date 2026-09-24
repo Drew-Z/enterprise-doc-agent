@@ -131,6 +131,7 @@ class PresalesProviderCall(UUIDPrimaryKeyMixin, Base):
             name="presales_provider_call_state",
         ),
         Index("ix_presales_provider_calls_started", "started_at"),
+        Index("ix_presales_provider_calls_tenant_time", "tenant_id", "started_at"),
     )
     tenant_id: Mapped[UUID] = mapped_column(nullable=False)
     operation_id: Mapped[UUID] = mapped_column(nullable=False)
@@ -144,6 +145,7 @@ class PresalesProviderCall(UUIDPrimaryKeyMixin, Base):
     error_code: Mapped[str | None] = mapped_column(String(100), nullable=True)
     model_provider: Mapped[str] = mapped_column(String(64))
     model_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    provider_request_id: Mapped[str | None] = mapped_column(String(200), nullable=True)
     provider_response_id: Mapped[str | None] = mapped_column(String(200), nullable=True)
     usage: Mapped[dict[str, int | None] | None] = mapped_column(JSONB, nullable=True)
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

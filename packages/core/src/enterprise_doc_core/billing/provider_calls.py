@@ -17,6 +17,7 @@ from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from enterprise_doc_core.billing.errors import UsageError
+from enterprise_doc_core.billing.provider_metadata import provider_request_id, safe_provider_id
 from enterprise_doc_core.billing.provider_models import ProviderDispatch
 from enterprise_doc_core.config import ProviderUsageSettings
 
@@ -134,9 +135,12 @@ class ProviderCallService:
         response: httpx.Response | None = None,
     ) -> None:
         tokens = None
+        response_id = None
+        request_id = provider_request_id(response.headers) if response is not None else None
         if response is not None and len(response.content) <= 2 * 1024 * 1024:
             try:
                 payload = response.json()
+                response_id = safe_provider_id(payload.get("id"))
                 candidate = payload.get("usage", {}).get("total_tokens")
                 if type(candidate) is int and 0 <= candidate <= 2**31 - 1:
                     tokens = candidate
@@ -159,6 +163,8 @@ class ProviderCallService:
                     return
                 row.state = state
                 row.status_code = response.status_code if response is not None else None
+                row.provider_request_id = request_id
+                row.provider_response_id = response_id
                 row.total_tokens = tokens
                 row.finished_at = datetime.now(UTC)
                 # No published, versioned rate card is configured. Cost stays

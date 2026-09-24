@@ -290,6 +290,88 @@ no historical configuration from no currently active period. Keep the reservatio
 stored entitlement ID when settling. Preserve rows during rollback; never delete
 configuration to restore legacy access.
 
+## Private reconciliation export (0031 candidate)
+
+### Scope / Trigger
+
+CM-5 adds operator evidence preparation, not prices, invoices or proof of live supplier
+reconciliation. Agent/embedding and background Presales use different call ledgers;
+business success events must never be added to call counts as a single bill.
+
+### Signatures
+
+```python
+await UsageReconciliationService(session_factory=...).export(
+    tenant_id=..., operator=PlatformEntitlementOperator(...),
+    window=UsageExportWindow(start=..., end=..., limit_per_source=5000),
+)
+```
+
+The packaged private CLI adds `usage export --tenant-id UUID --start ISO --end ISO
+--limit-per-source 5000` after the existing explicit target/operator arguments.
+Existing administrator/DB authorization applies; no public endpoint or tenant principal
+grants this access. Local/test entitlement scripts remain restricted.
+
+### Contracts
+
+- Dates require offsets, normalize to UTC and select `[start,end)` over at most 31 days.
+  Each of five sources has a 1..5000 row cap; query cap+1 and reject the whole export on
+  overflow. No truncated report or unlimited scan. Use REPEATABLE READ / READ ONLY,
+  statement timeout 10s, lock timeout 2s and whole operation timeout 30s.
+- `usage-reconciliation.v1` returns tenant/window/generated_at, source_counts,
+  provider_calls, business_events, legacy_presales_attempts, summary and warnings.
+  Calls filter started_at; events filter occurred_at and retain original entitlement,
+  reservation and operation IDs. Legacy non-Job attempts without any call row filter
+  created_at. An out-of-window call must not create a false legacy gap.
+- The report observes current row states in one snapshot, not states as of window_end.
+  Re-exporting may show later confirmation. No DB mutation, quota settlement or audit
+  insertion occurs; attribution is in the private CLI response.
+- Keep original states, routes/channel hashes and separate ledger IDs. Never deduplicate
+  on supplier ID. Presales `not_sent` is visible but excluded from potentially billable
+  counts. Uncertain outcomes, missing tokens and missing cost/currency stay explicit.
+  Business quantities group metric and consume/release separately; no sum of currencies.
+- 0031 adds nullable request/response IDs to provider_dispatches, a nullable request ID
+  and tenant/time index to presales_provider_calls. No old-row backfill. Supplier header
+  priority is x-request-id then request-id; JSON id is the response ID. The shared
+  allowlist is `[A-Za-z0-9][A-Za-z0-9_.-]{0,199}`; reject instead of truncate.
+  Agent/embedding parse bounded JSON; Presales records the header on HTTP errors,
+  invalid output, overlarge bodies and body timeouts too. No arbitrary header/body dump.
+  Downgrade locks both tables and refuses to discard populated new identifier columns.
+- Warnings explicitly exclude pre-metering/admin calls, mark legacy aggregate gaps and
+  state that supplier prices are unreconciled. Summary counts exclude legacy aggregates.
+
+### Validation & Error Matrix
+
+| Condition | Stable outcome |
+|---|---|
+| Naive/reversed/>31-day window or invalid row cap | CLI exit 2, reconciliation_invalid_window |
+| Wrong formal target / bad attribution | Existing operations/entitlement errors, no export |
+| Tenant does not exist | reconciliation_tenant_not_found |
+| Any source exceeds cap | reconciliation_export_limit_exceeded, no partial export |
+| Database read/statement timeout failure | reconciliation_store_unavailable |
+| Whole operation times out | CLI operations_timeout |
+| New supplier IDs exist during downgrade | provider_reconciliation_history_present |
+
+### Good / Base / Bad Cases
+
+Good: a primary timeout and fallback success yield two calls and one consumed business
+event. Base: historical IDs and all unpriced amounts remain null. Bad: treating HTTP 200
+as business success, unknown as free, or a call-less legacy attempt as a synthetic call.
+
+### Tests Required
+
+`test_usage_reconciliation_integration.py` verifies real PostgreSQL read-only enforcement,
+concurrent snapshot consistency, tenant/time isolation, original-period settlement,
+caps, operator adapter and additive migration/history guard. Presales background tests
+cover primary/fallback/error IDs, not_sent, legacy gaps and separate source limits.
+Metadata/window/CLI tests cover invalid fields, body timeouts and safe failures.
+
+### Wrong vs Correct
+
+Wrong: export the first 5000 rows with status confirmed and infer missing cost as zero.
+Correct: fetch 5001, reject if needed, narrow the time window, preserve null amounts
+and independently reconcile the exported identifiers against supplier records.
+
 ## Proven Examples
 
 - `packages/core/src/enterprise_doc_core/billing/service.py`
@@ -297,3 +379,5 @@ configuration to restore legacy access.
 - `apps/api/src/enterprise_doc_api/tenant_usage/router.py`
 - `tests/billing/test_entitlement_lifecycle_integration.py`
 - `tests/billing/test_tenant_resource_usage_integration.py`
+- `packages/core/src/enterprise_doc_core/billing/reconciliation.py`
+- `tests/billing/test_usage_reconciliation_integration.py`

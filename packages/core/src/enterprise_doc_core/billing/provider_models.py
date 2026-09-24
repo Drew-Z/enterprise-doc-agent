@@ -33,6 +33,8 @@ class ProviderDispatch(UUIDPrimaryKeyMixin, Base):
     channel_hash: Mapped[str] = mapped_column(String(64))
     state: Mapped[str] = mapped_column(String(24))
     status_code: Mapped[int | None] = mapped_column(Integer)
+    provider_request_id: Mapped[str | None] = mapped_column(String(200))
+    provider_response_id: Mapped[str | None] = mapped_column(String(200))
     total_tokens: Mapped[int | None] = mapped_column(Integer)
     estimated_cost: Mapped[Decimal | None] = mapped_column(Numeric(24, 8))
     currency: Mapped[str | None] = mapped_column(String(8))

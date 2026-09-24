@@ -21,6 +21,6 @@
   "children": [],
   "parent": "09-24-commercial-production-readiness",
   "relatedFiles": [],
-  "notes": "CM-1 through CM-4 implemented and locally validated; CM-5 live supplier reconciliation, pricing and deployment acceptance pending. No production migration or release.",
+  "notes": "CM-1 through CM-4 locally validated. CM-5 now includes supplier IDs and bounded private read-only ledger export with real PostgreSQL validation. Live supplier reconciliation, price card and deployment acceptance remain pending.",
   "meta": {}
 }

@@ -279,6 +279,7 @@ class BackgroundGeneration:
                                     generated.draft, candidates, sources, claim.tenant_id, notes
                                 )
                             except PresalesError as error:
+                                error.provider_request_id = generated.provider_request_id
                                 error.usage, error.provider_response_id = (
                                     generated.usage,
                                     generated.provider_response_id,
@@ -313,6 +314,7 @@ class BackgroundGeneration:
                                 provider_requests=1,
                                 usage=generated.usage,
                                 provider_response_id=generated.provider_response_id,
+                                provider_request_id=generated.provider_request_id,
                             )
                             await self._record_error(claim, call_id, failure)
                             raise failure from error
@@ -420,6 +422,7 @@ class BackgroundGeneration:
             )
             call.error_code, call.retryable = error.code, error.retryable
             call.usage, call.provider_response_id = error.usage, error.provider_response_id
+            call.provider_request_id = error.provider_request_id
             await route_health.observed(session, call, now=self.clock(), settings=self.settings)
             operation.state = "recovering" if error.retryable else "running"
             summarize_calls(operation, calls)
@@ -449,6 +452,7 @@ class BackgroundGeneration:
                 raise JobLeaseLost()
             call.state, call.finished_at = "succeeded", self.clock()
             call.usage, call.provider_response_id = generated.usage, generated.provider_response_id
+            call.provider_request_id = generated.provider_request_id
             call.model_name = generated.returned_model or gateway.model_name
             await route_health.observed(session, call, now=self.clock(), settings=self.settings)
             summarize_calls(operation, calls)

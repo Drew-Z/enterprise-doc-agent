@@ -28,3 +28,13 @@ Agent 以 run ID 预约一个 agent_task；文档以持久处理工作为边界�
   已用量。新 configure 默认 Agent/文档配额均为 0，需显式配置；新演示为 0 / 10 MiB。
 - 严格 Web API 与后端需一起升级。审批跨周期继续使用原预约；当前周期的调用统计按
   started_at 汇总，不能与原周期业务用量相加作账单。
+
+## CM-5 实施设计
+
+0031 仅追加 provider_dispatches 的 request/response ID、presales_provider_calls 的 request ID 和企业时间索引。ID 使用共享的有限 ASCII token 校验；不截断 ID，不记录原始 headers/body/URL。已有 null 不回填。保留标识时禁止破坏性降级。
+
+私有 operations CLI 新增 usage export，沿用宿主/数据库管理权限和显式环境/目标核对，不增加公开 API。Core 的 UsageReconciliationService 接收 PlatformEntitlementOperator 与经校验的单企业 [start,end) 窗口（<=31天）；每个来源最多5000条，查询多取1条，超限整体失败。REPEATABLE READ/READ ONLY 事务，语句10秒、锁2秒、操作30秒，不写审计/额度/账本。
+
+分别投影 provider_dispatches、presales_provider_calls、usage_events、product_usage_events；供应商记录按 started_at、业务事件按 occurred_at 过滤并带原周期/预约/操作标识。无逐次调用行的历史非 Job 售前 attempt 单列覆盖缺口（按 created_at）；不能用于填补或推算调用。所有关联带 tenant；对同一个不可变窗口重复导出会观察到后来确认的当前状态，不宣称历史 as-of。
+
+只在 HTTP 外部边界使用替身，数据库隔离/只读/一致快照、跨周期成功事件、迁移保留及 CLI 目标核对用真实本地 PostgreSQL 验证。真实供应商对账待账单/价目表后另验。

@@ -8,6 +8,7 @@ from typing import Any, Protocol
 import httpx
 from pydantic import ValidationError
 
+from enterprise_doc_core.billing.provider_metadata import provider_request_id, safe_provider_id
 from enterprise_doc_core.config import ModelProvider, ModelSettings
 from enterprise_doc_core.presales.citation_selection import (
     SelectionDraft,
@@ -156,6 +157,7 @@ class OpenAICompatiblePresalesGateway:
         }
         if len(json.dumps(request, ensure_ascii=False).encode()) > 128 * 1024:
             raise PresalesError("presales_input_too_large")
+        request_id = None
         try:
             async with asyncio.timeout(
                 self.settings.route_deadline_seconds or self.settings.timeout_seconds
@@ -177,6 +179,7 @@ class OpenAICompatiblePresalesGateway:
                         },
                         json=request,
                     ) as response:
+                        request_id = provider_request_id(response.headers)
                         if response.status_code != 200:
                             code = (
                                 "presales_model_rate_limited"
@@ -198,14 +201,25 @@ class OpenAICompatiblePresalesGateway:
                                     "presales_output_too_large", provider_requests=1
                                 )
                             content.extend(piece)
-            return self._decode(bytes(content), catalog)
+            return self._decode(bytes(content), catalog).model_copy(
+                update={"provider_request_id": request_id}
+            )
+        except PresalesError as error:
+            error.provider_request_id = request_id
+            raise
         except (httpx.TimeoutException, TimeoutError) as error:
             raise PresalesError(
-                "presales_model_timeout", provider_requests=1, retryable=True
+                "presales_model_timeout",
+                provider_requests=1,
+                retryable=True,
+                provider_request_id=request_id,
             ) from error
         except httpx.HTTPError as error:
             raise PresalesError(
-                "presales_model_transport_error", provider_requests=1, retryable=True
+                "presales_model_transport_error",
+                provider_requests=1,
+                retryable=True,
+                provider_request_id=request_id,
             ) from error
 
     @staticmethod
@@ -220,8 +234,7 @@ class OpenAICompatiblePresalesGateway:
                 for key in ("prompt_tokens", "completion_tokens", "total_tokens"):
                     value = reported_usage.get(key)
                     usage[key] = value if type(value) is int and value >= 0 else None
-            raw_id = response.get("id")
-            response_id = raw_id if isinstance(raw_id, str) and len(raw_id) <= 200 else None
+            response_id = safe_provider_id(response.get("id"))
             if response.get("error") is not None:
                 envelope = response["error"]
                 retryable_codes = {

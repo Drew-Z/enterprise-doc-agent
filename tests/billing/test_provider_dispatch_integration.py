@@ -28,6 +28,43 @@ from enterprise_doc_core.documents.embedding_provider import OpenAICompatibleEmb
 pytestmark = pytest.mark.integration
 
 
+@pytest.mark.parametrize("status", [200, 429, 503])
+async def test_provider_receipt_keeps_ids_even_without_valid_usage(billing_database, status):
+    sessions, (tenant_id, _) = billing_database
+    service = ProviderCallService(session_factory=sessions)
+
+    async def guard(session):
+        pass
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(
+            lambda _: httpx.Response(
+                status, headers={"x-request-id": "req-test"}, json={"id": "resp-test", "usage": []}
+            )
+        )
+    ) as client:
+        with service.scope(tenant_id=tenant_id, operation_id=uuid4(), kind="agent", guard=guard):
+            await recorded_post(
+                client,
+                "https://example.test/chat/completions",
+                provider="test",
+                model="test",
+                json_body={},
+                headers={},
+                request_timeout=httpx.Timeout(1),
+            )
+    async with sessions() as session:
+        row = (
+            await session.scalars(
+                select(ProviderDispatch).where(ProviderDispatch.tenant_id == tenant_id)
+            )
+        ).one()
+        assert row.provider_request_id == "req-test"
+        assert row.provider_response_id == "resp-test"
+        assert row.total_tokens is None and row.estimated_cost is None
+        assert row.state == ("responded" if status == 200 else "http_error")
+
+
 async def test_dispatch_fk_does_not_deadlock_with_quota_admission(billing_database):
     sessions, (tenant_id, _) = billing_database
     service = ProviderCallService(session_factory=sessions)
@@ -83,11 +120,16 @@ async def test_empty_dispatch_migration_roundtrip(billing_database):
     migration = import_module(
         "enterprise_doc_core.db.migrations.versions.20260924_0030_provider_dispatches"
     )
+    identifiers = import_module(
+        "enterprise_doc_core.db.migrations.versions.20260924_0031_provider_reconciliation"
+    )
 
     def roundtrip(connection):
         with Operations.context(MigrationContext.configure(connection)):
+            identifiers.downgrade()
             migration.downgrade()
             migration.upgrade()
+            identifiers.upgrade()
 
     async with sessions.begin() as session:
         await (await session.connection()).run_sync(roundtrip)

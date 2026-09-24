@@ -194,3 +194,4 @@ class GeneratedDraft(PresalesModel):
     usage: dict[str, int | None] | None = None
     returned_model: str | None = None
     provider_response_id: str | None = None
+    provider_request_id: str | None = None
