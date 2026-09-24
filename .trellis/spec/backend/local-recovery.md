@@ -66,3 +66,9 @@ migrated revision, synthetic-data scope, script hash and resource cleanup.
 Wrong: `dropdb --if-exists` before restore, or a successful local inventory check
 reported as a production recovery pass. Correct: exclusive creation, owned cleanup,
 private centralized artifacts, and explicit external acceptance limitations.
+
+## Proven Examples
+
+- `scripts/local_recovery_drill.py`
+- `tests/deployment/test_local_recovery_drill.py`
+- `docs/ops/single-node-operations-acceptance.md`
