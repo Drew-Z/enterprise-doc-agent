@@ -11,6 +11,8 @@ from enterprise_doc_api.errors import ApiError
 from enterprise_doc_core.context import PrincipalContext
 from enterprise_doc_core.presales.errors import PresalesError
 from enterprise_doc_core.presales.schemas import (
+    BatchGenerateInput,
+    BatchGenerateResult,
     CreatePacket,
     PacketSummary,
     PacketView,
@@ -27,6 +29,9 @@ class PresalesServiceProtocol(Protocol):
     async def generate(
         self, principal: PrincipalContext, packet_id: UUID, row_id: UUID, key: str
     ) -> PacketView: ...
+    async def generate_batch(
+        self, principal: PrincipalContext, packet_id: UUID, payload: BatchGenerateInput, key: str
+    ) -> BatchGenerateResult: ...
     async def review(
         self,
         principal: PrincipalContext,
@@ -88,6 +93,8 @@ async def result[T](operation: Awaitable[T]) -> T:
             status, message = 429, "已达到本次操作限额。请联系管理员。"
         elif code == "presales_generation_busy":
             message = "已有生成正在进行。请稍后刷新查看结果。"
+        elif code == "presales_background_required":
+            message = "当前仅支持逐条生成。请刷新页面后重试。"
         elif code == "presales_revision_conflict":
             message = "这条响应已被修改。请刷新后重新核对。"
         elif code == "presales_review_required":
@@ -121,9 +128,32 @@ async def get_packet(packet_id: UUID, principal: Principal, svc: Service) -> Pac
 
 @router.post("/{packet_id}/rows/{row_id}/generate", response_model=PacketView)
 async def generate_row(
-    packet_id: UUID, row_id: UUID, principal: Principal, svc: Service, key: Key
+    packet_id: UUID,
+    row_id: UUID,
+    principal: Principal,
+    svc: Service,
+    key: Key,
+    response: Response,
 ) -> PacketView:
-    return await result(svc.generate(principal, packet_id, row_id, key))
+    packet = await result(svc.generate(principal, packet_id, row_id, key))
+    if any(r.id == row_id and r.state in {"queued", "running", "recovering"} for r in packet.rows):
+        response.status_code = 202
+    return packet
+
+
+@router.post("/{packet_id}/generate", response_model=BatchGenerateResult)
+async def generate_batch(
+    packet_id: UUID,
+    payload: BatchGenerateInput,
+    principal: Principal,
+    svc: Service,
+    key: Key,
+    response: Response,
+) -> BatchGenerateResult:
+    batch = await result(svc.generate_batch(principal, packet_id, payload, key))
+    if any(r.state in {"queued", "running", "recovering"} for r in batch.packet.rows):
+        response.status_code = 202
+    return batch
 
 
 @router.put("/{packet_id}/rows/{row_id}/review", response_model=PacketView)

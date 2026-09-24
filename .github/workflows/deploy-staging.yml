@@ -252,6 +252,12 @@ jobs:
           PRESALES_MODEL_ROUTE: ${{ vars.STAGING_PRESALES_MODEL_ROUTE || 'primary' }}
           PRESALES_MODEL_TIMEOUT_SECONDS: ${{ vars.STAGING_PRESALES_MODEL_TIMEOUT_SECONDS }}
           PRESALES_ROW_TIMEOUT_SECONDS: ${{ vars.STAGING_PRESALES_ROW_TIMEOUT_SECONDS || '90' }}
+          PRESALES_BACKGROUND_GENERATION_ENABLED: ${{ vars.STAGING_PRESALES_BACKGROUND_GENERATION_ENABLED || 'false' }}
+          PRESALES_AUTOMATIC_FAILOVER_ENABLED: ${{ vars.STAGING_PRESALES_AUTOMATIC_FAILOVER_ENABLED || 'false' }}
+          PRESALES_DAILY_DISPATCH_LIMIT: ${{ vars.STAGING_PRESALES_DAILY_DISPATCH_LIMIT || '200' }}
+          PRESALES_QUEUE_TIMEOUT_SECONDS: ${{ vars.STAGING_PRESALES_QUEUE_TIMEOUT_SECONDS || '900' }}
+          PRESALES_ROUTE_FAILURE_THRESHOLD: ${{ vars.STAGING_PRESALES_ROUTE_FAILURE_THRESHOLD || '3' }}
+          PRESALES_ROUTE_COOLDOWN_SECONDS: ${{ vars.STAGING_PRESALES_ROUTE_COOLDOWN_SECONDS || '30' }}
           DATABASE_EGRESS_CIDR: ${{ vars.STAGING_DATABASE_EGRESS_CIDRS || vars.STAGING_DATABASE_EGRESS_CIDR }}
           MODEL_PROVIDER: openai_compatible
           MODEL_BASE_URL: ${{ vars.STAGING_MODEL_BASE_URL }}
@@ -329,6 +335,12 @@ jobs:
             --presales-model-route "$PRESALES_MODEL_ROUTE" \
             --presales-model-timeout-seconds "$PRESALES_MODEL_TIMEOUT_SECONDS" \
             --presales-row-timeout-seconds "$PRESALES_ROW_TIMEOUT_SECONDS" \
+            --presales-background-generation-enabled "$PRESALES_BACKGROUND_GENERATION_ENABLED" \
+            --presales-automatic-failover-enabled "$PRESALES_AUTOMATIC_FAILOVER_ENABLED" \
+            --presales-daily-dispatch-limit "$PRESALES_DAILY_DISPATCH_LIMIT" \
+            --presales-queue-timeout-seconds "$PRESALES_QUEUE_TIMEOUT_SECONDS" \
+            --presales-route-failure-threshold "$PRESALES_ROUTE_FAILURE_THRESHOLD" \
+            --presales-route-cooldown-seconds "$PRESALES_ROUTE_COOLDOWN_SECONDS" \
             --demo-enabled "$DEMO_ENABLED" \
             --embedding-base-url "$EMBEDDING_BASE_URL" \
             --embedding-model-name "$EMBEDDING_MODEL_NAME" \

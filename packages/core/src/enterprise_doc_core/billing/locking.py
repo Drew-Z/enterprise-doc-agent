@@ -10,15 +10,16 @@ from enterprise_doc_core.billing.errors import UsageError
 from enterprise_doc_core.identity.models import Tenant
 
 
-async def lock_usage_tenant(session: AsyncSession, tenant_id: UUID) -> None:
+async def lock_usage_tenant(
+    session: AsyncSession, tenant_id: UUID, *, allow_inactive: bool = False
+) -> None:
     """Serialize configuration and ledger work before locking their child rows."""
     try:
         await session.execute(text("SET LOCAL lock_timeout = '5s'"))
-        found = await session.scalar(
-            select(Tenant.id)
-            .where(Tenant.id == tenant_id, Tenant.is_active.is_(True))
-            .with_for_update()
-        )
+        statement = select(Tenant.id).where(Tenant.id == tenant_id)
+        if not allow_inactive:
+            statement = statement.where(Tenant.is_active.is_(True))
+        found = await session.scalar(statement.with_for_update())
     except DBAPIError as error:
         raise UsageError("usage_store_unavailable") from error
     if found is None:

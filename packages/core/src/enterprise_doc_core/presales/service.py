@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import Literal
@@ -13,6 +14,7 @@ from enterprise_doc_core.audit import append_audit_event
 from enterprise_doc_core.billing import EntitlementUsageService
 from enterprise_doc_core.context import PrincipalContext, get_request_context
 from enterprise_doc_core.demo.limits import check_packet
+from enterprise_doc_core.demo.settings import DemoError
 from enterprise_doc_core.presales.access import (
     authorize_principal,
     check_key,
@@ -25,7 +27,7 @@ from enterprise_doc_core.presales.access import (
 from enterprise_doc_core.presales.errors import PresalesError
 from enterprise_doc_core.presales.export import export_csv
 from enterprise_doc_core.presales.gateway import PresalesGateway
-from enterprise_doc_core.presales.generation import GenerationService, Retriever
+from enterprise_doc_core.presales.generation import ACTIVE_STATES, GenerationService, Retriever
 from enterprise_doc_core.presales.models import (
     PresalesAttempt,
     PresalesPacket,
@@ -34,6 +36,8 @@ from enterprise_doc_core.presales.models import (
 )
 from enterprise_doc_core.presales.schemas import (
     AttemptView,
+    BatchGenerateInput,
+    BatchGenerateResult,
     CitationInput,
     CreatePacket,
     ModelDraft,
@@ -41,6 +45,7 @@ from enterprise_doc_core.presales.schemas import (
     PacketView,
     RequirementInput,
     ReviewInput,
+    RowRejection,
     RowView,
     SavedDraft,
     SavedReview,
@@ -199,13 +204,44 @@ class PresalesService:
                 row_count=len(rows),
                 sources=[SourceSnapshot.model_validate(s) for s in packet.sources],
                 rows=views,
+                generation_mode=(
+                    "background"
+                    if self.generation.settings.background_generation_enabled
+                    else "synchronous"
+                ),
             )
 
     async def generate(
         self, principal: PrincipalContext, packet_id: UUID, row_id: UUID, key: str
     ) -> PacketView:
-        await self.generation.generate(principal, packet_id, row_id, key)
+        if self.generation.settings.background_generation_enabled:
+            await self.generation.enqueue(principal, packet_id, row_id, key)
+        else:
+            await self.generation.generate(principal, packet_id, row_id, key)
         return await self.get(principal, packet_id)
+
+    async def generate_batch(
+        self, principal: PrincipalContext, packet_id: UUID, payload: BatchGenerateInput, key: str
+    ) -> BatchGenerateResult:
+        check_key(key)
+        await self.get(principal, packet_id)
+        if not self.generation.settings.background_generation_enabled:
+            raise PresalesError("presales_background_required")
+        rejected = []
+        for row_id in payload.row_ids:
+            row_key = hashlib.sha256(f"{key}:{row_id}".encode()).hexdigest()
+            try:
+                await self.generation.enqueue(principal, packet_id, row_id, row_key)
+            except (PresalesError, DemoError) as error:
+                if error.code in {
+                    "presales_forbidden",
+                    "presales_source_unavailable",
+                    "presales_stale_sources",
+                    "demo_session_expired",
+                }:
+                    raise
+                rejected.append(RowRejection(row_id=row_id, code=error.code))
+        return BatchGenerateResult(packet=await self.get(principal, packet_id), rejected=rejected)
 
     async def review(
         self,
@@ -328,7 +364,9 @@ class PresalesService:
         for attempt in attempts:
             state = (
                 "expired"
-                if attempt.state == "running" and attempt.deadline_at <= self.clock()
+                if attempt.job_id is None
+                and attempt.state == "running"
+                and attempt.deadline_at <= self.clock()
                 else attempt.state
             )
             attempt_views.append(
@@ -352,22 +390,26 @@ class PresalesService:
                 )
             )
         history = [SavedReview.model_validate(r.content) for r in reviews]
-        state_value: Literal["pending", "running", "drafted", "failed"] = "pending"
+        state_value = "pending"
         if row.draft is not None:
             state_value = "drafted"
         elif attempt_views:
-            state_value = "running" if attempt_views[-1].state == "running" else "failed"
-        return RowView(
-            id=row.id,
-            requirement=RequirementInput(
-                key=row.requirement_key,
-                text=row.requirement_text,
-                source_location=row.source_location,
-            ),
-            revision=row.revision,
-            state=state_value,
-            draft=SavedDraft.model_validate(row.draft) if row.draft else None,
-            review=history[-1] if history else None,
-            review_history=history,
-            attempts=attempt_views,
+            state_value = (
+                attempt_views[-1].state if attempt_views[-1].state in ACTIVE_STATES else "failed"
+            )
+        return RowView.model_validate(
+            dict(
+                id=row.id,
+                requirement=RequirementInput(
+                    key=row.requirement_key,
+                    text=row.requirement_text,
+                    source_location=row.source_location,
+                ),
+                revision=row.revision,
+                state=state_value,
+                draft=SavedDraft.model_validate(row.draft) if row.draft else None,
+                review=history[-1] if history else None,
+                review_history=history,
+                attempts=attempt_views,
+            )
         )

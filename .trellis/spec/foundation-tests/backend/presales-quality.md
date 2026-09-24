@@ -203,8 +203,8 @@ Identify the route actually in use before interpreting "backup": presales can al
 be using configured fallback, making primary the available alternate. Freeze the new
 channel/model with the unchanged prompt and cases, keep original-channel failures,
 and retain the semantic release gate. A new channel's result is a separate experiment,
-not a retry that makes the original attempt successful. No automatic route switching
-is added to evaluation or the product.
+not a retry that makes the original attempt successful. Evaluation never switches
+routes automatically. Product background recovery is separately gated as below.
 
 When the user updates the local file, identify the selected endpoint, model and
 protocol again; a stale PROVIDER_NAME label does not select the route. Create a new
@@ -212,3 +212,30 @@ freeze and output path for a different designated channel. Preserve an interrupt
 candidate's original bytes and record cancellation uncertainty separately. A 200
 model catalog listing proves discovery only; a generation 200 without the standard
 choices envelope is still an invalid response, not a draft or semantic score.
+
+## Background recovery fault injection
+
+`tests/presales/test_presales_background_integration.py` uses real PostgreSQL,
+ASGI, Job leases, commercial reservations and demo limits with controlled HTTP
+transport. Verify admission without inference, idempotency, 503/timeout/200-error
+failover, terminal output failures, two-route exhaustion, unknown outcomes across
+restart, stale fencing, expired observed usage, pre-HTTP not_sent accounting,
+authorization/source changes, cancellation, daily budgets and one half-open probe.
+Batch tests must continue after per-row rejection and never create duplicate work
+on same-key replay. Migration tests cover empty upgrade/downgrade and refusal once
+dispatch history would be lost.
+
+The dedicated background browser harness exercises the real API/database/worker
+coordinator with synthetic sources and a controlled model. Verify page navigation,
+refresh, partial completion, failed-only retry, quota settlement/release, tenant
+isolation and mobile layout. Keep legacy synchronous, review and CSV suites passing.
+No live provider is required for these tests. Never alter frozen runs/gold, hide
+original failures, or count fault-injection success as a semantic release pass.
+
+For isolated migration validation, create a uniquely owned PostgreSQL schema and
+an empty alembic_version table in that schema **before** upgrading. With
+search_path=temporary_schema,public, Alembic can otherwise discover the public
+version table and apply incremental ALTERs to public tables. Assert both schema
+versions and table ownership before tests, verify public is unchanged afterward,
+and remove only the exact owned schema in finally. Do not point a harness at an
+empty schema and assume search_path alone provides migration isolation.

@@ -1,14 +1,15 @@
 # 公网试点：登录与业务发布
 
 目标是让获准的试用者或公开演示访客上传资料，生成并复核售前响应，导出 CSV。
-当前记录更新至 2026-09-23：v0.1.43 已部署到固定 4C4G 主机，公开访客可免登录进入
-独立演示企业。两份 TXT 批量上传、三条真实生成、引用核查、复核及 CSV 导出已通过公网验收。
+当前记录更新至 2026-09-24：v0.1.44 已部署到固定 4C4G 主机，公开访客可免登录进入
+独立演示企业。v0.1.43 完成两份 TXT 批量上传、三条真实生成、引用核查、复核及 CSV
+导出的公网验收，v0.1.44 再次通过标准发布业务检查。
 正式企业继续使用 GitHub 登录；既有受邀企业的资料、响应、权益和用量记录与发布前一致。
 
 当前选择：优先 GitHub 标准 OAuth，后续评估 LINUX DO，保留现有 Cloudflare Access 资源。
 真实 Access 换码已成功，但令牌缺少本产品要求的 `email_verified`；不能据此推断邮箱已验证。
 相关临时推导补丁已撤回，原 OIDC 校验保持严格。下方早期环境观察保留原始时点，
-不代表当前线上版本。当前部署见 [Deploy Staging 35831689248](https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/35831689248)，公网业务证据保存在本任务的 `public-demo-networkfix-public-verification.json`。
+不代表当前线上版本。当前部署见 [Deploy Staging 35853410044](https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/35853410044)，公网业务证据保存在本任务的 `public-demo-networkfix-public-verification.json`。
 
 ## 早期环境观察（历史记录）
 
@@ -165,16 +166,59 @@ $presalesArgs = @('--presales-generation-enabled', 'true',
 # 将 @presalesArgs 与已有 @browserArgs、模型路由、存储、镜像等参数一起传入。
 ```
 
-`fallback` 直接选择已配置的备用模型，并非失败后自动多调用一次；同时需要原有
+在自动切换关闭时，`fallback` 直接选择已配置的备用模型；同时需要原有
 `STAGING_MODEL_FALLBACK_BASE_URL`、`STAGING_MODEL_FALLBACK_NAME` 及私有备用 API Key。
 模型等待必须小于整行等待，两个值均为有限正数且不超过 180 秒；当前 Web 镜像的
-Nginx 等待为 210 秒。调用超时仍可能在供应商侧产生费用，不能自动重发来证明成功。
+Nginx 等待为 210 秒。调用超时仍可能在供应商侧产生费用。质量评测仍保持单次调用，
+不能通过自动重发把原失败改记为成功；产品的有界恢复由下节独立开关控制。
 
 每次渲染都会重设这四项管理范围内的配置，留空模型等待会清除旧覆盖值。未配置时
 生成保持关闭；想恢复默认时显式使用 `false`、`primary`、空模型等待和 `90`。
 ConfigMap 内容进入工作负载及前置资源 hash，若与线上管理员清单不同，标准发布
 会在 rollout 前拒绝。先审阅准确差异并按原流程更新 prerequisites，不绕过此检查。
 渲染清单随现有部署证据保留；设置 Environment 变量本身不改变当前运行服务。
+
+## 后台生成与有界渠道恢复
+
+本分支新增，**默认关闭、尚未部署**；线上仍为 v0.1.44。以下受控故障测试通过不代表
+v7 的独立语义发布门槛通过。固定 4C4G，复用现有 Worker/publisher 进程的异步轮询，
+每进程同时执行一条售前任务；不增加常驻服务，也不占用文档解析的 solo consumer。
+
+| Environment 变量 | renderer 参数 | 默认值 |
+| --- | --- | --- |
+| `STAGING_PRESALES_BACKGROUND_GENERATION_ENABLED` | `--presales-background-generation-enabled` | `false` |
+| `STAGING_PRESALES_AUTOMATIC_FAILOVER_ENABLED` | `--presales-automatic-failover-enabled` | `false` |
+| `STAGING_PRESALES_DAILY_DISPATCH_LIMIT` | `--presales-daily-dispatch-limit` | `200` |
+| `STAGING_PRESALES_QUEUE_TIMEOUT_SECONDS` | `--presales-queue-timeout-seconds` | `900` |
+| `STAGING_PRESALES_ROUTE_FAILURE_THRESHOLD` | `--presales-route-failure-threshold` | `3` |
+| `STAGING_PRESALES_ROUTE_COOLDOWN_SECONDS` | `--presales-route-cooldown-seconds` | `30` |
+
+这些值写入同名 `PRESALES__*` 配置并进入 ConfigMap hash，API/Worker 必须一致。
+企业待执行容量由 `PRESALES__QUEUED_ATTEMPT_LIMIT` 控制，默认 24；当前 renderer
+没有它的单独 CLI 参数。自动切换要求后台开关开启，两条模型配置及私有凭据完整。
+
+受理后返回 202 和持久任务状态，浏览器可以切页或刷新。逐行或批量请求有幂等键；
+一行失败不阻止其他行，成功草稿不会重生成。排队期限与执行期限分开，首次领取后
+执行截止时间不再延长；商业预留到期会进一步限制最晚开始时间。
+
+只有网络、超时、408/429、上游故障或可识别的 HTTP 200 错误信封才允许切换。
+同一操作最多两次调用，共享整行执行期限；无 SDK 重试，无第三次请求。引用、
+结构和业务错误直接结束，不通过重新采样掩盖问题。两路失败后保留要求、资料和
+已成功条目。路由连续故障会短暂冷却，之后只放行一个探测任务。
+
+成功操作只结算一次商业额度，失败释放预留；演示防滥用次数仍计一次操作。
+内部每次调用另记 ProviderCall，已知 usage 保留，未知费用不能写成零；超时可能
+仍在上游计费。派发槽位占用全站 UTC 日预算，进程中断或企业清理不退还该预算。
+两个代理域名也可能共享同一上游，应单独验证故障独立性。
+
+发布顺序：确认语义与业务门槛，通过原审批流程渲染准确配置，先应用迁移
+`20260924_0028`，再更新使用相同设置的 API/Worker/Web 镜像。保留既有镜像及
+配置恢复依据，先在受控故障环境验收，再作有明确调用预算的公网验收。
+
+回退时先将 `PRESALES__GENERATION_ENABLED=false` 停止新生成受理，保持后台
+执行开启，等待 queued/running/recovering 全部结束并核对预留释放；随后同时关闭
+自动切换与后台开关。保留迁移和调用历史，有后台记录或已用派发预算时 downgrade
+会拒绝。关闭开关不等于取消现有任务，不要直接删队列、调用表或商业账本。
 
 ## 公开演示企业
 

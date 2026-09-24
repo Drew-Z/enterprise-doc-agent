@@ -6,7 +6,7 @@ import { formatApiError } from "../api/errorDisplay";
 import type { ApiCredential } from "../auth/transport";
 import { useLocale } from "../i18n";
 import { fetchDocumentInventory } from "../product/documentsApi";
-import { PresalesApiError, presalesApi, type CreatePacket, type Packet, type PresalesRow, type ReviewInput } from "./api";
+import { generationActive, PresalesApiError, presalesApi, type CreatePacket, type Packet, type PresalesRow, type ReviewInput } from "./api";
 import { presalesCopy } from "./copy";
 import { PacketForm } from "./PacketForm";
 import { ResponseRow } from "./ResponseRow";
@@ -30,7 +30,7 @@ export function PresalesWorkspace({ token, contextKey, storageKey, openDocuments
   const enabled = Boolean(token) && !readOnly;
   const recent = useQuery({ queryKey: ["presales", contextKey, "list"], queryFn: ({ signal }) => api.list(signal), enabled, retry: false, gcTime: 0 });
   const inventory = useQuery({ queryKey: ["presales", contextKey, "sources"], queryFn: ({ signal }) => fetchDocumentInventory(token ?? "", signal), enabled: enabled && !activeId, retry: false, gcTime: 0 });
-  const packet = useQuery({ queryKey: ["presales", contextKey, activeId], queryFn: ({ signal }) => api.get(activeId ?? "", signal), enabled: enabled && activeId !== null, retry: false, gcTime: 0, refetchOnWindowFocus: true, refetchInterval: query => query.state.data?.rows.some(r => r.state === "running") ? 2500 : false });
+  const packet = useQuery({ queryKey: ["presales", contextKey, activeId], queryFn: ({ signal }) => api.get(activeId ?? "", signal), enabled: enabled && activeId !== null, retry: false, gcTime: 0, refetchOnWindowFocus: true, refetchInterval: query => query.state.data?.rows.some(generationActive) ? 2500 : false });
   useEffect(() => {
     if (!initialVersionId) return;
     try { sessionStorage.removeItem(storageKey); } catch { /* Recovery is optional. */ }
@@ -76,6 +76,21 @@ export function PresalesWorkspace({ token, contextKey, storageKey, openDocuments
     await recent.refetch();
   });
   const generate = (value: Packet, rows: PresalesRow[]) => void run(rows.length === 1 ? rows[0].id : "all", async signal => {
+    if (rows.length > 1 && value.generationMode === "background") {
+      try {
+        const batch = await api.generateBatch(value.id, rows.map(r => r.id), keyFor("batch:" + value.id, rows.map(r => ({ id: r.id, attempts: r.attempts.length, state: r.state }))), signal);
+        saveResult(batch.packet, signal);
+        return batch.rejected.length ? c.batchRejected.replace("{count}", String(batch.rejected.length)) : batch.packet.rows.some(generationActive) ? c.background : c.complete;
+      } catch (failure) {
+        if (signal.aborted || !alive.current || (failure instanceof PresalesApiError && failure.status < 500)) throw failure;
+        const recovered = await api.get(value.id, signal);
+        saveResult(recovered, signal);
+        const requested = recovered.rows.filter(r => rows.some(requestedRow => requestedRow.id === r.id));
+        if (requested.some(generationActive)) return c.background;
+        if (requested.length === rows.length && requested.every(r => r.state === "drafted" || r.state === "failed")) return c.finished;
+        throw failure;
+      }
+    }
     for (const row of rows) {
       if (signal.aborted) return;
       let next: Packet;
@@ -91,7 +106,7 @@ export function PresalesWorkspace({ token, contextKey, storageKey, openDocuments
       }
       saveResult(next, signal);
       if (next.rows.find(r => r.id === row.id)?.state === "failed") throw new Error(c.rowError);
-      if (next.rows.find(r => r.id === row.id)?.state !== "drafted") return c.waiting;
+      if (next.rows.find(r => r.id === row.id)?.state !== "drafted") return c.background;
     }
   });
   const review = (value: Packet, row: PresalesRow, payload: ReviewInput) => void run("review:" + row.id, async signal => { const next = await api.review(value.id, row.id, payload, keyFor("review:" + row.id, payload), signal); saveResult(next, signal); });
@@ -108,6 +123,7 @@ export function PresalesWorkspace({ token, contextKey, storageKey, openDocuments
   });
   const visible = packet.isError || (activeId !== null && blockedId === activeId) ? undefined : packet.data;
   const pageError = error || (activeId && packet.isError ? formatApiError(packet.error, c.sourceUnavailable, c.requestId) : "");
+  const visibleNotice = notice === c.background && visible && !visible.rows.some(generationActive) ? c.finished : notice;
   return <section className="presales-workspace">
     <header className="product-page-header"><div><p className="eyebrow">{c.title}</p><h1>{c.title}</h1><p className="page-summary">{c.summary}</p></div><button type="button" className="presales-secondary" onClick={openDocuments}>{c.documents}</button></header>
     {!enabled ? <div className="presales-empty" role="status"><ClipboardCheck aria-hidden="true" /><p>{readOnly ? c.showcase : c.login}</p><button type="button" onClick={openDocuments}>{c.documents}</button></div> : <div className="presales-layout">
@@ -115,12 +131,12 @@ export function PresalesWorkspace({ token, contextKey, storageKey, openDocuments
         {recent.isPending && <p role="status">{c.loading}</p>}{recent.isError && <p role="alert" className="presales-error">{formatApiError(recent.error, c.error, c.requestId)}</p>}{!recent.isError && recent.data?.length === 0 && <p className="presales-hint">{c.empty}</p>}
         {!recent.isError && recent.data?.map(item => <button type="button" key={item.id} className={"presales-packet-link" + (activeId === item.id ? " selected" : "")} aria-current={activeId === item.id ? "true" : undefined} disabled={Boolean(busy)} onClick={() => select(item.id)}><strong>{item.title}</strong><small>{new Date(item.createdAt).toLocaleDateString()} · {item.rowCount}</small>{item.staleSources && <small>{c.stale}</small>}</button>)}
       </aside>
-      <div className="presales-main" aria-busy={Boolean(busy)}>{pageError && <div className="presales-error" role="alert">{pageError}{(packet.isError || blockedId !== null) && <button type="button" onClick={() => select(null)}>{c.reset}</button>}</div>}{notice && <p className="presales-saved" role="status">{notice}</p>}
+      <div className="presales-main" aria-busy={Boolean(busy)}>{pageError && <div className="presales-error" role="alert">{pageError}{(packet.isError || blockedId !== null) && <button type="button" onClick={() => select(null)}>{c.reset}</button>}</div>}{visibleNotice && <p className="presales-saved" role="status">{visibleNotice}</p>}
         {!activeId && <><h2>{c.newPacket}</h2>{inventory.isPending && <p role="status">{c.loading}</p>}{inventory.isError && <p role="alert" className="presales-error">{formatApiError(inventory.error, c.error, c.requestId)}<button type="button" onClick={() => void inventory.refetch()}>{c.refresh}</button></p>}{inventory.isSuccess && <PacketForm key={formRevision} maxRequirements={maxRequirements} documents={inventory.data} busy={Boolean(busy)} onCreate={create} openDocuments={openDocuments} initialVersionId={entryVersionId} />}</>}
         {activeId && packet.isPending && <p role="status">{c.loading}</p>}
-        {visible && <><header className="presales-packet-heading"><div><h2>{visible.title}</h2><p className="presales-hint">{visible.rows.filter(r => r.review).length} / {visible.rows.length} {c.progress}</p></div><button className="presales-icon" type="button" aria-label={c.refresh} title={c.refresh} disabled={Boolean(busy)} onClick={() => void packet.refetch()}><RefreshCw aria-hidden="true" /></button></header>
+        {visible && <><header className="presales-packet-heading"><div><h2>{visible.title}</h2><p className="presales-hint" role="status">{visible.rows.filter(r => r.draft).length} / {visible.rows.length} {c.generatedProgress} · {visible.rows.filter(r => r.review).length} / {visible.rows.length} {c.progress}</p></div><button className="presales-icon" type="button" aria-label={c.refresh} title={c.refresh} disabled={Boolean(busy)} onClick={() => void packet.refetch()}><RefreshCw aria-hidden="true" /></button></header>
           <details className="presales-sources"><summary>{c.sourceSnapshot} ({visible.sources.length})</summary><p className="presales-hint">{c.frozen}</p>{visible.sources.map(source => <div key={source.versionId}><strong>{source.filename} · v{source.versionNumber}</strong><p>{source.applicability}</p></div>)}</details>
-          <div className="presales-toolbar"><button type="button" className="presales-primary" disabled={Boolean(busy) || !visible.rows.some(r => r.state === "pending")} onClick={() => generate(visible, visible.rows.filter(r => r.state === "pending"))}>{busy === "all" ? c.generating : c.generateAll}</button><button type="button" disabled={Boolean(busy)} onClick={() => download(visible.id, "draft")}><Download aria-hidden="true" />{c.exportDraft}</button><button type="button" disabled={Boolean(busy) || !visible.rows.every(r => r.review)} onClick={() => download(visible.id, "reviewed")}><Download aria-hidden="true" />{c.exportReviewed}</button></div>
+          <div className="presales-toolbar"><button type="button" className="presales-primary" disabled={Boolean(busy) || !visible.rows.some(r => r.state === "pending")} onClick={() => generate(visible, visible.rows.filter(r => r.state === "pending"))}>{busy === "all" ? c.generating : c.generateAll}</button>{visible.rows.some(r => r.state === "failed" && r.attempts.length < 3) && <button type="button" disabled={Boolean(busy)} onClick={() => generate(visible, visible.rows.filter(r => r.state === "failed" && r.attempts.length < 3))}>{c.retryFailed}</button>}<button type="button" disabled={Boolean(busy)} onClick={() => download(visible.id, "draft")}><Download aria-hidden="true" />{c.exportDraft}</button><button type="button" disabled={Boolean(busy) || !visible.rows.every(r => r.review)} onClick={() => download(visible.id, "reviewed")}><Download aria-hidden="true" />{c.exportReviewed}</button></div>
           <p className="presales-hint">{c.draftOnly}</p><div className="presales-rows">{visible.rows.map(row => <ResponseRow key={row.id} row={row} busy={Boolean(busy)} generating={busy === row.id || (busy === "all" && row.state === "pending")} onGenerate={() => generate(visible, [row])} onReview={payload => review(visible, row, payload)} />)}</div>
         </>}
       </div>

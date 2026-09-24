@@ -1,0 +1,50 @@
+import { expect, test } from "@playwright/test";
+
+test.skip(process.env.PRESALES_BACKGROUND_E2E !== "true", "Separate background worker fixture");
+const api = "http://127.0.0.1:18765";
+const headers = { "X-Presales-Test": "presales-browser" };
+
+test("background: navigate, reload, fail over, complete other rows and retry only failures", async ({ page, request }, info) => {
+  const context = await (await request.get(api + "/__presales_test__/context", { headers })).json() as { token: string; otherToken: string };
+  await page.addInitScript(token => {
+    sessionStorage.setItem("enterprise-doc.upload-token.v1", token);
+    localStorage.setItem("enterprise-doc-agent.locale", "zh");
+  }, context.token);
+  const posted: string[] = [];
+  page.on("request", req => { if (req.method() === "POST" && req.url().endsWith("/generate")) posted.push(req.url()); });
+  await page.goto("/#/presales");
+  await page.getByLabel("响应表名称").fill("后台生成故障恢复验收");
+  await page.getByRole("checkbox", { name: /contract-/ }).check();
+  await page.getByLabel("资料适用范围", { exact: true }).fill("合成资料验收");
+  await page.getByRole("checkbox", { name: "我已确认所选版本适用于本次客户要求" }).check();
+  await page.getByRole("textbox", { name: "2. 填写客户要求" }).fill("Retention transient\nRetention normal\nRetention terminal");
+  await page.getByRole("button", { name: "保存响应表", exact: true }).click();
+  await page.getByRole("button", { name: "生成待处理要求" }).click();
+  await expect(page.getByText(/已受理。任务将在后台继续/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "新建响应表", exact: true })).toBeEnabled();
+  await expect(page.getByRole("article", { name: "R2", exact: true }).locator(".presales-state")).toHaveText("排队中");
+  await page.getByRole("button", { name: "上传与管理资料", exact: true }).click();
+  await page.goto("/#/presales");
+  await page.reload();
+  await expect(page.getByRole("article", { name: "R2", exact: true }).locator(".presales-state")).toHaveText("排队中");
+  expect(posted).toHaveLength(1);
+  expect((await request.post(api + "/__presales_test__/release", { headers })).ok()).toBeTruthy();
+  await expect(page.locator(".presales-answer")).toHaveCount(2);
+  await expect(page.getByRole("article", { name: "R3", exact: true }).getByRole("alert")).toBeVisible();
+  await expect(page.getByText("2 / 3 条已生成 · 0 / 3 条已复核")).toBeVisible();
+  const before = await (await request.get(api + "/__presales_test__/stats", { headers })).json() as { calls: number; consumed: number; released: number };
+  expect(before).toMatchObject({ calls: 4, consumed: 2, released: 1 });
+  await page.screenshot({ path: info.outputPath("background-partial.png"), fullPage: true });
+  await request.post(api + "/__presales_test__/repair", { headers });
+  await page.getByRole("button", { name: "重试失败条目", exact: true }).click();
+  await expect(page.locator(".presales-answer")).toHaveCount(3);
+  expect(posted).toHaveLength(2);
+  const after: unknown = await (await request.get(api + "/__presales_test__/stats", { headers })).json();
+  expect(after).toMatchObject({ calls: 5, consumed: 3, released: 1 });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+  await page.screenshot({ path: info.outputPath("background-mobile.png"), fullPage: true });
+  await page.addInitScript(token => sessionStorage.setItem("enterprise-doc.upload-token.v1", token), context.otherToken);
+  await page.reload();
+  await expect(page.getByRole("article")).toHaveCount(0);
+});

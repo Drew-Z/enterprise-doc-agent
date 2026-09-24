@@ -350,7 +350,8 @@ class EntitlementUsageService:
     async def _release(
         self, session: AsyncSession, *, tenant_id: UUID, operation_id: UUID, source: str
     ) -> ReservationResult:
-        await lock_usage_tenant(session, tenant_id)
+        # Deactivation must not strand reservations for cancelled background work.
+        await lock_usage_tenant(session, tenant_id, allow_inactive=True)
         reservation = await self._reservation(session, tenant_id, operation_id, lock=True)
         if reservation is None:
             return ReservationResult(tenant_id, operation_id, 1, False, False, "legacy")

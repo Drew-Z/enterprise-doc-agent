@@ -126,11 +126,11 @@ class SavedReview(ResponseText):
 class AttemptView(PresalesModel):
     id: UUID
     number: int
-    state: Literal["running", "succeeded", "failed", "expired"]
+    state: Literal["queued", "running", "recovering", "succeeded", "failed", "expired"]
     error_code: str | None
     model_provider: str
     model_name: str | None
-    provider_request_count: int | None = Field(ge=0, le=1)
+    provider_request_count: int | None = Field(ge=0, le=2)
     provenance: dict[str, str | None]
     usage: dict[str, int | None] | None
     created_at: datetime
@@ -142,7 +142,7 @@ class RowView(PresalesModel):
     id: UUID
     requirement: RequirementInput
     revision: int
-    state: Literal["pending", "running", "drafted", "failed"]
+    state: Literal["pending", "queued", "running", "recovering", "drafted", "failed"]
     draft: SavedDraft | None
     review: SavedReview | None
     review_history: list[SavedReview]
@@ -160,6 +160,27 @@ class PacketSummary(PresalesModel):
 class PacketView(PacketSummary):
     sources: list[SourceSnapshot]
     rows: list[RowView]
+    generation_mode: Literal["synchronous", "background"] = "synchronous"
+
+
+class BatchGenerateInput(PresalesModel):
+    row_ids: list[UUID] = Field(min_length=1, max_length=12)
+
+    @model_validator(mode="after")
+    def unique_rows(self) -> Self:
+        if len(set(self.row_ids)) != len(self.row_ids):
+            raise ValueError("row IDs must be unique")
+        return self
+
+
+class RowRejection(PresalesModel):
+    row_id: UUID
+    code: str
+
+
+class BatchGenerateResult(PresalesModel):
+    packet: PacketView
+    rejected: list[RowRejection]
 
 
 class GenerationInput(PresalesModel):

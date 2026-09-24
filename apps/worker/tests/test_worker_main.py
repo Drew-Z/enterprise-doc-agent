@@ -143,3 +143,25 @@ async def test_worker_supervision_allows_normal_server_shutdown() -> None:
         await asyncio.Event().wait()
 
     await supervise_worker_tasks(server=stopped(), runtime=pending(), publisher=pending())
+
+
+async def test_worker_supervises_presales_without_blocking_publisher_or_shutdown() -> None:
+    published, cancelled = asyncio.Event(), asyncio.Event()
+
+    async def provider_wait() -> None:
+        try:
+            await asyncio.Event().wait()
+        finally:
+            cancelled.set()
+
+    async def publisher() -> None:
+        published.set()
+        await asyncio.Event().wait()
+
+    async def server() -> None:
+        await asyncio.wait_for(published.wait(), 1)
+
+    await supervise_worker_tasks(
+        server=server(), runtime=provider_wait(), publisher=publisher(), presales=provider_wait()
+    )
+    assert cancelled.is_set()

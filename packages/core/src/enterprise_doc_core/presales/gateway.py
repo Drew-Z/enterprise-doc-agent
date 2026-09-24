@@ -163,7 +163,10 @@ class OpenAICompatiblePresalesGateway:
                 async with httpx.AsyncClient(
                     transport=self.transport,
                     follow_redirects=False,
-                    timeout=self.settings.timeout_seconds,
+                    timeout=httpx.Timeout(
+                        self.settings.timeout_seconds,
+                        connect=min(5.0, self.settings.timeout_seconds),
+                    ),
                 ) as client:
                     async with client.stream(
                         "POST",
@@ -180,7 +183,14 @@ class OpenAICompatiblePresalesGateway:
                                 if response.status_code == 429
                                 else "presales_model_failed"
                             )
-                            raise PresalesError(code, provider_requests=1)
+                            raise PresalesError(
+                                code,
+                                provider_requests=1,
+                                retryable=(
+                                    response.status_code in {408, 429}
+                                    or response.status_code >= 500
+                                ),
+                            )
                         content = bytearray()
                         async for piece in response.aiter_bytes():
                             if len(content) + len(piece) > self.settings.max_output_bytes:
@@ -190,14 +200,49 @@ class OpenAICompatiblePresalesGateway:
                             content.extend(piece)
             return self._decode(bytes(content), catalog)
         except (httpx.TimeoutException, TimeoutError) as error:
-            raise PresalesError("presales_model_timeout", provider_requests=1) from error
+            raise PresalesError(
+                "presales_model_timeout", provider_requests=1, retryable=True
+            ) from error
         except httpx.HTTPError as error:
-            raise PresalesError("presales_model_transport_error", provider_requests=1) from error
+            raise PresalesError(
+                "presales_model_transport_error", provider_requests=1, retryable=True
+            ) from error
 
     @staticmethod
     def _decode(content: bytes, catalog: dict[str, CitationInput]) -> GeneratedDraft:
+        usage: dict[str, int | None] | None = None
+        response_id: str | None = None
         try:
             response: Any = json.loads(content)
+            reported_usage = response.get("usage")
+            if isinstance(reported_usage, dict):
+                usage = {}
+                for key in ("prompt_tokens", "completion_tokens", "total_tokens"):
+                    value = reported_usage.get(key)
+                    usage[key] = value if type(value) is int and value >= 0 else None
+            raw_id = response.get("id")
+            response_id = raw_id if isinstance(raw_id, str) and len(raw_id) <= 200 else None
+            if response.get("error") is not None:
+                envelope = response["error"]
+                retryable_codes = {
+                    "upstream_error",
+                    "server_error",
+                    "internal_error",
+                    "do_request_failed",
+                    "rate_limit_exceeded",
+                    "rate_limit_error",
+                    "overloaded_error",
+                    "timeout",
+                    "gateway_timeout",
+                    "service_unavailable",
+                }
+                retryable = isinstance(envelope, dict) and any(
+                    isinstance(envelope.get(key), str) and envelope[key] in retryable_codes
+                    for key in ("type", "code")
+                )
+                raise PresalesError(
+                    "presales_model_upstream_error", provider_requests=1, retryable=retryable
+                )
             choices = response["choices"]
             if not isinstance(choices, list) or len(choices) != 1:
                 raise ValueError("one choice required")
@@ -208,23 +253,22 @@ class OpenAICompatiblePresalesGateway:
             if message.get("tool_calls") or message.get("function_call") or message.get("refusal"):
                 raise ValueError("tools and refusal are not response drafts")
             draft = resolve_selection(message["content"], catalog)
-            reported_usage = response.get("usage")
-            usage: dict[str, int | None] | None = None
-            if isinstance(reported_usage, dict):
-                usage = {}
-                for key in ("prompt_tokens", "completion_tokens", "total_tokens"):
-                    value = reported_usage.get(key)
-                    usage[key] = value if type(value) is int and value >= 0 else None
-            returned_model, response_id = response.get("model"), response.get("id")
+            returned_model = response.get("model")
             return GeneratedDraft(
                 draft=draft,
                 usage=usage,
                 returned_model=returned_model
                 if isinstance(returned_model, str) and len(returned_model) <= 200
                 else None,
-                provider_response_id=response_id
-                if isinstance(response_id, str) and len(response_id) <= 200
-                else None,
+                provider_response_id=response_id,
             )
+        except PresalesError as error:
+            error.usage, error.provider_response_id = usage, response_id
+            raise
         except (ValueError, TypeError, KeyError, AttributeError, ValidationError) as error:
-            raise PresalesError("presales_invalid_model_output", provider_requests=1) from error
+            raise PresalesError(
+                "presales_invalid_model_output",
+                provider_requests=1,
+                usage=usage,
+                provider_response_id=response_id,
+            ) from error

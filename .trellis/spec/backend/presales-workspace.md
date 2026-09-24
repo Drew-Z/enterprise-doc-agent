@@ -21,6 +21,7 @@ outside this workflow. Commercial contracts are in [entitlements-usage.md](entit
 | POST /api/presales | Fixed title, 1–6 version/applicability pairs, 1–12 key/text/location requirements |
 | GET /api/presales/{id} | Reauthorized sources, rows, attempts and review history |
 | POST /api/presales/{id}/rows/{row}/generate | One explicit row attempt, Idempotency-Key required |
+| POST /api/presales/{id}/generate | Background only: 1–12 distinct rowIds, per-row derived keys; returns packet and rejected rowId/code pairs |
 | PUT /api/presales/{id}/rows/{row}/review | expectedRevision plus response text; Idempotency-Key required |
 | GET /api/presales/{id}/export?mode=draft\|reviewed | Reauthorized UTF-8 BOM CSV attachment |
 
@@ -73,12 +74,14 @@ survive ingestion and are exposed with the actual retrieved evidence.
 
 ## Generation and accounting
 
-The API runs one bounded row at a time; there is no new worker queue. Claim an
+The default synchronous path runs one bounded row at a time in the API. Claim an
 attempt in a short tenant/row transaction, release it for retrieval/network I/O,
 then reauthorize and fence by attempt state/deadline before saving the draft.
 An expired execution cannot overwrite a newer attempt. Same-key replay does not
 call the provider again. Default limits: 3 attempts per row, 2 live attempts per
 tenant, 100 attempts per UTC day; failures count toward these development budgets.
+The optional background path below uses the existing Job runtime and has a separate
+queue capacity; both feature switches remain false by default.
 
 `ApiSettings.presales.generation_enabled` defaults to false. Enabling generation
 requires an OpenAI-compatible selected model configuration; deterministic mode
@@ -95,9 +98,14 @@ The dedicated Chat Completions adapter sends one system/user pair, JSON mode,
 tools=[], tool_choice=none, stream=false and max_tokens=4000. The serialized
 request is capped at 128 KiB and the response at ModelSettings.max_output_bytes.
 Only one completed stop choice is accepted. Tool calls, refusal, truncation,
-invalid JSON/schema or citations fail the row. No repair, automatic failover or retry occurs.
+invalid JSON/schema or citations fail the row. The gateway itself never repairs,
+retries or switches routes. The background coordinator alone can recover eligible
+transport failures within its persistent dispatch budget.
 
 ## Explicit route and timeout contract
+
+This is the synchronous/default contract with automatic recovery disabled. The
+background section defines the additional opt-in coordinator behavior.
 
 1. **Scope:** choose a proven configured route for Presales without changing the Agent
    gateway or automatically issuing another potentially billable request.
@@ -283,12 +291,73 @@ is recorded by release evidence, not inferred from a dirty working tree.
 
 providerRequestCount is an observed client dispatch count, not a remote execution
 or billing count. It is 0 before dispatch, temporarily NULL once dispatch is
-prepared, and 0/1 once the outcome is observed. Preflight rejection remains 0;
-interruption/crash may leave NULL. A late expired execution may update accounting
+prepared, and 0/1 once a synchronous outcome is observed (0–2 for background
+operations). Preflight rejection remains 0; a background `not_sent` slot does not
+count as a request. Interruption/crash leaves NULL while any call is unobserved.
+A late expired execution under the current lease may update accounting
 but cannot save a draft. Missing token usage remains null. None of these fields
 constitutes a payment ledger. The separate commercial request ledger now reserves
 in the attempt-creation transaction and settles with a successful validated draft;
 failures/cancellation release quota while provider observations remain independent.
+
+## Background generation resilience
+
+This branch adds migration `20260924_0028`; it is not yet deployed. Defaults:
+`background_generation_enabled=false`, `automatic_failover_enabled=false`,
+`queue_timeout_seconds=900`, `queued_attempt_limit=24`, `daily_dispatch_limit=200`,
+`route_failure_threshold=3`, `route_cooldown_seconds=30`. Automatic failover requires
+background generation. API and Worker must use the same settings and model routes.
+
+- **Admission:** one transaction creates the PresalesAttempt, `presales.generate`
+  Job, job.created event and commercial reservation. No Celery Outbox entry is
+  created. The API returns 202 when requested work is active; an already completed
+  replay returns its saved packet without a new reservation. PacketView includes
+  generationMode=synchronous|background so clients keep separate row requests when
+  background is disabled; batch admission then rejects with 409
+  presales_background_required before reserving or dispatching. Batch keys derive from
+  the request key and row ID; a row rejection does not prevent remaining rows from
+  being admitted, while shared authorization/source failures stop the batch.
+- **Execution:** the existing Worker/publisher process runs one asynchronous
+  presales poller. Long inference does not occupy the solo document consumer. Job
+  leases, heartbeats, fencing and terminal projection are reused. Shutdown cancels
+  local I/O and preserves the lease for recovery; it is not user cancellation.
+  Generic dead-job retry rejects this job type, preventing a Celery/quotas bypass.
+- **Deadlines and access:** queued work has an independent deadline, bounded by the
+  commercial reservation expiry minus the execution budget. First claim fixes the
+  execution deadline; restarts do not extend it. Admission, claim, dispatch and save
+  reauthorize tenant, author and source versions. Final writes lock Job, Tenant,
+  then domain rows. An old lease cannot overwrite the current draft. Cancellation,
+  expiry, revoked access or terminal Job state releases any outstanding reservation,
+  including for an inactive tenant; it does not reactivate the tenant.
+- **Recovery:** before each HTTP request, persist one of at most two ProviderCall
+  slots. Start with model_route, then the other configured route only when enabled.
+  Never reuse a route label or endpoint/model hash within the operation. Recover only
+  transport/timeouts, HTTP 408/429/5xx, or recognized 200 error envelopes. Invalid
+  citations, JSON, prose and business failures are terminal. All calls share the
+  execution deadline, with two seconds reserved for persistence and a five-second
+  connection cap. There is no HTTP/SDK retry or third dispatch after restart.
+- **Accounting:** business quota settles once for a validated saved draft, or is
+  released on failure. Demo abuse limits count the user operation once; queued
+  operations take the global demo execution slot only at dispatch. ProviderCall
+  records route, fence, fixed error code, observed usage and bounded response ID,
+  never credentials, prompt or arbitrary error bodies. An interrupted slot becomes
+  unknown and cannot be reused; known usage remains on each call even if total
+  usage is unknown. A pre-HTTP rejection is not_sent. Slots consume the conservative
+  global daily dispatch budget even when their outcome is unknown or not_sent.
+- **Health:** persistent route health opens after consecutive eligible failures,
+  cools down, then admits only one half-open probe. Health generations reject stale
+  observations. Output validation failures are not network outages. Dispatch-day
+  counters survive tenant cleanup; they are not refunded by failure or deletion.
+- **Rollback:** stop new admission with generation_enabled=false, leave background
+  processing enabled until active work drains, then disable background/failover
+  together. Keep migration history: downgrade refuses background operations, calls
+  or used dispatch budgets. Different proxy hosts do not prove independent upstreams.
+
+`tests/presales/test_presales_background_integration.py` covers real PostgreSQL/ASGI,
+controlled HTTP failures, lease recovery, accounting and migration refusal.
+`playwright.presales-background.config.ts` covers batch, refresh/navigation, partial
+success, failed-only retry and tenant isolation. These checks do not change the v7
+semantic release gate or replace single-attempt quality evaluation.
 
 Only tenants with no entitlement history retain legacy behavior. Configured but
 not currently active periods reject new generation with HTTP 403

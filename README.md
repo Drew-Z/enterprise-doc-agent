@@ -66,7 +66,7 @@ DocAgent 面向售前、安全问卷和企业知识核验场景。上传产品�
 | 上传恢复 | 分片直传对象存储、校验和、暂停与续传；刷新后先查询服务端状态，已完成会话不必重新选择文件 |
 | 资料检索 | PostgreSQL 全文检索与 pgvector 向量召回，通过 RRF 合并；检索结果受租户与文档权限约束 |
 | 售前响应 | 选择就绪文档、粘贴要求、逐条生成结构化草稿；查看出处、补充条件与待补材料；保留原草稿和复核历史；导出 CSV |
-| 生成恢复 | 网络或代理报错后查询原响应状态；已保存的结果可恢复；不会自动重复提交模型请求 |
+| 生成恢复 | 线上通过查询恢复已保存结果；本分支新增后台排队、刷新恢复、部分成功与只重试失败项，自动切换最多一次，默认关闭且未部署 |
 | Agent 执行 | 固定 LangGraph 流程、PostgreSQL checkpoint、内部 MCP 工具、SSE 事件恢复、人工审批与可验证产物 |
 | 登录与协作 | GitHub OAuth 浏览器登录；应用会话与退出；企业准入、成员邀请、owner/member 权限、受限文档授权 |
 | 公开演示企业 | 公网一键进入、每位访客独立企业、示例资料与真实业务流程；有期限与额度，自动清理；自行部署时默认关闭 |
@@ -178,7 +178,8 @@ flowchart LR
     Graph -->|检索 / checkpoint| DB
     Graph --> Model[模型与 Embedding 服务]
     Consumer -->|Embedding| Model
-    API -->|售前逐行生成| Model
+    API -->|默认同步售前生成| Model
+    Publisher -->|可选后台售前生成| Model
 ```
 
 - **API 管控制与权限，文件直传对象存储。** 上传内容不需要经过 API 进程中转。
@@ -190,7 +191,7 @@ flowchart LR
 | --- | --- |
 | `apps/web` | React、TypeScript、Vite；文档、售前、Agent、成员、用量和审计工作区 |
 | `apps/api` | FastAPI 路由、认证会话、请求与权限边界 |
-| `apps/worker` | Outbox 发布、进程生命周期与探针 |
+| `apps/worker` | Outbox 发布、可选后台售前任务、进程生命周期与探针 |
 | `apps/mcp` | 内部 MCP stdio 协议与工具适配 |
 | `packages/core` | 上传、入库、检索、Agent、售前、身份、权益与审计领域逻辑 |
 | `infra` | 本地 Compose、容器镜像、Kubernetes overlays 与部署配置 |
@@ -206,11 +207,13 @@ flowchart LR
 | 身份 | GitHub OAuth App 使用准确的 `/auth/callback`；Client Secret 仅放服务端；登录后继续核验企业成员身份 |
 | 存储 | PostgreSQL/pgvector 保存状态；S3-compatible 存储保存文档和产物；浏览器需要可达的预签名地址与匹配的 CORS |
 | 模型 | 分别配置 Chat 与 Embedding；维度和索引版本必须一致；更换 embedding 需按手册重建索引 |
-| 售前 | `PRESALES__GENERATION_ENABLED` 控制生成；`PRESALES__MODEL_ROUTE` 选择 `primary` 或 `fallback`；模型超时小于整行超时 |
+| 售前 | `PRESALES__GENERATION_ENABLED` 控制生成；`PRESALES__MODEL_ROUTE` 选择起始路由；模型超时小于整行超时；后台与自动切换分别显式启用 |
 | 演示 | `DEMO__ENABLED` 默认关闭；标准发布还要求启用浏览器会话及售前生成；无需新增常驻服务 |
 | 运营 | 准入、邀请、试用期限与额度通过正式运营入口管理；凭据不放前端或版本库 |
 
-`PRESALES__MODEL_ROUTE=fallback` 表示本次售前请求直接使用已配置的备用路由，并非先调用主模型失败后再自动调用一次。模型超时后，上游仍可能完成并计费；没有保存到应用的正文无法只凭供应商账单恢复，手动重试会发起新请求。
+默认关闭后台生成及自动切换，`PRESALES__MODEL_ROUTE=fallback` 直接选择已配置的备用路由。启用 `PRESALES__BACKGROUND_GENERATION_ENABLED` 后，请求只提交持久任务，现有 Worker 在后台执行；刷新和切页不会重复提交。再启用 `PRESALES__AUTOMATIC_FAILOVER_ENABLED`，才会在连接、超时、限流或可恢复上游错误时尝试另一条已配置路由，同一操作最多两次调用，共享执行期限。引用、输出格式或业务校验失败不会自动重采样。
+
+业务额度按一次成功操作结算，内部每次渠道调用单独记录并受全站日预算限制。超时仍可能在供应商侧完成和计费；未知用量保留为未知，不能从账单恢复未收到的正文。两路都失败时保留资料、要求和成功条目，允许稍后只重试失败项。此能力已完成受控本地验证，**尚未部署**；配置、排空及回滚步骤见[后台生成手册](docs/ops/public-pilot-runbook.md#后台生成与有界渠道恢复)。
 
 部署从 [4C4G 单节点手册](docs/ops/single-node-4c4g-staging-runbook.md)开始，使用已核验的镜像 digest 和配置清单。该 profile 将数据库、对象存储和推理外置，采用单副本及零 surge 更新；升级可能短暂中断服务。仓库还保留其他部署 overlay，不能把它们的资源预算当作当前主机配置。
 
@@ -287,6 +290,7 @@ kubectl kustomize infra/k8s/overlays/single-node-4c4g
 - [x] 公网完成两份 TXT 批量上传、三条响应生成、引用复核与 CSV 导出验收。
 - [x] 六份复杂采购资料、五种判断状态完成两轮公网复测，公开原始结果、引用检查和失败记录。
 - [x] 受控原文引用随 v0.1.44 上线；新冻结六题完成公网验证，公开误判、语言问题及用量。
+- [x] 后台生成、有限渠道切换、刷新恢复、部分成功与独立调用记账完成本地故障注入验证；默认关闭，尚未部署。
 - [ ] 修正采购与启用条件遗漏、输出语言问题；扩充独立审定与真实客户资料，改善生成时延并核实实际费用。
 - [ ] 完成独立故障域恢复、外部监控告警及实际容量验收。
 

@@ -99,8 +99,8 @@ test("mobile: a failed row preserves earlier results and retries only on request
   const first = page.getByRole("article", { name: "R1", exact: true });
   const second = page.getByRole("article", { name: "R2", exact: true });
   await expect(first.locator(".presales-answer")).toBeVisible();
-  await expect(second.getByRole("alert")).toContainText("等待模型响应超时");
-  await expect(second.getByRole("alert")).toContainText("重试会发起一次新请求");
+  await expect(second.getByRole("alert")).toContainText("本次暂时未能完成生成");
+  await expect(second.getByRole("alert")).toContainText("要求和资料已保留");
   let stats = await (await request.get(api + "/__presales_test__/stats", { headers: testHeaders })).json() as { mockProviderRequests: number };
   expect(stats.mockProviderRequests).toBe(2);
   await second.getByRole("button", { name: "重试本条" }).click();

@@ -842,7 +842,9 @@ class JobRuntimeService:
             )
             if job is None:
                 raise JobNotFound()
-            if job.status != JobStatus.DEAD.value:
+            # Presales retries are new domain operations with fresh authorization
+            # and quota checks; a generic retry would bypass them and emit Celery work.
+            if job.status != JobStatus.DEAD.value or job.type == "presales.generate":
                 raise JobNotClaimable()
             job.status = JobStatus.PENDING.value
             job.max_attempts += 1

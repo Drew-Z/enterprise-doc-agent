@@ -22,6 +22,7 @@ from enterprise_doc_worker.app import create_probe_app
 from enterprise_doc_worker.config import WorkerSettings
 from enterprise_doc_worker.handler import build_consumer_factory
 from enterprise_doc_worker.lifecycle import WorkerRuntime
+from enterprise_doc_worker.presales import run_presales
 from enterprise_doc_worker.publisher import OutboxPublisher
 from enterprise_doc_worker.queue import (
     CeleryTaskDispatcher,
@@ -35,15 +36,18 @@ async def supervise_worker_tasks(
     server: Coroutine[Any, Any, None],
     runtime: Coroutine[Any, Any, None],
     publisher: Coroutine[Any, Any, None],
+    presales: Coroutine[Any, Any, None] | None = None,
 ) -> None:
     tasks = {
         "server": asyncio.create_task(server),
         "runtime": asyncio.create_task(runtime),
         "publisher": asyncio.create_task(publisher),
     }
+    if presales is not None:
+        tasks["presales"] = asyncio.create_task(presales)
     try:
         done, _ = await asyncio.wait(tasks.values(), return_when=asyncio.FIRST_COMPLETED)
-        for role in ("runtime", "publisher"):
+        for role in (name for name in tasks if name != "server"):
             task = tasks[role]
             if task not in done:
                 continue
@@ -140,6 +144,9 @@ async def run_worker() -> None:
             server=server.serve(),
             runtime=runtime.run(),
             publisher=publisher.run(runtime.shutdown_event),
+            presales=run_presales(settings, session_factory, runtime.shutdown_event, metrics)
+            if settings.presales.background_generation_enabled
+            else None,
         )
     finally:
         if runtime is not None:

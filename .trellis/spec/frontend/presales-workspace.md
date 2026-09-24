@@ -35,8 +35,12 @@ and later ordinary navigation does not reuse the consumed selection.
 The sheet lists fixed sources and requirements, five outcome labels, conditions,
 missing information, exact source excerpts, filenames and passage locations.
 Finite retrieval and truncation are explicitly disclosed. Generation is per row;
-the batch button sequences pending rows and stops at the first failure. Failed
-rows require an explicit retry. Existing successful rows remain available.
+the batch button submits pending rows to the server in one request when PacketView
+generationMode is background. The default synchronous mode retains separate row
+requests, avoiding a multi-row inference request that exceeds proxy limits. Missing
+generationMode from an older server defaults to synchronous. Per-row background
+rejections do not stop other eligible rows. A separate retry-failed action submits
+only failed rows with remaining attempts. Existing successful rows remain available.
 
 Human review keeps the original model draft and adds editable text/status/details,
 note, actor, time and history. Reviewed export stays disabled until every row has
@@ -48,15 +52,21 @@ attempts receive a new key only for an explicit retry. These keys are not a brow
 durable queue; after reload, recover the existing server sheet and its attempts.
 
 For a generate network/5xx/response-parse failure, read the same sheet once without
-another POST. A drafted row restores its saved result; a running row uses the existing
-2.5s read polling; a failed row displays the recorded error and an explicit retry.
+another POST. A drafted row restores its saved result; queued/running/recovering rows
+use 2.5s read polling; a failed row displays the recorded error and an explicit retry.
 A still-pending row keeps its original operation key and uncertainty. Authorization
 and business 4xx responses retain their normal failure path. Non-JSON errors preserve
 HTTP status (`presales_http_<status>`) and a safe `X-Request-ID` fallback.
-Timeout copy says that the application did not save a result while the provider may
-still complete/charge, and that retry sends a new request. No synthetic draft or billing
-correction is inferred from a provider dashboard. Tests must assert exactly one POST
-when a 504 is followed by either a persisted draft or a persisted model timeout.
+When background mode is enabled, 202 admission releases the page busy state;
+navigation or refresh recovers persisted work through GET, without another POST.
+Show actual phase and generated/total counts, never invented percentages. Completion
+replaces the background-running notice. Terminal failure copy retains requirements
+and sources and offers later retry without exposing internal routes or exception
+stacks. It does not promise zero upstream cost or fabricate a draft from a provider
+dashboard. Tests assert exactly one POST when a 504 is followed by either a persisted
+draft or a persisted model timeout. A lost batch response followed by completed rows
+restores those results without a false whole-batch HTTP error or a second POST.
+Automatic route recovery belongs to the server.
 
 Query keys include tenant/actor/auth revision. App remounts the workspace when its
 authentication context changes. Unmount aborts the operation and removes queries;
@@ -79,6 +89,10 @@ model output; it is separate from the ordinary development/production entrypoint
 
 Regression files: `src/presales/PresalesWorkspace.test.tsx` (fetch boundary) and
 `presales-e2e/workspace.spec.ts` (real local API/DB, controlled identity/model).
+`playwright.presales-background.config.ts` selects `presales-e2e/background.spec.ts`:
+accepted batch, navigation/reload, primary failure, partial completion, failed-only
+retry, commercial settlement, tenant isolation and 390px layout. The background
+spec is skipped in the legacy configuration; that skip is not a background pass.
 `playwright.presales.config.ts` is separate from the existing full platform E2E
 configuration, and its fixture deletes only the records it created.
 

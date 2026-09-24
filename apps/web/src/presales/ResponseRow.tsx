@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useLocale } from "../i18n";
-import { responseStatus, reviewInputSchema, type PresalesRow, type ReviewInput, type ResponseStatus } from "./api";
+import { generationActive, responseStatus, reviewInputSchema, type PresalesRow, type ReviewInput, type ResponseStatus } from "./api";
 import { presalesCopy, statusLabel } from "./copy";
 
 function ReviewEditor({ row, busy, onSave }: { row: PresalesRow; busy: boolean; onSave: (payload: ReviewInput) => void }) {
@@ -32,9 +32,9 @@ export function ResponseRow({ row, busy, generating, onGenerate, onReview }: { r
   const locale = useLocale(); const c = presalesCopy(locale); const effective = row.review ?? row.draft;
   const lastAttempt = row.attempts.at(-1);
   return <article className="presales-row" aria-label={row.requirement.key}>
-    <header className="presales-row-header"><span className="presales-row-number">{row.requirement.key}</span><div><h3>{row.requirement.text}</h3>{row.requirement.sourceLocation && <p className="presales-hint">{c.location}: {row.requirement.sourceLocation}</p>}</div><span className={"presales-state " + (effective?.status ?? row.state)}>{effective ? statusLabel(effective.status, locale) : row.state === "failed" ? c.failed : row.state === "running" || generating ? c.generating : c.pending}</span></header>
+    <header className="presales-row-header"><span className="presales-row-number">{row.requirement.key}</span><div><h3>{row.requirement.text}</h3>{row.requirement.sourceLocation && <p className="presales-hint">{c.location}: {row.requirement.sourceLocation}</p>}</div><span className={"presales-state " + (effective?.status ?? row.state)}>{effective ? statusLabel(effective.status, locale) : row.state === "failed" ? c.failed : row.state === "queued" ? c.queued : row.state === "recovering" ? c.recovering : row.state === "running" || generating ? c.generating : c.pending}</span></header>
     {effective && <p className="presales-answer">{effective.answer}</p>}
-    <div className="presales-row-actions"><span className={row.review ? "presales-reviewed" : "presales-hint"}>{row.review ? c.reviewed : row.draft ? c.unreviewed : row.state === "running" ? c.waiting : ""}</span>{!row.draft && <button type="button" disabled={busy || row.state === "running" || row.attempts.length >= 3} onClick={onGenerate}>{generating ? c.generating : row.state === "failed" ? c.retry : c.generate}</button>}</div>
+    <div className="presales-row-actions"><span className={row.review ? "presales-reviewed" : "presales-hint"}>{row.review ? c.reviewed : row.draft ? c.unreviewed : generationActive(row) ? c.waiting : ""}</span>{!row.draft && <button type="button" disabled={busy || generationActive(row) || row.attempts.length >= 3} onClick={onGenerate}>{generating ? c.generating : row.state === "failed" ? c.retry : c.generate}</button>}</div>
     {row.state === "failed" && <p role="alert" className="presales-error">{lastAttempt?.errorCode?.includes("timeout") ? c.modelTimeout : c.rowError}</p>}
     {lastAttempt && <p className="presales-hint">{row.attempts.length} / 3 {c.attempts}</p>}
     {row.draft && <details className="presales-row-details"><summary role="button" aria-label={`${row.requirement.key} ${c.rowDetail}`}>{c.rowDetail}</summary>

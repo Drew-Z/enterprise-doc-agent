@@ -148,6 +148,12 @@ def _presales_environment(
     model_timeout_seconds: str | None,
     row_timeout_seconds: str,
     fallback_configured: bool,
+    background_generation_enabled: str = "false",
+    automatic_failover_enabled: str = "false",
+    daily_dispatch_limit: str = "200",
+    queue_timeout_seconds: str = "900",
+    route_failure_threshold: str = "3",
+    route_cooldown_seconds: str = "30",
 ) -> dict[str, str]:
     enabled = generation_enabled.strip()
     route = model_route.strip()
@@ -157,6 +163,20 @@ def _presales_environment(
         raise ValueError("presales model route must be primary or fallback")
     if route == "fallback" and not fallback_configured:
         raise ValueError("presales fallback selection requires a configured fallback model route")
+    background, failover = background_generation_enabled.strip(), automatic_failover_enabled.strip()
+    if background not in {"true", "false"} or failover not in {"true", "false"}:
+        raise ValueError("presales background and failover flags must be true or false")
+    if failover == "true" and (background != "true" or not fallback_configured):
+        raise ValueError("presales automatic failover requires background and a fallback route")
+    limits = {
+        "DAILY_DISPATCH_LIMIT": (daily_dispatch_limit, 1, 10000),
+        "QUEUE_TIMEOUT_SECONDS": (queue_timeout_seconds, 30, 3600),
+        "ROUTE_FAILURE_THRESHOLD": (route_failure_threshold, 1, 10),
+        "ROUTE_COOLDOWN_SECONDS": (route_cooldown_seconds, 1, 300),
+    }
+    for value, minimum, maximum in limits.values():
+        if not value.isascii() or not value.isdigit() or not minimum <= int(value) <= maximum:
+            raise ValueError("presales resilience limit is invalid")
 
     def timeout(value: str, description: str) -> str:
         normalized = value.strip()
@@ -177,6 +197,9 @@ def _presales_environment(
         "PRESALES__GENERATION_ENABLED": enabled,
         "PRESALES__MODEL_ROUTE": route,
         "PRESALES__ROW_TIMEOUT_SECONDS": row_timeout,
+        "PRESALES__BACKGROUND_GENERATION_ENABLED": background,
+        "PRESALES__AUTOMATIC_FAILOVER_ENABLED": failover,
+        **{f"PRESALES__{name}": value for name, (value, _, _) in limits.items()},
     }
     if model_timeout_seconds and model_timeout_seconds.strip():
         model_timeout = timeout(model_timeout_seconds, "model timeout")
@@ -459,6 +482,12 @@ def configure_manifest(
     presales_model_route: str = "primary",
     presales_model_timeout_seconds: str | None = None,
     presales_row_timeout_seconds: str = "90",
+    presales_background_generation_enabled: str = "false",
+    presales_automatic_failover_enabled: str = "false",
+    presales_daily_dispatch_limit: str = "200",
+    presales_queue_timeout_seconds: str = "900",
+    presales_route_failure_threshold: str = "3",
+    presales_route_cooldown_seconds: str = "30",
     demo_enabled: str = "false",
     embedding_base_url: str = "https://embedding.example.invalid/v1",
     embedding_model_name: str = "staging-embedding",
@@ -526,6 +555,12 @@ def configure_manifest(
         model_timeout_seconds=presales_model_timeout_seconds,
         row_timeout_seconds=presales_row_timeout_seconds,
         fallback_configured=normalized_fallback_base_url is not None,
+        background_generation_enabled=presales_background_generation_enabled,
+        automatic_failover_enabled=presales_automatic_failover_enabled,
+        daily_dispatch_limit=presales_daily_dispatch_limit,
+        queue_timeout_seconds=presales_queue_timeout_seconds,
+        route_failure_threshold=presales_route_failure_threshold,
+        route_cooldown_seconds=presales_route_cooldown_seconds,
     )
     normalized_embedding_base_url = _embedding_base_url(embedding_base_url)
     normalized_embedding_model_name = _model_name(embedding_model_name)
@@ -865,6 +900,16 @@ def main() -> None:
     )
     parser.add_argument("--presales-model-timeout-seconds")
     parser.add_argument("--presales-row-timeout-seconds", default="90")
+    parser.add_argument(
+        "--presales-background-generation-enabled", choices=("true", "false"), default="false"
+    )
+    parser.add_argument(
+        "--presales-automatic-failover-enabled", choices=("true", "false"), default="false"
+    )
+    parser.add_argument("--presales-daily-dispatch-limit", default="200")
+    parser.add_argument("--presales-queue-timeout-seconds", default="900")
+    parser.add_argument("--presales-route-failure-threshold", default="3")
+    parser.add_argument("--presales-route-cooldown-seconds", default="30")
     parser.add_argument("--demo-enabled", choices=("true", "false"), default="false")
     parser.add_argument("--embedding-base-url", required=True)
     parser.add_argument("--embedding-model-name", required=True)
@@ -899,6 +944,12 @@ def main() -> None:
         presales_model_route=args.presales_model_route,
         presales_model_timeout_seconds=args.presales_model_timeout_seconds,
         presales_row_timeout_seconds=args.presales_row_timeout_seconds,
+        presales_background_generation_enabled=args.presales_background_generation_enabled,
+        presales_automatic_failover_enabled=args.presales_automatic_failover_enabled,
+        presales_daily_dispatch_limit=args.presales_daily_dispatch_limit,
+        presales_queue_timeout_seconds=args.presales_queue_timeout_seconds,
+        presales_route_failure_threshold=args.presales_route_failure_threshold,
+        presales_route_cooldown_seconds=args.presales_route_cooldown_seconds,
         demo_enabled=args.demo_enabled,
         embedding_base_url=args.embedding_base_url,
         embedding_model_name=args.embedding_model_name,

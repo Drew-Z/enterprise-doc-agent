@@ -95,6 +95,96 @@ beforeEach(() => { sessionStorage.clear(); localStorage.clear(); });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 describe("PresalesWorkspace HTTP boundary", () => {
+  it("keeps synchronous servers on separate row requests instead of one long batch", async () => {
+    sessionStorage.setItem(storageKey, packetId);
+    const current = makePacket();
+    current.rows.push({ ...current.rows[0], id: crypto.randomUUID(), requirement: { ...current.rows[0].requirement, key: "R2" } });
+    current.rowCount = 2;
+    const requests: string[] = [];
+    mockApi(() => current, path => {
+      requests.push(path);
+      const row = current.rows.find(r => path === `/api/presales/${packetId}/rows/${r.id}/generate`);
+      if (!row) throw new Error("Synchronous generation must submit one row per request.");
+      row.state = "drafted";
+      row.draft = makePacket(true).rows[0].draft;
+      row.revision = 1;
+      return json(current);
+    });
+    mount();
+    fireEvent.click(await screen.findByRole("button", { name: "Generate pending responses" }));
+    await waitFor(() => expect(screen.getAllByText("The source states 30 days.", { selector: "p" })).toHaveLength(2));
+    expect(requests).toEqual(current.rows.map(r => `/api/presales/${packetId}/rows/${r.id}/generate`));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("recovers all saved batch results after a lost response without a false error or another POST", async () => {
+    sessionStorage.setItem(storageKey, packetId);
+    const current = makePacket();
+    current.generationMode = "background";
+    current.rows.push({ ...current.rows[0], id: crypto.randomUUID(), requirement: { ...current.rows[0].requirement, key: "R2" } });
+    current.rowCount = 2;
+    const requests: string[] = [];
+    mockApi(() => current, path => {
+      requests.push(path);
+      for (const row of current.rows) {
+        row.state = "drafted";
+        row.draft = makePacket(true).rows[0].draft;
+        row.revision = 1;
+      }
+      return new Response("Gateway Timeout", { status: 504 });
+    });
+    mount();
+    fireEvent.click(await screen.findByRole("button", { name: "Generate pending responses" }));
+    await waitFor(() => expect(screen.getAllByText("The source states 30 days.", { selector: "p" })).toHaveLength(2));
+    await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
+    expect(requests).toEqual([`/api/presales/${packetId}/generate`]);
+  });
+
+  it("accepts background work, releases navigation, and restores queued state on remount", async () => {
+    sessionStorage.setItem(storageKey, packetId);
+    const current = makePacket();
+    current.generationMode = "background";
+    const requests: string[] = [];
+    mockApi(() => current, path => {
+      requests.push(path);
+      current.rows[0].state = "queued";
+      current.rows[0].attempts = [{ ...attempt("failed"), state: "queued", errorCode: null, providerRequestCount: 0, finishedAt: null }];
+      return json(current, 202);
+    });
+    const first = mount();
+    fireEvent.click(await screen.findByRole("button", { name: "Generate response" }));
+    await screen.findByText("Queued");
+    expect(screen.getByRole("button", { name: "New response sheet" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Generate response" })).toBeDisabled();
+    expect(screen.getByText(/Generation continues in the background/)).toBeInTheDocument();
+    first.unmount();
+    mount();
+    await screen.findByText("Queued");
+    expect(requests).toHaveLength(1);
+  });
+
+  it("submits one server batch and keeps accepted rows visible after a partial rejection", async () => {
+    sessionStorage.setItem(storageKey, packetId);
+    const current = makePacket();
+    current.generationMode = "background";
+    current.rows.push({ ...current.rows[0], id: crypto.randomUUID(), requirement: { ...current.rows[0].requirement, key: "R2" } });
+    current.rowCount = 2;
+    const requests: string[] = [];
+    mockApi(() => current, (path, init) => {
+      requests.push(path);
+      expect(path).toBe(`/api/presales/${packetId}/generate`);
+      if (typeof init.body !== "string") throw new Error("Expected a JSON batch body.");
+      expect(JSON.parse(init.body)).toEqual({ rowIds: current.rows.map(r => r.id) });
+      current.rows[0].state = "queued";
+      return json({ packet: current, rejected: [{ rowId: current.rows[1].id, code: "presales_usage_limit" }] }, 202);
+    });
+    mount();
+    fireEvent.click(await screen.findByRole("button", { name: "Generate pending responses" }));
+    await screen.findByText("Queued");
+    expect(screen.getByText(/1 row could not be queued/)).toBeInTheDocument();
+    expect(requests).toHaveLength(1);
+    expect(within(screen.getByRole("article", { name: "R2" })).getByRole("button", { name: "Generate response" })).toBeEnabled();
+  });
   it("starts a new sheet with the selected ready source instead of reopening the previous sheet", async () => {
     sessionStorage.setItem(storageKey, packetId);
     const fetch = mockApi(() => makePacket());
@@ -167,7 +257,7 @@ describe("PresalesWorkspace HTTP boundary", () => {
     await screen.findByText("Connection lost");
     expect(keys).toHaveLength(1);
     fireEvent.click(screen.getByRole("button", { name: "Generate response" }));
-    await screen.findByText(/provider may still complete and charge/);
+    await screen.findByText(/Your requirements and sources are saved/);
     expect(keys[1]).toBe(keys[0]);
     fireEvent.click(screen.getByRole("button", { name: "Retry this row" }));
     await screen.findByText("The source states 30 days.", { selector: "p" });
@@ -251,7 +341,7 @@ describe("PresalesWorkspace HTTP boundary", () => {
     });
     mount();
     fireEvent.click(await screen.findByRole("button", { name: "Generate response" }));
-    await screen.findByText(/provider may still complete and charge/);
+    await screen.findByText(/Your requirements and sources are saved/);
     expect(screen.getByRole("button", { name: "Retry this row" })).toBeEnabled();
     expect(calls).toHaveLength(1);
     expect(screen.queryByText(/Request failed/)).not.toBeInTheDocument();
