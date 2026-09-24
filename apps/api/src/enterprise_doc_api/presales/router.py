@@ -101,6 +101,10 @@ async def result[T](operation: Awaitable[T]) -> T:
             message = "请逐条完成复核。或选择导出带有未复核标识的草稿。"
         elif code == "presales_review_evidence_required":
             message = "此判断缺少相应证据或条件。请核对原文后再保存。"
+        elif code == "presales_review_prerequisites_invalid":
+            status, message = 422, "请保留全部前提及对应证据。刷新后重新复核。"
+        elif code == "presales_review_note_required":
+            status, message = 422, "前提状态已修改。请在复核备注中说明依据。"
         elif code == "presales_invalid_idempotency_key":
             status, message = 400, "操作标识无效。"
         raise ApiError(status_code=status, code=code, message=message) from error

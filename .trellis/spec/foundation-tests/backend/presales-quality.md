@@ -170,7 +170,7 @@ model semantics; frozen raw v5 failures provide the actual semantic regression c
 
 ## Projected input reports (v7)
 
-The collector now writes `presales-gateway-run-v2`. Each observation's `sourceInput`
+The initial v7 collector wrote `presales-gateway-run-v2`. Each observation's `sourceInput`
 is the complete synthetic internal GenerationInput actually passed to the gateway;
 `traces[].input` is still exactly the JSON sent to the provider, now SelectionInput.
 Never inject hidden UUIDs into a recorded wire request for scorer convenience.
@@ -183,6 +183,15 @@ matches its original selected references and projected conditions. Failed rows s
 failed even when their raw response could be decoded; no replay becomes a success.
 Tests mutate internal source IDs, source scope, source labels, fragment text,
 references, fragment coverage, accepted conditions and raw output to verify rejection.
+
+The structured prerequisite-review candidate writes `presales-gateway-run-v3`.
+Its result must retain every prerequisite state and its zero-based citation indexes;
+the scorer compares the complete resolved result to the recorded draft. Missing/null
+states, changed state (including unknown to unmet), changed links or flat projection
+tampering fail scoring. Historical run-v2 reproduces its original flat projection
+only; v1/v2 results cannot acquire new assessments. Frozen v5/v6/v7 scores are
+regression-tested unchanged, including rejected or unattempted rows. Do not rewrite
+run or score files or claim that application state preservation fixes model semantics.
 
 Run the real PostgreSQL and both presales browser suites when changing this protocol:
 wire fixtures must consume SelectionInput, not GenerationInput. A fixture cannot

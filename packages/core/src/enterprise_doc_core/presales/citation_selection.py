@@ -11,10 +11,12 @@ from enterprise_doc_core.presales.schemas import (
     CitationInput,
     GenerationInput,
     ModelDraft,
+    PrerequisiteAssessment,
     PresalesModel,
     RequirementInput,
     Status,
     TextItem,
+    prerequisite_conditions,
 )
 
 
@@ -174,10 +176,18 @@ def resolve_selection(content: str, catalog: dict[str, CitationInput]) -> ModelD
     # These are already explicit selections, not inferred or repaired quotations.
     # A source shared by the conclusion and its prerequisites is materialized once.
     references = list(dict.fromkeys([*references, *prerequisite_references]))
+    indexes = {key: index for index, key in enumerate(references)}
+    prerequisites = [
+        PrerequisiteAssessment(
+            condition=item.condition,
+            state=item.state,
+            citation_indexes=[indexes[citation.citation_id] for citation in item.citations],
+        )
+        for item in selected.prerequisites
+    ]
     return ModelDraft(
         **selected.model_dump(exclude={"citations", "prerequisites"}),
-        conditions=list(
-            dict.fromkeys(item.condition for item in selected.prerequisites if item.state != "met")
-        ),
+        conditions=prerequisite_conditions(prerequisites),
+        prerequisites=prerequisites,
         citations=[catalog[key] for key in references],
     )

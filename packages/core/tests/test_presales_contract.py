@@ -70,6 +70,54 @@ def test_duplicate_ids_and_excessive_scope_are_rejected() -> None:
             )
 
 
+@pytest.mark.parametrize("indexes", [[], [True], [-1], [1], [12], [0, 0], ["0"]])
+def test_prerequisites_require_distinct_bound_integer_citation_indexes(indexes) -> None:
+    with pytest.raises(ValidationError):
+        ModelDraft.model_validate(
+            {
+                "status": "conditional",
+                "answer": "需确认验收。",
+                "conditions": ["需确认验收。"],
+                "prerequisites": [
+                    {"condition": "需确认验收。", "state": "unknown", "citationIndexes": indexes}
+                ],
+                "citations": [
+                    {
+                        "chunkId": str(uuid4()),
+                        "documentVersionId": str(uuid4()),
+                        "excerpt": "验收未登记。",
+                    }
+                ],
+            }
+        )
+
+
+@pytest.mark.parametrize(
+    "status,conditions", [("supported", []), ("conditional", ["改写的条件。"]), ("conditional", [])]
+)
+def test_structured_prerequisites_cannot_be_hidden_by_overall_assessment(
+    status, conditions
+) -> None:
+    with pytest.raises(ValidationError):
+        ModelDraft.model_validate(
+            {
+                "status": status,
+                "answer": "核对验收。",
+                "conditions": conditions,
+                "prerequisites": [
+                    {"condition": "需确认验收。", "state": "unknown", "citationIndexes": [0]}
+                ],
+                "citations": [
+                    {
+                        "chunkId": str(uuid4()),
+                        "documentVersionId": str(uuid4()),
+                        "excerpt": "验收未登记。",
+                    }
+                ],
+            }
+        )
+
+
 def test_citations_are_bound_to_tenant_version_candidate_and_exact_excerpt() -> None:
     tenant, version, generation, chunk = (uuid4() for _ in range(4))
     source = SourceSnapshot(

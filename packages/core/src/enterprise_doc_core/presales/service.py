@@ -252,7 +252,10 @@ class PresalesService:
         key: str,
     ) -> PacketView:
         check_key(key)
-        digest = fingerprint(payload)
+        # Preserve fingerprints of review requests saved before structured prerequisites.
+        digest = fingerprint(
+            payload, exclude={"prerequisites"} if payload.prerequisites is None else None
+        )
         context = get_request_context()
         async with self.session_factory.begin() as session:
             packet = await load_packet(session, principal, packet_id, lock=True)
@@ -275,6 +278,30 @@ class PresalesService:
                 if row.revision >= 101:
                     raise PresalesError("presales_review_limit")
                 draft = SavedDraft.model_validate(row.draft)
+                original, proposed = draft.prerequisites, payload.prerequisites
+                if (original is None) != (proposed is None) or [
+                    (p.condition, p.citation_indexes) for p in original or []
+                ] != [(p.condition, p.citation_indexes) for p in proposed or []]:
+                    raise PresalesError("presales_review_prerequisites_invalid")
+                if proposed is not None:
+                    previous = await session.scalar(
+                        select(PresalesReview)
+                        .where(
+                            PresalesReview.row_id == row_id,
+                            PresalesReview.tenant_id == packet.tenant_id,
+                        )
+                        .order_by(PresalesReview.revision.desc())
+                        .limit(1)
+                    )
+                    previous_items = (
+                        SavedReview.model_validate(previous.content).prerequisites
+                        if previous is not None
+                        else original
+                    )
+                    if not payload.note.strip() and (
+                        proposed != original or proposed != previous_items
+                    ):
+                        raise PresalesError("presales_review_note_required")
                 try:
                     ModelDraft(
                         **payload.model_dump(exclude={"expected_revision", "note"}),

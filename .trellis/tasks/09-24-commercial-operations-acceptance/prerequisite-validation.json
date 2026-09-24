@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "scope": "CO-1/CO-2 application prerequisite state preservation; local controlled acceptance only",
+  "date": "2026-09-25",
+  "baseCommit": "f9cfa95f51388affd470f484a096d0357fa9dbd8",
+  "status": "local_checks_passed_external_acceptance_pending",
+  "redToGreen": [
+    "HTTP model selection drops prerequisite state and links: expected failure, then 37 selection tests passed",
+    "PostgreSQL review accepts missing structured prerequisites: expected failure, then rejects omissions/rebinding and preserves history",
+    "React missing state and legacy indicators: 2 expected failures, then both pass",
+    "Frozen v7 score mismatch after new field: 2 expected failures, then historical v5-v7 score comparison passes without rewriting reports"
+  ],
+  "checks": [
+    {
+      "name": "python_non_integration",
+      "command": "python -B -X utf8 -m pytest -m 'not integration' --tb=short",
+      "passed": 1767,
+      "deselected": 437
+    },
+    {
+      "name": "postgresql",
+      "command": "isolated schema run_integration.py tests/presales/test_presales_workflow_integration.py tests/presales/test_presales_background_integration.py --import-mode=importlib",
+      "passed": 64,
+      "publicSchemaUnchanged": true,
+      "ownedSchemasRemoved": true
+    },
+    {
+      "name": "ruff",
+      "passed": true,
+      "formattedFiles": 584
+    },
+    {
+      "name": "mypy",
+      "passed": true,
+      "sourceFiles": 249
+    },
+    {
+      "name": "web",
+      "lint": true,
+      "typecheck": true,
+      "tests": 343,
+      "testFiles": 48,
+      "build": true,
+      "buildNotice": "Existing Vite size advisory: main JS 511.24 kB before gzip; no build failure"
+    },
+    {
+      "name": "browser_sync",
+      "passed": 5,
+      "skipped": 1,
+      "note": "Background spec skipped in synchronous config; separately exercised below",
+      "viewports": [
+        1440,
+        390
+      ],
+      "screenshotsInspected": true
+    },
+    {
+      "name": "browser_background",
+      "passed": 1
+    },
+    {
+      "name": "browser_ingestion_initial",
+      "passed": 0,
+      "failed": 3,
+      "cause": "Local Docker MinIO HostConfig mapped 9000/9001, running NetworkSettings.Ports empty; upload create returned object_store_unavailable",
+      "resourcesCleaned": true
+    },
+    {
+      "name": "browser_ingestion_after_dependency_restore",
+      "passed": 3,
+      "action": "Restarted existing local MinIO container retaining existing data volume; host health HTTP 200 and mappings restored",
+      "resourcesCleaned": true
+    },
+    {
+      "name": "task_context",
+      "passed": true
+    }
+  ],
+  "contracts": {
+    "states": [
+      "met",
+      "unmet",
+      "unknown"
+    ],
+    "legacy": "omitted/null means unrecorded; explicit empty means no prerequisites",
+    "evidence": "server-bound zero-based indexes into immutable original draft citations",
+    "review": "state-only correction with explanatory note; original and previous revisions retained",
+    "csv": "neutral conditions header and added effective/original state+evidence columns",
+    "evaluation": "new run-v3 retains full structure; historical v1/v2 projections and failed denominators unchanged"
+  },
+  "limits": [
+    "No live supplier request or quality acceptance",
+    "No production deployment, migration, email or commercial approval",
+    "API, Worker and Web release together; older strict builds cannot parse new persisted fields, so rollback must retain contract support",
+    "Frozen unknown-to-unmet model failure still unresolved; task stays in_progress"
+  ],
+  "recovery": "Existing centralized commercial-production-readiness recovery group; exact Git/snapshot baseline and final file hashes kept privately",
+  "files": [
+    ".trellis/tasks/09-24-commercial-operations-acceptance/prd.md",
+    ".trellis/tasks/09-24-commercial-operations-acceptance/design.md",
+    ".trellis/tasks/09-24-commercial-operations-acceptance/implement.md",
+    ".trellis/tasks/09-24-commercial-operations-acceptance/task.json",
+    ".trellis/tasks/09-24-commercial-operations-acceptance/prerequisite-validation.json",
+    ".trellis/spec/backend/presales-workspace.md",
+    ".trellis/spec/frontend/presales-workspace.md",
+    ".trellis/spec/foundation-tests/backend/presales-quality.md",
+    "packages/core/src/enterprise_doc_core/presales/schemas.py",
+    "packages/core/src/enterprise_doc_core/presales/citation_selection.py",
+    "packages/core/src/enterprise_doc_core/presales/access.py",
+    "packages/core/src/enterprise_doc_core/presales/service.py",
+    "packages/core/src/enterprise_doc_core/presales/export.py",
+    "packages/core/tests/test_presales_citation_selection.py",
+    "packages/core/tests/test_presales_contract.py",
+    "tests/presales/test_presales_workflow_integration.py",
+    "apps/api/src/enterprise_doc_api/presales/router.py",
+    "apps/web/src/presales/api.ts",
+    "apps/web/src/presales/ResponseRow.tsx",
+    "apps/web/src/presales/copy.ts",
+    "apps/web/src/presales/presales.css",
+    "apps/web/src/presales/ResponseRow.test.tsx",
+    "apps/web/src/auth/clientCoverage.test.ts",
+    "apps/web/presales-e2e/workspace.spec.ts",
+    "scripts/score_presales_gateway.py",
+    "scripts/evaluate_presales_gateway.py",
+    "tests/evaluation/test_presales_gateway.py",
+    "tests/evaluation/test_presales_gateway_score.py",
+    "docs/ops/commercial-production-plan.md"
+  ]
+}

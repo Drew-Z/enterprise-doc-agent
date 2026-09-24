@@ -31,6 +31,45 @@ async function expectNoHorizontalOverflow(page: Page) {
   expect(excess).toBeLessThanOrEqual(1);
 }
 
+for (const width of [1440, 390]) {
+  test(`prerequisite review at ${width}px: states, evidence, correction, reload and CSV`, async ({ page }, info) => {
+    await page.setViewportSize({ width, height: 900 });
+    await createSheet(page, "[conditional] Retention 前提复核");
+    await page.getByRole("button", { name: "生成待处理要求" }).click();
+    const row = page.getByRole("article", { name: "R1", exact: true });
+    await expect(row.locator(".presales-answer")).toBeVisible();
+    await row.getByText("查看证据与复核", { exact: true }).click();
+    const items = row.getByRole("list", { name: "前提状态", exact: true }).first();
+    await expect(items.getByText("待确认", { exact: true })).toBeVisible();
+    await items.getByText("对应证据 (1)", { exact: true }).click();
+    await expect(items.getByRole("blockquote")).toContainText("Retention");
+    await row.getByLabel("前提状态 1", { exact: true }).selectOption("unmet");
+    await row.getByRole("button", { name: "保存复核", exact: true }).click();
+    await expect(row.getByRole("alert")).toHaveText("修改前提状态时，请在复核备注中说明依据。");
+    await row.getByLabel("复核备注", { exact: true }).fill("合成验收：将前提改为未满足，验证状态留痕。");
+    await row.getByRole("button", { name: "保存复核", exact: true }).click();
+    await expect(row.locator(".presales-reviewed")).toHaveText("已复核");
+    await expect(items.getByText("未满足", { exact: true })).toBeVisible();
+    await row.getByText("原模型草稿", { exact: true }).click();
+    await expect(row.locator(".presales-original").first().getByText("待确认", { exact: true })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+    await page.screenshot({ path: info.outputPath(`prerequisites-${width}.png`), fullPage: true });
+    await page.reload();
+    await row.getByText("查看证据与复核", { exact: true }).click();
+    await expect(row.getByLabel("前提状态 1", { exact: true })).toHaveValue("unmet");
+    await expect(items.getByText("未满足", { exact: true })).toBeVisible();
+    const [download] = await Promise.all([
+      page.waitForEvent("download"), page.getByRole("button", { name: "导出已复核 CSV" }).click(),
+    ]);
+    const content = readFileSync(await download.path(), "utf8");
+    expect(content).toContain("前提状态与对应证据");
+    expect(content).toContain("未满足：需采用指定配置并确认合同范围。");
+    expect(content).toContain("待确认：需采用指定配置并确认合同范围。");
+    expect(content).toContain("合成验收：将前提改为未满足，验证状态留痕。");
+    expect(content).toContain("Retention");
+  });
+}
+
 test("desktop: five assessments, evidence, review history, reload and real CSV", async ({ page, request }, info) => {
   const errors: string[] = [];
   const rejectedRequests: string[] = [];

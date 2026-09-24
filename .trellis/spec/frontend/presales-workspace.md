@@ -46,6 +46,25 @@ Human review keeps the original model draft and adds editable text/status/detail
 note, actor, time and history. Reviewed export stays disabled until every row has
 a review. Download Blob URLs are revoked after use or component unmount.
 
+Structured prerequisites display Met / Not met / Needs confirmation with text
+labels as well as distinct colors. Each item expands only its linked exact evidence;
+the complete numbered evidence list remains available. The API field is
+`prerequisites: {condition, state, citationIndexes}[] | null`, with zero-based
+indexes into original draft citations. Zod rejects malformed, duplicate or out-of-range
+links before rendering. Missing legacy fields default to null, shown as unrecorded;
+an empty list explicitly means no prerequisites. Never infer state from old prose.
+
+`ReviewEditor` preserves condition text and citation links, allows per-item state
+changes, and derives the compatibility conditions list from unmet/unknown items.
+Changes relative to either the original or latest review require a note. The user
+also checks the overall assessment and prose; supported cannot retain an outstanding
+prerequisite. Original/history panels keep their own states and links. Legacy rows
+retain editable response conditions under a neutral heading. The server remains
+authoritative for evidence bindings, revision conflicts and note requirements.
+CSV includes effective and original model states/evidence. `ResponseRow.test.tsx`
+and both viewport journeys in `presales-e2e/workspace.spec.ts` cover these behaviors.
+These changes preserve received states; they do not resolve the model quality gate.
+
 `api.ts` validates HTTP responses with strict Zod schemas. In-memory operation keys
 are reused after uncertain create/generate/review responses. Failed recorded
 attempts receive a new key only for an explicit retry. These keys are not a browser

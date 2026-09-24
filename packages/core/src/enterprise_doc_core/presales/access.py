@@ -20,8 +20,8 @@ from enterprise_doc_core.presales.models import PresalesPacket, PresalesRow
 from enterprise_doc_core.presales.schemas import SourceInput, SourceSnapshot
 
 
-def fingerprint(payload: BaseModel) -> str:
-    return hashlib.sha256(payload.model_dump_json().encode()).hexdigest()
+def fingerprint(payload: BaseModel, *, exclude: set[str] | None = None) -> str:
+    return hashlib.sha256(payload.model_dump_json(exclude=exclude).encode()).hexdigest()
 
 
 def check_key(key: str) -> None:

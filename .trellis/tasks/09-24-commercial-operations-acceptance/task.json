@@ -26,8 +26,16 @@
     ".trellis/spec/infrastructure/backend/index.md",
     ".trellis/spec/backend/local-recovery.md",
     "docs/ops/single-node-operations-acceptance.md",
-    "docs/ops/commercial-production-plan.md"
+    "docs/ops/commercial-production-plan.md",
+    "packages/core/src/enterprise_doc_core/presales/schemas.py",
+    "packages/core/src/enterprise_doc_core/presales/citation_selection.py",
+    "packages/core/src/enterprise_doc_core/presales/service.py",
+    "packages/core/src/enterprise_doc_core/presales/export.py",
+    "apps/web/src/presales/ResponseRow.tsx",
+    ".trellis/spec/backend/presales-workspace.md",
+    ".trellis/spec/frontend/presales-workspace.md",
+    ".trellis/tasks/09-24-commercial-operations-acceptance/prerequisite-validation.json"
   ],
-  "notes": "Local recovery preparation and synthetic 0030 ledger restore verified. Notification transport, real DB+objects, business capacity and external acceptance remain pending.",
+  "notes": "Local recovery preparation and synthetic 0030 ledger restore verified. Structured prerequisite state/evidence persistence, review and CSV verified locally with legacy compatibility; frozen v7 semantic failure remains unresolved. Notification transport, real DB+objects, business capacity and external acceptance remain pending.",
   "meta": {}
 }

@@ -39,7 +39,7 @@ async def test_gateway_trial_preserves_failed_output_and_refuses_overwrite(tmp_p
     )
     report = await collect(dataset, output, settings, transport=httpx.MockTransport(respond))
     assert report["status"] == "collected" and len(calls) == 6
-    assert report["schemaVersion"] == "presales-gateway-run-v2"
+    assert report["schemaVersion"] == "presales-gateway-run-v3"
     assert report["selectedRoute"] == "fallback"
     assert report["configuredModelName"] == "test-model"
     for row, sent in zip(report["observations"], calls, strict=True):

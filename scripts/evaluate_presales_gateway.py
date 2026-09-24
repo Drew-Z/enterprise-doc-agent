@@ -159,7 +159,7 @@ async def collect(
     dataset, digest = load_dataset(dataset_path)
     snapshots, evidence = synthetic_sources(dataset, digest)
     report: dict[str, Any] = {
-        "schemaVersion": "presales-gateway-run-v2",
+        "schemaVersion": "presales-gateway-run-v3",
         "scope": "generation_only_with_complete_synthetic_sources; no_retrieval_or_persistence",
         "datasetSha256": digest,
         "runnerSha256": hashlib.sha256(

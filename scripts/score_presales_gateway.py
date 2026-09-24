@@ -51,9 +51,14 @@ def score(dataset_path: Path, gold_path: Path, report: dict[str, Any]) -> dict[s
     gold = Gold.model_validate_json(gold_path.read_bytes())
     if digest != gold.dataset_sha256 or digest != report["datasetSha256"]:
         raise ValueError("dataset_hash_mismatch")
-    if report["schemaVersion"] not in {"presales-gateway-run-v1", "presales-gateway-run-v2"}:
+    if report["schemaVersion"] not in {
+        "presales-gateway-run-v1",
+        "presales-gateway-run-v2",
+        "presales-gateway-run-v3",
+    }:
         raise ValueError("invalid_report_scope")
-    projected = report["schemaVersion"] == "presales-gateway-run-v2"
+    projected = report["schemaVersion"] != "presales-gateway-run-v1"
+    structured = report["schemaVersion"] == "presales-gateway-run-v3"
     requirements = {r.key: r for r in dataset.requirements}
     sources = {s.key: s for s in dataset.sources}
     expected = {r.key: r for r in gold.rows}
@@ -137,10 +142,17 @@ def score(dataset_path: Path, gold_path: Path, report: dict[str, Any]) -> dict[s
             if len(traces) != 1 or traces[0]["httpStatus"] != 200:
                 raise ValueError("success_without_response")
             draft = GeneratedDraft.model_validate(observation["result"]).draft
+            if structured != (draft.prerequisites is not None):
+                raise ValueError("result_prerequisites_contract_mismatch")
             if projected:
                 try:
                     original = trace["response"]["choices"][0]["message"]["content"]
-                    if resolve_selection(original, catalog) != draft:
+                    resolved = resolve_selection(original, catalog)
+                    # v2 saved only the flat projection. Reproduce that contract without
+                    # rewriting the historical result or accepting a formerly failed call.
+                    if not structured:
+                        resolved = resolved.model_copy(update={"prerequisites": None})
+                    if resolved != draft:
                         raise ValueError("result_binding_mismatch")
                 except (KeyError, IndexError, TypeError, PresalesError) as error:
                     raise ValueError("result_binding_mismatch") from error

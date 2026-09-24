@@ -254,9 +254,9 @@ prompt text does not guarantee either distinction; test exact original responses
 
 ## Single-source model protocol (v7 candidate)
 
-1. **Scope:** model-facing input/output only; public `GenerationInput`, `ModelDraft`,
-   saved drafts, reviews, CSV and database schema remain compatible. v7 remains a
-   candidate until the separate live semantic/release gate passes.
+1. **Scope:** the initial v7 change affected model-facing input/output only. The
+   later prerequisite-review contract below also extends public drafts/reviews
+   and CSV. v7 remains a candidate until the separate live semantic/release gate passes.
 2. **Input:** `SelectionInput(requirement, evidence)` explicitly projects each fragment
    to `citationId`, exact `text`, `source: {label, filename, applicability,
    versionNumber, latestVersionNumber}`, `heading`, `pageNumber`. Source information
@@ -368,6 +368,62 @@ does not dispatch the model. Expiry does not block authorized reads, review, exp
 or replay of an already generated draft. Reservations retain their original period.
 
 ## Review, export and diagnostics
+
+### Structured prerequisite review (CO-1/CO-2 candidate)
+
+1. **Scope / trigger:** the adapter previously discarded prerequisite states and
+   links, presenting both unmet and unknown items as unmet conditions. Retain this
+   information without inferring or correcting model semantics. The frozen v7
+   unknown-to-unmet failure and release gate remain unresolved.
+2. **Signatures:** `ModelDraft`, `SavedDraft`, `ReviewInput` and `SavedReview` include
+   `prerequisites: list[PrerequisiteAssessment] | None`. GET/create/generate/review
+   keep their existing routes; JSONB draft/review content persists the extension
+   without a migration or rewriting existing rows. `resolve_selection(content,
+   catalog)` binds request-local references to the ordered union of saved citations.
+3. **Contracts:** each item is `{condition, state: met|unmet|unknown,
+   citationIndexes: number[]}`. Up to 12 items; each has 1–12 unique, strict integer
+   indexes into original `draft.citations`, starting at 0 and within bounds.
+   `null`/omission means not recorded by an older contract; `[]` explicitly means
+   no prerequisites. `conditions` must equal the ordered, exact-text deduplication
+   of non-met prerequisites. Reviews retain every original condition and reference
+   in order, editing only state. A nonempty note is required when states differ
+   from either the original draft or the latest review. Original drafts and prior
+   revisions stay immutable. No new environment setting is required.
+4. **Validation / errors:** inconsistent status/conditions, malformed/duplicate
+   indexes or oversized fields fail schema validation (API 422; model output fails
+   without repair). Missing, added, reordered or rebound review prerequisites:
+   422 `presales_review_prerequisites_invalid`. Changed states without a note:
+   422 `presales_review_note_required`. Existing evidence, revision, idempotency
+   and tenant/source authorization checks still apply. Legacy null reviews omit
+   this field from their fingerprint to preserve pre-upgrade idempotent replay.
+5. **Good / base / bad cases:** purchased=met, unfinished configuration=unmet,
+   missing acceptance record=unknown remain three separate items and references.
+   A reviewer may correct a state with an explanatory note; this is a human
+   assessment, not newly acquired source evidence. Legacy conditions remain editable
+   and show `未记录前提状态`. Do not accept a reviewer dropping an unknown prerequisite
+   to obtain supported, or pretending an older missing list is an assessed empty list.
+6. **Tests:** HTTP selection tests assert all states and reference union; real
+   PostgreSQL/API tests assert persisted links, correction history, legacy replay,
+   untouched original JSONB, rejection of dropped/rebound items, revocation and CSV.
+   Web tests exercise per-item state edits/notes; 1440px and 390px browser journeys
+   cover matching evidence, reload and downloaded CSV. These tests use synthetic
+   sources and controlled model HTTP; they do not establish real model quality.
+7. **Wrong vs correct:** wrong: derive state from words in `conditions`, or amend
+   old failed evaluation results. Correct: retain explicit assessments, display
+   unknown distinctly and keep historical scores. New gateway runs use
+   `presales-gateway-run-v3`, whose recorded result must include and exactly match
+   the structured raw response. v2 scoring reproduces only its original flat
+   projection; v1 scoring and failure denominators remain unchanged.
+
+CSV changes the ambiguous `未满足条件` header to `响应条件`, and appends
+`前提状态与对应证据` plus `原模型前提状态与对应证据`. Each item carries its state,
+condition, filenames, source versions, locations and exact excerpts. Legacy missing
+assessments are explicitly unrecorded; ungenerated rows remain blank.
+
+Release API/Worker and Web together. The new strict Web parser accepts omitted
+legacy fields as null. Older strict server/Web builds cannot read rows containing
+the new fields: a rollback image must understand this contract. Do not remove the
+new persisted state/history to make an old build start. This change is not deployed.
 
 Original drafts are immutable. Human reviews append actor/time/text/status/note
 and revision, with expectedRevision conflict protection. Basic evidence/status

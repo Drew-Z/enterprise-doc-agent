@@ -175,7 +175,9 @@ async def test_prerequisites_resolve_to_compatible_public_draft() -> None:
     assert output.draft.status == "conditional"
     assert output.draft.conditions == ["需采购 SSO。"]
     assert output.draft.citations[0].excerpt == payload.evidence[0]["text"]
-    assert "prerequisites" not in output.draft.model_dump()
+    assert output.draft.model_dump(by_alias=True)["prerequisites"] == [
+        {"condition": "需采购 SSO。", "state": "unmet", "citationIndexes": [0]}
+    ]
 
 
 @pytest.mark.parametrize("state", ["unmet", "unknown"])
@@ -248,7 +250,15 @@ async def test_conditions_are_projected_once_from_ordered_outstanding_prerequisi
     output = await gateway(httpx.MockTransport(respond)).generate(payload)
     assert output.draft.conditions == ["需完成配置。", "需确认验收结果。"]
     assert len(output.draft.citations) == 1
-    assert "prerequisites" not in output.model_dump_json()
+    assert output.draft.model_dump(by_alias=True)["prerequisites"] == [
+        {"condition": text, "state": state, "citationIndexes": [0]}
+        for text, state in [
+            ("已采购模块。", "met"),
+            ("需完成配置。", "unmet"),
+            ("需确认验收结果。", "unknown"),
+            ("需完成配置。", "unmet"),
+        ]
+    ]
 
 
 @pytest.mark.parametrize("include_final_references", [True, False])
@@ -271,6 +281,9 @@ async def test_prerequisite_references_are_materialized_without_repeating_them(
     output = await gateway(httpx.MockTransport(respond)).generate(payload)
     assert output.draft.status == "supported"
     assert [c.excerpt for c in output.draft.citations] == [e["text"] for e in payload.evidence]
+    assert output.draft.model_dump(by_alias=True)["prerequisites"] == [
+        {"condition": "需签署协议。", "state": "met", "citationIndexes": [0, 1]}
+    ]
 
 
 async def test_unknown_prerequisite_reference_is_rejected_without_repair() -> None:

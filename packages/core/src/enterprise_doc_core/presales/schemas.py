@@ -59,14 +59,38 @@ class CitationInput(PresalesModel):
     excerpt: str = Field(min_length=1, max_length=600)
 
 
+class PrerequisiteAssessment(PresalesModel):
+    condition: TextItem
+    state: Literal["met", "unmet", "unknown"]
+    citation_indexes: list[Annotated[int, Field(ge=0, lt=12, strict=True)]] = Field(
+        min_length=1, max_length=12
+    )
+
+    @model_validator(mode="after")
+    def unique_citations(self) -> Self:
+        if len(set(self.citation_indexes)) != len(self.citation_indexes):
+            raise ValueError("prerequisite references must not contain duplicates")
+        return self
+
+
+def prerequisite_conditions(items: list[PrerequisiteAssessment]) -> list[str]:
+    return list(dict.fromkeys(item.condition for item in items if item.state != "met"))
+
+
 class ResponseText(PresalesModel):
     status: Status
     answer: str = Field(min_length=1, max_length=4000)
     conditions: list[TextItem] = Field(default_factory=list, max_length=12)
     missing_information: list[TextItem] = Field(default_factory=list, max_length=12)
+    # None means the older contract did not record an assessment; [] is explicit.
+    prerequisites: list[PrerequisiteAssessment] | None = Field(default=None, max_length=12)
 
     @model_validator(mode="after")
     def required_details(self) -> Self:
+        if self.prerequisites is not None and self.conditions != prerequisite_conditions(
+            self.prerequisites
+        ):
+            raise ValueError("conditions must match outstanding prerequisites")
         if self.status == "conditional" and not self.conditions:
             raise ValueError("conditional response requires conditions")
         if self.status == "insufficient_evidence" and not self.missing_information:
@@ -75,12 +99,19 @@ class ResponseText(PresalesModel):
             raise ValueError("unmet conditions require conditional status")
         return self
 
+    def validate_prerequisite_citations(self, count: int) -> None:
+        if any(
+            index >= count for item in self.prerequisites or [] for index in item.citation_indexes
+        ):
+            raise ValueError("prerequisite references must identify saved evidence")
+
 
 class ModelDraft(ResponseText):
     citations: list[CitationInput] = Field(default_factory=list, max_length=12)
 
     @model_validator(mode="after")
     def required_citations(self) -> Self:
+        self.validate_prerequisite_citations(len(self.citations))
         if self.status != "insufficient_evidence" and not self.citations:
             raise ValueError("this status requires evidence")
         if (
@@ -109,6 +140,11 @@ class RetrievalNote(PresalesModel):
 class SavedDraft(ResponseText):
     citations: list[Evidence]
     retrieval: list[RetrievalNote]
+
+    @model_validator(mode="after")
+    def bound_prerequisites(self) -> Self:
+        self.validate_prerequisite_citations(len(self.citations))
+        return self
 
 
 class ReviewInput(ResponseText):
