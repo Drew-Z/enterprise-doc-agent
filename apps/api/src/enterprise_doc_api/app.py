@@ -277,7 +277,9 @@ def create_app(
     resolved_usage_service = (
         usage_service
         if usage_service is not None
-        else EntitlementUsageService(session_factory=session_factory)
+        else EntitlementUsageService(
+            session_factory=session_factory, app_env=resolved_settings.app_env
+        )
         if session_factory is not None
         else None
     )

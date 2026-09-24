@@ -25,7 +25,7 @@ await service.configure(tenant_id=..., operator=..., configuration=...)
 await service.show(tenant_id=..., entitlement_id=..., operator=...)
 await service.list(tenant_id=..., operator=..., limit=20)
 
-EntitlementUsageService(session_factory=..., clock=None, reservation_ttl_seconds=900)
+EntitlementUsageService(session_factory=..., clock=None, reservation_ttl_seconds=900, app_env=AppEnvironment.LOCAL)
 await usage.reserve_provider_request(tenant_id=..., operation_id=..., session=None)
 await usage.settle_provider_request(tenant_id=..., operation_id=..., session=None)
 await usage.release_provider_request(tenant_id=..., operation_id=..., session=None)
@@ -134,10 +134,20 @@ preview, list checks its 1-100 bound before connecting, and execution is bounded
 30 seconds. Required inputs, period validation, stable receipts and audit stay in
 EntitlementAdministrationService; the adapter does not change quota or lifecycle rules.
 
-Admission acceptance and period configuration are separate transactions. The initial
-pilot must keep generation disabled until its configured active period is confirmed.
-This operator workflow does not solve atomic paid onboarding: unconfigured tenants
-still retain legacy behavior. A future self-service flow needs a separate design.
+Admission acceptance and period configuration are separate transactions. API and the
+Presales Worker pass their actual app_env to EntitlementUsageService. Staging/production
+require a current finite period for a new reservation; unconfigured and historical
+unlimited periods are projected as inactive with remaining zero. Local/test keep legacy
+compatibility. This is not a configurable production bypass. Existing reservation
+replay, original-period settlement and release remain valid across policy/period changes.
+Formal settlement without a durable reservation fails with usage_reservation_not_found;
+release without one remains an idempotent no-op. Zero finite quota keeps usage_limit_reached.
+Read/review/export do not acquire this new generation restriction.
+
+This change is an unreleased candidate, not a claim about v0.1.44. Before rollout, configure
+finite periods for existing tenants and drain old unledgered work. The formal adapter
+does not implement payments or atomic paid onboarding. Agent and embedding calls are
+outside this Presales commercial ledger; never claim a product-wide cost cap from it.
 
 ## 4. Validation & Error Matrix
 
@@ -196,6 +206,10 @@ review and export retain their authorization rules and remain available after ex
   a period through the formal adapter, consumes one request, and replays the exact
   configuration. Verify one configuration audit, unchanged consumption, show/list and
   remaining quota. This is controlled local infrastructure, not a public pilot.
+- `tests/billing/test_commercial_entitlement_integration.py` checks missing/unlimited/
+  zero/finite formal periods and old-reservation settlement on PostgreSQL. Foundation
+  runtime tests execute API/Worker composition across all four environments. Presales
+  integration covers synchronous/background rejection before attempts or dispatch.
 
 ## 7. Wrong vs Correct
 

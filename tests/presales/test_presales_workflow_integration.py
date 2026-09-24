@@ -18,7 +18,12 @@ from enterprise_doc_api.config import ApiSettings
 from enterprise_doc_core.audit.models import AuditEvent
 from enterprise_doc_core.billing import EntitlementUsageService
 from enterprise_doc_core.billing.models import TenantEntitlement, UsageEvent, UsageReservation
-from enterprise_doc_core.config import DatabaseSettings, ModelProvider, ModelSettings
+from enterprise_doc_core.config import (
+    AppEnvironment,
+    DatabaseSettings,
+    ModelProvider,
+    ModelSettings,
+)
 from enterprise_doc_core.context import PrincipalContext
 from enterprise_doc_core.db import create_database_engine, create_session_factory
 from enterprise_doc_core.documents import DocumentVersion, HashEmbeddingProvider
@@ -563,18 +568,27 @@ async def test_disabled_or_unconfigured_generation_creates_no_attempt(workspace,
     assert gateway.calls == []
 
 
-@pytest.mark.parametrize("condition", ["expired", "scheduled", "exhausted"])
+@pytest.mark.parametrize("condition", ["expired", "scheduled", "exhausted", "missing", "unlimited"])
+@pytest.mark.parametrize("background", [False, True], ids=["synchronous", "background"])
 async def test_commercial_preflight_rejects_generation_without_attempt_or_dispatch(
-    workspace, condition
+    workspace, condition, background
 ) -> None:
     service, sessions, context, _, gateway, payload = workspace
-    usage = service.generation.usage_service
+    usage = EntitlementUsageService(session_factory=sessions, app_env=AppEnvironment.PRODUCTION)
+    service.generation.usage_service = usage
+    service.generation.settings = PresalesSettings(
+        generation_enabled=True, background_generation_enabled=background
+    )
     async with sessions.begin() as session:
         entitlement = await session.scalar(
             select(TenantEntitlement).where(TenantEntitlement.tenant_id == context.tenant_id)
         )
         if condition == "exhausted":
             entitlement.provider_request_limit = 0
+        elif condition == "missing":
+            await session.delete(entitlement)
+        elif condition == "unlimited":
+            entitlement.provider_request_limit = None
         else:
             now = (
                 entitlement.period_end

@@ -45,7 +45,7 @@ async def run_presales(
         gateways[settings.presales.model_route],
         settings.presales,
         lambda: datetime.now(UTC),
-        EntitlementUsageService(session_factory=sessions),
+        EntitlementUsageService(session_factory=sessions, app_env=settings.app_env),
     )
     worker = BackgroundGeneration(generation, gateways)
     worker_id = f"{settings.worker.worker_id[:140]}-presales-{uuid4().hex}"
