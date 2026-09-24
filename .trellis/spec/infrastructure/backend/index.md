@@ -13,3 +13,7 @@ for pinned source builds, fail-closed secrets, receive-only defaults and real lo
 Worker/D1/browser acceptance. Public provisioning, explicit recovery, Windows
 credentials and live HTTPS/browser checks follow the separate
 [mailbox rollout contract](./cloudflare-mail-rollout.md).
+
+Commercial candidate evidence aggregation and the read-only manual CI gate follow
+the [commercial readiness contract](../../backend/commercial-readiness.md). Mechanical
+evidence completeness does not authorize deployment or replace actual customer review.

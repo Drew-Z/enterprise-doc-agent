@@ -1,0 +1,60 @@
+name: Commercial Readiness
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_sha:
+        description: Exact reviewed application commit
+        required: true
+        type: string
+      manifest:
+        description: Repository-relative reviewed evidence manifest
+        required: true
+        default: evidence/gates/commercial-readiness-current.json
+        type: string
+      scope:
+        description: Intended commercial release scope
+        required: true
+        default: invited
+        type: choice
+        options: [invited, public_saas]
+      target_environment:
+        required: true
+        default: staging
+        type: choice
+        options: [staging, production]
+
+permissions:
+  contents: read
+
+jobs:
+  evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version-file: .python-version
+      - name: Validate current commercial evidence
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          MANIFEST: ${{ inputs.manifest }}
+          RELEASE_SCOPE: ${{ inputs.scope }}
+          TARGET_ENVIRONMENT: ${{ inputs.target_environment }}
+        run: |
+          python -B scripts/check_commercial_readiness.py \
+            --commit "$CANDIDATE_SHA" --manifest "$MANIFEST" \
+            --scope "$RELEASE_SCOPE" --environment "$TARGET_ENVIRONMENT" \
+            --profile single-node-4c4g \
+            > "$RUNNER_TEMP/commercial-readiness.json"
+      - name: Preserve this run's report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: commercial-readiness-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/commercial-readiness.json
+          if-no-files-found: error
+          retention-days: 14
