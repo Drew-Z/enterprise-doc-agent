@@ -1,0 +1,33 @@
+{
+  "id": "commercial-operations-acceptance",
+  "name": "commercial-operations-acceptance",
+  "title": "当前环境业务质量与运维验收",
+  "description": "",
+  "status": "in_progress",
+  "dev_type": null,
+  "scope": null,
+  "package": "core",
+  "priority": "P0",
+  "creator": "developer",
+  "assignee": "developer",
+  "createdAt": "2026-09-24",
+  "completedAt": null,
+  "branch": "codex/presales-prerequisite-assessment",
+  "base_branch": "codex/presales-prerequisite-assessment",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": "https://github.com/Drew-Z/enterprise-doc-agent/pull/8",
+  "subtasks": [],
+  "children": [],
+  "parent": "09-24-commercial-production-readiness",
+  "relatedFiles": [
+    "scripts/local_recovery_drill.py",
+    "tests/deployment/test_local_recovery_drill.py",
+    ".trellis/spec/infrastructure/backend/index.md",
+    ".trellis/spec/backend/local-recovery.md",
+    "docs/ops/single-node-operations-acceptance.md",
+    "docs/ops/commercial-production-plan.md"
+  ],
+  "notes": "Local recovery preparation and synthetic 0030 ledger restore verified. Notification transport, real DB+objects, business capacity and external acceptance remain pending.",
+  "meta": {}
+}

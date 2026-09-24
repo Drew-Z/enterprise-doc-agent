@@ -17,3 +17,6 @@ credentials and live HTTPS/browser checks follow the separate
 Commercial candidate evidence aggregation and the read-only manual CI gate follow
 the [commercial readiness contract](../../backend/commercial-readiness.md). Mechanical
 evidence completeness does not authorize deployment or replace actual customer review.
+
+The [private local recovery contract](../../backend/local-recovery.md) governs
+explicit backup output, isolated database ownership, cleanup and local-only reports.
