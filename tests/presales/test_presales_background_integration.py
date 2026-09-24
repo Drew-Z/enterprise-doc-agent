@@ -9,14 +9,20 @@ from uuid import UUID, uuid4
 import httpx
 import pytest
 from pydantic import SecretStr
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
 from enterprise_doc_api.app import create_app
 from enterprise_doc_api.config import ApiSettings
 from enterprise_doc_core.billing import EntitlementUsageService
 from enterprise_doc_core.billing.models import TenantEntitlement, UsageReservation
-from enterprise_doc_core.config import ModelProvider, ModelSettings
+from enterprise_doc_core.config import (
+    AppEnvironment,
+    EmbeddingSettings,
+    ModelProvider,
+    ModelSettings,
+)
 from enterprise_doc_core.documents import HashEmbeddingProvider
+from enterprise_doc_core.documents.embedding_provider import OpenAICompatibleEmbeddingProvider
 from enterprise_doc_core.documents.retrieval_service import HybridRetrievalService
 from enterprise_doc_core.jobs.models import Job, JobEvent, OutboxEvent
 from enterprise_doc_core.presales.gateway import OpenAICompatiblePresalesGateway
@@ -381,6 +387,66 @@ def configured_worker(b, respond, **settings):
 async def enqueue(b, key="once"):
     packet = await b.service.create(b.context.principal, b.payload, f"create-{key}")
     return await b.service.generate(b.context.principal, packet.id, packet.rows[0].id, key)
+
+
+@pytest.mark.parametrize("loss", ["released", "expired", "missing"])
+async def test_embedding_retry_stops_when_presales_reservation_is_lost(background, loss):
+    from enterprise_doc_core.billing.provider_models import ProviderDispatch
+
+    b = background
+    usage = EntitlementUsageService(session_factory=b.sessions, app_env=AppEnvironment.PRODUCTION)
+    b.service.generation.usage_service = usage
+    worker = configured_worker(b, lambda _: pytest.fail("Chat must not be dispatched"))
+    packet = await enqueue(b, "query-reservation")
+    operation_id = packet.rows[0].attempts[0].id
+    calls = []
+
+    async def provider(request):
+        calls.append(request)
+        if loss == "released":
+            await usage.release_provider_request(
+                tenant_id=b.context.tenant_id, operation_id=operation_id, source="test"
+            )
+        else:
+            async with b.sessions.begin() as session:
+                reservation = await session.scalar(
+                    select(UsageReservation).where(UsageReservation.operation_id == operation_id)
+                )
+                if loss == "expired":
+                    reservation.expires_at = datetime.now(UTC) - timedelta(seconds=1)
+                else:
+                    # Simulate a damaged/missing receipt, not a supported admin operation.
+                    await session.execute(
+                        delete(UsageReservation).where(UsageReservation.id == reservation.id)
+                    )
+        return httpx.Response(429, headers={"Retry-After": "0"})
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(provider)) as client:
+        b.service.generation.retriever = HybridRetrievalService(
+            session_factory=b.sessions,
+            embedding_provider=OpenAICompatibleEmbeddingProvider(
+                settings=EmbeddingSettings(
+                    provider="openai_compatible",
+                    base_url="https://embed.invalid/v1",
+                    api_key="test-only",
+                    model_name="embed",
+                ),
+                client=client,
+                require_metering=True,
+            ),
+            app_env=AppEnvironment.PRODUCTION,
+        )
+        assert await worker.run_once("query-worker")
+    result = await b.service.get(b.context.principal, packet.id)
+    assert result.rows[0].state == "failed" and result.rows[0].draft is None
+    assert len(calls) == 1
+    async with b.sessions() as session:
+        receipts = (
+            await session.scalars(
+                select(ProviderDispatch).where(ProviderDispatch.tenant_id == b.context.tenant_id)
+            )
+        ).all()
+        assert len(receipts) == 1 and receipts[0].state == "http_error"
 
 
 @pytest.mark.parametrize(

@@ -19,7 +19,10 @@ async def lock_usage_tenant(
         statement = select(Tenant.id).where(Tenant.id == tenant_id)
         if not allow_inactive:
             statement = statement.where(Tenant.is_active.is_(True))
-        found = await session.scalar(statement.with_for_update())
+        # Serialize admissions/counters but allow the KEY SHARE locks used by
+        # dispatch/event foreign keys after their business rows have been locked.
+        # SQLAlchemy key_share=True without read=True emits FOR NO KEY UPDATE.
+        found = await session.scalar(statement.with_for_update(key_share=True))
     except DBAPIError as error:
         raise UsageError("usage_store_unavailable") from error
     if found is None:

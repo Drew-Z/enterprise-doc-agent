@@ -26,6 +26,7 @@ from enterprise_doc_core.agents.schemas import (
     StructuredExtractionModelOutput,
     SummaryModelOutput,
 )
+from enterprise_doc_core.billing.provider_calls import recorded_post
 from enterprise_doc_core.config import ModelProvider, ModelSettings
 
 
@@ -595,6 +596,7 @@ class OpenAICompatibleChatGateway:
         *,
         settings: ModelSettings,
         client: httpx.AsyncClient | None = None,
+        require_metering: bool = False,
     ) -> None:
         if settings.provider is not ModelProvider.OPENAI_COMPATIBLE:
             raise ValueError("OpenAICompatibleChatGateway requires the openai_compatible provider")
@@ -605,6 +607,7 @@ class OpenAICompatibleChatGateway:
         self.endpoint = f"{settings.base_url.rstrip('/')}/chat/completions"
         self.client = client or httpx.AsyncClient(trust_env=False)
         self._owns_client = client is None
+        self.require_metering = require_metering
 
     async def aclose(self) -> None:
         if self._owns_client:
@@ -775,14 +778,18 @@ class OpenAICompatibleChatGateway:
             "messages": messages,
         }
         try:
-            response = await self.client.post(
+            response = await recorded_post(
+                self.client,
                 self.endpoint,
+                provider="openai_compatible",
+                model=self.settings.model_name,
+                require_metering=self.require_metering,
                 headers={
                     "Authorization": f"Bearer {self.settings.api_key.get_secret_value()}",
                     "Content-Type": "application/json",
                 },
-                json=body,
-                timeout=httpx.Timeout(self.settings.timeout_seconds),
+                json_body=body,
+                request_timeout=httpx.Timeout(self.settings.timeout_seconds),
             )
         except httpx.TimeoutException as error:
             raise ModelTimeoutError() from error

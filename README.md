@@ -74,6 +74,10 @@ DocAgent 面向售前、安全问卷和企业知识核验场景。上传产品�
 | 模型接入 | OpenAI-compatible Chat 与 Embedding 接口；Agent 主备路由与熔断；售前可独立选定路由和超时预算 |
 | 交付与运维 | Docker 镜像、Kubernetes/K3s 清单、健康探针、GitHub Actions、镜像 digest、签名、SBOM 与发布证据 |
 
+本分支另完成了 **Agent 成功任务额度、独立文档处理配额与逐次模型调用记录** 的本地验证。
+企业用量页分别展示业务额度、存储和调用观察；超时或未知费用保留为未知，不合成为账单。
+该候选尚未部署，需要迁移数据库并为现有企业补配额，步骤见[平台运营手册](docs/ops/platform-operations.md)。
+
 **典型操作路径**
 
 1. GitHub 登录后接受准入或成员邀请，进入企业空间。

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable, Mapping
+from contextlib import nullcontext
 from time import perf_counter
 from typing import Any, Protocol, cast
 
@@ -26,10 +27,12 @@ from enterprise_doc_core.agents.gateway import (
     OpenAICompatibleChatGateway,
 )
 from enterprise_doc_core.config import (
+    AppEnvironment,
     FaultInjectionSettings,
     McpSettings,
     ModelProvider,
     ModelSettings,
+    ProviderUsageSettings,
 )
 from enterprise_doc_core.telemetry import InstrumentedModelGateway, MetricsRuntime
 from enterprise_doc_worker.agent_backend import DurableAgentGraphBackend
@@ -66,10 +69,12 @@ GraphBuilder = Callable[
 ]
 
 
-def _provider_gateway(settings: ModelSettings) -> ChatModelGateway:
+def _provider_gateway(
+    settings: ModelSettings, *, require_metering: bool = False
+) -> ChatModelGateway:
     if settings.provider is ModelProvider.DETERMINISTIC:
         return DeterministicGroundedGateway()
-    return OpenAICompatibleChatGateway(settings=settings)
+    return OpenAICompatibleChatGateway(settings=settings, require_metering=require_metering)
 
 
 def _route_descriptor(settings: ModelSettings) -> ModelRouteDescriptor:
@@ -86,8 +91,10 @@ def _route_descriptor(settings: ModelSettings) -> ModelRouteDescriptor:
     )
 
 
-def _configured_gateway(settings: ModelSettings) -> ChatModelGateway:
-    primary = _provider_gateway(settings)
+def _configured_gateway(
+    settings: ModelSettings, *, require_metering: bool = False
+) -> ChatModelGateway:
+    primary = _provider_gateway(settings, require_metering=require_metering)
     if settings.fallback_provider is None:
         return primary
     fallback_timeout_seconds = settings.fallback_timeout_seconds or settings.timeout_seconds
@@ -102,7 +109,7 @@ def _configured_gateway(settings: ModelSettings) -> ChatModelGateway:
         timeout_seconds=fallback_timeout_seconds,
         max_output_bytes=settings.max_output_bytes,
     )
-    fallback = _provider_gateway(fallback_settings)
+    fallback = _provider_gateway(fallback_settings, require_metering=require_metering)
     route_deadline_seconds = settings.route_deadline_seconds
     if route_deadline_seconds is None:
         route_deadline_seconds = settings.timeout_seconds + fallback_timeout_seconds
@@ -270,7 +277,9 @@ class AgentGraphExecutor:
         else:
             raise AgentExecutionContractMismatch()
 
-        result = await graph.ainvoke(graph_input, config=config)
+        provider_scope = getattr(backend, "provider_scope", None)
+        with provider_scope() if callable(provider_scope) else nullcontext():
+            result = await graph.ainvoke(graph_input, config=config)
         if not isinstance(result, Mapping):
             raise AgentGraphExecutionResultInvalid()
         if "__interrupt__" in result:
@@ -316,11 +325,16 @@ def build_durable_agent_handler(
     mcp_client: McpClient | None = None,
     fault_injection: FaultInjectionSettings | None = None,
     metrics: MetricsRuntime | None = None,
+    app_env: AppEnvironment = AppEnvironment.LOCAL,
+    provider_usage_settings: ProviderUsageSettings | None = None,
 ) -> AgentExecutionHandler:
     if gateway is not None:
         resolved_gateway = gateway
     else:
-        resolved_gateway = _configured_gateway(model_settings)
+        resolved_gateway = _configured_gateway(
+            model_settings,
+            require_metering=app_env in {AppEnvironment.STAGING, AppEnvironment.PRODUCTION},
+        )
     resolved_mcp_client = mcp_client or McpStdioClient(
         command=mcp_settings.command,
         request_timeout_seconds=mcp_settings.request_timeout_seconds,
@@ -343,6 +357,8 @@ def build_durable_agent_handler(
             gateway=resolved_gateway,
             mcp_client=resolved_mcp_client,
             mcp_settings=mcp_settings,
+            app_env=app_env,
+            provider_usage_settings=provider_usage_settings,
         )
 
     executor = build_agent_graph_executor(

@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-24",
+  "worktree_base_commit": "64d3424f7e3bbeda5df877e3c1bb38d327e431ff",
+  "status": "local_validation_passed",
+  "deployed": false,
+  "commercial_readiness": "blocked",
+  "checks": [
+    {"name": "billing_agent_mcp_postgresql", "passed": 134, "deselected": 1, "excluded": "real_stdio"},
+    {"name": "presales_background_postgresql", "passed": 26},
+    {"name": "presales_query_reservation_loss", "passed": 3},
+    {"name": "entitlement_cli", "passed": 9},
+    {"name": "usage_frontend", "passed": 37},
+    {"name": "usage_chromium", "passed": 4, "visual_review": ["desktop", "mobile"]},
+    {"name": "ruff", "status": "passed"},
+    {"name": "ruff_format", "status": "passed", "files": 576},
+    {"name": "mypy", "status": "passed", "source_files": 245},
+    {"name": "web_typecheck_and_changed_file_eslint", "status": "passed"}
+  ],
+  "database_isolation": {
+    "migrated_test_schemas": "owned temporary schemas only",
+    "original_public_revision": "20260923_0027",
+    "public_schema_structure_unchanged": true,
+    "owned_schemas_removed": true
+  },
+  "earlier_regression": {
+    "non_integration_passed": 1708,
+    "deselected": 418,
+    "subtests_passed": 23,
+    "scope": "before final guard and lock changes; final relevant regression is listed above"
+  },
+  "observed_failures": [
+    "The dispatch/admission concurrency regression reproduced PostgreSQL DeadlockDetected before NO KEY UPDATE was applied; the same regression passed after the fix.",
+    "A direct MCP test invocation targeted the old local public schema and failed during seed transactions because processing_job_id was absent; those transactions rolled back. The final MCP tests ran successfully through the isolated migrated-schema runner.",
+    "A temporary indentation error in a test caused collection failure; it was corrected before the final 134-test regression."
+  ],
+  "limitations": [
+    "No real supplier call, price reconciliation, notification, remote migration or deployment was performed.",
+    "HTTP and object-store boundaries use controlled replacements; PostgreSQL locks, transactions and migrations are real.",
+    "Prior v7 semantic failures and unexecuted samples remain unchanged.",
+    "The readiness manifest is not marked passed by these local tests."
+  ]
+}

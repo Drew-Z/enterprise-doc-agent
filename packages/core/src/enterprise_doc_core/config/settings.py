@@ -284,6 +284,13 @@ class McpSettings(BaseModel):
         return self
 
 
+class ProviderUsageSettings(BaseModel):
+    daily_call_limit: int = Field(default=1000, strict=True, ge=1, le=1_000_000)
+    agent_call_limit: int = Field(default=12, strict=True, ge=1, le=100)
+    document_call_limit: int = Field(default=2048, strict=True, ge=1, le=100_000)
+    query_call_limit: int = Field(default=6, strict=True, ge=1, le=100)
+
+
 class FoundationSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -304,6 +311,7 @@ class FoundationSettings(BaseSettings):
     model: ModelSettings = Field(default_factory=ModelSettings)
     embedding: EmbeddingSettings = Field(default_factory=EmbeddingSettings)
     retrieval: RetrievalSettings = Field(default_factory=RetrievalSettings)
+    provider_usage: ProviderUsageSettings = Field(default_factory=ProviderUsageSettings)
     mcp: McpSettings = Field(default_factory=McpSettings)
     fault_injection: FaultInjectionSettings = Field(default_factory=FaultInjectionSettings)
 

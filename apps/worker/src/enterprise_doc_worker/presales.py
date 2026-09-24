@@ -20,7 +20,9 @@ async def run_presales(
     shutdown: asyncio.Event,
     metrics: MetricsRuntime,
 ) -> None:
-    provider, model, dimension = build_embedding_provider(settings.embedding)
+    provider, model, dimension = build_embedding_provider(
+        settings.embedding, app_env=settings.app_env
+    )
     routes = [settings.presales.model_route]
     if settings.presales.automatic_failover_enabled:
         routes.append("fallback" if routes[0] == "primary" else "primary")
@@ -41,6 +43,8 @@ async def run_presales(
             query_instruction=settings.embedding.query_instruction,
             require_vector_evidence=settings.retrieval.require_vector_evidence,
             metrics=metrics,
+            app_env=settings.app_env,
+            provider_usage_settings=settings.provider_usage,
         ),
         gateways[settings.presales.model_route],
         settings.presales,

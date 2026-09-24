@@ -43,6 +43,8 @@ it.each([
   { enabled: false },
   { periodEnd: "2026-08-01T00:00:00Z" },
   { resources: { ...tenantUsage().resources, storageRemainingBytes: 0 } },
+  { productQuotas: [{ metric: "agent_task", limit: 2, used: 1, reserved: 2, remaining: 0 }] },
+  { productQuotas: [tenantUsage().productQuotas[0], tenantUsage().productQuotas[0]] },
   { unexpected: "data" },
 ])("rejects malformed or imprecise usage instead of displaying it: %j", async fields => {
   vi.spyOn(globalThis, "fetch").mockResolvedValue(respond({ ...tenantUsage(), ...fields }));

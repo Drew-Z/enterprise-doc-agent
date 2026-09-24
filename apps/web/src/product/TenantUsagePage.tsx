@@ -17,7 +17,7 @@ const copy = {
     sessionError: "Enterprise access could not be confirmed. Refresh your session and try again.", refreshSession: "Refresh session",
     loadError: "Usage could not be loaded. Refresh to try again.", invalid: "Usage data could not be read accurately. Refresh or contact your administrator.",
     changed: "The enterprise session has changed. Reopen usage in the current enterprise.", requestId: "Request ID",
-    generation: "Generation capacity", active: "Active period", inactive: "No active generation period", legacy: "No generation period configured",
+    generation: "Presales generation capacity", active: "Active period", inactive: "No active generation period", legacy: "No generation period configured",
     inactiveDetail: "There is no generation entitlement in effect right now. New generations are unavailable; existing responses can still be reviewed and exported.",
     legacyDetail: "This enterprise has no configured generation period. Existing generation limits still apply. Period usage is not available here.",
     noCapacity: "No generation capacity available", noCapacityDetail: "Capacity may be used or reserved by work in progress. Refresh after running generations finish, or contact your administrator.",
@@ -28,12 +28,19 @@ const copy = {
     members: "Member seats", seatLimit: "Seat limit", seatsUsed: "Active members", seatsRemaining: "Available seats",
     seatNote: "Active owner and member memberships occupy seats. Pending invitations do not.",
     manageDocuments: "Manage documents", manageMembers: "Manage members",
-    activity: "Recent activity", activityLimit: "Up to 20 events from the current period.", activityList: "Recent usage activity",
+    activity: "Recent presales activity", activityLimit: "Up to 20 presales events from the current period.", activityList: "Recent usage activity",
     noActivity: "No recorded activity in this period.", noPeriodActivity: "Activity appears here when a generation period is active.",
     consume: "Generation saved", release: "Capacity released", quantity: "Units", estimatedCost: "Estimated model cost", unknown: "Unknown",
     costUnknown: "Model cost unknown", costKnown: "Some cost estimates available",
     costNote: "These are recorded estimates, not a bill or a complete period total. Released capacity does not mean the model provider charged nothing.",
     currencyUnknown: "Currency unknown",
+    agentTasks: "Agent tasks", documentProcessing: "Document processing",
+    agentNote: "Each successful task uses one unit. Waiting for approval keeps a reservation; failed or cancelled tasks release it. Model calls are separate from task units.",
+    documentNote: "Successful processing counts the original file size. Replaying a completed result does not count again. This allowance is separate from storage.",
+    productMissing: "No processing allowance is configured for this period. Contact your administrator to enable it.",
+    modelCalls: "Agent and embedding calls", dispatches: "Attempts", unresolved: "Uncertain responses",
+    unknownCalls: "Cost unknown", knownTokens: "Reported tokens",
+    callsNote: "Current-period attempts include retries and query embeddings. Uncertain responses may still incur a charge. Reported tokens may be incomplete; no monetary total is available.",
   },
   zh: {
     title: "企业用量", summary: "查看当前企业的生成额度与资源使用情况。", owner: "管理员视图",
@@ -43,7 +50,7 @@ const copy = {
     sessionError: "无法确认当前企业的访问权限，请刷新会话后重试。", refreshSession: "刷新会话",
     loadError: "暂时无法加载用量，请刷新重试。", invalid: "无法准确读取用量数据，请刷新或联系管理员。",
     changed: "企业会话已变化，请在当前企业重新打开用量页面。", requestId: "请求编号",
-    generation: "生成额度", active: "生效中", inactive: "当前没有生效中的生成周期", legacy: "尚未配置生成周期",
+    generation: "售前生成额度", active: "生效中", inactive: "当前没有生效中的生成周期", legacy: "尚未配置生成周期",
     inactiveDetail: "当前没有生效中的生成权益，暂时无法发起新生成；已有响应仍可复核和导出。",
     legacyDetail: "当前企业尚未配置生成周期，仍遵守已有生成限制。此处暂不提供周期用量。",
     noCapacity: "暂无可用生成额度", noCapacityDetail: "额度可能已使用，或被处理中任务预留。请在任务结束后刷新，或联系管理员。",
@@ -54,12 +61,19 @@ const copy = {
     members: "成员席位", seatLimit: "席位上限", seatsUsed: "活跃成员", seatsRemaining: "可用席位",
     seatNote: "有效的管理员和普通成员资格占用席位，待接受的邀请不占用席位。",
     manageDocuments: "管理资料", manageMembers: "管理成员",
-    activity: "最近用量记录", activityLimit: "仅展示当前周期最近的至多 20 条记录。", activityList: "最近用量记录列表",
+    activity: "最近售前用量记录", activityLimit: "仅展示当前周期最近的至多 20 条售前记录。", activityList: "最近用量记录列表",
     noActivity: "当前周期暂无用量记录。", noPeriodActivity: "生成周期生效后，此处将显示该周期的记录。",
     consume: "生成已保存", release: "额度已释放", quantity: "额度数量", estimatedCost: "模型费用估算", unknown: "未知",
     costUnknown: "模型费用未知", costKnown: "已有部分费用估算",
     costNote: "这里只显示已记录的费用估算，不代表账单或完整周期总费用。额度释放也不表示模型服务商未收费。",
     currencyUnknown: "币种未知",
+    agentTasks: "Agent 任务", documentProcessing: "文档处理",
+    agentNote: "每个成功任务消耗 1 份额度。等待审批时保持预留，失败或取消后释放。模型调用次数与任务额度分别记录。",
+    documentNote: "按成功处理文件的原始大小累计，复用已完成结果不重复扣量。处理额度与存储空间分别计算。",
+    productMissing: "当前周期尚未配置此项处理额度，请联系管理员开通。",
+    modelCalls: "Agent 与向量模型调用", dispatches: "调用尝试", unresolved: "响应不确定",
+    unknownCalls: "费用未知", knownTokens: "已知 Token 数",
+    callsNote: "统计当前周期的调用尝试，包含重试和检索向量计算。响应不确定仍可能产生费用，已知 Token 数可能不完整，暂不提供金额总计。",
   },
 } as const;
 
@@ -185,6 +199,25 @@ function UsageDetails({ data, locale, navigate }: { data: TenantUsage; locale: L
     </section>
 
     <div className="usage-resources">
+      {(["agent_task", "document_bytes"] as const).map(metric => {
+        const quota = data.productQuotas.find(item => item.metric === metric);
+        const isBytes = metric === "document_bytes";
+        const title = isBytes ? text.documentProcessing : text.agentTasks;
+        const display = (value: number) => isBytes ? bytes(value, locale) : number(value, locale);
+        return <section key={metric} className="usage-resource product-section" aria-labelledby={`usage-${metric}-title`}>
+          <h2 id={`usage-${metric}-title`}>{title}</h2>
+          {quota ? <dl className="usage-generation-metrics">
+            <Metric label={text.remaining} value={display(quota.remaining)} title={isBytes ? exactBytes(quota.remaining) : undefined} prominent />
+            <Metric label={text.used} value={display(quota.used)} title={isBytes ? exactBytes(quota.used) : undefined} />
+            <Metric label={text.reserved} value={display(quota.reserved)} title={isBytes ? exactBytes(quota.reserved) : undefined} />
+            <Metric label={text.limit} value={display(quota.limit)} title={isBytes ? exactBytes(quota.limit) : undefined} />
+          </dl> : <p className="usage-period-notice">{active ? text.productMissing : unspecified}</p>}
+          <p className="usage-resource-note">{isBytes ? text.documentNote : text.agentNote}</p>
+        </section>;
+      })}
+    </div>
+
+    <div className="usage-resources">
       <section className="usage-resource product-section" aria-labelledby="usage-storage-title">
         <div className="usage-section-heading"><h2 id="usage-storage-title"><Database aria-hidden="true" />{text.storage}</h2>
           <button type="button" className="usage-text-button" onClick={() => navigate("documents")}>{text.manageDocuments}<ArrowUpRight aria-hidden="true" /></button>
@@ -213,6 +246,17 @@ function UsageDetails({ data, locale, navigate }: { data: TenantUsage; locale: L
         <p className="usage-resource-note">{text.seatNote}</p>
       </section>
     </div>
+
+    <section className="usage-period product-section" aria-labelledby="usage-model-calls-title">
+      <h2 id="usage-model-calls-title">{text.modelCalls}</h2>
+      {active ? <dl className="usage-generation-metrics">
+        <Metric label={text.dispatches} value={number(data.modelCalls.calls, locale)} />
+        <Metric label={text.unresolved} value={number(data.modelCalls.unresolvedCalls, locale)} />
+        <Metric label={text.unknownCalls} value={number(data.modelCalls.unknownCostCalls, locale)} />
+        <Metric label={text.knownTokens} value={data.modelCalls.usageKnownCalls > 0 ? number(data.modelCalls.knownTotalTokens, locale) : text.unknown} />
+      </dl> : <p>{unspecified}</p>}
+      <p className="usage-resource-note">{text.callsNote}</p>
+    </section>
 
     <section className="usage-activity product-section" aria-labelledby="usage-activity-title">
       <div className="usage-section-heading"><div><h2 id="usage-activity-title">{text.activity}</h2><p className="usage-section-summary">{text.activityLimit}</p></div></div>

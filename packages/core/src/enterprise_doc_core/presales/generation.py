@@ -5,7 +5,7 @@ from collections.abc import Callable
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from typing import Protocol
-from uuid import UUID, uuid4
+from uuid import UUID, uuid4, uuid5
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -14,6 +14,7 @@ from enterprise_doc_core.audit import append_audit_event
 from enterprise_doc_core.billing import EntitlementUsageService
 from enterprise_doc_core.billing.errors import UsageError
 from enterprise_doc_core.billing.models import UsageReservation
+from enterprise_doc_core.billing.provider_calls import Guard
 from enterprise_doc_core.context import PrincipalContext, get_request_context
 from enterprise_doc_core.demo.limits import active_workspace, finish_attempt, reserve_attempt
 from enterprise_doc_core.documents.retrieval import (
@@ -23,6 +24,7 @@ from enterprise_doc_core.documents.retrieval import (
     RetrievalDecision,
     validate_citations,
 )
+from enterprise_doc_core.documents.retrieval_service import HybridRetrievalService
 from enterprise_doc_core.jobs.service import create_job_records
 from enterprise_doc_core.presales.access import check_key, check_sources, load_packet, load_row
 from enterprise_doc_core.presales.errors import PresalesError
@@ -122,9 +124,20 @@ class GenerationService:
         tenant_id, actor_id = UUID(principal.tenant_id), UUID(principal.actor_id)
         context = get_request_context()
         provider_requests: int | None = 0
+
+        async def guard(session: AsyncSession) -> None:
+            await self._guard_retrieval(session, principal, packet_id, row_id, attempt_id)
+
         try:
             async with asyncio.timeout(self.settings.row_timeout_seconds):
-                candidates, notes = await self._retrieve(tenant_id, actor_id, requirement, sources)
+                candidates, notes = await self._retrieve(
+                    tenant_id,
+                    actor_id,
+                    requirement,
+                    sources,
+                    provider_guard=guard,
+                    provider_operation_id=attempt_id,
+                )
                 # ACL may have changed during retrieval. Recheck before sending any evidence.
                 async with self.session_factory() as session:
                     await load_packet(session, principal, packet_id)
@@ -395,16 +408,33 @@ class GenerationService:
         actor_id: UUID,
         requirement: RequirementInput,
         sources: list[SourceSnapshot],
+        *,
+        provider_guard: Guard | None = None,
+        provider_operation_id: UUID | None = None,
     ) -> tuple[tuple[RetrievalCandidate, ...], list[RetrievalNote]]:
         candidates: list[RetrievalCandidate] = []
         notes = []
         for source in sources:
-            result = await self.retriever.retrieve(
-                tenant_id=tenant_id,
-                actor_id=actor_id,
-                document_version_id=source.version_id,
-                query=requirement.text,
-            )
+            if isinstance(self.retriever, HybridRetrievalService):
+                result = await self.retriever.retrieve(
+                    tenant_id=tenant_id,
+                    actor_id=actor_id,
+                    document_version_id=source.version_id,
+                    query=requirement.text,
+                    provider_guard=provider_guard,
+                    provider_operation_id=(
+                        uuid5(provider_operation_id, str(source.version_id))
+                        if provider_operation_id
+                        else None
+                    ),
+                )
+            else:
+                result = await self.retriever.retrieve(
+                    tenant_id=tenant_id,
+                    actor_id=actor_id,
+                    document_version_id=source.version_id,
+                    query=requirement.text,
+                )
             available = result.candidates if result.accepted else ()
             used = available[:2]
             if any(
@@ -427,6 +457,41 @@ class GenerationService:
                 for c in used
             )
         return tuple(candidates), notes
+
+    async def _guard_retrieval(
+        self,
+        session: AsyncSession,
+        principal: PrincipalContext,
+        packet_id: UUID,
+        row_id: UUID,
+        attempt_id: UUID,
+    ) -> None:
+        packet = await load_packet(session, principal, packet_id, lock=True)
+        await active_workspace(session, packet.tenant_id, self.clock())
+        row = await load_row(session, packet, row_id)
+        attempt = await session.get(PresalesAttempt, attempt_id, with_for_update=True)
+        if (
+            attempt is None
+            or attempt.tenant_id != packet.tenant_id
+            or attempt.row_id != row.id
+            or attempt.state not in {"running", "recovering"}
+            or attempt.deadline_at <= self.clock()
+            or row.draft is not None
+        ):
+            raise PresalesError("presales_attempt_expired")
+        reservation = await session.scalar(
+            select(UsageReservation).where(
+                UsageReservation.tenant_id == packet.tenant_id,
+                UsageReservation.operation_id == attempt_id,
+            )
+        )
+        if reservation is None and self.usage_service is not None:
+            if self.usage_service.require_active_entitlement:
+                raise PresalesError("presales_attempt_expired")
+        elif reservation is not None and (
+            reservation.state != "reserved" or reservation.expires_at <= self.clock()
+        ):
+            raise PresalesError("presales_attempt_expired")
 
     async def _prepare_dispatch(
         self, principal: PrincipalContext, packet_id: UUID, row_id: UUID, attempt_id: UUID

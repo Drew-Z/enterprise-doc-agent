@@ -7,11 +7,12 @@ from decimal import Decimal
 from typing import Any, cast
 from uuid import UUID, uuid4
 
-from sqlalchemy import desc, select
+from sqlalchemy import desc, func, select
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from enterprise_doc_core.billing.contracts import (
+    ProviderUsageSummary,
     ReservationResult,
     TenantResourceUsage,
     UsageEventView,
@@ -20,6 +21,9 @@ from enterprise_doc_core.billing.contracts import (
 from enterprise_doc_core.billing.errors import UsageError
 from enterprise_doc_core.billing.locking import lock_usage_tenant
 from enterprise_doc_core.billing.models import TenantEntitlement, UsageEvent, UsageReservation
+from enterprise_doc_core.billing.product_contracts import ProductMetric, ProductQuotaView
+from enterprise_doc_core.billing.product_models import ProductQuota
+from enterprise_doc_core.billing.provider_models import ProviderDispatch
 from enterprise_doc_core.config import AppEnvironment
 from enterprise_doc_core.identity.models import Tenant
 from enterprise_doc_core.identity.seats import membership_seats
@@ -180,6 +184,34 @@ class EntitlementUsageService:
                 )
             )
             cost_status = "known" if known_cost is not None else "unknown"
+            quotas = await session.scalars(
+                select(ProductQuota)
+                .where(
+                    ProductQuota.tenant_id == tenant_id, ProductQuota.entitlement_id == current.id
+                )
+                .order_by(ProductQuota.metric)
+            )
+            counts = (
+                await session.execute(
+                    select(
+                        func.count(ProviderDispatch.id),
+                        func.count(ProviderDispatch.id).filter(
+                            ProviderDispatch.state.in_(
+                                ("dispatched", "timeout", "transport_error", "cancelled", "unknown")
+                            )
+                        ),
+                        func.count(ProviderDispatch.id).filter(
+                            ProviderDispatch.estimated_cost.is_(None)
+                        ),
+                        func.count(ProviderDispatch.total_tokens),
+                        func.coalesce(func.sum(ProviderDispatch.total_tokens), 0),
+                    ).where(
+                        ProviderDispatch.tenant_id == tenant_id,
+                        ProviderDispatch.started_at >= current.period_start,
+                        ProviderDispatch.started_at < current.period_end,
+                    )
+                )
+            ).one()
             return UsageSummary(
                 tenant_id=tenant_id,
                 enabled=True,
@@ -195,6 +227,13 @@ class EntitlementUsageService:
                 cost_status=cost_status,
                 recent_events=tuple(self._event_view(event) for event in events),
                 resources=resources,
+                product_quotas=tuple(
+                    ProductQuotaView(
+                        ProductMetric(q.metric), q.unit_limit, q.units_used, q.units_reserved
+                    )
+                    for q in quotas
+                ),
+                model_calls=ProviderUsageSummary(*counts),
             )
 
     async def _resource_usage(self, session: AsyncSession, tenant_id: UUID) -> TenantResourceUsage:

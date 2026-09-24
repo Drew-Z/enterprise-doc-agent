@@ -100,6 +100,8 @@ async def run_worker() -> None:
             checkpointer=checkpointer,
             graph_version=settings.agent.graph_version,
             execution_timeout_seconds=settings.agent.execution_timeout_seconds,
+            app_env=settings.app_env,
+            provider_usage_settings=settings.provider_usage,
             fault_injection=settings.fault_injection,
             metrics=metrics,
         )
@@ -116,6 +118,8 @@ async def run_worker() -> None:
                 metrics=metrics,
                 fault_injection=settings.fault_injection,
                 embedding_settings=settings.embedding,
+                app_env=settings.app_env,
+                provider_usage_settings=settings.provider_usage,
             ),
         )
         publisher = OutboxPublisher(

@@ -222,9 +222,25 @@ class BackgroundGeneration:
             started = await self._start(claim)
             if started is not None:
                 requirement, sources, deadline = started
+
+                async def guard(session: AsyncSession) -> None:
+                    await self._lease(session, claim)
+                    await self.generation._guard_retrieval(
+                        session,
+                        self.principal(claim),
+                        UUID(claim.payload["packet_id"]),
+                        UUID(claim.payload["row_id"]),
+                        UUID(claim.payload["operation_id"]),
+                    )
+
                 async with asyncio.timeout(max(0, (deadline - self.clock()).total_seconds())):
                     candidates, notes = await self.generation._retrieve(
-                        claim.tenant_id, claim.actor_id, requirement, sources
+                        claim.tenant_id,
+                        claim.actor_id,
+                        requirement,
+                        sources,
+                        provider_guard=guard,
+                        provider_operation_id=UUID(claim.payload["operation_id"]),
                     )
                     payload = GenerationInput(
                         requirement=requirement,
