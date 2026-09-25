@@ -13,7 +13,7 @@ from scripts.score_presales_gateway import score
 from enterprise_doc_core.config import ModelProvider, ModelSettings
 
 
-@pytest.mark.parametrize("trial", ["v5", "v6", "v7", "v7-windhub"])
+@pytest.mark.parametrize("trial", ["v5", "v6", "v7", "v7-windhub", "v8"])
 def test_frozen_gateway_scores_remain_unchanged(trial: str) -> None:
     root = Path("evaluation/presales_quality_holdout_v3")
     report_path = root.with_suffix(f".{trial}-gateway.json")

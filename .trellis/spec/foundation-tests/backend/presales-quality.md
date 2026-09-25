@@ -245,6 +245,13 @@ route/model, six single attempts, 120-second deadlines and no failover/retry. St
 after the batch. Other datasets, additional paid requests and deployment require
 their own applicable authorization; local checks do not satisfy those boundaries.
 
+The authorized v8 H3 batch has six original successful outputs with matching labels,
+anchors, prerequisites and assistant prose review. Preserve this known-regression
+run alongside the failed v7 run, and regression-test both recorded scores. Do not
+call it a holdout or independent sign-off: no H4/H1/H2 request was made in that batch.
+The slowest call took 111.188 seconds and reported completion tokens can exceed the
+requested 4000, so neither six passes nor max_tokens establish a latency or cost SLO.
+
 ## Explicit alternate-channel trials
 
 `load_route_settings(provider_env, model_route)` selects BASE_URL/API_KEY/MODEL_NAME

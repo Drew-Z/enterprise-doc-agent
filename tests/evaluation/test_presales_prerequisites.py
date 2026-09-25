@@ -95,15 +95,18 @@ def test_frozen_v7_correct_classification_does_not_hide_wrong_prerequisite(tmp_p
     assert RUN.read_bytes() == before
 
 
-def test_recorded_regression_analysis_is_reproducible():
+@pytest.mark.parametrize("trial", ["v7.windhub", "v8"])
+def test_recorded_regression_analysis_is_reproducible(trial):
     result = score_prerequisites(
         ROOT.with_suffix(".json"),
         ROOT.with_suffix(".gold.json"),
-        RUN,
+        ROOT.with_suffix(
+            ".v7-windhub-gateway.json" if trial == "v7.windhub" else ".v8-gateway.json"
+        ),
         ROOT.with_suffix(".prerequisites.json"),
-        Path("evaluation/presales_quality_v7.windhub.prerequisite-review.json"),
+        Path(f"evaluation/presales_quality_{trial}.prerequisite-review.json"),
     )
-    recorded = Path("evaluation/presales_quality_v7.windhub.prerequisite-score.json")
+    recorded = Path(f"evaluation/presales_quality_{trial}.prerequisite-score.json")
     assert result == json.loads(recorded.read_bytes())
 
 

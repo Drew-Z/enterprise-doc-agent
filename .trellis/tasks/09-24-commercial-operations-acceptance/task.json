@@ -43,8 +43,15 @@
     "evaluation/presales_quality_v7.windhub.prerequisite-score.json",
     "evaluation/presales_quality_v8.candidate-prompt.txt",
     ".trellis/tasks/09-24-commercial-operations-acceptance/semantic-validation.json",
-    ".trellis/tasks/09-24-commercial-operations-acceptance/v8-trial-plan.json"
+    ".trellis/tasks/09-24-commercial-operations-acceptance/v8-trial-plan.json",
+    "tests/evaluation/test_presales_gateway_score.py",
+    "evaluation/presales_quality_holdout_v3.v8-gateway.json",
+    "evaluation/presales_quality_holdout_v3.v8-gateway.score.json",
+    "evaluation/presales_quality_v8.prerequisite-review.json",
+    "evaluation/presales_quality_v8.prerequisite-score.json",
+    "evaluation/presales_quality_v8.review.json",
+    ".trellis/tasks/09-24-commercial-operations-acceptance/v8-live-execution.json"
   ],
-  "notes": "Local recovery and structured prerequisite review verified. Added source-bound prerequisite scorer (original v7 remains failed) and frozen fact-first v8 candidate plus six-request plan; no new live requests. External semantic, supplier billing, capacity, notification and real recovery acceptance remain pending. Draft PR only, no deployment.",
+  "notes": "Local recovery and structured prerequisite review verified. Source-bound prerequisite scorer preserves v7 failures. Authorized v8 H3 batch on candidate 4368be0 passed 6/6 drafts, labels, source anchors, states and assistant prose review; six requests only, no retries/failover/deployment. Independent representative-source/customer review, supplier billing, 4C4G capacity, alert delivery and real recovery remain pending. Keep Draft and in_progress.",
   "meta": {}
 }

@@ -337,4 +337,17 @@ collector 支持 `--model-route primary|fallback`，缺省仍为 fallback。每�
 
 [v8 完整候选提示词](../../evaluation/presales_quality_v8.candidate-prompt.txt) 先评估事实状态，再生成待办与总分类，并区分业务事件、是否通过及报告登记。unknown 先请求确认状态，不能直接断言尚未完成。模型 schema 展示顺序也先列 prerequisites/state；没有新增协议字段、放宽引用校验、改判或重试。文字与顺序调整的效果仍须由真实输出验证。
 
-[新试验计划](../../.trellis/tasks/09-24-commercial-operations-acceptance/v8-trial-plan.json) 已冻结提示词/数据/两份参考的 SHA：现有 primary `windhub.cc` / `grok-4.7`，最多六次，每题一次、120 秒、请求 max_tokens=4000，零重试、零切换，不执行 H4/H1/H2。请求参数不是供应商收费硬上限；单价和最终金额未核实。本轮尚未执行新付费批次，发布仍暂停。收到适用批次授权后按冻结计划执行，审阅全部原始响应，并保持领域/客户和运营门槛。
+[新试验计划](../../.trellis/tasks/09-24-commercial-operations-acceptance/v8-trial-plan.json) 冻结提示词/数据/两份参考的 SHA：现有 primary `windhub.cc` / `grok-4.7`，最多六次，每题一次、120 秒、请求 max_tokens=4000，零重试、零切换，不执行 H4/H1/H2。用户收到具体批次及金额未知的提问后确认继续，已按提交 `4368be04f2db8905e51da089433cb72874385ee1` 执行。
+
+| 项目 | v8 H3 单次回归 |
+|---|---:|
+| 实际请求 / 有效草稿 / 分类匹配 | 6 / 6 / 6 |
+| 准确原文引用 / 必要锚点 | 11/11、9/9 |
+| 逐项前提检查 / 助手正文审阅 | 6/6、6/6 |
+| 最短 / 中位 / 最长耗时 | 10.156 / 40.258 / 111.188 秒 |
+| 报告输入 / 输出 / 总 token | 23,858 / 17,335 / 41,193 |
+| 已核验金额 | 未知 |
+
+关键 H3-R5 返回已购 `met`、未配置 `unmet`、验收状态未登记 `unknown`，待办要求先确认验收是否完成并补充依据，正文没有断言验收未执行或未通过。冲突题也正确描述德国独占与新加坡复制的相反方向，仅在吞吐事项应用优先级。完整[原始运行](../../evaluation/presales_quality_holdout_v3.v8-gateway.json)、[分类/引用评分](../../evaluation/presales_quality_holdout_v3.v8-gateway.score.json)、[明确映射](../../evaluation/presales_quality_v8.prerequisite-review.json)、[逐项评分](../../evaluation/presales_quality_v8.prerequisite-score.json)和[正文审阅](../../evaluation/presales_quality_v8.review.json)分开保留。
+
+这是已知短资料的一次回归和助手非盲审，不是独立领域审查、客户验收、真实检索或稳定性证明。最慢题接近 120 秒截止时间；H3-R1/R5 报告输出 token 分别为 4335/4183，超过请求的 4000，说明该参数不能当作该路由的收费硬上限。六次后已停止，不追加 H4/H1/H2、不覆盖 v7 失败、不部署。后续仍需未知/代表资料验收、领域审核、当前 4C4G 业务容量、告警与恢复验证。
