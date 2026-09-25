@@ -20,3 +20,7 @@ evidence completeness does not authorize deployment or replace actual customer r
 
 The [private local recovery contract](../../backend/local-recovery.md) governs
 explicit backup output, isolated database ownership, cleanup and local-only reports.
+
+The [local business capacity contract](../../backend/business-capacity.md) governs
+bounded workflow sampling, per-operation accounting, cancellation denominators and
+the local CLI. Functional sampling does not establish current 4C4G capacity.

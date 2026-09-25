@@ -1,6 +1,6 @@
 # 当前 4C4G 业务容量验收方案
 
-状态：准备中，尚未执行当前主机的业务容量试验。2026-09-25 的恢复应用验收是本地功能结果，不能代替本方案；历史 4C8G readiness 结果也不适用。首版保留现有服务器，不扩容、不配置备用机。
+状态：本地业务采样器已实现并通过受控链路验证，尚未执行当前主机的业务容量试验。2026-09-25 的恢复应用与采样结果属于本地功能验证，不能代替本方案；历史 4C8G readiness 结果也不适用。首版保留现有服务器，不扩容、不配置备用机。
 
 ## 先固定试验对象
 
@@ -44,10 +44,47 @@
 
 此采集路径尚未在当前主机负载试验中验证。没有完整遥测时保持阻塞，不用 `kubectl top` 的一次低负载快照估算企业数。
 
-## 执行器剩余实现与放行条件
+## 本地采样器与执行方式
 
-现有 `run_application_capacity.py` 支持四阶段和两轮，但其场景仍为 health/ready/status/Agent 创建与 end-to-end；尚不具备上述四种业务边界的统一采样。本轮只修复其部署版本记录，不能把该工具的 ready 报告提交为商业业务容量证据。
+新增 `scripts/run_business_capacity.py`，复用真实上传/库存/Presales API 和 `HybridRetrievalService`，分别记录 upload、ingestion、retrieval、generation_recovery。检索在采样进程运行，不是新的 HTTP 接口，也不是生成内部检索的独立测量。原 `run_application_capacity.py` 继续用于 health/ready/status/Agent，不接受新报告作为商业容量通过证据。
 
-后续顺序：实现四种业务样本及阶段时钟 → 用受控服务验证失败/幂等/计量 → 连接临时遥测 → 审核具体目标和窗口 → 当前 4C4G 两轮实测 → 按结果配置企业准入和并发限制。真实供应商长尾、计费和客户代表性另行验收。
+可直接验证仓库内的固定 TXT 示例，无需凭据或网络：
+
+```powershell
+.venv\Scripts\python.exe -B -X utf8 -m scripts.run_business_capacity --plan infra/capacity/business-capacity.example.json
+```
+
+示例为两轮、共 10 个任务、burst 并发 2，其他阶段并发 1；它是工具验证示例，不是上面的 160 任务容量试验。其固定字节/SHA 随仓库提供；更换文件或复制计划时须同时提供正确文件和哈希。TXT/PDF/DOCX 及三种故障组合由集成测试生成并冻结，采样器不会因 `fault_label` 自动注入故障。
+
+执行前需单独准备本机回环 API、DB、Redis、对象存储、解析消费者和后台生成器，以及一个无文档/响应表的新测试企业。API/消费者必须使用 Hash 向量和受控模型；服务端背景模式须开启。命令行只检查自身配置，`--confirm-controlled-target` 表示操作者已检查目标服务，不是自动证明。正常示例要求返回含固定原文引用的有效草稿；单纯启动默认 deterministic 模型不保证该业务断言成立。
+
+CLI 不读取 `.env` 文件。按 `.env.example` 的键名，通过当前进程环境显式提供本地 `DATABASE__URL`、`REDIS__URL`、`OBJECT_STORE__*`、`AUTH__*`；设 `APP_ENV=local`、`MODEL__PROVIDER=deterministic`、`EMBEDDING__PROVIDER=hash`，并在 `ENTERPRISE_DOC_LOAD_TOKEN` 放入该测试企业 owner 的实际 JWT。不要把凭据放入计划、命令参数、报告或 Git。
+
+```powershell
+# taskEvidenceDir 应为当前 CODEX_HOME 集中恢复组的既有目录。
+# business-run-01 必须尚不存在；以下命令会写入本地测试企业。
+$sampleOutput = Join-Path $taskEvidenceDir 'business-run-01'
+.venv\Scripts\python.exe -B -X utf8 -m scripts.run_business_capacity `
+  --plan infra/capacity/business-capacity.example.json `
+  --execute-local --confirm-controlled-target --output-dir $sampleOutput
+```
+
+输出 `run.json`、固定计划 `plan.json` 和逐任务刷新到磁盘的 `samples.jsonl`。已有输出、非回环服务、非 owner、已有文档/响应表和额度不足都拒绝；显式 HTTP 总量包含 quota 预检，不包含观察器 DB/对象读取及后台内部请求。请求慢流、阶段、单任务和整轮都有截止时间。中断保留活动任务及未提交任务；已被服务器接受的任务可能继续运行，CLI 不删除数据或清队列，后续按资源 UUID 检查。
+
+`local_checks_passed` 仅表示业务断言符合预期，不判断提案 p95 是否达标，且 `production_capacity_approved` 始终为 false。双渠道失败仍为业务失败，另记预期断言通过；正常任务失败、超时、未执行不能从分母删除。报告同时提供各轮/阶段/案例摘要、后台接受与终态耗时，未知费用和未报告 token 保持未知。
+
+完整本地验证：
+
+```powershell
+.venv\Scripts\python.exe -B -X utf8 -m pytest tests/deployment/test_business_capacity.py -q
+# 使用现有本地 PG/MinIO/Redis；临时 schema/测试资源由 harness 精确清理。
+.venv\Scripts\python.exe -B -X utf8 -m pytest tests/presales/test_business_capacity_integration.py -q -m integration
+```
+
+两种入口分别为 ASGI 传输、真实随机回环端口与独立 CLI 进程。每种覆盖 10 个任务、7 次业务成功、3 次预期双路失败，验证文档扣量、一次生成/消费或释放、同键重放、引用、复核和 CSV。模型 HTTP 受控，不产生真实供应商调用；新客户端刷新不等于真实浏览器/代理网络故障恢复。
+
+## 剩余放行条件
+
+接下来连接临时遥测并补充真实浏览器/代理恢复观测，固定服务实际版本与配置；审核目标和窗口后，才进入当前 4C4G 的两轮业务实测。当前 CLI 主动限制为本地受控入口，不能直接指向线上，也不能只改 URL 就宣称完成外部验收。实际主机需独立、有界的执行配置和完整资源采样，按实测结果配置企业准入与并发限制。真实供应商长尾、计费和客户代表性另行验收。
 
 运行出现 OOM、数据或租户隔离异常、调用预算耗尽，立即停止提交新任务并保留在途任务及账本状态。不得删除队列或重写失败结果，也不得因试验失败临时提高超时、并发或通过阈值。
