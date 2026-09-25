@@ -26,4 +26,6 @@ v8 修改现有模型提示词及模型 schema 的展示顺序：prerequisites �
 
 当前数据恢复切片：线上凭据仅在 SSH 子进程/执行器内存中使用。只读 repeatable-read 会话导出 PostgreSQL snapshot，表内容摘要与 pg_dump 共用该 snapshot；custom archive 直接流入集中恢复组。恢复到独占、本地无公网端口的 PostgreSQL 17；不包含 Supabase 管理 schema，也不尝试迁移线上数据库。
 
+恢复应用切片复用私有快照和现有 ingestion 浏览器验收 harness。独占 PostgreSQL 17、MinIO 和 Redis 只发布回环随机端口；生成的本地凭据只进入子进程环境。数据库副本由 0027 升至当前候选 0031，历史数据保持可读取；所有新业务写入独立合成租户。原应用恢复点不改写，操作脚本及私有输出集中在原恢复组。先执行历史记录 API 检查，再运行实际上传/Worker/浏览器流程；不让消费者扫描恢复库的历史队列。
+
 `scripts/local_object_recovery.py` 从恢复库的 `ObjectReference` 列表捕获对象。原 bucket/key 只进入私有 JSON，文件名是两者的 SHA-256；总量/对象数预先有界，下载逐块计算 SHA。仅 GET 源，不调用线上 Copy/Put/Delete。失败保留诊断目录且不发布成功清单。恢复端要求客户端实际 endpoint 为回环地址，所有目标桶为空；全量离线验证完成后按原 bucket/key 排他写入，再逐项读取验证。使用新的独占 MinIO 容器，原键可以保留而不改写恢复库；没有后台应用连接，不发送邮件或模型请求。临时数据在内存文件系统，结束后只停止并移除本轮独占资源。

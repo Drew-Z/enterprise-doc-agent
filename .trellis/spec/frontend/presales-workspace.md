@@ -123,6 +123,15 @@ MinIO and Redis/Celery boundaries are real; model HTTP and embeddings are contro
 The [ingestion contract](../foundation-tests/backend/presales-ingestion.md) records
 the ports, resource isolation and diagnostic-secret handling.
 
+Isolated recovery runs may publish MinIO on a random loopback port. Set
+`VITE_OBJECT_STORE_ORIGINS` to that exact origin before starting Vite; the browser's
+presign allowlist and the ingestion test's successful PUT counter must use the same
+origin list, not port 9000. `tests.presales.browser_server` resolves one
+`ApiSettings(_env_file=None)` instance and shares its database settings between the
+seed engine and API. A standalone `DatabaseSettings()` ignores `DATABASE__URL` and
+can seed the wrong local database. Restored-data runs must retain the selected DB
+identity, explicit local endpoints, failed attempts and tenant cleanup receipts.
+
 The [integrated first-use suite](../foundation-tests/backend/first-use.md) now
 connects browser admission and invitations to the real ingestion and Presales
 path, including both roles' review/CSV, usage settlement, parser/model recovery,

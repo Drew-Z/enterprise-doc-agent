@@ -20,7 +20,7 @@ from sqlalchemy import delete, func, select
 from enterprise_doc_api.app import create_app
 from enterprise_doc_api.auth.jwt import InvalidBearerToken
 from enterprise_doc_api.config import ApiSettings
-from enterprise_doc_core.config import DatabaseSettings, ModelProvider, ModelSettings
+from enterprise_doc_core.config import ModelProvider, ModelSettings
 from enterprise_doc_core.context import PrincipalContext
 from enterprise_doc_core.db import (
     create_database_engine,
@@ -41,7 +41,8 @@ from tests.presales.fixtures import add_chunk, add_document
 
 
 async def main() -> None:
-    engine = create_database_engine(DatabaseSettings())
+    settings = ApiSettings(_env_file=None)
+    engine = create_database_engine(settings.database)
     sessions = create_session_factory(engine)
     seeded: list[SeededAgentContext] = []
     cleaned = False
@@ -199,7 +200,7 @@ async def main() -> None:
             settings=PresalesSettings(generation_enabled=True),
         )
         app = create_app(
-            settings=ApiSettings(_env_file=None),
+            settings=settings,
             principal_resolver=Resolver(),
             presales_service=service,
         )
