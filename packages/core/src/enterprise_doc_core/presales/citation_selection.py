@@ -47,18 +47,18 @@ class SelectionInput(PresalesModel):
 
 
 class Prerequisite(PresalesModel):
-    condition: TextItem
     state: Literal["met", "unmet", "unknown"]
+    condition: TextItem
     citations: list[CitationReference] = Field(min_length=1, max_length=12)
 
 
 class SelectionDraft(PresalesModel):
     """Model-facing selection only; never persisted or exposed as the public draft."""
 
+    prerequisites: list[Prerequisite] = Field(max_length=12)
     status: Status
     answer: str = Field(min_length=1, max_length=4000)
     missing_information: list[TextItem] = Field(default_factory=list, max_length=12)
-    prerequisites: list[Prerequisite] = Field(max_length=12)
     citations: list[CitationReference] = Field(default_factory=list, max_length=12)
 
     @model_validator(mode="after")

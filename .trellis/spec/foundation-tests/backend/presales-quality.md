@@ -199,6 +199,52 @@ recover internal chunk/version IDs from provider input; check those identities i
 saved public evidence and the actual database chunks instead. Browser model-call
 records describe only the offered reference/source and retain the dispatch count.
 
+## Source-bound prerequisite regression review
+
+1. **Scope / trigger:** a correct conditional label and exact citations can hide an
+   unknown-to-unmet error. `scripts/score_presales_prerequisites.py` checks the
+   prerequisite states and their own evidence separately from the original scores.
+   It never dispatches HTTP or grants full semantic/production acceptance.
+2. **Signature:** `score_prerequisites(dataset_path, gold_path, run_path,
+   expectations_path, review_path) -> dict`; CLI requires `--input --gold --run
+   --expectations --review --output`. Output creation is exclusive. Exit 1 after
+   saving a valid failing score; exit 0 only when all prerequisite rows pass.
+   Always inspect the original classification/citation score and full answer too.
+3. **Contracts:** `presales-prerequisite-gold-v1` binds dataset SHA and all row keys;
+   each expected prerequisite has key, description, state and source/excerpt anchors.
+   `presales-prerequisite-review-v1` binds exact run/expectation bytes by SHA, names
+   the reviewer/type and explicitly maps expected keys to zero-based output indexes
+   with a reason. Null means an omitted prerequisite. The reviewer, not a keyword
+   heuristic, establishes semantic correspondence. Accepted v2/v3 original outputs
+   are validated with the existing scorer before reading prerequisite states; failed
+   responses are never reinterpreted as successes. Old scores remain byte-for-byte
+   unchanged. The run is bounded to 2 MiB; reference and review files to 256 KiB.
+4. **Validation / errors:** stale hashes, wrong dataset coverage, duplicate keys or
+   indexes, unknown/invalid anchors, out-of-range/non-integer indexes, incomplete
+   mappings marked reviewed, and reviewing unavailable results raise ValueError.
+   Missing reviews, absent/extra prerequisites, state or per-item anchor mismatch
+   yield a failing score. Every planned row remains in the denominator, including
+   failures and unattempted rows. Existing output is never overwritten.
+5. **Good / base / bad:** good: explicit mappings survive changed order and paraphrase;
+   base: controlled HTTP outputs verify the checker, not model quality; bad: overall
+   citations contain an anchor but the relevant prerequisite does not cite it.
+   `semanticReviewRequired=true` and `independentDomainReview=false` remain explicit,
+   even with a human-typed reviewer field: the file is not identity attestation.
+6. **Tests:** `test_presales_prerequisites.py` reproduces the immutable v7 Windhub
+   H3-R5 failure, verifies source/state checks, strict bindings, complete denominators,
+   explicit omissions, tampered mapping rejection, CLI exit and overwrite refusal.
+   Its controlled v3 run proves no matching relies on prose or array order.
+7. **Wrong vs correct:** wrong: edit the original gold or call an after-the-fact
+   reference a holdout. Correct: add an explicitly labeled H3 regression supplement,
+   retain the original input/gold/runs/scores, and freeze new candidate criteria
+   before the next inference. Prerequisite checks alone cannot approve prose.
+
+The frozen v8 candidate changes the order of assessment in the prompt and schema
+display only; the field contract is unchanged. A batch plan specifies exact hashes,
+route/model, six single attempts, 120-second deadlines and no failover/retry. Stop
+after the batch. Other datasets, additional paid requests and deployment require
+their own applicable authorization; local checks do not satisfy those boundaries.
+
 ## Explicit alternate-channel trials
 
 `load_route_settings(provider_env, model_route)` selects BASE_URL/API_KEY/MODEL_NAME

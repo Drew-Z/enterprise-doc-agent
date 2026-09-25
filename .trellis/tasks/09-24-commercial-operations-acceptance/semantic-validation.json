@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "scope": "CO-2 prerequisite regression scoring and fact-first v8 candidate; no live quality claim",
+  "baseCommit": "7631d7b80b46dd5f301087907f6143628974f7ba",
+  "status": "local_checks_passed_bounded_live_trial_pending",
+  "checks": {
+    "pythonNonIntegration": {
+      "passed": 1795,
+      "deselected": 437,
+      "elapsedSeconds": 145.9
+    },
+    "newPrerequisiteTests": {
+      "passed": 28
+    },
+    "ruff": {
+      "passed": true,
+      "formattedFiles": 586
+    },
+    "mypy": {
+      "passed": true,
+      "sourceFiles": 250
+    },
+    "historicalScores": {
+      "v5": "unchanged",
+      "v6": "unchanged",
+      "v7": "unchanged",
+      "v7-windhub": "unchanged"
+    },
+    "originalV7Analysis": {
+      "expectedRows": 6,
+      "observableRows": 3,
+      "passedRows": 2,
+      "h3r5MatchingStates": 2,
+      "h3r5MismatchedStates": 1,
+      "exitCode": 1,
+      "expectedFailure": true
+    }
+  },
+  "redToGreen": [
+    "New public prerequisite scorer absent; original v7 wrong-state regression then passed",
+    "CLI initially returned zero for failed semantic state check; now saves failure and exits 1"
+  ],
+  "contracts": {
+    "mapping": "Explicit reviewed output indexes bound to original run and expectation SHA; no keyword matching",
+    "evidence": "Each prerequisite must cover its own exact source anchors",
+    "failures": "Failed/unattempted/unreviewed rows remain in complete denominator; no failed-response replay",
+    "prompt": "Assess factual state before condition/status; public/schema fields unchanged, model schema display order adjusted"
+  },
+  "newRealProviderRequests": 0,
+  "productionDeployment": false,
+  "limits": [
+    "No real v8 result or independent semantic/customer acceptance",
+    "Expected prerequisite reference is known-regression supplement, not fresh holdout",
+    "State checker must be used alongside classification/citation scoring and full-prose review",
+    "Existing database/browser evidence is not counted as new validation for this slice; no persistence, API or UI change",
+    "Supplier prices and actual costs remain unknown"
+  ],
+  "files": [
+    "packages/core/src/enterprise_doc_core/presales/gateway.py",
+    "packages/core/src/enterprise_doc_core/presales/citation_selection.py",
+    "scripts/score_presales_prerequisites.py",
+    "tests/evaluation/test_presales_prerequisites.py",
+    "evaluation/presales_quality_holdout_v3.prerequisites.json",
+    "evaluation/presales_quality_v7.windhub.prerequisite-review.json",
+    "evaluation/presales_quality_v7.windhub.prerequisite-score.json",
+    "evaluation/presales_quality_v8.candidate-prompt.txt",
+    ".trellis/tasks/09-24-commercial-operations-acceptance/prd.md",
+    ".trellis/tasks/09-24-commercial-operations-acceptance/design.md",
+    ".trellis/tasks/09-24-commercial-operations-acceptance/implement.md",
+    ".trellis/tasks/09-24-commercial-operations-acceptance/task.json",
+    ".trellis/tasks/09-24-commercial-operations-acceptance/semantic-validation.json",
+    ".trellis/tasks/09-24-commercial-operations-acceptance/v8-trial-plan.json",
+    ".trellis/spec/backend/presales-workspace.md",
+    ".trellis/spec/foundation-tests/backend/presales-quality.md",
+    "docs/ops/commercial-production-plan.md",
+    "docs/ops/presales-quality-evaluation.md"
+  ]
+}

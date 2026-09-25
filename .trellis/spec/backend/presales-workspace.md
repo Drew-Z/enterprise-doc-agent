@@ -289,6 +289,25 @@ Configured or returned identifiers do not authenticate upstream model weights.
 Index generation IDs are in source snapshots. Deployment commit/image identity
 is recorded by release evidence, not inferred from a dirty working tree.
 
+### Fact-first prompt candidate (v8, not deployed)
+
+The v8 candidate separates business completion from eligibility to enable a service.
+It assesses prerequisite facts before writing the status and answer: explicit
+satisfaction is met, explicit non-satisfaction is unmet, and absent completion
+evidence is unknown. A completed check, a passed check and filing its report are
+different predicates. Unknown asks to confirm the event and supply evidence; it
+does not command completion as if non-completion were already known.
+
+Only prompt text/version and model-facing schema property order change:
+SelectionDraft lists prerequisites before status, and Prerequisite lists state
+before condition. Field names, validators, public data, stored results, request
+limits, routes and retries are unchanged. Neither field order nor stronger wording
+guarantees inference quality. Preserve original v7 failures, freeze the complete
+v8 system message, and run separately authorized, bounded original-output trials
+before considering release. The offline prerequisite-review scorer below the
+quality spec complements classification/citation scoring; it does not replace
+review of the answer, conflict direction or independent business approval.
+
 providerRequestCount is an observed client dispatch count, not a remote execution
 or billing count. It is 0 before dispatch, temporarily NULL once dispatch is
 prepared, and 0/1 once a synchronous outcome is observed (0–2 for background

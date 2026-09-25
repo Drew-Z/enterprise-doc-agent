@@ -316,3 +316,25 @@ collector 支持 `--model-route primary|fallback`，缺省仍为 fallback。每�
 一次只读 `/models` 在1.828秒返回200且列出目标模型，只证明目录可读。新渠道部分完成请求更快，但本轮小样本同时暴露渠道故障及unknown状态判断错误，不能推断稳定速度或成功率。H3未通过，H4/H1/H2的18次调用均未执行，线上保持v0.1.44。
 
 后续产品可靠性应单独验收“一次用户操作经有界恢复后能否完成”，包括后台任务、恢复进度、有限切换和费用边界；原始单次渠道失败继续保留。自动恢复不替代语义与引用质量验收。本轮未实现或上线自动重试，也未追加模型请求。
+
+## 逐项前提评分与 v8 候选（2026-09-25）
+
+新增离线评分器将每个业务前提的期望状态、对应输出及原文证据一起核对。[H3 前提参考](../../evaluation/presales_quality_holdout_v3.prerequisites.json) 是看过 v7 失败后的回归补充，不是新盲测，原 H3 输入和分类 gold 保持原字节。映射由审核者明确填写，不按条件关键词或数组顺序猜测。
+
+对原 Windhub v7 运行新增[逐项映射](../../evaluation/presales_quality_v7.windhub.prerequisite-review.json)及[离线结果](../../evaluation/presales_quality_v7.windhub.prerequisite-score.json)：H3-R5 分类正确，三项状态中两项正确、验收一项将 unknown 判为 unmet，因此该题不通过。H3-R1/R2/R3 的原调用失败仍保留，只有 R4/R6 通过本项检查，共 2/6；没有新模型请求，也没有重写旧运行或旧评分。这里的通过仅指前提检查，不是完整语义或独立领域验收。
+
+复现命令（输出必须是尚不存在的新文件；本失败样例保存报告后返回 exit 1）：
+
+```powershell
+& .\.venv\Scripts\python.exe -B -X utf8 -m scripts.score_presales_prerequisites `
+  --input evaluation/presales_quality_holdout_v3.json `
+  --gold evaluation/presales_quality_holdout_v3.gold.json `
+  --run evaluation/presales_quality_holdout_v3.v7-windhub-gateway.json `
+  --expectations evaluation/presales_quality_holdout_v3.prerequisites.json `
+  --review evaluation/presales_quality_v7.windhub.prerequisite-review.json `
+  --output "$env:TEMP\presales-prerequisite-score-new.json"
+```
+
+[v8 完整候选提示词](../../evaluation/presales_quality_v8.candidate-prompt.txt) 先评估事实状态，再生成待办与总分类，并区分业务事件、是否通过及报告登记。unknown 先请求确认状态，不能直接断言尚未完成。模型 schema 展示顺序也先列 prerequisites/state；没有新增协议字段、放宽引用校验、改判或重试。文字与顺序调整的效果仍须由真实输出验证。
+
+[新试验计划](../../.trellis/tasks/09-24-commercial-operations-acceptance/v8-trial-plan.json) 已冻结提示词/数据/两份参考的 SHA：现有 primary `windhub.cc` / `grok-4.7`，最多六次，每题一次、120 秒、请求 max_tokens=4000，零重试、零切换，不执行 H4/H1/H2。请求参数不是供应商收费硬上限；单价和最终金额未核实。本轮尚未执行新付费批次，发布仍暂停。收到适用批次授权后按冻结计划执行，审阅全部原始响应，并保持领域/客户和运营门槛。

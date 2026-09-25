@@ -34,8 +34,17 @@
     "apps/web/src/presales/ResponseRow.tsx",
     ".trellis/spec/backend/presales-workspace.md",
     ".trellis/spec/frontend/presales-workspace.md",
-    ".trellis/tasks/09-24-commercial-operations-acceptance/prerequisite-validation.json"
+    ".trellis/tasks/09-24-commercial-operations-acceptance/prerequisite-validation.json",
+    "packages/core/src/enterprise_doc_core/presales/gateway.py",
+    "scripts/score_presales_prerequisites.py",
+    "tests/evaluation/test_presales_prerequisites.py",
+    "evaluation/presales_quality_holdout_v3.prerequisites.json",
+    "evaluation/presales_quality_v7.windhub.prerequisite-review.json",
+    "evaluation/presales_quality_v7.windhub.prerequisite-score.json",
+    "evaluation/presales_quality_v8.candidate-prompt.txt",
+    ".trellis/tasks/09-24-commercial-operations-acceptance/semantic-validation.json",
+    ".trellis/tasks/09-24-commercial-operations-acceptance/v8-trial-plan.json"
   ],
-  "notes": "Local recovery preparation and synthetic 0030 ledger restore verified. Structured prerequisite state/evidence persistence, review and CSV verified locally with legacy compatibility; frozen v7 semantic failure remains unresolved. Notification transport, real DB+objects, business capacity and external acceptance remain pending.",
+  "notes": "Local recovery and structured prerequisite review verified. Added source-bound prerequisite scorer (original v7 remains failed) and frozen fact-first v8 candidate plus six-request plan; no new live requests. External semantic, supplier billing, capacity, notification and real recovery acceptance remain pending. Draft PR only, no deployment.",
   "meta": {}
 }
