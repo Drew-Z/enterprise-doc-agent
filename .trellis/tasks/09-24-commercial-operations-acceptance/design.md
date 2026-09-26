@@ -1,5 +1,11 @@
 # 当前环境验收设计
 
+只读资源观测使用标准库远端探针（经 SSH stdin 运行，不落地文件）和本地 metrics 白名单解析器。探针仅调用 kubectl get、containerd content get、读取 /proc 与根盘空间、抓取发现的 API/Worker/Consumer Pod metrics；输出投影只含身份摘要、运行状态和观测字段，不返回 Secret 或配置明文。用 Pod 地址逐副本抓取，避免 Service 负载均衡隐藏副本；保留 Kubernetes Metrics API 自带 timestamp/window，不把重复读取旧样本视为新数据。采样只读、低频且有调用数和单次时限，逐次 journal 及最终结果存当前集中恢复组。
+
+镜像核验区分同摘要、部署 OCI 索引到指定 Linux 平台 manifest，以及运行时归档索引包含部署索引与该平台 manifest 三类。索引字节校验 SHA 与 schemaVersion，目标平台唯一且成员 mediaType 正确才通过，保留三个摘要；不因摘要形式不同直接误判部署错误，也不无条件豁免差异。探针仍不证明签名、提交或迁移版本。现有队列/Redis gauge setter 未接入生产调用，其新鲜度不可证明，汇总必须保留 observation_incomplete；不能用导出的零值作为空闲证据。
+
+离线汇总将探针投影的镜像/配置/资源和 Pod 身份与第一次比较，检测漂移/重启/缺项；白名单指标的非有限值保持缺失。CPU/内存显示原始单位和实际限制，模型/对象延时只保留已有 histogram，不伪造零等待。通过可选业务报告关联阶段时间窗口，但业务报告没有实际主机身份绑定时不能宣称同目标。现阶段输出只读观测状态，production_capacity_approved 始终为 false；完整业务压测、真实浏览器恢复与最终放行另行验收。
+
 复用现有部署、故障注入、质量评测、容量和恢复脚本。所有报告分别记录执行器SHA与服务镜像/运行配置，不用本地HEAD冒充线上版本。历史失败保留。
 
 业务采样器独立于旧 health/Agent 容量报告：`business_capacity.py` 负责严格计划、HTTP 链路、任务/阶段时钟、分母与原始样本；`business_capacity_observer.py` 以同一已验证本地身份读取 DB/对象并调用现有 HybridRetrievalService；`run_business_capacity.py` 是显式本地执行入口。没有独立检索 HTTP 产品接口，因此不新增接口，不用生成总耗时冒充检索耗时；Core 检索样本的执行位置明确为采样进程。复用 Core 的 PacketView/ReviewInput、检索/引用及账本模型，不复制生产业务逻辑。恢复为新 HTTP 客户端读取和同幂等键重放，并独立检查一次操作/结算；它不证明真实浏览器或代理断网恢复。

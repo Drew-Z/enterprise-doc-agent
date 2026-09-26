@@ -1,6 +1,6 @@
 # 当前 4C4G 业务容量验收方案
 
-状态：本地业务采样器已实现并通过受控链路验证，尚未执行当前主机的业务容量试验。2026-09-25 的恢复应用与采样结果属于本地功能验证，不能代替本方案；历史 4C8G readiness 结果也不适用。首版保留现有服务器，不扩容、不配置备用机。
+状态：本地业务采样器已通过受控链路验证，当前主机的有界只读资源观测已执行；尚未执行主机业务容量试验。2026-09-25 的本地功能验证和只读低负载窗口都不能代替本方案；历史 4C8G readiness 结果也不适用。首版保留现有服务器，不扩容、不配置备用机。
 
 ## 先固定试验对象
 
@@ -37,12 +37,46 @@
 
 现有 4C4G 配置中 API、Worker、Consumer 的 CPU limit 合计为 1.8 核，内存 limit 合计为 1,536 MiB；这是仓库配置，执行前还须读回实际 Deployment。旧示例中的 3.25 核/3.25 GiB 分母来自 4C8G，不能沿用。
 
-1. 将临时 Prometheus 放在操作者环境，通过已批准的 Tailnet/SSH 和内部 Service 转发采集应用 `/metrics`，结束即关闭转发。业务节点不增加 Prometheus/Grafana/Alertmanager，不开放公网 metrics。
-2. 每 5 秒保留有时间戳的 Pod CPU/RSS、DB 池、最老队列年龄、Redis 连接、对象请求和模型请求观测；同时记录节点可用内存、磁盘和容器重启/OOM。进程 RSS 不能代替整机余量。
+1. 使用 `collect_business_telemetry.py` 经已知 SSH 主机发送标准库探针，不在远端落地文件。只读 `kubectl get`、containerd 内容索引、`/proc`、根盘及逐个 API/Worker/Consumer Pod 的 `/metrics`，避免 Service 负载均衡漏掉副本。业务节点不增加 Prometheus/Grafana/Alertmanager，不开放公网 metrics。
+2. 每次探针完成后至少间隔 5 秒，保留带时间戳的 Pod CPU/内存、进程 RSS、DB 池和依赖观测；同时记录节点可用内存、磁盘和容器重启/OOM。进程 RSS 不能代替整机余量。队列年龄和 Redis 连接虽有指标定义，生产端尚未接入可靠更新，当前均标为不可用于验收。
 3. 每阶段至少覆盖一分钟并覆盖完整排队消退过程，使 rate/histogram 有有效采样。空值、NaN、未采到的模型或对象指标保留为缺失，不能填 0。
 4. 原始请求样本、阶段开始/结束、队列变化及摘要均绑定到报告；前后采集实际镜像/配置，出现漂移或采样空洞则该次验收不成立。
 
-此采集路径尚未在当前主机负载试验中验证。没有完整遥测时保持阻塞，不用 `kubectl top` 的一次低负载快照估算企业数。
+此路径已在当前主机做只读验证，尚未用于业务负载试验。没有完整遥测时保持待验收，不用低负载快照估算企业数。
+
+### 只读观测命令与报告
+
+以下默认只校验计划，不连接服务器、不创建输出目录；SSH 必须已配置别名和可信主机记录，不接受交互登录或跳过主机校验。
+
+```powershell
+.venv\Scripts\python.exe -B -X utf8 -m scripts.collect_business_telemetry `
+  --ssh-host enterprise-doc-staging-4c4g --samples 13 --interval-seconds 5 --max-run-seconds 120
+```
+
+获得该目标只读观察授权后，显式执行；`taskEvidenceDir` 指向本任务已有的集中恢复组，子目录必须尚不存在。
+
+```powershell
+$telemetryOutput = Join-Path $taskEvidenceDir 'business-telemetry-observation-new'
+.venv\Scripts\python.exe -B -X utf8 -m scripts.collect_business_telemetry `
+  --ssh-host enterprise-doc-staging-4c4g --samples 13 --interval-seconds 5 --max-run-seconds 120 `
+  --execute-readonly --output-dir $telemetryOutput
+```
+
+本地输出逐次刷新的 `samples.jsonl` 和最终 `run.json`，记录执行源码 SHA、完整样本分母、缺失/过期/漂移、实际镜像/资源限制及配置摘要。单次远端最多 20 秒、本地 SSH 最多 25 秒，剩余不足 25 秒不发下一次探针。故障或中断的样本不补采，后续未运行样本保留在最终报告。输出不含配置明文、Secret、网络地址或原始 metrics 正文；SSH 别名保留在私有计划，不提交原始报告。
+
+OCI 索引摘要、amd64 平台摘要以及 containerd 归档索引摘要可能不同。工具校验内容 SHA、平台和成员关系，记录可验证的对应关系；未证明的摘要仍报告失败。只读探针不证明运行提交、迁移版本或 Secret 版本，这些仍需部署验收补齐。
+
+`--business-report <本地业务 run.json>` 只记录报告哈希和阶段时间重叠，始终 `target_binding_verified=false`。不同机器上时间重叠不能证明同一试验环境。依赖计数差值是进程观测事件，不是本次任务的模型请求数、供应商账单或可直接归属的业务延迟。
+
+当前队列/Redis 更新来源和新鲜度尚未核验，工具按设计返回 `observation_incomplete`、退出码 1；不能为了退出码为零而移除缺口。配置拒绝为 2，dry-run 为 0，`production_capacity_approved` 始终为 false。
+
+### 2026-09-25 观测范围
+
+- 第二轮 13/13 快照成功，7 个不同 Kubernetes 节点时间戳；无身份漂移、重启或 OOM。物理内存总量 3,904,057,344 字节，窗口内最小可用 1,673,691,136 字节；根盘最小可用 17,670,619,136 字节，CPU 区间最大繁忙约 10.08%。这是一段只读窗口，不能据此承诺业务余量。
+- 第三轮仅 2/2 短样本，用于新增归档索引核验：API/Worker/Consumer/Web/Redis 的五组镜像关系均通过，Worker 已证明归档索引→部署索引→amd64 平台的链条。该窗口只有 1 个不同 Kubernetes 时间戳，不能合并冒充更长容量试验。
+- 前两轮的镜像未解析结果和各轮原始文件保留，各自绑定当时执行源码。第三轮仍缺少队列/Redis 生产端新鲜度；没有业务负载、模型请求、邮件、远端迁移或部署。
+
+下一步补齐真实队列/Redis 指标的更新与新鲜度，在隔离环境验证积压、消费、断连和过期；随后准备具体候选部署和获准的受控业务试验。
 
 ## 本地采样器与执行方式
 
@@ -85,6 +119,6 @@ $sampleOutput = Join-Path $taskEvidenceDir 'business-run-01'
 
 ## 剩余放行条件
 
-接下来连接临时遥测并补充真实浏览器/代理恢复观测，固定服务实际版本与配置；审核目标和窗口后，才进入当前 4C4G 的两轮业务实测。当前 CLI 主动限制为本地受控入口，不能直接指向线上，也不能只改 URL 就宣称完成外部验收。实际主机需独立、有界的执行配置和完整资源采样，按实测结果配置企业准入与并发限制。真实供应商长尾、计费和客户代表性另行验收。
+接下来补齐队列/Redis 指标与阶段环境绑定，并补充真实浏览器/代理恢复观测，固定服务实际版本与配置；审核目标和窗口后，才进入当前 4C4G 的两轮业务实测。当前业务 CLI 主动限制为本地受控入口，不能直接指向线上，也不能只改 URL 就宣称完成外部验收。实际主机需独立、有界的执行配置和完整资源采样，按实测结果配置企业准入与并发限制。真实供应商长尾、计费和客户代表性另行验收。
 
 运行出现 OOM、数据或租户隔离异常、调用预算耗尽，立即停止提交新任务并保留在途任务及账本状态。不得删除队列或重写失败结果，也不得因试验失败临时提高超时、并发或通过阈值。

@@ -1,9 +1,10 @@
-# Local business capacity sampler
+# Business sampling and read-only telemetry
 
 ## 1. Scope / Trigger
 
-Use this contract for `scripts/business_capacity*.py`, the local CLI, its plans and
-tests. It measures upload, ingestion, Core retrieval and background Presales
+Use this contract for `scripts/business_capacity*.py`, `capacity_host_probe.py`,
+`collect_business_telemetry.py`, the local CLI, their plans and tests.
+The local sampler measures upload, ingestion, Core retrieval and background Presales
 generation/recovery through existing contracts. It does not add a product API or
 produce production acceptance evidence for `run_application_capacity.py`.
 
@@ -130,3 +131,60 @@ required before any production capacity claim.
 - `infra/capacity/business-capacity.example.json`
 - `tests/deployment/test_business_capacity.py`
 - `tests/presales/test_business_capacity_integration.py`
+
+## Read-only resource observations
+
+`collect_business_telemetry.ObservationPlan` and `run_collection(plan, output)`
+collect the existing single node without submitting business work. The CLI is
+dry-run by default. Execution requires `--execute-readonly`, a known SSH alias and
+a new absolute output directory outside the repository. No Secret, deployment,
+remote file write, email, model or embedding request is part of this probe.
+
+- Use SSH BatchMode and strict known-host checking. The standard-library probe is
+  sent over stdin to `python3 -B -`; allowed subprocesses are `kubectl get` and
+  `k3s ctr -n k8s.io content get <sha256>`. Read `/proc`, root filesystem usage and
+  each discovered API/Worker/Consumer Pod's `/metrics`, not a load-balanced Service.
+  Disable HTTP proxies/redirects. Bound responses, inventories, subprocess/HTTP
+  timeouts, a 20-second remote deadline and a 25-second local SSH deadline.
+- Plans permit 2–241 samples, 5–60 seconds minimum between completed probes and
+  a 1–3,600 second total budget. Default: 13 samples, 5 seconds, 120 seconds.
+  Do not catch up missed intervals with back-to-back requests. If fewer than
+  25 seconds remain, do not start SSH. Keep failed/interrupted/not-run records in
+  the planned denominator. Flush `samples.jsonl` after each completed attempt and
+  finalize `run.json` on interruption; unattempted records remain in that report.
+- Project configuration/template/cluster/Pod identity to SHA-256, keeping actual
+  image digests, resource limits, readiness and restart/OOM state. Do not retain
+  configuration values, node names, Pod addresses or upstream exception text.
+  This does not attest a source commit, migration or Secret version.
+- A configured OCI index and a runtime platform manifest have different valid
+  digests. Hash-check the index bytes and require one matching Linux architecture
+  manifest. A containerd runtime archive index may instead be the running digest:
+  hash-check both indexes and require schema version 2, the configured index and
+  the selected platform manifest as unique members with matching media types.
+  Preserve all three digests; wrong platforms, incomplete/ambiguous membership,
+  unsupported types and tampered bytes remain unresolved. Never just waive a
+  digest mismatch. These are runtime relationships, not registry signatures.
+- Parse only bounded metrics/labels. Missing, negative or nonfinite values stay
+  `null`; unexpected labels or duplicate series reject the scrape. Kubernetes
+  timestamps/windows are retained; repeated node timestamps are counted once,
+  values older than 45 seconds are stale. Compare identities and sample gaps,
+  record host memory/disk minima and CPU tick deltas, and keep process RSS distinct
+  from physical node memory.
+- Dependency count/sum differences are `observed_events`, not provider request
+  attribution or billing. No events mean no latency estimate; p95 remains `null`.
+  A process reset invalidates the delta. Optional business-report hashes and
+  phase overlaps are diagnostic: `target_binding_verified=false`.
+- Queue-age and Redis-connection gauges currently have no production callers for
+  their setters or verified producer freshness. Always report
+  `queue_and_redis_producer_freshness_unverified`; exported zeros cannot prove
+  an empty queue or healthy Redis. Until that contract is implemented and verified,
+  `observation_incomplete` / exit 1 is expected even when every probe succeeds.
+  Dry-run exits 0; configuration rejection exits 2. All reports keep
+  `production_capacity_approved=false`.
+
+Tests: `tests/deployment/test_business_telemetry.py` covers public projection,
+parsing, hashing, summary and collection interfaces with subprocess/HTTP/time
+boundaries replaced. Preserve each real observation and its executed source
+hashes separately. A later short image-verification window must not overwrite or
+retroactively upgrade an earlier resource window. Current-node business load,
+complete telemetry, approved objectives and browser recovery remain separate.
