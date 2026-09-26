@@ -31,7 +31,17 @@ prometheus:
     # single-node-4c8g limits: API 2x768Mi, Worker 1Gi, Consumer 768Mi.
     memory: 100 * sum(process_resident_memory_bytes{job=~"enterprise-doc-(api|worker|consumer)"}) / (3.25 * 1024 * 1024 * 1024)
     database_pool: max(enterprise_doc_database_pool_utilization_percent)
-    queue: max(enterprise_doc_queue_oldest_age_seconds)
-    redis: max(enterprise_doc_redis_connections)
+    # Worker-owned observation; missing/failed/stale samples remain absent.
+    queue: >-
+      max(enterprise_doc_queue_oldest_age_seconds{job="enterprise-doc-worker"}
+      and on(job, instance) (enterprise_doc_resource_sample_success{source="queue"} == 1)
+      and on(job, instance) (time() - enterprise_doc_resource_last_success_timestamp_seconds{source="queue"} <= 45)
+      and on(job, instance) (time() - enterprise_doc_resource_last_success_timestamp_seconds{source="queue"} >= -5))
+    # Worker-owned observation; missing/failed/stale samples remain absent.
+    redis: >-
+      max(enterprise_doc_redis_connected_clients{job="enterprise-doc-worker"}
+      and on(job, instance) (enterprise_doc_resource_sample_success{source="redis"} == 1)
+      and on(job, instance) (time() - enterprise_doc_resource_last_success_timestamp_seconds{source="redis"} <= 45)
+      and on(job, instance) (time() - enterprise_doc_resource_last_success_timestamp_seconds{source="redis"} >= -5))
     object_store: histogram_quantile(0.95, sum(rate(enterprise_doc_dependency_duration_seconds_bucket{dependency="object_store"}[1m])) by (le))
     model: histogram_quantile(0.95, sum(rate(enterprise_doc_dependency_duration_seconds_bucket{dependency="model"}[1m])) by (le))

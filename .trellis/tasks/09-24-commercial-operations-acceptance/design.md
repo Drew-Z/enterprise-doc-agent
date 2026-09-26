@@ -2,7 +2,7 @@
 
 只读资源观测使用标准库远端探针（经 SSH stdin 运行，不落地文件）和本地 metrics 白名单解析器。探针仅调用 kubectl get、containerd content get、读取 /proc 与根盘空间、抓取发现的 API/Worker/Consumer Pod metrics；输出投影只含身份摘要、运行状态和观测字段，不返回 Secret 或配置明文。用 Pod 地址逐副本抓取，避免 Service 负载均衡隐藏副本；保留 Kubernetes Metrics API 自带 timestamp/window，不把重复读取旧样本视为新数据。采样只读、低频且有调用数和单次时限，逐次 journal 及最终结果存当前集中恢复组。
 
-镜像核验区分同摘要、部署 OCI 索引到指定 Linux 平台 manifest，以及运行时归档索引包含部署索引与该平台 manifest 三类。索引字节校验 SHA 与 schemaVersion，目标平台唯一且成员 mediaType 正确才通过，保留三个摘要；不因摘要形式不同直接误判部署错误，也不无条件豁免差异。探针仍不证明签名、提交或迁移版本。现有队列/Redis gauge setter 未接入生产调用，其新鲜度不可证明，汇总必须保留 observation_incomplete；不能用导出的零值作为空闲证据。
+镜像核验区分同摘要、部署 OCI 索引到指定 Linux 平台 manifest，以及运行时归档索引包含部署索引与该平台 manifest 三类。索引字节校验 SHA 与 schemaVersion，目标平台唯一且成员 mediaType 正确才通过，保留三个摘要；不因摘要形式不同直接误判部署错误，也不无条件豁免差异。探针仍不证明签名、提交或迁移版本。前轮已部署旧版本的队列/Redis gauge setter 未接入生产调用，其新鲜度不可证明，对旧版本的汇总仍须保留 observation_incomplete；不能用导出的零值作为空闲证据。CO-3i 为候选补齐生产端及新鲜度后，仍须通过实际部署和采集验证，不能改写历史观测。
 
 离线汇总将探针投影的镜像/配置/资源和 Pod 身份与第一次比较，检测漂移/重启/缺项；白名单指标的非有限值保持缺失。CPU/内存显示原始单位和实际限制，模型/对象延时只保留已有 histogram，不伪造零等待。通过可选业务报告关联阶段时间窗口，但业务报告没有实际主机身份绑定时不能宣称同目标。现阶段输出只读观测状态，production_capacity_approved 始终为 false；完整业务压测、真实浏览器恢复与最终放行另行验收。
 
@@ -39,3 +39,8 @@ v8 修改现有模型提示词及模型 schema 的展示顺序：prerequisites �
 恢复应用切片复用私有快照和现有 ingestion 浏览器验收 harness。独占 PostgreSQL 17、MinIO 和 Redis 只发布回环随机端口；生成的本地凭据只进入子进程环境。数据库副本由 0027 升至当前候选 0031，历史数据保持可读取；所有新业务写入独立合成租户。原应用恢复点不改写，操作脚本及私有输出集中在原恢复组。先执行历史记录 API 检查，再运行实际上传/Worker/浏览器流程；不让消费者扫描恢复库的历史队列。
 
 `scripts/local_object_recovery.py` 从恢复库的 `ObjectReference` 列表捕获对象。原 bucket/key 只进入私有 JSON，文件名是两者的 SHA-256；总量/对象数预先有界，下载逐块计算 SHA。仅 GET 源，不调用线上 Copy/Put/Delete。失败保留诊断目录且不发布成功清单。恢复端要求客户端实际 endpoint 为回环地址，所有目标桶为空；全量离线验证完成后按原 bucket/key 排他写入，再逐项读取验证。使用新的独占 MinIO 容器，原键可以保留而不改写恢复库；没有后台应用连接，不发送邮件或模型请求。临时数据在内存文件系统，结束后只停止并移除本轮独占资源。
+
+
+CO-3i：Core jobs 模块提供只读队列年龄查询，分别从 pending/retry_wait 的现有 status/available_at 索引取第一项，再用数据库时钟计算最早已到期年龄；查询有 statement timeout，客户端采样每来源亦有截止时间。Core telemetry 的资源采样器接受显式读函数、registry 与时钟，不创建全局客户端；Worker composition root 连接现有 session_factory 与 Redis INFO clients，每次完成后间隔十秒，不追赶或并发叠加。业务监督器负责其取消与关闭。
+
+Prometheus 新增服务端 redis_connected_clients，旧 redis_connections 保留为未测 NaN，不悄悄改变口径。queue/redis 两个固定 source 标签分别提供 resource_sample_success 与 resource_last_success_timestamp_seconds；初始化不制造成功记录，失败保持最后成功时间但值变未知。已有队列 setter 不产生新鲜度证明。只读汇总仅要求 Worker 提供此契约；API/Consumer 的资源 NaN 属于未承担的采集职责，进程指标仍需完整。旧线上没有时间戳仍为 observation_incomplete，新候选的成功标记、有限值及 45 秒内时间戳齐全时才解除对应缺口；production_capacity_approved 始终 false。

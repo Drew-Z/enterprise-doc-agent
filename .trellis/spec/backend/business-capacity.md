@@ -174,13 +174,16 @@ remote file write, email, model or embedding request is part of this probe.
   attribution or billing. No events mean no latency estimate; p95 remains `null`.
   A process reset invalidates the delta. Optional business-report hashes and
   phase overlaps are diagnostic: `target_binding_verified=false`.
-- Queue-age and Redis-connection gauges currently have no production callers for
-  their setters or verified producer freshness. Always report
-  `queue_and_redis_producer_freshness_unverified`; exported zeros cannot prove
-  an empty queue or healthy Redis. Until that contract is implemented and verified,
-  `observation_incomplete` / exit 1 is expected even when every probe succeeds.
-  Dry-run exits 0; configuration rejection exits 2. All reports keep
-  `production_capacity_approved=false`.
+- Candidate Worker [resource observations](./resource-metrics.md) now populate due
+  queue age and Redis **server** connected clients with source success/timestamps.
+  Every Worker replica needs finite values and a successful observation within
+  45 seconds, no more than five seconds ahead, and after process start. Legacy
+  process-connection gauges, stale/failed/missing samples and zeros alone retain
+  `queue_and_redis_producer_freshness_unverified`. API/Consumer do not own these
+  shared observations; their process gauges remain required. The already-deployed
+  older producer is not upgraded by this code change. Complete read-only evidence
+  exits 0; incomplete/interrupted observation exits 1; configuration rejection
+  exits 2. All reports keep `production_capacity_approved=false`.
 
 Tests: `tests/deployment/test_business_telemetry.py` covers public projection,
 parsing, hashing, summary and collection interfaces with subprocess/HTTP/time

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import math
 from collections.abc import Sequence
 from dataclasses import dataclass
 from time import perf_counter
@@ -128,6 +129,9 @@ class MetricsRuntime:
     database_pool_utilization_percent: Gauge
     queue_oldest_age_seconds: Gauge
     redis_connections: Gauge
+    redis_connected_clients: Gauge
+    resource_sample_success: Gauge
+    resource_last_success_timestamp_seconds: Gauge
 
     @classmethod
     def create(cls) -> MetricsRuntime:
@@ -136,7 +140,7 @@ class MetricsRuntime:
         # implicitly. Register Linux process CPU and resident-memory metrics
         # explicitly; they carry no business or request identifiers.
         ProcessCollector(registry=registry)
-        return cls(
+        runtime = cls(
             registry=registry,
             api_requests_total=Counter(
                 "enterprise_doc_api_requests_total",
@@ -231,7 +235,32 @@ class MetricsRuntime:
                 "Observed Redis connections used by the process.",
                 registry=registry,
             ),
+            redis_connected_clients=Gauge(
+                "enterprise_doc_redis_connected_clients",
+                "Connected clients reported by the shared Redis server, not a process pool.",
+                registry=registry,
+            ),
+            resource_sample_success=Gauge(
+                "enterprise_doc_resource_sample_success",
+                "Whether the latest bounded resource observation succeeded.",
+                ("source",),
+                registry=registry,
+            ),
+            resource_last_success_timestamp_seconds=Gauge(
+                "enterprise_doc_resource_last_success_timestamp_seconds",
+                "Unix time of the last successful resource observation; zero means never.",
+                ("source",),
+                registry=registry,
+            ),
         )
+        # Gauge's default zero is not evidence that a resource was observed idle.
+        runtime.queue_oldest_age_seconds.set(float("nan"))
+        runtime.redis_connections.set(float("nan"))
+        runtime.redis_connected_clients.set(float("nan"))
+        for source in ("queue", "redis"):
+            runtime.resource_sample_success.labels(source).set(0)
+            runtime.resource_last_success_timestamp_seconds.labels(source).set(0)
+        return runtime
 
     def render(self) -> bytes:
         return generate_latest(self.registry)
@@ -305,6 +334,29 @@ class MetricsRuntime:
 
     def set_database_pool_utilization(self, utilization_percent: float) -> None:
         self.database_pool_utilization_percent.set(max(0.0, utilization_percent))
+
+    def record_resource_observation(
+        self, source: str, value: float | None, *, observed_at: float
+    ) -> None:
+        if source not in {"queue", "redis"}:
+            raise ValueError("unsupported_resource_source")
+        gauge = self.queue_oldest_age_seconds if source == "queue" else self.redis_connected_clients
+        # Mark incomplete before publishing separate fields to concurrent scrapes.
+        self.resource_sample_success.labels(source).set(0)
+        if (
+            value is None
+            or isinstance(value, bool)
+            or not math.isfinite(value)
+            or value < 0
+            or (source == "redis" and not float(value).is_integer())
+            or not math.isfinite(observed_at)
+            or observed_at <= 0
+        ):
+            gauge.set(float("nan"))
+            return
+        gauge.set(value)
+        self.resource_last_success_timestamp_seconds.labels(source).set(observed_at)
+        self.resource_sample_success.labels(source).set(1)
 
     def set_queue_oldest_age(self, age_seconds: float) -> None:
         self.queue_oldest_age_seconds.set(max(0.0, age_seconds))

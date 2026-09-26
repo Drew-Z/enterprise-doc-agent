@@ -574,3 +574,94 @@ def test_business_phase_overlap_does_not_attest_target_identity():
     )
     assert result["business_windows"][0]["observed_samples"] == 1
     assert result["business_windows"][0]["target_binding_verified"] is False
+
+
+def resource_snapshot():
+    from datetime import datetime
+
+    from enterprise_doc_core.telemetry import MetricsRuntime
+
+    raw = snapshot()
+    runtime = MetricsRuntime.create()
+    now = datetime.fromisoformat(raw["captured_at"]).timestamp()
+    runtime.record_resource_observation("queue", 0, observed_at=now - 2)
+    runtime.record_resource_observation("redis", 3, observed_at=now - 1)
+    for scrape in raw["scrapes"]:
+        if scrape["role"] == "worker":
+            scrape["text"] = (
+                "process_resident_memory_bytes 1024\nprocess_cpu_seconds_total 2\n"
+                "process_start_time_seconds 1\n"
+                + "\n".join(
+                    line
+                    for line in runtime.render().decode().splitlines()
+                    if not line.startswith(("process_", "# HELP process_", "# TYPE process_"))
+                )
+                + "\n"
+            )
+    return raw
+
+
+def test_fresh_worker_resource_observations_resolve_only_the_telemetry_gap():
+    from scripts.business_capacity_telemetry import normalize_snapshot, summarize_observations
+
+    report = summarize_observations(
+        [{"status": "observed", "snapshot": normalize_snapshot(resource_snapshot())}],
+        interval_seconds=5,
+    )
+    assert report["status"] == "read_only_observed", report["issues"]
+    assert report["unverified_gauges"] == []
+    assert report["production_capacity_approved"] is False
+
+
+@pytest.mark.parametrize(
+    "fault", ["missing", "failed", "stale", "future", "restarted", "nonfinite"]
+)
+def test_resource_freshness_rejects_missing_failed_stale_and_wrong_process_samples(fault):
+    from datetime import datetime
+
+    from scripts.business_capacity_telemetry import normalize_snapshot, summarize_observations
+
+    sample = normalize_snapshot(resource_snapshot())
+    worker = next(s for s in sample["scrapes"] if s["role"] == "worker")
+    now = datetime.fromisoformat(sample["captured_at"]).timestamp()
+    metadata = worker["metrics"]["resource_samples"]
+    if fault == "missing":
+        worker["metrics"].pop("resource_samples")
+    elif fault == "failed":
+        metadata["queue"]["success"] = 0
+    elif fault == "stale":
+        metadata["queue"]["last_success_timestamp_seconds"] = now - 46
+    elif fault == "future":
+        metadata["queue"]["last_success_timestamp_seconds"] = now + 6
+    elif fault == "restarted":
+        worker["metrics"]["gauges"]["process_start_time_seconds"] = now
+    elif fault == "nonfinite":
+        worker["metrics"]["gauges"]["enterprise_doc_queue_oldest_age_seconds"] = None
+    result = summarize_observations(
+        [{"status": "observed", "snapshot": sample}], interval_seconds=5
+    )
+    assert result["status"] == "observation_incomplete"
+    assert "queue_and_redis_producer_freshness_unverified" in result["issues"]
+    assert "enterprise_doc_queue_oldest_age_seconds" in result["unverified_gauges"]
+
+
+def test_resource_freshness_does_not_use_api_samples_to_replace_a_missing_worker_producer():
+    from scripts.business_capacity_telemetry import normalize_snapshot, summarize_observations
+
+    sample = normalize_snapshot(resource_snapshot())
+    api = next(s for s in sample["scrapes"] if s["role"] == "api")
+    worker = next(s for s in sample["scrapes"] if s["role"] == "worker")
+    api["metrics"], worker["metrics"] = worker["metrics"], api["metrics"]
+    report = summarize_observations(
+        [{"status": "observed", "snapshot": sample}], interval_seconds=5
+    )
+    assert "queue_and_redis_producer_freshness_unverified" in report["issues"]
+
+
+def test_resource_metric_labels_and_duplicate_series_are_rejected():
+    from scripts.business_capacity_telemetry import parse_metrics
+
+    with pytest.raises(ValueError, match="metric_labels_rejected"):
+        parse_metrics('enterprise_doc_resource_sample_success{source="private-tenant"} 1')
+    with pytest.raises(ValueError, match="duplicate_metric"):
+        parse_metrics('enterprise_doc_resource_sample_success{source="queue"} 1\n' * 2)

@@ -38,7 +38,7 @@
 现有 4C4G 配置中 API、Worker、Consumer 的 CPU limit 合计为 1.8 核，内存 limit 合计为 1,536 MiB；这是仓库配置，执行前还须读回实际 Deployment。旧示例中的 3.25 核/3.25 GiB 分母来自 4C8G，不能沿用。
 
 1. 使用 `collect_business_telemetry.py` 经已知 SSH 主机发送标准库探针，不在远端落地文件。只读 `kubectl get`、containerd 内容索引、`/proc`、根盘及逐个 API/Worker/Consumer Pod 的 `/metrics`，避免 Service 负载均衡漏掉副本。业务节点不增加 Prometheus/Grafana/Alertmanager，不开放公网 metrics。
-2. 每次探针完成后至少间隔 5 秒，保留带时间戳的 Pod CPU/内存、进程 RSS、DB 池和依赖观测；同时记录节点可用内存、磁盘和容器重启/OOM。进程 RSS 不能代替整机余量。队列年龄和 Redis 连接虽有指标定义，生产端尚未接入可靠更新，当前均标为不可用于验收。
+2. 每次探针完成后至少间隔 5 秒，保留带时间戳的 Pod CPU/内存、进程 RSS、DB 池和依赖观测；同时记录节点可用内存、磁盘和容器重启/OOM。进程 RSS 不能代替整机余量。当前已部署版本的队列/Redis 指标仍不可用于验收；新候选 Worker 已加入真实采集与时间戳，须在获准部署后重新核验。
 3. 每阶段至少覆盖一分钟并覆盖完整排队消退过程，使 rate/histogram 有有效采样。空值、NaN、未采到的模型或对象指标保留为缺失，不能填 0。
 4. 原始请求样本、阶段开始/结束、队列变化及摘要均绑定到报告；前后采集实际镜像/配置，出现漂移或采样空洞则该次验收不成立。
 
@@ -68,7 +68,7 @@ OCI 索引摘要、amd64 平台摘要以及 containerd 归档索引摘要可能�
 
 `--business-report <本地业务 run.json>` 只记录报告哈希和阶段时间重叠，始终 `target_binding_verified=false`。不同机器上时间重叠不能证明同一试验环境。依赖计数差值是进程观测事件，不是本次任务的模型请求数、供应商账单或可直接归属的业务延迟。
 
-当前队列/Redis 更新来源和新鲜度尚未核验，工具按设计返回 `observation_incomplete`、退出码 1；不能为了退出码为零而移除缺口。配置拒绝为 2，dry-run 为 0，`production_capacity_approved` 始终为 false。
+观测旧部署仍会因队列/Redis 缺少新鲜度证据返回 `observation_incomplete`、退出码 1。候选部署后，只有每个 Worker 的数值有限、本次成功、最近成功时间在 45 秒内且属于当前进程时，才解除该缺口；全部观测条件齐备可返回 `read_only_observed`、退出码 0。配置拒绝为 2，dry-run 为 0；这些状态均不批准容量，`production_capacity_approved` 始终为 false。
 
 ### 2026-09-25 观测范围
 
@@ -76,7 +76,13 @@ OCI 索引摘要、amd64 平台摘要以及 containerd 归档索引摘要可能�
 - 第三轮仅 2/2 短样本，用于新增归档索引核验：API/Worker/Consumer/Web/Redis 的五组镜像关系均通过，Worker 已证明归档索引→部署索引→amd64 平台的链条。该窗口只有 1 个不同 Kubernetes 时间戳，不能合并冒充更长容量试验。
 - 前两轮的镜像未解析结果和各轮原始文件保留，各自绑定当时执行源码。第三轮仍缺少队列/Redis 生产端新鲜度；没有业务负载、模型请求、邮件、远端迁移或部署。
 
-下一步补齐真实队列/Redis 指标的更新与新鲜度，在隔离环境验证积压、消费、断连和过期；随后准备具体候选部署和获准的受控业务试验。
+### 队列和 Redis 指标候选
+
+Worker 在启用 metrics 时每轮完成后间隔十秒采集，两来源各限两秒；复用现有 DB/Redis，不新增服务。队列只统计 `pending/retry_wait` 且已到 `available_at` 的任务，从本次可执行时间计算等待年龄，覆盖解析、Agent 和售前任务。未来重试、运行中和终态不属于该指标；它也不替代过期运行租约监测或端到端等待时长。
+
+Redis 新指标为 `enterprise_doc_redis_connected_clients`，来自 `INFO clients` 的服务端连接数。旧 `enterprise_doc_redis_connections` 仍是进程连接数定义，保持未测 NaN，不混用口径。来源为 queue/redis 的 `enterprise_doc_resource_sample_success` 和 `enterprise_doc_resource_last_success_timestamp_seconds` 分别记录本次结果和上次成功时间。初始化、超时、连接失败为未知，不能显示为空闲；失败保留最后成功时间，便于判断持续多久未恢复。
+
+候选已用本机独占 PostgreSQL schema 和实际 Redis 验证积压/消退、连接变化、连接失败恢复和表锁超时，未改变线上。当前应准备具体候选部署与回滚，获准后核对每个 Worker 的新鲜度，再执行受控业务试验。历史只读观察和失败结果保持原样。
 
 ## 本地采样器与执行方式
 
@@ -119,6 +125,6 @@ $sampleOutput = Join-Path $taskEvidenceDir 'business-run-01'
 
 ## 剩余放行条件
 
-接下来补齐队列/Redis 指标与阶段环境绑定，并补充真实浏览器/代理恢复观测，固定服务实际版本与配置；审核目标和窗口后，才进入当前 4C4G 的两轮业务实测。当前业务 CLI 主动限制为本地受控入口，不能直接指向线上，也不能只改 URL 就宣称完成外部验收。实际主机需独立、有界的执行配置和完整资源采样，按实测结果配置企业准入与并发限制。真实供应商长尾、计费和客户代表性另行验收。
+接下来核对部署后的队列/Redis 指标并绑定业务阶段与环境，补充真实浏览器/代理恢复观测，固定服务实际版本与配置；审核目标和窗口后，才进入当前 4C4G 的两轮业务实测。当前业务 CLI 主动限制为本地受控入口，不能直接指向线上，也不能只改 URL 就宣称完成外部验收。实际主机需独立、有界的执行配置和完整资源采样，按实测结果配置企业准入与并发限制。真实供应商长尾、计费和客户代表性另行验收。
 
 运行出现 OOM、数据或租户隔离异常、调用预算耗尽，立即停止提交新任务并保留在途任务及账本状态。不得删除队列或重写失败结果，也不得因试验失败临时提高超时、并发或通过阈值。

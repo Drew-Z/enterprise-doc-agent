@@ -1,5 +1,6 @@
 import asyncio
 from collections.abc import Coroutine
+from functools import partial
 from typing import Any
 
 import uvicorn
@@ -11,8 +12,13 @@ from enterprise_doc_core.db import (
 )
 from enterprise_doc_core.health import FoundationResources, build_foundation_resources
 from enterprise_doc_core.jobs import JobRuntimeService, OutboxService
+from enterprise_doc_core.jobs.metrics import read_queue_oldest_age
 from enterprise_doc_core.logging import configure_logging
 from enterprise_doc_core.telemetry import MetricsRuntime, TelemetryManager, TelemetryRuntime
+from enterprise_doc_core.telemetry.resources import (
+    ResourceMetricsSampler,
+    read_redis_connected_clients,
+)
 from enterprise_doc_worker.agent_handler import (
     agent_failure_lock_key,
     project_agent_run_failure,
@@ -37,6 +43,7 @@ async def supervise_worker_tasks(
     runtime: Coroutine[Any, Any, None],
     publisher: Coroutine[Any, Any, None],
     presales: Coroutine[Any, Any, None] | None = None,
+    resource_observer: Coroutine[Any, Any, None] | None = None,
 ) -> None:
     tasks = {
         "server": asyncio.create_task(server),
@@ -45,6 +52,8 @@ async def supervise_worker_tasks(
     }
     if presales is not None:
         tasks["presales"] = asyncio.create_task(presales)
+    if resource_observer is not None:
+        tasks["resource_observer"] = asyncio.create_task(resource_observer)
     try:
         done, _ = await asyncio.wait(tasks.values(), return_when=asyncio.FIRST_COMPLETED)
         for role in (name for name in tasks if name != "server"):
@@ -150,6 +159,13 @@ async def run_worker() -> None:
             publisher=publisher.run(runtime.shutdown_event),
             presales=run_presales(settings, session_factory, runtime.shutdown_event, metrics)
             if settings.presales.background_generation_enabled
+            else None,
+            resource_observer=ResourceMetricsSampler(
+                metrics,
+                partial(read_queue_oldest_age, session_factory),
+                partial(read_redis_connected_clients, resources.redis_client),
+            ).run(runtime.shutdown_event)
+            if settings.otel.metrics_enabled
             else None,
         )
     finally:
