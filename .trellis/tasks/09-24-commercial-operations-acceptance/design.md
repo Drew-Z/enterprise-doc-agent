@@ -44,3 +44,8 @@ v8 修改现有模型提示词及模型 schema 的展示顺序：prerequisites �
 CO-3i：Core jobs 模块提供只读队列年龄查询，分别从 pending/retry_wait 的现有 status/available_at 索引取第一项，再用数据库时钟计算最早已到期年龄；查询有 statement timeout，客户端采样每来源亦有截止时间。Core telemetry 的资源采样器接受显式读函数、registry 与时钟，不创建全局客户端；Worker composition root 连接现有 session_factory 与 Redis INFO clients，每次完成后间隔十秒，不追赶或并发叠加。业务监督器负责其取消与关闭。
 
 Prometheus 新增服务端 redis_connected_clients，旧 redis_connections 保留为未测 NaN，不悄悄改变口径。queue/redis 两个固定 source 标签分别提供 resource_sample_success 与 resource_last_success_timestamp_seconds；初始化不制造成功记录，失败保持最后成功时间但值变未知。已有队列 setter 不产生新鲜度证明。只读汇总仅要求 Worker 提供此契约；API/Consumer 的资源 NaN 属于未承担的采集职责，进程指标仍需完整。旧线上没有时间戳仍为 observation_incomplete，新候选的成功标记、有限值及 45 秒内时间戳齐全时才解除对应缺口；production_capacity_approved 始终 false。
+
+
+CO-3j1：复用现有部署 workflow 与只读主机入口，先固定当前工作区和五份旧索引。收尾步骤仍用 always 收集明确决策，但将 prerequisites/migration/workloads 的实际 outcome 作为运行输入；仅三者全部成功时才应用已部署候选的 workload manifest。任何 failure/cancelled/skipped/空值均不调用 kubectl，避免绕过迁移和前置条件。GitHub workflow 的 Bash run 原文在测试中真实执行，仅将 kubectl 替换为进程边界的记录器；Windows 明确使用本机 Git Bash 绝对路径，不调用 WSL。
+
+发布文档区分预迁移恢复原部署、迁移中停止并核对数据库、迁移后使用 0031 兼容候选，以及开写后保留账本向前修复。候选来源/代码一致性与镜像签名、实际兼容回滚演练分别记录，不能因源码相同就填写镜像或业务恢复通过。默认 embedding rollout 和 authenticated smoke 都可能调用供应商，本轮零预算不得直接 dispatch 该流程。

@@ -684,10 +684,21 @@ jobs:
       - name: Restore tiny workloads after deployment attempt
         if: always()
         env:
+          PREREQUISITES_OUTCOME: ${{ steps.prerequisites.outcome }}
+          MIGRATION_OUTCOME: ${{ steps.migration.outcome }}
+          WORKLOADS_OUTCOME: ${{ steps.workloads.outcome }}
           DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'single-node-4c4g' }}
         run: |
           set -euo pipefail
           if test "$DEPLOYMENT_PROFILE" != "tiny-single-node" && test "$DEPLOYMENT_PROFILE" != "single-node-4c4g"; then
+            exit 0
+          fi
+          # Resume only a candidate already validated, migrated and applied.
+          # This is not a rollback: an interrupted migration needs operator review.
+          if test "${PREREQUISITES_OUTCOME:-}" != "success" ||
+             test "${MIGRATION_OUTCOME:-}" != "success" ||
+             test "${WORKLOADS_OUTCOME:-}" != "success"; then
+            echo 'candidate recovery withheld: prerequisites, migration and workload apply must all succeed; inspect the failed attempt before restoring service'
             exit 0
           fi
           if test ! -f "$RUNNER_TEMP/staging-workloads.yaml"; then
