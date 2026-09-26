@@ -196,6 +196,12 @@ def test_configure_manifest_preserves_explicit_presales_route_and_wait_budget(
         "PRESALES__MODEL_ROUTE": "fallback",
         "PRESALES__MODEL_TIMEOUT_SECONDS": "120",
         "PRESALES__ROW_TIMEOUT_SECONDS": "150",
+        "PRESALES__BACKGROUND_GENERATION_ENABLED": "false",
+        "PRESALES__AUTOMATIC_FAILOVER_ENABLED": "false",
+        "PRESALES__DAILY_DISPATCH_LIMIT": "200",
+        "PRESALES__QUEUE_TIMEOUT_SECONDS": "900",
+        "PRESALES__ROUTE_FAILURE_THRESHOLD": "3",
+        "PRESALES__ROUTE_COOLDOWN_SECONDS": "30",
     }
     settings = PresalesSettings.model_validate(
         {
@@ -221,6 +227,32 @@ def test_configure_manifest_preserves_explicit_presales_route_and_wait_budget(
             )
 
 
+def test_presales_background_flags_and_budget_reach_api_and_worker(tmp_path: Path) -> None:
+    from enterprise_doc_api.config import ApiSettings
+    from enterprise_doc_worker.config import WorkerSettings
+
+    documents = _render_browser_manifest(
+        tmp_path,
+        presales_generation_enabled="true",
+        presales_background_generation_enabled="true",
+        presales_automatic_failover_enabled="true",
+        presales_daily_dispatch_limit="50",
+        fallback_model_base_url="https://fallback.example.com/v1",
+        fallback_model_name="fallback",
+    )
+    data = next(item for item in documents if item["kind"] == "ConfigMap")["data"]
+    values = {
+        k.removeprefix("PRESALES__").lower(): v
+        for k, v in data.items()
+        if k.startswith("PRESALES__")
+    }
+    for cls in (ApiSettings, WorkerSettings):
+        settings = cls(_env_file=None, presales=values)
+        assert settings.presales.background_generation_enabled
+        assert settings.presales.automatic_failover_enabled
+        assert settings.presales.daily_dispatch_limit == 50
+
+
 @pytest.mark.parametrize(
     "overrides",
     [
@@ -239,6 +271,13 @@ def test_configure_manifest_preserves_explicit_presales_route_and_wait_budget(
         {"presales_row_timeout_seconds": "0"},
         {"presales_row_timeout_seconds": "181"},
         {"presales_row_timeout_seconds": ""},
+        {"presales_background_generation_enabled": "yes"},
+        {"presales_automatic_failover_enabled": "true"},
+        {"presales_daily_dispatch_limit": "0"},
+        {"presales_daily_dispatch_limit": "10001"},
+        {"presales_queue_timeout_seconds": "NaN"},
+        {"presales_route_failure_threshold": "0"},
+        {"presales_route_cooldown_seconds": "301"},
     ],
 )
 def test_invalid_presales_release_settings_fail_before_output(
@@ -271,6 +310,12 @@ def test_presales_defaults_disable_generation_and_clear_old_model_override(tmp_p
         "PRESALES__GENERATION_ENABLED": "false",
         "PRESALES__MODEL_ROUTE": "primary",
         "PRESALES__ROW_TIMEOUT_SECONDS": "90",
+        "PRESALES__BACKGROUND_GENERATION_ENABLED": "false",
+        "PRESALES__AUTOMATIC_FAILOVER_ENABLED": "false",
+        "PRESALES__DAILY_DISPATCH_LIMIT": "200",
+        "PRESALES__QUEUE_TIMEOUT_SECONDS": "900",
+        "PRESALES__ROUTE_FAILURE_THRESHOLD": "3",
+        "PRESALES__ROUTE_COOLDOWN_SECONDS": "30",
     }
     disabled_annotations = next(item for item in disabled if item["kind"] == "Namespace")[
         "metadata"
@@ -322,6 +367,12 @@ def test_presales_cli_binds_approved_pilot_configuration(
         "PRESALES__MODEL_ROUTE": "fallback",
         "PRESALES__MODEL_TIMEOUT_SECONDS": "120",
         "PRESALES__ROW_TIMEOUT_SECONDS": "150",
+        "PRESALES__BACKGROUND_GENERATION_ENABLED": "false",
+        "PRESALES__AUTOMATIC_FAILOVER_ENABLED": "false",
+        "PRESALES__DAILY_DISPATCH_LIMIT": "200",
+        "PRESALES__QUEUE_TIMEOUT_SECONDS": "900",
+        "PRESALES__ROUTE_FAILURE_THRESHOLD": "3",
+        "PRESALES__ROUTE_COOLDOWN_SECONDS": "30",
     }
 
 
@@ -342,6 +393,17 @@ def test_staging_workflow_passes_presales_environment_to_the_renderer() -> None:
         "PRESALES_MODEL_TIMEOUT_SECONDS": "${{ vars.STAGING_PRESALES_MODEL_TIMEOUT_SECONDS }}",
         "PRESALES_ROW_TIMEOUT_SECONDS": "${{ vars.STAGING_PRESALES_ROW_TIMEOUT_SECONDS || '90' }}",
     }
+    for name, default in {
+        "BACKGROUND_GENERATION_ENABLED": "false",
+        "AUTOMATIC_FAILOVER_ENABLED": "false",
+        "DAILY_DISPATCH_LIMIT": "200",
+        "QUEUE_TIMEOUT_SECONDS": "900",
+        "ROUTE_FAILURE_THRESHOLD": "3",
+        "ROUTE_COOLDOWN_SECONDS": "30",
+    }.items():
+        expected["PRESALES_" + name] = (
+            "${{ vars.STAGING_PRESALES_" + name + " || '" + default + "' }}"
+        )
     for name, expression in expected.items():
         assert step["env"].get(name) == expression
         assert f'--{name.lower().replace("_", "-")} "${name}"' in step["run"]

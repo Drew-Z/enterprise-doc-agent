@@ -28,9 +28,9 @@ def draft_payload() -> dict:
     return {
         "status": "insufficient_evidence",
         "answer": "现有片段不能证明该能力。",
-        "conditions": [],
         "missingInformation": ["请补充有效能力证明。"],
         "citations": [],
+        "prerequisites": [],
     }
 
 
@@ -68,6 +68,54 @@ def test_duplicate_ids_and_excessive_scope_are_rejected() -> None:
             CreatePacket.model_validate(
                 {"title": "采购", "sources": sources, "requirements": requirements}
             )
+
+
+@pytest.mark.parametrize("indexes", [[], [True], [-1], [1], [12], [0, 0], ["0"]])
+def test_prerequisites_require_distinct_bound_integer_citation_indexes(indexes) -> None:
+    with pytest.raises(ValidationError):
+        ModelDraft.model_validate(
+            {
+                "status": "conditional",
+                "answer": "需确认验收。",
+                "conditions": ["需确认验收。"],
+                "prerequisites": [
+                    {"condition": "需确认验收。", "state": "unknown", "citationIndexes": indexes}
+                ],
+                "citations": [
+                    {
+                        "chunkId": str(uuid4()),
+                        "documentVersionId": str(uuid4()),
+                        "excerpt": "验收未登记。",
+                    }
+                ],
+            }
+        )
+
+
+@pytest.mark.parametrize(
+    "status,conditions", [("supported", []), ("conditional", ["改写的条件。"]), ("conditional", [])]
+)
+def test_structured_prerequisites_cannot_be_hidden_by_overall_assessment(
+    status, conditions
+) -> None:
+    with pytest.raises(ValidationError):
+        ModelDraft.model_validate(
+            {
+                "status": status,
+                "answer": "核对验收。",
+                "conditions": conditions,
+                "prerequisites": [
+                    {"condition": "需确认验收。", "state": "unknown", "citationIndexes": [0]}
+                ],
+                "citations": [
+                    {
+                        "chunkId": str(uuid4()),
+                        "documentVersionId": str(uuid4()),
+                        "excerpt": "验收未登记。",
+                    }
+                ],
+            }
+        )
 
 
 def test_citations_are_bound_to_tenant_version_candidate_and_exact_excerpt() -> None:
@@ -159,9 +207,10 @@ async def test_gateway_is_one_request_and_rejects_truncation_tools_and_bad_schem
         gateway.provenance["promptSha256"]
         == hashlib.sha256(requests[0]["messages"][0]["content"].encode()).hexdigest()
     )
-    assert json.loads(requests[0]["messages"][1]["content"]) == payload.model_dump(
-        mode="json", by_alias=True
-    )
+    assert json.loads(requests[0]["messages"][1]["content"]) == {
+        "requirement": payload.requirement.model_dump(mode="json", by_alias=True),
+        "evidence": [],
+    }
     for change in ["length", "tool", "approved", "multiple"]:
         reply = {
             "choices": [

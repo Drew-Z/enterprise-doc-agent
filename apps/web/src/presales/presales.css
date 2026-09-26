@@ -71,5 +71,16 @@
 .presales-review-form > button { justify-self: start; }
 .presales-original { border-top: 1px solid var(--ps-line); margin-top: 16px; padding-top: 12px; font-size: 12px; line-height: 1.8; overflow-wrap: anywhere; white-space: pre-wrap; }
 .presales-original > div { margin: 12px 0; }
+.presales-prerequisites ul { list-style: none; padding: 0; display: grid; gap: 12px; }
+.presales-prerequisites li { padding: 12px; background: #f5f8fa; border: 1px solid var(--ps-line); border-radius: 6px; font-size: 13px; line-height: 1.8; overflow-wrap: anywhere; }
+.presales-prerequisites .presales-evidence { margin: 8px 0 0; }
+.presales-prerequisites summary { cursor: pointer; color: #145d76; }
+.presales-prerequisite-state { display: inline-block; padding: 1px 6px; border-radius: 4px; margin-right: 6px; }
+.presales-prerequisite-state.met { background: #eaf7ef; color: #27603d; }
+.presales-prerequisite-state.unmet { background: #fbeeed; color: #984b45; }
+.presales-prerequisite-state.unknown { background: #fff4db; color: #785409; }
+.presales-prerequisite-editor { min-width: 0; padding: 14px; border: 1px solid var(--ps-line); border-radius: 6px; display: grid; gap: 12px; }
+.presales-prerequisite-editor legend { font-size: 13px; font-weight: 600; }
+.presales-prerequisite-editor .presales-field > span { overflow-wrap: anywhere; }
 @media (max-width: 1050px) { .presales-layout { grid-template-columns: minmax(0, 1fr); gap: 22px; } .presales-sidebar { border-right: 0; border-bottom: 1px solid var(--ps-line); padding: 0 0 16px; } .presales-sidebar .presales-packet-link { max-width: 100%; } }
 @media (max-width: 620px) { .presales-workspace .product-page-header { align-items: flex-start; flex-direction: column; gap: 12px; } .presales-two-fields { grid-template-columns: minmax(0, 1fr); gap: 12px; } .presales-row { padding: 14px 12px; } .presales-row-header { flex-wrap: wrap; } .presales-row-header > div { flex-basis: calc(100% - 50px); } .presales-state { margin-left: 36px; } .presales-toolbar button { flex: 1 1 100%; } .presales-form-footer > button { width: 100%; } .presales-workspace input:not([type="checkbox"]), .presales-workspace textarea, .presales-workspace select { font-size: 16px; } }

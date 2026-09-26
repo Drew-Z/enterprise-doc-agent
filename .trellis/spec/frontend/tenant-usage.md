@@ -3,7 +3,7 @@
 ## 1. Scope / Trigger
 
 `#/usage` provides the current enterprise owner with generation capacity, storage,
-member seats and recent usage events. App uses the live product session for access
+member seats, product quotas, dispatch observations and recent usage events. App uses the live product session for access
 and navigation. The browser session boundary continues to own selection, retirement,
 logout and workspace cache clearing. This is local UI/API delivery, separate from
 the S5 complete first-use journey or real IdP/model/customer acceptance.
@@ -37,6 +37,17 @@ origin. No new authentication store or persisted usage data is added.
 - Active remaining subtracts used and reserved capacity. Zero available may mean
   work is in progress, rather than all capacity being consumed. Dates display UTC
   and the period end is exclusive.
+- `productQuotas` has at most one entry each for `agent_task` and `document_bytes`.
+  Validate finite safe integers, uniqueness and exact remaining = limit-used-reserved.
+  Show successful Agent task units separately from original-file processing bytes
+  and storage. Missing quota means unconfigured; zero means no allocation.
+  Approval waits retain reservations; retries of the same successful work do not
+  consume again. No-period responses have an empty quota array.
+- `modelCalls` shows current-period Agent/embedding HTTP attempts, unresolved
+  responses, unknown costs and reported tokens. Validate each component against
+  calls and reject tokens with zero usage-known calls. This excludes Presales Chat,
+  which keeps its separate recent activity. Token sums may be incomplete; unknown
+  money is never zero. Current-period counters do not represent historical totals.
 - Decimal estimates are nullable strings, with scientific notation accepted for
   database zero (for example `0E-8`). Show only individual amounts and their
   currency; missing currency is explicit. `costStatus=known` means some estimates

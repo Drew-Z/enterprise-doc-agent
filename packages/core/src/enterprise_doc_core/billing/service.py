@@ -7,11 +7,12 @@ from decimal import Decimal
 from typing import Any, cast
 from uuid import UUID, uuid4
 
-from sqlalchemy import desc, select
+from sqlalchemy import desc, func, select
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from enterprise_doc_core.billing.contracts import (
+    ProviderUsageSummary,
     ReservationResult,
     TenantResourceUsage,
     UsageEventView,
@@ -20,6 +21,10 @@ from enterprise_doc_core.billing.contracts import (
 from enterprise_doc_core.billing.errors import UsageError
 from enterprise_doc_core.billing.locking import lock_usage_tenant
 from enterprise_doc_core.billing.models import TenantEntitlement, UsageEvent, UsageReservation
+from enterprise_doc_core.billing.product_contracts import ProductMetric, ProductQuotaView
+from enterprise_doc_core.billing.product_models import ProductQuota
+from enterprise_doc_core.billing.provider_models import ProviderDispatch
+from enterprise_doc_core.config import AppEnvironment
 from enterprise_doc_core.identity.models import Tenant
 from enterprise_doc_core.identity.seats import membership_seats
 
@@ -31,12 +36,17 @@ class EntitlementUsageService:
         session_factory: async_sessionmaker[AsyncSession],
         clock: Callable[[], datetime] | None = None,
         reservation_ttl_seconds: int = 900,
+        app_env: AppEnvironment = AppEnvironment.LOCAL,
     ) -> None:
         if reservation_ttl_seconds <= 0:
             raise ValueError("reservation_ttl_seconds must be positive")
         self.session_factory = session_factory
         self.clock = clock or (lambda: datetime.now(UTC))
         self.reservation_ttl = timedelta(seconds=reservation_ttl_seconds)
+        self.require_active_entitlement = app_env in {
+            AppEnvironment.STAGING,
+            AppEnvironment.PRODUCTION,
+        }
 
     async def reserve_provider_request(
         self,
@@ -120,8 +130,12 @@ class EntitlementUsageService:
             at = now or self.clock()
             resources = await self._resource_usage(session, tenant_id)
             current = await self._current_entitlement(session, tenant_id, at, lock=True)
-            if current is None:
-                configured = await self._has_entitlement(session, tenant_id)
+            if current is None or (
+                self.require_active_entitlement and current.provider_request_limit is None
+            ):
+                configured = self.require_active_entitlement or await self._has_entitlement(
+                    session, tenant_id
+                )
                 return UsageSummary(
                     tenant_id=tenant_id,
                     enabled=False,
@@ -170,6 +184,34 @@ class EntitlementUsageService:
                 )
             )
             cost_status = "known" if known_cost is not None else "unknown"
+            quotas = await session.scalars(
+                select(ProductQuota)
+                .where(
+                    ProductQuota.tenant_id == tenant_id, ProductQuota.entitlement_id == current.id
+                )
+                .order_by(ProductQuota.metric)
+            )
+            counts = (
+                await session.execute(
+                    select(
+                        func.count(ProviderDispatch.id),
+                        func.count(ProviderDispatch.id).filter(
+                            ProviderDispatch.state.in_(
+                                ("dispatched", "timeout", "transport_error", "cancelled", "unknown")
+                            )
+                        ),
+                        func.count(ProviderDispatch.id).filter(
+                            ProviderDispatch.estimated_cost.is_(None)
+                        ),
+                        func.count(ProviderDispatch.total_tokens),
+                        func.coalesce(func.sum(ProviderDispatch.total_tokens), 0),
+                    ).where(
+                        ProviderDispatch.tenant_id == tenant_id,
+                        ProviderDispatch.started_at >= current.period_start,
+                        ProviderDispatch.started_at < current.period_end,
+                    )
+                )
+            ).one()
             return UsageSummary(
                 tenant_id=tenant_id,
                 enabled=True,
@@ -185,6 +227,13 @@ class EntitlementUsageService:
                 cost_status=cost_status,
                 recent_events=tuple(self._event_view(event) for event in events),
                 resources=resources,
+                product_quotas=tuple(
+                    ProductQuotaView(
+                        ProductMetric(q.metric), q.unit_limit, q.units_used, q.units_reserved
+                    )
+                    for q in quotas
+                ),
+                model_calls=ProviderUsageSummary(*counts),
             )
 
     async def _resource_usage(self, session: AsyncSession, tenant_id: UUID) -> TenantResourceUsage:
@@ -235,9 +284,11 @@ class EntitlementUsageService:
             return self._reservation_result(existing, replay=True)
         entitlement = await self._current_entitlement(session, tenant_id, now, lock=True)
         if entitlement is None:
-            if await self._has_entitlement(session, tenant_id):
+            if self.require_active_entitlement or await self._has_entitlement(session, tenant_id):
                 raise UsageError("usage_entitlement_inactive")
             return ReservationResult(tenant_id, operation_id, quantity, False, False, "legacy")
+        if self.require_active_entitlement and entitlement.provider_request_limit is None:
+            raise UsageError("usage_entitlement_inactive")
         # A concurrent request with the same operation may have inserted its
         # reservation while we waited for the entitlement row lock.  Re-read
         # after acquiring that lock so the loser returns a replay instead of
@@ -288,6 +339,8 @@ class EntitlementUsageService:
         await lock_usage_tenant(session, tenant_id)
         reservation = await self._reservation(session, tenant_id, operation_id, lock=True)
         if reservation is None:
+            if self.require_active_entitlement:
+                raise UsageError("usage_reservation_not_found")
             return ReservationResult(tenant_id, operation_id, 1, False, False, "legacy")
         entitlement = await self._entitlement(session, reservation, lock=True)
         if reservation.state == "consumed":
@@ -350,7 +403,8 @@ class EntitlementUsageService:
     async def _release(
         self, session: AsyncSession, *, tenant_id: UUID, operation_id: UUID, source: str
     ) -> ReservationResult:
-        await lock_usage_tenant(session, tenant_id)
+        # Deactivation must not strand reservations for cancelled background work.
+        await lock_usage_tenant(session, tenant_id, allow_inactive=True)
         reservation = await self._reservation(session, tenant_id, operation_id, lock=True)
         if reservation is None:
             return ReservationResult(tenant_id, operation_id, 1, False, False, "legacy")

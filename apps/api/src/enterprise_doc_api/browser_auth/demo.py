@@ -97,6 +97,7 @@ def allow_demo_operation(method: str, path: str) -> None:
             rf"/api/upload-sessions/{identifier}/complete",
             r"/api/presales",
             rf"/api/presales/{identifier}/rows/{identifier}/generate",
+            rf"/api/presales/{identifier}/generate",
             rf"/api/jobs/{identifier}/cancel",
         ],
         "PUT": [rf"/api/presales/{identifier}/rows/{identifier}/review"],

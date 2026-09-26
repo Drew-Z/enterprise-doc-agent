@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "kind": "provider-neutral-integration-template",
+  "provisioning_status": "not_configured",
+  "name": "enterprise-doc-agent-readiness",
+  "execution_location": "outside-the-application-node",
+  "request": {
+    "method": "GET",
+    "url": "https://agent.playlab.eu.cc/health/ready",
+    "headers": {
+      "Accept": "application/json",
+      "User-Agent": "docagent-ops-readiness/1.0"
+    },
+    "follow_redirects": false,
+    "timeout_seconds": 10,
+    "interval_seconds": 60
+  },
+  "response": {
+    "http_status": 200,
+    "content_type": "application/json",
+    "json_equals": {
+      "$.status": "ready",
+      "$.checks.database.status": "up",
+      "$.checks.redis.status": "up",
+      "$.checks.object_store.status": "up"
+    },
+    "checked_at_max_age_seconds": 120,
+    "checked_at_max_future_skew_seconds": 15
+  },
+  "notification": {
+    "recipient_environment_variable": "OPERATIONS_ALERT_EMAIL",
+    "firing_after_consecutive_failures": 3,
+    "resolved_after_consecutive_successes": 2,
+    "send_only_on_state_change": true,
+    "delivery_enabled": false,
+    "receipt_verification": "recipient-confirms-one-test-firing-and-one-test-recovery"
+  },
+  "equivalent_probe_command": [
+    "python", "-B", "scripts/check_external_readiness.py",
+    "--url", "https://agent.playlab.eu.cc/health/ready",
+    "--timeout-seconds", "10", "--max-age-seconds", "120"
+  ],
+  "unconfigured_checks": ["queue-age", "disk-space", "complete-backup-freshness"],
+  "limitations": [
+    "This template does not create an account, scheduler, notification route or monitor.",
+    "The probe emits one observation and sends no messages; the selected external service owns state and delivery.",
+    "Readiness is not a business workflow, provider quality, capacity or disaster-recovery check."
+  ]
+}

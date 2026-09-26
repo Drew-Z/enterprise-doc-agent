@@ -6,6 +6,8 @@ from decimal import Decimal
 from typing import Literal
 from uuid import UUID
 
+from enterprise_doc_core.billing.product_contracts import ProductQuotaView
+
 
 @dataclass(frozen=True)
 class ReservationResult:
@@ -49,6 +51,15 @@ class TenantResourceUsage:
 
 
 @dataclass(frozen=True)
+class ProviderUsageSummary:
+    calls: int = 0
+    unresolved_calls: int = 0
+    unknown_cost_calls: int = 0
+    usage_known_calls: int = 0
+    known_total_tokens: int = 0
+
+
+@dataclass(frozen=True)
 class UsageSummary:
     tenant_id: UUID
     enabled: bool
@@ -64,3 +75,5 @@ class UsageSummary:
     cost_status: str
     recent_events: tuple[UsageEventView, ...]
     resources: TenantResourceUsage
+    product_quotas: tuple[ProductQuotaView, ...] = ()
+    model_calls: ProviderUsageSummary = ProviderUsageSummary()

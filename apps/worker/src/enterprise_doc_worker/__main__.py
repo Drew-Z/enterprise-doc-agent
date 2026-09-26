@@ -1,5 +1,6 @@
 import asyncio
 from collections.abc import Coroutine
+from functools import partial
 from typing import Any
 
 import uvicorn
@@ -11,8 +12,13 @@ from enterprise_doc_core.db import (
 )
 from enterprise_doc_core.health import FoundationResources, build_foundation_resources
 from enterprise_doc_core.jobs import JobRuntimeService, OutboxService
+from enterprise_doc_core.jobs.metrics import read_queue_oldest_age
 from enterprise_doc_core.logging import configure_logging
 from enterprise_doc_core.telemetry import MetricsRuntime, TelemetryManager, TelemetryRuntime
+from enterprise_doc_core.telemetry.resources import (
+    ResourceMetricsSampler,
+    read_redis_connected_clients,
+)
 from enterprise_doc_worker.agent_handler import (
     agent_failure_lock_key,
     project_agent_run_failure,
@@ -22,6 +28,7 @@ from enterprise_doc_worker.app import create_probe_app
 from enterprise_doc_worker.config import WorkerSettings
 from enterprise_doc_worker.handler import build_consumer_factory
 from enterprise_doc_worker.lifecycle import WorkerRuntime
+from enterprise_doc_worker.presales import run_presales
 from enterprise_doc_worker.publisher import OutboxPublisher
 from enterprise_doc_worker.queue import (
     CeleryTaskDispatcher,
@@ -35,15 +42,21 @@ async def supervise_worker_tasks(
     server: Coroutine[Any, Any, None],
     runtime: Coroutine[Any, Any, None],
     publisher: Coroutine[Any, Any, None],
+    presales: Coroutine[Any, Any, None] | None = None,
+    resource_observer: Coroutine[Any, Any, None] | None = None,
 ) -> None:
     tasks = {
         "server": asyncio.create_task(server),
         "runtime": asyncio.create_task(runtime),
         "publisher": asyncio.create_task(publisher),
     }
+    if presales is not None:
+        tasks["presales"] = asyncio.create_task(presales)
+    if resource_observer is not None:
+        tasks["resource_observer"] = asyncio.create_task(resource_observer)
     try:
         done, _ = await asyncio.wait(tasks.values(), return_when=asyncio.FIRST_COMPLETED)
-        for role in ("runtime", "publisher"):
+        for role in (name for name in tasks if name != "server"):
             task = tasks[role]
             if task not in done:
                 continue
@@ -96,6 +109,8 @@ async def run_worker() -> None:
             checkpointer=checkpointer,
             graph_version=settings.agent.graph_version,
             execution_timeout_seconds=settings.agent.execution_timeout_seconds,
+            app_env=settings.app_env,
+            provider_usage_settings=settings.provider_usage,
             fault_injection=settings.fault_injection,
             metrics=metrics,
         )
@@ -112,6 +127,8 @@ async def run_worker() -> None:
                 metrics=metrics,
                 fault_injection=settings.fault_injection,
                 embedding_settings=settings.embedding,
+                app_env=settings.app_env,
+                provider_usage_settings=settings.provider_usage,
             ),
         )
         publisher = OutboxPublisher(
@@ -140,6 +157,16 @@ async def run_worker() -> None:
             server=server.serve(),
             runtime=runtime.run(),
             publisher=publisher.run(runtime.shutdown_event),
+            presales=run_presales(settings, session_factory, runtime.shutdown_event, metrics)
+            if settings.presales.background_generation_enabled
+            else None,
+            resource_observer=ResourceMetricsSampler(
+                metrics,
+                partial(read_queue_oldest_age, session_factory),
+                partial(read_redis_connected_clients, resources.redis_client),
+            ).run(runtime.shutdown_event)
+            if settings.otel.metrics_enabled
+            else None,
         )
     finally:
         if runtime is not None:

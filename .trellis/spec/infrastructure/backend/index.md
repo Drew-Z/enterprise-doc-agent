@@ -13,3 +13,14 @@ for pinned source builds, fail-closed secrets, receive-only defaults and real lo
 Worker/D1/browser acceptance. Public provisioning, explicit recovery, Windows
 credentials and live HTTPS/browser checks follow the separate
 [mailbox rollout contract](./cloudflare-mail-rollout.md).
+
+Commercial candidate evidence aggregation and the read-only manual CI gate follow
+the [commercial readiness contract](../../backend/commercial-readiness.md). Mechanical
+evidence completeness does not authorize deployment or replace actual customer review.
+
+The [private local recovery contract](../../backend/local-recovery.md) governs
+explicit backup output, isolated database ownership, cleanup and local-only reports.
+
+The [local business capacity contract](../../backend/business-capacity.md) governs
+bounded workflow sampling, per-operation accounting, cancellation denominators and
+the local CLI. Functional sampling does not establish current 4C4G capacity.

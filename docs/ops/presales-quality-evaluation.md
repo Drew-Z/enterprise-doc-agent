@@ -1,6 +1,6 @@
 # 售前响应质量重复评测
 
-这项评测通过已经部署的公开演示 API 完成 TXT 上传、真实解析与检索、外部模型生成和结果读取。它不绕过企业权限，不预置草稿，也不直接用参考答案调用模型。浏览器交互、人工复核和 CSV 的验收见[公开演示手册](public-pilot-runbook.md#公开演示企业)。
+公网评测通过已经部署的公开演示 API 完成 TXT 上传、真实解析与检索、外部模型生成和结果读取。它不绕过企业权限，不预置草稿，也不直接用参考答案调用模型。下文另外标明候选代码的生成阶段试验，其范围不包含公网上传、检索和持久化。浏览器交互、人工复核和 CSV 的验收见[公开演示手册](public-pilot-runbook.md#公开演示企业)。
 
 ## 固定测试集
 
@@ -139,3 +139,215 @@ H1-R2 的引文自身包含全部前置条件，答案仍遗漏它们，说明**
   --gold evaluation/presales_quality_holdout_v1.gold.json `
   --run "$env:TEMP\presales-h1-run.json" --output "$env:TEMP\presales-h1-score.json"
 ```
+
+## 前置条件候选 v4（未发布）
+
+`presales.v4` 增加带引用的前置条件及 met/unmet/unknown 状态，校验未满足条件与支持结论的一致性，并拒绝全文非中文的生成正文。该语言检查只检查汉字是否存在，允许产品名、技术词和英文原文引用；它不等于完整语言识别。公开草稿、历史数据、人工复核与 CSV 契约不变。
+
+使用原 H1 作为**已知回归集**，另冻结 [H2 输入](../../evaluation/presales_quality_holdout_v2.json)及 [H2 参考标注](../../evaluation/presales_quality_holdout_v2.gold.json)。H2 覆盖已完成、未完成、状态未知的启用条件，以及导出硬上限、报告缺失和服务窗口冲突。全部由助手编写和自审，不是独立专家审定。
+
+这次从本地候选代码调用同一 `grok-4.6` 售前路由，直接提供完整的短篇合成证据，每题一次、共 12 次，不涉及上传、检索、企业数据、额度或公网持久化。不能把该结果当作公网端到端准确率，也不能与上次 HTTP 耗时直接比较。
+
+| 项目 | H1 已知回归 | H2 新合成样例 |
+|---|---:|---:|
+| 实际模型请求，无重试 | 6 | 6 |
+| 初始候选接受的草稿 | 5 | 5 |
+| 修正解码后原始响应重放成功 | 6 | 6 |
+| 重放草稿分类匹配 | 6/6 | 4/6 |
+| 错误肯定分类 | 0 | 0 |
+| 必要原文证据覆盖 | 11/11 | 10/10 |
+| 原文引用数量（均逐字有效） | 12 | 11 |
+| 全部请求最短 / 中位 / 最长（秒） | 42.844 / 60.430 / 82.563 | 53.968 / 64.875 / 81.250 |
+| 输入 / 输出 / 总 token | 22,399 / 24,093 / 46,492 | 19,161 / 24,041 / 43,202 |
+
+初始 H1-R5、H2-R3 的模型在前置条件中明确选择了有效引用，但未在顶层再次重复，初始适配器因重复要求而拒绝。修正后对所有原始响应重放同一解码器，按顺序合并两个位置的明确选择，继续检查请求内编号、准确原文和最终条数；没有改写分类、补造引文或再次调用模型。**初始 10/12 与重放 12/12 分别保留**，重放不算新真实调用。
+
+原始响应：[H1](../../evaluation/presales_quality_holdout_v1.v4-gateway.json)、[H2](../../evaluation/presales_quality_holdout_v2.v4-gateway.json)；解码重放及评分：[H1](../../evaluation/presales_quality_holdout_v1.v4-gateway.replay.json)、[H2](../../evaluation/presales_quality_holdout_v2.v4-gateway.replay.json)；[逐项审阅](../../evaluation/presales_quality_v4.review.json)。费用金额未知：提供方返回了计价刻度字段，但单位与账单未经核实，不能据此报告金额。
+
+H1 的采购、域名验证、联调条件现在完整保留，冲突回答也使用中文并提出澄清问题。然而 H2-R5 把“未提供 SOC 2 Type II 报告”判为不满足，而证据明确不证明公司是否持有报告；H2-R6 看到了冲突双方仍判为不满足，未保留资料冲突状态和澄清问题。H2-R2 的条件采用“已购买 / 已完成”的表达，也应改为明确待办措辞，避免被读成已完成事实。
+
+**处理决定：维持草案，不合并、不部署。** 下一步需要解决“缺少证明”和“证据相互矛盾”的判定顺序与交付措辞，再使用新的冻结资料验证；不修改 H2 标注或反复重跑同题挑选成功结果。线上继续 v0.1.44。
+
+复现单次生成（会产生真实模型用量；输出路径必须尚不存在）：
+
+```powershell
+& .\.venv\Scripts\python.exe -B -X utf8 -m scripts.evaluate_presales_gateway `
+  --input evaluation/presales_quality_holdout_v2.json `
+  --provider-env D:\path\to\provider.local.env `
+  --output "$env:TEMP\presales-h2-gateway-new-run.json"
+```
+
+## 判定顺序候选 v5（未发布）
+
+`presales.v5` 继续使用 v4 的前提状态与受控原文引用，明确区分未消解的同范围资料冲突、直接反证、缺少证明、有条件启用和全部满足。仅有“未附证书”不能推出“未认证”；强制禁止条款也不能自动覆盖同范围、互不优先的另一份有效承诺。未满足或未知的前提应写为待办，冲突草稿必须包含澄清问题。这些结构检查不能保证正文推理正确。
+
+本轮先冻结[完整提示词](../../evaluation/presales_quality_v5.candidate-prompt.txt)、[H3 输入](../../evaluation/presales_quality_holdout_v3.json)和[独立存放的 gold](../../evaluation/presales_quality_holdout_v3.gold.json)，再执行 H1/H2 已知回归和 H3 新合成样例各六次。H3 由助手编写并自审，未经独立专家审定。仍从本地候选通过同一 `grok-4.6` 路由提供完整短篇证据，不经过上传、检索、企业持久化或演示额度；没有重试、重新抽样或响应重放，也没有在看见结果后修改提示词、输入或 gold。
+
+原始结果与只计首次结果的离线评分分别保存：[H1 原始](../../evaluation/presales_quality_holdout_v1.v5-gateway.json) / [评分](../../evaluation/presales_quality_holdout_v1.v5-gateway.score.json)、[H2 原始](../../evaluation/presales_quality_holdout_v2.v5-gateway.json) / [评分](../../evaluation/presales_quality_holdout_v2.v5-gateway.score.json)、[H3 原始](../../evaluation/presales_quality_holdout_v3.v5-gateway.json) / [评分](../../evaluation/presales_quality_holdout_v3.v5-gateway.score.json)。[逐条语义审阅](../../evaluation/presales_quality_v5.review.json)与机械分类分数分开，不修改原草稿，也不代表客户复核通过。历史 v4 失败与重放证据保留。
+
+| 项目 | H1 已知回归 | H2 已知回归 | H3 新合成样例 | 合计 |
+|---|---:|---:|---:|---:|
+| 计划 / 实际模型请求 | 6 / 6 | 6 / 6 | 6 / 6 | 18 / 18 |
+| 首次接受的中文草稿 | 5 / 6 | 4 / 6 | 6 / 6 | 15 / 18 |
+| 分类匹配（包含失败题） | 5 / 6 | 4 / 6 | 6 / 6 | 15 / 18 |
+| 分类匹配（仅有草稿） | 5 / 5 | 4 / 4 | 6 / 6 | 15 / 15 |
+| 错误肯定分类 | 0 | 0 | 0 | 0 |
+| 有效逐字引文 | 9 / 9 | 9 / 9 | 11 / 11 | 29 / 29 |
+| 必要证据锚点覆盖 | 8 / 11 | 8 / 10 | 9 / 9 | 25 / 30 |
+| 全部请求最短 / 中位 / 最长（秒） | 32.406 / 57.274 / 120.000 | 12.766 / 67.711 / 107.781 | 54.656 / 92.601 / 108.844 | 12.766 / 69.438 / 120.000 |
+
+错误肯定指标只比较分类标签，不能据此断言正文无错误。包含失败题的首次草稿率及分类匹配率均为 83.3%；这18次短篇合成调用不能代表服务长期可用率、客户准确率或速度改善。
+
+| 观察项 | 原始结果与处理 |
+|---|---|
+| H1-R1 | 120 秒超时，无响应正文和用量；保留失败，不重试。 |
+| H2-R4、H2-R5 | 分别在 12.766、21.312 秒连接失败，无 HTTP 状态、正文或用量。不能据此确认 H2-R5 的缺报告误判已修复，也不能确定故障发生在哪一层。 |
+| H1-R2 | 三项采购、域名验证和联调前提均保留为待办；但只引用 SSO 规格，未引用冻结 gold 要求的订单已购数量 0。规格也写明未购买，仍不据此修改 gold 或隐去缺口。 |
+| H1-R4 | 证据不足分类正确，但答案过于简略，并询问引用原文已明确回答的“该 SLA 是否规定 P99”。应说明平均值不能证明 P99，索取真正缺失的测试或承诺。 |
+| H2-R2、H2-R6 | OCR 条件改为“需购买 / 需完成”；服务窗口由 v4 的“不满足”改为“资料冲突”，保留双方引用并提出澄清。 |
+| H3-R1、H3-R2 | 正确区别缺少 ISO 证书与明确尚未通过 PCI 评估。 |
+| H3-R3 | 虽分类及冲突双方引用正确，正文却说“本要求与 H3-BASE 条款直接矛盾”。实际要求与 BASE 的德国独占条款一致，与 ADD 的新加坡副本条款冲突，正文关系写反。 |
+| H3-R5 | 已购模块没有重复采购待办，但把“恢复验收状态未登记”标为 `unmet` 并写成尚未满足；应保留 `unknown`，请求确认是否已完成。 |
+
+缺失的五处必要锚点中，四处来自无草稿的 H1-R1 和 H2-R4，一处来自 H1-R2。H2-R5 的 gold 没有强制引用锚点，其失败仍计入六题分母。
+
+15 次有完整记录的响应合计 **55,938 输入、63,242 输出、119,180 总 token，属于部分用量**。三次失败用量未知，因此完整合计保持 `null`；单位价格与账单未核实，金额也为 `null`，不能将失败视为免费。H3 六次都有记录，合计 21,470 输入、29,154 输出、50,624 总 token。
+
+**处理决定：PR #8 继续为草案，不合并、不部署。** 冻结门槛要求18/18首次合法中文草稿、分类匹配、必要证据及前提完整，并通过逐条语义审阅；本轮因无草稿、证据缺口及正文/状态错误均未达标。线上 v0.1.44 的五个服务已只读核查就绪，镜像未变。本轮没有执行候选的公网生成/复核/导出验收。
+
+下一轮应先针对条款关系写反、未知状态与未满足混同，以及已知事实重复补问建立可复查的反例；之后冻结新候选和有界验证计划，再进行真实调用。当前18次结果封存，不继续追加同题请求挑选成功答案。连接失败与语义错误分别排查，不自动增加重试或更改模型路由。
+
+只评分现有原始报告的命令不会调用模型（输出路径必须尚不存在）：
+
+```powershell
+& .\.venv\Scripts\python.exe -B -X utf8 -m scripts.score_presales_gateway `
+  --input evaluation/presales_quality_holdout_v3.json `
+  --gold evaluation/presales_quality_holdout_v3.gold.json `
+  --run evaluation/presales_quality_holdout_v3.v5-gateway.json `
+  --output "$env:TEMP\presales-h3-v5-original-score.json"
+```
+
+## 正文事实候选 v6（已撤回）
+
+v6 在相同模型、路由、时限和输出结构下，补充正文事实关系、unknown/unmet 区别、避免重复补问及订单出处说明。试验前冻结[完整提示词](../../evaluation/presales_quality_v6.candidate-prompt.txt)、[H4 新输入](../../evaluation/presales_quality_holdout_v4.json)与[单独存放的参考标注](../../evaluation/presales_quality_holdout_v4.gold.json)。预定顺序为 H3、H4、H1、H2，各六次、最多24次；每组先通过首次草稿、分类、引用与语义审阅，才能继续下一组。
+
+**首组 H3 未通过，实际仅执行六次，其余18题未执行。** [原始结果](../../evaluation/presales_quality_holdout_v3.v6-gateway.json)、[首次结果评分](../../evaluation/presales_quality_holdout_v3.v6-gateway.score.json)及[逐条审阅](../../evaluation/presales_quality_v6.review.json)保留，没有重试、重放或改写失败。H3 是已知回归集；H4 尚未调用模型，不能提供新样例成绩。这些仍是完整短篇合成证据的生成阶段试验，非公网端到端或独立专家评测。
+
+| 项目 | H3 单次试验 |
+|---|---:|
+| 实际请求 / 收到完整 HTTP 200 正文 | 6 / 5 |
+| 首次有效草稿 / 分类匹配（包括失败） | 3 / 6 |
+| 仅有效草稿的分类匹配 | 3 / 3 |
+| 有效逐字引文 / 必要锚点 | 3 / 3、3 / 9 |
+| 全部请求最短 / 中位 / 最长 | 27.187 / 71.821 / 106.844 秒 |
+| 未执行的后续题 | 18 |
+
+| 题目 | 观察结果 |
+|---|---|
+| H3-R1、R2、R6 | 有效中文草稿；分别正确区分缺少认证证明、明确尚未评估和附件硬上限。 |
+| H3-R3 | 27.187秒后发生 `ReadError`，阶段为 `awaiting_response_headers`。无响应状态、正文或用量，不能确认条款关系问题是否修复。 |
+| H3-R4 | HTTP 200，但模型将两个证据中的 chunk UUID 填入 `citationId`，不在本次引用目录，按原规则拒绝。原始标签为 supported 不等于有可用草稿。 |
+| H3-R5 | HTTP 200，但 conditions 的“需配置/需完成”与前提 condition 的“配置/完成”未逐字相同，触发既有一致性检查；还把验收状态未登记标为 unmet，说明原语义问题仍在。 |
+
+新增的试验诊断只记录 HTTPX 白名单错误类型和响应头/正文阶段，排除异常消息、URL、headers、凭据和部分正文。中断的试验保存为 interrupted；已取得响应的流会关闭。它可以区分客户端观察到的故障阶段，**不能确定哪一网络节点故障、上游是否执行完成或是否计费**。
+
+五次完整响应报告 19,284 输入、23,620 输出、42,904 总 token，为**部分用量**，包含两条被拒绝的输出；连接失败的一次用量未知，完整合计和金额均为 `null`。一次短篇非独立试验不能证明某个提示词或模型整体更差，也不能以提供方的 max_tokens 参数推断真实计费上限。
+
+**处理决定：撤回本轮 v6 提示词，保留 v5 草案与线上 v0.1.44。** 脱敏诊断、测试、新资料和失败证据保留。源码不接受 UUID 作为引用别名、不忽略未知状态错误，也不把非法草稿修补后计作成功。尚未完成原定24题门槛，因此没有发布或候选公网验收。
+
+后续应先减少模型输入中无关的内部标识，并研究由结构化前提直接形成展示条件，避免让模型重复抄写同一字段；仍需单独验证事实判断。若比较其他已配置模型，应冻结模型、样例、费用上限与停止规则后执行，不延长本轮试验或更改正在运行的模型路由。
+
+## 单一来源协议候选 v7（未发布）
+
+v7 实施了上述接口调整。模型输入只保留本次 `citationId`、准确原文、来源显示标签、文件名、版本及适用范围、页码/标题；内部 chunk/version/document/generation UUID 与 hash 不再发送。模型仅生成结构化 `prerequisites`，服务端将 unmet/unknown 条件按原顺序去重形成公开 `conditions`，met 不列待办。公开草稿、数据库、人工复核和 CSV 不变；未知或跨请求编号仍严格拒绝，没有引用别名、修补、改判或重试。
+
+新 `presales-gateway-run-v2` 分别记录真实模型输入和内部合成证据。评分核对两者的逐片段绑定及已接受结果；旧 v1 原始报告仍可评分。测试覆盖篡改来源、范围、片段、编号、条件和原始输出的拒绝，失败记录不能通过重解码变成成功。
+
+冻结[完整提示词](../../evaluation/presales_quality_v7.candidate-prompt.txt)、代码和四份数据后，沿用 H3 → H4 → H1 → H2 的24次上限，每组六题审阅后才继续。**H3有两次超时，实际执行六次，其余18次未执行，H4仍未调用模型。** 未修改输入/gold或模型路由。保留[全部原始结果](../../evaluation/presales_quality_holdout_v3.v7-gateway.json)、[原始结果评分](../../evaluation/presales_quality_holdout_v3.v7-gateway.score.json)和[逐条审阅](../../evaluation/presales_quality_v7.review.json)。
+
+| 项目 | H3 单次试验 |
+|---|---:|
+| 实际请求 / 完整 HTTP 200 正文 | 6 / 4 |
+| 首次有效草稿 / 分类匹配（包括失败） | 4 / 6 |
+| 已接受草稿分类及语义审阅通过 | 4 / 4 |
+| 有效逐字引文 / 必要锚点 | 5 / 5、4 / 9 |
+| 全部请求最短 / 中位 / 最长 | 42.828 / 77.789 / 120 秒 |
+| 后续未执行题 | 18 |
+
+| 题目 | 观察结果 |
+|---|---|
+| H3-R1、R2 | 正确区分未附 ISO 证书与明确尚未通过 PCI 评估；没有把材料缺失写成无资质。 |
+| H3-R3 | 120秒时在等待响应头阶段取消；没有正文，冲突双方关系是否正确仍无法判断。 |
+| H3-R4 | 正确采用仅对吞吐生效的优先条款，300 ≥ 250；同时引用订单及补充协议，未再填写 chunk UUID。 |
+| H3-R5 | 120秒时在等待响应头阶段取消；无法验证验收 unknown 状态及真实前提投影效果。 |
+| H3-R6 | 正确说明单张12个附件的硬上限小于20，未编造提高上限的途径。 |
+
+四份完整响应没有出现引用编号或重复条件协议错误；这是小样本观察，不能推断稳定成功率。两次超时没有响应状态、正文或用量，客户端阶段记录不能确定网络节点、供应商执行/计费状态或根因。四份响应的**部分用量**为10,133输入、13,155输出、23,288总token；其中提供方报告12,767个reasoning token，不能据此解释没有正文的两次调用。一次完成响应报告5,012输出token，仍说明请求的 `max_tokens=4000` 不能视为该路由的账单硬上限。全部用量及已核验金额保持 `null`。
+
+本地验证包括1,653项非集成测试、25项真实PostgreSQL检查、3项售前浏览器和3项真实入库浏览器检查，以及Ruff和Mypy。浏览器模型是受控模拟，覆盖批量/文件夹恢复、TXT/PDF/DOCX、草稿/复核导出、刷新及隔离，不能替代上面的真实模型质量结果。
+
+**保留 v7 为 Draft 候选，线上维持 v0.1.44。** 下一步重点是查明所选模型路由的等待时间与输出预算兼容性，再另行冻结有界验证；不追加本轮付费尝试，不通过延长超时、放宽校验或忽略失败取得发布资格。原来两个关键语义案例仍未完成验证。
+
+## 指定新渠道验证
+
+2026-09-24（北京时间），用户更新配置后，使用明确选定的 primary 路由 `https://windhub.cc/v1` / `grok-4.7`，保持 v7 提示词、协议、H3资料和 gold 不变。`PROVIDER_NAME` 的旧标签不参与路由选择；未改写用户凭据文件。配置及返回模型名仅为渠道标识，未独立核验底层模型身份。
+
+collector 支持 `--model-route primary|fallback`，缺省仍为 fallback。每题一次、120秒上限、无自动切换或重试。独立保存[原始结果](../../evaluation/presales_quality_holdout_v3.v7-windhub-gateway.json)、[离线评分](../../evaluation/presales_quality_holdout_v3.v7-windhub-gateway.score.json)和[逐条语义审阅](../../evaluation/presales_quality_v7.windhub.review.json)，不覆盖旧 Grok 4.6 记录。此前误选的 GLM 诊断在用户澄清时已停止，五次已记录超时及一条中止中的未知结果单独保留，不计入新渠道六次试验。
+
+| 项目 | 新渠道 H3 结果 |
+|---|---:|
+| 实际请求 / HTTP 200 | 6 / 4 |
+| 有效草稿 / 分类匹配（包括失败） | 3 / 6 |
+| 语义审阅通过 / 已接受草稿 | 2 / 3 |
+| 准确原文引用 / 必要证据覆盖 | 6 / 6、6 / 9 |
+| 最短 / 中位 / 最长耗时 | 9.234 / 23.852 / 120.016 秒 |
+| 后续未执行题 | 18 |
+
+| 题目 | 观察结果 |
+|---|---|
+| H3-R1、R3 | 120秒等待响应头超时；无草稿、用量或可验证的语义。 |
+| H3-R2 | 23.453秒收到HTTP200，但标准成功字段为空、无可读取的choices，应用记录为 `presales_invalid_model_output`。用户渠道日志截图对应 `upstream_error`；不能将其归因于模型正文JSON或引用错误。原始错误正文未保留，确切错误结构未知。 |
+| H3-R4 | 正确采用仅对吞吐生效的优先关系，300≥250；三个来源引用准确。 |
+| H3-R5 | 正确判断conditional，已购met未列待办、策略配置unmet正确；但把“恢复验收状态未登记”标为unmet而非unknown，并要求完成验收。分类和引用通过，语义不通过。 |
+| H3-R6 | 正确指出单张12个附件的硬上限不能满足20个附件，没有虚构升级或拆单方案。 |
+
+用户截图按顺序、耗时及三条成功记录的精确token数与本次请求吻合：前三条为两次 `do_request_failed`、一次 `upstream_error`，后三条为消费记录。这是用户提供的截图关联，非独立后台查询；截图含网络信息，未复制或发布到仓库。页面三条消费合计显示 `0.061498`，失败条目显示0，但币种及最终账单未核实，不据此补齐未知用量或费用。应用已知部分用量为11,084输入、7,419输出、18,503总token；完整用量和已核验金额仍为null。
+
+一次只读 `/models` 在1.828秒返回200且列出目标模型，只证明目录可读。新渠道部分完成请求更快，但本轮小样本同时暴露渠道故障及unknown状态判断错误，不能推断稳定速度或成功率。H3未通过，H4/H1/H2的18次调用均未执行，线上保持v0.1.44。
+
+后续产品可靠性应单独验收“一次用户操作经有界恢复后能否完成”，包括后台任务、恢复进度、有限切换和费用边界；原始单次渠道失败继续保留。自动恢复不替代语义与引用质量验收。本轮未实现或上线自动重试，也未追加模型请求。
+
+## 逐项前提评分与 v8 候选（2026-09-25）
+
+新增离线评分器将每个业务前提的期望状态、对应输出及原文证据一起核对。[H3 前提参考](../../evaluation/presales_quality_holdout_v3.prerequisites.json) 是看过 v7 失败后的回归补充，不是新盲测，原 H3 输入和分类 gold 保持原字节。映射由审核者明确填写，不按条件关键词或数组顺序猜测。
+
+对原 Windhub v7 运行新增[逐项映射](../../evaluation/presales_quality_v7.windhub.prerequisite-review.json)及[离线结果](../../evaluation/presales_quality_v7.windhub.prerequisite-score.json)：H3-R5 分类正确，三项状态中两项正确、验收一项将 unknown 判为 unmet，因此该题不通过。H3-R1/R2/R3 的原调用失败仍保留，只有 R4/R6 通过本项检查，共 2/6；没有新模型请求，也没有重写旧运行或旧评分。这里的通过仅指前提检查，不是完整语义或独立领域验收。
+
+复现命令（输出必须是尚不存在的新文件；本失败样例保存报告后返回 exit 1）：
+
+```powershell
+& .\.venv\Scripts\python.exe -B -X utf8 -m scripts.score_presales_prerequisites `
+  --input evaluation/presales_quality_holdout_v3.json `
+  --gold evaluation/presales_quality_holdout_v3.gold.json `
+  --run evaluation/presales_quality_holdout_v3.v7-windhub-gateway.json `
+  --expectations evaluation/presales_quality_holdout_v3.prerequisites.json `
+  --review evaluation/presales_quality_v7.windhub.prerequisite-review.json `
+  --output "$env:TEMP\presales-prerequisite-score-new.json"
+```
+
+[v8 完整候选提示词](../../evaluation/presales_quality_v8.candidate-prompt.txt) 先评估事实状态，再生成待办与总分类，并区分业务事件、是否通过及报告登记。unknown 先请求确认状态，不能直接断言尚未完成。模型 schema 展示顺序也先列 prerequisites/state；没有新增协议字段、放宽引用校验、改判或重试。文字与顺序调整的效果仍须由真实输出验证。
+
+[新试验计划](../../.trellis/tasks/09-24-commercial-operations-acceptance/v8-trial-plan.json) 冻结提示词/数据/两份参考的 SHA：现有 primary `windhub.cc` / `grok-4.7`，最多六次，每题一次、120 秒、请求 max_tokens=4000，零重试、零切换，不执行 H4/H1/H2。用户收到具体批次及金额未知的提问后确认继续，已按提交 `4368be04f2db8905e51da089433cb72874385ee1` 执行。
+
+| 项目 | v8 H3 单次回归 |
+|---|---:|
+| 实际请求 / 有效草稿 / 分类匹配 | 6 / 6 / 6 |
+| 准确原文引用 / 必要锚点 | 11/11、9/9 |
+| 逐项前提检查 / 助手正文审阅 | 6/6、6/6 |
+| 最短 / 中位 / 最长耗时 | 10.156 / 40.258 / 111.188 秒 |
+| 报告输入 / 输出 / 总 token | 23,858 / 17,335 / 41,193 |
+| 已核验金额 | 未知 |
+
+关键 H3-R5 返回已购 `met`、未配置 `unmet`、验收状态未登记 `unknown`，待办要求先确认验收是否完成并补充依据，正文没有断言验收未执行或未通过。冲突题也正确描述德国独占与新加坡复制的相反方向，仅在吞吐事项应用优先级。完整[原始运行](../../evaluation/presales_quality_holdout_v3.v8-gateway.json)、[分类/引用评分](../../evaluation/presales_quality_holdout_v3.v8-gateway.score.json)、[明确映射](../../evaluation/presales_quality_v8.prerequisite-review.json)、[逐项评分](../../evaluation/presales_quality_v8.prerequisite-score.json)和[正文审阅](../../evaluation/presales_quality_v8.review.json)分开保留。
+
+这是已知短资料的一次回归和助手非盲审，不是独立领域审查、客户验收、真实检索或稳定性证明。最慢题接近 120 秒截止时间；H3-R1/R5 报告输出 token 分别为 4335/4183，超过请求的 4000，说明该参数不能当作该路由的收费硬上限。六次后已停止，不追加 H4/H1/H2、不覆盖 v7 失败、不部署。后续仍需未知/代表资料验收、领域审核、当前 4C4G 业务容量、告警与恢复验证。

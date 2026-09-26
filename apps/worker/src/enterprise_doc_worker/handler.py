@@ -4,7 +4,12 @@ from collections.abc import Callable, Mapping
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from enterprise_doc_core.config import EmbeddingSettings, FaultInjectionSettings
+from enterprise_doc_core.config import (
+    AppEnvironment,
+    EmbeddingSettings,
+    FaultInjectionSettings,
+    ProviderUsageSettings,
+)
 from enterprise_doc_core.documents import build_embedding_provider
 from enterprise_doc_core.documents.ingestion_service import (
     DocumentIngestionError,
@@ -60,11 +65,13 @@ def build_consumer_factory(
     metrics: MetricsRuntime | None = None,
     fault_injection: FaultInjectionSettings | None = None,
     embedding_settings: EmbeddingSettings | None = None,
+    app_env: AppEnvironment = AppEnvironment.LOCAL,
+    provider_usage_settings: ProviderUsageSettings | None = None,
 ) -> Callable[[], JobDeliveryConsumer]:
     resolved_faults = fault_injection or FaultInjectionSettings()
     resolved_embedding = embedding_settings or EmbeddingSettings()
     embedding_provider, embedding_model, embedding_dimension = build_embedding_provider(
-        resolved_embedding
+        resolved_embedding, app_env=app_env
     )
     service = DocumentIngestionService(
         session_factory=session_factory,
@@ -75,6 +82,8 @@ def build_consumer_factory(
         embedding_dimension=embedding_dimension,
         versions=IngestionVersions(embedding=resolved_embedding.version),
         metrics=metrics,
+        app_env=app_env,
+        provider_usage_settings=provider_usage_settings,
     )
 
     handlers: dict[str, AsyncJobHandler] = {DOCUMENT_INGEST_JOB_TYPE: service}

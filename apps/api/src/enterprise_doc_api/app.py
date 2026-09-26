@@ -277,7 +277,9 @@ def create_app(
     resolved_usage_service = (
         usage_service
         if usage_service is not None
-        else EntitlementUsageService(session_factory=session_factory)
+        else EntitlementUsageService(
+            session_factory=session_factory, app_env=resolved_settings.app_env
+        )
         if session_factory is not None
         else None
     )
@@ -465,6 +467,7 @@ def create_app(
             session_factory=_required_session_factory(session_factory),
             agent_settings=resolved_settings.agent,
             model_settings=resolved_settings.model,
+            app_env=resolved_settings.app_env,
         )
     )
     app.state.approval_service = (
@@ -548,7 +551,7 @@ def create_app(
     app.include_router(upload_router)
     if presales_service is None:
         embedding_provider, embedding_model, embedding_dimension = build_embedding_provider(
-            resolved_settings.embedding
+            resolved_settings.embedding, app_env=resolved_settings.app_env
         )
         app.state.presales_service = PresalesService(
             session_factory=_required_session_factory(session_factory),
@@ -559,6 +562,8 @@ def create_app(
                 embedding_dimension=embedding_dimension,
                 query_instruction=resolved_settings.embedding.query_instruction,
                 require_vector_evidence=resolved_settings.retrieval.require_vector_evidence,
+                app_env=resolved_settings.app_env,
+                provider_usage_settings=resolved_settings.provider_usage,
                 metrics=resolved_metrics,
             ),
             gateway=OpenAICompatiblePresalesGateway(

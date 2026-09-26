@@ -92,6 +92,8 @@ def build_consumer_app(
             metrics=resolved_metrics,
             fault_injection=settings.fault_injection,
             embedding_settings=settings.embedding,
+            app_env=settings.app_env,
+            provider_usage_settings=settings.provider_usage,
         ),
         async_runner=resolved_runner,
     )
@@ -157,6 +159,8 @@ def main() -> None:
             checkpointer=checkpointer,
             graph_version=settings.agent.graph_version,
             execution_timeout_seconds=settings.agent.execution_timeout_seconds,
+            app_env=settings.app_env,
+            provider_usage_settings=settings.provider_usage,
             fault_injection=settings.fault_injection,
             metrics=metrics,
         )

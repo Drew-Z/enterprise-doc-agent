@@ -5,7 +5,7 @@ import io
 from typing import Literal
 
 from enterprise_doc_core.presales.errors import PresalesError
-from enterprise_doc_core.presales.schemas import PacketView
+from enterprise_doc_core.presales.schemas import Evidence, PacketView, PrerequisiteAssessment
 
 STATUS_LABELS = {
     "supported": "支持",
@@ -14,6 +14,30 @@ STATUS_LABELS = {
     "insufficient_evidence": "证据不足",
     "conflicting_evidence": "证据冲突",
 }
+PREREQUISITE_LABELS = {"met": "已满足", "unmet": "未满足", "unknown": "待确认"}
+
+
+def evidence_text(citation: Evidence) -> str:
+    return (
+        f"{citation.filename} · {citation.document_version_id} · 页{citation.page_number or '-'} · "
+        f"{citation.heading or ''} · 字符{citation.start_offset}-{citation.end_offset}: "
+        f"{citation.excerpt}"
+    )
+
+
+def prerequisite_text(items: list[PrerequisiteAssessment] | None, citations: list[Evidence]) -> str:
+    if items is None:
+        return "未记录前提状态"
+    if not items:
+        return "无前提"
+    return "\n".join(
+        f"{PREREQUISITE_LABELS[item.state]}：{item.condition}\n"  # noqa: RUF001
+        + "\n".join(
+            f"  证据 {index + 1}：{evidence_text(citations[index])}"  # noqa: RUF001
+            for index in item.citation_indexes
+        )
+        for item in items
+    )
 
 
 def safe_cell(value: str) -> str:
@@ -38,7 +62,7 @@ def export_csv(packet: PacketView, mode: Literal["draft", "reviewed"]) -> bytes:
             "要求位置",
             "判断",
             "响应文案",
-            "未满足条件",
+            "响应条件",
             "待补材料",
             "原文证据",
             "资料版本与适用范围",
@@ -48,6 +72,8 @@ def export_csv(packet: PacketView, mode: Literal["draft", "reviewed"]) -> bytes:
             "复核备注",
             "原模型判断",
             "原模型文案",
+            "前提状态与对应证据",
+            "原模型前提状态与对应证据",
         ]
     )
     source_versions = "\n".join(
@@ -57,15 +83,7 @@ def export_csv(packet: PacketView, mode: Literal["draft", "reviewed"]) -> bytes:
     )
     for row in packet.rows:
         effective = row.review or row.draft
-        evidence = (
-            "\n".join(
-                f"{c.filename} · {c.document_version_id} · 页{c.page_number or '-'} · "
-                f"{c.heading or ''} · 字符{c.start_offset}-{c.end_offset}: {c.excerpt}"
-                for c in row.draft.citations
-            )
-            if row.draft
-            else ""
-        )
+        evidence = "\n".join(evidence_text(c) for c in row.draft.citations) if row.draft else ""
         values = [
             packet.title,
             row.requirement.key,
@@ -83,6 +101,10 @@ def export_csv(packet: PacketView, mode: Literal["draft", "reviewed"]) -> bytes:
             row.review.note if row.review else "",
             STATUS_LABELS[row.draft.status] if row.draft else "",
             row.draft.answer if row.draft else "",
+            prerequisite_text(effective.prerequisites, row.draft.citations)
+            if effective and row.draft
+            else "",
+            prerequisite_text(row.draft.prerequisites, row.draft.citations) if row.draft else "",
         ]
         writer.writerow([safe_cell(value) for value in values])
     return stream.getvalue().encode("utf-8-sig")

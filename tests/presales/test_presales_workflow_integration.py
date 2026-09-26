@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import asyncio
+import copy
 import csv
+import hashlib
 import io
 import json
 from datetime import UTC, datetime, timedelta
@@ -18,7 +20,12 @@ from enterprise_doc_api.config import ApiSettings
 from enterprise_doc_core.audit.models import AuditEvent
 from enterprise_doc_core.billing import EntitlementUsageService
 from enterprise_doc_core.billing.models import TenantEntitlement, UsageEvent, UsageReservation
-from enterprise_doc_core.config import DatabaseSettings, ModelProvider, ModelSettings
+from enterprise_doc_core.config import (
+    AppEnvironment,
+    DatabaseSettings,
+    ModelProvider,
+    ModelSettings,
+)
 from enterprise_doc_core.context import PrincipalContext
 from enterprise_doc_core.db import create_database_engine, create_session_factory
 from enterprise_doc_core.documents import DocumentVersion, HashEmbeddingProvider
@@ -31,11 +38,12 @@ from enterprise_doc_core.documents.retrieval_service import HybridRetrievalServi
 from enterprise_doc_core.identity import Membership, Tenant, User
 from enterprise_doc_core.presales.errors import PresalesError
 from enterprise_doc_core.presales.gateway import OpenAICompatiblePresalesGateway
-from enterprise_doc_core.presales.models import PresalesAttempt, PresalesRow
+from enterprise_doc_core.presales.models import PresalesAttempt, PresalesReview, PresalesRow
 from enterprise_doc_core.presales.schemas import (
     CreatePacket,
     RequirementInput,
     ReviewInput,
+    SavedReview,
     SourceInput,
 )
 from enterprise_doc_core.presales.service import PresalesService
@@ -563,18 +571,27 @@ async def test_disabled_or_unconfigured_generation_creates_no_attempt(workspace,
     assert gateway.calls == []
 
 
-@pytest.mark.parametrize("condition", ["expired", "scheduled", "exhausted"])
+@pytest.mark.parametrize("condition", ["expired", "scheduled", "exhausted", "missing", "unlimited"])
+@pytest.mark.parametrize("background", [False, True], ids=["synchronous", "background"])
 async def test_commercial_preflight_rejects_generation_without_attempt_or_dispatch(
-    workspace, condition
+    workspace, condition, background
 ) -> None:
     service, sessions, context, _, gateway, payload = workspace
-    usage = service.generation.usage_service
+    usage = EntitlementUsageService(session_factory=sessions, app_env=AppEnvironment.PRODUCTION)
+    service.generation.usage_service = usage
+    service.generation.settings = PresalesSettings(
+        generation_enabled=True, background_generation_enabled=background
+    )
     async with sessions.begin() as session:
         entitlement = await session.scalar(
             select(TenantEntitlement).where(TenantEntitlement.tenant_id == context.tenant_id)
         )
         if condition == "exhausted":
             entitlement.provider_request_limit = 0
+        elif condition == "missing":
+            await session.delete(entitlement)
+        elif condition == "unlimited":
+            entitlement.provider_request_limit = None
         else:
             now = (
                 entitlement.period_end
@@ -702,7 +719,85 @@ async def test_expired_entitlement_keeps_draft_read_review_export_and_generation
         )
 
 
-@pytest.mark.parametrize("change", ["none", "unknown_reference", "revoked", "stale_source"])
+async def test_legacy_review_replays_old_fingerprint_without_inventing_prerequisites(workspace):
+    service, sessions, context, _, _, payload = workspace
+    packet = await service.create(context.principal, payload, "legacy-create")
+    packet = await service.generate(
+        context.principal, packet.id, packet.rows[0].id, "legacy-generate"
+    )
+    row_id, draft = packet.rows[0].id, packet.rows[0].draft
+    assert draft is not None
+    old_draft = draft.model_dump(mode="json", exclude={"prerequisites"})
+    text = draft.model_dump(mode="json", exclude={"prerequisites", "citations", "retrieval"})
+    old_request = {**text, "expected_revision": 1, "note": "旧版复核"}
+    old_review = SavedReview(
+        **text,
+        revision=2,
+        note="旧版复核",
+        actor_id=context.actor_id,
+        reviewed_at=datetime.now(UTC),
+    )
+    # This is the persisted pre-upgrade wire fingerprint, with no new field.
+    digest = hashlib.sha256(
+        json.dumps(old_request, ensure_ascii=False, separators=(",", ":")).encode()
+    ).hexdigest()
+    async with sessions.begin() as session:
+        record = await session.get(PresalesRow, row_id)
+        record.draft, record.revision = old_draft, 2
+        session.add(
+            PresalesReview(
+                tenant_id=context.tenant_id,
+                row_id=row_id,
+                actor_id=context.actor_id,
+                revision=2,
+                idempotency_key="legacy-review",
+                fingerprint=digest,
+                content=old_review.model_dump(mode="json", exclude={"prerequisites"}),
+            )
+        )
+
+    class Resolver:
+        async def resolve(self, token: str) -> PrincipalContext:
+            return context.principal
+
+    app = create_app(
+        settings=ApiSettings(_env_file=None),
+        checkers=[],
+        principal_resolver=Resolver(),
+        presales_service=service,
+    )
+    async with app.router.lifespan_context(app):
+        async with AsyncClient(transport=ASGITransport(app), base_url="http://test") as client:
+            path = f"/api/presales/{packet.id}/rows/{row_id}/review"
+            headers = {"Authorization": "Bearer owner", "Idempotency-Key": "legacy-review"}
+            replayed = await client.put(path, headers=headers, json=old_request)
+            assert replayed.status_code == 200, replayed.text
+            row = replayed.json()["rows"][0]
+            assert row["revision"] == 2 and len(row["reviewHistory"]) == 1
+            assert row["draft"]["prerequisites"] is row["review"]["prerequisites"] is None
+            modified = {**old_request, "expected_revision": 2, "note": "继续复核"}
+            denied = await client.put(
+                path,
+                headers={**headers, "Idempotency-Key": "fabricated"},
+                json={**modified, "prerequisites": []},
+            )
+            assert denied.status_code == 422
+            assert denied.json()["error"]["code"] == "presales_review_prerequisites_invalid"
+            updated = await client.put(
+                path, headers={**headers, "Idempotency-Key": "legacy-next"}, json=modified
+            )
+            assert updated.status_code == 200, updated.text
+            assert len(updated.json()["rows"][0]["reviewHistory"]) == 2
+    content = (await service.export(context.principal, packet.id, "reviewed")).decode("utf-8-sig")
+    assert "未记录前提状态" in content
+    async with sessions() as session:
+        record = await session.get(PresalesRow, row_id)
+        assert record.draft == old_draft
+
+
+@pytest.mark.parametrize(
+    "change", ["none", "projection", "unknown_reference", "revoked", "stale_source"]
+)
 async def test_selection_adapter_preserves_persistence_export_and_authorization(
     workspace, change
 ) -> None:
@@ -712,8 +807,9 @@ async def test_selection_adapter_preserves_persistence_export_and_authorization(
     async def model_response(request: httpx.Request) -> httpx.Response:
         sent = json.loads(json.loads(request.content)["messages"][1]["content"])
         calls.append(sent)
-        assert {e["documentVersionId"] for e in sent["evidence"]} == {
-            str(s.version_id) for s in payload.sources
+        assert {e["source"]["label"] for e in sent["evidence"]} == {"来源 1", "来源 2"}
+        assert {e["source"]["applicability"] for e in sent["evidence"]} == {
+            s.applicability for s in payload.sources
         }
         references = [{"citationId": item["citationId"]} for item in sent["evidence"]]
         if change == "unknown_reference":
@@ -736,8 +832,21 @@ async def test_selection_adapter_preserves_persistence_export_and_authorization(
                         "message": {
                             "content": json.dumps(
                                 {
-                                    "status": "conflicting_evidence",
+                                    "status": "conditional"
+                                    if change == "projection"
+                                    else "conflicting_evidence",
+                                    "prerequisites": [
+                                        {"condition": text, "state": state, "citations": references}
+                                        for text, state in [
+                                            ("已采购。", "met"),
+                                            ("需配置。", "unmet"),
+                                            ("需确认验收结果。", "unknown"),
+                                        ]
+                                    ]
+                                    if change == "projection"
+                                    else [],
                                     "answer": "两份条款的保留期限冲突。",
+                                    "missingInformation": ["请确认适用条款的优先级。"],
                                     "citations": references,
                                 }
                             )
@@ -777,7 +886,7 @@ async def test_selection_adapter_preserves_persistence_export_and_authorization(
         )
         row = generated.rows[0]
         assert row.attempts[0].provider_request_count == 1
-        assert row.attempts[0].provenance["promptVersion"] == "presales.v3"
+        assert row.attempts[0].provenance["promptVersion"] == "presales.v7"
         if change == "unknown_reference":
             assert row.draft is None and row.attempts[0].error_code == "presales_invalid_citation"
         else:
@@ -787,14 +896,54 @@ async def test_selection_adapter_preserves_persistence_export_and_authorization(
                 "Retention is 90 days.",
             }
             assert "citationId" not in row.model_dump_json(by_alias=True)
+            if change == "projection":
+                assert row.draft.conditions == ["需配置。", "需确认验收结果。"]
+                saved = await service.get(context.principal, packet.id)
+                assert saved.rows[0].draft == row.draft
+                assert row.draft.prerequisites is not None
+                assert [p.state for p in row.draft.prerequisites] == ["met", "unmet", "unknown"]
+                assert all(p.citation_indexes == [0, 1] for p in row.draft.prerequisites)
+                base_review = {
+                    **row.draft.model_dump(exclude={"citations", "retrieval"}),
+                    "expected_revision": 1,
+                    "note": "核对原文。保留逐项状态。",
+                }
+                for change_kind in ("omitted", "removed", "condition", "reference", "no_note"):
+                    invalid = copy.deepcopy(base_review)
+                    if change_kind == "omitted":
+                        invalid.pop("prerequisites")
+                    elif change_kind == "removed":
+                        invalid["prerequisites"].pop(0)
+                    elif change_kind == "condition":
+                        invalid["prerequisites"][0]["condition"] = "已采购另一模块。"
+                    elif change_kind == "reference":
+                        invalid["prerequisites"][0]["citation_indexes"] = [1]
+                    else:
+                        invalid["prerequisites"][2]["state"] = "unmet"
+                        invalid["note"] = " "
+                    with pytest.raises(PresalesError, match="presales_review_"):
+                        await service.review(
+                            context.principal,
+                            packet.id,
+                            row_id,
+                            ReviewInput.model_validate(invalid),
+                            "invalid-" + change_kind,
+                        )
+                assert (await service.get(context.principal, packet.id)).rows[0].revision == 1
+                draft_csv = (await service.export(context.principal, packet.id, "draft")).decode(
+                    "utf-8-sig"
+                )
+                assert "需配置。" in draft_csv and "需确认验收结果。" in draft_csv
             reviewed = await service.review(
                 context.principal,
                 packet.id,
                 row_id,
                 ReviewInput(
                     expected_revision=1,
-                    status="conflicting_evidence",
+                    status="conditional" if change == "projection" else "conflicting_evidence",
                     answer="已逐字核对。需确认条款优先级。",
+                    conditions=row.draft.conditions,
+                    prerequisites=row.draft.prerequisites,
                 ),
                 "selection-review",
             )
@@ -804,6 +953,47 @@ async def test_selection_adapter_preserves_persistence_export_and_authorization(
             )
             assert "Retention is 30 days." in csv_content and "Retention is 90 days." in csv_content
             assert "已逐字核对" in csv_content and "已复核" in csv_content
+            if change == "projection":
+                assert "待确认" in csv_content and "未满足" in csv_content
+                original = row.draft.model_dump(mode="json")
+                corrected = ReviewInput.model_validate(
+                    {
+                        **base_review,
+                        "expected_revision": 2,
+                        "note": "配置证据已经核对。验收状态仍待确认。",
+                        "conditions": ["需确认验收结果。"],
+                        "prerequisites": [
+                            {**p.model_dump(), "state": "met" if index == 1 else p.state}
+                            for index, p in enumerate(row.draft.prerequisites)
+                        ],
+                    }
+                )
+                for _ in range(2):
+                    reviewed = await service.review(
+                        context.principal, packet.id, row_id, corrected, "correct-state"
+                    )
+                assert reviewed.rows[0].revision == 3
+                assert len(reviewed.rows[0].review_history) == 2
+                assert reviewed.rows[0].draft.model_dump(mode="json") == original
+                assert reviewed.rows[0].review.prerequisites[1].state == "met"
+                assert reviewed.rows[0].review_history[0].prerequisites[1].state == "unmet"
+                with pytest.raises(PresalesError, match="presales_revision_conflict"):
+                    await service.review(context.principal, packet.id, row_id, corrected, "stale")
+                with pytest.raises(PresalesError, match="presales_not_found"):
+                    await service.review(other.principal, packet.id, row_id, corrected, "foreign")
+                exported = next(
+                    csv.DictReader(
+                        io.StringIO(
+                            (await service.export(context.principal, packet.id, "reviewed")).decode(
+                                "utf-8-sig"
+                            )
+                        )
+                    )
+                )
+                assert "已满足：需配置。" in exported["前提状态与对应证据"]  # noqa: RUF001
+                assert "未满足：需配置。" in exported["原模型前提状态与对应证据"]  # noqa: RUF001
+                assert "待确认：需确认验收结果。" in exported["前提状态与对应证据"]  # noqa: RUF001
+                assert "Retention is 30 days." in exported["前提状态与对应证据"]
             with pytest.raises(PresalesError, match="presales_not_found"):
                 await service.get(other.principal, packet.id)
         await service.generate(context.principal, packet.id, row_id, "selection-generate")

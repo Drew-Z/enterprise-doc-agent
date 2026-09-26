@@ -1,0 +1,272 @@
+{
+  "scope": "offline_decode_replay_of_generation_only_trial; no_new_provider_requests",
+  "datasetSha256": "804a70dcbeea86e34381cdbc4664ca722e74288657766a4a5995136d96fa12ca",
+  "originalRunSha256": "94386cfb0647fdde61a77b4ed95c5dd7d4dde5960e264bbc8f37149321b20e31",
+  "promptSha256": [
+    "7cf89f233c9115c723c0bceea42a1ee085aaa4206410f34c1717d7bb9bb1981e"
+  ],
+  "decoderSourceSha256": {
+    "packages/core/src/enterprise_doc_core/presales/citation_selection.py": "5d7c42f7ae47942529878244532314d96258f6506ec5f27efd0c0589087003d6",
+    "packages/core/src/enterprise_doc_core/presales/gateway.py": "18d79962cba779de8da7db227e26da46bbe528982079b7291316d7a500d421de"
+  },
+  "rows": [
+    {
+      "key": "H1-R1",
+      "initialState": "succeeded",
+      "expectedStatus": "supported",
+      "requiredEvidence": 2,
+      "result": {
+        "draft": {
+          "status": "supported",
+          "answer": "本订单已包含审计记录至少保存 360 天，且企业管理员在此期间也不能删除。证据明确支持：本订单采购审计归档 A360 已购数量为 1，已购 A360 将审计记录保存期延长到 360 天，期间任何企业账号均不能提前删除记录。",
+          "conditions": [],
+          "missingInformation": [],
+          "citations": [
+            {
+              "chunkId": "8935e160-3d5b-57de-a4a2-1bb800a82ba6",
+              "documentVersionId": "80182010-f496-5a12-9b95-f4762c761ce2",
+              "excerpt": "# H1-ORDER 已签署订购单\n本订单采购星舟工单企业版，审计归档 A360 的已购数量为 1，单点登录 SSO-BIZ 的已购数量为 0。\n本订单明确引用 H1-SLA 的月度可用性约定；它在该项指标上优先于 H1-TECH 通用说明。该优先级仅适用于月度可用性，不能用于解释其他附件。\nH1-ERASE 与 H1-BACKUP 均已签署，适用于本企业的数据与全部备份，同日生效且没有优先级或例外条款。"
+            },
+            {
+              "chunkId": "09eab613-01fe-5459-bd2e-56034c5272ea",
+              "documentVersionId": "7f67753c-0fcc-5200-869d-c8aec0e5af8a",
+              "excerpt": "# H1-TECH 企业版能力说明\n## 审计归档\n基础套餐的审计记录保存 30 天。已购买的 A360 将审计记录保存期延长到 360 天，期间任何企业账号均不能提前删除记录。\n## 单次 API 报文\n企业版接收的单次 API 报文硬上限为 16 MiB，1 MiB = 1048576 字节。当前正式版本没有提高单次报文上限的配置或选购项。分多次提交不属于单次报文。\n## 通用服务指标\n通用套餐月度可用性为 99.80%。已签署订单明确引用其他可用性协议时，按订单指定协议执行。\n压测报告给出普通查询平均响应时间 180 毫秒。平均值不能说明尾部百分位；当前附件没有 P99 响应时间测试结果或承诺。"
+            }
+          ]
+        },
+        "usage": {
+          "prompt_tokens": 3730,
+          "completion_tokens": 2748,
+          "total_tokens": 6478
+        },
+        "returnedModel": "grok-4.6",
+        "providerResponseId": "7bfe3015-a050-9487-9a6a-620d5fa16a0d"
+      },
+      "replayState": "succeeded",
+      "statusMatch": true,
+      "unsafeAffirmative": false,
+      "coveredRequiredEvidence": 2,
+      "citations": 2
+    },
+    {
+      "key": "H1-R2",
+      "initialState": "succeeded",
+      "expectedStatus": "conditional",
+      "requiredEvidence": 3,
+      "result": {
+        "draft": {
+          "status": "conditional",
+          "answer": "企业可通过 SAML 2.0 使用客户自有身份提供方进行单点登录的能力目前未启用。当前订单未购买 SSO-BIZ 模块，未完成企业域名归属验证和双方联调验收，因此不符合启用前提。",
+          "conditions": [
+            "启用前必须购买 SSO-BIZ、完成企业域名归属验证并通过双方联调验收；三项均完成后才能用于正式登录。"
+          ],
+          "missingInformation": [],
+          "citations": [
+            {
+              "chunkId": "8935e160-3d5b-57de-a4a2-1bb800a82ba6",
+              "documentVersionId": "80182010-f496-5a12-9b95-f4762c761ce2",
+              "excerpt": "# H1-ORDER 已签署订购单\n本订单采购星舟工单企业版，审计归档 A360 的已购数量为 1，单点登录 SSO-BIZ 的已购数量为 0。\n本订单明确引用 H1-SLA 的月度可用性约定；它在该项指标上优先于 H1-TECH 通用说明。该优先级仅适用于月度可用性，不能用于解释其他附件。\nH1-ERASE 与 H1-BACKUP 均已签署，适用于本企业的数据与全部备份，同日生效且没有优先级或例外条款。"
+            },
+            {
+              "chunkId": "c7c3f018-9930-54ce-af1d-210d8241a53f",
+              "documentVersionId": "91a75bdf-5a9a-5a48-8505-881a469fc531",
+              "excerpt": "# H1-SSO 单点登录规格\nSSO-BIZ 是企业版可选购的 SAML 2.0 单点登录模块，能接入客户自有身份提供方。\n启用前必须购买 SSO-BIZ、完成企业域名归属验证并通过双方联调验收；三项均完成后才能用于正式登录。本订单目前未购买该模块，域名验证和联调验收也未完成。"
+            }
+          ]
+        },
+        "usage": {
+          "prompt_tokens": 3737,
+          "completion_tokens": 4980,
+          "total_tokens": 8717
+        },
+        "returnedModel": "grok-4.6",
+        "providerResponseId": "92a4caec-625c-9190-bd29-20b26b419f2b"
+      },
+      "replayState": "succeeded",
+      "statusMatch": true,
+      "unsafeAffirmative": false,
+      "coveredRequiredEvidence": 3,
+      "citations": 2
+    },
+    {
+      "key": "H1-R3",
+      "initialState": "succeeded",
+      "expectedStatus": "contradicted",
+      "requiredEvidence": 2,
+      "result": {
+        "draft": {
+          "status": "contradicted",
+          "answer": "当前正式版本不支持单次 API 请求提交 20 MiB 报文。企业版接收的单次 API 报文硬上限为 16 MiB，1 MiB = 1048576 字节。当前正式版本没有提高单次报文上限的配置或选购项。分多次提交不属于单次报文。",
+          "conditions": [],
+          "missingInformation": [],
+          "citations": [
+            {
+              "chunkId": "09eab613-01fe-5459-bd2e-56034c5272ea",
+              "documentVersionId": "7f67753c-0fcc-5200-869d-c8aec0e5af8a",
+              "excerpt": "# H1-TECH 企业版能力说明\n## 审计归档\n基础套餐的审计记录保存 30 天。已购买的 A360 将审计记录保存期延长到 360 天，期间任何企业账号均不能提前删除记录。\n## 单次 API 报文\n企业版接收的单次 API 报文硬上限为 16 MiB，1 MiB = 1048576 字节。当前正式版本没有提高单次报文上限的配置或选购项。分多次提交不属于单次报文。\n## 通用服务指标\n通用套餐月度可用性为 99.80%。已签署订单明确引用其他可用性协议时，按订单指定协议执行。\n压测报告给出普通查询平均响应时间 180 毫秒。平均值不能说明尾部百分位；当前附件没有 P99 响应时间测试结果或承诺。"
+            }
+          ]
+        },
+        "usage": {
+          "prompt_tokens": 3746,
+          "completion_tokens": 2701,
+          "total_tokens": 6447
+        },
+        "returnedModel": "grok-4.6",
+        "providerResponseId": "6756cce4-86c6-9e2a-a780-9b675524817c"
+      },
+      "replayState": "succeeded",
+      "statusMatch": true,
+      "unsafeAffirmative": false,
+      "coveredRequiredEvidence": 2,
+      "citations": 1
+    },
+    {
+      "key": "H1-R4",
+      "initialState": "succeeded",
+      "expectedStatus": "insufficient_evidence",
+      "requiredEvidence": 0,
+      "result": {
+        "draft": {
+          "status": "insufficient_evidence",
+          "answer": "根据提供的证据，H1-TECH 附件明确表示当前正式版本没有 P99 响应时间测试结果或承诺，仅给出普通查询平均响应时间 180 毫秒。H1-SLA 协议不规定响应时间 P99 指标。H1-ORDER 仅引用 SLA 的可用性协议，并未提及 P99 响应时间。因此，无法确认普通查询响应时间的 P99 是否不超过 500 毫秒。",
+          "conditions": [],
+          "missingInformation": [
+            "需补充普通查询响应时间的 P99 测试报告或产品承诺条款，以确认是否不超过 500 毫秒"
+          ],
+          "citations": [
+            {
+              "chunkId": "09eab613-01fe-5459-bd2e-56034c5272ea",
+              "documentVersionId": "7f67753c-0fcc-5200-869d-c8aec0e5af8a",
+              "excerpt": "# H1-TECH 企业版能力说明\n## 审计归档\n基础套餐的审计记录保存 30 天。已购买的 A360 将审计记录保存期延长到 360 天，期间任何企业账号均不能提前删除记录。\n## 单次 API 报文\n企业版接收的单次 API 报文硬上限为 16 MiB，1 MiB = 1048576 字节。当前正式版本没有提高单次报文上限的配置或选购项。分多次提交不属于单次报文。\n## 通用服务指标\n通用套餐月度可用性为 99.80%。已签署订单明确引用其他可用性协议时，按订单指定协议执行。\n压测报告给出普通查询平均响应时间 180 毫秒。平均值不能说明尾部百分位；当前附件没有 P99 响应时间测试结果或承诺。"
+            },
+            {
+              "chunkId": "c1b2af75-71f4-5ce1-a17e-1650524ae873",
+              "documentVersionId": "5deb34c3-1921-53b6-9d3b-a7a988be9ed6",
+              "excerpt": "# H1-SLA 本订单可用性协议\n本协议已签署，覆盖 H1-ORDER 采购的星舟工单企业版。\n本订单的月度可用性承诺为 99.97%。\nH1-ORDER 明确约定本协议的可用性指标优先于 H1-TECH 通用指标。本协议不规定响应时间 P99，也不覆盖数据删除附件的优先级。"
+            }
+          ]
+        },
+        "usage": {
+          "prompt_tokens": 3726,
+          "completion_tokens": 2703,
+          "total_tokens": 6429
+        },
+        "returnedModel": "grok-4.6",
+        "providerResponseId": "f37cdbf7-46b8-97e3-a5f4-14e5750bee94"
+      },
+      "replayState": "succeeded",
+      "statusMatch": true,
+      "unsafeAffirmative": false,
+      "coveredRequiredEvidence": 0,
+      "citations": 2
+    },
+    {
+      "key": "H1-R5",
+      "initialState": "failed",
+      "expectedStatus": "supported",
+      "requiredEvidence": 2,
+      "result": {
+        "draft": {
+          "status": "supported",
+          "answer": "证据明确证明 H1-SLA 协议将本订单月度可用性承诺设定为 99.97%，H1-ORDER 明确引用该协议优先于 H1-TECH 通用说明，因此满足本订单月度可用性承诺不得低于 99.97% 的要求。",
+          "conditions": [],
+          "missingInformation": [],
+          "citations": [
+            {
+              "chunkId": "c1b2af75-71f4-5ce1-a17e-1650524ae873",
+              "documentVersionId": "5deb34c3-1921-53b6-9d3b-a7a988be9ed6",
+              "excerpt": "# H1-SLA 本订单可用性协议\n本协议已签署，覆盖 H1-ORDER 采购的星舟工单企业版。\n本订单的月度可用性承诺为 99.97%。\nH1-ORDER 明确约定本协议的可用性指标优先于 H1-TECH 通用指标。本协议不规定响应时间 P99，也不覆盖数据删除附件的优先级。"
+            },
+            {
+              "chunkId": "8935e160-3d5b-57de-a4a2-1bb800a82ba6",
+              "documentVersionId": "80182010-f496-5a12-9b95-f4762c761ce2",
+              "excerpt": "# H1-ORDER 已签署订购单\n本订单采购星舟工单企业版，审计归档 A360 的已购数量为 1，单点登录 SSO-BIZ 的已购数量为 0。\n本订单明确引用 H1-SLA 的月度可用性约定；它在该项指标上优先于 H1-TECH 通用说明。该优先级仅适用于月度可用性，不能用于解释其他附件。\nH1-ERASE 与 H1-BACKUP 均已签署，适用于本企业的数据与全部备份，同日生效且没有优先级或例外条款。"
+            }
+          ]
+        },
+        "usage": {
+          "prompt_tokens": 3725,
+          "completion_tokens": 6177,
+          "total_tokens": 9902
+        },
+        "returnedModel": "grok-4.6",
+        "providerResponseId": "bec70988-b738-9885-9a73-93502ab0247f"
+      },
+      "replayState": "succeeded",
+      "statusMatch": true,
+      "unsafeAffirmative": false,
+      "coveredRequiredEvidence": 2,
+      "citations": 2
+    },
+    {
+      "key": "H1-R6",
+      "initialState": "succeeded",
+      "expectedStatus": "conflicting_evidence",
+      "requiredEvidence": 2,
+      "result": {
+        "draft": {
+          "status": "conflicting_evidence",
+          "answer": "要求指定企业注销完成后 14 个自然日内必须删除业务数据及全部备份，与 H1-ERASE 承诺相符，但 H1-BACKUP 要求在注销后 90 个自然日内保留全部备份副本并禁止删除，H1-ORDER 未约定两者优先级。",
+          "conditions": [],
+          "missingInformation": [
+            "澄清 H1-ERASE 与 H1-BACKUP 之间的优先级关系或适用范围例外条款"
+          ],
+          "citations": [
+            {
+              "chunkId": "8935e160-3d5b-57de-a4a2-1bb800a82ba6",
+              "documentVersionId": "80182010-f496-5a12-9b95-f4762c761ce2",
+              "excerpt": "# H1-ORDER 已签署订购单\n本订单采购星舟工单企业版，审计归档 A360 的已购数量为 1，单点登录 SSO-BIZ 的已购数量为 0。\n本订单明确引用 H1-SLA 的月度可用性约定；它在该项指标上优先于 H1-TECH 通用说明。该优先级仅适用于月度可用性，不能用于解释其他附件。\nH1-ERASE 与 H1-BACKUP 均已签署，适用于本企业的数据与全部备份，同日生效且没有优先级或例外条款。"
+            },
+            {
+              "chunkId": "f1682585-3ae3-5701-be88-786086d911e6",
+              "documentVersionId": "7a05ae22-9909-57af-82d5-2af8f67ac2fd",
+              "excerpt": "# H1-ERASE 数据删除承诺\n企业注销完成后，全部业务数据和全部备份副本均须在 14 个自然日内删除，不存在保留例外。\n本附件与 H1-BACKUP 同日生效，覆盖相同数据范围，两者均已签署且互不优先。"
+            },
+            {
+              "chunkId": "b946f291-23a6-5162-a8bd-5973001a8616",
+              "documentVersionId": "67da65cf-ef19-5e7e-ac8a-8ecbf945dbeb",
+              "excerpt": "# H1-BACKUP 备份生命周期附件\n企业注销完成后，其全部备份副本必须继续保留 90 个自然日；在第 90 日届满前禁止删除任何该企业备份副本。\n本附件与 H1-ERASE 同日生效，覆盖相同数据范围，两者均已签署且互不优先。"
+            }
+          ]
+        },
+        "usage": {
+          "prompt_tokens": 3735,
+          "completion_tokens": 4784,
+          "total_tokens": 8519
+        },
+        "returnedModel": "grok-4.6",
+        "providerResponseId": "e381609c-23d7-9687-ae21-685cf784f340"
+      },
+      "replayState": "succeeded",
+      "statusMatch": true,
+      "unsafeAffirmative": false,
+      "coveredRequiredEvidence": 2,
+      "citations": 3
+    }
+  ],
+  "expectedRows": 6,
+  "initialSucceeded": 5,
+  "replaySucceeded": 6,
+  "statusMatches": 6,
+  "unsafeAffirmatives": 0,
+  "requiredEvidence": 11,
+  "coveredRequiredEvidence": 11,
+  "citations": 12,
+  "realProviderRequests": 6,
+  "replayProviderRequests": 0,
+  "usage": {
+    "prompt_tokens": 22399,
+    "completion_tokens": 24093,
+    "total_tokens": 46492
+  },
+  "costAmount": null,
+  "costReason": "Provider tick unit and invoice not independently verified",
+  "latencySeconds": {
+    "min": 42.844,
+    "median": 60.429500000000004,
+    "max": 82.563
+  },
+  "semanticReviewRequired": true,
+  "independentDomainReview": false
+}

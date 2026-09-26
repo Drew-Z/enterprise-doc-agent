@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "release_scope": "invited",
+  "candidate": {
+    "commit_sha": "ad1863dc099326d12d3fc18ed67eb7e072184fa4",
+    "environment": "staging",
+    "profile": "single-node-4c4g"
+  },
+  "audit": "evidence/gates/commercial-audit-20260924.json",
+  "gates": [
+    {
+      "id": "tenant_isolation",
+      "status": "blocked",
+      "blocking_reason": "Existing local/public demo isolation evidence is not a current independently reviewed commercial candidate run.",
+      "evidence": null
+    },
+    {
+      "id": "business_journey",
+      "status": "blocked",
+      "blocking_reason": "Public v0.1.43/v0.1.44 journey exists; new candidate exact-version full journey and customer acceptance are pending.",
+      "evidence": null
+    },
+    {
+      "id": "model_quality",
+      "status": "blocked",
+      "blocking_reason": "v7 six-call trial has three usable drafts, two timeouts, one upstream failure and an unknown/unmet semantic error; release gate is not passed.",
+      "evidence": null
+    },
+    {
+      "id": "generation_resilience",
+      "status": "blocked",
+      "blocking_reason": "Background recovery is locally validated but disabled by default and not deployed.",
+      "evidence": null
+    },
+    {
+      "id": "commercial_metering",
+      "status": "blocked",
+      "blocking_reason": "Formal Presales finite-period enforcement is implemented locally; Agent and embedding lack unified commercial accounting.",
+      "evidence": null
+    },
+    {
+      "id": "capacity",
+      "status": "blocked",
+      "blocking_reason": "Historical readiness-only 4C8G measurements do not establish current 4C4G business capacity.",
+      "evidence": null
+    },
+    {
+      "id": "recovery",
+      "status": "blocked",
+      "blocking_reason": "Historical staging-to-local restore passed measured objectives; independent fault-domain current-candidate recovery and review are missing.",
+      "evidence": null
+    },
+    {
+      "id": "observability",
+      "status": "blocked",
+      "blocking_reason": "Actual alert delivery, recovery receipt, backup freshness and accountable on-call evidence are missing.",
+      "evidence": null
+    },
+    {
+      "id": "release_governance",
+      "status": "blocked",
+      "blocking_reason": "Read-only GitHub audit: main is unprotected, no repository rulesets, no staging independent reviewer.",
+      "evidence": null
+    },
+    {
+      "id": "data_governance",
+      "status": "blocked",
+      "blocking_reason": "Approved customer terms, provider disclosures, retention/deletion proof and customer exit process are not complete.",
+      "evidence": null
+    },
+    {
+      "id": "support_acceptance",
+      "status": "blocked",
+      "blocking_reason": "Named operating owner, support route and representative customer UAT evidence are not supplied.",
+      "evidence": null
+    },
+    {
+      "id": "payments",
+      "status": "blocked",
+      "blocking_reason": "Payment merchant, pricing/refund policies, signed callbacks and live reconciliation are not configured.",
+      "evidence": null
+    },
+    {
+      "id": "self_service",
+      "status": "blocked",
+      "blocking_reason": "Public paid onboarding, renewal/expiry and customer exit acceptance are pending.",
+      "evidence": null
+    }
+  ]
+}

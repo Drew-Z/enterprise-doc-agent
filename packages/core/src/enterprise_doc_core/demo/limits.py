@@ -83,7 +83,13 @@ async def check_packet(
 
 
 async def reserve_attempt(
-    session: AsyncSession, tenant_id: UUID, attempt_id: UUID, now: datetime, deadline: datetime
+    session: AsyncSession,
+    tenant_id: UUID,
+    attempt_id: UUID,
+    now: datetime,
+    deadline: datetime,
+    *,
+    background: bool = False,
 ) -> None:
     workspace = await active_workspace(session, tenant_id, now)
     if workspace is None:
@@ -100,16 +106,37 @@ async def reserve_attempt(
         raise DemoError("demo_attempt_limit")
     if budget.attempts_used >= budget.attempt_limit:
         raise DemoError("demo_daily_limit")
-    busy = await session.scalar(
-        select(DemoWorkspace.id).where(DemoWorkspace.busy_until > now).limit(1)
-    )
-    if busy is not None:
-        raise DemoError("demo_generation_busy")
+    if not background:
+        await _claim_execution(session, workspace, attempt_id, now, deadline)
     # These counters are never refunded on model failure, timeout or cleanup.
     budget.attempts_used += 1
     workspace.attempts_used += 1
-    workspace.active_attempt_id = attempt_id
-    workspace.busy_until = deadline + timedelta(seconds=30)
+
+
+async def _claim_execution(
+    session: AsyncSession,
+    workspace: DemoWorkspace,
+    attempt_id: UUID,
+    now: datetime,
+    deadline: datetime,
+) -> None:
+    busy = await session.scalar(
+        select(DemoWorkspace.id)
+        .where(DemoWorkspace.busy_until > now, DemoWorkspace.active_attempt_id != attempt_id)
+        .limit(1)
+    )
+    if busy is not None:
+        raise DemoError("demo_generation_busy")
+    workspace.active_attempt_id, workspace.busy_until = attempt_id, deadline + timedelta(seconds=30)
+
+
+async def begin_background_attempt(
+    session: AsyncSession, tenant_id: UUID, attempt_id: UUID, now: datetime, deadline: datetime
+) -> None:
+    workspace = await active_workspace(session, tenant_id, now)
+    if workspace is not None:
+        await lock_capacity(session)
+        await _claim_execution(session, workspace, attempt_id, now, deadline)
 
 
 async def finish_attempt(session: AsyncSession, tenant_id: UUID, attempt_id: UUID) -> None:

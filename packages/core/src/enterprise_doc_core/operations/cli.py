@@ -18,7 +18,7 @@ from typing import Never
 from urllib.parse import urlsplit
 from uuid import UUID
 
-from pydantic import BaseModel, Field, SecretStr
+from pydantic import BaseModel, Field, SecretStr, ValidationError
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import make_url
 
@@ -38,9 +38,12 @@ from enterprise_doc_core.billing.administration import EntitlementAdministration
 from enterprise_doc_core.billing.administration_contracts import (
     EntitlementConfiguration,
     PlatformEntitlementOperator,
+    ProductQuotaConfiguration,
     require_entitlement_operator,
 )
 from enterprise_doc_core.billing.errors import UsageError
+from enterprise_doc_core.billing.reconciliation import UsageReconciliationService
+from enterprise_doc_core.billing.reconciliation_contracts import UsageExportWindow
 from enterprise_doc_core.config import AppEnvironment, DatabaseSettings
 from enterprise_doc_core.db import (
     create_database_engine,
@@ -108,20 +111,40 @@ def build_parser() -> argparse.ArgumentParser:
             command.add_argument("--execute", action="store_true")
     entitlement = resources.add_parser("entitlement", allow_abbrev=False)
     periods = entitlement.add_subparsers(dest="command", required=True)
-    for operation in ("configure", "show", "list"):
+    for operation in ("configure", "configure-products", "show", "list"):
         command = periods.add_parser(operation, allow_abbrev=False)
         command.add_argument("--tenant-id", type=UUID, required=True)
-        if operation in {"configure", "show"}:
+        if operation in {"configure", "configure-products", "show"}:
             command.add_argument("--entitlement-id", type=UUID, required=True)
-        if operation == "configure":
+        if operation in {"configure", "configure-products"}:
             command.add_argument("--expected-version", type=int, required=True)
+            command.add_argument(
+                "--agent-task-limit",
+                type=int,
+                default=0,
+                required=operation == "configure-products",
+            )
+            command.add_argument(
+                "--document-bytes-limit",
+                type=int,
+                default=0,
+                required=operation == "configure-products",
+            )
+            command.add_argument("--execute", action="store_true")
+        if operation == "configure":
             command.add_argument("--plan-code", required=True)
             command.add_argument("--period-start", required=True)
             command.add_argument("--period-end", required=True)
             command.add_argument("--request-limit", type=int, required=True)
-            command.add_argument("--execute", action="store_true")
         elif operation == "list":
             command.add_argument("--limit", type=int, default=20)
+    usage = resources.add_parser("usage", allow_abbrev=False)
+    reports = usage.add_subparsers(dest="command", required=True)
+    export = reports.add_parser("export", allow_abbrev=False)
+    export.add_argument("--tenant-id", type=UUID, required=True)
+    export.add_argument("--start", required=True)
+    export.add_argument("--end", required=True)
+    export.add_argument("--limit-per-source", type=int, default=5000)
     return parser
 
 
@@ -262,7 +285,8 @@ async def run_entitlement(
     operator = require_entitlement_operator(PlatformEntitlementOperator(args.operator, args.reason))
     context["tenantId"] = str(args.tenant_id)
     configuration = None
-    if args.command in {"configure", "show"}:
+    products = None
+    if args.command in {"configure", "configure-products", "show"}:
         context["entitlementId"] = str(args.entitlement_id)
     if args.command == "configure":
         configuration = EntitlementConfiguration(
@@ -272,6 +296,8 @@ async def run_entitlement(
             period_start=args.period_start,
             period_end=args.period_end,
             provider_request_limit=args.request_limit,
+            agent_task_limit=args.agent_task_limit,
+            document_bytes_limit=args.document_bytes_limit,
         )
         if not args.execute:
             return 0, {
@@ -279,6 +305,20 @@ async def run_entitlement(
                 "status": "preview",
                 "databaseValidated": False,
                 "request": configuration.model_dump(mode="json"),
+            }
+    elif args.command == "configure-products":
+        products = ProductQuotaConfiguration(
+            entitlement_id=args.entitlement_id,
+            expected_version=args.expected_version,
+            agent_task_limit=args.agent_task_limit,
+            document_bytes_limit=args.document_bytes_limit,
+        )
+        if not args.execute:
+            return 0, {
+                **context,
+                "status": "preview",
+                "databaseValidated": False,
+                "request": products.model_dump(mode="json"),
             }
     elif args.command == "list" and not 1 <= args.limit <= 100:
         raise UsageError("entitlement_invalid_limit")
@@ -289,11 +329,19 @@ async def run_entitlement(
                 service = EntitlementAdministrationService(
                     session_factory=create_session_factory(engine)
                 )
-                if configuration is not None:
+                if products is not None:
+                    configured = await service.configure_products(
+                        tenant_id=args.tenant_id, operator=operator, configuration=products
+                    )
+                    output: dict[str, object] = {
+                        "entitlement": asdict(configured.entitlement),
+                        "replayed": configured.replayed,
+                    }
+                elif configuration is not None:
                     configured = await service.configure(
                         tenant_id=args.tenant_id, operator=operator, configuration=configuration
                     )
-                    output: dict[str, object] = {
+                    output = {
                         "entitlement": asdict(configured.entitlement),
                         "replayed": configured.replayed,
                     }
@@ -318,7 +366,7 @@ async def run_entitlement(
     except Exception as error:
         return 1, {
             **context,
-            "status": "not_confirmed" if args.command == "configure" else "failed",
+            "status": "not_confirmed" if args.command.startswith("configure") else "failed",
             "code": error.code
             if isinstance(error, UsageError)
             else "operations_timeout"
@@ -326,6 +374,39 @@ async def run_entitlement(
             else "entitlement_operation_failed",
         }
     return 0, {**context, "status": "confirmed", **output}
+
+
+async def run_usage(
+    args: argparse.Namespace, settings: OperationsSettings, context: dict[str, object]
+) -> tuple[int, dict[str, object]]:
+    operator = require_entitlement_operator(PlatformEntitlementOperator(args.operator, args.reason))
+    try:
+        window = UsageExportWindow(
+            start=args.start, end=args.end, limit_per_source=args.limit_per_source
+        )
+    except ValidationError as error:
+        raise UsageError("reconciliation_invalid_window") from error
+    context["tenantId"] = str(args.tenant_id)
+    try:
+        async with asyncio.timeout(OPERATION_TIMEOUT_SECONDS):
+            engine = create_database_engine(settings.database)
+            try:
+                result = await UsageReconciliationService(
+                    session_factory=create_session_factory(engine)
+                ).export(tenant_id=args.tenant_id, operator=operator, window=window)
+            finally:
+                await engine.dispose()
+    except Exception as error:
+        return 1, {
+            **context,
+            "status": "failed",
+            "code": error.code
+            if isinstance(error, UsageError)
+            else "operations_timeout"
+            if isinstance(error, TimeoutError)
+            else "reconciliation_operation_failed",
+        }
+    return 0, {**context, "status": "confirmed", "export": asdict(result)}
 
 
 async def run_command(
@@ -341,6 +422,8 @@ async def run_command(
     }
     if args.resource == "admission":
         return await run_admission(args, settings, operator, context)
+    if args.resource == "usage":
+        return await run_usage(args, settings, context)
     return await run_entitlement(args, settings, context)
 
 

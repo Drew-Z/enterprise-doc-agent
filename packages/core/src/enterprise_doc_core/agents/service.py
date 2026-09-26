@@ -29,7 +29,10 @@ from enterprise_doc_core.agents.state import (
     transition_approval_request,
 )
 from enterprise_doc_core.audit import append_audit_event
-from enterprise_doc_core.config import AgentSettings, ModelProvider, ModelSettings
+from enterprise_doc_core.billing.errors import UsageError
+from enterprise_doc_core.billing.product_contracts import ProductMetric
+from enterprise_doc_core.billing.product_usage import ProductUsageService
+from enterprise_doc_core.config import AgentSettings, AppEnvironment, ModelProvider, ModelSettings
 from enterprise_doc_core.context import PrincipalContext
 from enterprise_doc_core.documents.models import (
     Document,
@@ -81,6 +84,21 @@ class AgentRunInputInvalid(AgentRunError):
 class AgentRunIntegrityError(AgentRunError):
     code = "agent_run_integrity_error"
     message = "The Agent run persistence state is incomplete."
+
+
+class AgentRunUsageError(AgentRunError):
+    def __init__(self, error: UsageError) -> None:
+        self.code = {
+            "usage_limit_reached": "agent_usage_limit",
+            "usage_entitlement_inactive": "agent_entitlement_inactive",
+            "usage_product_quota_unconfigured": "agent_entitlement_inactive",
+        }.get(error.code, "agent_usage_unavailable")
+        self.message = {
+            "agent_usage_limit": "The enterprise Agent task quota has been reached.",
+            "agent_entitlement_inactive": "The enterprise has no active Agent task entitlement.",
+            "agent_usage_unavailable": "Agent task usage could not be confirmed.",
+        }[self.code]
+        super().__init__()
 
 
 @dataclass(frozen=True, slots=True)
@@ -256,6 +274,15 @@ async def append_agent_run_event(
     run.next_event_seq += 1
     session.add(event)
     await session.flush()
+    if event_type in {"run.finished", "run.cancelled"}:
+        await ProductUsageService.finish_in_session(
+            session,
+            tenant_id=tenant_id,
+            operation_id=run.id,
+            metric=ProductMetric.AGENT_TASK,
+            consume=run.status == AgentRunStatus.SUCCEEDED.value,
+            source=f"agent.{run.status}",
+        )
     await append_audit_event(
         session,
         tenant_id=tenant_id,
@@ -280,11 +307,15 @@ class AgentRunService:
         agent_settings: AgentSettings,
         model_settings: ModelSettings,
         clock: Callable[[], datetime] = _utcnow,
+        app_env: AppEnvironment = AppEnvironment.LOCAL,
     ) -> None:
         self.session_factory = session_factory
         self.agent_settings = agent_settings
         self.model_settings = model_settings
         self.clock = clock
+        self.product_usage = ProductUsageService(
+            session_factory=session_factory, app_env=app_env, clock=clock
+        )
 
     async def create(
         self,
@@ -306,6 +337,9 @@ class AgentRunService:
             self.model_settings
         )
         async with self.session_factory.begin() as session:
+            await session.scalar(
+                select(Tenant.id).where(Tenant.id == tenant_id).with_for_update(key_share=True)
+            )
             await session.execute(
                 text("SELECT pg_advisory_xact_lock(hashtextextended(:key, 0))"),
                 {"key": f"{tenant_id}:{idempotency_key}"},
@@ -350,6 +384,15 @@ class AgentRunService:
             )
 
             run_id = uuid4()
+            try:
+                await self.product_usage.reserve(
+                    tenant_id=tenant_id,
+                    operation_id=run_id,
+                    metric=ProductMetric.AGENT_TASK,
+                    session=session,
+                )
+            except UsageError as error:
+                raise AgentRunUsageError(error) from error
             run = AgentRun(
                 id=run_id,
                 tenant_id=tenant_id,
@@ -520,6 +563,9 @@ class AgentRunService:
     ) -> AgentRunStatusResult:
         now = self.clock()
         async with self.session_factory.begin() as session:
+            await session.scalar(
+                select(Tenant.id).where(Tenant.id == tenant_id).with_for_update(key_share=True)
+            )
             await session.execute(
                 text("SELECT pg_advisory_xact_lock(hashtextextended(:key, 0))"),
                 {"key": f"agent-run:{tenant_id}:{run_id}"},

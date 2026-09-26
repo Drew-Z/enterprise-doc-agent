@@ -1,0 +1,151 @@
+{
+  "schemaVersion": "presales-gateway-semantic-review-v1",
+  "reviewType": "assistant authored and self reviewed, non-blind; not independent domain or customer review",
+  "createdAt": "2026-09-23T16:56:21.281248+00:00",
+  "decision": "retain_v7_as_draft; designated_channel_gate_not_met; no_deploy; stop_remaining_datasets",
+  "promptVersion": "presales.v7",
+  "promptSha256": "11542919c2ebb588715fa788def38325b9e4384883fdb277bb6b9046d8dce55f",
+  "selectedRoute": "primary",
+  "configuredModelName": "grok-4.7",
+  "endpoint": "https://windhub.cc/v1",
+  "modelIdentityVerification": "Configured and returned labels only; upstream weights not independently verified",
+  "scope": "original_generation_only_outcomes_with_complete_short_synthetic_sources",
+  "plan": {
+    "maximumRequests": 24,
+    "sequence": [
+      "H3",
+      "H4",
+      "H1",
+      "H2"
+    ],
+    "stopAfterFailedDatasetReview": true
+  },
+  "realProviderRequests": 6,
+  "automaticRetries": 0,
+  "additionalReplayRequests": 0,
+  "unattemptedDatasets": [
+    "H4",
+    "H1",
+    "H2"
+  ],
+  "unattemptedRequirements": 18,
+  "acceptedDrafts": 3,
+  "statusMatches": 3,
+  "semanticPasses": 2,
+  "attemptedRows": 6,
+  "unsafeAffirmativeLabels": 0,
+  "exactCitations": 6,
+  "coveredRequiredEvidence": 6,
+  "requiredEvidenceInAttemptedDataset": 9,
+  "releaseGatePassed": false,
+  "usage": {
+    "prompt_tokens": null,
+    "completion_tokens": null,
+    "total_tokens": null
+  },
+  "knownPartialUsage": {
+    "requestsWithCompleteUsage": 3,
+    "prompt_tokens": 11084,
+    "completion_tokens": 7419,
+    "total_tokens": 18503
+  },
+  "costAmount": null,
+  "costReason": "Three failed requests lack application usage; screenshot display amounts are not a verified invoice and currency is unspecified.",
+  "providerScreenshotSummary": {
+    "evidenceType": "user-provided screenshot, visually correlated by order, timing and exact successful token counts; not independently queried",
+    "failedRows": 3,
+    "successfulRows": 3,
+    "errorLabels": [
+      "do_request_failed",
+      "upstream_error",
+      "do_request_failed"
+    ],
+    "displayedSuccessAmountTotal": "0.061498",
+    "displayedFailureAmounts": [
+      "0.000000",
+      "0.000000",
+      "0.000000"
+    ],
+    "currency": null,
+    "failureZeroUsageProven": false
+  },
+  "latencySeconds": {
+    "min": 9.234,
+    "median": 23.8515,
+    "max": 120.016
+  },
+  "runPath": "evaluation/presales_quality_holdout_v3.v7-windhub-gateway.json",
+  "runSha256": "e549e52e84fa050278f2252d08692b1160ce7d5c67688598ad1696ca49f5ea40",
+  "scorePath": "evaluation/presales_quality_holdout_v3.v7-windhub-gateway.score.json",
+  "scoreSha256": "c9459b18210cc1d1bb683a38661f302dd6055d71bc2700625eafa7be1fcc6d65",
+  "rows": [
+    {
+      "key": "H3-R1",
+      "acceptedDraft": false,
+      "statusMatch": false,
+      "semanticReview": "not_observable",
+      "elapsedSeconds": 120.016,
+      "notes": "120秒等待响应头超时；用户提供的渠道截图对应do_request_failed。没有草稿，ISO证明不足的语义尚未验证。",
+      "errorCode": "presales_model_timeout"
+    },
+    {
+      "key": "H3-R2",
+      "acceptedDraft": false,
+      "statusMatch": false,
+      "semanticReview": "not_observable",
+      "elapsedSeconds": 23.453,
+      "notes": "23.453秒收到HTTP200，但记录的标准成功字段为空，缺少可读取的choices；用户渠道截图对应upstream_error。不是已观察到的正文JSON或引用错误；原始错误正文未保留，不能重建其确切结构。",
+      "errorCode": "presales_invalid_model_output"
+    },
+    {
+      "key": "H3-R3",
+      "acceptedDraft": false,
+      "statusMatch": false,
+      "semanticReview": "not_observable",
+      "elapsedSeconds": 120.0,
+      "notes": "120秒等待响应头超时；用户渠道截图对应do_request_failed。无草稿，德国/新加坡冲突双方关系仍未验证。",
+      "errorCode": "presales_model_timeout"
+    },
+    {
+      "key": "H3-R4",
+      "acceptedDraft": true,
+      "statusMatch": true,
+      "semanticReview": "pass",
+      "elapsedSeconds": 24.25,
+      "notes": "正确采用仅对吞吐生效的明示优先级，300>=250；订单、BASE和ADD三处引用准确，不把存储冲突扩展到吞吐。"
+    },
+    {
+      "key": "H3-R5",
+      "acceptedDraft": true,
+      "statusMatch": true,
+      "semanticReview": "fail",
+      "elapsedSeconds": 22.078,
+      "notes": "conditional分类和订单/规格引用正确，已购met未列待办、策略配置unmet正确；但把恢复验收状态未登记标为unmet而非unknown，并生成需完成验收，未区分确认状态和实际未完成。语义门槛不通过。",
+      "prerequisiteStates": [
+        {
+          "condition": "已采购历史归档ARC180模块",
+          "observedState": "met",
+          "expectedState": "met"
+        },
+        {
+          "condition": "需完成180天归档保留策略配置",
+          "observedState": "unmet",
+          "expectedState": "unmet"
+        },
+        {
+          "condition": "需完成归档恢复验收",
+          "observedState": "unmet",
+          "expectedState": "unknown"
+        }
+      ]
+    },
+    {
+      "key": "H3-R6",
+      "acceptedDraft": true,
+      "statusMatch": true,
+      "semanticReview": "pass",
+      "elapsedSeconds": 9.234,
+      "notes": "正确说明单张12个附件低于要求20个，无提升途径，拆单不满足；没有虚构升级能力。"
+    }
+  ]
+}
