@@ -218,3 +218,56 @@ def test_missing_corrupt_or_unknown_state_cannot_create_a_new_window(tmp_path: P
         connection.execute("UPDATE guard SET value=?", (json.dumps(state),))
     with pytest.raises(GuardError, match="unknown"):
         guard.poll()
+
+
+def test_interrupted_administrator_request_never_looks_like_an_idle_window(tmp_path: Path) -> None:
+    from scripts.maintenance_guard import Guard, GuardError, Target, Tick
+
+    now = [Tick("boot", 0, 1000)]
+    guard = Guard(tmp_path / "guard.db", clock=lambda: now[0])
+    target = Target("window", "a" * 40, "namespace", "b" * 64)
+    guard.arm(target, timeout=50)
+    guard.poll()
+
+    def interrupted(deadline: float) -> None:
+        # A killed kubectl client does not prove its API request never committed.
+        raise SystemExit(17)
+
+    with pytest.raises(SystemExit):
+        guard.administer(target, interrupted)
+    assert guard.status()["phase"] == "administering"
+    with pytest.raises(GuardError):
+        guard.claim(target)
+    now[0] = Tick("boot", 31, 1031)
+    assert guard.poll() == "blocked"
+    assert guard.status()["reason"] == "administrator_result_unknown"
+
+
+@pytest.mark.parametrize("result", ["success", "failure", "late"])
+def test_administrator_ownership_requires_a_timely_success_receipt(
+    tmp_path: Path, result: str
+) -> None:
+    from scripts.maintenance_guard import Guard, GuardError, Target, Tick
+
+    now = [Tick("boot", 0, 1000)]
+    guard = Guard(tmp_path / "guard.db", clock=lambda: now[0])
+    target = Target("window", "a" * 40, "namespace", "b" * 64)
+    guard.arm(target, timeout=50)
+    guard.poll()
+
+    def action(deadline: float) -> None:
+        assert deadline == 30
+        assert guard.poll() == "administering"
+        with pytest.raises(GuardError):
+            guard.claim(target)
+        if result == "failure":
+            raise TimeoutError("indeterminate API request")
+        now[0] = Tick("boot", 31 if result == "late" else 1, 1001)
+
+    if result == "success":
+        guard.administer(target, action)
+        assert guard.status()["phase"] == "armed"
+    else:
+        with pytest.raises((GuardError, TimeoutError)):
+            guard.administer(target, action)
+        assert guard.status()["phase"] == "blocked"

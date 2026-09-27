@@ -120,7 +120,7 @@ class Guard:
             state = json.loads(row[0])
             if not isinstance(state, dict) or state.get("schema_version") != 1:
                 raise GuardError("unsupported maintenance guard state")
-            if state.get("phase") not in TERMINAL | {"armed", "recovering"}:
+            if state.get("phase") not in TERMINAL | {"armed", "administering", "recovering"}:
                 raise GuardError("unknown maintenance ownership state")
             Target(**state["target"]).validate()
             yield state
@@ -160,11 +160,31 @@ class Guard:
             state["phase"] = "migration_claimed"
 
     def administer(self, target: Target, action: Callable[[float], None]) -> None:
-        # All pre-migration mutations participate, including a late pause/config
-        # operation. Hold the lock across the bounded external mutation.
+        # Persist intent BEFORE a cluster request: process death / RPC timeout
+        # does not mean the API server discarded the write. Unknown outcomes
+        # cannot return to armed and race a delayed patch against restoration.
         with self._transaction() as state:
             self._allowed(state, target)
-            action(min(state["deadline"], self.clock().elapsed + 30))
+            until = min(float(state["deadline"]), self.clock().elapsed + 30)
+            state.update(phase="administering", administration_until=until)
+        try:
+            action(until)
+        except Exception:
+            with self._transaction() as state:
+                if state["phase"] == "administering":
+                    state.update(phase="blocked", reason="administrator_result_unknown")
+            raise
+        with self._transaction() as state:
+            tick = self.clock()
+            if state["phase"] != "administering":
+                raise GuardError("administrator operation lost ownership")
+            if not self._clock_valid(state, tick) or tick.elapsed >= until:
+                state.update(phase="blocked", reason="administrator_result_unknown")
+            else:
+                state.update(phase="armed", last_tick=tick.elapsed)
+            blocked = state["phase"] == "blocked"
+        if blocked:
+            raise GuardError("administrator operation exceeded its known-result deadline")
 
     def poll(self) -> str:
         with self._transaction() as state:
@@ -174,6 +194,11 @@ class Guard:
             tick = self.clock()
             if not self._clock_valid(state, tick):
                 state.update(phase="blocked", reason="host_clock_changed")
+            elif phase == "administering":
+                if tick.elapsed >= state["administration_until"]:
+                    state.update(phase="blocked", reason="administrator_result_unknown")
+                else:
+                    state.update(heartbeat=tick.elapsed, last_tick=tick.elapsed)
             elif tick.elapsed >= state["recover_by"]:
                 state.update(phase="blocked", reason="recovery_budget_exhausted")
             else:

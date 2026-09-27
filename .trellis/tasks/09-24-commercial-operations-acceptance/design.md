@@ -58,7 +58,7 @@ CO-3j3：deploy-staging 增加 standard/maintenance 显式模式，默认 standa
 
 维护模式独立记录准备、迁移、应用和停机验证 outcome，供应商验证明确 skipped，不复用会要求新 embedding 报告的普通发布通过记录。always 恢复步骤对 maintenance 直接返回，避免失败或成功后意外启动业务。该路线是维护窗口中的中间阶段；实际恢复点、旧任务排空、暂停其他写入方、有限额度及后续恢复业务必须由同一具体执行包约束，不把零调用模式当成零停机或完整上线验收。
 
-CO-3j5：同机临时 systemd 监督器与专用 runner 共用 SQLite 状态，BEGIN IMMEDIATE 串行化迁移 claim、暂停、配置与恢复所有权。绑定操作 ID、Namespace UID、执行器 SHA、恢复计划 SHA、boot ID 和包含休眠的单调截止时钟；状态初始化不覆盖，claim 不重放。监督器心跳过期禁止部署。迁移 claim 持久化后永久禁止旧版本自动恢复；恢复所有权先持久化为 recovering，进程中断只允许在相同 boot 和总预算内重新核查并继续。
+CO-3j5：同机临时 systemd 监督器与专用 runner 共用 SQLite 状态，BEGIN IMMEDIATE 串行化迁移 claim、暂停、配置与恢复所有权。管理员命令先提交 administering 状态，最多 30 秒内收到明确成功回执才返回 armed；命令超时/异常/进程死亡不能当成未执行，保持 blocked，避免延迟的集群补丁覆盖恢复结果。绑定操作 ID、Namespace UID、执行器 SHA、恢复计划 SHA、boot ID 和包含休眠的单调截止时钟；状态初始化不覆盖，claim 不重放。监督器心跳过期禁止部署。迁移 claim 持久化后永久禁止旧版本自动恢复；恢复所有权先持久化为 recovering，进程中断只允许在相同 boot 和总预算内重新核查并继续。
 
 恢复计划由集中恢复组原配置/原 workload spec 及候选前置资源生成，禁止 Secret 内容与任意 shell 回调。集群适配器只恢复已审核的 ConfigMap data、Namespace annotations 和四个原副本数；绝不重写模板、Secret、Redis/PVC 或数据库。逐对象使用 resourceVersion 的 JSON Patch test，读回后复用完整前置校验。数据库用既有管理员进程环境提供的 DSN 做只读、有界 revision 查询。所有恢复前提先完整核查；Web 最后启动，后端就绪失败不开放入口。
 

@@ -24,7 +24,7 @@ The `Restore tiny workloads after deployment attempt` step in
 and `--recovery-budget` (default/max 300s). Claim additionally takes `--operation`,
 `--executor` (40 lowercase hex), `--namespace-uid`, `--candidate` (full rendered
 YAML). Status prints private JSON with phase/target/timing; refusal exits nonzero
-with a sanitized message. Phases: armed, migration_claimed, recovering, restored,
+with a sanitized message. Phases: armed, administering, migration_claimed, recovering, restored,
 blocked. There is no reset, extend, unclaim or automatic downgrade command.
 
 The migration step binds `MAINTENANCE_GUARD_STATE`, `MAINTENANCE_GUARD_PLAN`,
@@ -65,6 +65,12 @@ prerequisites against the approved plan. Default standard mode is unchanged.
 Never implement check-then-restore in a separate lock domain. Once recovering
 wins, late pause/stage/claim must fail. Once migration_claimed wins, automatic old
 runtime restoration is forbidden even if the job was never observed starting.
+Administrator operations commit administering intent before any external action.
+Only a confirmed success within at most 30 seconds returns to armed. A timeout,
+exception or killed administrator leaves an indeterminate request, which blocks
+automatic recovery and all other mutations. A cancelled kubectl process does
+not cancel a request already accepted by the API server; rolling back the local
+transaction to armed would allow a delayed patch to overwrite recovery.
 Recovering is committed before external actions; same-boot restart revalidates
 partial configuration/restoration under the original total budget. Changed boot,
 unknown DB revision, template/UID drift, job/controller drift or failed recovery

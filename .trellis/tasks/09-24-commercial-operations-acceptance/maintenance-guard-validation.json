@@ -10,8 +10,9 @@
     "Old-revision and original-template checks before bounded recovery; Web starts last"
   ],
   "verification": {
-    "focused_tests_passed": 107,
-    "non_integration_tests_passed": 2019,
+    "focused_tests_passed": 111,
+    "documentation_tests_passed": 5,
+    "non_integration_tests_passed": 2023,
     "integration_tests_deselected": 440,
     "ruff_format_files": 610,
     "ruff_check": "passed",
@@ -24,7 +25,7 @@
     "database_adapter": "existing_psql_and_postgres_process_environment_no_new_host_driver",
     "actual_workflow_shell_and_guard_cli": "passed_with_only_clock_and_cluster_boundaries_substituted",
     "historical_configuration_plan": "passed_offline_18_resources_4_application_specs",
-    "final_error_exit_and_existing_client_refinement": "affected_checks_rerun_after_full_regression_new_exact_commit_ci_recorded_separately",
+    "final_refinements": "full_regression_rerun_after_all_refinements_exact_commit_ci_recorded_separately",
     "real_systemd_installation": "not_executed",
     "live_cluster_recovery": "not_executed"
   },
@@ -32,6 +33,7 @@
     "pre_migration_seconds": 1500,
     "recovery_budget_seconds": 300,
     "heartbeat_max_age_seconds": 10,
+    "administrator_receipt_max_seconds": 30,
     "clock": "Linux CLOCK_BOOTTIME and boot ID",
     "guaranteed_outage_rto": false,
     "migration_phase_covered_by_automatic_old_runtime_restore": false
