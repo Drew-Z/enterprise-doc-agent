@@ -1,0 +1,87 @@
+{
+  "schema_version": "agent-live-accounting-acceptance.v1",
+  "date": "2026-09-28",
+  "status": "passed_single_live_supplier_local_accounting",
+  "execution_source_commit": "d89049c7bb05d7b7a276deb3062d45180926334c",
+  "frozen_plan_sha256": "b8d6699a7f5486f87db1554911e513ea73ac6aebab99f0ba6179bff31c760744",
+  "authorization": {
+    "source": "User instructed continuation after the explicit one-request proposal and approval question.",
+    "maximum_model_requests": 1,
+    "remaining_model_requests": 0,
+    "request_timeout_seconds": 120,
+    "task_timeout_seconds": 150,
+    "job_max_attempts": 1,
+    "failover_allowed": false,
+    "repair_shares_same_request_limit": true
+  },
+  "execution": {
+    "route": "primary",
+    "configured_model": "grok-4.7",
+    "task_type": "question_answer",
+    "task_status": "succeeded",
+    "http_status": 200,
+    "real_http_requests": 1,
+    "job_attempts": 1,
+    "repair_requests": 0,
+    "fallbacks": 0,
+    "provider_http_seconds": 16.793538,
+    "local_harness_seconds": 19.04744,
+    "latency_is_not_capacity_evidence": true
+  },
+  "accounting": {
+    "provider_dispatches": 1,
+    "provider_state": "responded",
+    "provider_request_id_present": true,
+    "provider_response_id_present": true,
+    "provider_operation_equals_run_id": true,
+    "event_operation_equals_run_id": true,
+    "reservation_and_entitlement_ids_present": true,
+    "call_and_settlement_within_original_period": true,
+    "task_consumes": 1,
+    "consumed_quantity": 1,
+    "task_reserved_after": 0,
+    "presales_quota_consumed": 0,
+    "reported_prompt_tokens": 2176,
+    "reported_completion_tokens": 606,
+    "reported_total_tokens": 2782,
+    "usage_summary_matches_dispatch_and_run": true,
+    "estimated_cost": null,
+    "currency": null,
+    "supplier_price_reconciled": false
+  },
+  "replay_and_artifact": {
+    "same_key_returns_original_run": true,
+    "duplicate_delivery": "duplicate_or_not_claimable",
+    "no_additional_dispatch_or_settlement": true,
+    "artifact_count": 1,
+    "artifact_puts": 1,
+    "artifact_metadata_integrity_check": "passed",
+    "artifact_sha256": "9ce584cffc6222faca2b4db45caf645a380b7154f5c388b7ebe820cd5783d68b",
+    "artifact_bytes_exported": false,
+    "raw_provider_response_exported": false,
+    "independent_answer_semantic_review": false
+  },
+  "boundaries": {
+    "real": ["primary supplier HTTP", "isolated PostgreSQL", "formal admission", "job consumer", "Agent graph", "tool and artifact services", "dispatch and product ledgers", "usage summary", "read-only reconciliation export"],
+    "controlled": ["fixed retrieval candidate", "memory object store", "in-process MCP adapter", "in-memory graph checkpoint"],
+    "production_end_to_end": false,
+    "real_mcp_stdio": false,
+    "real_object_download": false
+  },
+  "external_effects": {
+    "real_model_requests": 1,
+    "embedding_requests": 0,
+    "emails": 0,
+    "production_writes": 0,
+    "application_deployments": 0,
+    "pilot_expiry_extended": false
+  },
+  "cleanup": {
+    "owned_schema_removed": true,
+    "default_public_migrated": false,
+    "local_trial_data_retained_in_private_receipts_only": true
+  },
+  "evidence_location": "Existing CODEX_HOME commercial-production-readiness recovery group: agent-live-accounting-evidence and the newly created live receipts beside the frozen agent-accounting runner.",
+  "formal_commercial_acceptance_complete": false,
+  "task_status": "in_progress"
+}
