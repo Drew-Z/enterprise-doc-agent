@@ -50,8 +50,9 @@
     "evaluation/presales_quality_v8.prerequisite-review.json",
     "evaluation/presales_quality_v8.prerequisite-score.json",
     "evaluation/presales_quality_v8.review.json",
-    ".trellis/tasks/09-24-commercial-operations-acceptance/v8-live-execution.json"
+    ".trellis/tasks/09-24-commercial-operations-acceptance/v8-live-execution.json",
+    ".trellis/tasks/09-24-commercial-operations-acceptance/maintenance-guarded-execution-validation.json"
   ],
-  "notes": "Local recovery and structured prerequisite review verified. Source-bound prerequisite scorer preserves v7 failures. Authorized v8 H3 batch on candidate 4368be0 passed 6/6 drafts, labels, source anchors, states and assistant prose review; six requests only, no retries/failover/deployment. Independent representative-source/customer review, supplier billing, 4C4G capacity, alert delivery and real recovery remain pending. Keep Draft and in_progress.",
+  "notes": "2026-09-27 guarded maintenance on executor 0b1bcac and run 36327978939 deployed v0.1.45-rc.1 with revision 0031. Fresh DB/object recovery point, finite original-period product quotas, one synthetic upload-to-review/CSV flow, historical reads and tenant denial passed. Actual model/embedding/email attempts 1/2/0; no duplicate settlement. Public service restored after 28.8 minutes. Temporary environment policy/variables and runtime cleaned; failed first maintenance and required image aliases retained. Independent domain review, supplier billing, interactive OAuth/browser recovery, Agent nonempty calls, 4C4G capacity, alert delivery and whole-host recovery remain pending. Keep Draft and in_progress.",
   "meta": {}
 }

@@ -1,6 +1,10 @@
 # 4C4G 零供应商调用的维护部署
 
-本路线把已批准的候选安装到**保持停机**的业务 Deployment，并运行数据库迁移；业务恢复另有门槛。2026-09-27 首次维护在前置资源校验失败，迁移和候选安装未执行，随后已恢复原服务。会话中断导致迁移前停机约 185.8 分钟，超过原批准的 30 分钟。失败记录保持不变，新窗口必须启用下面的独立守卫。
+本路线把已批准的候选安装到**保持停机**的业务 Deployment，并运行数据库迁移；业务恢复另有门槛。2026-09-27 首次维护在前置资源校验失败，迁移和候选安装未执行，随后已恢复原服务。会话中断导致迁移前停机约 185.8 分钟，超过原批准的 30 分钟。失败记录保持不变。
+
+同日新窗口已使用独立守卫完成 [维护流水线 36327978939](https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/36327978939)：执行器 `0b1bcacb6b96c700bdf1ef63c012ac69a520e1ad`，实际数据库 `0031`，rc.1 四组件安装后按批准步骤恢复。暂停请求至公网恢复验证为 14:50:51–15:19:39 UTC，约 28.8 分钟；arm 至迁移 claim 为 1112.1 秒，未超过 1500 秒。同步配置和 Namespace 批准信息的完整校验通过；另修复了节点导入镜像别名缺失，保持八个批准摘要及镜像内容不变。
+
+同一停写窗口的 49 表 / 79,388 行和 1,585 个持久对象均已核验。合成 TXT 上传、解析、生成、三态前提、复核、CSV、同键重放与一次结算通过，实际模型 / 向量 / 邮件为 **1 / 2 / 0**。5 个 Deployment 与公网就绪，历史读取保持相同。11 项临时 GitHub 变量和标签规则已撤销，远端临时状态已归档清理；必要的镜像缓存别名保留。详见 [执行记录](../../.trellis/tasks/09-24-commercial-operations-acceptance/maintenance-guarded-execution-validation.json)。这不是正式商业、浏览器重连或整机灾备验收。
 
 ## 固定发布与执行入口
 
@@ -12,7 +16,7 @@
 
 ## 私有执行包
 
-当前集中恢复组内的 `maintenance-preparation-evidence` 保存以下文件，不提交凭据、租户 ID、地址或完整运行配置到 Git：
+集中恢复组内的 `maintenance-preparation-evidence` 保存以下历史准备文件；本次实际执行使用 `maintenance-guarded-execution-evidence` 中重新读取并审核的计划、配置及恢复点。不能重放历史提案；凭据、租户 ID、地址或完整运行配置不提交到 Git：
 
 | 文件 | 用途 |
 | --- | --- |
@@ -23,12 +27,12 @@
 | `candidate-migration.private.yaml` | 候选 API 镜像执行的数据库与 checkpointer 迁移 |
 | `candidate-paused-workloads.private.yaml` | 仅 API、Worker、Consumer、Web 四个 Deployment，全部 `replicas=0` |
 | `candidate-resume-workloads.private.yaml` | 后续恢复业务的候选应用清单；仅在独立批准的恢复步骤使用，维护流程不会应用它 |
-| `dispatch-inputs.private.json`、`environment-variable-proposal.private.json` | 十个 dispatch 输入、环境变量明确差异和原模式恢复值；尚未应用 |
+| `dispatch-inputs.private.json`、`environment-variable-proposal.private.json` | 十个 dispatch 输入、环境变量明确差异和原模式恢复值；此处为历史提案，本次实际变更及撤销另有回执 |
 | `config-diff.private.json`、`quota-proposal.private.json` | 配置与有限额度提案；不延长周期或重置既有计数 |
 
 配置保持当前 GitHub 登录、对象存储、主/备模型渠道以及全部向量配置（version 3）。新增六项为后台生成 false、自动切换 false、每日 dispatch 上限 200、队列超时 900 秒、渠道失败阈值 3、冷却 30 秒。前两项关闭时，后四项不等于启用后台或切换。
 
-当前仅发现一个有效 pilot 额度周期，截止 **2026-09-29 10:57:59 UTC / 北京时间 18:57:59**。提案为该原周期另设 **100 个成功 Agent 任务、100 MiB 文档处理量**；既有售前额度、已消费/预留量和周期保持不变。这是待审核的上限，不是自动配置结果；过期或版本改变时必须重新生成提案。其他企业不得自动获得无限额度。
+本次获准 pilot 额度周期截止 **2026-09-29 10:57:59 UTC / 北京时间 18:57:59**，已通过正式运营 CLI 先预览再配置该原周期的 **100 个成功 Agent 任务、100 MiB 文档处理量**。配置未重置既有售前用量或延长周期；合成验收随后消耗 172 字节文档处理量和一次售前生成。过期或版本改变时必须重新生成提案，不能重放旧 expected version；其他企业不得自动获得无限额度。
 
 `configure-products` 必须先预览，核对企业、entitlement ID、expected version 和限制，再用相同参数加 `--execute`。具体无密钥参数已写入私有提案，数据库连接仅由获准执行环境提供。迁移至 0029 及以上前不能执行产品额度配置。
 
@@ -39,7 +43,7 @@
 3. 停止外部入口及其他写入方的新提交，完成旧任务。只读检查 jobs、Presales、Agent、工具执行、上传及未释放预留；人工等待不能算排空。首次维护已清理精确 **7 条已过期上传**并释放 2,900 字节，该批次不得重复执行。新增任务/上传须重新盘点。无 HPA/CronJob 仅是历史观察，新窗口重新核对。
 4. 保持停写，先等待 Worker/Consumer 完成既有任务，再将四个业务 Deployment 设为零，确认残留 Pod 已消失。保留原副本和版本记录；Redis/PVC 保持原状。
 5. 在**同一停写窗口**捕获 DB 和对象的完整恢复点，集中保存并校验 SHA 与数据库引用。使用现有 `backup_database.py --output <本任务恢复组中的新路径> --schema public --record-path <新回执路径>` 及已验证对象捕获流程；不得覆盖既有文件，不向线上桶写快照。9 月 25 日快照和本次只读库存均不能替代开窗前恢复点。
-6. 以 rc.0/rc.1 清单核验镜像仍可获取，使用守卫的 `stage` 操作一并修改六项 ConfigMap 字段及对应六项 Namespace 批准注解，随后用完整前置资源校验器读回比对。检查剩余内存/磁盘及配置中的有限额度，再进入迁移。环境变量提案、前置配置和实际渲染结果必须一致；服务账号仍不得读 Secret 或更新前置资源。
+6. 以 rc.0/rc.1 清单核验镜像仍可获取，并核对 CRI 引用的本地镜像名称仍指向相同摘要；仅在 `ctr images list` 看到正式引用不足以证明容器可启动。导入别名若仍被 CRI 使用，不能作为传输临时文件清理。使用守卫的 `stage` 操作一并修改六项 ConfigMap 字段及对应六项 Namespace 批准注解，随后用完整前置资源校验器读回比对。检查剩余内存/磁盘及配置中的有限额度，再进入迁移。环境变量提案、前置配置和实际渲染结果必须一致；服务账号仍不得读 Secret 或更新前置资源。
 
 ## 维护工作流的实际行为
 
@@ -69,7 +73,7 @@ python scripts/staging_maintenance.py prepare `
 - 迁移前失败：核查数据库仍为原版本和原配置后，依获准恢复步骤恢复原服务。
 - 迁移状态不明：维持停机，读取实际版本和 Job 结果。不得自动 downgrade、重放迁移或切换镜像。
 - 已到 0031：保留数据库与新历史，选用已验证的 rc.0 兼容镜像或修复后的 rc.1；不能退回 v0.1.44 假定兼容。
-- 成功安装后：根据开窗前批准的恢复步骤配置产品额度，应用批准的恢复业务清单，执行真实登录/历史读取/隔离、有限合成业务、浏览器恢复和当前主机容量验收。此阶段可能产生供应商请求，不能继续沿用维护阶段的零调用结论。
+- 成功安装后：按开窗前批准的恢复范围配置产品额度并分阶段恢复应用，验证认证读取、历史数据、企业隔离和有限合成业务。本次通过这些门槛后恢复受邀试点；交互式登录、浏览器恢复和当前主机容量验收仍须单独完成。此阶段可能产生供应商请求，不能继续沿用维护阶段的零调用结论。
 - 不要通过重新运行 standard 模式来绕过恢复审阅；它会执行向量 rollout。窗口结束时按记录恢复 `STAGING_DEPLOYMENT_MODE`，读回环境变量和运行状态，留存完整回执。
 
 ## 独立守卫的执行包
@@ -78,17 +82,17 @@ python scripts/staging_maintenance.py prepare `
 
 计划 JSON 固定 `schema_version=1`、操作 ID、**新执行器 SHA**、Namespace UID、`original_revision=20260923_0027`、完整渲染候选的 canonical JSON SHA-256、原/候选前置资源、四份带 UID 的原 Deployment spec 和完成 Job 的 name/UID 列表。完整渲染清单经 `Plan.validate_candidate` 验证；原/候选只允许已审核的六个配置新增值及六项批准注解差异，其他资源保持相同。恢复不 apply 模板，不写数据库，不改 Secret/Redis/PVC。
 
-原始基线、计划和执行证据仍存本机既有集中恢复组。下一窗口需新鲜库存和同一停写窗口快照；本轮根据冻结库存生成的 review plan 只用于离线验证，**不能用于 arm**。远端建议临时目录为 `/run/enterprise-doc-maintenance/<operation>`，内容仅限不可变工具、计划的运行副本、SQLite 状态及既有凭据的必要运行引用。复制计划含原配置，须先按用户集中备份规则批准这一临时远端例外；不得静默当成普通缓存。原 `ops-maintenance-2148a8f` 标签保留不覆盖；新执行器的 CI、精确环境标签规则、有人值守的窗口和迁移后恢复步骤须一并审阅。
+原始基线、计划和执行证据仍存本机既有集中恢复组。准备阶段根据冻结库存生成的 review plan 只用于离线验证，**不能用于 arm**；本次使用新鲜库存生成的获准计划执行。下一窗口须重新读取库存并创建同一停写窗口快照。远端临时目录为 `/run/enterprise-doc-maintenance/<operation>`，内容仅限不可变工具、计划的运行副本、SQLite 状态及既有凭据的必要运行引用。复制计划含原配置，须按用户集中备份规则批准这一临时远端例外；本次例外已获准并在执行后撤销。原 `ops-maintenance-2148a8f` 及本次 `ops-maintenance-0b1bcac` 标签均保留不覆盖；后续执行器的 CI、精确环境标签规则、有人值守的窗口和迁移后恢复步骤仍须按新窗口审阅。
 
-执行顺序（以下是待激活方案，本轮没有安装或停机）：
+执行顺序（已在上述新窗口执行；守卫仅支持本次审阅的 `0027` 原版本，现已归档撤销。后续维护须按实际版本准备新的恢复方案，不能复用该状态或重新 arm 延期）：
 
 1. 核验 Linux `CLOCK_BOOTTIME`、boot ID、systemd、Python/PyYAML、既有 psql、kubectl、DB 只读连通性及同机 SQLite 互斥；管理员恢复进程的访问权与部署账号保持分开。目录仅管理员及专用 runner 组可进入，状态文件允许双方写，计划/工具仅管理员可写；DB DSN 只传管理员进程环境，runner 不得读取。未通过就不暂停。
 2. 管理员执行 `arm --state <state> --plan <plan> --plan-sha256 <sha> --timeout 1500 --recovery-budget 300`。它在完整原状态/0027 验证后排他创建状态；不能覆盖、续期或重置旧窗口。计时从 arm 开始，因此早于首次暂停。
-3. 用 transient systemd service 启动相同工具的 `supervise`，不要使用 `ssh ... &`。单元使用 `Restart=on-failure`、`RestartSec=2s`、`StartLimitIntervalSec=60s`、`StartLimitBurst=3`、`RuntimeMaxSec=35min`、`UMask=0077`；设置审核后的 KUBECONFIG 和 `MAINTENANCE_GUARD_DATABASE_URL` 环境。用 `systemctl show` 核实独立主 PID，再读 `status`，必须看到新鲜心跳才能暂停。它不创建额外 VM，也不发送邮件。
+3. 用 transient systemd service 启动相同工具的 `supervise`，不要使用 `ssh ... &`。单元使用 `Restart=on-failure`、`RestartSec=2s`、`StartLimitIntervalSec=60s`、`StartLimitBurst=3`、`RuntimeMaxSec=35min`、`UMask=0077`；设置审核后的 KUBECONFIG 和 `MAINTENANCE_GUARD_DATABASE_URL` 环境。启动前拒绝任何未替换的计划哈希占位符；用 `systemctl show` 核实独立主 PID，再读 `status`，必须看到新鲜心跳才能暂停。本次首次启动因占位符未替换而被拒绝，停服尚未开始；修正启动参数后沿用原 SQLite 状态和原截止时间。它不创建额外 VM，也不发送邮件。
 4. 所有停机命令经同一守卫：`pause-web` 关闭公开入口，完成排空检查，再 `pause-backends`；两者均传同一 state/plan/hash。每次先持久化 `administering`，最多 30 秒内得到明确成功回执才返回 `armed`。命令异常或进程中断会阻塞自动恢复，须人工核查已经提交给集群的请求；不能把连接超时等同于未执行。暂停命令只给出停止信号，操作者仍须证明任务排空与 Pod 消失。捕获/核验新恢复点后执行 `stage`。禁止旁路 `kubectl scale/patch`，避免迟到命令在自动恢复后再停服。
 5. staging 环境补充 `STAGING_MAINTENANCE_GUARD_STATE`、`STAGING_MAINTENANCE_GUARD_PLAN`、`STAGING_MAINTENANCE_GUARD_PLAN_SHA256`、`STAGING_MAINTENANCE_OPERATION` 四个精确值，保留现有 `STAGING_NAMESPACE_UID` 绑定。源码下载/前置校验必须在 25 分钟内到达 claim；未到达就恢复，禁止重新 arm 延期。
 6. 25 分钟截止时，尚未 claim 的窗口变为 `recovering`，永久拒绝迟到部署。监督器在总 30 分钟内核查 UID、原模板、原/候选完整配置、原完成 Job 集合、无新增调度器/未知 Pod、DB 仍为 0027，再用 resourceVersion 条件补丁恢复配置与注解。后端分别就绪后才恢复 Web。部分恢复中进程死亡可以在同一 boot/总预算内重启重新核查；命令明确失败、预算耗尽、主机重启或状态不明则 `blocked`，不能伪报 restored。
 7. `migration_claimed` 后监督器退出，自动旧版本恢复永久关闭；原工作流继续受迁移/应用门槛控制。此后无论成功、失败或断线都必须核对实际 DB 和 Job，按 0031 兼容恢复方案处理。30 分钟仅是迁移前恢复预算，集群/数据库不可用时不能保证恢复成功，也不覆盖迁移阶段。
 8. 收尾先保存监督器日志、状态、配置/模板/DB/公网只读检查及完整失败证据到集中恢复组，再撤销本窗口四个变量及临时精确标签规则，停止临时单元、核实无进程持有状态，按精确清单删除本轮运行副本。正式执行证据与旧标签保留，商业任务仍不能因此标记通过。
 
-本地验证包括真实 SQLite 并发、启动进程退出后的独立子进程、真实 workflow Bash/Python CLI；集群与 DB 使用边界夹具，主机 systemd/实际恢复时延仍需在正式暂停前做无业务写入的安装检查。没有把本地替代边界的成功标为线上恢复演练通过。
+本地验证包括真实 SQLite 并发、启动进程退出后的独立子进程、真实 workflow Bash/Python CLI；集群与 DB 使用边界夹具。正式暂停前已通过实际主机 systemd、只读 DB 及管理员/runner 共享 SQLite 权限检查。本轮在截止前取得迁移所有权，未触发线上超时恢复；不能把安装检查或成功升级时长标成自动恢复 RTO 已实测。
