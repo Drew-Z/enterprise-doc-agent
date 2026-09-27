@@ -57,3 +57,9 @@ CO-3j2：两个获准 SHA 通过原子推送创建独立 rc 标签，复用相�
 CO-3j3：deploy-staging 增加 standard/maintenance 显式模式，默认 standard。维护模式在迁移前读取 Deployment/Pod 与现有 ConfigMap，用文件边界验证向量配置完全相等、四业务副本为零且无活动业务进程。复用 select_phase 选择实际模板，再深拷贝四个应用 Deployment 并固定 replicas=0；Redis/PVC/其他资源不进入维护应用清单。迁移 Job 仍使用候选 API 镜像，结果未知时停止；配置与 Secret 仍归管理员管理。
 
 维护模式独立记录准备、迁移、应用和停机验证 outcome，供应商验证明确 skipped，不复用会要求新 embedding 报告的普通发布通过记录。always 恢复步骤对 maintenance 直接返回，避免失败或成功后意外启动业务。该路线是维护窗口中的中间阶段；实际恢复点、旧任务排空、暂停其他写入方、有限额度及后续恢复业务必须由同一具体执行包约束，不把零调用模式当成零停机或完整上线验收。
+
+CO-3j5：同机临时 systemd 监督器与专用 runner 共用 SQLite 状态，BEGIN IMMEDIATE 串行化迁移 claim、暂停、配置与恢复所有权。绑定操作 ID、Namespace UID、执行器 SHA、恢复计划 SHA、boot ID 和包含休眠的单调截止时钟；状态初始化不覆盖，claim 不重放。监督器心跳过期禁止部署。迁移 claim 持久化后永久禁止旧版本自动恢复；恢复所有权先持久化为 recovering，进程中断只允许在相同 boot 和总预算内重新核查并继续。
+
+恢复计划由集中恢复组原配置/原 workload spec 及候选前置资源生成，禁止 Secret 内容与任意 shell 回调。集群适配器只恢复已审核的 ConfigMap data、Namespace annotations 和四个原副本数；绝不重写模板、Secret、Redis/PVC 或数据库。逐对象使用 resourceVersion 的 JSON Patch test，读回后复用完整前置校验。数据库用既有管理员进程环境提供的 DSN 做只读、有界 revision 查询。所有恢复前提先完整核查；Web 最后启动，后端就绪失败不开放入口。
+
+远端临时状态和恢复计划属于尚待审核的执行包，未在本切片安装；原始恢复基线仍集中本地，不能用临时副本代替备份。systemd 提供脱离会话及失败重启能力，不声称同机主机损坏恢复。新 workflow 必须使用新精确执行器 SHA，旧 ops-maintenance-2148a8f 不改写。

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import os
 import shutil
@@ -10,7 +11,9 @@ from pathlib import Path
 
 import pytest
 import yaml
+from scripts.maintenance_guard import Guard, Target, Tick
 from scripts.staging_maintenance import MaintenanceError, build_record, prepare, verify
+from tests.deployment.test_maintenance_guard_cluster import plan_data
 
 ROOT = Path(__file__).resolve().parents[2]
 NAMESPACE = "enterprise-doc-agent-staging"
@@ -312,12 +315,39 @@ def test_workflow_gates_all_calling_steps_and_records_maintenance_separately() -
     assert "scripts/staging_maintenance.py record" in collect["run"]
 
 
+def test_actual_migration_rejects_missing_guard_before_any_cluster_command(tmp_path: Path) -> None:
+    workflow = yaml.safe_load((ROOT / ".github/workflows/deploy-staging.yml").read_text())
+    step = next(s for s in workflow["jobs"]["deploy"]["steps"] if s.get("id") == "migration")
+    bash = r"C:\Program Files\Git\bin\bash.exe" if os.name == "nt" else shutil.which("bash")
+    assert bash
+    env = {
+        **os.environ,
+        "DEPLOYMENT_MODE": "maintenance",
+        "DEPLOYMENT_PROFILE": "single-node-4c4g",
+        "RUNNER_TEMP": tmp_path.as_posix(),
+    }
+    env.pop("BASH_ENV", None)
+    command = (
+        'kubectl() { printf "%s\\n" "$*" >> "$RUNNER_TEMP/commands"; return 71; }\n' + step["run"]
+    )
+    result = subprocess.run(
+        [bash, "--noprofile", "--norc", "-c", command],
+        cwd=ROOT,
+        env=env,
+        capture_output=True,
+        timeout=10,
+    )
+    assert result.returncode != 0
+    assert not (tmp_path / "commands").exists()
+
+
 @pytest.mark.parametrize("fail_migration", [False, True])
 def test_actual_maintenance_steps_run_real_cli_with_only_cluster_boundary_replaced(
     tmp_path: Path, fail_migration: bool
 ) -> None:
     paths = fixtures(tmp_path)
     (tmp_path / "staging.yaml").write_bytes(paths["source"].read_bytes())
+    guard_env = workflow_guard(tmp_path)
     (tmp_path / "staging-migration.yaml").write_text(
         "kind: Job\nmetadata:\n  name: enterprise-doc-migrate\n"
     )
@@ -354,7 +384,9 @@ def test_actual_maintenance_steps_run_real_cli_with_only_cluster_boundary_replac
         "RUNNER_PYTHON": Path(sys.executable).as_posix(),
         "KUBECTL_FIXTURE": recorder.as_posix(),
         "DEPLOYMENT_PROFILE": "single-node-4c4g",
+        "DEPLOYMENT_MODE": "maintenance",
         "FAIL_MIGRATION": str(fail_migration).lower(),
+        **guard_env,
     }
     env.pop("BASH_ENV", None)
     calls = []
@@ -365,7 +397,10 @@ def test_actual_maintenance_steps_run_real_cli_with_only_cluster_boundary_replac
     ]
     assert phases == ["maintenance_prepare", "migration", "workloads", "maintenance_verify"]
     for phase in phases:
-        command = 'kubectl() { "$RUNNER_PYTHON" "$KUBECTL_FIXTURE" "$@"; }\n' + by_id[phase]["run"]
+        command = (
+            'fixture_python() { "$PYTHON_REAL" "$PYTHON_CLOCK_BOUNDARY" "$@"; }\n'
+            'kubectl() { "$PYTHON_REAL" "$KUBECTL_FIXTURE" "$@"; }\n' + by_id[phase]["run"]
+        )
         result = subprocess.run(
             [bash, "--noprofile", "--norc", "-c", command],
             cwd=ROOT,
@@ -379,6 +414,7 @@ def test_actual_maintenance_steps_run_real_cli_with_only_cluster_boundary_replac
             break
     actual = [json.loads(line) for line in (tmp_path / "calls.jsonl").read_text().splitlines()]
     assert not any("embedding" in " ".join(call) or "smoke" in " ".join(call) for call in actual)
+    assert Guard(tmp_path / "guard.db").status()["phase"] == "migration_claimed"
     if fail_migration:
         assert calls == [("maintenance_prepare", 0), ("migration", 29)]
         assert not (tmp_path / "staging-maintenance-verified.json").exists()
@@ -396,3 +432,136 @@ def test_actual_maintenance_steps_run_real_cli_with_only_cluster_boundary_replac
             (tmp_path / "staging-migration.yaml").as_posix(),
             (tmp_path / "staging-workloads.yaml").as_posix(),
         ]
+
+
+def workflow_guard(tmp_path: Path) -> dict[str, str]:
+    from scripts.maintenance_guard_cluster import CONFIG_ADDITIONS, canonical_digest
+
+    plan = plan_data()
+    config = json.loads((tmp_path / "config.json").read_text())
+    plan["original_prerequisites"][1]["data"] = config["data"]
+    plan["candidate_prerequisites"][1]["data"] = config["data"] | CONFIG_ADDITIONS
+    documents = list(yaml.safe_load_all((tmp_path / "staging.yaml").read_text()))
+    documents[0] = plan["candidate_prerequisites"][1]
+    documents.insert(0, plan["candidate_prerequisites"][0])
+    (tmp_path / "staging.yaml").write_text(yaml.safe_dump_all(documents))
+    (tmp_path / "config.json").write_text(json.dumps(plan["candidate_prerequisites"][1]))
+    plan["candidate_sha256"] = canonical_digest(
+        list(yaml.safe_load_all((tmp_path / "staging.yaml").read_text()))
+    )
+    path = tmp_path / "guard-plan.json"
+    path.write_text(json.dumps(plan), encoding="utf-8")
+    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    guard = Guard(tmp_path / "guard.db", clock=lambda: Tick("workflow-boot", 10, 1000))
+    guard.arm(Target(plan["operation"], plan["executor"], plan["namespace_uid"], digest))
+    guard.poll()
+    clock = tmp_path / "python_clock_boundary.py"
+    clock.write_text(
+        "import sys,runpy\nfrom pathlib import Path\n"
+        f"sys.path.insert(0,{str(ROOT)!r})\n"
+        "from scripts import maintenance_guard as guard\n"
+        "guard.host_clock=lambda:guard.Tick('workflow-boot',10,1000)\n"
+        "sys.argv=sys.argv[1:]\n"
+        "if Path(sys.argv[0]).name=='maintenance_guard.py':guard.main()\n"
+        "else:runpy.run_path(sys.argv[0],run_name='__main__')\n",
+        encoding="utf-8",
+    )
+    return {
+        "RUNNER_PYTHON": "fixture_python",
+        "PYTHON_REAL": Path(sys.executable).as_posix(),
+        "PYTHON_CLOCK_BOUNDARY": clock.as_posix(),
+        "MAINTENANCE_GUARD_STATE": guard.path.as_posix(),
+        "MAINTENANCE_GUARD_PLAN": path.as_posix(),
+        "MAINTENANCE_GUARD_PLAN_SHA256": digest,
+        "MAINTENANCE_OPERATION": plan["operation"],
+        "EXPECTED_NAMESPACE_UID": plan["namespace_uid"],
+        "GITHUB_SHA": plan["executor"],
+    }
+
+
+@pytest.mark.parametrize(
+    "invalid",
+    [
+        "wrong-executor",
+        "wrong-namespace",
+        "wrong-operation",
+        "plan-tampered",
+        "candidate-tampered",
+        "missing-state",
+        "stale",
+        "expired",
+        "recovering",
+        "claimed",
+    ],
+)
+def test_actual_migration_cli_fences_invalid_or_late_workflow(tmp_path: Path, invalid: str) -> None:
+    paths = fixtures(tmp_path)
+    (tmp_path / "staging.yaml").write_bytes(paths["source"].read_bytes())
+    values = workflow_guard(tmp_path)
+    if invalid.startswith("wrong-"):
+        key = {
+            "wrong-executor": "GITHUB_SHA",
+            "wrong-namespace": "EXPECTED_NAMESPACE_UID",
+            "wrong-operation": "MAINTENANCE_OPERATION",
+        }[invalid]
+        values[key] = "c" * 40 if invalid == "wrong-executor" else "other"
+    elif invalid == "plan-tampered":
+        Path(values["MAINTENANCE_GUARD_PLAN"]).write_text("{}")
+    elif invalid == "candidate-tampered":
+        (tmp_path / "staging.yaml").write_text("kind: Unexpected\n")
+    elif invalid == "missing-state":
+        values["MAINTENANCE_GUARD_STATE"] = (tmp_path / "absent.db").as_posix()
+    elif invalid in {"stale", "expired"}:
+        clock_file = Path(values["PYTHON_CLOCK_BOUNDARY"])
+        clock_file.write_text(
+            clock_file.read_text().replace(
+                "Tick('workflow-boot',10,1000)",
+                f"Tick('workflow-boot',{21 if invalid == 'stale' else 1510},1000)",
+            )
+        )
+    elif invalid == "recovering":
+        Guard(tmp_path / "guard.db", clock=lambda: Tick("workflow-boot", 1510, 2500)).poll()
+    else:
+        Guard(tmp_path / "guard.db", clock=lambda: Tick("workflow-boot", 10, 1000)).claim(
+            Target(
+                values["MAINTENANCE_OPERATION"],
+                values["GITHUB_SHA"],
+                values["EXPECTED_NAMESPACE_UID"],
+                values["MAINTENANCE_GUARD_PLAN_SHA256"],
+            )
+        )
+    workflow = yaml.safe_load((ROOT / ".github/workflows/deploy-staging.yml").read_text())
+    step = next(s for s in workflow["jobs"]["deploy"]["steps"] if s.get("id") == "migration")
+    for key, value in {
+        "DEPLOYMENT_MODE": "${{ vars.STAGING_DEPLOYMENT_MODE || 'standard' }}",
+        "MAINTENANCE_GUARD_STATE": "${{ vars.STAGING_MAINTENANCE_GUARD_STATE }}",
+        "MAINTENANCE_GUARD_PLAN": "${{ vars.STAGING_MAINTENANCE_GUARD_PLAN }}",
+        "MAINTENANCE_GUARD_PLAN_SHA256": "${{ vars.STAGING_MAINTENANCE_GUARD_PLAN_SHA256 }}",
+        "MAINTENANCE_OPERATION": "${{ vars.STAGING_MAINTENANCE_OPERATION }}",
+        "EXPECTED_NAMESPACE_UID": "${{ vars.STAGING_NAMESPACE_UID }}",
+    }.items():
+        assert step["env"][key] == value
+    env = {
+        **os.environ,
+        **values,
+        "RUNNER_TEMP": tmp_path.as_posix(),
+        "DEPLOYMENT_MODE": "maintenance",
+        "DEPLOYMENT_PROFILE": "single-node-4c4g",
+    }
+    env.pop("BASH_ENV", None)
+    command = (
+        'fixture_python() { "$PYTHON_REAL" "$PYTHON_CLOCK_BOUNDARY" "$@"; }\n'
+        'kubectl() { printf "%s\\n" "$*" >> "$RUNNER_TEMP/commands"; return 71; }\n' + step["run"]
+    )
+    bash = r"C:\Program Files\Git\bin\bash.exe" if os.name == "nt" else shutil.which("bash")
+    assert bash
+    result = subprocess.run(
+        [bash, "--noprofile", "--norc", "-c", command],
+        cwd=ROOT,
+        env=env,
+        capture_output=True,
+        timeout=10,
+    )
+    assert result.returncode != 0
+    assert not (tmp_path / "commands").exists()
+    assert b"Traceback" not in result.stderr

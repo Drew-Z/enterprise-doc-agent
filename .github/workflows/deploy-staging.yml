@@ -438,8 +438,30 @@ jobs:
         id: migration
         env:
           DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'single-node-4c4g' }}
+          DEPLOYMENT_MODE: ${{ vars.STAGING_DEPLOYMENT_MODE || 'standard' }}
+          MAINTENANCE_GUARD_STATE: ${{ vars.STAGING_MAINTENANCE_GUARD_STATE }}
+          MAINTENANCE_GUARD_PLAN: ${{ vars.STAGING_MAINTENANCE_GUARD_PLAN }}
+          MAINTENANCE_GUARD_PLAN_SHA256: ${{ vars.STAGING_MAINTENANCE_GUARD_PLAN_SHA256 }}
+          MAINTENANCE_OPERATION: ${{ vars.STAGING_MAINTENANCE_OPERATION }}
+          EXPECTED_NAMESPACE_UID: ${{ vars.STAGING_NAMESPACE_UID }}
         run: |
           set -euo pipefail
+          if test "${DEPLOYMENT_MODE:-standard}" = "maintenance"; then
+            # Atomic fencing must precede scale, Job deletion and migration apply.
+            # Once claimed, even a cancelled/unknown migration cannot restore old code.
+            test -n "$MAINTENANCE_GUARD_STATE"
+            test -n "$MAINTENANCE_GUARD_PLAN"
+            test -n "$MAINTENANCE_GUARD_PLAN_SHA256"
+            test -n "$MAINTENANCE_OPERATION"
+            "$RUNNER_PYTHON" scripts/maintenance_guard.py claim \
+              --state "$MAINTENANCE_GUARD_STATE" \
+              --plan "$MAINTENANCE_GUARD_PLAN" \
+              --plan-sha256 "$MAINTENANCE_GUARD_PLAN_SHA256" \
+              --operation "$MAINTENANCE_OPERATION" \
+              --executor "$GITHUB_SHA" \
+              --namespace-uid "$EXPECTED_NAMESPACE_UID" \
+              --candidate "$RUNNER_TEMP/staging.yaml"
+          fi
           if test "$DEPLOYMENT_PROFILE" = "tiny-single-node" || test "$DEPLOYMENT_PROFILE" = "single-node-4c4g"; then
             kubectl -n enterprise-doc-agent-staging scale \
               deployment/enterprise-doc-api \
