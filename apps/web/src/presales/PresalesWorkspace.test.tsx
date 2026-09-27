@@ -95,6 +95,88 @@ beforeEach(() => { sessionStorage.clear(); localStorage.clear(); });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 describe("PresalesWorkspace HTTP boundary", () => {
+  it("retries a failed sheet read in place without creating or generating anything", async () => {
+    sessionStorage.setItem(storageKey, packetId);
+    let reads = 0;
+    let finishRead!: (response: Response) => void;
+    const fetch = vi.spyOn(globalThis, "fetch").mockImplementation(async input => {
+      if (requestPath(input) !== "/api/presales/" + packetId) return json([]);
+      reads += 1;
+      if (reads === 2) return json({ error: { code: "temporarily_unavailable", message: "Temporary read failure", requestId: "read-retry" } }, 503);
+      if (reads === 3) return new Promise<Response>(resolve => { finishRead = resolve; });
+      return json(makePacket(true));
+    });
+    mount();
+    await screen.findByText("The source states 30 days.", { selector: "p" });
+    fireEvent.click(screen.getAllByRole("button", { name: "Refresh" })[1]);
+    await screen.findByRole("alert");
+    expect(screen.queryByRole("article")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Retry reading" }));
+    await waitFor(() => expect(reads).toBe(3));
+    expect(screen.getByRole("button", { name: "Retry reading" })).toBeDisabled();
+    expect(screen.queryByRole("article")).not.toBeInTheDocument();
+    act(() => { finishRead(json(makePacket(true))); });
+    await screen.findByText("The source states 30 days.", { selector: "p" });
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(sessionStorage.getItem(storageKey)).toBe(packetId);
+    expect(fetch.mock.calls.every(([, init]) => (init?.method ?? "GET") === "GET")).toBe(true);
+  });
+
+  it.each([1, 2])("recovers %i row generation after both admission and recovery reads lose their responses", async rowCount => {
+    sessionStorage.setItem(storageKey, packetId);
+    const pending = makePacket();
+    pending.generationMode = "background";
+    if (rowCount === 2) pending.rows.push({ ...pending.rows[0], id: crypto.randomUUID(), requirement: { ...pending.rows[0].requirement, key: "R2" } });
+    pending.rowCount = rowCount;
+    let posted = false;
+    let connected = true;
+    const fetch = vi.spyOn(globalThis, "fetch").mockImplementation((input, init) => {
+      const path = requestPath(input);
+      if (path.endsWith("/generate")) { posted = true; connected = false; return Promise.reject(new TypeError("Admission response lost")); }
+      if (path === "/api/presales/" + packetId) {
+        if (!connected) return Promise.reject(new TypeError("Recovery read lost"));
+        return Promise.resolve(json(posted ? { ...pending, rows: pending.rows.map(row => ({ ...row, state: "drafted", draft: makePacket(true).rows[0].draft, attempts: [attempt("succeeded")], revision: 1 })) } : pending));
+      }
+      expect(init?.method ?? "GET").toBe("GET");
+      return Promise.resolve(json([{ id: packetId, title: pending.title, createdAt: timestamp, rowCount, staleSources: false }]));
+    });
+    mount();
+    fireEvent.click(await screen.findByRole("button", { name: "Generate pending responses" }));
+    await screen.findByText("Recovery read lost");
+    expect(screen.queryByRole("article")).not.toBeInTheDocument();
+    expect(sessionStorage.getItem(storageKey)).toBe(packetId);
+    fireEvent.click(screen.getByRole("button", { name: /Customer retention response/ }));
+    expect(screen.queryByRole("article")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Retry reading" })).toBeInTheDocument();
+    connected = true;
+    fireEvent.click(screen.getByRole("button", { name: "Retry reading" }));
+    await waitFor(() => expect(screen.getAllByText("The source states 30 days.", { selector: "p" })).toHaveLength(rowCount));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getByText("The response sheet was read again. Check each row's current state.")).toBeInTheDocument();
+    expect(fetch.mock.calls.filter(([, init]) => init?.method === "POST")).toHaveLength(1);
+    expect(screen.getByRole("button", { name: "Generate pending responses" })).toBeDisabled();
+  });
+
+  it("keeps cached content hidden when a read retry is denied by the server", async () => {
+    sessionStorage.setItem(storageKey, packetId);
+    let reads = 0;
+    vi.spyOn(globalThis, "fetch").mockImplementation(input => {
+      if (requestPath(input) !== "/api/presales/" + packetId) return Promise.resolve(json([]));
+      reads += 1;
+      return Promise.resolve(reads === 1 ? json(makePacket(true)) : json({ error: { code: "presales_forbidden", message: "Access revoked", requestId: "read-denied" } }, 403));
+    });
+    mount();
+    await screen.findByText("The source states 30 days.", { selector: "p" });
+    fireEvent.click(screen.getAllByRole("button", { name: "Refresh" })[1]);
+    await screen.findByText(/Access revoked/);
+    fireEvent.click(screen.getByRole("button", { name: "Retry reading" }));
+    await waitFor(() => expect(reads).toBe(3));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Retry reading" })).toBeEnabled());
+    expect(screen.queryByRole("article")).not.toBeInTheDocument();
+    expect(screen.queryByText("The source states 30 days.")).not.toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("Access revoked");
+  });
+
   it("keeps synchronous servers on separate row requests instead of one long batch", async () => {
     sessionStorage.setItem(storageKey, packetId);
     const current = makePacket();

@@ -22,6 +22,7 @@ export function PresalesWorkspace({ token, contextKey, storageKey, openDocuments
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [readRecovery, setReadRecovery] = useState<{ id: string; after: number; error: unknown } | null>(null);
   const [blockedId, setBlockedId] = useState<string | null>(null);
   const alive = useRef(true);
   const controller = useRef<AbortController | null>(null);
@@ -47,12 +48,12 @@ export function PresalesWorkspace({ token, contextKey, storageKey, openDocuments
       pendingDownloads.clear();
     };
   }, [contextKey, queryClient]);
-  const select = (id: string | null) => { setActiveId(id); setEntryVersionId(undefined); if (!id) setFormRevision(current => current + 1); setBlockedId(null); setError(""); setNotice(""); try { if (id) sessionStorage.setItem(storageKey, id); else sessionStorage.removeItem(storageKey); } catch { /* Recovery is optional; bodies stay in memory. */ } };
+  const select = (id: string | null) => { setActiveId(id); setEntryVersionId(undefined); if (!id) setFormRevision(current => current + 1); setBlockedId(null); setError(""); setNotice(""); setReadRecovery(current => current?.id === id ? current : null); try { if (id) sessionStorage.setItem(storageKey, id); else sessionStorage.removeItem(storageKey); } catch { /* Recovery is optional; bodies stay in memory. */ } };
   const keyFor = (operation: string, payload: unknown) => { const body = JSON.stringify(payload); const previous = keys.current.get(operation); if (previous?.body === body) return previous.key; const key = crypto.randomUUID(); keys.current.set(operation, { body, key }); return key; };
   const saveResult = (value: Packet, signal: AbortSignal) => { if (!alive.current || signal.aborted) return; queryClient.setQueryData(["presales", contextKey, value.id], value); select(value.id); };
   const run = async (label: string, operation: (signal: AbortSignal) => Promise<string | void>) => {
     if (controller.current !== null) return;
-    const current = new AbortController(); controller.current = current; setBusy(label); setError(""); setNotice("");
+    const current = new AbortController(); controller.current = current; setBusy(label); setError(""); setNotice(""); setReadRecovery(null);
     try {
       const message = await operation(current.signal);
       if (alive.current && !current.signal.aborted) setNotice(message ?? c.complete);
@@ -75,6 +76,17 @@ export function PresalesWorkspace({ token, contextKey, storageKey, openDocuments
     saveResult(value, signal);
     await recent.refetch();
   });
+  const recoverGeneration = async (id: string, signal: AbortSignal): Promise<Packet | null> => {
+    try { return await api.get(id, signal); }
+    catch (failure) {
+      if (signal.aborted || !alive.current || (failure instanceof PresalesApiError && failure.status < 500)) throw failure;
+      // The generation POST and its recovery GET both lost their response. Hide
+      // stale rows until a later successful read, without repeating the write.
+      const after = queryClient.getQueryState(["presales", contextKey, id])?.dataUpdatedAt ?? 0;
+      setReadRecovery({ id, after, error: failure });
+      return null;
+    }
+  };
   const generate = (value: Packet, rows: PresalesRow[]) => void run(rows.length === 1 ? rows[0].id : "all", async signal => {
     if (rows.length > 1 && value.generationMode === "background") {
       try {
@@ -83,7 +95,8 @@ export function PresalesWorkspace({ token, contextKey, storageKey, openDocuments
         return batch.rejected.length ? c.batchRejected.replace("{count}", String(batch.rejected.length)) : batch.packet.rows.some(generationActive) ? c.background : c.complete;
       } catch (failure) {
         if (signal.aborted || !alive.current || (failure instanceof PresalesApiError && failure.status < 500)) throw failure;
-        const recovered = await api.get(value.id, signal);
+        const recovered = await recoverGeneration(value.id, signal);
+        if (!recovered) return c.recoveryPending;
         saveResult(recovered, signal);
         const requested = recovered.rows.filter(r => rows.some(requestedRow => requestedRow.id === r.id));
         if (requested.some(generationActive)) return c.background;
@@ -100,7 +113,9 @@ export function PresalesWorkspace({ token, contextKey, storageKey, openDocuments
         if (signal.aborted || !alive.current || (failure instanceof PresalesApiError && failure.status < 500)) throw failure;
         // The request may still be running or already saved after a proxy/network
         // failure. Only read here: never dispatch another billable attempt.
-        next = await api.get(value.id, signal);
+        const recovered = await recoverGeneration(value.id, signal);
+        if (!recovered) return c.recoveryPending;
+        next = recovered;
         saveResult(next, signal);
         if (next.rows.find(r => r.id === row.id)?.state === "pending") throw failure;
       }
@@ -121,9 +136,11 @@ export function PresalesWorkspace({ token, contextKey, storageKey, openDocuments
     const timer = window.setTimeout(() => { releaseUrl(url); downloads.current.delete(url); }, 1000);
     downloads.current.set(url, () => { window.clearTimeout(timer); releaseUrl(url); });
   });
-  const visible = packet.isError || (activeId !== null && blockedId === activeId) ? undefined : packet.data;
-  const pageError = error || (activeId && packet.isError ? formatApiError(packet.error, c.sourceUnavailable, c.requestId) : "");
-  const visibleNotice = notice === c.background && visible && !visible.rows.some(generationActive) ? c.finished : notice;
+  const recovery = readRecovery?.id === activeId ? readRecovery : null;
+  const awaitingRead = recovery !== null && packet.dataUpdatedAt <= recovery.after;
+  const visible = packet.isError || awaitingRead || (activeId !== null && blockedId === activeId) ? undefined : packet.data;
+  const pageError = error || (activeId && packet.isError ? formatApiError(packet.error, c.sourceUnavailable, c.requestId) : awaitingRead ? formatApiError(recovery.error, c.error, c.requestId) : "");
+  const visibleNotice = recovery && visible ? c.readRecovered : notice === c.background && visible && !visible.rows.some(generationActive) ? c.finished : notice;
   return <section className="presales-workspace">
     <header className="product-page-header"><div><p className="eyebrow">{c.title}</p><h1>{c.title}</h1><p className="page-summary">{c.summary}</p></div><button type="button" className="presales-secondary" onClick={openDocuments}>{c.documents}</button></header>
     {!enabled ? <div className="presales-empty" role="status"><ClipboardCheck aria-hidden="true" /><p>{readOnly ? c.showcase : c.login}</p><button type="button" onClick={openDocuments}>{c.documents}</button></div> : <div className="presales-layout">
@@ -131,7 +148,7 @@ export function PresalesWorkspace({ token, contextKey, storageKey, openDocuments
         {recent.isPending && <p role="status">{c.loading}</p>}{recent.isError && <p role="alert" className="presales-error">{formatApiError(recent.error, c.error, c.requestId)}</p>}{!recent.isError && recent.data?.length === 0 && <p className="presales-hint">{c.empty}</p>}
         {!recent.isError && recent.data?.map(item => <button type="button" key={item.id} className={"presales-packet-link" + (activeId === item.id ? " selected" : "")} aria-current={activeId === item.id ? "true" : undefined} disabled={Boolean(busy)} onClick={() => select(item.id)}><strong>{item.title}</strong><small>{new Date(item.createdAt).toLocaleDateString()} · {item.rowCount}</small>{item.staleSources && <small>{c.stale}</small>}</button>)}
       </aside>
-      <div className="presales-main" aria-busy={Boolean(busy)}>{pageError && <div className="presales-error" role="alert">{pageError}{(packet.isError || blockedId !== null) && <button type="button" onClick={() => select(null)}>{c.reset}</button>}</div>}{visibleNotice && <p className="presales-saved" role="status">{visibleNotice}</p>}
+      <div className="presales-main" aria-busy={Boolean(busy)}>{pageError && <div className="presales-error" role="alert">{pageError}{activeId && (packet.isError || awaitingRead) && blockedId !== activeId && <><p>{c.readRecoveryHelp}</p><button type="button" disabled={Boolean(busy) || packet.fetchStatus !== "idle"} onClick={() => void packet.refetch()}>{c.retryRead}</button></>}{(packet.isError || blockedId !== null) && <button type="button" onClick={() => select(null)}>{c.reset}</button>}</div>}{visibleNotice && <p className="presales-saved" role="status">{visibleNotice}</p>}
         {!activeId && <><h2>{c.newPacket}</h2>{inventory.isPending && <p role="status">{c.loading}</p>}{inventory.isError && <p role="alert" className="presales-error">{formatApiError(inventory.error, c.error, c.requestId)}<button type="button" onClick={() => void inventory.refetch()}>{c.refresh}</button></p>}{inventory.isSuccess && <PacketForm key={formRevision} maxRequirements={maxRequirements} documents={inventory.data} busy={Boolean(busy)} onCreate={create} openDocuments={openDocuments} initialVersionId={entryVersionId} />}</>}
         {activeId && packet.isPending && <p role="status">{c.loading}</p>}
         {visible && <><header className="presales-packet-heading"><div><h2>{visible.title}</h2><p className="presales-hint" role="status">{visible.rows.filter(r => r.draft).length} / {visible.rows.length} {c.generatedProgress} · {visible.rows.filter(r => r.review).length} / {visible.rows.length} {c.progress}</p></div><button className="presales-icon" type="button" aria-label={c.refresh} title={c.refresh} disabled={Boolean(busy)} onClick={() => void packet.refetch()}><RefreshCw aria-hidden="true" /></button></header>

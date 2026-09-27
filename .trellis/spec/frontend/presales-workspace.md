@@ -87,6 +87,24 @@ draft or a persisted model timeout. A lost batch response followed by completed 
 restores those results without a false whole-batch HTTP error or a second POST.
 Automatic route recovery belongs to the server.
 
+A failed sheet GET keeps an in-place **Retry reading** action next to the error,
+even though the sheet heading and its ordinary refresh action are hidden. The
+action only calls the current query's `refetch()` for the same sheet/context;
+it cannot create a sheet or dispatch generation. It is disabled while a read is
+fetching or paused. Cached bodies remain hidden during the retry and after a
+denied/malformed response; only a successful authorized GET restores them.
+
+If an uncertain generate response is followed by a failed recovery GET,
+`recoverGeneration` records the sheet ID, the current query `dataUpdatedAt` and
+the read error in memory. Old rows stay hidden until a later successful read.
+Reconnection uses the normal Query read path; the same manual read action remains
+available. A successful read clears the displayed connection failure and reports
+that current row states were recovered, without inferring generation success.
+Selecting the same sidebar sheet cannot clear this guard; a different sheet or
+new operation retires it. Business/authorization 4xx errors keep the existing
+failure path. No write is replayed, no body/operation queue is added to storage,
+and a failed row still requires explicit generation retry.
+
 Query keys include tenant/actor/auth revision. App remounts the workspace when its
 authentication context changes. Unmount aborts the operation and removes queries;
 late results cannot update cache or storage. A rejected source/author/tenant
@@ -109,8 +127,17 @@ model output; it is separate from the ordinary development/production entrypoint
 Regression files: `src/presales/PresalesWorkspace.test.tsx` (fetch boundary) and
 `presales-e2e/workspace.spec.ts` (real local API/DB, controlled identity/model).
 `playwright.presales-background.config.ts` selects `presales-e2e/background.spec.ts`:
-accepted batch, navigation/reload, primary failure, partial completion, failed-only
-retry, commercial settlement, tenant isolation and 390px layout. The background
+accepted batch, navigation/reload, actual browser offline completion, GET 503 and
+in-place read recovery, dropped real 202 response plus failed recovery GET,
+primary failure, partial completion, failed-only retry, persisted reviews/CSV,
+commercial settlement, tenant isolation and 390px layout. An independent
+APIRequestContext observes worker/database completion while the browser context
+is offline. Two generation POSTs cover the initial batch and explicit failed-row
+retry; reconnect, refresh and read retry keep five controlled provider dispatches,
+three consumed reservations and one released reservation unchanged. This is a
+local API/DB/worker test with a synthetic bearer and controlled model/embedding
+boundaries, not live OAuth, real-provider capacity or deployed-feature evidence.
+The background
 spec is skipped in the legacy configuration; that skip is not a background pass.
 `playwright.presales.config.ts` is separate from the existing full platform E2E
 configuration, and its fixture deletes only the records it created.
