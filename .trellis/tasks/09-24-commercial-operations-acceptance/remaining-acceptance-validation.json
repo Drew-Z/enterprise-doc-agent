@@ -50,7 +50,8 @@
     "enforce_admins": true,
     "force_push_allowed": false,
     "deletion_allowed": false,
-    "required_checks_run_for_docs_changes": true,
+    "candidate_required_checks_run_for_docs_changes": true,
+    "main_workflow_update": "pending_draft_pr_merge; old-main documentation-only PRs may still omit required jobs",
     "independent_staging_reviewer": "pending",
     "main_merged": false,
     "new_source_ci": "recorded_separately_after_exact_commit"
