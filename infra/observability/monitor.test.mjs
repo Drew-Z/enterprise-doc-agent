@@ -1,0 +1,263 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { readFile } from 'node:fs/promises';
+import { Miniflare, convertV4MiniflareOptions } from 'miniflare';
+import ts from 'typescript';
+import { probeReadiness, recordObservation, deliverNotification, runScheduled } from './monitor.ts';
+
+const now = Date.parse('2026-09-28T00:00:00Z');
+const target = 'https://agent.example.test/health/ready';
+const payload = () => ({
+  status: 'ready',
+  checked_at: new Date(now).toISOString(),
+  checks: Object.fromEntries(['database', 'redis', 'object_store'].map((key) => [key, { status: 'up' }])),
+});
+
+for (const [label, response, reason] of [
+  ['redirect', () => new Response(null, { status: 302, headers: { Location: 'https://other.test/' } }), 'http_status'],
+  ['HTML with status 200', () => new Response('private contents'), 'invalid_content_type'],
+  ['missing dependency', () => Response.json({ ...payload(), checks: { database: { status: 'up' } } }), 'invalid_readiness'],
+  ['unhealthy dependency', () => Response.json({ ...payload(), checks: { ...payload().checks, redis: { status: 'down' } } }), 'dependency_unhealthy'],
+  ['unhealthy extra check', () => Response.json({ ...payload(), checks: { ...payload().checks, extra: { status: 'timeout' } } }), 'dependency_unhealthy'],
+  ['stale body', () => Response.json({ ...payload(), checked_at: new Date(now - 120_001).toISOString() }), 'stale_readiness'],
+  ['future body', () => Response.json({ ...payload(), checked_at: new Date(now + 15_001).toISOString() }), 'clock_skew'],
+  ['timezone absent', () => Response.json({ ...payload(), checked_at: '2026-09-28T00:00:00' }), 'invalid_readiness'],
+  ['JSON invalid', () => new Response('{', { headers: { 'Content-Type': 'application/json' } }), 'invalid_readiness'],
+  ['oversize body', () => Response.json({ ...payload(), secret: 'x'.repeat(65_536) }), 'response_too_large'],
+]) {
+  test(`probe rejects ${label} without storing response contents`, async () => {
+    const result = await probeReadiness(target, { now: () => now, fetch: async () => response() });
+    assert.equal(result.healthy, false);
+    assert.equal(result.reason, reason);
+    assert.equal(JSON.stringify(result).includes('private contents'), false);
+  });
+}
+
+test('probe deadline also bounds a body stalled after response headers', async () => {
+  const result = await probeReadiness(target, {
+    now: () => now, timeoutMs: 10,
+    fetch: async () => new Response(new ReadableStream(), { headers: { 'Content-Type': 'application/json' } }),
+  });
+  assert.equal(result.reason, 'timeout');
+});
+
+test('network failures are redacted and the probe does not retry', async () => {
+  let calls = 0;
+  const result = await probeReadiness(target, {
+    now: () => now,
+    fetch: async () => { calls++; throw new Error('PRIVATE_NETWORK_DIAGNOSTIC'); },
+  });
+  assert.equal(calls, 1);
+  assert.deepEqual(result, { healthy: false, reason: 'transport_error', checkedAt: null });
+});
+
+async function database(t) {
+  const mf = new Miniflare(convertV4MiniflareOptions({
+    modules: true, compatibilityDate: '2026-09-26',
+    script: 'export default { fetch() { return new Response("test"); } };',
+    d1Databases: { MONITOR_DB: 'monitor-test' },
+  }));
+  t.after(() => mf.dispose());
+  const db = await mf.getD1Database('MONITOR_DB');
+  const schema = await readFile(new URL('./schema.sql', import.meta.url), 'utf8');
+  await db.exec(schema.replaceAll('\n', ' '));
+  return db;
+}
+
+const sample = (minute, healthy, key = 'readiness-test') => ({
+  key, tick: now + minute * 60_000, observedAt: now + minute * 60_000 + 10,
+  probe: { healthy, reason: healthy ? 'ready' : 'http_status', checkedAt: null },
+});
+
+test('three failed minutes open one incident; two healthy minutes close it exactly once', async (t) => {
+  const db = await database(t);
+  assert.equal(await recordObservation(db, sample(0, false), 'notify'), null);
+  assert.equal(await recordObservation(db, sample(1, false), 'notify'), null);
+  const failure = await recordObservation(db, sample(2, false), 'notify');
+  assert.equal(failure.kind, 'failure');
+  assert.equal(await recordObservation(db, sample(3, false), 'notify'), null);
+  assert.equal(await recordObservation(db, sample(4, true), 'notify'), null);
+  const recovery = await recordObservation(db, sample(5, true), 'notify');
+  assert.equal(recovery.kind, 'recovery');
+  assert.equal(await recordObservation(db, sample(6, true), 'notify'), null);
+  const events = await db.prepare('SELECT kind FROM notification_events ORDER BY tick').all();
+  assert.deepEqual(events.results.map((item) => item.kind), ['failure', 'recovery']);
+});
+
+test('duplicate and late minutes cannot accumulate failures or race two incident events', async (t) => {
+  const db = await database(t);
+  await Promise.all(Array.from({ length: 4 }, () => recordObservation(db, sample(0, false), 'notify')));
+  await recordObservation(db, sample(1, false), 'notify');
+  const events = await Promise.all(Array.from({ length: 4 }, () => recordObservation(db, sample(2, false), 'notify')));
+  assert.equal(events.filter(Boolean).length, 1);
+  await recordObservation(db, sample(1, true), 'notify');
+  const state = await db.prepare('SELECT * FROM monitor_state').first();
+  assert.equal(state.failures, 3);
+  assert.equal(state.successes, 0);
+  assert.equal(state.last_tick, sample(2, false).tick);
+});
+
+test('missing minute resets the streak and expired or future observations are not evidence', async (t) => {
+  const db = await database(t);
+  await recordObservation(db, sample(0, false), 'notify');
+  await recordObservation(db, sample(1, false), 'notify');
+  assert.equal(await recordObservation(db, sample(3, false), 'notify'), null);
+  assert.equal(await recordObservation(db, { ...sample(4, false), observedAt: sample(4, false).tick + 90_001 }, 'notify'), null);
+  assert.equal(await recordObservation(db, { ...sample(4, false), observedAt: sample(4, false).tick - 1 }, 'notify'), null);
+  const state = await db.prepare('SELECT * FROM monitor_state').first();
+  assert.equal(state.failures, 1);
+  assert.equal(state.last_tick, sample(3, false).tick);
+});
+
+function mailEnv(db, send) {
+  return { MONITOR_DB: db, MAIL: { send }, MODE: 'notify', MONITOR_KEY: 'readiness-test',
+    MAIL_FROM: 'ops@example.test', MAIL_TO: 'owner@example.test', TARGET_URL: target };
+}
+
+async function incident(db, mode = 'notify') {
+  await recordObservation(db, sample(0, false), mode);
+  await recordObservation(db, sample(1, false), mode);
+  return recordObservation(db, sample(2, false), mode);
+}
+
+test('concurrent senders claim a notification once and use only fixed recipient and content', async (t) => {
+  const db = await database(t);
+  const event = await incident(db);
+  const messages = [];
+  const env = mailEnv(db, async (message) => { messages.push(message); return { messageId: 'test-message-1' }; });
+  await Promise.all(Array.from({ length: 4 }, () => deliverNotification(env, event.id, () => now)));
+  assert.equal(messages.length, 1);
+  assert.equal(messages[0].to, env.MAIL_TO);
+  assert.equal(messages[0].from, env.MAIL_FROM);
+  assert.equal(messages[0].cc, undefined);
+  assert.equal(messages[0].bcc, undefined);
+  assert.match(messages[0].text, /http_status/);
+  const saved = await db.prepare('SELECT * FROM notification_events').first();
+  assert.equal(saved.delivery_status, 'accepted');
+  assert.equal(saved.provider_message_id, 'test-message-1');
+  assert.equal(await deliverNotification(env, event.id, () => now), false);
+});
+
+for (const failure of ['exception', 'timeout']) {
+  test(`send ${failure} stays unknown and cannot be automatically retried`, async (t) => {
+    const db = await database(t);
+    const event = await incident(db);
+    let calls = 0;
+    const env = mailEnv(db, async () => {
+      calls++;
+      if (failure === 'exception') throw new Error('PRIVATE_MAIL_ERROR');
+      return new Promise(() => {});
+    });
+    await deliverNotification(env, event.id, () => now, 10);
+    assert.equal(await deliverNotification(env, event.id, () => now), false);
+    assert.equal(calls, 1);
+    const saved = await db.prepare('SELECT * FROM notification_events').first();
+    assert.equal(saved.delivery_status, 'unknown');
+    assert.equal(JSON.stringify(saved).includes('PRIVATE_MAIL_ERROR'), false);
+  });
+}
+
+test('observe mode and another monitor key never dispatch email', async (t) => {
+  const db = await database(t);
+  const event = await incident(db, 'observe');
+  const env = mailEnv(db, async () => assert.fail('email must not be called'));
+  assert.equal(event.delivery_status, 'suppressed');
+  assert.equal(await deliverNotification(env, event.id, () => now), false);
+  const other = await recordObservation(db, sample(0, false, 'drill-test'), 'notify');
+  assert.equal(other, null);
+  await recordObservation(db, sample(1, false, 'drill-test'), 'notify');
+  const otherEvent = await recordObservation(db, sample(2, false, 'drill-test'), 'notify');
+  assert.equal(await deliverNotification(env, otherEvent.id, () => now), false);
+});
+
+test('scheduled monitoring fetches the real target and suppresses repeated or stale invocations', async (t) => {
+  const db = await database(t);
+  const env = { ...mailEnv(db, async () => assert.fail('observe mode')), MODE: 'observe', DRILL_START_MS: '0' };
+  let requests = 0;
+  const boundary = { now: () => now + 10, fetch: async () => { requests++; return Response.json(payload()); } };
+  assert.equal((await runScheduled(env, now, boundary)).status, 'sampled');
+  assert.equal((await runScheduled(env, now, boundary)).status, 'ignored');
+  assert.equal((await runScheduled(env, now - 120_000, boundary)).status, 'ignored');
+  assert.equal((await runScheduled(env, now + 60_000, boundary)).status, 'ignored');
+  assert.equal(requests, 1);
+});
+
+test('a five-minute drill produces exactly two labelled messages with isolated state and no production request', async (t) => {
+  const db = await database(t);
+  await recordObservation(db, sample(0, true), 'observe');
+  const messages = [];
+  const env = {
+    ...mailEnv(db, async (message) => { messages.push(message); return { messageId: 'test-drill' }; }),
+    MONITOR_KEY: 'drill-acceptance', DRILL_START_MS: String(now),
+  };
+  for (let minute = 0; minute < 7; minute++) {
+    const tick = now + minute * 60_000;
+    const boundary = { now: () => tick + 10, fetch: async () => assert.fail('drill must not call the service') };
+    await runScheduled(env, tick, boundary);
+    await runScheduled(env, tick, boundary);
+  }
+  assert.equal(messages.length, 2);
+  assert.ok(messages.every((message) => message.subject.includes('[TEST]')));
+  const production = await db.prepare('SELECT * FROM monitor_state WHERE monitor_key = ?').bind('readiness-test').first();
+  assert.equal(production.last_tick, now);
+  assert.equal(production.incident_open, 0);
+});
+
+test('a committed pending event survives interruption before dispatch and is sent by the next tick once', async (t) => {
+  const db = await database(t);
+  const event = await incident(db);
+  const messages = [];
+  const env = { ...mailEnv(db, async (message) => { messages.push(message); return { messageId: 'delayed-ack' }; }), DRILL_START_MS: '0' };
+  const tick = now + 3 * 60_000;
+  const boundary = { now: () => tick + 10, fetch: async () => new Response(null, { status: 503 }) };
+  await runScheduled(env, tick, boundary);
+  await runScheduled(env, tick, boundary);
+  assert.equal(messages.length, 1);
+  assert.ok(messages[0].text.includes(event.id));
+});
+
+test('the shipped Worker executes a scheduled readiness probe with real workerd and D1', async (t) => {
+  const source = await readFile(new URL('./monitor.ts', import.meta.url), 'utf8');
+  const script = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText;
+  let requests = 0;
+  const mf = new Miniflare(convertV4MiniflareOptions({
+    modules: true, compatibilityDate: '2026-09-26', script,
+    unsafeTriggerHandlers: true, d1Databases: { MONITOR_DB: 'worker-smoke' },
+    bindings: { MODE: 'observe', MONITOR_KEY: 'readiness-runtime', TARGET_URL: target, DRILL_START_MS: '0',
+      MAIL_FROM: 'ops@example.test', MAIL_TO: 'owner@example.test' },
+    outboundService: () => {
+      requests++;
+      return Response.json({ ...payload(), checked_at: new Date().toISOString() });
+    },
+  }));
+  t.after(() => mf.dispose());
+  const db = await mf.getD1Database('MONITOR_DB');
+  await db.exec((await readFile(new URL('./schema.sql', import.meta.url), 'utf8')).replaceAll('\n', ' '));
+  const response = await mf.dispatchFetch('http://localhost/cdn-cgi/local/scheduled');
+  assert.equal(response.status, 200);
+  const state = await db.prepare('SELECT * FROM monitor_state').first();
+  assert.equal(requests, 1);
+  assert.equal(state.reason, 'ready');
+  assert.equal(state.successes, 1);
+  const noAdmin = await mf.dispatchFetch('http://localhost/send');
+  assert.equal(noAdmin.status, 404);
+});
+
+test('external probe accepts only a fresh complete readiness response', async () => {
+  let calls = 0;
+  const result = await probeReadiness(target, {
+    now: () => now,
+    fetch: async (url, options) => {
+      calls++;
+      assert.equal(url, target);
+      assert.equal(options.redirect, 'manual');
+      assert.equal(options.headers.Accept, 'application/json');
+      assert.equal(options.headers.Authorization, undefined);
+      return Response.json(payload());
+    },
+  });
+  assert.equal(calls, 1);
+  assert.equal(result.healthy, true);
+  assert.equal(result.reason, 'ready');
+  assert.equal(result.checkedAt, now);
+});

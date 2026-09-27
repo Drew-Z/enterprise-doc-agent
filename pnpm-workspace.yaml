@@ -1,7 +1,14 @@
 packages:
   - apps/web
+  - infra/observability
 
 onlyBuiltDependencies:
   - esbuild
+  - workerd
 allowBuilds:
   esbuild: true
+  workerd: true
+minimumReleaseAgeExclude:
+  - '@cloudflare/workers-types@5.20260927.1'
+  - miniflare@5.20260926.0-alpha
+  - wrangler@4.142.0

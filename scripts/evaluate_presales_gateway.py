@@ -1,4 +1,4 @@
-"""Single-pass synthetic generation evaluation; no upload, retrieval or tenant writes.
+"""Single-pass fixture generation evaluation; no upload, retrieval or tenant writes.
 
 The collector never reads gold answers. Use the same configured presales route,
 but keep these results separate from public end-to-end quality measurements.
@@ -26,7 +26,7 @@ from enterprise_doc_core.presales.errors import PresalesError
 from enterprise_doc_core.presales.gateway import OpenAICompatiblePresalesGateway
 from enterprise_doc_core.presales.schemas import GenerationInput, SourceSnapshot
 from enterprise_doc_core.presales.settings import PresalesSettings
-from scripts.evaluate_presales_quality import Dataset, load_dataset, write_json
+from scripts.evaluate_presales_quality import Dataset, PublicDataset, load_dataset, write_json
 
 ModelRoute = Literal["primary", "fallback"]
 
@@ -57,7 +57,7 @@ class RecordingTransport(httpx.AsyncBaseTransport):
     async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
         record: dict[str, Any] = {"requestDispatched": True}
         self.records.append(record)
-        # Only synthetic model input and bounded output, never headers or credentials.
+        # Only frozen fixture input and bounded output, never headers or credentials.
         record["input"] = json.loads(json.loads(request.content)["messages"][1]["content"])
         phase = "awaiting_response_headers"
         try:
@@ -116,7 +116,7 @@ class RecordingTransport(httpx.AsyncBaseTransport):
 
 
 def synthetic_sources(
-    dataset: Dataset,
+    dataset: Dataset | PublicDataset,
     digest: str,
 ) -> tuple[list[SourceSnapshot], list[dict[str, str]]]:
     if any(len(source.content) > 1800 for source in dataset.sources):
@@ -160,7 +160,11 @@ async def collect(
     snapshots, evidence = synthetic_sources(dataset, digest)
     report: dict[str, Any] = {
         "schemaVersion": "presales-gateway-run-v3",
-        "scope": "generation_only_with_complete_synthetic_sources; no_retrieval_or_persistence",
+        "scope": (
+            "generation_only_with_complete_synthetic_sources; no_retrieval_or_persistence"
+            if dataset.synthetic
+            else "generation_only_with_public_excerpts; no_retrieval_or_persistence"
+        ),
         "datasetSha256": digest,
         "runnerSha256": hashlib.sha256(
             await asyncio.to_thread(Path(__file__).read_bytes)

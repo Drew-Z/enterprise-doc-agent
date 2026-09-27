@@ -51,8 +51,16 @@
     "evaluation/presales_quality_v8.prerequisite-score.json",
     "evaluation/presales_quality_v8.review.json",
     ".trellis/tasks/09-24-commercial-operations-acceptance/v8-live-execution.json",
-    ".trellis/tasks/09-24-commercial-operations-acceptance/maintenance-guarded-execution-validation.json"
+    ".trellis/tasks/09-24-commercial-operations-acceptance/maintenance-guarded-execution-validation.json",
+    "infra/observability/monitor.ts",
+    "infra/observability/monitor.test.mjs",
+    "infra/observability/schema.sql",
+    "docs/ops/cloudflare-alert-activation.md",
+    "docs/ops/public-source-quality-acceptance.md",
+    "evaluation/presales_public_r2_v1.json",
+    "evaluation/presales_public_r2_v1.gold.json",
+    ".trellis/tasks/09-24-commercial-operations-acceptance/remaining-acceptance-validation.json"
   ],
-  "notes": "2026-09-27 guarded maintenance on executor 0b1bcac and run 36327978939 deployed v0.1.45-rc.1 with revision 0031. Fresh DB/object recovery point, finite original-period product quotas, one synthetic upload-to-review/CSV flow, historical reads and tenant denial passed. Actual model/embedding/email attempts 1/2/0; no duplicate settlement. Public service restored after 28.8 minutes. Temporary environment policy/variables and runtime cleaned; failed first maintenance and required image aliases retained. Independent domain review, supplier billing, interactive OAuth/browser recovery, Agent nonempty calls, 4C4G capacity, alert delivery and whole-host recovery remain pending. Keep Draft and in_progress.",
+  "notes": "2026-09-28: independent Cloudflare readiness Worker/D1 observes actual ready; recipient verified and exactly one failure plus one recovery drill email accepted with message IDs. Temporary drill Worker/cron removed; user confirmed both inbox receipts, daily notify activated and exact configuration plus first live ready observation read back. main required backend/frontend checks and force/delete protection applied and read back, independent release reviewer pending. Five authorized public-source grok-4.7 requests completed: 5 valid drafts/classifications, 10 valid citations, 4/5 frozen semantic references met; R2-R3 places a scenario state only in the requirement and conflicts with source-only prerequisite evidence. Preserve this fixture mismatch; no rerun, prompt change or commercial pass. 39242 reported tokens, amount unknown, 0 embeddings/business writes. Python 2030, Web 343 and monitor 24 tests passed. Prior rc.1/0031 deployment and 185.8-minute failure remain recorded. OAuth/browser recovery, Agent actual accounting, 4C4G capacity, independent review/UAT, backup/queue alerting and whole-host recovery remain pending. Keep Draft and in_progress.",
   "meta": {}
 }

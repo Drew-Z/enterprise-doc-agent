@@ -1,0 +1,80 @@
+# External readiness monitor
+
+This independent Cloudflare Worker checks the deployed application's `/health/ready`
+every minute. It adds no process to the application server. The existing private
+mailbox remains the inbound mail service; this Worker has its own D1 state and a
+restricted Email Service binding.
+
+- Accept only HTTP 200, JSON, all dependencies up and an aware timestamp no older
+  than 120 seconds (maximum future skew: 15 seconds). No redirects or retries;
+  10-second total probe deadline and 64 KiB body bound.
+- Three consecutive failed minutes open an incident; two consecutive healthy
+  minutes close it. Initial health does not send a recovery message. Missing
+  minutes reset the streak. Duplicate, out-of-order and expired samples do not count.
+- D1 atomically commits the sample, incident transition and unique notification.
+  Pending events survive an interruption before dispatch; each tick drains at most
+  two pending events. The sender claims each event before using the email binding.
+- `accepted` means the binding returned a message identifier. It does **not** mean
+  the user received the email. `unknown` and an abandoned `attempting` are
+  indeterminate and never automatically retried. Preserve these records for review.
+- No HTTP administration or arbitrary email API. `workers_dev` and preview URLs are
+  disabled; the HTTP handler returns 404. No service credentials are needed.
+
+## Configuration and validation
+
+The committed configuration is an **observe-only template** with placeholder D1
+and email addresses. Prepare a private configuration outside the repository, with
+an absolute `main` path, the exact account/database identifiers, and matching
+single-address sender/recipient allowlists. Never deploy the placeholder file.
+
+```powershell
+pnpm install --frozen-lockfile
+pnpm --filter ops-monitor types
+pnpm --filter ops-monitor lint
+pnpm --filter ops-monitor typecheck
+pnpm --filter ops-monitor test
+pnpm --filter ops-monitor exec wrangler deploy --dry-run --config <private-config> --outdir <task-evidence-directory>
+```
+
+Wrangler 4.142.0 and its matching Miniflare 5 alpha/workerd dependency are pinned in
+the lockfile. The tests use the published V4-options converter, real local D1 and
+the shipped handler in workerd; only the target HTTP service and email delivery
+boundaries are controlled. Compatibility date 2026-09-26 is the pinned runtime's
+supported date; the local 2026-09-28 date was rejected as future and is not silently
+substituted during testing. Regenerate Env with Wrangler after binding changes.
+
+## Activation and delivery drill
+
+Follow [the activation plan](../../docs/ops/cloudflare-alert-activation.md).
+Start with `MODE=observe`, `MONITOR_KEY=readiness-v1`, `DRILL_START_MS=0`, and apply
+`schema.sql` only to the newly created dedicated database. Verify at least three
+real scheduled observations before notification activation.
+
+A separate, temporary drill Worker uses the same reviewed source, a distinct
+`drill-<id>` key and an explicit future minute-aligned `DRILL_START_MS`. Its five
+minutes supply three controlled failures followed by two successes, make **zero**
+requests to the production target, and generate at most one labelled failure and
+one recovery event. Late or missing cron ticks can make the drill fail; do not
+change timestamps or reset events to claim it passed. It cannot change production
+monitor state. Archive its evidence before removing its cron/Worker.
+
+To activate real delivery, verify the fixed destination and sender domain, then
+use `MODE=notify` with a **new readiness key**. This starts a fresh streak; events
+suppressed in observe mode are never relabelled as delivered. Confirm both test
+messages with the recipient separately from the binding acknowledgements.
+
+For rollback, set `MODE=observe` or remove only this Worker's cron; retain D1 events
+and the source/configuration/version receipt. Do not delete the existing mailbox,
+its bindings, Routing rules, MX records or any application resources.
+
+## Operational limits
+
+This is an external readiness alert, not an independent measurement of queue age,
+backup freshness, business success, or the monitor's own availability. A missed
+cron or D1 outage is unknown, not a healthy sample. Check `monitor_state.observed_at`
+and Worker invocation failures through the account's operational view; these
+additional alert paths remain part of the wider operations acceptance.
+
+Events are retained without automatic deletion. No automatic reset/replay is
+permitted for an indeterminate email attempt. Mail quota errors stay visible;
+changing providers or retrying after such an event needs a new bounded test.

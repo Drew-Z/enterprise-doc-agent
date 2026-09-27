@@ -237,3 +237,31 @@ def test_cli_settings_load_only_selected_environment_fields(tmp_path, route):
         assert settings.fallback_model_name == "fallback-model"
         assert settings.fallback_api_key.get_secret_value() == "fixture-secret"
         assert settings.api_key is None
+
+
+async def test_public_excerpt_trial_preserves_source_scope_and_five_single_attempts(tmp_path):
+    requests = []
+
+    async def fail(request):
+        sent = json.loads(request.content)
+        requests.append(sent)
+        assert "referenceAnswer" not in request.content.decode()
+        raise httpx.ConnectError("controlled_failure")
+
+    settings = ModelSettings(
+        provider=ModelProvider.OPENAI_COMPATIBLE,
+        base_url="https://primary.invalid/v1",
+        api_key=SecretStr("fixture-secret"),
+        model_name="fixture-model",
+    )
+    report = await collect(
+        Path("evaluation/presales_public_r2_v1.json"),
+        tmp_path / "public-run.json",
+        settings,
+        model_route="primary",
+        transport=httpx.MockTransport(fail),
+    )
+    assert len(requests) == report["maxGenerationAttempts"] == 5
+    assert report["scope"] == "generation_only_with_public_excerpts; no_retrieval_or_persistence"
+    assert all(row["state"] == "failed" for row in report["observations"])
+    assert report["automaticRetries"] == 0

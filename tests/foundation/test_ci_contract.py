@@ -68,8 +68,13 @@ def test_quality_workflow_has_only_fast_jobs() -> None:
     workflow = _workflow()
     triggers = _triggers(workflow)
     assert set(triggers) == {"pull_request", "push"}
-    assert "**/*.md" in triggers["pull_request"]["paths-ignore"]
-    assert ".trellis/tasks/**/*.jsonl" in triggers["push"]["paths-ignore"]
+    # Required checks must be emitted for documentation-only changes as well.
+    # A path-filtered workflow leaves branch protection waiting indefinitely.
+    for event in ("pull_request", "push"):
+        filters = triggers[event] or {}
+        assert "paths-ignore" not in filters
+        assert "paths" not in filters
+    assert triggers["push"]["branches"] == ["main"]
     jobs = workflow.get("jobs")
     assert isinstance(jobs, dict)
     assert set(jobs) == {"backend", "frontend"}

@@ -114,6 +114,32 @@ before first inference; retain initial failures separately from deterministic de
 replay. Never present a replay as an extra successful live inference or independent
 adjudication. Inspect meaning/conditions in addition to labels and exact quotations.
 
+## Official public-source fixtures
+
+`presales-public-quality-input-v1` is a separate input format with `synthetic=false`.
+Each source must have exactly one publication identity: HTTPS URL without credentials
+or query, timezone-aware retrieval time, extracted-page/receipt/excerpt SHA-256.
+The loader binds the excerpt hash to the parsed source text and rejects incomplete
+coverage. The collector still never reads gold; classification, quotes and all
+failed/unattempted questions use the existing scorer. Reports must not label public
+material synthetic or imply that assistant-authored scenarios are customer facts.
+
+`evaluation/presales_public_r2_v1.*` freezes limited official excerpts and five
+assistant-authored requirements before inference. Check unmet cache purge separately
+from unknown jurisdiction/endpoint configuration. Public product documentation is
+not proof of actual customer configuration or end-to-end disaster-recovery guarantees.
+Page/receipt membership is verified when freezing; the loader checks bindings, not
+the truth of a remote page. Do not rewrite old synthetic fixtures, runs or scores.
+
+The first public R2 trial exposed a fixture-contract mismatch: R2-R3 put a current
+execution fact only in the requirement hypothesis, while `presales.v8` requires
+source evidence for prerequisite states. Preserve the original unmet/unknown
+mismatch and count the item outside accepted semantics; do not change gold after
+inference or call a prompt-compliant response a demonstrated model defect. Before
+another trial, separate public capability evidence, hypothetical scenarios and
+project records explicitly. Synthetic project records must not claim official
+publication provenance or independent customer approval.
+
 ## Ordered decision regression and original-outcome scoring
 
 `presales.v5` explicitly orders unresolved source conflict, direct counterevidence,
