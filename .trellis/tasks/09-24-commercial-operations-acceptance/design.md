@@ -71,3 +71,5 @@ CO-3j5：同机临时 systemd 监督器与专用 runner 共用 SQLite 状态，B
 公开资料采用官方来源并保存获取证据，仓库只含必要有限摘录、来源和固定题目；私有集中目录保存完整抓取回执。题目覆盖明确支持、明确否定、先决条件、配置未知和资料未覆盖。参考由助手预先编写并标明 provenance，后续由用户审核；与已知 H3 回归分开，不重写旧基准或失败结果。
 
 CO-3k 复用当前响应表查询和既有本地后台浏览器夹具。失败读取入口只调用相同企业/身份上下文、相同响应表 ID 的 GET；不重置表、不调用 create/generate/review。现有读取失败隐藏缓存和授权拒绝阻断规则保持。网络恢复的实际结果仍由服务器查询决定，不从供应商调用状态推断业务成功。浏览器 context.setOffline 与独立 APIRequestContext 配合，证明页面离线期间后台已完成；真实 POST 到达服务后丢弃返回值，验证受理结果不明时的只读恢复。统计来自隔离库 provider_calls/usage_reservations，冻结旧阶段证据，原位恢复点绑定本阶段起始提交。
+
+CO-1d 复用 `build_durable_agent_handler(gateway=...)`，向真实图执行器注入 `OpenAICompatibleChatGateway(require_metering=True)`，仅 HTTP 供应商边界使用 MockTransport。业务准入、Job 租约、调用账本、终态结算、用量汇总及对账导出均走现有服务和独占 PostgreSQL schema。成功场景通过进程内适配器调用实际 AgentToolService，检索替换为固定候选、对象存储替换为内存边界，验证产物生成字节/哈希和公开元数据读取；失败场景复用数据库检索夹具。不把这些结果视为真实 MCP stdio、向量检索或对象下载验收。先增加非空调用断言呈现旧确定性夹具的覆盖缺口，再验证直接成功、修复成功及有界失败。`ProviderUsageSettings` 控制每任务预算，失败按正式 Worker 的 failure projector 路径释放；同键重放使用公开 AgentRunService。真实执行包单独约束调用次数、重试、租户和停止条件，当前真实模型/向量预算为零。
