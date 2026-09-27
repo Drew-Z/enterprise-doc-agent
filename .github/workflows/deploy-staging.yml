@@ -70,8 +70,21 @@ jobs:
         working-directory: ${{ github.workspace }}
         env:
           CONTROL_PLANE_APPROVED: ${{ vars.STAGING_CONTROL_PLANE_APPROVED }}
+          DEPLOYMENT_MODE: ${{ vars.STAGING_DEPLOYMENT_MODE || 'standard' }}
+          RUN_SMOKE: ${{ inputs.run_smoke }}
+          DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'single-node-4c4g' }}
         run: |
           set -euo pipefail
+          case "$DEPLOYMENT_MODE" in
+            standard) ;;
+            maintenance)
+              if test "$RUN_SMOKE" != "false" || test "$DEPLOYMENT_PROFILE" != "single-node-4c4g"; then
+                echo 'maintenance requires single-node-4c4g and run_smoke=false' >&2
+                exit 1
+              fi
+              ;;
+            *) echo 'unsupported deployment mode' >&2; exit 1 ;;
+          esac
           if test "$CONTROL_PLANE_APPROVED" != "true"; then
             echo 'staging control-plane firewall requires out-of-band approval' >&2
             exit 1
@@ -403,6 +416,24 @@ jobs:
             --live-manifest "$RUNNER_TEMP/staging-prerequisites-live.yaml" \
             --live-namespace-json "$RUNNER_TEMP/staging-namespace.json"
           kubectl apply --dry-run=server -f "$RUNNER_TEMP/staging-workloads.yaml"
+      - name: Validate already paused maintenance target
+        id: maintenance_prepare
+        if: vars.STAGING_DEPLOYMENT_MODE == 'maintenance'
+        run: |
+          set -euo pipefail
+          kubectl -n enterprise-doc-agent-staging get configmap enterprise-doc-config -o json \
+            > "$RUNNER_TEMP/staging-maintenance-config-before.json"
+          kubectl -n enterprise-doc-agent-staging get deployments -o json \
+            > "$RUNNER_TEMP/staging-maintenance-deployments-before.json"
+          kubectl -n enterprise-doc-agent-staging get pods -o json \
+            > "$RUNNER_TEMP/staging-maintenance-pods-before.json"
+          "$RUNNER_PYTHON" scripts/staging_maintenance.py prepare \
+            --input "$RUNNER_TEMP/staging.yaml" \
+            --live-config "$RUNNER_TEMP/staging-maintenance-config-before.json" \
+            --live-deployments "$RUNNER_TEMP/staging-maintenance-deployments-before.json" \
+            --live-pods "$RUNNER_TEMP/staging-maintenance-pods-before.json" \
+            --workloads "$RUNNER_TEMP/staging-workloads.yaml" \
+            --report "$RUNNER_TEMP/staging-maintenance-prepared.json"
       - name: Apply migration job before rollout
         id: migration
         env:
@@ -474,6 +505,7 @@ jobs:
           kubectl apply -f "$RUNNER_TEMP/staging-workloads.yaml"
       - name: Wait for workloads
         id: rollout
+        if: vars.STAGING_DEPLOYMENT_MODE != 'maintenance'
         env:
           DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'single-node-4c4g' }}
         run: |
@@ -492,9 +524,27 @@ jobs:
           if kubectl -n enterprise-doc-agent-staging get deployment enterprise-doc-prometheus >/dev/null 2>&1; then
             kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-prometheus --timeout=300s
           fi
+      - name: Verify installed applications remain paused
+        id: maintenance_verify
+        if: vars.STAGING_DEPLOYMENT_MODE == 'maintenance'
+        run: |
+          set -euo pipefail
+          kubectl -n enterprise-doc-agent-staging get configmap enterprise-doc-config -o json \
+            > "$RUNNER_TEMP/staging-maintenance-config-after.json"
+          kubectl -n enterprise-doc-agent-staging get deployments -o json \
+            > "$RUNNER_TEMP/staging-maintenance-deployments-after.json"
+          kubectl -n enterprise-doc-agent-staging get pods -o json \
+            > "$RUNNER_TEMP/staging-maintenance-pods-after.json"
+          "$RUNNER_PYTHON" scripts/staging_maintenance.py verify \
+            --input "$RUNNER_TEMP/staging.yaml" \
+            --live-config "$RUNNER_TEMP/staging-maintenance-config-after.json" \
+            --live-deployments "$RUNNER_TEMP/staging-maintenance-deployments-after.json" \
+            --live-pods "$RUNNER_TEMP/staging-maintenance-pods-after.json" \
+            --workloads "$RUNNER_TEMP/staging-workloads.yaml" \
+            --report "$RUNNER_TEMP/staging-maintenance-verified.json"
       - name: Verify public browser login entry
         id: browser_identity
-        if: vars.STAGING_BROWSER_AUTH_ISSUER != ''
+        if: vars.STAGING_DEPLOYMENT_MODE != 'maintenance' && vars.STAGING_BROWSER_AUTH_ISSUER != ''
         timeout-minutes: 2
         env:
           STAGING_BASE_URL: ${{ inputs.staging_base_url }}
@@ -518,6 +568,7 @@ jobs:
             --output "$RUNNER_TEMP/staging-browser-identity-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"
       - name: Run embedding provider and reindex gate
         id: embedding_rollout
+        if: vars.STAGING_DEPLOYMENT_MODE != 'maintenance'
         env:
           EXPECTED_EMBEDDING_MODEL: ${{ vars.STAGING_EMBEDDING_MODEL_NAME }}
           EXPECTED_EMBEDDING_VERSION: ${{ vars.STAGING_EMBEDDING_VERSION || '2' }}
@@ -638,7 +689,7 @@ jobs:
             --for=condition=complete job/m5-staging-smoke --timeout=120s
           kubectl -n enterprise-doc-agent-staging logs job/m5-staging-smoke
       - name: Clean up readiness smoke
-        if: always() && inputs.run_smoke
+        if: always() && vars.STAGING_DEPLOYMENT_MODE != 'maintenance' && inputs.run_smoke
         run: |
           kubectl -n enterprise-doc-agent-staging delete job m5-staging-smoke \
             --ignore-not-found --wait=true
@@ -684,12 +735,17 @@ jobs:
       - name: Restore tiny workloads after deployment attempt
         if: always()
         env:
+          DEPLOYMENT_MODE: ${{ vars.STAGING_DEPLOYMENT_MODE || 'standard' }}
           PREREQUISITES_OUTCOME: ${{ steps.prerequisites.outcome }}
           MIGRATION_OUTCOME: ${{ steps.migration.outcome }}
           WORKLOADS_OUTCOME: ${{ steps.workloads.outcome }}
           DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'single-node-4c4g' }}
         run: |
           set -euo pipefail
+          if test "${DEPLOYMENT_MODE:-standard}" = "maintenance"; then
+            echo 'maintenance mode: business workloads remain paused for operator review'
+            exit 0
+          fi
           if test "$DEPLOYMENT_PROFILE" != "tiny-single-node" && test "$DEPLOYMENT_PROFILE" != "single-node-4c4g"; then
             exit 0
           fi
@@ -716,6 +772,9 @@ jobs:
       - name: Collect sanitized release evidence
         if: always()
         env:
+          DEPLOYMENT_MODE: ${{ vars.STAGING_DEPLOYMENT_MODE || 'standard' }}
+          MAINTENANCE_PREPARE_OUTCOME: ${{ steps.maintenance_prepare.outcome }}
+          MAINTENANCE_VERIFY_OUTCOME: ${{ steps.maintenance_verify.outcome }}
           REGISTRY_PREFIX: ${{ inputs.registry_prefix }}
           API_DIGEST: ${{ inputs.api_digest }}
           WORKER_DIGEST: ${{ inputs.worker_digest }}
@@ -807,6 +866,16 @@ jobs:
             --input-dir "$raw_dir" \
             --output-dir "$sanitized_dir" \
             --manifest "tmp/staging-evidence-${evidence_id}.manifest.json"
+          if test "$DEPLOYMENT_MODE" = "maintenance"; then
+            maintenance_outcomes="$($RUNNER_PYTHON -c 'import json, os; names=("prerequisites", "maintenance_prepare", "migration", "workloads", "maintenance_verify", "rollout", "embedding_rollout", "cluster_smoke", "authenticated_smoke", "governance_smoke", "browser_identity"); print(json.dumps({name: os.environ.get(name.upper()+"_OUTCOME") or "skipped" for name in names}))')"
+            "$RUNNER_PYTHON" scripts/staging_maintenance.py record \
+              --prepared "$RUNNER_TEMP/staging-maintenance-prepared.json" \
+              --verified "$RUNNER_TEMP/staging-maintenance-verified.json" \
+              --outcomes-json "$maintenance_outcomes" \
+              --commit "$GITHUB_SHA" \
+              --output "tmp/staging-release-${evidence_id}.record.json"
+            exit 0
+          fi
           image_digests_json="$("$RUNNER_PYTHON" -c 'import json, os; print(json.dumps({"api": os.environ["API_DIGEST"], "worker": os.environ["WORKER_DIGEST"], "consumer": os.environ["CONSUMER_DIGEST"], "web": os.environ["WEB_DIGEST"]}))')"
           outcomes_json="$("$RUNNER_PYTHON" -c 'import json, os; print(json.dumps({"prerequisites": os.environ["PREREQUISITES_OUTCOME"], "migration": os.environ["MIGRATION_OUTCOME"], "workloads": os.environ["WORKLOADS_OUTCOME"], "rollout": os.environ["ROLLOUT_OUTCOME"], "embedding_rollout": os.environ["EMBEDDING_ROLLOUT_OUTCOME"], "cluster_smoke": os.environ["CLUSTER_SMOKE_OUTCOME"], "authenticated_smoke": os.environ["AUTHENTICATED_SMOKE_OUTCOME"]}))')"
           fallback_record_args=()
@@ -859,3 +928,15 @@ jobs:
       - name: Clean up browser entry report
         if: always()
         run: rm -f "$RUNNER_TEMP/staging-browser-identity-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"
+      - name: Clean up private maintenance inventory
+        if: always() && vars.STAGING_DEPLOYMENT_MODE == 'maintenance'
+        run: |
+          rm -f -- \
+            "$RUNNER_TEMP/staging-maintenance-config-before.json" \
+            "$RUNNER_TEMP/staging-maintenance-deployments-before.json" \
+            "$RUNNER_TEMP/staging-maintenance-pods-before.json" \
+            "$RUNNER_TEMP/staging-maintenance-config-after.json" \
+            "$RUNNER_TEMP/staging-maintenance-deployments-after.json" \
+            "$RUNNER_TEMP/staging-maintenance-pods-after.json" \
+            "$RUNNER_TEMP/staging-maintenance-prepared.json" \
+            "$RUNNER_TEMP/staging-maintenance-verified.json"

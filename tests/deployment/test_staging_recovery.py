@@ -18,6 +18,7 @@ def execute_restore(
     profile: str = "single-node-4c4g",
     manifest_exists: bool = True,
     fail_call_at: int = 0,
+    mode: str = "standard",
 ) -> tuple[int, list[str]]:
     workflow = yaml.safe_load(
         (ROOT / ".github/workflows/deploy-staging.yml").read_text(encoding="utf-8")
@@ -27,6 +28,7 @@ def execute_restore(
         for item in workflow["jobs"]["deploy"]["steps"]
         if item.get("name") == "Restore tiny workloads after deployment attempt"
     )
+    assert step["env"]["DEPLOYMENT_MODE"] == "${{ vars.STAGING_DEPLOYMENT_MODE || 'standard' }}"
     values = {"prerequisites": "success", "migration": "success", "workloads": "success"}
     values.update(outcomes or {})
     if manifest_exists:
@@ -42,6 +44,7 @@ def execute_restore(
             "KUBECTL_CALLS": calls.as_posix(),
             "DEPLOYMENT_PROFILE": profile,
             "FAIL_CALL_AT": str(fail_call_at),
+            "DEPLOYMENT_MODE": mode,
         }
     )
     # Bind actual workflow environment expressions, not an invented decision function.
@@ -74,6 +77,11 @@ def test_failed_migration_never_applies_candidate(tmp_path: Path) -> None:
     exit_code, calls = execute_restore(tmp_path, outcomes={"migration": "failure"})
     assert exit_code == 0
     assert calls == []
+
+
+@pytest.mark.parametrize("outcome", ["success", "failure", "cancelled", "skipped", ""])
+def test_maintenance_never_resumes_business(tmp_path: Path, outcome: str) -> None:
+    assert execute_restore(tmp_path, mode="maintenance", outcomes={"migration": outcome}) == (0, [])
 
 
 @pytest.mark.parametrize("step", ["prerequisites", "migration", "workloads"])
