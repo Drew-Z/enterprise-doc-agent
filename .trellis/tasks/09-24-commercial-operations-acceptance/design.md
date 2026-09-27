@@ -49,3 +49,7 @@ Prometheus 新增服务端 redis_connected_clients，旧 redis_connections 保�
 CO-3j1：复用现有部署 workflow 与只读主机入口，先固定当前工作区和五份旧索引。收尾步骤仍用 always 收集明确决策，但将 prerequisites/migration/workloads 的实际 outcome 作为运行输入；仅三者全部成功时才应用已部署候选的 workload manifest。任何 failure/cancelled/skipped/空值均不调用 kubectl，避免绕过迁移和前置条件。GitHub workflow 的 Bash run 原文在测试中真实执行，仅将 kubectl 替换为进程边界的记录器；Windows 明确使用本机 Git Bash 绝对路径，不调用 WSL。
 
 发布文档区分预迁移恢复原部署、迁移中停止并核对数据库、迁移后使用 0031 兼容候选，以及开写后保留账本向前修复。候选来源/代码一致性与镜像签名、实际兼容回滚演练分别记录，不能因源码相同就填写镜像或业务恢复通过。默认 embedding rollout 和 authenticated smoke 都可能调用供应商，本轮零预算不得直接 dispatch 该流程。
+
+CO-3j2：两个获准 SHA 通过原子推送创建独立 rc 标签，复用相同 container.yml 发布链路。下载逐组件证据及严格清单后，重算文件哈希并核对镜像摘要、证明主题及源码 SHA；本机只拉取清单中的不可变摘要。实际应用运行在独占 internal Docker 网络，数据库、对象与 Redis 均为新资源，外部模型替换边界仅为独立本地 HTTP 服务。
+
+复用已冻结 0027 快照，在副本通过 rc.0 API 镜像迁移到 0031。依次运行 rc.0、rc.1、rc.0 的四组件镜像；每阶段读取历史数据、验证前阶段生成稿/复核/CSV及重放，再运行一个合成上传→解析→生成→复核流程。0031 与同一份本地数据保持不变。原 snapshot 不改写；每次尝试记录实际镜像 ID、摘要、错误和具所有权标签的容器/网络清理结果。该演练不替代正式环境部署、真实 OAuth、供应商质量或 4C4G 容量验收。
