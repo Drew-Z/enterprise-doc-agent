@@ -8,7 +8,6 @@ import json
 import os
 import re
 import subprocess
-import sys
 import tempfile
 import time
 from collections.abc import Callable
@@ -18,10 +17,14 @@ from typing import Any
 import yaml  # type: ignore[import-untyped]
 
 try:
+    from scripts.backup_database import postgres_process_environment
     from scripts.maintenance_guard import GuardError, Target, host_clock
     from scripts.render_k8s_phase import select_phase
     from scripts.validate_staging_prerequisites import validate_prerequisites
 except ModuleNotFoundError:
+    from backup_database import (  # type: ignore[import-not-found,no-redef]
+        postgres_process_environment,
+    )
     from maintenance_guard import (  # type: ignore[import-not-found,no-redef]
         GuardError,
         Target,
@@ -167,19 +170,34 @@ def kubectl(args: list[str], payload: str | None, timeout: float) -> str:
 
 
 def database_revision(timeout: float) -> str:
-    # DSN remains solely in the inherited environment, never argv or logs. The
-    # dedicated recovery process needs psycopg; the deployer never reads Secrets.
-    if not os.environ.get("MAINTENANCE_GUARD_DATABASE_URL"):
+    # Reuse the existing backup client's libpq environment adapter, without
+    # invoking its backup functionality or installing a driver in the runner.
+    url = os.environ.get("MAINTENANCE_GUARD_DATABASE_URL")
+    if not url:
         raise GuardError("recovery database connection is unavailable")
-    program = (
-        "import os,psycopg; "
-        "c=psycopg.connect(os.environ['MAINTENANCE_GUARD_DATABASE_URL'],connect_timeout=5,"
-        "options='-c default_transaction_read_only=on -c statement_timeout=2000'); "
-        "rows=c.execute('SELECT version_num FROM public.alembic_version').fetchall(); "
-        "print(','.join(str(r[0]) for r in rows)); c.close()"
+    environment = postgres_process_environment(url)
+    environment.pop("MAINTENANCE_GUARD_DATABASE_URL", None)
+    environment.pop("PGHOSTADDR", None)
+    environment.pop("PGSERVICEFILE", None)
+    environment.update(
+        PGCONNECT_TIMEOUT="5",
+        PGPASSFILE=os.devnull,
+        PGOPTIONS="-c default_transaction_read_only=on -c statement_timeout=2000",
     )
+    command = [
+        "psql",
+        "--no-psqlrc",
+        "--no-password",
+        "--tuples-only",
+        "--no-align",
+        "--quiet",
+        "--set=ON_ERROR_STOP=1",
+        "--command",
+        "BEGIN READ ONLY; SET LOCAL statement_timeout='2000ms'; "
+        "SELECT version_num FROM public.alembic_version; COMMIT;",
+    ]
     result = subprocess.run(
-        [sys.executable, "-c", program], capture_output=True, text=True, timeout=timeout, check=True
+        command, env=environment, capture_output=True, text=True, timeout=timeout, check=True
     )
     return result.stdout.strip()
 

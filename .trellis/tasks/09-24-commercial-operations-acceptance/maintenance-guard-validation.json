@@ -19,9 +19,12 @@
     "guard_linux_mypy_files": 2,
     "detached_process_after_launcher_exit": "passed",
     "native_linux_clock_and_process_check": "passed_in_network_disabled_local_container",
+    "native_psql_revision_and_read_only_transaction": "passed_in_new_network_disabled_postgresql_container_removed_after_test",
+    "host_read_only_capability_probe": "systemd_boottime_sqlite_yaml_and_psql_available",
+    "database_adapter": "existing_psql_and_postgres_process_environment_no_new_host_driver",
     "actual_workflow_shell_and_guard_cli": "passed_with_only_clock_and_cluster_boundaries_substituted",
     "historical_configuration_plan": "passed_offline_18_resources_4_application_specs",
-    "final_error_exit_refinement": "affected_checks_rerun_after_full_regression",
+    "final_error_exit_and_existing_client_refinement": "affected_checks_rerun_after_full_regression_new_exact_commit_ci_recorded_separately",
     "real_systemd_installation": "not_executed",
     "live_cluster_recovery": "not_executed"
   },

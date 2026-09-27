@@ -82,7 +82,7 @@ python scripts/staging_maintenance.py prepare `
 
 执行顺序（以下是待激活方案，本轮没有安装或停机）：
 
-1. 核验 Linux `CLOCK_BOOTTIME`、boot ID、systemd、Python/PyYAML/psycopg、kubectl、DB 只读连通性及同机 SQLite 互斥；管理员恢复进程的访问权与部署账号保持分开。目录仅管理员及专用 runner 组可进入，状态文件允许双方写，计划/工具仅管理员可写；DB DSN 只传管理员进程环境，runner 不得读取。未通过就不暂停。
+1. 核验 Linux `CLOCK_BOOTTIME`、boot ID、systemd、Python/PyYAML、既有 psql、kubectl、DB 只读连通性及同机 SQLite 互斥；管理员恢复进程的访问权与部署账号保持分开。目录仅管理员及专用 runner 组可进入，状态文件允许双方写，计划/工具仅管理员可写；DB DSN 只传管理员进程环境，runner 不得读取。未通过就不暂停。
 2. 管理员执行 `arm --state <state> --plan <plan> --plan-sha256 <sha> --timeout 1500 --recovery-budget 300`。它在完整原状态/0027 验证后排他创建状态；不能覆盖、续期或重置旧窗口。计时从 arm 开始，因此早于首次暂停。
 3. 用 transient systemd service 启动相同工具的 `supervise`，不要使用 `ssh ... &`。单元使用 `Restart=on-failure`、`RestartSec=2s`、`StartLimitIntervalSec=60s`、`StartLimitBurst=3`、`RuntimeMaxSec=35min`、`UMask=0077`；设置审核后的 KUBECONFIG 和 `MAINTENANCE_GUARD_DATABASE_URL` 环境。用 `systemctl show` 核实独立主 PID，再读 `status`，必须看到新鲜心跳才能暂停。它不创建额外 VM，也不发送邮件。
 4. 所有停机命令经同一守卫：`pause-web` 关闭公开入口，完成排空检查，再 `pause-backends`；两者均传同一 state/plan/hash。暂停命令只给出停止信号，操作者仍须证明任务排空与 Pod 消失。捕获/核验新恢复点后执行 `stage`。禁止旁路 `kubectl scale/patch`，避免迟到命令在自动恢复后再停服。

@@ -349,13 +349,22 @@ def test_database_probe_is_read_only_bounded_and_keeps_dsn_out_of_argv(
 ) -> None:
     from scripts.maintenance_guard_cluster import database_revision
 
-    monkeypatch.setenv("MAINTENANCE_GUARD_DATABASE_URL", "postgresql://private-credential")
+    monkeypatch.setenv(
+        "MAINTENANCE_GUARD_DATABASE_URL",
+        "postgresql://guard:p%40ss%3Aword@db.invalid:5432/app?sslmode=require",
+    )
 
     def run(args: list[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:
-        assert "private-credential" not in " ".join(args)
-        assert "default_transaction_read_only=on" in args[-1]
-        assert "statement_timeout=2000" in args[-1]
+        assert args[0] == "psql"
+        assert "p@ss:word" not in " ".join(args)
+        assert "BEGIN READ ONLY" in args[-1]
+        assert "statement_timeout" in args[-1]
         assert "SELECT version_num FROM public.alembic_version" in args[-1]
+        assert "--no-psqlrc" in args and "--no-password" in args
+        assert kwargs["env"]["PGHOST"] == "db.invalid"
+        assert kwargs["env"]["PGPASSWORD"] == "p@ss:word"
+        assert kwargs["env"]["PGSSLMODE"] == "require"
+        assert "default_transaction_read_only=on" in kwargs["env"]["PGOPTIONS"]
         assert kwargs["timeout"] == 3
         return subprocess.CompletedProcess(args, 0, stdout="20260923_0027\n", stderr="")
 

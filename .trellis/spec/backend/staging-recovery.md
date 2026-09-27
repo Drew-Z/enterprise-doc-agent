@@ -75,7 +75,11 @@ approval annotations and original application replicas, using resourceVersion
 tests. It reuses validate_staging_prerequisites for the entire inventory; a
 config-only administrator update is insufficient. It never rewrites workload
 templates or performs downgrade. DB revision queries are read-only and bounded,
-with credentials in the supervisor environment only. Backend readiness precedes
+using the existing `postgres_process_environment` adapter and psql with
+`--no-psqlrc --no-password --quiet --set=ON_ERROR_STOP=1`, a READ ONLY transaction,
+2s statement timeout and 5s connection timeout. Credentials remain in the
+supervisor environment only, never argv; no new runner Python driver is needed.
+Backend readiness precedes
 Web. Every external command and the entire recovery share bounded deadlines.
 This trusted-operator coordination is not a new RBAC authorization boundary.
 
