@@ -308,6 +308,23 @@ before considering release. The offline prerequisite-review scorer below the
 quality spec complements classification/citation scoring; it does not replace
 review of the answer, conflict direction or independent business approval.
 
+### Scope-limited evidence (v9 candidate)
+
+The deployed v8 prompt incorrectly rejected an explicit thirty-day retention fact
+within an expressly synthetic test scope because the source was not customer data
+or domain approval. v9 distinguishes scope from prerequisites: synthetic evidence
+can support its stated test scope; it cannot prove a real customer/production claim.
+Approval is assessed only when the requirement or evidence actually makes it a
+prerequisite. Applicability cannot invent facts, cancel source conditions or instruct
+a classification. Public schemas, citations, routes, budgets and stored drafts are
+unchanged; there is no deterministic relabeling of generated output.
+
+One original-output regression on the same saved excerpt returned supported with
+the correct scope restriction, no invented prerequisites and an exact citation.
+The original deployed insufficient_evidence result remains unchanged. This is a
+known-failure regression, not a new blind benchmark or independent approval; do not
+infer production-scope or explicit-approval negative-case performance from this sample.
+
 providerRequestCount is an observed client dispatch count, not a remote execution
 or billing count. It is 0 before dispatch, temporarily NULL once dispatch is
 prepared, and 0/1 once a synchronous outcome is observed (0–2 for background

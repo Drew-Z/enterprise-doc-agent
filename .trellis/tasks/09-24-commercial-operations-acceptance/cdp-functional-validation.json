@@ -1,0 +1,106 @@
+{
+  "at": "2026-09-28T20:08:17.069475+00:00",
+  "status": "functional_defects_fixed_candidate_verified",
+  "deployed_source": "f2910011fc219028a2611a22215e4e3e045919a3",
+  "fixes_deployed": false,
+  "authentication": {
+    "cdp": true,
+    "existing_staging_principal": true,
+    "interactive_auth_adapter": true,
+    "business_responses_mocked": false,
+    "new_oauth_claim": false,
+    "token_ttl_seconds": 900,
+    "credentials_persisted": false
+  },
+  "presales": {
+    "generation_operations": 1,
+    "model_dispatches": 1,
+    "embedding_dispatches": 1,
+    "consumptions": 1,
+    "reviews": 1,
+    "reviewer": "Codex automated technical consistency review",
+    "customer_approval": false,
+    "original_draft_preserved": true,
+    "original_status": "insufficient_evidence",
+    "reviewed_status": "supported",
+    "csv_sha256": "403527e8c01c12aa11d175c4b3c8fbfae06559f04e62d592d238914cd07cea80",
+    "ledger_passed": true,
+    "offline_at": "2026-09-28T19:23:11.348000+00:00",
+    "online_at": "2026-09-28T19:26:11.428000+00:00",
+    "server_finished_at": "2026-09-28T19:24:05.897256+00:00",
+    "clock_offset_bound_seconds": [
+      -0.447453,
+      10.652595
+    ],
+    "completion_local_bound": [
+      "2026-09-28T19:23:55.244661+00:00",
+      "2026-09-28T19:24:06.344709+00:00"
+    ],
+    "finished_while_offline": true,
+    "original_window_auto_reconnect": "not_verified_locator_timeout",
+    "fresh_browser_and_reload_passed": true
+  },
+  "agent": {
+    "deployed_ui_failure": "strict attempt history schema rejected diagnosticCode even when null",
+    "http_regression_red_failures": 2,
+    "http_regression_total_passed": 11,
+    "candidate_built_assets_with_real_api": true,
+    "status_events_answer_citations_download_reload_passed": true,
+    "download_bytes": 594,
+    "download_sha256": "8fb6250286207e3e29b22993633ff3a6860c37a87ec256764333a2ad9a3d1aca",
+    "new_agent_runs": 0
+  },
+  "semantic_regression": {
+    "prompt_version": "presales.v9",
+    "live_requests": 1,
+    "original_status": "insufficient_evidence",
+    "candidate_status": "supported",
+    "same_saved_excerpt": true,
+    "invented_prerequisites": 0,
+    "missing_information": [],
+    "independent_review": false,
+    "blind_benchmark": false,
+    "usage": {
+      "prompt_tokens": 3226,
+      "completion_tokens": 2528,
+      "total_tokens": 5754
+    },
+    "generation_only_no_business_writes": true,
+    "runtime_prompt_matches_tested": true
+  },
+  "phase_total": {
+    "model_requests": 2,
+    "embedding_requests": 1,
+    "model_total_tokens": 13481,
+    "cost": null,
+    "currency": null
+  },
+  "checks": {
+    "python_nonintegration": 2069,
+    "python_subtests": 23,
+    "integration_deselected": 445,
+    "web": 352,
+    "monitor": 24,
+    "ruff": true,
+    "ruff_format_files": 612,
+    "mypy_source_files": 251,
+    "web_lint_typecheck_build": true
+  },
+  "remaining": {
+    "deploy_fixes": true,
+    "original_window_reconnect": true,
+    "capacity_two_rounds": true,
+    "supplier_invoice": true,
+    "independent_customer_review": true,
+    "full_operations_and_disaster_recovery": true
+  },
+  "historical_failures_preserved": [
+    "initial CDP context omitted explicit proxy",
+    "reconnection button locator timeout",
+    "review select accessible-name locator timeout",
+    "original v8 scope misclassification",
+    "Agent diagnosticCode schema rejection",
+    "duplicate one-shot response capture crashed candidate verifier",
+    "Ruff ambiguous punctuation corrected with identical runtime Unicode string"
+  ]
+}

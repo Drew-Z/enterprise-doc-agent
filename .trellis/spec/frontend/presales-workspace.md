@@ -157,6 +157,17 @@ and fresh server preflight. Failed checks stop automation and preserve the visib
 browser; they do not authorize another generation, a new tenant, or new supplier
 budget. Record separate authentication, generation, recovery and review outcomes.
 
+Interactive OAuth need not be repeated for every business check. For an authorized
+staging functional test, `issue_staging_smoke_token` can issue a short-lived JWT
+for an existing active member. Verify `/api/session` before adapting the browser
+authentication response; do not stub business endpoints. With `connectOverCDP`,
+configure the new context's proxy explicitly: launcher options are not inherited
+by the independent CDP client. Keep tokens only in memory and retire them afterward.
+If reconnection already replaced the recovery button, do not wait for that vanished
+button before inspecting the current result. A new browser/refresh check is separate
+from proof of automatic recovery in the original window. Automated review must
+identify its author and preserve the original model error, never imply customer approval.
+
 The separate `apps/web/playwright.presales-ingestion.config.ts` suite covers real
 TXT/PDF/DOCX browser uploads, automatic ready-state refresh, source preselection,
 exact excerpts and locations, review/reload/CSV, parser failure and successful
