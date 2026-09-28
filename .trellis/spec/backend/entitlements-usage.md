@@ -307,6 +307,30 @@ stdio. Tests must state these boundaries; never fabricate verification timestamp
 turn that fixture into release evidence. Use an owned schema for billing migrations;
 do not migrate the developer's default `public` to make acceptance pass.
 
+For an online smoke, reuse `scripts/staging_smoke.py::run_staging_smoke` and bind the
+actual deployment, relevant process settings, source hashes, principal, period and
+fixed input before submission. Its `sample_count=1` is not a supplier request bound.
+`ProviderCallService` limits Agent Chat by run ID; query embeddings use the durable
+search tool execution ID, distinct from the Agent execution ID. The Worker search key
+includes run ID and execution sequence, so automatic Job retries share that key but a
+new approval resume must not be assumed to share the same query budget. Document
+receipts include `max_attempts`; manual retry is a new receipt and must be excluded
+from a previously approved automatic-retry budget.
+
+Bound a single-chunk upload using both actual ingestion attempts and embedding HTTP
+retries (five attempts with two retries means at most fifteen sends). Check the exact
+bytes through the real parser/chunker before relying on that formula; larger inputs
+also need batch splitting accounted for. Freeze a one-shot execution intent and exact
+idempotency keys, count every HTTP before sending, reject redirects/changed object
+origins, and keep accepted jobs after interruption. Client timeout is not proof of
+server cancellation. Success requires nonempty per-operation dispatches, original-period
+consumption, stable replay and downloaded artifact SHA, not just successful metadata.
+`tests/deployment/test_staging_smoke.py` covers the reusable protocol; the private
+batch also needs approval/expiry, duplicate launch, HTTP limit and credential-separation
+checks. Its plan and actual validation boundary are documented in
+`docs/ops/online-business-acceptance.md`; preparing or testing it does not authorize
+supplier calls or claim OAuth/browser/capacity acceptance.
+
 Wrong: `if current is None: return legacy`, or choosing `now` before a contended lock.
 
 Correct: lock Tenant, read the clock, select the half-open period, then distinguish
