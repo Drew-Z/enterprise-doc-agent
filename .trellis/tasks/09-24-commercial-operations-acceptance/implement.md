@@ -306,3 +306,12 @@ Ruff、603 文件格式、254 源码严格 Mypy、Trellis 上下文及容量 YAM
 - [x] 首轮登录等待约 17 分钟超过 Cookie 最多 10 分钟有效期，callback 303 后未确认 authenticated；`missing_login_cookie`、25 次会话读取和自动关闭记录均保留，未把用户看到页面或 callback 当作登录成功。
 
 本轮未生成、上传、邀请、新建企业或新增供应商调用；GitHub 插件用于仓库 PR/CI，不替代应用 OAuth。仓库仅新增脱敏结果和更新文档，运行代码及配置不变。详见 `public-ingress-validation.json`；私有证据集中于原恢复组的 `public-ingress-evidence`。总任务继续 in_progress，公网业务写入、售前浏览器恢复、两轮容量、供应商账单、领域/客户审核及完整运营/整机恢复仍待完成。
+
+## CO-21 单行售前后台与浏览器恢复准备
+
+- [x] 核对主备模型最多两个持久派发槽、每版本稳定查询操作的六次向量上限；冻结一个既有版本、一行要求、一个响应表和一次生成的独立执行包。
+- [x] 现网只读预检查通过：原部署/三进程参数及新增 15 处源码一致，0031、原 ready 单块/向量/源句正确，售前剩余 99、无活动 attempt、新创建键不存在；九条最终对账 SELECT 的只读 EXPLAIN 通过。
+- [x] 私有请求限制器 9 项测试通过，包完整性与缺授权启动拒绝已验证；无浏览器启动、应用 HTTP、新业务或供应商调用。运行代码和配置未改。
+- [ ] 用户批准本批独立模型 2 / 向量 6 请求上限后，重新预检查并进行实际登录、单行生成、丢失 202/断网/刷新、人工复核、CSV 和最终对账。不得挪用旧预算、换键重跑或因失败删除样本。
+
+方案见 `docs/ops/online-presales-browser-acceptance.md`，脱敏准备结果为 `online-presales-preparation-validation.json`。私有包复用原集中恢复组的 `online-presales-preparation-evidence`；本阶段只完成可执行准备，不关闭公网写入、售前恢复、容量或商业总门槛。正式提交、精确 HEAD CI 和证据冻结结果另存集中收尾回执，任务继续 in_progress。
