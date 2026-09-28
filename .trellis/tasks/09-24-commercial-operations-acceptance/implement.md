@@ -296,3 +296,13 @@ Ruff、603 文件格式、254 源码严格 Mypy、Trellis 上下文及容量 YAM
 - [x] 12 项离线目标/重放校验通过，更新规范和独立脱敏 `online-agent-replay-validation.json`；保留原执行报告的历史未完成状态。
 
 首批 Agent 既定主路径检查现已补齐，原验收器 exit 1 不改写。累计模型 1 / 向量 2、Agent 1 / 文档 109 字节不变，无新增上传/任务、重试 Job、审批恢复、迁移、部署或额度变更。继续保留公网/OAuth、售前浏览器、容量、账单及运营总门槛；不归档商业验收任务。
+
+## CO-20 公网只读与真实 GitHub OAuth 接续
+
+- [x] 原部署/源码/三进程参数核对后，从 API Pod 经公网 HTTPS 做 6 次 GET；匿名会话及 401 拒绝、认证原任务/产物/SHA/引用通过，前后和历史账本一致。
+- [x] GET-only、6 次上限、固定 origin、凭据隔离和重定向拒绝的 6 项边界测试通过；首次 SSH 建连超时保留，确认未执行后只重传一次原程序。
+- [x] 本机 6 次匿名尝试分别保留：直连 3 次连接失败，代理 2 次超时、1 次 401；不扩展请求预算或归纳为所有网络正常。
+- [x] 用户亲自完成 GitHub OAuth；第二次独立 Chromium 会话 authenticated / GitHub / 非 demo，选择原 pilot 后以真实 Cookie 读取原 Agent，HTTP 200 / succeeded / initial sequence 0，无测试 bearer。
+- [x] 首轮登录等待约 17 分钟超过 Cookie 最多 10 分钟有效期，callback 303 后未确认 authenticated；`missing_login_cookie`、25 次会话读取和自动关闭记录均保留，未把用户看到页面或 callback 当作登录成功。
+
+本轮未生成、上传、邀请、新建企业或新增供应商调用；GitHub 插件用于仓库 PR/CI，不替代应用 OAuth。仓库仅新增脱敏结果和更新文档，运行代码及配置不变。详见 `public-ingress-validation.json`；私有证据集中于原恢复组的 `public-ingress-evidence`。总任务继续 in_progress，公网业务写入、售前浏览器恢复、两轮容量、供应商账单、领域/客户审核及完整运营/整机恢复仍待完成。
