@@ -253,6 +253,44 @@ def test_presales_background_flags_and_budget_reach_api_and_worker(tmp_path: Pat
         assert settings.presales.daily_dispatch_limit == 50
 
 
+def test_single_node_limits_survive_rendering_and_bind_runtime_settings(tmp_path: Path) -> None:
+    from enterprise_doc_core.presales.settings import PresalesSettings
+
+    documents = _render_browser_manifest(
+        tmp_path, model_timeout_seconds="120", presales_concurrent_attempt_limit="1"
+    )
+    data = next(item for item in documents if item["kind"] == "ConfigMap")["data"]
+    assert data["MODEL__TIMEOUT_SECONDS"] == "120"
+    assert (
+        PresalesSettings.model_validate(
+            {
+                key.removeprefix("PRESALES__").lower(): value
+                for key, value in data.items()
+                if key.startswith("PRESALES__")
+            }
+        ).concurrent_attempt_limit
+        == 1
+    )
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {"model_timeout_seconds": "0"},
+        {"model_timeout_seconds": "NaN"},
+        {"presales_concurrent_attempt_limit": "0"},
+        {"presales_concurrent_attempt_limit": "5"},
+        {"presales_concurrent_attempt_limit": "1.5"},
+    ],
+)
+def test_release_limits_refuse_invalid_values_before_output(
+    tmp_path: Path, overrides: dict
+) -> None:
+    with pytest.raises(ValueError, match=r"model timeout|presales"):
+        _render_browser_manifest(tmp_path, **overrides)
+    assert not (tmp_path / "browser-staging.yaml").exists()
+
+
 @pytest.mark.parametrize(
     "overrides",
     [
@@ -345,6 +383,7 @@ def test_presales_cli_binds_approved_pilot_configuration(
         "model-provider": "openai_compatible",
         "model-base-url": "https://model.example.com/v1",
         "model-name": "primary-model",
+        "model-timeout-seconds": "120",
         "fallback-model-base-url": "https://fallback.example.com/v1",
         "fallback-model-name": "fallback-model",
         "embedding-base-url": "https://embedding.example.com/v1",
@@ -353,6 +392,7 @@ def test_presales_cli_binds_approved_pilot_configuration(
         "presales-model-route": "fallback",
         "presales-model-timeout-seconds": "120",
         "presales-row-timeout-seconds": "150",
+        "presales-concurrent-attempt-limit": "1",
     }
     monkeypatch.setattr(
         sys,
@@ -362,11 +402,13 @@ def test_presales_cli_binds_approved_pilot_configuration(
     configure_staging_manifest.main()
     documents = list(yaml.safe_load_all(output.read_text(encoding="utf-8")))
     data = next(item for item in documents if item["kind"] == "ConfigMap")["data"]
+    assert data["MODEL__TIMEOUT_SECONDS"] == "120"
     assert {key: value for key, value in data.items() if key.startswith("PRESALES__")} == {
         "PRESALES__GENERATION_ENABLED": "true",
         "PRESALES__MODEL_ROUTE": "fallback",
         "PRESALES__MODEL_TIMEOUT_SECONDS": "120",
         "PRESALES__ROW_TIMEOUT_SECONDS": "150",
+        "PRESALES__CONCURRENT_ATTEMPT_LIMIT": "1",
         "PRESALES__BACKGROUND_GENERATION_ENABLED": "false",
         "PRESALES__AUTOMATIC_FAILOVER_ENABLED": "false",
         "PRESALES__DAILY_DISPATCH_LIMIT": "200",
@@ -387,6 +429,10 @@ def test_staging_workflow_passes_presales_environment_to_the_renderer() -> None:
         if "scripts/configure_staging_manifest.py" in step.get("run", "")
     )
     expected = {
+        "MODEL_TIMEOUT_SECONDS": "${{ vars.STAGING_MODEL_TIMEOUT_SECONDS }}",
+        "PRESALES_CONCURRENT_ATTEMPT_LIMIT": (
+            "${{ vars.STAGING_PRESALES_CONCURRENT_ATTEMPT_LIMIT }}"
+        ),
         "DEMO_ENABLED": "${{ vars.STAGING_DEMO_ENABLED || 'false' }}",
         "PRESALES_GENERATION_ENABLED": "${{ vars.STAGING_PRESALES_GENERATION_ENABLED || 'false' }}",
         "PRESALES_MODEL_ROUTE": "${{ vars.STAGING_PRESALES_MODEL_ROUTE || 'primary' }}",

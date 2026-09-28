@@ -156,6 +156,9 @@ class Plan:
             raise GuardError("rendered candidate differs from approved plan")
         validate_objects(self.candidate, select_phase(documents, "prerequisites"))
 
+    def accepted_specs(self, expected: dict[str, Any]) -> list[dict[str, Any]]:
+        return [expected["spec"]]
+
 
 def kubectl(args: list[str], payload: str | None, timeout: float) -> str:
     result = subprocess.run(
@@ -272,11 +275,12 @@ class Cluster:
             item = selected(deployments, "Deployment", expected["metadata"]["name"])
             spec = copy.deepcopy(item["spec"])
             replicas = spec.pop("replicas", None)
-            old = copy.deepcopy(expected["spec"])
-            old.pop("replicas")
+            allowed = [copy.deepcopy(value) for value in self.plan.accepted_specs(expected)]
+            for value in allowed:
+                value.pop("replicas")
             if (
                 item["metadata"].get("uid") != expected["metadata"]["uid"]
-                or spec != old
+                or spec not in allowed
                 or replicas not in (0, 1)
             ):
                 raise GuardError("original workload identity or template changed")

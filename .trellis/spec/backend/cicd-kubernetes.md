@@ -536,3 +536,68 @@ Kustomize 5.7.1, plus Actionlint and shell syntax; these are local checks, not d
 Wrong: infer model enablement from successful GitHub login or bypass a prerequisite mismatch.
 Correct: preserve the explicit reviewed generation and timeout settings in both the protected
 Environment and administrator render, then keep the normal prerequisite and rollout gates.
+
+## Scenario: No-Migration Release Switch on Schema 0031
+
+### 1. Scope / Trigger
+
+Switch a reviewed, schema-compatible rc.1 deployment to rc.2 with a new primary route.
+The 0027-only maintenance guard retains its existing migration restrictions.
+
+### 2. Signatures
+
+`python -m scripts.release_switch validate|arm|execute|status --plan <private-json>
+--plan-sha256 <sha256> [--state <private-json>]`. `ReleasePlan`, `ReleaseCluster`
+and `Switch.execute(target, *, apply, restore)` expose validation, cluster and lifecycle boundaries.
+`configure_staging_manifest.py` accepts optional `--model-timeout-seconds` and
+`--presales-concurrent-attempt-limit`, connected to matching `STAGING_MODEL_TIMEOUT_SECONDS`
+and `STAGING_PRESALES_CONCURRENT_ATTEMPT_LIMIT` Environment variables, without more dispatch inputs.
+
+### 3. Contracts
+
+Plan schema 2 fixes 0031, Namespace UID, four original/candidate Deployment specs,
+original/candidate prerequisites, completed Job identities and one primary Secret key pair.
+Other credential values are represented only by a SHA-256. Executor source hashes and the
+plan hash must match before CLI use. Only image and config-hash template changes are allowed.
+Primary timeout is finite, greater than zero and at most 300; concurrency is an ASCII
+integer 1–4. Omitted concurrency removes a stale override and restores the application default 2.
+
+Host-local state uses atomic fsync/replace and an OS-exclusive lock. Persist applying before
+cluster writes; a new process seeing applying/recovering can only restore. Fixed 600-second
+apply and 300-second recovery ceilings never reset. Run under systemd with control-group
+child termination and restart-on-failure; boot-ID changes/missing state require inspection.
+Restoration fences even already-correct values with an actual annotation change, then restores
+configuration, primary key and templates before opening Web last. Remove only owned fence
+annotations and revalidate normal prerequisites. All database probes are read-only and bounded.
+
+### 4. Validation & Error Matrix
+
+- Non-0031 plan, image/config/approval/supplier-key mismatch -> refuse before apply.
+- Active jobs/attempts/runs/reservations or unexpired uploads -> refuse; consumed reservations
+  are terminal, not active. Recheck after closing application processes. A live apply preflight
+  failure before any writes returns blocked without rollback; an interrupted process still restores.
+- Foreign drift or a different operation's fence -> do not overwrite.
+- Interrupted apply -> restore; late old-resourceVersion request -> reject.
+- Expired but never-started window -> no cluster mutation; failed restore -> blocked.
+- Restored/blocked -> nonzero CLI exit; errors never contain raw subprocess/DB messages.
+
+### 5. Good / Base / Bad Cases
+
+Good: prewarm all exact images, validate the runtime bundle, switch in one independent process,
+read back the bundle and retain business acceptance separately. Base: validate only reads local
+inputs. Bad: reset the state deadline, change only the ConfigMap, or reuse the 0027 plan for 0031.
+
+### 6. Tests Required
+
+`tests/deployment/test_release_switch.py` covers partial updates, drift, late writes, Web ordering,
+source binding, process restart, exclusive ownership and budget/error redaction. Keep the original
+maintenance tests passing. Real Linux CLOCK_BOOTTIME/flock/process-death checks complement the
+Kubernetes subprocess boundary; they are not an actual Kubernetes release/rollback drill.
+Renderer tests cover runtime concurrency, timeout, invalid values and CLI/workflow propagation.
+
+### 7. Wrong vs Correct
+
+Wrong: assume a timed-out API write never happened or that a no-op patch advances resourceVersion.
+Correct: freeze a plan with both permitted states, force an owned fencing mutation and use
+conditional writes during bounded whole-bundle recovery. Temporary remote recovery inputs need
+the current window's storage exception; central local evidence remains authoritative.

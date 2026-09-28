@@ -271,10 +271,12 @@ jobs:
           PRESALES_QUEUE_TIMEOUT_SECONDS: ${{ vars.STAGING_PRESALES_QUEUE_TIMEOUT_SECONDS || '900' }}
           PRESALES_ROUTE_FAILURE_THRESHOLD: ${{ vars.STAGING_PRESALES_ROUTE_FAILURE_THRESHOLD || '3' }}
           PRESALES_ROUTE_COOLDOWN_SECONDS: ${{ vars.STAGING_PRESALES_ROUTE_COOLDOWN_SECONDS || '30' }}
+          PRESALES_CONCURRENT_ATTEMPT_LIMIT: ${{ vars.STAGING_PRESALES_CONCURRENT_ATTEMPT_LIMIT }}
           DATABASE_EGRESS_CIDR: ${{ vars.STAGING_DATABASE_EGRESS_CIDRS || vars.STAGING_DATABASE_EGRESS_CIDR }}
           MODEL_PROVIDER: openai_compatible
           MODEL_BASE_URL: ${{ vars.STAGING_MODEL_BASE_URL }}
           MODEL_NAME: ${{ vars.STAGING_MODEL_NAME }}
+          MODEL_TIMEOUT_SECONDS: ${{ vars.STAGING_MODEL_TIMEOUT_SECONDS }}
           MODEL_FALLBACK_BASE_URL: ${{ vars.STAGING_MODEL_FALLBACK_BASE_URL }}
           MODEL_FALLBACK_NAME: ${{ vars.STAGING_MODEL_FALLBACK_NAME }}
           MODEL_FALLBACK_VERSION: ${{ vars.STAGING_MODEL_FALLBACK_VERSION }}
@@ -343,6 +345,7 @@ jobs:
             --model-provider "$MODEL_PROVIDER" \
             --model-base-url "$MODEL_BASE_URL" \
             --model-name "$MODEL_NAME" \
+            --model-timeout-seconds "$MODEL_TIMEOUT_SECONDS" \
             "${browser_auth_args[@]}" \
             --presales-generation-enabled "$PRESALES_GENERATION_ENABLED" \
             --presales-model-route "$PRESALES_MODEL_ROUTE" \
@@ -354,6 +357,7 @@ jobs:
             --presales-queue-timeout-seconds "$PRESALES_QUEUE_TIMEOUT_SECONDS" \
             --presales-route-failure-threshold "$PRESALES_ROUTE_FAILURE_THRESHOLD" \
             --presales-route-cooldown-seconds "$PRESALES_ROUTE_COOLDOWN_SECONDS" \
+            --presales-concurrent-attempt-limit "$PRESALES_CONCURRENT_ATTEMPT_LIMIT" \
             --demo-enabled "$DEMO_ENABLED" \
             --embedding-base-url "$EMBEDDING_BASE_URL" \
             --embedding-model-name "$EMBEDDING_MODEL_NAME" \

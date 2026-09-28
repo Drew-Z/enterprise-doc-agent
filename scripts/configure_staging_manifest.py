@@ -154,6 +154,7 @@ def _presales_environment(
     queue_timeout_seconds: str = "900",
     route_failure_threshold: str = "3",
     route_cooldown_seconds: str = "30",
+    concurrent_attempt_limit: str | None = None,
 ) -> dict[str, str]:
     enabled = generation_enabled.strip()
     route = model_route.strip()
@@ -174,6 +175,8 @@ def _presales_environment(
         "ROUTE_FAILURE_THRESHOLD": (route_failure_threshold, 1, 10),
         "ROUTE_COOLDOWN_SECONDS": (route_cooldown_seconds, 1, 300),
     }
+    if concurrent_attempt_limit:
+        limits["CONCURRENT_ATTEMPT_LIMIT"] = (concurrent_attempt_limit, 1, 4)
     for value, minimum, maximum in limits.values():
         if not value.isascii() or not value.isdigit() or not minimum <= int(value) <= maximum:
             raise ValueError("presales resilience limit is invalid")
@@ -470,6 +473,7 @@ def configure_manifest(
     model_provider: str,
     model_base_url: str,
     model_name: str,
+    model_timeout_seconds: str | None = None,
     browser_auth_issuer: str | None = None,
     browser_auth_client_id: str | None = None,
     browser_auth_oidc_config: str | None = None,
@@ -488,6 +492,7 @@ def configure_manifest(
     presales_queue_timeout_seconds: str = "900",
     presales_route_failure_threshold: str = "3",
     presales_route_cooldown_seconds: str = "30",
+    presales_concurrent_attempt_limit: str | None = None,
     demo_enabled: str = "false",
     embedding_base_url: str = "https://embedding.example.invalid/v1",
     embedding_model_name: str = "staging-embedding",
@@ -525,6 +530,9 @@ def configure_manifest(
         raise ValueError(f"model provider must be {MODEL_PROVIDER}")
     normalized_model_base_url = _model_base_url(model_base_url)
     normalized_model_name = _model_name(model_name)
+    normalized_primary_timeout = (
+        _model_timeout_seconds(model_timeout_seconds) if model_timeout_seconds else None
+    )
     fallback_base_url_value = (
         fallback_model_base_url.strip() if fallback_model_base_url is not None else ""
     )
@@ -561,6 +569,7 @@ def configure_manifest(
         queue_timeout_seconds=presales_queue_timeout_seconds,
         route_failure_threshold=presales_route_failure_threshold,
         route_cooldown_seconds=presales_route_cooldown_seconds,
+        concurrent_attempt_limit=presales_concurrent_attempt_limit,
     )
     normalized_embedding_base_url = _embedding_base_url(embedding_base_url)
     normalized_embedding_model_name = _model_name(embedding_model_name)
@@ -615,6 +624,8 @@ def configure_manifest(
     data["MODEL__PROVIDER"] = MODEL_PROVIDER
     data["MODEL__BASE_URL"] = normalized_model_base_url
     data["MODEL__MODEL_NAME"] = normalized_model_name
+    if normalized_primary_timeout is not None:
+        data["MODEL__TIMEOUT_SECONDS"] = normalized_primary_timeout
     for fallback_key in (
         "MODEL__FALLBACK_PROVIDER",
         "MODEL__FALLBACK_BASE_URL",
@@ -632,6 +643,7 @@ def configure_manifest(
         if normalized_fallback_timeout is not None:
             data["MODEL__FALLBACK_TIMEOUT_SECONDS"] = normalized_fallback_timeout
     data.pop("PRESALES__MODEL_TIMEOUT_SECONDS", None)
+    data.pop("PRESALES__CONCURRENT_ATTEMPT_LIMIT", None)
     data.update(presales_config)
     data["DEMO__ENABLED"] = demo_enabled
     data["EMBEDDING__PROVIDER"] = "openai_compatible"
@@ -886,6 +898,7 @@ def main() -> None:
     parser.add_argument("--model-provider", required=True)
     parser.add_argument("--model-base-url", required=True)
     parser.add_argument("--model-name", required=True)
+    parser.add_argument("--model-timeout-seconds")
     parser.add_argument("--browser-auth-issuer")
     parser.add_argument("--browser-auth-client-id")
     parser.add_argument("--browser-auth-oidc-config")
@@ -910,6 +923,7 @@ def main() -> None:
     parser.add_argument("--presales-queue-timeout-seconds", default="900")
     parser.add_argument("--presales-route-failure-threshold", default="3")
     parser.add_argument("--presales-route-cooldown-seconds", default="30")
+    parser.add_argument("--presales-concurrent-attempt-limit")
     parser.add_argument("--demo-enabled", choices=("true", "false"), default="false")
     parser.add_argument("--embedding-base-url", required=True)
     parser.add_argument("--embedding-model-name", required=True)
@@ -932,6 +946,7 @@ def main() -> None:
         model_provider=args.model_provider,
         model_base_url=args.model_base_url,
         model_name=args.model_name,
+        model_timeout_seconds=args.model_timeout_seconds,
         browser_auth_issuer=args.browser_auth_issuer,
         browser_auth_client_id=args.browser_auth_client_id,
         browser_auth_oidc_config=args.browser_auth_oidc_config,
@@ -950,6 +965,7 @@ def main() -> None:
         presales_queue_timeout_seconds=args.presales_queue_timeout_seconds,
         presales_route_failure_threshold=args.presales_route_failure_threshold,
         presales_route_cooldown_seconds=args.presales_route_cooldown_seconds,
+        presales_concurrent_attempt_limit=args.presales_concurrent_attempt_limit,
         demo_enabled=args.demo_enabled,
         embedding_base_url=args.embedding_base_url,
         embedding_model_name=args.embedding_model_name,
