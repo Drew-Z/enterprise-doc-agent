@@ -347,6 +347,17 @@ replay. Report business outcome, verifier outcome and unexecuted checks separate
 never rerun the complete batch to obtain a green report. Pod-local authenticated
 HTTP does not prove the public ingress or interactive OAuth path.
 
+An authorized continuation can complete an omitted same-key POST without restarting
+the original batch. First verify the existing terminal run, original document/input,
+`publish_requested=false`, original key, single initial/0 execution and unchanged
+ledger. Keep the old intent and add an exclusive bounded step intent. Require HTTP
+200, `replayed=true`, the exact original run/job IDs, and equality of the full scoped
+ledger before and after POST plus status GET. Do not renew the old client window or
+infer a new supplier budget. Preserve the original failure separately from the
+continuation result. Only a proven SSH connection-establishment failure with empty
+stdout permits a bounded retry of the same frozen transport; exit 255 alone or an
+uncertain remote outcome is insufficient.
+
 Wrong: `if current is None: return legacy`, or choosing `now` before a contended lock.
 
 Correct: lock Tenant, read the clock, select the half-open period, then distinguish

@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-09-28T16:02:38.431392+00:00",
+  "phase": "CO-1h",
+  "status": "same_key_replay_passed",
+  "task_status": "in_progress",
+  "repository_baseline": "cdcddc6f4b581011ea4478fc0032fc4383c50e9e",
+  "deployed_commit": "f2910011fc219028a2611a22215e4e3e045919a3",
+  "original_plan_sha256": "2fb81862e517c1e872cc5332fff4f231d52fb266c5837a8f48cdfe236cf544f1",
+  "authorization": {
+    "user_requested_continuation": true,
+    "target": "Existing successful run with its original input and idempotency key",
+    "max_replay_posts": 1,
+    "max_status_gets": 1,
+    "client_window_seconds": 120,
+    "original_client_window_renewed": false,
+    "new_model_budget": 0,
+    "new_embedding_budget": 0
+  },
+  "result": {
+    "at": "2026-09-28T15:59:09.228119+00:00",
+    "replay_http_status": 200,
+    "replayed": true,
+    "original_run_id_preserved": true,
+    "original_job_id_preserved": true,
+    "status_get_http_status": 200,
+    "run_status": "succeeded",
+    "execution_sequence": 0,
+    "execution_kind": "initial",
+    "execution_count": 1,
+    "ledger_unchanged_before_after": true,
+    "ledger_unchanged_since_previous_verified_snapshot": true,
+    "http_requests": 2,
+    "new_uploads": 0,
+    "new_agent_tasks": 0,
+    "new_model_requests": 0,
+    "new_embedding_requests": 0,
+    "new_product_events": 0,
+    "job_retries": 0,
+    "approval_resumes": 0,
+    "batch_restarts": 0,
+    "deployment": 0,
+    "migration": 0,
+    "email": 0,
+    "quota_changes": 0
+  },
+  "transport": {
+    "attempts": 2,
+    "remote_program_starts": 1,
+    "first_attempt": "SSH connection establishment timed out; stdout empty; remote program not started",
+    "first_exit_code": 255,
+    "retry": "One exact frozen program transfer after verifying the specific pre-connection error, empty stdout and intent-bound SHA",
+    "retry_exit_code": 0,
+    "program_sha256": "e4f497b6a0112ef9410ae7009f32e067b1fa3df2b2cebd6cc30896a94184c000",
+    "original_intent_preserved": true,
+    "supplemental_step_intent_and_transport_intent_preserved": true
+  },
+  "cumulative_batch": {
+    "uploads": 1,
+    "fixture_bytes": 109,
+    "agent_tasks": 1,
+    "model_requests": 1,
+    "embedding_requests": 2,
+    "model_tokens": 2646,
+    "document_embedding_tokens": 21,
+    "query_embedding_tokens": 34,
+    "consumption": {
+      "agent_task": 1,
+      "document_bytes": 109
+    },
+    "application_http_requests_across_original_and_supplemental_clients": 38,
+    "main_path_checks_complete": true,
+    "original_controller_exit_code": 1,
+    "original_verifier_failure_preserved": true,
+    "artifact_sha256": "8fb6250286207e3e29b22993633ff3a6860c37a87ec256764333a2ad9a3d1aca",
+    "cost": null,
+    "currency": null
+  },
+  "local_verification": {
+    "target_and_replay_checks": 12,
+    "network_boundary": "HTTP MockTransport only; no live business calls in tests"
+  },
+  "boundaries": {
+    "api_origin": "Deployed API Pod loopback",
+    "public_business_ingress_verified": false,
+    "interactive_oauth_verified": false,
+    "presales_browser_recovery_verified": false,
+    "capacity_verified": false,
+    "supplier_invoice_reconciled": false,
+    "formal_acceptance_complete": false
+  },
+  "evidence": {
+    "previous_snapshot": "online-agent-execution-validation.json remains unchanged",
+    "stage": "online-agent-replay-evidence",
+    "replay_jsonl_sha256": "36c78b72b1f459d1db49903cebf8702b9fbfb4c7666422bea8f126c0345fca50",
+    "prior_indexes_preserved": 21,
+    "previous_execution_artifacts_preserved": 48,
+    "historical_workspace_entries": 2993
+  },
+  "remaining": [
+    "Public business ingress and interactive OAuth",
+    "Presales online background/browser recovery and review/CSV",
+    "Two current-host capacity rounds",
+    "Supplier invoices and independent domain/customer review",
+    "Complete backup/alert/on-call and whole-host RPO/RTO acceptance"
+  ]
+}
