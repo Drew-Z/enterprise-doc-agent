@@ -35,8 +35,14 @@ and later ordinary navigation does not reuse the consumed selection.
 The sheet lists fixed sources and requirements, five outcome labels, conditions,
 missing information, exact source excerpts, filenames and passage locations.
 Finite retrieval and truncation are explicitly disclosed. Generation is per row;
-the batch button submits pending rows to the server in one request when PacketView
-generationMode is background. The default synchronous mode retains separate row
+the batch button submits multiple pending rows in one request when PacketView
+generationMode is background. Exactly one eligible row uses the bodyless
+`POST /api/presales/{packet}/rows/{row}/generate` and returns `PacketView`, including
+202 while queued/running/recovering. Multiple background rows use
+`POST /api/presales/{packet}/generate` with `{rowIds: [...]}` and return
+`BatchGenerateResult`. Acceptance request gates must match the actual selected-row
+count and response schema; the toolbar label alone does not identify the endpoint.
+The default synchronous mode retains separate row
 requests, avoiding a multi-row inference request that exceeds proxy limits. Missing
 generationMode from an older server defaults to synchronous. Per-row background
 rejections do not stop other eligible rows. A separate retry-failed action submits
@@ -141,6 +147,15 @@ The background
 spec is skipped in the legacy configuration; that skip is not a background pass.
 `playwright.presales.config.ts` is separate from the existing full platform E2E
 configuration, and its fixture deletes only the records it created.
+
+For interactive deployed acceptance, reuse a user-authorized dedicated persistent
+browser profile after real OAuth has been established. Keep that profile private;
+do not export cookies or copy unrelated personal profiles. Waiting for the user to
+sign in must not automatically close their browser or consume the generation
+window. Start the bounded business window only after verifying the current tenant
+and fresh server preflight. Failed checks stop automation and preserve the visible
+browser; they do not authorize another generation, a new tenant, or new supplier
+budget. Record separate authentication, generation, recovery and review outcomes.
 
 The separate `apps/web/playwright.presales-ingestion.config.ts` suite covers real
 TXT/PDF/DOCX browser uploads, automatic ready-state refresh, source preselection,
