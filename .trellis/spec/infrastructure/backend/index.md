@@ -28,3 +28,7 @@ the local CLI. Functional sampling does not establish current 4C4G capacity.
 The [external monitor contract](./external-monitor.md) covers independent Cloudflare
 readiness scheduling, D1 notification deduplication, unknown mail outcomes and
 explicit receipt verification. It does not replace queue/backup or business SLOs.
+
+The [image cache runtime contract](../../backend/image-cache-runtime.md) covers
+containerd/CRI import aliases, exact digest checks and bounded in-window repairs.
+Successful image listings do not alone establish container startup readiness.

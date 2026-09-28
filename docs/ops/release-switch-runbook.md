@@ -20,12 +20,14 @@
   --plan <集中目录中的私有计划> --plan-sha256 <计划SHA256>
 ```
 
-本窗口拟用远端目录 `/run/enterprise-doc-release/ops-rc2-switch-20260928`。它包含恢复数据，须遵守当前任务集中备份规则的**本窗口临时副本例外**；历史例外不沿用。批准后才能安装，目录归 root、0700，文件0600，不向仓库 runner 共享凭据。完成后把状态/日志和文件清单收回集中本地，再清理该次创建的精确文件和目录。
+本次使用的远端目录为 `/run/enterprise-doc-release/ops-rc2-switch-20260928`。用户已批准该窗口的临时副本例外，实际安装为 root、0700/0600，未向仓库 runner 共享凭据。成功后状态/日志及文件清单已收回集中本地，11 个文件、该目录和独立服务已清理。该窗口例外已结束；下一窗口必须另设操作标识与具体例外，不能复用旧状态。
 
 ## 停服前完成
 
 1. 固定执行器提交及 CI、rc.2 发布清单和源文件哈希；重新读取 Namespace UID、0031、全部资源、主渠道键、任务和上传状态。主机必须有足够空间，四个候选及四个当前镜像都须在缓存中按摘要确认。
 2. 若直拉镜像失败，使用既有受限网络 OCI 中转；完整校验字节数/摘要，确认复用的内容仍在目标缓存，再导入。失败时保持服务运行，不把拉取超时消耗在停服窗口内。
+
+   镜像列名与 CRI ImageStatus 成功都不足以证明可启动。必须核对 CRI `repoDigests` 中本次导入别名也真实存在于 containerd image store，并与获准摘要一致；详见[缓存运行时契约](../../.trellis/spec/backend/image-cache-runtime.md)。本次初始预检查漏掉此项，导致 API CreateContainerError；原失败保留。
 3. 用正式渲染器复现候选；同步准备 GitHub staging Environment 的模型地址/名称、后台/切换、`STAGING_MODEL_TIMEOUT_SECONDS=120` 与 `STAGING_PRESALES_CONCURRENT_ATTEMPT_LIMIT=1`。这两个新可选输入保持十个 workflow_dispatch 参数。发布前后需读回变量，回退恢复原值。
 4. 在独立 systemd 进程下验证 Python/PyYAML、kubectl、psql、只读数据库及权限；不启动迁移 Job。临时运行包和独立服务未经本窗口确认时不安装、不 arm。
 
@@ -46,3 +48,9 @@
 进程在 `applying` 中断时，新进程只进入 `recovering`，不再次发布。恢复先停止业务进程，恢复整组配置/凭据/模板，再按后端→Web 顺序启动。每次更新包含 UID/resourceVersion 条件和真正改变的临时围栏，避免迟到请求以旧版本覆盖恢复结果；清理标记后正常部署校验仍可运行。
 
 未开始便超时的 armed 操作不暂停健康服务。当前进程确认预检查在任何写入前失败（例如用户刚提交业务）时，记录 `preflight_rejected`，不启动停服回退；进程已经死亡而无法确认写入情况时仍按未完成操作恢复。目标、模板、其他凭据、调度器或数据库版本漂移，以及恢复预算耗尽均记录明确失败，不覆盖未知变更、不自动重试业务、不清库/清队列。`restored` 返回非零，不能把回退成功算作发布成功；`blocked` 需要人工按集中恢复点核对，不能声称自动恢复或 RTO 已达标。
+
+## 本次执行结果
+
+2026-09-28，执行器 `edb0551` 的真实 systemd 预检查通过后，arm 到 succeeded 为 431.150 秒，服务未重启、期限未重置。中途核实 CRI 的四个 `import-2026-09-28` 引用缺少实际别名，按同一批准摘要补齐，当前执行继续完成。API→Worker→Consumer→Web 依次就绪，五个 Deployment、四份完整候选模板、配置/批准信息和主渠道键读回通过，临时围栏全部移除。
+
+公网首页与带依赖/时间校验的 readiness 通过（使用本机已配置代理）。成功后 11 项 GitHub staging 变量同步并读回；运行与回退需要的镜像别名保留。未执行新业务、模型/向量请求、迁移或测试邮件，也未演练 rc.2 回退。生产浏览器、容量、供应商质量和商业门槛仍待验收，详见[脱敏执行记录](../../.trellis/tasks/09-24-commercial-operations-acceptance/release-switch-execution-validation.json)。
