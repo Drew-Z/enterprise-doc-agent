@@ -331,6 +331,22 @@ checks. Its plan and actual validation boundary are documented in
 `docs/ops/online-business-acceptance.md`; preparing or testing it does not authorize
 supplier calls or claim OAuth/browser/capacity acceptance.
 
+The initial Agent execution is `sequence=0, kind=initial`, as created by
+`AgentRunService.create`; `next_event_seq=1` is an event counter, not an execution
+sequence. An initial-only acceptance snapshot must contain exactly one execution,
+with both the sequence and kind checked, and a succeeded Job. Sequence 1, a resume
+kind, an extra execution or a nonterminal Job must be rejected. Do not write an
+acceptance fixture that merely repeats the validator's assumed sequence: derive
+it from the service contract or a captured real ledger, and test those negative
+cases. Wrong: `executions[0]['sequence'] == 1`. Correct: one succeeded `initial/0`.
+
+If a post-business assertion fails, retain its exit code, original source and
+execution intent. Read-only evidence recovery may verify existing status, object
+hash/citations and stable ledgers, but does not prove an omitted same-key POST
+replay. Report business outcome, verifier outcome and unexecuted checks separately;
+never rerun the complete batch to obtain a green report. Pod-local authenticated
+HTTP does not prove the public ingress or interactive OAuth path.
+
 Wrong: `if current is None: return legacy`, or choosing `now` before a contended lock.
 
 Correct: lock Tenant, read the clock, select the half-open period, then distinguish
