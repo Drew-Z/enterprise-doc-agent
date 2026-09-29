@@ -205,6 +205,37 @@ export async function deliverNotification(
 
 type ScheduleResult = { status: 'ignored' | 'sampled'; healthy?: boolean; eventId?: string };
 
+async function operationalProbe(env: Env, now: number): Promise<Probe> {
+  for (const [label, key, maxAge] of [
+    ['queue', env.QUEUE_HEARTBEAT_KEY, 120_000],
+    ['backup', env.BACKUP_HEARTBEAT_KEY, 300_000],
+  ] as const) {
+    if (!key) continue;
+    const row = await env.MONITOR_DB.prepare('SELECT source_at, observed_at, healthy, artifact_sha256 FROM external_heartbeats WHERE source_key = ?')
+      .bind(key).first<{ source_at: number; observed_at: number; healthy: number; artifact_sha256: string | null }>();
+    const failed = (reason: string): Probe => ({ healthy: false, reason: label + '_' + reason, checkedAt: null });
+    if (!row) return failed('missing');
+    if (!Number.isSafeInteger(row.source_at) || !Number.isSafeInteger(row.observed_at) ||
+        row.source_at < 0 || row.observed_at < 0 || ![0, 1].includes(row.healthy) ||
+        row.source_at > now + 15_000 || row.observed_at > now + 15_000 || row.source_at > row.observed_at + 15_000) {
+      return failed('invalid');
+    }
+    if (now - row.source_at > maxAge || now - row.observed_at > maxAge) return failed('stale');
+    if (row.healthy !== 1) return failed('unhealthy');
+    if (label === 'backup' && !/^[a-f0-9]{64}$/.test(row.artifact_sha256 ?? '')) return failed('unverified');
+  }
+  if (env.WATCH_MONITOR_KEY) {
+    const row = await env.MONITOR_DB.prepare('SELECT observed_at FROM monitor_state WHERE monitor_key = ?')
+      .bind(env.WATCH_MONITOR_KEY).first<{ observed_at: number | null }>();
+    if (row?.observed_at == null) return { healthy: false, reason: 'monitor_missing', checkedAt: null };
+    if (!Number.isSafeInteger(row.observed_at) || row.observed_at < 0 || row.observed_at > now + 15_000) {
+      return { healthy: false, reason: 'monitor_invalid', checkedAt: null };
+    }
+    if (now - row.observed_at > 180_000) return { healthy: false, reason: 'monitor_stale', checkedAt: null };
+  }
+  return { healthy: true, reason: 'ready', checkedAt: now };
+}
+
 export async function runScheduled(env: Env, scheduledTime: number, boundary: ProbeOptions): Promise<ScheduleResult> {
   const tick = Math.floor(scheduledTime / MINUTE) * MINUTE;
   const drillStart = Number(env.DRILL_START_MS);
@@ -214,6 +245,13 @@ export async function runScheduled(env: Env, scheduledTime: number, boundary: Pr
     throw new Error('invalid_monitor_configuration');
   }
   validateTarget(env.TARGET_URL);
+  if (![undefined, 'true', 'false'].includes(env.CHECK_READINESS) ||
+      [env.QUEUE_HEARTBEAT_KEY, env.BACKUP_HEARTBEAT_KEY, env.WATCH_MONITOR_KEY]
+        .some(key => key && !/^[a-z][a-z0-9-]{1,60}$/.test(key)) ||
+      (env.WATCH_MONITOR_KEY && env.WATCH_MONITOR_KEY === env.MONITOR_KEY) ||
+      (env.CHECK_READINESS === 'false' && !env.WATCH_MONITOR_KEY)) {
+    throw new Error('invalid_operational_monitor_configuration');
+  }
   if (!validTick(tick, boundary.now())) return { status: 'ignored' };
   if (env.MODE === 'notify') {
     const pending = await env.MONITOR_DB.prepare(`SELECT id FROM notification_events
@@ -230,7 +268,10 @@ export async function runScheduled(env: Env, scheduledTime: number, boundary: Pr
     if (minute < 0 || minute >= 5) return { status: 'ignored' };
     probe = { healthy: minute >= 3, reason: minute >= 3 ? 'drill_recovery' : 'drill_failure', checkedAt: null };
   } else {
-    probe = await probeReadiness(env.TARGET_URL, boundary);
+    probe = env.CHECK_READINESS === 'false'
+      ? { healthy: true, reason: 'ready', checkedAt: null }
+      : await probeReadiness(env.TARGET_URL, boundary);
+    if (probe.healthy) probe = await operationalProbe(env, boundary.now());
   }
   const observedAt = boundary.now();
   if (!validTick(tick, observedAt)) return { status: 'ignored' };

@@ -261,3 +261,97 @@ test('external probe accepts only a fresh complete readiness response', async ()
   assert.equal(result.reason, 'ready');
   assert.equal(result.checkedAt, now);
 });
+
+test('a stale backup cannot be hidden by healthy public readiness or a fresh delivery heartbeat', async (t) => {
+  const db = await database(t);
+  await db.exec('CREATE TABLE IF NOT EXISTS external_heartbeats (source_key TEXT PRIMARY KEY, source_at INTEGER NOT NULL, observed_at INTEGER NOT NULL, healthy INTEGER NOT NULL CHECK (healthy IN (0,1)), artifact_sha256 TEXT);');
+  await db.prepare('INSERT INTO external_heartbeats VALUES (?, ?, ?, ?, ?)').bind('backup-test', now - 300_001, now, 1, 'a'.repeat(64)).run();
+  const env = { ...mailEnv(db, async () => assert.fail('observe only')), MODE: 'observe', DRILL_START_MS: '0', BACKUP_HEARTBEAT_KEY: 'backup-test' };
+  const result = await runScheduled(env, now, { now: () => now + 10, fetch: async () => Response.json(payload()) });
+  assert.equal(result.healthy, false);
+  assert.equal((await db.prepare('SELECT reason FROM monitor_state').first()).reason, 'backup_stale');
+});
+
+for (const [label, row, reason] of [
+  ['missing queue', null, 'queue_missing'],
+  ['failed queue query', [now, now, 0], 'queue_unhealthy'],
+  ['stale queue source', [now - 120_001, now, 1], 'queue_stale'],
+  ['future queue clock', [now + 15_001, now + 15_001, 1], 'queue_invalid'],
+]) {
+  test(`operational monitor rejects ${label}`, async (t) => {
+    const db = await database(t);
+    if (row) await db.prepare('INSERT INTO external_heartbeats VALUES (?, ?, ?, ?, NULL)').bind('queue-test', ...row).run();
+    const env = { ...mailEnv(db, async () => assert.fail('observe only')), MODE: 'observe', DRILL_START_MS: '0', QUEUE_HEARTBEAT_KEY: 'queue-test' };
+    const result = await runScheduled(env, now, { now: () => now, fetch: async () => Response.json(payload()) });
+    assert.equal(result.healthy, false);
+    assert.equal((await db.prepare('SELECT reason FROM monitor_state').first()).reason, reason);
+  });
+}
+
+test('backup completion without a verified artifact digest is unhealthy', async (t) => {
+  const db = await database(t);
+  await db.prepare('INSERT INTO external_heartbeats VALUES (?, ?, ?, 1, NULL)').bind('backup-test', now, now).run();
+  const env = { ...mailEnv(db, async () => assert.fail('observe only')), MODE: 'observe', DRILL_START_MS: '0', BACKUP_HEARTBEAT_KEY: 'backup-test' };
+  assert.equal((await runScheduled(env, now, { now: () => now, fetch: async () => Response.json(payload()) })).healthy, false);
+  assert.equal((await db.prepare('SELECT reason FROM monitor_state').first()).reason, 'backup_unverified');
+});
+
+test('a separate watchdog detects stopped scheduling without probing or stopping the application', async (t) => {
+  const db = await database(t);
+  await recordObservation(db, sample(0, true, 'main-test'), 'observe');
+  const env = { ...mailEnv(db, async () => assert.fail('observe only')), MODE: 'observe', DRILL_START_MS: '0', CHECK_READINESS: 'false', WATCH_MONITOR_KEY: 'main-test' };
+  let tick = now + 180_000;
+  const boundary = { now: () => tick + 20, fetch: async () => assert.fail('watchdog must not probe') };
+  assert.equal((await runScheduled(env, tick, boundary)).healthy, false);
+  assert.equal((await db.prepare('SELECT reason FROM monitor_state WHERE monitor_key = ?').bind(env.MONITOR_KEY).first()).reason, 'monitor_stale');
+  tick += 60_000;
+  await recordObservation(db, sample(4, false, 'main-test'), 'observe');
+  assert.equal((await runScheduled(env, tick, boundary)).healthy, true);
+});
+
+test('watchdog cannot disable all observations or watch itself', async (t) => {
+  const db = await database(t);
+  const base = { ...mailEnv(db, async () => assert.fail('no send')), MODE: 'observe', DRILL_START_MS: '0', CHECK_READINESS: 'false' };
+  const boundary = { now: () => now, fetch: async () => assert.fail('no network') };
+  await assert.rejects(runScheduled(base, now, boundary), /invalid_operational_monitor_configuration/);
+  await assert.rejects(runScheduled({ ...base, WATCH_MONITOR_KEY: base.MONITOR_KEY }, now, boundary), /invalid_operational_monitor_configuration/);
+});
+
+test('queue failure and recovery use the existing three/two streak and one-time delivery contract', async (t) => {
+  const db = await database(t);
+  const messages = [];
+  const env = { ...mailEnv(db, async message => { messages.push(message); return { messageId: 'queue-test-message' }; }), DRILL_START_MS: '0', QUEUE_HEARTBEAT_KEY: 'queue-test' };
+  for (let minute = 0; minute < 6; minute++) {
+    const tick = now + minute * 60_000;
+    await db.prepare('INSERT INTO external_heartbeats VALUES (?, ?, ?, ?, NULL) ON CONFLICT(source_key) DO UPDATE SET source_at=excluded.source_at, observed_at=excluded.observed_at, healthy=excluded.healthy').bind('queue-test', tick, tick, minute >= 3 ? 1 : 0).run();
+    await runScheduled(env, tick, { now: () => tick, fetch: async () => Response.json({ ...payload(), checked_at: new Date(tick).toISOString() }) });
+  }
+  assert.equal(messages.length, 2);
+  assert.match(messages[0].text, /queue_unhealthy/);
+  const events = await db.prepare('SELECT kind, delivery_status FROM notification_events ORDER BY tick').all();
+  assert.deepEqual(events.results, [{ kind: 'failure', delivery_status: 'accepted' }, { kind: 'recovery', delivery_status: 'accepted' }]);
+});
+
+for (const stale of [false, true]) {
+  test(`the shipped Worker checks operational heartbeats in workerd (stale backup: ${stale})`, async (t) => {
+    const source = await readFile(new URL('./monitor.ts', import.meta.url), 'utf8');
+    const script = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText;
+    const mf = new Miniflare(convertV4MiniflareOptions({
+      modules: true, compatibilityDate: '2026-09-26', script, unsafeTriggerHandlers: true,
+      d1Databases: { MONITOR_DB: 'operational-runtime' },
+      bindings: { MODE: 'observe', MONITOR_KEY: 'ops-runtime', TARGET_URL: target, DRILL_START_MS: '0',
+        QUEUE_HEARTBEAT_KEY: 'queue-runtime', BACKUP_HEARTBEAT_KEY: 'backup-runtime', WATCH_MONITOR_KEY: 'watchdog-runtime' },
+      outboundService: () => Response.json({ ...payload(), checked_at: new Date().toISOString() }),
+    }));
+    t.after(() => mf.dispose());
+    const db = await mf.getD1Database('MONITOR_DB');
+    await db.exec((await readFile(new URL('./schema.sql', import.meta.url), 'utf8')).replaceAll('\n', ' '));
+    const captured = Date.now();
+    await db.prepare('INSERT INTO external_heartbeats VALUES (?, ?, ?, 1, NULL)').bind('queue-runtime', captured, captured).run();
+    await db.prepare('INSERT INTO external_heartbeats VALUES (?, ?, ?, 1, ?)').bind('backup-runtime', captured - (stale ? 360_000 : 0), captured, 'a'.repeat(64)).run();
+    await db.prepare('INSERT INTO monitor_state (monitor_key, observed_at) VALUES (?, ?)').bind('watchdog-runtime', captured).run();
+    assert.equal((await mf.dispatchFetch('http://localhost/cdn-cgi/local/scheduled')).status, 200);
+    const state = await db.prepare('SELECT reason, successes, failures FROM monitor_state WHERE monitor_key = ?').bind('ops-runtime').first();
+    assert.deepEqual(state, stale ? { reason: 'backup_stale', successes: 0, failures: 1 } : { reason: 'ready', successes: 1, failures: 0 });
+  });
+}

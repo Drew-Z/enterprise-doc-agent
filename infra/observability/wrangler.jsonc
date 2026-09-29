@@ -13,6 +13,10 @@
     "MONITOR_KEY": "readiness-v1",
     "MODE": "observe",
     "DRILL_START_MS": "0",
+    "CHECK_READINESS": "true",
+    "QUEUE_HEARTBEAT_KEY": "",
+    "BACKUP_HEARTBEAT_KEY": "",
+    "WATCH_MONITOR_KEY": "",
     "MAIL_FROM": "ops-alerts@example.com",
     "MAIL_TO": "operator@example.com"
   },

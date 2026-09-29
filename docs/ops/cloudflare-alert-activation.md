@@ -1,5 +1,7 @@
 # Cloudflare 告警启用与验收
 
+2026-09-29 当前更新：主 Worker 已切换至 `6380c625-45d0-4eb8-9a14-2c62987675b3`，状态键 `operations-live-v1`，增加队列/备份心跳与 watchdog 新鲜度；独立调度 Worker `docagent-ops-watchdog` 为 `9e2ec181-06c3-4a20-8f5d-614c35e0d579`。两者先观察再启用 notify，分钟 cron、D1 和原限定收件人均已读回。下文 9 月 28 日版本和实收为历史阶段，仍保留。新增范围与实际限制见[最终验收入口](final-project-acceptance.md)。
+
 ## 现有邮箱可以复用
 
 现有 CF Worker 负责收信，没有 `send_email` 绑定。官方当前 Email Service
@@ -72,5 +74,6 @@ Destination addresses**，添加运维地址并点击验证邮件。完成后只
 binding 返回的 message ID、用户实收回执、值班处理人及处理动作。仅 dry-run、
 模拟收件、API 成功或用户未核对的发信记录，均不能关闭 CO-4。
 
-该 Worker 先覆盖公网 readiness。队列积压、备份新鲜度、监控自身失联及整个商业
-验收的其余门槛仍需各自证据；不将其写成已经完成。
+主监控已接入队列、备份与调度新鲜度；新鲜/过期、失败/恢复、去重通过真实本地
+workerd/D1 测试，线上真实心跳与 cron 已观察。共享 Cloudflare 的平台故障、Windows
+离线时的持续备份、值班及整机恢复仍不在这些结果内，不将其写成完整商业通过。

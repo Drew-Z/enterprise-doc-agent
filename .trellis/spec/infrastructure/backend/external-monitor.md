@@ -69,6 +69,23 @@ event and investigate the original provider/user receipt before a separately
 authorized retry. A known healthy readiness sample does not establish business or
 backup health.
 
+## Trusted operational inputs
+
+Enable external heartbeats only after applying the additive dedicated-D1 schema.
+The public HTTP handler remains 404. Queue freshness is 120 seconds; complete
+backup freshness is 300 seconds with a required artifact SHA. Validate both source
+and delivery timestamps, rejecting missing, negative, non-integer or future data.
+Use the source snapshot time, never a newly posted heartbeat, for backup age.
+The trusted collector owns actual restore/object verification; a digest alone is
+not proof that an untrusted caller backed up anything.
+
+A watchdog may disable readiness only when watching a different monitor key.
+Observation age expires after 180 seconds. The main monitor can reciprocally watch
+the watchdog. Both share a Cloudflare failure domain; do not claim otherwise.
+Keep original failed observations and suppressed events when enabling delivery.
+Test fresh and stale operational records through the shipped workerd handler and
+real D1, plus the notification state machine with controlled clock/mail boundaries.
+
 ## Proven Examples
 
 - `infra/observability/monitor.ts`

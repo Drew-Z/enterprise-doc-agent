@@ -1,6 +1,6 @@
-# rc.2 单行售前后台与浏览器恢复验收
+# 单行售前后台与浏览器恢复验收
 
-2026-09-28 UTC：**原表一次后台生成、离线期间后台完成、重开/刷新读取、技术复核、CSV 和最终账本已验证**。无需用户再次登录。原模型把测试范围说明误判为缺少领域批准，错误原稿保留；复核只纠正限定测试范围内的结论。v9 候选经一次真实模型定向验证通过，尚待部署。当前结果见[CDP 功能记录](../../.trellis/tasks/09-24-commercial-operations-acceptance/cdp-functional-validation.json)；原单行接口误判及登录超时仍保留在[历史执行记录](../../.trellis/tasks/09-24-commercial-operations-acceptance/online-presales-execution-validation.json)。
+2026-09-29 UTC：**原表一次后台生成、离线期间后台完成、重开/刷新读取、技术复核、CSV 和最终账本已验证，v9 修复已随 rc.3 部署**。部署后从线上静态资源再次读取原表、下载已复核 CSV、断网后重开，前后原表 JSON 完全相等；没有新生成或供应商请求。无需用户再次登录。原模型误把测试范围当成批准前提的原稿及自动化失败保留；复核只纠正限定测试范围内的结论。当前交付见[最终验收入口](final-project-acceptance.md)，前阶段结果见[CDP 功能记录](../../.trellis/tasks/09-24-commercial-operations-acceptance/cdp-functional-validation.json)和[历史执行记录](../../.trellis/tasks/09-24-commercial-operations-acceptance/online-presales-execution-validation.json)。
 
 ## 当前接续方式
 

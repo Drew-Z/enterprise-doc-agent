@@ -1,4 +1,4 @@
-# External readiness monitor
+# External service and operations monitor
 
 This independent Cloudflare Worker checks the deployed application's `/health/ready`
 every minute. It adds no process to the application server. The existing private
@@ -67,13 +67,38 @@ For rollback, set `MODE=observe` or remove only this Worker's cron; retain D1 ev
 and the source/configuration/version receipt. Do not delete the existing mailbox,
 its bindings, Routing rules, MX records or any application resources.
 
+## Queue, backup and scheduler freshness
+
+Optional `QUEUE_HEARTBEAT_KEY` and `BACKUP_HEARTBEAT_KEY` select records in
+`external_heartbeats`. A trusted private collector writes them through the D1
+management API; the Worker exposes no write endpoint. Apply the additive schema
+to the dedicated monitor database before enabling these keys.
+
+The queue record expires after 120 seconds. The backup record expires after 300
+seconds and requires a verified artifact SHA-256. Both `source_at` and `observed_at`
+must be valid millisecond timestamps; future skew is limited to 15 seconds.
+Reposting an old backup does not refresh its source time. A missing, failed,
+invalid or stale record makes an otherwise healthy readiness observation fail.
+Collectors must derive backup time from the consistent database snapshot, and
+publish success only after actual database restore and persistent-object checks.
+
+`WATCH_MONITOR_KEY` checks another monitor's last observation, expiring after 180
+seconds. A separate Worker uses `CHECK_READINESS=false` to watch the main schedule;
+the main Worker watches it in return. Disabling readiness without another monitor,
+or watching the same key, is rejected. Synthetic drills bypass these real sources.
+All failures use the same three-failure/two-recovery state machine and delivery
+deduplication. A watchdog checks scheduling, not whether the other monitor reports
+healthy service.
+
 ## Operational limits
 
-This is an external readiness alert, not an independent measurement of queue age,
-backup freshness, business success, or the monitor's own availability. A missed
-cron or D1 outage is unknown, not a healthy sample. Check `monitor_state.observed_at`
-and Worker invocation failures through the account's operational view; these
-additional alert paths remain part of the wider operations acceptance.
+The two Workers share Cloudflare and D1; this is not coverage for an entire
+Cloudflare outage. The deployed private collector currently depends on signed-in
+Windows, SSH and Docker Desktop. Minute triggers skip overlapping work. Backups
+are retained in the existing recovery group, with a 3 GiB stage dump budget and no
+automatic deletion. Offline collectors or exhausted storage produce failed/stale
+heartbeats, not a healthy status. This bounded configuration is not 24/7 coverage
+or proof of whole-host RPO/RTO. See the [current acceptance record](../../docs/ops/final-project-acceptance.md).
 
 Events are retained without automatic deletion. No automatic reset/replay is
 permitted for an indeterminate email attempt. Mail quota errors stay visible;
