@@ -120,6 +120,13 @@ failure/cancellation releases the reservation. This local quota policy does not 
 a failed or unknown upstream request cost nothing. Provider observations and nullable
 cost fields remain separate from payments and customer-approved pricing.
 
+`ReservationResult.expires_at` is the stored reservation deadline, including on
+same-operation replay; legacy/no-reservation results keep it null. It is an internal
+service value, not a new public HTTP field. Presales uses this receipt in the same
+transaction to bound its queue deadline, avoiding a duplicate SELECT. Never recompute
+the TTL on replay or extend a stored deadline. The admission integration suite checks
+exact stored expiry, replay, clipping and rollback when no execution time remains.
+
 CLI settings come from `FoundationSettings` (`APP_ENV`, `DATABASE__URL`, including
 the repository `.env`). Only local/test and loopback hosts are accepted; URL query
 host/hostaddr/service/servicefile overrides are rejected. Default configure returns

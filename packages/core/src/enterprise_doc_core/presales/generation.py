@@ -278,15 +278,16 @@ class GenerationService:
                     now,
                 )
             day_start = now.astimezone(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
-            daily_count = await session.scalar(
+            daily_count_query = (
                 select(func.count())
                 .select_from(PresalesAttempt)
                 .where(
                     PresalesAttempt.tenant_id == packet.tenant_id,
                     PresalesAttempt.created_at >= day_start,
                 )
+                .scalar_subquery()
             )
-            active_count = await session.scalar(
+            active_count_query = (
                 select(func.count())
                 .select_from(PresalesAttempt)
                 .where(
@@ -294,7 +295,11 @@ class GenerationService:
                     PresalesAttempt.state.in_(ACTIVE_STATES),
                     PresalesAttempt.deadline_at > now,
                 )
+                .scalar_subquery()
             )
+            daily_count, active_count = (
+                await session.execute(select(daily_count_query, active_count_query))
+            ).one()
             if (daily_count or 0) >= self.settings.daily_attempt_limit:
                 raise PresalesError("presales_daily_limit")
             capacity = (
@@ -365,27 +370,20 @@ class GenerationService:
             session.add(attempt)
             if self.usage_service is not None:
                 try:
-                    await self.usage_service.reserve_provider_request(
+                    reservation = await self.usage_service.reserve_provider_request(
                         tenant_id=packet.tenant_id,
                         operation_id=attempt_id,
                         source="presales",
                         session=session,
                     )
-                    if background:
-                        reservation = await session.scalar(
-                            select(UsageReservation).where(
-                                UsageReservation.tenant_id == packet.tenant_id,
-                                UsageReservation.operation_id == attempt_id,
-                            )
+                    if background and reservation.expires_at is not None:
+                        attempt.deadline_at = min(
+                            deadline,
+                            reservation.expires_at
+                            - timedelta(seconds=self.settings.row_timeout_seconds + 2),
                         )
-                        if reservation is not None:
-                            attempt.deadline_at = min(
-                                deadline,
-                                reservation.expires_at
-                                - timedelta(seconds=self.settings.row_timeout_seconds + 2),
-                            )
-                            if attempt.deadline_at <= now:
-                                raise PresalesError("presales_usage_unavailable")
+                        if attempt.deadline_at <= now:
+                            raise PresalesError("presales_usage_unavailable")
                 except UsageError as error:
                     if error.code == "usage_entitlement_inactive":
                         raise PresalesError("presales_entitlement_inactive") from error

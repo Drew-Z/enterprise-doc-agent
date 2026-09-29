@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from uuid import UUID
+import asyncio
+from datetime import UTC, datetime, timedelta
+from uuid import UUID, uuid4
 
 import pytest
 from sqlalchemy import event, select
 
-from enterprise_doc_core.billing.models import UsageReservation
+from enterprise_doc_core.billing.models import TenantEntitlement, UsageReservation
 from enterprise_doc_core.documents.models import DocumentIngestionGeneration, DocumentVersion
 from enterprise_doc_core.identity.models import Membership
 from enterprise_doc_core.jobs.models import Job
@@ -81,6 +83,128 @@ async def test_single_row_batch_admission_has_no_extra_read_budget(background):
     assert not b.requests
     print(f"Admission SELECT counts: single={counts[0]}, batch={counts[1]}")
     assert 0 < counts[1] <= counts[0], counts
+    assert counts[0] <= 23, counts
+
+
+@pytest.mark.parametrize("ttl", [92, 93, 1200])
+async def test_admission_uses_durable_reservation_expiry_and_rolls_back_if_too_short(
+    background, ttl
+):
+    b = background
+    now = datetime.now(UTC)
+    b.service.generation.clock = lambda: now
+    usage = b.service.generation.usage_service
+    usage.clock = lambda: now
+    usage.reservation_ttl = timedelta(seconds=ttl)
+    packet = await b.service.create(b.context.principal, b.payload, "expiry-packet")
+    response = await b.api.post(
+        f"/api/presales/{packet.id}/rows/{packet.rows[0].id}/generate",
+        headers={"Authorization": "Bearer owner", "Idempotency-Key": "expiry-admit"},
+    )
+    async with b.sessions() as session:
+        attempts = (await session.scalars(select(PresalesAttempt))).all()
+        reservations = (await session.scalars(select(UsageReservation))).all()
+        jobs = (await session.scalars(select(Job).where(Job.type == "presales.generate"))).all()
+        entitlement = (await session.scalars(select(TenantEntitlement))).one()
+        if ttl == 92:
+            assert response.status_code == 503
+            assert response.json()["error"]["code"] == "presales_usage_unavailable"
+            assert not attempts and not reservations and not jobs
+            assert entitlement.provider_requests_reserved == 0
+        else:
+            assert response.status_code == 202, response.text
+            assert len(attempts) == len(reservations) == len(jobs) == 1
+            assert reservations[0].expires_at == now + timedelta(seconds=ttl)
+            assert attempts[0].deadline_at == now + timedelta(seconds=min(900, ttl - 92))
+            assert entitlement.provider_requests_reserved == 1
+            replay = await usage.reserve_provider_request(
+                tenant_id=b.context.tenant_id, operation_id=attempts[0].id
+            )
+            assert replay.replay and replay.expires_at == reservations[0].expires_at
+    assert not b.requests
+
+
+@pytest.mark.parametrize(
+    ("state", "prior_day", "expired", "daily_limit", "queue_limit", "expected"),
+    [
+        ("failed", False, False, 1, 2, "presales_daily_limit"),
+        ("queued", False, False, 1, 1, "presales_daily_limit"),
+        ("running", True, False, 1, 1, "presales_generation_busy"),
+        ("recovering", True, False, 1, 1, "presales_generation_busy"),
+        ("queued", False, True, 2, 1, None),
+        ("failed", True, False, 1, 1, None),
+    ],
+)
+async def test_admission_counter_boundaries(
+    background, state, prior_day, expired, daily_limit, queue_limit, expected
+):
+    b = background
+    now = datetime.now(UTC)
+    b.service.generation.clock = lambda: now
+    b.settings.daily_attempt_limit = daily_limit
+    b.settings.queued_attempt_limit = queue_limit
+    packet = await b.service.create(b.context.principal, b.payload, "prior-packet")
+    async with b.sessions.begin() as session:
+        session.add(
+            PresalesAttempt(
+                id=uuid4(),
+                tenant_id=b.context.tenant_id,
+                row_id=packet.rows[0].id,
+                number=1,
+                idempotency_key="prior-operation",
+                state=state,
+                model_provider="openai_compatible",
+                model_name="test-model",
+                provenance={},
+                deadline_at=now + timedelta(seconds=-1 if expired else 60),
+                created_at=(
+                    now.replace(hour=0, minute=0, second=0, microsecond=0)
+                    - timedelta(microseconds=1)
+                )
+                if prior_day
+                else now,
+            )
+        )
+    target = await b.service.create(b.context.principal, b.payload, "target-packet")
+    response = await b.api.post(
+        f"/api/presales/{target.id}/rows/{target.rows[0].id}/generate",
+        headers={"Authorization": "Bearer owner", "Idempotency-Key": "target-admit"},
+    )
+    if expected:
+        assert response.status_code in (409, 429), response.text
+        assert response.json()["error"]["code"] == expected
+    else:
+        assert response.status_code == 202, response.text
+    async with b.sessions() as session:
+        assert len((await session.scalars(select(UsageReservation))).all()) == (
+            0 if expected else 1
+        )
+        assert len((await session.scalars(select(PresalesAttempt))).all()) == (1 if expected else 2)
+    assert not b.requests
+
+
+async def test_concurrent_single_row_admission_cannot_exceed_queue_capacity(background):
+    b = background
+    b.settings.queued_attempt_limit = 1
+    packets = [
+        await b.service.create(b.context.principal, b.payload, key) for key in ("race-a", "race-b")
+    ]
+    responses = await asyncio.gather(
+        *[
+            b.api.post(
+                f"/api/presales/{packet.id}/rows/{packet.rows[0].id}/generate",
+                headers={"Authorization": "Bearer owner", "Idempotency-Key": "race-admit"},
+            )
+            for packet in packets
+        ]
+    )
+    assert sorted(response.status_code for response in responses) == [202, 409]
+    rejected = next(response for response in responses if response.status_code == 409)
+    assert rejected.json()["error"]["code"] == "presales_generation_busy"
+    async with b.sessions() as session:
+        assert len((await session.scalars(select(PresalesAttempt))).all()) == 1
+        assert len((await session.scalars(select(UsageReservation))).all()) == 1
+    assert not b.requests
 
 
 @pytest.mark.parametrize("background_enabled", [True, False])

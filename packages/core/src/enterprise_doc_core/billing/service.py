@@ -529,6 +529,7 @@ class EntitlementUsageService:
             status=reservation.state,
             reservation_id=reservation.id,
             entitlement_id=reservation.entitlement_id,
+            expires_at=reservation.expires_at,
             provider_request_limit=(
                 entitlement.provider_request_limit if entitlement is not None else None
             ),

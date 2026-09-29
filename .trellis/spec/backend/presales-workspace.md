@@ -363,6 +363,13 @@ background generation. API and Worker must use the same settings and model route
   It also checks cross-tenant, revoked-member, unavailable/stale-source rejection
   without Jobs/reservations in both enabled and disabled modes. Final `get()` access
   rechecks remain mandatory; query counts alone do not prove online latency.
+  Single-row and equivalent batch admission have a 23-SELECT integration budget.
+  Daily and active counts use separate indexed scalar subqueries in one statement,
+  preserving tenant locks, predicates and daily-limit error precedence. Reuse the
+  commercial reservation receipt's stored expiry to clip queued work; do not reload
+  that row or recompute expiry. Boundary tests cover yesterday's still-active work,
+  today's failures, expired queue entries, concurrent last-slot admission, and
+  rollback of Job/attempt/reservation when the TTL cannot cover execution.
 - **Execution:** the existing Worker/publisher process runs one asynchronous
   presales poller. Long inference does not occupy the solo document consumer. Job
   leases, heartbeats, fencing and terminal projection are reused. Shutdown cancels

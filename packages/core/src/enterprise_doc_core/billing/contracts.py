@@ -22,6 +22,7 @@ class ReservationResult:
     provider_request_limit: int | None = None
     provider_requests_used: int | None = None
     provider_requests_reserved: int | None = None
+    expires_at: datetime | None = None
 
 
 @dataclass(frozen=True)
