@@ -376,3 +376,9 @@ Ruff、603 文件格式、254 源码严格 Mypy、Trellis 上下文及容量 YAM
 - [ ] 本机代理静态加载及售前 CSV 超时，完整 rc.4 售前 CDP 未通过；SSH 转发被主机拒绝，未修改安全策略，失败和原窗口结果保留。
 
 公开结果见 ux-release-validation.json。原 pilot 不延期；供应商金额、独立审核、离开个人电脑的连续备份和整机 RPO/RTO 尚未完成，任务不归档。源恢复点固定 cdc88e1，私有证据集中原恢复组 ux-release-evidence，历史工作区及冻结索引单独复核。
+
+## CO-28 静态资源与延迟诊断续作
+
+- [x] rc.4 独立只读 ASGI 剖析与 EXPLAIN ANALYZE：来源 SQL 数据库执行 0.288 ms，应用往返及偶发等待是主要开销；零模型/向量，不启动后台清理任务。
+- [x] 实际 nginx HTTP 先复现哈希资源 no-store、未压缩与缺失文件假 200；仅哈希 JS/CSS 缓存及 gzip 修复后通过，其他入口不公开缓存。
+- [ ] 精确候选检查、发布和实际 CDN/browser 核验；当前线上仍 rc.4，不能提前写上线。
