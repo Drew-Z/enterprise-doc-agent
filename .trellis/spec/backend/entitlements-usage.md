@@ -407,7 +407,11 @@ grants this access. Local/test entitlement scripts remain restricted.
   Business quantities group metric and consume/release separately; no sum of currencies.
 - 0031 adds nullable request/response IDs to provider_dispatches, a nullable request ID
   and tenant/time index to presales_provider_calls. No old-row backfill. Supplier header
-  priority is x-request-id then request-id; JSON id is the response ID. The shared
+  priority is x-oneapi-request-id, x-request-id, then request-id; JSON id is the
+  response ID. A New API gateway's billing ID takes precedence over any forwarded
+  upstream ID, so a provider statement can join the gateway's own request. An invalid
+  gateway ID falls back to the next safe ID. Historical upstream IDs are not rewritten
+  or joined by timestamps/token similarity. The shared
   allowlist is `[A-Za-z0-9][A-Za-z0-9_.-]{0,199}`; reject instead of truncate.
   Agent/embedding parse bounded JSON; Presales records the header on HTTP errors,
   invalid output, overlarge bodies and body timeouts too. No arbitrary header/body dump.

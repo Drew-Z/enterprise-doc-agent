@@ -9,6 +9,7 @@ import pytest
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
 from sqlalchemy import select, text
+from tests.browser_sessions.conftest import browser_db as browser_db
 
 from enterprise_doc_core.agents import AgentRunTaskType, BehaviorVersions, GroundedModelRequest
 from enterprise_doc_core.agents.gateway import OpenAICompatibleChatGateway
@@ -24,23 +25,35 @@ from enterprise_doc_core.billing.provider_models import ProviderDispatch
 from enterprise_doc_core.billing.service import EntitlementUsageService
 from enterprise_doc_core.config import EmbeddingSettings, ModelSettings, ProviderUsageSettings
 from enterprise_doc_core.documents.embedding_provider import OpenAICompatibleEmbeddingProvider
+from enterprise_doc_core.identity.models import Tenant
 
 pytestmark = pytest.mark.integration
 
 
 @pytest.mark.parametrize("status", [200, 429, 503])
-async def test_provider_receipt_keeps_ids_even_without_valid_usage(billing_database, status):
-    sessions, (tenant_id, _) = billing_database
+@pytest.mark.parametrize("through_gateway", [False, True])
+async def test_provider_receipt_keeps_ids_even_without_valid_usage(
+    browser_db, status, through_gateway
+):
+    sessions = browser_db.sessions
+    tenant_id = uuid4()
+    async with sessions.begin() as session:
+        session.add(
+            Tenant(
+                id=tenant_id, name="receipt test", slug=f"receipt-{tenant_id.hex}", quota_bytes=1024
+            )
+        )
     service = ProviderCallService(session_factory=sessions)
 
     async def guard(session):
         pass
 
+    headers = {"x-request-id": "req-test"}
+    if through_gateway:
+        headers = {"x-oneapi-request-id": "req-test", "x-request-id": "forwarded-upstream-id"}
     async with httpx.AsyncClient(
         transport=httpx.MockTransport(
-            lambda _: httpx.Response(
-                status, headers={"x-request-id": "req-test"}, json={"id": "resp-test", "usage": []}
-            )
+            lambda _: httpx.Response(status, headers=headers, json={"id": "resp-test", "usage": []})
         )
     ) as client:
         with service.scope(tenant_id=tenant_id, operation_id=uuid4(), kind="agent", guard=guard):

@@ -13,7 +13,8 @@ def safe_provider_id(value: object) -> str | None:
 
 
 def provider_request_id(headers: httpx.Headers) -> str | None:
-    for name in ("x-request-id", "request-id"):
+    # New API gateways bill under their own ID and may forward an upstream ID too.
+    for name in ("x-oneapi-request-id", "x-request-id", "request-id"):
         identifier = safe_provider_id(headers.get(name))
         if identifier is not None:
             return identifier

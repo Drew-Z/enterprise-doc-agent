@@ -1,21 +1,21 @@
 # 当前部署、回退与验收边界
 
-2026-09-29 UTC：当前部署为 **v0.1.45-rc.6 / fde6217492fefc06461fb5577b19fe4e2a601310**，数据库 `20260924_0031`。统一用户入口见[最终验收](final-project-acceptance.md)，本轮实测见[用户体验](user-experience-acceptance.md)和[机器记录](../../.trellis/tasks/09-24-commercial-operations-acceptance/static-release-validation.json)。
+2026-09-29 UTC：当前部署为 **v0.1.45-rc.7 / 587d72713711ed278a166f083e1467f4e7efbb32**，数据库 `20260924_0031`。统一用户入口见[最终验收](final-project-acceptance.md)，本轮实测见[机器记录](../../.trellis/tasks/09-24-commercial-operations-acceptance/rc7-release-validation.json)。
 
 ## 发布与回退
 
-[发布流水线 36602916574](https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/36602916574)四镜像及清单成功；清单 SHA-256 为 `9ad3d1e80ae430aa23cbb30ee5d897aa33aa1cca27b0fd4f2e29054f30c7ccdc`。56 份文件哈希、镜像及证明主题复核通过；密码学签名验证由该 CI 执行。
+[发布流水线 36625659126](https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/36625659126)四镜像及清单成功；清单 SHA-256 为 `42dc1fa04792e97f1f8f70022e9eff513a58e619b3dd1f38dbe27d48d2b86b3b`。56 份文件哈希、镜像及证明主题复核通过；密码学签名验证由该 CI 执行。
 
 以下位于 `ghcr.io/drew-z/enterprise-doc-<组件>`，使用完整 `image@sha256`：
 
-| 组件 | 当前 rc.6 | 回退 rc.5 |
+| 组件 | 当前 rc.7 | 回退 rc.6 |
 | --- | --- | --- |
-| api | `sha256:192f8b5e198da6232c7762603f10f98d8e9bd263ff644ffa015839dfb10a8626` | `sha256:32e8e1b98ee2ff6a9d9057208f0e6a36c29cb16164254e11d431aa2169290967` |
-| worker | `sha256:ae9aace76fda33cb9f0154aca9544dd04c71fd09a67766cf9a917572c1a22f9b` | `sha256:44602e0238d34a145f955660ae6c41d039d638ebdf1767545a895cb6009cfd91` |
-| consumer | `sha256:4ea4ba6355a90a931482797e7ac335e0cc3cde5ef689be7effb3a8ffd10cc77e` | `sha256:969bf6eaac00433f8667d269ba13ceb47231a7ad38373b5087d2a46beafebf45` |
-| web | `sha256:74e0619ff5b4d3bfd9de7a9c577d9d88f33ec0d35616d69daf6edc6de8733619` | `sha256:e280faa02c0ae98be415f532c70e5a409785215f10aeaaacf108ce5a92624e76` |
+| api | `sha256:1bd29a0ab8ec4427a19099e8f72245c4a7570c23145350b1a0db070d927a7c7e` | `sha256:192f8b5e198da6232c7762603f10f98d8e9bd263ff644ffa015839dfb10a8626` |
+| worker | `sha256:1df49907734385623bbce20c6a8901795a2002bff1705c76b14814afa962fa04` | `sha256:ae9aace76fda33cb9f0154aca9544dd04c71fd09a67766cf9a917572c1a22f9b` |
+| consumer | `sha256:c62be34aa8cfe5a44e1fd15fc3073829d9bd8062112f889f7f5769952bdb48d9` | `sha256:4ea4ba6355a90a931482797e7ac335e0cc3cde5ef689be7effb3a8ffd10cc77e` |
+| web | `sha256:101b0019f2f1da6924bcbe0a546db5176f1726a7aa0e083a4928ce9fd54fd7ad` | `sha256:74e0619ff5b4d3bfd9de7a9c577d9d88f33ec0d35616d69daf6edc6de8733619` |
 
-独立守卫在 94.214 秒内完成镜像切换。API、Worker、Consumer、Web 和 Redis 均就绪；配置、凭据和 0031 不变。四个 GitHub staging 回退变量已读回，其他变量未改。远端临时运行目录与 11 个文件已清理，原恢复输入集中本地保存。当前回退引用存在不等于本窗口执行过 rc.6→rc.5 故障演练；数据库不得降回 0027。
+独立守卫在 94.937 秒内完成镜像切换。API、Worker、Consumer、Web 和 Redis 均就绪；配置、凭据和 0031 不变。四个 GitHub staging 回退变量已读回，其他变量未改。远端临时运行目录与 11 个文件已清理，原恢复输入集中本地保存。当前回退引用存在不等于本窗口执行过 rc.7→rc.6 故障演练；数据库不得降回 0027。
 
 ## 实际业务配置
 
@@ -33,8 +33,10 @@
 
 ## 对账与历史记录
 
-应用侧调用/业务账本保留实际调用与一次结算；未知费用保持 null。模型账户查询只有累计配额单位，向量旧账户端点返回 410；不能据此换算币种和逐笔金额。此前两次逻辑查询实际包含一次重定向，共三次 HTTP，纠正回执单独保存，原证据未覆盖。
+应用侧调用/业务账本保留实际调用与一次结算；未知费用保持 null。新读取的 Windhub 52条账单合计300,694配额，与令牌累计用量一致，显示配置为 CUSTOM / 500000配额每单位；不能标成人民币或美元。旧应用 ID 与网关账单 ID 精确匹配为0，现已定位到 x-oneapi-request-id 与上游 x-request-id 的区别，候选修复待上线实测。向量旧账户端点已退役，金额尚未核实。此前两次逻辑查询实际包含一次重定向，共三次 HTTP，纠正回执单独保存，原证据未覆盖。
 
 旧 [Agent 验收](online-business-acceptance.md)、[售前验收](online-presales-browser-acceptance.md)、[rc.3 发布记录](../../.trellis/tasks/09-24-commercial-operations-acceptance/final-delivery-validation.json)和[原容量结果](../../.trellis/tasks/09-24-commercial-operations-acceptance/post-authorization-validation.json)保持各自时间与范围。Draft PR 与任务仍保持待最终放行，不以技术复核代替客户签署。
 
 rc.6 公网 GET 已验证三个指纹资源的 immutable/gzip 与实际镜像内容 SHA，HTML no-store、缺失指纹文件 404 + no-store。rc.5 的首次主 JS 连接中断与缺失文件 CDN 四小时缓存均保留；补修前后实际 nginx HTTP 测试分别失败、通过。静态加载改善不替代服务器受理 p95 和容量验收。
+
+rc.7 批量入口移除重复完整读表，隔离 PostgreSQL 的单行批量 SELECT 从33减为25，与单行入口一致。已完成任务各4次、交替顺序的线上重放：批量中位数1669.773→1291.637ms；切换后单行中位数1291.082ms。前后共20次 HTTP，没有新增任务、供应商调用或消费。测量走 API Pod 回环到实际服务进程，属于完成任务重放；原容量采样使用单行入口，不能用此结果关闭新任务受理两秒目标。

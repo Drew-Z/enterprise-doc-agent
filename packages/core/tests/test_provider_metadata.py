@@ -28,8 +28,28 @@ def test_provider_id_header_allowlist_and_precedence():
     )
 
 
+def test_gateway_billing_id_takes_precedence_over_forwarded_upstream_id():
+    assert (
+        provider_request_id(
+            httpx.Headers({"X-Oneapi-Request-Id": "gateway-billed-1", "x-request-id": "upstream-1"})
+        )
+        == "gateway-billed-1"
+    )
+    assert (
+        provider_request_id(httpx.Headers({"X-Oneapi-Request-Id": "gateway-billed-2"}))
+        == "gateway-billed-2"
+    )
+    assert (
+        provider_request_id(
+            httpx.Headers({"X-Oneapi-Request-Id": "invalid value", "x-request-id": "upstream-2"})
+        )
+        == "upstream-2"
+    )
+
+
 @pytest.mark.parametrize("fault", ["http", "invalid_output", "body_timeout", "oversized"])
-async def test_presales_errors_keep_header_id_after_response_started(fault):
+@pytest.mark.parametrize("through_gateway", [False, True])
+async def test_presales_errors_keep_header_id_after_response_started(fault, through_gateway):
     from enterprise_doc_core.config import ModelSettings
     from enterprise_doc_core.presales.errors import PresalesError
     from enterprise_doc_core.presales.gateway import OpenAICompatiblePresalesGateway
@@ -42,6 +62,11 @@ async def test_presales_errors_keep_header_id_after_response_started(fault):
 
     def respond(request):
         headers = {"x-request-id": "req-after-headers"}
+        if through_gateway:
+            headers = {
+                "x-oneapi-request-id": "req-after-headers",
+                "x-request-id": "forwarded-upstream-id",
+            }
         if fault == "http":
             return httpx.Response(503, headers=headers)
         if fault == "body_timeout":
