@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "at": "2026-09-29T20:17:44.327628+00:00",
+  "status": "local_regression_passed",
+  "baseline_commit": "81175ebb9d9914db5175fb66d4b6f213325caece",
+  "scope": "Public HTTP admission with real isolated local PostgreSQL and controlled provider transport",
+  "select_counts": {
+    "single_before": 25,
+    "batch_before": 33,
+    "single_after": 25,
+    "batch_after": 25
+  },
+  "integration_passed": 75,
+  "non_integration_passed": 2083,
+  "subtests_passed": 23,
+  "non_integration_deselected": 456,
+  "ruff_passed": true,
+  "formatted_files": 617,
+  "mypy_source_files": 251,
+  "authorization_modes": [
+    "background_enabled",
+    "background_disabled"
+  ],
+  "rejections": [
+    "other_tenant",
+    "revoked_membership",
+    "unavailable_source",
+    "stale_source"
+  ],
+  "durable_job_and_unique_reservation_verified": true,
+  "same_key_replay_verified": true,
+  "real_model_requests": 0,
+  "real_embedding_requests": 0,
+  "online_deployment_executed": false,
+  "online_admission_target_approved": false,
+  "production_capacity_approved": false,
+  "commercial_acceptance_approved": false,
+  "private_evidence_directory": "acceptance-completion-evidence",
+  "evidence": {
+    "admission-red.txt": {
+      "sha256": "dbcdbda5650cdcc23f165125890fc32f99e6ac4d2b8eacc1258ce50283f9c766",
+      "bytes": 3933
+    },
+    "admission-green.txt": {
+      "sha256": "8470cf63c0898884121ee4b704da30df99f6d8e0827a65c18d2f2334d1cbd225",
+      "bytes": 68
+    },
+    "admission-integration.txt": {
+      "sha256": "bce56b9b6ee43d0c178fdcd144a3692424a2f37435f06fba892b225f2120fcfa",
+      "bytes": 155
+    },
+    "admission-lint.txt": {
+      "sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0",
+      "bytes": 20
+    },
+    "admission-format.txt": {
+      "sha256": "d312346ff6b66b9f55d89692276e62e7821cee29973beb04ed85f96bf855ae14",
+      "bytes": 129
+    },
+    "admission-format-final.txt": {
+      "sha256": "f2cca65f4ff308d0dc317198840aa8be75d53d83278b48846c77cb451f542b46",
+      "bytes": 29
+    },
+    "admission-types.txt": {
+      "sha256": "82bcf5599efd0efb5189f1184e77fc0bb53e4c14436e4a10d3365c12bd56b53c",
+      "bytes": 46
+    },
+    "admission-unit.txt": {
+      "sha256": "0116f831690ff52d01e438a0b463371e20fe82168cb6bbde67461a7848569ebf",
+      "bytes": 2468
+    }
+  },
+  "preserved_failures": [
+    "pre_fix_query_budget",
+    "initial_test_file_format",
+    "historical_capacity"
+  ]
+}

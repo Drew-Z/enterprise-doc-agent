@@ -353,6 +353,16 @@ background generation. API and Worker must use the same settings and model route
   presales_background_required before reserving or dispatching. Batch keys derive from
   the request key and row ID; a row rejection does not prevent remaining rows from
   being admitted, while shared authorization/source failures stop the batch.
+  Enabled batch admission assembles the packet only after enqueueing; each row's
+  transaction already checks tenant/member/source access. Do not add a complete
+  pre-admission `get()` to repeat those reads. Disabled mode retains the initial
+  authorized read, so access/source errors still precede the background-required
+  error. `test_presales_admission_integration.py` compares equivalent one-row HTTP
+  submissions: batch SELECT count must not exceed the single-row endpoint's count,
+  with queued Jobs, one reservation per operation and no provider calls on replay.
+  It also checks cross-tenant, revoked-member, unavailable/stale-source rejection
+  without Jobs/reservations in both enabled and disabled modes. Final `get()` access
+  rechecks remain mandatory; query counts alone do not prove online latency.
 - **Execution:** the existing Worker/publisher process runs one asynchronous
   presales poller. Long inference does not occupy the solo document consumer. Job
   leases, heartbeats, fencing and terminal projection are reused. Shutdown cancels

@@ -252,9 +252,11 @@ class PresalesService:
         self, principal: PrincipalContext, packet_id: UUID, payload: BatchGenerateInput, key: str
     ) -> BatchGenerateResult:
         check_key(key)
-        await self.get(principal, packet_id)
         if not self.generation.settings.background_generation_enabled:
+            await self.get(principal, packet_id)
             raise PresalesError("presales_background_required")
+        # Each enqueue reauthorizes inside its transaction; assemble the view once,
+        # after admission, with get() retaining its final access/source checks.
         rejected = []
         for row_id in payload.row_ids:
             row_key = hashlib.sha256(f"{key}:{row_id}".encode()).hexdigest()
