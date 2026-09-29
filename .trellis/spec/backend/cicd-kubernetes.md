@@ -46,7 +46,10 @@
 - Web caches only fingerprinted `/assets/<name>-<hash>.js` and `.css` for one year
   with `immutable`, and compresses these public resources with gzip and `Vary`.
   HTML and unversioned files retain `no-store`; API/auth responses are not included.
-  A missing fingerprinted file returns an uncached 404, never an HTML success.
+  A missing fingerprinted file returns a 404 with explicit `Cache-Control: no-store`,
+  never an HTML success. Merely omitting the success cache header lets the CDN apply
+  its default negative-cache TTL. Select the asset cache policy by response status:
+  200/206/304 may be immutable; all errors must carry no-store.
   Validate actual nginx GET headers, compression/decoded bytes, missing-file behavior
   and security headers before release; a local probe does not prove public CDN behavior.
 - For Cloudflare R2, the account `r2.cloudflarestorage.com` S3 endpoint is used by both
