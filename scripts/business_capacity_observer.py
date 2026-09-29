@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid5
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -33,10 +33,13 @@ class CoreBusinessObserver:
         bucket: str,
         retriever: HybridRetrievalService,
         principal: PrincipalContext,
+        *,
+        run_id: UUID | None = None,
     ) -> None:
         self.sessions, self.store, self.bucket = sessions, store, bucket
         self.retriever, self.principal = retriever, principal
         self.tenant_id, self.actor_id = UUID(principal.tenant_id), UUID(principal.actor_id)
+        self.run_id = run_id
 
     async def ingestion(self, version_id: UUID, case: LoadedCase) -> dict[str, Any] | None:
         async with self.sessions() as session:
@@ -130,6 +133,7 @@ class CoreBusinessObserver:
             actor_id=self.actor_id,
             document_version_id=version_id,
             query=case.spec.query,
+            provider_operation_id=uuid5(self.run_id, str(version_id)) if self.run_id else None,
         )
         if not decision.accepted or not decision.candidates:
             raise BusinessFailure("retrieval_refused")

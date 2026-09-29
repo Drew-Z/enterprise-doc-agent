@@ -401,6 +401,56 @@ async def enqueue(b, key="once"):
     return await b.service.generate(b.context.principal, packet.id, packet.rows[0].id, key)
 
 
+async def test_stalled_primary_leaves_time_for_fallback_and_settles_once(background):
+    from enterprise_doc_core.presales.models import PresalesProviderCall
+
+    b = background
+    sent = []
+    cancelled = asyncio.Event()
+
+    async def respond(request):
+        sent.append(request.url.host)
+        if request.url.host == "primary.invalid":
+            try:
+                await asyncio.sleep(30)
+            finally:
+                cancelled.set()
+        return valid_response(request)
+
+    worker = configured_worker(b, respond, row_timeout_seconds=6)
+    packet = await enqueue(b, "stalled-primary")
+    await asyncio.wait_for(worker.run_once("worker"), timeout=10)
+    result = await b.service.get(b.context.principal, packet.id)
+    assert result.rows[0].state == "drafted"
+    assert cancelled.is_set()
+    assert sent == ["primary.invalid", "fallback.invalid"]
+    replay = await b.service.generate(
+        b.context.principal, packet.id, packet.rows[0].id, "stalled-primary"
+    )
+    assert replay.rows == result.rows
+    async with b.sessions() as session:
+        operation = await session.get(PresalesAttempt, packet.rows[0].attempts[0].id)
+        assert operation.state == "succeeded"
+        assert operation.finished_at < operation.deadline_at
+        calls = (
+            await session.scalars(
+                select(PresalesProviderCall)
+                .where(PresalesProviderCall.operation_id == operation.id)
+                .order_by(PresalesProviderCall.number)
+            )
+        ).all()
+        assert [call.state for call in calls] == ["failed", "succeeded"]
+        assert calls[0].error_code == "presales_model_timeout"
+        assert calls[0].usage is None  # An unknown upstream cost is never zero.
+        reservation = (
+            await session.scalars(
+                select(UsageReservation).where(UsageReservation.operation_id == operation.id)
+            )
+        ).one()
+        assert reservation.state == "consumed"
+    assert sent == ["primary.invalid", "fallback.invalid"]
+
+
 @pytest.mark.parametrize("loss", ["released", "expired", "missing"])
 async def test_embedding_retry_stops_when_presales_reservation_is_lost(background, loss):
     from enterprise_doc_core.billing.provider_models import ProviderDispatch

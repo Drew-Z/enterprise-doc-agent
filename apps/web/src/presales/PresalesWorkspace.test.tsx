@@ -95,6 +95,39 @@ beforeEach(() => { sessionStorage.clear(); localStorage.clear(); });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 describe("PresalesWorkspace HTTP boundary", () => {
+  it("automatically recovers an initial temporary read failure without generating", async () => {
+    sessionStorage.setItem(storageKey, packetId);
+    let reads = 0;
+    const fetch = vi.spyOn(globalThis, "fetch").mockImplementation(input => {
+      if (requestPath(input) !== "/api/presales/" + packetId) return Promise.resolve(json([]));
+      reads += 1;
+      return Promise.resolve(reads === 1 ? new Response("Proxy unavailable", { status: 503 }) : json(makePacket(true)));
+    });
+    mount();
+    await screen.findByRole("alert");
+    expect(screen.queryByRole("article")).not.toBeInTheDocument();
+    await screen.findByText("The source states 30 days.", { selector: "p" }, { timeout: 4000 });
+    expect(reads).toBe(2);
+    expect(fetch.mock.calls.every(([, init]) => (init?.method ?? "GET") === "GET")).toBe(true);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("shows immediate submission feedback before slow admission, then background recovery guidance", async () => {
+    sessionStorage.setItem(storageKey, packetId);
+    const current = makePacket(); current.generationMode = "background";
+    let finish!: (response: Response) => void;
+    const fetch = mockApi(() => current, () => new Promise<Response>(resolve => { finish = resolve; }));
+    mount();
+    fireEvent.click(await screen.findByRole("button", { name: "Generate response" }));
+    expect(screen.getByText(/Submitting generation/)).toBeInTheDocument();
+    expect(screen.queryByText(/Accepted. Generation/)).not.toBeInTheDocument();
+    current.rows[0].state = "recovering";
+    act(() => { finish(json(current, 202)); });
+    await screen.findByText(/Recovery is in progress/);
+    expect(screen.getByRole("button", { name: "Generate response" })).toBeDisabled();
+    expect(fetch.mock.calls.filter(([, init]) => init?.method === "POST")).toHaveLength(1);
+  });
+
   it("retries a failed sheet read in place without creating or generating anything", async () => {
     sessionStorage.setItem(storageKey, packetId);
     let reads = 0;

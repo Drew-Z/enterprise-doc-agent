@@ -372,6 +372,11 @@ background generation. API and Worker must use the same settings and model route
   citations, JSON, prose and business failures are terminal. All calls share the
   execution deadline, with two seconds reserved for persistence and a five-second
   connection cap. There is no HTTP/SDK retry or third dispatch after restart.
+  After dispatch admission, the first call uses at most half the remaining model
+  budget when a distinct second route is configured and failover is enabled. Time
+  is recalculated after database work; the second call uses the remaining budget
+  under the unchanged deadline. A real-clock integration test verifies hanging
+  primary cancellation, fallback success and one settlement with unknown usage retained.
 - **Accounting:** business quota settles once for a validated saved draft, or is
   released on failure. Demo abuse limits count the user operation once; queued
   operations take the global demo execution slot only at dispatch. ProviderCall
@@ -404,6 +409,12 @@ does not dispatch the model. Expiry does not block authorized reads, review, exp
 or replay of an already generated draft. Reservations retain their original period.
 
 ## Review, export and diagnostics
+
+Source snapshots fetch authorized versions, active generations and latest versions
+in one statement, preserving input order/applicability. Missing or ambiguous sources
+fail closed. Packet reads batch attempts/reviews while preserving each row's ordered
+history. Initial and final authorization/source rechecks remain. The complete
+6-source/12-row read has a ten-SELECT budget in the integration suite.
 
 ### Structured prerequisite review (CO-1/CO-2 candidate)
 

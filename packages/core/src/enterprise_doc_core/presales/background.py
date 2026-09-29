@@ -261,17 +261,22 @@ class BackgroundGeneration:
                     while True:
                         route = await self._next_route(claim, excluded)
                         gateway = self.gateways[route]
-                        remaining = (deadline - self.clock()).total_seconds() - 2
-                        if remaining <= 0:
+                        if (deadline - self.clock()).total_seconds() <= 2:
                             raise PresalesError("presales_attempt_expired")
                         try:
-                            call_id = await self._dispatch(claim, route, gateway)
+                            call_id, reserve_recovery = await self._dispatch(claim, route, gateway)
                         except PresalesError as error:
                             if error.code != "presales_route_cooling":
                                 raise
                             excluded.add(route)
                             continue
                         try:
+                            # Dispatch admission also takes time. Recompute under the
+                            # original deadline, preserving a turn for the second route
+                            # instead of letting a stalled first route consume both.
+                            remaining = max(0, (deadline - self.clock()).total_seconds() - 2)
+                            if reserve_recovery:
+                                remaining /= 2
                             async with asyncio.timeout(remaining):
                                 generated = await gateway.generate(payload)
                             try:
@@ -368,7 +373,9 @@ class BackgroundGeneration:
                     return route
             raise PresalesError("presales_model_unavailable")
 
-    async def _dispatch(self, claim: ClaimedJob, route: str, gateway: PresalesGateway) -> UUID:
+    async def _dispatch(
+        self, claim: ClaimedJob, route: str, gateway: PresalesGateway
+    ) -> tuple[UUID, bool]:
         async with self.sessions.begin() as session:
             await self._lease(session, claim)
             packet = await load_packet(
@@ -408,7 +415,15 @@ class BackgroundGeneration:
             session.add(call)
             operation.provider_request_count = None
             operation.state = "recovering" if calls else "running"
-            return call.id
+            reserve_recovery = (
+                self.settings.automatic_failover_enabled
+                and not calls
+                and any(
+                    other != route and self._route_key(other) != self._route_key(route)
+                    for other in self.gateways
+                )
+            )
+            return call.id, reserve_recovery
 
     async def _record_error(self, claim: ClaimedJob, call_id: UUID, error: PresalesError) -> None:
         async with self.sessions.begin() as session:

@@ -33,6 +33,25 @@ function completedRun(attemptFields: Record<string, unknown>) {
 }
 
 describe("Agent API client", () => {
+  it("bounds a stalled JSON request and preserves timeout as recoverable", async () => {
+    const deadline = new AbortController();
+    const timer = vi.spyOn(AbortSignal, "timeout").mockReturnValueOnce(deadline.signal);
+    try {
+      const client = new AgentApiClient({ getToken: () => "token", fetcher: (_input, init) => new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")), { once: true });
+      }) });
+      const pending = client.getRun(runId);
+      deadline.abort();
+      await expect(pending).rejects.toMatchObject({ code: "timeout" });
+      expect(timer).toHaveBeenCalledWith(15_000);
+    } finally { timer.mockRestore(); }
+  });
+
+  it.each([403, 429, 502, 503, 504])("preserves proxy HTTP %i without exposing its body", async status => {
+    const client = new AgentApiClient({ getToken: () => "token", fetcher: () => Promise.resolve(new Response("<html>private upstream diagnostic</html>", { status, headers: { "X-Request-ID": "proxy-123" } })) });
+    await expect(client.getRun(runId)).rejects.toMatchObject({ status, code: `agent_http_${status}`, requestId: "proxy-123", message: "The task service could not complete this request." });
+  });
+
   it.each([null, "grounding.citation_excerpt_not_verbatim"])(
     "reads persisted execution history with diagnosticCode %s",
     async diagnosticCode => {

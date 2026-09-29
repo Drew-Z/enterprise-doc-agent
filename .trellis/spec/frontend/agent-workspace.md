@@ -29,6 +29,18 @@ and the result must identify whether static assets are deployed or locally built
 
 ## Proven Examples
 
+Transient network/timeout/429/5xx snapshot reads retry at most three times with
+500/1000/2000 ms backoff. JSON requests have a 15-second deadline. Event streams
+retain a separate lifetime and stop after five consecutive failures. Successful
+reads clear old errors; denied reads and malformed successful responses do not retry.
+Proxy HTML is discarded while its HTTP status is preserved.
+
+Create response loss permits one automatic replay using the same idempotency key.
+The unchanged request retains that key for an explicit retry in the mounted workspace;
+no request body/key is persisted as a queue. Unmount retires the create controller.
+Optional recovery-storage failure cannot hide an accepted run. Immediate submission
+feedback precedes acceptance; failure copy separates task allowance from upstream usage.
+
 - `apps/web/src/agent/`
 - `apps/web/e2e/agent-workflow.spec.ts`
 - `apps/web/src/agent/AgentWorkspace.test.tsx`

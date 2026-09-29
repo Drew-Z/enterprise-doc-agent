@@ -135,11 +135,14 @@ class BusinessPlan(PlanModel):
     def total_tasks(self) -> int:
         return self.repetitions * sum(phase.tasks for phase in self.phases)
 
+    def object_origin(self, value: str) -> str:
+        return loopback_origin(value)
+
     @model_validator(mode="after")
     def check_plan(self) -> Self:
         loopback_origin(self.base_url)
         for origin in self.object_origins:
-            loopback_origin(origin)
+            self.object_origin(origin)
         if tuple(phase.name for phase in self.phases) != PHASES:
             raise ValueError("business_phase_order")
         if self.total_tasks > 160:
@@ -162,12 +165,14 @@ class LoadedBusinessPlan:
     cases: tuple[LoadedCase, ...]
 
 
-def load_business_plan(path: Path) -> LoadedBusinessPlan:
+def load_business_plan(
+    path: Path, *, plan_type: type[BusinessPlan] = BusinessPlan
+) -> LoadedBusinessPlan:
     if path.stat().st_size > 128 * 1024:
         raise ValueError("plan_too_large")
     raw = path.read_bytes()
     try:
-        plan = BusinessPlan.model_validate_json(raw)
+        plan = plan_type.model_validate_json(raw)
     except ValidationError:
         raise ValueError("invalid_business_plan") from None
     cases = []
@@ -310,7 +315,7 @@ async def upload_case(
             url = urlsplit(signed.url)
             if (
                 f"{url.scheme}://{url.netloc}"
-                not in {loopback_origin(o) for o in io.plan.object_origins}
+                not in {io.plan.object_origin(o) for o in io.plan.object_origins}
                 or url.username is not None
                 or url.password is not None
                 or url.fragment
@@ -666,8 +671,9 @@ async def _execute_task(
         )
         return result
 
+    task_deadline = asyncio.timeout(min(io.plan.task_timeout_seconds, remaining_seconds))
     try:
-        async with asyncio.timeout(min(io.plan.task_timeout_seconds, remaining_seconds)):
+        async with task_deadline:
             receipt = await measure(
                 "upload",
                 io.plan.upload_timeout_seconds,
@@ -717,6 +723,8 @@ async def _execute_task(
         )
         raise
     except (BusinessFailure, TimeoutError) as error:
+        if task_deadline.expired() and remaining_seconds <= io.plan.task_timeout_seconds:
+            io.exhausted = True
         code = "boundary_timeout" if isinstance(error, TimeoutError) else str(error)
         sample.update(status="failed", reason=code)
         sample["boundaries"][active].update(

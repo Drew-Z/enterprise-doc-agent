@@ -31,7 +31,14 @@ export function PresalesWorkspace({ token, contextKey, storageKey, openDocuments
   const enabled = Boolean(token) && !readOnly;
   const recent = useQuery({ queryKey: ["presales", contextKey, "list"], queryFn: ({ signal }) => api.list(signal), enabled, retry: false, gcTime: 0 });
   const inventory = useQuery({ queryKey: ["presales", contextKey, "sources"], queryFn: ({ signal }) => fetchDocumentInventory(token ?? "", signal), enabled: enabled && !activeId, retry: false, gcTime: 0 });
-  const packet = useQuery({ queryKey: ["presales", contextKey, activeId], queryFn: ({ signal }) => api.get(activeId ?? "", signal), enabled: enabled && activeId !== null, retry: false, gcTime: 0, refetchOnWindowFocus: true, refetchInterval: query => query.state.data?.rows.some(generationActive) ? 2500 : false });
+  const packet = useQuery({ queryKey: ["presales", contextKey, activeId], queryFn: ({ signal }) => api.get(activeId ?? "", signal), enabled: enabled && activeId !== null, retry: false, gcTime: 0, refetchOnWindowFocus: true, refetchInterval: query => {
+    if (query.state.status === "error") {
+      const failure = query.state.error;
+      const transient = failure instanceof TypeError || (failure instanceof PresalesApiError && (failure.status >= 500 || failure.status === 429));
+      return transient && query.state.errorUpdateCount < 3 ? 2500 * query.state.errorUpdateCount : false;
+    }
+    return query.state.data?.rows.some(generationActive) || (readRecovery?.id === activeId && query.state.dataUpdatedAt <= readRecovery.after) ? 2500 : false;
+  } });
   useEffect(() => {
     if (!initialVersionId) return;
     try { sessionStorage.removeItem(storageKey); } catch { /* Recovery is optional. */ }
@@ -108,7 +115,7 @@ export function PresalesWorkspace({ token, contextKey, storageKey, openDocuments
       if (signal.aborted) return;
       let next: Packet;
       try {
-        next = await api.generate(value.id, row.id, keyFor("generate:" + row.id, { attempts: row.attempts.length, state: row.state }), signal);
+        next = await api.generate(value.id, row.id, keyFor("generate:" + row.id, { attempts: row.attempts.length, state: row.state }), signal, value.generationMode === "background");
       } catch (failure) {
         if (signal.aborted || !alive.current || (failure instanceof PresalesApiError && failure.status < 500)) throw failure;
         // The request may still be running or already saved after a proxy/network
@@ -139,7 +146,7 @@ export function PresalesWorkspace({ token, contextKey, storageKey, openDocuments
   const recovery = readRecovery?.id === activeId ? readRecovery : null;
   const awaitingRead = recovery !== null && packet.dataUpdatedAt <= recovery.after;
   const visible = packet.isError || awaitingRead || (activeId !== null && blockedId === activeId) ? undefined : packet.data;
-  const pageError = error || (activeId && packet.isError ? formatApiError(packet.error, c.sourceUnavailable, c.requestId) : awaitingRead ? formatApiError(recovery.error, c.error, c.requestId) : "");
+  const pageError = error || (activeId && packet.isError ? formatApiError(packet.error, c.readFailed, c.requestId) : awaitingRead ? formatApiError(recovery.error, c.readFailed, c.requestId) : "");
   const visibleNotice = recovery && visible ? c.readRecovered : notice === c.background && visible && !visible.rows.some(generationActive) ? c.finished : notice;
   return <section className="presales-workspace">
     <header className="product-page-header"><div><p className="eyebrow">{c.title}</p><h1>{c.title}</h1><p className="page-summary">{c.summary}</p></div><button type="button" className="presales-secondary" onClick={openDocuments}>{c.documents}</button></header>
@@ -149,6 +156,8 @@ export function PresalesWorkspace({ token, contextKey, storageKey, openDocuments
         {!recent.isError && recent.data?.map(item => <button type="button" key={item.id} className={"presales-packet-link" + (activeId === item.id ? " selected" : "")} aria-current={activeId === item.id ? "true" : undefined} disabled={Boolean(busy)} onClick={() => select(item.id)}><strong>{item.title}</strong><small>{new Date(item.createdAt).toLocaleDateString()} · {item.rowCount}</small>{item.staleSources && <small>{c.stale}</small>}</button>)}
       </aside>
       <div className="presales-main" aria-busy={Boolean(busy)}>{pageError && <div className="presales-error" role="alert">{pageError}{activeId && (packet.isError || awaitingRead) && blockedId !== activeId && <><p>{c.readRecoveryHelp}</p><button type="button" disabled={Boolean(busy) || packet.fetchStatus !== "idle"} onClick={() => void packet.refetch()}>{c.retryRead}</button></>}{(packet.isError || blockedId !== null) && <button type="button" onClick={() => select(null)}>{c.reset}</button>}</div>}{visibleNotice && <p className="presales-saved" role="status">{visibleNotice}</p>}
+        {(busy === "all" || visible?.rows.some(row => busy === row.id)) && <p role="status" className="presales-hint">{c.submitting}</p>}
+        {visibleNotice !== c.background && visible?.rows.some(generationActive) && <p role="status" className="presales-hint">{c.background}</p>}
         {!activeId && <><h2>{c.newPacket}</h2>{inventory.isPending && <p role="status">{c.loading}</p>}{inventory.isError && <p role="alert" className="presales-error">{formatApiError(inventory.error, c.error, c.requestId)}<button type="button" onClick={() => void inventory.refetch()}>{c.refresh}</button></p>}{inventory.isSuccess && <PacketForm key={formRevision} maxRequirements={maxRequirements} documents={inventory.data} busy={Boolean(busy)} onCreate={create} openDocuments={openDocuments} initialVersionId={entryVersionId} />}</>}
         {activeId && packet.isPending && <p role="status">{c.loading}</p>}
         {visible && <><header className="presales-packet-heading"><div><h2>{visible.title}</h2><p className="presales-hint" role="status">{visible.rows.filter(r => r.draft).length} / {visible.rows.length} {c.generatedProgress} · {visible.rows.filter(r => r.review).length} / {visible.rows.length} {c.progress}</p></div><button className="presales-icon" type="button" aria-label={c.refresh} title={c.refresh} disabled={Boolean(busy)} onClick={() => void packet.refetch()}><RefreshCw aria-hidden="true" /></button></header>

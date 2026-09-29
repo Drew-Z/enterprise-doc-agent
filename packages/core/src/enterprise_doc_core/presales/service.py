@@ -193,7 +193,35 @@ class PresalesService:
                     .order_by(PresalesRow.position)
                 )
             ).all()
-            views = [await self._row_view(session, row) for row in rows]
+            row_ids = [row.id for row in rows]
+            attempts = (
+                await session.scalars(
+                    select(PresalesAttempt)
+                    .where(
+                        PresalesAttempt.row_id.in_(row_ids),
+                        PresalesAttempt.tenant_id == packet.tenant_id,
+                    )
+                    .order_by(PresalesAttempt.number)
+                )
+            ).all()
+            reviews = (
+                await session.scalars(
+                    select(PresalesReview)
+                    .where(
+                        PresalesReview.row_id.in_(row_ids),
+                        PresalesReview.tenant_id == packet.tenant_id,
+                    )
+                    .order_by(PresalesReview.revision)
+                )
+            ).all()
+            views = [
+                self._row_view(
+                    row,
+                    [attempt for attempt in attempts if attempt.row_id == row.id],
+                    [review for review in reviews if review.row_id == row.id],
+                )
+                for row in rows
+            ]
             # No source text is returned after a revocation observed during assembly.
             await authorize_principal(session, principal)
             await check_sources(session, packet)
@@ -372,21 +400,9 @@ class PresalesService:
             )
         return content
 
-    async def _row_view(self, session: AsyncSession, row: PresalesRow) -> RowView:
-        attempts = (
-            await session.scalars(
-                select(PresalesAttempt)
-                .where(PresalesAttempt.row_id == row.id, PresalesAttempt.tenant_id == row.tenant_id)
-                .order_by(PresalesAttempt.number)
-            )
-        ).all()
-        reviews = (
-            await session.scalars(
-                select(PresalesReview)
-                .where(PresalesReview.row_id == row.id, PresalesReview.tenant_id == row.tenant_id)
-                .order_by(PresalesReview.revision)
-            )
-        ).all()
+    def _row_view(
+        self, row: PresalesRow, attempts: list[PresalesAttempt], reviews: list[PresalesReview]
+    ) -> RowView:
         attempt_views = []
         for attempt in attempts:
             state = (

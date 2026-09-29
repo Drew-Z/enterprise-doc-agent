@@ -13,7 +13,7 @@ import httpx
 import pytest
 from httpx import ASGITransport, AsyncClient
 from pydantic import SecretStr
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, event, func, select
 
 from enterprise_doc_api.app import create_app
 from enterprise_doc_api.config import ApiSettings
@@ -22,12 +22,10 @@ from enterprise_doc_core.billing import EntitlementUsageService
 from enterprise_doc_core.billing.models import TenantEntitlement, UsageEvent, UsageReservation
 from enterprise_doc_core.config import (
     AppEnvironment,
-    DatabaseSettings,
     ModelProvider,
     ModelSettings,
 )
 from enterprise_doc_core.context import PrincipalContext
-from enterprise_doc_core.db import create_database_engine, create_session_factory
 from enterprise_doc_core.documents import DocumentVersion, HashEmbeddingProvider
 from enterprise_doc_core.documents.models import (
     Document,
@@ -49,15 +47,15 @@ from enterprise_doc_core.presales.schemas import (
 from enterprise_doc_core.presales.service import PresalesService
 from enterprise_doc_core.presales.settings import PresalesSettings
 from tests.agent.test_agent_run_integration import MutableClock, _seed_agent_context
+from tests.browser_sessions.conftest import browser_db as browser_db
 from tests.presales.fixtures import ControlledGateway, add_chunk, add_document
 
 pytestmark = pytest.mark.integration
 
 
 @pytest.fixture
-async def workspace():
-    engine = create_database_engine(DatabaseSettings())
-    sessions = create_session_factory(engine)
+async def workspace(browser_db):
+    sessions = browser_db.sessions
     context = await _seed_agent_context(sessions)
     other = await _seed_agent_context(sessions)
     gateway = ControlledGateway()
@@ -115,7 +113,60 @@ async def workspace():
             await session.execute(
                 delete(User).where(User.id.in_([context.actor_id, other.actor_id]))
             )
-        await engine.dispose()
+
+
+async def test_full_sheet_read_has_bounded_queries_and_keeps_row_histories_separate(workspace):
+    service, sessions, context, _, _, payload = workspace
+    for index in range(4):
+        version_id, _ = await add_document(sessions, context)
+        payload.sources.append(SourceInput(version_id=version_id, applicability=f"Scope {index}"))
+    payload.requirements = [RequirementInput(key=f"R{i}", text="Retention") for i in range(12)]
+    packet = await service.create(context.principal, payload, "full-sheet")
+    first = await service.generate(context.principal, packet.id, packet.rows[0].id, "first-row")
+    last = await service.generate(context.principal, packet.id, packet.rows[-1].id, "last-row")
+    reviewed = await service.review(
+        context.principal,
+        packet.id,
+        packet.rows[0].id,
+        ReviewInput(
+            expected_revision=1,
+            status="conflicting_evidence",
+            answer="Reviewed first row",
+            missing_information=["Confirm the applicable retention period"],
+            note="Controlled test review",
+        ),
+        "review-first",
+    )
+    statements = []
+    engine = sessions.kw["bind"].sync_engine
+
+    def observed(_connection, _cursor, statement, _parameters, _context, _executemany):
+        if statement.lstrip().upper().startswith("SELECT"):
+            statements.append(statement)
+
+    event.listen(engine, "before_cursor_execute", observed)
+    try:
+        result = await service.get(context.principal, packet.id)
+    finally:
+        event.remove(engine, "before_cursor_execute", observed)
+    # A full 6-source / 12-row sheet must not add per-source or per-row
+    # database round trips. Both initial and final access checks still run.
+    assert len(statements) <= 10
+    assert result.sources == packet.sources
+    assert result.rows[0] == reviewed.rows[0]
+    assert result.rows[-1] == last.rows[-1]
+    assert result.rows[0].attempts == first.rows[0].attempts
+    assert all(not row.attempts and not row.review_history for row in result.rows[1:-1])
+    async with sessions.begin() as session:
+        membership = await session.scalar(
+            select(Membership).where(
+                Membership.tenant_id == context.tenant_id,
+                Membership.user_id == context.actor_id,
+            )
+        )
+        membership.is_active = False
+    with pytest.raises(PresalesError, match="presales_forbidden"):
+        await service.get(context.principal, packet.id)
 
 
 async def test_multidocument_generate_review_export_and_api_authorization(workspace) -> None:
@@ -886,7 +937,7 @@ async def test_selection_adapter_preserves_persistence_export_and_authorization(
         )
         row = generated.rows[0]
         assert row.attempts[0].provider_request_count == 1
-        assert row.attempts[0].provenance["promptVersion"] == "presales.v7"
+        assert row.attempts[0].provenance["promptVersion"] == "presales.v9"
         if change == "unknown_reference":
             assert row.draft is None and row.attempts[0].error_code == "presales_invalid_citation"
         else:

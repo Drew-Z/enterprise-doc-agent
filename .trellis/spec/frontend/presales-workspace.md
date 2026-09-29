@@ -193,6 +193,13 @@ synthetic signed IdP and local model HTTP; it is not real-provider/customer acce
 
 ## Proven Examples
 
+Background generation and ordinary JSON requests use a 15-second response deadline.
+An uncertain response recovers through the same sheet GET; legacy synchronous
+generation retains 180 seconds. Transient GET failures can retry twice at 2.5/5-second
+intervals, including when no packet loaded. Permission/protocol failures stop automatic
+polling and hide cached bodies. Active work carries background guidance after remount;
+submission, recovery, failed allowance and exhausted attempts have distinct copy.
+
 - `apps/web/src/product/DocumentsPage.test.tsx`: polling stops at terminal states
   or read errors, explicit retry recovers, and only ready sources enable entry.
 - `apps/web/src/App.presales.test.tsx`: one-use version selection takes precedence

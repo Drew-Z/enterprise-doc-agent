@@ -54,20 +54,26 @@ async function check(response: Response): Promise<void> {
 }
 
 export function presalesApi(token: ApiCredential) {
-  const request = async <T>(route: string, schema: ZodType<T>, signal: AbortSignal, method = "GET", payload?: unknown, key?: string): Promise<T> => {
+  const request = async <T>(route: string, schema: ZodType<T>, signal: AbortSignal, method = "GET", payload?: unknown, key?: string, timeoutMs = 15_000): Promise<T> => {
     const headers: Record<string, string> = { Accept: "application/json" };
     if (payload !== undefined) headers["Content-Type"] = "application/json";
     if (key) headers["Idempotency-Key"] = key;
-    const response = await authenticatedFetch(base() + route, token, { method, headers, body: payload === undefined ? undefined : JSON.stringify(payload), signal, cache: "no-store" });
-    await check(response);
-    return schema.parse(await response.json());
+    const timeout = AbortSignal.timeout(timeoutMs);
+    try {
+      const response = await authenticatedFetch(base() + route, token, { method, headers, body: payload === undefined ? undefined : JSON.stringify(payload), signal: AbortSignal.any([signal, timeout]), cache: "no-store" });
+      await check(response);
+      return schema.parse(await response.json());
+    } catch (error) {
+      if (timeout.aborted && !signal.aborted) throw new PresalesApiError(504, "presales_response_timeout", "The response is taking longer than expected. Read the saved sheet to check its current state.", null);
+      throw error;
+    }
   };
   const packetPath = (value: string) => "/" + id.parse(value);
   return {
     list: (signal: AbortSignal) => request("", z.array(packetSummarySchema), signal),
     get: (packetId: string, signal: AbortSignal) => request(packetPath(packetId), packetSchema, signal),
     create: (payload: CreatePacket, key: string, signal: AbortSignal) => request("", packetSchema, signal, "POST", createPacketSchema.parse(payload), key),
-    generate: (packetId: string, rowId: string, key: string, signal: AbortSignal) => request(packetPath(packetId) + "/rows/" + id.parse(rowId) + "/generate", packetSchema, signal, "POST", undefined, key),
+    generate: (packetId: string, rowId: string, key: string, signal: AbortSignal, background = false) => request(packetPath(packetId) + "/rows/" + id.parse(rowId) + "/generate", packetSchema, signal, "POST", undefined, key, background ? 15_000 : 180_000),
     generateBatch: (packetId: string, rowIds: string[], key: string, signal: AbortSignal) => request(packetPath(packetId) + "/generate", batchSchema, signal, "POST", { rowIds: z.array(id).min(1).max(12).parse(rowIds) }, key),
     review: (packetId: string, rowId: string, payload: ReviewInput, key: string, signal: AbortSignal) => request(packetPath(packetId) + "/rows/" + id.parse(rowId) + "/review", packetSchema, signal, "PUT", reviewInputSchema.parse(payload), key),
     export: async (packetId: string, mode: "draft" | "reviewed", signal: AbortSignal) => {
