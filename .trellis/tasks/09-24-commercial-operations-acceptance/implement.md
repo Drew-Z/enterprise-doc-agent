@@ -381,4 +381,16 @@ Ruff、603 文件格式、254 源码严格 Mypy、Trellis 上下文及容量 YAM
 
 - [x] rc.4 独立只读 ASGI 剖析与 EXPLAIN ANALYZE：来源 SQL 数据库执行 0.288 ms，应用往返及偶发等待是主要开销；零模型/向量，不启动后台清理任务。
 - [x] 实际 nginx HTTP 先复现哈希资源 no-store、未压缩与缺失文件假 200；仅哈希 JS/CSS 缓存及 gzip 修复后通过，其他入口不公开缓存。
-- [ ] 精确候选检查、发布和实际 CDN/browser 核验；当前线上仍 rc.4，不能提前写上线。
+- [x] 精确候选检查、发布和实际 CDN/browser 核验已在 CO-29 完成；rc.4 当时未发布的记录由后续 rc.5/rc.6 实测补齐。
+
+## CO-29 公网缓存、CDP 与负缓存补修
+
+- [x] rc.5 四镜像签名证据、96.186 秒无迁移切换、五服务及回退变量读回。
+- [x] 实际公网页面/API 的 CDP：Agent 结果/引用/下载/刷新，售前 CSV/离线后重开/原表不变；无新业务与供应商调用。
+- [x] 保留 rc.5 首次 JS 连接中断和 CDN 默认四小时缓存 404 的失败；补充明确 no-store，实际 HTTP 先失败后通过。
+- [x] rc.6 精确提交 fde6217492fefc06461fb5577b19fe4e2a601310 的 Quality、容器与发布检查通过；56 文件证明核验、94.214 秒镜像切换、五服务/配置/凭据/0031、四回退变量及清理读回。
+- [x] rc.6 公网三个资源 SHA、gzip/immutable、HTML no-store、缺失资源 404/no-store；与已受测 rc.5 UI 字节一致。
+- [x] 506 冻结文件和 25 旧索引哈希核验；两项无窗口定时任务最近三次各自 exit 0。
+- [ ] 服务器受理目标、代表性容量、金额、独立审核、个人电脑停机后的备份连续性、值班及整机 RPO/RTO 保持开放，不归档任务。
+
+公开机器结果 static-release-validation.json；本阶段未修改旧容量失败和旧供应商记录。恢复点集中原组，文档修改前基线 f9aeb2f；私有发布阶段 static-release-evidence/static-error-release-evidence。

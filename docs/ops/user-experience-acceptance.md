@@ -58,4 +58,14 @@ rc.4 CDP 的 Agent 结果、引用、实际下载和刷新通过。由于本机�
 
 rc.4 的只读剖析显示，单次来源校验在 PostgreSQL 内执行约 0.288 ms，计划耗时约 1.032 ms；应用侧数据库往返常见约 50 ms，并出现数百毫秒波动。剖析使用独立 API Pod 进程、强制只读事务，不是生产 Worker 请求计时，也不证明连接池扩容必然改善延迟。当前没有为微秒级查询盲加索引或放宽权限校验。
 
-静态资源候选仅对带 Vite 内容哈希的 JS/CSS 启用一年 immutable 缓存及 gzip。HTML、未版本化文件和 API/auth 不纳入公开缓存；缺失的哈希资源返回不缓存的 404。实际本地 nginx HTTP 测试先复现 no-store/未压缩/缺失文件返回 HTML，修改后缓存头、压缩、解压长度与安全头通过，两个独占容器均已清理。候选仍须发布后验证真实 CDN 和浏览器；不把该项算作服务器受理目标通过。
+静态资源候选仅对带 Vite 内容哈希的 JS/CSS 启用一年 immutable 缓存及 gzip。HTML、未版本化文件和 API/auth 不纳入公开缓存；缺失的哈希资源返回不缓存的 404。实际本地 nginx HTTP 测试先复现 no-store/未压缩/缺失文件返回 HTML，修改后缓存头、压缩、解压长度与安全头通过，两个独占容器均已清理。该阶段尚待真实 CDN 和浏览器核验，后续结果见下一节；不把静态资源改善算作服务器受理目标通过。
+
+## rc.5/rc.6 公网静态资源与浏览器收尾
+
+rc.5 在 96.186 秒内完成切换；直接公网 CDP 的 Agent 答案、引用、594 字节产物 SHA、刷新，以及原售前表已复核 CSV、离线后重开、原表不变均通过。未替换静态字节，仅认证响应采用既有短期 staging 适配，零模型/向量及新业务提交。离线错误文档触发测试初始化脚本的 localStorage SecurityError，重开后恢复；该日志保留。
+
+首轮公网 GET 的主 JS 发生 RemoteProtocolError，缺失 JS 的 404 被 CDN 默认缓存四小时，不能据此宣称全部成功。后续三个真实静态文件均核对内容 SHA，CSS/vendor 命中 CDN，主 JS 为 MISS；这些不同缓存状态的样本不混为冷启动 p95。
+
+rc.6 显式按响应状态设置缓存：200/206/304 可 immutable，其余 no-store。实际 nginx HTTP 先复现 404 无缓存指令，修复后验证显式 no-store；43 个部署/文档检查通过，精确提交 fde6217492fefc06461fb5577b19fe4e2a601310 的 Quality、容器与签名发布均通过。rc.6 在 94.214 秒内完成无迁移切换，公网三个资源内容 SHA、immutable/gzip、HTML no-store、缺失资源 404/no-store 全通过。HTML/JS/CSS 与经过 CDP 验收的 rc.5 字节一致，回退 rc.5，配置和凭据不变。
+
+本项关闭静态缓存和直接公网只读浏览器流程缺口；2 秒受理、代表性容量、供应商金额、独立审核及运维连续性仍未关闭。完整机器结果见 [static-release-validation.json](../../.trellis/tasks/09-24-commercial-operations-acceptance/static-release-validation.json)。
