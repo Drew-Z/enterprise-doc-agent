@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "scope": "PyJWT dependency security remediation",
+  "status": "local_checks_passed_ci_pending_not_deployed",
+  "baseline": "50c459e429898dc15161f1036eb4d870516fde34",
+  "trigger": {
+    "container_run_id": 36688143032,
+    "critical": 1,
+    "high": 5
+  },
+  "dependency": {
+    "previous": "2.13.0",
+    "minimum": "2.14.0",
+    "locked": "2.15.1",
+    "other_package_versions_changed": 0
+  },
+  "verification": {
+    "authentication_passed": 72,
+    "non_integration_passed": 2127,
+    "subtests_passed": 23,
+    "integration_deselected": 469,
+    "mypy_linux_sources": 251,
+    "ruff": "passed"
+  },
+  "vulnerability_ids": [
+    "CVE-2026-102268",
+    "CVE-2026-102266",
+    "CVE-2026-102267",
+    "CVE-2026-102271",
+    "CVE-2026-102272",
+    "CVE-2026-102273"
+  ],
+  "sources": {
+    "apps/api/pyproject.toml": "26020767666fa338a6cba7d64a090cba30c962a07ba322eb3f0ae20abc154ea5",
+    "uv.lock": "177041fa44c5247ce1f8d8d87c51eddfa787d56402cabb83fe8c005c5dde2bad"
+  },
+  "production_approved": false,
+  "limits": [
+    "Container scan still pending for this source; no scanner exemptions",
+    "Online rc.9 remains unchanged; worker recovery and capacity still require live validation"
+  ]
+}

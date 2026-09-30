@@ -15,6 +15,8 @@ rc.8 将单行受理 SELECT 从25降至23，并发布网关请求标识优先识
 
 rc.9 已部署 API 四连接与繁忙响应修复。独立12任务诊断为0通过、4失败、8未执行，受理p95 5,376.727ms；四份上传/解析/检索完成，但售前Job未被领取，模型请求为0、向量8。旧Worker曾因连接池超时退出，当前进程后台与遥测停滞但存活探针仍返回成功。新增进度检查候选已通过本地验证，尚待发布；具体驱动或网络根因未确认。见[rc.9 核验](../../.trellis/tasks/09-24-commercial-operations-acceptance/rc9-release-validation.json)与[Worker恢复候选](../../.trellis/tasks/09-24-commercial-operations-acceptance/worker-progress-validation.json)。当前售前新生成不能视为可用。
 
+Worker候选的Quality通过，但容器扫描检出PyJWT 2.13.0的1项严重、5项高危漏洞。最低版本已提高至2.14.0，锁定当前2.15.1，其他包版本不变；72项认证测试、2127项非integration及23项子测试通过。新候选仍须通过容器扫描和实际发布，线上版本未因此改变。见[依赖修复核验](../../.trellis/tasks/09-24-commercial-operations-acceptance/pyjwt-remediation-validation.json)。
+
 ## 已交付并验证
 
 | 项目 | 实际结果 | 边界 |
