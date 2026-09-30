@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import AsyncIterator, Sequence
+from collections.abc import AsyncIterator, Callable, Sequence
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -38,6 +38,7 @@ def create_probe_app(
     checkers: Sequence[HealthChecker] | None = None,
     readiness_timeout_seconds: float | None = None,
     metrics: MetricsRuntime | None = None,
+    liveness: Callable[[], bool] | None = None,
 ) -> FastAPI:
     resolved_settings = settings or WorkerSettings()
     resolved_metrics = metrics if metrics is not None else MetricsRuntime.create()
@@ -80,8 +81,16 @@ def create_probe_app(
                 headers={"Content-Type": resolved_metrics.content_type},
             )
 
-    @app.get("/health/live", response_model=LivenessResponse)
-    async def live() -> LivenessResponse:
+    @app.get(
+        "/health/live",
+        response_model=LivenessResponse,
+        responses={503: {"model": LivenessResponse}},
+    )
+    async def live() -> LivenessResponse | JSONResponse:
+        if liveness is not None and not liveness():
+            return JSONResponse(
+                status_code=503, content=LivenessResponse(status="stalled").model_dump()
+            )
         return LivenessResponse()
 
     @app.get(

@@ -103,5 +103,15 @@
       "sha256": "73fc0b7128108440f9cb2377c4b5230c73c729368e5c0dda2a902e190e59375b",
       "bytes": 46
     }
-  ]
+  ],
+  "deployment_followup": {
+    "release": "v0.1.45-rc.9",
+    "record": ".trellis/tasks/09-24-commercial-operations-acceptance/rc9-release-validation.json",
+    "deployed_api_pool": [
+      4,
+      0
+    ],
+    "admission_target_met": false,
+    "capacity_approved": false
+  }
 }

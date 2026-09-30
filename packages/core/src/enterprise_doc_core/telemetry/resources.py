@@ -32,6 +32,7 @@ class ResourceMetricsSampler:
         clock: Callable[[], float] = time.time,
         interval_seconds: float = 10,
         timeout_seconds: float = 2,
+        on_progress: Callable[[], None] | None = None,
     ) -> None:
         if any(not math.isfinite(v) or v <= 0 for v in (interval_seconds, timeout_seconds)):
             raise ValueError("invalid_resource_sampling_budget")
@@ -40,6 +41,7 @@ class ResourceMetricsSampler:
         self.clock = clock
         self.interval_seconds = interval_seconds
         self.timeout_seconds = timeout_seconds
+        self.on_progress = on_progress
 
     async def _sample(self, source: str, reader: ResourceReader) -> None:
         try:
@@ -62,6 +64,8 @@ class ResourceMetricsSampler:
     async def run(self, shutdown: asyncio.Event) -> None:
         while not shutdown.is_set():
             await self.sample_once()
+            if self.on_progress is not None:
+                self.on_progress()
             try:
                 await asyncio.wait_for(shutdown.wait(), timeout=self.interval_seconds)
             except TimeoutError:

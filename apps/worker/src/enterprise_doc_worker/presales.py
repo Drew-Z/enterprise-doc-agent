@@ -1,4 +1,5 @@
 import asyncio
+from collections.abc import Callable
 from datetime import UTC, datetime
 from uuid import uuid4
 
@@ -19,6 +20,8 @@ async def run_presales(
     sessions: async_sessionmaker[AsyncSession],
     shutdown: asyncio.Event,
     metrics: MetricsRuntime,
+    *,
+    on_progress: Callable[[], None] | None = None,
 ) -> None:
     provider, model, dimension = build_embedding_provider(
         settings.embedding, app_env=settings.app_env
@@ -54,7 +57,10 @@ async def run_presales(
     worker = BackgroundGeneration(generation, gateways)
     worker_id = f"{settings.worker.worker_id[:140]}-presales-{uuid4().hex}"
     while not shutdown.is_set():
-        if not await worker.run_once(worker_id):
+        worked = await worker.run_once(worker_id)
+        if on_progress is not None:
+            on_progress()
+        if not worked:
             try:
                 await asyncio.wait_for(shutdown.wait(), timeout=1)
             except TimeoutError:

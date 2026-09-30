@@ -1,21 +1,21 @@
 # 当前部署、回退与验收边界
 
-2026-09-29 UTC：当前部署为 **v0.1.45-rc.8 / dab8480b3a5cb37a849d31f74834db6e1ef23ac5**，数据库 `20260924_0031`。统一用户入口见[最终验收](final-project-acceptance.md)，本轮实测见[机器记录](../../.trellis/tasks/09-24-commercial-operations-acceptance/rc8-release-validation.json)。
+2026-09-30 UTC：当前部署为 **v0.1.45-rc.9 / 72d01d2f949243a6725b510fe27079f160746101**，数据库 `20260924_0031`。统一用户入口见[最终验收](final-project-acceptance.md)，本轮实测见[机器记录](../../.trellis/tasks/09-24-commercial-operations-acceptance/rc9-release-validation.json)。售前新任务未被Worker领取，当前仍待修复验证。
 
 ## 发布与回退
 
-[发布流水线 36638635088](https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/36638635088)四镜像及清单成功；清单 SHA-256 为 `019e67906a1d7e57e4acc9fb65d4ef577ffac61a0c89d5b4e0adedbf7c46e76d`。56 份文件哈希、镜像及证明主题复核通过；密码学签名验证由该 CI 执行。
+[发布流水线 36650304872](https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/36650304872)四镜像及清单成功；清单 SHA-256 为 `d482faf100b1cbbb55e49d5e6e8c68e7e792208d3385e81eb2457640171c5e38`。56 份文件哈希、镜像及证明主题复核通过；密码学签名验证由该 CI 执行。
 
 以下位于 `ghcr.io/drew-z/enterprise-doc-<组件>`，使用完整 `image@sha256`：
 
-| 组件 | 当前 rc.8 | 回退 rc.7 |
+| 组件 | 当前 rc.9 | 回退 rc.8 |
 | --- | --- | --- |
-| api | `sha256:3a740771f631848798dfaa3e82a1c28b68ddf8bed8a203c2fe7a3a2c202ad021` | `sha256:1bd29a0ab8ec4427a19099e8f72245c4a7570c23145350b1a0db070d927a7c7e` |
-| worker | `sha256:26f02e5f1af022cb1b702ea8f9e679327e917c50fb161c5ac6d5de43d959d23b` | `sha256:1df49907734385623bbce20c6a8901795a2002bff1705c76b14814afa962fa04` |
-| consumer | `sha256:15f973b3d37fc6391583fff1b24bad9095c5437062f50ec10a4ccebd299d9e9b` | `sha256:c62be34aa8cfe5a44e1fd15fc3073829d9bd8062112f889f7f5769952bdb48d9` |
-| web | `sha256:a1a6dbe4c0d27c9f3720e64af9220e26d933018a09f84deb151a1a220952e0bd` | `sha256:101b0019f2f1da6924bcbe0a546db5176f1726a7aa0e083a4928ce9fd54fd7ad` |
+| api | `sha256:31081f730b5a957d17bb556e26770b0860c1cb068ba11aebe67b68ed5743e5c1` | `sha256:3a740771f631848798dfaa3e82a1c28b68ddf8bed8a203c2fe7a3a2c202ad021` |
+| worker | `sha256:3437898518bcb70f4da36679a497ed8749d896bbdaa7a8ad558060e7cd699236` | `sha256:26f02e5f1af022cb1b702ea8f9e679327e917c50fb161c5ac6d5de43d959d23b` |
+| consumer | `sha256:8eed3bafa378be3ce16c7bf38e4455eab5c4fa54bc9967bac276ea49306d881e` | `sha256:15f973b3d37fc6391583fff1b24bad9095c5437062f50ec10a4ccebd299d9e9b` |
+| web | `sha256:bff20cf7f57fb9f8dbf4f423f625c628b6a9cde3391ce04752628076c1f10589` | `sha256:a1a6dbe4c0d27c9f3720e64af9220e26d933018a09f84deb151a1a220952e0bd` |
 
-独立守卫在 91.292 秒内完成镜像切换。API、Worker、Consumer、Web 和 Redis 均就绪；配置、凭据和 0031 不变。四个 GitHub staging 回退变量已读回，其他变量未改。远端临时运行目录与 11 个文件已清理，原恢复输入集中本地保存。当前回退引用存在不等于本窗口执行过 rc.8→rc.7 故障演练；数据库不得降回 0027。
+独立守卫在90.735秒内完成切换，发布后五个Deployment就绪。API池显式4/0、后台1/0；共享配置、凭据和0031不变。四个GitHub staging回退变量已读回，其他变量未改。远端临时运行目录与11个文件已清理，恢复输入集中本地保存。后续Worker停滞不改写发布回执，也不能用发布通过证明业务可用。此窗口未执行rc.9→rc.8故障回退；数据库不得降回0027。
 
 ## 实际业务配置
 
@@ -45,4 +45,4 @@ rc.6 公网 GET 已验证三个指纹资源的 immutable/gzip 与实际镜像内
 
 rc.7 批量入口移除重复完整读表，隔离 PostgreSQL 的单行批量 SELECT 从33减为25，与单行入口一致。已完成任务各4次、交替顺序的线上重放：批量中位数1669.773→1291.637ms；切换后单行中位数1291.082ms。前后共20次 HTTP，没有新增任务、供应商调用或消费。测量走 API Pod 回环到实际服务进程，属于完成任务重放；原容量采样使用单行入口，不能用此结果关闭新任务受理两秒目标。
 
-rc.8单行/批量进一步降至23次SELECT。后续只读诊断发现API仅一个连接，隔离4并发对照中4连接减轻排队但仍有数据库读取波动；文档SQL服务器执行约1–2ms，普通往返约49–53ms。API四连接及503/service_busy候选已通过2094非integration/23子测试与静态检查，尚未部署；原配置和容量结果不变。纯端口切换无明显收益，生产仍使用5432。
+rc.8单行/批量进一步降至23次SELECT；rc.9已部署API四连接及503/service_busy。新12任务诊断为0通过/4失败/8未执行，四个售前Job无领取，模型0、向量8，受理p95 5376.727ms。具体驱动根因未确认；新增Worker进度存活检查候选已通过本地验证，尚待发布与恢复后实测。原容量分母和失败保持，生产连接模式未变。
