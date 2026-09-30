@@ -78,6 +78,33 @@ class ReleaseNotStarted(GuardError):
     """The current apply call failed before any cluster mutation was attempted."""
 
 
+def normalize_api_pool(source: dict[str, Any], target: dict[str, Any], pool_size: int) -> None:
+    """Validate the declared API-only pool override, then restore baseline for comparison."""
+    expected = {"DATABASE__POOL_SIZE": str(pool_size), "DATABASE__MAX_OVERFLOW": "0"}
+    for container in (source, target):
+        entries = container.get("env", [])
+        if not isinstance(entries, list) or any(
+            not isinstance(entry, dict) or not isinstance(entry.get("name"), str)
+            for entry in entries
+        ):
+            raise GuardError("invalid API environment entries")
+        if len({entry["name"] for entry in entries}) != len(entries):
+            raise GuardError("duplicate API environment entries")
+    actual = [entry for entry in target.get("env", []) if entry["name"] in expected]
+    if sorted(actual, key=lambda entry: entry["name"]) != [
+        {"name": name, "value": expected[name]} for name in sorted(expected)
+    ]:
+        raise GuardError("API pool environment differs from declared bounded override")
+    if [entry for entry in source.get("env", []) if entry["name"] not in expected] != [
+        entry for entry in target.get("env", []) if entry["name"] not in expected
+    ]:
+        raise GuardError("unrelated API environment changed")
+    if "env" in source:
+        target["env"] = copy.deepcopy(source["env"])
+    else:
+        target.pop("env", None)
+
+
 class ReleasePlan(Plan):
     def __init__(self, value: dict[str, Any]) -> None:
         self.data = copy.deepcopy(value)
@@ -144,6 +171,10 @@ class ReleasePlan(Plan):
         validate_objects(self.candidate, self.candidate)
         if len(self.deployments) != 4 or len(self.desired) != 4:
             raise GuardError("exactly four application deployments are required")
+        if "api_database_pool_size" in self.data:
+            pool_size = self.data["api_database_pool_size"]
+            if type(pool_size) is not int or not 1 <= pool_size <= 4:
+                raise GuardError("API pool override must be an integer from one to four")
         for name in APPLICATIONS:
             original = selected(self.deployments, "Deployment", name)
             candidate = selected(self.desired, "Deployment", name)
@@ -170,6 +201,12 @@ class ReleasePlan(Plan):
             if set(approved.split(",")) != {old_image, new_image}:
                 raise GuardError("candidate and rollback images must both be approved")
             target["spec"]["containers"][0]["image"] = old_image
+            if name == "enterprise-doc-api" and "api_database_pool_size" in self.data:
+                normalize_api_pool(
+                    source["spec"]["containers"][0],
+                    target["spec"]["containers"][0],
+                    self.data["api_database_pool_size"],
+                )
             old_annotations = source.get("metadata", {}).get("annotations", {})
             new_annotations = target.get("metadata", {}).get("annotations", {})
             if new_annotations.get(PREFIX + "config-sha256") != canonical_digest(new):
@@ -183,7 +220,7 @@ class ReleasePlan(Plan):
                 if not new_annotations:
                     target.get("metadata", {}).pop("annotations", None)
             if normalized != original["spec"]:
-                raise GuardError("workload change exceeds image and configuration binding")
+                raise GuardError("workload change exceeds declared release scope")
         if any(set(job) != {"name", "uid"} or not all(job.values()) for job in self.jobs):
             raise GuardError("invalid baseline job inventory")
         if (

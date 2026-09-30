@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-09-30T00:15:43.809318+00:00",
+  "status": "local_checks_passed_not_deployed",
+  "baseline_commit": "dab8480b3a5cb37a849d31f74834db6e1ef23ac5",
+  "database_migration": false,
+  "shared_pool_changed": false,
+  "candidate_effective_pools": {
+    "api": {
+      "size": 4,
+      "overflow": 0
+    },
+    "worker": {
+      "size": 1,
+      "overflow": 0
+    },
+    "consumer": {
+      "size": 1,
+      "overflow": 0
+    }
+  },
+  "backpressure_response": {
+    "exception": "sqlalchemy.exc.TimeoutError",
+    "http_status": 503,
+    "code": "service_busy",
+    "retry_after_seconds": 1,
+    "request_id_preserved": true
+  },
+  "release_plan": {
+    "schema_version": 2,
+    "optional_field": "api_database_pool_size",
+    "range": [
+      1,
+      4
+    ],
+    "other_workload_changes_rejected": true,
+    "complete_original_template_restoration": true
+  },
+  "validation": {
+    "full_non_integration_passed": 2122,
+    "deselected": 469,
+    "subtests_passed": 23,
+    "deployment_and_api_regression_passed": 744,
+    "release_switch_contracts_passed": 61,
+    "ruff": "passed",
+    "format": "passed",
+    "mypy_linux_source_files": 252
+  },
+  "limitations": [
+    "Candidate not yet deployed.",
+    "Isolated ASGI diagnosis is not serving-process latency acceptance.",
+    "Online 2-second acceptance and complete capacity run remain unverified.",
+    "Initial native-Windows mypy of Linux host-clock source reported an unreachable branch; Linux platform check passed."
+  ],
+  "evidence": [
+    {
+      "file": "backpressure-red.txt",
+      "sha256": "0bf0b20a9a83cbe8c09fb8d24c8ef2eefb139c3f06018de91e42978559a4231b",
+      "bytes": 9752
+    },
+    {
+      "file": "backpressure-green-final.txt",
+      "sha256": "23cfcbe2743efc1eac73e2fd080877aa31b9447a967b0b0470a6c438d2186fae",
+      "bytes": 115
+    },
+    {
+      "file": "pool-release-red.txt",
+      "sha256": "dff42be69086579052f7046ed10abcb2926694b4de05a67e5be5af0a34adf155",
+      "bytes": 8820
+    },
+    {
+      "file": "pool-release-green.txt",
+      "sha256": "92f9d91a3dcc371c90f4b551b5a08694c5c91a4fbc22f6efaf6caa06a25a7264",
+      "bytes": 101
+    },
+    {
+      "file": "pool-release-contracts.txt",
+      "sha256": "746a3b7b82a2db27298ef7ab002124af7086a8954fb54c1f6d12eec4b4d38985",
+      "bytes": 101
+    },
+    {
+      "file": "pool-release-regression.txt",
+      "sha256": "279b6feb14cebef40b6fc6752caa5d384611eb05be18c9cc44bf5d63e59d2018",
+      "bytes": 923
+    },
+    {
+      "file": "pool-release-full-regression.txt",
+      "sha256": "569084fd3735f21b2879c4ccc89b4a01459da548c08af4a2fef30d616c1efc2b",
+      "bytes": 2477
+    },
+    {
+      "file": "pool-release-lint.txt",
+      "sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0",
+      "bytes": 20
+    },
+    {
+      "file": "pool-release-format.txt",
+      "sha256": "7b582cb2c346e6e0cd14eb750d1cdbe3210be9d483df657d2c172fd6d2b31ec4",
+      "bytes": 29
+    },
+    {
+      "file": "pool-release-types.txt",
+      "sha256": "73fc0b7128108440f9cb2377c4b5230c73c729368e5c0dda2a902e190e59375b",
+      "bytes": 46
+    }
+  ]
+}

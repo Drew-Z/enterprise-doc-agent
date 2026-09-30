@@ -179,10 +179,17 @@ class Boundary:
         raise AssertionError(args)
 
 
-def test_release_restores_complete_bundle_after_partial_switch() -> None:
+@pytest.mark.parametrize("api_pool_override", [False, True])
+def test_release_restores_complete_bundle_after_partial_switch(api_pool_override: bool) -> None:
     from scripts.release_switch import ReleaseCluster, ReleasePlan
 
     data = release_data()
+    if api_pool_override:
+        data["api_database_pool_size"] = 4
+        data["candidate_deployments"][0]["spec"]["template"]["spec"]["containers"][0]["env"] = [
+            {"name": "DATABASE__POOL_SIZE", "value": "4"},
+            {"name": "DATABASE__MAX_OVERFLOW", "value": "0"},
+        ]
     boundary = Boundary(data)
     for item in boundary.items:
         if item["kind"] == "ConfigMap":
@@ -224,6 +231,127 @@ def test_release_clears_temporary_fences_for_normal_deployment_validation() -> N
         data["original_prerequisites"],
         [i for i in boundary.items if i["kind"] in {"ConfigMap", "Namespace"}],
     )
+
+
+@pytest.mark.parametrize("pool_size", [1, 4])
+@pytest.mark.parametrize("existing_override", [False, True])
+def test_declared_api_pool_switch_and_restore_preserve_other_environment(
+    pool_size: int, existing_override: bool
+) -> None:
+    from scripts.release_switch import ReleaseCluster, ReleasePlan
+
+    data = release_data()
+    data["api_database_pool_size"] = pool_size
+    original = data["deployments"][0]["spec"]["template"]["spec"]["containers"][0]
+    candidate = data["candidate_deployments"][0]["spec"]["template"]["spec"]["containers"][0]
+    original["env"] = [
+        {"name": "ROLE", "value": "api"},
+        {"name": "POD_NAME", "valueFrom": {"fieldRef": {"fieldPath": "metadata.name"}}},
+    ]
+    if existing_override:
+        original["env"] += [
+            {"name": "DATABASE__POOL_SIZE", "value": "1"},
+            {"name": "DATABASE__MAX_OVERFLOW", "value": "0"},
+        ]
+    candidate["env"] = [
+        *copy.deepcopy(original["env"][:2]),
+        {"name": "DATABASE__POOL_SIZE", "value": str(pool_size)},
+        {"name": "DATABASE__MAX_OVERFLOW", "value": "0"},
+    ]
+    frozen = copy.deepcopy(data)
+    boundary = Boundary(data)
+    cluster = ReleaseCluster(
+        ReleasePlan(data),
+        run=boundary,
+        revision=lambda timeout: "20260924_0031",
+        idle=lambda timeout: True,
+        clock=lambda: 1,
+    )
+    cluster.apply(100)
+    cluster.verify(True, 100)
+    cluster.restore(100)
+    cluster.verify(False, 100)
+    assert data == frozen
+    for baseline in data["deployments"]:
+        actual = next(
+            i for i in boundary.items if i["metadata"]["name"] == baseline["metadata"]["name"]
+        )
+        assert actual["spec"] == baseline["spec"]
+
+
+@pytest.mark.parametrize("pool_size", [None, True, False, "4", 4.0, 0, 5, -1])
+def test_api_pool_declaration_rejects_invalid_bounds_and_types(pool_size: Any) -> None:
+    from scripts.release_switch import ReleasePlan
+
+    data = release_data()
+    data["api_database_pool_size"] = pool_size
+    with pytest.raises(ValueError, match="API pool override"):
+        ReleasePlan(data)
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        "undeclared",
+        "missing",
+        "mismatch",
+        "overflow",
+        "value_from",
+        "duplicate",
+        "baseline_duplicate",
+        "unrelated_duplicate",
+        "unrelated_value",
+        "unrelated_order",
+        "worker",
+        "consumer",
+        "web",
+        "resources",
+        "env_from",
+    ],
+)
+def test_api_pool_override_cannot_hide_unreviewed_workload_changes(change: str) -> None:
+    from scripts.release_switch import ReleasePlan
+
+    data = release_data()
+    data["api_database_pool_size"] = 4
+    original = data["deployments"][0]["spec"]["template"]["spec"]["containers"][0]
+    candidate = data["candidate_deployments"][0]["spec"]["template"]["spec"]["containers"][0]
+    original["env"] = [{"name": "A", "value": "a"}, {"name": "B", "value": "b"}]
+    candidate["env"] = [
+        *copy.deepcopy(original["env"]),
+        {"name": "DATABASE__POOL_SIZE", "value": "4"},
+        {"name": "DATABASE__MAX_OVERFLOW", "value": "0"},
+    ]
+    if change == "undeclared":
+        del data["api_database_pool_size"]
+    elif change == "missing":
+        candidate["env"].pop()
+    elif change == "mismatch":
+        candidate["env"][2]["value"] = "3"
+    elif change == "overflow":
+        candidate["env"][3]["value"] = "1"
+    elif change == "value_from":
+        candidate["env"][2]["valueFrom"] = {"secretKeyRef": {"name": "pool", "key": "size"}}
+    elif change == "duplicate":
+        candidate["env"].append(copy.deepcopy(candidate["env"][2]))
+    elif change == "baseline_duplicate":
+        original["env"].extend([{"name": "DATABASE__POOL_SIZE", "value": "1"}] * 2)
+    elif change == "unrelated_duplicate":
+        candidate["env"].append(copy.deepcopy(candidate["env"][0]))
+    elif change == "unrelated_value":
+        candidate["env"][0]["value"] = "changed"
+    elif change == "unrelated_order":
+        candidate["env"][:2] = reversed(candidate["env"][:2])
+    elif change in {"worker", "consumer", "web"}:
+        data["candidate_deployments"][NAMES.index(change)]["spec"]["template"]["spec"][
+            "containers"
+        ][0]["env"] = copy.deepcopy(candidate["env"][2:])
+    elif change == "resources":
+        candidate["resources"] = {"limits": {"memory": "2Gi"}}
+    else:
+        candidate["envFrom"] = [{"configMapRef": {"name": "other-config"}}]
+    with pytest.raises(ValueError):
+        ReleasePlan(data)
 
 
 def test_interrupted_process_resumes_only_rollback_with_original_deadline(tmp_path: Path) -> None:

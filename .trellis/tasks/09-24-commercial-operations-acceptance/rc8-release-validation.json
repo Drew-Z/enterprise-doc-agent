@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-09-30T00:15:43.809318+00:00",
+  "status": "released_capacity_not_approved",
+  "release": {
+    "source": {
+      "commit_sha": "dab8480b3a5cb37a849d31f74834db6e1ef23ac5",
+      "ref": "refs/tags/v0.1.45-rc.8",
+      "repository": "Drew-Z/enterprise-doc-agent",
+      "run_attempt": "1",
+      "run_id": "36638635088",
+      "workflow_ref": "Drew-Z/enterprise-doc-agent/.github/workflows/container.yml@refs/tags/v0.1.45-rc.8"
+    },
+    "manifest_sha256": "019e67906a1d7e57e4acc9fb65d4ef577ffac61a0c89d5b4e0adedbf7c46e76d",
+    "checked_evidence_files": 56,
+    "signature_and_attestation_subjects_match": true,
+    "cryptographic_signature_verification": "successful release CI",
+    "images": {
+      "api": "ghcr.io/drew-z/enterprise-doc-api@sha256:3a740771f631848798dfaa3e82a1c28b68ddf8bed8a203c2fe7a3a2c202ad021",
+      "consumer": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:15f973b3d37fc6391583fff1b24bad9095c5437062f50ec10a4ccebd299d9e9b",
+      "web": "ghcr.io/drew-z/enterprise-doc-web@sha256:a1a6dbe4c0d27c9f3720e64af9220e26d933018a09f84deb151a1a220952e0bd",
+      "worker": "ghcr.io/drew-z/enterprise-doc-worker@sha256:26f02e5f1af022cb1b702ea8f9e679327e917c50fb161c5ac6d5de43d959d23b"
+    }
+  },
+  "database_revision": "20260924_0031",
+  "deployment": {
+    "arm_to_success_seconds": 91.292,
+    "all_five_deployments_ready": true,
+    "secret_unchanged": true,
+    "temporary_fences_removed": true
+  },
+  "rollback_release": "v0.1.45-rc.7",
+  "actual_rollback_drill_in_this_window": false,
+  "capacity": {
+    "planned": 160,
+    "passed": 30,
+    "failed": 5,
+    "not_run": 125,
+    "http_requests": 871,
+    "acceptance": {
+      "count": 32,
+      "p50_ms": 3535.433540586382,
+      "p95_ms": 7474.233755841851,
+      "max_ms": 8375.21769432351,
+      "target_ms": 2000,
+      "target_met": false
+    },
+    "model_calls": 34,
+    "embedding_calls": 100,
+    "production_capacity_approved": false,
+    "historical_failure_reclassified": false
+  },
+  "telemetry": {
+    "status": "observation_incomplete",
+    "observed_samples": 61,
+    "issues": [
+      "queue_and_redis_producer_freshness_unverified",
+      "queue_resource_observation_failed"
+    ],
+    "host": {
+      "memory_available_bytes_min": 1391226880,
+      "root_disk_available_bytes_min": 8071688192,
+      "cpu_busy_percent_max": 8.409638554216867,
+      "kubernetes_cpu_cores_max": 0.38559026
+    }
+  },
+  "supplier_reconciliation": {
+    "supplier_ledger_rows": 84,
+    "model_calls": 34,
+    "models_with_exact_matches": 2,
+    "models_with_exact_upstream_matches": 0,
+    "embedding_calls": 100,
+    "monetary_currency_confirmed": false
+  },
+  "supplier_limits": [
+    "Both exact matches are zero-quota error records.",
+    "Successful calls remain unmatched.",
+    "Primary and fallback endpoints and keys differ; primary invoices do not cover all fallback usage.",
+    "CUSTOM quota is not a confirmed monetary currency."
+  ],
+  "evidence": [
+    {
+      "file": "release-verification.json",
+      "sha256": "5e7f0ce82c1bce4fc8c91140c24aa55295df9c83abe853bbc5da93b0ede0af49",
+      "bytes": 1082
+    },
+    {
+      "file": "post-switch-verification.json",
+      "sha256": "1d523e2a3ca55c6758981c9b266733487a43c48af353ceb58b5906bc4b33fc54",
+      "bytes": 2001
+    },
+    {
+      "file": "capacity-envelope.json",
+      "sha256": "a87dc6b26aa6941b612594dbf106ae1cfbbec09d1a877eb414c0c63b9a65b7f0",
+      "bytes": 73934
+    },
+    {
+      "file": "capacity-execute.jsonl",
+      "sha256": "1172032a2010fc0d0d1a8efb54bcbd10c431aae7222262ee20f1570e852c7345",
+      "bytes": 749612
+    },
+    {
+      "file": "capacity-telemetry-summary.json",
+      "sha256": "72ee5d22626d8a899868c2635b7c69c694a966600a8fb52c9356ac1d9752b07d",
+      "bytes": 2071
+    },
+    {
+      "file": "reconcile-final-summary.json",
+      "sha256": "438079322aa0759565b942a23ce04d1b16671877fddee3d626b273996f14fd49",
+      "bytes": 917
+    }
+  ]
+}

@@ -902,6 +902,18 @@ def test_single_node_4c4g_overlay_matches_current_server_envelope() -> None:
     assert config["data"]["DATABASE__POOL_SIZE"] == "1"
     assert config["data"]["DATABASE__MAX_OVERFLOW"] == "0"
 
+    # API requests may overlap; background execution retains its original budget.
+    for role, pool_size in (("api", "4"), ("worker", "1"), ("consumer", "1")):
+        container = deployments[f"enterprise-doc-{role}"]["spec"]["template"]["spec"]["containers"][
+            0
+        ]
+        effective = dict(config["data"])
+        effective.update(
+            {item["name"]: item["value"] for item in container.get("env", []) if "value" in item}
+        )
+        assert effective["DATABASE__POOL_SIZE"] == pool_size
+        assert effective["DATABASE__MAX_OVERFLOW"] == "0"
+
 
 def test_staging_deploy_workflow_can_select_the_reviewed_tiny_overlay() -> None:
     deploy = (ROOT / ".github/workflows/deploy-staging.yml").read_text(encoding="utf-8")

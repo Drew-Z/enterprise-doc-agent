@@ -35,7 +35,53 @@ Alembic revision files use `YYYYMMDD_sequence_description.py`. Future table,
 column, constraint, and index naming must be introduced with the first real
 business schema and then recorded here.
 
+## Scenario: API Connection Budget and Read-only Diagnosis
+
+### 1. Scope / Trigger
+
+Concurrent API reads queue behind the 4C4G single-connection pool.
+
+### 2. Signatures
+
+`DatabaseSettings.pool_size`, `max_overflow` and `create_database_engine(settings)`;
+Deployment `env` takes precedence over the shared ConfigMap.
+
+### 3. Contracts
+
+For the 4C4G profile, the API overrides `DATABASE__POOL_SIZE=4` and
+`DATABASE__MAX_OVERFLOW=0` in its Deployment. Worker/Consumer keep the shared
+single-connection setting and existing execution concurrency. Check effective
+container environment after Kustomize merging, not just the ConfigMap. Resource
+limits remain unchanged; this is a candidate connection budget, not capacity approval.
+
+### 4. Validation & Error Matrix
+
+Read-only assertion failure or actual database project mismatch aborts diagnosis before
+business queries. Pool exhaustion follows the typed 503 contract in `error-handling.md`.
+
+### 5. Good / Base / Bad Cases
+
+When diagnosing latency, distinguish PostgreSQL execution time from client SQL
+round trips, connection hold time and pool queueing. Counted SELECT reductions do
+not establish an HTTP latency SLO. A read-only isolated ASGI process does not prove
+serving-process performance. Enforce and verify transaction read-only state before
+such probes: the deployed pooler ignored a startup `options` attempt. Do not silently
+continue after that check fails or query another project listed by a connector.
+
+### 6. Tests Required
+
+Render the 4C4G overlay and assert effective API pool 4/0, Worker/Consumer 1/0. Release
+tests must cover the declared API-only change and full original-template restoration.
+
+### 7. Wrong vs Correct
+
+Wrong: increase the shared pool and all background concurrency from an isolated result.
+Correct: keep each process budget explicit, then measure the deployed HTTP workload.
+
 ## Proven Examples
+
+- `infra/k8s/overlays/single-node-4c4g/resources-patch.yaml`
+- `tests/deployment/test_m6_contracts.py::test_single_node_4c4g_overlay_matches_current_server_envelope`
 
 - `packages/core/src/enterprise_doc_core/db/engine.py`
 - `packages/core/src/enterprise_doc_core/health/adapters.py`

@@ -551,7 +551,8 @@ Environment and administrator render, then keep the normal prerequisite and roll
 ### 1. Scope / Trigger
 
 Switch a reviewed, schema-compatible rc.1 deployment to rc.2 with a new primary route.
-The 0027-only maintenance guard retains its existing migration restrictions.
+The 0027-only maintenance guard retains its existing migration restrictions. The same
+0031 boundary supports later image releases and a declared API connection-pool adjustment.
 
 ### 2. Signatures
 
@@ -567,7 +568,13 @@ and `STAGING_PRESALES_CONCURRENT_ATTEMPT_LIMIT` Environment variables, without m
 Plan schema 2 fixes 0031, Namespace UID, four original/candidate Deployment specs,
 original/candidate prerequisites, completed Job identities and one primary Secret key pair.
 Other credential values are represented only by a SHA-256. Executor source hashes and the
-plan hash must match before CLI use. Only image and config-hash template changes are allowed.
+plan hash must match before CLI use. By default only image and config-hash template changes
+are allowed. Optional `api_database_pool_size` must be a non-boolean integer 1–4 and must
+match the API container's literal `DATABASE__POOL_SIZE`; `DATABASE__MAX_OVERFLOW` must be
+literal `0`. Both entries are required. Reject duplicate environment names, valueFrom for
+these two entries, other environment changes (including order), and changes to other
+containers, envFrom, resources or replicas. An omitted declaration grants no new scope.
+Restore the complete original template, including absent or previous explicit pool entries.
 Primary timeout is finite, greater than zero and at most 300; concurrency is an ASCII
 integer 1–4. Omitted concurrency removes a stale override and restores the application default 2.
 
@@ -582,6 +589,8 @@ annotations and revalidate normal prerequisites. All database probes are read-on
 ### 4. Validation & Error Matrix
 
 - Non-0031 plan, image/config/approval/supplier-key mismatch -> refuse before apply.
+- Missing or invalid pool declaration, target mismatch, duplicate entries or unrelated
+  workload change -> refuse before apply; the shared ConfigMap pool budget stays unchanged.
 - Active jobs/attempts/runs/reservations or unexpired uploads -> refuse; consumed reservations
   are terminal, not active. Recheck after closing application processes. A live apply preflight
   failure before any writes returns blocked without rollback; an interrupted process still restores.
@@ -603,6 +612,8 @@ source binding, process restart, exclusive ownership and budget/error redaction.
 maintenance tests passing. Real Linux CLOCK_BOOTTIME/flock/process-death checks complement the
 Kubernetes subprocess boundary; they are not an actual Kubernetes release/rollback drill.
 Renderer tests cover runtime concurrency, timeout, invalid values and CLI/workflow propagation.
+Pool tests exercise API-only apply and full restoration for inherited and explicit original
+settings, declaration bounds/types, environment identity and rejected unrelated changes.
 
 ### 7. Wrong vs Correct
 
