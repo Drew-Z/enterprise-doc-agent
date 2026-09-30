@@ -37,6 +37,20 @@ and original author. A different owner in the same tenant cannot read the sheet.
 Document visibility reuses `document_visible_to_actor`; client roles are not an
 authorization substitute. Rows/attempts/reviews use tenant-composite foreign keys.
 
+`authorize_principal(..., lock=True)` takes `FOR NO KEY UPDATE OF tenants`
+(`with_for_update(of=Tenant, key_share=True)`). This still serializes admissions,
+quota/configuration changes and tenant deactivation, while allowing the KEY SHARE
+locks used by unrelated job/audit foreign-key inserts. Presales does not modify
+the tenant key. Using FOR UPDATE here unnecessarily blocks behind those inserts;
+removing the lock would instead break admission serialization. Packet/row locks,
+source checks and response-time authorization remain unchanged.
+`test_presales_lock_integration.py` holds a real unrelated audit insert open and
+requires single/batch HTTP admission and replay to complete with one Job and
+reservation. A second test observes `pg_blocking_pids` during tenant deactivation,
+then requires 403 and no admission after commit. Keep the concurrent last-slot
+test in `test_presales_admission_integration.py`; local lock tests do not prove
+the deployed latency or capacity targets.
+
 Each source must be a ready version with an active succeeded/ready generation.
 Snapshots contain document/version/generation IDs, filename, content SHA, version
 number, latest version number at creation, and user-provided applicability.

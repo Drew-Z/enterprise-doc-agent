@@ -51,7 +51,10 @@ async def authorize_principal(
         )
     )
     if lock:
-        statement = statement.with_for_update(of=Tenant)
+        # Serialize admissions and tenant updates without blocking the KEY SHARE
+        # locks taken by unrelated job/audit foreign-key inserts. We never change
+        # the tenant's key here; FOR UPDATE would couple all of those operations.
+        statement = statement.with_for_update(of=Tenant, key_share=True)
     if await session.scalar(statement) is None:
         raise PresalesError("presales_forbidden")
     return tenant_id, actor_id
