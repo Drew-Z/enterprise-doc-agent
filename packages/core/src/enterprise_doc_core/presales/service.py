@@ -3,11 +3,12 @@ from __future__ import annotations
 import hashlib
 from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import Literal
+from typing import Any, Literal
 from uuid import UUID, uuid4
 
 from pydantic import ValidationError
 from sqlalchemy import func, select
+from sqlalchemy.dialects.postgresql import JSONB, aggregate_order_by
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from enterprise_doc_core.audit import append_audit_event
@@ -183,9 +184,46 @@ class PresalesService:
     async def get(self, principal: PrincipalContext, packet_id: UUID) -> PacketView:
         async with self.session_factory() as session:
             packet = await load_packet(session, principal, packet_id)
+            # One statement keeps draft/revision and their histories in the same
+            # MVCC snapshot when a generation or review commits during this read.
+            # Aggregate each history separately to avoid multiplying joined rows.
+            attempt_content = func.jsonb_build_object(
+                *[
+                    value
+                    for name in (*AttemptView.model_fields, "job_id")
+                    for value in (name, getattr(PresalesAttempt, name))
+                ]
+            )
+            attempts = (
+                select(
+                    func.jsonb_agg(
+                        aggregate_order_by(attempt_content, PresalesAttempt.number), type_=JSONB
+                    )
+                )
+                .where(
+                    PresalesAttempt.row_id == PresalesRow.id,
+                    PresalesAttempt.tenant_id == PresalesRow.tenant_id,
+                )
+                .correlate(PresalesRow)
+                .scalar_subquery()
+            )
+            reviews = (
+                select(
+                    func.jsonb_agg(
+                        aggregate_order_by(PresalesReview.content, PresalesReview.revision),
+                        type_=JSONB,
+                    )
+                )
+                .where(
+                    PresalesReview.row_id == PresalesRow.id,
+                    PresalesReview.tenant_id == PresalesRow.tenant_id,
+                )
+                .correlate(PresalesRow)
+                .scalar_subquery()
+            )
             rows = (
-                await session.scalars(
-                    select(PresalesRow)
+                await session.execute(
+                    select(PresalesRow, attempts, reviews)
                     .where(
                         PresalesRow.packet_id == packet_id,
                         PresalesRow.tenant_id == packet.tenant_id,
@@ -193,34 +231,9 @@ class PresalesService:
                     .order_by(PresalesRow.position)
                 )
             ).all()
-            row_ids = [row.id for row in rows]
-            attempts = (
-                await session.scalars(
-                    select(PresalesAttempt)
-                    .where(
-                        PresalesAttempt.row_id.in_(row_ids),
-                        PresalesAttempt.tenant_id == packet.tenant_id,
-                    )
-                    .order_by(PresalesAttempt.number)
-                )
-            ).all()
-            reviews = (
-                await session.scalars(
-                    select(PresalesReview)
-                    .where(
-                        PresalesReview.row_id.in_(row_ids),
-                        PresalesReview.tenant_id == packet.tenant_id,
-                    )
-                    .order_by(PresalesReview.revision)
-                )
-            ).all()
             views = [
-                self._row_view(
-                    row,
-                    [attempt for attempt in attempts if attempt.row_id == row.id],
-                    [review for review in reviews if review.row_id == row.id],
-                )
-                for row in rows
+                self._row_view(row, row_attempts or [], row_reviews or [])
+                for row, row_attempts, row_reviews in rows
             ]
             # No source text is returned after a revocation observed during assembly.
             await authorize_principal(session, principal)
@@ -403,38 +416,23 @@ class PresalesService:
         return content
 
     def _row_view(
-        self, row: PresalesRow, attempts: list[PresalesAttempt], reviews: list[PresalesReview]
+        self, row: PresalesRow, attempts: list[dict[str, Any]], reviews: list[dict[str, Any]]
     ) -> RowView:
         attempt_views = []
-        for attempt in attempts:
-            state = (
-                "expired"
-                if attempt.job_id is None
+        for content in attempts:
+            attempt = AttemptView.model_validate(
+                {key: value for key, value in content.items() if key != "job_id"}
+            )
+            if (
+                content["job_id"] is None
                 and attempt.state == "running"
                 and attempt.deadline_at <= self.clock()
-                else attempt.state
-            )
-            attempt_views.append(
-                AttemptView.model_validate(
-                    {
-                        "id": attempt.id,
-                        "number": attempt.number,
-                        "state": state,
-                        "error_code": "presales_attempt_expired"
-                        if state == "expired"
-                        else attempt.error_code,
-                        "model_provider": attempt.model_provider,
-                        "model_name": attempt.model_name,
-                        "provider_request_count": attempt.provider_request_count,
-                        "provenance": attempt.provenance,
-                        "usage": attempt.usage,
-                        "created_at": attempt.created_at,
-                        "finished_at": attempt.finished_at,
-                        "deadline_at": attempt.deadline_at,
-                    }
+            ):
+                attempt = attempt.model_copy(
+                    update={"state": "expired", "error_code": "presales_attempt_expired"}
                 )
-            )
-        history = [SavedReview.model_validate(r.content) for r in reviews]
+            attempt_views.append(attempt)
+        history = [SavedReview.model_validate(content) for content in reviews]
         state_value = "pending"
         if row.draft is not None:
             state_value = "drafted"

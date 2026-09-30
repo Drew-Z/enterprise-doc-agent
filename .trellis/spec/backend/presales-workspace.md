@@ -363,7 +363,7 @@ background generation. API and Worker must use the same settings and model route
   It also checks cross-tenant, revoked-member, unavailable/stale-source rejection
   without Jobs/reservations in both enabled and disabled modes. Final `get()` access
   rechecks remain mandatory; query counts alone do not prove online latency.
-  Single-row and equivalent batch admission have a 23-SELECT integration budget.
+  Single-row and equivalent batch admission have a 21-SELECT integration budget.
   Daily and active counts use separate indexed scalar subqueries in one statement,
   preserving tenant locks, predicates and daily-limit error precedence. Reuse the
   commercial reservation receipt's stored expiry to clip queued work; do not reload
@@ -429,9 +429,16 @@ or replay of an already generated draft. Reservations retain their original peri
 
 Source snapshots fetch authorized versions, active generations and latest versions
 in one statement, preserving input order/applicability. Missing or ambiguous sources
-fail closed. Packet reads batch attempts/reviews while preserving each row's ordered
-history. Initial and final authorization/source rechecks remain. The complete
-6-source/12-row read has a ten-SELECT budget in the integration suite.
+fail closed. Packet reads fetch rows and separately aggregated attempts/reviews in
+one PostgreSQL statement, preserving each row's ordered history without a join
+cross-product. Draft/revision and history must use the same statement snapshot:
+separate SELECTs can mix an old missing draft with a newly succeeded attempt and
+briefly report a successful generation as failed. A concurrent review must likewise
+not appear alongside an older row revision. Keep initial and final authorization/
+source rechecks outside that snapshot so revocations during assembly are observed.
+The complete 6-source/12-row read has an eight-SELECT integration budget. Regression
+tests finish generation or review immediately after the row SELECT and verify the
+current response stays coherent, while the next request sees the committed result.
 
 ### Structured prerequisite review (CO-1/CO-2 candidate)
 

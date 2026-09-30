@@ -83,7 +83,7 @@ async def test_single_row_batch_admission_has_no_extra_read_budget(background):
     assert not b.requests
     print(f"Admission SELECT counts: single={counts[0]}, batch={counts[1]}")
     assert 0 < counts[1] <= counts[0], counts
-    assert counts[0] <= 23, counts
+    assert counts[0] <= 21, counts
 
 
 @pytest.mark.parametrize("ttl", [92, 93, 1200])

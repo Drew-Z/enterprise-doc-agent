@@ -151,7 +151,7 @@ async def test_full_sheet_read_has_bounded_queries_and_keeps_row_histories_separ
         event.remove(engine, "before_cursor_execute", observed)
     # A full 6-source / 12-row sheet must not add per-source or per-row
     # database round trips. Both initial and final access checks still run.
-    assert len(statements) <= 10
+    assert len(statements) <= 8
     assert result.sources == packet.sources
     assert result.rows[0] == reviewed.rows[0]
     assert result.rows[-1] == last.rows[-1]
