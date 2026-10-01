@@ -26,12 +26,13 @@
   },
   "verification": {
     "nonintegration_passed": 2128,
-    "nonintegration_deselected": 474,
+    "nonintegration_deselected": 476,
     "ruff": "passed",
     "format_files": 622,
     "mypy_linux_source_files": 251,
     "frozen_sync": "passed",
-    "lock_check": "passed"
+    "lock_check": "passed",
+    "subtests_passed": 23
   },
   "scope": "No scanner suppression, threshold, application contract or database migration changes. Online remains rc.13; admission and capacity targets remain unverified for this candidate."
 }

@@ -47,12 +47,19 @@ The request contains an ordered `parts` array. Every item contains `partNumber`,
 - Finalization locks tenant then session, inserts the preallocated Document and Version,
   converts reserved bytes to used bytes, sets the unique reverse version link, and marks
   the session completed in one PostgreSQL transaction.
-- At the end of upload completion, `declared_sha256` remains unverified and
+- In native-checksum mode, at the end of upload completion, `declared_sha256` remains unverified and
   `content_sha256_verified_at` remains null. The object-store transport checksum is
   stored separately. Downstream document ingestion verifies the complete spooled
   bytes before parsing, records the marker with the chunk checkpoint and requires
   it for activation. This later Worker contract does not change completion's
   bounded envelope checks; see [presales ingestion](../foundation-tests/backend/presales-ingestion.md).
+- Readback-checksum mode verifies every expected part and the full declared SHA256
+  before recording `content_sha256_verified_at`. For objects at most 1 MiB, retain
+  only these same-operation verified bytes and run the existing envelope validators
+  against them, avoiding another storage GET. The buffer must match the full object
+  size, remain scoped to its bucket/key and never survive the completion call.
+  Large files and native-checksum mode keep their bounded remote envelope reads.
+  Reuse does not skip signature, UTF-8, ZIP metadata, quota or finalization checks.
 - Completed replay and final COMMIT acknowledgement loss reread the same durable version
   without calling object-store completion or changing quota again.
   Validate immutable tenant/session/version/document links, not the version's mutable
@@ -103,6 +110,9 @@ The request contains an ordered `parts` array. Every item contains `partNumber`,
 - Advance the linked version to ready/failed in PostgreSQL, replay complete and assert
   unchanged document/version/completion time, used/reserved bytes, version count and
   object-store completion-call count.
+- Verify small readback completions avoid duplicate GETs, large files retain remote
+  envelope reads, and completed replay does not re-read or consume storage twice.
+  Invalid buffered PDF/TXT/DOCX content must retain the same stable rejection codes.
 
 ### 7. Wrong vs Correct
 

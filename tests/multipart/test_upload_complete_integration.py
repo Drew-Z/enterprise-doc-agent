@@ -107,6 +107,7 @@ class CompletionObjectStore:
         self.head_etag = self.object_etag
         self.head_checksum: str | None = self.transport_checksum
         self.readback_content = seeded.content
+        self.range_requests: list[tuple[int, int]] = []
         self.completed_parts: tuple[UploadedPart, ...] | None = None
 
     async def list_parts(self, **_: object) -> tuple[UploadedPart, ...]:
@@ -148,6 +149,7 @@ class CompletionObjectStore:
         end_inclusive: int,
         **_: object,
     ) -> bytes:
+        self.range_requests.append((start, end_inclusive))
         return self.readback_content[start : end_inclusive + 1]
 
     async def delete_object(self, **_: object) -> None:
@@ -235,13 +237,13 @@ def _completion_request(parts: tuple[UploadedPart, ...]) -> CompleteUploadSessio
     )
 
 
-async def _seed_upload(session_factory, *, content: bytes) -> SeededUpload:
+async def _seed_upload(session_factory, *, content: bytes, part_size: int = 5) -> SeededUpload:
     principal = _principal(str(uuid4()))
     session_id = uuid4()
     pending_document_id = uuid4()
     pending_version_id = uuid4()
-    first = content[:5]
-    second = content[5:]
+    first = content[:part_size]
+    second = content[part_size:]
     parts = (
         UploadedPart(1, len(first), '"etag-one"', _checksum(first)),
         UploadedPart(2, len(second), '"etag-two"', _checksum(second)),
@@ -252,7 +254,7 @@ async def _seed_upload(session_factory, *, content: bytes) -> SeededUpload:
                 id=principal.tenant_id,
                 name="Completion fixture",
                 slug=f"completion-{principal.tenant_id}",
-                quota_bytes=1024,
+                quota_bytes=max(1024, len(content)),
                 reserved_storage_bytes=len(content),
             )
         )
@@ -669,11 +671,16 @@ async def test_completion_validates_ordered_parts_before_completing() -> None:
 
 
 @pytest.mark.integration
-async def test_readback_completion_verifies_parts_and_persists_content_hash_timestamp() -> None:
+@pytest.mark.parametrize("large", [False, True])
+async def test_readback_completion_verifies_parts_and_persists_content_hash_timestamp(
+    large: bool,
+) -> None:
     settings = ApiSettings(_env_file=None)
     engine = create_database_engine(settings.database)
     session_factory = create_session_factory(engine)
-    seeded = await _seed_upload(session_factory, content=b"%PDF-1.7")
+    content = b"%PDF-" + b"x" * MIB if large else b"%PDF-1.7"
+    part_size = (len(content) + 1) // 2 if large else 5
+    seeded = await _seed_upload(session_factory, content=content, part_size=part_size)
     store = CompletionObjectStore(seeded)
     store.listed_parts = tuple(
         UploadedPart(part.part_number, part.size_bytes, part.etag, None) for part in seeded.parts
@@ -699,12 +706,27 @@ async def test_readback_completion_verifies_parts_and_persists_content_hash_time
         assert store.completed_parts is not None
         assert all(part.checksum_sha256_b64 is None for part in store.completed_parts)
         assert store.head_checksum is None
+        expected_ranges = [(0, part_size - 1), (part_size, len(content) - 1)]
+        if large:
+            expected_ranges.append((0, 4))
+        assert store.range_requests == expected_ranges
+        replay = await service.complete(
+            principal=seeded.principal.context,
+            session_id=seeded.session_id,
+            request=_completion_request(seeded.parts),
+        )
+        assert replay.replayed is True
+        assert replay.version_id == result.version_id
+        assert store.range_requests == expected_ranges
         async with session_factory() as database:
             version = await database.get(DocumentVersion, seeded.pending_version_id)
             assert version is not None
             assert version.content_sha256_verified_at is not None
             assert version.transport_checksum_sha256 is None
             assert version.status == DocumentVersionStatus.UPLOADED.value
+            tenant = await database.get(Tenant, seeded.principal.tenant_id)
+            assert tenant.used_storage_bytes == len(content)
+            assert tenant.reserved_storage_bytes == 0
     finally:
         await _cleanup_seeded(session_factory, seeded)
         await engine.dispose()

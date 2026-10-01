@@ -21,6 +21,7 @@ from enterprise_doc_core.documents import (
     DocumentVersionStatus,
     validate_document_envelope,
 )
+from enterprise_doc_core.documents.envelope import MAX_BUFFERED_ENVELOPE_BYTES
 from enterprise_doc_core.identity import Tenant
 from enterprise_doc_core.jobs import create_job_records
 from enterprise_doc_core.object_store import (
@@ -723,8 +724,9 @@ class UploadSessionService:
         expected_parts: Sequence[UploadPart],
     ) -> tuple[str, str | None, datetime | None]:
         content_sha256_verified_at: datetime | None = None
+        verified_content: bytes | None = None
         if self.uses_readback_checksum_verification:
-            await self._verify_readback_content(
+            verified_content = await self._verify_readback_content(
                 snapshot=snapshot,
                 head=head,
                 expected_parts=expected_parts,
@@ -744,6 +746,7 @@ class UploadSessionService:
             size_bytes=head.size_bytes,
             extension=snapshot.extension,
             settings=self.settings,
+            verified_content=verified_content,
         )
         return envelope.detected_media_type, transport_checksum, content_sha256_verified_at
 
@@ -753,7 +756,7 @@ class UploadSessionService:
         snapshot: _UploadSessionSnapshot,
         head: ObjectHead,
         expected_parts: Sequence[UploadPart],
-    ) -> None:
+    ) -> bytes | None:
         if (
             head.size_bytes != snapshot.size_bytes
             or not _object_identity_matches(snapshot=snapshot, head=head)
@@ -762,6 +765,7 @@ class UploadSessionService:
             raise UploadCompletionVerificationFailed()
 
         whole_hasher = hashlib.sha256()
+        buffered = bytearray() if snapshot.size_bytes <= MAX_BUFFERED_ENVELOPE_BYTES else None
         expected_numbers = list(range(1, snapshot.expected_part_count + 1))
         if [part.part_number for part in expected_parts] != expected_numbers:
             raise UploadCompletionVerificationFailed()
@@ -788,6 +792,8 @@ class UploadSessionService:
                     raise UploadCompletionVerificationFailed()
                 part_hasher.update(chunk)
                 whole_hasher.update(chunk)
+                if buffered is not None:
+                    buffered.extend(chunk)
                 offset += length
                 remaining -= length
             actual_part_checksum = base64.b64encode(part_hasher.digest()).decode("ascii")
@@ -796,6 +802,7 @@ class UploadSessionService:
 
         if whole_hasher.hexdigest() != snapshot.declared_sha256:
             raise UploadCompletionVerificationFailed()
+        return bytes(buffered) if buffered is not None else None
 
     async def abort(
         self,
