@@ -289,15 +289,9 @@ class EntitlementUsageService:
             return ReservationResult(tenant_id, operation_id, quantity, False, False, "legacy")
         if self.require_active_entitlement and entitlement.provider_request_limit is None:
             raise UsageError("usage_entitlement_inactive")
-        # A concurrent request with the same operation may have inserted its
-        # reservation while we waited for the entitlement row lock.  Re-read
-        # after acquiring that lock so the loser returns a replay instead of
-        # surfacing a unique-constraint IntegrityError.
-        existing = await self._reservation(session, tenant_id, operation_id, lock=True)
-        if existing is not None:
-            if existing.metric != "provider_request" or existing.quantity != quantity:
-                raise UsageError("usage_idempotency_conflict")
-            return self._reservation_result(existing, replay=True)
+        # The tenant lock above serializes every reservation writer before its
+        # first lookup, including while waiting for the entitlement row lock.
+        # A second lookup here cannot observe a concurrent same-tenant insert.
         await self._release_expired(session, entitlement, now)
         limit = entitlement.provider_request_limit
         if limit is not None and (

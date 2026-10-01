@@ -10,7 +10,7 @@ from sqlalchemy import event, select
 from enterprise_doc_core.billing.models import TenantEntitlement, UsageReservation
 from enterprise_doc_core.documents.models import DocumentIngestionGeneration, DocumentVersion
 from enterprise_doc_core.identity.models import Membership
-from enterprise_doc_core.jobs.models import Job
+from enterprise_doc_core.jobs.models import Job, JobEvent
 from enterprise_doc_core.presales.models import PresalesAttempt
 from tests.browser_sessions.conftest import browser_db as browser_db
 from tests.presales.test_presales_background_integration import background as background
@@ -73,6 +73,10 @@ async def test_single_row_batch_admission_has_no_extra_read_budget(background):
             ).one()
             job = await session.get(Job, operation.job_id)
             assert job is not None and job.payload["operation_id"] == str(operation.id)
+            job_events = (
+                await session.scalars(select(JobEvent).where(JobEvent.job_id == job.id))
+            ).all()
+            assert [(item.seq, item.event_type) for item in job_events] == [(1, "job.created")]
             reservation = (
                 await session.scalars(
                     select(UsageReservation).where(UsageReservation.operation_id == operation.id)
@@ -83,7 +87,7 @@ async def test_single_row_batch_admission_has_no_extra_read_budget(background):
     assert not b.requests
     print(f"Admission SELECT counts: single={counts[0]}, batch={counts[1]}")
     assert 0 < counts[1] <= counts[0], counts
-    assert counts[0] <= 21, counts
+    assert counts[0] <= 19, counts
 
 
 @pytest.mark.parametrize("ttl", [92, 93, 1200])

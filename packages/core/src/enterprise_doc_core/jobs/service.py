@@ -210,11 +210,13 @@ async def _append_job_event(
     event_type: str,
     payload: Mapping[str, Any] | None = None,
     actor_id: UUID | None = None,
+    initial: bool = False,
 ) -> JobEvent:
     event = JobEvent(
         tenant_id=job.tenant_id,
         job_id=job.id,
-        seq=await _next_event_sequence(session, job_id=job.id),
+        # A new, uncommitted Job cannot have events from another transaction.
+        seq=1 if initial else await _next_event_sequence(session, job_id=job.id),
         event_type=event_type,
         status=job.status,
         actor_id=actor_id,
@@ -363,6 +365,7 @@ async def create_job_records(
         event_type="job.created",
         payload={"job_type": job_type},
         actor_id=actor_id,
+        initial=True,
     )
     outbox_event: OutboxEvent | None = None
     if outbox_event_type is not None:

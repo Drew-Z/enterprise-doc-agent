@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import asyncio
+import os
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
 import pytest
+from pydantic import SecretStr
 from sqlalchemy import select
+from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from enterprise_doc_core.config import DatabaseSettings
@@ -40,6 +43,16 @@ class MutableClock:
         self.value += timedelta(seconds=seconds)
 
 
+def _database_settings() -> DatabaseSettings:
+    configured = os.environ.get("FOUNDATION_TEST_DATABASE_URL")
+    if configured is None:
+        return DatabaseSettings()
+    url = make_url(configured).set(drivername="postgresql+psycopg")
+    if url.host not in {"127.0.0.1", "localhost", "::1"}:
+        raise RuntimeError("Job integration requires a loopback PostgreSQL database")
+    return DatabaseSettings(url=SecretStr(url.render_as_string(hide_password=False)))
+
+
 async def _seed_identity(
     session_factory: async_sessionmaker[AsyncSession],
 ) -> tuple[UUID, UUID]:
@@ -70,7 +83,7 @@ async def _runtime(
     UUID,
     JobCreateResult,
 ]:
-    engine = create_database_engine(DatabaseSettings())
+    engine = create_database_engine(_database_settings())
     session_factory = create_session_factory(engine)
     tenant_id, actor_id = await _seed_identity(session_factory)
     clock = MutableClock(datetime(2026, 7, 18, 8, 0, tzinfo=UTC))
@@ -95,7 +108,7 @@ async def _runtime(
 
 @pytest.mark.integration
 async def test_job_creation_is_idempotent_and_detects_payload_conflicts() -> None:
-    engine = create_database_engine(DatabaseSettings())
+    engine = create_database_engine(_database_settings())
     session_factory = create_session_factory(engine)
     tenant_id, actor_id = await _seed_identity(session_factory)
     service = JobRuntimeService(session_factory=session_factory)

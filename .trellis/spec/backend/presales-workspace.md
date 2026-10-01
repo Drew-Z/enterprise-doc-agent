@@ -377,7 +377,11 @@ background generation. API and Worker must use the same settings and model route
   It also checks cross-tenant, revoked-member, unavailable/stale-source rejection
   without Jobs/reservations in both enabled and disabled modes. Final `get()` access
   rechecks remain mandatory; query counts alone do not prove online latency.
-  Single-row and equivalent batch admission have a 21-SELECT integration budget.
+  Single-row and equivalent batch admission have a 19-SELECT integration budget.
+  The commercial ledger checks an operation once after acquiring the tenant lock;
+  every reservation writer takes that lock, so waiting for the entitlement lock
+  does not require another lookup. A newly inserted Job starts its event sequence
+  at 1 without querying an empty history; subsequent events retain locked max+1.
   Daily and active counts use separate indexed scalar subqueries in one statement,
   preserving tenant locks, predicates and daily-limit error precedence. Reuse the
   commercial reservation receipt's stored expiry to clip queued work; do not reload
