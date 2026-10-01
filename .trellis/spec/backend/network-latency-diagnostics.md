@@ -31,7 +31,12 @@ establish a lower end-to-end p95.
   performance target passed. A new API batch and full capacity matrix must retain
   their own budgets, denominators and stop conditions.
 
-Proven example: `docs/ops/database-transport-diagnosis.md` and the sanitized
+## Proven Examples
+
+Connection and pool configuration: `packages/core/src/enterprise_doc_core/db/engine.py`.
+Documentation contract: `tests/foundation/test_documentation_contract.py`.
+
+Diagnostic evidence: `docs/ops/database-transport-diagnosis.md` and the sanitized
 `rc16-network-diagnosis.json` task record. The rc.16 comparisons reproduced TCP
 retransmissions and rejected simple MTU, pooler-port and DNS-peer explanations;
 they did not establish a deployed transport fix.
