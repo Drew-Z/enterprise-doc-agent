@@ -415,14 +415,17 @@ class BackgroundGeneration:
             session.add(call)
             operation.provider_request_count = None
             operation.state = "recovering" if calls else "running"
-            reserve_recovery = (
-                self.settings.automatic_failover_enabled
-                and not calls
-                and any(
-                    other != route and self._route_key(other) != self._route_key(route)
-                    for other in self.gateways
-                )
-            )
+            reserve_recovery = False
+            if self.settings.automatic_failover_enabled and not calls:
+                for other in self.gateways:
+                    other_key = self._route_key(other)
+                    if (
+                        other != route
+                        and other_key != call.route_key
+                        and await route_health.available(session, other_key, self.clock())
+                    ):
+                        reserve_recovery = True
+                        break
             return call.id, reserve_recovery
 
     async def _record_error(self, claim: ClaimedJob, call_id: UUID, error: PresalesError) -> None:

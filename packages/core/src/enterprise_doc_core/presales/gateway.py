@@ -199,16 +199,15 @@ class OpenAICompatiblePresalesGateway:
                     ) as response:
                         request_id = provider_request_id(response.headers)
                         if response.status_code != 200:
-                            code = (
-                                "presales_model_rate_limited"
-                                if response.status_code == 429
-                                else "presales_model_failed"
-                            )
+                            code = {
+                                426: "presales_model_upgrade_required",
+                                429: "presales_model_rate_limited",
+                            }.get(response.status_code, "presales_model_failed")
                             raise PresalesError(
                                 code,
                                 provider_requests=1,
                                 retryable=(
-                                    response.status_code in {408, 429}
+                                    response.status_code in {408, 426, 429}
                                     or response.status_code >= 500
                                 ),
                             )

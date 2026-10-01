@@ -403,12 +403,16 @@ background generation. API and Worker must use the same settings and model route
 - **Recovery:** before each HTTP request, persist one of at most two ProviderCall
   slots. Start with model_route, then the other configured route only when enabled.
   Never reuse a route label or endpoint/model hash within the operation. Recover only
-  transport/timeouts, HTTP 408/429/5xx, or recognized 200 error envelopes. Invalid
+  transport/timeouts, HTTP 408/426/429/5xx, or recognized 200 error envelopes. HTTP 426
+  is `presales_model_upgrade_required`: try only the other route, never the same
+  endpoint/model again in the operation. Invalid
   citations, JSON, prose and business failures are terminal. All calls share the
   execution deadline, with two seconds reserved for persistence and a five-second
   connection cap. There is no HTTP/SDK retry or third dispatch after restart.
   After dispatch admission, the first call uses at most half the remaining model
-  budget when a distinct second route is configured and failover is enabled. Time
+  budget when a distinct second route is currently available and failover is enabled.
+  Check persistent route health after dispatch admission; a cooling or occupied
+  half-open alternate must not shorten the primary's original execution budget. Time
   is recalculated after database work; the second call uses the remaining budget
   under the unchanged deadline. A real-clock integration test verifies hanging
   primary cancellation, fallback success and one settlement with unknown usage retained.
@@ -422,7 +426,11 @@ background generation. API and Worker must use the same settings and model route
   global daily dispatch budget even when their outcome is unknown or not_sent.
 - **Health:** persistent route health opens after consecutive eligible failures,
   cools down, then admits only one half-open probe. Health generations reject stale
-  observations. Output validation failures are not network outages. Dispatch-day
+  observations. HTTP 426 immediately opens that route for at least 300 seconds,
+  because an upstream upgrade needs operator action; after that, the same single
+  half-open probe and generation fencing apply. Do not reset health merely because
+  the incompatible upstream returned an HTTP response. Output validation failures
+  are not network outages. Dispatch-day
   counters survive tenant cleanup; they are not refunded by failure or deletion.
 - **Rollback:** stop new admission with generation_enabled=false, leave background
   processing enabled until active work drains, then disable background/failover

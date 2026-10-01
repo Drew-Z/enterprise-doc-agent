@@ -451,6 +451,95 @@ async def test_stalled_primary_leaves_time_for_fallback_and_settles_once(backgro
     assert sent == ["primary.invalid", "fallback.invalid"]
 
 
+async def test_upgrade_required_cools_route_and_recovers_after_bounded_probe(background):
+    from enterprise_doc_core.presales.models import PresalesProviderCall, PresalesRouteHealth
+    from tests.agent.test_agent_run_integration import MutableClock
+
+    b = background
+    clock = MutableClock(datetime.now(UTC))
+    b.service.generation.clock = clock
+    sent = []
+    upgraded = False
+
+    def respond(request):
+        sent.append(request.url.host)
+        if request.url.host == "primary.invalid" and not upgraded:
+            return httpx.Response(426, json={"error": {"message": "Provider upgrade required"}})
+        return valid_response(request)
+
+    worker = configured_worker(b, respond)
+    first = await enqueue(b, "upgrade-required")
+    await worker.run_once("initial")
+    assert (await b.service.get(b.context.principal, first.id)).rows[0].state == "drafted"
+    assert sent == ["primary.invalid", "fallback.invalid"]
+    async with b.sessions() as session:
+        calls = (
+            await session.scalars(
+                select(PresalesProviderCall)
+                .where(PresalesProviderCall.operation_id == first.rows[0].attempts[0].id)
+                .order_by(PresalesProviderCall.number)
+            )
+        ).all()
+        assert calls[0].error_code == "presales_model_upgrade_required"
+        assert calls[0].usage is None
+        health = await session.get(PresalesRouteHealth, worker._route_key("primary"))
+        assert health.open_until >= clock() + timedelta(seconds=300)
+
+    clock.advance(31)  # A known required upgrade outlives the transient 30-second cooldown.
+    second = await enqueue(b, "during-upgrade")
+    await worker.run_once("cooling")
+    assert (await b.service.get(b.context.principal, second.id)).rows[0].state == "drafted"
+    assert sent == ["primary.invalid", "fallback.invalid", "fallback.invalid"]
+
+    clock.advance(270)
+    upgraded = True
+    third = await enqueue(b, "after-upgrade")
+    await worker.run_once("probe")
+    assert (await b.service.get(b.context.principal, third.id)).rows[0].state == "drafted"
+    assert sent[-1] == "primary.invalid"
+    async with b.sessions() as session:
+        health = await session.get(PresalesRouteHealth, worker._route_key("primary"))
+        assert health.open_until is None and health.probe_call_id is None
+        reservations = (await session.scalars(select(UsageReservation))).all()
+        assert len(reservations) == 3 and all(r.state == "consumed" for r in reservations)
+
+
+async def test_cooling_fallback_does_not_shorten_primary_execution_budget(background):
+    from enterprise_doc_core.presales.models import PresalesProviderCall, PresalesRouteHealth
+
+    b = background
+    sent = []
+
+    async def respond(request):
+        sent.append(request.url.host)
+        assert request.url.host == "primary.invalid"
+        await asyncio.sleep(4)  # Above the old half budget, below the original six-second budget.
+        return valid_response(request)
+
+    worker = configured_worker(b, respond, row_timeout_seconds=8)
+    async with b.sessions.begin() as session:
+        session.add(
+            PresalesRouteHealth(
+                route_key=worker._route_key("fallback"),
+                failures=3,
+                generation=1,
+                open_until=datetime.now(UTC) + timedelta(minutes=5),
+            )
+        )
+    packet = await enqueue(b, "cooling-fallback-budget")
+    await asyncio.wait_for(worker.run_once("worker"), timeout=12)
+    result = await b.service.get(b.context.principal, packet.id)
+    assert result.rows[0].state == "drafted"
+    assert sent == ["primary.invalid"]
+    async with b.sessions() as session:
+        operation = await session.get(PresalesAttempt, packet.rows[0].attempts[0].id)
+        assert operation.finished_at < operation.deadline_at
+        calls = (await session.scalars(select(PresalesProviderCall))).all()
+        assert len(calls) == 1 and calls[0].state == "succeeded"
+        reservation = (await session.scalars(select(UsageReservation))).one()
+        assert reservation.state == "consumed"
+
+
 @pytest.mark.parametrize("loss", ["released", "expired", "missing"])
 async def test_embedding_retry_stops_when_presales_reservation_is_lost(background, loss):
     from enterprise_doc_core.billing.provider_models import ProviderDispatch

@@ -11,6 +11,8 @@ from enterprise_doc_core.presales.models import (
 )
 from enterprise_doc_core.presales.settings import PresalesSettings
 
+_UPGRADE_COOLDOWN_SECONDS = 300
+
 
 async def available(session: AsyncSession, route_key: str, now: datetime) -> bool:
     health = await session.get(PresalesRouteHealth, route_key)
@@ -71,7 +73,15 @@ async def observed(
         # An interrupted half-open probe remains locked until its bounded deadline.
         return
     health.probe_call_id, health.probe_until = None, None
-    if call.retryable:
+    if call.error_code == "presales_model_upgrade_required":
+        # The upstream needs an operator change. Do not treat its HTTP response as
+        # healthy or probe it again at the shorter transient-outage interval.
+        health.failures += 1
+        health.open_until = now + timedelta(
+            seconds=max(settings.route_cooldown_seconds, _UPGRADE_COOLDOWN_SECONDS)
+        )
+        health.generation += 1
+    elif call.retryable:
         health.failures += 1
         if health.open_until is not None or health.failures >= settings.route_failure_threshold:
             health.open_until = now + timedelta(seconds=settings.route_cooldown_seconds)
