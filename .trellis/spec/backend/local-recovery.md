@@ -169,3 +169,30 @@ private centralized artifacts, and explicit external acceptance limitations.
 - Neither local run proves cloud/public cutover, production OAuth or suppliers,
   off-computer backups, or an on-call SLA. See `docs/ops/local-cold-recovery.md`
   for exact scope, advance media preparation and preserved failures.
+
+## Encrypted recovery bundles
+
+- Verify pinned age release archive size and official SHA-256 before extracting
+  or executing binaries. A partial download is not an installed tool; preserve
+  its failure and only reuse bytes after the complete archive hash matches.
+- Keep the age private identity in the restricted centralized local recovery
+  group. A server backup process needs only the public recipient. No remote
+  sensitive-data storage exception is implied by having working encryption.
+- Authenticate the entire ciphertext before consuming decrypted members. Verify
+  an exact member inventory, each byte length and hash; reject duplicate names,
+  path escapes, links, extra/missing files and over-budget bundles. Parsing a tar
+  must not extract arbitrary paths to the filesystem.
+- Bind database dump, content fingerprints and portable object mappings to the
+  same verified source snapshot. Include every referenced object byte; referring
+  to a Windows backup path is not a portable backup.
+- Local evidence separately records encryption/readback and actual restore.
+  The 2026-10-02 proof restored 56 tables/82,622 rows and 1,668 objects solely from
+  ciphertext into empty owned PostgreSQL/MinIO, using tmpfs for plaintext staging.
+  Its 17.531 seconds includes cleanup but is not a whole-machine RTO.
+- Current bounded in-memory packaging caps the entire bundle at 64 MiB and 4,096
+  payload members. Growth must fail visibly; a streaming design needs its own
+  complete-authentication and corruption tests before increasing this boundary.
+- Upload completion, ciphertext readback, source snapshot verification and actual
+  decryption/restore are separate claims. Off-computer continuity additionally
+  needs an independently running schedule and measured source-time freshness.
+  See `docs/ops/encrypted-backup.md` for implementation status and remaining work.
