@@ -28,6 +28,27 @@ shell substitutions, arbitrary commands and validation/crash-test fields are
 rejected. Carry forward the explicit historical artifact references established
 by the actual recovery inventory when preparing the real production configuration.
 
+The default-jurisdiction R2 endpoint is exactly
+`https://<account-id>.r2.cloudflarestorage.com`. The original synthetic installation
+fixture incorrectly used `.r2.storage.cloudflare.com`; a new regression rejects
+that typo and accepts the official endpoint. Local DNS failed for the former and
+resolved the latter. Preserve the earlier installation receipt as filesystem/unit
+validation only; it never tested target connectivity. Existing bucket metadata
+confirms the proposed backup bucket uses the default jurisdiction. Production
+source and backup target use the same R2 account authority and different bucket
+names: this is not an independent provider/account failure domain.
+
+Official [temporary credential documentation](https://developers.cloudflare.com/r2/api/s3/temporary-credentials/)
+supports locally signed credentials restricted to a bucket, prefix and explicit
+S3 actions. The proposed publisher actions are `ListObjectsV2`, `HeadObject`,
+`GetObject`, and `PutObject` under `operations-recovery/v1/`; deletion is excluded.
+The parent must have only the [bucket item permission](https://developers.cloudflare.com/r2/api/tokens/)
+for the selected bucket. Parent-token issuance, protected signing/renewal and
+session-token consumption still require implementation and live verification.
+Reading the permission-group directory does not establish that the current token
+can issue a new token. No credentials were issued or backup objects written by
+the metadata/permission checks.
+
 | Path | Purpose |
 | --- | --- |
 | `/var/lib/enterprise-doc-backup/releases/<package-id>/` | Verified code and Linux age binary |

@@ -270,3 +270,12 @@ private centralized artifacts, and explicit external acceptance limitations.
   all stay protected because none has an unqualified actual restore receipt.
   Preserve the `original_container_state_changed` result. A new module changes
   the package ID and does not retroactively extend an older native install proof.
+
+- Verify vendor endpoints against official documentation and actual DNS/provider
+  metadata before production preparation. The initial R2 fixture repeated the
+  incorrect `.r2.storage.cloudflare.com` in implementation and tests. The corrected
+  default-jurisdiction endpoint is `.r2.cloudflarestorage.com`; a positive official
+  endpoint and explicit typo rejection now prevent that self-consistent mistake.
+  A different bucket on the same R2 authority is not an independent account or
+  provider failure domain. Temporary credential action/prefix enforcement must
+  be tested live; a directory of available permission groups proves no issuance right.

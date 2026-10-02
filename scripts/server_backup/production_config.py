@@ -29,7 +29,7 @@ def validate_target(endpoint, bucket):
             or parsed.path not in ("", "/")
             or parsed.query
             or parsed.fragment
-            or re.fullmatch(r"[a-f0-9]{32}\.r2\.storage\.cloudflare\.com", parsed.hostname or "")
+            or re.fullmatch(r"[a-f0-9]{32}\.r2\.cloudflarestorage\.com", parsed.hostname or "")
             is None
             or not isinstance(bucket, str)
             or re.fullmatch(r"[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]", bucket) is None

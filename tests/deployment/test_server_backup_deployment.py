@@ -20,7 +20,7 @@ def package(tmp_path):
         age=age,
         expected_age_sha256=hashlib.sha256(binary).hexdigest(),
         public_recipient="age1" + "q" * 58,
-        target_endpoint="https://" + "a" * 32 + ".r2.storage.cloudflare.com",
+        target_endpoint="https://" + "a" * 32 + ".r2.cloudflarestorage.com",
         target_bucket="synthetic-backup-test",
         release={"release": "v0.1.45-rc.16", "source": "0" * 40, "revision": "20260924_0031"},
     )
@@ -56,14 +56,24 @@ def test_production_configuration_rejects_scope_drift(package, field, value):
     [
         "http://127.0.0.1:9000",
         "https://private@example.com",
-        "https://" + "a" * 32 + ".r2.storage.cloudflare.com/other",
-        "https://" + "a" * 32 + ".r2.storage.cloudflare.com?token=synthetic",
+        "https://" + "a" * 32 + ".r2.cloudflarestorage.com/other",
+        "https://" + "a" * 32 + ".r2.cloudflarestorage.com?token=synthetic",
         "https://unrelated.example.test",
     ],
 )
 def test_target_endpoint_is_exact_https_r2(endpoint):
     with pytest.raises(production_config.ConfigurationError):
         production_config.validate_target(endpoint, "synthetic-backup-test")
+
+
+def test_production_target_accepts_official_r2_hostname_and_rejects_previous_typo():
+    production_config.validate_target(
+        "https://" + "a" * 32 + ".r2.cloudflarestorage.com", "synthetic-backup-test"
+    )
+    with pytest.raises(production_config.ConfigurationError):
+        production_config.validate_target(
+            "https://" + "a" * 32 + ".r2.storage.cloudflare.com", "synthetic-backup-test"
+        )
 
 
 def test_tampered_package_or_age_binding_refuses_installation(package, tmp_path):
