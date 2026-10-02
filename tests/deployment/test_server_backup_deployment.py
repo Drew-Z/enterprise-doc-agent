@@ -192,12 +192,15 @@ def test_target_adapter_rejects_other_files_and_extra_admin_credentials(monkeypa
     value = {
         "endpoint": package["config"]["target_endpoint"],
         "bucket": package["config"]["target_bucket"],
-        "access": "synthetic-access",
-        "secret": "synthetic-secret",
+        "access": "b" * 32,
+        "secret": "c" * 64,
         "region": "auto",
     }
     monkeypatch.setattr(host_environment, "protected_json", lambda path: value)
-    assert host_environment.target_environment(production_config.ROOT + "/target.json") == value
+    result = host_environment.target_environment(production_config.ROOT + "/target.json")
+    assert result["access"] == value["access"]
+    assert result["secret"] != value["secret"]
+    assert result["session_token"]
     with pytest.raises(production_config.ConfigurationError):
         host_environment.target_environment("/tmp/other.json")
     value["cloudflare_admin_token"] = "synthetic-extra"

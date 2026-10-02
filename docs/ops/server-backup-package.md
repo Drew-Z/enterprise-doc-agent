@@ -43,24 +43,44 @@ supports locally signed credentials restricted to a bucket, prefix and explicit
 S3 actions. The proposed publisher actions are `ListObjectsV2`, `HeadObject`,
 `GetObject`, and `PutObject` under `operations-recovery/v1/`; deletion is excluded.
 The parent must have only the [bucket item permission](https://developers.cloudflare.com/r2/api/tokens/)
-for the selected bucket. Parent-token issuance, protected signing/renewal and
-session-token consumption still require implementation and live verification.
-Reading the permission-group directory does not establish that the current token
-can issue a new token. No credentials were issued or backup objects written by
-the metadata/permission checks.
+for the selected bucket. `target_credentials.publication_credentials` now signs
+a fresh 900-second session on every publication, including resumed uploads. It
+uses HS256 with the UTF-8 parent secret string, derives the child secret from the
+compact JWT's SHA-256, and supplies the base64 `jwt/` envelope as the SDK session
+token. The parent secret stays in the root-owned file and signer memory.
+
+Production publication rejects absent, expired, overbroad or misbound sessions
+before constructing the S3 client; it does not fall back to the parent key. The
+local claim validator does not authenticate the JWT signature: R2 does that and
+enforces delegated permissions. Root still holds the parent, so this design does
+not isolate a compromised host root. Parent revocation invalidates child sessions.
+
+Independent PyJWT verification and actual botocore SigV4 signing pass. The same
+adapter/SDK code also ran in the local Linux VM with a synthetic protected file:
+mode 0644 was rejected, mode 0600 accepted, the parent secret was not returned,
+and the owned synthetic file was removed. There were no target network requests.
+Seventeen new credential tests plus the existing backup/documentation suite pass
+(81 tests). See the [credential evidence](../../.trellis/tasks/09-24-commercial-operations-acceptance/server-backup-credential-validation.json).
+
+Real R2 permission enforcement and parent issuance remain unverified. A read-only
+inspection found the existing operations token has `API Tokens Read` and
+`Workers R2 Storage Write`, but no `API Tokens Write`; it cannot be treated as a
+verified issuer. Do not install that broad token as the backup parent. No real
+credentials were issued or backup objects written by these checks.
 
 | Path | Purpose |
 | --- | --- |
 | `/var/lib/enterprise-doc-backup/releases/<package-id>/` | Verified code and Linux age binary |
 | `/var/lib/enterprise-doc-backup/config.json` | Public runtime configuration, root-owned and private |
-| `/var/lib/enterprise-doc-backup/target.json` | Separately provisioned scoped target credentials, root-owned mode 0600 |
+| `/var/lib/enterprise-doc-backup/target.json` | Separately provisioned bucket-scoped parent S3 credentials, root-owned mode 0600 |
 | `/var/lib/enterprise-doc-backup/state/` | Durable attempt state and bounded encrypted upload spool |
 | `/etc/systemd/system/enterprise-doc-backup.service` | Owned service unit |
 
 The source adapter reads only the selected database/object-store environment fields
 from the existing API deployment. The daemon consumes that JSON in memory. The
 target adapter requires exactly endpoint, bucket, access, secret and region fields;
-it rejects another file path or additional admin credentials. Protected JSON reads
+access/secret are 32/64 lowercase hex characters and region is `auto`. It returns
+a temporary child, and rejects another file path or additional admin credentials. Protected JSON reads
 reject symlinks, non-regular files, non-root ownership, group/world permissions and
 oversized input. Do not run the credential adapter directly in an interactive log.
 

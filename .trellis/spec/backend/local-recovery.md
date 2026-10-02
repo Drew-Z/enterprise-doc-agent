@@ -279,3 +279,60 @@ private centralized artifacts, and explicit external acceptance limitations.
   A different bucket on the same R2 authority is not an independent account or
   provider failure domain. Temporary credential action/prefix enforcement must
   be tested live; a directory of available permission groups proves no issuance right.
+
+## Scenario: Temporary R2 publisher credentials
+
+### 1. Scope / Trigger
+
+Production backup publication and same-ciphertext retry must acquire fresh scoped
+sessions without relying on a personal computer for renewal.
+
+### 2. Signatures
+
+`publication_credentials(parent, *, now=None)` issues the session;
+`validate_session(value, *, now=None)` validates its local contract.
+`storage(endpoint, access, secret, region="auto", *, session_token=None)` passes
+`aws_session_token` to the real boto3 client and explicitly selects SigV4.
+
+### 3. Contracts
+
+The root-owned parent JSON has exactly `endpoint`, `bucket`, `access`, `secret`,
+and `region`; the key lengths are 32/64 lowercase hex characters, region is `auto`,
+and the endpoint uses the official default-jurisdiction account hostname.
+Sign HS256 with the UTF-8 secret string, not decoded hex. Bind account, issuer,
+audience and bucket; fix TTL to 900 seconds, prefix to `operations-recovery/v1/`,
+and actions to ListObjectsV2/HeadObject/GetObject/PutObject. Child secret is
+SHA-256(compact JWT); session token is base64(`jwt/` + compact JWT).
+The adapter never returns the parent secret. Re-sign for each publication/retry.
+Local decoding checks the contract; only R2 authenticates/enforces the token.
+Parent issuance is separate and must restrict the parent to the selected bucket.
+
+### 4. Validation & Error Matrix
+
+- Missing/expired session or mismatched account/bucket/actions/prefix -> reject
+  before S3 construction; never fall back to the parent key.
+- Extra parent configuration, non-default region or malformed key -> reject.
+- Group/world-readable parent, symlink or non-root ownership -> reject.
+- R2 authentication/authorization failure -> preserve existing runtime retry and
+  sealed snapshot state; do not infer an absent upload from an unknown result.
+
+### 5. Good/Base/Bad Cases
+
+Good: restart after expiry obtains a new session for the original sealed upload.
+Base: synthetic keys prove signing/SDK plumbing without target network calls.
+Bad: a broad operations token is installed because dedicated token issuance is
+unavailable; or local claim validation is described as actual R2 enforcement.
+
+### 6. Tests Required
+
+`test_server_backup_credentials.py` independently verifies signatures with PyJWT,
+checks actual botocore presigned session-token/SigV4 fields, renewal, unchanged
+parent and rejection before S3. The native Linux adapter/SDK proof uses the same
+module hashes, an exclusively owned synthetic file and inactive service. Live R2
+allow/deny tests remain a separate required acceptance step.
+
+### 7. Wrong vs Correct
+
+Wrong: return the parent secret or declare cloud permission enforcement from a
+decoded JWT. Correct: mint the fixed child, pass its session token to the SDK,
+verify provenance and enforce the real R2 boundary before production activation.

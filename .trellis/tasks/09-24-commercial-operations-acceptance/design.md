@@ -1,5 +1,7 @@
 # 当前环境验收设计
 
+服务器备份临时凭据：受保护的 root-owned `target.json` 保存仅限目标桶的父 S3 凭据；固定 target 适配器按 Cloudflare 官方 HS256 本地签发协议，每次生成900秒有效的临时 S3 凭据。JWT绑定账户、父access ID、官方endpoint audience、目标桶、`operations-recovery/v1/`前缀和 ListObjectsV2/HeadObject/GetObject/PutObject 四项操作，不能由配置扩大。父secret不进入适配器stdout；派生secret及session token仅进入上传SDK。生产模式拒绝缺少或过期的临时凭据，不降级使用父密钥。每次publish前重签，断电恢复无需个人电脑续期。父凭据仍由可信服务器root持有，此安排不是抵抗服务器root失陷的隔离；父令牌创建、精确权限实测和远端敏感存储例外分别核验。测试通过独立JWT库验证签名/claims，并检查真实botocore签名携带session token；不把本地测试当成R2已强制限制。
+
 只读资源观测使用标准库远端探针（经 SSH stdin 运行，不落地文件）和本地 metrics 白名单解析器。探针仅调用 kubectl get、containerd content get、读取 /proc 与根盘空间、抓取发现的 API/Worker/Consumer Pod metrics；输出投影只含身份摘要、运行状态和观测字段，不返回 Secret 或配置明文。用 Pod 地址逐副本抓取，避免 Service 负载均衡隐藏副本；保留 Kubernetes Metrics API 自带 timestamp/window，不把重复读取旧样本视为新数据。采样只读、低频且有调用数和单次时限，逐次 journal 及最终结果存当前集中恢复组。
 
 镜像核验区分同摘要、部署 OCI 索引到指定 Linux 平台 manifest，以及运行时归档索引包含部署索引与该平台 manifest 三类。索引字节校验 SHA 与 schemaVersion，目标平台唯一且成员 mediaType 正确才通过，保留三个摘要；不因摘要形式不同直接误判部署错误，也不无条件豁免差异。探针仍不证明签名、提交或迁移版本。前轮已部署旧版本的队列/Redis gauge setter 未接入生产调用，其新鲜度不可证明，对旧版本的汇总仍须保留 observation_incomplete；不能用导出的零值作为空闲证据。CO-3i 为候选补齐生产端及新鲜度后，仍须通过实际部署和采集验证，不能改写历史观测。

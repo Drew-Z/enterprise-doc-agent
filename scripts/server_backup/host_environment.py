@@ -6,6 +6,7 @@ import os
 
 from .production_config import NAMESPACE, ROOT, ConfigurationError, protected_json, validate_target
 from .server_capture import limited_output
+from .target_credentials import publication_credentials
 
 SOURCE_FIELDS = (
     "DATABASE__URL",
@@ -68,7 +69,7 @@ def target_environment(path):
         for key in ("access", "secret")
     ):
         raise ConfigurationError("target credential bounds differ")
-    return value
+    return publication_credentials(value)
 
 
 def main():

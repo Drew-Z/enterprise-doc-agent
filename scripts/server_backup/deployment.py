@@ -26,6 +26,7 @@ MODULES = (
     "database_environment.py",
     "production_config.py",
     "host_environment.py",
+    "target_credentials.py",
     "deployment.py",
 )
 

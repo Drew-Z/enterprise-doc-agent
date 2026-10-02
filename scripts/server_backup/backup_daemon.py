@@ -20,6 +20,7 @@ from .production_config import protected_json, validate_config
 from .recovery_bundle import seal_bundle
 from .remote_retention import DEFAULT_MAX_BYTES, publish_budgeted_snapshot
 from .server_capture import capture_database, capture_objects, limited_output
+from .target_credentials import validate_session
 
 
 def notify(message):
@@ -40,14 +41,16 @@ def environment(command):
     return value
 
 
-def storage(endpoint, access, secret, region="auto"):
+def storage(endpoint, access, secret, region="auto", *, session_token=None):
     return boto3.client(
         "s3",
         endpoint_url=endpoint,
         aws_access_key_id=access,
         aws_secret_access_key=secret,
+        aws_session_token=session_token,
         region_name=region,
         config=Config(
+            signature_version="s3v4",
             connect_timeout=5,
             read_timeout=10,
             retries={"total_max_attempts": 1},
@@ -161,13 +164,19 @@ class BackupService:
 
     def publish(self, **kwargs):
         target = environment(self.config["target_environment_command"])
+        if self.config.get("config_profile") == "production":
+            validate_session(target)
         if (
             target["endpoint"] != self.config["target_endpoint"]
             or target["bucket"] != self.config["target_bucket"]
         ):
             raise ValueError("backup target changed")
         client = storage(
-            target["endpoint"], target["access"], target["secret"], target.get("region", "auto")
+            target["endpoint"],
+            target["access"],
+            target["secret"],
+            target.get("region", "auto"),
+            session_token=target.get("session_token"),
         )
         try:
             return publish_budgeted_snapshot(
