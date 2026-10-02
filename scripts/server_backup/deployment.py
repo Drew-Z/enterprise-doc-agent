@@ -21,6 +21,7 @@ MODULES = (
     "server_capture.py",
     "server_publication.py",
     "remote_retention.py",
+    "restore_catalog.py",
     "recovery_bundle.py",
     "database_environment.py",
     "production_config.py",

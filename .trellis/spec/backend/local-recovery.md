@@ -249,3 +249,24 @@ private centralized artifacts, and explicit external acceptance limitations.
   credential-file permission rejection, installed hashes and disabled rollback
   passed. It does not prove production credentials, provider connectivity,
   off-computer continuity or a trusted restore/protection catalog.
+
+## Operator catalog evidence boundary
+
+- `scripts/server_backup/restore_catalog.py` authenticates the complete local
+  bundle before deriving content identity. Hash canonical table fingerprints,
+  object mappings/references/hashes, schema/extensions and release metadata;
+  exclude capture timestamps, randomized ciphertext and incidental dump bytes.
+- Import actual restore receipts only with operator-selected receipt/executor
+  hashes anchored in the protected recovery registry. A hash pins identity, not
+  execution; do not obtain the expected hashes from uploader-controlled markers.
+  Keep the raw original receipt, its overall status and any separate audit.
+- Failed/unknown attempts remain protected even with an earlier successful
+  attempt. Missing proofs, pinned snapshots, in-progress work and every explicit
+  owner reference protect the named snapshot; unknown references stay visible.
+- Validate the exact catalog SHA and all receipt/source bindings before retention
+  planning. The local operator owns catalog completeness and updates; this module
+  neither discovers external owners nor authorizes or executes deletion.
+- Real validation found three native ciphertexts with identical logical contents;
+  all stay protected because none has an unqualified actual restore receipt.
+  Preserve the `original_container_state_changed` result. A new module changes
+  the package ID and does not retroactively extend an older native install proof.

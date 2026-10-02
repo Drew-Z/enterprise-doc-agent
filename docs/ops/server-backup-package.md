@@ -2,7 +2,7 @@
 
 The tracked implementation lives in `scripts/server_backup`. It includes consistent
 read-only capture, age encryption, immutable upload/readback, durable same-ID retry,
-remote byte admission, retention planning, strict production configuration and
+remote byte admission, retention planning, an operator restore catalog, strict production configuration and
 first-installation/rollback helpers. It has not been installed on production.
 
 The original private implementations, failed attempts and ciphertexts remain in
@@ -82,8 +82,46 @@ drift, package tampering, existing-target refusal, first installation and rollba
 Three real-age tests separately cover roundtrip, wrong keys, corrupted ciphertext
 and invalid archives. See the [package evidence](../../.trellis/tasks/09-24-commercial-operations-acceptance/server-backup-package-validation.json).
 
-Remaining work is the actual target/bucket credential package, trusted
-restore/protection catalog, approved retention execution, the specific remote
+## Operator restore and protection catalog
+
+`restore_catalog.inspect_snapshot` authenticates a local age bundle and verifies
+its dump binding, table inventory and every object mapping/byte hash. Logical
+content identity includes table fingerprints, object locations/references/hashes,
+schema revision/extensions and release metadata. Capture timestamps, randomized
+ciphertext and incidental dump bytes do not create distinct logical contents.
+
+`record_restore` imports the original executed verifier's receipt with independently
+pinned receipt and verifier hashes from the protected local recovery registry.
+These hashes establish evidence identity; the operator must still establish that
+the verifier actually executed. Upload markers cannot provide these trust anchors.
+Successful receipts must bind the same ciphertext/dump and demonstrate complete
+table fingerprints, object readback/inventory, ordered timestamps and owned cleanup.
+Failed or unknown statuses remain preserved and protected even if another attempt
+for the same snapshot succeeded. A supplemental audit cannot rewrite an original failure.
+
+`build_catalog` includes explicit owner-to-snapshot references, pinned identities
+and in-progress identities. Store the returned document exclusively in the local
+recovery group and pin its exact byte SHA in the locked registry. Pass those bytes
+and that independent SHA to `plan_from_catalog`; it revalidates the catalog before
+calling the existing read-only planner. Missing/unverified snapshots remain protected,
+including owner references to snapshots absent from remote inventory. The catalog
+is operator-maintained; it does not discover every external owner automatically.
+No catalog API uploads, deletes, or grants retention approval.
+
+Real local validation authenticated all three existing native ciphertexts:
+56 tables/82,705 rows and 1,669 objects each. Three ciphertext hashes represented
+one logical content. All three remain protected, with zero actual-restore proofs:
+two have no restore receipt and the third retains `original_container_state_changed`.
+The original receipt and lifecycle audit were not modified; no restore was rerun.
+Sixteen catalog tests plus the previous 42 backup tests pass, including the real
+planner with only S3 transport replaced. See the [catalog evidence](../../.trellis/tasks/09-24-commercial-operations-acceptance/server-backup-catalog-validation.json).
+
+Adding this module changes the package inventory/ID. The earlier native staged
+package proof applies only to its original bytes; the new candidate has been
+prepared/verified locally and has not replaced the staged local unit or production.
+
+Remaining work is the actual target/bucket credential package, ongoing operator
+catalog maintenance, approved retention execution, the specific remote
 sensitive-backup storage exception, production activation/monitor configuration,
 and continuous operation while the personal computer is offline. This local
 installation check does not replace those requirements or the other acceptance gates.
