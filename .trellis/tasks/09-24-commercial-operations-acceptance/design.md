@@ -1,5 +1,9 @@
 # 当前环境验收设计
 
+2026-10-02真实R2核验补充：官方示例同时声明scope/actions，但目标实际服务拒绝该组合。API签发的只读令牌可用，其相同claims本地重签也可用；加入actions后重现400，仅声明actions则正常。因此生产签发/消费固定四项actions并排除scope，不放宽删除或前缀权限。父凭据已由用户本地DPAPI录入并经原管理能力只读核对精确桶策略；服务端配置与敏感备份上传仍待具体部署范围。九项真实权限/发布断言通过；保留代理/TLS导致的原清理失败，独立清理按原意图哈希确认两件合成对象归属、删除与不存在。
+
+同轮Container Supply Chain发现Web运行镜像中pcre2 10.48-r0的CVE-2026-103111 HIGH。官方Alpine 3.24已提供10.49-r0；Dockerfile明确要求pcre2>=10.49-r0，使旧缓存的apk upgrade层无法满足该候选。镜像基础摘要、其他运行配置及扫描阈值保持，实际镜像构建与扫描另验。
+
 服务器备份临时凭据：受保护的 root-owned `target.json` 保存仅限目标桶的父 S3 凭据；固定 target 适配器按 Cloudflare 官方 HS256 本地签发协议，每次生成900秒有效的临时 S3 凭据。JWT绑定账户、父access ID、官方endpoint audience、目标桶、`operations-recovery/v1/`前缀和 ListObjectsV2/HeadObject/GetObject/PutObject 四项操作，不能由配置扩大。父secret不进入适配器stdout；派生secret及session token仅进入上传SDK。生产模式拒绝缺少或过期的临时凭据，不降级使用父密钥。每次publish前重签，断电恢复无需个人电脑续期。父凭据仍由可信服务器root持有，此安排不是抵抗服务器root失陷的隔离；父令牌创建、精确权限实测和远端敏感存储例外分别核验。测试通过独立JWT库验证签名/claims，并检查真实botocore签名携带session token；不把本地测试当成R2已强制限制。
 
 只读资源观测使用标准库远端探针（经 SSH stdin 运行，不落地文件）和本地 metrics 白名单解析器。探针仅调用 kubectl get、containerd content get、读取 /proc 与根盘空间、抓取发现的 API/Worker/Consumer Pod metrics；输出投影只含身份摘要、运行状态和观测字段，不返回 Secret 或配置明文。用 Pod 地址逐副本抓取，避免 Service 负载均衡隐藏副本；保留 Kubernetes Metrics API 自带 timestamp/window，不把重复读取旧样本视为新数据。采样只读、低频且有调用数和单次时限，逐次 journal 及最终结果存当前集中恢复组。

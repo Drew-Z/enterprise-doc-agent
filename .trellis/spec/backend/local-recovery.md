@@ -301,7 +301,9 @@ and `region`; the key lengths are 32/64 lowercase hex characters, region is `aut
 and the endpoint uses the official default-jurisdiction account hostname.
 Sign HS256 with the UTF-8 secret string, not decoded hex. Bind account, issuer,
 audience and bucket; fix TTL to 900 seconds, prefix to `operations-recovery/v1/`,
-and actions to ListObjectsV2/HeadObject/GetObject/PutObject. Child secret is
+and actions to ListObjectsV2/HeadObject/GetObject/PutObject. Do not also include
+`scope`: live R2 rejected that vendor-example combination with InvalidArgument,
+while the same locally signed payload with actions alone was accepted. Child secret is
 SHA-256(compact JWT); session token is base64(`jwt/` + compact JWT).
 The adapter never returns the parent secret. Re-sign for each publication/retry.
 Local decoding checks the contract; only R2 authenticates/enforces the token.
@@ -329,7 +331,10 @@ unavailable; or local claim validation is described as actual R2 enforcement.
 checks actual botocore presigned session-token/SigV4 fields, renewal, unchanged
 parent and rejection before S3. The native Linux adapter/SDK proof uses the same
 module hashes, an exclusively owned synthetic file and inactive service. Live R2
-allow/deny tests remain a separate required acceptance step.
+separately verified immutable publication/readback/replay, HEAD/LIST and renewal,
+plus 403 rejection of deletion, out-of-prefix operations and an expired token.
+Keep the failed overall receipt when later cleanup requires separate recovery;
+link exact original hashes to the supplemental deletion/absence receipt.
 
 ### 7. Wrong vs Correct
 

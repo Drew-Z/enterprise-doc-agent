@@ -53,7 +53,8 @@ def publication_credentials(parent, *, now=None):
         "iss": parent["access"],
         "aud": authority,
         "bucket": parent["bucket"],
-        "scope": "object-read-write",
+        # R2 rejects simultaneous scope + actions; the explicit list alone
+        # delegates the required operations without a broader preset.
         "actions": list(ACTIONS),
         "paths": {"prefixPaths": [PREFIX], "objectPaths": []},
         "iat": stamp,
@@ -100,8 +101,7 @@ def validate_session(value, *, now=None):
         _require(header == {"alg": "HS256", "typ": "JWT"})
         _require(
             isinstance(claims, dict)
-            and set(claims)
-            == {"sub", "iss", "aud", "bucket", "scope", "actions", "paths", "iat", "exp"}
+            and set(claims) == {"sub", "iss", "aud", "bucket", "actions", "paths", "iat", "exp"}
         )
         authority = urlsplit(value["endpoint"]).hostname
         _require(
@@ -109,7 +109,7 @@ def validate_session(value, *, now=None):
             and claims["iss"] == value["access"]
             and claims["aud"] == authority
         )
-        _require(claims["bucket"] == value["bucket"] and claims["scope"] == "object-read-write")
+        _require(claims["bucket"] == value["bucket"])
         _require(
             claims["actions"] == list(ACTIONS)
             and claims["paths"] == {"prefixPaths": [PREFIX], "objectPaths": []}

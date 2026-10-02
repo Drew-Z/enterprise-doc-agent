@@ -62,11 +62,31 @@ and the owned synthetic file was removed. There were no target network requests.
 Seventeen new credential tests plus the existing backup/documentation suite pass
 (81 tests). See the [credential evidence](../../.trellis/tasks/09-24-commercial-operations-acceptance/server-backup-credential-validation.json).
 
-Real R2 permission enforcement and parent issuance remain unverified. A read-only
-inspection found the existing operations token has `API Tokens Read` and
-`Workers R2 Storage Write`, but no `API Tokens Write`; it cannot be treated as a
-verified issuer. Do not install that broad token as the backup parent. No real
-credentials were issued or backup objects written by these checks.
+The account operator subsequently provisioned a dedicated parent through the local
+DPAPI input tool. Independent API readback confirmed one active bucket item-write
+grant for exactly the target bucket, with no account-wide grant. The original
+operations token was not installed as the parent.
+
+Live R2 rejected the vendor example's simultaneous `scope` and `actions` claims
+with `InvalidArgument / X-Amz-Security-Token`. An API-issued read-only token and
+its locally re-signed equivalent worked; adding `actions` reproduced the rejection,
+while action-only signing worked. The signer and consumer now use only the fixed
+four actions, without a broader `scope` preset. The regression failed before this
+correction and passed afterward.
+
+The corrected token passed real immutable publication/readback, HEAD/LIST,
+same-identity conditional replay and renewal. Delete and out-of-prefix read/write/
+listing were denied with 403; an expired session was also rejected. Only a
+247-byte encrypted synthetic payload and its marker were uploaded. Initial
+cleanup hit local proxy/TLS errors, so that overall attempt remains failed; a
+separate cleanup verified the original hashes, deleted exactly those two objects
+and confirmed absence. The first malformed-session attempt wrote no objects.
+Native Linux validation was repeated against the corrected module hashes.
+See the [live credential evidence](../../.trellis/tasks/09-24-commercial-operations-acceptance/server-backup-live-credential-validation.json).
+
+Parent credentials remain DPAPI-protected on the personal computer. Production
+installation, protected server provisioning, monitoring and off-computer backup
+continuity remain open; no sensitive database/document backup was uploaded.
 
 | Path | Purpose |
 | --- | --- |

@@ -33,7 +33,9 @@ def test_adapter_emits_verifiable_scoped_session_without_parent_secret(monkeypat
     )
     assert claims["sub"] == "a" * 32
     assert claims["bucket"] == PARENT["bucket"]
-    assert claims["scope"] == "object-read-write"
+    # Live R2 rejects simultaneous scope + actions with InvalidArgument even
+    # though the vendor example combines them. Keep only the precise actions.
+    assert "scope" not in claims
     assert set(claims["actions"]) == {"ListObjectsV2", "HeadObject", "GetObject", "PutObject"}
     assert claims["paths"] == {"prefixPaths": ["operations-recovery/v1/"], "objectPaths": []}
     assert claims["exp"] - claims["iat"] == 900
