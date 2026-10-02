@@ -126,3 +126,30 @@ private centralized artifacts, and explicit external acceptance limitations.
 - `tests/deployment/test_local_recovery_drill.py`
 - `tests/deployment/test_local_object_recovery.py`
 - `docs/ops/single-node-operations-acceptance.md`
+
+## Full local VM execution findings
+
+- Confirm hardware execution by booting the guest, not only by initializing the
+  accelerator. This Windows host required `whpx,kernel-irqchip=off`. Preserve the
+  failed default attempt and keep all QEMU helpers windowless.
+- Use a fresh overlay over the verified base image. Freeze the selected verified
+  snapshot at failure declaration; retain that snapshot and clock across repairs.
+  Identify advance media preparation separately from measured rebuild time.
+- Include implicit local-path BusyBox helpers in air-gap media. Running-system
+  image inventories can omit them. Verify actual PVC binding and CRI image aliases
+  before claiming services are ready; a helper script must exit nonzero on failed
+  readiness instead of merely printing `not_ready`.
+- Do not trust successful stdin transfer alone. A kubectl WebSocket transfer of a
+  24 MB archive returned success while only 32 KiB reached the container. Compare
+  exact byte count and SHA before pg_restore. A receiver such as `pg_restore --list`
+  may exit without consuming its input; spool and verify the archive first, and
+  generate the filtered archive list in the container without another bulk stdin.
+- When copying through a local guest's container root, resolve the current PID
+  from the exact owned, running container and refuse an existing destination.
+  Retain interrupted files and hashes; never replace source or restored data to
+  hide a mismatch. Keep all such staging bytes on the local recovery VM disk.
+- The 2026-10-02 second cold run observed RPO 189.325 seconds and 883.364 seconds
+  from fresh VM creation to historical API/Web verification, including repairs.
+  It does not prove unattended execution, cloud/public cutover, restored new
+  business generation, off-computer backups, or an on-call SLA. See
+  `docs/ops/local-cold-recovery.md` for the exact scope and preserved failures.

@@ -42,6 +42,12 @@ establish a lower end-to-end p95.
 - Some resource DELETE endpoints return a successful empty response. Inspect the
   HTTP contract and authoritative resource state before retrying a mutation;
   parsing failures do not prove that deletion failed.
+- A prepared-statement comparison must actually exceed the preparation threshold
+  for the identical SQL and parameter types, then confirm the session catalog.
+  Two executions with the default threshold of five do not exercise reuse.
+  Separate first preparation from later reuse and retain per-sample TCP counters.
+  Reduced warm constant-query latency is not proof of cold business admission
+  latency, large result transfer, or a reliable physical network path.
 
 ## Proven Examples
 
