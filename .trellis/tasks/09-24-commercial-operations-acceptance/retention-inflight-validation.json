@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-10-02T22:25:09.919884+00:00",
+  "task_status": "in_progress",
+  "all_five_overall_gates_remain_open": true,
+  "deployed_version": "v0.1.45-rc.17",
+  "deployed_source": "c6493d90c7521c8fa595b17897ae0d4feb1cb568",
+  "retention": {
+    "historical_ciphertexts_actually_restored": 40,
+    "failed": 0,
+    "new_restore_containers_removed": 80,
+    "trusted_actual_restore_proofs": 42,
+    "protected_snapshots": 5,
+    "catalog_sha256": "c121029d1a989403c39f97db8c9a2600cc18d9d432cdfc1fb85d3440093a2cc2",
+    "plan_sha256": "b4b7ad75f006783785ecdcd9056f6647ba62ba1a2f212ab1d5818014d248a32e",
+    "planned_candidate_snapshots": 39,
+    "planned_candidate_keys": 78,
+    "candidate_bytes": 1111313965,
+    "bytes_at_inventory": 2908264933,
+    "max_bytes": 3221225472,
+    "remote_history_deleted": 0,
+    "explicit_cleanup_approval_received": false,
+    "executor_sha256": "cb77a0321944aacb138c5fecae588fae8bb6415cae4af58784767d0b87e71f61",
+    "executor_offline_guard_tests": 17,
+    "initial_read_timeout_and_truncated_stream_failures_preserved": true,
+    "sustainable_retention_completed": false,
+    "final_read_only_preflight_completed": true,
+    "final_remote_identity_checks": 39,
+    "ciphertext_identity_method": "Actual restore + local SHA256 and MD5 bound to current R2 conditional HEAD ETag/size; full marker SHA256",
+    "current_prefix_bytes": 3193831791,
+    "next_publication_waiting_for_space": true,
+    "waiting_error": "RemoteBudgetExceeded",
+    "backup_service_active": true,
+    "backup_service_restarts": 0,
+    "windows_queue_and_backup_tasks_enabled": true
+  },
+  "inflight_expiry": {
+    "source_snapshot": "snapshot-20261002-204721-0c726493f17e",
+    "tables": 56,
+    "rows": 82658,
+    "initial_fingerprints_match": true,
+    "unrelated_rows_across_all_tables_unchanged": true,
+    "job_before": "running",
+    "operation_before": "queued",
+    "operation_after": "expired",
+    "old_lease_attempt_after": "abandoned",
+    "recovery_attempt_after": "permanent_failed",
+    "reserved_before": 1,
+    "reserved_after": 0,
+    "used_before": 0,
+    "used_after": 0,
+    "release_events": 1,
+    "provider_calls": 0,
+    "old_worker_settlement_rejected": true,
+    "repeat_polls_without_additional_release_or_settlement": 3,
+    "clock_rewound": false,
+    "elapsed_seconds": 12.35899999999674,
+    "whole_machine_rto": false,
+    "within_deadline_resumption_verified": false,
+    "new_agent_mcp_recovery_verified": false,
+    "verifier_status_and_expected_audit_counter_scope_failures_preserved": 2
+  },
+  "mail": {
+    "previous_analytics_zone_was_wrong": true,
+    "actual_sender_zone_analytics_empty": true,
+    "matching_suppression_records": 0,
+    "sending_settings_read_http_status": 401,
+    "spf_and_dkim_dns_records_present": true,
+    "smtp_root_cause_verified": false,
+    "new_messages_sent": 0,
+    "notification_delivery_proven": false
+  },
+  "evidence": {
+    "batch-result.json": {
+      "sha256": "3bb7f538ca4678c24e1eed2b2f4e13d45506b32124382a3f64679f44965a3a2f"
+    },
+    "verified-catalog.json": {
+      "sha256": "c121029d1a989403c39f97db8c9a2600cc18d9d432cdfc1fb85d3440093a2cc2"
+    },
+    "remote-retention-plan.json": {
+      "sha256": "223443ca9775921b345878472505d8be70814569d46875a94dea47290477a761"
+    },
+    "inflight-expiry-v3-result.json": {
+      "sha256": "ed81f1b0f5fd8ca8709b2dccc77a3bae45b1d6dd1b781770fb031c5a23479d14"
+    },
+    "email-sender-zone-diagnosis.json": {
+      "sha256": "226f069844707b43a13cfef940b4f7e9d0bea64147d1f9f5c90d0d5b7466893e"
+    },
+    "email-sending-settings-readback.json": {
+      "sha256": "dce537d6f2cf26c6b2816051356538facdd2a44e889235b8bbb58fbcd2067751"
+    },
+    "email-sender-dns-readback.json": {
+      "sha256": "f60f5bc0ece547be3fe3f727b086874f4c9c54a10d87a21e23bcf709e1fafa4c"
+    },
+    "cleanup-preflight-v4.jsonl": {
+      "sha256": "c718c368e8db99f1d1429812ec133778214d92a84cb752d434688ea249087729"
+    }
+  }
+}
