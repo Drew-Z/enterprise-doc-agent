@@ -48,6 +48,15 @@ establish a lower end-to-end p95.
   Separate first preparation from later reuse and retain per-sample TCP counters.
   Reduced warm constant-query latency is not proof of cold business admission
   latency, large result transfer, or a reliable physical network path.
+- Reproduce the application's transaction boundaries. Psycopg clears prepared
+  names and execution counters on rollback, including routine read-session close.
+  Check actual cache state after returning connections to the pool; a long
+  constant-query transaction does not represent successive authenticated requests.
+- If successful reads commit to preserve cached SQL, require database-enforced
+  read-only mode before the first query, retain rollback on exceptions and verify
+  the pool restores ordinary write transactions. Never enable global autocommit
+  or silently commit arbitrary sessions based only on an empty ORM dirty set.
+  Include authentication reads using the same pool in the validation.
 
 ## Proven Examples
 

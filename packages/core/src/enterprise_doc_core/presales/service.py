@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from enterprise_doc_core.audit import append_audit_event
 from enterprise_doc_core.billing import EntitlementUsageService
 from enterprise_doc_core.context import PrincipalContext, get_request_context
+from enterprise_doc_core.db import read_only_session
 from enterprise_doc_core.demo.limits import check_packet
 from enterprise_doc_core.demo.settings import DemoError
 from enterprise_doc_core.presales.access import (
@@ -182,7 +183,7 @@ class PresalesService:
             return result
 
     async def get(self, principal: PrincipalContext, packet_id: UUID) -> PacketView:
-        async with self.session_factory() as session:
+        async with read_only_session(self.session_factory) as session:
             packet = await load_packet(session, principal, packet_id)
             # One statement keeps draft/revision and their histories in the same
             # MVCC snapshot when a generation or review commits during this read.
