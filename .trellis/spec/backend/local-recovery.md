@@ -229,3 +229,23 @@ private centralized artifacts, and explicit external acceptance limitations.
   continuity while the personal computer is offline. The latest actual data
   restore verified 56 tables / 82,705 rows and 1,669 objects; its 21.047 seconds
   remains a database/object drill, not whole-machine RTO.
+
+## Tracked server operations package
+
+- The promoted implementation is `scripts/server_backup`; retain the original
+  private sources and execution evidence. Compare generated SQL and query ASTs
+  when formatting/moving capture code, then rerun actual age authentication tests.
+- Production entry uses `--require-production-config`. Reject unknown/test
+  options, arbitrary credential commands, a changed namespace/path/prefix, and
+  an unapproved transport shape. Read protected regular root-owned JSON files
+  without symlinks or group/world permissions. Never log credential-adapter stdout.
+- Package preparation pins each module and the Linux age ELF by size/SHA, and
+  binds configuration to that inventory. First installation refuses an existing
+  root or unit and stages without credentials or startup. Preserve partial
+  failures; do not silently replace them. Rollback checks the exact owned unit
+  hash before stopping it and retains all files/backups.
+- The actual native staging proof uses production paths in the owned local VM,
+  a synthetic target and no capture. systemd syntax, strict configuration,
+  credential-file permission rejection, installed hashes and disabled rollback
+  passed. It does not prove production credentials, provider connectivity,
+  off-computer continuity or a trusted restore/protection catalog.
