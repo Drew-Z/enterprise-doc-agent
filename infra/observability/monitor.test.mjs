@@ -138,7 +138,7 @@ test('concurrent senders claim a notification once and use only fixed recipient 
   assert.equal(await deliverNotification(env, event.id, () => now), false);
 });
 
-for (const failure of ['exception', 'timeout']) {
+for (const failure of ['exception', 'timeout', 'quota', 'invalid_receipt', 'untrusted_code']) {
   test(`send ${failure} stays unknown and cannot be automatically retried`, async (t) => {
     const db = await database(t);
     const event = await incident(db);
@@ -146,6 +146,9 @@ for (const failure of ['exception', 'timeout']) {
     const env = mailEnv(db, async () => {
       calls++;
       if (failure === 'exception') throw new Error('PRIVATE_MAIL_ERROR');
+      if (failure === 'quota') throw Object.assign(new Error('PRIVATE_MAIL_ERROR'), { code: 'E_DAILY_LIMIT_EXCEEDED' });
+      if (failure === 'untrusted_code') throw Object.assign(new Error('PRIVATE_MAIL_ERROR'), { code: 'PRIVATE_DIAGNOSTIC' });
+      if (failure === 'invalid_receipt') return undefined;
       return new Promise(() => {});
     });
     await deliverNotification(env, event.id, () => now, 10);
@@ -154,6 +157,11 @@ for (const failure of ['exception', 'timeout']) {
     const saved = await db.prepare('SELECT * FROM notification_events').first();
     assert.equal(saved.delivery_status, 'unknown');
     assert.equal(JSON.stringify(saved).includes('PRIVATE_MAIL_ERROR'), false);
+    const diagnostic = await db.prepare('SELECT code FROM notification_diagnostics WHERE event_id = ?').bind(event.id).first();
+    assert.equal(diagnostic.code, {
+      exception: 'provider_error', timeout: 'timeout', quota: 'E_DAILY_LIMIT_EXCEEDED',
+      invalid_receipt: 'invalid_receipt', untrusted_code: 'provider_error',
+    }[failure]);
   });
 }
 

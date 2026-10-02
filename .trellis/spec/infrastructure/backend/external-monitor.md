@@ -28,6 +28,17 @@ requires a provider message ID, but remains distinct from inbox receipt. `observ
 records suppressed events. Fixed environment addresses must match both binding
 allowlists. No arbitrary-recipient or HTTP administration API.
 
+Apply the additive `notification_diagnostics` table before deploying delivery
+diagnostics. Failed attempts retain `unknown`; a separate record stores only a
+documented Email Service error code, `timeout`, `invalid_receipt`, or
+`provider_error`. Commit final event status and diagnostic in the same D1 batch.
+Never persist raw exceptions, arbitrary provider codes or recipient details, and
+never backfill a cause for old unknown events without evidence. A provider analytics
+query returning no events does not prove that an attempted message was delivered
+or never sent. Preserve failed deployment receipts; compare returned D1 rows rather
+than changing query metadata. On Windows, explicitly pass the existing system proxy
+to the Wrangler child if Node does not inherit it; preserve TLS verification.
+
 ## Failure and acceptance boundaries
 
 | Condition | Result |

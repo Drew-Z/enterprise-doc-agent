@@ -20,6 +20,11 @@ CREATE TABLE IF NOT EXISTS notification_events (
   UNIQUE (monitor_key, tick)
 );
 CREATE INDEX IF NOT EXISTS notification_pending ON notification_events (monitor_key, delivery_status, tick);
+CREATE TABLE IF NOT EXISTS notification_diagnostics (
+  event_id TEXT PRIMARY KEY REFERENCES notification_events(id),
+  code TEXT NOT NULL,
+  recorded_at INTEGER NOT NULL
+);
 CREATE TABLE IF NOT EXISTS external_heartbeats (
   source_key TEXT PRIMARY KEY,
   source_at INTEGER NOT NULL CHECK (source_at >= 0),

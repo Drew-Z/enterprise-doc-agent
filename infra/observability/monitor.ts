@@ -161,6 +161,17 @@ export async function recordObservation(db: D1Database, sample: Observation, mod
 
 type DeliveryEnv = Pick<Env, 'MONITOR_DB' | 'MAIL' | 'MAIL_FROM' | 'MAIL_TO' | 'MODE' | 'MONITOR_KEY' | 'TARGET_URL'>;
 
+// Only documented provider codes may leave the binding boundary. Error messages,
+// arbitrary codes and recipient details never enter the diagnostic record.
+const MAIL_ERROR_CODES = new Set([
+  'E_VALIDATION_ERROR', 'E_FIELD_MISSING', 'E_TOO_MANY_RECIPIENTS', 'E_TOO_MANY_ATTACHMENTS',
+  'E_SENDER_NOT_VERIFIED', 'E_RECIPIENT_NOT_ALLOWED', 'E_RECIPIENT_SUPPRESSED',
+  'E_SENDER_DOMAIN_NOT_AVAILABLE', 'E_CONTENT_TOO_LARGE', 'E_DELIVERY_FAILED',
+  'E_RATE_LIMIT_EXCEEDED', 'E_DAILY_LIMIT_EXCEEDED', 'E_INTERNAL_SERVER_ERROR',
+  'E_HEADER_NOT_ALLOWED', 'E_HEADER_USE_API_FIELD', 'E_HEADER_VALUE_INVALID',
+  'E_HEADER_VALUE_TOO_LONG', 'E_HEADER_NAME_INVALID', 'E_HEADERS_TOO_LARGE', 'E_HEADERS_TOO_MANY',
+]);
+
 export async function deliverNotification(
   env: DeliveryEnv, id: string, now: () => number, timeoutMs = 10_000,
 ): Promise<boolean> {
@@ -180,6 +191,8 @@ export async function deliverNotification(
   const drill = event.monitor_key.startsWith('drill-');
   let accepted = false;
   let messageId: string | null = null;
+  let diagnostic = 'invalid_receipt';
+  let timedOut = false;
   try {
     const receipt = await deadline(env.MAIL.send({
       from: env.MAIL_FROM, to: env.MAIL_TO,
@@ -191,19 +204,24 @@ export async function deliverNotification(
         'Failure threshold: 3 consecutive minutes. Recovery threshold: 2 consecutive minutes.',
         'Check the service and the operations runbook. This receipt is not proof of inbox delivery.',
       ].join('\n'),
-    }), timeoutMs);
-    if (typeof receipt.messageId === 'string' && /^[\x21-\x7e]{1,200}$/.test(receipt.messageId)) {
+    }), timeoutMs, () => { timedOut = true; });
+    if (receipt && typeof receipt.messageId === 'string' && /^[\x21-\x7e]{1,200}$/.test(receipt.messageId)) {
       accepted = true;
       messageId = receipt.messageId;
     }
-  } catch {
+  } catch (error) {
     // Rejection, timeout and unknown provider result all stay visible without
     // logging raw provider errors or retrying a possibly delivered message.
+    diagnostic = timedOut ? 'timeout' : object(error) && typeof error.code === 'string' && MAIL_ERROR_CODES.has(error.code)
+      ? error.code : 'provider_error';
   }
-  await env.MONITOR_DB.prepare(`UPDATE notification_events
+  const updates = [env.MONITOR_DB.prepare(`UPDATE notification_events
     SET delivery_status = ?, completed_at = ?, provider_message_id = ?
     WHERE id = ? AND delivery_status = 'attempting'`)
-    .bind(accepted ? 'accepted' : 'unknown', now(), messageId, event.id).run();
+    .bind(accepted ? 'accepted' : 'unknown', now(), messageId, event.id)];
+  if (!accepted) updates.push(env.MONITOR_DB.prepare(`INSERT INTO notification_diagnostics
+    (event_id, code, recorded_at) VALUES (?, ?, ?) ON CONFLICT DO NOTHING`).bind(event.id, diagnostic, now()));
+  await env.MONITOR_DB.batch(updates);
   return accepted;
 }
 

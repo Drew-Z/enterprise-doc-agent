@@ -191,7 +191,7 @@ of unit/config/installation/runtime state. It preserves all attempt rows and onl
 migrates the package-bound configuration fingerprint while the service is stopped.
 
 Cold object capture initially exceeded its deadline and discarded verified cache
-entries. Capture now uses eight bounded source readers, a 180-second object budget,
+entries. Capture now uses 32 bounded source readers, a 180-second object budget,
 and immediately caches each size/SHA-verified object in memory. Failed captures can
 reuse those bytes; changed references and poisoned cache entries are revalidated.
 No complete inventory is returned until every object passes. Native cold capture
@@ -231,3 +231,18 @@ reached 441.438 seconds. The full-window freshness gate therefore remains failed
 Remaining work includes cold-start freshness, personal-computer-off continuity,
 queue collector migration, catalog maintenance and explicitly approved retention. The
 finite cap deliberately stops new uploads when full; it is not indefinite retention.
+
+The subsequent 32-reader package completed all 1,668 cold object reads in a
+47.849-second capture and published the first snapshot at age 177.471 seconds.
+Its 21-minute observation produced nine successful backups, no new failed attempts
+and no restarts. New-publication peak age was 291.867 seconds. The preceding
+snapshot-to-first-new-publication gap was 395.649 seconds, including the stopped
+upgrade, so uninterrupted 300-second freshness still does not pass. The original
+failed observations remain. The service used 968,837,815 of 3,221,225,472 remote
+bytes at this observation; retention remains unresolved.
+
+The current tick finished after a scoped SIGTERM; no forced kill or pending-work
+discard was used. Four consistent stopped-state rollback files and 29 historical
+attempt rows were retained. The Cloudflare monitor now records safe failure codes
+for future mail attempts without resending old unknown events. No actual new
+provider refusal code or inbox delivery has yet been observed for that revision.

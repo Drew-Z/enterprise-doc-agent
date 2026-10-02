@@ -17,6 +17,11 @@ restricted Email Service binding.
 - `accepted` means the binding returned a message identifier. It does **not** mean
   the user received the email. `unknown` and an abandoned `attempting` are
   indeterminate and never automatically retried. Preserve these records for review.
+- Failed attempts also write a bounded code to `notification_diagnostics`: a
+  documented provider error, `timeout`, `invalid_receipt`, or `provider_error`.
+  Raw exceptions and arbitrary error codes are discarded. Apply this additive
+  table from `schema.sql` before updating an existing monitor. Original unknown
+  events remain unchanged and are not replayed by this upgrade.
 - No HTTP administration or arbitrary email API. `workers_dev` and preview URLs are
   disabled; the HTTP handler returns 404. No service credentials are needed.
 

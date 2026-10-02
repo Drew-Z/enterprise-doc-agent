@@ -347,7 +347,9 @@ verify provenance and enforce the real R2 boundary before production activation.
 - Keep individually size/SHA-verified object bytes in bounded memory even when a
   later GET or deadline fails. Prune against the current validated references and
   revalidate every reused entry; never publish a partial inventory. Source reads
-  use eight workers and retain the 180-second hard object deadline.
+  use 32 workers with a matching connection pool and retain the 180-second object
+  deadline. The production cold run read all 1,668 objects in a 47.849-second total
+  capture; larger concurrency does not expand object count or byte limits.
 - Large conditional R2 PUTs can lose their response or surface a prior-key 412 as
   TLS EOF. Resolve SDK connection failures and HTTP 5xx through full readback of
   the same key; only matching length/SHA permits the completion marker. Missing,
@@ -368,3 +370,11 @@ verify provenance and enforce the real R2 boundary before production activation.
   its cron semantics. Preserve any failed verifier receipt and perform a separate
   readback of exact bindings, destinations, cron values and deployment identity;
   do not redeploy solely to fix the verifier.
+- Freshness across an upgrade includes the predecessor snapshot until the first
+  new completion. Nine new publications stayed within 291.867 seconds, but the
+  old-to-new transition reached 395.649 seconds. Keep both measurements; a window
+  that starts with the new snapshots alone cannot establish uninterrupted RPO.
+- Graceful backup upgrades signal only the verified unit's main process and let
+  its current tick finish before disabling. Refuse staging with sealed/capturing
+  work. The ordinary 30-second systemd stop budget can interrupt a long PUT;
+  never erase pending work to satisfy an upgrade precondition.
