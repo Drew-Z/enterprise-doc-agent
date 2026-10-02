@@ -86,6 +86,37 @@ Keep original failed observations and suppressed events when enabling delivery.
 Test fresh and stale operational records through the shipped workerd handler and
 real D1, plus the notification state machine with controlled clock/mail boundaries.
 
+## Optional R2 upload receipts
+
+`probeRemoteBackup` reads the dedicated `BACKUP_BUCKET` only when
+`BACKUP_REMOTE_PREFIX=operations-recovery/v1/`; the committed template disables
+this input and uses a placeholder bucket. The code is a reader; a normal R2
+binding is not a platform read-only authorization. No service/admin credential is
+exported to a backup host by this design.
+
+Bound the probe to 10 seconds, five list pages / 4,096 keys, one newest completion
+marker of at most 4 KiB and one ciphertext head. Cancel a stalled body reader;
+after a timed-out list/get returns, do not issue later requests. Use the single
+publisher's UTC capture-start keys to select the newest capture, then validate
+the source timestamp inside its marker. New upload time cannot refresh old data.
+Keep the original 300-second source age and 15-second clock-skew bounds.
+
+Only paired snapshot ciphertext/completion keys are allowed. Missing, incomplete,
+changed, over-budget or malformed state is unhealthy. The capacity threshold
+reserves 64 MiB plus 4 KiB for the next maximum-size snapshot; this is an early
+alert, distinct from the server's exact additional-byte admission check.
+
+A marker comes from the trusted publisher that performed full remote readback.
+Checking marker shape, ciphertext size/ETag and freshness does not independently
+authenticate/decrypt the ciphertext or prove actual restoration. Do not substitute
+it for the trusted restore-heartbeat/certificate. Keep the two claims separate.
+Both old heartbeat and new bucket inputs remain required if both are configured.
+
+Exercise the actual shipped Worker with local workerd/D1/R2. Synthetic bucket
+objects and controlled email test stale-source and failure/recovery transitions;
+they are not production backup uploads or recipient delivery evidence. Preserve
+the existing three/two streak, duplicate-tick and unknown-mail-attempt behavior.
+
 ## Proven Examples
 
 - `infra/observability/monitor.ts`

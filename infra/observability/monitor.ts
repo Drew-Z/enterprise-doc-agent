@@ -35,10 +35,14 @@ async function deadline<T>(operation: Promise<T>, milliseconds: number, abort?: 
   }
 }
 
-async function responseBytes(response: Response): Promise<Uint8Array> {
+async function responseBytes(
+  response: Response, maximum = MAX_RESPONSE_BYTES,
+  onCancel?: (cancel: () => void) => void,
+): Promise<Uint8Array> {
   if (!response.body) throw new Error('invalid_readiness');
   const reader = response.body.getReader();
-  const buffer = new Uint8Array(MAX_RESPONSE_BYTES);
+  onCancel?.(() => { void reader.cancel().catch(() => {}); });
+  const buffer = new Uint8Array(maximum);
   let size = 0;
   try {
     while (true) {
@@ -46,7 +50,7 @@ async function responseBytes(response: Response): Promise<Uint8Array> {
       if (chunk.done) return buffer.subarray(0, size);
       const value: unknown = chunk.value;
       if (!(value instanceof Uint8Array)) throw new Error('invalid_readiness');
-      if (size + value.byteLength > MAX_RESPONSE_BYTES) throw new Error('response_too_large');
+      if (size + value.byteLength > maximum) throw new Error('response_too_large');
       buffer.set(value, size);
       size += value.byteLength;
     }
@@ -205,7 +209,127 @@ export async function deliverNotification(
 
 type ScheduleResult = { status: 'ignored' | 'sampled'; healthy?: boolean; eventId?: string };
 
-async function operationalProbe(env: Env, now: number): Promise<Probe> {
+const BACKUP_PREFIX = 'operations-recovery/v1/';
+const MAX_BACKUP_BYTES = 3 * 1024 ** 3;
+const MAX_SNAPSHOT_BYTES = 64 * 1024 ** 2;
+
+// This checks the trusted publisher's upload receipt and source freshness.
+// Actual decryption/restore remains the separate trusted restore-heartbeat input.
+export async function probeRemoteBackup(
+  bucket: Pick<R2Bucket, 'list' | 'get' | 'head'>,
+  options: { now: () => number; maxBytes: number; timeoutMs?: number },
+): Promise<Probe> {
+  const timeoutMs = options.timeoutMs ?? 10_000;
+  if (!Number.isSafeInteger(options.maxBytes) || options.maxBytes < 1 || options.maxBytes > MAX_BACKUP_BYTES ||
+      !Number.isFinite(timeoutMs) || timeoutMs <= 0 || timeoutMs > 10_000) {
+    throw new Error('invalid_backup_monitor_configuration');
+  }
+  const result = (reason: string, checkedAt: number | null = null): Probe =>
+    ({ healthy: reason === 'backup_upload_fresh', reason, checkedAt });
+  let expired = false;
+  let cancelBody: (() => void) | undefined;
+  const checkDeadline = () => { if (expired) throw new Error('deadline_exceeded'); };
+  try {
+    return await deadline((async () => {
+      const objects = new Map<string, R2Object>();
+      const cursors = new Set<string>();
+      let cursor: string | undefined;
+      let bytes = 0;
+      let completeInventory = false;
+      for (let page = 0; page < 5; page++) {
+        checkDeadline();
+        const listing = await bucket.list({ prefix: BACKUP_PREFIX, limit: 1000, cursor });
+        checkDeadline();
+        if (!Array.isArray(listing.objects) || listing.objects.length > 1000) return result('backup_remote_invalid');
+        for (const item of listing.objects) {
+          if (!/^operations-recovery\/v1\/snapshot-\d{8}-\d{6}-[a-f0-9]{12}\.(tar\.age|complete\.json)$/.test(item.key) ||
+              objects.has(item.key) || !Number.isSafeInteger(item.size) || item.size < 1 ||
+              typeof item.etag !== 'string' || !item.etag || item.etag.length > 256 ||
+              !Number.isFinite(item.uploaded?.getTime()) || item.uploaded.getTime() < 0 ||
+              item.uploaded.getTime() > options.now() + 15_000) return result('backup_remote_invalid');
+          if (item.size > (item.key.endsWith('.tar.age') ? MAX_SNAPSHOT_BYTES : 4096)) {
+            return result('backup_remote_invalid');
+          }
+          objects.set(item.key, item);
+          bytes += item.size;
+          if (objects.size > 4096) return result('backup_remote_inventory_limit');
+        }
+        if (!listing.truncated) { completeInventory = true; break; }
+        cursor = listing.cursor;
+        if (typeof cursor !== 'string' || !cursor || cursor.length > 8192 || cursors.has(cursor)) {
+          return result('backup_remote_invalid');
+        }
+        cursors.add(cursor);
+      }
+      if (!completeInventory) return result('backup_remote_inventory_limit');
+      if (!objects.size) return result('backup_remote_missing');
+      // Reserve one maximum-size next snapshot, including its completion marker.
+      if (bytes + MAX_SNAPSHOT_BYTES + 4096 > options.maxBytes) return result('backup_remote_capacity_low');
+      const markers: R2Object[] = [];
+      for (const item of objects.values()) {
+        const marker = item.key.endsWith('.complete.json');
+        const counterpart = marker ? item.key.replace(/\.complete\.json$/, '.tar.age')
+          : item.key.replace(/\.tar\.age$/, '.complete.json');
+        if (!objects.has(counterpart)) return result('backup_remote_upload_pending');
+        if (marker) markers.push(item);
+      }
+      // The single server writer names captures by UTC start. Inspect the newest
+      // capture's marker; a delayed upload must not refresh its source timestamp.
+      let latest: { capturedAt: number; key: string; bytes: number } | undefined;
+      markers.sort((a, b) => a.key < b.key ? 1 : a.key > b.key ? -1 : 0);
+      for (const listed of markers.slice(0, 1)) {
+        checkDeadline();
+        const marker = await bucket.get(listed.key);
+        checkDeadline();
+        if (!marker || marker.size !== listed.size || marker.etag !== listed.etag) {
+          await marker?.body.cancel();
+          return result('backup_remote_changed');
+        }
+        const raw = await responseBytes(new Response(marker.body), 4096, cancel => { cancelBody = cancel; });
+        checkDeadline();
+        if (raw.byteLength !== listed.size) return result('backup_remote_invalid');
+        let value: unknown;
+        try { value = JSON.parse(new TextDecoder('utf-8', { fatal: true, ignoreBOM: false }).decode(raw)); }
+        catch { return result('backup_remote_invalid'); }
+        const sid = listed.key.slice(BACKUP_PREFIX.length, -'.complete.json'.length);
+        const ciphertextKey = BACKUP_PREFIX + sid + '.tar.age';
+        if (!object(value) || value.schema_version !== 1 || value.snapshot_id !== sid ||
+            value.status !== 'ciphertext_upload_readback_verified' || value.ciphertext_key !== ciphertextKey ||
+            typeof value.ciphertext_sha256 !== 'string' || !/^[a-f0-9]{64}$/.test(value.ciphertext_sha256) ||
+            !Number.isSafeInteger(value.ciphertext_bytes) || Number(value.ciphertext_bytes) < 32 ||
+            value.ciphertext_bytes !== objects.get(ciphertextKey)?.size ||
+            typeof value.captured_at !== 'string' ||
+            !/^\d{4}-\d{2}-\d{2}T([01]\d|2[0-3]):[0-5]\d:[0-5]\d(\.\d{1,6})?(Z|\+00:00)$/.test(value.captured_at)) {
+          return result('backup_remote_invalid');
+        }
+        const capturedAt = Date.parse(value.captured_at);
+        const calendar = new Date(value.captured_at.slice(0, 10) + 'T00:00:00Z');
+        if (!Number.isSafeInteger(capturedAt) || capturedAt < 0 || !Number.isFinite(calendar.getTime()) ||
+            calendar.toISOString().slice(0, 10) !== value.captured_at.slice(0, 10) ||
+            capturedAt > options.now() + 15_000 || capturedAt > listed.uploaded.getTime() + 15_000) {
+          return result('backup_remote_invalid');
+        }
+        if (!latest || capturedAt > latest.capturedAt) {
+          latest = { capturedAt, key: ciphertextKey, bytes: Number(value.ciphertext_bytes) };
+        }
+      }
+      if (!latest) return result('backup_remote_missing');
+      if (options.now() - latest.capturedAt > 300_000) return result('backup_remote_stale', latest.capturedAt);
+      checkDeadline();
+      const ciphertext = await bucket.head(latest.key);
+      checkDeadline();
+      if (!ciphertext || ciphertext.size !== latest.bytes || ciphertext.etag !== objects.get(latest.key)?.etag) {
+        return result('backup_remote_changed');
+      }
+      return result('backup_upload_fresh', latest.capturedAt);
+    })(), timeoutMs, () => { expired = true; cancelBody?.(); });
+  } catch (error) {
+    return result(expired ? 'backup_remote_timeout' : error instanceof Error && error.message === 'response_too_large'
+      ? 'backup_remote_invalid' : 'backup_remote_unavailable');
+  }
+}
+
+async function operationalProbe(env: Env, now: number, clock: () => number): Promise<Probe> {
   for (const [label, key, maxAge] of [
     ['queue', env.QUEUE_HEARTBEAT_KEY, 120_000],
     ['backup', env.BACKUP_HEARTBEAT_KEY, 300_000],
@@ -223,6 +347,12 @@ async function operationalProbe(env: Env, now: number): Promise<Probe> {
     if (now - row.source_at > maxAge || now - row.observed_at > maxAge) return failed('stale');
     if (row.healthy !== 1) return failed('unhealthy');
     if (label === 'backup' && !/^[a-f0-9]{64}$/.test(row.artifact_sha256 ?? '')) return failed('unverified');
+  }
+  if (env.BACKUP_REMOTE_PREFIX) {
+    const upload = await probeRemoteBackup(env.BACKUP_BUCKET, {
+      now: clock, maxBytes: Number(env.BACKUP_REMOTE_MAX_BYTES),
+    });
+    if (!upload.healthy) return upload;
   }
   if (env.WATCH_MONITOR_KEY) {
     const row = await env.MONITOR_DB.prepare('SELECT observed_at FROM monitor_state WHERE monitor_key = ?')
@@ -249,7 +379,10 @@ export async function runScheduled(env: Env, scheduledTime: number, boundary: Pr
       [env.QUEUE_HEARTBEAT_KEY, env.BACKUP_HEARTBEAT_KEY, env.WATCH_MONITOR_KEY]
         .some(key => key && !/^[a-z][a-z0-9-]{1,60}$/.test(key)) ||
       (env.WATCH_MONITOR_KEY && env.WATCH_MONITOR_KEY === env.MONITOR_KEY) ||
-      (env.CHECK_READINESS === 'false' && !env.WATCH_MONITOR_KEY)) {
+      (env.CHECK_READINESS === 'false' && !env.WATCH_MONITOR_KEY) ||
+      (env.BACKUP_REMOTE_PREFIX && (env.BACKUP_REMOTE_PREFIX !== BACKUP_PREFIX || !env.BACKUP_BUCKET ||
+        !/^\d+$/.test(env.BACKUP_REMOTE_MAX_BYTES) || Number(env.BACKUP_REMOTE_MAX_BYTES) < 1 ||
+        Number(env.BACKUP_REMOTE_MAX_BYTES) > MAX_BACKUP_BYTES))) {
     throw new Error('invalid_operational_monitor_configuration');
   }
   if (!validTick(tick, boundary.now())) return { status: 'ignored' };
@@ -271,7 +404,7 @@ export async function runScheduled(env: Env, scheduledTime: number, boundary: Pr
     probe = env.CHECK_READINESS === 'false'
       ? { healthy: true, reason: 'ready', checkedAt: null }
       : await probeReadiness(env.TARGET_URL, boundary);
-    if (probe.healthy) probe = await operationalProbe(env, boundary.now());
+    if (probe.healthy) probe = await operationalProbe(env, boundary.now(), boundary.now);
   }
   const observedAt = boundary.now();
   if (!validTick(tick, observedAt)) return { status: 'ignored' };

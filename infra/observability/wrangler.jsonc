@@ -16,10 +16,16 @@
     "CHECK_READINESS": "true",
     "QUEUE_HEARTBEAT_KEY": "",
     "BACKUP_HEARTBEAT_KEY": "",
+    "BACKUP_REMOTE_PREFIX": "",
+    "BACKUP_REMOTE_MAX_BYTES": "3221225472",
     "WATCH_MONITOR_KEY": "",
     "MAIL_FROM": "ops-alerts@example.com",
     "MAIL_TO": "operator@example.com"
   },
+  "r2_buckets": [{
+    "binding": "BACKUP_BUCKET",
+    "bucket_name": "replace-with-approved-backup-bucket"
+  }],
   "d1_databases": [{
     "binding": "MONITOR_DB",
     "database_name": "docagent-ops-monitor-state",

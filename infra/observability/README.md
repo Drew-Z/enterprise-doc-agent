@@ -90,6 +90,39 @@ All failures use the same three-failure/two-recovery state machine and delivery
 deduplication. A watchdog checks scheduling, not whether the other monitor reports
 healthy service.
 
+## Optional server-upload monitoring
+
+The template keeps `BACKUP_REMOTE_PREFIX` empty, so existing deployments retain
+their heartbeat behavior. Before enabling the new input, replace the placeholder
+`BACKUP_BUCKET` binding with the specifically approved backup bucket and set
+`BACKUP_REMOTE_PREFIX=operations-recovery/v1/`. Match `BACKUP_REMOTE_MAX_BYTES` to
+the server's cap (at most 3 GiB). The monitor code only lists/reads/heads objects;
+the bucket binding itself is not a platform-enforced read-only credential.
+
+The probe lists at most five pages / 4,096 keys, then reads the latest capture's
+completion marker (at most 4 KiB) and heads its ciphertext. Its total deadline is
+10 seconds, including the streamed marker body; a timed-out body reader is
+cancelled. Only the server's timestamped snapshot keys are accepted. Unknown keys,
+unpaired ciphertext/markers, changed objects, malformed receipts and source times
+older than 300 seconds fail the observation. A fresh upload of an old snapshot
+remains stale. Capacity alerts reserve space for one next maximum-size snapshot
+plus its marker, so they can fire before publication reaches the hard cap.
+
+This is **upload receipt and freshness monitoring**. The trusted publisher has
+already read back the ciphertext; this probe checks its marker, current object
+size/ETag and source time without decrypting or rehashing the complete ciphertext.
+It does not convert an `actual_restore_verified=false` marker into a restore pass.
+Keep the separate trusted restore evidence and protection catalog. Enabling this
+input does not automatically disable either existing heartbeat or stop Windows
+collectors. All configured inputs must pass; changing that selection belongs in
+the concrete production deployment plan.
+
+The candidate is exercised with real local Miniflare/workerd, D1 and R2, including
+stale-source rejection and one failure/recovery notification through the existing
+deduplication contract. Local tests use synthetic objects and controlled mail;
+they do not send mail, upload production backups, or prove production R2 access.
+Production configuration, activation and computer-offline evidence remain pending.
+
 ## Operational limits
 
 The two Workers share Cloudflare and D1; this is not coverage for an entire

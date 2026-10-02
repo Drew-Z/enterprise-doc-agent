@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { readFile } from 'node:fs/promises';
 import { Miniflare, convertV4MiniflareOptions } from 'miniflare';
 import ts from 'typescript';
-import { probeReadiness, recordObservation, deliverNotification, runScheduled } from './monitor.ts';
+import { probeReadiness, probeRemoteBackup, recordObservation, deliverNotification, runScheduled } from './monitor.ts';
 
 const now = Date.parse('2026-09-28T00:00:00Z');
 const target = 'https://agent.example.test/health/ready';
@@ -353,5 +353,167 @@ for (const stale of [false, true]) {
     assert.equal((await mf.dispatchFetch('http://localhost/cdn-cgi/local/scheduled')).status, 200);
     const state = await db.prepare('SELECT reason, successes, failures FROM monitor_state WHERE monitor_key = ?').bind('ops-runtime').first();
     assert.deepEqual(state, stale ? { reason: 'backup_stale', successes: 0, failures: 1 } : { reason: 'ready', successes: 1, failures: 0 });
+  });
+}
+
+const remotePrefix = 'operations-recovery/v1/';
+const remoteMaxBytes = 3 * 1024 ** 3;
+
+async function remoteBucket(t) {
+  const mf = new Miniflare(convertV4MiniflareOptions({
+    modules: true, compatibilityDate: '2026-09-26',
+    script: 'export default { fetch() { return new Response("test"); } };',
+    r2Buckets: { BACKUP_BUCKET: 'backup-test' },
+  }));
+  t.after(() => mf.dispose());
+  return mf.getR2Bucket('BACKUP_BUCKET');
+}
+
+async function seedRemote(bucket, capturedAt, nonce = 1, overrides = {}) {
+  const iso = new Date(capturedAt).toISOString();
+  const date = iso.slice(0, 10).replaceAll('-', '');
+  const time = iso.slice(11, 19).replaceAll(':', '');
+  const id = `snapshot-${date}-${time}-${nonce.toString(16).padStart(12, '0')}`;
+  const cipherKey = remotePrefix + id + '.tar.age';
+  const markerKey = remotePrefix + id + '.complete.json';
+  const marker = {
+    schema_version: 1, snapshot_id: id, captured_at: iso,
+    ciphertext_key: cipherKey, ciphertext_sha256: 'a'.repeat(64), ciphertext_bytes: 64,
+    status: 'ciphertext_upload_readback_verified', actual_restore_verified: false,
+    ...overrides,
+  };
+  // Synthetic storage fixture: upload-marker monitoring does not decrypt data.
+  await bucket.put(cipherKey, new Uint8Array(64));
+  await bucket.put(markerKey, JSON.stringify(marker));
+  return { marker, markerKey, cipherKey };
+}
+
+test('remote upload health uses real R2 objects and never asserts actual restoration', async (t) => {
+  const bucket = await remoteBucket(t);
+  const captured = Date.now() - 1000;
+  const fixture = await seedRemote(bucket, captured);
+  const result = await probeRemoteBackup(bucket, { now: Date.now, maxBytes: remoteMaxBytes });
+  assert.deepEqual(result, { healthy: true, reason: 'backup_upload_fresh', checkedAt: captured });
+  assert.equal((await (await bucket.get(fixture.markerKey)).json()).actual_restore_verified, false);
+});
+
+test('a just-uploaded old snapshot remains stale and cannot refresh its source age', async (t) => {
+  const bucket = await remoteBucket(t);
+  await seedRemote(bucket, Date.now() - 360_000);
+  const result = await probeRemoteBackup(bucket, { now: Date.now, maxBytes: remoteMaxBytes });
+  assert.equal(result.reason, 'backup_remote_stale');
+  assert.equal(result.healthy, false);
+});
+
+test('remote missing, incomplete, and capacity-limited backups fail without modifying R2', async (t) => {
+  const bucket = await remoteBucket(t);
+  assert.equal((await probeRemoteBackup(bucket, { now: Date.now, maxBytes: remoteMaxBytes })).reason, 'backup_remote_missing');
+  const fixture = await seedRemote(bucket, Date.now() - 1000);
+  const before = await bucket.list();
+  assert.equal((await probeRemoteBackup(bucket, { now: Date.now, maxBytes: 1000 })).reason, 'backup_remote_capacity_low');
+  assert.deepEqual((await bucket.list()).objects.map(x => x.etag), before.objects.map(x => x.etag));
+  await bucket.delete(fixture.markerKey);
+  assert.equal((await probeRemoteBackup(bucket, { now: Date.now, maxBytes: remoteMaxBytes })).reason, 'backup_remote_upload_pending');
+});
+
+for (const [label, override] of [
+  ['wrong identity', { snapshot_id: 'snapshot-other' }],
+  ['wrong object size', { ciphertext_bytes: 65 }],
+  ['bad digest', { ciphertext_sha256: 'not-a-digest' }],
+  ['invalid calendar', { captured_at: '2026-02-30T00:00:00Z' }],
+  ['future source', { captured_at: new Date(Date.now() + 86_400_000).toISOString() }],
+]) {
+  test(`remote monitor rejects ${label}`, async (t) => {
+    const bucket = await remoteBucket(t);
+    await seedRemote(bucket, Date.now() - 1000, 1, override);
+    assert.equal((await probeRemoteBackup(bucket, { now: Date.now, maxBytes: remoteMaxBytes })).reason, 'backup_remote_invalid');
+  });
+}
+
+test('object deletion after listing and a changing completion marker cannot be healthy', async (t) => {
+  const bucket = await remoteBucket(t);
+  await seedRemote(bucket, Date.now() - 1000);
+  const boundary = {
+    list: options => bucket.list(options), get: key => bucket.get(key), head: async () => null,
+  };
+  assert.equal((await probeRemoteBackup(boundary, { now: Date.now, maxBytes: remoteMaxBytes })).reason, 'backup_remote_changed');
+  boundary.get = async key => {
+    const original = await bucket.get(key);
+    return { ...original, etag: 'changed', body: original.body };
+  };
+  assert.equal((await probeRemoteBackup(boundary, { now: Date.now, maxBytes: remoteMaxBytes })).reason, 'backup_remote_changed');
+});
+
+test('remote pagination, request failure and stalled response are bounded and redacted', async (t) => {
+  const bucket = await remoteBucket(t);
+  await seedRemote(bucket, Date.now() - 1000);
+  const boundary = { list: options => bucket.list(options), get: key => bucket.get(key), head: key => bucket.head(key) };
+  boundary.list = async () => ({ objects: [], truncated: true, cursor: 'repeated' });
+  assert.equal((await probeRemoteBackup(boundary, { now: Date.now, maxBytes: remoteMaxBytes })).reason, 'backup_remote_invalid');
+  boundary.list = async () => { throw new Error('PRIVATE_R2_ERROR'); };
+  assert.deepEqual(await probeRemoteBackup(boundary, { now: Date.now, maxBytes: remoteMaxBytes }),
+    { healthy: false, reason: 'backup_remote_unavailable', checkedAt: null });
+  boundary.list = async () => new Promise(() => {});
+  assert.equal((await probeRemoteBackup(boundary, { now: Date.now, maxBytes: remoteMaxBytes, timeoutMs: 10 })).reason, 'backup_remote_timeout');
+});
+
+test('remote marker body timeout cancels its reader and prevents later object requests', async (t) => {
+  const bucket = await remoteBucket(t);
+  await seedRemote(bucket, Date.now() - 1000);
+  const listing = await bucket.list({ prefix: remotePrefix });
+  const metadata = listing.objects.find(item => item.key.endsWith('.complete.json'));
+  let cancelled = false;
+  let heads = 0;
+  const boundary = {
+    list: async () => listing,
+    get: async () => ({ ...metadata, body: new ReadableStream({ cancel() { cancelled = true; } }) }),
+    head: async () => { heads++; assert.fail('timed-out marker must not proceed to object head'); },
+  };
+  const result = await probeRemoteBackup(boundary, { now: Date.now, maxBytes: remoteMaxBytes, timeoutMs: 10 });
+  assert.equal(result.reason, 'backup_remote_timeout');
+  assert.equal(cancelled, true);
+  assert.equal(heads, 0);
+});
+
+test('R2 upload failures and recovery keep the existing incident and delivery deduplication', async (t) => {
+  const db = await database(t);
+  const bucket = await remoteBucket(t);
+  const start = Math.floor(Date.now() / 60_000) * 60_000;
+  const messages = [];
+  const env = { ...mailEnv(db, async message => { messages.push(message); return { messageId: 'backup-test-message' }; }),
+    DRILL_START_MS: '0', BACKUP_REMOTE_PREFIX: remotePrefix, BACKUP_REMOTE_MAX_BYTES: String(remoteMaxBytes), BACKUP_BUCKET: bucket };
+  for (let minute = 0; minute < 6; minute++) {
+    const tick = start + minute * 60_000;
+    if (minute >= 3) await seedRemote(bucket, start, minute);
+    await runScheduled(env, tick, { now: () => tick, fetch: async () => Response.json({ ...payload(), checked_at: new Date(tick).toISOString() }) });
+    await runScheduled(env, tick, { now: () => tick, fetch: async () => assert.fail('duplicate must not fetch') });
+  }
+  assert.equal(messages.length, 2);
+  assert.match(messages[0].text, /backup_remote_missing/);
+  const events = await db.prepare('SELECT kind, delivery_status FROM notification_events ORDER BY tick').all();
+  assert.deepEqual(events.results, [{ kind: 'failure', delivery_status: 'accepted' }, { kind: 'recovery', delivery_status: 'accepted' }]);
+});
+
+for (const stale of [false, true]) {
+  test(`the shipped Worker checks R2 completion markers through real workerd/D1 (stale: ${stale})`, async (t) => {
+    const source = await readFile(new URL('./monitor.ts', import.meta.url), 'utf8');
+    const script = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText;
+    const mf = new Miniflare(convertV4MiniflareOptions({
+      modules: true, compatibilityDate: '2026-09-26', script, unsafeTriggerHandlers: true,
+      d1Databases: { MONITOR_DB: 'remote-backup-runtime' }, r2Buckets: { BACKUP_BUCKET: 'remote-backup-test' },
+      bindings: { MODE: 'observe', MONITOR_KEY: 'backup-runtime', TARGET_URL: target, DRILL_START_MS: '0',
+        BACKUP_REMOTE_PREFIX: remotePrefix, BACKUP_REMOTE_MAX_BYTES: String(remoteMaxBytes) },
+      outboundService: () => Response.json({ ...payload(), checked_at: new Date().toISOString() }),
+    }));
+    t.after(() => mf.dispose());
+    const db = await mf.getD1Database('MONITOR_DB');
+    await db.exec((await readFile(new URL('./schema.sql', import.meta.url), 'utf8')).replaceAll('\n', ' '));
+    const bucket = await mf.getR2Bucket('BACKUP_BUCKET');
+    await seedRemote(bucket, Date.now() - (stale ? 360_000 : 1000));
+    assert.equal((await mf.dispatchFetch('http://localhost/cdn-cgi/local/scheduled')).status, 200);
+    const state = await db.prepare('SELECT reason, successes, failures FROM monitor_state').first();
+    assert.deepEqual(state, stale ? { reason: 'backup_remote_stale', successes: 0, failures: 1 }
+      : { reason: 'ready', successes: 1, failures: 0 });
+    assert.equal((await mf.dispatchFetch('http://localhost/send')).status, 404);
   });
 }
