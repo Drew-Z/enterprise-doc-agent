@@ -13,6 +13,7 @@ import uuid
 MAX_DUMP_BYTES = 48 * 1024 * 1024
 MAX_OBJECT_BYTES = 8 * 1024 * 1024
 MAX_OBJECTS = 2000
+SOURCE_READ_CONCURRENCY = 8
 FLAGS = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 
 
@@ -211,7 +212,7 @@ def capture_database(*, psql, pg_dump, env, extra_artifact_ids=(), timeout=180):
             process.stdout.close()
 
 
-def capture_objects(*, client, references, documents_bucket, allowed_buckets, cache, timeout=120):
+def capture_objects(*, client, references, documents_bucket, allowed_buckets, cache, timeout=180):
     deadline = time.monotonic() + timeout
     if not 0 < timeout <= 180 or not 1 <= len(references) <= MAX_OBJECTS:
         raise CaptureError("object budget exceeded")
@@ -251,11 +252,22 @@ def capture_objects(*, client, references, documents_bucket, allowed_buckets, ca
         )
         records.append(item)
 
+    expected = {
+        (item["bucket"], item["key"], item["sha256"], item["size_bytes"]) for item in records
+    }
+    # Keep the cache within this capture's validated byte budget. Every reuse
+    # still checks the expected size and hash, including entries from a failed run.
+    for identity in list(cache):
+        if identity not in expected:
+            del cache[identity]
+    cache_lock = threading.Lock()
+
     def get(item):
         if time.monotonic() > deadline:
             raise CaptureError("object capture deadline exceeded")
         identity = (item["bucket"], item["key"], item["sha256"], item["size_bytes"])
-        prior = cache.get(identity)
+        with cache_lock:
+            prior = cache.get(identity)
         if (
             prior is not None
             and len(prior) == item["size_bytes"]
@@ -272,16 +284,20 @@ def capture_objects(*, client, references, documents_bucket, allowed_buckets, ca
             body.close()
         if len(data) != item["size_bytes"] or hashlib.sha256(data).hexdigest() != item["sha256"]:
             raise RuntimeError("source object integrity differs")
+        # A later request/deadline failure must not discard already authenticated
+        # bytes. No inventory or successful backup is published until all pass.
+        with cache_lock:
+            cache[identity] = data
         return item, data, False
 
     try:
-        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=SOURCE_READ_CONCURRENCY) as executor:
             results = list(executor.map(get, records))
     except Exception:
         raise CaptureError("source object capture did not complete") from None
     if time.monotonic() > deadline:
         raise CaptureError("object capture deadline exceeded")
-    # Replace the cache only after the whole snapshot passes; no plaintext files.
+    # The complete payload/inventory is assembled only after every object passes.
     cache.clear()
     payload = {}
     for item, data, _ in results:

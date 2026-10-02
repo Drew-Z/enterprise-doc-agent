@@ -3,7 +3,8 @@
 The tracked implementation lives in `scripts/server_backup`. It includes consistent
 read-only capture, age encryption, immutable upload/readback, durable same-ID retry,
 remote byte admission, retention planning, an operator restore catalog, strict production configuration and
-first-installation/rollback helpers. It has not been installed on production.
+first-installation/rollback helpers. The service and scoped credentials are now
+installed on the existing production host; see the activation evidence below.
 
 The original private implementations, failed attempts and ciphertexts remain in
 the centralized task recovery group. Promotion keeps SQL behavior intact: three
@@ -84,9 +85,10 @@ and confirmed absence. The first malformed-session attempt wrote no objects.
 Native Linux validation was repeated against the corrected module hashes.
 See the [live credential evidence](../../.trellis/tasks/09-24-commercial-operations-acceptance/server-backup-live-credential-validation.json).
 
-Parent credentials remain DPAPI-protected on the personal computer. Production
-installation, protected server provisioning, monitoring and off-computer backup
-continuity remain open; no sensitive database/document backup was uploaded.
+After explicit authorization, the dedicated parent was provisioned root/0600 on
+the existing host. Its DPAPI copy and the age private identity remain local.
+Real encrypted business backups have been uploaded and the first has been restored;
+continuous freshness and operation with the personal computer offline remain open.
 
 | Path | Purpose |
 | --- | --- |
@@ -177,12 +179,55 @@ The original receipt and lifecycle audit were not modified; no restore was rerun
 Sixteen catalog tests plus the previous 42 backup tests pass, including the real
 planner with only S3 transport replaced. See the [catalog evidence](../../.trellis/tasks/09-24-commercial-operations-acceptance/server-backup-catalog-validation.json).
 
-Adding this module changes the package inventory/ID. The earlier native staged
-package proof applies only to its original bytes; the new candidate has been
-prepared/verified locally and has not replaced the staged local unit or production.
+Each module change produces a new package ID. Installation evidence applies only
+to the recorded bytes; historical native and production failures remain intact.
 
-Remaining work is the actual target/bucket credential package, ongoing operator
-catalog maintenance, approved retention execution, the specific remote
-sensitive-backup storage exception, production activation/monitor configuration,
-and continuous operation while the personal computer is offline. This local
-installation check does not replace those requirements or the other acceptance gates.
+## Production activation and transport findings (2026-10-03)
+
+The authorized service reads the existing source namespace and publishes only to
+the approved recovery bucket/prefix, with the existing 3 GiB cap and no deletion.
+Every upgrade preserves the prior release and a consistent local rollback snapshot
+of unit/config/installation/runtime state. It preserves all attempt rows and only
+migrates the package-bound configuration fingerprint while the service is stopped.
+
+Cold object capture initially exceeded its deadline and discarded verified cache
+entries. Capture now uses eight bounded source readers, a 180-second object budget,
+and immediately caches each size/SHA-verified object in memory. Failed captures can
+reuse those bytes; changed references and poisoned cache entries are revalidated.
+No complete inventory is returned until every object passes. Native cold capture
+completed in 138 seconds, with a subsequent cached capture in 24 seconds.
+
+R2 can store a large PUT even when the SDK loses its response; an early conditional
+rejection can also surface as TLS EOF. Connection failures and HTTP 5xx therefore
+lead to complete readback of the same key. Missing or mismatching bytes still fail;
+there is no unconditional PUT, new snapshot ID or inferred successful restore.
+
+The host-to-R2 path also showed TCP retransmissions and about 132 kB/s upload with
+CUBIC. A separate real 28.5 MB PUT using BBR completed in 87 seconds. Production
+target clients now require usable Linux BBR through `TCP_CONGESTION`, applied only
+to their sockets. The kernel may autoload its installed BBR module; host defaults,
+source clients and application sockets are unchanged. The native botocore 1.34.46
+pool preserves TLS and existing socket options; this narrow internal SDK adaptation
+must be revalidated when upgrading botocore. Missing BBR fails publication visibly.
+
+The first real remote ciphertext restored 56 tables/82,622 rows and 1,668 objects
+into fresh local PostgreSQL/MinIO. Every table fingerprint and object byte matched;
+the 18.047-second run includes owned cleanup and is not whole-machine RTO. A new
+local catalog pins this successful receipt and verifier while retaining all old
+failed evidence. The remote upload marker still does not claim actual restore.
+
+The existing Cloudflare monitor now directly checks the approved R2 prefix. Its
+bindings, original notification destinations and minute schedule were read back.
+After the actual restore, backup health selection moved to this server R2 source;
+the legacy queue heartbeat and both Windows tasks remain. No test mail was sent. The first verifier
+incorrectly compared schedule metadata timestamps; separate readback verified the
+cron values without redeploying or rewriting that failure.
+
+See [production activation evidence](../../.trellis/tasks/09-24-commercial-operations-acceptance/server-backup-production-activation.json).
+The 22-minute observation completed eight new backups without failed attempts or
+service restarts. After warming, peak source age was 293.978 seconds against 300;
+the first cold publication took 322.881 seconds, and the following freshness gap
+reached 441.438 seconds. The full-window freshness gate therefore remains failed.
+Remaining work includes cold-start freshness, personal-computer-off continuity,
+queue collector migration, catalog maintenance and explicitly approved retention. The
+finite cap deliberately stops new uploads when full; it is not indefinite retention.

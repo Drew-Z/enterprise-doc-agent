@@ -19,7 +19,12 @@ from .database_environment import postgres_process_environment
 from .production_config import protected_json, validate_config
 from .recovery_bundle import seal_bundle
 from .remote_retention import DEFAULT_MAX_BYTES, publish_budgeted_snapshot
-from .server_capture import capture_database, capture_objects, limited_output
+from .server_capture import (
+    SOURCE_READ_CONCURRENCY,
+    capture_database,
+    capture_objects,
+    limited_output,
+)
 from .target_credentials import validate_session
 
 
@@ -41,8 +46,17 @@ def environment(command):
     return value
 
 
-def storage(endpoint, access, secret, region="auto", *, session_token=None):
-    return boto3.client(
+def storage(
+    endpoint,
+    access,
+    secret,
+    region="auto",
+    *,
+    session_token=None,
+    max_pool_connections=4,
+    congestion_control=None,
+):
+    client = boto3.client(
         "s3",
         endpoint_url=endpoint,
         aws_access_key_id=access,
@@ -54,9 +68,31 @@ def storage(endpoint, access, secret, region="auto", *, session_token=None):
             connect_timeout=5,
             read_timeout=10,
             retries={"total_max_attempts": 1},
-            max_pool_connections=4,
+            max_pool_connections=max_pool_connections,
         ),
     )
+    if congestion_control is not None:
+        try:
+            if congestion_control != "bbr":
+                raise ValueError("unsupported backup congestion control")
+            # Probe the installed kernel implementation before making a request.
+            # This changes only these sockets, never the host's default algorithm.
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+                probe.setsockopt(socket.IPPROTO_TCP, socket.TCP_CONGESTION, b"bbr")
+                selected = probe.getsockopt(socket.IPPROTO_TCP, socket.TCP_CONGESTION, 16)
+                if selected.split(b"\0")[0] != b"bbr":
+                    raise ValueError("backup congestion control was not applied")
+            # Botocore does not expose TCP_CONGESTION through Config. Preserve
+            # its TLS, timeout and existing socket options on the native manager.
+            manager = client._endpoint.http_session._manager
+            manager.connection_pool_kw["socket_options"] = [
+                *manager.connection_pool_kw["socket_options"],
+                (socket.IPPROTO_TCP, socket.TCP_CONGESTION, b"bbr"),
+            ]
+        except Exception:
+            client.close()
+            raise
+    return client
 
 
 class BackupService:
@@ -112,6 +148,7 @@ class BackupService:
             source["object_access"],
             source["object_secret"],
             source.get("object_region", "auto"),
+            max_pool_connections=SOURCE_READ_CONCURRENCY,
         )
         try:
             objects = capture_objects(
@@ -177,6 +214,7 @@ class BackupService:
             target["secret"],
             target.get("region", "auto"),
             session_token=target.get("session_token"),
+            congestion_control="bbr" if self.config.get("config_profile") == "production" else None,
         )
         try:
             return publish_budgeted_snapshot(

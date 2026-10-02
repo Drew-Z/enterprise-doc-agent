@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-02T18:37:47.107624+00:00",
+  "status": "server_backup_active_initial_freshness_gate_open",
+  "package_id": "c009a1b75b2a613bcba63cf3986359b04d0aa3ec16e863233db9f1ed31f07efa",
+  "source_sha256": {
+    "scripts/server_backup/backup_daemon.py": "6ff3b340fee9a07d2c195b4fc1d7819be84a883717c6bfddfb7e6c6a38fa3c43",
+    "scripts/server_backup/server_capture.py": "715be6ca3c39c3814dc6ad9be6f1a23a72843d5b899a054ca4a5dc629085262a",
+    "scripts/server_backup/server_publication.py": "d84ca4494e948806cfa0d9aca7b20090a22401108937fa66f08b621ac097af04"
+  },
+  "authorization": {
+    "dedicated_parent_root_0600": true,
+    "encrypted_business_uploads_to_approved_prefix": true,
+    "remote_byte_cap": 3221225472,
+    "remote_deletions": 0,
+    "private_identity_stays_local": true
+  },
+  "runtime": {
+    "window_start": "2026-10-02T18:11:37.489460+00:00",
+    "window_seconds": 1331.352458,
+    "at_least_20_minutes": true,
+    "new_successful_snapshots": 8,
+    "new_failed_attempts": 0,
+    "first_publication_age_seconds": 322.880989,
+    "publication_age_seconds": [
+      322.880989,
+      116.45484,
+      163.944406,
+      128.298953,
+      115.808893,
+      130.603249,
+      109.542667,
+      112.844284
+    ],
+    "between_publication_peak_age_seconds": [
+      441.437953,
+      282.330977,
+      293.977622,
+      245.831554,
+      248.164133,
+      242.005186,
+      225.044043
+    ],
+    "post_warmup_peak_age_seconds": 293.977622,
+    "current_source_age_seconds": 229.339502,
+    "full_window_freshness_passed": false,
+    "remote_bytes": 313447529,
+    "remote_keys": 22,
+    "unit": {
+      "MainPID": "1801272",
+      "NRestarts": "0",
+      "ExecMainStartTimestamp": "Sat 2026-10-03 02:11:37 CST",
+      "ExecMainStatus": "0",
+      "MemoryCurrent": "209428480",
+      "CPUUsageNSec": "52863769000",
+      "ActiveState": "active",
+      "SubState": "running",
+      "UnitFileState": "enabled"
+    },
+    "ready_deployments": {
+      "enterprise-doc-api": 1,
+      "enterprise-doc-consumer": 1,
+      "enterprise-doc-redis": 1,
+      "enterprise-doc-web": 1,
+      "enterprise-doc-worker": 1
+    }
+  },
+  "actual_remote_restore": {
+    "at": "2026-10-02T17:51:43.806444+00:00",
+    "completed_at": "2026-10-02T17:52:01.787916+00:00",
+    "status": "ciphertext_database_and_objects_restored",
+    "database": {
+      "tables": 56,
+      "rows": 82622,
+      "all_fingerprints_match": true,
+      "archive_sha256": "e51673e61ec495f6f4763deb23b6961779e98f8339730a170c39c928f5cf35e2"
+    },
+    "objects": {
+      "count": 1668,
+      "bytes": 1872148,
+      "all_readback_bytes_match": true,
+      "inventory_exact": true
+    },
+    "elapsed_seconds": 18.047000000005937,
+    "ciphertext_sha256": "9e4384982df68f4eec4147367de49cb84a6b11cb8422b106e8fab55093bea1b8",
+    "source_snapshot": "snapshot-20261002-171946-47beba483c6d",
+    "original_snapshot_read_during_restore": false,
+    "plaintext_host_archive_written": false,
+    "original_containers_still_running": true,
+    "cleanup": [
+      {
+        "id": "54f458f461bd68536880efdb9a2201349a277e80fc21a4ef525b873e947b1d57",
+        "removed": true
+      },
+      {
+        "id": "5071790233e800b57e3d5d7a20ad5e431f6c57a4da85c43e4cbf317f0589e938",
+        "removed": true
+      }
+    ]
+  },
+  "monitor": {
+    "status": "remote_backup_monitor_deployed_verified",
+    "source_sha256": "7b05164122adb2f7418afddf4e7426ee0abdb9700bddf6f4c39959aaabe034a4",
+    "config_sha256": "362dc07df1c747ecc2cece0d100de3b4d46b5310562f335468938bfbd60c1354",
+    "server_r2_is_backup_health_source": true,
+    "legacy_queue_heartbeat_retained": true,
+    "windows_tasks_stopped": false,
+    "test_emails": 0
+  },
+  "validation": {
+    "backup_tests_passed": 82,
+    "tls_loss_and_server_error_red_tests_observed": true,
+    "native_sdk": "botocore 1.34.46",
+    "bbr_per_connection_put_seconds": 87.09270901512355,
+    "host_default_congestion_control_unchanged": "cubic"
+  },
+  "limitations": [
+    "Cold start and first subsequent source freshness exceed 300 seconds; full window did not pass.",
+    "The personal computer remained online and queue monitoring still depends on its collector.",
+    "Finite 3 GiB admission cap eventually stops new uploads; no historical deletion was authorized.",
+    "Only the first real remote ciphertext has a pinned actual-restore proof; later upload markers do not certify restores.",
+    "Separate buckets use the same R2 account; account/provider-wide loss is not covered.",
+    "Independent review, full capacity rounds, supplier monetary reconciliation and historical in-flight/Agent/MCP recovery remain open."
+  ],
+  "all_five_acceptance_gates_complete": false
+}

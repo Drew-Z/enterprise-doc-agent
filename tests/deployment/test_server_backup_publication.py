@@ -4,7 +4,7 @@ import io
 import unittest
 from types import SimpleNamespace
 
-from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError, SSLError
 from scripts.server_backup import server_publication as publish
 
 
@@ -120,6 +120,58 @@ class PublicationTests(unittest.TestCase):
         self.assertEqual(self.invoke(store)["status"], "ciphertext_upload_readback_verified")
         self.assertEqual(store.meta.events.handlers, {})
         self.assertEqual(len(store.puts), 2)
+
+    def test_tls_disconnect_after_storage_requires_complete_readback(self):
+        class LostResponseStorage(Storage):
+            def put_object(self, **kwargs):
+                try:
+                    super().put_object(**kwargs)
+                except ClientError as exc:
+                    assert exc.response["ResponseMetadata"]["HTTPStatusCode"] == 412
+                raise SSLError(endpoint_url="https://recovery.invalid", error="EOF occurred")
+
+        store = LostResponseStorage()
+        result = self.invoke(store)
+        self.assertEqual(result["status"], "ciphertext_upload_readback_verified")
+        self.assertEqual(self.invoke(store), result)
+        self.assertEqual(len(store.puts), 2)
+
+        corrupt = LostResponseStorage()
+        corrupt.corrupt = True
+        with self.assertRaises(publish.PublicationError):
+            self.invoke(corrupt)
+        self.assertEqual(len(corrupt.puts), 1)
+
+    def test_tls_disconnect_without_stored_bytes_remains_unconfirmed(self):
+        class Unstored(Storage):
+            def put_object(self, **kwargs):
+                raise SSLError(endpoint_url="https://recovery.invalid", error="EOF occurred")
+
+        store = Unstored()
+        with self.assertRaises(publish.PublicationError):
+            self.invoke(store)
+        self.assertEqual(store.objects, {})
+
+    def test_server_error_after_storage_is_resolved_only_by_readback(self):
+        class LostResponse(Storage):
+            def put_object(self, **kwargs):
+                super().put_object(**kwargs)
+                raise ClientError(
+                    {
+                        "Error": {"Code": "InternalError"},
+                        "ResponseMetadata": {"HTTPStatusCode": 500},
+                    },
+                    "PutObject",
+                )
+
+        store = LostResponse()
+        self.assertEqual(self.invoke(store)["status"], "ciphertext_upload_readback_verified")
+        self.assertEqual(len(store.puts), 2)
+        corrupt = LostResponse()
+        corrupt.corrupt = True
+        with self.assertRaises(publish.PublicationError):
+            self.invoke(corrupt)
+        self.assertEqual(len(corrupt.puts), 1)
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@ import json
 import re
 import secrets
 
-from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError, ConnectionError, HTTPClientError
 
 MAX_CIPHERTEXT_BYTES = 64 * 1024 * 1024
 
@@ -64,9 +64,14 @@ def _put_immutable(client, bucket, key, data, content_type):
                 meta.events.unregister(event, unique_id=identity)
     except ClientError as error:
         status = error.response.get("ResponseMetadata", {}).get("HTTPStatusCode")
-        if status != 412:
+        if status != 412 and not (isinstance(status, int) and 500 <= status < 600):
             raise
-        # A known existing key may be resumed only after matching every byte.
+        # Existing keys and ambiguous server failures require matching every byte.
+    except (ConnectionError, HTTPClientError):
+        # R2 can finish PUT, or reject an existing key, before the SDK notices
+        # a TLS disconnect. Resolve that uncertainty by reading the same key;
+        # missing, incomplete or different bytes still prevent completion.
+        pass
     _read_matches(client, bucket, key, data)
 
 

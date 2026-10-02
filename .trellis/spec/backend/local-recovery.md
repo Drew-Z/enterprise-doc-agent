@@ -341,3 +341,30 @@ link exact original hashes to the supplemental deletion/absence receipt.
 Wrong: return the parent secret or declare cloud permission enforcement from a
 decoded JWT. Correct: mint the fixed child, pass its session token to the SDK,
 verify provenance and enforce the real R2 boundary before production activation.
+
+## Production capture and transport regressions
+
+- Keep individually size/SHA-verified object bytes in bounded memory even when a
+  later GET or deadline fails. Prune against the current validated references and
+  revalidate every reused entry; never publish a partial inventory. Source reads
+  use eight workers and retain the 180-second hard object deadline.
+- Large conditional R2 PUTs can lose their response or surface a prior-key 412 as
+  TLS EOF. Resolve SDK connection failures and HTTP 5xx through full readback of
+  the same key; only matching length/SHA permits the completion marker. Missing,
+  corrupt or unreadable data stays pending. Never substitute a new key or drop the
+  conditional header. Test loss after storage, absent storage, corrupt readback
+  and repeated exact input separately.
+- Production backup target sockets use Linux BBR after an actual setsockopt/get
+  probe. Preserve the host default, source clients, TLS verification and existing
+  socket options. The installed kernel may autoload BBR; unavailable support fails
+  explicitly. Revalidate the narrow native botocore connection-pool adaptation on
+  SDK upgrades. A faster diagnostic upload is not a sustained RPO result.
+- A stopped-package upgrade may migrate only the configuration fingerprint after
+  proving all non-package fields unchanged. Hold the runtime lock and SQLite
+  transaction, preserve attempt rows and prior releases, and snapshot consistent
+  state locally before switching. Never rerun the first installer over an existing
+  installation or discard successful/failed historical attempts.
+- Monitor deployment can refresh schedule metadata timestamps without changing
+  its cron semantics. Preserve any failed verifier receipt and perform a separate
+  readback of exact bindings, destinations, cron values and deployment identity;
+  do not redeploy solely to fix the verifier.
