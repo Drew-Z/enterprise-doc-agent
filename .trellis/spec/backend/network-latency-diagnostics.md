@@ -30,6 +30,18 @@ establish a lower end-to-end p95.
 - A successful diagnostic command means its assertions ran. It does not mean the
   performance target passed. A new API batch and full capacity matrix must retain
   their own budgets, denominators and stop conditions.
+- A packet-header capture must select only the diagnostic connection and exclude
+  payload output. ACK/SACK gaps narrow the failure evidence but do not identify
+  the physical fault. Kernel capture drops and transport retransmissions differ.
+- An owned edge relay experiment must have a fixed target, authentication,
+  absolute expiry, byte/time limits and verified cleanup. Preserve end-to-end
+  database TLS with its original hostname and an authoritative CA; never treat a
+  certificate verification error as a reason to disable verification. Compare
+  ordinary queries as well as large requests, and identify which TCP segment is
+  observable. A working relay may still be too slow for the application target.
+- Some resource DELETE endpoints return a successful empty response. Inspect the
+  HTTP contract and authoritative resource state before retrying a mutation;
+  parsing failures do not prove that deletion failed.
 
 ## Proven Examples
 
@@ -40,3 +52,8 @@ Diagnostic evidence: `docs/ops/database-transport-diagnosis.md` and the sanitize
 `rc16-network-diagnosis.json` task record. The rc.16 comparisons reproduced TCP
 retransmissions and rejected simple MTU, pooler-port and DNS-peer explanations;
 they did not establish a deployed transport fix.
+
+The subsequent `network-alternative-validation.json` record rejected per-socket
+rate limits and an owned Cloudflare relay as performance fixes. The relay worked
+with the official Supabase CA, but increased ordinary-query latency; all temporary
+resources were removed after the bounded experiment.
