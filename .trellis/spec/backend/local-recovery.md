@@ -150,6 +150,22 @@ private centralized artifacts, and explicit external acceptance limitations.
   hide a mismatch. Keep all such staging bytes on the local recovery VM disk.
 - The 2026-10-02 second cold run observed RPO 189.325 seconds and 883.364 seconds
   from fresh VM creation to historical API/Web verification, including repairs.
-  It does not prove unattended execution, cloud/public cutover, restored new
-  business generation, off-computer backups, or an on-call SLA. See
-  `docs/ops/local-cold-recovery.md` for the exact scope and preserved failures.
+  The third run consolidated those repairs and automatically completed historical
+  checks, a new Presales business flow and verifier cleanup in 353.051 seconds,
+  with RPO 117.036 seconds. Keep both results and all earlier failures distinct.
+- Before starting workers on a restored historical snapshot, explicitly verify
+  active jobs, outbox and Presales counts. The third run required all three to be
+  zero. It proves new controlled business, not safe recovery of historical active
+  work or new Agent/MCP executions. Do not remove this precondition without testing
+  leases, interrupted dispatches, reservations and duplicate delivery behavior.
+- Excluding synthetic tenant IDs must preserve nullable historical ownership:
+  use `tenant_id IS NULL OR tenant_id NOT IN (...)`. SQL `NOT IN` alone drops NULL
+  rows and creates false fingerprint mismatches. The local probe verified all 43
+  tenant-related tables, including existing browser session/event NULL rows.
+- Recovery fixtures must satisfy existing entitlement timestamps and Chinese
+  model prose contracts; do not weaken production validation to make fixtures pass.
+  Count controlled requests and ledger consumptions independently, verify repeated
+  reads/replays do not consume again, and restore API configuration after cleanup.
+- Neither local run proves cloud/public cutover, production OAuth or suppliers,
+  off-computer backups, or an on-call SLA. See `docs/ops/local-cold-recovery.md`
+  for exact scope, advance media preparation and preserved failures.
