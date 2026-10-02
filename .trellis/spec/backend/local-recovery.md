@@ -196,3 +196,36 @@ private centralized artifacts, and explicit external acceptance limitations.
   decryption/restore are separate claims. Off-computer continuity additionally
   needs an independently running schedule and measured source-time freshness.
   See `docs/ops/encrypted-backup.md` for implementation status and remaining work.
+
+## Server capture and publication validation
+
+- Hold the exported repeatable-read, read-only transaction until both inventory
+  and pg_dump complete. Derive table fingerprints and object references inside
+  that snapshot. The local concurrent-write proof restored the snapshot's counter
+  at zero while the source advanced 26 times; matching row counts alone is not proof.
+- Native SDK compatibility must preserve the actual signed conditional write.
+  botocore 1.34.46 rejects the IfNoneMatch keyword; a scoped before-sign event can
+  insert `If-None-Match: *`, with unregister in finally. Never retry unconditionally.
+- Persist sealed identity and ciphertext before upload. A process loss after
+  remote readback but before local receipt resumes exactly that identity/bytes.
+  Unknown uploads must not create another snapshot or replace the last success.
+- Whole-container-set comparisons are unsafe when an independent scheduled job
+  owns temporary containers. Preserve the original assertion failure, correlate
+  exact owner/success/cleanup receipts, and separately verify stable resources and
+  the restore's own cleanup. Empty Docker event history is not affirmative proof.
+- Bound the complete managed-prefix inventory, pagination and byte budget before
+  new publication. Count both ciphertext and completion markers; partial uploads
+  consume space. Same-ID replay only reserves missing bytes. This assumes one
+  namespace writer and the runtime process lock; it is not a distributed quota.
+- Capacity exhaustion preserves sealed work and existing points. Retention is an
+  exact reviewable plan, not implicit deletion authorization. Keep at least five
+  distinct actually restored contents, plus pinned/referenced/failed/in-progress,
+  incomplete and unverified snapshots. New unverified uploads cannot displace the
+  five restored contents. Accept restore proofs only from a trusted operator
+  catalog; an upload marker cannot assert its own successful restore.
+- The native local test retained three snapshots / six objects (85,516,410 bytes),
+  replayed at the exact cap, and refused a new ID without object or ETag changes.
+  It did not test production R2, retention deletion, monitor integration, or
+  continuity while the personal computer is offline. The latest actual data
+  restore verified 56 tables / 82,705 rows and 1,669 objects; its 21.047 seconds
+  remains a database/object drill, not whole-machine RTO.
