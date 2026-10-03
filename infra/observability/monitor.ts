@@ -4,7 +4,7 @@ const MAX_RESPONSE_BYTES = 64 * 1024;
 
 type Probe = { healthy: boolean; reason: string; checkedAt: number | null };
 type Network = (url: string, options: RequestInit) => Promise<Response>;
-type ProbeOptions = { fetch: Network; now: () => number; timeoutMs?: number };
+type ProbeOptions = { fetch: Network; now: () => number; timeoutMs?: number; requireQueueObservation?: boolean };
 
 function object(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -108,6 +108,19 @@ export async function probeReadiness(url: string, options: ProbeOptions): Promis
       if (age > 120_000) return result('stale_readiness', checkedAt);
       if (data.status !== 'ready' || Object.values(checks).some((check) => !object(check) || check.status !== 'up')) {
         return result('dependency_unhealthy', checkedAt);
+      }
+      if (options.requireQueueObservation) {
+        if (!('queue' in data)) return result('queue_missing');
+        const queue = data.queue;
+        if (!object(queue) || typeof queue.healthy !== 'boolean' ||
+            Object.keys(queue).length !== 2 || !('source_at' in queue) ||
+            (queue.source_at === null ? queue.healthy :
+              !Number.isSafeInteger(queue.source_at) || Number(queue.source_at) <= 0 ||
+              Number(queue.source_at) > options.now() + 15_000)) return result('queue_invalid');
+        if (queue.source_at !== null && options.now() - Number(queue.source_at) > 45_000) {
+          return result('queue_stale', Number(queue.source_at));
+        }
+        if (!queue.healthy) return result('queue_unhealthy', queue.source_at === null ? null : Number(queue.source_at));
       }
       return result('ready', checkedAt);
     })(), timeoutMs, () => { timeout = true; controller.abort(); });
@@ -394,6 +407,8 @@ export async function runScheduled(env: Env, scheduledTime: number, boundary: Pr
   }
   validateTarget(env.TARGET_URL);
   if (![undefined, 'true', 'false'].includes(env.CHECK_READINESS) ||
+      ![undefined, 'true', 'false'].includes(env.REQUIRE_QUEUE_OBSERVATION) ||
+      (env.REQUIRE_QUEUE_OBSERVATION === 'true' && env.CHECK_READINESS === 'false') ||
       [env.QUEUE_HEARTBEAT_KEY, env.BACKUP_HEARTBEAT_KEY, env.WATCH_MONITOR_KEY]
         .some(key => key && !/^[a-z][a-z0-9-]{1,60}$/.test(key)) ||
       (env.WATCH_MONITOR_KEY && env.WATCH_MONITOR_KEY === env.MONITOR_KEY) ||
@@ -421,7 +436,9 @@ export async function runScheduled(env: Env, scheduledTime: number, boundary: Pr
   } else {
     probe = env.CHECK_READINESS === 'false'
       ? { healthy: true, reason: 'ready', checkedAt: null }
-      : await probeReadiness(env.TARGET_URL, boundary);
+      : await probeReadiness(env.TARGET_URL, {
+        ...boundary, requireQueueObservation: env.REQUIRE_QUEUE_OBSERVATION === 'true',
+      });
     if (probe.healthy) probe = await operationalProbe(env, boundary.now(), boundary.now);
   }
   const observedAt = boundary.now();

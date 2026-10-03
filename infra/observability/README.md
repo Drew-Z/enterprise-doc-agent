@@ -95,6 +95,33 @@ All failures use the same three-failure/two-recovery state machine and delivery
 deduplication. A watchdog checks scheduling, not whether the other monitor reports
 healthy service.
 
+## Optional queue observation from the application server
+
+`REQUIRE_QUEUE_OBSERVATION=true` requires the safe `queue` projection on the same
+readiness response. It contains exactly `healthy` (boolean) and `source_at` (the
+oldest successful queue/Redis sample time, Unix milliseconds, or null). Both
+sources must have succeeded within 45 seconds; a due queue age above 120 seconds
+or stalled Worker progress is unhealthy. Forwarding never refreshes source time.
+Missing, malformed, failed and stale observations fail the external monitor
+without changing Kubernetes dependency readiness.
+
+API settings default `API__QUEUE_OBSERVATION_ENABLED=false`; the 4C4G overlay
+explicitly enables it. API polls the fixed internal Worker Service at
+`/health/queue` every ten seconds, with a two-second total deadline and 1 KiB JSON
+limit. It uses no credentials, proxy, redirects or automatic retries. Its lifespan
+owns polling and client cleanup. Public readiness requests use the cached safe
+projection and perform no queue network read. Network policies permit
+API-to-Worker TCP 8081 within the same namespace. This Service route assumes one
+Worker replica; it does not establish every replica's health after scaling.
+
+Roll out network policy and the application first; verify actual Worker samples
+and public projection. Then enable the external requirement, preserving the
+existing monitor key, D1 state and indeterminate notification history. Remove
+`QUEUE_HEARTBEAT_KEY` only after source verification. If both inputs are configured,
+both must pass. Keep the existing Windows tasks until a separately verified
+operational transition. The Cloudflare template leaves this requirement disabled.
+Tests do not prove production activation or computer-offline operation.
+
 ## Optional server-upload monitoring
 
 The template keeps `BACKUP_REMOTE_PREFIX` empty, so existing deployments retain

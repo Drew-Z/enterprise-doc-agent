@@ -128,6 +128,28 @@ objects and controlled email test stale-source and failure/recovery transitions;
 they are not production backup uploads or recipient delivery evidence. Preserve
 the existing three/two streak, duplicate-tick and unknown-mail-attempt behavior.
 
+## Server queue observation
+
+`probeReadiness(..., { requireQueueObservation: true })` requires exactly two
+fields in `queue`: boolean `healthy` and nullable safe positive integer `source_at`
+in Unix milliseconds. Success requires source age <=45 seconds and future skew
+<=15 seconds. Missing -> `queue_missing`; malformed/future -> `queue_invalid`;
+expired -> `queue_stale`; false -> `queue_unhealthy`. Keep raw responses private
+and reuse the same HTTPS limits and D1 three/two incident/delivery contract.
+
+`runScheduled` opts in for `REQUIRE_QUEUE_OBSERVATION=true`; reject other
+non-boolean strings and simultaneous `CHECK_READINESS=false`. The template defaults
+false. Old heartbeat, backup and watchdog requirements remain active when
+configured; no healthy new source may hide another failed input. Migration keeps
+the existing key/history, including unknown email attempts.
+
+Producer/API contracts and rollout limits are in `../../backend/resource-metrics.md`.
+Queue failure does not change API dependency readiness. The current Service route
+covers one Worker. Real workerd/D1 tests cover fresh/stale queue data with an empty
+heartbeat table; state-machine tests cover failure/recovery/deduplication and
+preservation of an old unknown notification. Tests are not runtime activation or
+computer-offline evidence.
+
 ## Proven Examples
 
 - `infra/observability/monitor.ts`

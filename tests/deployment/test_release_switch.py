@@ -115,6 +115,42 @@ def release_data() -> dict[str, Any]:
     }
 
 
+@pytest.mark.parametrize("enabled", ["true", "false", "yes", "", True, 1])
+def test_release_accepts_only_explicit_queue_observation_boolean(enabled: Any) -> None:
+    from scripts.maintenance_guard import GuardError
+    from scripts.release_switch import ReleaseCluster, ReleasePlan
+
+    data = release_data()
+    config = data["candidate_prerequisites"][1]["data"]
+    config["API__QUEUE_OBSERVATION_ENABLED"] = enabled
+    digest = canonical_digest(config)
+    data["candidate_prerequisites"][0]["metadata"]["annotations"][
+        PREFIX + "approved-config-sha256"
+    ] = digest
+    for deployment in data["candidate_deployments"]:
+        deployment["spec"]["template"]["metadata"]["annotations"][PREFIX + "config-sha256"] = digest
+    if enabled not in ("true", "false"):
+        with pytest.raises(GuardError):
+            ReleasePlan(data)
+        return
+    plan = ReleasePlan(data)
+    assert plan.new_config["data"]["API__QUEUE_OBSERVATION_ENABLED"] == enabled
+    assert "API__QUEUE_OBSERVATION_ENABLED" not in plan.old_config["data"]
+    boundary = Boundary(data)
+    cluster = ReleaseCluster(
+        plan,
+        run=boundary,
+        revision=lambda timeout: "20260924_0031",
+        idle=lambda timeout: True,
+        clock=lambda: 1.0,
+    )
+    cluster.apply(100)
+    config = next(item for item in boundary.items if item["kind"] == "ConfigMap")
+    assert config["data"]["API__QUEUE_OBSERVATION_ENABLED"] == enabled
+    cluster.restore(100)
+    assert config["data"] == data["original_prerequisites"][1]["data"]
+
+
 class Boundary:
     def __init__(self, data: dict[str, Any]) -> None:
         self.items = copy.deepcopy(data["original_prerequisites"] + data["deployments"])

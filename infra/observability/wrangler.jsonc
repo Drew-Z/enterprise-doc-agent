@@ -14,6 +14,7 @@
     "MODE": "observe",
     "DRILL_START_MS": "0",
     "CHECK_READINESS": "true",
+    "REQUIRE_QUEUE_OBSERVATION": "false",
     "QUEUE_HEARTBEAT_KEY": "",
     "BACKUP_HEARTBEAT_KEY": "",
     "BACKUP_REMOTE_PREFIX": "",

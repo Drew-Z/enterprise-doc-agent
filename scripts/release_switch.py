@@ -51,6 +51,7 @@ EXECUTOR_FILES = (
     "validate_staging_prerequisites.py",
 )
 CONFIG_KEYS = {
+    "API__QUEUE_OBSERVATION_ENABLED",
     "MODEL__BASE_URL",
     "MODEL__MODEL_NAME",
     "MODEL__MODEL_VERSION",
@@ -154,6 +155,7 @@ class ReleasePlan(Plan):
         ):
             raise GuardError("automatic failover requires background generation")
         for key in (
+            "API__QUEUE_OBSERVATION_ENABLED",
             "PRESALES__BACKGROUND_GENERATION_ENABLED",
             "PRESALES__AUTOMATIC_FAILOVER_ENABLED",
         ):

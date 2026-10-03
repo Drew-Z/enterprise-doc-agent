@@ -13,6 +13,80 @@ const payload = () => ({
   checks: Object.fromEntries(['database', 'redis', 'object_store'].map((key) => [key, { status: 'up' }])),
 });
 
+test('required server queue observation cannot be replaced by healthy dependency checks', async () => {
+  const result = await probeReadiness(target, {
+    now: () => now, requireQueueObservation: true,
+    fetch: async () => Response.json(payload()),
+  });
+  assert.deepEqual(result, { healthy: false, reason: 'queue_missing', checkedAt: null });
+});
+
+for (const [queue, reason] of [
+  [null, 'queue_invalid'], [{ healthy: 'true', source_at: now }, 'queue_invalid'],
+  [{ healthy: true, source_at: null }, 'queue_invalid'], [{ healthy: true, source_at: true }, 'queue_invalid'],
+  [{ healthy: true, source_at: 0 }, 'queue_invalid'], [{ healthy: true, source_at: now + 15_001 }, 'queue_invalid'],
+  [{ healthy: true, source_at: now - 45_001 }, 'queue_stale'],
+  [{ healthy: false, source_at: null }, 'queue_unhealthy'],
+  [{ healthy: false, source_at: now }, 'queue_unhealthy'],
+  [{ healthy: true, source_at: now, private: 'PRIVATE_BODY' }, 'queue_invalid'],
+  [{ healthy: true, source_at: now }, 'ready'],
+]) {
+  test(`server queue projection rejects invalid/stale sources: ${JSON.stringify(queue)}`, async () => {
+    const result = await probeReadiness(target, { now: () => now, requireQueueObservation: true,
+      fetch: async () => Response.json({ ...payload(), queue }) });
+    assert.equal(result.reason, reason);
+    assert.equal(JSON.stringify(result).includes('PRIVATE_BODY'), false);
+  });
+}
+
+test('server queue failure/recovery preserves existing history and does not bypass another required heartbeat', async (t) => {
+  const db = await database(t);
+  const messages = [];
+  const env = { ...mailEnv(db, async message => { messages.push(message); return { messageId: 'server-queue-event' }; }),
+    DRILL_START_MS: '0', REQUIRE_QUEUE_OBSERVATION: 'true' };
+  // An indeterminate earlier event remains indeterminate across migration.
+  await recordObservation(db, sample(-1, true), 'observe');
+  await db.prepare(`INSERT INTO notification_events (id, monitor_key, tick, kind, reason, delivery_status)
+    VALUES ('older-unknown', ?, ?, 'failure', 'queue_stale', 'unknown')`).bind(env.MONITOR_KEY, now - 60_000).run();
+  for (let minute = 0; minute < 6; minute++) {
+    const tick = now + minute * 60_000;
+    const boundary = { now: () => tick, fetch: async () => Response.json({ ...payload(), checked_at: new Date(tick).toISOString(),
+      queue: { healthy: minute >= 3, source_at: tick } }) };
+    await runScheduled(env, tick, boundary);
+    await runScheduled(env, tick, { ...boundary, fetch: async () => assert.fail('duplicate probe') });
+  }
+  assert.equal(messages.length, 2);
+  assert.equal((await db.prepare("SELECT delivery_status FROM notification_events WHERE id = 'older-unknown'").first()).delivery_status, 'unknown');
+  const tick = now + 6 * 60_000;
+  const result = await runScheduled({ ...env, QUEUE_HEARTBEAT_KEY: 'legacy-queue' }, tick, {
+    now: () => tick, fetch: async () => Response.json({ ...payload(), checked_at: new Date(tick).toISOString(), queue: { healthy: true, source_at: tick } }),
+  });
+  assert.equal(result.healthy, false);
+  assert.equal((await db.prepare('SELECT reason FROM monitor_state').first()).reason, 'queue_missing');
+});
+
+for (const stale of [false, true]) {
+  test(`shipped workerd monitor requires server queue without any Windows heartbeat (stale: ${stale})`, async (t) => {
+    const source = await readFile(new URL('./monitor.ts', import.meta.url), 'utf8');
+    const script = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText;
+    const mf = new Miniflare(convertV4MiniflareOptions({
+      modules: true, compatibilityDate: '2026-09-26', script, unsafeTriggerHandlers: true,
+      d1Databases: { MONITOR_DB: 'server-queue-runtime' },
+      bindings: { MODE: 'observe', MONITOR_KEY: 'queue-runtime', TARGET_URL: target, DRILL_START_MS: '0', REQUIRE_QUEUE_OBSERVATION: 'true' },
+      outboundService: () => Response.json({ ...payload(), checked_at: new Date().toISOString(),
+        queue: { healthy: true, source_at: Date.now() - (stale ? 46_000 : 1000) } }),
+    }));
+    t.after(() => mf.dispose());
+    const db = await mf.getD1Database('MONITOR_DB');
+    await db.exec((await readFile(new URL('./schema.sql', import.meta.url), 'utf8')).replaceAll('\n', ' '));
+    assert.equal((await mf.dispatchFetch('http://localhost/cdn-cgi/local/scheduled')).status, 200);
+    const state = await db.prepare('SELECT reason, successes, failures FROM monitor_state').first();
+    assert.deepEqual(state, stale ? { reason: 'queue_stale', successes: 0, failures: 1 } : { reason: 'ready', successes: 1, failures: 0 });
+    assert.equal((await db.prepare('SELECT count(*) AS count FROM external_heartbeats').first()).count, 0);
+    assert.equal((await mf.dispatchFetch('http://localhost/send')).status, 404);
+  });
+}
+
 for (const [label, response, reason] of [
   ['redirect', () => new Response(null, { status: 302, headers: { Location: 'https://other.test/' } }), 'http_status'],
   ['HTML with status 200', () => new Response('private contents'), 'invalid_content_type'],

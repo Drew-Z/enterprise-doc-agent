@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import math
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from time import perf_counter
 from typing import Any, Final, Protocol
 
@@ -16,6 +16,8 @@ from prometheus_client import (
     exposition,
     generate_latest,
 )
+
+from enterprise_doc_core.telemetry.queue_health import ResourceHealthState
 
 _ROUTE_FALLBACK: Final = "unmatched"
 _STATIC_ROUTE_SEGMENTS: Final = frozenset(
@@ -132,6 +134,7 @@ class MetricsRuntime:
     redis_connected_clients: Gauge
     resource_sample_success: Gauge
     resource_last_success_timestamp_seconds: Gauge
+    resource_health: ResourceHealthState = field(default_factory=ResourceHealthState)
 
     @classmethod
     def create(cls) -> MetricsRuntime:
@@ -353,10 +356,12 @@ class MetricsRuntime:
             or observed_at <= 0
         ):
             gauge.set(float("nan"))
+            self.resource_health.record(source, None, observed_at)
             return
         gauge.set(value)
         self.resource_last_success_timestamp_seconds.labels(source).set(observed_at)
         self.resource_sample_success.labels(source).set(1)
+        self.resource_health.record(source, value, observed_at)
 
     def set_queue_oldest_age(self, age_seconds: float) -> None:
         self.queue_oldest_age_seconds.set(max(0.0, age_seconds))
