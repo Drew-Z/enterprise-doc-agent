@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "verified_at": "2026-10-03T20:18:17.034897+00:00",
+  "status": "rc20_restored_runtime_verified",
+  "release": "v0.1.45-rc.20",
+  "application_source": "0779458c0d6be085b713b4c4fba4b01bb129597a",
+  "database_revision": "20260924_0031",
+  "snapshot": "backup-tick-20261002-071234-486190",
+  "fresh_production_snapshot": false,
+  "independent_restored_database": {
+    "tables": 56,
+    "rows": 82622,
+    "source_fingerprints_match": true,
+    "restore_seconds": 18.155999999988126
+  },
+  "historical_reads": {
+    "packets": 33,
+    "csv_and_cross_tenant_denial": true,
+    "objects": 1668,
+    "object_bytes": 1872148,
+    "object_sha256_all_match": true,
+    "object_adapter": "rc20 bounded read_object"
+  },
+  "new_business": {
+    "status": "restored_new_business_verified",
+    "controlled_model_calls": 1,
+    "historical_tenant_tables_unchanged": 43,
+    "upload_parse_retrieve_generate_review_csv": true,
+    "met_unmet_unknown_preserved": true,
+    "same_key_replays_and_one_settlement": true
+  },
+  "agent_recovery": {
+    "status": "restored_agent_mcp_approval_recovery_verified",
+    "controlled_model_calls": 1,
+    "replaced_processes": [
+      "consumer",
+      "worker"
+    ],
+    "waiting_approval_state_and_accounting_unchanged": true,
+    "approval_then_publication": true,
+    "execution_sequences": [
+      0,
+      1
+    ],
+    "artifact_bytes": 539,
+    "artifact_sha256": "a40de5980cd25ce0b13fdb214a9b998e20df5773ab5c3d12734ad2ff435b264e",
+    "citation_and_download_verified": true,
+    "same_key_replays_unchanged": true,
+    "cross_tenant_denied": true,
+    "quota_used": 1,
+    "quota_reserved": 0,
+    "preexisting_tables_unchanged": 56,
+    "preexisting_rows_unchanged": 82705
+  },
+  "original_database": {
+    "tables_unchanged": 56,
+    "rows_unchanged": 82948
+  },
+  "cleanup": {
+    "owned_vm_resources_removed": 14,
+    "api_and_web_retained_ready": true,
+    "original_secret_and_network_policy_unchanged": true,
+    "local_transport_files_removed": 20,
+    "local_transport_bytes_removed": 486131657,
+    "local_transport_directory_removed": true
+  },
+  "production_writes": 0,
+  "real_supplier_calls_in_recovery": 0,
+  "fresh_production_rpo_verified": false,
+  "historical_production_inflight_deadline_recovery_verified": false,
+  "independent_cloud_failure_domain_verified": false,
+  "on_call_arrangements_verified": false,
+  "all_five_acceptance_gates_complete": false
+}
