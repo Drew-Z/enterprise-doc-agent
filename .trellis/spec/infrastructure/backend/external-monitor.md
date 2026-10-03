@@ -150,6 +150,20 @@ heartbeat table; state-machine tests cover failure/recovery/deduplication and
 preservation of an old unknown notification. Tests are not runtime activation or
 computer-offline evidence.
 
+For deployment, validate the actual single Worker and advancing API/public source
+timestamps before requiring the new input. First require both sources, observe a
+natural cron, then clear only `QUEUE_HEARTBEAT_KEY`. A subsequent backup-capacity
+reason proves the earlier queue check passed, but keeps overall health failed.
+Preserve D1 monitor keys and existing unknown events through both deployments.
+Removing desktop inputs does not itself prove a physical computer-off exercise.
+
+When introducing the two network policies to an existing strict release inventory,
+bootstrap only the absent policies and compare-and-swap the Namespace prerequisite
+fingerprint before binding the normal release plan. Both candidate and rollback
+inventories must contain the same complete set. Kubernetes create may emit multiple
+JSON objects, and optional labels may be absent; reconcile UIDs/specs after an
+uncertain client result instead of repeating successful creates.
+
 ## Proven Examples
 
 - `infra/observability/monitor.ts`

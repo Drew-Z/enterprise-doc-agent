@@ -39,5 +39,10 @@ are substituted):
   responses, closes clients/tasks and stays independent of request readiness.
 - [x] Cloudflare fails closed on missing/invalid/stale queue data, preserves both
   configured input requirements and verifies failure/recovery in real D1/workerd.
-- [ ] Local checks, spec and rollout package; current deployment and runtime proof
-  remain separate from candidate source validation.
+- [x] Local checks, spec and bounded rollout package. rc.18 deployed with all five
+  services ready, 20 prerequisites verified and rc.17 rollback retained.
+- [x] Real Worker/API/public observations preserve advancing source timestamps.
+  Cloudflare first required both inputs, then removed only the legacy queue input
+  after an actual cron reached the independent backup check. D1 history is retained.
+- [ ] Physical computer-off validation, sustainable backup capacity/freshness and
+  notification delivery. These remain open within the overall operations gate.
