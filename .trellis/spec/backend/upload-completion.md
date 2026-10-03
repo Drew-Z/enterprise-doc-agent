@@ -13,6 +13,7 @@ completed object. M1 does not create ingestion jobs or outbox events.
 
 - `POST /api/upload-sessions/{session_id}/complete`
 - `UploadSessionService.complete(principal, session_id, request)`
+- `MultipartObjectStore.read_object(bucket, key, max_bytes) -> ObjectContent`
 - `validate_document_envelope(object_store, bucket, key, size_bytes, extension, settings)`
 - `upload_sessions.document_version_id -> document_versions.id` is nullable and unique.
 
@@ -55,8 +56,14 @@ The request contains an ordered `parts` array. Every item contains `partNumber`,
   bounded envelope checks; see [presales ingestion](../foundation-tests/backend/presales-ingestion.md).
 - Readback-checksum mode verifies every expected part and the full declared SHA256
   before recording `content_sha256_verified_at`. For objects at most 1 MiB, retain
-  only these same-operation verified bytes and run the existing envelope validators
-  against them, avoiding another storage GET. The buffer must match the full object
+  metadata and bounded bytes from one complete `GetObject` response, avoiding a separate
+  HEAD and per-part GETs. `ObjectContent` contains its `head` and `content`; an object
+  larger than `max_bytes` returns metadata with `content=None` without reading its body,
+  allowing the existing ownership/size rejection and identity-gated cleanup to apply.
+  The adapter closes the body on every available exit path and rejects partial responses,
+  invalid metadata, truncation or excess bytes. Blocking I/O stays in the worker thread.
+  Verify every recorded part boundary and the whole SHA256 in memory before running the
+  existing envelope validators. The buffer must match the full object
   size, remain scoped to its bucket/key and never survive the completion call.
   Large files and native-checksum mode keep their bounded remote envelope reads.
   Reuse does not skip signature, UTF-8, ZIP metadata, quota or finalization checks.
@@ -81,6 +88,8 @@ The request contains an ordered `parts` array. Every item contains `partNumber`,
 - Invalid PDF/TXT/DOCX envelope -> `409` with a stable `document_*` code.
 - Missing multipart/object during an unreconciled state -> `409` object-store error.
 - Object-store unavailable -> `503`; protocol violation -> `502`.
+- Oversize small-object response -> read no body; preserve the existing size/ownership
+  rejection, one-time reservation release and owned-object-only deletion.
 - Broken completed/link invariant or unrecovered finalization -> typed `500`.
 - A completed session linked to a ready/failed version -> `200`, same IDs and
   completedAt, `replayed=true`; this is not `upload_completion_state_invalid`.
@@ -113,12 +122,21 @@ The request contains an ordered `parts` array. Every item contains `partNumber`,
 - Verify small readback completions avoid duplicate GETs, large files retain remote
   envelope reads, and completed replay does not re-read or consume storage twice.
   Invalid buffered PDF/TXT/DOCX content must retain the same stable rejection codes.
+- SDK boundary tests assert one full GET with same-response metadata/bytes, bounded read,
+  no body read for oversize, and closure after malformed metadata, partial or truncated data.
+- Real PostgreSQL/MinIO public API concurrency covers both checksum modes; direct completion
+  and stale-cleanup recovery after object completion still finalize once. Small-object
+  foreign metadata and both size mismatches release the reservation and delete only when owned.
 
 ### 7. Wrong vs Correct
 
 Wrong: reject a completed receipt when `version.status != "uploaded"`.
 Correct: verify the immutable completion links; downstream ingestion status does not
 invalidate the upload receipt or authorize a second quota conversion.
+
+Wrong: treat the combined GET buffer as already verified because transport succeeded.
+Correct: bind its metadata to the owned upload and verify all part/full hashes before
+format validation and finalization; the optimization removes a round trip, not a check.
 
 #### Wrong
 

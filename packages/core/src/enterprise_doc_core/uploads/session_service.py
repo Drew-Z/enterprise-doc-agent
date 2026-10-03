@@ -491,10 +491,7 @@ class UploadSessionService:
             except MultipartUploadNotFound:
                 completion_result = None
 
-        head = await self.object_store.head_object(
-            bucket=self.documents_bucket,
-            key=snapshot.object_key,
-        )
+        head, readback_content = await self._read_completed_object(snapshot)
         identity_verified = _object_identity_matches(snapshot=snapshot, head=head)
         try:
             (
@@ -506,6 +503,7 @@ class UploadSessionService:
                 head=head,
                 completion_result=completion_result,
                 expected_parts=expected_parts,
+                readback_content=readback_content,
             )
         except (DocumentEnvelopeViolation, UploadCompletionVerificationFailed) as error:
             await self._mark_invalid_completion(
@@ -600,10 +598,7 @@ class UploadSessionService:
                 multipart_missing = True
 
         try:
-            head = await self.object_store.head_object(
-                bucket=self.documents_bucket,
-                key=snapshot.object_key,
-            )
+            head, readback_content = await self._read_completed_object(snapshot)
         except ObjectStoreNotFound as error:
             if not multipart_missing:
                 raise
@@ -632,6 +627,7 @@ class UploadSessionService:
                 head=head,
                 completion_result=completion_result,
                 expected_parts=expected_parts,
+                readback_content=readback_content,
             )
         except (DocumentEnvelopeViolation, UploadCompletionVerificationFailed) as error:
             marked_failed = await self._mark_invalid_completion(
@@ -715,6 +711,26 @@ class UploadSessionService:
             )
             return _snapshot(upload_session), expected_parts, None
 
+    async def _read_completed_object(
+        self, snapshot: _UploadSessionSnapshot
+    ) -> tuple[ObjectHead, bytes | None]:
+        if (
+            self.uses_readback_checksum_verification
+            and snapshot.size_bytes <= MAX_BUFFERED_ENVELOPE_BYTES
+        ):
+            result = await self.object_store.read_object(
+                bucket=self.documents_bucket,
+                key=snapshot.object_key,
+                max_bytes=snapshot.size_bytes,
+            )
+            return result.head, result.content
+        return (
+            await self.object_store.head_object(
+                bucket=self.documents_bucket, key=snapshot.object_key
+            ),
+            None,
+        )
+
     async def _validate_completed_object(
         self,
         *,
@@ -722,6 +738,7 @@ class UploadSessionService:
         head: ObjectHead,
         completion_result: CompletedMultipartUpload | None,
         expected_parts: Sequence[UploadPart],
+        readback_content: bytes | None = None,
     ) -> tuple[str, str | None, datetime | None]:
         content_sha256_verified_at: datetime | None = None
         verified_content: bytes | None = None
@@ -730,6 +747,7 @@ class UploadSessionService:
                 snapshot=snapshot,
                 head=head,
                 expected_parts=expected_parts,
+                content=readback_content,
             )
             transport_checksum = None
             content_sha256_verified_at = self.clock()
@@ -756,16 +774,22 @@ class UploadSessionService:
         snapshot: _UploadSessionSnapshot,
         head: ObjectHead,
         expected_parts: Sequence[UploadPart],
+        content: bytes | None = None,
     ) -> bytes | None:
         if (
             head.size_bytes != snapshot.size_bytes
             or not _object_identity_matches(snapshot=snapshot, head=head)
             or len(expected_parts) != snapshot.expected_part_count
+            or (content is not None and len(content) != snapshot.size_bytes)
         ):
             raise UploadCompletionVerificationFailed()
 
         whole_hasher = hashlib.sha256()
-        buffered = bytearray() if snapshot.size_bytes <= MAX_BUFFERED_ENVELOPE_BYTES else None
+        buffered = (
+            bytearray()
+            if content is None and snapshot.size_bytes <= MAX_BUFFERED_ENVELOPE_BYTES
+            else None
+        )
         expected_numbers = list(range(1, snapshot.expected_part_count + 1))
         if [part.part_number for part in expected_parts] != expected_numbers:
             raise UploadCompletionVerificationFailed()
@@ -782,11 +806,15 @@ class UploadSessionService:
             offset = part_start
             while remaining:
                 length = min(READBACK_HASH_CHUNK_BYTES, remaining)
-                chunk = await self.object_store.get_range(
-                    bucket=self.documents_bucket,
-                    key=snapshot.object_key,
-                    start=offset,
-                    end_inclusive=offset + length - 1,
+                chunk = (
+                    content[offset : offset + length]
+                    if content is not None
+                    else await self.object_store.get_range(
+                        bucket=self.documents_bucket,
+                        key=snapshot.object_key,
+                        start=offset,
+                        end_inclusive=offset + length - 1,
+                    )
                 )
                 if len(chunk) != length:
                     raise UploadCompletionVerificationFailed()
@@ -802,7 +830,7 @@ class UploadSessionService:
 
         if whole_hasher.hexdigest() != snapshot.declared_sha256:
             raise UploadCompletionVerificationFailed()
-        return bytes(buffered) if buffered is not None else None
+        return content if content is not None else bytes(buffered) if buffered is not None else None
 
     async def abort(
         self,

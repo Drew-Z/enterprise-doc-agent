@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-03T17:30:42.505367+00:00",
+  "status": "local_validation_passed_not_deployed",
+  "baseline_commit": "3f14284c3ef867e9071c72993fd4e030710eed19",
+  "change": "Read metadata and bounded content from one full GetObject response for readback uploads at most 1 MiB.",
+  "preserved": [
+    "upload ownership",
+    "declared size",
+    "per-part and full SHA256",
+    "file envelope validation",
+    "one-time quota conversion",
+    "completed replay",
+    "post-object crash recovery",
+    "native and large-file paths"
+  ],
+  "checks": {
+    "nonintegration_passed": 2275,
+    "subtests_passed": 23,
+    "integration_deselected": 505,
+    "real_postgres_minio_multipart_passed": 58,
+    "format_lint_strict_types": "passed",
+    "historical_dirty_paths_preserved": 2993,
+    "owned_test_containers_removed": 2
+  },
+  "test_boundaries": "Real PostgreSQL completion/recovery and MinIO HTTP concurrency in both checksum modes; SDK/network doubles for exact single-request, bounded body and malformed-response cases.",
+  "failures_retained": [
+    "Initial missing adapter operation",
+    "Unreadable body closure",
+    "Old duplicate range expectation",
+    "Sorted exports",
+    "Worker protocol forwarding",
+    "Native stale-recovery fixture lacked prior public resume observations"
+  ],
+  "review": "Main-agent protocol and call-site review; independent subagent was unavailable because its configured model provider returned model_not_found.",
+  "evidence": {
+    "quality-backend-3.json": "fa8849a5b6e6727bc956909495fd5819322d864a23a12e6cdc8c54cece7acc92",
+    "quality-backend-3-pytest.txt": "a0b0ddb2b4e3ab8c3b9c6ecdcec5dbe49cffe2d3e3b110498138d75a940bc6ee",
+    "multipart-regression-2.log": "5b4c75cb501f4c7e8326070cf5014bd6f090ed927e072f6bb43c71e19ad5919a",
+    "adapter-red.txt": "b7e598b3f13f485fac413609ff8ced44ea7aaf9dbc906f29a8eadc433cedd35a",
+    "adapter-green.txt": "0c81d97b7cd745ce2e34aabf3c730fe120c0de8016d1d52560ae37ef0baf3593",
+    "adapter-boundary-red.txt": "b9341a755d81b14786838ce33b463b557c2b939652514582ae98aab8b85a3ba5",
+    "adapter-boundary-green.txt": "30822d3a3faddacbae5a288a0991bc4b0f1e96cc3fa464743b6668d9f2559c25",
+    "completion-red.log": "cee45599fdf1e4895f344cf77004476918f28981c9cb6c508f452a02d33e986f",
+    "completion-green.log": "c57d325b64c6c9972f00f2de085582ac1909918538073581f5e8688834535c0d",
+    "fault-adapter-red.txt": "4411c3ed12b63522e0d2108784c05a1e2917fe2b6e2e724e55dde7fca3c14fa8",
+    "fault-adapter-green.txt": "c82745319773d9647dc8264b840417ab73d10d6ae6cf46a8ac9202f621dba09e",
+    "real-completion.log": "0419bb9887367ca13acdfb679c06a0e6081dac0ef8b657be9fed53a312ed2c69",
+    "test-resource-cleanup-result.json": "5796a91f010db87f506f1f41e28e49461274ec79223151888068835d291b29eb",
+    "historical-workspace-verification.json": "fbe6d3d7fe7f972494e3851595f521bbcbf575d99ffe4110d039c544b2e0977c"
+  },
+  "limits": [
+    "No deployment or new supplier calls in local validation.",
+    "Previous real upload p95 11458.226 ms remains failed against 5000 ms; removing requests does not prove live latency.",
+    "All five overall acceptance gates remain open."
+  ]
+}

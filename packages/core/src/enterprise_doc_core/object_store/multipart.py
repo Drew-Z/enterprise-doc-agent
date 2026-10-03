@@ -20,6 +20,7 @@ from enterprise_doc_core.object_store.metrics import instrument_object_store_ope
 from enterprise_doc_core.object_store.models import (
     CompletedMultipartUpload,
     IncompleteUpload,
+    ObjectContent,
     ObjectHead,
     PresignedUploadPart,
     UploadedPart,
@@ -65,6 +66,8 @@ class MultipartObjectStore(Protocol):
     ) -> CompletedMultipartUpload: ...
 
     async def head_object(self, *, bucket: str, key: str) -> ObjectHead: ...
+
+    async def read_object(self, *, bucket: str, key: str, max_bytes: int) -> ObjectContent: ...
 
     async def get_range(
         self,
@@ -304,22 +307,42 @@ class Boto3MultipartObjectStore:
                 **parameters,
             ),
         )
-        checksum = response.get("ChecksumSHA256")
-        content_type = response.get("ContentType")
-        metadata = response.get("Metadata", {})
-        if checksum is not None and not isinstance(checksum, str):
+        return _object_head(response)
+
+    @instrument_object_store_operation("read")
+    async def read_object(self, *, bucket: str, key: str, max_bytes: int) -> ObjectContent:
+        """Return one response's metadata and bounded bytes; oversize bodies stay unread."""
+        if type(max_bytes) is not int or max_bytes < 1:
             raise ObjectStoreProtocolError()
-        if content_type is not None and not isinstance(content_type, str):
-            raise ObjectStoreProtocolError()
-        if not isinstance(metadata, Mapping):
-            raise ObjectStoreProtocolError()
-        return ObjectHead(
-            size_bytes=_require_int(response, "ContentLength", minimum=0),
-            etag=_require_str(response, "ETag"),
-            checksum_sha256_b64=checksum,
-            content_type=content_type,
-            metadata={str(name): str(value) for name, value in metadata.items()},
-        )
+
+        def read() -> ObjectContent:
+            parameters: dict[str, Any] = {"Bucket": bucket, "Key": key}
+            if self.settings.multipart_checksum_mode is ObjectStoreChecksumMode.NATIVE_SHA256:
+                parameters["ChecksumMode"] = "ENABLED"
+            response = _require_mapping(self.control_client.get_object(**parameters))
+            raw_body = response.get("Body")
+            if not callable(getattr(raw_body, "read", None)) or not callable(
+                getattr(raw_body, "close", None)
+            ):
+                close = getattr(raw_body, "close", None)
+                if callable(close):
+                    close()
+                raise ObjectStoreProtocolError()
+            body = cast(_ReadableBody, raw_body)
+            try:
+                head = _object_head(response)
+                if response.get("ContentRange") is not None:
+                    raise ObjectStoreProtocolError()
+                if head.size_bytes > max_bytes:
+                    return ObjectContent(head=head, content=None)
+                content = body.read(head.size_bytes + 1)
+                if not isinstance(content, bytes) or len(content) != head.size_bytes:
+                    raise ObjectStoreProtocolError()
+                return ObjectContent(head=head, content=content)
+            finally:
+                body.close()
+
+        return cast(ObjectContent, await self._call(read))
 
     @instrument_object_store_operation("read")
     async def get_range(
@@ -471,6 +494,25 @@ class Boto3MultipartObjectStore:
         except (BotoCoreError, ClientError) as error:
             normalized_error: ObjectStoreError = normalize_object_store_error(error)
         raise normalized_error
+
+
+def _object_head(response: Mapping[str, Any]) -> ObjectHead:
+    checksum = response.get("ChecksumSHA256")
+    content_type = response.get("ContentType")
+    metadata = response.get("Metadata", {})
+    if checksum is not None and not isinstance(checksum, str):
+        raise ObjectStoreProtocolError()
+    if content_type is not None and not isinstance(content_type, str):
+        raise ObjectStoreProtocolError()
+    if not isinstance(metadata, Mapping):
+        raise ObjectStoreProtocolError()
+    return ObjectHead(
+        size_bytes=_require_int(response, "ContentLength", minimum=0),
+        etag=_require_str(response, "ETag"),
+        checksum_sha256_b64=checksum,
+        content_type=content_type,
+        metadata={str(name): str(value) for name, value in metadata.items()},
+    )
 
 
 def _validate_part_number(part_number: int) -> None:
