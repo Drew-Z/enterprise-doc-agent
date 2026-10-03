@@ -2,6 +2,13 @@
 
 ## Adopted Facts
 
+- ModelSettings exposes independent optional reasoning_effort and fallback_reasoning_effort
+  values (low, medium, high, xhigh). Agent and Presales requests omit the field unless
+  configured; fallback never inherits primary effort, and bounded Agent schema repairs
+  keep the selected route's effort. This does not automatically select a task quality tier.
+- Staging rendering and guarded release switching bind both settings to the existing
+  configuration fingerprint and restore the original values or absence on rollback.
+  The generation-only evaluator records configuredReasoningEffort for comparisons.
 - `RoutedChatModelGateway` uses fallback only for retryable gateway errors.
 - Exhausted bounded provider-output schema repair is retryable; permanent auth,
   provider-envelope contract, authorization and grounding failures do not silently
@@ -25,6 +32,9 @@
 
 ## Proven Examples
 
+- Settings, model gateway, Presales citation selection, Worker composition, staging
+  rendering, release switching and evaluator tests cover explicit effort and omission,
+  invalid-value rejection, request preservation, fingerprint mismatch and rollback.
 - `packages/core/tests/test_model_routing.py` proves retryable-only fallback, permanent
   failure propagation, schema-failure telemetry merging, raw observed identity retention,
   shared deadline enforcement, cancellation propagation, single-probe HALF_OPEN behavior

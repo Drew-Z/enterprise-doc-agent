@@ -14,6 +14,7 @@ from enterprise_doc_core.presales.errors import PresalesError
 from enterprise_doc_core.presales.gateway import OpenAICompatiblePresalesGateway
 from enterprise_doc_core.presales.generation import resolve_draft
 from enterprise_doc_core.presales.schemas import GenerationInput, RequirementInput, SourceSnapshot
+from enterprise_doc_core.presales.settings import PresalesSettings
 
 
 def evidence_payload(text: str) -> GenerationInput:
@@ -82,6 +83,50 @@ def model_response(citations: list[dict], **changes) -> httpx.Response:
             "usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
         },
     )
+
+
+@pytest.mark.parametrize("route", ["primary", "fallback"])
+@pytest.mark.parametrize(
+    "primary,fallback", [(None, None), ("high", None), (None, "medium"), ("high", "xhigh")]
+)
+async def test_selected_route_uses_only_its_explicit_reasoning(route, primary, fallback):
+    requests = []
+
+    async def respond(request):
+        envelope = json.loads(request.content)
+        requests.append(envelope)
+        assert request.url.host == f"{route}.example"
+        sent = json.loads(envelope["messages"][1]["content"])
+        return model_response([{"citationId": sent["evidence"][0]["citationId"]}])
+
+    settings = ModelSettings.model_validate(
+        {
+            "provider": "openai_compatible",
+            "base_url": "https://primary.example/v1",
+            "api_key": "primary-test",
+            "model_name": "primary-model",
+            "reasoning_effort": primary,
+            "fallback_provider": "openai_compatible",
+            "fallback_base_url": "https://fallback.example/v1",
+            "fallback_api_key": "fallback-test",
+            "fallback_model_name": "fallback-model",
+            "fallback_reasoning_effort": fallback,
+        }
+    )
+    selected = OpenAICompatiblePresalesGateway(
+        settings,
+        presales_settings=PresalesSettings(model_route=route),
+        transport=httpx.MockTransport(respond),
+    )
+    result = await selected.generate(evidence_payload("报告保留期为30天。"))
+    assert len(requests) == 1
+    assert result.draft.citations[0].excerpt == "报告保留期为30天。"
+    expected = primary if route == "primary" else fallback
+    if expected is None:
+        assert "reasoning_effort" not in requests[0]
+    else:
+        assert requests[0]["reasoning_effort"] == expected
+    assert requests[0]["max_tokens"] == 4000
 
 
 async def test_model_selects_reference_and_server_returns_exact_authorized_source() -> None:

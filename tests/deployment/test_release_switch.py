@@ -115,6 +115,53 @@ def release_data() -> dict[str, Any]:
     }
 
 
+@pytest.mark.parametrize("key", ["MODEL__REASONING_EFFORT", "MODEL__FALLBACK_REASONING_EFFORT"])
+@pytest.mark.parametrize(
+    "effort", [None, "low", "medium", "high", "xhigh", "", " HIGH", "automatic"]
+)
+def test_reasoning_switch_validates_fingerprints_and_restores_original(key, effort):
+    from scripts.maintenance_guard import GuardError
+    from scripts.release_switch import ReleaseCluster, ReleasePlan
+
+    data = release_data()
+    data["original_prerequisites"][1]["data"][key] = "high"
+    candidate = data["candidate_prerequisites"][1]["data"]
+    if effort is not None:
+        candidate[key] = effort
+    for prerequisites, deployments in (
+        (data["original_prerequisites"], data["deployments"]),
+        (data["candidate_prerequisites"], data["candidate_deployments"]),
+    ):
+        digest = canonical_digest(prerequisites[1]["data"])
+        prerequisites[0]["metadata"]["annotations"][PREFIX + "approved-config-sha256"] = digest
+        for deployment in deployments:
+            deployment["spec"]["template"]["metadata"]["annotations"][PREFIX + "config-sha256"] = (
+                digest
+            )
+    if effort not in (None, "low", "medium", "high", "xhigh"):
+        with pytest.raises(GuardError):
+            ReleasePlan(data)
+        return
+    mismatched = copy.deepcopy(data)
+    mismatched["candidate_prerequisites"][1]["data"][key] = "low" if effort != "low" else "high"
+    with pytest.raises(GuardError, match="fingerprint"):
+        ReleasePlan(mismatched)
+    plan = ReleasePlan(data)
+    boundary = Boundary(data)
+    cluster = ReleaseCluster(
+        plan,
+        run=boundary,
+        revision=lambda timeout: "20260924_0031",
+        idle=lambda timeout: True,
+        clock=lambda: 1.0,
+    )
+    cluster.apply(100)
+    config = next(item for item in boundary.items if item["kind"] == "ConfigMap")
+    assert config["data"].get(key) == effort
+    cluster.restore(100)
+    assert config["data"] == data["original_prerequisites"][1]["data"]
+
+
 @pytest.mark.parametrize("enabled", ["true", "false", "yes", "", True, 1])
 def test_release_accepts_only_explicit_queue_observation_boolean(enabled: Any) -> None:
     from scripts.maintenance_guard import GuardError

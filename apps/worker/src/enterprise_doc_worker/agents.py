@@ -104,6 +104,7 @@ def _configured_gateway(
         api_key=settings.fallback_api_key,
         model_name=settings.fallback_model_name,
         model_version=settings.fallback_model_version,
+        reasoning_effort=settings.fallback_reasoning_effort,
         route_id=f"{settings.route_id}-fallback",
         embedding_dimension=settings.embedding_dimension,
         timeout_seconds=fallback_timeout_seconds,

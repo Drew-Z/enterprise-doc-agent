@@ -42,6 +42,7 @@ def load_route_settings(provider_env: Path, model_route: ModelRoute) -> ModelSet
         "base_url": values[prefix + "BASE_URL"],
         "api_key": SecretStr(values[prefix + "API_KEY"] or ""),
         "model_name": values[prefix + "MODEL_NAME"],
+        "reasoning_effort": values.get(prefix + "REASONING_EFFORT") or None,
         "timeout_seconds": 120,
     }
     if model_route == "fallback":
@@ -176,6 +177,9 @@ async def collect(
         "configuredModelName": settings.fallback_model_name
         if model_route == "fallback"
         else settings.model_name,
+        "configuredReasoningEffort": settings.fallback_reasoning_effort
+        if model_route == "fallback"
+        else settings.reasoning_effort,
         "versions": {
             s.key: str(v.version_id) for s, v in zip(dataset.sources, snapshots, strict=True)
         },

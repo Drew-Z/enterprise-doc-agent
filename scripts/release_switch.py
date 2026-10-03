@@ -56,6 +56,8 @@ CONFIG_KEYS = {
     "MODEL__MODEL_NAME",
     "MODEL__MODEL_VERSION",
     "MODEL__FALLBACK_MODEL_NAME",
+    "MODEL__REASONING_EFFORT",
+    "MODEL__FALLBACK_REASONING_EFFORT",
     "MODEL__TIMEOUT_SECONDS",
     "PRESALES__MODEL_ROUTE",
     "PRESALES__BACKGROUND_GENERATION_ENABLED",
@@ -136,6 +138,9 @@ class ReleasePlan(Plan):
         changed = {k for k in old.keys() | new.keys() if old.get(k) != new.get(k)}
         if changed - CONFIG_KEYS or any(not isinstance(v, str) for v in new.values()):
             raise GuardError("configuration exceeds the reviewed release scope")
+        for key in ("MODEL__REASONING_EFFORT", "MODEL__FALLBACK_REASONING_EFFORT"):
+            if key in new and new[key] not in {"low", "medium", "high", "xhigh"}:
+                raise GuardError("invalid model reasoning effort")
         if "MODEL__FALLBACK_MODEL_NAME" in changed:
             fallback_name = new.get("MODEL__FALLBACK_MODEL_NAME", "")
             if not fallback_name or fallback_name != fallback_name.strip():

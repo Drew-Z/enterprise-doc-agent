@@ -130,6 +130,14 @@ def _model_version(value: str) -> str:
     return normalized
 
 
+def _model_reasoning_effort(value: str | None) -> str | None:
+    if value is None or value == "":
+        return None
+    if value not in {"low", "medium", "high", "xhigh"}:
+        raise ValueError("model reasoning effort must be low, medium, high, or xhigh")
+    return value
+
+
 def _model_timeout_seconds(value: str) -> str:
     normalized = value.strip()
     try:
@@ -474,6 +482,7 @@ def configure_manifest(
     model_base_url: str,
     model_name: str,
     model_timeout_seconds: str | None = None,
+    model_reasoning_effort: str | None = None,
     browser_auth_issuer: str | None = None,
     browser_auth_client_id: str | None = None,
     browser_auth_oidc_config: str | None = None,
@@ -482,6 +491,7 @@ def configure_manifest(
     fallback_model_name: str | None = None,
     fallback_model_version: str | None = None,
     fallback_model_timeout_seconds: str | None = None,
+    fallback_model_reasoning_effort: str | None = None,
     presales_generation_enabled: str = "false",
     presales_model_route: str = "primary",
     presales_model_timeout_seconds: str | None = None,
@@ -530,6 +540,8 @@ def configure_manifest(
         raise ValueError(f"model provider must be {MODEL_PROVIDER}")
     normalized_model_base_url = _model_base_url(model_base_url)
     normalized_model_name = _model_name(model_name)
+    normalized_reasoning = _model_reasoning_effort(model_reasoning_effort)
+    normalized_fallback_reasoning = _model_reasoning_effort(fallback_model_reasoning_effort)
     normalized_primary_timeout = (
         _model_timeout_seconds(model_timeout_seconds) if model_timeout_seconds else None
     )
@@ -547,6 +559,8 @@ def configure_manifest(
         raise ValueError("fallback model route requires both a base URL and a model name")
     if (fallback_version_value or fallback_timeout_value) and not fallback_base_url_value:
         raise ValueError("fallback model version and timeout require a configured fallback route")
+    if normalized_fallback_reasoning is not None and not fallback_base_url_value:
+        raise ValueError("fallback reasoning effort requires a configured fallback route")
     normalized_fallback_base_url = (
         _model_base_url(fallback_base_url_value) if fallback_base_url_value else None
     )
@@ -624,6 +638,9 @@ def configure_manifest(
     data["MODEL__PROVIDER"] = MODEL_PROVIDER
     data["MODEL__BASE_URL"] = normalized_model_base_url
     data["MODEL__MODEL_NAME"] = normalized_model_name
+    data.pop("MODEL__REASONING_EFFORT", None)
+    if normalized_reasoning is not None:
+        data["MODEL__REASONING_EFFORT"] = normalized_reasoning
     if normalized_primary_timeout is not None:
         data["MODEL__TIMEOUT_SECONDS"] = normalized_primary_timeout
     for fallback_key in (
@@ -632,6 +649,7 @@ def configure_manifest(
         "MODEL__FALLBACK_MODEL_NAME",
         "MODEL__FALLBACK_MODEL_VERSION",
         "MODEL__FALLBACK_TIMEOUT_SECONDS",
+        "MODEL__FALLBACK_REASONING_EFFORT",
     ):
         data.pop(fallback_key, None)
     if normalized_fallback_base_url is not None and normalized_fallback_name is not None:
@@ -642,6 +660,8 @@ def configure_manifest(
             data["MODEL__FALLBACK_MODEL_VERSION"] = normalized_fallback_version
         if normalized_fallback_timeout is not None:
             data["MODEL__FALLBACK_TIMEOUT_SECONDS"] = normalized_fallback_timeout
+        if normalized_fallback_reasoning is not None:
+            data["MODEL__FALLBACK_REASONING_EFFORT"] = normalized_fallback_reasoning
     data.pop("PRESALES__MODEL_TIMEOUT_SECONDS", None)
     data.pop("PRESALES__CONCURRENT_ATTEMPT_LIMIT", None)
     data.update(presales_config)
@@ -899,6 +919,7 @@ def main() -> None:
     parser.add_argument("--model-base-url", required=True)
     parser.add_argument("--model-name", required=True)
     parser.add_argument("--model-timeout-seconds")
+    parser.add_argument("--model-reasoning-effort")
     parser.add_argument("--browser-auth-issuer")
     parser.add_argument("--browser-auth-client-id")
     parser.add_argument("--browser-auth-oidc-config")
@@ -907,6 +928,7 @@ def main() -> None:
     parser.add_argument("--fallback-model-name")
     parser.add_argument("--fallback-model-version")
     parser.add_argument("--fallback-model-timeout-seconds")
+    parser.add_argument("--fallback-model-reasoning-effort")
     parser.add_argument("--presales-generation-enabled", choices=("true", "false"), default="false")
     parser.add_argument(
         "--presales-model-route", choices=("primary", "fallback"), default="primary"
@@ -947,6 +969,7 @@ def main() -> None:
         model_base_url=args.model_base_url,
         model_name=args.model_name,
         model_timeout_seconds=args.model_timeout_seconds,
+        model_reasoning_effort=args.model_reasoning_effort,
         browser_auth_issuer=args.browser_auth_issuer,
         browser_auth_client_id=args.browser_auth_client_id,
         browser_auth_oidc_config=args.browser_auth_oidc_config,
@@ -955,6 +978,7 @@ def main() -> None:
         fallback_model_name=args.fallback_model_name,
         fallback_model_version=args.fallback_model_version,
         fallback_model_timeout_seconds=args.fallback_model_timeout_seconds,
+        fallback_model_reasoning_effort=args.fallback_model_reasoning_effort,
         presales_generation_enabled=args.presales_generation_enabled,
         presales_model_route=args.presales_model_route,
         presales_model_timeout_seconds=args.presales_model_timeout_seconds,

@@ -111,6 +111,7 @@ class OpenAICompatiblePresalesGateway:
                 api_key=settings.fallback_api_key,
                 model_name=settings.fallback_model_name,
                 model_version=settings.fallback_model_version,
+                reasoning_effort=settings.fallback_reasoning_effort,
                 timeout_seconds=settings.fallback_timeout_seconds or settings.timeout_seconds,
                 max_output_bytes=settings.max_output_bytes,
             )
@@ -173,6 +174,8 @@ class OpenAICompatiblePresalesGateway:
             "stream": False,
             "max_tokens": 4000,
         }
+        if self.settings.reasoning_effort is not None:
+            request["reasoning_effort"] = self.settings.reasoning_effort
         if len(json.dumps(request, ensure_ascii=False).encode()) > 128 * 1024:
             raise PresalesError("presales_input_too_large")
         request_id = None

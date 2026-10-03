@@ -277,6 +277,8 @@ jobs:
           MODEL_BASE_URL: ${{ vars.STAGING_MODEL_BASE_URL }}
           MODEL_NAME: ${{ vars.STAGING_MODEL_NAME }}
           MODEL_TIMEOUT_SECONDS: ${{ vars.STAGING_MODEL_TIMEOUT_SECONDS }}
+          MODEL_REASONING_EFFORT: ${{ vars.STAGING_MODEL_REASONING_EFFORT }}
+          MODEL_FALLBACK_REASONING_EFFORT: ${{ vars.STAGING_MODEL_FALLBACK_REASONING_EFFORT }}
           MODEL_FALLBACK_BASE_URL: ${{ vars.STAGING_MODEL_FALLBACK_BASE_URL }}
           MODEL_FALLBACK_NAME: ${{ vars.STAGING_MODEL_FALLBACK_NAME }}
           MODEL_FALLBACK_VERSION: ${{ vars.STAGING_MODEL_FALLBACK_VERSION }}
@@ -346,6 +348,8 @@ jobs:
             --model-base-url "$MODEL_BASE_URL" \
             --model-name "$MODEL_NAME" \
             --model-timeout-seconds "$MODEL_TIMEOUT_SECONDS" \
+            --model-reasoning-effort "$MODEL_REASONING_EFFORT" \
+            --fallback-model-reasoning-effort "$MODEL_FALLBACK_REASONING_EFFORT" \
             "${browser_auth_args[@]}" \
             --presales-generation-enabled "$PRESALES_GENERATION_ENABLED" \
             --presales-model-route "$PRESALES_MODEL_ROUTE" \

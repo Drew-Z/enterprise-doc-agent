@@ -1165,6 +1165,8 @@ def _configure_model(
     model_provider: str = "openai_compatible",
     model_base_url: str = "https://model.example.com/v1",
     model_name: str = "staging-model",
+    model_reasoning_effort: str | None = None,
+    fallback_model_reasoning_effort: str | None = None,
     fallback_model_base_url: str | None = None,
     fallback_model_name: str | None = None,
     fallback_model_version: str | None = None,
@@ -1183,12 +1185,74 @@ def _configure_model(
         model_provider=model_provider,
         model_base_url=model_base_url,
         model_name=model_name,
+        model_reasoning_effort=model_reasoning_effort,
+        fallback_model_reasoning_effort=fallback_model_reasoning_effort,
         fallback_model_base_url=fallback_model_base_url,
         fallback_model_name=fallback_model_name,
         fallback_model_version=fallback_model_version,
         fallback_model_timeout_seconds=fallback_model_timeout_seconds,
         embedding_version=embedding_version,
     )
+
+
+@pytest.mark.parametrize("primary,fallback", [("high", "medium"), ("low", "xhigh"), (None, "high")])
+def test_reasoning_rendering_is_explicit_and_stale_values_are_removed(tmp_path, primary, fallback):
+    source = tmp_path / "template.yaml"
+    destination = tmp_path / "configured.yaml"
+    cleared = tmp_path / "cleared.yaml"
+    _write_template(source)
+    _configure_model(
+        source,
+        destination,
+        model_reasoning_effort=primary,
+        fallback_model_reasoning_effort=fallback,
+        fallback_model_base_url="https://fallback.example.com/v1",
+        fallback_model_name="fallback-model",
+    )
+    docs = list(yaml.safe_load_all(destination.read_text(encoding="utf-8")))
+    config = next(d for d in docs if d["kind"] == "ConfigMap")["data"]
+    assert config.get("MODEL__REASONING_EFFORT") == primary
+    assert config["MODEL__FALLBACK_REASONING_EFFORT"] == fallback
+    from enterprise_doc_core.config import ModelSettings
+
+    loaded = ModelSettings.model_validate(
+        {
+            key.removeprefix("MODEL__").lower(): value
+            for key, value in config.items()
+            if key.startswith("MODEL__")
+        }
+        | {"api_key": "fixture-only", "fallback_api_key": "fallback-fixture-only"}
+    )
+    assert loaded.reasoning_effort == primary
+    assert loaded.fallback_reasoning_effort == fallback
+    _configure_model(destination, cleared)
+    reset = next(
+        d
+        for d in yaml.safe_load_all(cleared.read_text(encoding="utf-8"))
+        if d["kind"] == "ConfigMap"
+    )["data"]
+    assert "MODEL__REASONING_EFFORT" not in reset
+    assert "MODEL__FALLBACK_REASONING_EFFORT" not in reset
+
+
+@pytest.mark.parametrize("field", ["model_reasoning_effort", "fallback_model_reasoning_effort"])
+@pytest.mark.parametrize("effort", ["automatic", "HIGH", " high", "unknown"])
+def test_renderer_rejects_invalid_reasoning_before_writing(tmp_path, field, effort):
+    source = tmp_path / "template.yaml"
+    destination = tmp_path / "configured.yaml"
+    _write_template(source)
+    with pytest.raises(ValueError, match="reasoning effort"):
+        _configure_model(source, destination, **{field: effort})
+    assert not destination.exists()
+
+
+def test_renderer_rejects_reasoning_for_unconfigured_fallback(tmp_path):
+    source = tmp_path / "template.yaml"
+    destination = tmp_path / "configured.yaml"
+    _write_template(source)
+    with pytest.raises(ValueError, match="configured fallback"):
+        _configure_model(source, destination, fallback_model_reasoning_effort="high")
+    assert not destination.exists()
 
 
 def test_configure_manifest_binds_optional_fallback_route_without_secret_data(

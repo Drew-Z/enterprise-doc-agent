@@ -180,12 +180,14 @@ async def test_partial_response_failure_retains_status_not_body_and_closes(tmp_p
 @pytest.mark.parametrize("model_route", ["primary", "fallback"])
 async def test_trial_uses_only_explicit_route_without_failover(tmp_path, model_route):
     requests = []
+    expected_effort = "high" if model_route == "primary" else "medium"
 
     async def fail(request):
         requests.append(request)
         assert str(request.url) == f"https://{model_route}.invalid/v1/chat/completions"
         assert request.headers["Authorization"] == f"Bearer {model_route}-private-key"
         assert json.loads(request.content)["model"] == f"{model_route}-model"
+        assert json.loads(request.content)["reasoning_effort"] == expected_effort
         assert request.extensions["timeout"]["read"] == 120
         raise httpx.ConnectError("private-exception-not-for-report", request=request)
 
@@ -194,10 +196,12 @@ async def test_trial_uses_only_explicit_route_without_failover(tmp_path, model_r
         base_url="https://primary.invalid/v1",
         api_key=SecretStr("primary-private-key"),
         model_name="primary-model",
+        reasoning_effort="high",
         fallback_provider=ModelProvider.OPENAI_COMPATIBLE,
         fallback_base_url="https://fallback.invalid/v1",
         fallback_api_key=SecretStr("fallback-private-key"),
         fallback_model_name="fallback-model",
+        fallback_reasoning_effort="medium",
     )
     output = tmp_path / "selected-route.json"
     result = await collect(
@@ -210,6 +214,7 @@ async def test_trial_uses_only_explicit_route_without_failover(tmp_path, model_r
     assert len(requests) == 6
     assert result["selectedRoute"] == model_route
     assert result["configuredModelName"] == f"{model_route}-model"
+    assert result["configuredReasoningEffort"] == expected_effort
     assert all(
         row["state"] == "failed" and row["providerRequests"] == 1 for row in result["observations"]
     )
@@ -218,12 +223,14 @@ async def test_trial_uses_only_explicit_route_without_failover(tmp_path, model_r
 
 
 @pytest.mark.parametrize("route", ["primary", "fallback"])
-def test_cli_settings_load_only_selected_environment_fields(tmp_path, route):
+@pytest.mark.parametrize("effort", [None, "high"])
+def test_cli_settings_load_only_selected_environment_fields(tmp_path, route, effort):
     prefix = "FALLBACK_" if route == "fallback" else ""
     path = tmp_path / "provider.env"
     path.write_text(
         f"{prefix}BASE_URL=https://{route}.invalid/v1\n"
-        f"{prefix}API_KEY=fixture-secret\n{prefix}MODEL_NAME={route}-model\n",
+        f"{prefix}API_KEY=fixture-secret\n{prefix}MODEL_NAME={route}-model\n"
+        + (f"{prefix}REASONING_EFFORT={effort}\n" if effort else ""),
         encoding="utf-8",
     )
     before = path.read_bytes()
@@ -233,10 +240,14 @@ def test_cli_settings_load_only_selected_environment_fields(tmp_path, route):
         assert settings.model_name == "primary-model"
         assert settings.api_key.get_secret_value() == "fixture-secret"
         assert settings.fallback_api_key is None
+        assert settings.reasoning_effort == effort
+        assert settings.fallback_reasoning_effort is None
     else:
         assert settings.fallback_model_name == "fallback-model"
         assert settings.fallback_api_key.get_secret_value() == "fixture-secret"
         assert settings.api_key is None
+        assert settings.fallback_reasoning_effort == effort
+        assert settings.reasoning_effort is None
 
 
 async def test_public_excerpt_trial_preserves_source_scope_and_five_single_attempts(tmp_path):

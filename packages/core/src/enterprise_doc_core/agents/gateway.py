@@ -777,6 +777,8 @@ class OpenAICompatibleChatGateway:
             "response_format": {"type": "json_object"},
             "messages": messages,
         }
+        if self.settings.reasoning_effort is not None:
+            body["reasoning_effort"] = self.settings.reasoning_effort
         try:
             response = await recorded_post(
                 self.client,
