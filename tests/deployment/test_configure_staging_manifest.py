@@ -227,7 +227,8 @@ def test_configure_manifest_preserves_explicit_presales_route_and_wait_budget(
             )
 
 
-def test_presales_background_flags_and_budget_reach_api_and_worker(tmp_path: Path) -> None:
+@pytest.mark.parametrize("budgets", [(120, None, 150), (300, 90, 660), (180, 300, 900)])
+def test_presales_background_flags_and_budget_reach_api_and_worker(tmp_path: Path, budgets) -> None:
     from enterprise_doc_api.config import ApiSettings
     from enterprise_doc_worker.config import WorkerSettings
 
@@ -237,6 +238,9 @@ def test_presales_background_flags_and_budget_reach_api_and_worker(tmp_path: Pat
         presales_background_generation_enabled="true",
         presales_automatic_failover_enabled="true",
         presales_daily_dispatch_limit="50",
+        presales_model_timeout_seconds=str(budgets[0]),
+        presales_fallback_model_timeout_seconds=str(budgets[1]) if budgets[1] is not None else None,
+        presales_row_timeout_seconds=str(budgets[2]),
         fallback_model_base_url="https://fallback.example.com/v1",
         fallback_model_name="fallback",
     )
@@ -251,6 +255,9 @@ def test_presales_background_flags_and_budget_reach_api_and_worker(tmp_path: Pat
         assert settings.presales.background_generation_enabled
         assert settings.presales.automatic_failover_enabled
         assert settings.presales.daily_dispatch_limit == 50
+        assert settings.presales.model_timeout_seconds == budgets[0]
+        assert settings.presales.fallback_model_timeout_seconds == budgets[1]
+        assert settings.presales.row_timeout_seconds == budgets[2]
 
 
 def test_single_node_limits_survive_rendering_and_bind_runtime_settings(tmp_path: Path) -> None:
@@ -271,6 +278,27 @@ def test_single_node_limits_survive_rendering_and_bind_runtime_settings(tmp_path
         ).concurrent_attempt_limit
         == 1
     )
+
+
+@pytest.mark.parametrize(
+    "route_budget,agent_budget,valid",
+    [(600, 900, True), (600, 300, False), (601, 900, False), (120, 3601, False)],
+)
+def test_agent_route_and_execution_budget_are_rendered_together(
+    tmp_path, route_budget, agent_budget, valid
+):
+    args = {
+        "model_route_deadline_seconds": str(route_budget),
+        "agent_execution_timeout_seconds": str(agent_budget),
+    }
+    if not valid:
+        with pytest.raises(ValueError):
+            _render_browser_manifest(tmp_path, **args)
+        return
+    docs = _render_browser_manifest(tmp_path, **args)
+    config = next(item for item in docs if item["kind"] == "ConfigMap")["data"]
+    assert config["MODEL__ROUTE_DEADLINE_SECONDS"] == str(route_budget)
+    assert config["AGENT__EXECUTION_TIMEOUT_SECONDS"] == str(agent_budget)
 
 
 @pytest.mark.parametrize(
@@ -301,13 +329,16 @@ def test_release_limits_refuse_invalid_values_before_output(
         {"presales_model_timeout_seconds": "NaN"},
         {"presales_model_timeout_seconds": "inf"},
         {"presales_model_timeout_seconds": "0"},
-        {"presales_model_timeout_seconds": "181"},
+        {"presales_model_timeout_seconds": "301"},
+        {"presales_fallback_model_timeout_seconds": "301"},
+        {"presales_fallback_model_timeout_seconds": "90"},
+        {"presales_fallback_model_timeout_seconds": "nan"},
         {"presales_model_timeout_seconds": "90"},
         {"presales_model_timeout_seconds": "not-a-number"},
         {"presales_row_timeout_seconds": "NaN"},
         {"presales_row_timeout_seconds": "inf"},
         {"presales_row_timeout_seconds": "0"},
-        {"presales_row_timeout_seconds": "181"},
+        {"presales_row_timeout_seconds": "901"},
         {"presales_row_timeout_seconds": ""},
         {"presales_background_generation_enabled": "yes"},
         {"presales_automatic_failover_enabled": "true"},
@@ -437,6 +468,11 @@ def test_staging_workflow_passes_presales_environment_to_the_renderer() -> None:
         "PRESALES_GENERATION_ENABLED": "${{ vars.STAGING_PRESALES_GENERATION_ENABLED || 'false' }}",
         "PRESALES_MODEL_ROUTE": "${{ vars.STAGING_PRESALES_MODEL_ROUTE || 'primary' }}",
         "PRESALES_MODEL_TIMEOUT_SECONDS": "${{ vars.STAGING_PRESALES_MODEL_TIMEOUT_SECONDS }}",
+        "PRESALES_FALLBACK_MODEL_TIMEOUT_SECONDS": (
+            "${{ vars.STAGING_PRESALES_FALLBACK_MODEL_TIMEOUT_SECONDS }}"
+        ),
+        "MODEL_ROUTE_DEADLINE_SECONDS": "${{ vars.STAGING_MODEL_ROUTE_DEADLINE_SECONDS }}",
+        "AGENT_EXECUTION_TIMEOUT_SECONDS": "${{ vars.STAGING_AGENT_EXECUTION_TIMEOUT_SECONDS }}",
         "PRESALES_ROW_TIMEOUT_SECONDS": "${{ vars.STAGING_PRESALES_ROW_TIMEOUT_SECONDS || '90' }}",
     }
     for name, default in {

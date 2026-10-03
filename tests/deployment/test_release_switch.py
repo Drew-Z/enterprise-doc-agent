@@ -162,6 +162,78 @@ def test_reasoning_switch_validates_fingerprints_and_restores_original(key, effo
     assert config["data"] == data["original_prerequisites"][1]["data"]
 
 
+@pytest.mark.parametrize(
+    "overrides,valid",
+    [
+        (
+            {
+                "PRESALES__MODEL_TIMEOUT_SECONDS": "300",
+                "PRESALES__FALLBACK_MODEL_TIMEOUT_SECONDS": "90",
+                "PRESALES__ROW_TIMEOUT_SECONDS": "660",
+            },
+            True,
+        ),
+        (
+            {
+                "MODEL__TIMEOUT_SECONDS": "300",
+                "MODEL__FALLBACK_TIMEOUT_SECONDS": "180",
+                "MODEL__ROUTE_DEADLINE_SECONDS": "600",
+                "AGENT__EXECUTION_TIMEOUT_SECONDS": "900",
+            },
+            True,
+        ),
+        ({"PRESALES__MODEL_TIMEOUT_SECONDS": "120", "PRESALES__ROW_TIMEOUT_SECONDS": "120"}, False),
+        (
+            {
+                "PRESALES__FALLBACK_MODEL_TIMEOUT_SECONDS": "300",
+                "PRESALES__ROW_TIMEOUT_SECONDS": "150",
+            },
+            False,
+        ),
+        ({"PRESALES__ROW_TIMEOUT_SECONDS": "901"}, False),
+        ({"MODEL__TIMEOUT_SECONDS": "301"}, False),
+        ({"MODEL__FALLBACK_TIMEOUT_SECONDS": "nan"}, False),
+        ({"MODEL__ROUTE_DEADLINE_SECONDS": "601"}, False),
+        ({"AGENT__EXECUTION_TIMEOUT_SECONDS": "3601"}, False),
+        (
+            {"MODEL__ROUTE_DEADLINE_SECONDS": "600", "AGENT__EXECUTION_TIMEOUT_SECONDS": "300"},
+            False,
+        ),
+    ],
+)
+def test_reasoning_budget_switch_is_bounded_and_reversible(overrides, valid):
+    from scripts.maintenance_guard import GuardError
+    from scripts.release_switch import ReleaseCluster, ReleasePlan
+
+    data = release_data()
+    candidate = data["candidate_prerequisites"][1]["data"]
+    candidate.update(overrides)
+    digest = canonical_digest(candidate)
+    data["candidate_prerequisites"][0]["metadata"]["annotations"][
+        PREFIX + "approved-config-sha256"
+    ] = digest
+    for deployment in data["candidate_deployments"]:
+        deployment["spec"]["template"]["metadata"]["annotations"][PREFIX + "config-sha256"] = digest
+    if not valid:
+        with pytest.raises(GuardError):
+            ReleasePlan(data)
+        return
+    plan = ReleasePlan(data)
+    boundary = Boundary(data)
+    cluster = ReleaseCluster(
+        plan,
+        run=boundary,
+        revision=lambda timeout: "20260924_0031",
+        idle=lambda timeout: True,
+        clock=lambda: 1.0,
+    )
+    cluster.apply(100)
+    config = next(item for item in boundary.items if item["kind"] == "ConfigMap")
+    assert all(config["data"][key] == value for key, value in overrides.items())
+    cluster.restore(100)
+    assert config["data"] == data["original_prerequisites"][1]["data"]
+
+
 @pytest.mark.parametrize("enabled", ["true", "false", "yes", "", True, 1])
 def test_release_accepts_only_explicit_queue_observation_boolean(enabled: Any) -> None:
     from scripts.maintenance_guard import GuardError

@@ -115,11 +115,19 @@ class OpenAICompatiblePresalesGateway:
                 timeout_seconds=settings.fallback_timeout_seconds or settings.timeout_seconds,
                 max_output_bytes=settings.max_output_bytes,
             )
-        if presales_settings is not None and presales_settings.model_timeout_seconds is not None:
+        timeout_override = None
+        if presales_settings is not None:
+            timeout_override = presales_settings.model_timeout_seconds
+            if (
+                presales_settings.model_route == "fallback"
+                and presales_settings.fallback_model_timeout_seconds is not None
+            ):
+                timeout_override = presales_settings.fallback_model_timeout_seconds
+        if timeout_override is not None:
             settings = settings.model_copy(
                 update={
-                    "timeout_seconds": presales_settings.model_timeout_seconds,
-                    "route_deadline_seconds": presales_settings.model_timeout_seconds,
+                    "timeout_seconds": timeout_override,
+                    "route_deadline_seconds": timeout_override,
                 }
             )
         self.settings = settings
@@ -132,6 +140,13 @@ class OpenAICompatiblePresalesGateway:
     @property
     def model_name(self) -> str | None:
         return self.settings.model_name
+
+    @property
+    def request_timeout_seconds(self) -> float:
+        return min(
+            self.settings.timeout_seconds,
+            self.settings.route_deadline_seconds or self.settings.timeout_seconds,
+        )
 
     @property
     def system_message(self) -> str:

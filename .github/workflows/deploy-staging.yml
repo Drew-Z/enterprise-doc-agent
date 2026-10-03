@@ -264,6 +264,7 @@ jobs:
           PRESALES_GENERATION_ENABLED: ${{ vars.STAGING_PRESALES_GENERATION_ENABLED || 'false' }}
           PRESALES_MODEL_ROUTE: ${{ vars.STAGING_PRESALES_MODEL_ROUTE || 'primary' }}
           PRESALES_MODEL_TIMEOUT_SECONDS: ${{ vars.STAGING_PRESALES_MODEL_TIMEOUT_SECONDS }}
+          PRESALES_FALLBACK_MODEL_TIMEOUT_SECONDS: ${{ vars.STAGING_PRESALES_FALLBACK_MODEL_TIMEOUT_SECONDS }}
           PRESALES_ROW_TIMEOUT_SECONDS: ${{ vars.STAGING_PRESALES_ROW_TIMEOUT_SECONDS || '90' }}
           PRESALES_BACKGROUND_GENERATION_ENABLED: ${{ vars.STAGING_PRESALES_BACKGROUND_GENERATION_ENABLED || 'false' }}
           PRESALES_AUTOMATIC_FAILOVER_ENABLED: ${{ vars.STAGING_PRESALES_AUTOMATIC_FAILOVER_ENABLED || 'false' }}
@@ -277,6 +278,8 @@ jobs:
           MODEL_BASE_URL: ${{ vars.STAGING_MODEL_BASE_URL }}
           MODEL_NAME: ${{ vars.STAGING_MODEL_NAME }}
           MODEL_TIMEOUT_SECONDS: ${{ vars.STAGING_MODEL_TIMEOUT_SECONDS }}
+          MODEL_ROUTE_DEADLINE_SECONDS: ${{ vars.STAGING_MODEL_ROUTE_DEADLINE_SECONDS }}
+          AGENT_EXECUTION_TIMEOUT_SECONDS: ${{ vars.STAGING_AGENT_EXECUTION_TIMEOUT_SECONDS }}
           MODEL_REASONING_EFFORT: ${{ vars.STAGING_MODEL_REASONING_EFFORT }}
           MODEL_FALLBACK_REASONING_EFFORT: ${{ vars.STAGING_MODEL_FALLBACK_REASONING_EFFORT }}
           MODEL_FALLBACK_BASE_URL: ${{ vars.STAGING_MODEL_FALLBACK_BASE_URL }}
@@ -348,12 +351,15 @@ jobs:
             --model-base-url "$MODEL_BASE_URL" \
             --model-name "$MODEL_NAME" \
             --model-timeout-seconds "$MODEL_TIMEOUT_SECONDS" \
+            --model-route-deadline-seconds "$MODEL_ROUTE_DEADLINE_SECONDS" \
+            --agent-execution-timeout-seconds "$AGENT_EXECUTION_TIMEOUT_SECONDS" \
             --model-reasoning-effort "$MODEL_REASONING_EFFORT" \
             --fallback-model-reasoning-effort "$MODEL_FALLBACK_REASONING_EFFORT" \
             "${browser_auth_args[@]}" \
             --presales-generation-enabled "$PRESALES_GENERATION_ENABLED" \
             --presales-model-route "$PRESALES_MODEL_ROUTE" \
             --presales-model-timeout-seconds "$PRESALES_MODEL_TIMEOUT_SECONDS" \
+            --presales-fallback-model-timeout-seconds "$PRESALES_FALLBACK_MODEL_TIMEOUT_SECONDS" \
             --presales-row-timeout-seconds "$PRESALES_ROW_TIMEOUT_SECONDS" \
             --presales-background-generation-enabled "$PRESALES_BACKGROUND_GENERATION_ENABLED" \
             --presales-automatic-failover-enabled "$PRESALES_AUTOMATIC_FAILOVER_ENABLED" \

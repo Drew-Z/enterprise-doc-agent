@@ -178,7 +178,10 @@ async def test_partial_response_failure_retains_status_not_body_and_closes(tmp_p
 
 
 @pytest.mark.parametrize("model_route", ["primary", "fallback"])
-async def test_trial_uses_only_explicit_route_without_failover(tmp_path, model_route):
+@pytest.mark.parametrize("timeout_seconds", [120, 300])
+async def test_trial_uses_only_explicit_route_without_failover(
+    tmp_path, model_route, timeout_seconds
+):
     requests = []
     expected_effort = "high" if model_route == "primary" else "medium"
 
@@ -188,7 +191,7 @@ async def test_trial_uses_only_explicit_route_without_failover(tmp_path, model_r
         assert request.headers["Authorization"] == f"Bearer {model_route}-private-key"
         assert json.loads(request.content)["model"] == f"{model_route}-model"
         assert json.loads(request.content)["reasoning_effort"] == expected_effort
-        assert request.extensions["timeout"]["read"] == 120
+        assert request.extensions["timeout"]["read"] == timeout_seconds
         raise httpx.ConnectError("private-exception-not-for-report", request=request)
 
     settings = ModelSettings(
@@ -209,12 +212,14 @@ async def test_trial_uses_only_explicit_route_without_failover(tmp_path, model_r
         output,
         settings,
         model_route=model_route,
+        model_timeout_seconds=timeout_seconds,
         transport=httpx.MockTransport(fail),
     )
     assert len(requests) == 6
     assert result["selectedRoute"] == model_route
     assert result["configuredModelName"] == f"{model_route}-model"
     assert result["configuredReasoningEffort"] == expected_effort
+    assert result["configuredModelTimeoutSeconds"] == timeout_seconds
     assert all(
         row["state"] == "failed" and row["providerRequests"] == 1 for row in result["observations"]
     )

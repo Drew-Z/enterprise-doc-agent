@@ -13,8 +13,9 @@ class PresalesSettings(BaseModel):
     route_failure_threshold: int = Field(default=3, ge=1, le=10)
     route_cooldown_seconds: float = Field(default=30, ge=1, le=300)
     model_route: Literal["primary", "fallback"] = "primary"
-    model_timeout_seconds: float | None = Field(default=None, gt=0, le=180)
-    row_timeout_seconds: float = Field(default=90, gt=0, le=180)
+    model_timeout_seconds: float | None = Field(default=None, gt=0, le=300)
+    fallback_model_timeout_seconds: float | None = Field(default=None, gt=0, le=300)
+    row_timeout_seconds: float = Field(default=90, gt=0, le=900)
     daily_attempt_limit: int = Field(default=100, ge=1, le=1000)
     concurrent_attempt_limit: int = Field(default=2, ge=1, le=4)
 
@@ -22,9 +23,8 @@ class PresalesSettings(BaseModel):
     def validate_wait_budget(self) -> Self:
         if self.automatic_failover_enabled and not self.background_generation_enabled:
             raise ValueError("automatic failover requires background generation")
-        if (
-            self.model_timeout_seconds is not None
-            and self.model_timeout_seconds >= self.row_timeout_seconds
-        ):
-            raise ValueError("model_timeout_seconds must be less than row_timeout_seconds")
+        for name in ("model_timeout_seconds", "fallback_model_timeout_seconds"):
+            timeout = getattr(self, name)
+            if timeout is not None and timeout >= self.row_timeout_seconds:
+                raise ValueError(f"{name} must be less than row_timeout_seconds")
         return self

@@ -2,6 +2,16 @@
 
 ## Adopted Facts
 
+- Presales model calls allow up to 300 seconds and rows up to 900 seconds, with
+  unchanged defaults. An optional fallback_model_timeout_seconds overrides only
+  the fallback route; both explicit model overrides must remain below the row budget.
+- A first background Presales dispatch reserves the smaller of half the remaining
+  time and an available distinct fallback's advertised request timeout. Unknown
+  custom-gateway bounds retain the half-budget reservation. The persisted row
+  deadline, lease fence, two-dispatch cap and unknown-usage handling remain enforced.
+- Deployment rendering and release guards bind Presales, model-route and Agent
+  execution budgets. The release guard requires no active or queued work before
+  configuration changes; it does not reset an in-flight task's deadline.
 - ModelSettings exposes independent optional reasoning_effort and fallback_reasoning_effort
   values (low, medium, high, xhigh). Agent and Presales requests omit the field unless
   configured; fallback never inherits primary effort, and bounded Agent schema repairs

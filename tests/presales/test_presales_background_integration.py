@@ -401,6 +401,35 @@ async def enqueue(b, key="once"):
     return await b.service.generate(b.context.principal, packet.id, packet.rows[0].id, key)
 
 
+async def test_short_fallback_budget_does_not_preempt_successful_primary(background):
+    from enterprise_doc_core.presales.models import PresalesProviderCall
+
+    b = background
+    sent = []
+
+    async def respond(request):
+        sent.append(request.url.host)
+        if request.url.host == "primary.invalid":
+            await asyncio.sleep(4)
+        return valid_response(request)
+
+    worker = configured_worker(b, respond, row_timeout_seconds=8)
+    fallback = worker.gateways["fallback"]
+    fallback.settings = ModelSettings.model_validate(
+        {**fallback.settings.model_dump(), "timeout_seconds": 1}
+    )
+    packet = await enqueue(b, "short-fallback-budget")
+    await asyncio.wait_for(worker.run_once("worker"), timeout=12)
+    result = await b.service.get(b.context.principal, packet.id)
+    assert result.rows[0].state == "drafted"
+    assert sent == ["primary.invalid"]
+    async with b.sessions() as session:
+        calls = (await session.scalars(select(PresalesProviderCall))).all()
+        assert len(calls) == 1 and calls[0].state == "succeeded"
+        reservation = (await session.scalars(select(UsageReservation))).one()
+        assert reservation.state == "consumed"
+
+
 async def test_stalled_primary_leaves_time_for_fallback_and_settles_once(background):
     from enterprise_doc_core.presales.models import PresalesProviderCall
 
@@ -648,7 +677,10 @@ async def test_terminal_errors_release_reservation_without_extra_sampling(backgr
             assert calls[0].usage["total_tokens"] == 50
 
 
-async def test_shutdown_recovers_remaining_route_and_preserves_unknown_usage(background):
+@pytest.mark.parametrize("row_budget", [90, 660])
+async def test_shutdown_recovers_remaining_route_and_preserves_unknown_usage(
+    background, row_budget
+):
     from enterprise_doc_core.presales.models import PresalesProviderCall
     from tests.agent.test_agent_run_integration import MutableClock
 
@@ -665,7 +697,8 @@ async def test_shutdown_recovers_remaining_route_and_preserves_unknown_usage(bac
 
     clock = MutableClock(datetime.now(UTC))
     b.service.generation.clock = clock
-    worker = configured_worker(b, respond)
+    PresalesSettings.model_validate({**b.settings.model_dump(), "row_timeout_seconds": row_budget})
+    worker = configured_worker(b, respond, row_timeout_seconds=row_budget)
     packet = await enqueue(b)
     task = asyncio.create_task(worker.run_once("old-worker"))
     await asyncio.wait_for(entered.wait(), timeout=5)
@@ -675,6 +708,7 @@ async def test_shutdown_recovers_remaining_route_and_preserves_unknown_usage(bac
     async with b.sessions() as session:
         operation = await session.get(PresalesAttempt, packet.rows[0].attempts[0].id)
         deadline = operation.deadline_at
+        assert deadline == operation.started_at + timedelta(seconds=row_budget)
     clock.advance(31)
     assert await worker.run_once("new-worker")
     result = await b.service.get(b.context.principal, packet.id)

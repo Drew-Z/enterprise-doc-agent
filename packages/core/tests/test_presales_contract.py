@@ -289,7 +289,8 @@ async def test_gateway_timeout_has_no_retry_and_deterministic_mode_never_fakes_r
 
 
 @pytest.mark.parametrize("route", ["primary", "fallback"])
-async def test_explicit_presales_route_is_one_request_with_its_own_deadline(route: str) -> None:
+@pytest.mark.parametrize("budgets", [(120, None, 150), (300, 90, 660), (180, 300, 900)])
+async def test_explicit_presales_route_is_one_request_with_its_own_deadline(route, budgets) -> None:
     requests: list[httpx.Request] = []
 
     async def timeout(request: httpx.Request) -> httpx.Response:
@@ -311,7 +312,12 @@ async def test_explicit_presales_route_is_one_request_with_its_own_deadline(rout
         fallback_model_version="fallback-version",
     )
     settings = PresalesSettings.model_validate(
-        {"model_route": route, "model_timeout_seconds": 120, "row_timeout_seconds": 150}
+        {
+            "model_route": route,
+            "model_timeout_seconds": budgets[0],
+            "fallback_model_timeout_seconds": budgets[1],
+            "row_timeout_seconds": budgets[2],
+        }
     )
     gateway = OpenAICompatiblePresalesGateway(
         model, presales_settings=settings, transport=httpx.MockTransport(timeout)
@@ -326,8 +332,10 @@ async def test_explicit_presales_route_is_one_request_with_its_own_deadline(rout
     assert str(requests[0].url) == f"https://{route}.example/v1/chat/completions"
     assert requests[0].headers["Authorization"] == f"Bearer {route}-secret"
     assert json.loads(requests[0].content)["model"] == f"{route}-model"
-    assert requests[0].extensions["timeout"]["read"] == 120
-    assert gateway.settings.route_deadline_seconds == 120
+    expected = budgets[1] if route == "fallback" and budgets[1] is not None else budgets[0]
+    assert requests[0].extensions["timeout"]["read"] == expected
+    assert gateway.settings.route_deadline_seconds == expected
+    assert gateway.request_timeout_seconds == expected
     assert gateway.model_name == f"{route}-model"
     assert gateway.provenance["configuredModelRevision"] == (
         "primary-revision" if route == "primary" else None
@@ -345,3 +353,18 @@ def test_presales_route_rejects_missing_configuration_and_invalid_wait_budget() 
         PresalesSettings.model_validate({"model_timeout_seconds": 120, "row_timeout_seconds": 90})
     with pytest.raises(ValueError):
         PresalesSettings.model_validate({"model_route": "automatic"})
+
+
+@pytest.mark.parametrize(
+    "values",
+    [
+        {"model_timeout_seconds": 301, "row_timeout_seconds": 900},
+        {"fallback_model_timeout_seconds": 301, "row_timeout_seconds": 900},
+        {"row_timeout_seconds": 901},
+        {"fallback_model_timeout_seconds": 120, "row_timeout_seconds": 120},
+        {"fallback_model_timeout_seconds": float("nan")},
+    ],
+)
+def test_long_reasoning_budget_stays_bounded(values):
+    with pytest.raises(ValueError):
+        PresalesSettings.model_validate(values)

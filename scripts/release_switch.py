@@ -59,6 +59,12 @@ CONFIG_KEYS = {
     "MODEL__REASONING_EFFORT",
     "MODEL__FALLBACK_REASONING_EFFORT",
     "MODEL__TIMEOUT_SECONDS",
+    "MODEL__FALLBACK_TIMEOUT_SECONDS",
+    "MODEL__ROUTE_DEADLINE_SECONDS",
+    "AGENT__EXECUTION_TIMEOUT_SECONDS",
+    "PRESALES__MODEL_TIMEOUT_SECONDS",
+    "PRESALES__FALLBACK_MODEL_TIMEOUT_SECONDS",
+    "PRESALES__ROW_TIMEOUT_SECONDS",
     "PRESALES__MODEL_ROUTE",
     "PRESALES__BACKGROUND_GENERATION_ENABLED",
     "PRESALES__AUTOMATIC_FAILOVER_ENABLED",
@@ -145,6 +151,32 @@ class ReleasePlan(Plan):
             fallback_name = new.get("MODEL__FALLBACK_MODEL_NAME", "")
             if not fallback_name or fallback_name != fallback_name.strip():
                 raise GuardError("invalid fallback model name")
+        budget_limits = {
+            "MODEL__TIMEOUT_SECONDS": 300,
+            "MODEL__FALLBACK_TIMEOUT_SECONDS": 300,
+            "MODEL__ROUTE_DEADLINE_SECONDS": 600,
+            "AGENT__EXECUTION_TIMEOUT_SECONDS": 3600,
+            "PRESALES__MODEL_TIMEOUT_SECONDS": 300,
+            "PRESALES__FALLBACK_MODEL_TIMEOUT_SECONDS": 300,
+            "PRESALES__ROW_TIMEOUT_SECONDS": 900,
+        }
+        budgets: dict[str, float] = {}
+        for key, limit in budget_limits.items():
+            if key in new:
+                try:
+                    seconds = float(new[key])
+                except ValueError as error:
+                    raise GuardError("invalid model execution budget") from error
+                if not math.isfinite(seconds) or not 0 < seconds <= limit:
+                    raise GuardError("invalid model execution budget")
+                budgets[key] = seconds
+        for key in ("PRESALES__MODEL_TIMEOUT_SECONDS", "PRESALES__FALLBACK_MODEL_TIMEOUT_SECONDS"):
+            if budgets.get(key, 0) >= budgets.get("PRESALES__ROW_TIMEOUT_SECONDS", 90):
+                raise GuardError("presales model budget must be less than row budget")
+        if budgets.get("MODEL__ROUTE_DEADLINE_SECONDS", 0) > budgets.get(
+            "AGENT__EXECUTION_TIMEOUT_SECONDS", 300
+        ):
+            raise GuardError("model route budget must not exceed Agent execution budget")
         before, after = (
             approval_annotations(self.old_namespace),
             approval_annotations(self.new_namespace),

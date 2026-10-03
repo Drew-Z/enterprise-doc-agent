@@ -155,8 +155,14 @@ async def collect(
     settings: ModelSettings,
     *,
     model_route: ModelRoute = "fallback",
+    model_timeout_seconds: float = 120,
     transport: httpx.AsyncBaseTransport | None = None,
 ) -> dict[str, Any]:
+    presales_settings = PresalesSettings(
+        model_route=model_route,
+        model_timeout_seconds=model_timeout_seconds,
+        row_timeout_seconds=model_timeout_seconds + 30,
+    )
     dataset, digest = load_dataset(dataset_path)
     snapshots, evidence = synthetic_sources(dataset, digest)
     report: dict[str, Any] = {
@@ -174,6 +180,7 @@ async def collect(
         "maxGenerationAttempts": len(dataset.requirements),
         "automaticRetries": 0,
         "selectedRoute": model_route,
+        "configuredModelTimeoutSeconds": model_timeout_seconds,
         "configuredModelName": settings.fallback_model_name
         if model_route == "fallback"
         else settings.model_name,
@@ -192,9 +199,7 @@ async def collect(
             recorder = RecordingTransport(transport or httpx.AsyncHTTPTransport(retries=0))
             gateway = OpenAICompatiblePresalesGateway(
                 settings,
-                presales_settings=PresalesSettings(
-                    model_route=model_route, model_timeout_seconds=120, row_timeout_seconds=150
-                ),
+                presales_settings=presales_settings,
                 transport=recorder,
             )
             source_input = GenerationInput(
@@ -247,10 +252,23 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--provider-env", type=Path, required=True)
     parser.add_argument("--model-route", choices=("primary", "fallback"), default="fallback")
+    parser.add_argument("--model-timeout-seconds", type=float, default=120)
+    parser.add_argument("--reasoning-effort", choices=("low", "medium", "high", "xhigh"))
     args = parser.parse_args()
     settings = load_route_settings(args.provider_env, args.model_route)
+    if args.reasoning_effort is not None:
+        key = "fallback_reasoning_effort" if args.model_route == "fallback" else "reasoning_effort"
+        settings = ModelSettings.model_validate(
+            {**settings.model_dump(), key: args.reasoning_effort}
+        )
     asyncio.run(
-        collect(args.input, args.output, settings, model_route=args.model_route),
+        collect(
+            args.input,
+            args.output,
+            settings,
+            model_route=args.model_route,
+            model_timeout_seconds=args.model_timeout_seconds,
+        ),
         loop_factory=selector_event_loop_factory,
     )
 

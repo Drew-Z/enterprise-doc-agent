@@ -276,7 +276,7 @@ class BackgroundGeneration:
                             # instead of letting a stalled first route consume both.
                             remaining = max(0, (deadline - self.clock()).total_seconds() - 2)
                             if reserve_recovery:
-                                remaining /= 2
+                                remaining -= min(remaining / 2, reserve_recovery)
                             async with asyncio.timeout(remaining):
                                 generated = await gateway.generate(payload)
                             try:
@@ -375,7 +375,7 @@ class BackgroundGeneration:
 
     async def _dispatch(
         self, claim: ClaimedJob, route: str, gateway: PresalesGateway
-    ) -> tuple[UUID, bool]:
+    ) -> tuple[UUID, float]:
         async with self.sessions.begin() as session:
             await self._lease(session, claim)
             packet = await load_packet(
@@ -415,7 +415,7 @@ class BackgroundGeneration:
             session.add(call)
             operation.provider_request_count = None
             operation.state = "recovering" if calls else "running"
-            reserve_recovery = False
+            reserve_recovery = 0.0
             if self.settings.automatic_failover_enabled and not calls:
                 for other in self.gateways:
                     other_key = self._route_key(other)
@@ -424,7 +424,11 @@ class BackgroundGeneration:
                         and other_key != call.route_key
                         and await route_health.available(session, other_key, self.clock())
                     ):
-                        reserve_recovery = True
+                        # Custom gateways without an advertised bound keep the
+                        # existing half-budget reservation at the execution site.
+                        reserve_recovery = float(
+                            getattr(self.gateways[other], "request_timeout_seconds", float("inf"))
+                        )
                         break
             return call.id, reserve_recovery
 

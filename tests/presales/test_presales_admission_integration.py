@@ -90,11 +90,14 @@ async def test_single_row_batch_admission_has_no_extra_read_budget(background):
     assert counts[0] <= 19, counts
 
 
-@pytest.mark.parametrize("ttl", [92, 93, 1200])
+@pytest.mark.parametrize("row_budget", [90, 660])
+@pytest.mark.parametrize("extra", [0, 1, 1108])
 async def test_admission_uses_durable_reservation_expiry_and_rolls_back_if_too_short(
-    background, ttl
+    background, row_budget, extra
 ):
     b = background
+    b.settings.row_timeout_seconds = row_budget
+    ttl = row_budget + 2 + extra
     now = datetime.now(UTC)
     b.service.generation.clock = lambda: now
     usage = b.service.generation.usage_service
@@ -110,7 +113,7 @@ async def test_admission_uses_durable_reservation_expiry_and_rolls_back_if_too_s
         reservations = (await session.scalars(select(UsageReservation))).all()
         jobs = (await session.scalars(select(Job).where(Job.type == "presales.generate"))).all()
         entitlement = (await session.scalars(select(TenantEntitlement))).one()
-        if ttl == 92:
+        if extra == 0:
             assert response.status_code == 503
             assert response.json()["error"]["code"] == "presales_usage_unavailable"
             assert not attempts and not reservations and not jobs
@@ -119,7 +122,7 @@ async def test_admission_uses_durable_reservation_expiry_and_rolls_back_if_too_s
             assert response.status_code == 202, response.text
             assert len(attempts) == len(reservations) == len(jobs) == 1
             assert reservations[0].expires_at == now + timedelta(seconds=ttl)
-            assert attempts[0].deadline_at == now + timedelta(seconds=min(900, ttl - 92))
+            assert attempts[0].deadline_at == now + timedelta(seconds=min(900, extra))
             assert entitlement.provider_requests_reserved == 1
             replay = await usage.reserve_provider_request(
                 tenant_id=b.context.tenant_id, operation_id=attempts[0].id
