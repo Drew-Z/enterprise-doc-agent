@@ -175,6 +175,7 @@ def test_fallback_model_only_switch_preserves_images_and_restores_config(
         annotations = prerequisites[0]["metadata"]["annotations"]
         annotations[PREFIX + "approved-config-sha256"] = canonical_digest(config)
         annotations[PREFIX + "approved-model-name"] = config["MODEL__MODEL_NAME"]
+        annotations[PREFIX + "approved-model-fallback-name"] = config["MODEL__FALLBACK_MODEL_NAME"]
         for deployment in deployments:
             role = deployment["metadata"]["name"].removeprefix("enterprise-doc-")
             template = deployment["spec"]["template"]
@@ -190,6 +191,14 @@ def test_fallback_model_only_switch_preserves_images_and_restores_config(
         with pytest.raises(GuardError):
             ReleasePlan(data)
         return
+    ReleasePlan(data)
+    for phase in ("original_prerequisites", "candidate_prerequisites"):
+        mismatched = copy.deepcopy(data)
+        mismatched[phase][0]["metadata"]["annotations"][PREFIX + "approved-model-fallback-name"] = (
+            "unreviewed-model"
+        )
+        with pytest.raises(GuardError, match="fallback model approval"):
+            ReleasePlan(mismatched)
     boundary = Boundary(data)
     original = copy.deepcopy(boundary.items)
     cluster = ReleaseCluster(

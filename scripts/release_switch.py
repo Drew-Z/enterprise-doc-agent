@@ -72,6 +72,7 @@ APPROVAL_KEYS = {
         "config-sha256",
         "model-base-url",
         "model-name",
+        "model-fallback-name",
     )
 } | {PREFIX + "prerequisites-sha256"}
 
@@ -154,6 +155,10 @@ class ReleasePlan(Plan):
             for suffix, key in (("base-url", "BASE_URL"), ("name", "MODEL_NAME")):
                 if approved_values[PREFIX + "approved-model-" + suffix] != config["MODEL__" + key]:
                     raise GuardError("model route approval does not match")
+            if config.get("MODEL__FALLBACK_MODEL_NAME") != approved_values.get(
+                PREFIX + "approved-model-fallback-name"
+            ):
+                raise GuardError("fallback model approval does not match")
         if (
             new.get("PRESALES__AUTOMATIC_FAILOVER_ENABLED") == "true"
             and new.get("PRESALES__BACKGROUND_GENERATION_ENABLED") != "true"

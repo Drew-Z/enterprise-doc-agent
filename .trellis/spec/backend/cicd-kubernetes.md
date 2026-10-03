@@ -589,7 +589,9 @@ annotations and revalidate normal prerequisites. All database probes are read-on
 
 `MODEL__FALLBACK_MODEL_NAME` may change only within the reviewed configuration bundle;
 the new value must be a nonempty string without leading/trailing whitespace. The endpoint,
-credential and timeout are not added to this scope. A catalog entry or one synthetic reply
+credential and timeout are not added to this scope. Both original and candidate configuration
+require the matching `approved-model-fallback-name` Namespace value; mismatches are rejected.
+A catalog entry or one synthetic reply
 does not prove business failover; validate the deployed process and preserve old failures.
 For a same-image configuration switch, keep an already-approved rollback image list only
 when it is byte-for-byte unchanged and contains the running image. This does not allow
