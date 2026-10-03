@@ -35,12 +35,53 @@ and later ordinary navigation does not reuse the consumed selection.
 The sheet lists fixed sources and requirements, five outcome labels, conditions,
 missing information, exact source excerpts, filenames and passage locations.
 Finite retrieval and truncation are explicitly disclosed. Generation is per row;
-the batch button sequences pending rows and stops at the first failure. Failed
-rows require an explicit retry. Existing successful rows remain available.
+the batch button submits multiple pending rows in one request when PacketView
+generationMode is background. Exactly one eligible row uses the bodyless
+`POST /api/presales/{packet}/rows/{row}/generate?response=receipt`. Multiple background
+rows use `POST /api/presales/{packet}/generate?response=receipt` with `{rowIds: [...]}`.
+Both return a GenerationReceipt, validated against the exact packet and complete
+requested row set across admissions and rejections. Only enqueued/replayed rows
+carry attemptId; already_drafted has null. The compatibility API methods without
+the query option still return PacketView/BatchGenerateResult. Acceptance request gates must match the actual selected-row
+count and response schema; the toolbar label alone does not identify the endpoint.
+After a valid receipt, cancel older sheet reads, reset the old sheet cache and start
+a new authorized GET without waiting before releasing submission busy. Show submission
+confirmation while reading; no optimistic row state, draft or success is fabricated.
+Clearing the old cache prevents navigation away/back from exposing a stale pending
+row. A failed GET hides content and follows existing bounded/manual read recovery;
+authorization/protocol failures do not poll. No automatic generation replay is added.
+`api.test.ts` verifies malformed/duplicate/mismatched receipt rejection, and the
+workspace tests cover delayed/failed GETs and discarded pre-admission reads. The real
+background browser test delays the first GET after an actual three-row receipt,
+checks navigation and hidden stale content, then completes the existing recovery/ledger flow.
+The default synchronous mode retains separate row
+requests, avoiding a multi-row inference request that exceeds proxy limits. Missing
+generationMode from an older server defaults to synchronous. Per-row background
+rejections do not stop other eligible rows. A separate retry-failed action submits
+only failed rows with remaining attempts. Existing successful rows remain available.
 
 Human review keeps the original model draft and adds editable text/status/details,
 note, actor, time and history. Reviewed export stays disabled until every row has
 a review. Download Blob URLs are revoked after use or component unmount.
+
+Structured prerequisites display Met / Not met / Needs confirmation with text
+labels as well as distinct colors. Each item expands only its linked exact evidence;
+the complete numbered evidence list remains available. The API field is
+`prerequisites: {condition, state, citationIndexes}[] | null`, with zero-based
+indexes into original draft citations. Zod rejects malformed, duplicate or out-of-range
+links before rendering. Missing legacy fields default to null, shown as unrecorded;
+an empty list explicitly means no prerequisites. Never infer state from old prose.
+
+`ReviewEditor` preserves condition text and citation links, allows per-item state
+changes, and derives the compatibility conditions list from unmet/unknown items.
+Changes relative to either the original or latest review require a note. The user
+also checks the overall assessment and prose; supported cannot retain an outstanding
+prerequisite. Original/history panels keep their own states and links. Legacy rows
+retain editable response conditions under a neutral heading. The server remains
+authoritative for evidence bindings, revision conflicts and note requirements.
+CSV includes effective and original model states/evidence. `ResponseRow.test.tsx`
+and both viewport journeys in `presales-e2e/workspace.spec.ts` cover these behaviors.
+These changes preserve received states; they do not resolve the model quality gate.
 
 `api.ts` validates HTTP responses with strict Zod schemas. In-memory operation keys
 are reused after uncertain create/generate/review responses. Failed recorded
@@ -48,15 +89,39 @@ attempts receive a new key only for an explicit retry. These keys are not a brow
 durable queue; after reload, recover the existing server sheet and its attempts.
 
 For a generate network/5xx/response-parse failure, read the same sheet once without
-another POST. A drafted row restores its saved result; a running row uses the existing
-2.5s read polling; a failed row displays the recorded error and an explicit retry.
+another POST. A drafted row restores its saved result; queued/running/recovering rows
+use 2.5s read polling; a failed row displays the recorded error and an explicit retry.
 A still-pending row keeps its original operation key and uncertainty. Authorization
 and business 4xx responses retain their normal failure path. Non-JSON errors preserve
 HTTP status (`presales_http_<status>`) and a safe `X-Request-ID` fallback.
-Timeout copy says that the application did not save a result while the provider may
-still complete/charge, and that retry sends a new request. No synthetic draft or billing
-correction is inferred from a provider dashboard. Tests must assert exactly one POST
-when a 504 is followed by either a persisted draft or a persisted model timeout.
+When background mode is enabled, 202 admission releases the page busy state;
+navigation or refresh recovers persisted work through GET, without another POST.
+Show actual phase and generated/total counts, never invented percentages. Completion
+replaces the background-running notice. Terminal failure copy retains requirements
+and sources and offers later retry without exposing internal routes or exception
+stacks. It does not promise zero upstream cost or fabricate a draft from a provider
+dashboard. Tests assert exactly one POST when a 504 is followed by either a persisted
+draft or a persisted model timeout. A lost batch response followed by completed rows
+restores those results without a false whole-batch HTTP error or a second POST.
+Automatic route recovery belongs to the server.
+
+A failed sheet GET keeps an in-place **Retry reading** action next to the error,
+even though the sheet heading and its ordinary refresh action are hidden. The
+action only calls the current query's `refetch()` for the same sheet/context;
+it cannot create a sheet or dispatch generation. It is disabled while a read is
+fetching or paused. Cached bodies remain hidden during the retry and after a
+denied/malformed response; only a successful authorized GET restores them.
+
+If an uncertain generate response is followed by a failed recovery GET,
+`recoverGeneration` records the sheet ID, the current query `dataUpdatedAt` and
+the read error in memory. Old rows stay hidden until a later successful read.
+Reconnection uses the normal Query read path; the same manual read action remains
+available. A successful read clears the displayed connection failure and reports
+that current row states were recovered, without inferring generation success.
+Selecting the same sidebar sheet cannot clear this guard; a different sheet or
+new operation retires it. Business/authorization 4xx errors keep the existing
+failure path. No write is replayed, no body/operation queue is added to storage,
+and a failed row still requires explicit generation retry.
 
 Query keys include tenant/actor/auth revision. App remounts the workspace when its
 authentication context changes. Unmount aborts the operation and removes queries;
@@ -79,8 +144,41 @@ model output; it is separate from the ordinary development/production entrypoint
 
 Regression files: `src/presales/PresalesWorkspace.test.tsx` (fetch boundary) and
 `presales-e2e/workspace.spec.ts` (real local API/DB, controlled identity/model).
+`playwright.presales-background.config.ts` selects `presales-e2e/background.spec.ts`:
+accepted batch, navigation/reload, actual browser offline completion, GET 503 and
+in-place read recovery, dropped real 202 response plus failed recovery GET,
+primary failure, partial completion, failed-only retry, persisted reviews/CSV,
+commercial settlement, tenant isolation and 390px layout. An independent
+APIRequestContext observes worker/database completion while the browser context
+is offline. Two generation POSTs cover the initial batch and explicit failed-row
+retry; reconnect, refresh and read retry keep five controlled provider dispatches,
+three consumed reservations and one released reservation unchanged. This is a
+local API/DB/worker test with a synthetic bearer and controlled model/embedding
+boundaries, not live OAuth, real-provider capacity or deployed-feature evidence.
+The background
+spec is skipped in the legacy configuration; that skip is not a background pass.
 `playwright.presales.config.ts` is separate from the existing full platform E2E
 configuration, and its fixture deletes only the records it created.
+
+For interactive deployed acceptance, reuse a user-authorized dedicated persistent
+browser profile after real OAuth has been established. Keep that profile private;
+do not export cookies or copy unrelated personal profiles. Waiting for the user to
+sign in must not automatically close their browser or consume the generation
+window. Start the bounded business window only after verifying the current tenant
+and fresh server preflight. Failed checks stop automation and preserve the visible
+browser; they do not authorize another generation, a new tenant, or new supplier
+budget. Record separate authentication, generation, recovery and review outcomes.
+
+Interactive OAuth need not be repeated for every business check. For an authorized
+staging functional test, `issue_staging_smoke_token` can issue a short-lived JWT
+for an existing active member. Verify `/api/session` before adapting the browser
+authentication response; do not stub business endpoints. With `connectOverCDP`,
+configure the new context's proxy explicitly: launcher options are not inherited
+by the independent CDP client. Keep tokens only in memory and retire them afterward.
+If reconnection already replaced the recovery button, do not wait for that vanished
+button before inspecting the current result. A new browser/refresh check is separate
+from proof of automatic recovery in the original window. Automated review must
+identify its author and preserve the original model error, never imply customer approval.
 
 The separate `apps/web/playwright.presales-ingestion.config.ts` suite covers real
 TXT/PDF/DOCX browser uploads, automatic ready-state refresh, source preselection,
@@ -90,6 +188,15 @@ MinIO and Redis/Celery boundaries are real; model HTTP and embeddings are contro
 The [ingestion contract](../foundation-tests/backend/presales-ingestion.md) records
 the ports, resource isolation and diagnostic-secret handling.
 
+Isolated recovery runs may publish MinIO on a random loopback port. Set
+`VITE_OBJECT_STORE_ORIGINS` to that exact origin before starting Vite; the browser's
+presign allowlist and the ingestion test's successful PUT counter must use the same
+origin list, not port 9000. `tests.presales.browser_server` resolves one
+`ApiSettings(_env_file=None)` instance and shares its database settings between the
+seed engine and API. A standalone `DatabaseSettings()` ignores `DATABASE__URL` and
+can seed the wrong local database. Restored-data runs must retain the selected DB
+identity, explicit local endpoints, failed attempts and tenant cleanup receipts.
+
 The [integrated first-use suite](../foundation-tests/backend/first-use.md) now
 connects browser admission and invitations to the real ingestion and Presales
 path, including both roles' review/CSV, usage settlement, parser/model recovery,
@@ -97,6 +204,13 @@ two-tab switching and member revocation. It uses the production API factory with
 synthetic signed IdP and local model HTTP; it is not real-provider/customer acceptance.
 
 ## Proven Examples
+
+Background generation and ordinary JSON requests use a 15-second response deadline.
+An uncertain response recovers through the same sheet GET; legacy synchronous
+generation retains 180 seconds. Transient GET failures can retry twice at 2.5/5-second
+intervals, including when no packet loaded. Permission/protocol failures stop automatic
+polling and hide cached bodies. Active work carries background guidance after remount;
+submission, recovery, failed allowance and exhausted attempts have distinct copy.
 
 - `apps/web/src/product/DocumentsPage.test.tsx`: polling stops at terminal states
   or read errors, explicit retry recovers, and only ready sources enable entry.

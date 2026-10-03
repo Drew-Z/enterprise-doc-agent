@@ -4,6 +4,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 const api = "http://127.0.0.1:18766";
+const objectStoreOrigins = new Set((process.env.VITE_OBJECT_STORE_ORIGINS ?? "http://127.0.0.1:9000").split(",").map(value => new URL(value.trim()).origin));
 const testHeaders = { "X-Presales-Test": "presales-ingestion" };
 interface Fixture { name: string; mediaType: string; sizeBytes: number; sha256: string; excerpt: string; heading: string | null; pageNumber: number | null }
 interface Context { token: string; otherToken: string; tenantId: string; actorId: string; fixtures: Record<string, Fixture> }
@@ -165,7 +166,7 @@ test("desktop: real TXT PDF DOCX ingestion, evidence, review, recovery and tenan
   page.on("worker", worker => workers.push(new URL(worker.url()).pathname));
   page.on("response", response => {
     const url = new URL(response.url());
-    if (url.port === "9000" && response.request().method() === "PUT" && response.ok()) successfulObjectPuts += 1;
+    if (objectStoreOrigins.has(url.origin) && response.request().method() === "PUT" && response.ok()) successfulObjectPuts += 1;
     if (url.pathname === "/api/upload-sessions" && response.request().method() === "POST") {
       const body = response.request().postDataJSON() as { filename: string; sha256: string };
       uploads.push({ filename: body.filename, sha256: body.sha256 });

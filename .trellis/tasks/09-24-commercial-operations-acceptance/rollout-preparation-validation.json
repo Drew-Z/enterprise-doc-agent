@@ -1,0 +1,147 @@
+{
+  "schema_version": 1,
+  "recorded_on": "2026-09-26",
+  "scope": "CO-3j1 current 4C4G rollout preparation and guarded candidate recovery",
+  "status": "local_checks_passed_rollout_pending",
+  "task_status": "in_progress",
+  "base_commit": "e8aa9e29a26692ca7336e36eaa1dbd8733db7cf8",
+  "candidate": "The commit containing this report; exact publication SHA and CI outcomes are recorded separately after commit",
+  "recovery": {
+    "workflow": ".github/workflows/deploy-staging.yml",
+    "required_successful_steps": [
+      "prerequisites",
+      "migration",
+      "workloads"
+    ],
+    "unsupported_or_unproven_inputs": "No kubectl command; original workflow failure remains a failure",
+    "success": "Reapply the already applied candidate, then wait for API, Worker, Consumer and Web",
+    "rollback_claim": false,
+    "test_boundary": "Execute the actual workflow Bash body; replace only kubectl with a command recorder and failure injector",
+    "red": {
+      "failed": 1,
+      "unexpected_kubectl_calls": 5
+    },
+    "green": {
+      "passed": 24
+    },
+    "cases": [
+      "failure, cancelled, skipped, empty and unknown outcome for each prerequisite",
+      "successful recovery on both supported small profiles",
+      "other profiles and absent manifest do not invoke kubectl",
+      "apply or rollout failure propagates and stops later commands"
+    ]
+  },
+  "checks": {
+    "pytest_non_integration": {
+      "passed": 1936,
+      "subtests_passed": 23,
+      "deselected": 440,
+      "seconds": 152.44
+    },
+    "ruff": "passed",
+    "ruff_format": {
+      "status": "passed",
+      "files": 604
+    },
+    "strict_mypy": {
+      "status": "passed",
+      "files": 254
+    },
+    "trellis_context": "passed",
+    "additional_integration": "Not rerun for this workflow-only behavior change; previous resource-producer integration evidence remains frozen",
+    "remote_ci": "Pending publication of this exact commit; do not infer from local checks",
+    "candidate_diff_check": "passed; all candidate paths only",
+    "whole_workspace_diff_check": "Existing out-of-scope whitespace findings; historical files unchanged and excluded"
+  },
+  "live_read_only_observation": {
+    "observed_at_utc": [
+      "2026-09-26T06:29:10Z",
+      "2026-09-26T06:35:17Z"
+    ],
+    "deployment_profile": "single-node-4c4g",
+    "cpu_count": 4,
+    "physical_memory_bytes": 3904057344,
+    "available_memory_bytes": 1652088832,
+    "swap_bytes": 0,
+    "ready_deployments": 5,
+    "replicas_each": 1,
+    "observed_pod_restarts": 0,
+    "database_revision": "20260923_0027",
+    "jobs_by_status": {
+      "cancelled": 3,
+      "dead": 99,
+      "succeeded": 2295
+    },
+    "presales_attempts_by_state": {
+      "failed": 2
+    },
+    "full_drain_proven": false,
+    "unchecked_drain_sources": [
+      "Agent waiting_approval and other active runs",
+      "active uploads and other writers"
+    ],
+    "images": "Configured digests match the previously recorded v0.1.44 deployment; source and signature are not re-attested in this slice",
+    "candidate_deployed": false,
+    "sensitive_inventory": "Kept only in the existing local recovery group"
+  },
+  "offline_render": {
+    "source_commit": "e8aa9e29a26692ca7336e36eaa1dbd8733db7cf8",
+    "source_method": "git archive of committed infrastructure",
+    "tool": "kubectl v1.34.1 / kustomize v5.7.1",
+    "resources": 25,
+    "deployment_resource_contracts_matching_live": 5,
+    "render_sha256": "454aee2739f9e77f0d0d25742c8d8ffa38631efcd4d7da955a5694f04d76412c",
+    "release_images_bound": false,
+    "apply_ready": false
+  },
+  "rollout_plan": {
+    "document": "docs/ops/commercial-rollout-plan.md",
+    "database_upgrade": "20260923_0027 -> 20260924_0031",
+    "proposed_compatible_fallback_source": "93d95a96d83b9ec7ac26897b9287842d0d798923",
+    "proposed_tags": [
+      "v0.1.45-rc.0",
+      "v0.1.45-rc.1"
+    ],
+    "tags_created": false,
+    "images_published": false,
+    "image_level_rollback_verified": false,
+    "existing_enterprise_quotas_approved": false,
+    "zero_supplier_deployment_route_ready": false,
+    "default_workflow_constraint": "Embedding rollout still calls the supplier even when run_smoke=false",
+    "data_preservation": "Retain 0031 and compatible readers after migration; do not downgrade or restore a stale snapshot over new ledger history",
+    "zero_downtime_claim": false
+  },
+  "preserved_failures": [
+    "The original migration-failure regression applied the candidate and made five kubectl calls",
+    "The first read-only database query used presales_attempts.status instead of state; its partial result remains unchanged and a separate corrected read succeeded",
+    "Two E501 lines and format differences were corrected before the successful full checks",
+    "Earlier approval timeouts did not start full checks; an access-denied log attempt was not accepted as test evidence",
+    "Whole-workspace git diff --check reports pre-existing whitespace outside the nine candidate paths; the candidate check passes"
+  ],
+  "side_effects": {
+    "real_model_requests": 0,
+    "real_embedding_requests": 0,
+    "emails_sent": 0,
+    "remote_sql_writes": 0,
+    "remote_deployment_commands": 0,
+    "remote_release_tags_created": 0
+  },
+  "evidence_policy": {
+    "private_evidence": "Existing centralized recovery group; no private absolute paths or credentials are committed",
+    "previous_frozen_indexes": 5,
+    "original_failures_retained": true,
+    "historical_workspace_changes_excluded": true,
+    "publication_and_cleanup": "Recorded separately after this report is committed",
+    "baseline_status_entries_preserved": 2993
+  },
+  "remaining": [
+    "Publish explicitly approved immutable candidate and compatible fallback images and strict manifests",
+    "Verify image-level rollback on an exclusive restored local copy",
+    "Prepare the zero-supplier-call deployment route, actual private configuration, finite quotas, current consistent backup and maintenance window",
+    "Bind business phases to the deployed environment and verify browser/proxy recovery",
+    "Run approved current-host business capacity trials",
+    "Complete representative quality and independent review, alert receipts, recurring complete backups, whole-host RPO/RTO and customer acceptance"
+  ],
+  "production_capacity_approved": false,
+  "commercial_readiness_approved": false
+}

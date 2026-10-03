@@ -1,0 +1,115 @@
+{
+  "at": "2026-09-29T08:00:22.184022+00:00",
+  "status": "engineering_slice_verified_commercial_acceptance_incomplete",
+  "task_status": "in_progress",
+  "release": {
+    "source": {
+      "commit_sha": "58ef13dc505645529c54d5d14db7a076fdb4f8c9",
+      "ref": "refs/tags/v0.1.45-rc.3",
+      "repository": "Drew-Z/enterprise-doc-agent",
+      "run_attempt": "1",
+      "run_id": "36525020825",
+      "workflow_ref": "Drew-Z/enterprise-doc-agent/.github/workflows/container.yml@refs/tags/v0.1.45-rc.3"
+    },
+    "manifest_sha256": "d8f21c4e0467699c40e4012206dd73eca1f6e29a3e20708b475e39dc4f89fad7",
+    "checked_evidence_files": 56,
+    "signature_and_attestation_subjects_match": true,
+    "cryptographic_signature_verification": "successful release CI",
+    "images": {
+      "api": "ghcr.io/drew-z/enterprise-doc-api@sha256:3e3bbd3858bcf1731f00628d893431808c80d33961da1217ea7324ce1e31b69d",
+      "consumer": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:f18e9b2a6235dc629dd95b384e09dad67f9033238ee3e1b43c53bf8b755a6534",
+      "web": "ghcr.io/drew-z/enterprise-doc-web@sha256:62257d676dd580caaea728e5e7aa56656206d48cd9421d7e61a37c302d6a88d8",
+      "worker": "ghcr.io/drew-z/enterprise-doc-worker@sha256:f39a247ff1b4821364046fe383fdbd46d78a192121d45fc3e8751fbc6505a26c"
+    }
+  },
+  "deployment": {
+    "status": "succeeded",
+    "elapsed_seconds": 95.583,
+    "configuration_and_secrets_unchanged": true,
+    "database_revision": "20260924_0031",
+    "rollback_release": "v0.1.45-rc.2"
+  },
+  "browser": {
+    "at": "2026-09-29T06:10:13.302Z",
+    "status": "passed",
+    "real_deployed_assets": true,
+    "real_business_responses": true,
+    "interactive_auth_adapter": true,
+    "agent_result_download_refresh": true,
+    "presales_review_csv_reopen": true,
+    "read_only_offline_recovery": true,
+    "background_generation_offline_retest": false,
+    "original_packet_unchanged": true,
+    "application_http": 22,
+    "control_http": 3,
+    "new_business_submissions": 0,
+    "supplier_calls": 0,
+    "csv_sha256": "403527e8c01c12aa11d175c4b3c8fbfae06559f04e62d592d238914cd07cea80"
+  },
+  "browser_limits": {
+    "interactive_auth_adapter": true,
+    "background_generation_offline_retest": false,
+    "original_window_auto_reconnect_passed": false,
+    "offline_reload_initialization_security_error_retained": true,
+    "additional_inplace_checks": "Page navigation timeout, static fetch proxy abort, SOCKS control-read failure retained; no new business writes"
+  },
+  "backup": {
+    "scheduled_completed": 21,
+    "statuses": {
+      "healthy": 21
+    },
+    "last_completed_at": "2026-09-29T07:59:12.926915+00:00",
+    "actual_postgres_restore": true,
+    "tables": 56,
+    "rows": 79547,
+    "objects": 1588,
+    "object_bytes": 1084833,
+    "new_empty_minio_restore_per_cycle": false,
+    "trigger_minutes": 1,
+    "overlap_policy": "IgnoreNew",
+    "storage_cap_bytes": 3221225472,
+    "automatic_deletion": false,
+    "windows_online_dependency": true
+  },
+  "monitor": {
+    "main_version": "6380c625-45d0-4eb8-9a14-2c62987675b3",
+    "watchdog_version": "9e2ec181-06c3-4a20-8f5d-614c35e0d579",
+    "mode": "notify",
+    "queue_heartbeats_completed": 48,
+    "queue_record_max_age_seconds": 120,
+    "backup_source_max_age_seconds": 300,
+    "monitor_max_age_seconds": 180,
+    "same_cloudflare_failure_domain": true,
+    "new_test_email_dispatches": 0
+  },
+  "validation": {
+    "monitor_tests": 35,
+    "monitor_failed": 0,
+    "real_workerd_and_D1": true,
+    "lint": "passed",
+    "typecheck": "passed",
+    "trellis": "passed",
+    "private_python_ast": "passed",
+    "deployed_release_CI": "success",
+    "new_commit_CI": "pending_after_commit"
+  },
+  "retention": {
+    "old_root_artifact_indexes_unchanged": 25,
+    "baseline_dirty_entries": 2993,
+    "owned_OCI_temp_files_removed": 30,
+    "owned_shadow_worker_removed": true,
+    "token_storage": "Current-user DPAPI and restricted ACL; local only"
+  },
+  "new_supplier_calls": 0,
+  "production_capacity_approved": false,
+  "rpo_rto_approved": false,
+  "independent_review_approved": false,
+  "supplier_money_reconciled": false,
+  "remaining": [
+    "Current-host two-round business capacity including bounded external adapter and approved target/budget",
+    "Supplier monetary reconciliation",
+    "Independent business/customer/release approval",
+    "Long-term backup retention and on-call coverage",
+    "Whole-host RPO/RTO drill"
+  ]
+}

@@ -2,27 +2,9 @@ name: Quality
 
 on:
   pull_request:
-    paths-ignore:
-      - "**/*.md"
-      - "docs/**"
-      - ".trellis/tasks/**/*.json"
-      - ".trellis/tasks/**/*.jsonl"
-      - ".trellis/spec/**/*.json"
-      - ".trellis/spec/**/*.jsonl"
-      - ".trellis/workspace/**/*.json"
-      - ".trellis/workspace/**/*.jsonl"
   push:
     branches:
       - main
-    paths-ignore:
-      - "**/*.md"
-      - "docs/**"
-      - ".trellis/tasks/**/*.json"
-      - ".trellis/tasks/**/*.jsonl"
-      - ".trellis/spec/**/*.json"
-      - ".trellis/spec/**/*.jsonl"
-      - ".trellis/workspace/**/*.json"
-      - ".trellis/workspace/**/*.jsonl"
 
 permissions:
   contents: read

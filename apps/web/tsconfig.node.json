@@ -13,5 +13,5 @@
     "noEmit": true,
     "strict": true
   },
-  "include": ["vite.config.ts", "vite.presales.config.ts", "vite.presales-ingestion.config.ts", "vite.browser-session.config.ts", "vite.invitation.config.ts", "playwright.config.ts", "playwright.presales.config.ts", "playwright.presales-ingestion.config.ts", "playwright.browser-session.config.ts", "playwright.invitation.config.ts", "playwright.usage.config.ts", "playwright.first-use.config.ts", "playwright.keycloak-first-use.config.ts", "e2e/**/*.ts", "presales-e2e/**/*.ts", "presales-ingestion-e2e/**/*.ts", "browser-session-e2e/**/*.ts", "invitation-e2e/**/*.ts", "usage-e2e/**/*.ts", "first-use-e2e/**/*.ts"]
+  "include": ["vite.config.ts", "vite.presales.config.ts", "vite.presales-ingestion.config.ts", "vite.browser-session.config.ts", "vite.invitation.config.ts", "playwright.config.ts", "playwright.presales.config.ts", "playwright.presales-background.config.ts", "playwright.presales-ingestion.config.ts", "playwright.browser-session.config.ts", "playwright.invitation.config.ts", "playwright.usage.config.ts", "playwright.first-use.config.ts", "playwright.keycloak-first-use.config.ts", "e2e/**/*.ts", "presales-e2e/**/*.ts", "presales-ingestion-e2e/**/*.ts", "browser-session-e2e/**/*.ts", "invitation-e2e/**/*.ts", "usage-e2e/**/*.ts", "first-use-e2e/**/*.ts"]
 }

@@ -4,6 +4,7 @@ import asyncio
 import hashlib
 import logging
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from tempfile import SpooledTemporaryFile
 from time import perf_counter
@@ -12,6 +13,15 @@ from uuid import UUID
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from enterprise_doc_core.billing.errors import UsageError
+from enterprise_doc_core.billing.locking import lock_usage_tenant
+from enterprise_doc_core.billing.product_contracts import (
+    ProductMetric,
+    document_processing_operation_id,
+)
+from enterprise_doc_core.billing.product_usage import ProductUsageService
+from enterprise_doc_core.billing.provider_calls import ProviderCallService
+from enterprise_doc_core.config import AppEnvironment, ProviderUsageSettings
 from enterprise_doc_core.documents.ingestion import (
     DocumentParseViolation,
     EmbeddingProvider,
@@ -29,6 +39,7 @@ from enterprise_doc_core.documents.models import (
     DocumentVersionStatus,
 )
 from enterprise_doc_core.jobs import ClaimedJob
+from enterprise_doc_core.jobs.models import Job, JobStatus
 from enterprise_doc_core.object_store import MultipartObjectStore, ObjectStoreError
 from enterprise_doc_core.telemetry import MetricsRuntime
 
@@ -123,6 +134,8 @@ class DocumentIngestionService:
         versions: IngestionVersions | None = None,
         limits: IngestionLimits | None = None,
         metrics: MetricsRuntime | None = None,
+        app_env: AppEnvironment = AppEnvironment.LOCAL,
+        provider_usage_settings: ProviderUsageSettings | None = None,
     ) -> None:
         if embedding_dimension != DEFAULT_EMBEDDING_DIMENSION:
             raise ValueError(
@@ -138,11 +151,30 @@ class DocumentIngestionService:
         self.versions = versions or IngestionVersions()
         self.limits = limits or IngestionLimits()
         self.metrics = metrics
+        self.product_usage = ProductUsageService(session_factory=session_factory, app_env=app_env)
+        self.provider_usage = ProviderCallService(
+            session_factory=session_factory, settings=provider_usage_settings
+        )
 
     async def __call__(self, claim: ClaimedJob) -> None:
         started = perf_counter()
         try:
             await self._execute(claim)
+        except UsageError as error:
+            code = {
+                "usage_limit_reached": "document_usage_limit",
+                "usage_entitlement_inactive": "document_entitlement_inactive",
+                "usage_product_quota_unconfigured": "document_entitlement_inactive",
+                "provider_daily_budget_exhausted": "document_provider_budget_exhausted",
+                "provider_operation_budget_exhausted": "document_provider_budget_exhausted",
+            }.get(error.code, "document_usage_unavailable")
+            if code != "document_usage_unavailable":
+                await self._record_quota_rejection(claim, code)
+            raise DocumentIngestionError(
+                code,
+                "Document processing quota could not be confirmed.",
+                retryable=code == "document_usage_unavailable",
+            ) from error
         except asyncio.CancelledError:
             if self.metrics is not None:
                 self.metrics.observe_boundary(
@@ -183,6 +215,7 @@ class DocumentIngestionService:
         generation_id, version, resume_stage, already_complete = await self._start_generation(
             tenant_id=claim.tenant_id,
             document_version_id=document_version_id,
+            claim=claim,
         )
         if already_complete:
             return
@@ -196,7 +229,7 @@ class DocumentIngestionService:
                 )
             else:
                 current_stage = DocumentIngestionStage.DOWNLOAD_SPOOL
-                await self._checkpoint(generation_id, DocumentIngestionStage.DOWNLOAD_SPOOL)
+                await self._checkpoint(generation_id, DocumentIngestionStage.DOWNLOAD_SPOOL, claim)
                 spool = await spool_object(
                     object_store=self.object_store,
                     bucket=self.documents_bucket,
@@ -217,13 +250,13 @@ class DocumentIngestionService:
                     )
 
                 current_stage = DocumentIngestionStage.PARSE
-                await self._checkpoint(generation_id, DocumentIngestionStage.PARSE)
+                await self._checkpoint(generation_id, DocumentIngestionStage.PARSE, claim)
                 sections = parse_document_bytes(
                     data,
                     extension=Path(version.original_filename).suffix,
                 )
                 current_stage = DocumentIngestionStage.CHUNK
-                await self._checkpoint(generation_id, DocumentIngestionStage.CHUNK)
+                await self._checkpoint(generation_id, DocumentIngestionStage.CHUNK, claim)
                 chunks = chunk_sections(
                     sections,
                     max_chars=self.limits.max_chunk_chars,
@@ -235,9 +268,48 @@ class DocumentIngestionService:
                     generation_id=generation_id,
                     chunks=chunks,
                     verified_content_sha256=content_sha256,
+                    claim=claim,
                 )
             current_stage = DocumentIngestionStage.EMBED
-            embeddings = await self.embedding_provider.embed(tuple(chunk.text for chunk in chunks))
+            await self._checkpoint(generation_id, DocumentIngestionStage.EMBED, claim)
+            async with self.session_factory() as session:
+                max_attempts = await session.scalar(
+                    select(Job.max_attempts).where(
+                        Job.tenant_id == claim.tenant_id, Job.id == claim.job_id
+                    )
+                )
+
+            async def guard(session: AsyncSession) -> None:
+                job = await self._lock_claim(session, claim)
+                generation = await session.scalar(
+                    select(DocumentIngestionGeneration)
+                    .where(
+                        DocumentIngestionGeneration.id == generation_id,
+                        DocumentIngestionGeneration.tenant_id == claim.tenant_id,
+                    )
+                    .with_for_update()
+                )
+                if generation is None:
+                    raise DocumentIngestionError(
+                        "generation_not_found", "Generation missing.", retryable=False
+                    )
+                self._require_generation_owner(generation, claim)
+                await self.product_usage.require_reserved(
+                    session=session,
+                    tenant_id=claim.tenant_id,
+                    operation_id=self._operation_id(claim, job),
+                    metric=ProductMetric.DOCUMENT_BYTES,
+                )
+
+            with self.provider_usage.scope(
+                tenant_id=claim.tenant_id,
+                operation_id=document_processing_operation_id(claim.job_id, max_attempts or 1),
+                kind="document",
+                guard=guard,
+            ):
+                embeddings = await self.embedding_provider.embed(
+                    tuple(chunk.text for chunk in chunks)
+                )
             self._validate_embeddings(chunks, embeddings)
             await self._commit_embeddings_and_activate(
                 tenant_id=claim.tenant_id,
@@ -245,6 +317,7 @@ class DocumentIngestionService:
                 generation_id=generation_id,
                 chunks=chunks,
                 embeddings=embeddings,
+                claim=claim,
             )
         except DocumentParseViolation as error:
             await self._mark_failed(
@@ -253,6 +326,7 @@ class DocumentIngestionService:
                 code=error.code,
                 message=error.message,
                 deterministic=True,
+                claim=claim,
             )
             raise DocumentIngestionError(error.code, error.message, retryable=False) from error
         except DocumentIngestionError as error:
@@ -262,6 +336,7 @@ class DocumentIngestionService:
                 code=error.code,
                 message=error.message,
                 deterministic=not error.retryable,
+                claim=claim,
             )
             raise
         except ObjectStoreError as error:
@@ -271,12 +346,15 @@ class DocumentIngestionService:
                 code="object_store_unavailable",
                 message="object store operation failed",
                 deterministic=False,
+                claim=claim,
             )
             raise DocumentIngestionError(
                 "object_store_unavailable",
                 "object store operation failed",
                 retryable=True,
             ) from error
+        except UsageError:
+            raise
         except Exception as error:
             _LOGGER.error(
                 "document_ingestion_unhandled",
@@ -293,6 +371,7 @@ class DocumentIngestionService:
                 code="ingestion_failed",
                 message="document ingestion failed",
                 deterministic=False,
+                claim=claim,
             )
             raise DocumentIngestionError(
                 "ingestion_failed", "document ingestion failed", retryable=True
@@ -309,10 +388,65 @@ class DocumentIngestionService:
                 retryable=False,
             ) from exc
 
+    async def _record_quota_rejection(self, claim: ClaimedJob, code: str) -> None:
+        """Persist an actionable inventory state after the rejected transaction rolled back."""
+        async with self.session_factory.begin() as session:
+            await lock_usage_tenant(session, claim.tenant_id)
+            try:
+                job = await self._lock_claim(session, claim)
+            except DocumentIngestionError:
+                return
+            version = await session.scalar(
+                select(DocumentVersion)
+                .where(
+                    DocumentVersion.tenant_id == claim.tenant_id,
+                    DocumentVersion.id == self._document_version_id(claim),
+                )
+                .with_for_update()
+            )
+            if version is None:
+                return
+            generation = await session.scalar(
+                select(DocumentIngestionGeneration)
+                .where(
+                    DocumentIngestionGeneration.tenant_id == claim.tenant_id,
+                    DocumentIngestionGeneration.document_version_id == version.id,
+                    DocumentIngestionGeneration.parser_version == self.versions.parser,
+                    DocumentIngestionGeneration.chunker_version == self.versions.chunker,
+                    DocumentIngestionGeneration.embedding_version == self.versions.embedding,
+                )
+                .with_for_update()
+            )
+            if generation is None:
+                generation = DocumentIngestionGeneration(
+                    tenant_id=claim.tenant_id,
+                    document_version_id=version.id,
+                    processing_job_id=job.id if job is not None else None,
+                    parser_version=self.versions.parser,
+                    chunker_version=self.versions.chunker,
+                    embedding_version=self.versions.embedding,
+                    embedding_model=self.embedding_model,
+                    embedding_dimension=self.embedding_dimension,
+                    stage=DocumentIngestionStage.DOWNLOAD_SPOOL.value,
+                )
+                session.add(generation)
+            elif generation.status == DocumentIngestionStatus.SUCCEEDED.value or (
+                generation.processing_job_id not in {None, claim.job_id}
+            ):
+                return
+            generation.status = DocumentIngestionStatus.FAILED.value
+            generation.error_code = code
+            generation.error_message = "Document processing allowance is unavailable."
+            generation.finished_at = func.now()
+            if version.status != DocumentVersionStatus.READY.value:
+                version.status = DocumentVersionStatus.FAILED.value
+
     async def _start_generation(
-        self, *, tenant_id: UUID, document_version_id: UUID
+        self, *, tenant_id: UUID, document_version_id: UUID, claim: ClaimedJob
     ) -> tuple[UUID, DocumentVersion, DocumentIngestionStage, bool]:
         async with self.session_factory() as session, session.begin():
+            await lock_usage_tenant(session, tenant_id)
+            job = await self._lock_claim(session, claim)
             version = await session.scalar(
                 select(DocumentVersion)
                 .where(
@@ -337,9 +471,48 @@ class DocumentIngestionService:
                 )
                 .with_for_update()
             )
+            if (
+                generation is not None
+                and generation.processing_job_id is not None
+                and generation.processing_job_id != claim.job_id
+                and generation.status != DocumentIngestionStatus.SUCCEEDED.value
+            ):
+                # Do not lock another Job after version/generation. A revived old
+                # Job must re-enter this ownership check before doing any work.
+                owner_status = await session.scalar(
+                    select(Job.status).where(
+                        Job.tenant_id == tenant_id, Job.id == generation.processing_job_id
+                    )
+                )
+                if owner_status not in {
+                    JobStatus.DEAD.value,
+                    JobStatus.CANCELLED.value,
+                    JobStatus.SUCCEEDED.value,
+                }:
+                    raise DocumentIngestionError(
+                        "document_processing_busy",
+                        "This document is already being processed.",
+                        retryable=True,
+                    )
+            if not (
+                generation is not None
+                and generation.status == DocumentIngestionStatus.SUCCEEDED.value
+                and generation.stage == DocumentIngestionStage.READY.value
+                and version.status == DocumentVersionStatus.READY.value
+            ):
+                reservation = await self.product_usage.reserve(
+                    session=session,
+                    tenant_id=tenant_id,
+                    operation_id=self._operation_id(claim, job),
+                    metric=ProductMetric.DOCUMENT_BYTES,
+                    quantity=version.size_bytes,
+                )
+                if reservation.ledgered and reservation.status != "reserved":
+                    raise UsageError("usage_reservation_not_executable")
             if generation is None:
                 generation = DocumentIngestionGeneration(
                     tenant_id=tenant_id,
+                    processing_job_id=job.id if job is not None else None,
                     document_version_id=document_version_id,
                     parser_version=self.versions.parser,
                     chunker_version=self.versions.chunker,
@@ -368,6 +541,7 @@ class DocumentIngestionService:
             ):
                 return generation.id, version, DocumentIngestionStage.READY, True
             else:
+                generation.processing_job_id = job.id if job is not None else None
                 resume_stage = DocumentIngestionStage(generation.stage)
                 if (
                     resume_stage is not DocumentIngestionStage.EMBED
@@ -388,17 +562,30 @@ class DocumentIngestionService:
                 return generation.id, version, resume_stage, False
             return generation.id, version, DocumentIngestionStage.DOWNLOAD_SPOOL, False
 
-    async def _checkpoint(self, generation_id: UUID, stage: DocumentIngestionStage) -> None:
+    async def _checkpoint(
+        self, generation_id: UUID, stage: DocumentIngestionStage, claim: ClaimedJob
+    ) -> None:
         async with self.session_factory() as session, session.begin():
+            job = await self._lock_claim(session, claim)
             generation = await session.scalar(
                 select(DocumentIngestionGeneration)
-                .where(DocumentIngestionGeneration.id == generation_id)
+                .where(
+                    DocumentIngestionGeneration.id == generation_id,
+                    DocumentIngestionGeneration.tenant_id == claim.tenant_id,
+                )
                 .with_for_update()
             )
             if generation is None:
                 raise DocumentIngestionError(
                     "generation_not_found", "ingestion generation was not found", retryable=False
                 )
+            self._require_generation_owner(generation, claim)
+            await self.product_usage.require_reserved(
+                session=session,
+                tenant_id=claim.tenant_id,
+                operation_id=self._operation_id(claim, job),
+                metric=ProductMetric.DOCUMENT_BYTES,
+            )
             generation.status = DocumentIngestionStatus.RUNNING.value
             generation.stage = stage.value
 
@@ -428,8 +615,10 @@ class DocumentIngestionService:
         generation_id: UUID,
         chunks: tuple[ParsedChunk, ...],
         verified_content_sha256: str,
+        claim: ClaimedJob,
     ) -> None:
         async with self.session_factory() as session, session.begin():
+            await self._lock_claim(session, claim)
             version = await session.scalar(
                 select(DocumentVersion)
                 .where(
@@ -451,6 +640,7 @@ class DocumentIngestionService:
                 raise DocumentIngestionError(
                     "ingestion_target_missing", "ingestion target was not found", retryable=False
                 )
+            self._require_generation_owner(generation, claim)
             if version.declared_sha256 != verified_content_sha256:
                 raise DocumentIngestionError(
                     "document_sha256_mismatch",
@@ -555,8 +745,10 @@ class DocumentIngestionService:
         generation_id: UUID,
         chunks: tuple[ParsedChunk, ...],
         embeddings: tuple[tuple[float, ...], ...],
+        claim: ClaimedJob,
     ) -> None:
         async with self.session_factory() as session, session.begin():
+            job = await self._lock_claim(session, claim)
             version = await session.scalar(
                 select(DocumentVersion)
                 .where(
@@ -590,6 +782,7 @@ class DocumentIngestionService:
                 raise DocumentIngestionError(
                     "ingestion_target_missing", "ingestion target was not found", retryable=False
                 )
+            self._require_generation_owner(generation, claim)
             if (
                 version.content_sha256_verified_at is None
                 or generation.stage != DocumentIngestionStage.EMBED.value
@@ -628,6 +821,13 @@ class DocumentIngestionService:
             generation.error_message = None
             generation.finished_at = func.now()
             version.status = DocumentVersionStatus.READY.value
+            await self.product_usage.settle(
+                session=session,
+                tenant_id=tenant_id,
+                operation_id=self._operation_id(claim, job),
+                metric=ProductMetric.DOCUMENT_BYTES,
+                source="document.ready",
+            )
 
     async def _mark_failed(
         self,
@@ -637,19 +837,34 @@ class DocumentIngestionService:
         code: str,
         message: str,
         deterministic: bool,
+        claim: ClaimedJob,
     ) -> None:
         async with self.session_factory() as session, session.begin():
-            generation = await session.scalar(
-                select(DocumentIngestionGeneration)
-                .where(DocumentIngestionGeneration.id == generation_id)
-                .with_for_update()
-            )
+            try:
+                await self._lock_claim(session, claim)
+            except DocumentIngestionError:
+                return
             version = await session.scalar(
                 select(DocumentVersion)
-                .where(DocumentVersion.id == document_version_id)
+                .where(
+                    DocumentVersion.id == document_version_id,
+                    DocumentVersion.tenant_id == claim.tenant_id,
+                )
+                .with_for_update()
+            )
+            generation = await session.scalar(
+                select(DocumentIngestionGeneration)
+                .where(
+                    DocumentIngestionGeneration.id == generation_id,
+                    DocumentIngestionGeneration.tenant_id == claim.tenant_id,
+                )
                 .with_for_update()
             )
             if generation is not None:
+                try:
+                    self._require_generation_owner(generation, claim)
+                except DocumentIngestionError:
+                    return
                 generation.status = DocumentIngestionStatus.FAILED.value
                 generation.error_code = code[:100]
                 generation.error_message = message[:1000]
@@ -660,3 +875,51 @@ class DocumentIngestionService:
                 and version.status != DocumentVersionStatus.READY.value
             ):
                 version.status = DocumentVersionStatus.FAILED.value
+
+    async def _lock_claim(self, session: AsyncSession, claim: ClaimedJob) -> Job | None:
+        job = await session.scalar(
+            select(Job)
+            .where(
+                Job.id == claim.job_id,
+                Job.tenant_id == claim.tenant_id,
+            )
+            .with_for_update()
+        )
+        if job is None and not self.product_usage.require_active_entitlement:
+            return None
+        if (
+            job is None
+            or job.type != "document.ingest"
+            or job.status != JobStatus.RUNNING.value
+            or job.lease_token != claim.lease_token
+            or job.fencing_token != claim.fencing_token
+            or job.actor_id != claim.actor_id
+            or job.locked_by != claim.worker_id
+            or job.cancel_requested_at is not None
+            or job.lease_expires_at is None
+            or job.lease_expires_at <= datetime.now(UTC)
+            or job.document_version_id != self._document_version_id(claim)
+        ):
+            raise DocumentIngestionError(
+                "document_execution_stale",
+                "Document execution is no longer active.",
+                retryable=False,
+            )
+        return job
+
+    @staticmethod
+    def _require_generation_owner(
+        generation: DocumentIngestionGeneration, claim: ClaimedJob
+    ) -> None:
+        if generation.processing_job_id not in {None, claim.job_id}:
+            raise DocumentIngestionError(
+                "document_execution_stale",
+                "Document execution is no longer active.",
+                retryable=False,
+            )
+
+    @staticmethod
+    def _operation_id(claim: ClaimedJob, job: Job | None) -> UUID:
+        return document_processing_operation_id(
+            claim.job_id, job.max_attempts if job is not None else 1
+        )

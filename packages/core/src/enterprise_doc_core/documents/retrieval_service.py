@@ -3,13 +3,18 @@ from __future__ import annotations
 import asyncio
 import re
 from collections.abc import Sequence
+from datetime import UTC, datetime
 from time import perf_counter
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from enterprise_doc_core.billing.errors import UsageError
+from enterprise_doc_core.billing.models import TenantEntitlement
+from enterprise_doc_core.billing.provider_calls import Guard, ProviderCallService
+from enterprise_doc_core.config import AppEnvironment, ProviderUsageSettings
 from enterprise_doc_core.documents.ingestion import EmbeddingProvider
 from enterprise_doc_core.documents.models import (
     DEFAULT_EMBEDDING_DIMENSION,
@@ -86,6 +91,8 @@ class HybridRetrievalService:
         max_vector_distance: float = 0.65,
         require_vector_evidence: bool = False,
         metrics: MetricsRuntime | None = None,
+        app_env: AppEnvironment = AppEnvironment.LOCAL,
+        provider_usage_settings: ProviderUsageSettings | None = None,
     ) -> None:
         if top_k <= 0:
             raise ValueError("top_k must be positive")
@@ -115,6 +122,10 @@ class HybridRetrievalService:
         self.max_vector_distance = max_vector_distance
         self.require_vector_evidence = require_vector_evidence
         self.metrics = metrics
+        self.require_entitlement = app_env in {AppEnvironment.STAGING, AppEnvironment.PRODUCTION}
+        self.provider_usage = ProviderCallService(
+            session_factory=session_factory, settings=provider_usage_settings
+        )
 
     async def retrieve(
         self,
@@ -123,6 +134,8 @@ class HybridRetrievalService:
         actor_id: UUID | None = None,
         document_version_id: UUID,
         query: str,
+        provider_guard: Guard | None = None,
+        provider_operation_id: UUID | None = None,
     ) -> RetrievalDecision:
         started = perf_counter()
         try:
@@ -131,6 +144,8 @@ class HybridRetrievalService:
                 actor_id=actor_id,
                 document_version_id=document_version_id,
                 query=query,
+                provider_guard=provider_guard,
+                provider_operation_id=provider_operation_id,
             )
         except asyncio.CancelledError:
             if self.metrics is not None:
@@ -166,6 +181,8 @@ class HybridRetrievalService:
         actor_id: UUID | None = None,
         document_version_id: UUID,
         query: str,
+        provider_guard: Guard | None = None,
+        provider_operation_id: UUID | None = None,
     ) -> RetrievalDecision:
         normalized_query = query.strip()
         if not normalized_query:
@@ -181,7 +198,45 @@ class HybridRetrievalService:
             query=normalized_query,
         )
         embedding_query = format_embedding_query(normalized_query, self.query_instruction)
-        vectors = await self.embedding_provider.embed((embedding_query,))
+
+        async def guard(session: AsyncSession) -> None:
+            if provider_guard is not None:
+                await provider_guard(session)
+            visible = await session.scalar(
+                select(DocumentVersion.id)
+                .join(Document, Document.id == DocumentVersion.document_id)
+                .where(
+                    DocumentVersion.id == document_version_id,
+                    DocumentVersion.tenant_id == tenant_id,
+                    document_visible_to_actor(tenant_id=tenant_id, actor_id=actor_id),
+                )
+            )
+            if visible is None:
+                raise UsageError("provider_query_forbidden")
+            # A durable caller validates its original reservation, which may
+            # legitimately outlive the admission period while waiting for review.
+            if self.require_entitlement and provider_guard is None:
+                now = datetime.now(UTC)
+                period = await session.scalar(
+                    select(TenantEntitlement.id)
+                    .where(
+                        TenantEntitlement.tenant_id == tenant_id,
+                        TenantEntitlement.period_start <= now,
+                        TenantEntitlement.period_end > now,
+                        TenantEntitlement.provider_request_limit.is_not(None),
+                    )
+                    .limit(1)
+                )
+                if period is None:
+                    raise UsageError("usage_entitlement_inactive")
+
+        with self.provider_usage.scope(
+            tenant_id=tenant_id,
+            operation_id=provider_operation_id or uuid4(),
+            kind="query",
+            guard=guard,
+        ):
+            vectors = await self.embedding_provider.embed((embedding_query,))
         if len(vectors) != 1:
             raise ValueError("embedding provider returned an invalid query batch")
         vector_candidates = await self._vector_recall(

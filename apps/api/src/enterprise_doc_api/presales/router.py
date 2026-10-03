@@ -11,7 +11,10 @@ from enterprise_doc_api.errors import ApiError
 from enterprise_doc_core.context import PrincipalContext
 from enterprise_doc_core.presales.errors import PresalesError
 from enterprise_doc_core.presales.schemas import (
+    BatchGenerateInput,
+    BatchGenerateResult,
     CreatePacket,
+    GenerationReceipt,
     PacketSummary,
     PacketView,
     ReviewInput,
@@ -27,6 +30,15 @@ class PresalesServiceProtocol(Protocol):
     async def generate(
         self, principal: PrincipalContext, packet_id: UUID, row_id: UUID, key: str
     ) -> PacketView: ...
+    async def generate_batch(
+        self, principal: PrincipalContext, packet_id: UUID, payload: BatchGenerateInput, key: str
+    ) -> BatchGenerateResult: ...
+    async def admit(
+        self, principal: PrincipalContext, packet_id: UUID, row_id: UUID, key: str
+    ) -> GenerationReceipt: ...
+    async def admit_batch(
+        self, principal: PrincipalContext, packet_id: UUID, payload: BatchGenerateInput, key: str
+    ) -> GenerationReceipt: ...
     async def review(
         self,
         principal: PrincipalContext,
@@ -88,12 +100,18 @@ async def result[T](operation: Awaitable[T]) -> T:
             status, message = 429, "已达到本次操作限额。请联系管理员。"
         elif code == "presales_generation_busy":
             message = "已有生成正在进行。请稍后刷新查看结果。"
+        elif code == "presales_background_required":
+            message = "当前仅支持逐条生成。请刷新页面后重试。"
         elif code == "presales_revision_conflict":
             message = "这条响应已被修改。请刷新后重新核对。"
         elif code == "presales_review_required":
             message = "请逐条完成复核。或选择导出带有未复核标识的草稿。"
         elif code == "presales_review_evidence_required":
             message = "此判断缺少相应证据或条件。请核对原文后再保存。"
+        elif code == "presales_review_prerequisites_invalid":
+            status, message = 422, "请保留全部前提及对应证据。刷新后重新复核。"
+        elif code == "presales_review_note_required":
+            status, message = 422, "前提状态已修改。请在复核备注中说明依据。"
         elif code == "presales_invalid_idempotency_key":
             status, message = 400, "操作标识无效。"
         raise ApiError(status_code=status, code=code, message=message) from error
@@ -119,11 +137,46 @@ async def get_packet(packet_id: UUID, principal: Principal, svc: Service) -> Pac
     return await result(svc.get(principal, packet_id))
 
 
-@router.post("/{packet_id}/rows/{row_id}/generate", response_model=PacketView)
+@router.post("/{packet_id}/rows/{row_id}/generate", response_model=PacketView | GenerationReceipt)
 async def generate_row(
-    packet_id: UUID, row_id: UUID, principal: Principal, svc: Service, key: Key
-) -> PacketView:
-    return await result(svc.generate(principal, packet_id, row_id, key))
+    packet_id: UUID,
+    row_id: UUID,
+    principal: Principal,
+    svc: Service,
+    key: Key,
+    response: Response,
+    response_mode: Annotated[Literal["full", "receipt"], Query(alias="response")] = "full",
+) -> PacketView | GenerationReceipt:
+    if response_mode == "receipt":
+        receipt = await result(svc.admit(principal, packet_id, row_id, key))
+        if any(item.disposition == "enqueued" for item in receipt.admissions):
+            response.status_code = 202
+        return receipt
+    packet = await result(svc.generate(principal, packet_id, row_id, key))
+    if any(r.id == row_id and r.state in {"queued", "running", "recovering"} for r in packet.rows):
+        response.status_code = 202
+    return packet
+
+
+@router.post("/{packet_id}/generate", response_model=BatchGenerateResult | GenerationReceipt)
+async def generate_batch(
+    packet_id: UUID,
+    payload: BatchGenerateInput,
+    principal: Principal,
+    svc: Service,
+    key: Key,
+    response: Response,
+    response_mode: Annotated[Literal["full", "receipt"], Query(alias="response")] = "full",
+) -> BatchGenerateResult | GenerationReceipt:
+    if response_mode == "receipt":
+        receipt = await result(svc.admit_batch(principal, packet_id, payload, key))
+        if any(item.disposition == "enqueued" for item in receipt.admissions):
+            response.status_code = 202
+        return receipt
+    batch = await result(svc.generate_batch(principal, packet_id, payload, key))
+    if any(r.state in {"queued", "running", "recovering"} for r in batch.packet.rows):
+        response.status_code = 202
+    return batch
 
 
 @router.put("/{packet_id}/rows/{row_id}/review", response_model=PacketView)

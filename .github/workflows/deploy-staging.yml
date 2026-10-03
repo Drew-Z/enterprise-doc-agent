@@ -70,8 +70,21 @@ jobs:
         working-directory: ${{ github.workspace }}
         env:
           CONTROL_PLANE_APPROVED: ${{ vars.STAGING_CONTROL_PLANE_APPROVED }}
+          DEPLOYMENT_MODE: ${{ vars.STAGING_DEPLOYMENT_MODE || 'standard' }}
+          RUN_SMOKE: ${{ inputs.run_smoke }}
+          DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'single-node-4c4g' }}
         run: |
           set -euo pipefail
+          case "$DEPLOYMENT_MODE" in
+            standard) ;;
+            maintenance)
+              if test "$RUN_SMOKE" != "false" || test "$DEPLOYMENT_PROFILE" != "single-node-4c4g"; then
+                echo 'maintenance requires single-node-4c4g and run_smoke=false' >&2
+                exit 1
+              fi
+              ;;
+            *) echo 'unsupported deployment mode' >&2; exit 1 ;;
+          esac
           if test "$CONTROL_PLANE_APPROVED" != "true"; then
             echo 'staging control-plane firewall requires out-of-band approval' >&2
             exit 1
@@ -251,11 +264,24 @@ jobs:
           PRESALES_GENERATION_ENABLED: ${{ vars.STAGING_PRESALES_GENERATION_ENABLED || 'false' }}
           PRESALES_MODEL_ROUTE: ${{ vars.STAGING_PRESALES_MODEL_ROUTE || 'primary' }}
           PRESALES_MODEL_TIMEOUT_SECONDS: ${{ vars.STAGING_PRESALES_MODEL_TIMEOUT_SECONDS }}
+          PRESALES_FALLBACK_MODEL_TIMEOUT_SECONDS: ${{ vars.STAGING_PRESALES_FALLBACK_MODEL_TIMEOUT_SECONDS }}
           PRESALES_ROW_TIMEOUT_SECONDS: ${{ vars.STAGING_PRESALES_ROW_TIMEOUT_SECONDS || '90' }}
+          PRESALES_BACKGROUND_GENERATION_ENABLED: ${{ vars.STAGING_PRESALES_BACKGROUND_GENERATION_ENABLED || 'false' }}
+          PRESALES_AUTOMATIC_FAILOVER_ENABLED: ${{ vars.STAGING_PRESALES_AUTOMATIC_FAILOVER_ENABLED || 'false' }}
+          PRESALES_DAILY_DISPATCH_LIMIT: ${{ vars.STAGING_PRESALES_DAILY_DISPATCH_LIMIT || '200' }}
+          PRESALES_QUEUE_TIMEOUT_SECONDS: ${{ vars.STAGING_PRESALES_QUEUE_TIMEOUT_SECONDS || '900' }}
+          PRESALES_ROUTE_FAILURE_THRESHOLD: ${{ vars.STAGING_PRESALES_ROUTE_FAILURE_THRESHOLD || '3' }}
+          PRESALES_ROUTE_COOLDOWN_SECONDS: ${{ vars.STAGING_PRESALES_ROUTE_COOLDOWN_SECONDS || '30' }}
+          PRESALES_CONCURRENT_ATTEMPT_LIMIT: ${{ vars.STAGING_PRESALES_CONCURRENT_ATTEMPT_LIMIT }}
           DATABASE_EGRESS_CIDR: ${{ vars.STAGING_DATABASE_EGRESS_CIDRS || vars.STAGING_DATABASE_EGRESS_CIDR }}
           MODEL_PROVIDER: openai_compatible
           MODEL_BASE_URL: ${{ vars.STAGING_MODEL_BASE_URL }}
           MODEL_NAME: ${{ vars.STAGING_MODEL_NAME }}
+          MODEL_TIMEOUT_SECONDS: ${{ vars.STAGING_MODEL_TIMEOUT_SECONDS }}
+          MODEL_ROUTE_DEADLINE_SECONDS: ${{ vars.STAGING_MODEL_ROUTE_DEADLINE_SECONDS }}
+          AGENT_EXECUTION_TIMEOUT_SECONDS: ${{ vars.STAGING_AGENT_EXECUTION_TIMEOUT_SECONDS }}
+          MODEL_REASONING_EFFORT: ${{ vars.STAGING_MODEL_REASONING_EFFORT }}
+          MODEL_FALLBACK_REASONING_EFFORT: ${{ vars.STAGING_MODEL_FALLBACK_REASONING_EFFORT }}
           MODEL_FALLBACK_BASE_URL: ${{ vars.STAGING_MODEL_FALLBACK_BASE_URL }}
           MODEL_FALLBACK_NAME: ${{ vars.STAGING_MODEL_FALLBACK_NAME }}
           MODEL_FALLBACK_VERSION: ${{ vars.STAGING_MODEL_FALLBACK_VERSION }}
@@ -324,11 +350,24 @@ jobs:
             --model-provider "$MODEL_PROVIDER" \
             --model-base-url "$MODEL_BASE_URL" \
             --model-name "$MODEL_NAME" \
+            --model-timeout-seconds "$MODEL_TIMEOUT_SECONDS" \
+            --model-route-deadline-seconds "$MODEL_ROUTE_DEADLINE_SECONDS" \
+            --agent-execution-timeout-seconds "$AGENT_EXECUTION_TIMEOUT_SECONDS" \
+            --model-reasoning-effort "$MODEL_REASONING_EFFORT" \
+            --fallback-model-reasoning-effort "$MODEL_FALLBACK_REASONING_EFFORT" \
             "${browser_auth_args[@]}" \
             --presales-generation-enabled "$PRESALES_GENERATION_ENABLED" \
             --presales-model-route "$PRESALES_MODEL_ROUTE" \
             --presales-model-timeout-seconds "$PRESALES_MODEL_TIMEOUT_SECONDS" \
+            --presales-fallback-model-timeout-seconds "$PRESALES_FALLBACK_MODEL_TIMEOUT_SECONDS" \
             --presales-row-timeout-seconds "$PRESALES_ROW_TIMEOUT_SECONDS" \
+            --presales-background-generation-enabled "$PRESALES_BACKGROUND_GENERATION_ENABLED" \
+            --presales-automatic-failover-enabled "$PRESALES_AUTOMATIC_FAILOVER_ENABLED" \
+            --presales-daily-dispatch-limit "$PRESALES_DAILY_DISPATCH_LIMIT" \
+            --presales-queue-timeout-seconds "$PRESALES_QUEUE_TIMEOUT_SECONDS" \
+            --presales-route-failure-threshold "$PRESALES_ROUTE_FAILURE_THRESHOLD" \
+            --presales-route-cooldown-seconds "$PRESALES_ROUTE_COOLDOWN_SECONDS" \
+            --presales-concurrent-attempt-limit "$PRESALES_CONCURRENT_ATTEMPT_LIMIT" \
             --demo-enabled "$DEMO_ENABLED" \
             --embedding-base-url "$EMBEDDING_BASE_URL" \
             --embedding-model-name "$EMBEDDING_MODEL_NAME" \
@@ -391,12 +430,52 @@ jobs:
             --live-manifest "$RUNNER_TEMP/staging-prerequisites-live.yaml" \
             --live-namespace-json "$RUNNER_TEMP/staging-namespace.json"
           kubectl apply --dry-run=server -f "$RUNNER_TEMP/staging-workloads.yaml"
+      - name: Validate already paused maintenance target
+        id: maintenance_prepare
+        if: vars.STAGING_DEPLOYMENT_MODE == 'maintenance'
+        run: |
+          set -euo pipefail
+          kubectl -n enterprise-doc-agent-staging get configmap enterprise-doc-config -o json \
+            > "$RUNNER_TEMP/staging-maintenance-config-before.json"
+          kubectl -n enterprise-doc-agent-staging get deployments -o json \
+            > "$RUNNER_TEMP/staging-maintenance-deployments-before.json"
+          kubectl -n enterprise-doc-agent-staging get pods -o json \
+            > "$RUNNER_TEMP/staging-maintenance-pods-before.json"
+          "$RUNNER_PYTHON" scripts/staging_maintenance.py prepare \
+            --input "$RUNNER_TEMP/staging.yaml" \
+            --live-config "$RUNNER_TEMP/staging-maintenance-config-before.json" \
+            --live-deployments "$RUNNER_TEMP/staging-maintenance-deployments-before.json" \
+            --live-pods "$RUNNER_TEMP/staging-maintenance-pods-before.json" \
+            --workloads "$RUNNER_TEMP/staging-workloads.yaml" \
+            --report "$RUNNER_TEMP/staging-maintenance-prepared.json"
       - name: Apply migration job before rollout
         id: migration
         env:
           DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'single-node-4c4g' }}
+          DEPLOYMENT_MODE: ${{ vars.STAGING_DEPLOYMENT_MODE || 'standard' }}
+          MAINTENANCE_GUARD_STATE: ${{ vars.STAGING_MAINTENANCE_GUARD_STATE }}
+          MAINTENANCE_GUARD_PLAN: ${{ vars.STAGING_MAINTENANCE_GUARD_PLAN }}
+          MAINTENANCE_GUARD_PLAN_SHA256: ${{ vars.STAGING_MAINTENANCE_GUARD_PLAN_SHA256 }}
+          MAINTENANCE_OPERATION: ${{ vars.STAGING_MAINTENANCE_OPERATION }}
+          EXPECTED_NAMESPACE_UID: ${{ vars.STAGING_NAMESPACE_UID }}
         run: |
           set -euo pipefail
+          if test "${DEPLOYMENT_MODE:-standard}" = "maintenance"; then
+            # Atomic fencing must precede scale, Job deletion and migration apply.
+            # Once claimed, even a cancelled/unknown migration cannot restore old code.
+            test -n "$MAINTENANCE_GUARD_STATE"
+            test -n "$MAINTENANCE_GUARD_PLAN"
+            test -n "$MAINTENANCE_GUARD_PLAN_SHA256"
+            test -n "$MAINTENANCE_OPERATION"
+            "$RUNNER_PYTHON" scripts/maintenance_guard.py claim \
+              --state "$MAINTENANCE_GUARD_STATE" \
+              --plan "$MAINTENANCE_GUARD_PLAN" \
+              --plan-sha256 "$MAINTENANCE_GUARD_PLAN_SHA256" \
+              --operation "$MAINTENANCE_OPERATION" \
+              --executor "$GITHUB_SHA" \
+              --namespace-uid "$EXPECTED_NAMESPACE_UID" \
+              --candidate "$RUNNER_TEMP/staging.yaml"
+          fi
           if test "$DEPLOYMENT_PROFILE" = "tiny-single-node" || test "$DEPLOYMENT_PROFILE" = "single-node-4c4g"; then
             kubectl -n enterprise-doc-agent-staging scale \
               deployment/enterprise-doc-api \
@@ -462,6 +541,7 @@ jobs:
           kubectl apply -f "$RUNNER_TEMP/staging-workloads.yaml"
       - name: Wait for workloads
         id: rollout
+        if: vars.STAGING_DEPLOYMENT_MODE != 'maintenance'
         env:
           DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'single-node-4c4g' }}
         run: |
@@ -480,9 +560,27 @@ jobs:
           if kubectl -n enterprise-doc-agent-staging get deployment enterprise-doc-prometheus >/dev/null 2>&1; then
             kubectl -n enterprise-doc-agent-staging rollout status deployment/enterprise-doc-prometheus --timeout=300s
           fi
+      - name: Verify installed applications remain paused
+        id: maintenance_verify
+        if: vars.STAGING_DEPLOYMENT_MODE == 'maintenance'
+        run: |
+          set -euo pipefail
+          kubectl -n enterprise-doc-agent-staging get configmap enterprise-doc-config -o json \
+            > "$RUNNER_TEMP/staging-maintenance-config-after.json"
+          kubectl -n enterprise-doc-agent-staging get deployments -o json \
+            > "$RUNNER_TEMP/staging-maintenance-deployments-after.json"
+          kubectl -n enterprise-doc-agent-staging get pods -o json \
+            > "$RUNNER_TEMP/staging-maintenance-pods-after.json"
+          "$RUNNER_PYTHON" scripts/staging_maintenance.py verify \
+            --input "$RUNNER_TEMP/staging.yaml" \
+            --live-config "$RUNNER_TEMP/staging-maintenance-config-after.json" \
+            --live-deployments "$RUNNER_TEMP/staging-maintenance-deployments-after.json" \
+            --live-pods "$RUNNER_TEMP/staging-maintenance-pods-after.json" \
+            --workloads "$RUNNER_TEMP/staging-workloads.yaml" \
+            --report "$RUNNER_TEMP/staging-maintenance-verified.json"
       - name: Verify public browser login entry
         id: browser_identity
-        if: vars.STAGING_BROWSER_AUTH_ISSUER != ''
+        if: vars.STAGING_DEPLOYMENT_MODE != 'maintenance' && vars.STAGING_BROWSER_AUTH_ISSUER != ''
         timeout-minutes: 2
         env:
           STAGING_BASE_URL: ${{ inputs.staging_base_url }}
@@ -506,6 +604,7 @@ jobs:
             --output "$RUNNER_TEMP/staging-browser-identity-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"
       - name: Run embedding provider and reindex gate
         id: embedding_rollout
+        if: vars.STAGING_DEPLOYMENT_MODE != 'maintenance'
         env:
           EXPECTED_EMBEDDING_MODEL: ${{ vars.STAGING_EMBEDDING_MODEL_NAME }}
           EXPECTED_EMBEDDING_VERSION: ${{ vars.STAGING_EMBEDDING_VERSION || '2' }}
@@ -626,7 +725,7 @@ jobs:
             --for=condition=complete job/m5-staging-smoke --timeout=120s
           kubectl -n enterprise-doc-agent-staging logs job/m5-staging-smoke
       - name: Clean up readiness smoke
-        if: always() && inputs.run_smoke
+        if: always() && vars.STAGING_DEPLOYMENT_MODE != 'maintenance' && inputs.run_smoke
         run: |
           kubectl -n enterprise-doc-agent-staging delete job m5-staging-smoke \
             --ignore-not-found --wait=true
@@ -672,10 +771,26 @@ jobs:
       - name: Restore tiny workloads after deployment attempt
         if: always()
         env:
+          DEPLOYMENT_MODE: ${{ vars.STAGING_DEPLOYMENT_MODE || 'standard' }}
+          PREREQUISITES_OUTCOME: ${{ steps.prerequisites.outcome }}
+          MIGRATION_OUTCOME: ${{ steps.migration.outcome }}
+          WORKLOADS_OUTCOME: ${{ steps.workloads.outcome }}
           DEPLOYMENT_PROFILE: ${{ vars.STAGING_DEPLOYMENT_PROFILE || 'single-node-4c4g' }}
         run: |
           set -euo pipefail
+          if test "${DEPLOYMENT_MODE:-standard}" = "maintenance"; then
+            echo 'maintenance mode: business workloads remain paused for operator review'
+            exit 0
+          fi
           if test "$DEPLOYMENT_PROFILE" != "tiny-single-node" && test "$DEPLOYMENT_PROFILE" != "single-node-4c4g"; then
+            exit 0
+          fi
+          # Resume only a candidate already validated, migrated and applied.
+          # This is not a rollback: an interrupted migration needs operator review.
+          if test "${PREREQUISITES_OUTCOME:-}" != "success" ||
+             test "${MIGRATION_OUTCOME:-}" != "success" ||
+             test "${WORKLOADS_OUTCOME:-}" != "success"; then
+            echo 'candidate recovery withheld: prerequisites, migration and workload apply must all succeed; inspect the failed attempt before restoring service'
             exit 0
           fi
           if test ! -f "$RUNNER_TEMP/staging-workloads.yaml"; then
@@ -693,6 +808,9 @@ jobs:
       - name: Collect sanitized release evidence
         if: always()
         env:
+          DEPLOYMENT_MODE: ${{ vars.STAGING_DEPLOYMENT_MODE || 'standard' }}
+          MAINTENANCE_PREPARE_OUTCOME: ${{ steps.maintenance_prepare.outcome }}
+          MAINTENANCE_VERIFY_OUTCOME: ${{ steps.maintenance_verify.outcome }}
           REGISTRY_PREFIX: ${{ inputs.registry_prefix }}
           API_DIGEST: ${{ inputs.api_digest }}
           WORKER_DIGEST: ${{ inputs.worker_digest }}
@@ -784,6 +902,16 @@ jobs:
             --input-dir "$raw_dir" \
             --output-dir "$sanitized_dir" \
             --manifest "tmp/staging-evidence-${evidence_id}.manifest.json"
+          if test "$DEPLOYMENT_MODE" = "maintenance"; then
+            maintenance_outcomes="$($RUNNER_PYTHON -c 'import json, os; names=("prerequisites", "maintenance_prepare", "migration", "workloads", "maintenance_verify", "rollout", "embedding_rollout", "cluster_smoke", "authenticated_smoke", "governance_smoke", "browser_identity"); print(json.dumps({name: os.environ.get(name.upper()+"_OUTCOME") or "skipped" for name in names}))')"
+            "$RUNNER_PYTHON" scripts/staging_maintenance.py record \
+              --prepared "$RUNNER_TEMP/staging-maintenance-prepared.json" \
+              --verified "$RUNNER_TEMP/staging-maintenance-verified.json" \
+              --outcomes-json "$maintenance_outcomes" \
+              --commit "$GITHUB_SHA" \
+              --output "tmp/staging-release-${evidence_id}.record.json"
+            exit 0
+          fi
           image_digests_json="$("$RUNNER_PYTHON" -c 'import json, os; print(json.dumps({"api": os.environ["API_DIGEST"], "worker": os.environ["WORKER_DIGEST"], "consumer": os.environ["CONSUMER_DIGEST"], "web": os.environ["WEB_DIGEST"]}))')"
           outcomes_json="$("$RUNNER_PYTHON" -c 'import json, os; print(json.dumps({"prerequisites": os.environ["PREREQUISITES_OUTCOME"], "migration": os.environ["MIGRATION_OUTCOME"], "workloads": os.environ["WORKLOADS_OUTCOME"], "rollout": os.environ["ROLLOUT_OUTCOME"], "embedding_rollout": os.environ["EMBEDDING_ROLLOUT_OUTCOME"], "cluster_smoke": os.environ["CLUSTER_SMOKE_OUTCOME"], "authenticated_smoke": os.environ["AUTHENTICATED_SMOKE_OUTCOME"]}))')"
           fallback_record_args=()
@@ -836,3 +964,15 @@ jobs:
       - name: Clean up browser entry report
         if: always()
         run: rm -f "$RUNNER_TEMP/staging-browser-identity-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"
+      - name: Clean up private maintenance inventory
+        if: always() && vars.STAGING_DEPLOYMENT_MODE == 'maintenance'
+        run: |
+          rm -f -- \
+            "$RUNNER_TEMP/staging-maintenance-config-before.json" \
+            "$RUNNER_TEMP/staging-maintenance-deployments-before.json" \
+            "$RUNNER_TEMP/staging-maintenance-pods-before.json" \
+            "$RUNNER_TEMP/staging-maintenance-config-after.json" \
+            "$RUNNER_TEMP/staging-maintenance-deployments-after.json" \
+            "$RUNNER_TEMP/staging-maintenance-pods-after.json" \
+            "$RUNNER_TEMP/staging-maintenance-prepared.json" \
+            "$RUNNER_TEMP/staging-maintenance-verified.json"

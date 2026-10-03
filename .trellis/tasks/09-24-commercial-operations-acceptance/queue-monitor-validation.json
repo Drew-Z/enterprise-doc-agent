@@ -1,0 +1,132 @@
+{
+  "schema_version": 1,
+  "at": "2026-10-03T01:25:44.355698+00:00",
+  "status": "deployed_queue_independent_overall_operations_pending",
+  "baseline_commit": "cb9abc44cf0c28c7fc6469e1cf1f2a4537a35533",
+  "scope": "Server queue projection and external monitor without personal-computer heartbeat dependency",
+  "verification": {
+    "python_full_non_integration": {
+      "passed": 2246,
+      "deselected": 479,
+      "scope_note": "Before final release-toggle tests; affected suite rerun afterwards"
+    },
+    "final_affected_tests": 220,
+    "monitor_workerd_d1_r2_tests": 67,
+    "ruff": "passed",
+    "format_files": 647,
+    "mypy_production_files": 253,
+    "mypy_release_switch_linux": "passed",
+    "monitor_lint_types": "passed",
+    "preserved_preexisting_dirty_hashes": 2993
+  },
+  "failure_records": [
+    "worker-red.txt",
+    "api-red.txt",
+    "monitor-red.txt",
+    "python-focused.txt",
+    "monitor-tests.txt",
+    "switch-red.txt",
+    "final-focused.txt"
+  ],
+  "failure_notes": [
+    "Expected missing Worker endpoint, API injection and required monitor projection failures preceded implementation.",
+    "A 10ms test schedule raced the test owner; fixture now signals stop at the HTTP boundary and runner rechecks stop after timeout.",
+    "Historical notification fixture initially omitted its required D1 monitor parent; the real foreign key rejected it before behavior execution.",
+    "Release test initially omitted the database-idle boundary; preflight rejected before writes. The corrected test injects it and exercises apply/restore.",
+    "Expanded release-tool Mypy on Windows reports a preexisting unreachable Linux clock branch; --platform linux passes without changing that implementation.",
+    "Initial namespace policy creation succeeded but kubectl emitted separate JSON objects; read-only UID/spec reconciliation preceded finishing the fingerprint update, without repeating creates. Optional absent labels were then handled before any namespace mutation.",
+    "Early artifact verification ran before download completion; it failed without changing deployment state, then all 56 evidence hashes passed after completion.",
+    "Initial overlay spelling and multi-page GitHub JSON array parsing failed before plan preparation; both corrected with original evidence retained.",
+    "Image-cache preflight found four missing imported aliases. Only the four absent aliases were added after readback; unchanged strict systemd preflight then passed."
+  ],
+  "production": {
+    "application_release": "v0.1.45-rc.18",
+    "application_source": "edad8b2033e873d01dd140a18fdc6f422af8e39b",
+    "deployment_this_slice": true,
+    "external_monitor_switched": true,
+    "windows_tasks_stopped": false,
+    "historical_backup_deletion": false,
+    "real_supplier_calls": 0,
+    "test_email_sends": 0
+  },
+  "limitations": [
+    "One Worker Service replica only; not per-replica discovery",
+    "Physical computer-off exercise remains untested; actual cron now ignores both desktop heartbeat inputs",
+    "3 GiB cap blocks the next publication; no historical deletion has been authorized or executed",
+    "Sustainable retention, uninterrupted freshness and inbox delivery remain open",
+    "All five overall acceptance gates remain open; no new capacity/model batch in this release"
+  ],
+  "source_files": [
+    "packages/core/src/enterprise_doc_core/telemetry/metrics.py",
+    "packages/core/src/enterprise_doc_core/telemetry/queue_health.py",
+    "apps/worker/src/enterprise_doc_worker/app.py",
+    "apps/worker/tests/test_queue_health.py",
+    "apps/api/src/enterprise_doc_api/config.py",
+    "apps/api/src/enterprise_doc_api/app.py",
+    "apps/api/src/enterprise_doc_api/queue_probe.py",
+    "apps/api/tests/test_queue_probe.py",
+    "infra/observability/monitor.ts",
+    "infra/observability/monitor.test.mjs",
+    "infra/observability/wrangler.jsonc",
+    "infra/observability/worker-configuration.d.ts",
+    "infra/k8s/base/network-policy.yaml",
+    "infra/observability/README.md",
+    ".trellis/spec/infrastructure/backend/external-monitor.md",
+    ".trellis/spec/backend/resource-metrics.md",
+    ".trellis/tasks/09-24-commercial-operations-acceptance/queue-monitor-plan.md",
+    ".trellis/tasks/09-24-commercial-operations-acceptance/queue-monitor-validation.json",
+    "scripts/release_switch.py",
+    "tests/deployment/test_release_switch.py",
+    "infra/k8s/overlays/single-node-4c4g/configmap-patch.yaml"
+  ],
+  "release": {
+    "tag": "v0.1.45-rc.18",
+    "source": "edad8b2033e873d01dd140a18fdc6f422af8e39b",
+    "quality_run": 37082284139,
+    "container_ci_run": 37082284167,
+    "signed_release_run": 37082660269,
+    "evidence_files_verified": 56,
+    "switch_seconds": 90.675,
+    "rollback": "v0.1.45-rc.17",
+    "prerequisite_objects": 20,
+    "new_network_policies": 2,
+    "changed_configuration_keys": [
+      "API__QUEUE_OBSERVATION_ENABLED"
+    ],
+    "schema": "20260924_0031",
+    "five_services_ready": true,
+    "public_readiness_and_home": true
+  },
+  "runtime": {
+    "worker_api_public_samples": 4,
+    "source_time_advances": true,
+    "distinct_natural_cron_ticks": 3,
+    "desktop_heartbeat_inputs_selected": false,
+    "unknown_events_unchanged": true,
+    "prior_notifications_preserved": 39,
+    "watchdog_healthy": true,
+    "operations_healthy": false,
+    "operations_reason": "backup_remote_capacity_low",
+    "physical_computer_off_test": false
+  },
+  "backup_transition": {
+    "release_metadata_bound_after_verified_rollout": true,
+    "attempt_rows_unchanged": 117,
+    "sealed_ciphertext_hash_and_source_time_preserved": true,
+    "target_credential_and_unit_unchanged": true,
+    "service_enabled_active": true,
+    "service_restarts": 0,
+    "succeeded": 112,
+    "sealed_waiting_for_capacity": 1,
+    "historical_deletions": 0,
+    "continuous_300_second_freshness_passed": false
+  },
+  "cleanup": {
+    "remote_release_files": 11,
+    "local_oci_files": 30,
+    "local_oci_bytes": 508161013.0,
+    "temporary_directory_removed": true,
+    "runtime_fixture_removed": true,
+    "preexisting_workspace_and_images_retained": true
+  }
+}

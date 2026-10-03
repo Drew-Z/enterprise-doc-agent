@@ -1,0 +1,103 @@
+{
+  "schemaVersion": "presales-gateway-score-v1",
+  "scope": "original_generation_only_outcomes",
+  "datasetSha256": "804a70dcbeea86e34381cdbc4664ca722e74288657766a4a5995136d96fa12ca",
+  "expectedRows": 6,
+  "rows": [
+    {
+      "key": "H1-R1",
+      "expectedStatus": "supported",
+      "predictedStatus": null,
+      "acceptedDraft": false,
+      "statusMatch": false,
+      "unsafeAffirmative": false,
+      "citations": 0,
+      "validCitations": 0,
+      "requiredEvidence": 2,
+      "coveredRequiredEvidence": 0
+    },
+    {
+      "key": "H1-R2",
+      "expectedStatus": "conditional",
+      "predictedStatus": "conditional",
+      "acceptedDraft": true,
+      "statusMatch": true,
+      "unsafeAffirmative": false,
+      "citations": 1,
+      "validCitations": 1,
+      "requiredEvidence": 3,
+      "coveredRequiredEvidence": 2
+    },
+    {
+      "key": "H1-R3",
+      "expectedStatus": "contradicted",
+      "predictedStatus": "contradicted",
+      "acceptedDraft": true,
+      "statusMatch": true,
+      "unsafeAffirmative": false,
+      "citations": 1,
+      "validCitations": 1,
+      "requiredEvidence": 2,
+      "coveredRequiredEvidence": 2
+    },
+    {
+      "key": "H1-R4",
+      "expectedStatus": "insufficient_evidence",
+      "predictedStatus": "insufficient_evidence",
+      "acceptedDraft": true,
+      "statusMatch": true,
+      "unsafeAffirmative": false,
+      "citations": 2,
+      "validCitations": 2,
+      "requiredEvidence": 0,
+      "coveredRequiredEvidence": 0
+    },
+    {
+      "key": "H1-R5",
+      "expectedStatus": "supported",
+      "predictedStatus": "supported",
+      "acceptedDraft": true,
+      "statusMatch": true,
+      "unsafeAffirmative": false,
+      "citations": 2,
+      "validCitations": 2,
+      "requiredEvidence": 2,
+      "coveredRequiredEvidence": 2
+    },
+    {
+      "key": "H1-R6",
+      "expectedStatus": "conflicting_evidence",
+      "predictedStatus": "conflicting_evidence",
+      "acceptedDraft": true,
+      "statusMatch": true,
+      "unsafeAffirmative": false,
+      "citations": 3,
+      "validCitations": 3,
+      "requiredEvidence": 2,
+      "coveredRequiredEvidence": 2
+    }
+  ],
+  "realProviderRequests": 6,
+  "semanticReviewRequired": true,
+  "independentDomainReview": false,
+  "usage": {
+    "prompt_tokens": null,
+    "completion_tokens": null,
+    "total_tokens": null
+  },
+  "costAmount": null,
+  "costReason": "No verified unit price or invoice",
+  "latencySeconds": {
+    "min": 32.406,
+    "median": 57.274,
+    "max": 120.0
+  },
+  "acceptedDrafts": 5,
+  "statusMatches": 5,
+  "unsafeAffirmatives": 0,
+  "citations": 9,
+  "validCitations": 9,
+  "requiredEvidence": 11,
+  "coveredRequiredEvidence": 8,
+  "originalRunSha256": "7bea6184841526e0cca19dc7c2e2334c5413510c44cea3ce081b704627da6af1"
+}

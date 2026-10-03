@@ -130,14 +130,24 @@ def _model_version(value: str) -> str:
     return normalized
 
 
-def _model_timeout_seconds(value: str) -> str:
+def _model_reasoning_effort(value: str | None) -> str | None:
+    if value is None or value == "":
+        return None
+    if value not in {"low", "medium", "high", "xhigh"}:
+        raise ValueError("model reasoning effort must be low, medium, high, or xhigh")
+    return value
+
+
+def _model_timeout_seconds(value: str, maximum: int = 300) -> str:
     normalized = value.strip()
     try:
         timeout = float(normalized)
     except ValueError as error:
-        raise ValueError("model timeout must be a number greater than 0 and at most 300") from error
-    if not math.isfinite(timeout) or not 0 < timeout <= 300:
-        raise ValueError("model timeout must be a number greater than 0 and at most 300")
+        raise ValueError(
+            f"model timeout must be a number greater than 0 and at most {maximum}"
+        ) from error
+    if not math.isfinite(timeout) or not 0 < timeout <= maximum:
+        raise ValueError(f"model timeout must be a number greater than 0 and at most {maximum}")
     return format(timeout, "g")
 
 
@@ -148,6 +158,14 @@ def _presales_environment(
     model_timeout_seconds: str | None,
     row_timeout_seconds: str,
     fallback_configured: bool,
+    fallback_model_timeout_seconds: str | None = None,
+    background_generation_enabled: str = "false",
+    automatic_failover_enabled: str = "false",
+    daily_dispatch_limit: str = "200",
+    queue_timeout_seconds: str = "900",
+    route_failure_threshold: str = "3",
+    route_cooldown_seconds: str = "30",
+    concurrent_attempt_limit: str | None = None,
 ) -> dict[str, str]:
     enabled = generation_enabled.strip()
     route = model_route.strip()
@@ -157,32 +175,58 @@ def _presales_environment(
         raise ValueError("presales model route must be primary or fallback")
     if route == "fallback" and not fallback_configured:
         raise ValueError("presales fallback selection requires a configured fallback model route")
+    background, failover = background_generation_enabled.strip(), automatic_failover_enabled.strip()
+    if background not in {"true", "false"} or failover not in {"true", "false"}:
+        raise ValueError("presales background and failover flags must be true or false")
+    if failover == "true" and (background != "true" or not fallback_configured):
+        raise ValueError("presales automatic failover requires background and a fallback route")
+    limits = {
+        "DAILY_DISPATCH_LIMIT": (daily_dispatch_limit, 1, 10000),
+        "QUEUE_TIMEOUT_SECONDS": (queue_timeout_seconds, 30, 3600),
+        "ROUTE_FAILURE_THRESHOLD": (route_failure_threshold, 1, 10),
+        "ROUTE_COOLDOWN_SECONDS": (route_cooldown_seconds, 1, 300),
+    }
+    if concurrent_attempt_limit:
+        limits["CONCURRENT_ATTEMPT_LIMIT"] = (concurrent_attempt_limit, 1, 4)
+    for value, minimum, maximum in limits.values():
+        if not value.isascii() or not value.isdigit() or not minimum <= int(value) <= maximum:
+            raise ValueError("presales resilience limit is invalid")
 
-    def timeout(value: str, description: str) -> str:
+    def timeout(value: str, description: str, maximum: int) -> str:
         normalized = value.strip()
         try:
             seconds = float(normalized)
         except ValueError as error:
             raise ValueError(
-                f"presales {description} must be finite, greater than 0 and at most 180"
+                f"presales {description} must be finite, greater than 0 and at most {maximum}"
             ) from error
-        if not math.isfinite(seconds) or not 0 < seconds <= 180:
+        if not math.isfinite(seconds) or not 0 < seconds <= maximum:
             raise ValueError(
-                f"presales {description} must be finite, greater than 0 and at most 180"
+                f"presales {description} must be finite, greater than 0 and at most {maximum}"
             )
         return normalized
 
-    row_timeout = timeout(row_timeout_seconds, "row timeout")
+    row_timeout = timeout(row_timeout_seconds, "row timeout", 900)
     result = {
         "PRESALES__GENERATION_ENABLED": enabled,
         "PRESALES__MODEL_ROUTE": route,
         "PRESALES__ROW_TIMEOUT_SECONDS": row_timeout,
+        "PRESALES__BACKGROUND_GENERATION_ENABLED": background,
+        "PRESALES__AUTOMATIC_FAILOVER_ENABLED": failover,
+        **{f"PRESALES__{name}": value for name, (value, _, _) in limits.items()},
     }
     if model_timeout_seconds and model_timeout_seconds.strip():
-        model_timeout = timeout(model_timeout_seconds, "model timeout")
+        model_timeout = timeout(model_timeout_seconds, "model timeout", 300)
         if float(model_timeout) >= float(row_timeout):
             raise ValueError("presales model timeout must be less than the row timeout")
         result["PRESALES__MODEL_TIMEOUT_SECONDS"] = model_timeout
+    if fallback_model_timeout_seconds and fallback_model_timeout_seconds.strip():
+        fallback_timeout = timeout(fallback_model_timeout_seconds, "fallback model timeout", 300)
+        if not fallback_configured or float(fallback_timeout) >= float(row_timeout):
+            raise ValueError(
+                "presales fallback timeout requires a route and must be less than row timeout"
+            )
+        result["PRESALES__FALLBACK_MODEL_TIMEOUT_SECONDS"] = fallback_timeout
     return result
 
 
@@ -447,6 +491,10 @@ def configure_manifest(
     model_provider: str,
     model_base_url: str,
     model_name: str,
+    model_timeout_seconds: str | None = None,
+    model_reasoning_effort: str | None = None,
+    model_route_deadline_seconds: str | None = None,
+    agent_execution_timeout_seconds: str | None = None,
     browser_auth_issuer: str | None = None,
     browser_auth_client_id: str | None = None,
     browser_auth_oidc_config: str | None = None,
@@ -455,10 +503,19 @@ def configure_manifest(
     fallback_model_name: str | None = None,
     fallback_model_version: str | None = None,
     fallback_model_timeout_seconds: str | None = None,
+    fallback_model_reasoning_effort: str | None = None,
     presales_generation_enabled: str = "false",
     presales_model_route: str = "primary",
     presales_model_timeout_seconds: str | None = None,
+    presales_fallback_model_timeout_seconds: str | None = None,
     presales_row_timeout_seconds: str = "90",
+    presales_background_generation_enabled: str = "false",
+    presales_automatic_failover_enabled: str = "false",
+    presales_daily_dispatch_limit: str = "200",
+    presales_queue_timeout_seconds: str = "900",
+    presales_route_failure_threshold: str = "3",
+    presales_route_cooldown_seconds: str = "30",
+    presales_concurrent_attempt_limit: str | None = None,
     demo_enabled: str = "false",
     embedding_base_url: str = "https://embedding.example.invalid/v1",
     embedding_model_name: str = "staging-embedding",
@@ -496,6 +553,25 @@ def configure_manifest(
         raise ValueError(f"model provider must be {MODEL_PROVIDER}")
     normalized_model_base_url = _model_base_url(model_base_url)
     normalized_model_name = _model_name(model_name)
+    normalized_reasoning = _model_reasoning_effort(model_reasoning_effort)
+    normalized_fallback_reasoning = _model_reasoning_effort(fallback_model_reasoning_effort)
+    normalized_primary_timeout = (
+        _model_timeout_seconds(model_timeout_seconds) if model_timeout_seconds else None
+    )
+    normalized_route_deadline = (
+        _model_timeout_seconds(model_route_deadline_seconds, 600)
+        if model_route_deadline_seconds
+        else None
+    )
+    normalized_agent_timeout = (
+        _model_timeout_seconds(agent_execution_timeout_seconds, 3600)
+        if agent_execution_timeout_seconds
+        else None
+    )
+    if normalized_route_deadline is not None and float(normalized_route_deadline) > float(
+        normalized_agent_timeout or 300
+    ):
+        raise ValueError("model route deadline must not exceed Agent execution timeout")
     fallback_base_url_value = (
         fallback_model_base_url.strip() if fallback_model_base_url is not None else ""
     )
@@ -510,6 +586,8 @@ def configure_manifest(
         raise ValueError("fallback model route requires both a base URL and a model name")
     if (fallback_version_value or fallback_timeout_value) and not fallback_base_url_value:
         raise ValueError("fallback model version and timeout require a configured fallback route")
+    if normalized_fallback_reasoning is not None and not fallback_base_url_value:
+        raise ValueError("fallback reasoning effort requires a configured fallback route")
     normalized_fallback_base_url = (
         _model_base_url(fallback_base_url_value) if fallback_base_url_value else None
     )
@@ -524,8 +602,16 @@ def configure_manifest(
         generation_enabled=presales_generation_enabled,
         model_route=presales_model_route,
         model_timeout_seconds=presales_model_timeout_seconds,
+        fallback_model_timeout_seconds=presales_fallback_model_timeout_seconds,
         row_timeout_seconds=presales_row_timeout_seconds,
         fallback_configured=normalized_fallback_base_url is not None,
+        background_generation_enabled=presales_background_generation_enabled,
+        automatic_failover_enabled=presales_automatic_failover_enabled,
+        daily_dispatch_limit=presales_daily_dispatch_limit,
+        queue_timeout_seconds=presales_queue_timeout_seconds,
+        route_failure_threshold=presales_route_failure_threshold,
+        route_cooldown_seconds=presales_route_cooldown_seconds,
+        concurrent_attempt_limit=presales_concurrent_attempt_limit,
     )
     normalized_embedding_base_url = _embedding_base_url(embedding_base_url)
     normalized_embedding_model_name = _model_name(embedding_model_name)
@@ -580,12 +666,25 @@ def configure_manifest(
     data["MODEL__PROVIDER"] = MODEL_PROVIDER
     data["MODEL__BASE_URL"] = normalized_model_base_url
     data["MODEL__MODEL_NAME"] = normalized_model_name
+    data.pop("MODEL__REASONING_EFFORT", None)
+    if normalized_reasoning is not None:
+        data["MODEL__REASONING_EFFORT"] = normalized_reasoning
+    if normalized_primary_timeout is not None:
+        data["MODEL__TIMEOUT_SECONDS"] = normalized_primary_timeout
+    for key, value in (
+        ("MODEL__ROUTE_DEADLINE_SECONDS", normalized_route_deadline),
+        ("AGENT__EXECUTION_TIMEOUT_SECONDS", normalized_agent_timeout),
+    ):
+        data.pop(key, None)
+        if value is not None:
+            data[key] = value
     for fallback_key in (
         "MODEL__FALLBACK_PROVIDER",
         "MODEL__FALLBACK_BASE_URL",
         "MODEL__FALLBACK_MODEL_NAME",
         "MODEL__FALLBACK_MODEL_VERSION",
         "MODEL__FALLBACK_TIMEOUT_SECONDS",
+        "MODEL__FALLBACK_REASONING_EFFORT",
     ):
         data.pop(fallback_key, None)
     if normalized_fallback_base_url is not None and normalized_fallback_name is not None:
@@ -596,7 +695,11 @@ def configure_manifest(
             data["MODEL__FALLBACK_MODEL_VERSION"] = normalized_fallback_version
         if normalized_fallback_timeout is not None:
             data["MODEL__FALLBACK_TIMEOUT_SECONDS"] = normalized_fallback_timeout
+        if normalized_fallback_reasoning is not None:
+            data["MODEL__FALLBACK_REASONING_EFFORT"] = normalized_fallback_reasoning
     data.pop("PRESALES__MODEL_TIMEOUT_SECONDS", None)
+    data.pop("PRESALES__FALLBACK_MODEL_TIMEOUT_SECONDS", None)
+    data.pop("PRESALES__CONCURRENT_ATTEMPT_LIMIT", None)
     data.update(presales_config)
     data["DEMO__ENABLED"] = demo_enabled
     data["EMBEDDING__PROVIDER"] = "openai_compatible"
@@ -851,6 +954,10 @@ def main() -> None:
     parser.add_argument("--model-provider", required=True)
     parser.add_argument("--model-base-url", required=True)
     parser.add_argument("--model-name", required=True)
+    parser.add_argument("--model-timeout-seconds")
+    parser.add_argument("--model-reasoning-effort")
+    parser.add_argument("--model-route-deadline-seconds")
+    parser.add_argument("--agent-execution-timeout-seconds")
     parser.add_argument("--browser-auth-issuer")
     parser.add_argument("--browser-auth-client-id")
     parser.add_argument("--browser-auth-oidc-config")
@@ -859,12 +966,25 @@ def main() -> None:
     parser.add_argument("--fallback-model-name")
     parser.add_argument("--fallback-model-version")
     parser.add_argument("--fallback-model-timeout-seconds")
+    parser.add_argument("--fallback-model-reasoning-effort")
     parser.add_argument("--presales-generation-enabled", choices=("true", "false"), default="false")
     parser.add_argument(
         "--presales-model-route", choices=("primary", "fallback"), default="primary"
     )
     parser.add_argument("--presales-model-timeout-seconds")
+    parser.add_argument("--presales-fallback-model-timeout-seconds")
     parser.add_argument("--presales-row-timeout-seconds", default="90")
+    parser.add_argument(
+        "--presales-background-generation-enabled", choices=("true", "false"), default="false"
+    )
+    parser.add_argument(
+        "--presales-automatic-failover-enabled", choices=("true", "false"), default="false"
+    )
+    parser.add_argument("--presales-daily-dispatch-limit", default="200")
+    parser.add_argument("--presales-queue-timeout-seconds", default="900")
+    parser.add_argument("--presales-route-failure-threshold", default="3")
+    parser.add_argument("--presales-route-cooldown-seconds", default="30")
+    parser.add_argument("--presales-concurrent-attempt-limit")
     parser.add_argument("--demo-enabled", choices=("true", "false"), default="false")
     parser.add_argument("--embedding-base-url", required=True)
     parser.add_argument("--embedding-model-name", required=True)
@@ -887,6 +1007,10 @@ def main() -> None:
         model_provider=args.model_provider,
         model_base_url=args.model_base_url,
         model_name=args.model_name,
+        model_timeout_seconds=args.model_timeout_seconds,
+        model_reasoning_effort=args.model_reasoning_effort,
+        model_route_deadline_seconds=args.model_route_deadline_seconds,
+        agent_execution_timeout_seconds=args.agent_execution_timeout_seconds,
         browser_auth_issuer=args.browser_auth_issuer,
         browser_auth_client_id=args.browser_auth_client_id,
         browser_auth_oidc_config=args.browser_auth_oidc_config,
@@ -895,10 +1019,19 @@ def main() -> None:
         fallback_model_name=args.fallback_model_name,
         fallback_model_version=args.fallback_model_version,
         fallback_model_timeout_seconds=args.fallback_model_timeout_seconds,
+        fallback_model_reasoning_effort=args.fallback_model_reasoning_effort,
         presales_generation_enabled=args.presales_generation_enabled,
         presales_model_route=args.presales_model_route,
         presales_model_timeout_seconds=args.presales_model_timeout_seconds,
+        presales_fallback_model_timeout_seconds=args.presales_fallback_model_timeout_seconds,
         presales_row_timeout_seconds=args.presales_row_timeout_seconds,
+        presales_background_generation_enabled=args.presales_background_generation_enabled,
+        presales_automatic_failover_enabled=args.presales_automatic_failover_enabled,
+        presales_daily_dispatch_limit=args.presales_daily_dispatch_limit,
+        presales_queue_timeout_seconds=args.presales_queue_timeout_seconds,
+        presales_route_failure_threshold=args.presales_route_failure_threshold,
+        presales_route_cooldown_seconds=args.presales_route_cooldown_seconds,
+        presales_concurrent_attempt_limit=args.presales_concurrent_attempt_limit,
         demo_enabled=args.demo_enabled,
         embedding_base_url=args.embedding_base_url,
         embedding_model_name=args.embedding_model_name,

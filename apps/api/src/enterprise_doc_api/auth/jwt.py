@@ -13,6 +13,7 @@ from enterprise_doc_api.config import AuthSettings
 from enterprise_doc_api.errors import ApiError
 from enterprise_doc_core.auth import LocalTokenRevocation
 from enterprise_doc_core.context import PrincipalContext
+from enterprise_doc_core.db import read_only_session
 from enterprise_doc_core.identity import Membership, Tenant, User
 
 
@@ -146,7 +147,7 @@ class DatabasePrincipalResolver:
                 User.is_active.is_(True),
             )
         )
-        async with self.session_factory() as session:
+        async with read_only_session(self.session_factory) as session:
             revoked = await session.scalar(
                 select(LocalTokenRevocation.id).where(
                     LocalTokenRevocation.tenant_id == claims.tenant_id,

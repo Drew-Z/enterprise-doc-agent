@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "scope": "worker progress and stalled-I/O recovery candidate",
+  "status": "local_validation_passed_not_deployed",
+  "baseline": "72d01d2f949243a6725b510fe27079f160746101",
+  "sources": {
+    "apps/worker/src/enterprise_doc_worker/lifecycle.py": "fd83c78e32e5bf57e53770a959fc6dc7f3e50d86f2f67dfc1a74ea6801a8a45d",
+    "apps/worker/src/enterprise_doc_worker/app.py": "863386c010d9fcfd7abf4cb79110f310c0ecaa25fdf0762dc7720f94c0e0d5d6",
+    "apps/worker/src/enterprise_doc_worker/__main__.py": "0abdca03180c14a22c94b88362d451d04891256e6751b32ab14e83f4b4c73f08",
+    "apps/worker/src/enterprise_doc_worker/presales.py": "5dcf983a49610b06d2010fb35fb7cf8c906a534aea1e3f05f1f7ac340925c1ec",
+    "apps/worker/src/enterprise_doc_worker/publisher.py": "13408342506db1266f571d56c1790f9ee107253e1ebb443944f3d9ae6bed3c9b",
+    "packages/core/src/enterprise_doc_core/telemetry/resources.py": "5f861d309b24227e9a62f542934a121a40e939ca49da84c46246a5c05d990bbb"
+  },
+  "verification": {
+    "non_integration_passed": 2127,
+    "subtests_passed": 23,
+    "integration_not_in_full_command": 469,
+    "focused_passed": 33,
+    "mypy_linux_sources": 251,
+    "covered": [
+      "HTTP 503 while database cancellation remains blocked",
+      "terminal expiry despite late callback",
+      "idle and temporary-error cycles",
+      "normal model execution within budget",
+      "supervisor invalidates probes before waiting for cleanup"
+    ]
+  },
+  "unchanged": [
+    "durable leases",
+    "provider dispatch limits",
+    "task retry count",
+    "business concurrency",
+    "database schema"
+  ],
+  "limits": [
+    "underlying live driver/network stall not yet reproduced",
+    "candidate not yet deployed",
+    "automatic Kubernetes restart and post-restart business still need live validation"
+  ],
+  "production_approved": false
+}

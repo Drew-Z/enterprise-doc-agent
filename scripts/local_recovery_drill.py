@@ -35,7 +35,9 @@ def compose_command(compose_file: Path, *args: str) -> list[str]:
 
 
 def _run_text(command: list[str]) -> str:
-    result = subprocess.run(command, check=True, capture_output=True, text=True)
+    result = subprocess.run(
+        command, check=True, capture_output=True, text=True, encoding="utf-8", timeout=60
+    )
     return result.stdout.strip()
 
 
@@ -107,7 +109,9 @@ def _inventory(compose_file: Path, *, user: str, database: str) -> dict[str, Any
 
 def _write_json(path: Path, value: object) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    with path.open("x", encoding="utf-8") as stream:
+        stream.write(json.dumps(value, indent=2, sort_keys=True) + "\n")
+    path.chmod(0o600)
 
 
 def _sha256(path: Path) -> str:
@@ -118,15 +122,17 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _repo_relative(root: Path, path: Path) -> str:
-    try:
-        return path.resolve().relative_to(root.resolve()).as_posix()
-    except ValueError as error:
-        raise LocalRecoveryDrillError("output directory must be inside the repository") from error
+def validate_output_directory(root: Path, output_dir: Path) -> Path:
+    resolved = output_dir.resolve()
+    if resolved.is_relative_to(root.resolve()):
+        raise LocalRecoveryDrillError("backup output directory must be outside the repository")
+    if resolved.exists():
+        raise LocalRecoveryDrillError("output directory already exists; choose a new directory")
+    return resolved
 
 
-def _artifact(root: Path, path: Path, kind: str) -> dict[str, str]:
-    return {"path": _repo_relative(root, path), "kind": kind, "sha256": _sha256(path)}
+def _artifact(path: Path, kind: str) -> dict[str, str]:
+    return {"path": path.resolve().as_posix(), "kind": kind, "sha256": _sha256(path)}
 
 
 def run_drill(
@@ -140,17 +146,29 @@ def run_drill(
     keep_restore_database: bool,
 ) -> dict[str, Any]:
     validate_database_names(source_database, restore_database)
+    output_dir = validate_output_directory(root, output_dir)
+    existing_target = _run_text(
+        _psql_command(
+            compose_file,
+            user=postgres_user,
+            database="postgres",
+            sql=f"SELECT 1 FROM pg_database WHERE datname = '{restore_database}'",
+        )
+    )
+    if existing_target:
+        raise LocalRecoveryDrillError("restore database already exists; choose a new name")
     started_at = datetime.now(UTC)
     command_log = output_dir / "commands.log"
     backup = output_dir / "database.dump"
     before_path = output_dir / "inventory-before.json"
     after_path = output_dir / "inventory-after.json"
-    output_dir.mkdir(parents=True, exist_ok=True)
+    output_dir.mkdir(parents=True, mode=0o700)
     commands: list[str] = []
 
     def record(command: list[str]) -> None:
         commands.append(subprocess.list2cmdline(command))
         command_log.write_text("\n".join(commands) + "\n", encoding="utf-8")
+        command_log.chmod(0o600)
 
     before = _inventory(compose_file, user=postgres_user, database=source_database)
     _write_json(before_path, before)
@@ -169,73 +187,72 @@ def run_drill(
         source_database,
     )
     record(backup_command)
-    with backup.open("wb") as stream:
-        subprocess.run(backup_command, check=True, stdout=stream)
+    with backup.open("xb") as stream:
+        backup.chmod(0o600)
+        subprocess.run(backup_command, check=True, stdout=stream, timeout=300)
     if backup.stat().st_size <= 0:
         raise LocalRecoveryDrillError("pg_dump produced an empty backup")
     backup_completed = time.time()
 
-    admin = [
-        compose_command(
-            compose_file,
-            "exec",
-            "-T",
-            "postgres",
-            "dropdb",
-            "--if-exists",
-            "-U",
-            postgres_user,
-            restore_database,
-        ),
-        compose_command(
-            compose_file,
-            "exec",
-            "-T",
-            "postgres",
-            "createdb",
-            "-U",
-            postgres_user,
-            restore_database,
-        ),
-    ]
-    for command in admin:
-        record(command)
-        subprocess.run(command, check=True)
-
-    restore_started = time.monotonic()
-    restore_command = compose_command(
+    create_command = compose_command(
         compose_file,
         "exec",
         "-T",
         "postgres",
-        "pg_restore",
-        "--exit-on-error",
-        "--single-transaction",
-        "--no-owner",
-        "--no-privileges",
+        "createdb",
         "-U",
         postgres_user,
-        "-d",
         restore_database,
     )
-    record(restore_command)
-    with backup.open("rb") as stream:
-        subprocess.run(restore_command, check=True, stdin=stream)
-    restore_duration = time.monotonic() - restore_started
-    after = _inventory(compose_file, user=postgres_user, database=restore_database)
-    _write_json(after_path, after)
-    comparable_after = {**after, "database": source_database}
-    data_matches = before == comparable_after
-    if not data_matches:
-        raise LocalRecoveryDrillError("restored database inventory does not match source")
-
-    if not keep_restore_database:
-        cleanup = admin[0]
-        record(cleanup)
-        subprocess.run(cleanup, check=True)
+    record(create_command)
+    # Successful exclusive creation establishes ownership; never clean a name we
+    # only inspected, or one whose creation failed/has an uncertain outcome.
+    subprocess.run(create_command, check=True, timeout=60)
+    try:
+        backup_age_at_restore = max(0.0, time.time() - backup_completed)
+        restore_started = time.monotonic()
+        restore_command = compose_command(
+            compose_file,
+            "exec",
+            "-T",
+            "postgres",
+            "pg_restore",
+            "--exit-on-error",
+            "--single-transaction",
+            "--no-owner",
+            "--no-privileges",
+            "-U",
+            postgres_user,
+            "-d",
+            restore_database,
+        )
+        record(restore_command)
+        with backup.open("rb") as restore_stream:
+            subprocess.run(restore_command, check=True, stdin=restore_stream, timeout=300)
+        restore_duration = time.monotonic() - restore_started
+        after = _inventory(compose_file, user=postgres_user, database=restore_database)
+        _write_json(after_path, after)
+        comparable_after = {**after, "database": source_database}
+        data_matches = before == comparable_after
+        if not data_matches:
+            raise LocalRecoveryDrillError("restored database inventory does not match source")
+    finally:
+        if not keep_restore_database:
+            cleanup = compose_command(
+                compose_file,
+                "exec",
+                "-T",
+                "postgres",
+                "dropdb",
+                "-U",
+                postgres_user,
+                restore_database,
+            )
+            record(cleanup)
+            subprocess.run(cleanup, check=True, timeout=60)
 
     completed_at = datetime.now(UTC)
-    commit_sha = _run_text(["git", "rev-parse", "HEAD"])
+    commit_sha = _run_text(["git", "-C", str(root.resolve()), "rev-parse", "HEAD"])
     report = {
         "schema_version": 1,
         "evidence_type": "recovery",
@@ -266,27 +283,31 @@ def run_drill(
         "completed_at": completed_at.isoformat(),
         "command_or_procedure": commands,
         "measurements": {
-            "backup_age_seconds_at_restore": max(0.0, time.time() - backup_completed),
+            "backup_age_seconds_at_restore": backup_age_at_restore,
             "restore_duration_seconds": restore_duration,
             "local_data_inventory_match": data_matches,
             "source_table_count": len(before["table_counts"]),
         },
         "smoke_checks": [
             {"name": "backup_integrity", "status": "passed"},
-            {"name": "data_integrity", "status": "passed"},
+            {"name": "database_inventory", "status": "passed"},
+            {"name": "data_integrity", "status": "not_executed"},
             {"name": "application_readiness", "status": "not_executed"},
             {"name": "rollback_readiness", "status": "not_executed"},
         ],
+        "artifact_scope": "local-private",
         "artifacts": [
-            _artifact(root, backup, "postgres-custom-backup"),
-            _artifact(root, before_path, "source-inventory"),
-            _artifact(root, after_path, "restore-inventory"),
-            _artifact(root, command_log, "command-log"),
+            _artifact(backup, "postgres-custom-backup"),
+            _artifact(before_path, "source-inventory"),
+            _artifact(after_path, "restore-inventory"),
+            _artifact(command_log, "command-log"),
         ],
         "limitations": [
             "This local drill does not restore object-store versions.",
             "This local drill does not execute Kubernetes rollout rollback or authenticated smoke.",
             "Local timings are not production RPO or RTO measurements.",
+            "Table counts and revisions do not prove row content or application correctness.",
+            "Private absolute artifact paths must not be published as release evidence.",
         ],
         "owner": "platform-engineering",
     }
@@ -301,7 +322,7 @@ def main() -> None:
     parser.add_argument(
         "--compose-file", type=Path, default=Path("infra/compose/docker-compose.yml")
     )
-    parser.add_argument("--output-dir", type=Path, default=Path("tmp/local-recovery-drill"))
+    parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument(
         "--source-database", default=os.environ.get("POSTGRES_DB", "enterprise_doc")
     )
@@ -311,12 +332,14 @@ def main() -> None:
     )
     parser.add_argument("--keep-restore-database", action="store_true")
     parser.add_argument("--confirm-local", action="store_true")
-    parser.add_argument(
-        "--report-path", type=Path, default=Path("tmp/local-recovery-drill/report.json")
-    )
+    parser.add_argument("--report-path", type=Path)
     args = parser.parse_args()
     try:
         validate_database_names(args.source_database, args.restore_database)
+        output_dir = validate_output_directory(args.root, args.output_dir)
+        report_path = args.report_path or output_dir / "report.json"
+        if not report_path.resolve().is_relative_to(output_dir):
+            raise LocalRecoveryDrillError("report path must be inside the private output directory")
         if not args.confirm_local:
             print(
                 json.dumps(
@@ -325,6 +348,8 @@ def main() -> None:
                         "source_database": args.source_database,
                         "restore_database": args.restore_database,
                         "compose_file": args.compose_file.as_posix(),
+                        "output_dir": output_dir.as_posix(),
+                        "report_path": report_path.as_posix(),
                     },
                     indent=2,
                 )
@@ -333,16 +358,16 @@ def main() -> None:
         report = run_drill(
             root=args.root,
             compose_file=args.compose_file,
-            output_dir=args.output_dir,
+            output_dir=output_dir,
             source_database=args.source_database,
             restore_database=args.restore_database,
             postgres_user=args.postgres_user,
             keep_restore_database=args.keep_restore_database,
         )
-        _write_json(args.report_path, report)
-    except (OSError, LocalRecoveryDrillError, subprocess.CalledProcessError) as error:
+        _write_json(report_path, report)
+    except (OSError, LocalRecoveryDrillError, subprocess.SubprocessError) as error:
         raise SystemExit(str(error)) from error
-    print(json.dumps({"status": report["status"], "report": args.report_path.as_posix()}))
+    print(json.dumps({"status": report["status"], "report": report_path.as_posix()}))
 
 
 if __name__ == "__main__":

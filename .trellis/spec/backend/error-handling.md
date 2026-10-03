@@ -23,7 +23,61 @@ payloads and logs do not include DSNs, credentials, stack traces, or document bo
 M0 defines typed health responses only. New business errors must introduce an
 explicit response model and contract tests in the milestone that owns them.
 
+## Scenario: Database Pool Backpressure
+
+### 1. Scope / Trigger
+
+The API cannot acquire a SQLAlchemy database connection within the configured pool wait.
+
+### 2. Signatures
+
+`unexpected_error_response(error)` and `register_error_handlers(app)`
+share the existing `ErrorResponse` boundary with authentication middleware.
+
+### 3. Contracts
+
+SQLAlchemy pool `TimeoutError` is a temporary capacity failure: return the existing
+ErrorResponse shape with HTTP 503, `service_busy`, `Retry-After: 1` and the request ID.
+Authentication middleware and route failures share the mapping. Register its typed
+route handler inside ExceptionMiddleware so RequestContext is still available;
+the outer catch-all runs after that context has been reset. Built-in TimeoutError
+and unrelated exceptions retain the existing 500 contract. Never expose driver
+messages or automatically replay a write because of this response; existing
+idempotent/GET recovery determines whether a submitted operation was accepted.
+
+### 4. Validation & Error Matrix
+
+SQLAlchemy `TimeoutError` -> 503/service_busy; built-in `TimeoutError` and unrelated
+programming errors -> existing 500/internal_error. Driver text never enters the response.
+
+### 5. Good / Base / Bad Cases
+
+Good: the client can wait one second and recover a safe read. Base: successful reads are
+unchanged. Bad: classify every TimeoutError as capacity exhaustion or replay an unsafe write.
+
+### 6. Tests Required
+
+Exercise authentication and route boundaries with pool timeout, built-in timeout and
+programming errors. Verify request ID, retry header, redaction and a later successful read.
+
+### 7. Wrong vs Correct
+
+Wrong: rely only on the outer catch-all after RequestContext cleanup. Correct: register
+the typed pool handler inside ExceptionMiddleware and preserve correlation.
+
 ## Common Mistakes
+
+Worker progress is part of process health. `WorkerProgress.register` returns a callback
+for completed publisher, presales and resource-observer cycles. Only enabled loops
+register. Budgets include normal execution, polling and cleanup time; they use a
+monotonic clock. Failed but completed dependency polls refresh progress, while
+readiness still reports the dependency failure. A stuck loop, including stuck driver
+cancellation, must make `/health/live` return 503 without awaiting that loop. Expiry
+and supervisor shutdown are terminal for that process; late callbacks cannot revive
+it. Kubernetes then restarts it using the existing durable leases and dispatch limits.
+Stall logs contain the fixed loop role and at most 20 code locations, never locals,
+SQL parameters or exception bodies. Test delayed cancellation, idle/error cycles,
+long valid model execution and shutdown before blocked cleanup.
 
 Do not return raw exception strings, use HTTP 200 for `not_ready`, swallow process
 startup failures, or use retries to convert a failing quality gate into success.
@@ -34,3 +88,5 @@ startup failures, or use retries to convert a failing quality gate into success.
 - `apps/api/src/enterprise_doc_api/app.py`
 - `apps/worker/src/enterprise_doc_worker/app.py`
 - `scripts/foundation_smoke.py`
+- `apps/api/tests/test_database_backpressure.py`
+- `apps/worker/tests/test_worker_progress.py`

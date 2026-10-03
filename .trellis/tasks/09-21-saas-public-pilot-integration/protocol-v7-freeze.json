@@ -1,0 +1,94 @@
+{
+  "createdAt": "2026-09-23T15:17:15.332819+00:00",
+  "promptVersion": "presales.v7",
+  "promptSha256": "11542919c2ebb588715fa788def38325b9e4384883fdb277bb6b9046d8dce55f",
+  "baselineCommit": "21b8661e97bfb105ea0d8ad875718709d8250ce1",
+  "sequence": [
+    "H3",
+    "H4",
+    "H1",
+    "H2"
+  ],
+  "maxRequests": 24,
+  "perRequirementAttempts": 1,
+  "retryCount": 0,
+  "stopAfterFailedDatasetReview": true,
+  "selectedRoute": "configured_fallback",
+  "configuredModelName": "grok-4.6",
+  "timeoutSeconds": 120,
+  "requestMaxTokens": 4000,
+  "providerBillingHardCapVerified": false,
+  "semanticGate": "All first-attempt drafts, labels, required evidence, facts, prerequisite states and clarification questions pass; stop after any failed six-row dataset.",
+  "files": [
+    {
+      "path": "packages/core/src/enterprise_doc_core/presales/citation_selection.py",
+      "sha256": "414b34b4ac079f2884adbfb2bc07c2a35d322e64ef5e2c761c831839ca74af8b",
+      "bytes": 7361
+    },
+    {
+      "path": "packages/core/src/enterprise_doc_core/presales/gateway.py",
+      "sha256": "9dc0f915de6d201f767bcec52a3f53fbb82e0e098ba9caa437f71078874a9703",
+      "bytes": 12588
+    },
+    {
+      "path": "packages/core/src/enterprise_doc_core/presales/schemas.py",
+      "sha256": "6881202468429173870fd24de2797474adff6548ee3113741e91910761bc3060",
+      "bytes": 5214
+    },
+    {
+      "path": "scripts/evaluate_presales_gateway.py",
+      "sha256": "a91bdcce9edb41720ad9bf4c8665c448eb29b1aff1fc34b084dd914edd147d9a",
+      "bytes": 9236
+    },
+    {
+      "path": "scripts/score_presales_gateway.py",
+      "sha256": "988d741fb5ebc9ee7a9dc670b9bbdbb1a5a704a8f97e777fb220a383be9c7e57",
+      "bytes": 10417
+    },
+    {
+      "path": "evaluation\\presales_quality_v7.candidate-prompt.txt",
+      "sha256": "11542919c2ebb588715fa788def38325b9e4384883fdb277bb6b9046d8dce55f",
+      "bytes": 5892
+    },
+    {
+      "path": "evaluation/presales_quality_holdout_v1.json",
+      "sha256": "804a70dcbeea86e34381cdbc4664ca722e74288657766a4a5995136d96fa12ca",
+      "bytes": 6367
+    },
+    {
+      "path": "evaluation/presales_quality_holdout_v1.gold.json",
+      "sha256": "a4a72610fb3dd89acd0cbdde6a44b2f0b4e1568d238d72788deab2ec2ab3c218",
+      "bytes": 4380
+    },
+    {
+      "path": "evaluation/presales_quality_holdout_v2.json",
+      "sha256": "c93361e9b1ffac60b6026172a79360aac9bf0a18f7186c818190fa938e37d55c",
+      "bytes": 4189
+    },
+    {
+      "path": "evaluation/presales_quality_holdout_v2.gold.json",
+      "sha256": "feff5700da2cb2fbf7302fb77aba500eec208c47af8e2fdce78251971473de00",
+      "bytes": 3871
+    },
+    {
+      "path": "evaluation/presales_quality_holdout_v3.json",
+      "sha256": "260759bf6314153a9ca48ff80c9e6dbd148b917e828fefb57e1db3c9852d33a6",
+      "bytes": 4399
+    },
+    {
+      "path": "evaluation/presales_quality_holdout_v3.gold.json",
+      "sha256": "3eccacb3939ea5f1b65395a5244f7138aab2135e502afac3ffa78d91c1f7ddfe",
+      "bytes": 3965
+    },
+    {
+      "path": "evaluation/presales_quality_holdout_v4.json",
+      "sha256": "77ad69107ed3314306ea50ada45ac6a02f87d922b5ceeaa2c07e57e63a6dac3f",
+      "bytes": 4374
+    },
+    {
+      "path": "evaluation/presales_quality_holdout_v4.gold.json",
+      "sha256": "694ebffaff1af31fc9ca1730aabbcd0ed73550d95dc270380460c36222d29937",
+      "bytes": 5057
+    }
+  ]
+}

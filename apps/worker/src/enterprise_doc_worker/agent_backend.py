@@ -3,11 +3,12 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Callable, Mapping
+from contextlib import AbstractContextManager
 from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from enterprise_doc_core.agents import (
@@ -46,7 +47,10 @@ from enterprise_doc_core.agents import (
     validate_grounded_output,
 )
 from enterprise_doc_core.agents.state import AgentRunTransitionEvent, transition_agent_run
-from enterprise_doc_core.config import McpSettings
+from enterprise_doc_core.billing.product_contracts import ProductMetric
+from enterprise_doc_core.billing.product_usage import ProductUsageService
+from enterprise_doc_core.billing.provider_calls import ProviderCallService
+from enterprise_doc_core.config import AppEnvironment, McpSettings, ProviderUsageSettings
 from enterprise_doc_core.documents.models import (
     DocumentChunk,
     DocumentIngestionGeneration,
@@ -76,6 +80,8 @@ class DurableAgentGraphBackend:
         mcp_settings: McpSettings,
         clock: Clock | None = None,
         approval_ttl_seconds: int | None = None,
+        app_env: AppEnvironment = AppEnvironment.LOCAL,
+        provider_usage_settings: ProviderUsageSettings | None = None,
     ) -> None:
         self.session_factory = session_factory
         self.context = context
@@ -86,11 +92,46 @@ class DurableAgentGraphBackend:
         self.approval_ttl_seconds = approval_ttl_seconds or mcp_settings.context_ttl_seconds
         self._model_outputs: dict[str, GroundedModelOutput] = {}
         self._answers: dict[str, GroundedAnswer] = {}
+        self.product_usage = ProductUsageService(
+            session_factory=session_factory, app_env=app_env, clock=self.clock
+        )
+        self.provider_usage = ProviderCallService(
+            session_factory=session_factory, settings=provider_usage_settings
+        )
+
+    def provider_scope(self) -> AbstractContextManager[None]:
+        return self.provider_usage.scope(
+            tenant_id=self.context.tenant_id,
+            operation_id=self.context.run_id,
+            kind="agent",
+            guard=self._guard_provider_dispatch,
+        )
+
+    async def _guard_provider_dispatch(self, session: AsyncSession) -> None:
+        run = await self._load_authorized_run(session, for_update=True)
+        if run.status != AgentRunStatus.RUNNING.value:
+            raise AgentGraphError("The Agent model execution is no longer running.")
+        await self.product_usage.require_reserved(
+            session=session,
+            tenant_id=run.tenant_id,
+            operation_id=run.id,
+            metric=ProductMetric.AGENT_TASK,
+        )
 
     async def prepare_segment(self) -> None:
         now = self.clock()
         async with self.session_factory.begin() as session:
             run = await self._load_authorized_run(session, for_update=True)
+            if (
+                self.context.execution_kind == "initial"
+                or self.context.approval_decision == "approved"
+            ):
+                await self.product_usage.require_reserved(
+                    session=session,
+                    tenant_id=run.tenant_id,
+                    operation_id=run.id,
+                    metric=ProductMetric.AGENT_TASK,
+                )
             if self.context.execution_kind == "initial":
                 if run.status == AgentRunStatus.PENDING.value:
                     run.status = transition_agent_run(
@@ -516,16 +557,7 @@ class DurableAgentGraphBackend:
     ) -> None:
         now = self.clock()
         async with self.session_factory.begin() as session:
-            run = await session.scalar(
-                select(AgentRun)
-                .where(
-                    AgentRun.id == self.context.run_id,
-                    AgentRun.tenant_id == self.context.tenant_id,
-                )
-                .with_for_update()
-            )
-            if run is None:
-                raise AgentGraphError("Agent run is missing during finalization.")
+            run = await self._load_authorized_run(session, for_update=True)
             target_status = {
                 "succeeded": AgentRunStatus.SUCCEEDED,
                 "refused": AgentRunStatus.REFUSED,
@@ -578,6 +610,21 @@ class DurableAgentGraphBackend:
         *,
         for_update: bool = False,
     ) -> AgentRun:
+        if for_update:
+            await session.execute(text("SET LOCAL lock_timeout = '5s'"))
+            await session.execute(
+                text("SELECT pg_advisory_xact_lock(hashtextextended(:key, 0))"),
+                {"key": f"agent-run:{self.context.tenant_id}:{self.context.run_id}"},
+            )
+            # Runtime terminal projection takes this same advisory lock before Job.
+            await session.scalar(
+                select(Job.id)
+                .where(
+                    Job.id == self.context.job_id,
+                    Job.tenant_id == self.context.tenant_id,
+                )
+                .with_for_update()
+            )
         statement = select(AgentRun).where(
             AgentRun.id == self.context.run_id,
             AgentRun.tenant_id == self.context.tenant_id,
@@ -618,6 +665,8 @@ class DurableAgentGraphBackend:
                 Job.status == JobStatus.RUNNING.value,
                 Job.lease_token == self.context.lease_token,
                 Job.fencing_token == self.context.fencing_token,
+                Job.cancel_requested_at.is_(None),
+                Job.lease_expires_at > self.clock(),
             )
         )
         attempt = await session.scalar(
@@ -631,7 +680,7 @@ class DurableAgentGraphBackend:
             )
         )
         if run is None or membership is None or execution is None or job is None or attempt is None:
-            raise AgentGraphError("The execution is no longer authorized.")
+            raise AgentGraphError("The execution is stale or no longer authorized.")
         await self._load_authorized_version(session)
         return run
 

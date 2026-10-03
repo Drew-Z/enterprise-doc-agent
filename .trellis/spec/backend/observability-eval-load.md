@@ -219,6 +219,71 @@ prove a complete original registry cache. Changes to lockfile, Python ABI, platf
 checkout path require renewed preparation. Check transferred wheels against original
 lockfile hashes/sizes, and never edit uv cache internals or disable TLS verification.
 
+## External Readiness Probe And Capacity Source Identity
+
+### Scope / Trigger
+
+Use the one-shot external probe when preparing managed alerting. The service must
+observe the actual readiness JSON; a 200 login page or stale cache is not healthy.
+Capacity evidence must distinguish the evaluator checkout from deployed code.
+
+### Signatures
+
+`scripts/check_external_readiness.py::probe_readiness(url, *, timeout_seconds=10,
+max_age_seconds=120, proxy=None, transport=None, clock=...)` returns metadata only.
+CLI: `--url`, `--timeout-seconds`, `--max-age-seconds`, optional `--use-system-proxy`.
+`run_capacity_matrix(..., deployed_commit_sha=None)` requires the deployed SHA for
+external execution; CLI uses `--deployed-commit`.
+
+### Contracts
+
+The probe makes one GET with fixed Accept/User-Agent, no credentials, redirects or
+retries. HTTPS is required except loopback HTTP; URL userinfo/query/fragment and
+paths other than `/health/ready` are rejected. HTTP 200, JSON content type, Core's
+`ReadinessResponse`, all three required dependencies up, aware `checked_at` within
+120 seconds and no more than 15 seconds in the future are required. The deadline
+covers streaming as well as connection setup; the body limit is 64 KiB. No response
+body, exception text or proxy address appears in output. `notifications_sent` stays
+zero; scheduling, consecutive failure/recovery state and delivery belong to the
+external monitoring service. The example JSON is a provider-neutral template only.
+
+Explicit system-proxy mode reads the existing HTTPS proxy without changing system
+settings or TLS verification. It records `network_route=configured-proxy`; default
+is direct. Preserve observations of both routes rather than replacing failed ones.
+
+For external capacity, `commit_sha` is the supplied deployed SHA and
+`executor_commit_sha` is local HEAD captured before load. Missing/malformed server
+identity fails before output creation or HTTP. Declared image/SHA values still need
+independent runtime verification; this does not expand the existing load scenarios.
+
+### Validation & Error Matrix
+
+Healthy probe exits 0; HTTP/body/dependency/freshness/transport/timeout failures exit
+1 with a bounded reason; invalid configuration or an explicitly requested but
+unconfigured system proxy exits 2. A missing deployed commit raises
+`ApplicationCapacityError` before the capacity runner touches the target.
+
+### Good/Base/Bad Cases
+
+Good: current typed JSON plus real notification receipts after separate connection.
+Base: a valid probe result with no monitor account remains unconfigured alerting.
+Bad: mark monitoring delivered from `healthy=true`, call local browser timings
+production capacity, or copy executor HEAD into an unrelated running release.
+
+### Tests Required
+
+`tests/deployment/test_external_readiness.py` covers fresh/stale/incomplete/naive
+timestamps, false 200s, redirects, body limits, total deadline, redaction and
+pre-network URL rejection through the public probe with only HTTP/time boundaries.
+`tests/deployment/test_run_application_capacity.py` proves distinct source identities
+and rejection before any HTTP for missing deployed identity. Preserve browser
+recovery runs on a restored 0031 database separately from these unit tests.
+
+### Wrong vs Correct
+
+Do not equate an HTTP 200 or a healthy probe with delivered monitoring. Validate the
+body and timestamp, then test the real service's firing/recovery route and recipient.
+
 ## Proven Examples
 
 - `apps/api/tests/test_metrics.py` and `packages/core/tests/test_metrics.py` verify

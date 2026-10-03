@@ -17,6 +17,12 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import aliased
 
 from enterprise_doc_core.audit import append_audit_event
+from enterprise_doc_core.billing.product_contracts import (
+    ProductMetric,
+    document_processing_operation_id,
+)
+from enterprise_doc_core.billing.product_models import ProductUsageReservation
+from enterprise_doc_core.billing.product_usage import ProductUsageService
 from enterprise_doc_core.jobs.diagnostics import is_allowed_job_diagnostic_code
 from enterprise_doc_core.jobs.models import (
     Job,
@@ -204,11 +210,13 @@ async def _append_job_event(
     event_type: str,
     payload: Mapping[str, Any] | None = None,
     actor_id: UUID | None = None,
+    initial: bool = False,
 ) -> JobEvent:
     event = JobEvent(
         tenant_id=job.tenant_id,
         job_id=job.id,
-        seq=await _next_event_sequence(session, job_id=job.id),
+        # A new, uncommitted Job cannot have events from another transaction.
+        seq=1 if initial else await _next_event_sequence(session, job_id=job.id),
         event_type=event_type,
         status=job.status,
         actor_id=actor_id,
@@ -217,6 +225,29 @@ async def _append_job_event(
     )
     session.add(event)
     await session.flush()
+    if job.type == "document.ingest" and job.status in {
+        JobStatus.DEAD.value,
+        JobStatus.CANCELLED.value,
+    }:
+        operation_id = document_processing_operation_id(job.id, job.max_attempts)
+        reservation = await session.scalar(
+            select(ProductUsageReservation).where(
+                ProductUsageReservation.tenant_id == job.tenant_id,
+                ProductUsageReservation.operation_id == operation_id,
+                ProductUsageReservation.metric == ProductMetric.DOCUMENT_BYTES.value,
+            )
+        )
+        # Activation and cancellation both lock Job. A completed activation remains
+        # counted even if its delivery acknowledgement is later lost or cancelled.
+        if reservation is not None and reservation.state == "reserved":
+            await ProductUsageService.finish_in_session(
+                session,
+                tenant_id=job.tenant_id,
+                operation_id=operation_id,
+                metric=ProductMetric.DOCUMENT_BYTES,
+                consume=False,
+                source=f"document.{job.status}",
+            )
     metadata: dict[str, Any] = {"event_type": event_type, "status": job.status}
     if job.type:
         metadata["job_type"] = job.type
@@ -334,6 +365,7 @@ async def create_job_records(
         event_type="job.created",
         payload={"job_type": job_type},
         actor_id=actor_id,
+        initial=True,
     )
     outbox_event: OutboxEvent | None = None
     if outbox_event_type is not None:
@@ -842,7 +874,9 @@ class JobRuntimeService:
             )
             if job is None:
                 raise JobNotFound()
-            if job.status != JobStatus.DEAD.value:
+            # Presales retries are new domain operations with fresh authorization
+            # and quota checks; a generic retry would bypass them and emit Celery work.
+            if job.status != JobStatus.DEAD.value or job.type == "presales.generate":
                 raise JobNotClaimable()
             job.status = JobStatus.PENDING.value
             job.max_attempts += 1

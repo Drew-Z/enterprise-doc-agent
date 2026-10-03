@@ -5,9 +5,32 @@ import re
 import struct
 import unicodedata
 from dataclasses import dataclass
+from typing import Protocol
 
 from enterprise_doc_core.config import UploadSettings
-from enterprise_doc_core.object_store import MultipartObjectStore
+
+MAX_BUFFERED_ENVELOPE_BYTES = 1024 * 1024
+
+
+class ObjectRangeReader(Protocol):
+    async def get_range(
+        self, *, bucket: str, key: str, start: int, end_inclusive: int
+    ) -> bytes: ...
+
+
+@dataclass(frozen=True, slots=True)
+class _VerifiedContentReader:
+    bucket: str
+    key: str
+    content: bytes
+
+    async def get_range(self, *, bucket: str, key: str, start: int, end_inclusive: int) -> bytes:
+        if (bucket, key) != (self.bucket, self.key) or not (
+            0 <= start <= end_inclusive < len(self.content)
+        ):
+            raise ValueError("Verified content range does not match the current object")
+        return self.content[start : end_inclusive + 1]
+
 
 _PDF_MEDIA_TYPE = "application/pdf"
 _TXT_MEDIA_TYPE = "text/plain"
@@ -61,7 +84,7 @@ class ValidatedDocumentEnvelope:
 
 @dataclass(slots=True)
 class _RangeBudget:
-    object_store: MultipartObjectStore
+    object_store: ObjectRangeReader
     bucket: str
     key: str
     remaining_bytes: int
@@ -81,13 +104,18 @@ class _RangeBudget:
 
 async def validate_document_envelope(
     *,
-    object_store: MultipartObjectStore,
+    object_store: ObjectRangeReader,
     bucket: str,
     key: str,
     size_bytes: int,
     extension: str,
     settings: UploadSettings,
+    verified_content: bytes | None = None,
 ) -> ValidatedDocumentEnvelope:
+    if verified_content is not None:
+        if len(verified_content) != size_bytes or size_bytes > MAX_BUFFERED_ENVELOPE_BYTES:
+            raise ValueError("Verified content must be complete and within the buffer limit")
+        object_store = _VerifiedContentReader(bucket, key, verified_content)
     if size_bytes < 1:
         raise DocumentEnvelopeViolation(code="document_type_unsupported")
     if extension == ".pdf":
@@ -121,7 +149,7 @@ async def validate_document_envelope(
 
 async def _validate_pdf(
     *,
-    object_store: MultipartObjectStore,
+    object_store: ObjectRangeReader,
     bucket: str,
     key: str,
     size_bytes: int,
@@ -140,7 +168,7 @@ async def _validate_pdf(
 
 async def _validate_txt(
     *,
-    object_store: MultipartObjectStore,
+    object_store: ObjectRangeReader,
     bucket: str,
     key: str,
     size_bytes: int,
@@ -194,7 +222,7 @@ def _reject_txt_nul(content: bytes) -> None:
 
 async def _validate_docx(
     *,
-    object_store: MultipartObjectStore,
+    object_store: ObjectRangeReader,
     bucket: str,
     key: str,
     size_bytes: int,

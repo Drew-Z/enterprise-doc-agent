@@ -313,6 +313,9 @@ class ApprovalService:
             raise ValueError("clock must return a timezone-aware datetime")
 
         async with self.session_factory.begin() as session:
+            await session.scalar(
+                select(Tenant.id).where(Tenant.id == tenant_id).with_for_update(key_share=True)
+            )
             approval_run_id = await session.scalar(
                 select(ApprovalRequest.run_id).where(
                     ApprovalRequest.id == approval_id,
@@ -504,6 +507,9 @@ class ApprovalService:
     ) -> ApprovalRevocationResult:
         now = self.clock()
         async with self.session_factory.begin() as session:
+            await session.scalar(
+                select(Tenant.id).where(Tenant.id == tenant_id).with_for_update(key_share=True)
+            )
             approval_run_id = await session.scalar(
                 select(ApprovalRequest.run_id).where(
                     ApprovalRequest.id == approval_id,

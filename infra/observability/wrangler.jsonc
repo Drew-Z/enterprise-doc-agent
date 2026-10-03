@@ -1,0 +1,40 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "docagent-ops-monitor",
+  "main": "monitor.ts",
+  "compatibility_date": "2026-09-26",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": { "enabled": true, "head_sampling_rate": 1 },
+  "triggers": { "crons": ["* * * * *"] },
+  "vars": {
+    "TARGET_URL": "https://agent.playlab.eu.cc/health/ready",
+    "MONITOR_KEY": "readiness-v1",
+    "MODE": "observe",
+    "DRILL_START_MS": "0",
+    "CHECK_READINESS": "true",
+    "REQUIRE_QUEUE_OBSERVATION": "false",
+    "QUEUE_HEARTBEAT_KEY": "",
+    "BACKUP_HEARTBEAT_KEY": "",
+    "BACKUP_REMOTE_PREFIX": "",
+    "BACKUP_REMOTE_MAX_BYTES": "3221225472",
+    "WATCH_MONITOR_KEY": "",
+    "MAIL_FROM": "ops-alerts@example.com",
+    "MAIL_TO": "operator@example.com"
+  },
+  "r2_buckets": [{
+    "binding": "BACKUP_BUCKET",
+    "bucket_name": "replace-with-approved-backup-bucket"
+  }],
+  "d1_databases": [{
+    "binding": "MONITOR_DB",
+    "database_name": "docagent-ops-monitor-state",
+    "database_id": "00000000-0000-0000-0000-000000000000"
+  }],
+  "send_email": [{
+    "name": "MAIL",
+    "allowed_destination_addresses": ["operator@example.com"],
+    "allowed_sender_addresses": ["ops-alerts@example.com"]
+  }]
+}

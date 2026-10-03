@@ -41,6 +41,7 @@ from enterprise_doc_core.object_store.errors import (
 from enterprise_doc_core.object_store.models import (
     CompletedMultipartUpload,
     IncompleteUpload,
+    ObjectContent,
     ObjectHead,
     PresignedUploadPart,
     UploadedPart,
@@ -294,6 +295,17 @@ class FaultInjectingMultipartObjectStore:
     async def head_object(self, *, bucket: str, key: str) -> ObjectHead:
         await self._before("head_object")
         return await self.inner.head_object(bucket=bucket, key=key)
+
+    async def read_object(self, *, bucket: str, key: str, max_bytes: int) -> ObjectContent:
+        short_read = await self._before("read_object")
+        result = await self.inner.read_object(bucket=bucket, key=key, max_bytes=max_bytes)
+        if (
+            short_read
+            and self.controller.settings.mode == "short_read"
+            and result.content is not None
+        ):
+            return ObjectContent(head=result.head, content=result.content[:-1])
+        return result
 
     async def get_range(
         self,

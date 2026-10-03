@@ -1,0 +1,195 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-10-02T21:03:14.927860+00:00",
+  "task_status": "in_progress",
+  "deployment": {
+    "version": "v0.1.45-rc.17",
+    "source_commit": "c6493d90c7521c8fa595b17897ae0d4feb1cb568",
+    "executor_commit": "5c5a5f89072a6d5f5740115e96c24ec3093d1158",
+    "release_ci": 37053907009,
+    "release_evidence_files": 56,
+    "switch_seconds": 88.675,
+    "rollback_version": "v0.1.45-rc.16",
+    "database_revision": "20260924_0031",
+    "five_deployments_ready": true,
+    "public_readiness": "ready",
+    "shared_configuration_and_credentials_unchanged": true,
+    "api_pool_size": 4
+  },
+  "diagnostic": {
+    "scope": "rc17-four-task-consistency-diagnostic-not-capacity-approval",
+    "summary": {
+      "planned_tasks": 4,
+      "business_successes": 4,
+      "business_non_successes": 0,
+      "expected_failures": 0,
+      "not_run": 0,
+      "interrupted": 0,
+      "expectations_met": 4,
+      "normal_failure_rate": 0.0,
+      "boundaries": {
+        "upload": {
+          "planned": 4,
+          "observed": 4,
+          "passed": 4,
+          "failed": 0,
+          "expected_failure": 0,
+          "interrupted": 0,
+          "not_run": 0,
+          "sample_count": 4,
+          "min_ms": 9122.52031872049,
+          "p50_ms": 10493.422915693372,
+          "p95_ms": 14672.373334877193,
+          "p99_ms": 14672.373334877193,
+          "max_ms": 14672.373334877193,
+          "proposed_target_ms": 5000.0,
+          "proposed_target_met": false
+        },
+        "ingestion": {
+          "planned": 4,
+          "observed": 4,
+          "passed": 4,
+          "failed": 0,
+          "expected_failure": 0,
+          "interrupted": 0,
+          "not_run": 0,
+          "sample_count": 4,
+          "min_ms": 11794.80603011325,
+          "p50_ms": 19111.461495049298,
+          "p95_ms": 20977.222699206322,
+          "p99_ms": 20977.222699206322,
+          "max_ms": 20977.222699206322,
+          "proposed_target_ms": 30000.0,
+          "proposed_target_met": true
+        },
+        "retrieval": {
+          "planned": 4,
+          "observed": 4,
+          "passed": 4,
+          "failed": 0,
+          "expected_failure": 0,
+          "interrupted": 0,
+          "not_run": 0,
+          "sample_count": 4,
+          "min_ms": 2618.1139941327274,
+          "p50_ms": 5141.770915128291,
+          "p95_ms": 7529.286012984812,
+          "p99_ms": 7529.286012984812,
+          "max_ms": 7529.286012984812,
+          "proposed_target_ms": 2000.0,
+          "proposed_target_met": false
+        },
+        "generation_recovery": {
+          "planned": 4,
+          "observed": 4,
+          "passed": 4,
+          "failed": 0,
+          "expected_failure": 0,
+          "interrupted": 0,
+          "not_run": 0,
+          "sample_count": 4,
+          "min_ms": 44843.46633218229,
+          "p50_ms": 50224.880582652986,
+          "p95_ms": 62542.24513377994,
+          "p99_ms": 62542.24513377994,
+          "max_ms": 62542.24513377994,
+          "proposed_target_ms": 180000.0,
+          "proposed_target_met": true
+        }
+      },
+      "generation_acceptance": {
+        "observed": 4,
+        "sample_count": 4,
+        "min_ms": 2758.10322817415,
+        "p50_ms": 4941.592061892152,
+        "p95_ms": 5376.285964157432,
+        "p99_ms": 5376.285964157432,
+        "max_ms": 5376.285964157432,
+        "proposed_target_ms": 2000.0
+      },
+      "generation_terminal": {
+        "observed": 4,
+        "sample_count": 4,
+        "min_ms": 34800.88055599481,
+        "p50_ms": 37622.00056808069,
+        "p95_ms": 50803.435729816556,
+        "p99_ms": 50803.435729816556,
+        "max_ms": 50803.435729816556
+      }
+    },
+    "model_calls": 4,
+    "model_tokens": 19048,
+    "embedding_calls": 12,
+    "one_settlement_per_task": true,
+    "live_failover_exercised": false,
+    "two_full_rounds_completed": false,
+    "performance_approved": false
+  },
+  "accounting": {
+    "scope": "unique multi-attribute correlation, not authenticated shared request-ID proof",
+    "observed_calls": 4,
+    "unique_correlations": 4,
+    "exact_request_id_matches": 0,
+    "matched_quota": 31278,
+    "matched_custom_display_units": "0.062556",
+    "provider_ledger_rows": 112,
+    "ledger_quota_sum": 670350,
+    "currency": "CUSTOM",
+    "fiat_currency_verified": false,
+    "fallback_and_vector_costs_verified": false
+  },
+  "backup": {
+    "service_active_and_enabled": true,
+    "only_release_metadata_changed": true,
+    "historical_attempts_preserved": 74,
+    "first_new_publication_source_age_seconds": 135.160667,
+    "previous_source_to_first_new_publication_seconds": 551.625945,
+    "uninterrupted_300_second_freshness_met": false,
+    "personal_computer_offline_test_completed": false,
+    "remote_history_deleted": 0,
+    "restore": {
+      "tables": 56,
+      "rows": 82658,
+      "objects": 1669,
+      "fingerprints_and_object_readback_match": true,
+      "running_jobs_in_restored_snapshot": 1,
+      "elapsed_seconds": 18.203000000008615,
+      "application_restarted": false,
+      "inflight_job_resumed": false,
+      "whole_machine_rto": false
+    },
+    "trusted_restore_catalog_updated": true
+  },
+  "monitor": {
+    "current_operations_and_watchdog_ready": true,
+    "natural_notification_results": [
+      {
+        "kind": "recovery",
+        "status": "unknown",
+        "diagnostic": "E_DELIVERY_FAILED"
+      },
+      {
+        "kind": "failure",
+        "status": "unknown",
+        "diagnostic": "timeout"
+      }
+    ],
+    "extra_test_messages_sent": 0,
+    "successful_delivery_proven": false
+  },
+  "cleanup": {
+    "remote_runtime_files": 11,
+    "local_transport_files": 28,
+    "local_transport_bytes": 508068572,
+    "isolated_restore_containers": 2,
+    "historical_files_and_running_images_retained": true,
+    "original_dirty_files_verified": 2993
+  },
+  "remaining": [
+    "Admission/upload/retrieval latency and two complete capacity rounds",
+    "Provider fiat costs and exact request-ID reconciliation",
+    "Independent business and release review",
+    "Sustainable retention, notification delivery and off-computer continuity",
+    "Resume historical in-flight work, Agent/MCP recovery, RPO/RTO and on-call evidence"
+  ]
+}

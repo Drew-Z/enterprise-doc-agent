@@ -1,0 +1,173 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-09-28T02:31:51.429148+00:00",
+  "scope": "Current target and ledger verification plus rc.2 candidate publication",
+  "status": "candidate_published_current_target_observed",
+  "task_status": "in_progress",
+  "formal_acceptance_complete": false,
+  "production_capacity_approved": false,
+  "base_commit": "f2910011fc219028a2611a22215e4e3e045919a3",
+  "deployed": {
+    "tag": "v0.1.45-rc.1",
+    "source_commit": "1ac873b06f265a415ed128ed55b9f54f81bdf0b9",
+    "migration": "20260924_0031",
+    "all_five_deployments_ready": true,
+    "model_primary": "glm-5.3-flash",
+    "model_fallback": "grok-4.6",
+    "presales_route": "fallback",
+    "background_generation": false,
+    "automatic_failover": false
+  },
+  "local_latest_primary": "grok-4.7",
+  "local_success_is_online_acceptance": false,
+  "quota": {
+    "presales_remaining": 99,
+    "products_remaining": {
+      "agent_task": 100,
+      "document_bytes": 104857428
+    },
+    "period_end": "2026-09-29 10:57:59.211855+00:00",
+    "period_extended": false,
+    "counters_reset": false,
+    "160_task_matrix_fits_current_pilot": false
+  },
+  "telemetry": {
+    "status": "read_only_observed",
+    "started_at": "2026-09-28T02:01:12.403284+00:00",
+    "completed_at": "2026-09-28T02:02:32.215550+00:00",
+    "samples": 13,
+    "distinct_node_samples": 6,
+    "host": {
+      "memory_available_bytes_min": 1690308608,
+      "root_disk_available_bytes_min": 15520768000,
+      "cpu_busy_percent_max": 8.37087087087087,
+      "kubernetes_cpu_cores_max": 0.35866200600000003
+    },
+    "issues": [],
+    "business_load_tasks": 0
+  },
+  "external_readiness": {
+    "checked_at": "2026-09-28T02:31:52.291497+00:00",
+    "elapsed_ms": 3328.0,
+    "healthy": true,
+    "http_status": 200,
+    "network_route": "configured-proxy",
+    "notifications_sent": 0,
+    "observed_at": "2026-09-28T02:31:51.332983+00:00",
+    "reason": "ready",
+    "schema_version": 1,
+    "scope": "single-external-readiness-probe"
+  },
+  "application_ledger": {
+    "window_start": "2026-09-27 00:00:00+00:00",
+    "window_end_exclusive": "2026-09-28 02:06:34.298177+00:00",
+    "export_sha256": "cf10acfd96804b69284aeca956b09f923401b39febd024ae8ffb6f092aac678b",
+    "summary": {
+      "provider_records": 2,
+      "potentially_billable_records": 2,
+      "unresolved_records": 0,
+      "unknown_cost_records": 2,
+      "known_total_tokens": 78,
+      "missing_token_records": 0,
+      "business_quantities": {
+        "provider_request": {
+          "consume": 1,
+          "release": 0
+        },
+        "document_bytes": {
+          "consume": 172,
+          "release": 0
+        }
+      }
+    },
+    "legacy_presales_records": 1,
+    "legacy_presales_requests_reported": 1,
+    "supplier_bill_reconciled": false,
+    "source_scope": "Existing online pilot only; prior local Agent receipt is separate"
+  },
+  "candidate_release": {
+    "tag": "v0.1.45-rc.2",
+    "commit": "f2910011fc219028a2611a22215e4e3e045919a3",
+    "run_id": 36368935547,
+    "run_url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/36368935547",
+    "manifest_sha256": "e5f421d3646d02692fd3ca1fac44f2487d2ec099a193b4f410c706d959293004",
+    "status": "published_verified",
+    "images": [
+      {
+        "service": "api",
+        "image": "ghcr.io/drew-z/enterprise-doc-api",
+        "digest": "sha256:cc577900fda327bce44819c1a1063d8d40a5c9384335942316b6e72aaf011690",
+        "ci_signature_verified": true,
+        "attestation_subject_verified": true,
+        "provenance_source_sha_verified": true
+      },
+      {
+        "service": "worker",
+        "image": "ghcr.io/drew-z/enterprise-doc-worker",
+        "digest": "sha256:bd46489681256c2c2a111862dba2aa5b12a3b9d7b407ea0d42798d66dd52563d",
+        "ci_signature_verified": true,
+        "attestation_subject_verified": true,
+        "provenance_source_sha_verified": true
+      },
+      {
+        "service": "consumer",
+        "image": "ghcr.io/drew-z/enterprise-doc-consumer",
+        "digest": "sha256:b5fbffa35cb100903824aa3e4c32dabe0cbf9624af0522339442a9a514fb22d1",
+        "ci_signature_verified": true,
+        "attestation_subject_verified": true,
+        "provenance_source_sha_verified": true
+      },
+      {
+        "service": "web",
+        "image": "ghcr.io/drew-z/enterprise-doc-web",
+        "digest": "sha256:fc0a059517f7acb566b8c9f30820db38c479f2e25333434abb6ca77e18c4f65b",
+        "ci_signature_verified": true,
+        "attestation_subject_verified": true,
+        "provenance_source_sha_verified": true
+      }
+    ],
+    "evidence_hashes_verified": 56,
+    "local_cosign_executed": false,
+    "signatures_verified_by": "exact release CI",
+    "runtime_exercised_on_current_host": false,
+    "backend_dependencies_and_migrations_changed": false
+  },
+  "actions": {
+    "release_tags_created": 1,
+    "images_published": 4,
+    "deployments": 0,
+    "business_submissions": 0,
+    "database_writes": 0,
+    "model_requests": 0,
+    "embedding_requests": 0,
+    "emails": 0
+  },
+  "scope_checks": {
+    "previous_indexes_verified": 16,
+    "source_recovery_points": "source-recovery-points.json",
+    "tests_required": "Documentation contracts, Trellis, scoped diff and exact release evidence; no runtime code edited"
+  },
+  "corrections_retained": [
+    "Initial baseline glob omitted the v2 index; stopped before writes, then included all 16.",
+    "Fallback-only loader was first projected through primary fields; corrected record reads fallback fields.",
+    "First multi-file patch context mismatch rejected before any source edits.",
+    "Initial staged diff rejected CRLF in the new JSON report; converted only that newly generated file to LF before commit."
+  ],
+  "remaining": [
+    "Fresh rc.2/runtime-route/background rollout execution package",
+    "Bounded real HTTP/Worker/MCP/object end-to-end with new supplier budget",
+    "Isolated capacity tenant, quota, actual target/phase binding and two rounds",
+    "Supplier bill and price verification",
+    "Existing independent review, backup, alerting and invited-customer acceptance gates"
+  ],
+  "evidence_location": "Existing private recovery group / online-capacity-preparation-evidence",
+  "local_checks": {
+    "documentation_contracts_passed": 5,
+    "trellis": "passed",
+    "scoped_diff_check": "passed",
+    "private_executor_syntax": "passed",
+    "historical_workspace_entries_preserved": 2993,
+    "spec_review": "No implementation/API/CLI/DB contract changed; verified deployment facts belong in the runbook and task evidence.",
+    "full_python_and_web_tests": "Not rerun for documentation-only changes; exact candidate source CI already passed."
+  }
+}

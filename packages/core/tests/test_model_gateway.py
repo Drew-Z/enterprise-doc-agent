@@ -160,6 +160,31 @@ async def test_deterministic_gateway_rejects_empty_evidence() -> None:
         await gateway.generate(_request(evidence=[]))
 
 
+@pytest.mark.parametrize("effort", [None, "low", "medium", "high", "xhigh"])
+async def test_reasoning_effort_is_preserved_through_schema_repair(effort):
+    requests = []
+
+    async def handler(request):
+        requests.append(json.loads(request.content))
+        content = "invalid-json" if len(requests) == 1 else json.dumps(_valid_payload(_request()))
+        return httpx.Response(200, json=_completion(content))
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        gateway = OpenAICompatibleChatGateway(
+            settings=_settings(reasoning_effort=effort), client=client
+        )
+        result = await gateway.generate(_request())
+    assert result.repaired is True
+    assert result.payload.answer_text == "Payment is due within 30 days."
+    assert len(requests) == 2
+    for body in requests:
+        if effort is None:
+            assert "reasoning_effort" not in body
+        else:
+            assert body["reasoning_effort"] == effort
+        assert body["response_format"] == {"type": "json_object"}
+
+
 async def test_openai_gateway_sends_strict_json_request_without_secret_or_tools() -> None:
     requests: list[httpx.Request] = []
 

@@ -1,18 +1,22 @@
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import Literal
+from typing import Any, Literal
 from uuid import UUID, uuid4
 
 from pydantic import ValidationError
 from sqlalchemy import func, select
+from sqlalchemy.dialects.postgresql import JSONB, aggregate_order_by
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from enterprise_doc_core.audit import append_audit_event
 from enterprise_doc_core.billing import EntitlementUsageService
 from enterprise_doc_core.context import PrincipalContext, get_request_context
+from enterprise_doc_core.db import read_only_session
 from enterprise_doc_core.demo.limits import check_packet
+from enterprise_doc_core.demo.settings import DemoError
 from enterprise_doc_core.presales.access import (
     authorize_principal,
     check_key,
@@ -25,7 +29,7 @@ from enterprise_doc_core.presales.access import (
 from enterprise_doc_core.presales.errors import PresalesError
 from enterprise_doc_core.presales.export import export_csv
 from enterprise_doc_core.presales.gateway import PresalesGateway
-from enterprise_doc_core.presales.generation import GenerationService, Retriever
+from enterprise_doc_core.presales.generation import ACTIVE_STATES, GenerationService, Retriever
 from enterprise_doc_core.presales.models import (
     PresalesAttempt,
     PresalesPacket,
@@ -34,13 +38,17 @@ from enterprise_doc_core.presales.models import (
 )
 from enterprise_doc_core.presales.schemas import (
     AttemptView,
+    BatchGenerateInput,
+    BatchGenerateResult,
     CitationInput,
     CreatePacket,
+    GenerationReceipt,
     ModelDraft,
     PacketSummary,
     PacketView,
     RequirementInput,
     ReviewInput,
+    RowRejection,
     RowView,
     SavedDraft,
     SavedReview,
@@ -176,11 +184,48 @@ class PresalesService:
             return result
 
     async def get(self, principal: PrincipalContext, packet_id: UUID) -> PacketView:
-        async with self.session_factory() as session:
+        async with read_only_session(self.session_factory) as session:
             packet = await load_packet(session, principal, packet_id)
+            # One statement keeps draft/revision and their histories in the same
+            # MVCC snapshot when a generation or review commits during this read.
+            # Aggregate each history separately to avoid multiplying joined rows.
+            attempt_content = func.jsonb_build_object(
+                *[
+                    value
+                    for name in (*AttemptView.model_fields, "job_id")
+                    for value in (name, getattr(PresalesAttempt, name))
+                ]
+            )
+            attempts = (
+                select(
+                    func.jsonb_agg(
+                        aggregate_order_by(attempt_content, PresalesAttempt.number), type_=JSONB
+                    )
+                )
+                .where(
+                    PresalesAttempt.row_id == PresalesRow.id,
+                    PresalesAttempt.tenant_id == PresalesRow.tenant_id,
+                )
+                .correlate(PresalesRow)
+                .scalar_subquery()
+            )
+            reviews = (
+                select(
+                    func.jsonb_agg(
+                        aggregate_order_by(PresalesReview.content, PresalesReview.revision),
+                        type_=JSONB,
+                    )
+                )
+                .where(
+                    PresalesReview.row_id == PresalesRow.id,
+                    PresalesReview.tenant_id == PresalesRow.tenant_id,
+                )
+                .correlate(PresalesRow)
+                .scalar_subquery()
+            )
             rows = (
-                await session.scalars(
-                    select(PresalesRow)
+                await session.execute(
+                    select(PresalesRow, attempts, reviews)
                     .where(
                         PresalesRow.packet_id == packet_id,
                         PresalesRow.tenant_id == packet.tenant_id,
@@ -188,7 +233,10 @@ class PresalesService:
                     .order_by(PresalesRow.position)
                 )
             ).all()
-            views = [await self._row_view(session, row) for row in rows]
+            views = [
+                self._row_view(row, row_attempts or [], row_reviews or [])
+                for row, row_attempts, row_reviews in rows
+            ]
             # No source text is returned after a revocation observed during assembly.
             await authorize_principal(session, principal)
             await check_sources(session, packet)
@@ -199,13 +247,72 @@ class PresalesService:
                 row_count=len(rows),
                 sources=[SourceSnapshot.model_validate(s) for s in packet.sources],
                 rows=views,
+                generation_mode=(
+                    "background"
+                    if self.generation.settings.background_generation_enabled
+                    else "synchronous"
+                ),
             )
 
     async def generate(
         self, principal: PrincipalContext, packet_id: UUID, row_id: UUID, key: str
     ) -> PacketView:
-        await self.generation.generate(principal, packet_id, row_id, key)
+        if self.generation.settings.background_generation_enabled:
+            await self.generation.enqueue(principal, packet_id, row_id, key)
+        else:
+            await self.generation.generate(principal, packet_id, row_id, key)
         return await self.get(principal, packet_id)
+
+    async def generate_batch(
+        self, principal: PrincipalContext, packet_id: UUID, payload: BatchGenerateInput, key: str
+    ) -> BatchGenerateResult:
+        receipt = await self.admit_batch(principal, packet_id, payload, key)
+        return BatchGenerateResult(
+            packet=await self.get(principal, packet_id), rejected=receipt.rejected
+        )
+
+    async def admit(
+        self, principal: PrincipalContext, packet_id: UUID, row_id: UUID, key: str
+    ) -> GenerationReceipt:
+        check_key(key)
+        if not self.generation.settings.background_generation_enabled:
+            await self.get(principal, packet_id)
+            raise PresalesError("presales_background_required")
+        admitted = await self.generation.enqueue(principal, packet_id, row_id, key)
+        return GenerationReceipt(packet_id=packet_id, admissions=[admitted], rejected=[])
+
+    async def admit_batch(
+        self, principal: PrincipalContext, packet_id: UUID, payload: BatchGenerateInput, key: str
+    ) -> GenerationReceipt:
+        check_key(key)
+        if not self.generation.settings.background_generation_enabled:
+            await self.get(principal, packet_id)
+            raise PresalesError("presales_background_required")
+        # Each enqueue reauthorizes and commits independently. A receipt contains
+        # identifiers only; callers obtain content through the authorized GET.
+        admissions = []
+        rejected = []
+        for row_id in payload.row_ids:
+            row_key = hashlib.sha256(f"{key}:{row_id}".encode()).hexdigest()
+            try:
+                admissions.append(
+                    await self.generation.enqueue(principal, packet_id, row_id, row_key)
+                )
+            except (PresalesError, DemoError) as error:
+                if error.code in {
+                    "presales_forbidden",
+                    "presales_source_unavailable",
+                    "presales_stale_sources",
+                    "demo_session_expired",
+                }:
+                    raise
+                if error.code == "presales_not_found":
+                    # Distinguish an inaccessible packet from a missing row without
+                    # assembling content or adding reads to successful admissions.
+                    async with read_only_session(self.session_factory) as session:
+                        await load_packet(session, principal, packet_id)
+                rejected.append(RowRejection(row_id=row_id, code=error.code))
+        return GenerationReceipt(packet_id=packet_id, admissions=admissions, rejected=rejected)
 
     async def review(
         self,
@@ -216,7 +323,10 @@ class PresalesService:
         key: str,
     ) -> PacketView:
         check_key(key)
-        digest = fingerprint(payload)
+        # Preserve fingerprints of review requests saved before structured prerequisites.
+        digest = fingerprint(
+            payload, exclude={"prerequisites"} if payload.prerequisites is None else None
+        )
         context = get_request_context()
         async with self.session_factory.begin() as session:
             packet = await load_packet(session, principal, packet_id, lock=True)
@@ -239,6 +349,30 @@ class PresalesService:
                 if row.revision >= 101:
                     raise PresalesError("presales_review_limit")
                 draft = SavedDraft.model_validate(row.draft)
+                original, proposed = draft.prerequisites, payload.prerequisites
+                if (original is None) != (proposed is None) or [
+                    (p.condition, p.citation_indexes) for p in original or []
+                ] != [(p.condition, p.citation_indexes) for p in proposed or []]:
+                    raise PresalesError("presales_review_prerequisites_invalid")
+                if proposed is not None:
+                    previous = await session.scalar(
+                        select(PresalesReview)
+                        .where(
+                            PresalesReview.row_id == row_id,
+                            PresalesReview.tenant_id == packet.tenant_id,
+                        )
+                        .order_by(PresalesReview.revision.desc())
+                        .limit(1)
+                    )
+                    previous_items = (
+                        SavedReview.model_validate(previous.content).prerequisites
+                        if previous is not None
+                        else original
+                    )
+                    if not payload.note.strip() and (
+                        proposed != original or proposed != previous_items
+                    ):
+                        raise PresalesError("presales_review_note_required")
                 try:
                     ModelDraft(
                         **payload.model_dump(exclude={"expected_revision", "note"}),
@@ -309,65 +443,44 @@ class PresalesService:
             )
         return content
 
-    async def _row_view(self, session: AsyncSession, row: PresalesRow) -> RowView:
-        attempts = (
-            await session.scalars(
-                select(PresalesAttempt)
-                .where(PresalesAttempt.row_id == row.id, PresalesAttempt.tenant_id == row.tenant_id)
-                .order_by(PresalesAttempt.number)
-            )
-        ).all()
-        reviews = (
-            await session.scalars(
-                select(PresalesReview)
-                .where(PresalesReview.row_id == row.id, PresalesReview.tenant_id == row.tenant_id)
-                .order_by(PresalesReview.revision)
-            )
-        ).all()
+    def _row_view(
+        self, row: PresalesRow, attempts: list[dict[str, Any]], reviews: list[dict[str, Any]]
+    ) -> RowView:
         attempt_views = []
-        for attempt in attempts:
-            state = (
-                "expired"
-                if attempt.state == "running" and attempt.deadline_at <= self.clock()
-                else attempt.state
+        for content in attempts:
+            attempt = AttemptView.model_validate(
+                {key: value for key, value in content.items() if key != "job_id"}
             )
-            attempt_views.append(
-                AttemptView.model_validate(
-                    {
-                        "id": attempt.id,
-                        "number": attempt.number,
-                        "state": state,
-                        "error_code": "presales_attempt_expired"
-                        if state == "expired"
-                        else attempt.error_code,
-                        "model_provider": attempt.model_provider,
-                        "model_name": attempt.model_name,
-                        "provider_request_count": attempt.provider_request_count,
-                        "provenance": attempt.provenance,
-                        "usage": attempt.usage,
-                        "created_at": attempt.created_at,
-                        "finished_at": attempt.finished_at,
-                        "deadline_at": attempt.deadline_at,
-                    }
+            if (
+                content["job_id"] is None
+                and attempt.state == "running"
+                and attempt.deadline_at <= self.clock()
+            ):
+                attempt = attempt.model_copy(
+                    update={"state": "expired", "error_code": "presales_attempt_expired"}
                 )
-            )
-        history = [SavedReview.model_validate(r.content) for r in reviews]
-        state_value: Literal["pending", "running", "drafted", "failed"] = "pending"
+            attempt_views.append(attempt)
+        history = [SavedReview.model_validate(content) for content in reviews]
+        state_value = "pending"
         if row.draft is not None:
             state_value = "drafted"
         elif attempt_views:
-            state_value = "running" if attempt_views[-1].state == "running" else "failed"
-        return RowView(
-            id=row.id,
-            requirement=RequirementInput(
-                key=row.requirement_key,
-                text=row.requirement_text,
-                source_location=row.source_location,
-            ),
-            revision=row.revision,
-            state=state_value,
-            draft=SavedDraft.model_validate(row.draft) if row.draft else None,
-            review=history[-1] if history else None,
-            review_history=history,
-            attempts=attempt_views,
+            state_value = (
+                attempt_views[-1].state if attempt_views[-1].state in ACTIVE_STATES else "failed"
+            )
+        return RowView.model_validate(
+            dict(
+                id=row.id,
+                requirement=RequirementInput(
+                    key=row.requirement_key,
+                    text=row.requirement_text,
+                    source_location=row.source_location,
+                ),
+                revision=row.revision,
+                state=state_value,
+                draft=SavedDraft.model_validate(row.draft) if row.draft else None,
+                review=history[-1] if history else None,
+                review_history=history,
+                attempts=attempt_views,
+            )
         )

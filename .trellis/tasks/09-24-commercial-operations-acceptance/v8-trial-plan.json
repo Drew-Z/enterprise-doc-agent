@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-09-25T01:06:46.061656+08:00",
+  "status": "authorized_for_one_bounded_six_request_trial",
+  "candidateBaseCommit": "7631d7b80b46dd5f301087907f6143628974f7ba",
+  "promptVersion": "presales.v8",
+  "promptPath": "evaluation/presales_quality_v8.candidate-prompt.txt",
+  "promptSha256": "51b51052d456574357e8ef0b41f1933e3f586ea768ba7020644fbb934ccd3d15",
+  "datasetPath": "evaluation/presales_quality_holdout_v3.json",
+  "datasetSha256": "260759bf6314153a9ca48ff80c9e6dbd148b917e828fefb57e1db3c9852d33a6",
+  "classificationGoldSha256": "3eccacb3939ea5f1b65395a5244f7138aab2135e502afac3ffa78d91c1f7ddfe",
+  "prerequisiteGoldSha256": "d0cf7caacd89597b30e0d6d3e279d5cb6ff7e65beda11d3c06f60e53ca5983b6",
+  "corpusRole": "Known H3 regression; assistant-authored references, not an independent holdout",
+  "selectedRoute": "primary",
+  "endpoint": "https://windhub.cc/v1",
+  "configuredModelName": "grok-4.7",
+  "credentials": "Existing local file only, not copied or published",
+  "maximumRequests": 6,
+  "oneRequestPerRequirement": true,
+  "deadlineSecondsPerRequest": 120,
+  "maxOutputTokensPerRequest": 4000,
+  "automaticRetries": 0,
+  "automaticFailover": false,
+  "additionalDatasetsAuthorized": false,
+  "costAmount": null,
+  "costReason": "No verified supplier unit price or invoice; request/output bounds are not a monetary cap",
+  "output": "evaluation/presales_quality_holdout_v3.v8-gateway.json",
+  "acceptance": [
+    "All six first attempts produce valid original drafts; failures remain in the denominator",
+    "All six classification labels and required source anchors match frozen classification gold",
+    "All prerequisites match the frozen states and per-item evidence through explicit reviewed mappings",
+    "Read original prose for facts, unknown vs unmet, source direction, numeric scope and non-duplicated follow-up",
+    "These checks do not substitute for independent domain/customer or production acceptance"
+  ],
+  "stopRule": "Stop after this six-request batch regardless of result; do not invoke H4/H1/H2, resample, switch route, extend timeout, deploy or alter previous evidence",
+  "preflightRevisions": [
+    {
+      "previousPromptSha256": "d288008090bae70136fae6a1123343548d40dda28bd4f7eba7c30a5f5cded87b",
+      "reason": "Removed two trailing spaces before any live call; field contract unchanged",
+      "realProviderRequestsBeforeRevision": 0
+    }
+  ],
+  "authorization": "User replied 继续推进 immediately after the explicit maximum-six-request paid trial question; no additional datasets or deployment authorized."
+}

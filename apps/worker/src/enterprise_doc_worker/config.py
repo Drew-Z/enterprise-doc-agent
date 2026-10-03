@@ -3,6 +3,7 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 
 from enterprise_doc_core.config import FoundationSettings
+from enterprise_doc_core.presales.settings import PresalesSettings
 
 
 class WorkerServerSettings(BaseModel):
@@ -21,4 +22,5 @@ class WorkerServerSettings(BaseModel):
 
 
 class WorkerSettings(FoundationSettings):
+    presales: PresalesSettings = Field(default_factory=PresalesSettings)
     worker: WorkerServerSettings = Field(default_factory=WorkerServerSettings)

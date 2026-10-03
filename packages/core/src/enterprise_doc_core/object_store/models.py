@@ -42,6 +42,12 @@ class ObjectHead:
 
 
 @dataclass(frozen=True, slots=True)
+class ObjectContent:
+    head: ObjectHead
+    content: bytes | None
+
+
+@dataclass(frozen=True, slots=True)
 class ArtifactObject:
     bucket: str
     key: str

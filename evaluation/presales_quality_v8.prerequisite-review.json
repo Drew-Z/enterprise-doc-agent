@@ -1,0 +1,55 @@
+{
+  "schemaVersion": "presales-prerequisite-review-v1",
+  "runSha256": "bb6953862e94f7c83e2853cbb6d561f0edc3a90fe9c2b1a423231ae940378fcb",
+  "expectationsSha256": "d0cf7caacd89597b30e0d6d3e279d5cb6ff7e65beda11d3c06f60e53ca5983b6",
+  "reviewer": "Codex assistant",
+  "reviewType": "assistant",
+  "rows": [
+    {
+      "key": "H3-R1",
+      "reviewed": true,
+      "mappings": []
+    },
+    {
+      "key": "H3-R2",
+      "reviewed": true,
+      "mappings": []
+    },
+    {
+      "key": "H3-R3",
+      "reviewed": true,
+      "mappings": []
+    },
+    {
+      "key": "H3-R4",
+      "reviewed": true,
+      "mappings": []
+    },
+    {
+      "key": "H3-R5",
+      "reviewed": true,
+      "mappings": [
+        {
+          "expectedKey": "purchase",
+          "observedIndex": 0,
+          "reason": "第 0 项陈述本订单已采购 ARC180，明确对应模块购买前提，引用订单和启用规定。"
+        },
+        {
+          "expectedKey": "configure",
+          "observedIndex": 1,
+          "reason": "第 1 项要求实际完成 180 天保留策略配置，对应订单明确尚未配置及启用规定。"
+        },
+        {
+          "expectedKey": "acceptance",
+          "observedIndex": 2,
+          "reason": "第 2 项先确认归档恢复验收是否完成，对应状态未登记；没有推断未执行或未通过。"
+        }
+      ]
+    },
+    {
+      "key": "H3-R6",
+      "reviewed": true,
+      "mappings": []
+    }
+  ]
+}
