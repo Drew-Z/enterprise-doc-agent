@@ -151,6 +151,69 @@ def test_release_accepts_only_explicit_queue_observation_boolean(enabled: Any) -
     assert config["data"] == data["original_prerequisites"][1]["data"]
 
 
+@pytest.mark.parametrize("model", ["gemini-3.7-flash", "", " ", " model", "model\n", False])
+@pytest.mark.parametrize("retain_rollback", [False, True])
+def test_fallback_model_only_switch_preserves_images_and_restores_config(
+    model: Any, retain_rollback: bool
+) -> None:
+    from scripts.maintenance_guard import GuardError
+    from scripts.release_switch import ReleaseCluster, ReleasePlan
+
+    data = release_data()
+    old_config = data["original_prerequisites"][1]["data"]
+    old_config["MODEL__FALLBACK_MODEL_NAME"] = "old-fallback"
+    new_config = copy.deepcopy(old_config)
+    new_config["MODEL__FALLBACK_MODEL_NAME"] = model
+    data["candidate_prerequisites"][1]["data"] = new_config
+    data["candidate_deployments"] = copy.deepcopy(data["deployments"])
+    data["secret"]["new_key"] = data["secret"]["old_key"]
+    for prerequisites, deployments in (
+        (data["original_prerequisites"], data["deployments"]),
+        (data["candidate_prerequisites"], data["candidate_deployments"]),
+    ):
+        config = prerequisites[1]["data"]
+        annotations = prerequisites[0]["metadata"]["annotations"]
+        annotations[PREFIX + "approved-config-sha256"] = canonical_digest(config)
+        annotations[PREFIX + "approved-model-name"] = config["MODEL__MODEL_NAME"]
+        for deployment in deployments:
+            role = deployment["metadata"]["name"].removeprefix("enterprise-doc-")
+            template = deployment["spec"]["template"]
+            template["metadata"]["annotations"][PREFIX + "config-sha256"] = canonical_digest(config)
+            annotations[PREFIX + f"approved-{role}-images"] = template["spec"]["containers"][0][
+                "image"
+            ]
+            if retain_rollback:
+                annotations[PREFIX + f"approved-{role}-images"] += (
+                    f",ghcr.io/drew-z/enterprise-doc-{role}@sha256:{'d' * 64}"
+                )
+    if not isinstance(model, str) or not model or model != model.strip():
+        with pytest.raises(GuardError):
+            ReleasePlan(data)
+        return
+    boundary = Boundary(data)
+    original = copy.deepcopy(boundary.items)
+    cluster = ReleaseCluster(
+        ReleasePlan(data),
+        run=boundary,
+        revision=lambda timeout: "20260924_0031",
+        idle=lambda timeout: True,
+        clock=lambda: 1.0,
+    )
+    cluster.apply(100)
+    cluster.verify(True, 100)
+    actual = next(i for i in boundary.items if i["kind"] == "ConfigMap")
+    assert actual["data"] == new_config
+    for before in original:
+        if before["kind"] == "Deployment":
+            after = next(
+                i for i in boundary.items if i["metadata"]["name"] == before["metadata"]["name"]
+            )
+            assert after["spec"]["template"]["spec"] == before["spec"]["template"]["spec"]
+    cluster.restore(100)
+    cluster.verify(False, 100)
+    assert actual["data"] == old_config
+
+
 class Boundary:
     def __init__(self, data: dict[str, Any]) -> None:
         self.items = copy.deepcopy(data["original_prerequisites"] + data["deployments"])
@@ -464,7 +527,17 @@ def test_drift_is_rejected_without_mutations(drift: str) -> None:
 
 
 @pytest.mark.parametrize(
-    "change", ["revision", "config", "namespace", "image", "template", "secret", "failover"]
+    "change",
+    [
+        "revision",
+        "config",
+        "namespace",
+        "image",
+        "image-approval",
+        "template",
+        "secret",
+        "failover",
+    ],
 )
 def test_plan_rejects_unreviewed_scope(change: str) -> None:
     from scripts.release_switch import ReleasePlan
@@ -480,6 +553,10 @@ def test_plan_rejects_unreviewed_scope(change: str) -> None:
         data["candidate_deployments"][0]["spec"]["template"]["spec"]["containers"][0]["image"] = (
             "latest"
         )
+    elif change == "image-approval":
+        data["candidate_prerequisites"][0]["metadata"]["annotations"][
+            PREFIX + "approved-api-images"
+        ] += f",ghcr.io/drew-z/enterprise-doc-api@sha256:{'e' * 64}"
     elif change == "template":
         data["candidate_deployments"][0]["spec"]["template"]["spec"]["hostNetwork"] = True
     elif change == "secret":

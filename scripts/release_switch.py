@@ -55,6 +55,7 @@ CONFIG_KEYS = {
     "MODEL__BASE_URL",
     "MODEL__MODEL_NAME",
     "MODEL__MODEL_VERSION",
+    "MODEL__FALLBACK_MODEL_NAME",
     "MODEL__TIMEOUT_SECONDS",
     "PRESALES__MODEL_ROUTE",
     "PRESALES__BACKGROUND_GENERATION_ENABLED",
@@ -134,6 +135,10 @@ class ReleasePlan(Plan):
         changed = {k for k in old.keys() | new.keys() if old.get(k) != new.get(k)}
         if changed - CONFIG_KEYS or any(not isinstance(v, str) for v in new.values()):
             raise GuardError("configuration exceeds the reviewed release scope")
+        if "MODEL__FALLBACK_MODEL_NAME" in changed:
+            fallback_name = new.get("MODEL__FALLBACK_MODEL_NAME", "")
+            if not fallback_name or fallback_name != fallback_name.strip():
+                raise GuardError("invalid fallback model name")
         before, after = (
             approval_annotations(self.old_namespace),
             approval_annotations(self.new_namespace),
@@ -197,10 +202,14 @@ class ReleasePlan(Plan):
             for image in (old_image, new_image):
                 if not re.fullmatch(r"ghcr.io/drew-z/" + name + r"@sha256:[0-9a-f]{64}", image):
                     raise GuardError("immutable application image required")
-            approved = after[
-                PREFIX + "approved-" + name.removeprefix("enterprise-doc-") + "-images"
-            ]
-            if set(approved.split(",")) != {old_image, new_image}:
+            image_key = PREFIX + "approved-" + name.removeprefix("enterprise-doc-") + "-images"
+            approved = after[image_key]
+            retained_images = (
+                new_image == old_image
+                and approved == before[image_key]
+                and old_image in approved.split(",")
+            )
+            if set(approved.split(",")) != {old_image, new_image} and not retained_images:
                 raise GuardError("candidate and rollback images must both be approved")
             target["spec"]["containers"][0]["image"] = old_image
             if name == "enterprise-doc-api" and "api_database_pool_size" in self.data:

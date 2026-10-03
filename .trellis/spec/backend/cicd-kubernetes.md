@@ -552,7 +552,8 @@ Environment and administrator render, then keep the normal prerequisite and roll
 
 Switch a reviewed, schema-compatible rc.1 deployment to rc.2 with a new primary route.
 The 0027-only maintenance guard retains its existing migration restrictions. The same
-0031 boundary supports later image releases and a declared API connection-pool adjustment.
+0031 boundary supports later image releases, a declared API connection-pool adjustment,
+and a reviewed fallback model-name change with unchanged images.
 
 ### 2. Signatures
 
@@ -586,9 +587,19 @@ Restoration fences even already-correct values with an actual annotation change,
 configuration, primary key and templates before opening Web last. Remove only owned fence
 annotations and revalidate normal prerequisites. All database probes are read-only and bounded.
 
+`MODEL__FALLBACK_MODEL_NAME` may change only within the reviewed configuration bundle;
+the new value must be a nonempty string without leading/trailing whitespace. The endpoint,
+credential and timeout are not added to this scope. A catalog entry or one synthetic reply
+does not prove business failover; validate the deployed process and preserve old failures.
+For a same-image configuration switch, keep an already-approved rollback image list only
+when it is byte-for-byte unchanged and contains the running image. This does not allow
+adding an unreviewed image or changing the approved set during an image replacement.
+
 ### 4. Validation & Error Matrix
 
 - Non-0031 plan, image/config/approval/supplier-key mismatch -> refuse before apply.
+- Invalid fallback name or unrelated configuration change -> refuse; a valid same-image
+  name switch must still support full original-configuration restoration.
 - Missing or invalid pool declaration, target mismatch, duplicate entries or unrelated
   workload change -> refuse before apply; the shared ConfigMap pool budget stays unchanged.
 - Active jobs/attempts/runs/reservations or unexpired uploads -> refuse; consumed reservations

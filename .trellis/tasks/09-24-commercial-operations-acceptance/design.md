@@ -1,5 +1,9 @@
 # 当前环境验收设计
 
+## 2026-10-03 备用模型对齐
+
+复用ReleasePlan/ReleaseCluster/Switch，只把MODEL__FALLBACK_MODEL_NAME加入可审阅配置字段；改变时必须为去除首尾空白后不变的非空字符串。配置与Namespace指纹、原/候选模板、Secret摘要和独立执行期限保持。既有镜像可同时作为候选和回退，配置恢复仍使用本轮实际原值。单模型JSON连通请求仅验证候选兼容性，后续真实业务和金额另记。
+
 ## 2026-10-03 轻量受理协议
 
 两个现有 generate POST 增加显式 `response=receipt` 查询选项，默认完整响应不变。回执为 `packetId/admissions/rejected`；每个 admission 只含 rowId、disposition（enqueued/replayed/already_drafted）和可空 attemptId。新入队返回202；仅重放、已有稿或逐行拒绝返回200。重放不报告当前执行状态，调用方必须读取结果。禁用后台时先验证访问再拒绝，不启动同步模型。
