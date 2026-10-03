@@ -36,6 +36,7 @@ from enterprise_doc_core.presales.schemas import (
     ModelDraft,
     RequirementInput,
     RetrievalNote,
+    RowAdmission,
     SavedDraft,
     SourceSnapshot,
 )
@@ -118,7 +119,7 @@ class GenerationService:
     ) -> None:
         check_key(key)
         started = await self._begin(principal, packet_id, row_id, key)
-        if started is None:
+        if isinstance(started, RowAdmission):
             return
         attempt_id, requirement, sources = started
         tenant_id, actor_id = UUID(principal.tenant_id), UUID(principal.actor_id)
@@ -228,9 +229,12 @@ class GenerationService:
 
     async def enqueue(
         self, principal: PrincipalContext, packet_id: UUID, row_id: UUID, key: str
-    ) -> None:
+    ) -> RowAdmission:
         check_key(key)
-        await self._begin(principal, packet_id, row_id, key, background=True)
+        admitted = await self._begin(principal, packet_id, row_id, key, background=True)
+        assert isinstance(admitted, RowAdmission)
+        # _begin exits its transaction before this acknowledgement can escape.
+        return admitted
 
     async def _begin(
         self,
@@ -240,7 +244,7 @@ class GenerationService:
         key: str,
         *,
         background: bool = False,
-    ) -> tuple[UUID, RequirementInput, list[SourceSnapshot]] | None:
+    ) -> tuple[UUID, RequirementInput, list[SourceSnapshot]] | RowAdmission:
         async with self.session_factory.begin() as session:
             packet = await load_packet(session, principal, packet_id, lock=True)
             row = await load_row(session, packet, row_id)
@@ -256,8 +260,11 @@ class GenerationService:
                     )
                 ).all()
             )
-            if any(a.idempotency_key == key for a in attempts) or row.draft is not None:
-                return None
+            replay = next((a for a in attempts if a.idempotency_key == key), None)
+            if replay is not None:
+                return RowAdmission(row_id=row_id, disposition="replayed", attempt_id=replay.id)
+            if row.draft is not None:
+                return RowAdmission(row_id=row_id, disposition="already_drafted", attempt_id=None)
             if not self.settings.generation_enabled:
                 raise PresalesError("presales_generation_disabled")
             if self.gateway.model_provider == "deterministic":
@@ -390,6 +397,9 @@ class GenerationService:
                     if error.code == "usage_limit_reached":
                         raise PresalesError("presales_usage_limit") from error
                     raise PresalesError("presales_usage_unavailable") from error
+            sources = await check_sources(session, packet)
+            if background:
+                return RowAdmission(row_id=row_id, disposition="enqueued", attempt_id=attempt_id)
             return (
                 attempt_id,
                 RequirementInput(
@@ -397,7 +407,7 @@ class GenerationService:
                     text=row.requirement_text,
                     source_location=row.source_location,
                 ),
-                await check_sources(session, packet),
+                sources,
             )
 
     async def _retrieve(

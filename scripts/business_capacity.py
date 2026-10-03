@@ -34,7 +34,7 @@ from enterprise_doc_api.uploads.router import (
     UploadSessionCreateResponse,
 )
 from enterprise_doc_core.evaluation import build_percentile_summary
-from enterprise_doc_core.presales.schemas import PacketView, ReviewInput, RowView
+from enterprise_doc_core.presales.schemas import GenerationReceipt, PacketView, ReviewInput, RowView
 
 BOUNDARIES = ("upload", "ingestion", "retrieval", "generation_recovery")
 PHASES = ("ramp", "steady_state", "burst", "recovery")
@@ -123,6 +123,7 @@ class BusinessPlan(PlanModel):
     ingestion_target_ms: float = Field(default=30000, gt=0, strict=True)
     retrieval_target_ms: float = Field(default=2000, gt=0, strict=True)
     accept_target_ms: float = Field(default=250, gt=0, strict=True)
+    admission_response: Literal["full", "receipt"] = "full"
 
     @field_validator("schema_version", mode="before")
     @classmethod
@@ -449,13 +450,39 @@ async def generate_and_recover(
         headers = {"Idempotency-Key": key + "-generate"}
         generation_started = time.perf_counter()
         accepted = await io.request(
-            client, "POST", generate_path, payload={}, headers=headers, accepted=(200, 202)
+            client,
+            "POST",
+            generate_path
+            + ("?response=receipt" if io.plan.admission_response == "receipt" else ""),
+            payload={},
+            headers=headers,
+            accepted=(200, 202),
         )
         measured.update(
             accept_duration_ms=(time.perf_counter() - generation_started) * 1000,
             accept_status=accepted.status_code,
+            admission_response=io.plan.admission_response,
         )
-        current = decode(PacketView, accepted)
+        if io.plan.admission_response == "receipt":
+            admission = decode(GenerationReceipt, accepted)
+            if (
+                accepted.status_code != 202
+                or admission.packet_id != packet.id
+                or admission.rejected
+                or len(admission.admissions) != 1
+                or admission.admissions[0].row_id != row_id
+                or admission.admissions[0].disposition != "enqueued"
+                or admission.admissions[0].attempt_id is None
+            ):
+                raise BusinessFailure("admission_receipt_mismatch")
+            refs["attempt_id"] = str(admission.admissions[0].attempt_id)
+            read_started = time.perf_counter()
+            try:
+                current = decode(PacketView, await io.request(client, "GET", path))
+            finally:
+                measured["first_read_duration_ms"] = (time.perf_counter() - read_started) * 1000
+        else:
+            current = decode(PacketView, accepted)
 
     def row(view: PacketView) -> RowView:
         if (
@@ -471,6 +498,8 @@ async def generate_and_recover(
         return result
 
     attempt_id = row(current).attempts[0].id
+    if "attempt_id" in refs and refs["attempt_id"] != str(attempt_id):
+        raise BusinessFailure("admission_receipt_mismatch")
     refs["attempt_id"] = str(attempt_id)
     # Fresh client: recover from durable API state, without sharing prior in-memory responses.
     async with io.client() as client:

@@ -41,6 +41,14 @@ function validPrerequisiteIndexes(items: PrerequisiteAssessment[] | null, count:
 }
 export const generationActive = (row: PresalesRow) => ["queued", "running", "recovering"].includes(row.state);
 const batchSchema = z.object({ packet: packetSchema, rejected: z.array(z.object({ rowId: id, code: z.string() }).strict()) }).strict();
+const admissionSchema = z.object({ rowId: id, disposition: z.enum(["enqueued", "replayed", "already_drafted"]), attemptId: id.nullable() }).strict().refine(value => (value.disposition === "already_drafted") === (value.attemptId === null));
+const receiptSchema = z.object({ packetId: id, admissions: z.array(admissionSchema).max(12), rejected: z.array(z.object({ rowId: id, code: z.string() }).strict()).max(12) }).strict();
+function receiptFor(packetId: string, rowIds: string[]) {
+  return receiptSchema.refine(value => {
+    const returned = [...value.admissions, ...value.rejected].map(item => item.rowId);
+    return value.packetId === packetId && returned.length === rowIds.length && new Set(returned).size === rowIds.length && rowIds.every(rowId => returned.includes(rowId));
+  });
+}
 
 export class PresalesApiError extends Error {
   constructor(readonly status: number, readonly code: string, message: string, readonly requestId: string | null) { super(message); this.name = "PresalesApiError"; }
@@ -75,6 +83,8 @@ export function presalesApi(token: ApiCredential) {
     create: (payload: CreatePacket, key: string, signal: AbortSignal) => request("", packetSchema, signal, "POST", createPacketSchema.parse(payload), key),
     generate: (packetId: string, rowId: string, key: string, signal: AbortSignal, background = false) => request(packetPath(packetId) + "/rows/" + id.parse(rowId) + "/generate", packetSchema, signal, "POST", undefined, key, background ? 15_000 : 180_000),
     generateBatch: (packetId: string, rowIds: string[], key: string, signal: AbortSignal) => request(packetPath(packetId) + "/generate", batchSchema, signal, "POST", { rowIds: z.array(id).min(1).max(12).parse(rowIds) }, key),
+    admit: (packetId: string, rowId: string, key: string, signal: AbortSignal) => request(packetPath(packetId) + "/rows/" + id.parse(rowId) + "/generate?response=receipt", receiptFor(packetId, [rowId]), signal, "POST", undefined, key),
+    admitBatch: (packetId: string, rowIds: string[], key: string, signal: AbortSignal) => request(packetPath(packetId) + "/generate?response=receipt", receiptFor(packetId, rowIds), signal, "POST", { rowIds: z.array(id).min(1).max(12).refine(values => new Set(values).size === values.length).parse(rowIds) }, key),
     review: (packetId: string, rowId: string, payload: ReviewInput, key: string, signal: AbortSignal) => request(packetPath(packetId) + "/rows/" + id.parse(rowId) + "/review", packetSchema, signal, "PUT", reviewInputSchema.parse(payload), key),
     export: async (packetId: string, mode: "draft" | "reviewed", signal: AbortSignal) => {
       const response = await authenticatedFetch(base() + packetPath(packetId) + "/export?mode=" + mode, token, { headers: { Accept: "text/csv" }, signal, cache: "no-store" });

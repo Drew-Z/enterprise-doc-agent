@@ -14,6 +14,7 @@ from enterprise_doc_core.presales.schemas import (
     BatchGenerateInput,
     BatchGenerateResult,
     CreatePacket,
+    GenerationReceipt,
     PacketSummary,
     PacketView,
     ReviewInput,
@@ -32,6 +33,12 @@ class PresalesServiceProtocol(Protocol):
     async def generate_batch(
         self, principal: PrincipalContext, packet_id: UUID, payload: BatchGenerateInput, key: str
     ) -> BatchGenerateResult: ...
+    async def admit(
+        self, principal: PrincipalContext, packet_id: UUID, row_id: UUID, key: str
+    ) -> GenerationReceipt: ...
+    async def admit_batch(
+        self, principal: PrincipalContext, packet_id: UUID, payload: BatchGenerateInput, key: str
+    ) -> GenerationReceipt: ...
     async def review(
         self,
         principal: PrincipalContext,
@@ -130,7 +137,7 @@ async def get_packet(packet_id: UUID, principal: Principal, svc: Service) -> Pac
     return await result(svc.get(principal, packet_id))
 
 
-@router.post("/{packet_id}/rows/{row_id}/generate", response_model=PacketView)
+@router.post("/{packet_id}/rows/{row_id}/generate", response_model=PacketView | GenerationReceipt)
 async def generate_row(
     packet_id: UUID,
     row_id: UUID,
@@ -138,14 +145,20 @@ async def generate_row(
     svc: Service,
     key: Key,
     response: Response,
-) -> PacketView:
+    response_mode: Annotated[Literal["full", "receipt"], Query(alias="response")] = "full",
+) -> PacketView | GenerationReceipt:
+    if response_mode == "receipt":
+        receipt = await result(svc.admit(principal, packet_id, row_id, key))
+        if any(item.disposition == "enqueued" for item in receipt.admissions):
+            response.status_code = 202
+        return receipt
     packet = await result(svc.generate(principal, packet_id, row_id, key))
     if any(r.id == row_id and r.state in {"queued", "running", "recovering"} for r in packet.rows):
         response.status_code = 202
     return packet
 
 
-@router.post("/{packet_id}/generate", response_model=BatchGenerateResult)
+@router.post("/{packet_id}/generate", response_model=BatchGenerateResult | GenerationReceipt)
 async def generate_batch(
     packet_id: UUID,
     payload: BatchGenerateInput,
@@ -153,7 +166,13 @@ async def generate_batch(
     svc: Service,
     key: Key,
     response: Response,
-) -> BatchGenerateResult:
+    response_mode: Annotated[Literal["full", "receipt"], Query(alias="response")] = "full",
+) -> BatchGenerateResult | GenerationReceipt:
+    if response_mode == "receipt":
+        receipt = await result(svc.admit_batch(principal, packet_id, payload, key))
+        if any(item.disposition == "enqueued" for item in receipt.admissions):
+            response.status_code = 202
+        return receipt
     batch = await result(svc.generate_batch(principal, packet_id, payload, key))
     if any(r.state in {"queued", "running", "recovering"} for r in batch.packet.rows):
         response.status_code = 202

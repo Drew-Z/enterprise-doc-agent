@@ -22,7 +22,7 @@ export function PresalesWorkspace({ token, contextKey, storageKey, openDocuments
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [readRecovery, setReadRecovery] = useState<{ id: string; after: number; error: unknown } | null>(null);
+  const [readRecovery, setReadRecovery] = useState<{ id: string; after: number; error: unknown; notice?: string } | null>(null);
   const [blockedId, setBlockedId] = useState<string | null>(null);
   const alive = useRef(true);
   const controller = useRef<AbortController | null>(null);
@@ -95,11 +95,23 @@ export function PresalesWorkspace({ token, contextKey, storageKey, openDocuments
     }
   };
   const generate = (value: Packet, rows: PresalesRow[]) => void run(rows.length === 1 ? rows[0].id : "all", async signal => {
-    if (rows.length > 1 && value.generationMode === "background") {
+    if (value.generationMode === "background") {
       try {
-        const batch = await api.generateBatch(value.id, rows.map(r => r.id), keyFor("batch:" + value.id, rows.map(r => ({ id: r.id, attempts: r.attempts.length, state: r.state }))), signal);
-        saveResult(batch.packet, signal);
-        return batch.rejected.length ? c.batchRejected.replace("{count}", String(batch.rejected.length)) : batch.packet.rows.some(generationActive) ? c.background : c.complete;
+        const receipt = rows.length === 1
+          ? await api.admit(value.id, rows[0].id, keyFor("generate:" + rows[0].id, { attempts: rows[0].attempts.length, state: rows[0].state }), signal)
+          : await api.admitBatch(value.id, rows.map(r => r.id), keyFor("batch:" + value.id, rows.map(r => ({ id: r.id, attempts: r.attempts.length, state: r.state }))), signal);
+        if (!alive.current || signal.aborted) return;
+        // Discard an older in-flight GET before starting the post-admission read.
+        // The receipt confirms persistence, never a row state or generated draft.
+        const queryKey = ["presales", contextKey, value.id];
+        await queryClient.cancelQueries({ queryKey, exact: true });
+        if (!alive.current || signal.aborted) return;
+        const rejected = receipt.rejected.length ? c.batchRejected.replace("{count}", String(receipt.rejected.length)) : undefined;
+        setReadRecovery({ id: value.id, after: 0, error: null, notice: rejected });
+        // Clear the pre-admission cache as well: navigating away and back must
+        // not expose the old pending row before the new read finishes.
+        void queryClient.resetQueries({ queryKey, exact: true });
+        return rejected ?? c.admitted;
       } catch (failure) {
         if (signal.aborted || !alive.current || (failure instanceof PresalesApiError && failure.status < 500)) throw failure;
         const recovered = await recoverGeneration(value.id, signal);
@@ -115,7 +127,7 @@ export function PresalesWorkspace({ token, contextKey, storageKey, openDocuments
       if (signal.aborted) return;
       let next: Packet;
       try {
-        next = await api.generate(value.id, row.id, keyFor("generate:" + row.id, { attempts: row.attempts.length, state: row.state }), signal, value.generationMode === "background");
+        next = await api.generate(value.id, row.id, keyFor("generate:" + row.id, { attempts: row.attempts.length, state: row.state }), signal);
       } catch (failure) {
         if (signal.aborted || !alive.current || (failure instanceof PresalesApiError && failure.status < 500)) throw failure;
         // The request may still be running or already saved after a proxy/network
@@ -146,8 +158,8 @@ export function PresalesWorkspace({ token, contextKey, storageKey, openDocuments
   const recovery = readRecovery?.id === activeId ? readRecovery : null;
   const awaitingRead = recovery !== null && packet.dataUpdatedAt <= recovery.after;
   const visible = packet.isError || awaitingRead || (activeId !== null && blockedId === activeId) ? undefined : packet.data;
-  const pageError = error || (activeId && packet.isError ? formatApiError(packet.error, c.readFailed, c.requestId) : awaitingRead ? formatApiError(recovery.error, c.readFailed, c.requestId) : "");
-  const visibleNotice = recovery && visible ? c.readRecovered : notice === c.background && visible && !visible.rows.some(generationActive) ? c.finished : notice;
+  const pageError = error || (activeId && packet.isError ? formatApiError(packet.error, c.readFailed, c.requestId) : awaitingRead && recovery.error !== null ? formatApiError(recovery.error, c.readFailed, c.requestId) : "");
+  const visibleNotice = recovery && visible ? recovery.notice ?? c.readRecovered : awaitingRead && recovery.error === null ? recovery.notice ?? c.admitted : notice === c.background && visible && !visible.rows.some(generationActive) ? c.finished : notice;
   return <section className="presales-workspace">
     <header className="product-page-header"><div><p className="eyebrow">{c.title}</p><h1>{c.title}</h1><p className="page-summary">{c.summary}</p></div><button type="button" className="presales-secondary" onClick={openDocuments}>{c.documents}</button></header>
     {!enabled ? <div className="presales-empty" role="status"><ClipboardCheck aria-hidden="true" /><p>{readOnly ? c.showcase : c.login}</p><button type="button" onClick={openDocuments}>{c.documents}</button></div> : <div className="presales-layout">

@@ -37,11 +37,23 @@ missing information, exact source excerpts, filenames and passage locations.
 Finite retrieval and truncation are explicitly disclosed. Generation is per row;
 the batch button submits multiple pending rows in one request when PacketView
 generationMode is background. Exactly one eligible row uses the bodyless
-`POST /api/presales/{packet}/rows/{row}/generate` and returns `PacketView`, including
-202 while queued/running/recovering. Multiple background rows use
-`POST /api/presales/{packet}/generate` with `{rowIds: [...]}` and return
-`BatchGenerateResult`. Acceptance request gates must match the actual selected-row
+`POST /api/presales/{packet}/rows/{row}/generate?response=receipt`. Multiple background
+rows use `POST /api/presales/{packet}/generate?response=receipt` with `{rowIds: [...]}`.
+Both return a GenerationReceipt, validated against the exact packet and complete
+requested row set across admissions and rejections. Only enqueued/replayed rows
+carry attemptId; already_drafted has null. The compatibility API methods without
+the query option still return PacketView/BatchGenerateResult. Acceptance request gates must match the actual selected-row
 count and response schema; the toolbar label alone does not identify the endpoint.
+After a valid receipt, cancel older sheet reads, reset the old sheet cache and start
+a new authorized GET without waiting before releasing submission busy. Show submission
+confirmation while reading; no optimistic row state, draft or success is fabricated.
+Clearing the old cache prevents navigation away/back from exposing a stale pending
+row. A failed GET hides content and follows existing bounded/manual read recovery;
+authorization/protocol failures do not poll. No automatic generation replay is added.
+`api.test.ts` verifies malformed/duplicate/mismatched receipt rejection, and the
+workspace tests cover delayed/failed GETs and discarded pre-admission reads. The real
+background browser test delays the first GET after an actual three-row receipt,
+checks navigation and hidden stale content, then completes the existing recovery/ledger flow.
 The default synchronous mode retains separate row
 requests, avoiding a multi-row inference request that exceeds proxy limits. Missing
 generationMode from an older server defaults to synchronous. Per-row background

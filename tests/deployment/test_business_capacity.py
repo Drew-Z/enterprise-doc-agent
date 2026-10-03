@@ -9,6 +9,97 @@ import httpx
 import pytest
 
 
+async def test_receipt_acceptance_is_recorded_even_when_the_result_read_fails():
+    from scripts.business_capacity import (
+        BusinessFailure,
+        BusinessIO,
+        BusinessPlan,
+        LoadedCase,
+        UploadReceipt,
+        generate_and_recover,
+    )
+
+    plan = BusinessPlan.model_validate({**plan_payload(), "admission_response": "receipt"})
+    packet_id, row_id, version_id, document_id, generation_id, attempt_id = (
+        uuid4() for _ in range(6)
+    )
+    packet = {
+        "id": str(packet_id),
+        "title": "Capacity fixture",
+        "createdAt": "2026-10-03T00:00:00Z",
+        "rowCount": 1,
+        "generationMode": "background",
+        "sources": [
+            {
+                "versionId": str(version_id),
+                "documentId": str(document_id),
+                "generationId": str(generation_id),
+                "applicability": "Test",
+                "filename": "source.txt",
+                "versionNumber": 1,
+                "latestVersionNumber": 1,
+                "contentSha256": plan.cases[0].sha256,
+            }
+        ],
+        "rows": [
+            {
+                "id": str(row_id),
+                "requirement": {"key": "R1", "text": "Retention"},
+                "revision": 0,
+                "state": "pending",
+                "draft": None,
+                "review": None,
+                "reviewHistory": [],
+                "attempts": [],
+            }
+        ],
+    }
+    calls = []
+
+    def api(request):
+        calls.append((request.method, str(request.url)))
+        if request.url.path == "/api/presales":
+            return httpx.Response(201, json=packet)
+        if request.method == "POST":
+            assert request.url.params["response"] == "receipt"
+            return httpx.Response(
+                202,
+                json={
+                    "packetId": str(packet_id),
+                    "admissions": [
+                        {
+                            "rowId": str(row_id),
+                            "disposition": "enqueued",
+                            "attemptId": str(attempt_id),
+                        }
+                    ],
+                    "rejected": [],
+                },
+            )
+        return httpx.Response(503)
+
+    io = BusinessIO(plan, "test", api_transport=httpx.MockTransport(api))
+    refs, measured = {}, {}
+    with pytest.raises(BusinessFailure, match="http_503"):
+        await generate_and_recover(
+            io,
+            object(),
+            UploadReceipt(uuid4(), document_id, version_id),
+            LoadedCase(plan.cases[0], b"Retention is 30 days."),
+            "once",
+            refs,
+            {},
+            measured,
+        )
+    assert [method for method, _ in calls] == ["POST", "POST", "GET"]
+    assert measured["accept_status"] == 202
+    assert measured["admission_response"] == "receipt"
+    assert measured["accept_duration_ms"] >= 0
+    assert measured["first_read_duration_ms"] >= 0
+    assert "terminal_duration_ms" not in measured
+    assert refs["attempt_id"] == str(attempt_id)
+
+
 @pytest.mark.parametrize("version", [True, 1.0, "1"])
 def test_plan_version_requires_an_integer(version):
     from pydantic import ValidationError

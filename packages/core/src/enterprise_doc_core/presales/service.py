@@ -42,6 +42,7 @@ from enterprise_doc_core.presales.schemas import (
     BatchGenerateResult,
     CitationInput,
     CreatePacket,
+    GenerationReceipt,
     ModelDraft,
     PacketSummary,
     PacketView,
@@ -265,17 +266,38 @@ class PresalesService:
     async def generate_batch(
         self, principal: PrincipalContext, packet_id: UUID, payload: BatchGenerateInput, key: str
     ) -> BatchGenerateResult:
+        receipt = await self.admit_batch(principal, packet_id, payload, key)
+        return BatchGenerateResult(
+            packet=await self.get(principal, packet_id), rejected=receipt.rejected
+        )
+
+    async def admit(
+        self, principal: PrincipalContext, packet_id: UUID, row_id: UUID, key: str
+    ) -> GenerationReceipt:
         check_key(key)
         if not self.generation.settings.background_generation_enabled:
             await self.get(principal, packet_id)
             raise PresalesError("presales_background_required")
-        # Each enqueue reauthorizes inside its transaction; assemble the view once,
-        # after admission, with get() retaining its final access/source checks.
+        admitted = await self.generation.enqueue(principal, packet_id, row_id, key)
+        return GenerationReceipt(packet_id=packet_id, admissions=[admitted], rejected=[])
+
+    async def admit_batch(
+        self, principal: PrincipalContext, packet_id: UUID, payload: BatchGenerateInput, key: str
+    ) -> GenerationReceipt:
+        check_key(key)
+        if not self.generation.settings.background_generation_enabled:
+            await self.get(principal, packet_id)
+            raise PresalesError("presales_background_required")
+        # Each enqueue reauthorizes and commits independently. A receipt contains
+        # identifiers only; callers obtain content through the authorized GET.
+        admissions = []
         rejected = []
         for row_id in payload.row_ids:
             row_key = hashlib.sha256(f"{key}:{row_id}".encode()).hexdigest()
             try:
-                await self.generation.enqueue(principal, packet_id, row_id, row_key)
+                admissions.append(
+                    await self.generation.enqueue(principal, packet_id, row_id, row_key)
+                )
             except (PresalesError, DemoError) as error:
                 if error.code in {
                     "presales_forbidden",
@@ -284,8 +306,13 @@ class PresalesService:
                     "demo_session_expired",
                 }:
                     raise
+                if error.code == "presales_not_found":
+                    # Distinguish an inaccessible packet from a missing row without
+                    # assembling content or adding reads to successful admissions.
+                    async with read_only_session(self.session_factory) as session:
+                        await load_packet(session, principal, packet_id)
                 rejected.append(RowRejection(row_id=row_id, code=error.code))
-        return BatchGenerateResult(packet=await self.get(principal, packet_id), rejected=rejected)
+        return GenerationReceipt(packet_id=packet_id, admissions=admissions, rejected=rejected)
 
     async def review(
         self,

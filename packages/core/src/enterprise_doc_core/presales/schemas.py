@@ -219,6 +219,18 @@ class BatchGenerateResult(PresalesModel):
     rejected: list[RowRejection]
 
 
+class RowAdmission(PresalesModel):
+    row_id: UUID
+    disposition: Literal["enqueued", "replayed", "already_drafted"]
+    attempt_id: UUID | None
+
+
+class GenerationReceipt(PresalesModel):
+    packet_id: UUID
+    admissions: list[RowAdmission]
+    rejected: list[RowRejection]
+
+
 class GenerationInput(PresalesModel):
     requirement: RequirementInput
     sources: list[SourceSnapshot]

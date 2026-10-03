@@ -376,7 +376,7 @@ background generation. API and Worker must use the same settings and model route
   with queued Jobs, one reservation per operation and no provider calls on replay.
   It also checks cross-tenant, revoked-member, unavailable/stale-source rejection
   without Jobs/reservations in both enabled and disabled modes. Final `get()` access
-  rechecks remain mandatory; query counts alone do not prove online latency.
+  rechecks remain mandatory for complete-content responses; query counts alone do not prove online latency.
   Single-row and equivalent batch admission have a 19-SELECT integration budget.
   The commercial ledger checks an operation once after acquiring the tenant lock;
   every reservation writer takes that lock, so waiting for the entitlement lock
@@ -388,6 +388,47 @@ background generation. API and Worker must use the same settings and model route
   that row or recompute expiry. Boundary tests cover yesterday's still-active work,
   today's failures, expired queue entries, concurrent last-slot admission, and
   rollback of Job/attempt/reservation when the TTL cannot cover execution.
+- **Optional receipt:** both generate POSTs accept `response=receipt`; omitted or
+  `full` retains the complete PacketView/BatchGenerateResult contract. A receipt
+  contains only `packetId`, `admissions` (rowId/disposition/attemptId), and `rejected`.
+  `enqueued` is emitted only after the existing Job/event/attempt/reservation
+  transaction commits. `replayed` identifies the original key's attempt without
+  claiming its current state; `already_drafted` has null attemptId and starts no work.
+  Any new admission returns 202; only replays/existing drafts/rejections return 200.
+  Disabled background mode rejects after an authorized read and never runs a model.
+  Every row retains transaction authorization and source checks. A missing row is a
+  batch rejection only after an error-path packet access check distinguishes it from
+  an inaccessible packet. Shared access/source errors stop the batch; earlier commits
+  remain recoverable. Clients must GET the sheet for content and current state, with
+  the original final authorization/source checks. No migration or quota change.
+  `test_presales_admission_receipt_integration.py` verifies 13 SELECTs versus the full
+  contract's 19, a body under 300 bytes for one row, durable independent-connection
+  visibility, same-key replay, partial rejection, rollback and later source revocation.
+  Capacity plans opt in with `admission_response=receipt`; legacy plans default to
+  full. New admission requires 202/enqueued and a matching attempt on the subsequent
+  GET. Its duration is separate from `first_read_duration_ms` and total terminal
+  duration; a failed read retains the already-observed admission timing and failure.
+  These checks do not turn previous replay diagnostics into new-task latency evidence.
+  Validation/error matrix (single-row / batch receipt):
+
+  | Input or state | Single row | Batch |
+  | --- | --- | --- |
+  | New committed attempt | 202 / enqueued | 202 if any row enqueued |
+  | Existing operation key | 200 / replayed, same attemptId | Same per-row disposition |
+  | Existing draft, different key | 200 / already_drafted, null attemptId | Same per-row disposition |
+  | Revoked member / inaccessible packet | 403 / 404 | Whole request 403 / 404 |
+  | Source unavailable / stale | 404 / 409 | Whole request 404 / 409 |
+  | Background disabled | 409 after access validation | Same |
+  | Missing row in accessible packet | 404 | Per-row rejection, continue |
+  | Reservation too short | 503, transaction rolled back | Per-row rejection, no admission |
+  | Unknown response option | 422, no generation | Same |
+
+  Good: accept a durable receipt, then GET and verify the actual attempt. Base:
+  omit the option and retain the original full-content behavior. Bad: treat a
+  replay receipt as a completed draft, return before commit, or count a rejected
+  row as accepted. The main pitfall is accidentally keeping the full `get()` on
+  the receipt path, or removing it from legacy/content reads. Public integration
+  assertions and separate read timing protect both contracts.
 - **Execution:** the existing Worker/publisher process runs one asynchronous
   presales poller. Long inference does not occupy the solo document consumer. Job
   leases, heartbeats, fencing and terminal projection are reused. Shutdown cancels

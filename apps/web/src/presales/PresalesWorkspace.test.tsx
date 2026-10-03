@@ -53,6 +53,10 @@ function json(value: unknown, status = 200) {
   return new Response(JSON.stringify(value), { status, headers: { "Content-Type": "application/json" } });
 }
 
+function receipt(value: Packet, rejected: { rowId: string; code: string }[] = []) {
+  return { packetId: value.id, admissions: value.rows.filter(row => !rejected.some(item => item.rowId === row.id)).map(row => ({ rowId: row.id, disposition: "enqueued", attemptId: row.attempts[0]?.id ?? crypto.randomUUID() })), rejected };
+}
+
 function requestPath(input: RequestInfo | URL): string {
   return typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
 }
@@ -95,6 +99,86 @@ beforeEach(() => { sessionStorage.clear(); localStorage.clear(); });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 describe("PresalesWorkspace HTTP boundary", () => {
+  it.each([403, 503])("keeps content hidden after a receipt followed by HTTP %i, with read-only recovery", async status => {
+    sessionStorage.setItem(storageKey, packetId);
+    const current = makePacket(); current.generationMode = "background";
+    let posted = false;
+    let recovered = false;
+    const fetch = vi.spyOn(globalThis, "fetch").mockImplementation((input, init) => {
+      if (init?.method === "POST") { posted = true; return Promise.resolve(json(receipt(current), 202)); }
+      if (requestPath(input) === "/api/presales/" + packetId) {
+        if (posted && !recovered) return Promise.resolve(json({ error: { code: status === 403 ? "presales_forbidden" : "temporarily_unavailable", message: "Result read unavailable", requestId: "receipt-read" } }, status));
+        return Promise.resolve(json(recovered ? makePacket(true) : current));
+      }
+      return Promise.resolve(json([]));
+    });
+    mount();
+    fireEvent.click(await screen.findByRole("button", { name: "Generate response" }));
+    await screen.findByRole("alert");
+    expect(screen.queryByRole("article")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "New response sheet" })).toBeEnabled();
+    recovered = true;
+    fireEvent.click(screen.getByRole("button", { name: "Retry reading" }));
+    await screen.findByText("The source states 30 days.", { selector: "p" });
+    expect(fetch.mock.calls.filter(([, init]) => init?.method === "POST")).toHaveLength(1);
+  });
+
+  it("discards a pre-admission read that returns late instead of restoring a stale pending row", async () => {
+    sessionStorage.setItem(storageKey, packetId);
+    const current = makePacket(); current.generationMode = "background";
+    let reads = 0;
+    let posted = false;
+    let finishOld!: (response: Response) => void;
+    let oldSignal: AbortSignal | null | undefined;
+    const fetch = vi.spyOn(globalThis, "fetch").mockImplementation((input, init) => {
+      if (init?.method === "POST") { posted = true; return Promise.resolve(json(receipt(current), 202)); }
+      if (requestPath(input) === "/api/presales/" + packetId) {
+        reads += 1;
+        if (reads === 2) { oldSignal = init?.signal; return new Promise<Response>(resolve => { finishOld = resolve; }); }
+        return Promise.resolve(json(posted ? makePacket(true) : current));
+      }
+      return Promise.resolve(json([]));
+    });
+    mount();
+    await screen.findByRole("article");
+    fireEvent.click(screen.getAllByRole("button", { name: "Refresh" })[1]);
+    await waitFor(() => expect(finishOld).toBeDefined());
+    fireEvent.click(screen.getByRole("button", { name: "Generate response" }));
+    await screen.findByText("The source states 30 days.", { selector: "p" });
+    expect(oldSignal?.aborted).toBe(true);
+    await act(() => Promise.resolve(finishOld(json(current))));
+    expect(screen.getByText("The source states 30 days.", { selector: "p" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Generate response" })).not.toBeInTheDocument();
+    expect(fetch.mock.calls.filter(([, init]) => init?.method === "POST")).toHaveLength(1);
+  });
+
+  it("releases navigation on a durable receipt while a fresh authorized read is still pending", async () => {
+    sessionStorage.setItem(storageKey, packetId);
+    const current = makePacket(); current.generationMode = "background";
+    let posted = false;
+    let finishRead!: (response: Response) => void;
+    const fetch = vi.spyOn(globalThis, "fetch").mockImplementation((input, init) => {
+      if (init?.method === "POST") {
+        posted = true;
+        return Promise.resolve(json({ packetId, admissions: [{ rowId, disposition: "enqueued", attemptId: crypto.randomUUID() }], rejected: [] }, 202));
+      }
+      if (requestPath(input) === "/api/presales/" + packetId) {
+        return posted ? new Promise<Response>(resolve => { finishRead = resolve; }) : Promise.resolve(json(current));
+      }
+      return Promise.resolve(json([]));
+    });
+    mount();
+    fireEvent.click(await screen.findByRole("button", { name: "Generate response" }));
+    await waitFor(() => expect(finishRead).toBeDefined());
+    await waitFor(() => expect(screen.getByRole("button", { name: "New response sheet" })).toBeEnabled());
+    expect(screen.queryByRole("article")).not.toBeInTheDocument();
+    expect(screen.getByText(/Submission confirmed. Reading the latest/)).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    act(() => { finishRead(json(makePacket(true))); });
+    await screen.findByText("The source states 30 days.", { selector: "p" });
+    expect(fetch.mock.calls.filter(([, init]) => init?.method === "POST").map(([input]) => requestPath(input))).toEqual([`/api/presales/${packetId}/rows/${rowId}/generate?response=receipt`]);
+  });
+
   it("automatically recovers an initial temporary read failure without generating", async () => {
     sessionStorage.setItem(storageKey, packetId);
     let reads = 0;
@@ -122,7 +206,7 @@ describe("PresalesWorkspace HTTP boundary", () => {
     expect(screen.getByText(/Submitting generation/)).toBeInTheDocument();
     expect(screen.queryByText(/Accepted. Generation/)).not.toBeInTheDocument();
     current.rows[0].state = "recovering";
-    act(() => { finish(json(current, 202)); });
+    act(() => { finish(json(receipt(current), 202)); });
     await screen.findByText(/Recovery is in progress/);
     expect(screen.getByRole("button", { name: "Generate response" })).toBeDisabled();
     expect(fetch.mock.calls.filter(([, init]) => init?.method === "POST")).toHaveLength(1);
@@ -165,7 +249,7 @@ describe("PresalesWorkspace HTTP boundary", () => {
     let connected = true;
     const fetch = vi.spyOn(globalThis, "fetch").mockImplementation((input, init) => {
       const path = requestPath(input);
-      if (path.endsWith("/generate")) { posted = true; connected = false; return Promise.reject(new TypeError("Admission response lost")); }
+      if (path.split("?")[0].endsWith("/generate")) { posted = true; connected = false; return Promise.reject(new TypeError("Admission response lost")); }
       if (path === "/api/presales/" + packetId) {
         if (!connected) return Promise.reject(new TypeError("Recovery read lost"));
         return Promise.resolve(json(posted ? { ...pending, rows: pending.rows.map(row => ({ ...row, state: "drafted", draft: makePacket(true).rows[0].draft, attempts: [attempt("succeeded")], revision: 1 })) } : pending));
@@ -252,7 +336,7 @@ describe("PresalesWorkspace HTTP boundary", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Generate pending responses" }));
     await waitFor(() => expect(screen.getAllByText("The source states 30 days.", { selector: "p" })).toHaveLength(2));
     await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
-    expect(requests).toEqual([`/api/presales/${packetId}/generate`]);
+    expect(requests).toEqual([`/api/presales/${packetId}/generate?response=receipt`]);
   });
 
   it("accepts background work, releases navigation, and restores queued state on remount", async () => {
@@ -264,7 +348,7 @@ describe("PresalesWorkspace HTTP boundary", () => {
       requests.push(path);
       current.rows[0].state = "queued";
       current.rows[0].attempts = [{ ...attempt("failed"), state: "queued", errorCode: null, providerRequestCount: 0, finishedAt: null }];
-      return json(current, 202);
+      return json(receipt(current), 202);
     });
     const first = mount();
     fireEvent.click(await screen.findByRole("button", { name: "Generate response" }));
@@ -287,11 +371,11 @@ describe("PresalesWorkspace HTTP boundary", () => {
     const requests: string[] = [];
     mockApi(() => current, (path, init) => {
       requests.push(path);
-      expect(path).toBe(`/api/presales/${packetId}/generate`);
+      expect(path).toBe(`/api/presales/${packetId}/generate?response=receipt`);
       if (typeof init.body !== "string") throw new Error("Expected a JSON batch body.");
       expect(JSON.parse(init.body)).toEqual({ rowIds: current.rows.map(r => r.id) });
       current.rows[0].state = "queued";
-      return json({ packet: current, rejected: [{ rowId: current.rows[1].id, code: "presales_usage_limit" }] }, 202);
+      return json(receipt(current, [{ rowId: current.rows[1].id, code: "presales_usage_limit" }]), 202);
     });
     mount();
     fireEvent.click(await screen.findByRole("button", { name: "Generate pending responses" }));

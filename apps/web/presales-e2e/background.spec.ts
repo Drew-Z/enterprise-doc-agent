@@ -12,7 +12,7 @@ test("background: offline completion, read recovery, lost admission, review and 
     localStorage.setItem("enterprise-doc-agent.locale", "zh");
   }, context.token);
   const posted: string[] = [];
-  page.on("request", req => { if (req.method() === "POST" && req.url().endsWith("/generate")) posted.push(req.url()); });
+  page.on("request", req => { if (req.method() === "POST" && new URL(req.url()).pathname.endsWith("/generate")) posted.push(req.url()); });
   await page.goto("/#/presales");
   await page.getByLabel("响应表名称").fill("后台生成故障恢复验收");
   await page.getByRole("checkbox", { name: /contract-/ }).check();
@@ -25,7 +25,29 @@ test("background: offline completion, read recovery, lost admission, review and 
   ]);
   expect(created.status()).toBe(201);
   const sheet = await created.json() as { id: string };
-  await page.getByRole("button", { name: "生成待处理要求" }).click();
+  const sheetRoute = "**/api/presales/" + sheet.id;
+  let releaseRead!: () => void;
+  const pendingRead = new Promise<void>(resolve => { releaseRead = resolve; });
+  await page.route(sheetRoute, async route => { await pendingRead; await route.continue(); });
+  const [admission] = await Promise.all([
+    page.waitForResponse(response => new URL(response.url()).pathname === `/api/presales/${sheet.id}/generate` && response.request().method() === "POST"),
+    page.getByRole("button", { name: "生成待处理要求" }).click(),
+  ]);
+  expect(admission.status()).toBe(202);
+  expect(new URL(admission.url()).searchParams.get("response")).toBe("receipt");
+  const receipt = await admission.json() as { packetId: string; admissions: { disposition: string; attemptId: string }[]; rejected: unknown[] };
+  expect(Object.keys(receipt).sort()).toEqual(["admissions", "packetId", "rejected"]);
+  expect(receipt.packetId).toBe(sheet.id);
+  expect(receipt.admissions).toHaveLength(3);
+  expect(receipt.admissions.every(item => item.disposition === "enqueued" && Boolean(item.attemptId))).toBeTruthy();
+  expect(receipt.rejected).toEqual([]);
+  await expect(page.getByText(/提交已确认，正在读取最新状态/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "新建响应表", exact: true })).toBeEnabled();
+  await expect(page.getByRole("article")).toHaveCount(0);
+  await page.screenshot({ path: info.outputPath("admission-awaiting-read.png"), fullPage: true });
+  releaseRead();
+  await expect(page.getByRole("article", { name: "R2", exact: true }).locator(".presales-state")).toHaveText("排队中");
+  await page.unroute(sheetRoute);
   await expect(page.getByText(/已受理。任务将在后台继续/)).toBeVisible();
   await expect(page.getByRole("button", { name: "新建响应表", exact: true })).toBeEnabled();
   await expect(page.getByRole("article", { name: "R2", exact: true }).locator(".presales-state")).toHaveText("排队中");
@@ -54,7 +76,6 @@ test("background: offline completion, read recovery, lost admission, review and 
 
   // A failed GET hides the cached sheet, but can recover it without a new sheet
   // or generation request. Exercise the recovery controls at mobile width too.
-  const sheetRoute = "**/api/presales/" + sheet.id;
   await page.route(sheetRoute, route => route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ error: { code: "temporarily_unavailable", message: "Temporary read failure", requestId: "browser-read-retry" } }) }));
   await page.locator(".presales-packet-heading").getByRole("button", { name: "刷新", exact: true }).click();
   await expect(page.getByRole("article")).toHaveCount(0);
@@ -69,7 +90,7 @@ test("background: offline completion, read recovery, lost admission, review and 
   expect(posted).toHaveLength(1);
 
   expect((await request.post(api + "/__presales_test__/repair", { headers })).ok()).toBeTruthy();
-  const retryRoute = sheetRoute + "/rows/*/generate";
+  const retryRoute = sheetRoute + "/rows/*/generate?response=receipt";
   let lostAdmissions = 0;
   await page.route(retryRoute, async route => {
     const response = await route.fetch();

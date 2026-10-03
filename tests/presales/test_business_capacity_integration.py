@@ -35,8 +35,9 @@ pytestmark = pytest.mark.integration
 
 
 @pytest.mark.parametrize("execution", ["asgi", "tcp-cli"])
+@pytest.mark.parametrize("admission_response", ["full", "receipt"])
 async def test_business_matrix_uploads_three_formats_and_verifies_recovery_ledgers(
-    browser_db, tmp_path, monkeypatch, execution
+    browser_db, tmp_path, monkeypatch, execution, admission_response
 ):
     from scripts.business_capacity import load_business_plan, run_business_matrix
     from scripts.business_capacity_observer import CoreBusinessObserver
@@ -170,6 +171,7 @@ async def test_business_matrix_uploads_three_formats_and_verifies_recovery_ledge
             )
         plan = {
             "schema_version": 1,
+            "admission_response": admission_response,
             "base_url": "http://127.0.0.1:18766",
             "object_origins": [harness.settings.object_store.presign_endpoint.rstrip("/")],
             "repetitions": 2,
@@ -295,6 +297,14 @@ async def test_business_matrix_uploads_three_formats_and_verifies_recovery_ledge
         assert report["summary"]["boundaries"]["retrieval"]["passed"] == 10
         assert len(requests) == 16
         for sample in report["samples"]:
+            timing = sample["boundaries"]["generation_recovery"]
+            assert timing["admission_response"] == admission_response
+            if admission_response == "receipt":
+                assert timing["first_read_duration_ms"] >= 0
+                assert (
+                    timing["accept_duration_ms"] + timing["first_read_duration_ms"]
+                    <= timing["terminal_duration_ms"]
+                )
             assert sample["generation"]["ledger"]["attempts"] == 1
             assert sample["ingestion"]["document_quantity"] == sample["ingestion"]["size_bytes"]
             assert sample["ingestion"]["document_consumptions"] == 1
