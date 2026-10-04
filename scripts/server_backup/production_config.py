@@ -60,8 +60,12 @@ def validate_config(config, *, expected_root=ROOT, expected_namespace=NAMESPACE)
         "release",
         "extra_artifact_ids",
     }
-    if not isinstance(config, dict) or set(config) != required:
+    optional = {"publication_multipart_enabled"}
+    if not isinstance(config, dict) or not required <= set(config) <= required | optional:
         raise ConfigurationError("production configuration fields differ")
+    multipart = config.get("publication_multipart_enabled", False)
+    if type(multipart) is not bool:
+        raise ConfigurationError("invalid publication transport option")
     if (
         type(config["schema_version"]) is not int
         or config["schema_version"] != 1
@@ -93,6 +97,7 @@ def validate_config(config, *, expected_root=ROOT, expected_namespace=NAMESPACE)
         "target",
         "--file",
         str(root / "target.json"),
+        *(["--multipart"] if multipart else []),
     ]:
         raise ConfigurationError("production credential command differs")
     if (

@@ -107,7 +107,9 @@ def budget_admission(*, objects, expected, max_bytes):
     }
 
 
-def publish_budgeted_snapshot(*, client, bucket, prefix, max_bytes=DEFAULT_MAX_BYTES, **kwargs):
+def publish_budgeted_snapshot(
+    *, client, bucket, prefix, max_bytes=DEFAULT_MAX_BYTES, multipart_journal=None, **kwargs
+):
     record = snapshot_record(bucket=bucket, prefix=prefix, **kwargs)
     expected = {
         record["ciphertext_key"]: record["ciphertext_bytes"],
@@ -115,7 +117,14 @@ def publish_budgeted_snapshot(*, client, bucket, prefix, max_bytes=DEFAULT_MAX_B
     }
     objects = inventory(client=client, bucket=bucket, prefix=prefix)
     budget_admission(objects=objects, expected=expected, max_bytes=max_bytes)
-    return publish_snapshot(client=client, bucket=bucket, prefix=prefix, **kwargs)
+    return publish_snapshot(
+        client=client,
+        bucket=bucket,
+        prefix=prefix,
+        max_bytes=max_bytes,
+        multipart_journal=multipart_journal,
+        **kwargs,
+    )
 
 
 def _utc(value):

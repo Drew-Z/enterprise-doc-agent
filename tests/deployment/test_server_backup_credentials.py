@@ -18,6 +18,48 @@ PARENT = {
 }
 
 
+def test_multipart_adapter_is_explicit_and_never_delegates_object_deletion(monkeypatch):
+    from scripts.server_backup.target_credentials import validate_session
+
+    monkeypatch.setattr(host_environment, "protected_json", lambda _: dict(PARENT))
+    value = host_environment.target_environment(
+        production_config.ROOT + "/target.json", multipart=True
+    )
+    assert validate_session(value, multipart=True) == value
+    with pytest.raises(production_config.ConfigurationError):
+        validate_session(value)
+    ordinary = host_environment.target_environment(production_config.ROOT + "/target.json")
+    with pytest.raises(production_config.ConfigurationError):
+        validate_session(ordinary, multipart=True)
+    claims = jwt.decode(
+        base64.b64decode(value["session_token"])[4:],
+        PARENT["secret"],
+        algorithms=["HS256"],
+        audience=urlsplit(PARENT["endpoint"]).hostname,
+    )
+    assert set(claims["actions"]) == {
+        "ListObjectsV2",
+        "HeadObject",
+        "GetObject",
+        "PutObject",
+        "CreateMultipartUpload",
+        "UploadPart",
+        "CompleteMultipartUpload",
+        "AbortMultipartUpload",
+        "ListMultipartUploads",
+        "ListParts",
+    }
+    assert claims["paths"] == {"prefixPaths": [production_config.PREFIX], "objectPaths": []}
+
+
+@pytest.mark.parametrize("value", [1, "true", None])
+def test_transport_mode_requires_boolean(value):
+    from scripts.server_backup.target_credentials import publication_credentials
+
+    with pytest.raises(production_config.ConfigurationError):
+        publication_credentials(PARENT, multipart=value)
+
+
 def test_adapter_emits_verifiable_scoped_session_without_parent_secret(monkeypatch):
     monkeypatch.setattr(host_environment, "protected_json", lambda _: dict(PARENT))
     result = host_environment.target_environment(production_config.ROOT + "/target.json")

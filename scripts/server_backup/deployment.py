@@ -20,6 +20,7 @@ MODULES = (
     "backup_daemon.py",
     "server_capture.py",
     "server_publication.py",
+    "multipart_publication.py",
     "remote_retention.py",
     "restore_catalog.py",
     "recovery_bundle.py",
@@ -53,6 +54,7 @@ def prepare_package(
     target_bucket,
     release,
     extra_artifact_ids=(),
+    publication_multipart_enabled=False,
 ):
     source, age = Path(source), Path(age)
     if source.is_symlink() or age.is_symlink():
@@ -100,6 +102,11 @@ def prepare_package(
     for key in ("state_directory", "age_path"):
         config[key] = config[key].replace("\\", "/")
     config["target_environment_command"][-1] = ROOT + "/target.json"
+    if type(publication_multipart_enabled) is not bool:
+        raise DeploymentError("invalid publication transport option")
+    if publication_multipart_enabled:
+        config["publication_multipart_enabled"] = True
+        config["target_environment_command"].append("--multipart")
     validate_config(config)
     return {"package_id": package_id, "inventory": inventory, "files": files, "config": config}
 

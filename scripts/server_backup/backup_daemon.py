@@ -200,9 +200,12 @@ class BackupService:
         )
 
     def publish(self, **kwargs):
+        multipart = self.config.get("publication_multipart_enabled", False)
+        if type(multipart) is not bool:
+            raise ValueError("invalid publication transport option")
         target = environment(self.config["target_environment_command"])
         if self.config.get("config_profile") == "production":
-            validate_session(target)
+            validate_session(target, multipart=multipart)
         if (
             target["endpoint"] != self.config["target_endpoint"]
             or target["bucket"] != self.config["target_bucket"]
@@ -222,6 +225,7 @@ class BackupService:
                 bucket=target["bucket"],
                 prefix=self.config["target_prefix"],
                 max_bytes=self.config.get("remote_max_bytes", DEFAULT_MAX_BYTES),
+                multipart_journal=self.root / "runtime.sqlite" if multipart else None,
                 **kwargs,
             )
         finally:

@@ -112,7 +112,17 @@ def marker_bytes(record):
     return (json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n").encode()
 
 
-def publish_snapshot(*, client, bucket, prefix, snapshot_id, ciphertext, captured_at):
+def publish_snapshot(
+    *,
+    client,
+    bucket,
+    prefix,
+    snapshot_id,
+    ciphertext,
+    captured_at,
+    multipart_journal=None,
+    max_bytes=3 * 1024**3,
+):
     record = snapshot_record(
         bucket=bucket,
         prefix=prefix,
@@ -123,7 +133,19 @@ def publish_snapshot(*, client, bucket, prefix, snapshot_id, ciphertext, capture
     key = record["ciphertext_key"]
     marker = marker_bytes(record)
     try:
-        _put_immutable(client, bucket, key, ciphertext, "application/octet-stream")
+        if multipart_journal is None:
+            _put_immutable(client, bucket, key, ciphertext, "application/octet-stream")
+        else:
+            from .multipart_publication import upload_ciphertext
+
+            upload_ciphertext(
+                client=client,
+                bucket=bucket,
+                record=record,
+                ciphertext=ciphertext,
+                journal_path=multipart_journal,
+                max_bytes=max_bytes,
+            )
         _put_immutable(
             client, bucket, prefix + snapshot_id + ".complete.json", marker, "application/json"
         )

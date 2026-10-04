@@ -378,3 +378,41 @@ verify provenance and enforce the real R2 boundary before production activation.
   its current tick finish before disabling. Refuse staging with sealed/capturing
   work. The ordinary 30-second systemd stop budget can interrupt a long PUT;
   never erase pending work to satisfy an upgrade precondition.
+
+## Opt-in durable multipart publication
+
+- `publication_multipart_enabled` is an optional strict boolean, absent means
+  false. Production validation requires the matching `--multipart` credential
+  adapter argument. The configuration hash includes the option: changing the
+  mode requires an explicit stopped-runtime migration, not silently rebinding
+  the journal. The first-install package includes `multipart_publication.py`.
+- `publication_credentials(..., multipart=True)` and
+  `validate_session(..., multipart=True)` add only CreateMultipartUpload,
+  UploadPart, CompleteMultipartUpload, AbortMultipartUpload, ListMultipartUploads
+  and ListParts to the four original actions. Neither mode permits DeleteObject.
+  A session for the wrong mode fails before constructing an S3 client.
+- `publish_budgeted_snapshot(..., multipart_journal=runtime.sqlite)` requires the
+  caller's existing runtime lock. The journal binds the original sealed attempt,
+  source timestamp, ciphertext size/SHA, bucket, endpoint and part size. Upload
+  8 MiB parts with at most four workers, verify each MD5/ETag and finally read
+  back the complete ciphertext before publishing the unchanged completion marker.
+- Persist creation intent before requesting an upload ID. An uncertain create
+  may adopt only one matching listing entry; an absent entry remains unresolved
+  and must not create another upload. A durably recorded ID can use ListParts
+  directly when an S3-compatible listing omits it. Missing/changed parts fail
+  closed; a successful completion with a lost response is resolved by full
+  readback of the same object. Never recapture to replace a sealed attempt.
+- Completion always sends signed `If-None-Match: *`, including with older SDK
+  models through a scoped signing callback that is unregistered on failure.
+  Existing different bytes are never replaced. Byte admission reserves the
+  entire pending ciphertext and marker, plus a full 64 MiB for each visible
+  unknown incomplete upload. Truncated/ambiguous inventories are rejected.
+- The local MinIO integration exercises normal completion and lost part/complete
+  responses using actual SDK calls and SQLite reopen. MinIO can omit uploads
+  from its listing; an unknown create ID remains safely unresolved. This is an
+  availability limitation, not successful automatic recovery.
+- Before activation, preserve the complete runtime SQLite database (including
+  `multipart_transfers`) and sealed spool. Do not roll back to a package that
+  cannot interpret pending multipart transfers. Reconcile the original transfer
+  first; never delete the journal or reset attempt/source timestamps. Production
+  throughput, continuous freshness and restore evidence remain separate gates.

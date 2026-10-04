@@ -57,7 +57,7 @@ def source_environment(namespace):
     }
 
 
-def target_environment(path):
+def target_environment(path, *, multipart=False):
     if str(path) != ROOT + "/target.json":
         raise ConfigurationError("unapproved target credential file")
     value = protected_json(path)
@@ -69,7 +69,7 @@ def target_environment(path):
         for key in ("access", "secret")
     ):
         raise ConfigurationError("target credential bounds differ")
-    return publication_credentials(value)
+    return publication_credentials(value, multipart=multipart)
 
 
 def main():
@@ -77,12 +77,13 @@ def main():
     parser.add_argument("kind", choices=("source", "target"))
     parser.add_argument("--namespace")
     parser.add_argument("--file")
+    parser.add_argument("--multipart", action="store_true")
     args = parser.parse_args()
     try:
-        if args.kind == "source" and args.namespace and not args.file:
+        if args.kind == "source" and args.namespace and not args.file and not args.multipart:
             value = source_environment(args.namespace)
         elif args.kind == "target" and args.file and not args.namespace:
-            value = target_environment(args.file)
+            value = target_environment(args.file, multipart=args.multipart)
         else:
             raise ConfigurationError("invalid credential command")
     except Exception:

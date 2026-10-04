@@ -16,6 +16,15 @@ from .production_config import PREFIX, ConfigurationError, validate_target
 
 TTL_SECONDS = 900
 ACTIONS = ("ListObjectsV2", "HeadObject", "GetObject", "PutObject")
+MULTIPART_ACTIONS = (
+    *ACTIONS,
+    "CreateMultipartUpload",
+    "UploadPart",
+    "CompleteMultipartUpload",
+    "AbortMultipartUpload",
+    "ListMultipartUploads",
+    "ListParts",
+)
 PARENT_FIELDS = {"endpoint", "bucket", "access", "secret", "region"}
 
 
@@ -42,9 +51,10 @@ def _part(value):
     return base64.urlsafe_b64encode(raw).rstrip(b"=")
 
 
-def publication_credentials(parent, *, now=None):
+def publication_credentials(parent, *, now=None, multipart=False):
     """Re-sign per publication, including same-ciphertext retries after restart."""
     _require(isinstance(parent, dict) and set(parent) == PARENT_FIELDS)
+    _require(type(multipart) is bool)
     _base(parent)
     stamp = _clock(now)
     authority = urlsplit(parent["endpoint"]).hostname
@@ -55,7 +65,7 @@ def publication_credentials(parent, *, now=None):
         "bucket": parent["bucket"],
         # R2 rejects simultaneous scope + actions; the explicit list alone
         # delegates the required operations without a broader preset.
-        "actions": list(ACTIONS),
+        "actions": list(MULTIPART_ACTIONS if multipart else ACTIONS),
         "paths": {"prefixPaths": [PREFIX], "objectPaths": []},
         "iat": stamp,
         "exp": stamp + TTL_SECONDS,
@@ -75,8 +85,9 @@ def publication_credentials(parent, *, now=None):
     }
 
 
-def validate_session(value, *, now=None):
+def validate_session(value, *, now=None, multipart=False):
     """Reject missing/expired/overbroad sessions before S3; R2 authenticates them."""
+    _require(type(multipart) is bool)
     _require(
         isinstance(value, dict) and set(value) == PARENT_FIELDS | {"session_token", "expires_at"}
     )
@@ -111,7 +122,7 @@ def validate_session(value, *, now=None):
         )
         _require(claims["bucket"] == value["bucket"])
         _require(
-            claims["actions"] == list(ACTIONS)
+            claims["actions"] == list(MULTIPART_ACTIONS if multipart else ACTIONS)
             and claims["paths"] == {"prefixPaths": [PREFIX], "objectPaths": []}
         )
         _require(type(claims["iat"]) is int and type(claims["exp"]) is int)

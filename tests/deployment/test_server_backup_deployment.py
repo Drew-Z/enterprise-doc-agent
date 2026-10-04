@@ -51,6 +51,22 @@ def test_production_configuration_rejects_scope_drift(package, field, value):
         production_config.validate_config(config)
 
 
+def test_multipart_config_requires_matching_credential_command(package):
+    config = copy.deepcopy(package["config"])
+    assert "publication_multipart_enabled" not in config
+    production_config.validate_config(config)
+    config["publication_multipart_enabled"] = True
+    with pytest.raises(production_config.ConfigurationError):
+        production_config.validate_config(config)
+    config["target_environment_command"].append("--multipart")
+    production_config.validate_config(config)
+    assert "server_backup/multipart_publication.py" in package["files"]
+    for invalid in (False, 1, "true", None):
+        config["publication_multipart_enabled"] = invalid
+        with pytest.raises(production_config.ConfigurationError):
+            production_config.validate_config(config)
+
+
 @pytest.mark.parametrize(
     "endpoint",
     [
