@@ -87,6 +87,7 @@ APPROVAL_KEYS = {
         "model-name",
         "model-fallback-name",
         "model-fallback-base-url",
+        "model-fallback-timeout-seconds",
     )
 } | {PREFIX + "prerequisites-sha256"}
 
@@ -217,6 +218,11 @@ class ReleasePlan(Plan):
                 PREFIX + "approved-model-fallback-name"
             ):
                 raise GuardError("fallback model approval does not match")
+            timeout_approval = PREFIX + "approved-model-fallback-timeout-seconds"
+            if timeout_approval in approved_values and approved_values[
+                timeout_approval
+            ] != config.get("MODEL__FALLBACK_TIMEOUT_SECONDS"):
+                raise GuardError("fallback timeout approval does not match")
             if self.fallback_secret is not None:
                 # This extension replaces an existing route; enabling/removing a
                 # route with no rollback credential remains outside this scope.

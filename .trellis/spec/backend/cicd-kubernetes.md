@@ -608,6 +608,14 @@ must match the exact fallback base URL/name, `openai_compatible` provider and
 removing a route without an original recovery credential is rejected. Fallback model version
 changes remain outside this extension.
 
+An existing `approved-model-fallback-timeout-seconds` annotation may change with
+`MODEL__FALLBACK_TIMEOUT_SECONDS`. The annotation must exactly match its own original
+or candidate configuration; both states are checked before writes. Preserve the
+existing numeric bounds and complete approval-key inventory. Do not hand-edit the
+renderer output to keep the old approval while changing the runtime timeout.
+`test_release_fallback_timeout_approval.py` covers paired apply/restore, mismatched
+or missing approval, and rejection of unrelated fallback-version approval changes.
+
 The paused release writes both declared keys atomically through a Secret `/data` JSON patch
 with UID/resourceVersion tests and a fresh release fence. Unrelated data is read-verified by
 its digest and preserved exactly. Recovery accepts only each key's declared original/candidate
