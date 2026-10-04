@@ -568,6 +568,9 @@ and `STAGING_PRESALES_CONCURRENT_ATTEMPT_LIMIT` Environment variables, without m
 
 Plan schema 2 fixes 0031, Namespace UID, four original/candidate Deployment specs,
 original/candidate prerequisites, completed Job identities and one primary Secret key pair.
+An optional `fallback_secret={old_key,new_key}` declares exactly one existing fallback
+credential pair, both nonempty base64 strings. With this declaration, `secret.other_data_sha256`
+excludes both declared keys; otherwise the fallback key remains protected by that digest.
 Other credential values are represented only by a SHA-256. Executor source hashes and the
 plan hash must match before CLI use. By default only image and config-hash template changes
 are allowed. Optional `api_database_pool_size` must be a non-boolean integer 1–4 and must
@@ -588,8 +591,8 @@ configuration, primary key and templates before opening Web last. Remove only ow
 annotations and revalidate normal prerequisites. All database probes are read-only and bounded.
 
 `MODEL__FALLBACK_MODEL_NAME` may change only within the reviewed configuration bundle;
-the new value must be a nonempty string without leading/trailing whitespace. The endpoint,
-credential and timeout are not added to this scope. Both original and candidate configuration
+the new value must be a nonempty string without leading/trailing whitespace. Endpoint or
+credential changes require the explicit fallback binding described below. Both configurations
 require the matching `approved-model-fallback-name` Namespace value; mismatches are rejected.
 A catalog entry or one synthetic reply
 does not prove business failover; validate the deployed process and preserve old failures.
@@ -597,11 +600,27 @@ For a same-image configuration switch, keep an already-approved rollback image l
 when it is byte-for-byte unchanged and contains the running image. This does not allow
 adding an unreviewed image or changing the approved set during an image replacement.
 
+Changing `MODEL__FALLBACK_BASE_URL` requires the optional fallback credential binding.
+Both original and candidate must have an existing nonempty fallback name and HTTPS base URL,
+without userinfo, whitespace, query, fragment or invalid/zero port. Their Namespace approvals
+must match the exact fallback base URL/name, `openai_compatible` provider and
+`MODEL__FALLBACK_API_KEY` Secret key name. This scope replaces an existing route; adding or
+removing a route without an original recovery credential is rejected. Fallback model version
+changes remain outside this extension.
+
+The paused release writes both declared keys atomically through a Secret `/data` JSON patch
+with UID/resourceVersion tests and a fresh release fence. Unrelated data is read-verified by
+its digest and preserved exactly. Recovery accepts only each key's declared original/candidate
+values, restores the complete original bundle, then verifies both keys before clearing fences.
+Do not log the private plan or patch stdin. A client timeout does not prove a patch failed.
+
 ### 4. Validation & Error Matrix
 
 - Non-0031 plan, image/config/approval/supplier-key mismatch -> refuse before apply.
 - Invalid fallback name or unrelated configuration change -> refuse; a valid same-image
   name switch must still support full original-configuration restoration.
+- Endpoint change without credential declaration, malformed key pair, insecure URL, mismatched
+  fallback approvals, missing old route or undeclared Secret value -> refuse before writes.
 - Missing or invalid pool declaration, target mismatch, duplicate entries or unrelated
   workload change -> refuse before apply; the shared ConfigMap pool budget stays unchanged.
 - Active jobs/attempts/runs/reservations or unexpired uploads -> refuse; consumed reservations
@@ -627,6 +646,9 @@ Kubernetes subprocess boundary; they are not an actual Kubernetes release/rollba
 Renderer tests cover runtime concurrency, timeout, invalid values and CLI/workflow propagation.
 Pool tests exercise API-only apply and full restoration for inherited and explicit original
 settings, declaration bounds/types, environment identity and rejected unrelated changes.
+`test_release_fallback_credentials.py` exercises full apply/restore, recovery after a partial
+bundle write, unchanged legacy fingerprint behavior, URL/key/approval rejection and credential
+drift before any mutation. These subprocess-boundary tests do not prove an actual deployment.
 
 ### 7. Wrong vs Correct
 

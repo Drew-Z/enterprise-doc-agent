@@ -1,6 +1,6 @@
 """Bounded 0031 release switching; no migrations, business smoke, or supplier calls.
 
-Private plans contain the two primary API key values needed for rollback. Keep
+Private plans contain the primary and any explicitly declared fallback API keys. Keep
 them out of Git/logs, and explicitly approve any temporary remote runtime copy.
 """
 
@@ -23,6 +23,7 @@ from contextlib import contextmanager
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 from scripts.maintenance_guard import GuardError, Target, Tick, host_clock
 from scripts.maintenance_guard_cluster import (
@@ -42,6 +43,7 @@ from scripts.maintenance_guard_cluster import (
 PREFIX = "enterprise-doc-agent/"
 FENCE = PREFIX + "release-fence"
 SECRET_KEY = "MODEL__API_KEY"
+FALLBACK_SECRET_KEY = "MODEL__FALLBACK_API_KEY"
 EXECUTOR_FILES = (
     "release_switch.py",
     "maintenance_guard.py",
@@ -56,6 +58,7 @@ CONFIG_KEYS = {
     "MODEL__MODEL_NAME",
     "MODEL__MODEL_VERSION",
     "MODEL__FALLBACK_MODEL_NAME",
+    "MODEL__FALLBACK_BASE_URL",
     "MODEL__REASONING_EFFORT",
     "MODEL__FALLBACK_REASONING_EFFORT",
     "MODEL__STREAMING",
@@ -83,6 +86,7 @@ APPROVAL_KEYS = {
         "model-base-url",
         "model-name",
         "model-fallback-name",
+        "model-fallback-base-url",
     )
 } | {PREFIX + "prerequisites-sha256"}
 
@@ -134,6 +138,19 @@ class ReleasePlan(Plan):
         self.desired: list[dict[str, Any]] = self.data["candidate_deployments"]
         self.jobs = self.data["jobs"]
         self.secret: dict[str, str] = self.data["secret"]
+        self.fallback_secret: dict[str, str] | None = self.data.get("fallback_secret")
+        if "fallback_secret" in self.data:
+            if not isinstance(self.fallback_secret, dict) or set(self.fallback_secret) != {
+                "old_key",
+                "new_key",
+            }:
+                raise GuardError("invalid fallback-key recovery binding")
+            for value in self.fallback_secret.values():
+                try:
+                    if not isinstance(value, str) or not base64.b64decode(value, validate=True):
+                        raise ValueError
+                except ValueError:
+                    raise GuardError("invalid fallback-key encoding") from None
         self.old_namespace = selected(self.original, "Namespace", NAMESPACE)
         self.new_namespace = selected(self.candidate, "Namespace", NAMESPACE)
         self.old_config = selected(self.original, "ConfigMap", "enterprise-doc-config")
@@ -146,6 +163,8 @@ class ReleasePlan(Plan):
         changed = {k for k in old.keys() | new.keys() if old.get(k) != new.get(k)}
         if changed - CONFIG_KEYS or any(not isinstance(v, str) for v in new.values()):
             raise GuardError("configuration exceeds the reviewed release scope")
+        if "MODEL__FALLBACK_BASE_URL" in changed and self.fallback_secret is None:
+            raise GuardError("fallback endpoint change requires explicit credential binding")
         for key in ("MODEL__REASONING_EFFORT", "MODEL__FALLBACK_REASONING_EFFORT"):
             if key in new and new[key] not in {"low", "medium", "high", "xhigh"}:
                 raise GuardError("invalid model reasoning effort")
@@ -198,6 +217,35 @@ class ReleasePlan(Plan):
                 PREFIX + "approved-model-fallback-name"
             ):
                 raise GuardError("fallback model approval does not match")
+            if self.fallback_secret is not None:
+                # This extension replaces an existing route; enabling/removing a
+                # route with no rollback credential remains outside this scope.
+                endpoint = config.get("MODEL__FALLBACK_BASE_URL", "")
+                try:
+                    parsed = urlsplit(endpoint)
+                    if (
+                        not endpoint
+                        or any(char.isspace() for char in endpoint)
+                        or parsed.scheme != "https"
+                        or not parsed.hostname
+                        or parsed.username is not None
+                        or parsed.password is not None
+                        or parsed.query
+                        or parsed.fragment
+                        or parsed.port == 0
+                    ):
+                        raise ValueError
+                except ValueError:
+                    raise GuardError("invalid fallback endpoint") from None
+                if (
+                    not config.get("MODEL__FALLBACK_MODEL_NAME", "").strip()
+                    or approved_values.get(PREFIX + "approved-model-fallback-base-url") != endpoint
+                    or approved_values.get(PREFIX + "approved-model-fallback-provider")
+                    != "openai_compatible"
+                    or approved_values.get(PREFIX + "approved-model-fallback-secret-key")
+                    != FALLBACK_SECRET_KEY
+                ):
+                    raise GuardError("fallback route approval does not match credential binding")
         if (
             new.get("PRESALES__AUTOMATIC_FAILOVER_ENABLED") == "true"
             and new.get("PRESALES__BACKGROUND_GENERATION_ENABLED") != "true"
@@ -336,6 +384,10 @@ class ReleaseCluster(Cluster):
         self._check_fence(item)
         data = dict(item["data"])
         key = data.pop(SECRET_KEY, None)
+        if self.plan.fallback_secret is not None:
+            fallback = data.pop(FALLBACK_SECRET_KEY, None)
+            if fallback not in self.plan.fallback_secret.values():
+                raise GuardError("fallback credential changed outside release binding")
         if (
             item["metadata"].get("uid") != self.plan.secret["uid"]
             or key not in (self.plan.secret["old_key"], self.plan.secret["new_key"])
@@ -429,11 +481,16 @@ class ReleaseCluster(Cluster):
             value = expected["data"] if kind == "ConfigMap" else approval_annotations(expected)
             self._patch(item, kind.lower(), field, value, deadline)
         secret = self._secret(deadline)
+        credentials = dict(secret["data"])
+        key_phase = "new_key" if candidate else "old_key"
+        credentials[SECRET_KEY] = self.plan.secret[key_phase]
+        if self.plan.fallback_secret is not None:
+            credentials[FALLBACK_SECRET_KEY] = self.plan.fallback_secret[key_phase]
         self._patch(
             secret,
             "secret",
-            "/data/" + SECRET_KEY,
-            self.plan.secret["new_key" if candidate else "old_key"],
+            "/data",
+            credentials,
             deadline,
         )
         for expected in deployments:
@@ -512,6 +569,11 @@ class ReleaseCluster(Cluster):
             != self.plan.secret["new_key" if candidate else "old_key"]
         ):
             raise GuardError("release primary-key verification failed")
+        if self.plan.fallback_secret is not None and (
+            self._secret(deadline)["data"][FALLBACK_SECRET_KEY]
+            != self.plan.fallback_secret["new_key" if candidate else "old_key"]
+        ):
+            raise GuardError("release fallback-key verification failed")
 
     def check_original(self, deadline: float) -> None:
         self.verify(False, deadline)
