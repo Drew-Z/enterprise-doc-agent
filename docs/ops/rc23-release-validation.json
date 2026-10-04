@@ -1,0 +1,52 @@
+{
+  "release": "v0.1.45-rc.23",
+  "source_commit": "fdc008ccad639b63c8106272a9df73fd5874703c",
+  "status": "deployed_verified_business_acceptance_pending",
+  "release_run": 37220427240,
+  "verified_evidence_files": 56,
+  "verified_artifact_archives": 5,
+  "schema": "20260924_0031",
+  "rollback": "v0.1.45-rc.22",
+  "switch_seconds": 92.846,
+  "ready_services": 5,
+  "public_home_status": 200,
+  "public_readiness_status": 200,
+  "shared_config_changed": false,
+  "credentials_changed": false,
+  "backup_state": "inactive_disabled",
+  "remote_temporary_files_removed": 11,
+  "images": {
+    "api": "ghcr.io/drew-z/enterprise-doc-api@sha256:bd3c032bee0ef01bab60e2cc4832f02cba786fab652f8fc946b79cd9b0ad3d0d",
+    "consumer": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:ac97a1bec5e67ac3658cd28b35a9280cbece9cae22dde96cb9b0f28d4d7fefd2",
+    "web": "ghcr.io/drew-z/enterprise-doc-web@sha256:724c7ab42c3c9e7fc6a6a340c485c05385584054d41408d481562642d876a577",
+    "worker": "ghcr.io/drew-z/enterprise-doc-worker@sha256:aabad31bc8e3bb78c806bf0baf3695285ba2fd9644037d5e0d4a00625d72dea7"
+  },
+  "scope": "Agent and Presales explicit transient upstream error classification; no timeout or model changes",
+  "latest_business_batch": {
+    "release": "v0.1.45-rc.22",
+    "run_id": "fcfdebec-ee25-4c85-9f10-02f6d2a7938c",
+    "producer": "production API pod over public HTTPS; not browser network or two capacity rounds",
+    "tasks": 4,
+    "business_successes": 1,
+    "failed_generations": 3,
+    "model_calls": 7,
+    "failed_model_calls": 6,
+    "known_model_tokens": 4735,
+    "failed_call_usage": "unknown",
+    "currency_cost": null,
+    "allowance_consumptions": 1,
+    "allowance_releases": 3
+  },
+  "rc23_new_business_requests": 0,
+  "remaining": [
+    "real supplier reliability and semantic quality",
+    "public performance and two capacity rounds",
+    "independent business and release review",
+    "currency reconciliation",
+    "on-call acknowledgment"
+  ],
+  "deferred": [
+    "continuous backup",
+    "further restoration qualification"
+  ]
+}
