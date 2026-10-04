@@ -22,3 +22,9 @@ Tests in `test_public_staging_business_capacity.py` exercise the real HTTP clien
 with a controlled transport: approved URL selection, old-entrypoint rejection,
 unauthenticated object requests, no redirected request, and rejection of absolute
 cross-origin/userinfo requests before the transport is called.
+
+## Proven Examples
+
+- `scripts/staging_business_capacity.py`: explicit public-origin plan type.
+- `scripts/business_capacity.py`: authenticated API and unauthenticated object clients.
+- `tests/deployment/test_public_staging_business_capacity.py`: origin and redirect checks.
