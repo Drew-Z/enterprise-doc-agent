@@ -5,7 +5,7 @@
 - API, Worker, consumer and Web have separate non-root Dockerfiles.
 - The pinned Python Bookworm runtime still carries `libpcre2-8-0=10.42-1`.
   API, Worker and consumer explicitly install only the security update
-  `10.42-1+deb12u1` in their runtime stages, then remove apt lists. Keep Python,
+  `10.42-1+deb12u2` in their runtime stages (fixing CVE-2026-103111), then remove apt lists. Keep Python,
   application locks and the release scan/signature gates unchanged; replacing a base
   tag alone is insufficient unless its actual installed package version is verified.
 - Kubernetes base defines migration, startup/readiness/liveness probes, resource bounds,
