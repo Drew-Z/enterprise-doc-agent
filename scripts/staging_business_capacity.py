@@ -24,3 +24,29 @@ class StagingBusinessPlan(BusinessPlan):
         ):
             raise ValueError("staging_object_origin_rejected")
         return f"https://{parsed.netloc}"
+
+
+class PublicStagingBusinessPlan(StagingBusinessPlan):
+    """Explicit public-path runner; the execution envelope must bind this approved origin."""
+
+    approved_api_origin: str
+
+    def api_origin(self, value: str) -> str:
+        def canonical(origin: str) -> str:
+            parsed = urlsplit(origin)
+            if (
+                any(char.isspace() for char in origin)
+                or parsed.scheme != "https"
+                or not parsed.hostname
+                or parsed.netloc != parsed.hostname
+                or parsed.path not in {"", "/"}
+                or parsed.query
+                or parsed.fragment
+            ):
+                raise ValueError("public_staging_api_origin_rejected")
+            return f"https://{parsed.hostname}"
+
+        selected = canonical(value)
+        if selected != canonical(self.approved_api_origin):
+            raise ValueError("public_staging_api_origin_mismatch")
+        return selected

@@ -139,9 +139,12 @@ class BusinessPlan(PlanModel):
     def object_origin(self, value: str) -> str:
         return loopback_origin(value)
 
+    def api_origin(self, value: str) -> str:
+        return loopback_origin(value)
+
     @model_validator(mode="after")
     def check_plan(self) -> Self:
-        loopback_origin(self.base_url)
+        self.api_origin(self.base_url)
         for origin in self.object_origins:
             self.object_origin(origin)
         if tuple(phase.name for phase in self.phases) != PHASES:
@@ -211,7 +214,7 @@ class BusinessIO:
 
     def client(self, *, objects: bool = False) -> httpx.AsyncClient:
         return httpx.AsyncClient(
-            base_url="" if objects else loopback_origin(self.plan.base_url),
+            base_url="" if objects else self.plan.api_origin(self.plan.base_url),
             transport=self.object_transport if objects else self.api_transport,
             headers={} if objects else {"Authorization": f"Bearer {self.token}"},
             timeout=self.plan.request_timeout_seconds,
@@ -230,6 +233,15 @@ class BusinessIO:
         headers: dict[str, str] | None = None,
         accepted: tuple[int, ...] = (200,),
     ) -> httpx.Response:
+        if "authorization" in client.headers:
+            target = client.base_url.join(path)
+            expected = httpx.URL(self.plan.api_origin(self.plan.base_url))
+            if target.userinfo or (target.scheme, target.host, target.port) != (
+                expected.scheme,
+                expected.host,
+                expected.port,
+            ):
+                raise BusinessFailure("api_origin_mismatch")
         if self.requests >= self.plan.max_http_requests:
             self.exhausted = True
             raise BusinessFailure("http_budget_exhausted")
