@@ -375,3 +375,41 @@ async def test_stream_without_usage_keeps_unknown_accounting():
             result = await reader.read(response)
     assert "usage" not in result.json()
     assert "usage" not in reader.accounting_response.json()
+
+
+@pytest.mark.parametrize("streaming", [False, True])
+@pytest.mark.parametrize(
+    "error,retryable",
+    [
+        ({"type": "server_error"}, True),
+        ({"code": "rate_limit_exceeded"}, True),
+        ({"code": "invalid_api_key"}, False),
+        ({"message": "private upstream_error"}, False),
+        ("upstream_error", False),
+    ],
+)
+async def test_presales_upstream_error_policy_is_transport_independent(streaming, error, retryable):
+    requests = []
+
+    def respond(request):
+        requests.append(request)
+        payload = {"id": "response-1", "usage": {"total_tokens": 42}, "error": error}
+        headers = {"x-oneapi-request-id": "request-1"}
+        if streaming:
+            headers["content-type"] = "text/event-stream"
+            return httpx.Response(
+                200, content=b"data: " + json.dumps(payload).encode() + b"\n\n", headers=headers
+            )
+        return httpx.Response(200, json=payload, headers=headers)
+
+    with pytest.raises(PresalesError) as caught:
+        await OpenAICompatiblePresalesGateway(
+            settings(streaming=streaming), transport=httpx.MockTransport(respond)
+        ).generate(presales_request())
+    assert caught.value.code == "presales_model_upstream_error"
+    assert caught.value.retryable is retryable
+    assert caught.value.provider_requests == len(requests) == 1
+    assert caught.value.usage["total_tokens"] == 42
+    assert caught.value.provider_response_id == "response-1"
+    assert caught.value.provider_request_id == "request-1"
+    assert "private" not in str(caught.value)

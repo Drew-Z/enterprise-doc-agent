@@ -10,7 +10,11 @@ from pydantic import ValidationError
 
 from enterprise_doc_core.billing.provider_metadata import provider_request_id, safe_provider_id
 from enterprise_doc_core.config import ModelProvider, ModelSettings
-from enterprise_doc_core.model_response import ModelResponseError, OpenAIResponseReader
+from enterprise_doc_core.model_response import (
+    ModelResponseError,
+    OpenAIResponseReader,
+    retryable_provider_error,
+)
 from enterprise_doc_core.presales.citation_selection import (
     SelectionDraft,
     prepare_citations,
@@ -273,6 +277,10 @@ class OpenAICompatiblePresalesGateway:
                 )
             raise
         except ModelResponseError as error:
+            if error.code == "model_stream_upstream_error":
+                raise stream_failure(
+                    "presales_model_upstream_error", retryable=error.retryable
+                ) from error
             raise stream_failure(
                 "presales_output_too_large"
                 if error.code == "model_response_too_large"
@@ -300,25 +308,10 @@ class OpenAICompatiblePresalesGateway:
                     usage[key] = value if type(value) is int and value >= 0 else None
             response_id = safe_provider_id(response.get("id"))
             if response.get("error") is not None:
-                envelope = response["error"]
-                retryable_codes = {
-                    "upstream_error",
-                    "server_error",
-                    "internal_error",
-                    "do_request_failed",
-                    "rate_limit_exceeded",
-                    "rate_limit_error",
-                    "overloaded_error",
-                    "timeout",
-                    "gateway_timeout",
-                    "service_unavailable",
-                }
-                retryable = isinstance(envelope, dict) and any(
-                    isinstance(envelope.get(key), str) and envelope[key] in retryable_codes
-                    for key in ("type", "code")
-                )
                 raise PresalesError(
-                    "presales_model_upstream_error", provider_requests=1, retryable=retryable
+                    "presales_model_upstream_error",
+                    provider_requests=1,
+                    retryable=retryable_provider_error(response["error"]),
                 )
             choices = response["choices"]
             if not isinstance(choices, list) or len(choices) != 1:

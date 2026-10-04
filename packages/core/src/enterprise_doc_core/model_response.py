@@ -9,9 +9,29 @@ from typing import Any
 import httpx
 
 
+def retryable_provider_error(envelope: Any) -> bool:
+    """Classify explicit provider codes, never free-form messages or raw payloads."""
+    codes = {
+        "upstream_error",
+        "server_error",
+        "internal_error",
+        "do_request_failed",
+        "rate_limit_exceeded",
+        "rate_limit_error",
+        "overloaded_error",
+        "timeout",
+        "gateway_timeout",
+        "service_unavailable",
+    }
+    return isinstance(envelope, dict) and any(
+        isinstance(envelope.get(key), str) and envelope[key] in codes for key in ("type", "code")
+    )
+
+
 class ModelResponseError(ValueError):
-    def __init__(self, code: str = "invalid_model_stream") -> None:
+    def __init__(self, code: str = "invalid_model_stream", *, retryable: bool = False) -> None:
         self.code = code
+        self.retryable = retryable
         super().__init__(code)
 
 
@@ -83,7 +103,10 @@ class OpenAIResponseReader:
             self._metadata["usage"] = counts
         self.accounting_response = self._response_for(self._metadata)
         if event.get("error") is not None:
-            raise ModelResponseError("model_stream_upstream_error")
+            raise ModelResponseError(
+                "model_stream_upstream_error",
+                retryable=retryable_provider_error(event["error"]),
+            )
         choices = event.get("choices", [])
         if not isinstance(choices, list) or len(choices) > 1:
             raise ModelResponseError()

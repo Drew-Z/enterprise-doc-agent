@@ -12,6 +12,10 @@ a particular proxy permits requests longer than its read timeout.
 ### 2. Signatures
 
 - `OpenAIResponseReader(*, streaming: bool, max_bytes: int)` is created per request.
+- `retryable_provider_error(envelope)` checks explicit `type`/`code` values only.
+  `ModelResponseError.retryable` carries that classification without retaining error text;
+  Presales maps an SSE upstream error to `presales_model_upstream_error`, preserving
+  already observed usage and request/response IDs. The gateway never dispatches a retry.
 - `await reader.read(response: httpx.Response) -> httpx.Response` reconstructs a
   complete JSON envelope; `accounting_response` retains only observed metadata.
 - `recorded_post(..., response_reader: OpenAIResponseReader | None = None)` records
@@ -40,7 +44,8 @@ a particular proxy permits requests longer than its read timeout.
 | Condition | Outcome |
 | --- | --- |
 | Complete stop and DONE | Original business validation before publication |
-| Truncation, malformed SSE, identity drift, tool delta, upstream SSE error | Contract rejection; no partial publication or implicit retry |
+| Truncation, malformed SSE, identity drift, tool delta | Contract rejection; no partial publication or implicit retry |
+| Explicit upstream SSE error | Presales uses the same code/type retry allowlist as JSON errors; only its existing coordinator may switch routes within the original budget. Unknown/permanent errors stay non-retryable; Agent policy remains unchanged. |
 | Excessive stream bytes | Response-too-large rejection |
 | HTTP/transport timeout or network error | Existing retryable route policy with observed usage retained |
 | External cancellation | Close stream, preserve bounded accounting, rethrow cancellation |
