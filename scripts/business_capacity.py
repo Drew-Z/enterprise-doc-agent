@@ -259,7 +259,14 @@ class BusinessIO:
                             raise BusinessFailure("response_too_large")
                         body.extend(chunk)
                     return httpx.Response(
-                        response.status_code, headers=response.headers, content=bytes(body)
+                        response.status_code,
+                        headers=[
+                            (key, value)
+                            for key, value in response.headers.multi_items()
+                            if key.lower()
+                            not in {"content-encoding", "content-length", "transfer-encoding"}
+                        ],
+                        content=bytes(body),
                     )
         except (httpx.TimeoutException, TimeoutError):
             raise BusinessFailure("request_timeout") from None

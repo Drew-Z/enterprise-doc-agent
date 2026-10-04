@@ -13,6 +13,13 @@ the separate object client has no application Authorization header. The existing
 R2 origin, request count, stage timeout, total deadline and failure accounting
 remain in force.
 
+When buffering `response.aiter_bytes()`, the body is already decompressed. Remove
+the original Content-Encoding, Content-Length and Transfer-Encoding headers from
+the reconstructed response; HTTPX supplies the decoded length. Otherwise a valid
+compressed public response is decoded twice and mislabeled as a transport error.
+Retain ETag and other application headers, and enforce the response cap on the
+decoded bytes.
+
 Record the actual producer location as well as the public URL. A request from a
 server Pod through the public edge is public-path evidence, not browser latency
 from an end user's network. A four-task diagnostic is not two complete capacity

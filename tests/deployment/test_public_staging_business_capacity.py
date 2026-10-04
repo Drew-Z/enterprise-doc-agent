@@ -1,3 +1,5 @@
+import gzip
+
 import httpx
 import pytest
 from pydantic import ValidationError
@@ -97,3 +99,30 @@ async def test_absolute_request_cannot_escape_authenticated_origin(path):
         with pytest.raises(BusinessFailure, match="api_origin_mismatch"):
             await io.request(client, "GET", path)
     assert calls == []
+
+
+@pytest.mark.asyncio
+async def test_compressed_public_response_is_decoded_exactly_once():
+    content = b'{"url":"https://objects.example.com/signed-resource"}'
+    encoded = gzip.compress(content)
+
+    def handler(request):
+        return httpx.Response(
+            200,
+            headers={
+                "content-encoding": "gzip",
+                "content-length": str(len(encoded)),
+                "etag": '"original-etag"',
+            },
+            stream=httpx.ByteStream(encoded),
+        )
+
+    plan = PublicStagingBusinessPlan.model_validate(public_payload())
+    io = BusinessIO(plan, "synthetic-token", api_transport=httpx.MockTransport(handler))
+    async with io.client() as client:
+        response = await io.request(client, "POST", "/api/upload-sessions/id/parts/1/presign")
+    assert response.content == content
+    assert response.json() == {"url": "https://objects.example.com/signed-resource"}
+    assert "content-encoding" not in response.headers
+    assert response.headers["content-length"] == str(len(content))
+    assert response.headers["etag"] == '"original-etag"'
