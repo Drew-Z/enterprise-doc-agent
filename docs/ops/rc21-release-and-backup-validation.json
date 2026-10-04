@@ -1,0 +1,134 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-04T10:39:00.377303+00:00",
+  "release": {
+    "at": "2026-10-04T09:56:08.389270+00:00",
+    "status": "passed",
+    "application": "v0.1.45-rc.21",
+    "database_revision": "20260924_0031",
+    "all_four_candidate_specs": "exact match",
+    "all_five_deployments_ready": true,
+    "secret_unchanged": true,
+    "temporary_fences_removed": true,
+    "running_configuration": {
+      "enterprise-doc-api": {
+        "API__QUEUE_OBSERVATION_ENABLED": "true",
+        "DATABASE__POOL_SIZE": "4",
+        "DATABASE__MAX_OVERFLOW": "0",
+        "MODEL__MODEL_NAME": "grok-4.7",
+        "MODEL__TIMEOUT_SECONDS": "120",
+        "MODEL__FALLBACK_MODEL_NAME": "gemini-3.7-flash",
+        "PRESALES__MODEL_ROUTE": "primary",
+        "PRESALES__BACKGROUND_GENERATION_ENABLED": "true",
+        "PRESALES__AUTOMATIC_FAILOVER_ENABLED": "true",
+        "PRESALES__CONCURRENT_ATTEMPT_LIMIT": "1"
+      },
+      "enterprise-doc-worker": {
+        "API__QUEUE_OBSERVATION_ENABLED": "true",
+        "DATABASE__POOL_SIZE": "1",
+        "DATABASE__MAX_OVERFLOW": "0",
+        "MODEL__MODEL_NAME": "grok-4.7",
+        "MODEL__TIMEOUT_SECONDS": "120",
+        "MODEL__FALLBACK_MODEL_NAME": "gemini-3.7-flash",
+        "PRESALES__MODEL_ROUTE": "primary",
+        "PRESALES__BACKGROUND_GENERATION_ENABLED": "true",
+        "PRESALES__AUTOMATIC_FAILOVER_ENABLED": "true",
+        "PRESALES__CONCURRENT_ATTEMPT_LIMIT": "1"
+      },
+      "enterprise-doc-consumer": {
+        "API__QUEUE_OBSERVATION_ENABLED": "true",
+        "DATABASE__POOL_SIZE": "1",
+        "DATABASE__MAX_OVERFLOW": "0",
+        "MODEL__MODEL_NAME": "grok-4.7",
+        "MODEL__TIMEOUT_SECONDS": "120",
+        "MODEL__FALLBACK_MODEL_NAME": "gemini-3.7-flash",
+        "PRESALES__MODEL_ROUTE": "primary",
+        "PRESALES__BACKGROUND_GENERATION_ENABLED": "true",
+        "PRESALES__AUTOMATIC_FAILOVER_ENABLED": "true",
+        "PRESALES__CONCURRENT_ATTEMPT_LIMIT": "1"
+      }
+    },
+    "database_idle": true,
+    "public_readiness": {
+      "schema_version": 1,
+      "scope": "single-external-readiness-probe",
+      "healthy": true,
+      "reason": "ready",
+      "http_status": 200,
+      "observed_at": "2026-10-04T09:56:06.210060+00:00",
+      "checked_at": "2026-10-04T09:56:06.990457+00:00",
+      "elapsed_ms": 2485.0,
+      "notifications_sent": 0,
+      "network_route": "configured-proxy"
+    },
+    "public_home_status": 200,
+    "arm_to_success_seconds": 88.542,
+    "supplier_requests_submitted_by_this_task": 0,
+    "business_submissions": 0,
+    "production_business_acceptance": false
+  },
+  "rollback": "v0.1.45-rc.20",
+  "source": "e0bdaecdd46159d5e673fa78de83cc72af8c61bc",
+  "quality_run": 37189626905,
+  "supply_chain_run": 37189626920,
+  "signed_release_run": 37190070629,
+  "shared_configuration_unchanged": true,
+  "streaming_enabled": false,
+  "new_fallback_deployed": false,
+  "backup_cleanup": {
+    "at": "2026-10-04T10:31:51.171551+00:00",
+    "status": "passed",
+    "deleted_snapshots": 39,
+    "deleted_objects": 78,
+    "deleted_bytes": 1111313965,
+    "all_deleted_keys_absent": true,
+    "retained_plan_objects_unchanged": 126,
+    "local_copies_reverified": 39,
+    "current_remote_bytes": 2168597174,
+    "max_remote_bytes": 3221225472,
+    "current_objects": 151,
+    "plan_sha256": "b4b7ad75f006783785ecdcd9056f6647ba62ba1a2f212ab1d5818014d248a32e",
+    "future_deletion_authorized": false,
+    "execution_log_sha256": "6b23c53bf57eff381fdcbccd5b004bc2c7824a29c179fd2924259cf393bb167a"
+  },
+  "backup_resume": {
+    "at": "2026-10-04T10:37:45.917413+00:00",
+    "status": "publication_resumed_continuous_freshness_not_met",
+    "new_successful_snapshots": 4,
+    "new_snapshot_ids": [
+      "snapshot-20261004-102645-e8b9406ffca9",
+      "snapshot-20261004-102917-533f59b1ba0e",
+      "snapshot-20261004-103224-9a04997d268d",
+      "snapshot-20261004-103421-d633fac3b572"
+    ],
+    "source_to_success_seconds": [
+      149.963801,
+      185.992142,
+      114.888056,
+      111.774181
+    ],
+    "source_age_immediately_before_next_publication_seconds": [
+      337.752192,
+      302.612194,
+      228.581224
+    ],
+    "continuous_300_seconds_proven": false,
+    "observed_gap_over_300_seconds": true,
+    "remote_deletions": 0,
+    "service_restarts": 0
+  },
+  "remaining_gates": [
+    "performance and two complete public capacity rounds",
+    "semantic business quality and supplier monetary reconciliation",
+    "independent business and release review",
+    "sustainable retention, continuous freshness and offline notification receipt",
+    "current and historical in-flight recovery plus on-call"
+  ],
+  "evidence_sha256": {
+    "fallback-model-evidence/rc21-runtime/release-closure.json": "dbbbf972899d05bcbd6ad91c2a7e36bb06c8491d6b620018edbbd013dca984df",
+    "fallback-model-evidence/rc21-runtime/github-environment-sync.json": "97b4cf414aad395947509065ba639d42185fc173a2a2dbd14c1ed8a64a90df09",
+    "retention-proof-evidence/cleanup-execution-v4.jsonl": "6b23c53bf57eff381fdcbccd5b004bc2c7824a29c179fd2924259cf393bb167a",
+    "retention-proof-evidence/cleanup-post-verification-20261004.json": "44d401485e1689f091d5e487c9389d712c11e7370c69edee08b672570907ead7",
+    "retention-proof-evidence/backup-resume-observation-20261004.json": "15f86549d2acb366740b94e831b87cab5891849a979ad89daf210c11afec9520"
+  }
+}
