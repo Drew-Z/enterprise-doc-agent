@@ -28,6 +28,7 @@ from enterprise_doc_core.agents.schemas import (
 )
 from enterprise_doc_core.billing.provider_calls import recorded_post
 from enterprise_doc_core.config import ModelProvider, ModelSettings
+from enterprise_doc_core.model_response import ModelResponseError, OpenAIResponseReader
 
 
 class ModelGatewayError(Exception):
@@ -779,6 +780,11 @@ class OpenAICompatibleChatGateway:
         }
         if self.settings.reasoning_effort is not None:
             body["reasoning_effort"] = self.settings.reasoning_effort
+        reader = None
+        if self.settings.streaming:
+            body["stream"] = True
+            body["stream_options"] = {"include_usage": True}
+            reader = OpenAIResponseReader(streaming=True, max_bytes=self.settings.max_output_bytes)
         try:
             response = await recorded_post(
                 self.client,
@@ -792,7 +798,12 @@ class OpenAICompatibleChatGateway:
                 },
                 json_body=body,
                 request_timeout=httpx.Timeout(self.settings.timeout_seconds),
+                response_reader=reader,
             )
+        except ModelResponseError as error:
+            if error.code == "model_response_too_large":
+                raise ModelResponseTooLarge() from error
+            raise ModelContractError() from error
         except httpx.TimeoutException as error:
             raise ModelTimeoutError() from error
         except httpx.RequestError as error:

@@ -282,6 +282,8 @@ jobs:
           AGENT_EXECUTION_TIMEOUT_SECONDS: ${{ vars.STAGING_AGENT_EXECUTION_TIMEOUT_SECONDS }}
           MODEL_REASONING_EFFORT: ${{ vars.STAGING_MODEL_REASONING_EFFORT }}
           MODEL_FALLBACK_REASONING_EFFORT: ${{ vars.STAGING_MODEL_FALLBACK_REASONING_EFFORT }}
+          MODEL_STREAMING: ${{ vars.STAGING_MODEL_STREAMING }}
+          MODEL_FALLBACK_STREAMING: ${{ vars.STAGING_MODEL_FALLBACK_STREAMING }}
           MODEL_FALLBACK_BASE_URL: ${{ vars.STAGING_MODEL_FALLBACK_BASE_URL }}
           MODEL_FALLBACK_NAME: ${{ vars.STAGING_MODEL_FALLBACK_NAME }}
           MODEL_FALLBACK_VERSION: ${{ vars.STAGING_MODEL_FALLBACK_VERSION }}
@@ -355,6 +357,8 @@ jobs:
             --agent-execution-timeout-seconds "$AGENT_EXECUTION_TIMEOUT_SECONDS" \
             --model-reasoning-effort "$MODEL_REASONING_EFFORT" \
             --fallback-model-reasoning-effort "$MODEL_FALLBACK_REASONING_EFFORT" \
+            --model-streaming "$MODEL_STREAMING" \
+            --fallback-model-streaming "$MODEL_FALLBACK_STREAMING" \
             "${browser_auth_args[@]}" \
             --presales-generation-enabled "$PRESALES_GENERATION_ENABLED" \
             --presales-model-route "$PRESALES_MODEL_ROUTE" \

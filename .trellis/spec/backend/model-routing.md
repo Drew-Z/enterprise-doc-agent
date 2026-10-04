@@ -1,5 +1,76 @@
 # Model And Embedding Routing
 
+## Optional Streamed Model Responses
+
+### 1. Scope / Trigger
+
+Agent and Presales may receive OpenAI-compatible SSE while preserving complete-result
+validation, durable dispatch accounting, cancellation and existing total deadlines.
+Streaming is transport support; it does not establish semantic quality or prove that
+a particular proxy permits requests longer than its read timeout.
+
+### 2. Signatures
+
+- `OpenAIResponseReader(*, streaming: bool, max_bytes: int)` is created per request.
+- `await reader.read(response: httpx.Response) -> httpx.Response` reconstructs a
+  complete JSON envelope; `accounting_response` retains only observed metadata.
+- `recorded_post(..., response_reader: OpenAIResponseReader | None = None)` records
+  the dispatch before entering HTTP and preserves observed accounting on failure.
+- Staging CLI accepts `--model-streaming` and `--fallback-model-streaming`.
+
+### 3. Contracts
+
+- `MODEL__STREAMING` and `MODEL__FALLBACK_STREAMING` default to false, independently.
+  Deployment inputs accept only omitted/empty/`true`/`false`; false removes stale keys.
+  Release fingerprints, guarded apply and rollback bind both keys. Workflow inputs
+  are `STAGING_MODEL_STREAMING` and `STAGING_MODEL_FALLBACK_STREAMING`.
+- Enabled requests send `stream: true` and `stream_options: {include_usage: true}`.
+  Choice zero must finish with `stop` followed by `[DONE]`. UTF-8 and CR/LF boundaries
+  may span transport chunks. Tool calls and changing response identities are rejected.
+- The byte limit counts the decoded HTTP stream, including SSE and reasoning fields;
+  heartbeat events never reset the enclosing route or persisted row deadline.
+- Only complete assembled content enters the existing schema/citation validation.
+  Unknown usage and monetary cost remain unknown. Accounting excludes answer/reasoning.
+- Background Presales cancellation persists observed usage and IDs under the lease,
+  retains the unresolved `running` call and rethrows cancellation. It does not confirm
+  cancellation at the provider. Outer row timeout retains usage and records timeout.
+
+### 4. Validation & Error Matrix
+
+| Condition | Outcome |
+| --- | --- |
+| Complete stop and DONE | Original business validation before publication |
+| Truncation, malformed SSE, identity drift, tool delta, upstream SSE error | Contract rejection; no partial publication or implicit retry |
+| Excessive stream bytes | Response-too-large rejection |
+| HTTP/transport timeout or network error | Existing retryable route policy with observed usage retained |
+| External cancellation | Close stream, preserve bounded accounting, rethrow cancellation |
+| No usage frame | Unknown usage, never inferred zero |
+
+### 5. Good/Base/Bad Cases
+
+- Good: primary non-streaming, fallback streaming, each with its own effort/timeout.
+- Base: omitted flags preserve existing non-streaming behavior.
+- Bad: accepting partial JSON after connection close or treating a heartbeat as a new budget.
+
+### 6. Tests Required
+
+- `test_model_stream_response.py`: chunk framing, byte bounds, malformed streams,
+  final business checks, independent fallback settings, closure, deadlines and usage.
+- `test_stream_provider_dispatch_integration.py`: one durable dispatch, budget denial
+  before the next HTTP call, known/unknown usage under truncation/cancellation/network loss.
+- `test_stream_background_integration.py`: cancellation/row timeout keep observed usage,
+  preserve recovery state and publish no draft.
+- `test_model_stream_configuration.py`: reject invalid configuration before writing,
+  apply/restore both flags and detect fingerprint drift.
+- `test_stream_presales_evaluation.py`: reconstructed envelope retains usage and supports
+  offline scoring. Evaluator buffering is not evidence of live time to first token.
+
+### 7. Wrong vs Correct
+
+Wrong: return the accumulated answer at EOF and record missing token counters as zero.
+Correct: require `stop` plus `[DONE]`, pass the envelope through the original validator,
+and preserve unavailable token counters as unknown even when a request was charged.
+
 ## Adopted Facts
 
 - Presales model calls allow up to 300 seconds and rows up to 900 seconds, with

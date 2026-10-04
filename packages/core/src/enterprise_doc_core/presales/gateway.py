@@ -3,13 +3,14 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
-from typing import Any, Protocol
+from typing import Any, Protocol, cast
 
 import httpx
 from pydantic import ValidationError
 
 from enterprise_doc_core.billing.provider_metadata import provider_request_id, safe_provider_id
 from enterprise_doc_core.config import ModelProvider, ModelSettings
+from enterprise_doc_core.model_response import ModelResponseError, OpenAIResponseReader
 from enterprise_doc_core.presales.citation_selection import (
     SelectionDraft,
     prepare_citations,
@@ -112,6 +113,7 @@ class OpenAICompatiblePresalesGateway:
                 model_name=settings.fallback_model_name,
                 model_version=settings.fallback_model_version,
                 reasoning_effort=settings.fallback_reasoning_effort,
+                streaming=settings.fallback_streaming,
                 timeout_seconds=settings.fallback_timeout_seconds or settings.timeout_seconds,
                 max_output_bytes=settings.max_output_bytes,
             )
@@ -174,7 +176,7 @@ class OpenAICompatiblePresalesGateway:
         if len(payload.model_dump_json(by_alias=True).encode()) > 128 * 1024:
             raise PresalesError("presales_input_too_large")
         selected_payload, catalog = prepare_citations(payload)
-        request = {
+        request: dict[str, Any] = {
             "model": self.settings.model_name,
             "messages": [
                 {
@@ -186,14 +188,34 @@ class OpenAICompatiblePresalesGateway:
             "response_format": {"type": "json_object"},
             "tools": [],
             "tool_choice": "none",
-            "stream": False,
+            "stream": self.settings.streaming,
             "max_tokens": 4000,
         }
         if self.settings.reasoning_effort is not None:
             request["reasoning_effort"] = self.settings.reasoning_effort
+        reader = None
+        if self.settings.streaming:
+            request["stream_options"] = {"include_usage": True}
+            reader = OpenAIResponseReader(streaming=True, max_bytes=self.settings.max_output_bytes)
         if len(json.dumps(request, ensure_ascii=False).encode()) > 128 * 1024:
             raise PresalesError("presales_input_too_large")
         request_id = None
+
+        def stream_failure(code: str, *, retryable: bool = False) -> PresalesError:
+            metadata = (
+                reader.accounting_response.json()
+                if reader and reader.accounting_response is not None
+                else {}
+            )
+            return PresalesError(
+                code,
+                provider_requests=1,
+                retryable=retryable,
+                usage=metadata.get("usage"),
+                provider_response_id=safe_provider_id(metadata.get("id")),
+                provider_request_id=request_id,
+            )
+
         try:
             async with asyncio.timeout(
                 self.settings.route_deadline_seconds or self.settings.timeout_seconds
@@ -230,32 +252,39 @@ class OpenAICompatiblePresalesGateway:
                                 ),
                             )
                         content = bytearray()
-                        async for piece in response.aiter_bytes():
-                            if len(content) + len(piece) > self.settings.max_output_bytes:
-                                raise PresalesError(
-                                    "presales_output_too_large", provider_requests=1
-                                )
-                            content.extend(piece)
+                        if reader is not None:
+                            content.extend((await reader.read(response)).content)
+                        else:
+                            async for piece in response.aiter_bytes():
+                                if len(content) + len(piece) > self.settings.max_output_bytes:
+                                    raise PresalesError(
+                                        "presales_output_too_large", provider_requests=1
+                                    )
+                                content.extend(piece)
             return self._decode(bytes(content), catalog).model_copy(
                 update={"provider_request_id": request_id}
             )
+        except asyncio.CancelledError as error:
+            if reader is not None and reader.accounting_response is not None:
+                # Keep cancellation identity so asyncio.timeout still converts its
+                # own cancellation; the durable caller may preserve observed usage.
+                cast(Any, error).presales_failure = stream_failure(
+                    "presales_generation_interrupted"
+                )
+            raise
+        except ModelResponseError as error:
+            raise stream_failure(
+                "presales_output_too_large"
+                if error.code == "model_response_too_large"
+                else "presales_invalid_model_output"
+            ) from error
         except PresalesError as error:
             error.provider_request_id = request_id
             raise
         except (httpx.TimeoutException, TimeoutError) as error:
-            raise PresalesError(
-                "presales_model_timeout",
-                provider_requests=1,
-                retryable=True,
-                provider_request_id=request_id,
-            ) from error
+            raise stream_failure("presales_model_timeout", retryable=True) from error
         except httpx.HTTPError as error:
-            raise PresalesError(
-                "presales_model_transport_error",
-                provider_requests=1,
-                retryable=True,
-                provider_request_id=request_id,
-            ) from error
+            raise stream_failure("presales_model_transport_error", retryable=True) from error
 
     @staticmethod
     def _decode(content: bytes, catalog: dict[str, CitationInput]) -> GeneratedDraft:

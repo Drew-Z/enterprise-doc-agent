@@ -493,6 +493,7 @@ def configure_manifest(
     model_name: str,
     model_timeout_seconds: str | None = None,
     model_reasoning_effort: str | None = None,
+    model_streaming: str | None = None,
     model_route_deadline_seconds: str | None = None,
     agent_execution_timeout_seconds: str | None = None,
     browser_auth_issuer: str | None = None,
@@ -504,6 +505,7 @@ def configure_manifest(
     fallback_model_version: str | None = None,
     fallback_model_timeout_seconds: str | None = None,
     fallback_model_reasoning_effort: str | None = None,
+    fallback_model_streaming: str | None = None,
     presales_generation_enabled: str = "false",
     presales_model_route: str = "primary",
     presales_model_timeout_seconds: str | None = None,
@@ -555,6 +557,9 @@ def configure_manifest(
     normalized_model_name = _model_name(model_name)
     normalized_reasoning = _model_reasoning_effort(model_reasoning_effort)
     normalized_fallback_reasoning = _model_reasoning_effort(fallback_model_reasoning_effort)
+    for value in (model_streaming, fallback_model_streaming):
+        if value not in (None, "", "true", "false"):
+            raise ValueError("model streaming must be true or false")
     normalized_primary_timeout = (
         _model_timeout_seconds(model_timeout_seconds) if model_timeout_seconds else None
     )
@@ -588,6 +593,8 @@ def configure_manifest(
         raise ValueError("fallback model version and timeout require a configured fallback route")
     if normalized_fallback_reasoning is not None and not fallback_base_url_value:
         raise ValueError("fallback reasoning effort requires a configured fallback route")
+    if fallback_model_streaming == "true" and not fallback_base_url_value:
+        raise ValueError("fallback streaming requires a configured fallback route")
     normalized_fallback_base_url = (
         _model_base_url(fallback_base_url_value) if fallback_base_url_value else None
     )
@@ -667,6 +674,9 @@ def configure_manifest(
     data["MODEL__BASE_URL"] = normalized_model_base_url
     data["MODEL__MODEL_NAME"] = normalized_model_name
     data.pop("MODEL__REASONING_EFFORT", None)
+    data.pop("MODEL__STREAMING", None)
+    if model_streaming == "true":
+        data["MODEL__STREAMING"] = "true"
     if normalized_reasoning is not None:
         data["MODEL__REASONING_EFFORT"] = normalized_reasoning
     if normalized_primary_timeout is not None:
@@ -685,6 +695,7 @@ def configure_manifest(
         "MODEL__FALLBACK_MODEL_VERSION",
         "MODEL__FALLBACK_TIMEOUT_SECONDS",
         "MODEL__FALLBACK_REASONING_EFFORT",
+        "MODEL__FALLBACK_STREAMING",
     ):
         data.pop(fallback_key, None)
     if normalized_fallback_base_url is not None and normalized_fallback_name is not None:
@@ -697,6 +708,8 @@ def configure_manifest(
             data["MODEL__FALLBACK_TIMEOUT_SECONDS"] = normalized_fallback_timeout
         if normalized_fallback_reasoning is not None:
             data["MODEL__FALLBACK_REASONING_EFFORT"] = normalized_fallback_reasoning
+        if fallback_model_streaming == "true":
+            data["MODEL__FALLBACK_STREAMING"] = "true"
     data.pop("PRESALES__MODEL_TIMEOUT_SECONDS", None)
     data.pop("PRESALES__FALLBACK_MODEL_TIMEOUT_SECONDS", None)
     data.pop("PRESALES__CONCURRENT_ATTEMPT_LIMIT", None)
@@ -956,6 +969,7 @@ def main() -> None:
     parser.add_argument("--model-name", required=True)
     parser.add_argument("--model-timeout-seconds")
     parser.add_argument("--model-reasoning-effort")
+    parser.add_argument("--model-streaming")
     parser.add_argument("--model-route-deadline-seconds")
     parser.add_argument("--agent-execution-timeout-seconds")
     parser.add_argument("--browser-auth-issuer")
@@ -967,6 +981,7 @@ def main() -> None:
     parser.add_argument("--fallback-model-version")
     parser.add_argument("--fallback-model-timeout-seconds")
     parser.add_argument("--fallback-model-reasoning-effort")
+    parser.add_argument("--fallback-model-streaming")
     parser.add_argument("--presales-generation-enabled", choices=("true", "false"), default="false")
     parser.add_argument(
         "--presales-model-route", choices=("primary", "fallback"), default="primary"
@@ -1009,6 +1024,7 @@ def main() -> None:
         model_name=args.model_name,
         model_timeout_seconds=args.model_timeout_seconds,
         model_reasoning_effort=args.model_reasoning_effort,
+        model_streaming=args.model_streaming,
         model_route_deadline_seconds=args.model_route_deadline_seconds,
         agent_execution_timeout_seconds=args.agent_execution_timeout_seconds,
         browser_auth_issuer=args.browser_auth_issuer,
@@ -1020,6 +1036,7 @@ def main() -> None:
         fallback_model_version=args.fallback_model_version,
         fallback_model_timeout_seconds=args.fallback_model_timeout_seconds,
         fallback_model_reasoning_effort=args.fallback_model_reasoning_effort,
+        fallback_model_streaming=args.fallback_model_streaming,
         presales_generation_enabled=args.presales_generation_enabled,
         presales_model_route=args.presales_model_route,
         presales_model_timeout_seconds=args.presales_model_timeout_seconds,

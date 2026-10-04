@@ -22,6 +22,7 @@ from pydantic import SecretStr
 
 from enterprise_doc_core.config import ModelProvider, ModelSettings
 from enterprise_doc_core.db import selector_event_loop_factory
+from enterprise_doc_core.model_response import ModelResponseError, OpenAIResponseReader
 from enterprise_doc_core.presales.errors import PresalesError
 from enterprise_doc_core.presales.gateway import OpenAICompatiblePresalesGateway
 from enterprise_doc_core.presales.schemas import GenerationInput, SourceSnapshot
@@ -43,6 +44,7 @@ def load_route_settings(provider_env: Path, model_route: ModelRoute) -> ModelSet
         "api_key": SecretStr(values[prefix + "API_KEY"] or ""),
         "model_name": values[prefix + "MODEL_NAME"],
         "reasoning_effort": values.get(prefix + "REASONING_EFFORT") or None,
+        "streaming": values.get(prefix + "STREAMING") or False,
         "timeout_seconds": 120,
     }
     if model_route == "fallback":
@@ -104,13 +106,30 @@ class RecordingTransport(httpx.AsyncBaseTransport):
             raise
         if response.status_code == 200:
             try:
-                raw = json.loads(body)
+                if json.loads(request.content).get("stream") is True:
+                    reader = OpenAIResponseReader(streaming=True, max_bytes=128 * 1024)
+                    decoded = await reader.read(
+                        httpx.Response(
+                            200,
+                            content=bytes(body),
+                            headers={"content-type": response.headers.get("content-type", "")},
+                            request=request,
+                        )
+                    )
+                    raw = decoded.json()
+                else:
+                    raw = json.loads(body)
                 record["response"] = {
                     k: raw[k] for k in ("id", "model", "choices", "usage") if k in raw
                 }
-            except (ValueError, TypeError):
+            except (ValueError, TypeError, ModelResponseError):
                 record["invalidJson"] = True
-        return httpx.Response(response.status_code, content=bytes(body), request=request)
+        return httpx.Response(
+            response.status_code,
+            content=bytes(body),
+            request=request,
+            headers={"content-type": response.headers.get("content-type", "")},
+        )
 
     async def aclose(self) -> None:
         await self.inner.aclose()
@@ -187,6 +206,9 @@ async def collect(
         "configuredReasoningEffort": settings.fallback_reasoning_effort
         if model_route == "fallback"
         else settings.reasoning_effort,
+        "configuredStreaming": settings.fallback_streaming
+        if model_route == "fallback"
+        else settings.streaming,
         "versions": {
             s.key: str(v.version_id) for s, v in zip(dataset.sources, snapshots, strict=True)
         },

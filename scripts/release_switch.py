@@ -58,6 +58,8 @@ CONFIG_KEYS = {
     "MODEL__FALLBACK_MODEL_NAME",
     "MODEL__REASONING_EFFORT",
     "MODEL__FALLBACK_REASONING_EFFORT",
+    "MODEL__STREAMING",
+    "MODEL__FALLBACK_STREAMING",
     "MODEL__TIMEOUT_SECONDS",
     "MODEL__FALLBACK_TIMEOUT_SECONDS",
     "MODEL__ROUTE_DEADLINE_SECONDS",
@@ -203,6 +205,8 @@ class ReleasePlan(Plan):
             raise GuardError("automatic failover requires background generation")
         for key in (
             "API__QUEUE_OBSERVATION_ENABLED",
+            "MODEL__STREAMING",
+            "MODEL__FALLBACK_STREAMING",
             "PRESALES__BACKGROUND_GENERATION_ENABLED",
             "PRESALES__AUTOMATIC_FAILOVER_ENABLED",
         ):

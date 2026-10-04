@@ -290,15 +290,28 @@ class BackgroundGeneration:
                                     generated.provider_response_id,
                                 )
                                 raise
-                        except TimeoutError:
+                        except TimeoutError as error:
+                            failure = getattr(error.__cause__, "presales_failure", None)
+                            if not isinstance(failure, PresalesError):
+                                failure = PresalesError(
+                                    "presales_model_timeout", provider_requests=1
+                                )
+                            failure.code, failure.retryable = "presales_model_timeout", True
                             await self._record_error(
                                 claim,
                                 call_id,
-                                PresalesError(
-                                    "presales_model_timeout", provider_requests=1, retryable=True
-                                ),
+                                failure,
                             )
                             continue
+                        except asyncio.CancelledError as error:
+                            failure = getattr(error, "presales_failure", None)
+                            if isinstance(failure, PresalesError):
+                                try:
+                                    async with asyncio.timeout(3):
+                                        await self._record_partial(claim, call_id, failure)
+                                except (Exception, asyncio.CancelledError):
+                                    pass  # Keep the unresolved dispatch if its lease is lost.
+                            raise
                         except PresalesError as error:
                             await self._record_error(claim, call_id, error)
                             if not error.retryable:
@@ -431,6 +444,17 @@ class BackgroundGeneration:
                         )
                         break
             return call.id, reserve_recovery
+
+    async def _record_partial(self, claim: ClaimedJob, call_id: UUID, error: PresalesError) -> None:
+        async with self.sessions.begin() as session:
+            await self._lease(session, claim)
+            operation = await self._operation(session, claim)
+            calls = await self._calls(session, operation)
+            call = next(c for c in calls if c.id == call_id)
+            # Cancellation does not confirm that the upstream operation stopped.
+            # Keep its dispatched state and the existing recovery/deadline policy.
+            call.usage, call.provider_response_id = error.usage, error.provider_response_id
+            call.provider_request_id = error.provider_request_id
 
     async def _record_error(self, claim: ClaimedJob, call_id: UUID, error: PresalesError) -> None:
         async with self.sessions.begin() as session:

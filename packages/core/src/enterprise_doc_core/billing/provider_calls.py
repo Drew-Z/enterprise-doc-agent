@@ -20,6 +20,7 @@ from enterprise_doc_core.billing.errors import UsageError
 from enterprise_doc_core.billing.provider_metadata import provider_request_id, safe_provider_id
 from enterprise_doc_core.billing.provider_models import ProviderDispatch
 from enterprise_doc_core.config import ProviderUsageSettings
+from enterprise_doc_core.model_response import OpenAIResponseReader
 
 Guard = Callable[[AsyncSession], Awaitable[None]]
 Kind = Literal["agent", "document", "query"]
@@ -183,17 +184,26 @@ async def recorded_post(
     headers: dict[str, str],
     request_timeout: httpx.Timeout,
     require_metering: bool = False,
+    response_reader: OpenAIResponseReader | None = None,
 ) -> httpx.Response:
+    async def send() -> httpx.Response:
+        if response_reader is None:
+            return await client.post(
+                endpoint, json=json_body, headers=headers, timeout=request_timeout
+            )
+        async with client.stream(
+            "POST", endpoint, json=json_body, headers=headers, timeout=request_timeout
+        ) as raw:
+            return await response_reader.read(raw)
+
     scope = _SCOPE.get()
     if scope is None:
         if require_metering:
             raise UsageError("provider_metering_context_missing")
-        return await client.post(endpoint, json=json_body, headers=headers, timeout=request_timeout)
+        return await send()
     receipt = await scope.service.begin(scope, provider=provider, model=model, endpoint=endpoint)
     try:
-        response = await client.post(
-            endpoint, json=json_body, headers=headers, timeout=request_timeout
-        )
+        response = await send()
     except BaseException as error:
         state = (
             "cancelled"
@@ -206,7 +216,12 @@ async def recorded_post(
         )
         try:
             async with asyncio.timeout(3):
-                await scope.service.finish(scope, receipt, state=state)
+                await scope.service.finish(
+                    scope,
+                    receipt,
+                    state=state,
+                    response=response_reader.accounting_response if response_reader else None,
+                )
         except (Exception, asyncio.CancelledError):
             # A committed 'dispatched' row is deliberately an unresolved cost,
             # not proof of success or a zero-cost request after a process crash.
