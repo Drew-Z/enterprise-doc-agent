@@ -43,6 +43,7 @@ from enterprise_doc_core.object_store.models import (
     IncompleteUpload,
     ObjectContent,
     ObjectHead,
+    PresignedObjectUpload,
     PresignedUploadPart,
     UploadedPart,
 )
@@ -245,6 +246,30 @@ class FaultInjectingMultipartObjectStore:
     ) -> str:
         await self._before("create_upload")
         return await self.inner.create_upload(bucket=bucket, key=key, metadata=metadata)
+
+    async def presign_object_put(
+        self,
+        *,
+        bucket: str,
+        key: str,
+        size_bytes: int,
+        metadata: Mapping[str, str],
+        expires_in_seconds: int,
+    ) -> PresignedObjectUpload:
+        await self._before("presign_object_put")
+        return await self.inner.presign_object_put(
+            bucket=bucket,
+            key=key,
+            size_bytes=size_bytes,
+            metadata=metadata,
+            expires_in_seconds=expires_in_seconds,
+        )
+
+    async def retire_upload_object(
+        self, *, bucket: str, key: str, metadata: Mapping[str, str]
+    ) -> bool:
+        await self._before("retire_upload_object")
+        return await self.inner.retire_upload_object(bucket=bucket, key=key, metadata=metadata)
 
     async def presign_upload_part(
         self,

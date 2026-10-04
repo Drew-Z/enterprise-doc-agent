@@ -145,6 +145,51 @@ class FakeMultipartStore:
         return b"abcdef"
 
 
+@pytest.mark.parametrize("operation", ["presign_object_put", "retire_upload_object"])
+async def test_direct_upload_operations_preserve_one_shot_fault_and_arguments(
+    operation: str,
+) -> None:
+    from enterprise_doc_core.object_store.errors import ObjectStoreUnavailable
+    from enterprise_doc_core.object_store.models import PresignedObjectUpload
+
+    calls = []
+    signed = PresignedObjectUpload("https://objects.test/signed", {"If-None-Match": "*"}, 60)
+
+    class Inner:
+        async def presign_object_put(self, **arguments: Any) -> PresignedObjectUpload:
+            calls.append(arguments)
+            return signed
+
+        async def retire_upload_object(self, **arguments: Any) -> bool:
+            calls.append(arguments)
+            return False
+
+    store = FaultInjectingMultipartObjectStore(
+        Inner(),
+        FaultController(
+            FaultInjectionSettings(
+                enabled=True,
+                target="multipart",
+                mode="object_store_unavailable",
+            )
+        ),
+    )
+    arguments: dict[str, Any] = {
+        "bucket": "documents",
+        "key": "owned",
+        "metadata": {"contract": "m1"},
+    }
+    if operation == "presign_object_put":
+        arguments.update(size_bytes=37, expires_in_seconds=60)
+    method = getattr(store, operation)
+    with pytest.raises(ObjectStoreUnavailable):
+        await method(**arguments)
+    assert calls == []
+    result = await method(**arguments)
+    assert result == (signed if operation == "presign_object_put" else False)
+    assert calls == [arguments]
+
+
 async def test_multipart_short_read_is_one_shot() -> None:
     store = FaultInjectingMultipartObjectStore(
         FakeMultipartStore(),  # type: ignore[arg-type]
