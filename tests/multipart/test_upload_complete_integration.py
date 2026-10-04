@@ -183,12 +183,14 @@ class CrashBeforeFinalizationService(UploadSessionService):
 
 
 class CommitAcknowledgementLostTransaction:
-    def __init__(self, inner: Any, *, fail_after_commit: bool) -> None:
+    def __init__(self, inner: Any, *, owner: CommitAcknowledgementLostSessionFactory) -> None:
         self.inner = inner
-        self.fail_after_commit = fail_after_commit
+        self.owner = owner
+        self.session: Any = None
 
     async def __aenter__(self) -> Any:
-        return await self.inner.__aenter__()
+        self.session = await self.inner.__aenter__()
+        return self.session
 
     async def __aexit__(
         self,
@@ -196,26 +198,32 @@ class CommitAcknowledgementLostTransaction:
         exc_value: BaseException | None,
         traceback: TracebackType | None,
     ) -> bool | None:
+        fail_after_commit = False
+        if exc_type is None:
+            connection = await self.session.connection()
+            readonly = connection.sync_connection.get_execution_options().get("postgresql_readonly")
+            if readonly is not True:
+                self.owner.write_commits += 1
+                fail_after_commit = self.owner.write_commits == self.owner.fail_on_write_commit
         result = await self.inner.__aexit__(exc_type, exc_value, traceback)
-        if self.fail_after_commit and exc_type is None:
+        if fail_after_commit:
             raise ConnectionError("finalization commit acknowledgement lost")
         return result
 
 
 class CommitAcknowledgementLostSessionFactory:
-    def __init__(self, inner: Any, *, fail_on_begin: int) -> None:
+    def __init__(self, inner: Any, *, fail_on_write_commit: int) -> None:
         self.inner = inner
-        self.fail_on_begin = fail_on_begin
-        self.begin_calls = 0
+        self.fail_on_write_commit = fail_on_write_commit
+        self.write_commits = 0
 
     def __call__(self) -> Any:
         return self.inner()
 
     def begin(self) -> CommitAcknowledgementLostTransaction:
-        self.begin_calls += 1
         return CommitAcknowledgementLostTransaction(
             self.inner.begin(),
-            fail_after_commit=self.begin_calls == self.fail_on_begin,
+            owner=self,
         )
 
 
@@ -1207,7 +1215,7 @@ async def test_completion_recovers_finalization_commit_acknowledgement_loss() ->
     store = CompletionObjectStore(seeded)
     faulting_factory = CommitAcknowledgementLostSessionFactory(
         session_factory,
-        fail_on_begin=2,
+        fail_on_write_commit=2,
     )
     service = UploadSessionService(
         session_factory=faulting_factory,
@@ -1306,7 +1314,7 @@ async def test_invalid_completion_deletes_owned_object_after_failure_commit_ack_
     store = CompletionObjectStore(seeded)
     faulting_factory = CommitAcknowledgementLostSessionFactory(
         session_factory,
-        fail_on_begin=2,
+        fail_on_write_commit=2,
     )
     service = UploadSessionService(
         session_factory=faulting_factory,
@@ -1324,7 +1332,7 @@ async def test_invalid_completion_deletes_owned_object_after_failure_commit_ack_
             )
 
         assert exc_info.value.code == "document_pdf_signature_invalid"
-        assert faulting_factory.begin_calls == 2
+        assert faulting_factory.write_commits == 2
         assert store.delete_calls == 1
         assert store.object_exists is False
         async with session_factory() as database:

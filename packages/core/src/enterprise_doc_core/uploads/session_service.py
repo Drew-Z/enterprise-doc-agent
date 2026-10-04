@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from enterprise_doc_core.config import ObjectStoreChecksumMode, UploadSettings
 from enterprise_doc_core.context import PrincipalContext
+from enterprise_doc_core.db import read_only_session
 from enterprise_doc_core.documents import (
     Document,
     DocumentEnvelopeViolation,
@@ -674,7 +675,7 @@ class UploadSessionService:
         | None
     ):
         session_factory = self._session_factory()
-        async with session_factory() as database:
+        async with read_only_session(session_factory) as database:
             upload_session = await database.scalar(
                 select(UploadSession).where(
                     UploadSession.id == session_id,
@@ -1008,7 +1009,7 @@ class UploadSessionService:
         CompleteUploadSessionResult | None,
     ]:
         session_factory = self._session_factory()
-        async with session_factory() as database:
+        async with read_only_session(session_factory) as database:
             upload_session = await database.scalar(
                 _owned_session_query(
                     session_id=session_id,
@@ -1219,7 +1220,7 @@ class UploadSessionService:
         replayed: bool,
     ) -> CompleteUploadSessionResult | None:
         session_factory = self._session_factory()
-        async with session_factory() as database:
+        async with read_only_session(session_factory) as database:
             upload_session = await database.scalar(
                 _owned_session_query(
                     session_id=session_id,

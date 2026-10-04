@@ -138,6 +138,21 @@ Wrong: treat the combined GET buffer as already verified because transport succe
 Correct: bind its metadata to the owned upload and verify all part/full hashes before
 format validation and finalization; the optimization removes a round trip, not a check.
 
+Completion-only reads (`_load_completion_state`, `_load_stale_completion_state`,
+and `_read_completed_result`) use `read_only_session`: PostgreSQL prevents writes,
+successful exit commits, and errors still roll back. This preserves psycopg's
+prepared-statement cache across repeated reads. Claim/finalization transactions
+keep their row locks and existing commit semantics. Do not mechanically convert
+every apparent read: upload `get()` allocates an observation sequence value and
+therefore cannot run in a PostgreSQL read-only transaction.
+
+The regression test inspects actual `pg_prepared_statements` after eight completed
+replays, checks identical receipts, one object completion and one quota conversion,
+and confirms the returned pool connection is writable. Commit-loss injection
+targets the numbered writable commit rather than counting intervening successful
+read transactions. Cache retention and short read latency do not prove the whole
+upload's public p95 or the two capacity rounds.
+
 #### Wrong
 
 ```python
