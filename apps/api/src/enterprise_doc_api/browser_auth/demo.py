@@ -95,6 +95,8 @@ def allow_demo_operation(method: str, path: str) -> None:
             r"/api/upload-sessions",
             rf"/api/upload-sessions/{identifier}/parts/[1-9][0-9]*/presign",
             rf"/api/upload-sessions/{identifier}/complete",
+            rf"/api/upload-sessions/{identifier}/object/presign",
+            rf"/api/upload-sessions/{identifier}/object/complete",
             r"/api/presales",
             rf"/api/presales/{identifier}/rows/{identifier}/generate",
             rf"/api/presales/{identifier}/generate",

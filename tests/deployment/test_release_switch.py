@@ -17,6 +17,63 @@ PREFIX = "enterprise-doc-agent/"
 NAMES = ("api", "worker", "consumer", "web")
 
 
+def upload_switch_data(enabled: str = "true") -> dict[str, Any]:
+    data = release_data()
+    data["original_revision"] = "20261005_0032"
+    data["secret"]["new_key"] = data["secret"]["old_key"]
+    old = data["original_prerequisites"][1]["data"]
+    old["UPLOAD__SINGLE_PUT_ENABLED"] = "false" if enabled == "true" else "true"
+    new = old | {"UPLOAD__SINGLE_PUT_ENABLED": enabled}
+    data["candidate_prerequisites"][1]["data"] = new
+    before = data["original_prerequisites"][0]["metadata"]["annotations"]
+    before[PREFIX + "approved-config-sha256"] = canonical_digest(old)
+    after = copy.deepcopy(before)
+    after[PREFIX + "approved-config-sha256"] = canonical_digest(new)
+    data["candidate_prerequisites"][0]["metadata"]["annotations"] = after
+    for deployment in data["deployments"]:
+        annotations = deployment["spec"]["template"]["metadata"]["annotations"]
+        annotations[PREFIX + "config-sha256"] = canonical_digest(old)
+    data["candidate_deployments"] = copy.deepcopy(data["deployments"])
+    for deployment in data["candidate_deployments"]:
+        annotations = deployment["spec"]["template"]["metadata"]["annotations"]
+        annotations[PREFIX + "config-sha256"] = canonical_digest(new)
+    return data
+
+
+@pytest.mark.parametrize("enabled", ["true", "false"])
+def test_0032_upload_switch_keeps_same_runtime(enabled: str) -> None:
+    from scripts.release_switch import ReleasePlan
+
+    assert ReleasePlan(upload_switch_data(enabled)).revision == "20261005_0032"
+
+
+@pytest.mark.parametrize(
+    "mutation", ["image", "model", "missing", "invalid", "pool", "credential", "0031"]
+)
+def test_0032_upload_switch_rejects_incompatible_changes(mutation: str) -> None:
+    from scripts.release_switch import GuardError, ReleasePlan
+
+    data = upload_switch_data()
+    config = data["candidate_prerequisites"][1]["data"]
+    if mutation == "image":
+        container = data["candidate_deployments"][0]["spec"]["template"]["spec"]["containers"][0]
+        container["image"] = "ghcr.io/drew-z/enterprise-doc-api@sha256:" + "b" * 64
+    elif mutation == "model":
+        config["MODEL__MODEL_NAME"] = "changed"
+    elif mutation == "missing":
+        del config["UPLOAD__SINGLE_PUT_ENABLED"]
+    elif mutation == "invalid":
+        config["UPLOAD__SINGLE_PUT_ENABLED"] = "yes"
+    elif mutation == "pool":
+        data["api_database_pool_size"] = 2
+    elif mutation == "credential":
+        data["secret"]["new_key"] = "bmV3"
+    else:
+        data["original_revision"] = "20260924_0031"
+    with pytest.raises(GuardError):
+        ReleasePlan(data)
+
+
 def release_data() -> dict[str, Any]:
     config = {"MODEL__MODEL_NAME": "old-model", "MODEL__BASE_URL": "https://old.invalid/v1"}
     new_config = config | {"MODEL__MODEL_NAME": "new-model"}
@@ -340,6 +397,63 @@ def test_fallback_model_only_switch_preserves_images_and_restores_config(
     cluster.restore(100)
     cluster.verify(False, 100)
     assert actual["data"] == old_config
+
+
+@pytest.mark.parametrize("enabled", ["true", "false"])
+@pytest.mark.parametrize("partial", [False, True])
+def test_0032_upload_switch_applies_and_restores_same_runtime(enabled: str, partial: bool) -> None:
+    from scripts.release_switch import ReleaseCluster, ReleasePlan
+
+    data = upload_switch_data(enabled)
+    boundary = Boundary(data)
+    cluster = ReleaseCluster(
+        ReleasePlan(data),
+        run=boundary,
+        revision=lambda timeout: "20261005_0032",
+        idle=lambda timeout: True,
+        clock=lambda: 1.0,
+    )
+    if partial:
+        for item in boundary.items:
+            if item["kind"] == "ConfigMap":
+                item["data"] = copy.deepcopy(data["candidate_prerequisites"][1]["data"])
+            if item["kind"] == "Deployment" and item["metadata"]["name"] == "enterprise-doc-api":
+                item["spec"] = copy.deepcopy(data["candidate_deployments"][0]["spec"])
+    else:
+        cluster.apply(100)
+        cluster.verify(True, 100)
+        actual = next(item for item in boundary.items if item["kind"] == "ConfigMap")
+        assert actual["data"]["UPLOAD__SINGLE_PUT_ENABLED"] == enabled
+    cluster.restore(100)
+    cluster.verify(False, 100)
+    for original in data["original_prerequisites"] + data["deployments"]:
+        current = next(
+            item
+            for item in boundary.items
+            if item["metadata"]["name"] == original["metadata"]["name"]
+        )
+        for key in ("data", "spec"):
+            if key in original:
+                assert current[key] == original[key]
+    secret = next(item for item in boundary.items if item["kind"] == "Secret")
+    assert secret["data"]["MODEL__API_KEY"] == data["secret"]["old_key"]
+
+
+def test_0032_upload_switch_refuses_changed_database_before_writing() -> None:
+    from scripts.release_switch import GuardError, ReleaseCluster, ReleasePlan
+
+    data = upload_switch_data()
+    boundary = Boundary(data)
+    cluster = ReleaseCluster(
+        ReleasePlan(data),
+        run=boundary,
+        revision=lambda timeout: "20260924_0031",
+        idle=lambda timeout: True,
+        clock=lambda: 1.0,
+    )
+    with pytest.raises(GuardError):
+        cluster.apply(100)
+    assert boundary.writes == []
 
 
 class Boundary:

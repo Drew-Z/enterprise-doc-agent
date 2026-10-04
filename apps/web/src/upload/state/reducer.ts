@@ -109,6 +109,7 @@ function queuePartsEffect(state: UploadMachineState, parts: readonly UploadPartS
     ? null
     : {
         type: "queue_parts",
+        ...(state.session.transport === "single_put" ? { transport: "single_put" as const } : {}),
         generation: state.generation,
         sessionId: state.session.sessionId,
         file: state.file,
@@ -122,6 +123,7 @@ function completionEffect(state: UploadMachineState, parts: readonly UploadPartS
   }
   return {
     type: "complete_session",
+    ...(state.session.transport === "single_put" ? { transport: "single_put" as const } : {}),
     generation: state.generation,
     sessionId: state.session.sessionId,
     parts: parts.map((part) => ({
@@ -171,6 +173,7 @@ function resetActiveParts(parts: readonly UploadPartState[]): UploadPartState[] 
 }
 
 function persistedSessionFromResponse(response: {
+  transport?: "multipart" | "single_put";
   sessionId: string;
   filename: string;
   sizeBytes: number;
@@ -180,6 +183,7 @@ function persistedSessionFromResponse(response: {
 }): PersistedUploadSession {
   return {
     version: 1,
+    ...(response.transport === "single_put" ? { transport: "single_put" as const } : {}),
     sessionId: response.sessionId,
     filename: response.filename,
     sizeBytes: response.sizeBytes,
@@ -240,6 +244,7 @@ function handleHashSuccess(state: UploadMachineState, result: HashResult): Uploa
             sizeBytes: state.file.size,
             mediaType: state.mediaType,
             sha256: result.wholeSha256,
+            ...(state.file.size <= 1_048_576 ? { transport: "single_put" as const } : {}),
           },
           idempotencyKey: state.idempotencyKey,
         },
@@ -418,6 +423,8 @@ export function reduceUpload(state: UploadMachineState, action: UploadAction): U
         action.session.sizeBytes !== state.fileIdentity.sizeBytes ||
         action.session.declaredSha256 !== state.fileIdentity.declaredSha256 ||
         action.session.status !== "active" ||
+        (action.session.transport === "single_put" &&
+          (action.session.sizeBytes > 1_048_576 || action.session.expectedPartCount !== 1)) ||
         action.session.expectedPartCount !== Math.ceil(action.session.sizeBytes / action.session.partSizeBytes)
       ) {
         return fail(
@@ -469,6 +476,7 @@ export function reduceUpload(state: UploadMachineState, action: UploadAction): U
       }
       if (
         action.session.sessionId !== state.session.sessionId ||
+        (action.session.transport ?? "multipart") !== (state.session.transport ?? "multipart") ||
         action.session.filename !== state.session.filename ||
         action.session.sizeBytes !== state.session.sizeBytes ||
         action.session.declaredSha256 !== state.session.declaredSha256 ||
@@ -681,6 +689,7 @@ export function reduceUpload(state: UploadMachineState, action: UploadAction): U
                 sizeBytes: state.fileIdentity.sizeBytes,
                 mediaType: state.mediaType,
                 sha256: state.fileIdentity.declaredSha256,
+                ...(state.fileIdentity.sizeBytes <= 1_048_576 ? { transport: "single_put" as const } : {}),
               },
               idempotencyKey: state.idempotencyKey,
             },

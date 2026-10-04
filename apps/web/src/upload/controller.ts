@@ -16,6 +16,7 @@ import type {
   GetUploadResponse,
   PresignPartRequest,
   PresignPartResponse,
+  UploadTransport,
 } from "./api/schemas";
 import { HashWorkerClientError, type HashJob, type StartHashJobOptions } from "./hashing/client";
 import {
@@ -43,11 +44,13 @@ export interface UploadApiPort {
     partNumber: number,
     request: PresignPartRequest,
     signal?: AbortSignal,
+    transport?: UploadTransport,
   ): Promise<PresignPartResponse>;
   completeSession(
     sessionId: string,
     request: CompleteUploadRequest,
     signal?: AbortSignal,
+    transport?: UploadTransport,
   ): Promise<CompleteUploadResponse>;
   abortSession(sessionId: string, signal?: AbortSignal): Promise<void>;
 }
@@ -179,7 +182,7 @@ export function useUploadController(
             const presigned = await api.presignPart(task.sessionId, part.partNumber, {
               sizeBytes: part.sizeBytes,
               checksumSha256: part.checksumSha256,
-            });
+            }, undefined, task.transport);
             if (
               !dispatch({
                 type: "part_upload_started",
@@ -210,7 +213,21 @@ export function useUploadController(
             });
             activeTransfersRef.current.set(key, { controller, handle });
             try {
-              const result = await handle.result;
+              const result = await handle.result.catch(async (error: unknown) => {
+                if (task.transport !== "single_put" || !(error instanceof XhrUploadError) || error.status !== 412) {
+                  throw error;
+                }
+                const observed = await api.getSession(task.sessionId, controller.signal);
+                const uploaded = observed.uploadedParts[0];
+                if (observed.sessionId !== task.sessionId || observed.transport !== "single_put" ||
+                    observed.status !== "active" || observed.sizeBytes !== task.file.size ||
+                    observed.uploadedParts.length !== 1 || uploaded?.partNumber !== 1 ||
+                    uploaded.sizeBytes !== part.sizeBytes || uploaded.checksumSha256 !== part.checksumSha256 ||
+                    !uploaded.etag) {
+                  throw new UploadApiProtocolError("Existing object does not match the selected upload.");
+                }
+                return { etag: uploaded.etag };
+              });
               dispatch({
                 type: "part_uploaded",
                 generation: task.generation,
@@ -350,8 +367,11 @@ export function useUploadController(
             transfer.handle.abort();
           }
           return;
-        case "complete_session":
-          void api.completeSession(effect.sessionId, { parts: effect.parts }).then(
+        case "complete_session": {
+          const completion = effect.transport === "single_put"
+            ? api.completeSession(effect.sessionId, { parts: effect.parts }, undefined, effect.transport)
+            : api.completeSession(effect.sessionId, { parts: effect.parts });
+          void completion.then(
             (result) => dispatch({ type: "complete_succeeded", generation: effect.generation, result }),
             (error: unknown) => {
               const details = errorDetails(error);
@@ -365,6 +385,7 @@ export function useUploadController(
             },
           );
           return;
+        }
         case "abort_session":
           void api.abortSession(effect.sessionId).catch(setBackgroundError);
       }

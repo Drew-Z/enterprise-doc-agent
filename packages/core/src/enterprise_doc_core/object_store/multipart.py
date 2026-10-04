@@ -22,6 +22,7 @@ from enterprise_doc_core.object_store.models import (
     IncompleteUpload,
     ObjectContent,
     ObjectHead,
+    PresignedObjectUpload,
     PresignedUploadPart,
     UploadedPart,
 )
@@ -29,6 +30,20 @@ from enterprise_doc_core.telemetry import MetricsRuntime
 
 
 class MultipartObjectStore(Protocol):
+    async def retire_upload_object(
+        self, *, bucket: str, key: str, metadata: Mapping[str, str]
+    ) -> bool: ...
+
+    async def presign_object_put(
+        self,
+        *,
+        bucket: str,
+        key: str,
+        size_bytes: int,
+        metadata: Mapping[str, str],
+        expires_in_seconds: int,
+    ) -> PresignedObjectUpload: ...
+
     async def create_upload(
         self,
         *,
@@ -194,6 +209,46 @@ class Boto3MultipartObjectStore:
         return PresignedUploadPart(
             url=url,
             headers=headers,
+            expires_in_seconds=effective_ttl,
+        )
+
+    @instrument_object_store_operation("write")
+    async def presign_object_put(
+        self,
+        *,
+        bucket: str,
+        key: str,
+        size_bytes: int,
+        metadata: Mapping[str, str],
+        expires_in_seconds: int,
+    ) -> PresignedObjectUpload:
+        """Sign a create-only PUT; callers still own readback and session lifecycle."""
+        if type(size_bytes) is not int or size_bytes < 1:
+            raise ObjectStoreProtocolError()
+        _validate_presign_ttl(expires_in_seconds)
+        effective_ttl = min(expires_in_seconds, self.settings.presign_ttl_seconds)
+        url = await self._call(
+            self.presign_client.generate_presigned_url,
+            ClientMethod="put_object",
+            Params={
+                "Bucket": bucket,
+                "Key": key,
+                "ContentLength": size_bytes,
+                "IfNoneMatch": "*",
+                "Metadata": dict(metadata),
+            },
+            ExpiresIn=effective_ttl,
+            HttpMethod="PUT",
+        )
+        if not isinstance(url, str) or not url:
+            raise ObjectStoreProtocolError()
+        return PresignedObjectUpload(
+            url=url,
+            headers={
+                "Content-Length": str(size_bytes),
+                "If-None-Match": "*",
+                **{f"x-amz-meta-{name}": value for name, value in metadata.items()},
+            },
             expires_in_seconds=effective_ttl,
         )
 
@@ -403,6 +458,54 @@ class Boto3MultipartObjectStore:
             Key=key,
             UploadId=upload_id,
         )
+
+    @instrument_object_store_operation("write")
+    async def retire_upload_object(
+        self, *, bucket: str, key: str, metadata: Mapping[str, str]
+    ) -> bool:
+        """Erase owned content while preventing outstanding create-only PUTs.
+
+        Keep the zero-byte marker: deleting it would re-enable an in-flight PUT.
+        False means a conditional race; the durable cleanup task must retry.
+        """
+        if any(
+            not metadata.get(name)
+            for name in ("contract", "upload-session-id", "version-id", "declared-size")
+        ):
+            raise ObjectStoreProtocolError()
+
+        def retire() -> bool:
+            condition: dict[str, str]
+            try:
+                head = _object_head(
+                    _require_mapping(self.control_client.head_object(Bucket=bucket, Key=key))
+                )
+            except ClientError as error:
+                if error.response.get("ResponseMetadata", {}).get("HTTPStatusCode") != 404:
+                    raise
+                condition = {"IfNoneMatch": "*"}
+            else:
+                if any(head.metadata.get(name) != value for name, value in metadata.items()):
+                    raise ObjectStoreProtocolError()
+                if head.size_bytes == 0 and head.metadata.get("upload-retired") == "true":
+                    return True
+                condition = {"IfMatch": head.etag}
+            try:
+                self.control_client.put_object(
+                    Bucket=bucket,
+                    Key=key,
+                    Body=b"",
+                    ContentLength=0,
+                    Metadata={**metadata, "upload-retired": "true"},
+                    **condition,
+                )
+            except ClientError as error:
+                if error.response.get("ResponseMetadata", {}).get("HTTPStatusCode") in {409, 412}:
+                    return False
+                raise
+            return True
+
+        return cast(bool, await self._call(retire))
 
     @instrument_object_store_operation("write")
     async def delete_object(self, *, bucket: str, key: str) -> None:

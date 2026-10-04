@@ -4,6 +4,7 @@ import type {
   CreateUploadResponse,
   GetUploadResponse,
   UploadedPart,
+  UploadTransport,
 } from "../api/schemas";
 import type { HashResult } from "../hashing/protocol";
 
@@ -28,6 +29,7 @@ export interface UploadFileIdentity {
 }
 
 export interface PersistedUploadSession {
+  transport?: UploadTransport;
   version: 1;
   sessionId: string;
   filename: string;
@@ -107,6 +109,7 @@ export type UploadEffect =
   | { type: "fetch_session"; generation: number; sessionId: string }
   | {
       type: "queue_parts";
+      transport?: UploadTransport;
       generation: number;
       sessionId: string;
       file: File;
@@ -119,6 +122,7 @@ export type UploadEffect =
   | { type: "abort_transfers" }
   | {
       type: "complete_session";
+      transport?: UploadTransport;
       generation: number;
       sessionId: string;
       parts: UploadedPart[];

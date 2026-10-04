@@ -65,6 +65,7 @@ class ObjectStoreSettings(BaseModel):
 
 
 class UploadSettings(BaseModel):
+    single_put_enabled: bool = True
     max_file_size_bytes: int = Field(default=10 * 1024**3, gt=0, le=5 * 1024**4)
     max_filename_length: int = Field(default=255, ge=1, le=255)
     preferred_part_size_bytes: int = Field(

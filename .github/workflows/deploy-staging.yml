@@ -283,6 +283,7 @@ jobs:
           MODEL_REASONING_EFFORT: ${{ vars.STAGING_MODEL_REASONING_EFFORT }}
           MODEL_FALLBACK_REASONING_EFFORT: ${{ vars.STAGING_MODEL_FALLBACK_REASONING_EFFORT }}
           MODEL_STREAMING: ${{ vars.STAGING_MODEL_STREAMING }}
+          UPLOAD_SINGLE_PUT_ENABLED: ${{ vars.STAGING_UPLOAD_SINGLE_PUT_ENABLED || 'false' }}
           MODEL_FALLBACK_STREAMING: ${{ vars.STAGING_MODEL_FALLBACK_STREAMING }}
           MODEL_FALLBACK_BASE_URL: ${{ vars.STAGING_MODEL_FALLBACK_BASE_URL }}
           MODEL_FALLBACK_NAME: ${{ vars.STAGING_MODEL_FALLBACK_NAME }}
@@ -346,6 +347,7 @@ jobs:
             --object-store-endpoint "$OBJECT_STORE_ENDPOINT" \
             --object-store-presign-endpoint "$OBJECT_STORE_PRESIGN_ENDPOINT" \
             --object-store-checksum-mode "$OBJECT_STORE_CHECKSUM_MODE" \
+            --upload-single-put-enabled "$UPLOAD_SINGLE_PUT_ENABLED" \
             --tls-secret-name "$TLS_SECRET_NAME" \
             --web-object-store-origins "$VITE_OBJECT_STORE_ORIGINS" \
             --database-egress-cidr "$DATABASE_EGRESS_CIDR" \

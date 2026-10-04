@@ -3,6 +3,8 @@ import { z } from "zod";
 const safeIntegerSchema = z.number().int().safe();
 const positiveSafeIntegerSchema = safeIntegerSchema.positive();
 export const sessionIdSchema = z.string().uuid();
+export const uploadTransportSchema = z.enum(["multipart", "single_put"]);
+export type UploadTransport = z.infer<typeof uploadTransportSchema>;
 export const partNumberSchema = positiveSafeIntegerSchema.max(10_000);
 const dateTimeSchema = z.iso.datetime({ offset: true });
 const httpUrlSchema = z.url().refine((value) => {
@@ -51,6 +53,7 @@ export const createUploadRequestSchema = z
     sizeBytes: positiveSafeIntegerSchema,
     mediaType: z.string().min(1),
     sha256: sha256HexSchema,
+    transport: uploadTransportSchema.optional(),
   })
   .strict();
 
@@ -67,6 +70,7 @@ export const createUploadResponseSchema = z
     expectedPartCount: positiveSafeIntegerSchema.max(10_000),
     expiresAt: dateTimeSchema,
     replayed: z.boolean(),
+    transport: uploadTransportSchema.optional(),
   })
   .strict();
 
@@ -106,6 +110,10 @@ export const completeUploadRequestSchema = z
   .object({
     parts: z.array(uploadedPartSchema).min(1).max(10_000),
   })
+  .strict();
+
+export const presignObjectResponseSchema = presignPartResponseSchema
+  .pick({ url: true, headers: true, expiresInSeconds: true })
   .strict();
 
 export const completeUploadResponseSchema = z

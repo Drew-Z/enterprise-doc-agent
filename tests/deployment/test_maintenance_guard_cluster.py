@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
 import pytest
+import yaml
 from scripts.validate_staging_prerequisites import REQUIRED_APPROVAL_ANNOTATIONS
 
 NS = "enterprise-doc-agent-staging"
@@ -86,6 +89,109 @@ def plan_data() -> dict[str, Any]:
     }
 
 
+def single_put_plan_data() -> dict[str, Any]:
+    data = plan_data()
+    data.update(
+        schema_version=3, original_revision="20260924_0031", target_revision="20261005_0032"
+    )
+    data["candidate_prerequisites"][1]["data"] = data["original_prerequisites"][1]["data"] | {
+        "UPLOAD__SINGLE_PUT_ENABLED": "false"
+    }
+    return data
+
+
+def test_single_put_migration_plan_requires_disabled_creation() -> None:
+    from scripts.maintenance_guard_cluster import Plan
+
+    assert Plan(single_put_plan_data()).revision == "20260924_0031"
+
+
+@pytest.mark.parametrize("tamper", [False, True])
+def test_single_put_cli_claim_binds_manifest_and_disables_timeout_restore(
+    tmp_path: Path, monkeypatch, tamper: bool
+) -> None:
+    from scripts import maintenance_guard as guard_module
+    from scripts.maintenance_guard_cluster import canonical_digest
+
+    data = single_put_plan_data()
+    candidate = copy.deepcopy(data["candidate_prerequisites"])
+    candidate.extend(
+        [
+            {"apiVersion": "batch/v1", "kind": "Job", "metadata": {"name": name}}
+            for name in ("enterprise-doc-migrate", "enterprise-doc-embedding-rollout")
+        ]
+    )
+    data["candidate_sha256"] = canonical_digest(candidate)
+    plan_path = tmp_path / "plan.json"
+    raw = json.dumps(data).encode()
+    plan_path.write_bytes(raw)
+    plan_hash = hashlib.sha256(raw).hexdigest()
+    candidate_path = tmp_path / "candidate.yaml"
+    if tamper:
+        candidate[1]["data"]["UPLOAD__SINGLE_PUT_ENABLED"] = "true"
+    candidate_path.write_text(yaml.safe_dump_all(candidate), encoding="utf-8")
+    now = [guard_module.Tick("boot", 10, 1000)]
+    monkeypatch.setattr(guard_module, "host_clock", lambda: now[0])
+    state_path = tmp_path / "state.sqlite"
+    guard = guard_module.Guard(state_path)
+    target = guard_module.Target(
+        data["operation"], data["executor"], data["namespace_uid"], plan_hash
+    )
+    guard.arm(target, timeout=20, recovery_budget=10)
+    guard.poll()
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "maintenance_guard",
+            "claim",
+            "--state",
+            str(state_path),
+            "--plan",
+            str(plan_path),
+            "--plan-sha256",
+            plan_hash,
+            "--operation",
+            target.operation,
+            "--executor",
+            target.executor,
+            "--namespace-uid",
+            target.namespace_uid,
+            "--candidate",
+            str(candidate_path),
+        ],
+    )
+    if tamper:
+        with pytest.raises(SystemExit):
+            guard_module.main()
+        assert guard.status()["phase"] == "armed"
+    else:
+        guard_module.main()
+        now[0] = guard_module.Tick("boot", 40, 1030)
+        assert guard.poll() == "migration_claimed"
+
+
+@pytest.mark.parametrize("mutation", ["enabled", "model", "source", "target", "legacy", "present"])
+def test_single_put_migration_plan_rejects_scope_drift(mutation: str) -> None:
+    from scripts.maintenance_guard_cluster import GuardError, Plan
+
+    data = single_put_plan_data()
+    if mutation == "enabled":
+        data["candidate_prerequisites"][1]["data"]["UPLOAD__SINGLE_PUT_ENABLED"] = "true"
+    elif mutation == "model":
+        data["candidate_prerequisites"][1]["data"]["MODEL__MODEL_NAME"] = "changed"
+    elif mutation == "source":
+        data["original_revision"] = "20261005_0032"
+    elif mutation == "target":
+        data["target_revision"] = "20261005_0033"
+    elif mutation == "legacy":
+        data["schema_version"] = 1
+    else:
+        data["original_prerequisites"][1]["data"]["UPLOAD__SINGLE_PUT_ENABLED"] = "false"
+    with pytest.raises(GuardError):
+        Plan(data)
+
+
 class ClusterBoundary:
     def __init__(self, data: dict[str, Any]) -> None:
         self.prerequisites = copy.deepcopy(data["candidate_prerequisites"])
@@ -141,13 +247,17 @@ class ClusterBoundary:
         raise AssertionError(args)
 
 
-def test_recovery_validates_whole_plan_and_restores_web_last(tmp_path: Path) -> None:
+@pytest.mark.parametrize("single_put", [False, True])
+def test_recovery_validates_whole_plan_and_restores_web_last(single_put: bool) -> None:
     from scripts.maintenance_guard_cluster import Cluster, Plan
 
-    data = plan_data()
+    data = single_put_plan_data() if single_put else plan_data()
     boundary = ClusterBoundary(data)
     cluster = Cluster(
-        Plan(data), run=boundary, revision=lambda timeout: "20260923_0027", clock=lambda: 1.0
+        Plan(data),
+        run=boundary,
+        revision=lambda timeout: data["original_revision"],
+        clock=lambda: 1.0,
     )
     cluster.restore(60)
     assert boundary.prerequisites == data["original_prerequisites"] or all(
@@ -161,6 +271,19 @@ def test_recovery_validates_whole_plan_and_restores_web_last(tmp_path: Path) -> 
     )
     assert boundary.writes[-1] == ("deployment", "enterprise-doc-web")
     assert all(d["spec"]["replicas"] == 1 for d in boundary.deployments)
+
+
+def test_single_put_recovery_refuses_migrated_schema_without_writes() -> None:
+    from scripts.maintenance_guard_cluster import Cluster, GuardError, Plan
+
+    data = single_put_plan_data()
+    boundary = ClusterBoundary(data)
+    cluster = Cluster(
+        Plan(data), run=boundary, revision=lambda timeout: "20261005_0032", clock=lambda: 1.0
+    )
+    with pytest.raises(GuardError, match="revision"):
+        cluster.restore(60)
+    assert boundary.writes == []
 
 
 @pytest.mark.parametrize(

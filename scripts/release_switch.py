@@ -1,4 +1,4 @@
-"""Bounded 0031 release switching; no migrations, business smoke, or supplier calls.
+"""Bounded 0031 release switching and 0032 upload-switch changes; no migrations.
 
 Private plans contain the primary and any explicitly declared fallback API keys. Keep
 them out of Git/logs, and explicitly approve any temporary remote runtime copy.
@@ -53,6 +53,7 @@ EXECUTOR_FILES = (
     "validate_staging_prerequisites.py",
 )
 CONFIG_KEYS = {
+    "UPLOAD__SINGLE_PUT_ENABLED",
     "API__QUEUE_OBSERVATION_ENABLED",
     "MODEL__BASE_URL",
     "MODEL__MODEL_NAME",
@@ -130,8 +131,11 @@ class ReleasePlan(Plan):
         self.executor = value["executor"]
         self.namespace_uid = value["namespace_uid"]
         Target(self.operation, self.executor, self.namespace_uid, "0" * 64).validate()
-        if value["schema_version"] != 2 or value["original_revision"] != "20260924_0031":
-            raise GuardError("release switching requires the reviewed 0031 schema")
+        if value["schema_version"] != 2 or value["original_revision"] not in {
+            "20260924_0031",
+            "20261005_0032",
+        }:
+            raise GuardError("release switching requires a reviewed schema")
         self.revision = value["original_revision"]
         self.original = self.data["original_prerequisites"]
         self.candidate = self.data["candidate_prerequisites"]
@@ -162,6 +166,18 @@ class ReleasePlan(Plan):
             raise GuardError("full Secrets must not enter release prerequisites")
         old, new = self.old_config["data"], self.new_config["data"]
         changed = {k for k in old.keys() | new.keys() if old.get(k) != new.get(k)}
+        if self.revision == "20261005_0032":
+            if changed - {"UPLOAD__SINGLE_PUT_ENABLED"} or any(
+                item.get("UPLOAD__SINGLE_PUT_ENABLED") not in {"true", "false"}
+                for item in (old, new)
+            ):
+                raise GuardError("0032 release switching only permits the explicit upload switch")
+            if "api_database_pool_size" in self.data or self.fallback_secret is not None:
+                raise GuardError("0032 upload switching cannot change pool or credentials")
+            if self.secret.get("old_key") != self.secret.get("new_key"):
+                raise GuardError("0032 upload switching must retain the primary credential")
+        elif "UPLOAD__SINGLE_PUT_ENABLED" in changed:
+            raise GuardError("upload switching requires schema 0032")
         if changed - CONFIG_KEYS or any(not isinstance(v, str) for v in new.values()):
             raise GuardError("configuration exceeds the reviewed release scope")
         if "MODEL__FALLBACK_BASE_URL" in changed and self.fallback_secret is None:
@@ -299,6 +315,8 @@ class ReleasePlan(Plan):
                 raise GuardError("single reviewed application container required")
             old_image = source["spec"]["containers"][0]["image"]
             new_image = target["spec"]["containers"][0]["image"]
+            if self.revision == "20261005_0032" and new_image != old_image:
+                raise GuardError("0032 upload switching must retain all application images")
             for image in (old_image, new_image):
                 if not re.fullmatch(r"ghcr.io/drew-z/" + name + r"@sha256:[0-9a-f]{64}", image):
                     raise GuardError("immutable application image required")

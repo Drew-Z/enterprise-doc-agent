@@ -1,5 +1,41 @@
 # Browser Multipart Upload
 
+## Single PUT extension (candidate, October 2026)
+
+New browser uploads up to1MiB request `transport: single_put`. The server can return
+multipart when `UPLOAD__SINGLE_PUT_ENABLED=false`; always follow the returned mode.
+Larger files and callers omitting transport keep the multipart protocol. Creation
+retries retain the requested mode and idempotency key; server-side replay retains the
+stored transport across operational switch changes.
+
+The strict version1 recovery record additionally permits optional `transport`.
+Absent means multipart. Store it for direct sessions and reject transport changes
+during reconciliation. Do not persist URLs, headers, credentials or file bodies.
+
+Direct sessions call POST `/{id}/object/presign` and `/{id}/object/complete` under
+`/api/upload-sessions`, both with an exact empty JSON object. Before XHR, validate the
+allowlisted origin, unique case-insensitive headers, signed Content-Length, session
+metadata and `If-None-Match: *`. Remove Content-Length from manually set headers:
+the browser derives it from the Blob. R2 CORS must permit the conditional header and
+four signed metadata headers, and expose ETag for the exact application origin.
+
+A412 response alone is never success. Read the authoritative session and require an
+active single_put session with matching size and one part with matching SHA-256,
+size and nonempty ETag. Dispatch only through the existing generation/attempt checks;
+pause or cancellation invalidates late readback. Refresh requires original-file
+reselection and hash verification before completion; a wrong same-name/same-size
+file must cause no upload or completion writes.
+
+The backend performs full bounded content/hash/envelope validation. Canceled direct
+uploads retain permanent zero-byte conditional retirement markers, including after
+demo cleanup, to prevent delayed signed PUTs recreating canceled content.
+
+Validation: API, state/persistence and React controller tests live beside the modules.
+Real isolated PostgreSQL/API/MinIO browser checks covered normal upload, lost actual
+PUT response followed by real412, and refresh/wrong-file recovery. A separate real
+R2 browser probe verified signed PUT200, exposed ETag, repeated412 and unchanged
+content. These checks do not establish public performance or production deployment.
+
 ## Scenario: Slice 8 hashing, transfer, state, and recovery contracts
 
 ### 1. Scope / Trigger

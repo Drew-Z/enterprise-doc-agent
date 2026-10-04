@@ -176,6 +176,24 @@ def _render_browser_manifest(tmp_path: Path, **overrides: str | None) -> list[di
     return [item for item in yaml.safe_load_all(destination.read_text(encoding="utf-8")) if item]
 
 
+@pytest.mark.parametrize("enabled", ["true", "false"])
+def test_single_put_switch_is_rendered_explicitly(tmp_path: Path, enabled: str) -> None:
+    documents = _render_browser_manifest(tmp_path, upload_single_put_enabled=enabled)
+    config = next(
+        item
+        for item in documents
+        if item.get("kind") == "ConfigMap" and item["metadata"]["name"] == "enterprise-doc-config"
+    )
+    assert config["data"]["UPLOAD__SINGLE_PUT_ENABLED"] == enabled
+
+
+@pytest.mark.parametrize("invalid", ["", "yes", "1", "False"])
+def test_single_put_switch_rejects_invalid_values(tmp_path: Path, invalid: str) -> None:
+    with pytest.raises(ValueError, match="single PUT enablement"):
+        _render_browser_manifest(tmp_path, upload_single_put_enabled=invalid)
+    assert not (tmp_path / "browser-staging.yaml").exists()
+
+
 def test_configure_manifest_preserves_explicit_presales_route_and_wait_budget(
     tmp_path: Path,
 ) -> None:

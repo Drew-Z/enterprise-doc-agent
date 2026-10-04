@@ -11,6 +11,7 @@ import {
   partNumberSchema,
   presignPartRequestSchema,
   presignPartResponseSchema,
+  presignObjectResponseSchema,
   sessionIdSchema,
   type CompleteUploadRequest,
   type CompleteUploadResponse,
@@ -19,6 +20,7 @@ import {
   type GetUploadResponse,
   type PresignPartRequest,
   type PresignPartResponse,
+  type UploadTransport,
 } from "./schemas";
 
 type Fetcher = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
@@ -156,9 +158,43 @@ export class UploadApiClient {
     partNumber: number,
     request: PresignPartRequest,
     signal?: AbortSignal,
+    transport: UploadTransport = "multipart",
   ): Promise<PresignPartResponse> {
     const parsedSessionId = parseOutgoing(sessionIdSchema, sessionId);
     const parsedPartNumber = parseOutgoing(partNumberSchema, partNumber);
+    const parsedRequest = parseOutgoing(presignPartRequestSchema, request);
+    if (transport === "single_put") {
+      if (parsedPartNumber !== 1 || parsedRequest.sizeBytes > 1_048_576) {
+        throw new UploadApiProtocolError("Single PUT requires one bounded part.");
+      }
+      const response = await this.requestJson(
+        `/api/upload-sessions/${encodeURIComponent(parsedSessionId)}/object/presign`,
+        presignObjectResponseSchema,
+        [200],
+        { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}", signal },
+      );
+      const url = new URL(response.url);
+      if (!this.allowedObjectStoreOrigins.has(url.origin) || url.username || url.password) {
+        throw new UploadApiProtocolError("Presigned upload URL uses an unapproved object store origin.");
+      }
+      const headers: Record<string, string> = {};
+      for (const [name, value] of Object.entries(response.headers)) {
+        const lower = name.toLowerCase();
+        if (Object.hasOwn(headers, lower) || !/^(content-length|if-none-match|x-amz-meta-[a-z0-9-]+)$/.test(lower)) {
+          throw new UploadApiProtocolError("Single PUT response has invalid signed headers.");
+        }
+        headers[lower] = value;
+      }
+      if (headers["content-length"] !== String(parsedRequest.sizeBytes) ||
+          headers["if-none-match"] !== "*" ||
+          headers["x-amz-meta-upload-session-id"] !== parsedSessionId ||
+          headers["x-amz-meta-declared-size"] !== String(parsedRequest.sizeBytes)) {
+        throw new UploadApiProtocolError("Single PUT response does not match the requested object.");
+      }
+      // The browser supplies Content-Length from the Blob; scripts cannot set it.
+      delete headers["content-length"];
+      return { ...response, headers, partNumber: 1, ...parsedRequest };
+    }
     const response = await this.requestJson(
       `/api/upload-sessions/${encodeURIComponent(parsedSessionId)}/parts/${parsedPartNumber}/presign`,
       presignPartResponseSchema,
@@ -197,16 +233,23 @@ export class UploadApiClient {
     sessionId: string,
     request: CompleteUploadRequest,
     signal?: AbortSignal,
+    transport: UploadTransport = "multipart",
   ): Promise<CompleteUploadResponse> {
     const parsedSessionId = parseOutgoing(sessionIdSchema, sessionId);
+    const parsedRequest = parseOutgoing(completeUploadRequestSchema, request);
+    if (transport === "single_put" &&
+        (parsedRequest.parts.length !== 1 || parsedRequest.parts[0]?.partNumber !== 1 ||
+         parsedRequest.parts[0].sizeBytes > 1_048_576)) {
+      throw new UploadApiProtocolError("Single PUT completion requires one bounded part.");
+    }
     return this.requestJson(
-      `/api/upload-sessions/${encodeURIComponent(parsedSessionId)}/complete`,
+      `/api/upload-sessions/${encodeURIComponent(parsedSessionId)}/${transport === "single_put" ? "object/complete" : "complete"}`,
       completeUploadResponseSchema,
       [200],
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(parseOutgoing(completeUploadRequestSchema, request)),
+        body: JSON.stringify(transport === "single_put" ? {} : parsedRequest),
         signal,
       },
     );

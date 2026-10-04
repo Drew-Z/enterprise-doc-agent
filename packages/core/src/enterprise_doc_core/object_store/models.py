@@ -13,6 +13,13 @@ class PresignedUploadPart:
 
 
 @dataclass(frozen=True, slots=True)
+class PresignedObjectUpload:
+    url: str
+    headers: Mapping[str, str]
+    expires_in_seconds: int
+
+
+@dataclass(frozen=True, slots=True)
 class PresignedObjectDownload:
     url: str
     expires_in_seconds: int

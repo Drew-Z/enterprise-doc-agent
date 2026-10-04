@@ -102,12 +102,16 @@ class Plan:
         self.candidate: list[dict[str, Any]] = self.data["candidate_prerequisites"]
         self.deployments: list[dict[str, Any]] = self.data["deployments"]
         self.revision: str = self.data["original_revision"]
-        if value["schema_version"] != 1 or not re.fullmatch(
+        single_put_migration = value["schema_version"] == 3
+        if value["schema_version"] not in {1, 3} or not re.fullmatch(
             r"[a-f0-9]{64}", value["candidate_sha256"]
         ):
             raise GuardError("unsupported maintenance plan")
-        if self.revision != "20260923_0027":
+        expected_revision = "20260924_0031" if single_put_migration else "20260923_0027"
+        if self.revision != expected_revision:
             raise GuardError("this recovery plan only supports the reviewed pre-migration revision")
+        if single_put_migration and value.get("target_revision") != "20261005_0032":
+            raise GuardError("single PUT maintenance requires the exact 0032 target")
         if any(item.get("kind") == "Secret" for item in self.original + self.candidate):
             raise GuardError("maintenance plans cannot contain Secrets")
         self.old_namespace = selected(self.original, "Namespace", NAMESPACE)
@@ -116,9 +120,12 @@ class Plan:
         self.new_config = selected(self.candidate, "ConfigMap", "enterprise-doc-config")
         if self.old_namespace["metadata"].get("uid") != self.namespace_uid:
             raise GuardError("plan Namespace UID does not match")
-        if CONFIG_ADDITIONS.keys() & self.old_config["data"].keys():
+        additions = (
+            {"UPLOAD__SINGLE_PUT_ENABLED": "false"} if single_put_migration else CONFIG_ADDITIONS
+        )
+        if additions.keys() & self.old_config["data"].keys():
             raise GuardError("plan no longer describes the reviewed six additions")
-        if self.new_config["data"] != self.old_config["data"] | CONFIG_ADDITIONS:
+        if self.new_config["data"] != self.old_config["data"] | additions:
             raise GuardError("candidate configuration exceeds reviewed additions")
         old, new = (
             approval_annotations(self.old_namespace),

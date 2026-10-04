@@ -523,11 +523,14 @@ def configure_manifest(
     embedding_model_name: str = "staging-embedding",
     embedding_version: str = EMBEDDING_VERSION,
     object_store_checksum_mode: str = "native_sha256",
+    upload_single_put_enabled: str | None = None,
     rollback_api_image: str | None = None,
     rollback_worker_image: str | None = None,
     rollback_consumer_image: str | None = None,
     rollback_web_image: str | None = None,
 ) -> None:
+    if upload_single_put_enabled not in (None, "true", "false"):
+        raise ValueError("single PUT enablement must be true or false")
     staging = _https_url(staging_base_url, description="staging base URL")
     staging_hostname = _dns_hostname(staging.hostname or "", description="staging host")
     object_store_endpoint = object_store_endpoint.strip()
@@ -670,6 +673,10 @@ def configure_manifest(
     data["OBJECT_STORE__PRESIGN_ENDPOINT"] = object_store_presign_endpoint
     data["OBJECT_STORE__SECURE"] = "true"
     data["OBJECT_STORE__MULTIPART_CHECKSUM_MODE"] = normalized_checksum_mode
+    if upload_single_put_enabled is not None:
+        data["UPLOAD__SINGLE_PUT_ENABLED"] = upload_single_put_enabled
+    if data.get("UPLOAD__SINGLE_PUT_ENABLED", "true") not in {"true", "false"}:
+        raise ValueError("single PUT enablement must be true or false")
     data["MODEL__PROVIDER"] = MODEL_PROVIDER
     data["MODEL__BASE_URL"] = normalized_model_base_url
     data["MODEL__MODEL_NAME"] = normalized_model_name
@@ -962,6 +969,7 @@ def main() -> None:
         default="native_sha256",
     )
     parser.add_argument("--tls-secret-name", required=True)
+    parser.add_argument("--upload-single-put-enabled", choices=("true", "false"))
     parser.add_argument("--web-object-store-origins", required=True)
     parser.add_argument("--database-egress-cidr", required=True)
     parser.add_argument("--model-provider", required=True)
@@ -1016,6 +1024,7 @@ def main() -> None:
         object_store_endpoint=args.object_store_endpoint,
         object_store_presign_endpoint=args.object_store_presign_endpoint,
         object_store_checksum_mode=args.object_store_checksum_mode,
+        upload_single_put_enabled=args.upload_single_put_enabled,
         tls_secret_name=args.tls_secret_name,
         web_object_store_origins=args.web_object_store_origins,
         database_egress_cidr=args.database_egress_cidr,
