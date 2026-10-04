@@ -28,7 +28,11 @@ from enterprise_doc_core.agents.schemas import (
 )
 from enterprise_doc_core.billing.provider_calls import recorded_post
 from enterprise_doc_core.config import ModelProvider, ModelSettings
-from enterprise_doc_core.model_response import ModelResponseError, OpenAIResponseReader
+from enterprise_doc_core.model_response import (
+    ModelResponseError,
+    OpenAIResponseReader,
+    retryable_provider_error,
+)
 
 
 class ModelGatewayError(Exception):
@@ -803,6 +807,8 @@ class OpenAICompatibleChatGateway:
         except ModelResponseError as error:
             if error.code == "model_response_too_large":
                 raise ModelResponseTooLarge() from error
+            if error.code == "model_stream_upstream_error" and error.retryable:
+                raise ModelServerError() from error
             raise ModelContractError() from error
         except httpx.TimeoutException as error:
             raise ModelTimeoutError() from error
@@ -820,6 +826,10 @@ class OpenAICompatibleChatGateway:
             raise ModelResponseTooLarge()
         try:
             raw_envelope = json.loads(response.content)
+            if isinstance(raw_envelope, dict) and raw_envelope.get("error") is not None:
+                if retryable_provider_error(raw_envelope["error"]):
+                    raise ModelServerError()
+                raise ModelContractError()
             envelope = _OpenAIResponse.model_validate(raw_envelope)
         except (json.JSONDecodeError, ValidationError, UnicodeDecodeError) as error:
             raise ModelContractError() from error

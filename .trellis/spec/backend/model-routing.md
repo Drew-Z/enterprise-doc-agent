@@ -34,6 +34,8 @@ a particular proxy permits requests longer than its read timeout.
 - The byte limit counts the decoded HTTP stream, including SSE and reasoning fields;
   heartbeat events never reset the enclosing route or persisted row deadline.
 - Only complete assembled content enters the existing schema/citation validation.
+  An explicit provider error takes precedence over any accompanying choices; Agent
+  rejects unknown/permanent errors even if the envelope also contains a valid-looking answer.
   Unknown usage and monetary cost remain unknown. Accounting excludes answer/reasoning.
 - Background Presales cancellation persists observed usage and IDs under the lease,
   retains the unresolved `running` call and rethrows cancellation. It does not confirm
@@ -45,7 +47,7 @@ a particular proxy permits requests longer than its read timeout.
 | --- | --- |
 | Complete stop and DONE | Original business validation before publication |
 | Truncation, malformed SSE, identity drift, tool delta | Contract rejection; no partial publication or implicit retry |
-| Explicit upstream SSE error | Presales uses the same code/type retry allowlist as JSON errors; only its existing coordinator may switch routes within the original budget. Unknown/permanent errors stay non-retryable; Agent policy remains unchanged. |
+| Explicit upstream SSE error | Presales uses the same code/type retry allowlist as JSON errors; only its existing coordinator may switch routes within the original budget. Agent maps the same explicit transient codes to ModelServerError in JSON and SSE so its existing bounded router can recover. Unknown/permanent errors stay non-retryable. |
 | Excessive stream bytes | Response-too-large rejection |
 | HTTP/transport timeout or network error | Existing retryable route policy with observed usage retained |
 | External cancellation | Close stream, preserve bounded accounting, rethrow cancellation |

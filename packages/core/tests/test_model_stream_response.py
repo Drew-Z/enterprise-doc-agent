@@ -9,8 +9,11 @@ import pytest
 
 from enterprise_doc_core.agents import (
     GroundedModelRequest,
+    ModelContractError,
+    ModelRouteDescriptor,
     ModelTimeoutError,
     OpenAICompatibleChatGateway,
+    RoutedChatModelGateway,
 )
 from enterprise_doc_core.config import ModelSettings
 from enterprise_doc_core.model_response import ModelResponseError, OpenAIResponseReader
@@ -328,6 +331,83 @@ async def test_presales_interrupted_stream_preserves_reported_usage_and_ids():
     assert caught.value.provider_request_id == "request-1"
     assert "private" not in str(caught.value)
     assert stream.closed
+
+
+@pytest.mark.parametrize("streaming", [False, True])
+@pytest.mark.parametrize("with_choices", [False, True])
+@pytest.mark.parametrize("code,recover", [("server_error", True), ("invalid_api_key", False)])
+async def test_agent_routing_recovers_explicit_upstream_errors_only(
+    streaming, with_choices, code, recover
+):
+    requests = []
+
+    def respond(request):
+        requests.append(request.url.host)
+        if request.url.host == "primary.invalid":
+            payload = {"error": {"code": code, "message": "private provider detail"}}
+            if with_choices:
+                payload["choices"] = [
+                    {
+                        "message": {
+                            "content": json.dumps(
+                                {
+                                    "outcome": "refusal",
+                                    "task_type": "question_answer",
+                                    "refusal_reason": "insufficient_evidence",
+                                    "answer_text": None,
+                                    "structured_fields": None,
+                                    "citations": [],
+                                    "risk_hint": None,
+                                }
+                            )
+                        }
+                    }
+                ]
+            if streaming:
+                return httpx.Response(
+                    200,
+                    content=b"data: " + json.dumps(payload).encode() + b"\n\n",
+                    headers={"content-type": "text/event-stream"},
+                )
+            return httpx.Response(200, json=payload)
+        answer = {
+            "outcome": "refusal",
+            "task_type": "question_answer",
+            "refusal_reason": "insufficient_evidence",
+            "answer_text": None,
+            "structured_fields": None,
+            "citations": [],
+            "risk_hint": None,
+        }
+        return httpx.Response(
+            200, content=sse(json.dumps(answer)), headers={"content-type": "text/event-stream"}
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(respond)) as client:
+        routed = RoutedChatModelGateway(
+            primary=OpenAICompatibleChatGateway(
+                settings=settings(streaming=streaming), client=client
+            ),
+            primary_descriptor=ModelRouteDescriptor(
+                route_id="primary", provider="openai_compatible", model_name="primary"
+            ),
+            fallback=OpenAICompatibleChatGateway(
+                settings=settings(base_url="https://fallback.invalid/v1"), client=client
+            ),
+            fallback_descriptor=ModelRouteDescriptor(
+                route_id="fallback", provider="openai_compatible", model_name="fallback"
+            ),
+        )
+        if recover:
+            output = await routed.generate(agent_request())
+            assert output.telemetry.fallback_count == 1
+            assert output.telemetry.provider_request_count == 2
+            assert requests == ["primary.invalid", "fallback.invalid"]
+        else:
+            with pytest.raises(ModelContractError) as caught:
+                await routed.generate(agent_request())
+            assert "private" not in str(caught.value)
+            assert requests == ["primary.invalid"]
 
 
 @pytest.mark.parametrize(
