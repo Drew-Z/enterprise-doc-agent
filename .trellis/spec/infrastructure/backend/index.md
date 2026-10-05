@@ -32,3 +32,11 @@ explicit receipt verification. It does not replace queue/backup or business SLOs
 The [image cache runtime contract](../../backend/image-cache-runtime.md) covers
 containerd/CRI import aliases, exact digest checks and bounded in-window repairs.
 Successful image listings do not alone establish container startup readiness.
+
+On schema `20261005_0032`, `ReleasePlan` defaults to the existing same-image upload
+flag switch. A new image release must explicitly declare `release_kind=images_only`;
+configuration, credentials, pool settings, unrelated approvals and workload specs stay
+fixed. Both candidate and recovery image digests must be approved. Schema drift must
+reject the operation before writes; partial execution restores the original full specs.
+This mode performs no migration and does not permit a return to schema 0031. Bind and
+verify the exact executor source independently from the signed application source.

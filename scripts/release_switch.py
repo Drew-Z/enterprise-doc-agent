@@ -1,4 +1,4 @@
-"""Bounded 0031 release switching and 0032 upload-switch changes; no migrations.
+"""Bounded releases and explicit 0032 upload or image-only changes; no migrations.
 
 Private plans contain the primary and any explicitly declared fallback API keys. Keep
 them out of Git/logs, and explicitly approve any temporary remote runtime copy.
@@ -137,6 +137,9 @@ class ReleasePlan(Plan):
         }:
             raise GuardError("release switching requires a reviewed schema")
         self.revision = value["original_revision"]
+        self.image_only = value.get("release_kind") == "images_only"
+        if "release_kind" in value and (not self.image_only or self.revision != "20261005_0032"):
+            raise GuardError("explicit image-only switching requires schema 0032")
         self.original = self.data["original_prerequisites"]
         self.candidate = self.data["candidate_prerequisites"]
         self.deployments = self.data["deployments"]
@@ -167,6 +170,8 @@ class ReleasePlan(Plan):
         old, new = self.old_config["data"], self.new_config["data"]
         changed = {k for k in old.keys() | new.keys() if old.get(k) != new.get(k)}
         if self.revision == "20261005_0032":
+            if self.image_only and changed:
+                raise GuardError("image-only switching must retain all configuration")
             if changed - {"UPLOAD__SINGLE_PUT_ENABLED"} or any(
                 item.get("UPLOAD__SINGLE_PUT_ENABLED") not in {"true", "false"}
                 for item in (old, new)
@@ -224,6 +229,11 @@ class ReleasePlan(Plan):
             or {k for k in before if before[k] != after[k]} - APPROVAL_KEYS
         ):
             raise GuardError("Namespace approval exceeds release scope")
+        image_approvals = {
+            PREFIX + "approved-" + role + "-images" for role in ("api", "worker", "consumer", "web")
+        } | {PREFIX + "prerequisites-sha256"}
+        if self.image_only and {k for k in before if before[k] != after[k]} - image_approvals:
+            raise GuardError("image-only switching cannot change unrelated approvals")
         for config, approved_values in ((old, before), (new, after)):
             if approved_values[PREFIX + "approved-config-sha256"] != canonical_digest(config):
                 raise GuardError("configuration approval fingerprint does not match")
@@ -315,7 +325,7 @@ class ReleasePlan(Plan):
                 raise GuardError("single reviewed application container required")
             old_image = source["spec"]["containers"][0]["image"]
             new_image = target["spec"]["containers"][0]["image"]
-            if self.revision == "20261005_0032" and new_image != old_image:
+            if self.revision == "20261005_0032" and not self.image_only and new_image != old_image:
                 raise GuardError("0032 upload switching must retain all application images")
             for image in (old_image, new_image):
                 if not re.fullmatch(r"ghcr.io/drew-z/" + name + r"@sha256:[0-9a-f]{64}", image):

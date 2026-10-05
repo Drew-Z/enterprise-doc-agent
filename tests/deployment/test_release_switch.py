@@ -74,6 +74,107 @@ def test_0032_upload_switch_rejects_incompatible_changes(mutation: str) -> None:
         ReleasePlan(data)
 
 
+def image_switch_data() -> dict[str, Any]:
+    data = upload_switch_data()
+    data["release_kind"] = "images_only"
+    data["candidate_prerequisites"] = copy.deepcopy(data["original_prerequisites"])
+    data["candidate_deployments"] = copy.deepcopy(data["deployments"])
+    annotations = data["candidate_prerequisites"][0]["metadata"]["annotations"]
+    for deployment in data["candidate_deployments"]:
+        name = deployment["metadata"]["name"]
+        container = deployment["spec"]["template"]["spec"]["containers"][0]
+        old = container["image"]
+        new = old.split("@", 1)[0] + "@sha256:" + "e" * 64
+        container["image"] = new
+        annotations[PREFIX + "approved-" + name.removeprefix("enterprise-doc-") + "-images"] = (
+            old + "," + new
+        )
+    return data
+
+
+def test_0032_explicit_image_switch_accepts_unchanged_configuration() -> None:
+    from scripts.release_switch import ReleasePlan
+
+    plan = ReleasePlan(image_switch_data())
+    assert plan.revision == "20261005_0032"
+    assert plan.old_config == plan.new_config
+
+
+@pytest.mark.parametrize(
+    "mutation", ["config", "pool", "credential", "approval", "workload", "schema", "kind"]
+)
+def test_0032_image_only_rejects_scope_expansion(mutation: str) -> None:
+    from scripts.release_switch import GuardError, ReleasePlan
+
+    data = image_switch_data()
+    if mutation == "config":
+        data["candidate_prerequisites"][1]["data"]["UPLOAD__SINGLE_PUT_ENABLED"] = "true"
+    elif mutation == "pool":
+        data["api_database_pool_size"] = 2
+    elif mutation == "credential":
+        data["secret"]["new_key"] = "bmV3"
+    elif mutation == "approval":
+        data["candidate_prerequisites"][0]["metadata"]["annotations"][
+            PREFIX + "approved-model-name"
+        ] = "other-model"
+    elif mutation == "workload":
+        data["candidate_deployments"][0]["spec"]["replicas"] = 2
+    elif mutation == "schema":
+        data["original_revision"] = "20260924_0031"
+    else:
+        data["release_kind"] = "unknown"
+    with pytest.raises(GuardError):
+        ReleasePlan(data)
+
+
+@pytest.mark.parametrize("partial", [False, True])
+def test_0032_image_only_applies_and_restores_full_specs(partial: bool) -> None:
+    from scripts.release_switch import ReleaseCluster, ReleasePlan
+
+    data = image_switch_data()
+    boundary = Boundary(data)
+    cluster = ReleaseCluster(
+        ReleasePlan(data),
+        run=boundary,
+        revision=lambda timeout: "20261005_0032",
+        idle=lambda timeout: True,
+        clock=lambda: 1.0,
+    )
+    if partial:
+        for item in boundary.items:
+            if item["kind"] == "Deployment" and item["metadata"]["name"] == "enterprise-doc-api":
+                item["spec"] = copy.deepcopy(data["candidate_deployments"][0]["spec"])
+    else:
+        cluster.apply(100)
+        cluster.verify(True, 100)
+    cluster.restore(100)
+    cluster.verify(False, 100)
+    for original in data["original_prerequisites"] + data["deployments"]:
+        current = next(
+            i for i in boundary.items if i["metadata"]["name"] == original["metadata"]["name"]
+        )
+        for key in ("data", "spec"):
+            if key in original:
+                assert current[key] == original[key]
+
+
+def test_0032_image_only_refuses_schema_drift_before_writes() -> None:
+    from scripts.release_switch import GuardError, ReleaseCluster, ReleasePlan
+
+    data = image_switch_data()
+    boundary = Boundary(data)
+    cluster = ReleaseCluster(
+        ReleasePlan(data),
+        run=boundary,
+        revision=lambda timeout: "20260924_0031",
+        idle=lambda timeout: True,
+        clock=lambda: 1.0,
+    )
+    with pytest.raises(GuardError):
+        cluster.apply(100)
+    assert boundary.writes == []
+
+
 def release_data() -> dict[str, Any]:
     config = {"MODEL__MODEL_NAME": "old-model", "MODEL__BASE_URL": "https://old.invalid/v1"}
     new_config = config | {"MODEL__MODEL_NAME": "new-model"}
