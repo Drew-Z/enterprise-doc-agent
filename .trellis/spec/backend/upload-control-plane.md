@@ -23,6 +23,12 @@ PostgreSQL owns business state; the object store owns multipart bytes and observ
 - Create reserves quota once and never returns an `initializing` session as a successful
   replay. A replay waits briefly for activation, then returns active/terminal state or
   typed `upload_initialization_in_progress`.
+- Creation locks Tenant, then Membership and User with `FOR NO KEY UPDATE`; it changes
+  counters, not identity keys. Keep all three locks: tenant quota competition and
+  tenant/member/user deactivation must still serialize and recheck active status.
+  Unrelated audit/event FK inserts holding `KEY SHARE` must not block create or replay.
+  Restrict the lock targets explicitly; do not remove the User lock merely because it
+  is joined for authorization. Multipart initialization remains outside the transaction.
 - A part has one immutable expected base64 SHA-256 value per upload generation.
 - Presign TTL is `min(configured_ttl, floor(session_expires_at - now))`; less than one
   remaining second is expired.
@@ -61,6 +67,11 @@ PostgreSQL owns business state; the object store owns multipart bytes and observ
 - Blocking initiate tests for replay wait, timeout, owner failure, and concurrent expiry.
 - Concurrent GET tests where an older remote result returns after a newer result, plus
   repeated wall-clock timestamps; assert the database sequence CAS prevents stale writes.
+- `test_upload_create_lock_integration.py` holds a real AuditEvent insert open while
+  both transports create and replay through ASGI. Separate tests observe PostgreSQL
+  blocking during tenant/user/member deactivation and verify rejection after commit;
+  competing last-quota creates still admit only one. These isolated tests do not prove
+  deployed upload p95 or attribute earlier public latency to this lock.
 - Real MinIO tests for checksum-bound PUT, session-bounded TTL, GET expiry, immutable
   expectation uniqueness, malformed checksum mapping, and owner boundaries.
 - OpenAPI tests for BearerAuth and every declared typed error response.

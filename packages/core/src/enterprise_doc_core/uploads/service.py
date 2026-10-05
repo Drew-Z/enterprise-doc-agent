@@ -182,7 +182,9 @@ class UploadCreationService:
                 tenant = await session.scalar(
                     select(Tenant)
                     .where(Tenant.id == tenant_id, Tenant.is_active.is_(True))
-                    .with_for_update()
+                    # Quota changes do not change identity keys. Serialize quota
+                    # and deactivation without blocking unrelated FK inserts.
+                    .with_for_update(of=Tenant, key_share=True)
                 )
                 if tenant is None:
                     raise UploadTenantUnavailable()
@@ -195,7 +197,7 @@ class UploadCreationService:
                         Membership.is_active.is_(True),
                         User.is_active.is_(True),
                     )
-                    .with_for_update()
+                    .with_for_update(of=(Membership, User), key_share=True)
                 )
                 if membership_id is None:
                     raise UploadTenantUnavailable()
