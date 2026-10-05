@@ -29,6 +29,10 @@ PostgreSQL owns business state; the object store owns multipart bytes and observ
   Unrelated audit/event FK inserts holding `KEY SHARE` must not block create or replay.
   Restrict the lock targets explicitly; do not remove the User lock merely because it
   is joined for authorization. Multipart initialization remains outside the transaction.
+- Completion takes the Tenant `FOR NO KEY UPDATE` lock before the upload-session lock.
+  It changes storage counters, not identity keys. Keep this serialization and the atomic
+  document/version/job/outbox creation plus reserved-to-used conversion. An unrelated
+  audit FK insert must not block either transport's completion or completed replay.
 - A part has one immutable expected base64 SHA-256 value per upload generation.
 - Presign TTL is `min(configured_ttl, floor(session_expires_at - now))`; less than one
   remaining second is expired.
@@ -72,6 +76,10 @@ PostgreSQL owns business state; the object store owns multipart bytes and observ
   blocking during tenant/user/member deactivation and verify rejection after commit;
   competing last-quota creates still admit only one. These isolated tests do not prove
   deployed upload p95 or attribute earlier public latency to this lock.
+- `test_upload_completion_lock_integration.py` holds an actual AuditEvent transaction
+  open while competing completions and replay run for both transports. Exactly one
+  document, version, job and outbox record survive, with one storage conversion and no
+  remaining reservation. This uses a local isolated schema and a controlled object store.
 - Real MinIO tests for checksum-bound PUT, session-bounded TTL, GET expiry, immutable
   expectation uniqueness, malformed checksum mapping, and owner boundaries.
 - OpenAPI tests for BearerAuth and every declared typed error response.

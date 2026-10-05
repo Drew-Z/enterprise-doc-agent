@@ -1379,7 +1379,9 @@ class UploadSessionService:
         try:
             async with session_factory.begin() as database:
                 tenant = await database.scalar(
-                    select(Tenant).where(Tenant.id == snapshot.tenant_id).with_for_update()
+                    select(Tenant)
+                    .where(Tenant.id == snapshot.tenant_id)
+                    .with_for_update(of=Tenant, key_share=True)
                 )
                 if tenant is None:
                     raise UploadCompletionStateInvalid()
