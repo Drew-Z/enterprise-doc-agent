@@ -11,6 +11,7 @@ from pydantic import ValidationError
 from enterprise_doc_core.billing.provider_metadata import provider_request_id, safe_provider_id
 from enterprise_doc_core.config import ModelProvider, ModelSettings
 from enterprise_doc_core.model_response import (
+    MAX_MODEL_STREAM_BYTES,
     ModelResponseError,
     OpenAIResponseReader,
     retryable_provider_error,
@@ -200,7 +201,11 @@ class OpenAICompatiblePresalesGateway:
         reader = None
         if self.settings.streaming:
             request["stream_options"] = {"include_usage": True}
-            reader = OpenAIResponseReader(streaming=True, max_bytes=self.settings.max_output_bytes)
+            reader = OpenAIResponseReader(
+                streaming=True,
+                max_bytes=self.settings.max_output_bytes,
+                max_stream_bytes=MAX_MODEL_STREAM_BYTES,
+            )
         if len(json.dumps(request, ensure_ascii=False).encode()) > 128 * 1024:
             raise PresalesError("presales_input_too_large")
         request_id = None

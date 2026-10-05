@@ -416,6 +416,8 @@ async def test_agent_routing_recovers_explicit_upstream_errors_only(
         [{"choices": [{"index": 1, "delta": {"content": "wrong"}}]}],
         [{"choices": [{"index": 0, "delta": {"tool_calls": [{}]}}]}],
         [{"choices": [{"index": 0, "delta": {"content": []}}]}],
+        [{"choices": [{"index": 0, "delta": {"content": "\ud800"}}]}],
+        [{"model": "\ud800", "choices": []}],
         [{"choices": [{"index": 0, "delta": {}, "finish_reason": "length"}]}],
         [{"model": "one", "choices": []}, {"model": "two", "choices": []}],
         [{"id": "one", "choices": []}, {"id": "two", "choices": []}],
@@ -455,6 +457,96 @@ async def test_stream_without_usage_keeps_unknown_accounting():
             result = await reader.read(response)
     assert "usage" not in result.json()
     assert "usage" not in reader.accounting_response.json()
+
+
+@pytest.mark.parametrize("gateway_kind", ["agent", "presales"])
+async def test_small_valid_result_survives_large_stream_framing(gateway_kind):
+    requests = []
+
+    def respond(request):
+        requests.append(request)
+        if gateway_kind == "agent":
+            answer = {
+                "outcome": "refusal",
+                "task_type": "question_answer",
+                "refusal_reason": "insufficient_evidence",
+                "answer_text": None,
+                "structured_fields": None,
+                "citations": [],
+                "risk_hint": None,
+            }
+        else:
+            answer = {
+                "prerequisites": [],
+                "status": "insufficient_evidence",
+                "answer": "需要补充资料。",
+                "missingInformation": ["请提供证明。"],
+                "citations": [],
+            }
+        reasoning = b'data: {"choices":[{"index":0,"delta":{"reasoning_content":"private"}}]}\n\n'
+        wire = reasoning * 5000 + sse(json.dumps(answer))
+        assert len(wire) > 256 * 1024
+        return httpx.Response(200, content=wire, headers={"content-type": "text/event-stream"})
+
+    config = settings(max_output_bytes=1024)
+    if gateway_kind == "agent":
+        async with httpx.AsyncClient(transport=httpx.MockTransport(respond)) as client:
+            result = await OpenAICompatibleChatGateway(settings=config, client=client).generate(
+                agent_request()
+            )
+        assert result.telemetry.total_tokens == 30
+    else:
+        result = await OpenAICompatiblePresalesGateway(
+            config, transport=httpx.MockTransport(respond)
+        ).generate(presales_request())
+        assert result.usage["total_tokens"] == 30
+    assert len(requests) == 1
+
+
+@pytest.mark.parametrize("overflow", ["content", "envelope", "event", "line", "wire"])
+async def test_stream_framing_budget_does_not_expand_result_or_event_limits(overflow):
+    if overflow == "content":
+        wire = b"".join(
+            b'data: {"choices":[{"index":0,"delta":{"content":"' + b"x" * 300 + b'"}}]}\n\n'
+            for _ in range(4)
+        )
+    elif overflow == "envelope":
+        # Each event fits, as do decoded content bytes; JSON escaping still counts.
+        event = (
+            b'data: {"choices":[{"index":0,"delta":{"content":"' + b"\\u0001" * 100 + b'"}}]}\n\n'
+        )
+        wire = event * 3 + sse("")
+    elif overflow == "event":
+        wire = b'data: {"choices":[],"ignored":"' + b"x" * 1000 + b'"}\n\n'
+    elif overflow == "line":
+        wire = b":" + b"x" * 1024
+    else:
+        wire = b": heartbeat\n\n" * 400
+
+    class Stream(httpx.AsyncByteStream):
+        closed = False
+
+        async def __aiter__(self):
+            for offset in range(0, len(wire), 73):
+                yield wire[offset : offset + 73]
+
+        async def aclose(self):
+            self.closed = True
+
+    stream = Stream()
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(
+            lambda _: httpx.Response(
+                200, stream=stream, headers={"content-type": "text/event-stream"}
+            )
+        )
+    ) as client:
+        reader = OpenAIResponseReader(streaming=True, max_bytes=1024, max_stream_bytes=4096)
+        async with client.stream("POST", "https://model.invalid") as response:
+            with pytest.raises(ModelResponseError) as caught:
+                await reader.read(response)
+        assert caught.value.code == "model_response_too_large"
+    assert stream.closed
 
 
 @pytest.mark.parametrize("streaming", [False, True])

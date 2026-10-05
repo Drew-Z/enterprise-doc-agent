@@ -8,6 +8,9 @@ from typing import Any
 
 import httpx
 
+MAX_MODEL_STREAM_BYTES = 8 * 1024**2
+_SSE_LINE_END = re.compile(rb"\r\n|\r|\n")
+
 
 def retryable_provider_error(envelope: Any) -> bool:
     """Classify explicit provider codes, never free-form messages or raw payloads."""
@@ -38,14 +41,18 @@ class ModelResponseError(ValueError):
 class OpenAIResponseReader:
     """One reader per request. Accounting survives cancellation without saving content."""
 
-    def __init__(self, *, streaming: bool, max_bytes: int) -> None:
-        if max_bytes <= 0:
+    def __init__(
+        self, *, streaming: bool, max_bytes: int, max_stream_bytes: int | None = None
+    ) -> None:
+        if max_bytes <= 0 or (max_stream_bytes is not None and max_stream_bytes <= 0):
             raise ValueError("positive response limit required")
         self.streaming = streaming
         self.max_bytes = max_bytes
+        self.max_stream_bytes = max_stream_bytes if max_stream_bytes is not None else max_bytes
         self.accounting_response: httpx.Response | None = None
         self._metadata: dict[str, Any] = {}
         self._content: list[str] = []
+        self._content_bytes = 0
         self._finish: str | None = None
         self._done = False
         self._response: httpx.Response | None = None
@@ -58,14 +65,19 @@ class OpenAIResponseReader:
             if key.lower()
             not in {"content-encoding", "content-length", "content-type", "transfer-encoding"}
         }
-        return httpx.Response(
-            self._response.status_code,
-            json=payload,
-            headers=headers,
-            request=self._response.request,
-        )
+        try:
+            return httpx.Response(
+                self._response.status_code,
+                json=payload,
+                headers=headers,
+                request=self._response.request,
+            )
+        except UnicodeError:
+            raise ModelResponseError() from None
 
     def _event(self, data: str) -> None:
+        if len(data.encode("utf-8")) > self.max_bytes:
+            raise ModelResponseError("model_response_too_large")
         if data == "[DONE]":
             if self._finish != "stop":
                 raise ModelResponseError("incomplete_model_stream")
@@ -124,7 +136,14 @@ class OpenAIResponseReader:
             if content is not None:
                 if not isinstance(content, str) or (self._finish is not None and content):
                     raise ModelResponseError()
-                self._content.append(content)
+                try:
+                    self._content_bytes += len(content.encode("utf-8"))
+                except UnicodeError:
+                    raise ModelResponseError() from None
+                if self._content_bytes > self.max_bytes:
+                    raise ModelResponseError("model_response_too_large")
+                if content:
+                    self._content.append(content)
             finish = choice.get("finish_reason")
             if finish is not None:
                 if self._finish is not None or finish != "stop":
@@ -132,7 +151,7 @@ class OpenAIResponseReader:
                 self._finish = finish
 
     def _completed_response(self) -> httpx.Response:
-        return self._response_for(
+        response = self._response_for(
             {
                 **self._metadata,
                 "choices": [
@@ -144,11 +163,15 @@ class OpenAIResponseReader:
                 ],
             }
         )
+        if len(response.content) > self.max_bytes:
+            raise ModelResponseError("model_response_too_large")
+        return response
 
     async def read(self, response: httpx.Response) -> httpx.Response:
         self._response = response
         self.accounting_response = self._response_for({})
         is_stream = self.streaming and response.is_success
+        wire_limit = self.max_stream_bytes if is_stream else self.max_bytes
         if (
             is_stream
             and response.headers.get("content-type", "").split(";", 1)[0].strip().lower()
@@ -156,33 +179,45 @@ class OpenAIResponseReader:
         ):
             raise ModelResponseError()
         length = response.headers.get("content-length")
-        if length is not None and length.isdecimal() and int(length) > self.max_bytes:
+        if length is not None and length.isdecimal() and int(length) > wire_limit:
             raise ModelResponseError("model_response_too_large")
         total = 0
         buffer = b""
         data: list[str] = []
+        data_bytes = 0
         async for chunk in response.aiter_bytes():
             total += len(chunk)
-            if total > self.max_bytes:
+            if total > wire_limit:
                 raise ModelResponseError("model_response_too_large")
             buffer += chunk
             if not is_stream:
                 continue
-            while match := re.search(rb"\r\n|\r|\n", buffer):
+            offset = 0
+            while match := _SSE_LINE_END.search(buffer, offset):
                 if match.group() == b"\r" and match.end() == len(buffer):
                     break  # CRLF can straddle two transport chunks.
+                if match.start() - offset > self.max_bytes:
+                    raise ModelResponseError("model_response_too_large")
                 try:
-                    line = buffer[: match.start()].decode("utf-8")
+                    line = buffer[offset : match.start()].decode("utf-8")
                 except UnicodeError:
                     raise ModelResponseError() from None
-                buffer = buffer[match.end() :]
+                offset = match.end()
                 if not line and data:
                     self._event("\n".join(data))
                     data.clear()
+                    data_bytes = 0
                     if self._done:
                         return self._completed_response()
                 elif line.startswith("data:"):
-                    data.append(line[5:].removeprefix(" "))
+                    value = line[5:].removeprefix(" ")
+                    data_bytes += len(value.encode("utf-8")) + bool(data)
+                    if data_bytes > self.max_bytes:
+                        raise ModelResponseError("model_response_too_large")
+                    data.append(value)
+            buffer = buffer[offset:]
+            if len(buffer) > self.max_bytes:
+                raise ModelResponseError("model_response_too_large")
         if is_stream:
             if buffer == b"\r" and data:
                 self._event("\n".join(data))

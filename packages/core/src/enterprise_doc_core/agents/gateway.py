@@ -29,6 +29,7 @@ from enterprise_doc_core.agents.schemas import (
 from enterprise_doc_core.billing.provider_calls import recorded_post
 from enterprise_doc_core.config import ModelProvider, ModelSettings
 from enterprise_doc_core.model_response import (
+    MAX_MODEL_STREAM_BYTES,
     ModelResponseError,
     OpenAIResponseReader,
     retryable_provider_error,
@@ -788,7 +789,11 @@ class OpenAICompatibleChatGateway:
         if self.settings.streaming:
             body["stream"] = True
             body["stream_options"] = {"include_usage": True}
-            reader = OpenAIResponseReader(streaming=True, max_bytes=self.settings.max_output_bytes)
+            reader = OpenAIResponseReader(
+                streaming=True,
+                max_bytes=self.settings.max_output_bytes,
+                max_stream_bytes=MAX_MODEL_STREAM_BYTES,
+            )
         try:
             response = await recorded_post(
                 self.client,

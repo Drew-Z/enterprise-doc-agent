@@ -11,7 +11,9 @@ a particular proxy permits requests longer than its read timeout.
 
 ### 2. Signatures
 
-- `OpenAIResponseReader(*, streaming: bool, max_bytes: int)` is created per request.
+- `OpenAIResponseReader(*, streaming: bool, max_bytes: int,
+  max_stream_bytes: int | None = None)` is created per request. Omitted stream
+  budget preserves the original wire bound for direct callers.
 - `retryable_provider_error(envelope)` checks explicit `type`/`code` values only.
   `ModelResponseError.retryable` carries that classification without retaining error text;
   Presales maps an SSE upstream error to `presales_model_upstream_error`, preserving
@@ -31,8 +33,12 @@ a particular proxy permits requests longer than its read timeout.
 - Enabled requests send `stream: true` and `stream_options: {include_usage: true}`.
   Choice zero must finish with `stop` followed by `[DONE]`. UTF-8 and CR/LF boundaries
   may span transport chunks. Tool calls and changing response identities are rejected.
-- The byte limit counts the decoded HTTP stream, including SSE and reasoning fields;
-  heartbeat events never reset the enclosing route or persisted row deadline.
+- Agent and Presales explicitly use `MAX_MODEL_STREAM_BYTES` (8 MiB) for decoded
+  SSE traffic, including framing, ignored reasoning and heartbeats. The configured
+  `max_output_bytes` still bounds accumulated UTF-8 answer content, each event and
+  unterminated line, and the complete reconstructed JSON envelope (including escape
+  expansion). Plain JSON responses retain their original configured byte limit.
+  Heartbeat events never reset the enclosing route or persisted row deadline.
 - Only complete assembled content enters the existing schema/citation validation.
   An explicit provider error takes precedence over any accompanying choices; Agent
   rejects unknown/permanent errors even if the envelope also contains a valid-looking answer.
@@ -48,7 +54,8 @@ a particular proxy permits requests longer than its read timeout.
 | Complete stop and DONE | Original business validation before publication |
 | Truncation, malformed SSE, identity drift, tool delta | Contract rejection; no partial publication or implicit retry |
 | Explicit upstream SSE error | Presales uses the same code/type retry allowlist as JSON errors; only its existing coordinator may switch routes within the original budget. Agent maps the same explicit transient codes to ModelServerError in JSON and SSE so its existing bounded router can recover. Unknown/permanent errors stay non-retryable. |
-| Excessive stream bytes | Response-too-large rejection |
+| Excessive wire, event, line, content or reconstructed envelope bytes | Response-too-large rejection; framing allowance does not expand accepted answer size |
+| Invalid Unicode in content or metadata | Contract rejection, never an uncaught encoding error |
 | HTTP/transport timeout or network error | Existing retryable route policy with observed usage retained |
 | External cancellation | Close stream, preserve bounded accounting, rethrow cancellation |
 | No usage frame | Unknown usage, never inferred zero |
@@ -70,13 +77,21 @@ a particular proxy permits requests longer than its read timeout.
 - `test_model_stream_configuration.py`: reject invalid configuration before writing,
   apply/restore both flags and detect fingerprint drift.
 - `test_stream_presales_evaluation.py`: reconstructed envelope retains usage and supports
-  offline scoring. Evaluator buffering is not evidence of live time to first token.
+  offline scoring, including small answers with more than 256 KiB of framing. The
+  evaluator shares the stream ceiling and receives the model output setting instead
+  of truncating all responses at a separate hardcoded 128 KiB. Evaluator buffering
+  is not evidence of live time to first token.
 
 ### 7. Wrong vs Correct
 
 Wrong: return the accumulated answer at EOF and record missing token counters as zero.
 Correct: require `stop` plus `[DONE]`, pass the envelope through the original validator,
 and preserve unavailable token counters as unknown even when a request was charged.
+
+Wrong: classify a stream as an oversized answer solely because repeated SSE envelopes
+or discarded reasoning exceed the answer budget. Correct: enforce independent bounded
+wire and result budgets. Controlled HTTP tests prove framing compatibility; they do
+not prove that an earlier truncated provider response contained a correct final answer.
 
 ## Adopted Facts
 

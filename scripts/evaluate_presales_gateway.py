@@ -22,7 +22,11 @@ from pydantic import SecretStr
 
 from enterprise_doc_core.config import ModelProvider, ModelSettings
 from enterprise_doc_core.db import selector_event_loop_factory
-from enterprise_doc_core.model_response import ModelResponseError, OpenAIResponseReader
+from enterprise_doc_core.model_response import (
+    MAX_MODEL_STREAM_BYTES,
+    ModelResponseError,
+    OpenAIResponseReader,
+)
 from enterprise_doc_core.presales.errors import PresalesError
 from enterprise_doc_core.presales.gateway import OpenAICompatiblePresalesGateway
 from enterprise_doc_core.presales.schemas import GenerationInput, SourceSnapshot
@@ -53,24 +57,35 @@ def load_route_settings(provider_env: Path, model_route: ModelRoute) -> ModelSet
 
 
 class RecordingTransport(httpx.AsyncBaseTransport):
-    def __init__(self, inner: httpx.AsyncBaseTransport) -> None:
+    def __init__(
+        self, inner: httpx.AsyncBaseTransport, *, max_output_bytes: int | None = None
+    ) -> None:
         self.inner = inner
+        self.max_output_bytes = (
+            ModelSettings().max_output_bytes if max_output_bytes is None else max_output_bytes
+        )
+        if self.max_output_bytes <= 0:
+            raise ValueError("positive response limit required")
         self.records: list[dict[str, Any]] = []
 
     async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
         record: dict[str, Any] = {"requestDispatched": True}
         self.records.append(record)
         # Only frozen fixture input and bounded output, never headers or credentials.
-        record["input"] = json.loads(json.loads(request.content)["messages"][1]["content"])
+        request_body = json.loads(request.content)
+        record["input"] = json.loads(request_body["messages"][1]["content"])
         phase = "awaiting_response_headers"
         try:
             response = await self.inner.handle_async_request(request)
             record["httpStatus"] = response.status_code
+            streaming = response.status_code == 200 and request_body.get("stream") is True
+            wire_limit = MAX_MODEL_STREAM_BYTES if streaming else self.max_output_bytes
             phase = "reading_response_body"
             body = bytearray()
             try:
                 async for part in response.aiter_bytes():
-                    if len(body) + len(part) > 128 * 1024:
+                    record["decodedWireBytes"] = len(body) + len(part)
+                    if len(body) + len(part) > wire_limit:
                         record["outputTooLarge"] = True
                         raise PresalesError("presales_output_too_large", provider_requests=1)
                     body.extend(part)
@@ -106,8 +121,12 @@ class RecordingTransport(httpx.AsyncBaseTransport):
             raise
         if response.status_code == 200:
             try:
-                if json.loads(request.content).get("stream") is True:
-                    reader = OpenAIResponseReader(streaming=True, max_bytes=128 * 1024)
+                if streaming:
+                    reader = OpenAIResponseReader(
+                        streaming=True,
+                        max_bytes=self.max_output_bytes,
+                        max_stream_bytes=MAX_MODEL_STREAM_BYTES,
+                    )
                     decoded = await reader.read(
                         httpx.Response(
                             200,
@@ -218,7 +237,10 @@ async def collect(
     write_json(output, report, exclusive=True)
     try:
         for requirement in dataset.requirements:
-            recorder = RecordingTransport(transport or httpx.AsyncHTTPTransport(retries=0))
+            recorder = RecordingTransport(
+                transport or httpx.AsyncHTTPTransport(retries=0),
+                max_output_bytes=settings.max_output_bytes,
+            )
             gateway = OpenAICompatiblePresalesGateway(
                 settings,
                 presales_settings=presales_settings,

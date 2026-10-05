@@ -2,13 +2,17 @@ import json
 from pathlib import Path
 
 import httpx
+import pytest
 from scripts.evaluate_presales_gateway import collect, load_route_settings
 from scripts.score_presales_gateway import score
 
 ROOT = Path(__file__).resolve().parents[2]
 
 
-async def test_stream_evaluation_preserves_original_output_usage_and_route(tmp_path):
+@pytest.mark.parametrize("expanded_framing", [False, True])
+async def test_stream_evaluation_preserves_original_output_usage_and_route(
+    tmp_path, expanded_framing
+):
     env = tmp_path / "provider.env"
     env.write_text(
         "FALLBACK_BASE_URL=https://model.invalid/v1\nFALLBACK_API_KEY=test\nFALLBACK_MODEL_NAME=test-model\nFALLBACK_STREAMING=true\n",
@@ -48,6 +52,11 @@ async def test_stream_evaluation_preserves_original_output_usage_and_route(tmp_p
             "".join("data: " + json.dumps(x, ensure_ascii=False) + "\n\n" for x in (event, usage))
             + "data: [DONE]\n\n"
         )
+        if expanded_framing:
+            content = (
+                'data: {"choices":[{"index":0,"delta":{"reasoning_content":"private"}}]}\n\n' * 5000
+                + content
+            )
         return httpx.Response(
             200, content=content.encode(), headers={"content-type": "text/event-stream"}
         )
@@ -61,3 +70,4 @@ async def test_stream_evaluation_preserves_original_output_usage_and_route(tmp_p
     assert result["realProviderRequests"] == len(requests) == 6
     assert result["acceptedDrafts"] == 6
     assert result["usage"]["total_tokens"] == 180
+    assert "private" not in json.dumps(run)
