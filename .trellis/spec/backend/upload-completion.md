@@ -1,5 +1,64 @@
 # Multipart Upload Completion
 
+## Scenario: bounded authenticated content upload
+
+### 1. Scope / Trigger
+
+Small files received by the API use the trusted Core writer below. This is a local
+server capability; browser integration and public performance remain unverified.
+
+### 2. Signatures
+
+`POST /api/upload-sessions/content` with `Idempotency-Key` calls existing creation
+and `UploadSessionService.complete_content(..., content: bytes, writer)`.
+
+### 3. Contracts
+
+JSON fields: `filename`, `mediaType`, positive integer `sizeBytes` <=1MiB,
+lowercase hex `sha256`, and `contentBase64`. No client receipts or transport fields.
+`UPLOAD__SINGLE_PUT_ENABLED` gates the route before reading its body. Stream-count
+the wire bytes before JSON parsing, including when Content-Length is absent or
+false; cap at 1,414,488 bytes (base64 expansion plus 16KiB metadata allowance).
+Authenticate before body read; use the existing owned-session and quota contracts.
+
+Return `{session, completion}` only after service finalization, with no-store.
+First creation is 201, same-key replay 200. If an old same-key session is multipart,
+return that session and `completion: null`; never reinterpret its persisted transport.
+The response omits optional default fields such as `initialUpload: null`.
+
+### 4. Validation & Error Matrix
+
+| Condition | Result |
+| --- | --- |
+| Disabled / unauthenticated | 404 upload_content_unsupported / 401 before body read |
+| Missing key / wrong content type | 400 / 415 before mutation |
+| Oversize wire body | 413 before JSON parse, even with false Content-Length |
+| Invalid schema/base64 or extra fields | 422 without content in errors |
+| Decoded size/SHA mismatch | 400 upload_content_mismatch before creation |
+| Owned completion/store failure | Existing typed error; retain same-key recovery |
+
+### 5. Good/Base/Bad Cases
+
+Good: immutable verified bytes, signed create-only PUT, one durable finalization.
+Base: old multipart same-key session continues its existing protocol.
+Bad: lost object/HTTP response triggers a new idempotency key and duplicates quota.
+
+### 6. Tests Required
+
+`apps/api/tests/test_upload_content_bounds.py` proves authentication, capability,
+stream bounds, invalid content and strict fields through ASGI. Real PostgreSQL tests
+in `tests/multipart/test_upload_content_http_integration.py` inject only identity and
+external object/HTTP boundaries. Normal, concurrent, before-write failure, lost PUT
+acknowledgment and lost HTTP response must converge to one session/document/version,
+one Job/Outbox and one storage conversion. Normal success performs no readback;
+ambiguous writes must read back. No production DB is a test fixture.
+
+### 7. Wrong vs Correct
+
+Wrong: `payload = await request.json()` followed by a size check.
+Correct: count `request.stream()` chunks against the wire limit before
+`ContentUploadRequest.model_validate_json(...)`; then verify decoded size and SHA256.
+
 ## Scenario: Slice 6 completion and crash reconciliation
 
 ### 1. Scope / Trigger
@@ -166,6 +225,35 @@ Real PostgreSQL tests must prove one owned-session SELECT before direct object I
 durable `completing` and immediate lock acquisition by a separate transaction at that
 boundary, plus unchanged rejection, concurrent completion and crash recovery behavior.
 
+### Trusted server-received small content (Core capability)
+
+`UploadSessionService.complete_content(principal, session_id, content, writer)`
+accepts immutable bytes within the existing 1 MiB limit. Its claim transaction
+verifies the owned session's transport, declared size and SHA256 before changing
+state, including on replay; mismatching input cannot poison a valid in-flight
+completion. The existing envelope validator receives those verified full bytes.
+
+`Boto3SignedUploadWriter.write_content` owns a separate S3 client with explicit
+SigV4 payload signing. It sends the full SHA256 and `If-None-Match: *`, validates
+HTTP 200 plus a nonempty ETag, and returns a receipt for its own write. It never
+represents that digest as a stored native checksum or accepts client receipts.
+Other object-store clients keep their existing signing defaults. The real R2
+negative probe rejected a body changed after signing without creating an object;
+this is request-payload integrity, distinct from R2's HEAD checksum support.
+
+Only that acknowledged fresh write can use its verified bytes/owned metadata
+without a second object read. Any object-store error or mismatched write receipt
+falls back to the original owned-object readback path. A missing object remains
+in `completing` for recovery rather than being treated as success. Cancellation
+does not manufacture a receipt. Finalization retains the existing tenant→session
+lock order, preallocated IDs, job/outbox and one-time quota conversion.
+
+Validation must use real SDK signing with only the HTTP boundary replaced, plus
+isolated PostgreSQL for no-lock-during-PUT, concurrent completion/replay, lost
+response recovery and invalid actor/tenant/hash/size/expiry/envelope rejection.
+The Core capability alone is not a bounded HTTP ingress, browser recovery or
+public performance result; those integrations require their own checks.
+
 #### Wrong
 
 ```python
@@ -198,3 +286,6 @@ finalize_preallocated_version_and_quota_once()
 - `apps/api/src/enterprise_doc_api/uploads/router.py`
 - `packages/core/tests/test_document_envelope.py`
 - `tests/multipart/test_upload_complete_integration.py`
+- `packages/core/src/enterprise_doc_core/object_store/signed_upload.py`
+- `packages/core/tests/test_signed_object_upload.py`
+- `tests/multipart/test_signed_upload_completion_integration.py`

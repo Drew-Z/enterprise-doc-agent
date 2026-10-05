@@ -83,6 +83,7 @@ from enterprise_doc_api.presales.router import router as presales_router
 from enterprise_doc_api.queue_probe import QueueProbe
 from enterprise_doc_api.tenant_usage.router import router as tenant_usage_router
 from enterprise_doc_api.uploads import router as upload_router
+from enterprise_doc_api.uploads.content import router as upload_content_router
 from enterprise_doc_api.uploads.router import (
     UploadCreationServiceProtocol,
     UploadSessionServiceProtocol,
@@ -119,6 +120,10 @@ from enterprise_doc_core.object_store import (
     Boto3ArtifactObjectStore,
     Boto3MultipartObjectStore,
     MultipartObjectStore,
+)
+from enterprise_doc_core.object_store.signed_upload import (
+    Boto3SignedUploadWriter,
+    SignedUploadWriter,
 )
 from enterprise_doc_core.presales.gateway import OpenAICompatiblePresalesGateway
 from enterprise_doc_core.presales.service import PresalesService
@@ -185,6 +190,7 @@ def create_app(
     external_principal_resolver: PrincipalResolver | None = None,
     upload_creation_service: UploadCreationServiceProtocol | None = None,
     upload_session_service: UploadSessionServiceProtocol | None = None,
+    signed_upload_writer: SignedUploadWriter | None = None,
     document_inventory_service: DocumentInventoryServiceProtocol | None = None,
     document_policy_service: DocumentPolicyServiceProtocol | None = None,
     agent_run_service: AgentRunServiceProtocol | None = None,
@@ -257,6 +263,11 @@ def create_app(
     owned_database_engine: AsyncEngine | None = None
     owned_multipart_object_store: Boto3MultipartObjectStore | None = None
     owned_artifact_object_store: Boto3ArtifactObjectStore | None = None
+    owned_signed_upload_writer = (
+        Boto3SignedUploadWriter(settings=resolved_settings.object_store, metrics=resolved_metrics)
+        if resolved_settings.upload.single_put_enabled and signed_upload_writer is None
+        else None
+    )
     if resources is not None:
         business_database_engine: AsyncEngine | None = resources.database_engine
         business_object_store: MultipartObjectStore | None = resources.multipart_object_store
@@ -362,6 +373,8 @@ def create_app(
                     await owned_multipart_object_store.close()
             if owned_artifact_object_store is not None:
                 await owned_artifact_object_store.close()
+            if owned_signed_upload_writer is not None:
+                await owned_signed_upload_writer.close()
 
     app = FastAPI(
         title="Enterprise Document Agent API",
@@ -440,6 +453,8 @@ def create_app(
         )
     app.state.metrics = resolved_metrics
     app.state.readiness_cache = readiness_cache
+    app.state.upload_content_enabled = resolved_settings.upload.single_put_enabled
+    app.state.signed_upload_writer = signed_upload_writer or owned_signed_upload_writer
     app.state.upload_creation_service = (
         upload_creation_service
         if upload_creation_service is not None
@@ -571,6 +586,7 @@ def create_app(
         if session_factory is not None
         else None
     )
+    app.include_router(upload_content_router)
     app.include_router(upload_router)
     if presales_service is None:
         embedding_provider, embedding_model, embedding_dimension = build_embedding_provider(

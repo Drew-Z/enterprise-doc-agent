@@ -33,7 +33,9 @@ from enterprise_doc_core.object_store import (
     ObjectStoreNotFound,
     UploadedPart,
 )
+from enterprise_doc_core.object_store.errors import ObjectStoreError
 from enterprise_doc_core.object_store.models import ObjectContent, PresignedObjectUpload
+from enterprise_doc_core.object_store.signed_upload import SignedUploadWriter
 from enterprise_doc_core.uploads.models import (
     UPLOAD_PART_OBSERVATION_VERSION_SEQUENCE,
     UploadPart,
@@ -674,6 +676,76 @@ class UploadSessionService:
         return await self._finalize_completion(
             snapshot=snapshot,
             head=result.head,
+            detected_media_type=envelope.detected_media_type,
+            transport_checksum=None,
+            content_sha256_verified_at=self.clock(),
+        )
+
+    async def complete_content(
+        self,
+        *,
+        principal: PrincipalContext,
+        session_id: UUID,
+        content: bytes,
+        writer: SignedUploadWriter,
+    ) -> CompleteUploadSessionResult:
+        """Complete server-received bytes through a trusted payload-signed writer.
+
+        An existing or ambiguously written object always takes the original
+        readback path. Callers must never accept a writer/receipt from a client.
+        """
+        if type(content) is not bytes or not 0 < len(content) <= MAX_BUFFERED_ENVELOPE_BYTES:
+            raise UploadPartSizeInvalid()
+        digest = hashlib.sha256(content).hexdigest()
+        tenant_id, actor_id = _principal_ids(principal)
+        snapshot, completed = await self._claim_owned_completion(
+            session_id=session_id,
+            tenant_id=tenant_id,
+            actor_id=actor_id,
+            expected_content=(len(content), digest),
+        )
+        if completed is not None:
+            return completed
+        try:
+            envelope = await validate_document_envelope(
+                object_store=self.object_store,
+                bucket=self.documents_bucket,
+                key=snapshot.object_key,
+                size_bytes=snapshot.size_bytes,
+                extension=snapshot.extension,
+                settings=self.settings,
+                verified_content=content,
+            )
+        except DocumentEnvelopeViolation as error:
+            await self._mark_invalid_completion(
+                snapshot=snapshot, error_code=error.code, delete_object=False
+            )
+            raise
+        try:
+            receipt = await writer.write_content(
+                bucket=self.documents_bucket,
+                key=snapshot.object_key,
+                body=content,
+                content_type=envelope.detected_media_type,
+                metadata={
+                    "contract": "m1",
+                    "upload-session-id": str(snapshot.session_id),
+                    "version-id": str(snapshot.pending_version_id),
+                    "declared-size": str(snapshot.size_bytes),
+                },
+            )
+            if receipt.content_sha256 != digest:
+                raise UploadCompletionVerificationFailed()
+            _verified_single_put_content(snapshot, ObjectContent(receipt.head, content))
+        except (ObjectStoreError, UploadCompletionVerificationFailed) as error:
+            _LOGGER.info(
+                "signed upload requires readback recovery",
+                extra={"event_data": {"error_code": error.code}},
+            )
+            return await self._complete_single_put(snapshot)
+        return await self._finalize_completion(
+            snapshot=snapshot,
+            head=receipt.head,
             detected_media_type=envelope.detected_media_type,
             transport_checksum=None,
             content_sha256_verified_at=self.clock(),
@@ -1339,6 +1411,7 @@ class UploadSessionService:
         tenant_id: UUID,
         actor_id: UUID,
         expected_snapshot: _UploadSessionSnapshot | None = None,
+        expected_content: tuple[int, str] | None = None,
     ) -> tuple[_UploadSessionSnapshot, CompleteUploadSessionResult | None]:
         session_factory = self._session_factory()
         claimed_snapshot: _UploadSessionSnapshot | None = None
@@ -1353,6 +1426,12 @@ class UploadSessionService:
             )
             if upload_session is None:
                 raise UploadSessionNotFound()
+            if expected_content is not None:
+                if upload_session.transport != UploadTransport.SINGLE_PUT.value:
+                    raise UploadCompletionPartsInvalid()
+                if expected_content != (upload_session.size_bytes, upload_session.declared_sha256):
+                    # Invalid input must not claim or fail a valid in-flight upload.
+                    raise UploadCompletionVerificationFailed()
             completed = await _completed_result(
                 database,
                 upload_session=upload_session,
