@@ -36,6 +36,17 @@ PostgreSQL owns business state; the object store owns multipart bytes and observ
 - A part has one immutable expected base64 SHA-256 value per upload generation.
 - Presign TTL is `min(configured_ttl, floor(session_expires_at - now))`; less than one
   remaining second is expired.
+- `?includeSignature=true` on creation opts into an optional `initialUpload` for
+  active single PUT sessions, including active replays. No opt-in or a multipart/
+  terminal result retains the legacy response. Call the existing signing service
+  after durable creation so ownership, TTL and persisted capability expiry still
+  apply. The capability response is `Cache-Control: no-store`; expected signing
+  errors omit the optional field and retain the separate presign recovery route.
+- The Web client keeps at most one initial capability in instance memory, strips it
+  before returning session state, and consumes it once. Bind it to the captured
+  credential and session ID; use a monotonic expiry measured before the create request
+  with a five-second margin. Expiry, retired credentials and retries use the normal
+  presign route. Both paths must share origin, session, size and header validation.
 - A listed checksum/size mismatch clears prior verification. Absence from one complete
   listing is not destructive evidence because a part cannot be deleted independently
   inside the same multipart generation.
@@ -83,6 +94,11 @@ PostgreSQL owns business state; the object store owns multipart bytes and observ
 - Real MinIO tests for checksum-bound PUT, session-bounded TTL, GET expiry, immutable
   expectation uniqueness, malformed checksum mapping, and owner boundaries.
 - OpenAPI tests for BearerAuth and every declared typed error response.
+- Initial-signature HTTP tests cover opt-in, replay, terminal/multipart omission and
+  signing failure after durable creation. A real isolated PostgreSQL test verifies
+  one reservation and stored signature expiry across creation/replay. Web tests
+  verify one initial control request, no capability in returned state, one-use and
+  credential/expiry fallback, and refusal of invalid inline capabilities.
 
 ### 7. Wrong vs Correct
 

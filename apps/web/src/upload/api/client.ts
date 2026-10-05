@@ -91,6 +91,12 @@ export class UploadApiClient {
   private readonly baseUrl: string;
   private readonly fetcher: Fetcher;
   private readonly allowedObjectStoreOrigins: ReadonlySet<string>;
+  private initialUpload: {
+    sessionId: string;
+    credential: ApiCredential;
+    expiresAt: number;
+    signature: Pick<PresignPartResponse, "url" | "headers" | "expiresInSeconds">;
+  } | undefined;
 
   constructor(private readonly options: UploadApiClientOptions) {
     this.baseUrl = normalizeBaseUrl(options.baseUrl);
@@ -130,17 +136,32 @@ export class UploadApiClient {
     if (!/^[\x21-\x7e]{1,128}$/.test(idempotencyKey)) {
       throw new UploadApiProtocolError("Idempotency key must be 1-128 visible ASCII characters.");
     }
-    return this.requestJson(
-      "/api/upload-sessions",
-      createUploadResponseSchema,
+    this.initialUpload = undefined;
+    const credential = this.options.getToken();
+    const startedAt = performance.now();
+    const { initialUpload, ...session } = await this.requestJson(
+      `/api/upload-sessions${request.transport === "single_put" ? "?includeSignature=true" : ""}`,
+      createUploadResponseSchema.extend({ initialUpload: presignObjectResponseSchema.optional() }),
       [200, 201],
       {
         method: "POST",
-        headers: { "Content-Type": "application/json", "Idempotency-Key": idempotencyKey },
+        headers: {
+          "Content-Type": "application/json", "Idempotency-Key": idempotencyKey,
+        },
         body: JSON.stringify(parseOutgoing(createUploadRequestSchema, request)),
         signal,
       },
     );
+    if (initialUpload && request.transport === "single_put" && session.transport === "single_put" &&
+        session.status === "active" && credential !== null && credential === this.options.getToken() &&
+        !signal?.aborted) {
+      this.initialUpload = {
+        sessionId: session.sessionId, credential, signature: initialUpload,
+        expiresAt: startedAt + Math.max(0, initialUpload.expiresInSeconds - 5) * 1_000,
+      };
+    }
+    // Signed capabilities must never enter the controller's persisted session state.
+    return session;
   }
 
   async getSession(sessionId: string, signal?: AbortSignal): Promise<GetUploadResponse> {
@@ -167,7 +188,13 @@ export class UploadApiClient {
       if (parsedPartNumber !== 1 || parsedRequest.sizeBytes > 1_048_576) {
         throw new UploadApiProtocolError("Single PUT requires one bounded part.");
       }
-      const response = await this.requestJson(
+      const initial = this.initialUpload;
+      this.initialUpload = undefined;
+      const credential = this.options.getToken();
+      const reusable = initial?.sessionId === parsedSessionId && initial.credential === credential &&
+        performance.now() < initial.expiresAt && !signal?.aborted &&
+        (typeof credential === "string" || (credential !== null && !credential.signal.aborted));
+      const response = reusable ? initial.signature : await this.requestJson(
         `/api/upload-sessions/${encodeURIComponent(parsedSessionId)}/object/presign`,
         presignObjectResponseSchema,
         [200],

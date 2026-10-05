@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Annotated, Protocol, cast
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, Request, Response, status
+from fastapi import APIRouter, Depends, Header, Query, Request, Response, status
 from pydantic import Field, StrictInt
 
 from enterprise_doc_api.auth import get_current_principal
@@ -107,6 +107,12 @@ class UploadSessionCreateRequest(ApiModel):
     transport: UploadTransport = UploadTransport.MULTIPART
 
 
+class PresignSinglePutResponse(ApiModel):
+    url: str
+    headers: dict[str, str]
+    expires_in_seconds: int
+
+
 class UploadSessionCreateResponse(ApiModel):
     session_id: UUID
     status: str
@@ -120,6 +126,7 @@ class UploadSessionCreateResponse(ApiModel):
     expires_at: datetime
     replayed: bool
     transport: UploadTransport = UploadTransport.MULTIPART
+    initial_upload: PresignSinglePutResponse | None = None
 
 
 class UploadedPartResponse(ApiModel):
@@ -160,12 +167,6 @@ class PresignUploadPartResponse(ApiModel):
 
 class SinglePutRequest(ApiModel):
     pass
-
-
-class PresignSinglePutResponse(ApiModel):
-    url: str
-    headers: dict[str, str]
-    expires_in_seconds: int
 
 
 class CompleteUploadPartRequest(ApiModel):
@@ -218,6 +219,7 @@ async def create_upload_session(
     request: Request,
     principal: Annotated[PrincipalContext, Depends(get_current_principal)],
     idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
+    include_signature: Annotated[bool, Query(alias="includeSignature")] = False,
 ) -> UploadSessionCreateResponse:
     if idempotency_key is None:
         raise ApiError(
@@ -283,6 +285,30 @@ async def create_upload_session(
 
     if result.replayed:
         response.status_code = status.HTTP_200_OK
+    initial_upload = None
+    if (
+        include_signature
+        and result.transport == UploadTransport.SINGLE_PUT.value
+        and result.status == "active"
+    ):
+        response.headers["Cache-Control"] = "no-store"
+        session_service = cast(
+            UploadSessionServiceProtocol, request.app.state.upload_session_service
+        )
+        try:
+            signed = await session_service.presign_single_put(
+                principal=principal, session_id=result.session_id
+            )
+        except (UploadSessionError, ObjectStoreError):
+            # Creation is already durable. The separate presign endpoint retains
+            # its typed failure/recovery contract if this optional capability fails.
+            pass
+        else:
+            initial_upload = PresignSinglePutResponse(
+                url=signed.url,
+                headers=signed.headers,
+                expires_in_seconds=signed.expires_in_seconds,
+            )
     return UploadSessionCreateResponse(
         session_id=result.session_id,
         status=result.status,
@@ -296,6 +322,7 @@ async def create_upload_session(
         expires_at=result.expires_at,
         replayed=result.replayed,
         transport=UploadTransport(result.transport),
+        initial_upload=initial_upload,
     )
 
 
