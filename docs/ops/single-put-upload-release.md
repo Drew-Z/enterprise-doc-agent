@@ -1,6 +1,19 @@
 # Small-file single PUT release
 
-Status: candidate, not deployed. Production application remains rc.23/schema0031.
+Status: rc.24 deployed and verified on schema0032 (2026-10-04 23:37 UTC),
+source `d14fa62f222f656b6155ec71b401453ef7a71082`. Single PUT creation was enabled
+by the guarded same-image configuration switch (91.84 seconds). Public browser
+normal, lost-response412 retry, and refresh/reselect recovery passed. The normal
+41-byte upload sample took8.01 seconds; this is not a percentile or capacity result.
+Five synthetic sessions completed with zero reserved bytes and distinct versions.
+The existing demonstration tenant had no processing allowance, so these documents
+failed subsequent ingestion; full business/performance acceptance remains pending.
+The first two browser harness runs incorrectly waited for a local-only result element;
+their failures are retained, and the corrected test checks the visible completion state.
+Four application specifications and 20 prerequisites match the exact candidate;
+public homepage/readiness return200. A containerd alias issue initially prevented
+migration container startup; adding four equivalent qualified aliases resolved it.
+The existing migration Job then completed once, without restoring old images.
 
 Files up to1MiB may upload with one conditional object PUT instead of multipart
 creation/part upload/completion. The API still verifies ownership, full SHA-256,
