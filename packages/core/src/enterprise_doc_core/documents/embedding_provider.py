@@ -3,7 +3,8 @@ from __future__ import annotations
 import asyncio
 import json
 import math
-from collections.abc import Sequence
+from collections.abc import AsyncIterator, Sequence
+from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 from typing import Any
@@ -236,6 +237,7 @@ def build_embedding_provider(
     settings: EmbeddingSettings,
     *,
     app_env: AppEnvironment = AppEnvironment.LOCAL,
+    client: httpx.AsyncClient | None = None,
 ) -> tuple[EmbeddingProvider, str, int]:
     from enterprise_doc_core.documents.embedding_routing import DimensionCheckedEmbeddingProvider
     from enterprise_doc_core.documents.ingestion import HashEmbeddingProvider
@@ -245,6 +247,7 @@ def build_embedding_provider(
     else:
         provider = OpenAICompatibleEmbeddingProvider(
             settings=settings,
+            client=client,
             require_metering=app_env in {AppEnvironment.STAGING, AppEnvironment.PRODUCTION},
         )
     return (
@@ -254,9 +257,27 @@ def build_embedding_provider(
     )
 
 
+@asynccontextmanager
+async def managed_embedding_provider(
+    settings: EmbeddingSettings,
+    *,
+    app_env: AppEnvironment = AppEnvironment.LOCAL,
+) -> AsyncIterator[tuple[EmbeddingProvider, str, int]]:
+    """Own a connection pool within one service's async lifetime and event loop."""
+    if settings.provider.value == "hash":
+        yield build_embedding_provider(settings, app_env=app_env)
+        return
+    async with httpx.AsyncClient(
+        trust_env=False,
+        limits=httpx.Limits(max_connections=10, max_keepalive_connections=5, keepalive_expiry=120),
+    ) as client:
+        yield build_embedding_provider(settings, app_env=app_env, client=client)
+
+
 __all__ = [
     "EmbeddingProviderError",
     "OpenAICompatibleEmbeddingProvider",
     "build_embedding_provider",
     "embedding_model_identity",
+    "managed_embedding_provider",
 ]
