@@ -658,7 +658,7 @@ async def test_terminal_errors_release_reservation_without_extra_sampling(backgr
     await worker.run_once("worker")
     result = await b.service.get(b.context.principal, packet.id)
     assert result.rows[0].state == "failed" and result.rows[0].draft is None
-    assert len(dispatched) == (2 if fault == "both_fail" else 1)
+    assert len(dispatched) == (2 if fault in {"both_fail", "invalid_output"} else 1)
     await b.service.generate(b.context.principal, packet.id, packet.rows[0].id, "once")
     assert not await worker.run_once("worker")
     async with b.sessions() as session:
@@ -675,6 +675,50 @@ async def test_terminal_errors_release_reservation_without_extra_sampling(backgr
         ).all()
         if fault in {"invalid_citation", "invalid_output"}:
             assert calls[0].usage["total_tokens"] == 50
+
+
+@pytest.mark.parametrize("failover", [True, False])
+async def test_invalid_output_recovers_without_marking_transport_unhealthy(background, failover):
+    from enterprise_doc_core.presales.models import PresalesProviderCall, PresalesRouteHealth
+
+    b = background
+    dispatched = []
+
+    def respond(request):
+        dispatched.append(request.url.host)
+        response = valid_response(request).json()
+        if request.url.host == "primary.invalid":
+            draft = json.loads(response["choices"][0]["message"]["content"])
+            draft.pop("prerequisites")
+            response["choices"][0]["message"]["content"] = json.dumps(draft)
+        return httpx.Response(200, json=response)
+
+    worker = configured_worker(b, respond, automatic_failover_enabled=failover)
+    packet = await enqueue(b)
+    await worker.run_once("worker")
+    result = await b.service.get(b.context.principal, packet.id)
+    assert result.rows[0].state == ("drafted" if failover else "failed")
+    assert dispatched == (
+        ["primary.invalid", "fallback.invalid"] if failover else ["primary.invalid"]
+    )
+    await b.service.generate(b.context.principal, packet.id, packet.rows[0].id, "once")
+    assert not await worker.run_once("worker")
+    async with b.sessions() as session:
+        calls = (
+            await session.scalars(
+                select(PresalesProviderCall).order_by(PresalesProviderCall.number)
+            )
+        ).all()
+        assert len(calls) == (2 if failover else 1)
+        assert calls[0].error_code == "presales_invalid_model_output"
+        assert calls[0].retryable is False
+        assert calls[0].usage["total_tokens"] == 50
+        if failover:
+            assert calls[1].state == "succeeded" and calls[1].usage["total_tokens"] == 50
+        reservation = (await session.scalars(select(UsageReservation))).one()
+        assert reservation.state == ("consumed" if failover else "released")
+        health = (await session.scalars(select(PresalesRouteHealth))).all()
+        assert all(item.failures == 0 and item.open_until is None for item in health)
 
 
 @pytest.mark.parametrize("row_budget", [90, 660])

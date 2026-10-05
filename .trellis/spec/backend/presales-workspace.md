@@ -446,8 +446,12 @@ background generation. API and Worker must use the same settings and model route
   Never reuse a route label or endpoint/model hash within the operation. Recover only
   transport/timeouts, HTTP 408/426/429/5xx, or recognized 200 error envelopes. HTTP 426
   is `presales_model_upgrade_required`: try only the other route, never the same
-  endpoint/model again in the operation. Invalid
-  citations, JSON, prose and business failures are terminal. All calls share the
+  endpoint/model again in the operation. A dispatched `presales_invalid_model_output`
+  rejection can use the remaining distinct route slot, including after lease recovery.
+  Both responses still undergo the complete contract validation; no draft is repaired
+  or saved on failure. Invalid citations and business/access failures remain terminal.
+  This coordinator policy supersedes the earlier no-recovery statements for malformed
+  output above; the synchronous gateway still issues exactly one request. All calls share the
   execution deadline, with two seconds reserved for persistence and a five-second
   connection cap. There is no HTTP/SDK retry or third dispatch after restart.
   After dispatch admission, the first call uses at most half the remaining model
@@ -471,7 +475,8 @@ background generation. API and Worker must use the same settings and model route
   because an upstream upgrade needs operator action; after that, the same single
   half-open probe and generation fencing apply. Do not reset health merely because
   the incompatible upstream returned an HTTP response. Output validation failures
-  are not network outages. Dispatch-day
+  are not network outages: malformed-output alternate eligibility must not set the
+  stored transport `retryable` flag or count toward the outage circuit breaker. Dispatch-day
   counters survive tenant cleanup; they are not refunded by failure or deletion.
 - **Rollback:** stop new admission with generation_enabled=false, leave background
   processing enabled until active work drains, then disable background/failover

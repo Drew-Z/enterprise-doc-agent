@@ -46,6 +46,12 @@ from enterprise_doc_core.presales.schemas import (
 )
 
 
+def _can_recover(code: str | None, retryable: bool | None, dispatched: bool) -> bool:
+    # Contract rejection may use the other route's existing slot. It is not a
+    # transport outage: keep the original retryable observation for route health.
+    return bool(retryable) or (dispatched and code == "presales_invalid_model_output")
+
+
 class BackgroundGeneration:
     """Bounded PostgreSQL polling in the existing worker; no Celery retry chain."""
 
@@ -314,7 +320,9 @@ class BackgroundGeneration:
                             raise
                         except PresalesError as error:
                             await self._record_error(claim, call_id, error)
-                            if not error.retryable:
+                            if not _can_recover(
+                                error.code, error.retryable, bool(error.provider_requests)
+                            ):
                                 raise
                             continue
                         try:
@@ -369,7 +377,12 @@ class BackgroundGeneration:
             self._active(operation)
             calls = await self._calls(session, operation)
             maximum = 2 if self.settings.automatic_failover_enabled else 1
-            if calls and (len(calls) >= maximum or not calls[-1].retryable):
+            if calls and (
+                len(calls) >= maximum
+                or not _can_recover(
+                    calls[-1].error_code, calls[-1].retryable, calls[-1].state == "failed"
+                )
+            ):
                 raise PresalesError(calls[-1].error_code or "presales_dispatch_limit")
             order = [self.settings.model_route]
             if maximum == 2:
@@ -470,7 +483,11 @@ class BackgroundGeneration:
             call.usage, call.provider_response_id = error.usage, error.provider_response_id
             call.provider_request_id = error.provider_request_id
             await route_health.observed(session, call, now=self.clock(), settings=self.settings)
-            operation.state = "recovering" if error.retryable else "running"
+            operation.state = (
+                "recovering"
+                if _can_recover(error.code, error.retryable, bool(error.provider_requests))
+                else "running"
+            )
             summarize_calls(operation, calls)
 
     async def _save(
