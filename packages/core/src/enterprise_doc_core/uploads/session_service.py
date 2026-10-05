@@ -540,6 +540,15 @@ class UploadSessionService:
         request: CompleteUploadSessionInput,
     ) -> CompleteUploadSessionResult:
         tenant_id, actor_id = _principal_ids(principal)
+        if not request.parts:
+            # An unfinished multipart upload cannot complete without parts.
+            # Claim a direct upload from its owned row in one transaction.
+            snapshot, completed = await self._claim_owned_completion(
+                session_id=session_id, tenant_id=tenant_id, actor_id=actor_id
+            )
+            if completed is not None:
+                return completed
+            return await self._complete_single_put(snapshot)
         snapshot, expected_parts, completed = await self._load_completion_state(
             session_id=session_id,
             tenant_id=tenant_id,
@@ -548,9 +557,7 @@ class UploadSessionService:
         if completed is not None:
             return completed
         if snapshot.transport == UploadTransport.SINGLE_PUT.value:
-            if request.parts:
-                raise UploadCompletionPartsInvalid()
-            return await self._complete_single_put(snapshot)
+            raise UploadCompletionPartsInvalid()
         completion_parts = _validate_completion_request(
             snapshot=snapshot,
             expected_parts=expected_parts,
@@ -641,9 +648,6 @@ class UploadSessionService:
     ) -> CompleteUploadSessionResult:
         if not 0 < snapshot.size_bytes <= MAX_BUFFERED_ENVELOPE_BYTES:
             raise UploadCompletionStateInvalid()
-        snapshot, completed = await self._claim_completion(snapshot=snapshot)
-        if completed is not None:
-            return completed
         # A missing object is not a terminal failure: the client's PUT response
         # may have been lost or its request may still be in flight.
         result = await self.object_store.read_object(
@@ -1321,15 +1325,30 @@ class UploadSessionService:
         *,
         snapshot: _UploadSessionSnapshot,
     ) -> tuple[_UploadSessionSnapshot, CompleteUploadSessionResult | None]:
+        return await self._claim_owned_completion(
+            session_id=snapshot.session_id,
+            tenant_id=snapshot.tenant_id,
+            actor_id=snapshot.actor_id,
+            expected_snapshot=snapshot,
+        )
+
+    async def _claim_owned_completion(
+        self,
+        *,
+        session_id: UUID,
+        tenant_id: UUID,
+        actor_id: UUID,
+        expected_snapshot: _UploadSessionSnapshot | None = None,
+    ) -> tuple[_UploadSessionSnapshot, CompleteUploadSessionResult | None]:
         session_factory = self._session_factory()
         claimed_snapshot: _UploadSessionSnapshot | None = None
         completed: CompleteUploadSessionResult | None = None
         async with session_factory.begin() as database:
             upload_session = await database.scalar(
                 _owned_session_query(
-                    session_id=snapshot.session_id,
-                    tenant_id=snapshot.tenant_id,
-                    actor_id=snapshot.actor_id,
+                    session_id=session_id,
+                    tenant_id=tenant_id,
+                    actor_id=actor_id,
                 ).with_for_update()
             )
             if upload_session is None:
@@ -1347,22 +1366,26 @@ class UploadSessionService:
                     upload_session.completion_started_at = self.clock()
                 elif upload_session.status != UploadSessionStatus.COMPLETING.value:
                     raise UploadSessionNotActive()
-                if (
-                    upload_session.object_key != snapshot.object_key
-                    or upload_session.object_store_upload_id != snapshot.object_store_upload_id
-                    or upload_session.pending_document_id != snapshot.pending_document_id
-                    or upload_session.pending_version_id != snapshot.pending_version_id
-                    or upload_session.transport != snapshot.transport
+                if expected_snapshot is None:
+                    if upload_session.transport != UploadTransport.SINGLE_PUT.value:
+                        raise UploadCompletionPartsInvalid()
+                    if not 0 < upload_session.size_bytes <= MAX_BUFFERED_ENVELOPE_BYTES:
+                        raise UploadCompletionStateInvalid()
+                elif (
+                    upload_session.object_key != expected_snapshot.object_key
+                    or upload_session.object_store_upload_id
+                    != expected_snapshot.object_store_upload_id
+                    or upload_session.pending_document_id != expected_snapshot.pending_document_id
+                    or upload_session.pending_version_id != expected_snapshot.pending_version_id
+                    or upload_session.transport != expected_snapshot.transport
                 ):
                     raise UploadCompletionStateInvalid()
                 upload_session.cleanup_claimed_at = None
                 upload_session.cleanup_claim_token = None
-                claimed_snapshot = _snapshot(upload_session)
-        if completed is not None:
-            return snapshot, completed
+            claimed_snapshot = _snapshot(upload_session)
         if claimed_snapshot is None:
             raise UploadCompletionStateInvalid()
-        return claimed_snapshot, None
+        return claimed_snapshot, completed
 
     async def _finalize_completion(
         self,

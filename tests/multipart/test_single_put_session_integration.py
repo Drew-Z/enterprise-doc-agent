@@ -3,7 +3,7 @@ from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import pytest
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete, event, select, update
 
 from enterprise_doc_api.config import ApiSettings
 from enterprise_doc_core.context import PrincipalContext
@@ -22,7 +22,10 @@ from enterprise_doc_core.uploads.service import (
 from enterprise_doc_core.uploads.session_service import (
     CompleteUploadSessionInput,
     UploadAbortFailed,
+    UploadCompletionPartsInvalid,
     UploadCompletionVerificationFailed,
+    UploadSessionExpired,
+    UploadSessionNotActive,
     UploadSessionNotFound,
     UploadSessionService,
 )
@@ -30,6 +33,7 @@ from tests.multipart.test_upload_complete_integration import (
     CompletionObjectStore,
     CrashBeforeFinalizationService,
     _cleanup_seeded,
+    _completion_request,
     _seed_upload,
 )
 
@@ -40,6 +44,151 @@ class DirectStore:
 
     async def presign_object_put(self, **kwargs):
         return PresignedObjectUpload("https://example.test/signed", {}, 60)
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize(
+    "scenario",
+    ["multipart", "expired", "expired_multipart", "failed", "actor", "tenant", "parts"],
+)
+async def test_single_put_claim_rejections_preserve_session_and_skip_object_io(scenario):
+    settings = ApiSettings(_env_file=None)
+    engine = create_database_engine(settings.database)
+    factory = create_session_factory(engine)
+    seeded = await _seed_upload(factory, content=b"%PDF-1.7")
+    store = CompletionObjectStore(seeded)
+    original_status = "failed" if scenario == "failed" else "active"
+    try:
+        async with factory.begin() as db:
+            values = {"status": original_status}
+            if "multipart" not in scenario:
+                values.update(transport="single_put", object_store_upload_id=None)
+            if "expired" in scenario:
+                values["expires_at"] = datetime.now(UTC) - timedelta(seconds=1)
+            await db.execute(
+                update(UploadSession).where(UploadSession.id == seeded.session_id).values(**values)
+            )
+        principal = seeded.principal.context
+        if scenario in {"actor", "tenant"}:
+            principal = PrincipalContext(
+                tenant_id=str(uuid4()) if scenario == "tenant" else principal.tenant_id,
+                actor_id=str(uuid4()) if scenario == "actor" else principal.actor_id,
+                role="owner",
+            )
+        expected = (
+            UploadSessionNotFound
+            if scenario in {"actor", "tenant"}
+            else UploadSessionExpired
+            if "expired" in scenario
+            else UploadSessionNotActive
+            if scenario == "failed"
+            else UploadCompletionPartsInvalid
+        )
+        service = UploadSessionService(
+            session_factory=factory, object_store=store, documents_bucket="documents"
+        )
+        with pytest.raises(expected):
+            await service.complete(
+                principal=principal,
+                session_id=seeded.session_id,
+                request=(
+                    _completion_request(seeded.parts)
+                    if scenario == "parts"
+                    else CompleteUploadSessionInput(parts=())
+                ),
+            )
+        assert store.read_calls == store.list_calls == store.complete_calls == 0
+        async with factory() as db:
+            row = await db.get(UploadSession, seeded.session_id)
+            tenant = await db.get(Tenant, seeded.principal.tenant_id)
+            assert row.status == original_status and row.completion_started_at is None
+            assert row.document_version_id is None and row.reserved_bytes == len(seeded.content)
+            assert tenant.reserved_storage_bytes == len(seeded.content)
+            assert tenant.used_storage_bytes == 0
+    finally:
+        await _cleanup_seeded(factory, seeded)
+        await engine.dispose()
+
+
+@pytest.mark.integration
+async def test_empty_completion_replays_an_already_completed_multipart_upload():
+    settings = ApiSettings(_env_file=None)
+    engine = create_database_engine(settings.database)
+    factory = create_session_factory(engine)
+    seeded = await _seed_upload(factory, content=b"%PDF-1.7")
+    store = CompletionObjectStore(seeded)
+    try:
+        service = UploadSessionService(
+            session_factory=factory, object_store=store, documents_bucket="documents"
+        )
+        original = await service.complete(
+            principal=seeded.principal.context,
+            session_id=seeded.session_id,
+            request=_completion_request(seeded.parts),
+        )
+        before = (store.read_calls, store.list_calls, store.complete_calls)
+        replay = await service.complete(
+            principal=seeded.principal.context,
+            session_id=seeded.session_id,
+            request=CompleteUploadSessionInput(parts=()),
+        )
+        assert replay.replayed and replay.version_id == original.version_id
+        assert replay.completed_at == original.completed_at
+        assert before == (store.read_calls, store.list_calls, store.complete_calls)
+    finally:
+        await _cleanup_seeded(factory, seeded)
+        await engine.dispose()
+
+
+@pytest.mark.integration
+async def test_single_put_claim_reads_owned_session_once_before_object_io():
+    settings = ApiSettings(_env_file=None)
+    engine = create_database_engine(settings.database)
+    factory = create_session_factory(engine)
+    seeded = await _seed_upload(factory, content=b"%PDF-1.7")
+    reads = []
+
+    def observe(connection, cursor, statement, parameters, context, executemany):
+        if "from upload_sessions" in statement.lower():
+            reads.append(statement)
+
+    class ClaimStore(CompletionObjectStore):
+        async def read_object(self, **kwargs):
+            assert len(reads) == 1
+            # A separate connection must see the durable claim and acquire the
+            # same row immediately: no database lock may span object-store I/O.
+            async with factory.begin() as db:
+                row = await db.scalar(
+                    select(UploadSession)
+                    .where(UploadSession.id == seeded.session_id)
+                    .with_for_update(nowait=True)
+                )
+                assert row.status == "completing"
+            return await super().read_object(**kwargs)
+
+    store = ClaimStore(seeded)
+    store.object_exists = True
+    try:
+        async with factory.begin() as db:
+            await db.execute(
+                update(UploadSession)
+                .where(UploadSession.id == seeded.session_id)
+                .values(transport="single_put", object_store_upload_id=None)
+            )
+        event.listen(engine.sync_engine, "before_cursor_execute", observe)
+        service = UploadSessionService(
+            session_factory=factory, object_store=store, documents_bucket="documents"
+        )
+        result = await service.complete(
+            principal=seeded.principal.context,
+            session_id=seeded.session_id,
+            request=CompleteUploadSessionInput(parts=()),
+        )
+        assert result.version_id == seeded.pending_version_id
+    finally:
+        event.remove(engine.sync_engine, "before_cursor_execute", observe)
+        await _cleanup_seeded(factory, seeded)
+        await engine.dispose()
 
 
 @pytest.mark.integration

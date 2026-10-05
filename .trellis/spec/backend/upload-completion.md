@@ -153,6 +153,19 @@ targets the numbered writable commit rather than counting intervening successful
 read transactions. Cache retention and short read latency do not prove the whole
 upload's public p95 or the two capacity rounds.
 
+An empty-parts completion uses a single owned-session `FOR UPDATE` transaction to
+load and claim a direct (`single_put`) upload. It validates status, expiry, transport
+and bounded size before committing `completing`; invalid requests roll back without
+changing reservations or contacting object storage. Unfinished multipart uploads
+still require their complete part list. A completed receipt is replayable with an
+empty list for either transport, retaining the existing completion contract.
+The claim commits and releases its lock before object reads. Multipart calls with
+parts retain their read-only preflight, fresh part verification and snapshot identity
+checks. Finalization still locks tenant then session and converts quota exactly once.
+Real PostgreSQL tests must prove one owned-session SELECT before direct object I/O,
+durable `completing` and immediate lock acquisition by a separate transaction at that
+boundary, plus unchanged rejection, concurrent completion and crash recovery behavior.
+
 #### Wrong
 
 ```python
