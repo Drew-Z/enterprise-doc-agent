@@ -1,4 +1,4 @@
-"""Bounded releases and explicit 0032 upload or image-only changes; no migrations.
+"""Bounded releases and explicit schema 0032 configuration or image changes; no migrations.
 
 Private plans contain the primary and any explicitly declared fallback API keys. Keep
 them out of Git/logs, and explicitly approve any temporary remote runtime copy.
@@ -138,8 +138,11 @@ class ReleasePlan(Plan):
             raise GuardError("release switching requires a reviewed schema")
         self.revision = value["original_revision"]
         self.image_only = value.get("release_kind") == "images_only"
-        if "release_kind" in value and (not self.image_only or self.revision != "20261005_0032"):
-            raise GuardError("explicit image-only switching requires schema 0032")
+        self.reasoning_only = value.get("release_kind") == "reasoning_only"
+        if "release_kind" in value and (
+            not (self.image_only or self.reasoning_only) or self.revision != "20261005_0032"
+        ):
+            raise GuardError("explicit release kind requires a supported schema 0032 mode")
         self.original = self.data["original_prerequisites"]
         self.candidate = self.data["candidate_prerequisites"]
         self.deployments = self.data["deployments"]
@@ -172,15 +175,29 @@ class ReleasePlan(Plan):
         if self.revision == "20261005_0032":
             if self.image_only and changed:
                 raise GuardError("image-only switching must retain all configuration")
-            if changed - {"UPLOAD__SINGLE_PUT_ENABLED"} or any(
+            if self.reasoning_only:
+                effort_keys = {"MODEL__REASONING_EFFORT", "MODEL__FALLBACK_REASONING_EFFORT"}
+                if (
+                    not changed
+                    or changed - effort_keys
+                    or any(
+                        old.get(key) not in {"low", "medium", "high", "xhigh"}
+                        or new.get(key) not in {"low", "medium", "high", "xhigh"}
+                        for key in changed
+                    )
+                ):
+                    raise GuardError(
+                        "reasoning-only switching requires existing valid effort changes"
+                    )
+            elif changed - {"UPLOAD__SINGLE_PUT_ENABLED"} or any(
                 item.get("UPLOAD__SINGLE_PUT_ENABLED") not in {"true", "false"}
                 for item in (old, new)
             ):
                 raise GuardError("0032 release switching only permits the explicit upload switch")
             if "api_database_pool_size" in self.data or self.fallback_secret is not None:
-                raise GuardError("0032 upload switching cannot change pool or credentials")
+                raise GuardError("0032 switching cannot change pool or credentials")
             if self.secret.get("old_key") != self.secret.get("new_key"):
-                raise GuardError("0032 upload switching must retain the primary credential")
+                raise GuardError("0032 switching must retain the primary credential")
         elif "UPLOAD__SINGLE_PUT_ENABLED" in changed:
             raise GuardError("upload switching requires schema 0032")
         if changed - CONFIG_KEYS or any(not isinstance(v, str) for v in new.values()):
@@ -234,6 +251,11 @@ class ReleasePlan(Plan):
         } | {PREFIX + "prerequisites-sha256"}
         if self.image_only and {k for k in before if before[k] != after[k]} - image_approvals:
             raise GuardError("image-only switching cannot change unrelated approvals")
+        if self.reasoning_only and {k for k in before if before[k] != after[k]} - {
+            PREFIX + "approved-config-sha256",
+            PREFIX + "prerequisites-sha256",
+        }:
+            raise GuardError("reasoning-only switching cannot change unrelated approvals")
         for config, approved_values in ((old, before), (new, after)):
             if approved_values[PREFIX + "approved-config-sha256"] != canonical_digest(config):
                 raise GuardError("configuration approval fingerprint does not match")
@@ -326,7 +348,7 @@ class ReleasePlan(Plan):
             old_image = source["spec"]["containers"][0]["image"]
             new_image = target["spec"]["containers"][0]["image"]
             if self.revision == "20261005_0032" and not self.image_only and new_image != old_image:
-                raise GuardError("0032 upload switching must retain all application images")
+                raise GuardError("0032 configuration switching must retain all application images")
             for image in (old_image, new_image):
                 if not re.fullmatch(r"ghcr.io/drew-z/" + name + r"@sha256:[0-9a-f]{64}", image):
                     raise GuardError("immutable application image required")

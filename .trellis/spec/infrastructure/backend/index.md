@@ -40,3 +40,10 @@ fixed. Both candidate and recovery image digests must be approved. Schema drift 
 reject the operation before writes; partial execution restores the original full specs.
 This mode performs no migration and does not permit a return to schema 0031. Bind and
 verify the exact executor source independently from the signed application source.
+
+Schema 0032 also accepts explicit `release_kind=reasoning_only`: only existing valid
+primary and/or fallback reasoning efforts may change, with at least one actual change.
+Only configuration and prerequisite approval fingerprints may change. Images, route
+settings, credentials, budgets, streaming, pools and other workload fields stay fixed.
+The same schema-drift checks and full-spec rollback apply. This release capability
+does not establish model quality or authorize promoting an unreviewed candidate.

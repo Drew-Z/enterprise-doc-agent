@@ -74,6 +74,112 @@ def test_0032_upload_switch_rejects_incompatible_changes(mutation: str) -> None:
         ReleasePlan(data)
 
 
+def reasoning_switch_data(route: str = "primary") -> dict[str, Any]:
+    data = upload_switch_data()
+    data["release_kind"] = "reasoning_only"
+    old = data["original_prerequisites"][1]["data"]
+    old.update({"MODEL__REASONING_EFFORT": "medium", "MODEL__FALLBACK_REASONING_EFFORT": "medium"})
+    new = copy.deepcopy(old)
+    if route in {"primary", "both"}:
+        new["MODEL__REASONING_EFFORT"] = "high"
+    if route in {"fallback", "both"}:
+        new["MODEL__FALLBACK_REASONING_EFFORT"] = "high"
+    data["candidate_prerequisites"][1]["data"] = new
+    for prerequisites, deployments, config in (
+        (data["original_prerequisites"], data["deployments"], old),
+        (data["candidate_prerequisites"], data["candidate_deployments"], new),
+    ):
+        prerequisites[0]["metadata"]["annotations"][PREFIX + "approved-config-sha256"] = (
+            canonical_digest(config)
+        )
+        for deployment in deployments:
+            deployment["spec"]["template"]["metadata"]["annotations"][PREFIX + "config-sha256"] = (
+                canonical_digest(config)
+            )
+    return data
+
+
+@pytest.mark.parametrize("route", ["primary", "fallback", "both"])
+def test_0032_reasoning_only_accepts_independent_routes(route: str) -> None:
+    from scripts.release_switch import ReleasePlan
+
+    assert ReleasePlan(reasoning_switch_data(route)).reasoning_only
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "budget",
+        "streaming",
+        "endpoint",
+        "upload",
+        "image",
+        "credential",
+        "fallback_secret",
+        "pool",
+        "approval",
+        "missing",
+        "introduced",
+        "invalid",
+        "noop",
+        "schema",
+        "kind",
+    ],
+)
+def test_0032_reasoning_only_rejects_scope_expansion(mutation: str) -> None:
+    from scripts.release_switch import GuardError, ReleasePlan
+
+    data = reasoning_switch_data()
+    old = data["original_prerequisites"][1]["data"]
+    new = data["candidate_prerequisites"][1]["data"]
+    config_changes = {
+        "budget": ("MODEL__TIMEOUT_SECONDS", "300"),
+        "streaming": ("MODEL__STREAMING", "true"),
+        "endpoint": ("MODEL__BASE_URL", "https://different.invalid/v1"),
+        "upload": ("UPLOAD__SINGLE_PUT_ENABLED", "true"),
+        "invalid": ("MODEL__REASONING_EFFORT", "maximum"),
+        "noop": ("MODEL__REASONING_EFFORT", "medium"),
+    }
+    if mutation in config_changes:
+        key, value = config_changes[mutation]
+        new[key] = value
+    elif mutation == "image":
+        data["candidate_deployments"][0]["spec"]["template"]["spec"]["containers"][0]["image"] = (
+            "ghcr.io/drew-z/enterprise-doc-api@sha256:" + "e" * 64
+        )
+    elif mutation == "credential":
+        data["secret"]["new_key"] = "bmV3"
+    elif mutation == "fallback_secret":
+        data["fallback_secret"] = {"old_key": "b2xk", "new_key": "bmV3"}
+    elif mutation == "pool":
+        data["api_database_pool_size"] = 2
+    elif mutation == "approval":
+        data["candidate_prerequisites"][0]["metadata"]["annotations"][
+            PREFIX + "approved-api-images"
+        ] += ",ghcr.io/drew-z/enterprise-doc-api@sha256:" + "e" * 64
+    elif mutation == "missing":
+        del new["MODEL__REASONING_EFFORT"]
+    elif mutation == "introduced":
+        del old["MODEL__REASONING_EFFORT"]
+    elif mutation == "schema":
+        data["original_revision"] = "20260924_0031"
+    else:
+        data["release_kind"] = "unknown"
+    # Keep fingerprints valid so scope guards, rather than stale hashes, reject mutations.
+    for prerequisites, deployments in (
+        (data["original_prerequisites"], data["deployments"]),
+        (data["candidate_prerequisites"], data["candidate_deployments"]),
+    ):
+        digest = canonical_digest(prerequisites[1]["data"])
+        prerequisites[0]["metadata"]["annotations"][PREFIX + "approved-config-sha256"] = digest
+        for deployment in deployments:
+            deployment["spec"]["template"]["metadata"]["annotations"][PREFIX + "config-sha256"] = (
+                digest
+            )
+    with pytest.raises(GuardError):
+        ReleasePlan(data)
+
+
 def image_switch_data() -> dict[str, Any]:
     data = upload_switch_data()
     data["release_kind"] = "images_only"
@@ -128,10 +234,11 @@ def test_0032_image_only_rejects_scope_expansion(mutation: str) -> None:
 
 
 @pytest.mark.parametrize("partial", [False, True])
-def test_0032_image_only_applies_and_restores_full_specs(partial: bool) -> None:
+@pytest.mark.parametrize("kind", ["images_only", "reasoning_only"])
+def test_0032_explicit_mode_applies_and_restores_full_specs(partial: bool, kind: str) -> None:
     from scripts.release_switch import ReleaseCluster, ReleasePlan
 
-    data = image_switch_data()
+    data = image_switch_data() if kind == "images_only" else reasoning_switch_data()
     boundary = Boundary(data)
     cluster = ReleaseCluster(
         ReleasePlan(data),
@@ -158,10 +265,11 @@ def test_0032_image_only_applies_and_restores_full_specs(partial: bool) -> None:
                 assert current[key] == original[key]
 
 
-def test_0032_image_only_refuses_schema_drift_before_writes() -> None:
+@pytest.mark.parametrize("kind", ["images_only", "reasoning_only"])
+def test_0032_explicit_mode_refuses_schema_drift_before_writes(kind: str) -> None:
     from scripts.release_switch import GuardError, ReleaseCluster, ReleasePlan
 
-    data = image_switch_data()
+    data = image_switch_data() if kind == "images_only" else reasoning_switch_data()
     boundary = Boundary(data)
     cluster = ReleaseCluster(
         ReleasePlan(data),
