@@ -11,6 +11,7 @@ import {
 import type {
   CompleteUploadRequest,
   CompleteUploadResponse,
+  ContentUploadResponse,
   CreateUploadRequest,
   CreateUploadResponse,
   GetUploadResponse,
@@ -18,6 +19,7 @@ import type {
   PresignPartResponse,
   UploadTransport,
 } from "./api/schemas";
+import { createContentIntentStore, type ContentUploadIntent } from "./contentIntent";
 import { HashWorkerClientError, type HashJob, type StartHashJobOptions } from "./hashing/client";
 import {
   createUploadRecoveryStore,
@@ -33,6 +35,7 @@ import {
 } from "./transfer/xhrUploadPart";
 
 export interface UploadApiPort {
+  uploadContent?(request: CreateUploadRequest, idempotencyKey: string, file: File, signal?: AbortSignal): Promise<ContentUploadResponse>;
   createSession(
     request: CreateUploadRequest,
     idempotencyKey: string,
@@ -112,6 +115,7 @@ export function useUploadController(
   const stores = useMemo(
     () => ({
       recovery: createUploadRecoveryStore(storage),
+      content: createContentIntentStore(storage),
       token: createApplicationCredentialStore(storage),
     }),
     [storage],
@@ -132,6 +136,8 @@ export function useUploadController(
   const hashJobRef = useRef<HashJob | null>(null);
   const activeTransfersRef = useRef(new Map<string, ActiveTransfer>());
   const initializedRef = useRef(false);
+  const recoveryBlockedRef = useRef(false);
+  const contentRequestsRef = useRef(new Set<AbortController>());
   const schedulerRef = useRef<PartUploadScheduler | null>(null);
   const executeEffectsRef = useRef<(effects: readonly UploadEffect[]) => void>(() => undefined);
 
@@ -146,6 +152,7 @@ export function useUploadController(
 
   const dispatch = useCallback((action: UploadAction): boolean => {
     if (!mountedRef.current || (typeof tokenRef.current === "object" && tokenRef.current?.signal.aborted)) return false;
+    if (recoveryBlockedRef.current && action.type === "select_file") return false;
     const transition = reduceUpload(stateRef.current, action);
     if (!transition.accepted) {
       return false;
@@ -295,7 +302,47 @@ export function useUploadController(
           );
           return;
         }
-        case "create_session":
+        case "create_session": {
+          const file = stateRef.current.file;
+          if (api.uploadContent && effect.request.transport === "single_put" && file !== null) {
+            const intent: ContentUploadIntent = { version: 1, idempotencyKey: effect.idempotencyKey,
+              request: { ...effect.request, transport: "single_put" } };
+            try { stores.content.save(intent); }
+            catch (error) {
+              const details = errorDetails(error);
+              dispatch({ type: "session_create_failed", generation: effect.generation, ...details });
+              return;
+            }
+            if (!dispatch({ type: "content_started", generation: effect.generation, intent })) return;
+            const credential = tokenRef.current;
+            const controller = new AbortController();
+            contentRequestsRef.current.add(controller);
+            const isCurrentCredential = () => mountedRef.current && tokenRef.current === credential && !controller.signal.aborted;
+            void api.uploadContent(effect.request, effect.idempotencyKey, file, controller.signal).then(
+              (result) => {
+                if (!isCurrentCredential()) return;
+                if (result.completion !== null) dispatch({ type: "content_completed", generation: effect.generation, session: result.session, result: result.completion });
+                else dispatch({ type: "session_created", generation: effect.generation, session: result.session });
+              },
+              async (error: unknown) => {
+                if (!isCurrentCredential()) return;
+                if (error instanceof UploadApiError &&
+                    ((error.status === 404 && ["upload_content_unsupported", "http_not_found"].includes(error.code)) ||
+                     (error.status === 405 && error.code === "http_method_not_allowed"))) {
+                  try {
+                    const session = await api.createSession(effect.request, effect.idempotencyKey, controller.signal);
+                    if (isCurrentCredential()) dispatch({ type: "session_created", generation: effect.generation, session });
+                    return;
+                  } catch (fallbackError) { error = fallbackError; }
+                }
+                if (isCurrentCredential()) {
+                  const details = errorDetails(error);
+                  dispatch({ type: "session_create_failed", generation: effect.generation, ...details });
+                }
+              },
+            ).finally(() => contentRequestsRef.current.delete(controller));
+            return;
+          }
           void api.createSession(effect.request, effect.idempotencyKey).then(
             (session) => dispatch({ type: "session_created", generation: effect.generation, session }),
             (error: unknown) => {
@@ -310,9 +357,41 @@ export function useUploadController(
             },
           );
           return;
+        }
+        case "cancel_content": {
+          const controller = new AbortController();
+          const credential = tokenRef.current;
+          contentRequestsRef.current.add(controller);
+          void api.abortSession(effect.sessionId, controller.signal).then(
+            () => {
+              if (tokenRef.current === credential && !controller.signal.aborted) dispatch({ type: "content_canceled", generation: effect.generation });
+            },
+            () => {
+              if (mountedRef.current && tokenRef.current === credential && !controller.signal.aborted) {
+                executeEffectsRef.current([{ type: "recover_content", generation: effect.generation, intent: effect.intent }]);
+              }
+            },
+          ).finally(() => contentRequestsRef.current.delete(controller));
+          return;
+        }
+        case "recover_content": {
+          const controller = new AbortController();
+          const credential = tokenRef.current;
+          contentRequestsRef.current.add(controller);
+          void api.createSession(effect.intent.request, effect.intent.idempotencyKey, controller.signal).then(
+            (session) => {
+              if (tokenRef.current === credential && !controller.signal.aborted) dispatch({ type: "content_recovered", generation: effect.generation, session });
+            },
+            () => {
+              if (tokenRef.current === credential && !controller.signal.aborted) dispatch({ type: "content_recovery_failed", generation: effect.generation });
+            },
+          ).finally(() => contentRequestsRef.current.delete(controller));
+          return;
+        }
         case "persist_session":
           try {
             stores.recovery.save(effect.session);
+            stores.content.clear();
           } catch (error) {
             setBackgroundError(error);
           }
@@ -320,6 +399,7 @@ export function useUploadController(
         case "clear_persistence":
           try {
             stores.recovery.clear();
+            stores.content.clear();
           } catch (error) {
             setBackgroundError(error);
           }
@@ -405,11 +485,17 @@ export function useUploadController(
     }
     initializedRef.current = true;
     try {
+      const intent = stores.content.load();
+      if (intent !== null) {
+        dispatch({ type: "restore_content_intent", intent });
+        return;
+      }
       const recovery = stores.recovery.load();
       if (recovery !== null) {
         dispatch({ type: "restore_session", session: recovery });
       }
     } catch (error) {
+      recoveryBlockedRef.current = true;
       setBackgroundError(error);
     }
   }, [dispatch, setBackgroundError, stores]);
@@ -417,10 +503,17 @@ export function useUploadController(
   useEffect(
     () => {
       const activeTransfers = activeTransfersRef.current;
+      const contentRequests = contentRequestsRef.current;
       mountedRef.current = true;
       schedulerRef.current?.resume();
+      const pending = stateRef.current;
+      if (pending.contentIntent !== null && pending.reconciling &&
+          [...contentRequests].every(controller => controller.signal.aborted)) {
+        executeEffectsRef.current([{ type: "recover_content", generation: pending.generation, intent: pending.contentIntent }]);
+      }
       const cancelWork = () => {
         hashJobRef.current?.cancel();
+        for (const controller of contentRequests) controller.abort();
         for (const transfer of activeTransfers.values()) {
           transfer.controller.abort();
           transfer.handle.abort();

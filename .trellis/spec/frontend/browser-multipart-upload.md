@@ -1,5 +1,79 @@
 # Browser Multipart Upload
 
+## Scenario: small-file single-request upload
+
+### 1. Scope / Trigger
+
+New files <=1MiB use authenticated API content upload after the existing Worker
+hash pass. Existing restored sessions and larger files retain the direct/multipart
+flow. Local client, API, PostgreSQL and MinIO validation is not public capacity proof.
+
+### 2. Signatures
+
+`UploadApiClient.uploadContent(request, idempotencyKey, file, signal)` calls
+`POST /api/upload-sessions/content`. `createContentIntentStore(storage)` persists
+the pre-submit intent under `enterprise-doc.upload-content-intent.v1`, scoped to
+the current browser tenant/actor by the application authentication transport.
+
+### 3. Contracts
+
+The strict intent contains only version=1, idempotencyKey, and the original create
+request (filename, sizeBytes, mediaType, sha256, transport=single_put). Save it before
+any content submission; a storage failure stops the request. File bytes, credentials,
+signed URLs, headers and receipts never enter the intent. Whole-file base64 encoding
+is allowed only after enforcing the 1MiB bound; hashing still uses the Worker.
+
+Validate the response session identity and durable completion's session ID. Only a
+completion receipt or an authoritative same-key completed session establishes success.
+An unsupported route may use legacy creation with the same key; a lost response is
+not unsupported. Retain the intent until completion, terminal server state, confirmed
+cancellation, or successful persistence of the same legacy session.
+
+On loss/reload, use the original metadata/key to recover creation. Completed restores
+success without sending bytes; active/completing retain the intent. After reload,
+require original-file reselection and hash match before a content retry. A wrong
+same-name/same-size file cannot reach any content or completion request. React
+StrictMode may restart an aborted recovery query with the same key. An old credential
+never adopts a new enterprise during file reading or response handling.
+
+Nginx admits at most 1,414,488 wire bytes only on the exact content route and disables
+request buffering there; ordinary API limits remain unchanged. The API independently
+counts the request stream before JSON parsing.
+
+### 4. Validation & Error Matrix
+
+| Condition | Behavior |
+| --- | --- |
+| Recovery save/read failure | Surface persistence error; do not submit a new request |
+| Explicit unsupported 404/405 | Existing create path, same idempotency key |
+| Network error/unknown receipt | Recover same-key session; no automatic content replay |
+| Active/completing recovery | Original error and explicit retry, or file reselection after reload |
+| Failed/aborted/expired session | Clear intent and expose terminal outcome |
+| Cancellation requested for known active session | Keep intent until DELETE succeeds; recover conflicts/lost response |
+| Unknown or completing submission | Do not discard it through cancel/clear/new-file actions |
+| Enterprise switch | Abort current work; ignore old response and preserve scoped recovery |
+
+### 5. Good/Base/Bad Cases
+
+Good: a lost completed response is recovered by same-key creation and sends no second
+content body. Base: explicit unsupported content endpoint continues the same legacy
+session. Bad: generate a new key after an unknown response or persist an entire File.
+
+### 6. Tests Required
+
+`api/content.test.ts` checks HTTP bytes, bounded reading, receipt binding and enterprise
+switches. `contentController.test.ts` uses the actual API client and HTTP/Worker/storage
+boundaries to prove pre-submit persistence, loss/reload, wrong-file rejection, retry,
+StrictMode, unsupported fallback and cancellation acknowledgment. Real browser evidence
+must exercise real API/PostgreSQL/MinIO and verify document/job/quota counts; route
+interception can drop a request/response but must not invent a business completion.
+
+### 7. Wrong vs Correct
+
+Wrong: `catch { createSession(request, crypto.randomUUID()); }`.
+Correct: retain `{request, idempotencyKey}` before submission and recover that exact
+intent; only a terminal response allows the UI to discard its recovery state.
+
 ## Single PUT extension (candidate, October 2026)
 
 New browser uploads up to1MiB request `transport: single_put`. The server can return

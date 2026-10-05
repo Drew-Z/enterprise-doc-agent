@@ -7,6 +7,7 @@ import type {
   UploadTransport,
 } from "../api/schemas";
 import type { HashResult } from "../hashing/protocol";
+import type { ContentUploadIntent } from "../contentIntent";
 
 export type UploadPhase =
   | "idle"
@@ -79,6 +80,8 @@ export interface UploadMachineState {
   parts: UploadPartState[];
   completion: CompleteUploadResponse | null;
   failure: UploadFailure | null;
+  contentIntent: ContentUploadIntent | null;
+  contentStatus: CreateUploadResponse["status"] | null;
 }
 
 export interface UploadPartDescriptor {
@@ -105,6 +108,8 @@ export type UploadEffect =
       idempotencyKey: string;
     }
   | { type: "persist_session"; session: PersistedUploadSession }
+  | { type: "recover_content"; generation: number; intent: ContentUploadIntent }
+  | { type: "cancel_content"; generation: number; sessionId: string; intent: ContentUploadIntent }
   | { type: "clear_persistence" }
   | { type: "fetch_session"; generation: number; sessionId: string }
   | {
@@ -130,6 +135,12 @@ export type UploadEffect =
   | { type: "abort_session"; sessionId: string };
 
 export type UploadAction =
+  | { type: "restore_content_intent"; intent: ContentUploadIntent }
+  | { type: "content_started"; generation: number; intent: ContentUploadIntent }
+  | { type: "content_completed"; generation: number; session: CreateUploadResponse; result: CompleteUploadResponse }
+  | { type: "content_recovered"; generation: number; session: CreateUploadResponse }
+  | { type: "content_recovery_failed"; generation: number }
+  | { type: "content_canceled"; generation: number }
   | { type: "select_file"; file: File; mediaType: string; idempotencyKey: string }
   | { type: "restore_session"; session: PersistedUploadSession }
   | { type: "reselect_file"; file: File }

@@ -128,6 +128,11 @@ export const completeUploadResponseSchema = z
   .strict();
 
 export type UploadSessionStatus = z.infer<typeof uploadSessionStatusSchema>;
+export const contentUploadResponseSchema = z.object({
+  session: createUploadResponseSchema,
+  completion: completeUploadResponseSchema.nullable(),
+}).strict();
+export type ContentUploadResponse = z.infer<typeof contentUploadResponseSchema>;
 export type ErrorResponse = z.infer<typeof errorResponseSchema>;
 export type CreateUploadRequest = z.infer<typeof createUploadRequestSchema>;
 export type CreateUploadResponse = z.infer<typeof createUploadResponseSchema>;
