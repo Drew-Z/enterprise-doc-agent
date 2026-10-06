@@ -259,7 +259,8 @@ unrecorded acceptance has neither and remains unknown. Bad: fabricate a negative
 quote, accept a previous call's ID, or infer state by keyword rewriting. Regression
 examples: `test_presales_evidence_selection.py`, `test_presales_citation_selection.py`,
 `test_presales_gateway_score.py` and `test_presales_workflow_integration.py`.
-This contract is a source candidate until its separately verified release is deployed.
+This contract was deployed in rc.34 with verified package/configuration identity;
+postdeployment business/semantic acceptance remains separate from rollout health.
 
 `PresalesSettings.primary_reasoning_effort` (low/medium/high/xhigh or null) and
 `primary_streaming` (boolean or null) override only the primary presales gateway.
