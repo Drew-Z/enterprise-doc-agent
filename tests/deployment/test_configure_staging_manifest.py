@@ -194,6 +194,49 @@ def test_single_put_switch_rejects_invalid_values(tmp_path: Path, invalid: str) 
     assert not (tmp_path / "browser-staging.yaml").exists()
 
 
+@pytest.mark.parametrize("streaming", ["true", "false", ""])
+def test_presales_primary_inference_render_preserves_shared_model(tmp_path, streaming):
+    documents = _render_browser_manifest(
+        tmp_path,
+        model_reasoning_effort="high",
+        model_streaming="true",
+        presales_primary_reasoning_effort="low",
+        presales_primary_streaming=streaming,
+    )
+    data = next(d for d in documents if d["kind"] == "ConfigMap")["data"]
+    assert data["MODEL__REASONING_EFFORT"] == "high" and data["MODEL__STREAMING"] == "true"
+    assert data["PRESALES__PRIMARY_REASONING_EFFORT"] == "low"
+    assert data.get("PRESALES__PRIMARY_STREAMING") == (streaming or None)
+
+
+def test_presales_primary_defaults_remove_stale_overrides(tmp_path):
+    source = tmp_path / "browser-template.yaml"
+    _write_template(source)
+    documents = list(yaml.safe_load_all(source.read_text(encoding="utf-8")))
+    config = next(d for d in documents if d["kind"] == "ConfigMap")
+    config["data"].update(
+        {"PRESALES__PRIMARY_REASONING_EFFORT": "low", "PRESALES__PRIMARY_STREAMING": "false"}
+    )
+    source.write_text(yaml.safe_dump_all(documents), encoding="utf-8")
+    rendered = _render_browser_manifest(tmp_path)
+    data = next(d for d in rendered if d["kind"] == "ConfigMap")["data"]
+    assert "PRESALES__PRIMARY_REASONING_EFFORT" not in data
+    assert "PRESALES__PRIMARY_STREAMING" not in data
+
+
+@pytest.mark.parametrize(
+    "options",
+    [
+        {"presales_primary_reasoning_effort": "maximum"},
+        {"presales_primary_streaming": "yes"},
+    ],
+)
+def test_presales_primary_inference_render_rejects_invalid_values(tmp_path, options):
+    with pytest.raises(ValueError):
+        _render_browser_manifest(tmp_path, **options)
+    assert not (tmp_path / "browser-staging.yaml").exists()
+
+
 def test_configure_manifest_preserves_explicit_presales_route_and_wait_budget(
     tmp_path: Path,
 ) -> None:
@@ -442,6 +485,8 @@ def test_presales_cli_binds_approved_pilot_configuration(
         "presales-model-timeout-seconds": "120",
         "presales-row-timeout-seconds": "150",
         "presales-concurrent-attempt-limit": "1",
+        "presales-primary-reasoning-effort": "low",
+        "presales-primary-streaming": "false",
     }
     monkeypatch.setattr(
         sys,
@@ -458,6 +503,8 @@ def test_presales_cli_binds_approved_pilot_configuration(
         "PRESALES__MODEL_TIMEOUT_SECONDS": "120",
         "PRESALES__ROW_TIMEOUT_SECONDS": "150",
         "PRESALES__CONCURRENT_ATTEMPT_LIMIT": "1",
+        "PRESALES__PRIMARY_REASONING_EFFORT": "low",
+        "PRESALES__PRIMARY_STREAMING": "false",
         "PRESALES__BACKGROUND_GENERATION_ENABLED": "false",
         "PRESALES__AUTOMATIC_FAILOVER_ENABLED": "false",
         "PRESALES__DAILY_DISPATCH_LIMIT": "200",
@@ -478,6 +525,10 @@ def test_staging_workflow_passes_presales_environment_to_the_renderer() -> None:
         if "scripts/configure_staging_manifest.py" in step.get("run", "")
     )
     expected = {
+        "PRESALES_PRIMARY_REASONING_EFFORT": (
+            "${{ vars.STAGING_PRESALES_PRIMARY_REASONING_EFFORT }}"
+        ),
+        "PRESALES_PRIMARY_STREAMING": "${{ vars.STAGING_PRESALES_PRIMARY_STREAMING }}",
         "MODEL_TIMEOUT_SECONDS": "${{ vars.STAGING_MODEL_TIMEOUT_SECONDS }}",
         "PRESALES_CONCURRENT_ATTEMPT_LIMIT": (
             "${{ vars.STAGING_PRESALES_CONCURRENT_ATTEMPT_LIMIT }}"

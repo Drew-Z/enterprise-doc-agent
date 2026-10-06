@@ -41,6 +41,17 @@ reject the operation before writes; partial execution restores the original full
 This mode performs no migration and does not permit a return to schema 0031. Bind and
 verify the exact executor source independently from the signed application source.
 
+For a combined application and presales inference release on schema 0032, explicitly
+declare `release_kind=presales_inference`. Only `PRESALES__PRIMARY_REASONING_EFFORT`
+and `PRESALES__PRIMARY_STREAMING` may change, including removal to restore inheritance;
+at least one must change. Signed/approved application image changes are allowed.
+Only image, configuration and prerequisite fingerprints may change in approvals.
+Shared model routes, reasoning, streaming, all budgets, credentials, pool settings,
+upload settings and unrelated workload fields remain fixed. Invalid override values,
+implicit modes and schema drift are rejected before writes. Partial application
+restores the complete original configuration and workload specs. Tests exercise the
+public ReleasePlan and ReleaseCluster boundaries, including schema drift before writes.
+
 Schema 0032 also accepts explicit `release_kind=reasoning_only`: only existing valid
 primary and/or fallback reasoning efforts may change, with at least one actual change.
 Only configuration and prerequisite approval fingerprints may change. Images, route

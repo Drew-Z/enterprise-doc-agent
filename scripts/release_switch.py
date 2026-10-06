@@ -69,6 +69,8 @@ CONFIG_KEYS = {
     "MODEL__ROUTE_DEADLINE_SECONDS",
     "AGENT__EXECUTION_TIMEOUT_SECONDS",
     "PRESALES__MODEL_TIMEOUT_SECONDS",
+    "PRESALES__PRIMARY_REASONING_EFFORT",
+    "PRESALES__PRIMARY_STREAMING",
     "PRESALES__FALLBACK_MODEL_TIMEOUT_SECONDS",
     "PRESALES__ROW_TIMEOUT_SECONDS",
     "PRESALES__MODEL_ROUTE",
@@ -139,8 +141,10 @@ class ReleasePlan(Plan):
         self.revision = value["original_revision"]
         self.image_only = value.get("release_kind") == "images_only"
         self.reasoning_only = value.get("release_kind") == "reasoning_only"
+        self.presales_inference = value.get("release_kind") == "presales_inference"
         if "release_kind" in value and (
-            not (self.image_only or self.reasoning_only) or self.revision != "20261005_0032"
+            not (self.image_only or self.reasoning_only or self.presales_inference)
+            or self.revision != "20261005_0032"
         ):
             raise GuardError("explicit release kind requires a supported schema 0032 mode")
         self.original = self.data["original_prerequisites"]
@@ -156,9 +160,11 @@ class ReleasePlan(Plan):
                 "new_key",
             }:
                 raise GuardError("invalid fallback-key recovery binding")
-            for value in self.fallback_secret.values():
+            for encoded_key in self.fallback_secret.values():
                 try:
-                    if not isinstance(value, str) or not base64.b64decode(value, validate=True):
+                    if not isinstance(encoded_key, str) or not base64.b64decode(
+                        encoded_key, validate=True
+                    ):
                         raise ValueError
                 except ValueError:
                     raise GuardError("invalid fallback-key encoding") from None
@@ -172,6 +178,12 @@ class ReleasePlan(Plan):
             raise GuardError("full Secrets must not enter release prerequisites")
         old, new = self.old_config["data"], self.new_config["data"]
         changed = {k for k in old.keys() | new.keys() if old.get(k) != new.get(k)}
+        presales_inference_keys = {
+            "PRESALES__PRIMARY_REASONING_EFFORT",
+            "PRESALES__PRIMARY_STREAMING",
+        }
+        if changed & presales_inference_keys and not self.presales_inference:
+            raise GuardError("presales inference settings require an explicit release mode")
         if self.revision == "20261005_0032":
             if self.image_only and changed:
                 raise GuardError("image-only switching must retain all configuration")
@@ -189,6 +201,18 @@ class ReleasePlan(Plan):
                     raise GuardError(
                         "reasoning-only switching requires existing valid effort changes"
                     )
+            elif self.presales_inference:
+                if not changed or changed - presales_inference_keys:
+                    raise GuardError("presales inference switching only permits primary overrides")
+                for config in (old, new):
+                    if config.get("PRESALES__PRIMARY_REASONING_EFFORT") not in {
+                        None,
+                        "low",
+                        "medium",
+                        "high",
+                        "xhigh",
+                    } or config.get("PRESALES__PRIMARY_STREAMING") not in {None, "true", "false"}:
+                        raise GuardError("invalid presales inference setting")
             elif changed - {"UPLOAD__SINGLE_PUT_ENABLED"} or any(
                 item.get("UPLOAD__SINGLE_PUT_ENABLED") not in {"true", "false"}
                 for item in (old, new)
@@ -256,6 +280,10 @@ class ReleasePlan(Plan):
             PREFIX + "prerequisites-sha256",
         }:
             raise GuardError("reasoning-only switching cannot change unrelated approvals")
+        if self.presales_inference and {k for k in before if before[k] != after[k]} - (
+            image_approvals | {PREFIX + "approved-config-sha256"}
+        ):
+            raise GuardError("presales inference switching cannot change unrelated approvals")
         for config, approved_values in ((old, before), (new, after)):
             if approved_values[PREFIX + "approved-config-sha256"] != canonical_digest(config):
                 raise GuardError("configuration approval fingerprint does not match")
@@ -347,7 +375,11 @@ class ReleasePlan(Plan):
                 raise GuardError("single reviewed application container required")
             old_image = source["spec"]["containers"][0]["image"]
             new_image = target["spec"]["containers"][0]["image"]
-            if self.revision == "20261005_0032" and not self.image_only and new_image != old_image:
+            if (
+                self.revision == "20261005_0032"
+                and not (self.image_only or self.presales_inference)
+                and new_image != old_image
+            ):
                 raise GuardError("0032 configuration switching must retain all application images")
             for image in (old_image, new_image):
                 if not re.fullmatch(r"ghcr.io/drew-z/" + name + r"@sha256:[0-9a-f]{64}", image):

@@ -105,6 +105,14 @@ class OpenAICompatiblePresalesGateway:
         presales_settings: PresalesSettings | None = None,
         transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
+        if presales_settings is not None and presales_settings.model_route == "primary":
+            overrides: dict[str, Any] = {}
+            if presales_settings.primary_reasoning_effort is not None:
+                overrides["reasoning_effort"] = presales_settings.primary_reasoning_effort
+            if presales_settings.primary_streaming is not None:
+                overrides["streaming"] = presales_settings.primary_streaming
+            if overrides:
+                settings = settings.model_copy(update=overrides)
         if presales_settings is not None and presales_settings.model_route == "fallback":
             if settings.fallback_provider is None:
                 raise ValueError("Presales fallback route requires a configured fallback provider")

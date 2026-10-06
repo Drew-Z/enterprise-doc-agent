@@ -97,6 +97,72 @@ def prerequisite(condition, refs, *, positive=None, negative=None):
 
 
 @pytest.mark.parametrize("route", ["primary", "fallback"])
+@pytest.mark.parametrize("effort", [None, "low"])
+@pytest.mark.parametrize("streaming", [None, False, True])
+async def test_presales_primary_inference_overrides_do_not_change_shared_or_fallback(
+    route, effort, streaming
+):
+    seen = []
+
+    async def respond(request):
+        envelope = json.loads(request.content)
+        seen.append(envelope)
+        assert request.url.host == f"{route}.example"
+        sent = json.loads(envelope["messages"][1]["content"])
+        body = model_response([{"citationId": sent["evidence"][0]["citationId"]}]).json()
+        if not envelope["stream"]:
+            return httpx.Response(200, json=body)
+        frame = {
+            "id": body["id"],
+            "choices": [
+                {
+                    "index": 0,
+                    "delta": {"content": body["choices"][0]["message"]["content"]},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": body["usage"],
+        }
+        return httpx.Response(
+            200,
+            headers={"content-type": "text/event-stream"},
+            content="data: " + json.dumps(frame) + "\n\ndata: [DONE]\n\n",
+        )
+
+    shared = ModelSettings.model_validate(
+        {
+            "provider": "openai_compatible",
+            "base_url": "https://primary.example/v1",
+            "api_key": "test-primary",
+            "model_name": "primary",
+            "reasoning_effort": "high",
+            "streaming": True,
+            "fallback_provider": "openai_compatible",
+            "fallback_base_url": "https://fallback.example/v1",
+            "fallback_api_key": "test-fallback",
+            "fallback_model_name": "fallback",
+            "fallback_reasoning_effort": "medium",
+            "fallback_streaming": False,
+        }
+    )
+    before = shared.model_dump()
+    selected = OpenAICompatiblePresalesGateway(
+        shared,
+        presales_settings=PresalesSettings(
+            model_route=route, primary_reasoning_effort=effort, primary_streaming=streaming
+        ),
+        transport=httpx.MockTransport(respond),
+    )
+    result = await selected.generate(evidence_payload("保留30天。"))
+    assert result.draft.status == "supported" and len(seen) == 1
+    assert seen[0]["reasoning_effort"] == ("medium" if route == "fallback" else effort or "high")
+    assert seen[0]["stream"] is (
+        False if route == "fallback" else True if streaming is None else streaming
+    )
+    assert shared.model_dump() == before
+
+
+@pytest.mark.parametrize("route", ["primary", "fallback"])
 @pytest.mark.parametrize(
     "primary,fallback", [(None, None), ("high", None), (None, "medium"), ("high", "xhigh")]
 )

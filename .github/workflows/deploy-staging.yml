@@ -263,6 +263,8 @@ jobs:
           DEMO_ENABLED: ${{ vars.STAGING_DEMO_ENABLED || 'false' }}
           PRESALES_GENERATION_ENABLED: ${{ vars.STAGING_PRESALES_GENERATION_ENABLED || 'false' }}
           PRESALES_MODEL_ROUTE: ${{ vars.STAGING_PRESALES_MODEL_ROUTE || 'primary' }}
+          PRESALES_PRIMARY_REASONING_EFFORT: ${{ vars.STAGING_PRESALES_PRIMARY_REASONING_EFFORT }}
+          PRESALES_PRIMARY_STREAMING: ${{ vars.STAGING_PRESALES_PRIMARY_STREAMING }}
           PRESALES_MODEL_TIMEOUT_SECONDS: ${{ vars.STAGING_PRESALES_MODEL_TIMEOUT_SECONDS }}
           PRESALES_FALLBACK_MODEL_TIMEOUT_SECONDS: ${{ vars.STAGING_PRESALES_FALLBACK_MODEL_TIMEOUT_SECONDS }}
           PRESALES_ROW_TIMEOUT_SECONDS: ${{ vars.STAGING_PRESALES_ROW_TIMEOUT_SECONDS || '90' }}
@@ -364,6 +366,8 @@ jobs:
             "${browser_auth_args[@]}" \
             --presales-generation-enabled "$PRESALES_GENERATION_ENABLED" \
             --presales-model-route "$PRESALES_MODEL_ROUTE" \
+            --presales-primary-reasoning-effort "$PRESALES_PRIMARY_REASONING_EFFORT" \
+            --presales-primary-streaming "$PRESALES_PRIMARY_STREAMING" \
             --presales-model-timeout-seconds "$PRESALES_MODEL_TIMEOUT_SECONDS" \
             --presales-fallback-model-timeout-seconds "$PRESALES_FALLBACK_MODEL_TIMEOUT_SECONDS" \
             --presales-row-timeout-seconds "$PRESALES_ROW_TIMEOUT_SECONDS" \

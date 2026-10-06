@@ -261,6 +261,22 @@ examples: `test_presales_evidence_selection.py`, `test_presales_citation_selecti
 `test_presales_gateway_score.py` and `test_presales_workflow_integration.py`.
 This contract is a source candidate until its separately verified release is deployed.
 
+`PresalesSettings.primary_reasoning_effort` (low/medium/high/xhigh or null) and
+`primary_streaming` (boolean or null) override only the primary presales gateway.
+Null inherits the shared ModelSettings value; explicit false disables streaming
+even if shared streaming is true. The adapter copies settings, never mutating the
+shared Agent configuration. Selecting fallback ignores both primary overrides and
+retains that route's own settings. Worker route construction preserves the overrides
+while changing only model_route. Existing per-route and total row deadlines apply.
+
+The staging renderer/CLI and workflow carry `PRESALES__PRIMARY_REASONING_EFFORT` and
+`PRESALES__PRIMARY_STREAMING`. Omitted/empty arguments remove stale overrides; false
+is preserved explicitly. ConfigMap and workload approval fingerprints cover both.
+The schema 0032 `presales_inference` release mode combines these changes with approved
+application images and complete rollback, without changing shared model settings.
+See `test_presales_citation_selection.py`, `test_configure_staging_manifest.py`,
+`test_release_switch.py` and `test_stream_background_integration.py` for examples.
+
 `presales.v5` keeps the v4 model/public structures. The prompt defines an ordered
 assessment: unresolved contradictions between applicable sources take precedence
 over selecting one side's hard limit; after resolving source priority, an explicit

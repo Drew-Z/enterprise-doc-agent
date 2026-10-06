@@ -198,6 +198,87 @@ def image_switch_data() -> dict[str, Any]:
     return data
 
 
+def presales_inference_data(remove: bool = False) -> dict[str, Any]:
+    data = image_switch_data()
+    data["release_kind"] = "presales_inference"
+    target = data["original_prerequisites" if remove else "candidate_prerequisites"][1]["data"]
+    target.update(
+        {"PRESALES__PRIMARY_REASONING_EFFORT": "low", "PRESALES__PRIMARY_STREAMING": "true"}
+    )
+    refresh_inference_hashes(data)
+    return data
+
+
+def refresh_inference_hashes(data):
+    for prerequisites, deployments in (
+        (data["original_prerequisites"], data["deployments"]),
+        (data["candidate_prerequisites"], data["candidate_deployments"]),
+    ):
+        digest = canonical_digest(prerequisites[1]["data"])
+        prerequisites[0]["metadata"]["annotations"][PREFIX + "approved-config-sha256"] = digest
+        for deployment in deployments:
+            deployment["spec"]["template"]["metadata"]["annotations"][PREFIX + "config-sha256"] = (
+                digest
+            )
+
+
+@pytest.mark.parametrize("remove", [False, True])
+def test_presales_inference_release_supports_explicit_settings_and_removal(remove):
+    from scripts.release_switch import ReleasePlan
+
+    assert ReleasePlan(presales_inference_data(remove)).presales_inference
+
+
+@pytest.mark.parametrize(
+    "key,value",
+    [
+        ("MODEL__REASONING_EFFORT", "low"),
+        ("MODEL__STREAMING", "true"),
+        ("MODEL__FALLBACK_REASONING_EFFORT", "high"),
+        ("PRESALES__ROW_TIMEOUT_SECONDS", "900"),
+        ("UPLOAD__SINGLE_PUT_ENABLED", "true"),
+        ("PRESALES__PRIMARY_REASONING_EFFORT", "maximum"),
+        ("PRESALES__PRIMARY_STREAMING", "yes"),
+    ],
+)
+def test_presales_inference_release_rejects_scope_or_invalid_settings(key, value):
+    from scripts.release_switch import GuardError, ReleasePlan
+
+    data = presales_inference_data()
+    data["candidate_prerequisites"][1]["data"][key] = value
+    refresh_inference_hashes(data)
+    with pytest.raises(GuardError):
+        ReleasePlan(data)
+
+
+@pytest.mark.parametrize(
+    "mutation", ["credential", "pool", "approval", "schema", "implicit", "noop"]
+)
+def test_presales_inference_release_requires_exact_authorized_boundary(mutation):
+    from scripts.release_switch import GuardError, ReleasePlan
+
+    data = presales_inference_data()
+    if mutation == "credential":
+        data["secret"]["new_key"] = "bmV3"
+    elif mutation == "pool":
+        data["api_database_pool_size"] = 2
+    elif mutation == "approval":
+        data["candidate_prerequisites"][0]["metadata"]["annotations"][
+            PREFIX + "approved-model-base-url"
+        ] = "https://changed.invalid/v1"
+    elif mutation == "schema":
+        data["original_revision"] = "20260924_0031"
+    elif mutation == "implicit":
+        data.pop("release_kind")
+    else:
+        data["candidate_prerequisites"][1]["data"] = copy.deepcopy(
+            data["original_prerequisites"][1]["data"]
+        )
+        refresh_inference_hashes(data)
+    with pytest.raises(GuardError):
+        ReleasePlan(data)
+
+
 def test_0032_explicit_image_switch_accepts_unchanged_configuration() -> None:
     from scripts.release_switch import ReleasePlan
 
@@ -234,11 +315,15 @@ def test_0032_image_only_rejects_scope_expansion(mutation: str) -> None:
 
 
 @pytest.mark.parametrize("partial", [False, True])
-@pytest.mark.parametrize("kind", ["images_only", "reasoning_only"])
+@pytest.mark.parametrize("kind", ["images_only", "reasoning_only", "presales_inference"])
 def test_0032_explicit_mode_applies_and_restores_full_specs(partial: bool, kind: str) -> None:
     from scripts.release_switch import ReleaseCluster, ReleasePlan
 
-    data = image_switch_data() if kind == "images_only" else reasoning_switch_data()
+    data = {
+        "images_only": image_switch_data,
+        "reasoning_only": reasoning_switch_data,
+        "presales_inference": presales_inference_data,
+    }[kind]()
     boundary = Boundary(data)
     cluster = ReleaseCluster(
         ReleasePlan(data),
@@ -265,11 +350,15 @@ def test_0032_explicit_mode_applies_and_restores_full_specs(partial: bool, kind:
                 assert current[key] == original[key]
 
 
-@pytest.mark.parametrize("kind", ["images_only", "reasoning_only"])
+@pytest.mark.parametrize("kind", ["images_only", "reasoning_only", "presales_inference"])
 def test_0032_explicit_mode_refuses_schema_drift_before_writes(kind: str) -> None:
     from scripts.release_switch import GuardError, ReleaseCluster, ReleasePlan
 
-    data = image_switch_data() if kind == "images_only" else reasoning_switch_data()
+    data = {
+        "images_only": image_switch_data,
+        "reasoning_only": reasoning_switch_data,
+        "presales_inference": presales_inference_data,
+    }[kind]()
     boundary = Boundary(data)
     cluster = ReleaseCluster(
         ReleasePlan(data),

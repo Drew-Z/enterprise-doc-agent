@@ -166,6 +166,8 @@ def _presales_environment(
     route_failure_threshold: str = "3",
     route_cooldown_seconds: str = "30",
     concurrent_attempt_limit: str | None = None,
+    primary_reasoning_effort: str | None = None,
+    primary_streaming: str | None = None,
 ) -> dict[str, str]:
     enabled = generation_enabled.strip()
     route = model_route.strip()
@@ -215,6 +217,13 @@ def _presales_environment(
         "PRESALES__AUTOMATIC_FAILOVER_ENABLED": failover,
         **{f"PRESALES__{name}": value for name, (value, _, _) in limits.items()},
     }
+    effort = _model_reasoning_effort(primary_reasoning_effort)
+    if effort is not None:
+        result["PRESALES__PRIMARY_REASONING_EFFORT"] = effort
+    if primary_streaming not in (None, "", "true", "false"):
+        raise ValueError("presales primary streaming must be true or false")
+    if primary_streaming:
+        result["PRESALES__PRIMARY_STREAMING"] = primary_streaming
     if model_timeout_seconds and model_timeout_seconds.strip():
         model_timeout = timeout(model_timeout_seconds, "model timeout", 300)
         if float(model_timeout) >= float(row_timeout):
@@ -508,6 +517,8 @@ def configure_manifest(
     fallback_model_streaming: str | None = None,
     presales_generation_enabled: str = "false",
     presales_model_route: str = "primary",
+    presales_primary_reasoning_effort: str | None = None,
+    presales_primary_streaming: str | None = None,
     presales_model_timeout_seconds: str | None = None,
     presales_fallback_model_timeout_seconds: str | None = None,
     presales_row_timeout_seconds: str = "90",
@@ -611,6 +622,8 @@ def configure_manifest(
     presales_config = _presales_environment(
         generation_enabled=presales_generation_enabled,
         model_route=presales_model_route,
+        primary_reasoning_effort=presales_primary_reasoning_effort,
+        primary_streaming=presales_primary_streaming,
         model_timeout_seconds=presales_model_timeout_seconds,
         fallback_model_timeout_seconds=presales_fallback_model_timeout_seconds,
         row_timeout_seconds=presales_row_timeout_seconds,
@@ -718,6 +731,8 @@ def configure_manifest(
         if fallback_model_streaming == "true":
             data["MODEL__FALLBACK_STREAMING"] = "true"
     data.pop("PRESALES__MODEL_TIMEOUT_SECONDS", None)
+    data.pop("PRESALES__PRIMARY_REASONING_EFFORT", None)
+    data.pop("PRESALES__PRIMARY_STREAMING", None)
     data.pop("PRESALES__FALLBACK_MODEL_TIMEOUT_SECONDS", None)
     data.pop("PRESALES__CONCURRENT_ATTEMPT_LIMIT", None)
     data.update(presales_config)
@@ -995,6 +1010,8 @@ def main() -> None:
         "--presales-model-route", choices=("primary", "fallback"), default="primary"
     )
     parser.add_argument("--presales-model-timeout-seconds")
+    parser.add_argument("--presales-primary-reasoning-effort")
+    parser.add_argument("--presales-primary-streaming")
     parser.add_argument("--presales-fallback-model-timeout-seconds")
     parser.add_argument("--presales-row-timeout-seconds", default="90")
     parser.add_argument(
@@ -1048,6 +1065,8 @@ def main() -> None:
         fallback_model_streaming=args.fallback_model_streaming,
         presales_generation_enabled=args.presales_generation_enabled,
         presales_model_route=args.presales_model_route,
+        presales_primary_reasoning_effort=args.presales_primary_reasoning_effort,
+        presales_primary_streaming=args.presales_primary_streaming,
         presales_model_timeout_seconds=args.presales_model_timeout_seconds,
         presales_fallback_model_timeout_seconds=args.presales_fallback_model_timeout_seconds,
         presales_row_timeout_seconds=args.presales_row_timeout_seconds,
