@@ -78,6 +78,30 @@ tests must cover the declared API-only change and full original-template restora
 Wrong: increase the shared pool and all background concurrency from an isolated result.
 Correct: keep each process budget explicit, then measure the deployed HTTP workload.
 
+## Initial Durable Job Records
+
+`create_job_records` keeps the existing idempotency SELECT and fingerprint check.
+For a new job, insert Job, seq-1 JobEvent, AuditEvent and optional OutboxEvent in
+one PostgreSQL data-modifying CTE statement. Each child references the new Job's
+RETURNING ID. Supply a fresh UUID for every inserted row: multiple client-side
+UUID defaults can collide as bind parameters in a multi-table CTE. Keep audit
+`event_metadata` mapped to its physical `metadata` column and retain database
+timestamp/schema defaults.
+
+All writes belong to the caller's transaction; do not commit within creation.
+Flush pending caller-owned parents before the statement, including when the caller
+disabled autoflush. Preserve Tenant/UploadSession lock ordering, replay behavior,
+event/audit payloads and later job lifecycle operations. No-outbox jobs must still
+receive their initial event and audit record. Do not treat a local query-count
+reduction as proof of deployed HTTP latency.
+
+PostgreSQL integration tests must count every SQL statement (including WITH),
+verify the two-round-trip budget for a new job with already-flushed parents,
+check original records on replay/conflict, and reject each table's write using a
+real constraint. Verify no partial group survives failure or caller rollback,
+and that repeated statements allocate distinct row IDs. Use an owned
+loopback schema; never migrate shared public tables to run these tests.
+
 ## Proven Examples
 
 - `infra/k8s/overlays/single-node-4c4g/resources-patch.yaml`
@@ -87,3 +111,5 @@ Correct: keep each process budget explicit, then measure the deployed HTTP workl
 - `packages/core/src/enterprise_doc_core/health/adapters.py`
 - `packages/core/src/enterprise_doc_core/db/migrations/versions/20260717_0001_enable_vector.py`
 - `tests/foundation/test_migration_contract.py`
+- `packages/core/src/enterprise_doc_core/jobs/service.py::create_job_records`
+- `tests/jobs/test_job_creation_batch_integration.py`

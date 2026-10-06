@@ -12,11 +12,12 @@ from enum import StrEnum
 from typing import Any, Protocol
 from uuid import UUID, uuid4
 
-from sqlalchemy import and_, exists, func, or_, select, text
+from sqlalchemy import and_, exists, func, insert, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import aliased
 
 from enterprise_doc_core.audit import append_audit_event
+from enterprise_doc_core.audit.models import AuditEvent
 from enterprise_doc_core.billing.product_contracts import (
     ProductMetric,
     document_processing_operation_id,
@@ -342,51 +343,93 @@ async def create_job_records(
         )
         return JobCreateResult(existing.id, event.id if event else None, True)
 
-    job = Job(
-        tenant_id=tenant_id,
-        actor_id=actor_id,
-        document_version_id=document_version_id,
-        type=job_type,
-        status=JobStatus.PENDING.value,
-        priority=priority,
-        idempotency_key=idempotency_key,
-        request_fingerprint=fingerprint,
-        payload=dict(payload),
-        max_attempts=max_attempts,
-        available_at=available_at or _utcnow(),
-        request_id=request_id,
-        correlation_id=correlation_id,
-    )
-    session.add(job)
+    # Flush caller-owned parents even when autoflush is disabled, as the previous
+    # ORM creation path did. All initial job records then share one database
+    # round trip and the caller's transaction; later events keep their own path.
     await session.flush()
-    await _append_job_event(
-        session,
-        job=job,
-        event_type="job.created",
-        payload={"job_type": job_type},
-        actor_id=actor_id,
-        initial=True,
-    )
-    outbox_event: OutboxEvent | None = None
-    if outbox_event_type is not None:
-        outbox_event = OutboxEvent(
+    job_id = uuid4()
+    created_job = (
+        insert(Job)
+        .values(
+            id=job_id,
             tenant_id=tenant_id,
-            aggregate_id=job.id,
-            event_type=outbox_event_type,
-            payload={
-                "job_id": str(job.id),
-                "tenant_id": str(tenant_id),
-                "document_version_id": str(document_version_id)
-                if document_version_id is not None
-                else None,
-            },
-            payload_version=1,
-            status=OutboxEventStatus.PENDING.value,
+            actor_id=actor_id,
+            document_version_id=document_version_id,
+            type=job_type,
+            status=JobStatus.PENDING.value,
+            priority=priority,
+            idempotency_key=idempotency_key,
+            request_fingerprint=fingerprint,
+            payload=dict(payload),
+            max_attempts=max_attempts,
             available_at=available_at or _utcnow(),
+            request_id=request_id,
+            correlation_id=correlation_id,
         )
-        session.add(outbox_event)
-        await session.flush()
-    return JobCreateResult(job.id, outbox_event.id if outbox_event else None, False)
+        .returning(Job.id)
+        .cte("created_job")
+    )
+    created_job_id = select(created_job.c.id).scalar_subquery()
+    initial_event = (
+        insert(JobEvent)
+        .values(
+            id=uuid4(),
+            tenant_id=tenant_id,
+            job_id=created_job_id,
+            seq=1,
+            event_type="job.created",
+            status=JobStatus.PENDING.value,
+            payload={"job_type": job_type},
+            payload_version=1,
+            actor_id=actor_id,
+        )
+        .cte("initial_job_event")
+    )
+    metadata = {"event_type": "job.created", "status": JobStatus.PENDING.value}
+    if job_type:
+        metadata["job_type"] = job_type
+    initial_audit = (
+        insert(AuditEvent)
+        .values(
+            id=uuid4(),
+            tenant_id=tenant_id,
+            actor_id=actor_id,
+            action="job.created",
+            resource_type="job",
+            resource_id=created_job_id,
+            event_metadata=metadata,
+            request_id=request_id,
+            correlation_id=correlation_id,
+        )
+        .cte("initial_job_audit")
+    )
+    statement = select(created_job.c.id).add_cte(initial_event, initial_audit)
+    outbox_event_id: UUID | None = None
+    if outbox_event_type is not None:
+        outbox_event_id = uuid4()
+        initial_outbox = (
+            insert(OutboxEvent)
+            .values(
+                id=outbox_event_id,
+                tenant_id=tenant_id,
+                aggregate_id=created_job_id,
+                event_type=outbox_event_type,
+                payload={
+                    "job_id": str(job_id),
+                    "tenant_id": str(tenant_id),
+                    "document_version_id": str(document_version_id)
+                    if document_version_id is not None
+                    else None,
+                },
+                payload_version=1,
+                status=OutboxEventStatus.PENDING.value,
+                available_at=available_at or _utcnow(),
+            )
+            .cte("initial_job_outbox")
+        )
+        statement = statement.add_cte(initial_outbox)
+    await session.execute(statement)
+    return JobCreateResult(job_id, outbox_event_id, False)
 
 
 async def cancel_job_records(
