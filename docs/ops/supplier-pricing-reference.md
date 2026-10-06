@@ -42,3 +42,21 @@ rc.25 H3五次有用量的主路调用，各有一条模型、时间区间及输
 正式账单、主路现金单位对应关系和向量费用仍待补齐。脱敏原始记录及带源哈希的关联报告保存在
 集中恢复组的`fallback-model-evidence/supplier-token-logs-header-20261005.json`与
 `supplier-request-reconciliation-20261005.json`。
+
+## 2026-10-06 备用价及当前请求核对
+
+通过本机现有代理读取主路174条、备用82条令牌日志，解决此前备用ConnectError；原失败记录保留，
+没有新增模型调用。x666.me公开`/api/status`报告USD显示单位、每单位500,000 quota；
+`/api/pricing`中grok-4.7为按次计费（quota_type=1），单次US$0.002，level3分组倍率1。
+不得套用windhub.cc的每百万tokens人民币价格。
+
+rc.35本批五次调用中，三次有请求ID的调用均找到对应记录。主路成功记录与输入/输出用量精确
+匹配，按用户确认参考价为¥0.01725。备用成功记录亦精确匹配，扣除1,000 quota，即平台记录的
+US$0.002；按其当时公开7.3参考汇率约为¥0.0146，换算不代表人民币现金账单。
+
+备用失败请求对应两条同ID错误记录，不重复累计为两次应用调用，不把其零quota/tokens当作
+无上游费用保证。两个主路超时没有请求ID，仍不按时间猜配。已知应用用量保持13,883 tokens，
+三次用量未知；现金账单及24次向量派发费用仍未知，不能给出完整总费用。
+
+带源SHA的私有补充报告为`fallback-model-evidence/rc35-multisource-cost-reconciliation-refresh-20261006.json`；
+原价格截图、旧报告和原始调用状态均未改写。
