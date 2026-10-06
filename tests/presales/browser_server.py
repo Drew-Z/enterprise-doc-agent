@@ -31,7 +31,8 @@ from enterprise_doc_core.documents import Document, DocumentVersion, HashEmbeddi
 from enterprise_doc_core.documents.models import DocumentGrant
 from enterprise_doc_core.documents.retrieval_service import HybridRetrievalService
 from enterprise_doc_core.identity import Membership, Tenant, User
-from enterprise_doc_core.presales.citation_selection import SelectionDraft, SelectionInput
+from enterprise_doc_core.presales.citation_selection import SelectionInput
+from enterprise_doc_core.presales.evidence_selection import EvidenceDraft
 from enterprise_doc_core.presales.gateway import OpenAICompatiblePresalesGateway
 from enterprise_doc_core.presales.models import PresalesPacket
 from enterprise_doc_core.presales.service import PresalesService
@@ -146,13 +147,16 @@ async def main() -> None:
                 citations = citations[:1]
             if status == "insufficient_evidence":
                 citations = []
-            draft = SelectionDraft.model_validate(
+            draft = EvidenceDraft.model_validate(
                 {
                     "status": status,
                     "prerequisites": [
                         {
                             "condition": "需采用指定配置并确认合同范围。",
-                            "state": "unknown",
+                            "proposition": "指定配置及合同范围已确认。",
+                            "uncertainty": "missing",
+                            "positive": [],
+                            "negative": [],
                             "citations": citations,
                         }
                     ]

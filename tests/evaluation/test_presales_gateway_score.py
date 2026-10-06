@@ -75,7 +75,10 @@ async def projected_run(tmp_path):
                                     "prerequisites": [
                                         {
                                             "condition": "需确认验收结果。",
-                                            "state": "unknown",
+                                            "proposition": "验收已通过。",
+                                            "uncertainty": "missing",
+                                            "positive": [],
+                                            "negative": [],
                                             "citations": [
                                                 {"citationId": wire["evidence"][0]["citationId"]}
                                             ],

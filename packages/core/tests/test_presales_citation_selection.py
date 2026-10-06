@@ -85,6 +85,17 @@ def model_response(citations: list[dict], **changes) -> httpx.Response:
     )
 
 
+def prerequisite(condition, refs, *, positive=None, negative=None):
+    return {
+        "proposition": "该前提已经满足。",
+        "condition": condition,
+        "uncertainty": "none" if positive or negative else "missing",
+        "positive": [{**refs[-1], "text": positive}] if positive else [],
+        "negative": [{**refs[-1], "text": negative}] if negative else [],
+        "citations": refs,
+    }
+
+
 @pytest.mark.parametrize("route", ["primary", "fallback"])
 @pytest.mark.parametrize(
     "primary,fallback", [(None, None), ("high", None), (None, "medium"), ("high", "xhigh")]
@@ -209,9 +220,7 @@ async def test_prerequisites_resolve_to_compatible_public_draft() -> None:
         reference = {"citationId": sent["evidence"][0]["citationId"]}
         return model_response(
             [reference],
-            prerequisites=[
-                {"condition": "需采购 SSO。", "state": "unmet", "citations": [reference]}
-            ],
+            prerequisites=[prerequisite("需采购 SSO。", [reference], negative="本订单尚未采购。")],
             status="conditional",
             answer="采购后方可启用。目前尚未采购。",
         )
@@ -235,11 +244,17 @@ async def test_supported_cannot_omit_outstanding_prerequisites(state: str) -> No
         calls.append(sent)
         return model_response(
             [reference],
-            prerequisites=[{"condition": "需采购 SSO。", "state": state, "citations": [reference]}],
+            prerequisites=[
+                prerequisite(
+                    "需采购 SSO。", [reference], negative="尚未采购。" if state == "unmet" else None
+                )
+            ],
         )
 
     with pytest.raises(PresalesError, match=r"^presales_invalid_model_output$") as error:
-        await gateway(httpx.MockTransport(respond)).generate(evidence_payload("需先采购 SSO。"))
+        await gateway(httpx.MockTransport(respond)).generate(
+            evidence_payload("需先采购 SSO。尚未采购。")
+        )
     assert len(calls) == 1 and error.value.provider_requests == 1
 
 
@@ -261,9 +276,9 @@ async def test_prerequisites_preserve_each_condition_and_selected_evidence(kind:
             status="conditional",
             prerequisites=[
                 {
-                    "condition": "需验收。",
-                    "state": "unmet",
-                    "citations": bound,
+                    **prerequisite("需验收。", bound),
+                    "uncertainty": "none",
+                    "negative": [{**refs[1], "text": "当前未验收。"}],
                 }
             ]
             if kind != "empty_prerequisites"
@@ -282,7 +297,12 @@ async def test_conditions_are_projected_once_from_ordered_outstanding_prerequisi
         sent = json.loads(json.loads(request.content)["messages"][1]["content"])
         reference = {"citationId": sent["evidence"][0]["citationId"]}
         prerequisites = [
-            {"condition": text, "state": state, "citations": [reference]}
+            prerequisite(
+                text,
+                [reference],
+                positive="已采购。" if state == "met" else None,
+                negative="配置未完成。" if state == "unmet" else None,
+            )
             for text, state in [
                 ("已采购模块。", "met"),
                 ("需完成配置。", "unmet"),
@@ -320,14 +340,14 @@ async def test_prerequisite_references_are_materialized_without_repeating_them(
         refs = [{"citationId": item["citationId"]} for item in sent["evidence"]]
         return model_response(
             refs[:1] if include_final_references else [],
-            prerequisites=[{"condition": "需签署协议。", "state": "met", "citations": refs}],
+            prerequisites=[prerequisite("已签署协议。", refs, positive="本订单已签署上述协议。")],
         )
 
     output = await gateway(httpx.MockTransport(respond)).generate(payload)
     assert output.draft.status == "supported"
     assert [c.excerpt for c in output.draft.citations] == [e["text"] for e in payload.evidence]
     assert output.draft.model_dump(by_alias=True)["prerequisites"] == [
-        {"condition": "需签署协议。", "state": "met", "citationIndexes": [0, 1]}
+        {"condition": "已签署协议。", "state": "met", "citationIndexes": [0, 1]}
     ]
 
 
@@ -335,13 +355,8 @@ async def test_unknown_prerequisite_reference_is_rejected_without_repair() -> No
     async def respond(request: httpx.Request) -> httpx.Response:
         return model_response(
             [],
-            prerequisites=[
-                {
-                    "condition": "需签署协议。",
-                    "state": "met",
-                    "citations": [{"citationId": "foreign-request"}],
-                }
-            ],
+            status="conditional",
+            prerequisites=[prerequisite("需确认协议。", [{"citationId": "foreign-request"}])],
         )
 
     with pytest.raises(PresalesError, match=r"^presales_invalid_citation$"):
@@ -359,11 +374,9 @@ async def test_generated_business_prose_cannot_be_english_only(field: str) -> No
         if field == "prerequisite":
             changes = {
                 "prerequisites": [
-                    {
-                        "condition": "Purchase SSO first.",
-                        "state": "unknown",
-                        "citations": [{"citationId": sent["evidence"][0]["citationId"]}],
-                    }
+                    prerequisite(
+                        "Purchase SSO first.", [{"citationId": sent["evidence"][0]["citationId"]}]
+                    )
                 ],
                 "status": "conditional",
             }
@@ -378,15 +391,23 @@ async def test_generated_business_prose_cannot_be_english_only(field: str) -> No
 
 @pytest.mark.parametrize("state,status", [("met", "supported"), ("unknown", "conditional")])
 async def test_prerequisite_states_keep_chinese_prose_and_english_sources(state, status) -> None:
-    original = "Enable SAML 2.0 after purchase and verification."
+    original = (
+        "Enable SAML 2.0 after purchase and verification. Purchase and verification completed."
+    )
 
     async def respond(request: httpx.Request) -> httpx.Response:
         sent = json.loads(json.loads(request.content)["messages"][1]["content"])
         reference = {"citationId": sent["evidence"][0]["citationId"]}
-        condition = "需采购 SAML 2.0 并验证。"
+        condition = "已采购 SAML 2.0 并验证。" if state == "met" else "需确认 SAML 2.0 采购及验证。"
         return model_response(
             [reference],
-            prerequisites=[{"condition": condition, "state": state, "citations": [reference]}],
+            prerequisites=[
+                prerequisite(
+                    condition,
+                    [reference],
+                    positive="Purchase and verification completed." if state == "met" else None,
+                )
+            ],
             status=status,
             answer="已確認 SAML 2.0 的適用條件。",
         )

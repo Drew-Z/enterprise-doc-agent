@@ -16,6 +16,7 @@ from enterprise_doc_core.presales.citation_selection import (
     resolve_selection,
 )
 from enterprise_doc_core.presales.errors import PresalesError
+from enterprise_doc_core.presales.evidence_selection import resolve_evidence_selection
 from enterprise_doc_core.presales.schemas import CitationInput, GeneratedDraft, GenerationInput
 from scripts.evaluate_presales_gateway import synthetic_sources
 from scripts.evaluate_presales_quality import Gold, load_dataset, write_json
@@ -55,10 +56,12 @@ def score(dataset_path: Path, gold_path: Path, report: dict[str, Any]) -> dict[s
         "presales-gateway-run-v1",
         "presales-gateway-run-v2",
         "presales-gateway-run-v3",
+        "presales-gateway-run-v4",
     }:
         raise ValueError("invalid_report_scope")
     projected = report["schemaVersion"] != "presales-gateway-run-v1"
-    structured = report["schemaVersion"] == "presales-gateway-run-v3"
+    evidence_backed = report["schemaVersion"] == "presales-gateway-run-v4"
+    structured = evidence_backed or report["schemaVersion"] == "presales-gateway-run-v3"
     requirements = {r.key: r for r in dataset.requirements}
     sources = {s.key: s for s in dataset.sources}
     expected = {r.key: r for r in gold.rows}
@@ -147,7 +150,8 @@ def score(dataset_path: Path, gold_path: Path, report: dict[str, Any]) -> dict[s
             if projected:
                 try:
                     original = trace["response"]["choices"][0]["message"]["content"]
-                    resolved = resolve_selection(original, catalog)
+                    resolver = resolve_evidence_selection if evidence_backed else resolve_selection
+                    resolved = resolver(original, catalog)
                     # v2 saved only the flat projection. Reproduce that contract without
                     # rewriting the historical result or accepting a formerly failed call.
                     if not structured:

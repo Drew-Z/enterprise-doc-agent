@@ -16,6 +16,7 @@ from typing import Annotated, Any, Literal
 from pydantic import Field
 
 from enterprise_doc_core.presales.citation_selection import resolve_selection
+from enterprise_doc_core.presales.evidence_selection import resolve_evidence_selection
 from enterprise_doc_core.presales.schemas import GenerationInput, PresalesModel, TextItem
 from scripts.evaluate_presales_quality import Anchor, load_dataset, write_json
 from scripts.score_presales_gateway import bind_projected_input, score
@@ -90,7 +91,11 @@ def score_prerequisites(
     if review.run_sha256 != run_hash or review.expectations_sha256 != expected_hash:
         raise ValueError("review_binding_mismatch")
     report = json.loads(run_raw)
-    if report["schemaVersion"] not in {"presales-gateway-run-v2", "presales-gateway-run-v3"}:
+    if report["schemaVersion"] not in {
+        "presales-gateway-run-v2",
+        "presales-gateway-run-v3",
+        "presales-gateway-run-v4",
+    }:
         raise ValueError("prerequisite_report_scope_unsupported")
     baseline = score(dataset_path, gold_path, report)
     dataset, digest = load_dataset(dataset_path)
@@ -146,9 +151,12 @@ def score_prerequisites(
             )
             # Baseline scoring has already bound this accepted output to its result.
             # Historical v2 states are read for a new analysis, never written back.
-            draft = resolve_selection(
-                trace["response"]["choices"][0]["message"]["content"], catalog
+            resolver = (
+                resolve_evidence_selection
+                if report["schemaVersion"] == "presales-gateway-run-v4"
+                else resolve_selection
             )
+            draft = resolver(trace["response"]["choices"][0]["message"]["content"], catalog)
             actual = draft.prerequisites or []
         if any(index >= len(actual) for index in indexes):
             raise ValueError("prerequisite_mapping_index_out_of_range")

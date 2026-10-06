@@ -227,6 +227,40 @@ do not prove logical entailment or complete capture of contractual conditions.
 
 ## Decision precedence and actionable conditions
 
+### Literal prerequisite evidence (v11 candidate)
+
+The current gateway uses the private `EvidenceDraft` provider schema. Every
+prerequisite supplies a positive business proposition, `uncertainty`, positive and
+negative quote arrays, a Chinese condition and context citation IDs. `none`
+requires exactly one supported direction; `missing` requires neither; `conflict`
+requires both. The server derives met/unmet/unknown from these combinations.
+Model-supplied `state` is rejected, with no fallback to the older provider schema.
+
+Each quote contains this call's `citationId` and a nonempty literal `text` of at
+most 600 characters. It must occur within that exact catalog fragment, never just
+another authorized source. Invalid support is `presales_invalid_model_output`;
+unknown context/final citation IDs retain `presales_invalid_citation`. The original
+gateway envelope guards, usage and safe response/request IDs remain in force.
+There is one HTTP dispatch per gateway call; background recovery policy is unchanged.
+
+`resolve_evidence_selection(content, catalog)` unions explicitly selected support
+and context references, then reuses `SelectionDraft` and `resolve_selection` for
+language/status/conditions and public projection. Public drafts, saved JSONB,
+review history and CSV keep their existing schema. Literal containment does not
+prove semantic entailment: missing-record versus negative-fact interpretation,
+source precedence and final business approval still need semantic evaluation.
+
+New evaluation reports use `presales-gateway-run-v4`. Offline scorers select the
+new parser only for v4; v1/v2/v3 retain their historical interpretation and frozen
+failure denominator. Never relabel an old failed output with the new decoder.
+
+Good: purchase has positive text, unfinished configuration has negative text,
+unrecorded acceptance has neither and remains unknown. Bad: fabricate a negative
+quote, accept a previous call's ID, or infer state by keyword rewriting. Regression
+examples: `test_presales_evidence_selection.py`, `test_presales_citation_selection.py`,
+`test_presales_gateway_score.py` and `test_presales_workflow_integration.py`.
+This contract is a source candidate until its separately verified release is deployed.
+
 `presales.v5` keeps the v4 model/public structures. The prompt defines an ordered
 assessment: unresolved contradictions between applicable sources take precedence
 over selecting one side's hard limit; after resolving source priority, an explicit

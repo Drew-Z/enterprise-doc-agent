@@ -887,11 +887,46 @@ async def test_selection_adapter_preserves_persistence_export_and_authorization(
                                     if change == "projection"
                                     else "conflicting_evidence",
                                     "prerequisites": [
-                                        {"condition": text, "state": state, "citations": references}
-                                        for text, state in [
-                                            ("已采购。", "met"),
-                                            ("需配置。", "unmet"),
-                                            ("需确认验收结果。", "unknown"),
+                                        {
+                                            "condition": text,
+                                            "proposition": proposition,
+                                            "uncertainty": "missing"
+                                            if state == "unknown"
+                                            else "none",
+                                            "positive": [
+                                                {
+                                                    "citationId": e["citationId"],
+                                                    "text": "Retention is 30 days.",
+                                                }
+                                                for e in sent["evidence"]
+                                                if "30 days" in e["text"]
+                                            ]
+                                            if state == "met"
+                                            else [],
+                                            "negative": [
+                                                {
+                                                    "citationId": e["citationId"],
+                                                    "text": "Retention is 90 days.",
+                                                }
+                                                for e in sent["evidence"]
+                                                if "90 days" in e["text"]
+                                            ]
+                                            if state == "unmet"
+                                            else [],
+                                            "citations": references,
+                                        }
+                                        for text, state, proposition in [
+                                            (
+                                                "首份条款规定30天。",
+                                                "met",
+                                                "首份条款的保留期为30天。",
+                                            ),
+                                            (
+                                                "需调整第二份条款。",
+                                                "unmet",
+                                                "第二份条款的保留期为30天。",
+                                            ),
+                                            ("需确认验收结果。", "unknown", "验收已通过。"),
                                         ]
                                     ]
                                     if change == "projection"
@@ -937,7 +972,7 @@ async def test_selection_adapter_preserves_persistence_export_and_authorization(
         )
         row = generated.rows[0]
         assert row.attempts[0].provider_request_count == 1
-        assert row.attempts[0].provenance["promptVersion"] == "presales.v9"
+        assert row.attempts[0].provenance["promptVersion"] == "presales.v11"
         if change == "unknown_reference":
             assert row.draft is None and row.attempts[0].error_code == "presales_invalid_citation"
         else:
@@ -948,7 +983,7 @@ async def test_selection_adapter_preserves_persistence_export_and_authorization(
             }
             assert "citationId" not in row.model_dump_json(by_alias=True)
             if change == "projection":
-                assert row.draft.conditions == ["需配置。", "需确认验收结果。"]
+                assert row.draft.conditions == ["需调整第二份条款。", "需确认验收结果。"]
                 saved = await service.get(context.principal, packet.id)
                 assert saved.rows[0].draft == row.draft
                 assert row.draft.prerequisites is not None
@@ -984,7 +1019,7 @@ async def test_selection_adapter_preserves_persistence_export_and_authorization(
                 draft_csv = (await service.export(context.principal, packet.id, "draft")).decode(
                     "utf-8-sig"
                 )
-                assert "需配置。" in draft_csv and "需确认验收结果。" in draft_csv
+                assert "需调整第二份条款。" in draft_csv and "需确认验收结果。" in draft_csv
             reviewed = await service.review(
                 context.principal,
                 packet.id,
@@ -1011,7 +1046,7 @@ async def test_selection_adapter_preserves_persistence_export_and_authorization(
                     {
                         **base_review,
                         "expected_revision": 2,
-                        "note": "配置证据已经核对。验收状态仍待确认。",
+                        "note": "人工确认第二份条款已调整。验收状态仍待确认。",
                         "conditions": ["需确认验收结果。"],
                         "prerequisites": [
                             {**p.model_dump(), "state": "met" if index == 1 else p.state}
@@ -1041,8 +1076,8 @@ async def test_selection_adapter_preserves_persistence_export_and_authorization(
                         )
                     )
                 )
-                assert "已满足：需配置。" in exported["前提状态与对应证据"]  # noqa: RUF001
-                assert "未满足：需配置。" in exported["原模型前提状态与对应证据"]  # noqa: RUF001
+                assert "已满足：需调整第二份条款。" in exported["前提状态与对应证据"]  # noqa: RUF001
+                assert "未满足：需调整第二份条款。" in exported["原模型前提状态与对应证据"]  # noqa: RUF001
                 assert "待确认：需确认验收结果。" in exported["前提状态与对应证据"]  # noqa: RUF001
                 assert "Retention is 30 days." in exported["前提状态与对应证据"]
             with pytest.raises(PresalesError, match="presales_not_found"):

@@ -146,11 +146,30 @@ async def complete_run(tmp_path):
             "status": statuses[wire["requirement"]["key"]],
             "answer": "仅供受控接口测试的回复。不代表真实模型质量。",
             "prerequisites": [
-                {"condition": condition, "state": state, "citations": references}
-                for condition, state in (
-                    ("确认归档恢复的验收结论", "unknown"),
-                    ("模块已购入", "met"),
-                    ("设置保留周期", "unmet"),
+                {
+                    "condition": condition,
+                    "proposition": proposition,
+                    "uncertainty": "missing" if state == "unknown" else "none",
+                    "positive": [
+                        {"citationId": e["citationId"], "text": "本订单已采购历史归档 ARC180"}
+                        for e in wire["evidence"]
+                        if "本订单已采购历史归档 ARC180" in e["text"]
+                    ]
+                    if state == "met"
+                    else [],
+                    "negative": [
+                        {"citationId": e["citationId"], "text": "归档保留策略尚未配置"}
+                        for e in wire["evidence"]
+                        if "归档保留策略尚未配置" in e["text"]
+                    ]
+                    if state == "unmet"
+                    else [],
+                    "citations": references,
+                }
+                for condition, state, proposition in (
+                    ("确认归档恢复的验收结论", "unknown", "归档恢复验收已通过。"),
+                    ("模块已购入", "met", "模块已采购。"),
+                    ("设置保留周期", "unmet", "归档保留策略已配置。"),
                 )
             ]
             if wire["requirement"]["key"] == "H3-R5"
