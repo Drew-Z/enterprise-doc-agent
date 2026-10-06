@@ -74,7 +74,6 @@ async def projected_run(tmp_path):
                                     "answer": "需确认前提。",
                                     "prerequisites": [
                                         {
-                                            "condition": "需确认验收结果。",
                                             "proposition": "验收已通过。",
                                             "uncertainty": "missing",
                                             "positive": [],
@@ -115,6 +114,26 @@ async def test_projected_run_keeps_exact_wire_binding_and_original_failure(proje
     first.pop("result")
     result = score(root.with_suffix(".json"), root.with_suffix(".gold.json"), projected_run)
     assert result["acceptedDrafts"] == 5 and result["realProviderRequests"] == 6
+
+
+async def test_v4_reports_keep_the_original_condition_instead_of_new_projection(projected_run):
+    report = copy.deepcopy(projected_run)
+    report["schemaVersion"] = "presales-gateway-run-v4"
+    for observation in report["observations"]:
+        message = observation["traces"][0]["response"]["choices"][0]["message"]
+        raw = json.loads(message["content"])
+        raw["prerequisites"][0]["condition"] = "旧协议要求补充验收记录。"
+        message["content"] = json.dumps(raw)
+        observation["result"]["draft"]["prerequisites"][0]["condition"] = "旧协议要求补充验收记录。"
+        observation["result"]["draft"]["conditions"] = ["旧协议要求补充验收记录。"]
+    root = Path("evaluation/presales_quality_holdout_v4")
+    assert (
+        score(root.with_suffix(".json"), root.with_suffix(".gold.json"), report)["acceptedDrafts"]
+        == 6
+    )
+    report["schemaVersion"] = "presales-gateway-run-v5"
+    with pytest.raises(ValueError):
+        score(root.with_suffix(".json"), root.with_suffix(".gold.json"), report)
 
 
 @pytest.mark.parametrize(

@@ -85,10 +85,9 @@ def model_response(citations: list[dict], **changes) -> httpx.Response:
     )
 
 
-def prerequisite(condition, refs, *, positive=None, negative=None):
+def prerequisite(proposition, refs, *, positive=None, negative=None):
     return {
-        "proposition": "该前提已经满足。",
-        "condition": condition,
+        "proposition": proposition,
         "uncertainty": "none" if positive or negative else "missing",
         "positive": [{**refs[-1], "text": positive}] if positive else [],
         "negative": [{**refs[-1], "text": negative}] if negative else [],
@@ -286,17 +285,19 @@ async def test_prerequisites_resolve_to_compatible_public_draft() -> None:
         reference = {"citationId": sent["evidence"][0]["citationId"]}
         return model_response(
             [reference],
-            prerequisites=[prerequisite("需采购 SSO。", [reference], negative="本订单尚未采购。")],
+            prerequisites=[
+                prerequisite("本订单已采购 SSO。", [reference], negative="本订单尚未采购。")
+            ],
             status="conditional",
             answer="采购后方可启用。目前尚未采购。",
         )
 
     output = await gateway(httpx.MockTransport(respond)).generate(payload)
     assert output.draft.status == "conditional"
-    assert output.draft.conditions == ["需采购 SSO。"]
+    assert output.draft.conditions == ["核验事项\uff1a本订单已采购 SSO。"]
     assert output.draft.citations[0].excerpt == payload.evidence[0]["text"]
     assert output.draft.model_dump(by_alias=True)["prerequisites"] == [
-        {"condition": "需采购 SSO。", "state": "unmet", "citationIndexes": [0]}
+        {"condition": "核验事项\uff1a本订单已采购 SSO。", "state": "unmet", "citationIndexes": [0]}
     ]
 
 
@@ -371,23 +372,23 @@ async def test_conditions_are_projected_once_from_ordered_outstanding_prerequisi
             )
             for text, state in [
                 ("已采购模块。", "met"),
-                ("需完成配置。", "unmet"),
-                ("需确认验收结果。", "unknown"),
-                ("需完成配置。", "unmet"),
+                ("配置已完成。", "unmet"),
+                ("验收已通过。", "unknown"),
+                ("配置已完成。", "unmet"),
             ]
         ]
         return model_response([], status="conditional", prerequisites=prerequisites)
 
     output = await gateway(httpx.MockTransport(respond)).generate(payload)
-    assert output.draft.conditions == ["需完成配置。", "需确认验收结果。"]
+    assert output.draft.conditions == ["核验事项\uff1a配置已完成。", "核验事项\uff1a验收已通过。"]
     assert len(output.draft.citations) == 1
     assert output.draft.model_dump(by_alias=True)["prerequisites"] == [
         {"condition": text, "state": state, "citationIndexes": [0]}
         for text, state in [
-            ("已采购模块。", "met"),
-            ("需完成配置。", "unmet"),
-            ("需确认验收结果。", "unknown"),
-            ("需完成配置。", "unmet"),
+            ("核验事项\uff1a已采购模块。", "met"),
+            ("核验事项\uff1a配置已完成。", "unmet"),
+            ("核验事项\uff1a验收已通过。", "unknown"),
+            ("核验事项\uff1a配置已完成。", "unmet"),
         ]
     ]
 
@@ -413,7 +414,7 @@ async def test_prerequisite_references_are_materialized_without_repeating_them(
     assert output.draft.status == "supported"
     assert [c.excerpt for c in output.draft.citations] == [e["text"] for e in payload.evidence]
     assert output.draft.model_dump(by_alias=True)["prerequisites"] == [
-        {"condition": "已签署协议。", "state": "met", "citationIndexes": [0, 1]}
+        {"condition": "核验事项\uff1a已签署协议。", "state": "met", "citationIndexes": [0, 1]}
     ]
 
 

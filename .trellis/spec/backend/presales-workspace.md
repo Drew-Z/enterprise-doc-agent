@@ -227,9 +227,30 @@ do not prove logical entailment or complete capture of contractual conditions.
 
 ## Decision precedence and actionable conditions
 
+### Single business proposition (v12 candidate)
+
+`PropositionDraft` removes the second model-written prerequisite `condition`.
+The server validates the proposition and support through the existing evidence
+resolver before projecting `核验事项：` plus the exact proposition. The 995-character
+input bound reserves five characters within the public 1000-character limit.
+Chinese-language validation applies before adding the prefix, so English-only
+propositions cannot pass merely because the server contributes Chinese text.
+
+Keep the description neutral: reviewers can change state but cannot rewrite the
+original prerequisite text. Embedding an immutable state label in that text would
+contradict a later correction and duplicate CSV labels. Public state, citation
+indexes, draft persistence and review-history contracts remain unchanged.
+
+`presales.v12` and `presales-gateway-run-v5` select the new protocol; historical v4
+reports still decode model-written conditions with `resolve_evidence_selection`.
+Old `condition` fields are rejected by the new provider schema, never silently
+ignored. No added inference, keyword relabeling, or promise of semantic entailment.
+Examples: `test_presales_proposition_selection.py`, the v4/v5 scoring regression,
+and the real workflow integration's state-correction/CSV case.
+
 ### Literal prerequisite evidence (v11 candidate)
 
-The current gateway uses the private `EvidenceDraft` provider schema. Every
+The rc.34 deployed gateway uses the private `EvidenceDraft` provider schema. Every
 prerequisite supplies a positive business proposition, `uncertainty`, positive and
 negative quote arrays, a Chinese condition and context citation IDs. `none`
 requires exactly one supported direction; `missing` requires neither; `conflict`

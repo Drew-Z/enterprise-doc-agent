@@ -17,6 +17,7 @@ from enterprise_doc_core.presales.citation_selection import (
 )
 from enterprise_doc_core.presales.errors import PresalesError
 from enterprise_doc_core.presales.evidence_selection import resolve_evidence_selection
+from enterprise_doc_core.presales.proposition_selection import resolve_proposition_selection
 from enterprise_doc_core.presales.schemas import CitationInput, GeneratedDraft, GenerationInput
 from scripts.evaluate_presales_gateway import synthetic_sources
 from scripts.evaluate_presales_quality import Gold, load_dataset, write_json
@@ -57,10 +58,14 @@ def score(dataset_path: Path, gold_path: Path, report: dict[str, Any]) -> dict[s
         "presales-gateway-run-v2",
         "presales-gateway-run-v3",
         "presales-gateway-run-v4",
+        "presales-gateway-run-v5",
     }:
         raise ValueError("invalid_report_scope")
     projected = report["schemaVersion"] != "presales-gateway-run-v1"
-    evidence_backed = report["schemaVersion"] == "presales-gateway-run-v4"
+    evidence_backed = report["schemaVersion"] in {
+        "presales-gateway-run-v4",
+        "presales-gateway-run-v5",
+    }
     structured = evidence_backed or report["schemaVersion"] == "presales-gateway-run-v3"
     requirements = {r.key: r for r in dataset.requirements}
     sources = {s.key: s for s in dataset.sources}
@@ -150,7 +155,10 @@ def score(dataset_path: Path, gold_path: Path, report: dict[str, Any]) -> dict[s
             if projected:
                 try:
                     original = trace["response"]["choices"][0]["message"]["content"]
-                    resolver = resolve_evidence_selection if evidence_backed else resolve_selection
+                    resolver = {
+                        "presales-gateway-run-v4": resolve_evidence_selection,
+                        "presales-gateway-run-v5": resolve_proposition_selection,
+                    }.get(report["schemaVersion"], resolve_selection)
                     resolved = resolver(original, catalog)
                     # v2 saved only the flat projection. Reproduce that contract without
                     # rewriting the historical result or accepting a formerly failed call.

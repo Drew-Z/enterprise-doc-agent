@@ -51,7 +51,6 @@ def item(reference, uncertainty="missing", positive=None, negative=None):
         "uncertainty": uncertainty,
         "positive": [{"citationId": reference, "text": positive}] if positive else [],
         "negative": [{"citationId": reference, "text": negative}] if negative else [],
-        "condition": "需确认验收情况。",
         "citations": [{"citationId": reference}],
     }
 
@@ -108,14 +107,17 @@ async def invoke(make_items, *, finish="stop", message_extra=None, source_text=N
 async def test_evidence_directions_derive_states_and_keep_public_projection():
     def items(ref):
         purchased = item(ref, "none", positive="已采购归档。")
-        purchased["condition"] = "已采购归档。"
+        purchased["proposition"] = "已采购归档。"
         unfinished = item(ref, "none", negative="配置尚未完成。")
-        unfinished["condition"] = "需完成配置。"
+        unfinished["proposition"] = "配置已完成。"
         return [purchased, unfinished, item(ref)]
 
     result = await invoke(items)
     assert [p.state for p in result.draft.prerequisites] == ["met", "unmet", "unknown"]
-    assert result.draft.conditions == ["需完成配置。", "需确认验收情况。"]
+    assert result.draft.conditions == [
+        "核验事项\uff1a配置已完成。",
+        "核验事项\uff1a该前提已经满足。",
+    ]
     assert all(p.citation_indexes == [0] for p in result.draft.prerequisites)
     assert "proposition" not in result.draft.model_dump_json()
     assert result.provider_response_id == "response-evidence"
@@ -129,7 +131,7 @@ async def test_conflicting_literal_support_stays_unknown():
         source_text="记录甲称验收已通过。记录乙称验收未通过。两份记录效力相同。",
     )
     assert result.draft.prerequisites[0].state == "unknown"
-    assert result.draft.conditions == ["需确认验收情况。"]
+    assert result.draft.conditions == ["核验事项\uff1a该前提已经满足。"]
 
 
 @pytest.mark.parametrize("wrong_source", [False, True])
@@ -143,6 +145,7 @@ def test_literal_support_is_bound_to_its_own_fragment_and_joined_to_context(wron
         ),
     }
     selected = item("context", "none", negative="配置尚未完成。")
+    selected["condition"] = "需完成配置。"  # Historical v4 keeps its model-written condition.
     selected["negative"][0]["citationId"] = "context" if wrong_source else "status"
     content = json.dumps(
         {"status": "conditional", "answer": "需完成配置。", "prerequisites": [selected]}

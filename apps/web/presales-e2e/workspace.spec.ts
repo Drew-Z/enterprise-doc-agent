@@ -63,8 +63,8 @@ for (const width of [1440, 390]) {
     ]);
     const content = readFileSync(await download.path(), "utf8");
     expect(content).toContain("前提状态与对应证据");
-    expect(content).toContain("未满足：需采用指定配置并确认合同范围。");
-    expect(content).toContain("待确认：需采用指定配置并确认合同范围。");
+    expect(content).toContain("未满足：核验事项：指定配置及合同范围已确认。");
+    expect(content).toContain("待确认：核验事项：指定配置及合同范围已确认。");
     expect(content).toContain("合成验收：将前提改为未满足，验证状态留痕。");
     expect(content).toContain("Retention");
   });
@@ -94,7 +94,7 @@ test("desktop: five assessments, evidence, review history, reload and real CSV",
     const row = page.getByRole("article", { name: `R${index + 1}`, exact: true });
     await row.getByText("查看证据与复核", { exact: true }).click();
     if (index !== 3) await expect(row.getByRole("blockquote").first()).toContainText("Retention");
-    if (index === 1) await expect(row.getByText("需采用指定配置并确认合同范围。", { exact: true }).first()).toBeVisible();
+    if (index === 1) await expect(row.getByText("核验事项：指定配置及合同范围已确认。", { exact: true }).first()).toBeVisible();
     if (index === 3) await expect(row.getByText("请补充当前有效的证明材料。", { exact: true }).first()).toBeVisible();
     await expect(row.getByText(/部分片段已按长度或数量限制截取/)).toBeVisible();
     await row.getByRole("textbox", { name: "响应文案", exact: true }).fill(index === 0 ? "=客户原文\n人工复核后的中文响应" : `人工复核第 ${index + 1} 条`);

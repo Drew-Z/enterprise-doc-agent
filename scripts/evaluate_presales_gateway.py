@@ -204,7 +204,7 @@ async def collect(
     dataset, digest = load_dataset(dataset_path)
     snapshots, evidence = synthetic_sources(dataset, digest)
     report: dict[str, Any] = {
-        "schemaVersion": "presales-gateway-run-v4",
+        "schemaVersion": "presales-gateway-run-v5",
         "scope": (
             "generation_only_with_complete_synthetic_sources; no_retrieval_or_persistence"
             if dataset.synthetic
