@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from typing import Any
 from uuid import UUID, uuid4
 
-from sqlalchemy import and_, or_, select
+from sqlalchemy import and_, or_, select, true
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from enterprise_doc_core.audit import append_audit_event
@@ -17,6 +17,7 @@ from enterprise_doc_core.demo.limits import (
     begin_background_attempt,
     finish_attempt,
 )
+from enterprise_doc_core.demo.models import DemoWorkspace
 from enterprise_doc_core.identity import Tenant
 from enterprise_doc_core.jobs.models import Job
 from enterprise_doc_core.jobs.service import (
@@ -76,7 +77,7 @@ class BackgroundGeneration:
             failure_projector=self.project_failure,
         )
 
-    async def run_once(self, worker_id: str) -> bool:
+    async def run_once(self, worker_id: str, *, include_demo: bool = True) -> bool:
         if await self._reconcile_terminal():
             return True
         now = self.clock()
@@ -86,6 +87,15 @@ class BackgroundGeneration:
                     select(Job.id)
                     .where(
                         Job.type == BACKGROUND_JOB_TYPE,
+                        # Only one local lane accepts demos. Filter before LIMIT
+                        # so queued demos cannot hide ordinary tenants' work.
+                        (
+                            true()
+                            if include_demo
+                            else ~select(DemoWorkspace.id)
+                            .where(DemoWorkspace.tenant_id == Job.tenant_id)
+                            .exists()
+                        ),
                         or_(
                             and_(Job.status == "pending", Job.available_at <= now),
                             and_(Job.status == "running", Job.lease_expires_at <= now),

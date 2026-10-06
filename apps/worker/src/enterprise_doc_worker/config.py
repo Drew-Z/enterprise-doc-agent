@@ -19,6 +19,12 @@ class WorkerServerSettings(BaseModel):
     publisher_batch_size: int = Field(default=20, ge=1, le=100)
     publisher_poll_interval_seconds: float = Field(default=1.0, gt=0, le=60)
     publisher_cycle_timeout_seconds: float = Field(default=30.0, gt=0, le=300)
+    presales_concurrency: int = Field(
+        default=1,
+        ge=1,
+        le=4,
+        description="Concurrent background generations per worker process, not a tenant quota.",
+    )
 
 
 class WorkerSettings(FoundationSettings):

@@ -529,6 +529,7 @@ def configure_manifest(
     presales_route_failure_threshold: str = "3",
     presales_route_cooldown_seconds: str = "30",
     presales_concurrent_attempt_limit: str | None = None,
+    worker_presales_concurrency: str | None = None,
     demo_enabled: str = "false",
     embedding_base_url: str = "https://embedding.example.invalid/v1",
     embedding_model_name: str = "staging-embedding",
@@ -542,6 +543,8 @@ def configure_manifest(
 ) -> None:
     if upload_single_put_enabled not in (None, "true", "false"):
         raise ValueError("single PUT enablement must be true or false")
+    if worker_presales_concurrency not in (None, "", "1", "2", "3", "4"):
+        raise ValueError("worker presales concurrency must be an integer from one to four")
     staging = _https_url(staging_base_url, description="staging base URL")
     staging_hostname = _dns_hostname(staging.hostname or "", description="staging host")
     object_store_endpoint = object_store_endpoint.strip()
@@ -736,6 +739,9 @@ def configure_manifest(
     data.pop("PRESALES__FALLBACK_MODEL_TIMEOUT_SECONDS", None)
     data.pop("PRESALES__CONCURRENT_ATTEMPT_LIMIT", None)
     data.update(presales_config)
+    data.pop("WORKER__PRESALES_CONCURRENCY", None)
+    if worker_presales_concurrency:
+        data["WORKER__PRESALES_CONCURRENCY"] = worker_presales_concurrency
     data["DEMO__ENABLED"] = demo_enabled
     data["EMBEDDING__PROVIDER"] = "openai_compatible"
     data["EMBEDDING__BASE_URL"] = normalized_embedding_base_url
@@ -1025,6 +1031,7 @@ def main() -> None:
     parser.add_argument("--presales-route-failure-threshold", default="3")
     parser.add_argument("--presales-route-cooldown-seconds", default="30")
     parser.add_argument("--presales-concurrent-attempt-limit")
+    parser.add_argument("--worker-presales-concurrency")
     parser.add_argument("--demo-enabled", choices=("true", "false"), default="false")
     parser.add_argument("--embedding-base-url", required=True)
     parser.add_argument("--embedding-model-name", required=True)
@@ -1077,6 +1084,7 @@ def main() -> None:
         presales_route_failure_threshold=args.presales_route_failure_threshold,
         presales_route_cooldown_seconds=args.presales_route_cooldown_seconds,
         presales_concurrent_attempt_limit=args.presales_concurrent_attempt_limit,
+        worker_presales_concurrency=args.worker_presales_concurrency,
         demo_enabled=args.demo_enabled,
         embedding_base_url=args.embedding_base_url,
         embedding_model_name=args.embedding_model_name,

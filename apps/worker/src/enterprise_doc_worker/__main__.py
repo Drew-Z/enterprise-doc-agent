@@ -171,12 +171,7 @@ async def run_worker() -> None:
                 session_factory,
                 runtime.shutdown_event,
                 metrics,
-                on_progress=progress.register(
-                    "presales",
-                    timeout_seconds=settings.presales.row_timeout_seconds
-                    + 2 * settings.database.pool_timeout_seconds
-                    + 30,
-                ),
+                progress=progress,
             )
         server = uvicorn.Server(
             uvicorn.Config(

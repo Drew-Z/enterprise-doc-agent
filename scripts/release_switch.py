@@ -77,6 +77,7 @@ CONFIG_KEYS = {
     "PRESALES__BACKGROUND_GENERATION_ENABLED",
     "PRESALES__AUTOMATIC_FAILOVER_ENABLED",
     "PRESALES__CONCURRENT_ATTEMPT_LIMIT",
+    "WORKER__PRESALES_CONCURRENCY",
 }
 APPROVAL_KEYS = {
     PREFIX + "approved-" + name
@@ -142,8 +143,14 @@ class ReleasePlan(Plan):
         self.image_only = value.get("release_kind") == "images_only"
         self.reasoning_only = value.get("release_kind") == "reasoning_only"
         self.presales_inference = value.get("release_kind") == "presales_inference"
+        self.presales_concurrency = value.get("release_kind") == "presales_concurrency"
         if "release_kind" in value and (
-            not (self.image_only or self.reasoning_only or self.presales_inference)
+            not (
+                self.image_only
+                or self.reasoning_only
+                or self.presales_inference
+                or self.presales_concurrency
+            )
             or self.revision != "20261005_0032"
         ):
             raise GuardError("explicit release kind requires a supported schema 0032 mode")
@@ -184,6 +191,8 @@ class ReleasePlan(Plan):
         }
         if changed & presales_inference_keys and not self.presales_inference:
             raise GuardError("presales inference settings require an explicit release mode")
+        if "WORKER__PRESALES_CONCURRENCY" in changed and not self.presales_concurrency:
+            raise GuardError("presales concurrency requires an explicit release mode")
         if self.revision == "20261005_0032":
             if self.image_only and changed:
                 raise GuardError("image-only switching must retain all configuration")
@@ -201,6 +210,14 @@ class ReleasePlan(Plan):
                     raise GuardError(
                         "reasoning-only switching requires existing valid effort changes"
                     )
+            elif self.presales_concurrency:
+                if changed != {"WORKER__PRESALES_CONCURRENCY"}:
+                    raise GuardError("concurrency switching only permits the worker slot setting")
+                if any(
+                    config.get("WORKER__PRESALES_CONCURRENCY") not in {None, "1", "2", "3", "4"}
+                    for config in (old, new)
+                ):
+                    raise GuardError("invalid worker presales concurrency")
             elif self.presales_inference:
                 if not changed or changed - presales_inference_keys:
                     raise GuardError("presales inference switching only permits primary overrides")
@@ -280,10 +297,10 @@ class ReleasePlan(Plan):
             PREFIX + "prerequisites-sha256",
         }:
             raise GuardError("reasoning-only switching cannot change unrelated approvals")
-        if self.presales_inference and {k for k in before if before[k] != after[k]} - (
-            image_approvals | {PREFIX + "approved-config-sha256"}
-        ):
-            raise GuardError("presales inference switching cannot change unrelated approvals")
+        if (self.presales_inference or self.presales_concurrency) and {
+            k for k in before if before[k] != after[k]
+        } - (image_approvals | {PREFIX + "approved-config-sha256"}):
+            raise GuardError("presales switching cannot change unrelated approvals")
         for config, approved_values in ((old, before), (new, after)):
             if approved_values[PREFIX + "approved-config-sha256"] != canonical_digest(config):
                 raise GuardError("configuration approval fingerprint does not match")
@@ -377,7 +394,7 @@ class ReleasePlan(Plan):
             new_image = target["spec"]["containers"][0]["image"]
             if (
                 self.revision == "20261005_0032"
-                and not (self.image_only or self.presales_inference)
+                and not (self.image_only or self.presales_inference or self.presales_concurrency)
                 and new_image != old_image
             ):
                 raise GuardError("0032 configuration switching must retain all application images")
