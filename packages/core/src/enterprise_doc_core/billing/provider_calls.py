@@ -12,7 +12,7 @@ from urllib.parse import urlsplit
 from uuid import UUID
 
 import httpx
-from sqlalchemy import func, select, text
+from sqlalchemy import func, select, text, update
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -75,15 +75,23 @@ class ProviderCallService:
                 await scope.guard(session)
                 # Guards take business locks before budget locks. No path takes
                 # a business/Tenant lock after acquiring a provider budget lock.
-                for key in (
-                    f"provider-day:{scope.tenant_id}:{day.date()}",
-                    f"provider-operation:{scope.tenant_id}:{scope.kind}:{scope.operation_id}",
-                ):
-                    await session.execute(
-                        text("SELECT pg_advisory_xact_lock(hashtextextended(:key, 0))"),
-                        {"key": key},
-                    )
-                daily = await session.scalar(
+                await session.execute(
+                    text(
+                        "WITH day_lock AS MATERIALIZED ("
+                        "SELECT pg_advisory_xact_lock(hashtextextended(:day_key, 0))) "
+                        "SELECT pg_advisory_xact_lock(hashtextextended(:operation_key, 0)) "
+                        "FROM day_lock"
+                    ),
+                    {
+                        "day_key": f"provider-day:{scope.tenant_id}:{day.date()}",
+                        "operation_key": (
+                            f"provider-operation:{scope.tenant_id}:{scope.kind}:{scope.operation_id}"
+                        ),
+                    },
+                )
+                # Counts need a new READ COMMITTED snapshot after any lock wait.
+                # Combining them with the lock statement can miss a prior commit.
+                daily_count = (
                     select(func.count())
                     .select_from(ProviderDispatch)
                     .where(
@@ -91,10 +99,9 @@ class ProviderCallService:
                         ProviderDispatch.started_at >= day,
                         ProviderDispatch.started_at < day + timedelta(days=1),
                     )
+                    .scalar_subquery()
                 )
-                if (daily or 0) >= self.settings.daily_call_limit:
-                    raise UsageError("provider_daily_budget_exhausted")
-                attempts = await session.scalar(
+                operation_count = (
                     select(func.count())
                     .select_from(ProviderDispatch)
                     .where(
@@ -102,13 +109,19 @@ class ProviderCallService:
                         ProviderDispatch.kind == scope.kind,
                         ProviderDispatch.operation_id == scope.operation_id,
                     )
+                    .scalar_subquery()
                 )
+                daily, attempts = (
+                    await session.execute(select(daily_count, operation_count))
+                ).one()
+                if daily >= self.settings.daily_call_limit:
+                    raise UsageError("provider_daily_budget_exhausted")
                 limit = {
                     "agent": self.settings.agent_call_limit,
                     "document": self.settings.document_call_limit,
                     "query": self.settings.query_call_limit,
                 }[scope.kind]
-                if (attempts or 0) >= limit:
+                if attempts >= limit:
                     raise UsageError("provider_operation_budget_exhausted")
                 row = ProviderDispatch(
                     tenant_id=scope.tenant_id,
@@ -149,25 +162,29 @@ class ProviderCallService:
                 pass
         try:
             async with self.sessions.begin() as session:
-                row = await session.scalar(
-                    select(ProviderDispatch)
-                    .where(
-                        ProviderDispatch.id == receipt,
-                        ProviderDispatch.tenant_id == scope.tenant_id,
-                        ProviderDispatch.operation_id == scope.operation_id,
-                    )
-                    .with_for_update()
+                identity = (
+                    ProviderDispatch.id == receipt,
+                    ProviderDispatch.tenant_id == scope.tenant_id,
+                    ProviderDispatch.operation_id == scope.operation_id,
                 )
-                if row is None:
-                    raise UsageError("provider_usage_receipt_missing")
-                if row.state != "dispatched":
-                    return
-                row.state = state
-                row.status_code = response.status_code if response is not None else None
-                row.provider_request_id = request_id
-                row.provider_response_id = response_id
-                row.total_tokens = tokens
-                row.finished_at = datetime.now(UTC)
+                updated = await session.scalar(
+                    update(ProviderDispatch)
+                    .where(*identity, ProviderDispatch.state == "dispatched")
+                    .values(
+                        state=state,
+                        status_code=response.status_code if response is not None else None,
+                        provider_request_id=request_id,
+                        provider_response_id=response_id,
+                        total_tokens=tokens,
+                        finished_at=datetime.now(UTC),
+                    )
+                    .returning(ProviderDispatch.id)
+                    .execution_options(synchronize_session=False)
+                )
+                if updated is None:
+                    existing = await session.scalar(select(ProviderDispatch.id).where(*identity))
+                    if existing is None:
+                        raise UsageError("provider_usage_receipt_missing")
                 # No published, versioned rate card is configured. Cost stays
                 # NULL even when the provider returns token usage or an error.
         except DBAPIError as error:

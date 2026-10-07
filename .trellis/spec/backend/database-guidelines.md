@@ -102,6 +102,33 @@ real constraint. Verify no partial group survives failure or caller rollback,
 and that repeated statements allocate distinct row IDs. Use an owned
 loopback schema; never migrate shared public tables to run these tests.
 
+## Provider Dispatch Metering
+
+`ProviderCallService.begin` preserves business guard locks before tenant/day and
+operation advisory locks. A materialized day-lock CTE feeds the operation-lock
+SELECT, enforcing their order in one round trip. Daily and operation counts share
+the next SELECT as independent scalar subqueries, preserving their indexed filters
+and daily-limit error priority. **Never put counts in the lock statement:** its
+READ COMMITTED snapshot precedes any lock wait and may miss the dispatch just
+committed by the previous lock owner. Commit the intent before HTTP dispatch.
+
+`finish` conditionally updates the scoped receipt only while `state='dispatched'`,
+using `UPDATE ... RETURNING id`. PostgreSQL rechecks this predicate after a row-lock
+wait. The first committed terminal state and all of its metadata remain unchanged
+on replay. An unmatched update needs a scoped existence query: an absent receipt
+raises `provider_usage_receipt_missing`; an existing terminal receipt is a no-op.
+Constraint/driver errors retain `provider_usage_unavailable` and transaction rollback.
+Cost and currency stay NULL without a versioned tariff.
+
+Real isolated PostgreSQL tests exercise `recorded_post` with a no-query guard and
+count all statements: normal dispatch plus finish uses at most five. Verify the
+intent is visible to a separate connection before HTTP. Queue contenders behind
+a held day lock to test both last daily and operation slots, then independently
+hold the operation lock to prove day-before-operation ordering. Verify concurrent
+finish, identity mismatch, constraint rollback and lost commit acknowledgment
+without overwriting terminal metadata. Only the provider HTTP and database fault
+injection boundaries are replaced. SQL savings do not establish deployed latency.
+
 ## Proven Examples
 
 - `infra/k8s/overlays/single-node-4c4g/resources-patch.yaml`
@@ -113,3 +140,4 @@ loopback schema; never migrate shared public tables to run these tests.
 - `tests/foundation/test_migration_contract.py`
 - `packages/core/src/enterprise_doc_core/jobs/service.py::create_job_records`
 - `tests/jobs/test_job_creation_batch_integration.py`
+- `tests/billing/test_provider_dispatch_roundtrips_integration.py`
