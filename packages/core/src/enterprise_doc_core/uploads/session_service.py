@@ -16,15 +16,12 @@ from enterprise_doc_core.config import ObjectStoreChecksumMode, UploadSettings
 from enterprise_doc_core.context import PrincipalContext
 from enterprise_doc_core.db import read_only_session
 from enterprise_doc_core.documents import (
-    Document,
     DocumentEnvelopeViolation,
     DocumentVersion,
-    DocumentVersionStatus,
     validate_document_envelope,
 )
 from enterprise_doc_core.documents.envelope import MAX_BUFFERED_ENVELOPE_BYTES
 from enterprise_doc_core.identity import Tenant
-from enterprise_doc_core.jobs import create_job_records
 from enterprise_doc_core.object_store import (
     CompletedMultipartUpload,
     MultipartObjectStore,
@@ -36,6 +33,7 @@ from enterprise_doc_core.object_store import (
 from enterprise_doc_core.object_store.errors import ObjectStoreError
 from enterprise_doc_core.object_store.models import ObjectContent, PresignedObjectUpload
 from enterprise_doc_core.object_store.signed_upload import SignedUploadWriter
+from enterprise_doc_core.uploads.completion_records import insert_completion_records
 from enterprise_doc_core.uploads.models import (
     UPLOAD_PART_OBSERVATION_VERSION_SEQUENCE,
     UploadPart,
@@ -1516,60 +1514,23 @@ class UploadSessionService:
                         )
                     ):
                         raise UploadCompletionStateInvalid()
-                    document = Document(
-                        id=upload_session.pending_document_id,
-                        tenant_id=upload_session.tenant_id,
-                        created_by=upload_session.actor_id,
-                        title=upload_session.original_filename,
-                    )
-                    database.add(document)
-                    await database.flush()
-                    version = DocumentVersion(
-                        id=upload_session.pending_version_id,
-                        tenant_id=upload_session.tenant_id,
-                        document_id=upload_session.pending_document_id,
-                        upload_session_id=upload_session.id,
-                        version_number=1,
-                        status=DocumentVersionStatus.UPLOADED.value,
-                        object_key=upload_session.object_key,
-                        original_filename=upload_session.original_filename,
-                        declared_media_type=upload_session.declared_media_type,
-                        detected_media_type=detected_media_type,
-                        size_bytes=head.size_bytes,
-                        declared_sha256=upload_session.declared_sha256,
-                        content_sha256_verified_at=content_sha256_verified_at,
-                        transport_checksum_sha256=transport_checksum,
-                        created_by=upload_session.actor_id,
-                    )
-                    database.add(version)
-                    await database.flush()
-                    await create_job_records(
+                    completed_at = self.clock()
+                    await insert_completion_records(
                         database,
-                        tenant_id=upload_session.tenant_id,
-                        actor_id=upload_session.actor_id,
-                        job_type="document.ingest",
-                        idempotency_key=f"document-version:{version.id}",
-                        payload={"document_version_id": str(version.id)},
-                        document_version_id=version.id,
-                        max_attempts=self.ingestion_max_attempts,
-                        request_id=None,
-                        correlation_id=None,
-                        outbox_event_type="document.ingest.requested",
+                        upload=upload_session,
+                        size_bytes=head.size_bytes,
+                        detected_media_type=detected_media_type,
+                        transport_checksum=transport_checksum,
+                        content_sha256_verified_at=content_sha256_verified_at,
+                        completed_at=completed_at,
+                        ingestion_max_attempts=self.ingestion_max_attempts,
                     )
-                    reserved_bytes = upload_session.reserved_bytes
-                    tenant.reserved_storage_bytes -= reserved_bytes
-                    tenant.used_storage_bytes += head.size_bytes
-                    upload_session.reserved_bytes = 0
-                    upload_session.document_version_id = version.id
-                    upload_session.status = UploadSessionStatus.COMPLETED.value
-                    upload_session.completed_at = self.clock()
-                    upload_session.last_error_code = None
-                    upload_session.cleanup_claimed_at = None
-                    upload_session.cleanup_claim_token = None
-                    await database.flush()
-                    result = _result_from_completed_models(
-                        upload_session=upload_session,
-                        version=version,
+                    result = CompleteUploadSessionResult(
+                        session_id=upload_session.id,
+                        status=UploadSessionStatus.COMPLETED.value,
+                        document_id=upload_session.pending_document_id,
+                        version_id=upload_session.pending_version_id,
+                        completed_at=completed_at,
                         replayed=False,
                     )
         except Exception as error:

@@ -1,5 +1,29 @@
 # Multipart Upload Completion
 
+## Atomic completion record group
+
+Finalization keeps the Tenant then owned UploadSession locks and all existing
+state, preallocated-ID, cleanup-token and storage-reservation checks. After those
+checks, `insert_completion_records` combines Document, DocumentVersion, initial
+Job/JobEvent/AuditEvent/OutboxEvent, tenant quota conversion and the completed
+upload link in one PostgreSQL data-modifying CTE statement. Each inserted parent
+feeds dependent records through RETURNING; retain explicit IDs and server defaults.
+
+Reuse `jobs.service.prepare_job_records` for idempotency/fingerprint checks and
+the initial job statement. Ordinary `create_job_records` executes that same prepared
+statement. Preparation may flush pending ORM parents; a replay has no new statement.
+The upload composition requires a new job and must not run dependent inserts on
+a replay. Loaded ORM rows stay clean and must not be used for their stale mutable
+fields after the Core writes. Construct the receipt from validated immutable IDs
+and the persisted completion timestamp, returning only after transaction commit.
+
+Any write failure rolls back the complete group, retaining the earlier durable
+completion claim and reservation. Original object/commit acknowledgment recovery
+continues to read the same upload. Tests must cover every table's constraint failure,
+same-upload concurrency, lost final COMMIT acknowledgment, original defaults and
+links, and a six-statement bound through `complete_content` (including its claim
+and the Job idempotency SELECT). A SQL budget is not deployed public latency proof.
+
 ## Scenario: bounded authenticated content upload
 
 ### 1. Scope / Trigger

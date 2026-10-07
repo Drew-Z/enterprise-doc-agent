@@ -12,7 +12,7 @@ from enum import StrEnum
 from typing import Any, Protocol
 from uuid import UUID, uuid4
 
-from sqlalchemy import and_, exists, func, insert, or_, select, text
+from sqlalchemy import ColumnElement, Select, and_, exists, func, insert, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import aliased
 
@@ -87,6 +87,12 @@ class JobCreateResult:
     job_id: UUID
     outbox_event_id: UUID | None
     replayed: bool
+
+
+@dataclass(frozen=True, slots=True)
+class PreparedJobRecords:
+    statement: Select[Any] | None
+    result: JobCreateResult
 
 
 @dataclass(frozen=True, slots=True)
@@ -309,7 +315,53 @@ async def create_job_records(
     available_at: datetime | None = None,
     outbox_event_type: str | None = "job.created",
 ) -> JobCreateResult:
+    prepared = await prepare_job_records(
+        session,
+        tenant_id=tenant_id,
+        actor_id=actor_id,
+        job_type=job_type,
+        idempotency_key=idempotency_key,
+        payload=payload,
+        document_version_id=document_version_id,
+        max_attempts=max_attempts,
+        priority=priority,
+        request_id=request_id,
+        correlation_id=correlation_id,
+        available_at=available_at,
+        outbox_event_type=outbox_event_type,
+    )
+    if prepared.statement is not None:
+        await session.execute(prepared.statement)
+    return prepared.result
+
+
+async def prepare_job_records(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    actor_id: UUID,
+    job_type: str,
+    idempotency_key: str,
+    payload: Mapping[str, Any],
+    document_version_id: UUID | None = None,
+    max_attempts: int = 3,
+    priority: int = 0,
+    request_id: str | None = None,
+    correlation_id: str | None = None,
+    available_at: datetime | None = None,
+    outbox_event_type: str | None = "job.created",
+    document_version_reference: ColumnElement[UUID] | None = None,
+) -> PreparedJobRecords:
+    """Check idempotency and prepare a composable insert in the caller's transaction.
+
+    Flush pending ORM parents as ordinary creation does. A trusted caller may
+    instead supply a RETURNING expression for its new version's declared UUID,
+    then compose its own dependent writes before executing the returned statement.
+    A replay has no statement and must never execute new dependent writes.
+    """
     importlib.import_module("enterprise_doc_core.db.metadata")
+    if document_version_reference is not None and document_version_id is None:
+        raise ValueError("a version reference requires its declared document_version_id")
     if not 1 <= max_attempts <= 100:
         raise ValueError("max_attempts must be between 1 and 100")
     if len(idempotency_key) == 0 or len(idempotency_key) > 128:
@@ -341,7 +393,9 @@ async def create_job_records(
             if outbox_event_type is not None
             else None
         )
-        return JobCreateResult(existing.id, event.id if event else None, True)
+        return PreparedJobRecords(
+            None, JobCreateResult(existing.id, event.id if event else None, True)
+        )
 
     # Flush caller-owned parents even when autoflush is disabled, as the previous
     # ORM creation path did. All initial job records then share one database
@@ -354,7 +408,11 @@ async def create_job_records(
             id=job_id,
             tenant_id=tenant_id,
             actor_id=actor_id,
-            document_version_id=document_version_id,
+            document_version_id=(
+                document_version_reference
+                if document_version_reference is not None
+                else document_version_id
+            ),
             type=job_type,
             status=JobStatus.PENDING.value,
             priority=priority,
@@ -428,8 +486,7 @@ async def create_job_records(
             .cte("initial_job_outbox")
         )
         statement = statement.add_cte(initial_outbox)
-    await session.execute(statement)
-    return JobCreateResult(job_id, outbox_event_id, False)
+    return PreparedJobRecords(statement, JobCreateResult(job_id, outbox_event_id, False))
 
 
 async def cancel_job_records(
