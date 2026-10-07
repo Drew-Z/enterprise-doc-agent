@@ -7,9 +7,10 @@ from decimal import Decimal
 from typing import Any, cast
 from uuid import UUID, uuid4
 
-from sqlalchemy import desc, func, select
+from sqlalchemy import desc, func, insert, select, update
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.orm.attributes import set_committed_value
 
 from enterprise_doc_core.billing.contracts import (
     ProviderUsageSummary,
@@ -299,21 +300,39 @@ class EntitlementUsageService:
             > limit
         ):
             raise UsageError("usage_limit_reached")
-        reservation = UsageReservation(
-            id=uuid4(),
-            tenant_id=tenant_id,
-            entitlement_id=entitlement.id,
-            operation_id=operation_id,
-            quantity=quantity,
-            state="reserved",
-            expires_at=now + self.reservation_ttl,
-            reserved_at=now,
-            created_at=now,
-            updated_at=now,
-        )
-        entitlement.provider_requests_reserved += quantity
-        session.add(reservation)
+        # Persist expiry releases and caller-owned changes before the combined
+        # write, including when the caller disabled autoflush. The tenant lock
+        # still serializes every reservation writer in this transaction.
         await session.flush()
+        reserved = entitlement.provider_requests_reserved + quantity
+        updated = (
+            update(TenantEntitlement)
+            .where(TenantEntitlement.id == entitlement.id, TenantEntitlement.tenant_id == tenant_id)
+            .values(provider_requests_reserved=reserved)
+            .returning(TenantEntitlement.id, TenantEntitlement.updated_at)
+            .cte("reserved_entitlement")
+        )
+        statement = (
+            insert(UsageReservation)
+            .values(
+                id=uuid4(),
+                tenant_id=tenant_id,
+                entitlement_id=select(updated.c.id).scalar_subquery(),
+                operation_id=operation_id,
+                quantity=quantity,
+                state="reserved",
+                expires_at=now + self.reservation_ttl,
+                reserved_at=now,
+                created_at=now,
+                updated_at=now,
+            )
+            .returning(UsageReservation, select(updated.c.updated_at).scalar_subquery())
+        )
+        reservation, updated_at = (await session.execute(statement)).one()
+        # The CTE bypasses ORM synchronization; subsequent calls in this session
+        # must see the returned database state without scheduling another UPDATE.
+        set_committed_value(entitlement, "provider_requests_reserved", reserved)
+        set_committed_value(entitlement, "updated_at", updated_at)
         return self._reservation_result(reservation, replay=False, entitlement=entitlement)
 
     async def _settle(

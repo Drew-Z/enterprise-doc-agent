@@ -129,6 +129,34 @@ finish, identity mismatch, constraint rollback and lost commit acknowledgment
 without overwriting terminal metadata. Only the provider HTTP and database fault
 injection boundaries are replaced. SQL savings do not establish deployed latency.
 
+## New Usage Reservation Writes
+
+After the existing Tenant, reservation and entitlement locks and expiry processing,
+new Presales usage reservations combine the entitlement counter UPDATE and reservation
+INSERT in one statement. The INSERT references the UPDATE CTE's returned entitlement
+ID; retain the original clock/TTL values and database defaults. Flush pending expiry
+events and caller-owned changes first, including under `session.no_autoflush`.
+Do not commit within a caller-owned transaction.
+
+The CTE's counter update bypasses ORM synchronization. After successful execution,
+use `set_committed_value` for the locked entitlement's new reserved counter and the
+database-returned `updated_at`; otherwise same-session reserve/settle/release can
+read a stale counter or flush a duplicate UPDATE. This marks the ORM state as flushed,
+not the database transaction as committed. Constraint failure must roll back both
+writes; same-operation replay retains the original ID and expiry after uncertain commit.
+
+Presales adds its new attempt to the session only after usage reservation and queue
+deadline clipping. Keep the final source recheck and transaction boundary; the receipt
+must see a durable Job, attempt and reservation with the final stored deadline.
+Do not let an earlier quota lookup autoflush a provisional attempt then update it again.
+
+Tests count all SQL through public reservation and single/batch receipt interfaces:
+at most six for a new standalone reservation and seventeen for the configured admission
+fixture. Verify same-session multiple operations, pending caller changes, expired
+reservation release, both table constraint failures, caller rollback, commit acknowledgment
+loss, same-key contention and last-slot contention behind a real Tenant lock. These
+local query budgets do not prove public latency or production capacity.
+
 ## Proven Examples
 
 - `infra/k8s/overlays/single-node-4c4g/resources-patch.yaml`
@@ -141,3 +169,5 @@ injection boundaries are replaced. SQL savings do not establish deployed latency
 - `packages/core/src/enterprise_doc_core/jobs/service.py::create_job_records`
 - `tests/jobs/test_job_creation_batch_integration.py`
 - `tests/billing/test_provider_dispatch_roundtrips_integration.py`
+- `tests/billing/test_reservation_batch_integration.py`
+- `tests/presales/test_presales_admission_batch_integration.py`

@@ -1,5 +1,13 @@
 # 当前环境验收设计
 
+## 2026-10-07 受理预约写入合并
+
+真实隔离数据库的轻量受理回执路径共19条SQL；新attempt在额度检查前被自动flush，拿到预约期限后又UPDATE截止时间。新attempt保持暂存，直到额度预约及期限裁剪成功才加入session，仍在最终来源复查前flush、同事务提交。原日/并发计数、重放、展示额度、权限及首末来源检查保持。
+
+商业新预约在原Tenant→reservation→entitlement锁、当前期限检查与过期释放之后，将额度计数UPDATE和UsageReservation INSERT合成一条数据修改CTE。INSERT依赖UPDATE返回的entitlement ID；先flush调用方和过期释放的待写内容，再执行组合写入，返回数据库预约及更新时间，同步session内已锁entitlement的计数/时间。失败整体回滚；同事务再次reserve/settle/release不能使用旧计数。保持当前时钟、真实储存TTL、遗留模式和错误优先级，无迁移或配置变化。
+
+公开轻量受理先用17条总SQL预算及最终持久Job/attempt/预约/截止时间建立红例。真实独占PostgreSQL回归覆盖两表约束拒绝、过期释放再预约、调用方回滚与no_autoflush下的调用方待写内容、同键及最后额度并发、同事务多次操作、提交确认丢失后的原键恢复；仅替代HTTP供应商与数据库故障注入边界。局部SQL预算不当作公网延迟或容量通过。
+
 ## 2026-10-07 供应商计量往返合并
 
 三次rc.38独立进程检索剖析显示，派发前计量572–609ms、完成记账259–269ms。保留业务guard优先及day→operation锁顺序，将两次预算锁请求合为带显式依赖的MATERIALIZED CTE，将每日/操作计数合为下一条SELECT的两个标量子查询。计数不能与等待锁放在同一语句：READ COMMITTED语句快照可能在等待前建立，遗漏前序提交并超支。

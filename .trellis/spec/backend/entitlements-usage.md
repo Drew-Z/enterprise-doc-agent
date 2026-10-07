@@ -127,6 +127,16 @@ transaction to bound its queue deadline, avoiding a duplicate SELECT. Never reco
 the TTL on replay or extend a stored deadline. The admission integration suite checks
 exact stored expiry, replay, clipping and rollback when no execution time remains.
 
+New reservation insertion and the entitlement reserved-counter update share a
+data-modifying CTE after all existing lock, lifecycle, expiry and limit checks.
+The insert depends on the updated entitlement ID. Flush pending expiry/caller
+writes first; synchronize the already-loaded entitlement counter and returned
+database timestamp without another write. Same-session reserve/settle/release
+must use those current counters. The caller still owns the final commit and all
+writes roll back together. Presales persists its attempt only after determining
+the final reservation-bounded deadline, before the final source recheck. The public
+receipt and stored TTL remain unchanged; see `database-guidelines.md` for tests.
+
 CLI settings come from `FoundationSettings` (`APP_ENV`, `DATABASE__URL`, including
 the repository `.env`). Only local/test and loopback hosts are accepted; URL query
 host/hostaddr/service/servicefile overrides are rejected. Default configure returns

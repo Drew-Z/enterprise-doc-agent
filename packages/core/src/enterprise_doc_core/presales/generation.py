@@ -374,7 +374,6 @@ class GenerationService:
                 deadline_at=deadline,
                 created_at=now,
             )
-            session.add(attempt)
             if self.usage_service is not None:
                 try:
                     reservation = await self.usage_service.reserve_provider_request(
@@ -397,6 +396,9 @@ class GenerationService:
                     if error.code == "usage_limit_reached":
                         raise PresalesError("presales_usage_limit") from error
                     raise PresalesError("presales_usage_unavailable") from error
+            # Add only after the durable reservation determines the final deadline,
+            # so quota lookups cannot autoflush an attempt that needs another write.
+            session.add(attempt)
             sources = await check_sources(session, packet)
             if background:
                 return RowAdmission(row_id=row_id, disposition="enqueued", attempt_id=attempt_id)
