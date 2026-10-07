@@ -16,10 +16,12 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from enterprise_doc_core.config import UploadSettings
 from enterprise_doc_core.context import PrincipalContext
-from enterprise_doc_core.demo.limits import check_upload
+from enterprise_doc_core.demo.limits import check_upload_workspace
+from enterprise_doc_core.demo.models import DemoWorkspace
 from enterprise_doc_core.documents.envelope import MAX_BUFFERED_ENVELOPE_BYTES
 from enterprise_doc_core.identity import Membership, Tenant, User
 from enterprise_doc_core.object_store import MultipartObjectStore
+from enterprise_doc_core.uploads.creation_records import insert_upload_reservation
 from enterprise_doc_core.uploads.models import UploadSession, UploadSessionStatus, UploadTransport
 from enterprise_doc_core.uploads.policy import build_object_key, validate_upload_metadata
 
@@ -203,12 +205,21 @@ class UploadCreationService:
                     raise UploadTenantUnavailable()
                 membership_validated = True
 
-                existing_session = await session.scalar(
-                    select(UploadSession).where(
-                        UploadSession.tenant_id == tenant_id,
-                        UploadSession.idempotency_key == idempotency_key,
+                # The tenant lock serializes quota and idempotency writers.
+                # Fetch both optional rows without changing their lock order.
+                existing_session, demo_workspace = (
+                    await session.execute(
+                        select(UploadSession, DemoWorkspace)
+                        .select_from(Tenant)
+                        .outerjoin(
+                            UploadSession,
+                            (UploadSession.tenant_id == Tenant.id)
+                            & (UploadSession.idempotency_key == idempotency_key),
+                        )
+                        .outerjoin(DemoWorkspace, DemoWorkspace.tenant_id == Tenant.id)
+                        .where(Tenant.id == tenant_id)
                     )
-                )
+                ).one()
                 if existing_session is not None:
                     _require_matching_idempotency_session(
                         existing_session,
@@ -216,7 +227,9 @@ class UploadCreationService:
                         request_fingerprint=request_fingerprint,
                     )
                 else:
-                    await check_upload(session, tenant_id, metadata.size_bytes)
+                    await check_upload_workspace(
+                        session, tenant_id, metadata.size_bytes, demo_workspace
+                    )
                     projected_storage = (
                         tenant.used_storage_bytes
                         + tenant.reserved_storage_bytes
@@ -257,9 +270,9 @@ class UploadCreationService:
                         reserved_bytes=metadata.size_bytes,
                         expires_at=now + timedelta(seconds=self.settings.session_ttl_seconds),
                     )
-                    tenant.reserved_storage_bytes += metadata.size_bytes
-                    session.add(upload_session)
-                    await session.flush()
+                    upload_session = await insert_upload_reservation(
+                        session, tenant=tenant, upload=upload_session
+                    )
                     if transport is UploadTransport.SINGLE_PUT:
                         direct_result = _result_from_session(upload_session, replayed=False)
                     else:

@@ -29,6 +29,17 @@ PostgreSQL owns business state; the object store owns multipart bytes and observ
   Unrelated audit/event FK inserts holding `KEY SHARE` must not block create or replay.
   Restrict the lock targets explicitly; do not remove the User lock merely because it
   is joined for authorization. Multipart initialization remains outside the transaction.
+- After those locks, creation reads the optional same-key UploadSession and DemoWorkspace
+  in one Tenant-rooted outer-join statement. A replay retains the original actor/fingerprint
+  checks and does not run new-upload demo admission. A new upload still validates demo
+  expiry/revocation/cleanup, upload count/size and the locked storage quota.
+- `insert_upload_reservation` flushes caller-owned pending changes, then writes the
+  storage-reservation UPDATE and UploadSession INSERT in one dependent CTE statement.
+  The INSERT's tenant ID comes from UPDATE RETURNING; constraint failure or caller rollback
+  restores both. It returns the saved ORM session and synchronizes loaded Tenant counters
+  and database timestamp without a second UPDATE. Keep original reservation/activation
+  COMMIT-acknowledgment recovery. The single-PUT create path has four business statements;
+  this local query budget is not evidence of deployed p95 or public capacity.
 - Completion takes the Tenant `FOR NO KEY UPDATE` lock before the upload-session lock.
   It changes storage counters, not identity keys. Keep this serialization and the atomic
   document/version/job/outbox creation plus reserved-to-used conversion. An unrelated
@@ -79,6 +90,9 @@ PostgreSQL owns business state; the object store owns multipart bytes and observ
 
 - Fault injection after reservation and activation COMMIT; assert one row, one quota
   reservation, one multipart creation, and no abort of a committed active upload.
+- `test_upload_creation_batch_integration.py` checks four creation statements, one
+  reservation on replay, INSERT-constraint rollback, caller rollback with no-autoflush
+  pending changes, repeated same-session writes, and demo count/expiry boundaries.
 - Blocking initiate tests for replay wait, timeout, owner failure, and concurrent expiry.
 - Concurrent GET tests where an older remote result returns after a newer result, plus
   repeated wall-clock timestamps; assert the database sequence CAS prevents stale writes.
