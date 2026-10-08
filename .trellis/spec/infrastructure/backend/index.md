@@ -55,6 +55,16 @@ Successful image listings do not alone establish container startup readiness.
    completed expansion first; use this no-migration executor only on exact 0034. Frozen
    reader compatibility does not replace signed-image startup or actual rollback evidence.
 
+Independent post-release observation compares the full five workload specs with the
+candidate, then recomputes the cache workload digest and required references from those
+same specs. Keep node/boot/namespace, filesystems and eviction-policy bindings unchanged.
+Verify packaged Python against the signed application commit, separately from the external
+executor commit, and compare served Web assets with the running signed image. Count only
+nonterminal Pods as active replicas; retain and compare historical Failed/Succeeded Pod
+identities separately. Historical failures must neither be deleted nor counted as extra
+current replicas. A stopped transient unit may have been garbage-collected: its default
+not-found properties are not evidence of the limits used while it ran.
+
 ## Fixed 0032-to-0034 expansion (local candidate)
 
 1. Scope: the separate `scripts.presales_schema_expand` window expands only the two

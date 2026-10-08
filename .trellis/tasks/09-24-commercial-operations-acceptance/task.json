@@ -61,7 +61,7 @@
     "evaluation/presales_public_r2_v1.gold.json",
     ".trellis/tasks/09-24-commercial-operations-acceptance/remaining-acceptance-validation.json"
   ],
-  "notes": "2026-10-08 E2 update: live5432 session pooler ignored PGOPTIONS (lock/idle timeout0). Session executor now SETs and verifies10s/5s/10min and exact schema before advisory lock, sharing one initialization deadline. Real database red and5 process refusal reds preserved;285 related tests passed including14 database cases;2863 nonintegration/692 deselected/23 subtests and format/lint/mypy passed.18:59 live memory-source checks verified limits, backend across COMMIT, held lock, competing-session refusal and reacquisition after close;DB0032 idle, no schema/cluster writes. Exact executor commit/CI and credential-free E2 bundle pending. 2026-10-08 18:14 CST: rc42 application 934d246 remains signed and undeployed. Receiver 69670cf passed exact Quality 37760613919 and Container 37760613940; CI2714/687, local2858/691/23 with 144 historical uncommitted tests. Original 2993 workspace differences preserved. Full OCI batch imported; first alias assertion and first bounded repair failed and remain recorded. Exact two-alias completion succeeded in15.538s after proving owned CRI config-ID targets. Independent verification confirms all four candidate caches, all retained originals, rc40/0032 five services and public health. Two approved historical cleanups removed148 references. Task-owned43 local and114 remote temporary files removed,14495363072 bytes free. No schema/workload/model/mail mutations. Next: separate schema-only0032-to0034, restore rc40, exact images-only0034 release and actual rollback. A scope aligned, B human corrections and C durable modes implemented; original model quality5/6, real mode comparison and full capacity148/3/9 remain open. Current consumption accepted; only new costs need reconciliation. Four Outlook S8002 rejections, two TEST grants exhausted. Backup/further DR deferred, release rollback required. Real business/release reviews, support/UAT and normal merge pending; Draft PR and overall in_progress retained.",
+  "notes": "2026-10-08 21:03 CST: rc42/934d246 is running on schema0034 with concurrency2. External executor2f237f7 exact Quality37768097590/Container37768097596 passed; CI2719/688, local2863/692/23 retains144 historical uncommitted tests. Default mypy266; Linux with schema script267, correcting prior268. Atomic expansion70.542s, release89.117s, real rollback to rc40/aeab21388.010s, reapply89.711s all independently verified: complete specs/prerequisites/Secret fingerprints/schema/history/idle, active Pod identities, packaged source and public assets/health, cache policy. Initial verifier terminal-Pod counting failure preserved; six snapshot checks and fresh verification passed. No business/model/mail initiated. Four task runtime roots cleaned:192 files1562524 bytes252 directories; all cache/history/backups preserved. Two authorized historical cache cleanups148 references already complete; no additional deletion authority. A implemented; B/C features deployed, live mode comparison, model semantics5/6, full capacity148/3/9 and browser/new costs remain open. Accepted consumptions0.046616/0.089334 retained; no historical settlement condition. Four Outlook S8002 rejections; two TEST authorizations exhausted. Backup/further DR deferred, measured release rollback does not substitute real review. Business/release reviewers, support/on-call/UAT and normal merge pending. Draft PR and in_progress retained.",
   "meta": {
     "final_delivery_plan": {
       "scope": "invited",
@@ -71,15 +71,18 @@
       "signed_release_run": 37750530549,
       "work_packages": {
         "A": "pushed_ci_verified",
-        "B": "human_revision_pushed_ci_verified_model_quality_pending",
-        "C": "functionality_pushed_ci_verified_live_comparison_pending",
-        "D": "cache_verified_temporary_transport_cleaned_mail_pending",
-        "E": "rc42_signed_and_preheated_live_schema_release_rollback_and_acceptance_pending",
+        "B": "human_revision_deployed_model_quality_and_review_pending",
+        "C": "durable_modes_deployed_live_comparison_pending",
+        "D": "cache_and_space_verified_mail_pending",
+        "E": "schema_release_rollback_reapply_verified_business_acceptance_pending",
         "F": "pending"
       },
       "deferral_decision_sha256": "e2b8ff9d814d0191fbc13dfc06a32b40db60b68e1f14f201c7e33a96aefd05d2",
       "receiver_commit": "69670cf9ded5bf47993278ea833683f8006e5a2c",
-      "schema_session_fix": "local_and_live_session_validated_exact_ci_pending"
+      "schema_session_fix": "committed_exact_ci_and_live_expansion_verified",
+      "executor_commit": "2f237f7efa2b70e7f730a64657cb6de5f6062833",
+      "runtime_schema": "20261008_0034",
+      "release_rollback_evidence": "docs/ops/rc42-release-rollback-validation.json"
     }
   }
 }
