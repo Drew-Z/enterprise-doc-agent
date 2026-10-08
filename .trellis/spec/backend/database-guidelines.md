@@ -179,6 +179,33 @@ recall round trips even when the primary query is empty. Cover primary preferenc
 top-K/rank ties/metadata, empty and stopword queries, both branches' scope filters,
 and existing real provider-HTTP metering/denial tests. Remove only the owned schema.
 
+## Retrieval Guard and Read Transactions
+
+The embedding dispatch guard reads document visibility and finite active entitlement
+existence in one statement. Missing or invisible documents retain
+`provider_query_forbidden` precedence over `usage_entitlement_inactive`. Period start
+is inclusive, end is exclusive; a NULL provider limit is not a finite period, while
+zero is finite. This check does not replace product quota admission or dispatch limits.
+Run a caller's durable reservation guard first, and let it validate the original
+reservation even after its admission period ends. Do not require a new current period
+for an otherwise valid durable reservation.
+
+Keyword and vector recall each use `read_only_session`: PostgreSQL must enforce the
+read-only transaction, successful reads commit to retain psycopg prepared statements,
+and exceptions or cancellation roll back. Returning the connection to the pool must
+restore ordinary writable transactions. Keep provider intent and terminal metering
+in their existing independent write transactions; never use concurrent operations
+on one AsyncSession.
+
+Real PostgreSQL tests run public metered `retrieve` with only external HTTP controlled.
+Verify the ordinary non-durable query uses at most eight SQL statements, denied guards
+create no HTTP request or dispatch, and repeated retrieval keeps both recall queries
+in `pg_prepared_statements`. Inject a write and cancellation at each recall boundary:
+the write must fail with SQLSTATE 25006, pool writes and fresh retrieval must recover,
+and any already-dispatched embedding receipt must remain terminal. These checks do
+not establish deployed retrieval p95; the capacity observer calls the retriever
+directly, so its retrieval timing must not be described as HTTP authentication latency.
+
 ## Proven Examples
 
 - `infra/k8s/overlays/single-node-4c4g/resources-patch.yaml`
@@ -194,3 +221,5 @@ and existing real provider-HTTP metering/denial tests. Remove only the owned sch
 - `tests/billing/test_reservation_batch_integration.py`
 - `tests/presales/test_presales_admission_batch_integration.py`
 - `tests/jobs/test_keyword_recall_roundtrips_integration.py`
+- `tests/billing/test_query_guard_roundtrips_integration.py`
+- `tests/jobs/test_retrieval_read_transactions_integration.py`

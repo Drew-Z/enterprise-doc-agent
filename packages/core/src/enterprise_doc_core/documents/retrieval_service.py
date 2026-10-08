@@ -8,13 +8,15 @@ from time import perf_counter
 from typing import Any
 from uuid import UUID, uuid4
 
-from sqlalchemy import Select, desc, func, select, union_all
+from sqlalchemy import Select, desc, func, literal, select, union_all
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.sql.elements import ColumnElement
 
 from enterprise_doc_core.billing.errors import UsageError
 from enterprise_doc_core.billing.models import TenantEntitlement
 from enterprise_doc_core.billing.provider_calls import Guard, ProviderCallService
 from enterprise_doc_core.config import AppEnvironment, ProviderUsageSettings
+from enterprise_doc_core.db import read_only_session
 from enterprise_doc_core.documents.ingestion import EmbeddingProvider
 from enterprise_doc_core.documents.models import (
     DEFAULT_EMBEDDING_DIMENSION,
@@ -202,22 +204,12 @@ class HybridRetrievalService:
         async def guard(session: AsyncSession) -> None:
             if provider_guard is not None:
                 await provider_guard(session)
-            visible = await session.scalar(
-                select(DocumentVersion.id)
-                .join(Document, Document.id == DocumentVersion.document_id)
-                .where(
-                    DocumentVersion.id == document_version_id,
-                    DocumentVersion.tenant_id == tenant_id,
-                    document_visible_to_actor(tenant_id=tenant_id, actor_id=actor_id),
-                )
-            )
-            if visible is None:
-                raise UsageError("provider_query_forbidden")
             # A durable caller validates its original reservation, which may
             # legitimately outlive the admission period while waiting for review.
+            period_active: ColumnElement[bool] = literal(True)
             if self.require_entitlement and provider_guard is None:
                 now = datetime.now(UTC)
-                period = await session.scalar(
+                period_active = (
                     select(TenantEntitlement.id)
                     .where(
                         TenantEntitlement.tenant_id == tenant_id,
@@ -225,10 +217,23 @@ class HybridRetrievalService:
                         TenantEntitlement.period_end > now,
                         TenantEntitlement.provider_request_limit.is_not(None),
                     )
-                    .limit(1)
+                    .exists()
                 )
-                if period is None:
-                    raise UsageError("usage_entitlement_inactive")
+            row = (
+                await session.execute(
+                    select(DocumentVersion.id, period_active.label("period_active"))
+                    .join(Document, Document.id == DocumentVersion.document_id)
+                    .where(
+                        DocumentVersion.id == document_version_id,
+                        DocumentVersion.tenant_id == tenant_id,
+                        document_visible_to_actor(tenant_id=tenant_id, actor_id=actor_id),
+                    )
+                )
+            ).one_or_none()
+            if row is None:
+                raise UsageError("provider_query_forbidden")
+            if not row.period_active:
+                raise UsageError("usage_entitlement_inactive")
 
         with self.provider_usage.scope(
             tenant_id=tenant_id,
@@ -294,7 +299,7 @@ class HybridRetrievalService:
             statement = select(recalled).order_by(
                 desc(recalled.c.rank_score), recalled.c.chunk_index
             )
-        async with self.session_factory() as session:
+        async with read_only_session(self.session_factory) as session:
             rows = (await session.execute(statement)).all()
         return tuple(self._candidate_from_row(row, score=float(row.rank_score)) for row in rows)
 
@@ -412,7 +417,7 @@ class HybridRetrievalService:
             statement = statement.where(
                 DocumentIngestionGeneration.embedding_model == self.embedding_model
             )
-        async with self.session_factory() as session:
+        async with read_only_session(self.session_factory) as session:
             rows = (await session.execute(statement)).all()
         return tuple(self._candidate_from_row(row, score=1.0 - float(row.distance)) for row in rows)
 
