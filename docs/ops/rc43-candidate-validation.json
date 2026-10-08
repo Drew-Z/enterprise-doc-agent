@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "status": "signed_candidate_verified_not_deployed",
+  "recorded_at": "2026-10-08T18:19:38.492802+00:00",
+  "application_commit": "40f8de0ec6ff74524655754decf36c346b32db73",
+  "executor_commit": "40f8de0ec6ff74524655754decf36c346b32db73",
+  "tag": "v0.1.45-rc.43",
+  "environment": "staging",
+  "profile": "single-node-4c4g",
+  "scope": "invited",
+  "currently_running": {
+    "tag": "v0.1.45-rc.42",
+    "application_commit": "934d2469f70586018aa1cdce053af89ca08cf21f",
+    "schema": "20261008_0034",
+    "capacity_batch": "original_160_item_matrix_running"
+  },
+  "ci": {
+    "quality": 37816704268,
+    "container": 37816702756,
+    "signed_release": 37817800261,
+    "conclusion": "success"
+  },
+  "artifacts": {
+    "digests_verified": 5,
+    "evidence_files_verified": 56,
+    "manifest_sha256": "4d75a5f35416f505516be0e83883b5ed0bc210c4ce5b67c4daae0b9671798006",
+    "images": {
+      "api": "ghcr.io/drew-z/enterprise-doc-api@sha256:a1aad54be661686da421d427d00d7203e485c7476671f91738cee0d22a7e1961",
+      "consumer": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:5080a39fded95c8c77760e830a72384ed5ac642dce583c98654a05337a9ee7ff",
+      "web": "ghcr.io/drew-z/enterprise-doc-web@sha256:b92a8a23c02caf65c0e722ceb74592c8ca165063542fc069d52e0ebb21ebfcd4",
+      "worker": "ghcr.io/drew-z/enterprise-doc-worker@sha256:d6ddb68eb44e3e26c66079db4929a62c16a9b41b3e4821518aa4109283d000a1"
+    },
+    "signature_and_attestation_subjects_match": true,
+    "cryptographic_verification": "Successful exact-source release CI; local review validates receipts and subjects"
+  },
+  "web_security": {
+    "previous_failed_run": 37815701344,
+    "finding": "CVE-2026-4775",
+    "old_tiff": "4.7.1-r0",
+    "candidate_tiff": "4.7.2-r0",
+    "configured_high_critical_findings": 0,
+    "scanner_exceptions_added": false
+  },
+  "cache_preflight": {
+    "at": "2026-10-08T17:46:42.275093+00:00",
+    "status": "passed",
+    "full_archive_sha256": "37bd6c32c8aa6b3c34f9e0b90e880b6088b3da5c0732aa4aab7c632213dfcae8",
+    "available_bytes": 14534451200,
+    "reserve_bytes": 8431251456,
+    "receiver_peak_bytes": 4034547456,
+    "source_archive_transfer_bytes": 332963840,
+    "aggregate_required_free_bytes": 12798762752,
+    "shortfall_bytes": 0
+  },
+  "offline_validation": {
+    "actual_signed_metadata_alias_scenarios": 32,
+    "terminal_extraction_tests": 7,
+    "preterminal_entrypoint_refusals": 5,
+    "independent_review_obtained": false,
+    "boundary": "External k3s responses are simulated for alias scenarios; no live import or deployment is proven."
+  },
+  "next_order": [
+    "original_capacity_authoritative_terminal_and_full160_readback",
+    "new_supplier_reconciliation_and_offline_analysis",
+    "fresh_idle0034_configuration_credentials_history_and_cache_baseline",
+    "one_bounded_full_oci_import_and_independent_verification",
+    "rc43_release_rc42_actual_rollback_rc43_reapply",
+    "rc43_specific_business_browser_and_operational_acceptance",
+    "real_independent_business_release_review_support_UAT"
+  ],
+  "window": {
+    "apply_seconds": 600,
+    "recovery_seconds": 300,
+    "schema": "20261008_0034",
+    "rollback_tag": "v0.1.45-rc.42"
+  },
+  "source_evidence_sha256": {
+    "rc43-release-verification-20261008.json": "d7cc8f73ba7c3abfaf43c36208d54279945cc6534efde42c4a28172eb00b66ae",
+    "rc42-tiff-fix-ci-40f8de0-20261008.json": "5141c7a53d3bcce498c622e9bc9a5118ba7c58eecc036cf3935814f020ca16d3",
+    "rc42-tiff-fix-web-validation-20261008.json": "2e32c25c5457b98e77fbf2b9f445f62b8f6d8c276ff2e49882f596f4d5489923",
+    "rc43-full-cache-preflight-20261008.json": "96d54cfa06fe96fcf834736d0277e113d7b80bd8af9b465ab162873610b1b50e",
+    "rc43-signed-alias-transport-validation-20261008.json": "6b107cf6e7ec883ae6793bf25fe88005489a2dd9c3de6029e9dab09dada5e290",
+    "rc43-preterminal-refusal-validation-20261008.json": "6ee13aed265ea765f217d9e1e94fa35f9e207e125ffcd4a3122ad97f9ee7c1b2"
+  },
+  "target_cache_writes": 0,
+  "deployment_writes": 0,
+  "model_calls_in_this_preparation": 0,
+  "emails_sent_in_this_preparation": 0,
+  "capacity_approved": false,
+  "release_approved": false,
+  "limitations": [
+    "rc42 capacity remains bound to rc42 actual runtime; it is not relabeled for rc43.",
+    "Candidate build and offline verification do not prove a successful target deployment.",
+    "Outlook receipt, genuine human revision and independent reviews/support/UAT remain pending.",
+    "No historical cache or backup cleanup beyond the previously completed approved lists."
+  ]
+}
