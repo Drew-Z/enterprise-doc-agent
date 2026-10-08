@@ -32,6 +32,50 @@ async function expectNoHorizontalOverflow(page: Page) {
 }
 
 for (const width of [1440, 390]) {
+  test(`full prerequisite changes at ${width}px: split, add, exclude and preserve history`, async ({ page, request }, info) => {
+    await page.setViewportSize({ width, height: 900 });
+    await createSheet(page, "[conditional] Retention 完整前提修订");
+    await page.getByRole("button", { name: "生成待处理要求" }).click();
+    const row = page.getByRole("article", { name: "R1", exact: true });
+    await expect(row.locator(".presales-answer")).toBeVisible();
+    await row.getByText("查看证据与复核", { exact: true }).click();
+    await row.getByRole("button", { name: "拆分前提 1", exact: true }).click();
+    await row.getByLabel("前提命题 1", { exact: true }).fill("合同范围已确认。");
+    await row.getByLabel("前提状态 1", { exact: true }).selectOption("met");
+    await row.getByLabel("前提命题 2", { exact: true }).fill("指定配置已确认。");
+    await row.getByRole("button", { name: "新增前提", exact: true }).click();
+    await row.getByLabel("前提命题 3", { exact: true }).fill("验收状态已确认。");
+    await row.getByLabel("前提证据 3-1", { exact: true }).check();
+    await row.getByLabel("复核备注", { exact: true }).fill("受控测试：拆分混合前提并补充独立验收事项。");
+    await row.getByRole("button", { name: "保存复核", exact: true }).click();
+    await expect(row.locator(".presales-reviewed")).toHaveText("已复核");
+    await page.reload();
+    await row.getByText("查看证据与复核", { exact: true }).click();
+    await expect(row.getByLabel("前提命题 3", { exact: true })).toHaveValue("验收状态已确认。");
+    await expect(row.getByLabel("关联原项 2", { exact: true })).toHaveValue("0");
+    await expect(row.getByLabel("关联原项 3", { exact: true })).toHaveValue("new");
+    await expectNoHorizontalOverflow(page);
+    await page.screenshot({ path: info.outputPath(`full-prerequisite-changes-${width}.png`), fullPage: true });
+    await row.getByRole("button", { name: "排除前提 1", exact: true }).click();
+    await row.getByRole("button", { name: "排除前提 1", exact: true }).click();
+    await expect(row.getByRole("button", { name: "恢复原项 1", exact: true })).toBeVisible();
+    await row.getByLabel("复核备注", { exact: true }).fill("受控测试：排除原混合项，原稿与上次拆分历史保留。");
+    await row.getByRole("button", { name: "保存复核", exact: true }).click();
+    await expect(row.getByText("复核历史 (2)", { exact: true })).toBeVisible();
+    await page.reload();
+    await row.getByText("查看证据与复核", { exact: true }).click();
+    await expect(row.getByLabel("前提命题 1", { exact: true })).toHaveValue("验收状态已确认。");
+    const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "导出已复核 CSV" }).click()]);
+    const content = readFileSync(await download.path(), "utf8");
+    expect(content).toContain("人工前提修订记录");
+    expect(content).toContain("人工新增");
+    expect(content).toContain("排除原项 1");
+    expect(content).toContain("指定配置及合同范围已确认");
+    expect(content).toContain("验收状态已确认");
+    const stats = await (await request.get(api + "/__presales_test__/stats", { headers: testHeaders })).json() as { mockProviderRequests: number };
+    expect(stats.mockProviderRequests).toBe(1);
+  });
+
   test(`prerequisite review at ${width}px: states, evidence, correction, reload and CSV`, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 900 });
     await createSheet(page, "[conditional] Retention 前提复核");
@@ -45,7 +89,7 @@ for (const width of [1440, 390]) {
     await expect(items.getByRole("blockquote")).toContainText("Retention");
     await row.getByLabel("前提状态 1", { exact: true }).selectOption("unmet");
     await row.getByRole("button", { name: "保存复核", exact: true }).click();
-    await expect(row.getByRole("alert")).toHaveText("修改前提状态时，请在复核备注中说明依据。");
+    await expect(row.getByRole("alert")).toHaveText("修改前提时，请在复核备注中说明依据。");
     await row.getByLabel("复核备注", { exact: true }).fill("合成验收：将前提改为未满足，验证状态留痕。");
     await row.getByRole("button", { name: "保存复核", exact: true }).click();
     await expect(row.locator(".presales-reviewed")).toHaveText("已复核");

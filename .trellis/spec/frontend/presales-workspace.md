@@ -72,16 +72,33 @@ indexes into original draft citations. Zod rejects malformed, duplicate or out-o
 links before rendering. Missing legacy fields default to null, shown as unrecorded;
 an empty list explicitly means no prerequisites. Never infer state from old prose.
 
-`ReviewEditor` preserves condition text and citation links, allows per-item state
-changes, and derives the compatibility conditions list from unmet/unknown items.
-Changes relative to either the original or latest review require a note. The user
-also checks the overall assessment and prose; supported cannot retain an outstanding
-prerequisite. Original/history panels keep their own states and links. Legacy rows
-retain editable response conditions under a neutral heading. The server remains
-authoritative for evidence bindings, revision conflicts and note requirements.
-CSV includes effective and original model states/evidence. `ResponseRow.test.tsx`
-and both viewport journeys in `presales-e2e/workspace.spec.ts` cover these behaviors.
-These changes preserve received states; they do not resolve the model quality gate.
+`ReviewEditor` and `PrerequisiteEditor` permit text/state edits, selecting immutable
+saved evidence, splitting, adding, excluding and restoring prerequisites (maximum 12).
+Every effective item explicitly identifies its original draft item or Human added.
+Repeated origins represent a split; unreferenced originals appear in an exclusion
+list with restoration actions. The payload carries `prerequisiteChanges: {origins,
+excludedIndexes}` alongside prerequisites. It cannot modify excerpt bytes or acquire
+new document access. New evidence still requires the existing source workflow.
+
+Trim edited prerequisite text before deriving conditions from unmet/unknown items;
+supported cannot retain an outstanding
+condition. Content/mapping changes relative to original/latest review require a note.
+The server remains authoritative for range, coverage, citation, conflict and note
+checks. Buttons and fields disable while saving. Empty newly added items/evidence
+cannot save. Legacy null stays unrecorded unless the user explicitly starts recording;
+its additions use null origins and do not invent model assessments.
+
+Effective/original/history panels retain their separate states, links and revision
+maps. Zod verifies origin count, exact original coverage, disjoint exclusions and saved
+citation ranges before rendering. Older reviews without maps remain readable. CSV
+includes effective/original states and the human correction record; every row still
+needs review for reviewed export. Unit tests and both 1440/390px browser journeys cover
+split/add/exclude, restoration, notes, disabled state, refresh and real CSV. This is
+human-correction capability; model original quality is scored independently.
+Give each repeated textarea/select an explicit accessible label. A wrapping label
+whose text includes the control value/options is unstable in the real Chromium
+label locator even when jsdom finds it. Validate current and historical mappings at
+the HTTP boundary before rendering either list.
 
 `api.ts` validates HTTP responses with strict Zod schemas. In-memory operation keys
 are reused after uncertain create/generate/review responses. Failed recorded

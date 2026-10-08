@@ -1,5 +1,13 @@
 # 当前环境验收设计
 
+## 2026-10-08 B：人工修订与来源关联
+
+ReviewInput/SavedReview新增可空prerequisite_changes，含origins（与有效前提逐项对应的原稿索引或null人工新增）及excluded_indexes。原项可对应多个有效项以支持拆分；排除与引用原项互斥且并集覆盖原列表，不能遗漏或伪造索引。无该字段时保持原严格结构契约及旧指纹；新修订相对原稿/前次有变更必须有备注，状态和引用仍走现有ModelDraft验证。
+
+新增0033迁移为presales_reviews增加可空JSONB prerequisite_changes，content仍按旧SavedReview字段保存。GET在原单条历史聚合查询里合并新列，无额外逐行查询；旧服务只读取旧content，保留0033时应仍能读取修订稿，不能删除新历史来降级。downgrade持有表锁，有任何修订关联即拒绝。字段是来源/修订记录，不是额外模型请求或独立业务批准。
+
+前端抽出前提编辑器，保留三态、增加命题/证据选择、拆分/新增/排除/恢复；每项来源可读且新增来源可明确选择。展示及CSV包含原项关联和排除，原稿与全部历史保持。公开API/真实PostgreSQL先红后绿，覆盖R5式拆分、人工补项、排除、旧稿、范围/证据/备注拒绝、同键/并发/撤权及迁移和旧解析器读取；1440/390px真实浏览器验证刷新与CSV。
+
 ## 2026-10-08 受邀首版限定延期
 
 复用check_commercial_readiness的安全路径、摘要、准确候选、7天执行新鲜度及独立review校验。新增可选deferral_decision引用和调用方--deferral-sha256固定值；两者必须同时存在且一致。决定为schema1/decision=deferred/release_scope=invited，含记录人、记录时间、决策人、来源及理由，延期集合必须恰为已批准的三个recovery检查和backup_freshness，不提供任意豁免引擎。

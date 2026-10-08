@@ -5,7 +5,12 @@ import io
 from typing import Literal
 
 from enterprise_doc_core.presales.errors import PresalesError
-from enterprise_doc_core.presales.schemas import Evidence, PacketView, PrerequisiteAssessment
+from enterprise_doc_core.presales.schemas import (
+    Evidence,
+    PacketView,
+    PrerequisiteAssessment,
+    SavedReview,
+)
 
 STATUS_LABELS = {
     "supported": "支持",
@@ -49,6 +54,21 @@ def safe_cell(value: str) -> str:
     return value
 
 
+def changes_text(review: SavedReview | None, original: list[PrerequisiteAssessment] | None) -> str:
+    if review is None or review.prerequisite_changes is None:
+        return ""
+    changes = review.prerequisite_changes
+    lines = [
+        f"有效项 {index + 1} ← " + ("人工新增" if origin is None else f"原项 {origin + 1}")
+        for index, origin in enumerate(changes.origins)
+    ]
+    lines.extend(
+        f"排除原项 {index + 1}：{(original or [])[index].condition}"  # noqa: RUF001
+        for index in changes.excluded_indexes
+    )
+    return "\n".join(lines)
+
+
 def export_csv(packet: PacketView, mode: Literal["draft", "reviewed"]) -> bytes:
     if mode == "reviewed" and any(row.review is None or row.draft is None for row in packet.rows):
         raise PresalesError("presales_review_required")
@@ -74,6 +94,7 @@ def export_csv(packet: PacketView, mode: Literal["draft", "reviewed"]) -> bytes:
             "原模型文案",
             "前提状态与对应证据",
             "原模型前提状态与对应证据",
+            "人工前提修订记录",
         ]
     )
     source_versions = "\n".join(
@@ -105,6 +126,7 @@ def export_csv(packet: PacketView, mode: Literal["draft", "reviewed"]) -> bytes:
             if effective and row.draft
             else "",
             prerequisite_text(row.draft.prerequisites, row.draft.citations) if row.draft else "",
+            changes_text(row.review, row.draft.prerequisites if row.draft else None),
         ]
         writer.writerow([safe_cell(value) for value in values])
     return stream.getvalue().encode("utf-8-sig")

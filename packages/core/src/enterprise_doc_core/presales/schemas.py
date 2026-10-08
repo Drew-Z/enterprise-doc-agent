@@ -147,12 +147,46 @@ class SavedDraft(ResponseText):
         return self
 
 
-class ReviewInput(ResponseText):
+OriginalIndex = Annotated[int, Field(ge=0, lt=12, strict=True)]
+
+
+class PrerequisiteChanges(PresalesModel):
+    # Positions identify immutable model items; null explicitly means human-added.
+    origins: list[OriginalIndex | None] = Field(max_length=12)
+    excluded_indexes: list[OriginalIndex] = Field(default_factory=list, max_length=12)
+
+    @model_validator(mode="after")
+    def distinct_exclusions(self) -> Self:
+        if len(set(self.excluded_indexes)) != len(self.excluded_indexes):
+            raise ValueError("excluded original items must be unique")
+        return self
+
+    def validate_originals(self, count: int) -> None:
+        included = {index for index in self.origins if index is not None}
+        excluded = set(self.excluded_indexes)
+        if included & excluded or included | excluded != set(range(count)):
+            raise ValueError("each original item must be mapped or explicitly excluded")
+
+
+class ReviewText(ResponseText):
+    prerequisite_changes: PrerequisiteChanges | None = None
+
+    @model_validator(mode="after")
+    def mapped_items(self) -> Self:
+        if self.prerequisite_changes is not None and (
+            self.prerequisites is None
+            or len(self.prerequisite_changes.origins) != len(self.prerequisites)
+        ):
+            raise ValueError("each effective prerequisite needs an explicit origin")
+        return self
+
+
+class ReviewInput(ReviewText):
     expected_revision: int = Field(ge=1, strict=True)
     note: str = Field(default="", max_length=1000)
 
 
-class SavedReview(ResponseText):
+class SavedReview(ReviewText):
     revision: int
     note: str
     actor_id: UUID
@@ -183,6 +217,18 @@ class RowView(PresalesModel):
     review: SavedReview | None
     review_history: list[SavedReview]
     attempts: list[AttemptView]
+
+    @model_validator(mode="after")
+    def review_bindings(self) -> Self:
+        for review in [self.review, *self.review_history]:
+            if review is None:
+                continue
+            review.validate_prerequisite_citations(len(self.draft.citations) if self.draft else 0)
+            if review.prerequisite_changes is not None:
+                review.prerequisite_changes.validate_originals(
+                    len(self.draft.prerequisites or []) if self.draft else 0
+                )
+        return self
 
 
 class PacketSummary(PresalesModel):

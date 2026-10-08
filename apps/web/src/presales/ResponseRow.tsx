@@ -1,7 +1,17 @@
 import { useState, type FormEvent } from "react";
 import { useLocale } from "../i18n";
-import { generationActive, prerequisiteConditions, prerequisiteState, responseStatus, reviewInputSchema, type Evidence, type PrerequisiteAssessment, type PresalesRow, type ReviewInput, type ResponseStatus } from "./api";
+import { generationActive, prerequisiteConditions, responseStatus, reviewInputSchema, type Evidence, type PrerequisiteAssessment, type PresalesRow, type ReviewInput, type ResponseStatus } from "./api";
 import { presalesCopy, prerequisiteLabel, statusLabel } from "./copy";
+import { PrerequisiteEditor, type AssessmentEdit } from "./PrerequisiteEditor";
+
+function ReviewOrigins({ review, original }: { review: PresalesRow["review"]; original: PrerequisiteAssessment[] }) {
+  const c = presalesCopy(useLocale()); const changes = review?.prerequisiteChanges;
+  if (!changes) return null;
+  return <section className="presales-review-origins"><h4>{c.prerequisiteChanges}</h4><ul>
+    {changes.origins.map((origin, i) => <li key={i}>{c.effectiveItem} {i + 1} ← {origin === null ? c.humanAdded : `${c.originalItem} ${origin + 1}`}</li>)}
+    {changes.excludedIndexes.map(index => <li key={`excluded-${index}`}>{c.excludedOriginal} {index + 1}: {original[index].condition}</li>)}
+  </ul><p>{review?.note}</p></section>;
+}
 
 function EvidenceFigure({ citation, index }: { citation: Evidence; index: number }) {
   const c = presalesCopy(useLocale());
@@ -32,29 +42,28 @@ function ReviewEditor({ row, busy, onSave }: { row: PresalesRow; busy: boolean; 
   const [status, setStatus] = useState<ResponseStatus>(initial?.status ?? "insufficient_evidence");
   const [answer, setAnswer] = useState(initial?.answer ?? "");
   const [conditions, setConditions] = useState(initial?.conditions.join("\n") ?? "");
-  const [prerequisites, setPrerequisites] = useState(initial?.prerequisites ?? null);
+  const [assessment, setAssessment] = useState<AssessmentEdit>({ items: initial?.prerequisites ?? null, origins: row.review?.prerequisiteChanges?.origins ?? initial?.prerequisites?.map((_, index) => index) ?? [] });
+  const prerequisites = assessment.items;
+  const original = row.draft?.prerequisites ?? [];
+  const changes = prerequisites === null ? null : { origins: assessment.origins, excludedIndexes: original.map((_, index) => index).filter(index => !assessment.origins.includes(index)) };
   const [missing, setMissing] = useState(initial?.missingInformation.join("\n") ?? "");
   const [note, setNote] = useState(row.review?.note ?? "");
   const [error, setError] = useState("");
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    const stateChanged = prerequisites?.some((item, index) => item.state !== row.draft?.prerequisites?.[index]?.state || item.state !== initial?.prerequisites?.[index]?.state);
+    const proposed = prerequisites?.map(item => ({ ...item, condition: item.condition.trim() })) ?? null;
+    const originalMapping = { origins: original.map((_, index) => index), excludedIndexes: [] };
+    const stateChanged = JSON.stringify(proposed) !== JSON.stringify(row.draft?.prerequisites ?? null) || JSON.stringify(proposed) !== JSON.stringify(initial?.prerequisites ?? null)
+      || (changes !== null && (JSON.stringify(changes) !== JSON.stringify(originalMapping) || JSON.stringify(changes) !== JSON.stringify(row.review?.prerequisiteChanges ?? originalMapping)));
     if (stateChanged && !note.trim()) { setError(c.prerequisiteNoteRequired); return; }
-    const parsed = reviewInputSchema.safeParse({ expectedRevision: row.revision, status, answer: answer.trim(), conditions: prerequisites === null ? conditions.split("\n").map(s => s.trim()).filter(Boolean) : prerequisiteConditions(prerequisites), prerequisites, missingInformation: missing.split("\n").map(s => s.trim()).filter(Boolean), note: note.trim() });
+    const parsed = reviewInputSchema.safeParse({ expectedRevision: row.revision, status, answer: answer.trim(), conditions: proposed === null ? conditions.split("\n").map(s => s.trim()).filter(Boolean) : prerequisiteConditions(proposed), prerequisites: proposed, prerequisiteChanges: changes, missingInformation: missing.split("\n").map(s => s.trim()).filter(Boolean), note: note.trim() });
     if (!parsed.success) { setError(c.reviewInvalid); return; }
     setError(""); onSave(parsed.data);
   };
   return <form onSubmit={submit} className="presales-review-form"><h4>{c.reviewTitle}</h4><p className="presales-hint">{c.reviewHelp}</p>
     <label className="presales-field">{c.status}<select value={status} onChange={e => setStatus(responseStatus.parse(e.target.value))} disabled={busy}>{responseStatus.options.map(s => <option key={s} value={s}>{statusLabel(s, locale)}</option>)}</select></label>
     <label className="presales-field">{c.response}<textarea value={answer} onChange={e => setAnswer(e.target.value)} rows={4} maxLength={4000} required disabled={busy} /></label>
-    {prerequisites !== null && prerequisites.length > 0 && <fieldset className="presales-prerequisite-editor"><legend>{c.prerequisites}</legend><p className="presales-hint">{c.prerequisiteReviewHelp}</p>
-      {prerequisites.map((item, index) => <label key={index} className="presales-field"><span>{index + 1}. {item.condition}</span>
-        <select aria-label={`${c.prerequisiteState} ${index + 1}`} disabled={busy} value={item.state} onChange={event => {
-          const state = prerequisiteState.parse(event.target.value);
-          setPrerequisites(prerequisites.map((value, i) => i === index ? { ...value, state } : value));
-        }}>{prerequisiteState.options.map(state => <option key={state} value={state}>{prerequisiteLabel(state, locale)}</option>)}</select>
-      </label>)}
-    </fieldset>}
+    <PrerequisiteEditor value={assessment} original={original} citations={row.draft?.citations ?? []} busy={busy} onChange={setAssessment} />
     <div className="presales-two-fields">{prerequisites === null && <label className="presales-field">{c.conditions}<textarea value={conditions} onChange={e => setConditions(e.target.value)} rows={3} maxLength={12000} disabled={busy} /></label>}<label className="presales-field">{c.missing}<textarea value={missing} onChange={e => setMissing(e.target.value)} rows={3} maxLength={12000} disabled={busy} /></label></div>
     <label className="presales-field">{c.note}<input value={note} onChange={e => setNote(e.target.value)} maxLength={1000} disabled={busy} /></label>
     {error && <p role="alert" className="presales-error">{error}</p>}
@@ -77,8 +86,9 @@ export function ResponseRow({ row, busy, generating, onGenerate, onReview }: { r
       {effective && <><PrerequisiteList items={effective.prerequisites} citations={row.draft.citations} /><div className="presales-two-fields">{effective.prerequisites === null && <section><h4>{c.conditions}</h4>{effective.conditions.length ? <ul>{effective.conditions.map((item, i) => <li key={i}>{item}</li>)}</ul> : <p className="presales-hint">{c.none}</p>}</section>}<section><h4>{c.missing}</h4>{effective.missingInformation.length ? <ul>{effective.missingInformation.map((item, i) => <li key={i}>{item}</li>)}</ul> : <p className="presales-hint">{c.none}</p>}</section></div></>}
       <section className="presales-evidence"><h4>{c.evidence}</h4><p className="presales-hint">{c.retrievalNotice}</p>{row.draft.retrieval.some(r => r.truncated) && <p className="presales-notice">{c.truncated}</p>}{row.draft.citations.length ? row.draft.citations.map((citation, index) => <EvidenceFigure key={index} citation={citation} index={index} />) : <p>{c.noEvidence}</p>}</section>
       <ReviewEditor key={row.id + ":" + row.revision} row={row} busy={busy} onSave={onReview} />
+      <ReviewOrigins review={row.review} original={row.draft.prerequisites ?? []} />
       {row.review && <details className="presales-original"><summary>{c.original}</summary><strong>{statusLabel(row.draft.status, locale)}</strong><p>{row.draft.answer}</p><PrerequisiteList items={row.draft.prerequisites} citations={row.draft.citations} />{row.draft.prerequisites === null && <p>{row.draft.conditions.join("\n")}</p>}<p>{row.draft.missingInformation.join("\n")}</p></details>}
-      {row.reviewHistory.length > 0 && <details className="presales-original"><summary>{c.history} ({row.reviewHistory.length})</summary>{row.reviewHistory.map(entry => <div key={entry.revision}><strong>{statusLabel(entry.status, locale)}</strong><p>{entry.answer}</p><PrerequisiteList items={entry.prerequisites} citations={row.draft!.citations} />{entry.prerequisites === null && <p>{entry.conditions.join("\n")}</p>}<p>{entry.missingInformation.join("\n")}</p><p>{entry.note}</p><small>{c.reviewer}: {entry.actorId} · {new Date(entry.reviewedAt).toLocaleString()}</small></div>)}</details>}
+      {row.reviewHistory.length > 0 && <details className="presales-original"><summary>{c.history} ({row.reviewHistory.length})</summary>{row.reviewHistory.map(entry => <div key={entry.revision}><strong>{statusLabel(entry.status, locale)}</strong><p>{entry.answer}</p><PrerequisiteList items={entry.prerequisites} citations={row.draft!.citations} /><ReviewOrigins review={entry} original={row.draft!.prerequisites ?? []} />{entry.prerequisites === null && <p>{entry.conditions.join("\n")}</p>}<p>{entry.missingInformation.join("\n")}</p><p>{entry.note}</p><small>{c.reviewer}: {entry.actorId} · {new Date(entry.reviewedAt).toLocaleString()}</small></div>)}</details>}
     </details>}
   </article>;
 }

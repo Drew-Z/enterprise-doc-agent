@@ -178,6 +178,10 @@ class PresalesReview(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         ),
         UniqueConstraint("row_id", "revision", name="uq_presales_reviews_revision"),
         UniqueConstraint("row_id", "idempotency_key", name="uq_presales_reviews_key"),
+        CheckConstraint(
+            "prerequisite_changes IS NULL OR jsonb_typeof(prerequisite_changes) = 'object'",
+            name="presales_review_changes_object",
+        ),
     )
     tenant_id: Mapped[UUID] = mapped_column(nullable=False)
     row_id: Mapped[UUID] = mapped_column(nullable=False)
@@ -186,3 +190,6 @@ class PresalesReview(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     idempotency_key: Mapped[str] = mapped_column(String(128))
     fingerprint: Mapped[str] = mapped_column(String(64))
     content: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    prerequisite_changes: Mapped[dict[str, Any] | None] = mapped_column(
+        JSONB(none_as_null=True), nullable=True
+    )

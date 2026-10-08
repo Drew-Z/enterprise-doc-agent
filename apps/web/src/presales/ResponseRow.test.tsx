@@ -34,7 +34,7 @@ it("keeps three states and the evidence for each prerequisite, and requires a co
   fireEvent.change(screen.getByLabelText("Prerequisite state 2"), { target: { value: "met" } });
   fireEvent.click(screen.getByRole("button", { name: "Save review" }));
   expect(onReview).not.toHaveBeenCalled();
-  expect(screen.getByRole("alert")).toHaveTextContent("Explain the changed prerequisite state in the review note.");
+  expect(screen.getByRole("alert")).toHaveTextContent("Explain prerequisite changes in the review note.");
   fireEvent.change(screen.getByLabelText("Review note"), { target: { value: "核查配置已完成，验收仍待确认。" } });
   fireEvent.click(screen.getByRole("button", { name: "Save review" }));
   expect(onReview).toHaveBeenCalledOnce();
@@ -55,4 +55,46 @@ it("shows legacy state as unrecorded and still permits text review", () => {
   fireEvent.change(screen.getByLabelText("Response conditions"), { target: { value: "需核对旧资料。" } });
   fireEvent.click(screen.getByRole("button", { name: "Save review" }));
   expect(onReview.mock.calls[0][0]).toMatchObject({ prerequisites: null, conditions: ["需核对旧资料。"] });
+});
+
+it("splits, rewrites, adds and excludes prerequisites with preserved source links", () => {
+  const row = fixture(); const onReview = vi.fn();
+  render(<ResponseRow row={row} busy={false} generating={false} onGenerate={vi.fn()} onReview={onReview} />);
+  fireEvent.click(screen.getByRole("button", { name: "R1 Evidence and review" }));
+  fireEvent.click(screen.getByRole("button", { name: "Split prerequisite 2" }));
+  fireEvent.change(screen.getByLabelText("Prerequisite text 2"), { target: { value: "  保留策略已配置。  " } });
+  fireEvent.change(screen.getByLabelText("Prerequisite text 3"), { target: { value: "验收已通过。" } });
+  fireEvent.change(screen.getByLabelText("Prerequisite state 3"), { target: { value: "unknown" } });
+  fireEvent.click(screen.getByRole("button", { name: "Exclude prerequisite 4" }));
+  fireEvent.click(screen.getByRole("button", { name: "Add prerequisite" }));
+  fireEvent.change(screen.getByLabelText("Prerequisite text 4"), { target: { value: "新补充条件。" } });
+  fireEvent.click(screen.getByLabelText("Prerequisite evidence 4-2"));
+  fireEvent.click(screen.getByRole("button", { name: "Save review" }));
+  expect(onReview).not.toHaveBeenCalled();
+  fireEvent.change(screen.getByLabelText("Review note"), { target: { value: "拆分混合命题，补充并排除错误项。" } });
+  fireEvent.click(screen.getByRole("button", { name: "Save review" }));
+  expect(onReview).toHaveBeenCalledOnce();
+  expect(onReview.mock.calls[0][0]).toMatchObject({
+    prerequisiteChanges: { origins: [0, 1, 1, null], excludedIndexes: [2] },
+    conditions: ["保留策略已配置。", "验收已通过。", "新补充条件。"],
+  });
+  expect(row.draft!.prerequisites).toEqual(draft.prerequisites);
+});
+
+it("requires evidence on additions, supports restoring exclusions and disables editing while saving", () => {
+  const row = fixture(); const onReview = vi.fn();
+  const view = render(<ResponseRow row={row} busy={false} generating={false} onGenerate={vi.fn()} onReview={onReview} />);
+  fireEvent.click(screen.getByRole("button", { name: "R1 Evidence and review" }));
+  fireEvent.click(screen.getByRole("button", { name: "Exclude prerequisite 2" }));
+  fireEvent.click(screen.getByRole("button", { name: "Restore original item 2" }));
+  expect(screen.getByLabelText("Original item 3")).toHaveValue("1");
+  fireEvent.click(screen.getByRole("button", { name: "Add prerequisite" }));
+  fireEvent.change(screen.getByLabelText("Prerequisite text 4"), { target: { value: "新增核查事项。" } });
+  fireEvent.change(screen.getByLabelText("Review note"), { target: { value: "新增须有证据。" } });
+  fireEvent.click(screen.getByRole("button", { name: "Save review" }));
+  expect(onReview).not.toHaveBeenCalled();
+  view.rerender(<ResponseRow row={row} busy generating={false} onGenerate={vi.fn()} onReview={onReview} />);
+  expect(screen.getByLabelText("Prerequisite text 1")).toBeDisabled();
+  expect(screen.getByLabelText("Prerequisite evidence 4-1")).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Add prerequisite" })).toBeDisabled();
 });

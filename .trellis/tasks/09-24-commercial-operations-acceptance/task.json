@@ -61,14 +61,14 @@
     "evaluation/presales_public_r2_v1.gold.json",
     ".trellis/tasks/09-24-commercial-operations-acceptance/remaining-acceptance-validation.json"
   ],
-  "notes": "2026-10-08: Execute approved final A-F plan. A scope/evidence alignment in progress; B atomic propositions and complete human correction; C persistent auto/deep policies; D bounded cache/mail prerequisites; E one candidate quality, full 160-task capacity, browser, new-cost and delivery acceptance; F independent reviews, UAT, handoff and normal merge. Runtime rc.40/aeab213/0032, concurrency 2, rollback rc.39; acceptance baseline 3deeec8. rc.41 failed, current cache guard refuses insufficient space. Strict semantics 5/6, latest full capacity 148/3/9. Current consumption reconciled; no new historical settlement gate. Four Outlook S8002 rejections; two TEST authorizations exhausted. Backup/recovery deferred except release rollback. Preserve 2993 historical changes, failed runs and Draft PR #8; no independent signatures fabricated.",
+  "notes": "2026-10-08: Execute approved final A-F plan. A scope/evidence alignment pushed and CI verified at e553b32; B complete human correction locally validated (18 new database/API cases, 7 browser passes), original-model quality and independent review pending; C persistent auto/deep policies; D bounded cache/mail prerequisites; E one candidate quality, full 160-task capacity, browser, new-cost and delivery acceptance; F independent reviews, UAT, handoff and normal merge. Runtime rc.40/aeab213/0032, concurrency 2, rollback rc.39; acceptance baseline 3deeec8. rc.41 failed, current cache guard refuses insufficient space. Strict semantics 5/6, latest full capacity 148/3/9. Current consumption reconciled; no new historical settlement gate. Four Outlook S8002 rejections; two TEST authorizations exhausted. Backup/recovery deferred except release rollback. Preserve 2993 historical changes, failed runs and Draft PR #8; no independent signatures fabricated.",
   "meta": {
     "final_delivery_plan": {
       "scope": "invited",
       "baseline_commit": "3deeec82c19260ae73a763973a97b4ed3ff23183",
       "work_packages": {
-        "A": "implemented_pending_ci",
-        "B": "pending",
+        "A": "pushed_ci_verified",
+        "B": "human_revision_local_validated_model_quality_pending",
         "C": "pending",
         "D": "pending",
         "E": "pending",

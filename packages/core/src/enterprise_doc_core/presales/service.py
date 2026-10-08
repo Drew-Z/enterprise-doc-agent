@@ -6,7 +6,6 @@ from datetime import UTC, datetime
 from typing import Any, Literal
 from uuid import UUID, uuid4
 
-from pydantic import ValidationError
 from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import JSONB, aggregate_order_by
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -36,14 +35,13 @@ from enterprise_doc_core.presales.models import (
     PresalesReview,
     PresalesRow,
 )
+from enterprise_doc_core.presales.review import validate_review
 from enterprise_doc_core.presales.schemas import (
     AttemptView,
     BatchGenerateInput,
     BatchGenerateResult,
-    CitationInput,
     CreatePacket,
     GenerationReceipt,
-    ModelDraft,
     PacketSummary,
     PacketView,
     RequirementInput,
@@ -212,7 +210,14 @@ class PresalesService:
             reviews = (
                 select(
                     func.jsonb_agg(
-                        aggregate_order_by(PresalesReview.content, PresalesReview.revision),
+                        aggregate_order_by(
+                            PresalesReview.content.op("||")(
+                                func.jsonb_build_object(
+                                    "prerequisite_changes", PresalesReview.prerequisite_changes
+                                )
+                            ),
+                            PresalesReview.revision,
+                        ),
                         type_=JSONB,
                     )
                 )
@@ -323,10 +328,11 @@ class PresalesService:
         key: str,
     ) -> PacketView:
         check_key(key)
-        # Preserve fingerprints of review requests saved before structured prerequisites.
-        digest = fingerprint(
-            payload, exclude={"prerequisites"} if payload.prerequisites is None else None
-        )
+        # Preserve every earlier wire fingerprint; explicit change maps are part of new intents.
+        excluded = {"prerequisite_changes"} if payload.prerequisite_changes is None else set()
+        if payload.prerequisites is None:
+            excluded.add("prerequisites")
+        digest = fingerprint(payload, exclude=excluded)
         context = get_request_context()
         async with self.session_factory.begin() as session:
             packet = await load_packet(session, principal, packet_id, lock=True)
@@ -349,12 +355,8 @@ class PresalesService:
                 if row.revision >= 101:
                     raise PresalesError("presales_review_limit")
                 draft = SavedDraft.model_validate(row.draft)
-                original, proposed = draft.prerequisites, payload.prerequisites
-                if (original is None) != (proposed is None) or [
-                    (p.condition, p.citation_indexes) for p in original or []
-                ] != [(p.condition, p.citation_indexes) for p in proposed or []]:
-                    raise PresalesError("presales_review_prerequisites_invalid")
-                if proposed is not None:
+                previous_review = None
+                if payload.prerequisites is not None or row.revision > 1:
                     previous = await session.scalar(
                         select(PresalesReview)
                         .where(
@@ -364,29 +366,17 @@ class PresalesService:
                         .order_by(PresalesReview.revision.desc())
                         .limit(1)
                     )
-                    previous_items = (
-                        SavedReview.model_validate(previous.content).prerequisites
+                    previous_review = (
+                        SavedReview.model_validate(
+                            {
+                                **previous.content,
+                                "prerequisite_changes": previous.prerequisite_changes,
+                            }
+                        )
                         if previous is not None
-                        else original
+                        else None
                     )
-                    if not payload.note.strip() and (
-                        proposed != original or proposed != previous_items
-                    ):
-                        raise PresalesError("presales_review_note_required")
-                try:
-                    ModelDraft(
-                        **payload.model_dump(exclude={"expected_revision", "note"}),
-                        citations=[
-                            CitationInput(
-                                **c.model_dump(
-                                    include={"chunk_id", "document_version_id", "excerpt"}
-                                )
-                            )
-                            for c in draft.citations
-                        ],
-                    )
-                except ValidationError as error:
-                    raise PresalesError("presales_review_evidence_required") from error
+                validate_review(draft, payload, previous_review)
                 row.revision += 1
                 saved = SavedReview(
                     **payload.model_dump(exclude={"expected_revision"}),
@@ -402,7 +392,10 @@ class PresalesService:
                         revision=row.revision,
                         idempotency_key=key,
                         fingerprint=digest,
-                        content=saved.model_dump(mode="json"),
+                        content=saved.model_dump(mode="json", exclude={"prerequisite_changes"}),
+                        prerequisite_changes=saved.prerequisite_changes.model_dump(mode="json")
+                        if saved.prerequisite_changes is not None
+                        else None,
                     )
                 )
                 await append_audit_event(

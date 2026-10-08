@@ -11,20 +11,24 @@ const responseFields = { status: responseStatus, answer: z.string().min(1).max(4
 const evidence = z.object({ chunkId: id, documentVersionId: id, excerpt: z.string().min(1).max(600), filename: z.string(), pageNumber: z.number().int().nullable(), heading: z.string().nullable(), startOffset: z.number().int().nonnegative(), endOffset: z.number().int().nonnegative() }).strict();
 const retrieval = z.object({ versionId: id, retrievedCount: z.number().int().nonnegative(), usedCount: z.number().int().nonnegative(), truncated: z.boolean() }).strict();
 const draft = z.object({ ...responseFields, citations: z.array(evidence), retrieval: z.array(retrieval) }).strict().refine(value => validPrerequisiteIndexes(value.prerequisites, value.citations.length));
-const review = z.object({ ...responseFields, revision: z.number().int().positive(), note: z.string(), actorId: id, reviewedAt: time }).strict();
+const originalIndex = z.number().int().min(0).max(11);
+const prerequisiteChanges = z.object({ origins: z.array(originalIndex.nullable()).max(12), excludedIndexes: z.array(originalIndex).max(12).refine(values => new Set(values).size === values.length) }).strict();
+const reviewFields = { ...responseFields, prerequisiteChanges: prerequisiteChanges.nullable().optional() };
+const review = z.object({ ...reviewFields, revision: z.number().int().positive(), note: z.string(), actorId: id, reviewedAt: time }).strict();
 const attempt = z.object({ id, number: z.number().int().positive(), state: z.enum(["queued", "running", "recovering", "succeeded", "failed", "expired"]), errorCode: z.string().nullable(), modelProvider: z.string(), modelName: z.string().nullable(), providerRequestCount: z.number().int().min(0).max(2).nullable(), provenance: z.record(z.string(), z.string().nullable()), usage: z.record(z.string(), z.number().int().nonnegative().nullable()).nullable(), createdAt: time, finishedAt: time.nullable(), deadlineAt: time }).strict();
 const requirement = z.object({ key: z.string().regex(/^[A-Za-z0-9_-]{1,40}$/), text: z.string().min(1).max(2000), sourceLocation: z.string().max(300) }).strict();
 const sourceInput = z.object({ versionId: id, applicability: z.string().min(1).max(500) }).strict();
 const source = sourceInput.extend({ documentId: id, generationId: id, filename: z.string(), versionNumber: z.number().int().positive(), latestVersionNumber: z.number().int().positive(), contentSha256: z.string().regex(/^[0-9a-f]{64}$/) });
-const row = z.object({ id, requirement, revision: z.number().int().nonnegative(), state: z.enum(["pending", "queued", "running", "recovering", "drafted", "failed"]), draft: draft.nullable(), review: review.nullable(), reviewHistory: z.array(review), attempts: z.array(attempt).max(3) }).strict().refine(value => [value.review, ...value.reviewHistory].every(entry => validPrerequisiteIndexes(entry?.prerequisites ?? null, value.draft?.citations.length ?? 0)));
+const row = z.object({ id, requirement, revision: z.number().int().nonnegative(), state: z.enum(["pending", "queued", "running", "recovering", "drafted", "failed"]), draft: draft.nullable(), review: review.nullable(), reviewHistory: z.array(review), attempts: z.array(attempt).max(3) }).strict().refine(value => [value.review, ...value.reviewHistory].every(entry => validPrerequisiteIndexes(entry?.prerequisites ?? null, value.draft?.citations.length ?? 0) && validReviewChanges(entry?.prerequisiteChanges, entry?.prerequisites ?? null, value.draft?.prerequisites?.length ?? 0)));
 export const packetSummarySchema = z.object({ id, title: z.string(), createdAt: time, rowCount: z.number().int().nonnegative(), staleSources: z.boolean() }).strict();
 export const packetSchema = packetSummarySchema.extend({ sources: z.array(source).min(1).max(6), rows: z.array(row).min(1).max(12), generationMode: z.enum(["synchronous", "background"]).default("synchronous") });
 export const createPacketSchema = z.object({ title: z.string().trim().min(1).max(160), sources: z.array(sourceInput).min(1).max(6), requirements: z.array(requirement).min(1).max(12) }).strict();
-export const reviewInputSchema = z.object({ ...responseFields, expectedRevision: z.number().int().positive(), note: z.string().max(1000) }).strict().refine(value =>
+export const reviewInputSchema = z.object({ ...reviewFields, expectedRevision: z.number().int().positive(), note: z.string().max(1000) }).strict().refine(value =>
   (value.status !== "conditional" || value.conditions.length > 0)
   && (value.status !== "insufficient_evidence" || value.missingInformation.length > 0)
   && (value.status !== "supported" || value.conditions.length === 0)
   && (value.prerequisites === null || JSON.stringify(value.conditions) === JSON.stringify(prerequisiteConditions(value.prerequisites)))
+  && (!value.prerequisiteChanges || (value.prerequisites !== null && value.prerequisiteChanges.origins.length === value.prerequisites.length))
 );
 export type Packet = z.infer<typeof packetSchema>;
 export type PresalesRow = z.infer<typeof row>;
@@ -33,11 +37,21 @@ export type ReviewInput = z.input<typeof reviewInputSchema>;
 export type ResponseStatus = z.infer<typeof responseStatus>;
 export type PrerequisiteAssessment = z.infer<typeof prerequisite>;
 export type Evidence = z.infer<typeof evidence>;
+export type PrerequisiteChanges = z.infer<typeof prerequisiteChanges>;
 export function prerequisiteConditions(items: PrerequisiteAssessment[]): string[] {
   return [...new Set(items.filter(item => item.state !== "met").map(item => item.condition))];
 }
 function validPrerequisiteIndexes(items: PrerequisiteAssessment[] | null, count: number): boolean {
   return (items ?? []).every(item => item.citationIndexes.every(index => index < count));
+}
+export function validReviewChanges(changes: PrerequisiteChanges | null | undefined, items: PrerequisiteAssessment[] | null, count: number): boolean {
+  if (!changes) return true;
+  if (items === null || changes.origins.length !== items.length) return false;
+  const included = new Set(changes.origins.filter((index): index is number => index !== null));
+  const excluded = new Set(changes.excludedIndexes);
+  return [...included, ...excluded].every(index => index < count)
+    && [...included].every(index => !excluded.has(index))
+    && included.size + excluded.size === count;
 }
 export const generationActive = (row: PresalesRow) => ["queued", "running", "recovering"].includes(row.state);
 const batchSchema = z.object({ packet: packetSchema, rejected: z.array(z.object({ rowId: id, code: z.string() }).strict()) }).strict();

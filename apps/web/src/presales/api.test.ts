@@ -44,3 +44,48 @@ describe("Presales durable receipt HTTP contract", () => {
     expect(fetch.mock.calls[0][1]?.body).toBe(JSON.stringify({ rowIds: [rowId, otherId] }));
   });
 });
+
+const reviewedText = { status: "conditional", answer: "人工核查。", conditions: ["需确认验收。"], missingInformation: [], prerequisites: [{ condition: "需确认验收。", state: "unknown", citationIndexes: [0] }] };
+const savedReview = { ...reviewedText, revision: 2, note: "排除无依据条目。", actorId: otherId, reviewedAt: "2026-10-08T00:00:00Z", prerequisiteChanges: { origins: [0], excludedIndexes: [1] } };
+function reviewedPacket(review: Record<string, unknown>, history: Record<string, unknown>[] = [review]) {
+  return {
+    id: packetId, title: "Review contract", createdAt: "2026-10-08T00:00:00Z", rowCount: 1, staleSources: false,
+    sources: [{ versionId: otherId, documentId: otherId, generationId: otherId, filename: "contract.txt", versionNumber: 1, latestVersionNumber: 1, contentSha256: "a".repeat(64), applicability: "测试资料" }],
+    rows: [{ id: rowId, requirement: { key: "R1", text: "核对验收", sourceLocation: "" }, revision: 2, state: "drafted", attempts: [], review, reviewHistory: history,
+      draft: { ...reviewedText, prerequisites: [...reviewedText.prerequisites, { condition: "附加前提。", state: "met", citationIndexes: [0] }],
+        citations: [{ chunkId: otherId, documentVersionId: otherId, excerpt: "验收状态未登记。", filename: "contract.txt", pageNumber: 1, heading: null, startOffset: 0, endOffset: 8 }], retrieval: [] },
+    }],
+  };
+}
+
+describe("Presales review source bindings at the HTTP boundary", () => {
+  it("preserves split, human-added and excluded origins on read and accepts older responses", async () => {
+    const revised = { ...savedReview, prerequisites: [reviewedText.prerequisites[0], reviewedText.prerequisites[0], reviewedText.prerequisites[0]], prerequisiteChanges: { origins: [0, 0, null], excludedIndexes: [1] } };
+    const fetch = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify(reviewedPacket(revised))));
+    const result = await presalesApi("test-token").get(packetId, new AbortController().signal);
+    expect(result.rows[0].review?.prerequisiteChanges).toEqual(revised.prerequisiteChanges);
+    const legacy: Record<string, unknown> = { ...savedReview };
+    delete legacy.prerequisiteChanges;
+    fetch.mockResolvedValue(new Response(JSON.stringify(reviewedPacket(legacy))));
+    expect((await presalesApi("test-token").get(packetId, new AbortController().signal)).rows[0].review?.prerequisiteChanges).toBeUndefined();
+  });
+
+  it.each([
+    { prerequisiteChanges: { origins: [], excludedIndexes: [0, 1] } },
+    { prerequisiteChanges: { origins: [0], excludedIndexes: [] } },
+    { prerequisiteChanges: { origins: [0], excludedIndexes: [0, 1] } },
+    { prerequisiteChanges: { origins: [2], excludedIndexes: [1] } },
+    { prerequisiteChanges: { origins: [true], excludedIndexes: [1] } },
+    { prerequisiteChanges: { origins: [0], excludedIndexes: [1, 1] } },
+    { prerequisites: null },
+    { prerequisites: [{ ...reviewedText.prerequisites[0], citationIndexes: [1] }] },
+    { prerequisites: [{ ...reviewedText.prerequisites[0], excerpt: "伪造引文" }] },
+  ])("rejects malformed current and historical review bindings before rendering", async patch => {
+    const invalid = { ...savedReview, ...patch };
+    const fetch = vi.spyOn(globalThis, "fetch");
+    for (const body of [reviewedPacket(invalid), reviewedPacket(savedReview, [invalid, savedReview])]) {
+      fetch.mockResolvedValue(new Response(JSON.stringify(body)));
+      await expect(presalesApi("test-token").get(packetId, new AbortController().signal)).rejects.toThrow();
+    }
+  });
+});

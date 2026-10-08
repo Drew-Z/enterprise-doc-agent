@@ -571,6 +571,62 @@ or replay of an already generated draft. Reservations retain their original peri
 
 ## Review, export and diagnostics
 
+### Complete human prerequisite correction (2026-10-08 candidate)
+
+The review PUT now optionally accepts `prerequisiteChanges: {origins: (number|null)[],
+excludedIndexes: number[]}`. Each effective prerequisite has exactly one origin:
+an immutable zero-based original draft item, or null for a human addition. Repeated
+origins allow splitting one mixed proposition. Exclusions are unique, disjoint from
+referenced originals, and together must account for every original item. Reference
+indexes remain strict integers in 0..11; no fabricated origin or silent omission.
+This permits rewriting, splitting, adding and explicitly excluding human conclusions.
+It does not alter the model draft or provide new source evidence.
+
+Use `validate_review(draft, payload, previous)` for the shared contract. Existing
+schema length/status/conditions rules and ModelDraft citation validation still apply;
+citations can only reference the saved, authorized draft evidence. Changed content or
+mapping relative to original/latest review requires a nonempty note. Without a change
+map, old clients retain the exact original structure restriction. Null legacy fields
+remain unrecorded; an explicit new map can introduce human assessments with null
+origins. It must not pretend those were model-generated. Null change maps are excluded
+from old request fingerprints, including the pre-prerequisites legacy path.
+Always load the latest review when a row already has review history, including a
+request with null prerequisites. Reverting explicit human additions on a legacy
+unrecorded draft is a change and requires a note; rejection must not write a revision.
+
+Migration `20261008_0033` adds nullable JSONB `presales_reviews.prerequisite_changes`
+with SQL NULL for old reviews and an object constraint for new metadata. `content`
+retains the pre-0033 SavedReview fields, so the old strict reader can still decode
+corrected review bodies on the newer schema. The existing history aggregation merges
+the side column in the same MVCC statement; no per-row reads are added. A schema
+downgrade locks the review table and refuses any non-null correction history with
+`presales_review_changes_history_present`. Preserve 0033 for application rollback;
+do not delete provenance. Actual signed-image rollback still needs E verification.
+
+Outputs/history include their own mapping. CSV appends `人工前提修订记录` with effective
+origins, human additions and excluded original text; original/effective evidence columns
+and formula escaping remain. RowView and the Web parser validate each history mapping
+against the immutable original and all evidence indexes before display/export.
+
+| Case | Result |
+|---|---|
+| Split/add/rewrite/exclude, valid map and note | New immutable revision; same-key replay is unchanged |
+| Missing origin, duplicate exclusion, malformed fields | API 422 request_validation_failed |
+| Unaccounted, out-of-range or both excluded/referenced original | 422 presales_review_prerequisites_invalid |
+| Change without note | 422 presales_review_note_required |
+| Out-of-range saved evidence index | Existing 409 presales_review_evidence_required |
+| Stale revision / changed same-key intent | Existing 409 conflict; no new history |
+| Revoked member/source | Existing authorization rejection, including replay/export |
+
+Tests: `test_presales_review_changes_integration.py` calls the real PostgreSQL/API,
+preserves original JSONB and two revision snapshots, exercises conflicts/revocation,
+all-original exclusion and legacy additions, and verifies real migration behavior.
+`legacy_review_schema.py` is a frozen extraction of the pre-change strict decoder,
+independent of Git clone depth; do not evolve it with production schemas. Both browser
+widths test split/add/exclude, reload, provenance, original/history and downloaded CSV.
+Controlled fixture success is manual-correction capability, not original model accuracy
+or independent business approval. R5 model quality remains separately open.
+
 Source snapshots fetch authorized versions, active generations and latest versions
 in one statement, preserving input order/applicability. Missing or ambiguous sources
 fail closed. Packet reads fetch rows and separately aggregated attempts/reviews in
@@ -584,7 +640,7 @@ The complete 6-source/12-row read has an eight-SELECT integration budget. Regres
 tests finish generation or review immediately after the row SELECT and verify the
 current response stays coherent, while the next request sees the committed result.
 
-### Structured prerequisite review (CO-1/CO-2 candidate)
+### Original structured prerequisite review (historical CO-1/CO-2 contract)
 
 1. **Scope / trigger:** the adapter previously discarded prerequisite states and
    links, presenting both unmet and unknown items as unmet conditions. Retain this

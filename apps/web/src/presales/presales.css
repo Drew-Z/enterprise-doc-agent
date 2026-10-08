@@ -82,5 +82,12 @@
 .presales-prerequisite-editor { min-width: 0; padding: 14px; border: 1px solid var(--ps-line); border-radius: 6px; display: grid; gap: 12px; }
 .presales-prerequisite-editor legend { font-size: 13px; font-weight: 600; }
 .presales-prerequisite-editor .presales-field > span { overflow-wrap: anywhere; }
+.presales-prerequisite-item { min-width: 0; border: 1px solid var(--ps-line); border-radius: 6px; padding: 12px; display: grid; gap: 12px; }
+.presales-prerequisite-evidence { min-width: 0; border: 0; padding: 0; display: grid; gap: 8px; }
+.presales-prerequisite-evidence label { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; line-height: 1.7; }
+.presales-prerequisite-evidence span { min-width: 0; overflow-wrap: anywhere; }
+.presales-prerequisite-evidence small { display: block; color: var(--ps-muted); white-space: pre-wrap; }
+.presales-prerequisite-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.presales-excluded-item, .presales-review-origins { font-size: 12px; line-height: 1.8; overflow-wrap: anywhere; }
 @media (max-width: 1050px) { .presales-layout { grid-template-columns: minmax(0, 1fr); gap: 22px; } .presales-sidebar { border-right: 0; border-bottom: 1px solid var(--ps-line); padding: 0 0 16px; } .presales-sidebar .presales-packet-link { max-width: 100%; } }
 @media (max-width: 620px) { .presales-workspace .product-page-header { align-items: flex-start; flex-direction: column; gap: 12px; } .presales-two-fields { grid-template-columns: minmax(0, 1fr); gap: 12px; } .presales-row { padding: 14px 12px; } .presales-row-header { flex-wrap: wrap; } .presales-row-header > div { flex-basis: calc(100% - 50px); } .presales-state { margin-left: 36px; } .presales-toolbar button { flex: 1 1 100%; } .presales-form-footer > button { width: 100%; } .presales-workspace input:not([type="checkbox"]), .presales-workspace textarea, .presales-workspace select { font-size: 16px; } }
