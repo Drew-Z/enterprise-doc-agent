@@ -21,12 +21,12 @@ missing minute resets the streak. Three failures open an incident, two successes
 close it. Initial health is silent. D1 `batch` atomically commits counters, unique
 event and incident transition. Readiness state is not inferred from missing data.
 
-Delivery: commit `attempting` before the Email binding. Only `pending` can be
+Delivery: commit `attempting` before contacting the selected mail provider. Only `pending` can be
 claimed; pending events survive interruption and drain at most two per tick.
 `unknown` or abandoned `attempting` must never automatically retry. `accepted`
 requires a provider message ID, but remains distinct from inbox receipt. `observe`
 records suppressed events. Fixed environment addresses must match both binding
-allowlists. No arbitrary-recipient or HTTP administration API.
+allowlists for Cloudflare delivery. No arbitrary-recipient or HTTP administration API.
 
 Apply the additive `notification_diagnostics` table before deploying delivery
 diagnostics. Failed attempts retain `unknown`; a separate record stores only a
@@ -38,6 +38,73 @@ query returning no events does not prove that an attempted message was delivered
 or never sent. Preserve failed deployment receipts; compare returned D1 rows rather
 than changing query metadata. On Windows, explicitly pass the existing system proxy
 to the Wrangler child if Node does not inherit it; preserve TLS verification.
+
+## Optional ClawEmail delivery
+
+### 1. Scope / Trigger
+
+Use the explicitly selected Agent mailbox when the existing sender domain is
+blocked. This changes only the external monitor's mail transport.
+
+### 2. Signatures
+
+`deliverNotification(env, id, now, timeoutMs=10000, network=wrappedFetch)` retains
+the atomic D1 claim and boolean result. `runScheduled` passes its HTTP boundary to
+the selected transport. The D1 schema stays unchanged.
+
+### 3. Contracts
+
+`MAIL_PROVIDER` defaults to `cloudflare`; an absent setting retains legacy behavior.
+The explicit `clawemail` provider uses `MAIL_FROM` as the sole Agent uid (an address
+at `claw.163.com`), `MAIL_TO` as the sole recipient, and `CLAWEMAIL_API_KEY` as a
+Worker secret. Reject unknown providers, invalid uid and missing key before D1
+claim. Preserve the old send binding for explicit rollback; never fall back or
+refresh/retry automatically. Account-level API keys are not proven mailbox-scoped:
+the application restriction does not imply provider-enforced least privilege.
+
+The official `@clawemail/node-sdk@0.2.4` protocol uses token auth followed by
+Coremail `mbox:compose` continue/deliver. Deliver returns `S_OK` without Message-ID.
+Query only the unique event subject in Sent (`fid=3`, limit/windowSize=2), require
+exact subject/from/to/fid and one valid `hmid`. Live preflight verified `hmid`
+against the same message's RFC5322 header. Never store compose ID as a message ID.
+A missing, delayed, ambiguous or mismatched Sent record leaves the event unknown;
+do not send again. Accepted still means provider receipt, not recipient delivery.
+
+### 4. Validation & Error Matrix
+
+Authentication, compose, delivery and receipt query share the existing 10-second
+deadline and AbortController. Each response is at most 64 KiB, JSON/HTTP200, with
+manual redirects. Check cancellation after every await, cancel active body readers
+and prevent a late response from starting the next request. No token persistence,
+arbitrary URLs, public send endpoint, or inbound-mail command execution. Only
+documented provider codes prefixed `CLAW_` may enter diagnostics; raw messages and
+tokens remain private. Configuration errors reject before claim; network/provider
+errors or missing receipts finish unknown; timeouts record only `timeout`.
+
+### 5. Good / Base / Bad Cases
+
+Good: one S_OK deliver followed by one matching Sent record gives accepted with
+the real hmid. Base: absent provider uses the existing Cloudflare binding. Bad:
+use the compose ID as a receipt or send again after a missing Sent record.
+
+### 6. Tests Required
+
+Substitute HTTPS only and use real D1/workerd, including the shipped scheduled
+handler, competing claims, receipt identity, per-stage failures, total deadlines,
+late responses and stalled body cancellation. Assert old unknown events survive,
+exactly one deliver occurs, and neither keys nor provider messages reach D1.
+
+### 7. Wrong vs Correct
+
+Wrong: copy the SDK's automatic token-refresh wrapper around delivery. Correct:
+authenticate once inside the shared deadline; preserve unknown without retry.
+
+Subjects include the stable event ID. Bodies use the monitor key rather than
+TARGET_URL: DBL filtering can also inspect links in the message. The real probe URL
+and application DNS stay unchanged. Before activation preserve complete cloud
+source/settings/schedules, verify a bounded test and actual receipt, then compare
+both monitor deployments and retained D1 history. Local DPAPI files are never
+uploaded; provision only the necessary value through the Worker secret interface.
 
 ## Failure and acceptance boundaries
 

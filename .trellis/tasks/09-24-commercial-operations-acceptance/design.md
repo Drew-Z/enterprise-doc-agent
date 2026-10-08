@@ -1,5 +1,13 @@
 # 当前环境验收设计
 
+## 2026-10-08 ClawEmail云端告警
+
+在原deliverNotification边界增加显式MAIL_PROVIDER=clawemail，默认cloudflare以兼容原部署；MAIL_FROM为唯一uid，MAIL_TO仍为固定收件者，密钥仅来自CLAWEMAIL_API_KEY secret。使用官方node-sdk 0.2.4的token、Coremail compose continue/deliver与searchMessages协议，不安装本机常驻进程。
+
+D1先持久化attempting，再执行至多四次HTTPS：token、compose、deliver、仅本事件主题的已发送元数据查询。所有请求共用AbortController和10秒截止，64KiB响应上限；每次await后检查取消，迟到认证/草稿回执不能继续deliver。无刷新、重试、自动降级。deliver须S_OK，再要求唯一已发送记录的fid=3、完整subject/from/to及合法hmid；实测hmid与本次邮件headerRaw Message-ID一致。空/重复/不匹配回执保留unknown，不伪造编号。
+
+复用notification_events与diagnostics原子终态，无schema变更。主题带唯一event.id，正文使用monitor_key而不放TARGET_URL。错误仅记录明确供应商白名单代码或原有通用诊断；测试替代HTTP边界并使用真实D1/workerd，覆盖一次claim、超时/取消、各阶段失败、回执身份和旧历史保持。两个生产Worker完整源码/设置/调度先保存，待实收后才切换；旧MAIL binding保留供明确回退，不自动重放事件。
+
 ## 2026-10-08 E2会话设置读回
 
 现场5432会话池接受连接但忽略PGOPTIONS中的lock_timeout及idle_session_timeout，读回为0。PsqlSession在同一连接显式SET三项超时和search_path，再从pg_settings读取毫秒整数与current_schema并精确核对，之后才取得数据库会话锁。初始化设置、读回和锁等待共享connect_timeout截止；任何错误关闭连接，原始服务端输出不入异常。

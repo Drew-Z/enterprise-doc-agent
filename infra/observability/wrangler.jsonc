@@ -20,6 +20,7 @@
     "BACKUP_REMOTE_PREFIX": "",
     "BACKUP_REMOTE_MAX_BYTES": "3221225472",
     "WATCH_MONITOR_KEY": "",
+    "MAIL_PROVIDER": "cloudflare",
     "MAIL_FROM": "ops-alerts@example.com",
     "MAIL_TO": "operator@example.com"
   },

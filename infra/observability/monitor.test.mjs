@@ -188,6 +188,209 @@ function mailEnv(db, send) {
     MAIL_FROM: 'ops@example.test', MAIL_TO: 'owner@example.test', TARGET_URL: target };
 }
 
+function clawEnv(db) {
+  return { ...mailEnv(db, async () => assert.fail('must not fall back to the old binding')),
+    MAIL_PROVIDER: 'clawemail', MAIL_FROM: 'monitor@claw.163.com', MAIL_TO: 'owner@example.test',
+    CLAWEMAIL_API_KEY: 'ck_test_PRIVATE_KEY' };
+}
+
+function clawWire(env, override = () => undefined) {
+  const calls = [];
+  let attrs;
+  const network = async (url, options) => {
+    const parsed = new URL(url);
+    assert.equal(parsed.origin, 'https://claw.163.com');
+    assert.equal(options.method, 'POST');
+    assert.equal(options.redirect, 'manual');
+    const body = JSON.parse(options.body);
+    const token = parsed.pathname.endsWith('/auth/token');
+    const phase = token ? 'token' : body.action ?? 'receipt';
+    calls.push({ phase, url, body, signal: options.signal });
+    assert.equal(new Headers(options.headers).get('Authorization'),
+      'Bearer ' + (token ? env.CLAWEMAIL_API_KEY : 'PRIVATE_ACCESS_TOKEN'));
+    if (token) assert.deepEqual(body, { uid: env.MAIL_FROM });
+    else {
+      assert.equal(parsed.pathname, '/claw-api-gateway/api/coremail/proxy');
+      assert.equal(parsed.searchParams.get('uid'), env.MAIL_FROM);
+      assert.equal(parsed.searchParams.get('func'), phase === 'receipt' ? 'mbox:searchMessages' : 'mbox:compose');
+    }
+    const replacement = await override(phase, body, options);
+    if (replacement !== undefined) return replacement;
+    if (token) return Response.json({ result: { accessToken: 'PRIVATE_ACCESS_TOKEN', expiresIn: 1800 } });
+    if (phase === 'continue') {
+      attrs = body.attrs;
+      assert.deepEqual(attrs.to, [env.MAIL_TO]);
+      assert.equal(attrs.cc, undefined);
+      assert.equal(attrs.bcc, undefined);
+      assert.equal(attrs.saveSentCopy, true);
+      assert.equal(attrs.isHtml, false);
+      return Response.json({ code: 'S_OK', var: 'compose-123' });
+    }
+    if (phase === 'deliver') {
+      assert.equal(body.id, 'compose-123');
+      assert.deepEqual(body.attrs, attrs);
+      return Response.json({ code: 'S_OK', var: null });
+    }
+    assert.equal(body.fid, 3);
+    assert.equal(body.limit, 2);
+    assert.equal(body.windowSize, 2);
+    assert.equal(body.conditions[0].operand, attrs.subject);
+    return Response.json({ code: 'S_OK', var: [{ fid: 3, from: env.MAIL_FROM, to: env.MAIL_TO,
+      subject: attrs.subject, hmid: '<real-receipt@claw.163.com>' }] });
+  };
+  return { calls, network };
+}
+
+test('ClawEmail concurrent delivery uses fixed identity and a real Sent Message-ID exactly once', async (t) => {
+  const db = await database(t);
+  const event = await incident(db);
+  const env = clawEnv(db);
+  const wire = clawWire(env);
+  const results = await Promise.all(Array.from({ length: 4 }, () => deliverNotification(env, event.id, () => now, 10_000, wire.network)));
+  assert.equal(results.filter(Boolean).length, 1);
+  assert.deepEqual(wire.calls.map(x => x.phase), ['token', 'continue', 'deliver', 'receipt']);
+  const attrs = wire.calls[1].body.attrs;
+  assert.ok(attrs.subject.includes(event.id));
+  assert.ok(attrs.content.includes(event.id));
+  assert.equal(attrs.content.includes(new URL(target).hostname), false);
+  assert.equal(attrs.content.includes('PRIVATE'), false);
+  const saved = await db.prepare('SELECT * FROM notification_events').first();
+  assert.equal(saved.delivery_status, 'accepted');
+  assert.equal(saved.provider_message_id, '<real-receipt@claw.163.com>');
+  assert.equal(await deliverNotification(env, event.id, () => now, 10_000, wire.network), false);
+  assert.equal(wire.calls.length, 4);
+});
+
+for (const [phase, reply, code] of [
+  ['token', () => new Response(null, { status: 302, headers: { Location: 'https://untrusted.test' } }), 'provider_error'],
+  ['token', () => Response.json({ result: { accessToken: 'PRIVATE_ACCESS_TOKEN', expiresIn: 0 } }), 'provider_error'],
+  ['token', () => Response.json({ result: { accessToken: 'x'.repeat(65_537), expiresIn: 1800 } }), 'provider_error'],
+  ['continue', () => Response.json({ code: 'FA_FORBIDDEN', message: 'PRIVATE_PROVIDER_ERROR' }), 'CLAW_FA_FORBIDDEN'],
+  ['continue', () => Response.json({ code: 'S_OK', var: {} }), 'provider_error'],
+  ['deliver', () => Response.json({ code: 'ACCESS_TOKEN_EXPIRED' }), 'CLAW_ACCESS_TOKEN_EXPIRED'],
+  ['deliver', () => { throw new Error('PRIVATE_PROVIDER_ERROR'); }, 'provider_error'],
+  ['deliver', () => Response.json({ code: 'PRIVATE_PROVIDER_ERROR' }), 'provider_error'],
+  ['receipt', () => Response.json({ code: 'S_OK', var: [] }), 'invalid_receipt'],
+  ['receipt', () => Response.json({ code: 'S_OK', var: [{ hmid: 'compose-123' }] }), 'invalid_receipt'],
+]) {
+  test(`ClawEmail ${phase} ${code} remains unknown without refreshing or retrying`, async (t) => {
+    const db = await database(t);
+    const event = await incident(db);
+    const env = clawEnv(db);
+    const wire = clawWire(env, stage => stage === phase ? reply() : undefined);
+    assert.equal(await deliverNotification(env, event.id, () => now, 10_000, wire.network), false);
+    assert.equal(await deliverNotification(env, event.id, () => now, 10_000, wire.network), false);
+    assert.deepEqual(wire.calls.map(x => x.phase), ['token', 'continue', 'deliver', 'receipt'].slice(0, ['token', 'continue', 'deliver', 'receipt'].indexOf(phase) + 1));
+    const saved = await db.prepare('SELECT * FROM notification_events').first();
+    assert.equal(saved.delivery_status, 'unknown');
+    assert.equal(saved.provider_message_id, null);
+    const diagnostic = await db.prepare('SELECT code FROM notification_diagnostics').first();
+    assert.equal(diagnostic.code, code);
+    assert.equal(JSON.stringify([saved, diagnostic]).includes('PRIVATE'), false);
+  });
+}
+
+for (const phase of ['token', 'continue', 'deliver', 'receipt']) {
+  test(`ClawEmail timeout during ${phase} aborts and a late reply cannot start another request`, async (t) => {
+    const db = await database(t);
+    const event = await incident(db);
+    const env = clawEnv(db);
+    let release;
+    const wire = clawWire(env, stage => stage === phase ? new Promise(resolve => { release = resolve; }) : undefined);
+    assert.equal(await deliverNotification(env, event.id, () => now, 20, wire.network), false);
+    const count = wire.calls.length;
+    assert.equal(wire.calls.at(-1).phase, phase);
+    assert.equal(wire.calls.at(-1).signal.aborted, true);
+    release(undefined);
+    await new Promise(resolve => setTimeout(resolve, 25));
+    assert.equal(wire.calls.length, count);
+    assert.equal((await db.prepare('SELECT code FROM notification_diagnostics').first()).code, 'timeout');
+    assert.equal(await deliverNotification(env, event.id, () => now, 20, wire.network), false);
+    assert.equal(wire.calls.length, count);
+  });
+}
+
+for (const mismatch of ['from', 'to', 'subject', 'fid', 'hmid', 'duplicate']) {
+  test(`ClawEmail refuses a Sent receipt with ${mismatch} mismatch`, async (t) => {
+    const db = await database(t);
+    const event = await incident(db);
+    const env = clawEnv(db);
+    const wire = clawWire(env, (phase, body) => {
+      if (phase !== 'receipt') return;
+      const row = { fid: 3, from: env.MAIL_FROM, to: env.MAIL_TO,
+        subject: body.conditions[0].operand, hmid: '<other@claw.163.com>' };
+      if (mismatch !== 'duplicate') row[mismatch] = mismatch === 'fid' ? 1 : 'wrong';
+      return Response.json({ code: 'S_OK', var: mismatch === 'duplicate' ? [row, row] : [row] });
+    });
+    assert.equal(await deliverNotification(env, event.id, () => now, 10_000, wire.network), false);
+    assert.equal((await db.prepare('SELECT code FROM notification_diagnostics').first()).code, 'invalid_receipt');
+    assert.equal(wire.calls.filter(x => x.phase === 'deliver').length, 1);
+    assert.equal(await deliverNotification(env, event.id, () => now, 10_000, wire.network), false);
+    assert.equal(wire.calls.length, 4);
+  });
+}
+
+test('ClawEmail stages share one deadline instead of resetting the budget per request', async (t) => {
+  const db = await database(t);
+  const event = await incident(db);
+  const env = clawEnv(db);
+  const wire = clawWire(env, async () => { await new Promise(resolve => setTimeout(resolve, 40)); });
+  assert.equal(await deliverNotification(env, event.id, () => now, 100, wire.network), false);
+  await new Promise(resolve => setTimeout(resolve, 60));
+  assert.ok(wire.calls.length <= 3);
+  assert.equal(wire.calls.some(x => x.phase === 'receipt'), false);
+  assert.equal((await db.prepare('SELECT code FROM notification_diagnostics').first()).code, 'timeout');
+});
+
+test('ClawEmail cancels a stalled response body and does not advance to compose', async (t) => {
+  const db = await database(t);
+  const event = await incident(db);
+  const env = clawEnv(db);
+  let cancelled = false;
+  const wire = clawWire(env, () => new Response(new ReadableStream({ cancel() { cancelled = true; } }),
+    { headers: { 'Content-Type': 'application/json' } }));
+  assert.equal(await deliverNotification(env, event.id, () => now, 20, wire.network), false);
+  assert.equal(cancelled, true);
+  assert.equal(wire.calls.length, 1);
+});
+
+for (const change of [{ MAIL_PROVIDER: 'unsupported' }, { CLAWEMAIL_API_KEY: '' }, { MAIL_FROM: 'owner@example.test' }]) {
+  test(`ClawEmail invalid configuration rejects before claiming: ${JSON.stringify(change)}`, async (t) => {
+    const db = await database(t);
+    const event = await incident(db);
+    await assert.rejects(deliverNotification({ ...clawEnv(db), ...change }, event.id, () => now), /invalid_mail_configuration/);
+    assert.equal((await db.prepare('SELECT delivery_status FROM notification_events').first()).delivery_status, 'pending');
+  });
+}
+
+test('shipped workerd scheduled handler delivers ClawEmail and preserves historical unknown events', async (t) => {
+  const env = { ...clawEnv(null), DRILL_START_MS: '0' };
+  const wire = clawWire(env);
+  const source = await readFile(new URL('./monitor.ts', import.meta.url), 'utf8');
+  const script = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText;
+  const bindings = Object.fromEntries(Object.entries(env).filter(([key]) => !['MAIL', 'MONITOR_DB'].includes(key)));
+  const mf = new Miniflare(convertV4MiniflareOptions({
+    modules: true, compatibilityDate: '2026-09-26', script, unsafeTriggerHandlers: true,
+    d1Databases: { MONITOR_DB: 'claw-runtime' }, bindings,
+    outboundService: async request => request.url === target ? new Response(null, { status: 503 }) :
+      wire.network(request.url, { method: request.method, headers: request.headers, body: await request.text(), redirect: 'manual', signal: request.signal }),
+  }));
+  t.after(() => mf.dispose());
+  const db = await mf.getD1Database('MONITOR_DB');
+  await db.exec((await readFile(new URL('./schema.sql', import.meta.url), 'utf8')).replaceAll('\n', ' '));
+  const tick = Math.floor(Date.now() / 60_000) * 60_000;
+  await db.prepare('INSERT INTO monitor_state (monitor_key,last_tick,observed_at,failures) VALUES (?,?,?,2)').bind(env.MONITOR_KEY, tick - 60_000, tick - 60_000).run();
+  await db.prepare("INSERT INTO notification_events (id,monitor_key,tick,kind,reason,delivery_status) VALUES ('older-unknown',?,?,'failure','http_status','unknown')").bind(env.MONITOR_KEY, tick - 120_000).run();
+  assert.equal((await mf.dispatchFetch('http://localhost/cdn-cgi/local/scheduled')).status, 200);
+  assert.equal((await mf.dispatchFetch('http://localhost/cdn-cgi/local/scheduled')).status, 200);
+  assert.equal(wire.calls.filter(x => x.phase === 'deliver').length, 1);
+  const rows = (await db.prepare('SELECT id,delivery_status,provider_message_id FROM notification_events ORDER BY tick').all()).results;
+  assert.equal(rows[0].delivery_status, 'unknown');
+  assert.equal(rows[1].delivery_status, 'accepted');
+  assert.equal(rows[1].provider_message_id, '<real-receipt@claw.163.com>');
+  assert.equal((await mf.dispatchFetch('http://localhost/send')).status, 404);
+});
+
 async function incident(db, mode = 'notify') {
   await recordObservation(db, sample(0, false), mode);
   await recordObservation(db, sample(1, false), mode);

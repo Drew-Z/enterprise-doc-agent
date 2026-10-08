@@ -172,7 +172,9 @@ export async function recordObservation(db: D1Database, sample: Observation, mod
   return events?.[0] ?? null;
 }
 
-type DeliveryEnv = Pick<Env, 'MONITOR_DB' | 'MAIL' | 'MAIL_FROM' | 'MAIL_TO' | 'MODE' | 'MONITOR_KEY' | 'TARGET_URL'>;
+// Secret bindings are configured separately from the public Wrangler template.
+type RuntimeEnv = Env & { CLAWEMAIL_API_KEY?: string };
+type DeliveryEnv = Pick<RuntimeEnv, 'MONITOR_DB' | 'MAIL' | 'MAIL_FROM' | 'MAIL_TO' | 'MODE' | 'MONITOR_KEY' | 'TARGET_URL' | 'MAIL_PROVIDER' | 'CLAWEMAIL_API_KEY'>;
 
 // Only documented provider codes may leave the binding boundary. Error messages,
 // arbitrary codes and recipient details never enter the diagnostic record.
@@ -185,13 +187,89 @@ const MAIL_ERROR_CODES = new Set([
   'E_HEADER_VALUE_TOO_LONG', 'E_HEADER_NAME_INVALID', 'E_HEADERS_TOO_LARGE', 'E_HEADERS_TOO_MANY',
 ]);
 
+const CLAW_ERROR_CODES = new Set([
+  'FA_UNAUTHORIZED', 'ACCESS_TOKEN_REQUIRED', 'ACCESS_TOKEN_INVALID', 'ACCESS_TOKEN_EXPIRED',
+  'FA_FORBIDDEN', 'FUNC_FORBIDDEN', 'FA_OVERFLOW', 'FA_NO_RECEIPT', 'FA_WRONG_RECEIPT',
+  'FA_INVALID_ACCOUNT', 'FA_NEED_VERIFY_CODE',
+]);
+
+async function sendClawEmail(
+  env: DeliveryEnv, subject: string, text: string, network: Network,
+  signal: AbortSignal, onCancel: (cancel: () => void) => void,
+): Promise<{ messageId?: string }> {
+  const check = () => { if (signal.aborted) throw new Error('deadline_exceeded'); };
+  const post = async (url: string, bearer: string, body: unknown): Promise<Record<string, unknown>> => {
+    check();
+    const response = await network(url, {
+      method: 'POST', redirect: 'manual', signal,
+      headers: { Authorization: 'Bearer ' + bearer, 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (signal.aborted || response.status !== 200 ||
+        response.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase() !== 'application/json') {
+      void response.body?.cancel().catch(() => {});
+      throw new Error('claw_response_invalid');
+    }
+    const raw = await responseBytes(response, MAX_RESPONSE_BYTES, onCancel);
+    check();
+    const value: unknown = JSON.parse(new TextDecoder('utf-8', { fatal: true, ignoreBOM: false }).decode(raw));
+    if (!object(value)) throw new Error('claw_response_invalid');
+    if (typeof value.code === 'string' && CLAW_ERROR_CODES.has(value.code)) {
+      throw Object.assign(new Error('claw_provider_error'), { code: 'CLAW_' + value.code });
+    }
+    return value;
+  };
+  const auth = await post('https://claw.163.com/claw-api-gateway/open/v1/mail/auth/token',
+    env.CLAWEMAIL_API_KEY!, { uid: env.MAIL_FROM });
+  check();
+  const result = auth.result;
+  if (!object(result) || typeof result.accessToken !== 'string' ||
+      !/^[\x21-\x7e]{1,8192}$/.test(result.accessToken) || typeof result.expiresIn !== 'number' ||
+      !Number.isFinite(result.expiresIn) || result.expiresIn <= 0) throw new Error('claw_token_invalid');
+  const accessToken = result.accessToken;
+  const call = async (func: string, body: unknown): Promise<unknown> => {
+    check();
+    const response = await post('https://claw.163.com/claw-api-gateway/api/coremail/proxy?' +
+      new URLSearchParams({ uid: env.MAIL_FROM, func }).toString(), accessToken, body);
+    check();
+    if (response.code !== 'S_OK') throw new Error('claw_provider_error');
+    return response.var;
+  };
+  const attrs = { to: [env.MAIL_TO], subject, content: text, isHtml: false, priority: 3, saveSentCopy: true };
+  const composed = await call('mbox:compose', { action: 'continue', attrs });
+  check();
+  const id = typeof composed === 'string' ? composed : object(composed) ? composed.id : undefined;
+  if (typeof id !== 'string' || !/^[A-Za-z0-9_.:-]{1,256}$/.test(id)) throw new Error('claw_compose_invalid');
+  await call('mbox:compose', { id, action: 'deliver', attrs });
+  check();
+  // Deliver returns S_OK with no Message-ID. Read only this event's Sent metadata;
+  // hmid was verified against headerRaw's RFC5322 Message-ID in the live preflight.
+  const sent = await call('mbox:searchMessages', {
+    fid: 3, recursive: true, operator: 'and',
+    conditions: [{ field: 'subject', operator: 'contains', operand: subject, ignoreCase: true }],
+    limit: 2, windowSize: 2, order: 'date', desc: true,
+  });
+  check();
+  if (!Array.isArray(sent) || sent.length !== 1 || !object(sent[0])) return {};
+  const message = sent[0];
+  if (message.fid !== 3 || message.from !== env.MAIL_FROM || message.to !== env.MAIL_TO ||
+      message.subject !== subject || typeof message.hmid !== 'string' ||
+      !/^[\x21-\x7e]{1,200}$/.test(message.hmid) || !/^<[^<>\s@]+@[^<>\s@]+>$/.test(message.hmid)) return {};
+  return { messageId: message.hmid };
+}
+
 export async function deliverNotification(
   env: DeliveryEnv, id: string, now: () => number, timeoutMs = 10_000,
+  network: Network = (url, options) => fetch(url, options),
 ): Promise<boolean> {
   if (env.MODE !== 'notify') return false;
   validateTarget(env.TARGET_URL);
   if (![env.MAIL_FROM, env.MAIL_TO].every((address) => /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(address)) ||
-      !Number.isFinite(timeoutMs) || timeoutMs <= 0 || timeoutMs > 10_000) {
+      !Number.isFinite(timeoutMs) || timeoutMs <= 0 || timeoutMs > 10_000 ||
+      ![undefined, 'cloudflare', 'clawemail'].includes(env.MAIL_PROVIDER) ||
+      (env.MAIL_PROVIDER === 'clawemail' &&
+        (!/^[a-zA-Z0-9._-]+@claw\.163\.com$/.test(env.MAIL_FROM) ||
+         !/^ck_(?:live|test)_[\x21-\x7e]{1,4096}$/.test(env.CLAWEMAIL_API_KEY ?? '')))) {
     throw new Error('invalid_mail_configuration');
   }
   // Commit before touching the send binding. A crashed invocation leaves an
@@ -206,18 +284,23 @@ export async function deliverNotification(
   let messageId: string | null = null;
   let diagnostic = 'invalid_receipt';
   let timedOut = false;
+  const controller = new AbortController();
+  let cancelBody: (() => void) | undefined;
   try {
-    const receipt = await deadline(env.MAIL.send({
-      from: env.MAIL_FROM, to: env.MAIL_TO,
-      subject: `[DocAgent]${drill ? '[TEST]' : ''} ${event.kind === 'failure' ? 'Service alert' : 'Service recovered'}`,
-      text: [
+    const subject = `[DocAgent]${drill ? '[TEST]' : ''} ${event.kind === 'failure' ? 'Service alert' : 'Service recovered'} ${event.id}`;
+    const text = [
         drill ? 'Controlled notification test. No production outage was injected.' : 'External readiness monitor.',
         `Event: ${event.id}`, `Time (UTC): ${new Date(event.tick).toISOString()}`,
-        `Target: ${env.TARGET_URL}`, `State: ${event.kind}`, `Reason: ${event.reason}`,
+        `Monitor: ${event.monitor_key}`, `State: ${event.kind}`, `Reason: ${event.reason}`,
         'Failure threshold: 3 consecutive minutes. Recovery threshold: 2 consecutive minutes.',
         'Check the service and the operations runbook. This receipt is not proof of inbox delivery.',
-      ].join('\n'),
-    }), timeoutMs, () => { timedOut = true; });
+      ].join('\n');
+    const operation = env.MAIL_PROVIDER === 'clawemail'
+      ? sendClawEmail(env, subject, text, network, controller.signal, cancel => { cancelBody = cancel; })
+      : env.MAIL.send({ from: env.MAIL_FROM, to: env.MAIL_TO, subject, text });
+    const receipt = await deadline(operation, timeoutMs, () => {
+      timedOut = true; controller.abort(); cancelBody?.();
+    });
     if (receipt && typeof receipt.messageId === 'string' && /^[\x21-\x7e]{1,200}$/.test(receipt.messageId)) {
       accepted = true;
       messageId = receipt.messageId;
@@ -225,7 +308,9 @@ export async function deliverNotification(
   } catch (error) {
     // Rejection, timeout and unknown provider result all stay visible without
     // logging raw provider errors or retrying a possibly delivered message.
-    diagnostic = timedOut ? 'timeout' : object(error) && typeof error.code === 'string' && MAIL_ERROR_CODES.has(error.code)
+    diagnostic = timedOut ? 'timeout' : object(error) && typeof error.code === 'string' &&
+      (MAIL_ERROR_CODES.has(error.code) || (env.MAIL_PROVIDER === 'clawemail' &&
+        error.code.startsWith('CLAW_') && CLAW_ERROR_CODES.has(error.code.slice(5))))
       ? error.code : 'provider_error';
   }
   const updates = [env.MONITOR_DB.prepare(`UPDATE notification_events
@@ -397,7 +482,7 @@ async function operationalProbe(env: Env, now: number, clock: () => number): Pro
   return { healthy: true, reason: 'ready', checkedAt: now };
 }
 
-export async function runScheduled(env: Env, scheduledTime: number, boundary: ProbeOptions): Promise<ScheduleResult> {
+export async function runScheduled(env: RuntimeEnv, scheduledTime: number, boundary: ProbeOptions): Promise<ScheduleResult> {
   const tick = Math.floor(scheduledTime / MINUTE) * MINUTE;
   const drillStart = Number(env.DRILL_START_MS);
   if (!['observe', 'notify'].includes(env.MODE) || !/^[a-z][a-z0-9-]{1,60}$/.test(env.MONITOR_KEY) ||
@@ -423,7 +508,7 @@ export async function runScheduled(env: Env, scheduledTime: number, boundary: Pr
     const pending = await env.MONITOR_DB.prepare(`SELECT id FROM notification_events
       WHERE monitor_key = ? AND delivery_status = 'pending' ORDER BY tick LIMIT 2`)
       .bind(env.MONITOR_KEY).all<{ id: string }>();
-    for (const event of pending.results) await deliverNotification(env, event.id, boundary.now);
+    for (const event of pending.results) await deliverNotification(env, event.id, boundary.now, 10_000, boundary.fetch);
   }
   const previous = await env.MONITOR_DB.prepare('SELECT last_tick FROM monitor_state WHERE monitor_key = ?')
     .bind(env.MONITOR_KEY).first<{ last_tick: number }>();
@@ -444,7 +529,7 @@ export async function runScheduled(env: Env, scheduledTime: number, boundary: Pr
   const observedAt = boundary.now();
   if (!validTick(tick, observedAt)) return { status: 'ignored' };
   const event = await recordObservation(env.MONITOR_DB, { key: env.MONITOR_KEY, tick, observedAt, probe }, env.MODE as Mode);
-  if (event) await deliverNotification(env, event.id, boundary.now);
+  if (event) await deliverNotification(env, event.id, boundary.now, 10_000, boundary.fetch);
   return { status: 'sampled', healthy: probe.healthy, ...(event ? { eventId: event.id } : {}) };
 }
 
@@ -462,4 +547,4 @@ export default {
       throw new Error('readiness_monitor_failed');
     }
   },
-} satisfies ExportedHandler<Env>;
+} satisfies ExportedHandler<RuntimeEnv>;
