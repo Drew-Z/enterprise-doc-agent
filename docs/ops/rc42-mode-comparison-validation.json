@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "status": "technical_comparison_passed_billing_partially_reconciled",
+  "commit_sha": "934d2469f70586018aa1cdce053af89ca08cf21f",
+  "environment": "staging",
+  "profile": "single-node-4c4g",
+  "release_scope": "invited",
+  "database_revision": "20261008_0034",
+  "completed_at": "2026-10-08T16:40:15.326058+00:00",
+  "executed_by": "codex-primary-assistant",
+  "review": {
+    "status": "pending",
+    "independent_business_approval": false
+  },
+  "planned_denominator": 12,
+  "modes": {
+    "auto": {
+      "planned_rows": 6,
+      "completed_rows": 6,
+      "classification_passed": 6,
+      "assistant_semantic_passed": 6,
+      "terminal_median_seconds": 55.91,
+      "terminal_max_seconds": 86.126,
+      "provider_calls": 6,
+      "failed_provider_calls": 0,
+      "exact_billing_matches": 6,
+      "known_platform_debits": {
+        "CNY": "0.076488",
+        "USD": "0"
+      },
+      "unmatched_call_count": 0,
+      "application_known_tokens": 28772,
+      "application_total_tokens": 28772
+    },
+    "deep": {
+      "planned_rows": 6,
+      "completed_rows": 6,
+      "classification_passed": 6,
+      "assistant_semantic_passed": 6,
+      "terminal_median_seconds": 124.566,
+      "terminal_max_seconds": 271.641,
+      "provider_calls": 8,
+      "failed_provider_calls": 2,
+      "exact_billing_matches": 7,
+      "known_platform_debits": {
+        "CNY": "0.128648",
+        "USD": "0.004"
+      },
+      "unmatched_call_count": 1,
+      "application_known_tokens": 48946,
+      "application_total_tokens": null
+    }
+  },
+  "billing": {
+    "matched": 13,
+    "unknown": 1,
+    "known_currency_totals": {
+      "CNY": "0.205136",
+      "USD": "0.004"
+    },
+    "unknown_fee_is_zero": false,
+    "embedding_actual_debit": null
+  },
+  "ledger": {
+    "successful_task_consumptions": 12,
+    "document_bytes_consumed": 1949,
+    "embedding_calls": 78,
+    "embedding_known_tokens": 3387,
+    "active_jobs": 0,
+    "outstanding_reservations": 0
+  },
+  "browser": {
+    "status": "passed",
+    "realDeployedAssets": true,
+    "realPublicAPI": true,
+    "authenticationAdapter": true,
+    "newOAuthAcceptance": false,
+    "modelCalls": 0,
+    "generationWhileOfflineTested": false,
+    "tokenRetirementStatus": 200,
+    "reads": 18,
+    "businessWrites": 0,
+    "errors": []
+  },
+  "browser_business_snapshot_unchanged": true,
+  "browser_widths": [
+    1440,
+    390
+  ],
+  "technical_review_kind": "Unchanged original-copy persistence check; no actual human semantic approval or corrective rewrite claimed.",
+  "semantic_review": "Primary assistant read all original answers, prerequisite states and citations against unchanged frozen references. Known regression, one paired run, no independent adjudication.",
+  "recommendation": "Keep auto as default. This run shows no semantic gain from deep, with longer waits and two fallback recoveries; it is not a statistical quality guarantee.",
+  "capacity_approval": false,
+  "independent_business_approval": false,
+  "new_email_sends": 0,
+  "historical_failures_unchanged": true,
+  "source_hashes": {
+    "result-analysis.json": "7bfdf3094c46ae77180eacea607c31bade37843de6f27d458441806effc1924a",
+    "browser-result.json": "a882afef0fa7560ab74b825565723e09e9e8305e7e3b5b23b5697a5d8fa82e2c",
+    "capacity-envelope-v2.json": "f8e139009288428ff85450b20b6b3002873795e3e9c13f4399d1a8204314f69c",
+    "reference-binding-v2.json": "bb9e0dbf57a4f9a9fa86404e6f22589874a57d8bdf2b6873aba5a9c7385a3e13",
+    "capacity-execute.jsonl": "69f5cc96fffdae697f414a50207b2b168f0e78530aacc1d74d1dc317289f0733",
+    "readback-terminal.json": "76bf5a187e192654bc8fd17531d9ebeb31f31615f9fc5043b52f976681520cf2",
+    "supplier-logs-direct.json": "b75906e306078c2ac8edb77f5ec27011dad26432ea0b091ec039fd78e34c9db7",
+    "supplier-currency-settings.json": "4e8bce3d75101aaa7033f059d2cf7e3b2e5470ed4702f3a2069de90257cafe98"
+  },
+  "private_evidence_location": "existing commercial-production-readiness recovery group / fallback-model-evidence / rc42-mode-comparison",
+  "limitations": [
+    "One paired known regression, not independent customer or blind acceptance.",
+    "All original drafts retained. Review saves were unchanged technical copies, not actual human correction.",
+    "Supplier exact request matching is not an invoice; one failed call and embedding debit remain unknown.",
+    "Real browser read recovery does not prove generation completing during browser offline.",
+    "Original 160 task capacity is a separate execution and not approved by this comparison."
+  ]
+}
