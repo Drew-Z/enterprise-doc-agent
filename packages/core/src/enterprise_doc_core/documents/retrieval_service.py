@@ -8,7 +8,7 @@ from time import perf_counter
 from typing import Any
 from uuid import UUID, uuid4
 
-from sqlalchemy import desc, func, select
+from sqlalchemy import Select, desc, func, select, union_all
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from enterprise_doc_core.billing.errors import UsageError
@@ -268,33 +268,37 @@ class HybridRetrievalService:
     ) -> tuple[RetrievalCandidate, ...]:
         ts_query = func.websearch_to_tsquery("simple", query)
         rank = func.ts_rank_cd(DocumentChunk.search_vector, ts_query)
-        candidates = await self._execute_keyword_recall(
+        statement = self._keyword_statement(
             tenant_id=tenant_id,
             actor_id=actor_id,
             document_version_id=document_version_id,
             ts_query=ts_query,
             rank=rank,
         )
-        if candidates:
-            return candidates
-
         # Natural-language questions often contain words absent from the
-        # document. Retry with meaningful terms so exact lexical overlap can
-        # still complement semantic/vector recall.
+        # document. Evaluate the meaningful-term fallback only when the scoped
+        # primary recall is empty, within the same snapshot and round trip.
         fallback_query = self._keyword_fallback_query(query)
-        if fallback_query is None:
-            return ()
-        fallback_ts_query = func.websearch_to_tsquery("simple", fallback_query)
-        fallback_rank = func.ts_rank_cd(DocumentChunk.search_vector, fallback_ts_query)
-        return await self._execute_keyword_recall(
-            tenant_id=tenant_id,
-            actor_id=actor_id,
-            document_version_id=document_version_id,
-            ts_query=fallback_ts_query,
-            rank=fallback_rank,
-        )
+        if fallback_query is not None:
+            primary = statement.cte("primary_keyword_recall").prefix_with("MATERIALIZED")
+            fallback_ts_query = func.websearch_to_tsquery("simple", fallback_query)
+            fallback_rank = func.ts_rank_cd(DocumentChunk.search_vector, fallback_ts_query)
+            fallback = self._keyword_statement(
+                tenant_id=tenant_id,
+                actor_id=actor_id,
+                document_version_id=document_version_id,
+                ts_query=fallback_ts_query,
+                rank=fallback_rank,
+            ).where(~select(primary.c.id).exists())
+            recalled = union_all(select(primary), fallback).subquery()
+            statement = select(recalled).order_by(
+                desc(recalled.c.rank_score), recalled.c.chunk_index
+            )
+        async with self.session_factory() as session:
+            rows = (await session.execute(statement)).all()
+        return tuple(self._candidate_from_row(row, score=float(row.rank_score)) for row in rows)
 
-    async def _execute_keyword_recall(
+    def _keyword_statement(
         self,
         *,
         tenant_id: UUID,
@@ -302,10 +306,11 @@ class HybridRetrievalService:
         document_version_id: UUID,
         ts_query: Any,
         rank: Any,
-    ) -> tuple[RetrievalCandidate, ...]:
+    ) -> Select[Any]:
         statement = (
             select(
                 DocumentChunk.id,
+                DocumentChunk.chunk_index,
                 DocumentChunk.tenant_id,
                 DocumentChunk.document_version_id,
                 DocumentChunk.generation_id,
@@ -344,9 +349,7 @@ class HybridRetrievalService:
             statement = statement.where(
                 DocumentIngestionGeneration.embedding_model == self.embedding_model
             )
-        async with self.session_factory() as session:
-            rows = (await session.execute(statement)).all()
-        return tuple(self._candidate_from_row(row, score=float(row.rank_score)) for row in rows)
+        return statement
 
     @classmethod
     def _keyword_fallback_query(cls, query: str) -> str | None:

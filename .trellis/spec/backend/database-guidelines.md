@@ -157,6 +157,28 @@ reservation release, both table constraint failures, caller rollback, commit ack
 loss, same-key contention and last-slot contention behind a real Tenant lock. These
 local query budgets do not prove public latency or production capacity.
 
+## Keyword Recall Round Trips
+
+`HybridRetrievalService` evaluates primary full-text recall and its conditional
+meaningful-term OR fallback in one PostgreSQL statement. Materialize only the
+already filtered, ranked, top-K primary result. The fallback repeats the same
+tenant/actor/version/generation/model/dimension predicates and runs only when
+that scoped primary CTE is empty. A partial primary result must not be filled
+with fallback matches. Each branch keeps rank descending and chunk-index ties;
+the union requires an explicit outer ordering before RRF consumes its ranks.
+
+Keep embedding dispatch after keyword recall, with the existing metering guard
+and original durable reservation validation. Vector recall stays independent;
+do not materialize all document embeddings or share an AsyncSession concurrently.
+One statement gives both keyword branches the same database snapshot. This does
+not prove a deployed latency SLO or final-candidate capacity.
+
+An owned PostgreSQL schema exercises public `retrieve` with an external controlled
+embedding boundary, counts every SQL statement (including WITH), and verifies two
+recall round trips even when the primary query is empty. Cover primary preference,
+top-K/rank ties/metadata, empty and stopword queries, both branches' scope filters,
+and existing real provider-HTTP metering/denial tests. Remove only the owned schema.
+
 ## Proven Examples
 
 - `infra/k8s/overlays/single-node-4c4g/resources-patch.yaml`
@@ -171,3 +193,4 @@ local query budgets do not prove public latency or production capacity.
 - `tests/billing/test_provider_dispatch_roundtrips_integration.py`
 - `tests/billing/test_reservation_batch_integration.py`
 - `tests/presales/test_presales_admission_batch_integration.py`
+- `tests/jobs/test_keyword_recall_roundtrips_integration.py`
