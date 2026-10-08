@@ -93,6 +93,45 @@ def _json_blob(archive: tarfile.TarFile, digest: object) -> dict[str, Any]:
     return value
 
 
+def _validate_empty_config_attestation(
+    archive: tarfile.TarFile,
+    manifest: dict[str, Any],
+    config: dict[str, Any],
+    image_config: dict[str, Any],
+    image_digests: Sequence[str],
+) -> None:
+    """Recognize BuildKit OCI artifacts without exempting unknown runtime content."""
+    layers = manifest.get("layers")
+    if (
+        manifest.get("artifactType") != "application/vnd.docker.attestation.manifest.v1+json"
+        or manifest.get("mediaType") != "application/vnd.oci.image.manifest.v1+json"
+        or image_config != {}
+        or config.get("digest") != "sha256:" + hashlib.sha256(b"{}").hexdigest()
+        or config.get("size") != 2
+        or config.get("data", "e30=") != "e30="
+        or not isinstance(layers, list)
+        or not layers
+        or any(layer.get("mediaType") != "application/vnd.in-toto+json" for layer in layers)
+    ):
+        raise ImageCacheSafetyError("unsupported OCI empty-config attestation")
+    subject = manifest.get("subject")
+    if (
+        not isinstance(subject, dict)
+        or subject.get("mediaType") != "application/vnd.oci.image.manifest.v1+json"
+        or subject.get("digest") not in image_digests
+        or type(subject.get("size")) is not int
+        or _blob(archive, subject.get("digest")).size != subject["size"]
+    ):
+        raise ImageCacheSafetyError("OCI attestation subject is missing or mismatched")
+    runtime = _json_blob(archive, subject["digest"])
+    runtime_config = runtime.get("config")
+    if not isinstance(runtime_config, dict):
+        raise ImageCacheSafetyError("OCI attestation subject has no runtime config")
+    platform = _json_blob(archive, runtime_config.get("digest"))
+    if platform.get("os") != "linux" or platform.get("architecture") != "amd64":
+        raise ImageCacheSafetyError("OCI attestation subject is not a supported runtime image")
+
+
 def archive_footprint(
     path: Path,
     image_digests: Sequence[str],
@@ -158,6 +197,11 @@ def archive_footprint(
                     item = _blob(archive, descriptor.get("digest"))
                     if type(descriptor.get("size")) is not int or item.size != descriptor["size"]:
                         raise ImageCacheSafetyError("OCI content size mismatch")
+                if config.get("mediaType") == "application/vnd.oci.empty.v1+json":
+                    _validate_empty_config_attestation(
+                        archive, manifest, config, image_config, image_digests
+                    )
+                    continue  # Content/temporary files are counted; artifacts have no snapshot.
                 if image_config.get("os") == image_config.get("architecture") == "unknown":
                     continue  # Attestation payloads have no runtime snapshot.
                 if image_config.get("os") != "linux" or image_config.get("architecture") != "amd64":

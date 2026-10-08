@@ -1,5 +1,9 @@
 # 当前环境验收设计
 
+## 2026-10-08 OCI空配置证明
+
+在现有archive_footprint完成所有内容hash和描述符size核对后，识别BuildKit的application/vnd.docker.attestation.manifest.v1+json。其config必须为application/vnd.oci.empty.v1+json、精确两字节空JSON及相符inline data；layers非空且均为application/vnd.in-toto+json，subject摘要必须属于本次归档描述符、mediaType/size相符且指向linux/amd64运行清单。只有这个明确分支跳过snapshot计算，内容和归档/inode照常计入。旧unknown/unknown证明兼容不扩展，未知空配置仍拒绝。执行器修复的源码与已有rc.42应用934d246分开绑定，不更改签名制品或以重打标签替代。
+
 ## 2026-10-08 E2：独立原子扩展窗口
 
 新增专用schema_version=4计划，仅允许0032→0034、固定两份新增列迁移；原四镜像、配置、凭据、资源和Namespace批准全部不变。这是schema-only窗口，迁移后先恢复rc.40，再另用E1精确0034镜像计划发布新候选。固定迁移正文与Alembic离线0032:0034 SQL核对，禁止输入任意SQL或schema downgrade；执行包固定七个模块的摘要。

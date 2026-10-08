@@ -50,6 +50,15 @@ missing facts or unsupported targets are rejected, never treated as zero usage.
   gzip/plain-tar layers and expanded `diff_id` before normalization. Partial relay
   archives, sparse layers and unsupported encodings are rejected. Count expanded
   OCI envelope size for normalization, not only compressed transport bytes.
+- BuildKit can encode attestations as `application/vnd.docker.attestation.manifest.v1+json`
+  with `application/vnd.oci.empty.v1+json` config containing exactly `{}`. Require
+  matching inline config when present, only in-toto payload layers, and a same-archive
+  linux/amd64 runtime subject with matching descriptor digest/type/size. Count all
+  artifact content, inodes and normalized copies, but no runtime snapshot. Unknown
+  empty configs, runtime layers disguised as proof, and unbound subjects reject
+  before temporary files or containerd commands. Legacy unknown/unknown configs
+  retain their existing compatibility path; missing platform fields alone never
+  establish that arbitrary content is a non-runtime artifact.
 - Sum the full batch's content, snapshots and temporary copies. Shared layers may
   be counted repeatedly. Cache allocation includes 25% headroom, 64 MiB metadata
   and 4096 metadata inodes in addition to content-store and snapshot file counts;
@@ -82,6 +91,8 @@ missing facts or unsupported targets are rejected, never treated as zero usage.
 | Insufficient bytes/inodes, stale sample, policy/spec/boot/device drift | Reject the next write; retain failure |
 | Redis/init image missing or not unpacked, stale CRI alias | Reject prewarm even when four application names exist |
 | Original cache disappears after import | Batch fails; do not publish a passed receipt |
+| Exact BuildKit empty-config artifact bound to a supported runtime | Count proof content/inodes and temporary bytes; no artifact snapshot |
+| Unknown empty config, runtime payload type or mismatched artifact subject | Reject before temporary archive or cache commands |
 
 ## Good/Base/Bad Cases
 
@@ -93,6 +104,9 @@ Good: pass all four candidate archives in one reviewed batch and retain all thre
 guard receipts. Base: produce an offline plan, which does not prove live capacity.
 Bad: import archives independently to hide aggregate peak usage or reuse the old
 partial-blob transport outside this complete-archive guard.
+Good: a verified empty-config BuildKit proof accompanies its amd64 runtime.
+Base: the earlier unknown/unknown proof format remains supported.
+Bad: skip every config lacking platform fields or exclude proof files from capacity.
 
 ## Tests Required
 
@@ -100,6 +114,9 @@ Public receiver tests exercise aggregate refusal with zero commands/files, real
 gzip layer/diff-id validation, outer envelope expansion, original Redis/init cache,
 stale/mismatched aliases, policy changes, separate full node disks, post-import
 cache loss, unknown import results and shared deadlines through system boundaries.
+Include current OCI empty-config attestations, legacy proofs and malformed artifact
+type/config/payload/subject cases. Verify that proof bytes/inodes remain budgeted
+and that unsupported artifacts create no temporary archive or import command.
 Actual release evidence must additionally retain Pod startup/readiness and image
 identity. Local tests and a live refusal do not establish a successful new release.
 
@@ -108,6 +125,9 @@ identity. Local tests and a live refusal do not establish a successful new relea
 Wrong: a successful `crictl inspecti` or image-list count proves the import is usable.
 Correct: reconcile approved digest, CRI aliases and containerd references, then
 separately verify actual container startup without altering the approved plan.
+Wrong: an OCI config without an OS must be safe to ignore.
+Correct: recognize the exact artifact contract and bound subject, retaining all
+content and temporary-allocation accounting before excluding only its snapshot.
 
 ## Proven Examples
 

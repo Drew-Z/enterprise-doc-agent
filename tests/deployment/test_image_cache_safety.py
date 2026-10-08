@@ -138,6 +138,155 @@ def test_normalization_budget_counts_expanded_outer_archive(tmp_path: Path) -> N
     assert footprint.normalized_archive_bytes >= 20 * 1024**2
 
 
+def artifact_archive(tmp_path: Path, fault: str | None = None) -> receiver.OciImportPlan:
+    runtime = layer_archive(tmp_path)
+    with tarfile.open(runtime.archive) as archive:
+        blobs = {}
+        for member in archive.getmembers():
+            stream = archive.extractfile(member)
+            assert stream is not None
+            blobs[member.name] = stream.read()
+    index = json.loads(blobs["index.json"])
+    subject = dict(index["manifests"][0])
+
+    def blob(content: bytes, kind: str) -> dict[str, object]:
+        digest = "sha256:" + hashlib.sha256(content).hexdigest()
+        blobs["blobs/sha256/" + digest[7:]] = content
+        return {"mediaType": kind, "digest": digest, "size": len(content)}
+
+    if fault == "subject_platform":
+        runtime_manifest = json.loads(blobs["blobs/sha256/" + subject["digest"][7:]])
+        runtime_config = json.loads(
+            blobs["blobs/sha256/" + runtime_manifest["config"]["digest"][7:]]
+        )
+        runtime_config["architecture"] = "arm64"
+        runtime_manifest["config"] = blob(
+            json.dumps(runtime_config).encode(), "application/vnd.oci.image.config.v1+json"
+        )
+        subject = blob(
+            json.dumps(runtime_manifest).encode(), "application/vnd.oci.image.manifest.v1+json"
+        )
+        index["manifests"][0] = subject
+
+    config = blob(
+        b"{}" if fault != "nonempty_config" else b'{"rootfs":{}}',
+        "application/vnd.oci.empty.v1+json",
+    )
+    config["data"] = "e30=" if fault != "inline_config" else "e10="
+    layer = blob(
+        json.dumps({"predicate": {"sbom": "x" * 32768}}).encode(),
+        "application/vnd.in-toto+json"
+        if fault != "runtime_layer"
+        else "application/vnd.oci.image.layer.v1.tar",
+    )
+    if fault == "subject_digest":
+        subject["digest"] = "sha256:" + "0" * 64
+    elif fault == "subject_size":
+        subject["size"] += 1
+    elif fault == "subject_type":
+        subject["mediaType"] = "application/vnd.oci.image.index.v1+json"
+    artifact = {
+        "schemaVersion": 2,
+        "mediaType": "application/vnd.oci.image.manifest.v1+json",
+        "artifactType": "application/vnd.docker.attestation.manifest.v1+json"
+        if fault != "artifact_type"
+        else "application/unknown",
+        "config": config,
+        "layers": [layer] if fault != "no_layers" else [],
+        "subject": subject,
+    }
+    index["manifests"].append(blob(json.dumps(artifact).encode(), artifact["mediaType"]))
+    blobs["index.json"] = json.dumps(index).encode()
+    path = tmp_path / "artifact.oci.tar"
+    with tarfile.open(path, "w") as archive:
+        for name, content in blobs.items():
+            info = tarfile.TarInfo(name)
+            info.size = len(content)
+            archive.addfile(info, io.BytesIO(content))
+    return receiver.prepare_import_plan(
+        archive=path,
+        expected_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
+        base_name="artifact",
+        containerd_cli="k3s",
+    )
+
+
+def test_oci_empty_config_attestation_is_counted_without_runtime_snapshot(tmp_path: Path) -> None:
+    plan = artifact_archive(tmp_path)
+    runner = Containerd([plan])
+    report = receiver.execute_import_batch(
+        [plan], run=runner.run, probe=lambda _: archive_fixture().healthy_cache_state()
+    )
+    assert report["status"] == "passed"
+    footprint = safety.archive_footprint(plan.archive, plan.descriptor_digests)
+    runtime = receiver.prepare_import_plan(
+        archive=tmp_path / "layers.oci.tar",
+        expected_sha256=hashlib.sha256((tmp_path / "layers.oci.tar").read_bytes()).hexdigest(),
+        base_name="runtime",
+        containerd_cli="k3s",
+    )
+    baseline = safety.archive_footprint(runtime.archive, runtime.descriptor_digests)
+    assert footprint.snapshot_bytes == baseline.snapshot_bytes
+    assert footprint.snapshot_inodes == baseline.snapshot_inodes
+    assert footprint.content_bytes > baseline.content_bytes + 32768
+    assert footprint.content_inodes > baseline.content_inodes
+    assert footprint.normalized_archive_bytes > baseline.normalized_archive_bytes + 32768
+    assert all(not path.exists() for path in runner.archives)
+
+
+@pytest.mark.parametrize(
+    "fault",
+    [
+        "nonempty_config",
+        "inline_config",
+        "runtime_layer",
+        "subject_digest",
+        "subject_size",
+        "subject_type",
+        "artifact_type",
+        "no_layers",
+        "subject_platform",
+    ],
+)
+def test_unknown_or_mismatched_oci_artifact_never_writes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, fault: str
+) -> None:
+    plan = artifact_archive(tmp_path, fault)
+    runner = Containerd([plan])
+
+    def no_temp(*args: object, **kwargs: object) -> None:
+        pytest.fail("invalid OCI artifact created temporary files")
+
+    monkeypatch.setattr(receiver.tempfile, "TemporaryDirectory", no_temp)
+    with pytest.raises(receiver.StagingOciImportError, match=r"attestation|runtime images"):
+        receiver.execute_import_batch(
+            [plan], run=runner.run, probe=lambda _: archive_fixture().healthy_cache_state()
+        )
+    assert runner.commands == []
+
+
+def test_valid_attestation_content_can_exhaust_the_batch_budget(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    plan = artifact_archive(tmp_path)
+    runtime = tmp_path / "layers.oci.tar"
+    baseline = safety.archive_footprint(runtime, receiver.image_descriptor_digests(runtime))
+    state = archive_fixture().healthy_cache_state()
+    budget = safety.validate_capacity(state, [baseline])["filesystems"][0]
+    for key in ("cache_filesystem", "temporary_filesystem", "node_filesystem"):
+        state[key]["available_bytes"] = budget["reserve_bytes"] + budget["required_bytes"]
+    safety.validate_capacity(state, [baseline])
+
+    def no_temp(*args: object, **kwargs: object) -> None:
+        pytest.fail("unbudgeted attestation created temporary files")
+
+    monkeypatch.setattr(receiver.tempfile, "TemporaryDirectory", no_temp)
+    runner = Containerd([plan])
+    with pytest.raises(receiver.StagingOciImportError, match="space"):
+        receiver.execute_import_batch([plan], run=runner.run, probe=lambda _: state)
+    assert runner.commands == []
+
+
 def test_batch_has_no_import_when_only_one_archive_fits(tmp_path: Path) -> None:
     fixture_path = Path(__file__).with_name("test_import_staging_oci_archive.py")
     spec = importlib.util.spec_from_file_location("cache_archive_fixture", fixture_path)
