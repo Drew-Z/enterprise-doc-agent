@@ -1,5 +1,9 @@
 # 当前环境验收设计
 
+## 2026-10-09 TIFF补丁版本约束
+
+在Web runtime已有apk upgrade及apk add步骤中并列要求tiff>=4.7.2-r0；改变RUN内容使旧缓存安全升级层不能直接满足新构建。保留pcre2>=10.49-r0及基础摘要，不引入未审查仓库、例外清单或扫描豁免。以失败SARIF为红证据，用实际镜像构建、SBOM及同HIGH/CRITICAL扫描验证修复；已有部署契约回归验证非root/代理/来源配置保持。生产镜像替换必须在原rc.42业务批次收尾后按新候选正常制备、发布及复验，不替换原测量身份。
+
 ## 2026-10-08 ClawEmail云端告警
 
 在原deliverNotification边界增加显式MAIL_PROVIDER=clawemail，默认cloudflare以兼容原部署；MAIL_FROM为唯一uid，MAIL_TO仍为固定收件者，密钥仅来自CLAWEMAIL_API_KEY secret。使用官方node-sdk 0.2.4的token、Coremail compose continue/deliver与searchMessages协议，不安装本机常驻进程。
