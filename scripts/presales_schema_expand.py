@@ -133,6 +133,7 @@ class PsqlSession:
             self.overflow.set()
 
     def __enter__(self) -> PsqlSession:
+        deadline = self.clock() + self.connect_timeout
         try:
             self.process = subprocess.Popen(
                 [
@@ -157,9 +158,33 @@ class PsqlSession:
                 target=self._read, args=(self.process.stdout,), daemon=True
             )
             self.reader.start()
+            # Session poolers may ignore PGOPTIONS. Establish and read back the
+            # limits over this connection before taking any migration lock.
+            settings = self.query(
+                "SET statement_timeout='10000ms';\n"
+                "SET lock_timeout='5000ms';\n"
+                "SET idle_session_timeout='600000ms';\n"
+                f'SET search_path TO "{self.schema}";\n'
+                "SELECT json_build_object(\n"
+                "'statement_timeout', (SELECT setting::int FROM pg_settings "
+                "WHERE name='statement_timeout'),\n"
+                "'lock_timeout', (SELECT setting::int FROM pg_settings "
+                "WHERE name='lock_timeout'),\n"
+                "'idle_session_timeout', (SELECT setting::int FROM pg_settings "
+                "WHERE name='idle_session_timeout'),\n"
+                "'schema', current_schema());",
+                deadline - self.clock(),
+            )
+            if json.loads(settings) != {
+                "statement_timeout": 10000,
+                "lock_timeout": 5000,
+                "idle_session_timeout": 600000,
+                "schema": self.schema,
+            }:
+                raise GuardError("database session limits were not established")
             self.query(
-                f'SET search_path TO "{self.schema}";\nSELECT pg_advisory_lock({DATABASE_LOCK});',
-                self.connect_timeout,
+                f"SELECT pg_advisory_lock({DATABASE_LOCK});",
+                deadline - self.clock(),
             )
             return self
         except Exception:

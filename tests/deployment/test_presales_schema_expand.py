@@ -277,3 +277,36 @@ def test_schema_replay_refuses_completed_migration_without_writes():
     with pytest.raises(GuardError):
         cluster.apply(100)
     assert not boundary.writes and database.expansions == 0
+
+
+@pytest.mark.parametrize(
+    "mismatch", ["statement_timeout", "lock_timeout", "idle_session_timeout", "schema", "json"]
+)
+def test_psql_session_rejects_unverified_session_settings(mismatch):
+    from scripts.presales_schema_expand import PsqlSession
+
+    settings = {
+        "statement_timeout": 10000,
+        "lock_timeout": 5000,
+        "idle_session_timeout": 600000,
+        "schema": "public",
+    }
+    settings[mismatch] = "private-server-detail"
+    reply = "private-server-detail" if mismatch == "json" else json.dumps(settings)
+    boundary = (
+        "import sys\n"
+        "for line in sys.stdin:\n"
+        " if line.startswith('\\\\q'): break\n"
+        " if line.startswith('\\\\echo '):\n"
+        f"  print({reply!r}, flush=True)\n"
+        "  print(line.split(maxsplit=1)[1].strip(), flush=True)\n"
+    )
+    session = PsqlSession(
+        "postgresql://local:local@127.0.0.1:1/local",
+        command=(sys.executable, "-u", "-c", boundary),
+    )
+    with pytest.raises(GuardError, match="database session") as failure:
+        with session:
+            pytest.fail("unverified session was allowed to own a migration window")
+    assert "private-server-detail" not in str(failure.value)
+    assert session.process is None

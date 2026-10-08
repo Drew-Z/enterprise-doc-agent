@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import shutil
+import subprocess
 import time
 from importlib import import_module
 from pathlib import Path
@@ -63,6 +64,30 @@ def psql_session(database, **overrides):
         command.extend(["--env", name])
     command.extend(["enterprise-doc-agent-postgres-1", "psql"])
     return PsqlSession(url, schema=database.schema, command=tuple(command), **overrides)
+
+
+async def test_session_enforces_limits_when_pooler_ignores_startup_options(
+    schema_database, monkeypatch
+):
+    popen = subprocess.Popen
+
+    def without_startup_options(*args, **kwargs):
+        environment = dict(kwargs["env"])
+        environment["PGOPTIONS"] = (
+            "-c statement_timeout=0 -c lock_timeout=0 -c idle_session_timeout=0"
+        )
+        return popen(*args, **(kwargs | {"env": environment}))
+
+    monkeypatch.setattr(subprocess, "Popen", without_startup_options)
+    with psql_session(schema_database) as session:
+        for setting, expected in [
+            ("statement_timeout", "10s"),
+            ("lock_timeout", "5s"),
+            ("idle_session_timeout", "10min"),
+        ]:
+            assert session.query("SHOW " + setting + ";", 5) == expected
+        assert session.query("SELECT current_schema();", 5) == schema_database.schema
+        assert session.revision(5) == "20261005_0032"
 
 
 async def test_fixed_expansion_commits_both_revisions_and_preserves_original_tables(

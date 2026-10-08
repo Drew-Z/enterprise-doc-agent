@@ -67,6 +67,12 @@ Successful image listings do not alone establish container startup readiness.
    idle checks and the single migration transaction use that connection. All CLI
    calls are bounded; database stdout is capped at 64 KiB and raw stderr is discarded.
    Both revisions commit atomically; recovery never downgrades or resends the migration.
+   Before acquiring the lock, explicitly SET statement_timeout=10000ms,
+   lock_timeout=5000ms, idle_session_timeout=600000ms and the exact search_path.
+   Read pg_settings millisecond values and current_schema back on that connection;
+   reject missing, malformed or differing values. PGOPTIONS alone is insufficient:
+   the live session pooler ignored it. Setup, readback and lock acquisition share
+   one connect_timeout deadline, including on recovery.
 4. Validation/errors: unknown/0033 revisions, partial columns, missing/wrong constraints,
    pending business or resource drift reject. Lost acknowledgement closes the old
    session; recovery must acquire the same lock before cluster writes. Lock failure
@@ -80,6 +86,9 @@ Successful image listings do not alone establish container startup readiness.
    COMMIT, advisory-lock contention, schema drift, pending Jobs, output/time bounds,
    and Switch recovery after a committed migration plus lost application-start reply.
    Test schemas and explicit temporary state directories are removed in finally/context exits.
+   Also override startup options at the subprocess boundary against real PostgreSQL
+   and assert effective limits/schema. A process boundary returning bad settings must
+   be closed with a credential-free error before the window can begin.
 7. Wrong/correct: a read on another connection cannot fence a late COMMIT. Acquire
    the same session lock first, reconcile a known complete schema, then restore original
    applications under unchanged deadlines. Actual signed-image startup and live
