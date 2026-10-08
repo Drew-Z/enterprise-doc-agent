@@ -1,6 +1,27 @@
 # Cloudflare 告警启用与验收
 
-2026-09-29 当前更新：主 Worker 已切换至 `6380c625-45d0-4eb8-9a14-2c62987675b3`，状态键 `operations-live-v1`，增加队列/备份心跳与 watchdog 新鲜度；独立调度 Worker `docagent-ops-watchdog` 为 `9e2ec181-06c3-4a20-8f5d-614c35e0d579`。两者先观察再启用 notify，分钟 cron、D1 和原限定收件人均已读回。下文 9 月 28 日版本和实收为历史阶段，仍保留。新增范围与实际限制见[最终验收入口](final-project-acceptance.md)。
+## 2026-10-09 当前运行配置
+
+用户已确认 Outlook 收到唯一测试 `CLAW-20261008-01`。两个正式 Worker 均已切换到 ClawEmail，使用 `MAIL_PROVIDER=clawemail`、`MAIL_FROM=biau4z@claw.163.com` 和 `CLAWEMAIL_API_KEY` secret，收件人仍为原来固定的运维地址。分钟 cron 在 Cloudflare 执行，不依赖本机在线；不增加任意收件人能力。
+
+| Worker | 当前版本 | 状态键 |
+|---|---|---|
+| `docagent-ops-monitor` | `10ef1efb-71d9-4cec-9bcb-1d17c0740f45` | `operations-live-v1` |
+| `docagent-ops-watchdog` | `13415854-05ca-4e4f-86ec-fe0ce7c70f04` | `watchdog-live-v1` |
+
+运行源码绑定 `7baac1b998566fdf215eb640abcde9376792f2fe`，兼容 Coremail 实际返回的 `text/x-json;charset=UTF-8`；认证端仍要求 `application/json`。严格 JSON、64KiB 上限、共用 10 秒截止、D1 先 claim、一次 deliver 和 unknown 不重试保持。103 项监控检查及对应 Quality/Container CI 通过。
+
+2026-10-08 21:04 UTC 切换后，五次观测覆盖 21:04、21:05、21:06 三个自然分钟，两监控均 ready，51 条历史通知完整保留，没有新通知。独立云端探测在 589 毫秒完成认证及同一已发送邮件回执核对，共两次 API 请求、零发信。单封实际收件、云端只读路径、自然调度分别留证，详见[脱敏验收记录](clawemail-activation-validation.json)。
+
+回滚恢复组保存切换前源码、设置、部署引用和调度；原 `MAIL` binding 保留供显式恢复，不能自动回退或重放 unknown。旧发件域仍未证明解除 Spamhaus DBL，恢复旧通道不代表恢复 Outlook 可达性。遇到问题先核对 D1 状态、Worker 版本及脱敏错误，不通过重复发送判断是否成功；凭据只能通过既定 secret 流程更换，不写入仓库或日志。
+
+本轮五个临时 Worker 和三个独立 D1 均已删除并核对缺席，原探测超时、格式拒绝及定时窗口无结果保留。没有注入新的事故或发送新的故障/恢复邮件；实际值班处理、独立审核与客户 UAT 继续开放。此前备份延期保持，邮件接通不能替代备份验收。
+
+## 历史接线与授权
+
+以下内容保留各自时点，当前配置以上节为准。
+
+2026-09-29 更新：主 Worker 已切换至 `6380c625-45d0-4eb8-9a14-2c62987675b3`，状态键 `operations-live-v1`，增加队列/备份心跳与 watchdog 新鲜度；独立调度 Worker `docagent-ops-watchdog` 为 `9e2ec181-06c3-4a20-8f5d-614c35e0d579`。两者先观察再启用 notify，分钟 cron、D1 和原限定收件人均已读回。下文 9 月 28 日版本和实收为历史阶段，仍保留。新增范围与实际限制见[最终验收入口](final-project-acceptance.md)。
 
 ## 现有邮箱可以复用
 

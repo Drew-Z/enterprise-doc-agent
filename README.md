@@ -24,7 +24,7 @@
 
 DocAgent 面向售前、安全问卷和企业知识核验场景。上传产品说明、制度或技术文档后，选择已就绪的资料建立响应表，逐条生成带原文引用的草稿，人工确认判断与措辞，再导出 CSV。需要多步处理时，可以使用带工具调用、执行记录和审批环节的 Agent 工作流。
 
-**当前阶段：公开演示与受邀公网试点，正在完成受邀企业正式版。** 2026-10-09 03:37（北京时间）独立核验运行 [v0.1.45-rc.43](https://github.com/Drew-Z/enterprise-doc-agent/tree/v0.1.45-rc.43)，应用与执行器源码 `40f8de0`、数据库 `0034`、售前后台并发2，TIFF安全修复4.7.2-r0已落地。rc.42→rc.43→rc.42→rc.43实际往返通过，回退85.442秒，配置、凭据及业务历史保持。rc.42完整160项为159成功/1超时失败，上传、检索、受理p95仍未达原目标；真实人员审核、通知实收和客户UAT尚未完成。详情见[发布回退](docs/ops/rc43-release-rollback-validation.json)、[容量终态](docs/ops/rc42-full-capacity-validation.json)、[最终验收入口](docs/ops/final-project-acceptance.md)与[正式交付计划](docs/ops/commercial-production-plan.md)。
+**当前阶段：公开演示与受邀公网试点，正在完成受邀企业正式版。** 2026-10-09 03:37（北京时间）独立核验运行 [v0.1.45-rc.43](https://github.com/Drew-Z/enterprise-doc-agent/tree/v0.1.45-rc.43)，应用与执行器源码 `40f8de0`、数据库 `0034`、售前后台并发2，TIFF安全修复4.7.2-r0已落地。rc.42→rc.43→rc.42→rc.43实际往返通过，回退85.442秒，配置、凭据及业务历史保持。rc.42完整160项为159成功/1超时失败，上传、检索、受理p95仍未达原目标；真实人员审核、值班处理记录和客户UAT尚未完成。ClawEmail唯一测试已获用户确认Outlook实收，两个外部告警Worker已切换并通过自然调度观察，旧域未宣称解除DBL。详情见[邮件接入](docs/ops/clawemail-activation-validation.json)、[发布回退](docs/ops/rc43-release-rollback-validation.json)、[容量终态](docs/ops/rc42-full-capacity-validation.json)、[最终验收入口](docs/ops/final-project-acceptance.md)与[正式交付计划](docs/ops/commercial-production-plan.md)。
 
 **公开演示已有完整公网流程的历史验收。** v0.1.43 覆盖 TXT 批量上传、解析、外部生成、原文引用、人工复核和 CSV；手机布局、访客隔离、刷新及退出也有实测。rc.1 在实际主机完成一次合成业务与同键重放。它们保留各自的版本和范围，不能替代最新候选的完整验收。见[演示手册](docs/ops/public-pilot-runbook.md#公开演示企业)。
 
@@ -304,7 +304,8 @@ kubectl kustomize infra/k8s/overlays/single-node-4c4g
 - [x] 独立原子扩展及 rc.42→rc.40→rc.42 实际回退往返通过，完整保留 0034。
 - [ ] 修正并验收原模型原子命题遗漏，完成两档真实质量、完成率、时延和费用对照。
 - [ ] 同一候选完成原 160 项容量、业务质量、浏览器恢复及新增费用验证。
-- [ ] 处理 Outlook/Spamhaus 拒收，取得实际收件、值班反馈、独立审核及受邀客户 UAT。
+- [x] ClawEmail替代链路取得用户确认的Outlook实收并启用云端告警；旧发件域DBL记录未宣称解除。
+- [ ] 完成实际告警值班处理、独立审核及受邀客户 UAT。
 
 备份、独立故障域恢复及 RPO/RTO 按已批准决定延期，明确为未验收；本候选发布回退已有实测，仍需真实发布审核。公开支付和自助订阅留到后续。两份获准历史清理共移除 148 个缓存引用；保留 rc.26–29、rc.36–40 和 Redis，rc.42 完整预热与切换已通过。后续操作继续检查新鲜空间和完整缓存，无额外历史删除授权。
 

@@ -5,7 +5,10 @@
 - [x] 用户确认已收到并提供Outlook截图，发件人与唯一事件CLAW-20261008-01匹配；实收回执独立保存，不改写原发送时的unconfirmed记录，不补发测试。
 - [x] 云端原探测完成认证及两次读取后拒绝响应；本地同一发送记录核对成功，实际Coremail响应为HTTP200、text/x-json;charset=UTF-8。原实现仅接受application/json，真实workerd回归先复现三项失败，原失败保留。
 - [x] 仅固定Coremail代理兼容text/x-json；认证仍要求application/json，UTF-8/严格JSON、64KiB、共享10秒、固定身份、一次deliver及旧unknown不重放保持。完整103项监控检查、lint、类型与文档契约通过。
-- [ ] 新精确提交CI、云端有界只读路径核验及正式两Worker切换/调度观察；先前连接超时和cron期限内未触发均留证，其临时Worker/独立D1已清理。未切换正式监控，旧域未宣称解除DBL，总A–F目标保持。
+- [x] 精确7baac1b的Quality 37841758676、Container 37841758701通过；修复后的云端只读探测589毫秒完成认证及同一Sent回执核对，共两次API请求、零发信。
+- [x] 21:04 UTC两正式Worker切换并逐项读回源码/配置/调度；五份自然观察覆盖三个分钟，两监控ready、51条历史通知保持、零新通知。收件人、监控键和旧MAIL绑定保持，没有自动回退或unknown重放。
+- [x] 五个临时Worker及三个独立D1删除且缺席核验通过；原连接超时、格式拒绝及两次cron窗口无结果保留。子代理任务正文传递失败，没有有效独立审核结果；本阶段由主代理核对回执。
+- [ ] 实际事故值班处理、独立审核和客户UAT仍需对应证据；旧域未宣称解除DBL，总A–F目标保持。邮件证据见docs/ops/clawemail-activation-validation.json；下列段落保留各历史时点。
 
 恢复点：原集中恢复组clawemail-mime-recovery-20261009.json及clawemail-activation-docs-recovery-20261009.json，精确3b0fb49覆盖修改前内容；历史2,993项差异保持。
 
