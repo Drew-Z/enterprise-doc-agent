@@ -55,6 +55,36 @@ Successful image listings do not alone establish container startup readiness.
    completed expansion first; use this no-migration executor only on exact 0034. Frozen
    reader compatibility does not replace signed-image startup or actual rollback evidence.
 
+## Fixed 0032-to-0034 expansion (local candidate)
+
+1. Scope: the separate `scripts.presales_schema_expand` window expands only the two
+   nullable JSONB columns/checks while retaining every original rc.40 resource.
+2. Signatures: `ExpansionPlan` schema version 4, `presales_schema_expand` kind, exact
+   original/target revisions and fixed migration digest; CLI validate/arm/execute/status,
+   exact plan SHA and seven source-module hashes. No arbitrary SQL or workload delta.
+3. Contract: `PsqlSession` owns one credential-private psql connection and a session
+   advisory lock throughout apply/restore. Version, exact column/constraint shape,
+   idle checks and the single migration transaction use that connection. All CLI
+   calls are bounded; database stdout is capped at 64 KiB and raw stderr is discarded.
+   Both revisions commit atomically; recovery never downgrades or resends the migration.
+4. Validation/errors: unknown/0033 revisions, partial columns, missing/wrong constraints,
+   pending business or resource drift reject. Lost acknowledgement closes the old
+   session; recovery must acquire the same lock before cluster writes. Lock failure
+   is a blocked recovery, never proof that an earlier transaction was not committed.
+5. Cases: good = complete expansion, or original-app recovery on complete 0032/0034;
+   base = older Plan/ReleasePlan still accept only their single exact revision;
+   bad = launch old recovery while another database session may still commit DDL.
+6. Tests: deployment tests compare fixed SQL with actual offline Alembic output,
+   reject scope/source drift and verify cluster ordering/idle races. Real PostgreSQL
+   tests cover rollback at the last version update, missing receipts before/after
+   COMMIT, advisory-lock contention, schema drift, pending Jobs, output/time bounds,
+   and Switch recovery after a committed migration plus lost application-start reply.
+   Test schemas and explicit temporary state directories are removed in finally/context exits.
+7. Wrong/correct: a read on another connection cannot fence a late COMMIT. Acquire
+   the same session lock first, reconcile a known complete schema, then restore original
+   applications under unchanged deadlines. Actual signed-image startup and live
+   migration/rollback remain required; local process/Kubernetes fixtures do not prove them.
+
 On schema `20261005_0032`, `ReleasePlan` defaults to the existing same-image upload
 flag switch. A new image release must explicitly declare `release_kind=images_only`;
 configuration, credentials, pool settings, unrelated approvals and workload specs stay

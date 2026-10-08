@@ -166,6 +166,9 @@ class Plan:
     def accepted_specs(self, expected: dict[str, Any]) -> list[dict[str, Any]]:
         return [expected["spec"]]
 
+    def accepted_revisions(self) -> tuple[str, ...]:
+        return (self.revision,)
+
 
 def kubectl(args: list[str], payload: str | None, timeout: float) -> str:
     result = subprocess.run(
@@ -317,7 +320,7 @@ class Cluster:
                 "enterprise-doc-redis",
             } or any(ref.get("kind") == "Job" for ref in metadata.get("ownerReferences", [])):
                 raise GuardError("unreviewed active pod")
-        if self.revision(self._remaining(deadline)) != self.plan.revision:
+        if self.revision(self._remaining(deadline)) not in self.plan.accepted_revisions():
             raise GuardError("database migration revision changed or is unknown")
         return live, deployments
 
