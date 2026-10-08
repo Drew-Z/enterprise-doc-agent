@@ -198,15 +198,18 @@ async function sendClawEmail(
   signal: AbortSignal, onCancel: (cancel: () => void) => void,
 ): Promise<{ messageId?: string }> {
   const check = () => { if (signal.aborted) throw new Error('deadline_exceeded'); };
-  const post = async (url: string, bearer: string, body: unknown): Promise<Record<string, unknown>> => {
+  const post = async (url: string, bearer: string, body: unknown, coremail = false): Promise<Record<string, unknown>> => {
     check();
     const response = await network(url, {
       method: 'POST', redirect: 'manual', signal,
       headers: { Authorization: 'Bearer ' + bearer, 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify(body),
     });
+    const mediaType = response.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase();
+    // Coremail's live proxy returns text/x-json; authentication still requires
+    // application/json. Both bodies use the same bounded, strict JSON parser.
     if (signal.aborted || response.status !== 200 ||
-        response.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase() !== 'application/json') {
+        (mediaType !== 'application/json' && !(coremail && mediaType === 'text/x-json'))) {
       void response.body?.cancel().catch(() => {});
       throw new Error('claw_response_invalid');
     }
@@ -230,7 +233,7 @@ async function sendClawEmail(
   const call = async (func: string, body: unknown): Promise<unknown> => {
     check();
     const response = await post('https://claw.163.com/claw-api-gateway/api/coremail/proxy?' +
-      new URLSearchParams({ uid: env.MAIL_FROM, func }).toString(), accessToken, body);
+      new URLSearchParams({ uid: env.MAIL_FROM, func }).toString(), accessToken, body, true);
     check();
     if (response.code !== 'S_OK') throw new Error('claw_provider_error');
     return response.var;

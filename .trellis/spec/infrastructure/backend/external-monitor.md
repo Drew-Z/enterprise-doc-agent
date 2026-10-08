@@ -81,6 +81,13 @@ documented provider codes prefixed `CLAW_` may enter diagnostics; raw messages a
 tokens remain private. Configuration errors reject before claim; network/provider
 errors or missing receipts finish unknown; timeouts record only `timeout`.
 
+Authentication requires `application/json`. The fixed Coremail proxy additionally
+accepts its observed `text/x-json;charset=UTF-8` response type; normalize the MIME
+type's case and parameters, then apply the same bounded UTF-8 and strict JSON
+parsing. Do not accept HTML, JSONP, arbitrary text types, or this legacy MIME on
+the token endpoint. Exercise the actual Coremail MIME through the shipped
+workerd scheduled handler and retain application/json compatibility.
+
 ### 5. Good / Base / Bad Cases
 
 Good: one S_OK deliver followed by one matching Sent record gives accepted with

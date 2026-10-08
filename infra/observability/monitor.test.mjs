@@ -194,9 +194,10 @@ function clawEnv(db) {
     CLAWEMAIL_API_KEY: 'ck_test_PRIVATE_KEY' };
 }
 
-function clawWire(env, override = () => undefined) {
+function clawWire(env, override = () => undefined, coremailType = 'text/x-json;charset=UTF-8') {
   const calls = [];
   let attrs;
+  const coremailReply = value => Response.json(value, { headers: { 'Content-Type': coremailType } });
   const network = async (url, options) => {
     const parsed = new URL(url);
     assert.equal(parsed.origin, 'https://claw.163.com');
@@ -224,18 +225,18 @@ function clawWire(env, override = () => undefined) {
       assert.equal(attrs.bcc, undefined);
       assert.equal(attrs.saveSentCopy, true);
       assert.equal(attrs.isHtml, false);
-      return Response.json({ code: 'S_OK', var: 'compose-123' });
+      return coremailReply({ code: 'S_OK', var: 'compose-123' });
     }
     if (phase === 'deliver') {
       assert.equal(body.id, 'compose-123');
       assert.deepEqual(body.attrs, attrs);
-      return Response.json({ code: 'S_OK', var: null });
+      return coremailReply({ code: 'S_OK', var: null });
     }
     assert.equal(body.fid, 3);
     assert.equal(body.limit, 2);
     assert.equal(body.windowSize, 2);
     assert.equal(body.conditions[0].operand, attrs.subject);
-    return Response.json({ code: 'S_OK', var: [{ fid: 3, from: env.MAIL_FROM, to: env.MAIL_TO,
+    return coremailReply({ code: 'S_OK', var: [{ fid: 3, from: env.MAIL_FROM, to: env.MAIL_TO,
       subject: attrs.subject, hmid: '<real-receipt@claw.163.com>' }] });
   };
   return { calls, network };
@@ -260,6 +261,39 @@ test('ClawEmail concurrent delivery uses fixed identity and a real Sent Message-
   assert.equal(await deliverNotification(env, event.id, () => now, 10_000, wire.network), false);
   assert.equal(wire.calls.length, 4);
 });
+
+for (const mediaType of ['application/json', 'TEXT/X-JSON ; charset=UTF-8']) {
+  test(`ClawEmail supports bounded Coremail JSON with ${mediaType}`, async (t) => {
+    const db = await database(t);
+    const event = await incident(db);
+    const env = clawEnv(db);
+    const wire = clawWire(env, undefined, mediaType);
+    assert.equal(await deliverNotification(env, event.id, () => now, 10_000, wire.network), true);
+    assert.equal(wire.calls.filter(x => x.phase === 'deliver').length, 1);
+    assert.equal((await db.prepare('SELECT delivery_status FROM notification_events').first()).delivery_status, 'accepted');
+  });
+}
+
+for (const [phase, contentType, body] of [
+  ['token', 'text/x-json', JSON.stringify({ result: { accessToken: 'PRIVATE_ACCESS_TOKEN', expiresIn: 1800 } })],
+  ['continue', 'text/html', JSON.stringify({ code: 'S_OK', var: 'compose-123' })],
+  ['continue', 'text/x-jsonp', JSON.stringify({ code: 'S_OK', var: 'compose-123' })],
+  ['continue', 'text/x-json', '{'],
+  ['continue', 'text/x-json', 'callback({"code":"S_OK","var":"compose-123"})'],
+  ['continue', 'text/x-json', new Uint8Array([0xff, 0xfe])],
+  ['continue', 'text/x-json', JSON.stringify({ code: 'S_OK', var: 'x'.repeat(65_536) })],
+]) {
+  test(`ClawEmail rejects invalid ${phase} ${contentType} response of ${body.length} bytes`, async (t) => {
+    const db = await database(t);
+    const event = await incident(db);
+    const env = clawEnv(db);
+    const wire = clawWire(env, stage => stage === phase ? new Response(body, { headers: { 'Content-Type': contentType } }) : undefined);
+    assert.equal(await deliverNotification(env, event.id, () => now, 10_000, wire.network), false);
+    assert.equal(wire.calls.some(x => x.phase === 'deliver'), false);
+    assert.equal((await db.prepare('SELECT delivery_status FROM notification_events').first()).delivery_status, 'unknown');
+    assert.equal((await db.prepare('SELECT code FROM notification_diagnostics').first()).code, 'provider_error');
+  });
+}
 
 for (const [phase, reply, code] of [
   ['token', () => new Response(null, { status: 302, headers: { Location: 'https://untrusted.test' } }), 'provider_error'],
