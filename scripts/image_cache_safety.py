@@ -46,6 +46,7 @@ class ArchiveFootprint(NamedTuple):
     snapshot_inodes: int
     unpack_temporary_bytes: int
     normalized_archive_bytes: int
+    content_inodes: int = 0
 
 
 class LayerReader(io.RawIOBase):
@@ -226,7 +227,12 @@ def archive_footprint(
     if not runtime_images:
         raise ImageCacheSafetyError("OCI archive has no supported runtime image")
     return ArchiveFootprint(
-        content_bytes, snapshot_bytes, inodes, largest_layer, archive_bytes + 16 * 1024**2
+        content_bytes,
+        snapshot_bytes,
+        inodes,
+        largest_layer,
+        archive_bytes + 16 * 1024**2,
+        len(seen),
     )
 
 
@@ -315,7 +321,10 @@ def validate_capacity(
     permanent = sum(item.content_bytes + item.snapshot_bytes for item in footprints)
     unpack_temp = max(item.unpack_temporary_bytes for item in footprints)
     cache_bytes = math.ceil((permanent + unpack_temp) * 5 / 4) + 64 * 1024**2
-    cache_inodes = math.ceil(sum(item.snapshot_inodes for item in footprints) * 5 / 4) + 4096
+    cache_inodes = (
+        math.ceil(sum(item.snapshot_inodes + item.content_inodes for item in footprints) * 5 / 4)
+        + 4096
+    )
     temp_bytes = 0 if normalized else sum(item.normalized_archive_bytes for item in footprints)
     allocations = [
         (cache, cache_bytes, cache_inodes, "imagefs"),

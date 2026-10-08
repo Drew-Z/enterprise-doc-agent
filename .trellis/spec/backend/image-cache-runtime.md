@@ -52,7 +52,8 @@ missing facts or unsupported targets are rejected, never treated as zero usage.
   OCI envelope size for normalization, not only compressed transport bytes.
 - Sum the full batch's content, snapshots and temporary copies. Shared layers may
   be counted repeatedly. Cache allocation includes 25% headroom, 64 MiB metadata
-  and 4096 metadata inodes; preserve at least 5% inodes plus any stricter policy.
+  and 4096 metadata inodes in addition to content-store and snapshot file counts;
+  preserve at least 5% inodes plus any stricter policy.
   Group allocations by filesystem device and keep separate node, cache and temporary
   filesystem checks. Preserve `max(evictionHard, evictionSoft) + minimumReclaim`
   for each applicable signal; never lower the effective kubelet policy.

@@ -190,6 +190,27 @@ def test_real_compressed_layer_and_batch_import_cleanup(tmp_path: Path) -> None:
     assert all(not path.exists() for path in runner.archives)
 
 
+def test_content_store_inodes_are_reserved_before_any_temporary_write(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    plans = plans_for(tmp_path)
+    state = archive_fixture().healthy_cache_state()
+    # Empty runtime layers still import config, manifest and attestation blobs.
+    # This leaves room for the fixed metadata allowance and temporary directory,
+    # but no content files above the 5% inode reserve.
+    for key in ("cache_filesystem", "temporary_filesystem", "node_filesystem"):
+        state[key]["available_inodes"] = 50000 + 4096 + 2
+
+    def no_temp(*args: object, **kwargs: object) -> None:
+        pytest.fail("content inode shortage created temporary files")
+
+    monkeypatch.setattr(receiver.tempfile, "TemporaryDirectory", no_temp)
+    runner = Containerd(plans)
+    with pytest.raises(receiver.StagingOciImportError, match="inode"):
+        receiver.execute_import_batch(plans, run=runner.run, probe=lambda _: state)
+    assert runner.commands == []
+
+
 @pytest.mark.parametrize(
     "fault",
     [
