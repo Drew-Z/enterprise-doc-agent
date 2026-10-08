@@ -25,6 +25,7 @@ test("background: offline completion, read recovery, lost admission, review and 
   ]);
   expect(created.status()).toBe(201);
   const sheet = await created.json() as { id: string };
+  await page.getByLabel("生成档位", { exact: true }).selectOption("deep");
   const sheetRoute = "**/api/presales/" + sheet.id;
   let releaseRead!: () => void;
   const pendingRead = new Promise<void>(resolve => { releaseRead = resolve; });
@@ -34,6 +35,7 @@ test("background: offline completion, read recovery, lost admission, review and 
     page.getByRole("button", { name: "生成待处理要求" }).click(),
   ]);
   expect(admission.status()).toBe(202);
+  expect(admission.request().postDataJSON()).toMatchObject({ executionMode: "deep" });
   expect(new URL(admission.url()).searchParams.get("response")).toBe("receipt");
   const receipt = await admission.json() as { packetId: string; admissions: { disposition: string; attemptId: string }[]; rejected: unknown[] };
   expect(Object.keys(receipt).sort()).toEqual(["admissions", "packetId", "rejected"]);
@@ -55,6 +57,10 @@ test("background: offline completion, read recovery, lost admission, review and 
   await page.goto("/#/presales");
   await page.reload();
   await expect(page.getByRole("article", { name: "R2", exact: true }).locator(".presales-state")).toHaveText("排队中");
+  await expect(page.locator(".presales-execution-mode")).toHaveCount(3);
+  await expect(page.getByLabel("生成档位", { exact: true })).toHaveValue("deep");
+  const saved = await (await request.get(api + "/api/presales/" + sheet.id, { headers: { Authorization: "Bearer " + context.token } })).json() as { rows: { attempts: { executionPolicy: { mode: string; rowTimeoutSeconds: number; maxProviderRequests: number } }[] }[] };
+  expect(saved.rows.every(row => row.attempts[0].executionPolicy.mode === "deep" && row.attempts[0].executionPolicy.rowTimeoutSeconds === 660 && row.attempts[0].executionPolicy.maxProviderRequests === 2)).toBeTruthy();
   expect(posted).toHaveLength(1);
 
   // Only the browser goes offline. The independent request context can observe
@@ -95,6 +101,7 @@ test("background: offline completion, read recovery, lost admission, review and 
   await page.route(retryRoute, async route => {
     const response = await route.fetch();
     expect(response.status()).toBe(202);
+    expect(route.request().postDataJSON()).toEqual({ executionMode: "deep" });
     // The actual API has admitted the request. Drop that response and the
     // immediate recovery GET, without cancelling the durable server job.
     await page.context().setOffline(true);
@@ -126,6 +133,7 @@ test("background: offline completion, read recovery, lost admission, review and 
   }
   await page.reload();
   await expect(page.locator(".presales-reviewed")).toHaveCount(3);
+  await expect(page.getByLabel("生成档位", { exact: true })).toHaveValue("deep");
   const [download] = await Promise.all([
     page.waitForEvent("download"), page.getByRole("button", { name: "导出已复核 CSV" }).click(),
   ]);

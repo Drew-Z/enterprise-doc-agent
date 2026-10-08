@@ -89,6 +89,10 @@ class PresalesAttempt(UUIDPrimaryKeyMixin, TimestampMixin, Base):
             name="presales_attempt_limits",
         ),
         Index("ix_presales_attempts_tenant_started", "tenant_id", "created_at"),
+        CheckConstraint(
+            "execution_policy IS NULL OR jsonb_typeof(execution_policy) = 'object'",
+            name="presales_attempt_execution_policy_object",
+        ),
     )
     tenant_id: Mapped[UUID] = mapped_column(nullable=False)
     row_id: Mapped[UUID] = mapped_column(nullable=False)
@@ -112,6 +116,9 @@ class PresalesAttempt(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     deadline_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    execution_policy: Mapped[dict[str, Any] | None] = mapped_column(
+        JSONB(none_as_null=True), nullable=True
+    )
 
 
 class PresalesProviderCall(UUIDPrimaryKeyMixin, Base):

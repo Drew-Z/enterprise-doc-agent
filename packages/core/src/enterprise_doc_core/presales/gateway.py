@@ -105,6 +105,7 @@ class OpenAICompatiblePresalesGateway:
         presales_settings: PresalesSettings | None = None,
         transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
+        self.source_settings = settings
         if presales_settings is not None and presales_settings.model_route == "primary":
             overrides: dict[str, Any] = {}
             if presales_settings.primary_reasoning_effort is not None:

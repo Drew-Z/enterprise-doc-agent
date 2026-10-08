@@ -89,3 +89,20 @@ describe("Presales review source bindings at the HTTP boundary", () => {
     }
   });
 });
+
+describe("Presales saved execution policy boundary", () => {
+  const policy = { version: "presales.execution.v1", mode: "auto", rowTimeoutSeconds: 90, queueTimeoutSeconds: 900, maxProviderRequests: 1, dailyDispatchLimit: 200,
+    routes: [{ route: "primary", provider: "openai_compatible", endpointSha256: "a".repeat(64), modelName: "fixture", modelVersion: null, modelRevision: null, reasoningEffort: null, streaming: false, timeoutSeconds: 30, maxOutputBytes: 262144, promptVersion: "presales.v12", promptSha256: "b".repeat(64) }] };
+  it.each([
+    { mode: "unlimited" }, { version: "presales.execution.v999" }, { maxProviderRequests: 3 },
+    { rowTimeoutSeconds: 901 }, { dailyDispatchLimit: 0 }, { maxProviderRequests: 2 },
+    { routes: [policy.routes[0], policy.routes[0]], maxProviderRequests: 2 },
+    { routes: [{ ...policy.routes[0], timeoutSeconds: 301 }] },
+    { routes: [{ ...policy.routes[0], apiKey: "should-never-be-in-a-response" }] },
+  ])("rejects malformed saved strategies before displaying task content", async patch => {
+    const original = reviewedPacket(savedReview);
+    const body = { ...original, rows: original.rows.map(row => ({ ...row, attempts: [{ id: attemptId, number: 1, state: "succeeded", errorCode: null, modelProvider: "openai_compatible", modelName: "fixture", providerRequestCount: 1, provenance: {}, usage: null, createdAt: "2026-10-08T00:00:00Z", finishedAt: "2026-10-08T00:01:00Z", deadlineAt: "2026-10-08T00:02:00Z", executionPolicy: { ...policy, ...patch } }] })) };
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify(body)));
+    await expect(presalesApi("test-token").get(packetId, new AbortController().signal)).rejects.toThrow();
+  });
+});

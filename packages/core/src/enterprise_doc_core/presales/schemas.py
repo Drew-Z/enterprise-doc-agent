@@ -7,6 +7,8 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 from pydantic.alias_generators import to_camel
 
+from enterprise_doc_core.presales.policy import ExecutionMode, ExecutionPolicy
+
 Status = Literal[
     "supported", "conditional", "contradicted", "insufficient_evidence", "conflicting_evidence"
 ]
@@ -206,6 +208,7 @@ class AttemptView(PresalesModel):
     created_at: datetime
     finished_at: datetime | None
     deadline_at: datetime
+    execution_policy: ExecutionPolicy | None = None
 
 
 class RowView(PresalesModel):
@@ -243,10 +246,16 @@ class PacketView(PacketSummary):
     sources: list[SourceSnapshot]
     rows: list[RowView]
     generation_mode: Literal["synchronous", "background"] = "synchronous"
+    available_execution_modes: list[ExecutionMode] = Field(default_factory=list)
+
+
+class GenerateRowInput(PresalesModel):
+    execution_mode: ExecutionMode | None = None
 
 
 class BatchGenerateInput(PresalesModel):
     row_ids: list[UUID] = Field(min_length=1, max_length=12)
+    execution_mode: ExecutionMode | None = None
 
     @model_validator(mode="after")
     def unique_rows(self) -> Self:

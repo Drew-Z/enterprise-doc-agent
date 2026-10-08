@@ -2,6 +2,10 @@ import type { Locale } from "../i18n";
 import type { PrerequisiteAssessment, ResponseStatus } from "./api";
 
 const zh = {
+  generationMode: "生成档位", modeAuto: "自动", modeDeep: "深度", savedMode: "已保存档位：{mode}",
+  modeHelp: "深度使用更高推理预算，可能需要更长时间。已受理任务的档位保持不变，结果仍需人工复核。",
+  executionLimit: "执行上限 {seconds} 秒（排队另计）", generationHistory: "生成策略记录",
+  policyUnavailable: "原任务的生成配置暂不可用，任务已停止。请联系管理员核查后再重试。",
   admitted: "提交已确认，正在读取最新状态。已受理的任务会继续执行，可以离开此页后再查看。",
   submitting: "正在提交生成请求。确认受理前请保持此页打开，无需重复点击。",
   readFailed: "暂时无法读取响应表，已受理的任务仍可能在后台完成。",
@@ -26,6 +30,10 @@ const zh = {
   generateAll: "生成待处理要求", generating: "正在生成", generate: "生成响应", retry: "重试本条", pending: "待生成", failed: "生成失败", waiting: "生成中，请稍后刷新", reviewed: "已复核", unreviewed: "待复核", complete: "已保存", exportDraft: "导出草稿 CSV", exportReviewed: "导出已复核 CSV", progress: "条已复核", sourceSnapshot: "本表资料版本", frozen: "要求与资料版本已固定。需要更换资料时，请新建响应表。", stale: "资料已变化，请新建响应表", rowDetail: "查看证据与复核", evidence: "原文证据", noEvidence: "尚无可引用的证据，请补充资料。", retrievalNotice: "基于有限召回片段生成，未命中不代表资料中不存在。", truncated: "部分片段已按长度或数量限制截取，请复核完整原文。", conditions: "响应条件", missing: "待补材料", response: "响应文案", original: "原模型草稿", reviewTitle: "逐行复核", status: "判断", note: "复核备注", saveReview: "保存复核", reviewHelp: "确认文案、条件和证据后保存。原模型草稿会保留，人工修改不会覆盖它。", history: "复核历史", reviewer: "复核人", location: "原文位置", page: "页", offsets: "字符范围", version: "版本", applicable: "适用范围", requestId: "请求编号", error: "操作未完成，请刷新后重试。", rowError: "本条未生成可用响应，失败记录已保存。", modelTimeout: "本次暂时未能完成生成。要求和资料已保留，请稍后重试本条。", attempts: "次生成尝试", draftOnly: "未复核草稿仅供内部核查。全部复核后可导出已复核版本。", sourceUnavailable: "资料不可访问或已变化，请刷新资料并新建响应表。", reset: "返回新建响应表", none: "无", reviewInvalid: "请检查文案、条件与待补材料；有条件支持需填写条件，证据不足需填写待补材料。",
 };
 const en: typeof zh = {
+  generationMode: "Generation mode", modeAuto: "Auto", modeDeep: "Deep", savedMode: "Saved mode: {mode}",
+  modeHelp: "Deep uses a higher reasoning budget and may take longer. Accepted tasks keep their saved mode; all results still need review.",
+  executionLimit: "Execution limit: {seconds} seconds, excluding queue time", generationHistory: "Generation policy history",
+  policyUnavailable: "The original task configuration is unavailable, so generation stopped. Contact your administrator before retrying.",
   admitted: "Submission confirmed. Reading the latest state. Accepted work will continue; you can leave this page and check later.",
   submitting: "Submitting generation. Please keep this page open until acceptance is confirmed; do not submit it again.",
   readFailed: "The response sheet could not be read. Accepted work may still finish in the background.",

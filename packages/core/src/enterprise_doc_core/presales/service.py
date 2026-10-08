@@ -27,7 +27,7 @@ from enterprise_doc_core.presales.access import (
 )
 from enterprise_doc_core.presales.errors import PresalesError
 from enterprise_doc_core.presales.export import export_csv
-from enterprise_doc_core.presales.gateway import PresalesGateway
+from enterprise_doc_core.presales.gateway import OpenAICompatiblePresalesGateway, PresalesGateway
 from enterprise_doc_core.presales.generation import ACTIVE_STATES, GenerationService, Retriever
 from enterprise_doc_core.presales.models import (
     PresalesAttempt,
@@ -35,6 +35,7 @@ from enterprise_doc_core.presales.models import (
     PresalesReview,
     PresalesRow,
 )
+from enterprise_doc_core.presales.policy import ExecutionMode
 from enterprise_doc_core.presales.review import validate_review
 from enterprise_doc_core.presales.schemas import (
     AttemptView,
@@ -257,15 +258,33 @@ class PresalesService:
                     if self.generation.settings.background_generation_enabled
                     else "synchronous"
                 ),
+                available_execution_modes=(
+                    ["auto", "deep"]
+                    if self.generation.settings.background_generation_enabled
+                    else ["auto"]
+                )
+                if isinstance(self.generation.gateway, OpenAICompatiblePresalesGateway)
+                and self.generation.gateway.model_provider == "openai_compatible"
+                else [],
             )
 
     async def generate(
-        self, principal: PrincipalContext, packet_id: UUID, row_id: UUID, key: str
+        self,
+        principal: PrincipalContext,
+        packet_id: UUID,
+        row_id: UUID,
+        key: str,
+        *,
+        execution_mode: ExecutionMode | None = None,
     ) -> PacketView:
         if self.generation.settings.background_generation_enabled:
-            await self.generation.enqueue(principal, packet_id, row_id, key)
+            await self.generation.enqueue(
+                principal, packet_id, row_id, key, execution_mode=execution_mode
+            )
         else:
-            await self.generation.generate(principal, packet_id, row_id, key)
+            await self.generation.generate(
+                principal, packet_id, row_id, key, execution_mode=execution_mode
+            )
         return await self.get(principal, packet_id)
 
     async def generate_batch(
@@ -277,13 +296,21 @@ class PresalesService:
         )
 
     async def admit(
-        self, principal: PrincipalContext, packet_id: UUID, row_id: UUID, key: str
+        self,
+        principal: PrincipalContext,
+        packet_id: UUID,
+        row_id: UUID,
+        key: str,
+        *,
+        execution_mode: ExecutionMode | None = None,
     ) -> GenerationReceipt:
         check_key(key)
         if not self.generation.settings.background_generation_enabled:
             await self.get(principal, packet_id)
             raise PresalesError("presales_background_required")
-        admitted = await self.generation.enqueue(principal, packet_id, row_id, key)
+        admitted = await self.generation.enqueue(
+            principal, packet_id, row_id, key, execution_mode=execution_mode
+        )
         return GenerationReceipt(packet_id=packet_id, admissions=[admitted], rejected=[])
 
     async def admit_batch(
@@ -301,7 +328,9 @@ class PresalesService:
             row_key = hashlib.sha256(f"{key}:{row_id}".encode()).hexdigest()
             try:
                 admissions.append(
-                    await self.generation.enqueue(principal, packet_id, row_id, row_key)
+                    await self.generation.enqueue(
+                        principal, packet_id, row_id, row_key, execution_mode=payload.execution_mode
+                    )
                 )
             except (PresalesError, DemoError) as error:
                 if error.code in {

@@ -10,6 +10,7 @@ from enterprise_doc_core.documents.retrieval_service import HybridRetrievalServi
 from enterprise_doc_core.presales.background import BackgroundGeneration
 from enterprise_doc_core.presales.gateway import OpenAICompatiblePresalesGateway, PresalesGateway
 from enterprise_doc_core.presales.generation import GenerationService
+from enterprise_doc_core.presales.policy import MAX_POLICY_ROW_SECONDS
 from enterprise_doc_core.telemetry import MetricsRuntime
 from enterprise_doc_worker.config import WorkerSettings
 from enterprise_doc_worker.lifecycle import WorkerProgress
@@ -78,7 +79,10 @@ async def run_presales(
         dimension,
     ):
         routes = [settings.presales.model_route]
-        if settings.presales.automatic_failover_enabled:
+        if (
+            settings.presales.automatic_failover_enabled
+            or settings.model.fallback_provider is not None
+        ):
             routes.append("fallback" if routes[0] == "primary" else "primary")
         gateways: dict[str, PresalesGateway] = {
             route: OpenAICompatiblePresalesGateway(
@@ -113,7 +117,7 @@ async def run_presales(
             worker_id=worker_id,
             concurrency=settings.worker.presales_concurrency,
             progress=progress,
-            progress_timeout_seconds=settings.presales.row_timeout_seconds
+            progress_timeout_seconds=MAX_POLICY_ROW_SECONDS
             + 2 * settings.database.pool_timeout_seconds
             + 30,
         )

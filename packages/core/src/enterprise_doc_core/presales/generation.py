@@ -30,6 +30,8 @@ from enterprise_doc_core.presales.access import check_key, check_sources, load_p
 from enterprise_doc_core.presales.errors import PresalesError
 from enterprise_doc_core.presales.gateway import PresalesGateway
 from enterprise_doc_core.presales.models import PresalesAttempt
+from enterprise_doc_core.presales.policy import ExecutionMode, ExecutionPolicy
+from enterprise_doc_core.presales.policy_gateway import freeze_policy, restore_gateway
 from enterprise_doc_core.presales.schemas import (
     Evidence,
     GenerationInput,
@@ -115,13 +117,21 @@ class GenerationService:
         self.usage_service = usage_service
 
     async def generate(
-        self, principal: PrincipalContext, packet_id: UUID, row_id: UUID, key: str
+        self,
+        principal: PrincipalContext,
+        packet_id: UUID,
+        row_id: UUID,
+        key: str,
+        *,
+        execution_mode: ExecutionMode | None = None,
     ) -> None:
         check_key(key)
-        started = await self._begin(principal, packet_id, row_id, key)
+        started = await self._begin(
+            principal, packet_id, row_id, key, execution_mode=execution_mode
+        )
         if isinstance(started, RowAdmission):
             return
-        attempt_id, requirement, sources = started
+        attempt_id, requirement, sources, policy, deadline = started
         tenant_id, actor_id = UUID(principal.tenant_id), UUID(principal.actor_id)
         context = get_request_context()
         provider_requests: int | None = 0
@@ -130,7 +140,8 @@ class GenerationService:
             await self._guard_retrieval(session, principal, packet_id, row_id, attempt_id)
 
         try:
-            async with asyncio.timeout(self.settings.row_timeout_seconds):
+            gateway = restore_gateway(self.gateway, policy.routes[0]) if policy else self.gateway
+            async with asyncio.timeout(max(0, (deadline - self.clock()).total_seconds())):
                 candidates, notes = await self._retrieve(
                     tenant_id,
                     actor_id,
@@ -162,7 +173,7 @@ class GenerationService:
                 await self._prepare_dispatch(principal, packet_id, row_id, attempt_id)
                 provider_requests = None
                 try:
-                    generated = await self.gateway.generate(payload)
+                    generated = await gateway.generate(payload)
                 except PresalesError as error:
                     provider_requests = error.provider_requests
                     raise
@@ -187,8 +198,8 @@ class GenerationService:
                         await self.usage_service.settle_provider_request(
                             tenant_id=tenant_id,
                             operation_id=attempt_id,
-                            provider=self.gateway.model_provider,
-                            model=generated.returned_model or self.gateway.model_name,
+                            provider=gateway.model_provider,
+                            model=generated.returned_model or gateway.model_name,
                             usage=generated.usage,
                             source="presales",
                             session=session,
@@ -228,10 +239,18 @@ class GenerationService:
             await self._fail(attempt_id, "presales_generation_failed", provider_requests)
 
     async def enqueue(
-        self, principal: PrincipalContext, packet_id: UUID, row_id: UUID, key: str
+        self,
+        principal: PrincipalContext,
+        packet_id: UUID,
+        row_id: UUID,
+        key: str,
+        *,
+        execution_mode: ExecutionMode | None = None,
     ) -> RowAdmission:
         check_key(key)
-        admitted = await self._begin(principal, packet_id, row_id, key, background=True)
+        admitted = await self._begin(
+            principal, packet_id, row_id, key, background=True, execution_mode=execution_mode
+        )
         assert isinstance(admitted, RowAdmission)
         # _begin exits its transaction before this acknowledgement can escape.
         return admitted
@@ -244,7 +263,11 @@ class GenerationService:
         key: str,
         *,
         background: bool = False,
-    ) -> tuple[UUID, RequirementInput, list[SourceSnapshot]] | RowAdmission:
+        execution_mode: ExecutionMode | None = None,
+    ) -> (
+        tuple[UUID, RequirementInput, list[SourceSnapshot], ExecutionPolicy | None, datetime]
+        | RowAdmission
+    ):
         async with self.session_factory.begin() as session:
             packet = await load_packet(session, principal, packet_id, lock=True)
             row = await load_row(session, packet, row_id)
@@ -262,6 +285,13 @@ class GenerationService:
             )
             replay = next((a for a in attempts if a.idempotency_key == key), None)
             if replay is not None:
+                original_mode = (
+                    ExecutionPolicy.model_validate(replay.execution_policy).mode
+                    if replay.execution_policy is not None
+                    else None
+                )
+                if original_mode != execution_mode:
+                    raise PresalesError("presales_idempotency_conflict")
                 return RowAdmission(row_id=row_id, disposition="replayed", attempt_id=replay.id)
             if row.draft is not None:
                 return RowAdmission(row_id=row_id, disposition="already_drafted", attempt_id=None)
@@ -269,6 +299,17 @@ class GenerationService:
                 raise PresalesError("presales_generation_disabled")
             if self.gateway.model_provider == "deterministic":
                 raise PresalesError("presales_model_not_configured")
+            policy = (
+                freeze_policy(self.gateway, self.settings, execution_mode, background=background)
+                if execution_mode is not None
+                else None
+            )
+            row_seconds = (
+                policy.row_timeout_seconds if policy else self.settings.row_timeout_seconds
+            )
+            queue_seconds = (
+                policy.queue_timeout_seconds if policy else self.settings.queue_timeout_seconds
+            )
             now = self.clock()
             if (
                 attempts
@@ -317,13 +358,7 @@ class GenerationService:
             if (active_count or 0) >= capacity:
                 raise PresalesError("presales_generation_busy")
             attempt_id = uuid4()
-            deadline = now + timedelta(
-                seconds=(
-                    self.settings.queue_timeout_seconds
-                    if background
-                    else self.settings.row_timeout_seconds
-                )
-            )
+            deadline = now + timedelta(seconds=(queue_seconds if background else row_seconds))
             job_id = None
             if background:
                 context = get_request_context()
@@ -349,12 +384,7 @@ class GenerationService:
                 packet.tenant_id,
                 attempt_id,
                 now,
-                deadline
-                + (
-                    timedelta(seconds=self.settings.row_timeout_seconds)
-                    if background
-                    else timedelta()
-                ),
+                deadline + (timedelta(seconds=row_seconds) if background else timedelta()),
                 background=background,
             )
             attempt = PresalesAttempt(
@@ -373,6 +403,7 @@ class GenerationService:
                 },
                 deadline_at=deadline,
                 created_at=now,
+                execution_policy=policy.model_dump(mode="json") if policy else None,
             )
             if self.usage_service is not None:
                 try:
@@ -385,8 +416,7 @@ class GenerationService:
                     if background and reservation.expires_at is not None:
                         attempt.deadline_at = min(
                             deadline,
-                            reservation.expires_at
-                            - timedelta(seconds=self.settings.row_timeout_seconds + 2),
+                            reservation.expires_at - timedelta(seconds=row_seconds + 2),
                         )
                         if attempt.deadline_at <= now:
                             raise PresalesError("presales_usage_unavailable")
@@ -410,6 +440,8 @@ class GenerationService:
                     source_location=row.source_location,
                 ),
                 sources,
+                policy,
+                deadline,
             )
 
     async def _retrieve(

@@ -9,6 +9,53 @@ ready/succeeded generations, and asks the user to confirm source applicability.
 Each pasted line is one requirement; an optional tab separates the location.
 This is manual entry, not automatic splitting of a tender document.
 
+## Execution mode UI (2026-10-08 candidate)
+
+### 1. Scope / trigger
+
+Expose the server's supported generation modes and the durable mode of each attempt.
+This local feature does not claim that deep has passed real model quality acceptance.
+
+### 2. Signatures
+
+`Packet.availableExecutionModes?: ("auto" | "deep")[]` and
+`Attempt.executionPolicy?: ExecutionPolicy | null`; API generate/admit and batch
+methods accept an optional final `executionMode` argument.
+
+### 3. Contracts
+
+Render a picker only when modes are advertised. Default to the latest recorded
+attempt's mode or auto; send the choice with single/batch requests and include it
+in the idempotency intent. Legacy servers without the field receive legacy bodies.
+Row history renders the saved mode, time budget and model names from the API.
+Lost acknowledgement triggers the existing GET recovery, never an automatic POST.
+
+### 4. Validation and errors
+
+The strict Zod policy decoder rejects extra fields, invalid/duplicate routes,
+dispatch-count mismatches, nonfinite/oversized budgets and malformed digests.
+Missing legacy policy is unrecorded, not inferred. Display the explicit unavailable
+policy error when the server cannot restore its accepted configuration.
+
+### 5. Good / base / bad cases
+
+Good: deep remains visible after refresh and offline completion. Base: no picker
+for a legacy server. Bad: derive a task's mode from the current picker or automatically
+resubmit generation after a lost response.
+
+### 6. Tests and assertion points
+
+Workspace tests assert single/batch selection and persisted-mode restoration;
+API tests reject nine malformed policies. The real background browser journey
+checks deep payloads, refreshed history, lost acknowledgements, offline completion,
+one-time settlement and mobile layout. Ordinary review/export E2E remains separate.
+
+### 7. Wrong versus correct
+
+Wrong: treat a longer timeout as proof of improved quality or add internal budget
+controls to the user form. Correct: offer the supported modes, explain the longer
+wait, and show the strategy actually saved by the service.
+
 ## Entry from uploaded documents
 
 `apps/web/src/product/DocumentsPage.tsx` refreshes the inventory every two seconds
@@ -36,9 +83,10 @@ The sheet lists fixed sources and requirements, five outcome labels, conditions,
 missing information, exact source excerpts, filenames and passage locations.
 Finite retrieval and truncation are explicitly disclosed. Generation is per row;
 the batch button submits multiple pending rows in one request when PacketView
-generationMode is background. Exactly one eligible row uses the bodyless
+generationMode is background. Exactly one eligible row uses
 `POST /api/presales/{packet}/rows/{row}/generate?response=receipt`. Multiple background
 rows use `POST /api/presales/{packet}/generate?response=receipt` with `{rowIds: [...]}`.
+When supported, both carry `executionMode`; the legacy single-row request is bodyless.
 Both return a GenerationReceipt, validated against the exact packet and complete
 requested row set across admissions and rejections. Only enqueued/replayed rows
 carry attemptId; already_drafted has null. The compatibility API methods without

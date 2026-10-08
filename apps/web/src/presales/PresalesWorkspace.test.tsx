@@ -99,6 +99,33 @@ beforeEach(() => { sessionStorage.clear(); localStorage.clear(); });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 describe("PresalesWorkspace HTTP boundary", () => {
+  it.each([1, 2])("submits the selected deep mode for %i rows and restores it after a lost response and reload", async count => {
+    sessionStorage.setItem(storageKey, packetId);
+    let current = { ...makePacket(), generationMode: "background" as const, availableExecutionModes: ["auto", "deep"] as ("auto" | "deep")[] };
+    if (count === 2) current.rows.push({ ...structuredClone(current.rows[0]), id: versionId, requirement: { key: "R2", text: "Second requirement", sourceLocation: "" } });
+    const policy: NonNullable<Packet["rows"][number]["attempts"][number]["executionPolicy"]> = { version: "presales.execution.v1", mode: "deep", rowTimeoutSeconds: 660, queueTimeoutSeconds: 900, maxProviderRequests: 1, dailyDispatchLimit: 200,
+      routes: [{ route: "primary", provider: "openai_compatible", endpointSha256: "a".repeat(64), modelName: "fixture-model", modelVersion: null, modelRevision: null, reasoningEffort: "high", streaming: false, timeoutSeconds: 300, maxOutputBytes: 262144, promptVersion: "presales.v12", promptSha256: "b".repeat(64) }] };
+    const fetch = mockApi(() => current, () => {
+      current = { ...current, rows: current.rows.map(row => ({ ...row, revision: 1, state: "drafted", draft: makePacket(true).rows[0].draft, attempts: [{ ...attempt("succeeded"), executionPolicy: policy }] })) };
+      return Promise.reject(new TypeError("admission response was lost"));
+    });
+    const view = mount();
+    const picker = await screen.findByLabelText("Generation mode");
+    fireEvent.change(picker, { target: { value: "deep" } });
+    fireEvent.click(screen.getByRole("button", { name: "Generate pending responses" }));
+    await screen.findAllByText("Saved mode: Deep");
+    const writes = fetch.mock.calls.filter(([, init]) => init?.method === "POST");
+    expect(writes).toHaveLength(1);
+    const submitted = writes[0][1]?.body;
+    if (typeof submitted !== "string") throw new Error("Expected a JSON request body");
+    expect(JSON.parse(submitted)).toEqual(count === 1 ? { executionMode: "deep" } : { rowIds: [rowId, versionId], executionMode: "deep" });
+    view.unmount();
+    mount();
+    await screen.findAllByText("Saved mode: Deep");
+    expect(screen.getByLabelText("Generation mode")).toHaveValue("deep");
+    expect(fetch.mock.calls.filter(([, init]) => init?.method === "POST")).toHaveLength(1);
+  });
+
   it.each([403, 503])("keeps content hidden after a receipt followed by HTTP %i, with read-only recovery", async status => {
     sessionStorage.setItem(storageKey, packetId);
     const current = makePacket(); current.generationMode = "background";

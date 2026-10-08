@@ -37,6 +37,8 @@ from enterprise_doc_core.presales.generation import (
     resolve_draft,
 )
 from enterprise_doc_core.presales.models import PresalesAttempt, PresalesProviderCall
+from enterprise_doc_core.presales.policy import ExecutionPolicy
+from enterprise_doc_core.presales.policy_gateway import restore_gateway
 from enterprise_doc_core.presales.provider_calls import abandon_calls, summarize_calls
 from enterprise_doc_core.presales.schemas import (
     GeneratedDraft,
@@ -202,7 +204,7 @@ class BackgroundGeneration:
 
     async def _start(
         self, claim: ClaimedJob
-    ) -> tuple[RequirementInput, list[SourceSnapshot], datetime] | None:
+    ) -> tuple[RequirementInput, list[SourceSnapshot], datetime, ExecutionPolicy | None] | None:
         async with self.sessions.begin() as session:
             await self._lease(session, claim)
             packet = await load_packet(
@@ -214,10 +216,13 @@ class BackgroundGeneration:
             if operation.state == "succeeded":
                 return None
             self._active(operation)
+            policy = self._policy(operation)
             if operation.started_at is None:
                 operation.started_at = self.clock()
                 operation.deadline_at = operation.started_at + timedelta(
-                    seconds=self.settings.row_timeout_seconds
+                    seconds=policy.row_timeout_seconds
+                    if policy
+                    else self.settings.row_timeout_seconds
                 )
             calls = await self._calls(session, operation)
             abandon_calls(calls, self.clock())
@@ -231,13 +236,15 @@ class BackgroundGeneration:
                 ),
                 await check_sources(session, packet),
                 operation.deadline_at,
+                policy,
             )
 
     async def execute(self, claim: ClaimedJob) -> None:
         try:
             started = await self._start(claim)
             if started is not None:
-                requirement, sources, deadline = started
+                requirement, sources, deadline, policy = started
+                gateways = self._policy_gateways(policy)
 
                 async def guard(session: AsyncSession) -> None:
                     await self._lease(session, claim)
@@ -276,7 +283,7 @@ class BackgroundGeneration:
                     excluded: set[str] = set()
                     while True:
                         route = await self._next_route(claim, excluded)
-                        gateway = self.gateways[route]
+                        gateway = gateways[route]
                         if (deadline - self.clock()).total_seconds() <= 2:
                             raise PresalesError("presales_attempt_expired")
                         try:
@@ -375,8 +382,26 @@ class BackgroundGeneration:
                 error_message="Generation could not complete.",
             )
 
-    def _route_key(self, route: str) -> str:
-        gateway = self.gateways[route]
+    @staticmethod
+    def _policy(operation: PresalesAttempt) -> ExecutionPolicy | None:
+        return (
+            ExecutionPolicy.model_validate(operation.execution_policy)
+            if operation.execution_policy is not None
+            else None
+        )
+
+    def _policy_gateways(self, policy: ExecutionPolicy | None) -> dict[str, PresalesGateway]:
+        if policy is None:
+            return self.gateways
+        if any(route.route not in self.gateways for route in policy.routes):
+            raise PresalesError("presales_execution_policy_unavailable")
+        return {
+            route.route: restore_gateway(self.gateways[route.route], route)
+            for route in policy.routes
+        }
+
+    def _route_key(self, route: str, gateways: Mapping[str, PresalesGateway] | None = None) -> str:
+        gateway = (gateways if gateways is not None else self.gateways)[route]
         endpoint = getattr(getattr(gateway, "settings", None), "base_url", route)
         return hashlib.sha256(f"{endpoint}:{gateway.model_name}".encode()).hexdigest()
 
@@ -386,7 +411,15 @@ class BackgroundGeneration:
             operation = await self._operation(session, claim)
             self._active(operation)
             calls = await self._calls(session, operation)
-            maximum = 2 if self.settings.automatic_failover_enabled else 1
+            policy = self._policy(operation)
+            gateways = self._policy_gateways(policy)
+            maximum = (
+                policy.max_provider_requests
+                if policy
+                else 2
+                if self.settings.automatic_failover_enabled
+                else 1
+            )
             if calls and (
                 len(calls) >= maximum
                 or not _can_recover(
@@ -394,17 +427,22 @@ class BackgroundGeneration:
                 )
             ):
                 raise PresalesError(calls[-1].error_code or "presales_dispatch_limit")
-            order = [self.settings.model_route]
-            if maximum == 2:
+            order = (
+                [route.route for route in policy.routes] if policy else [self.settings.model_route]
+            )
+            if policy is None and maximum == 2:
                 order.append("fallback" if order[0] == "primary" else "primary")
             for route in order:
                 if (
                     route not in excluded
-                    and route in self.gateways
+                    and route in gateways
                     and all(
-                        c.route != route and c.route_key != self._route_key(route) for c in calls
+                        c.route != route and c.route_key != self._route_key(route, gateways)
+                        for c in calls
                     )
-                    and await route_health.available(session, self._route_key(route), self.clock())
+                    and await route_health.available(
+                        session, self._route_key(route, gateways), self.clock()
+                    )
                 ):
                     return route
             raise PresalesError("presales_model_unavailable")
@@ -421,8 +459,22 @@ class BackgroundGeneration:
             operation = await self._operation(session, claim)
             self._active(operation)
             calls = await self._calls(session, operation)
-            if len(calls) >= (2 if self.settings.automatic_failover_enabled else 1) or any(
-                c.route == route or c.route_key == self._route_key(route) for c in calls
+            policy = self._policy(operation)
+            gateways = self._policy_gateways(policy)
+            maximum = (
+                policy.max_provider_requests
+                if policy
+                else 2
+                if self.settings.automatic_failover_enabled
+                else 1
+            )
+            if (
+                route not in gateways
+                or len(calls) >= maximum
+                or any(
+                    c.route == route or c.route_key == self._route_key(route, gateways)
+                    for c in calls
+                )
             ):
                 raise PresalesError("presales_dispatch_limit")
             await begin_background_attempt(
@@ -434,7 +486,7 @@ class BackgroundGeneration:
                 operation_id=operation.id,
                 number=len(calls) + 1,
                 route=route,
-                route_key=self._route_key(route),
+                route_key=self._route_key(route, gateways),
                 fencing_token=claim.fencing_token,
                 state="running",
                 model_provider=gateway.model_provider,
@@ -446,15 +498,23 @@ class BackgroundGeneration:
                 call,
                 now=self.clock(),
                 deadline=operation.deadline_at,
-                settings=self.settings,
+                settings=self.settings.model_copy(
+                    update={
+                        "daily_dispatch_limit": min(
+                            self.settings.daily_dispatch_limit, policy.daily_dispatch_limit
+                        )
+                    }
+                )
+                if policy
+                else self.settings,
             )
             session.add(call)
             operation.provider_request_count = None
             operation.state = "recovering" if calls else "running"
             reserve_recovery = 0.0
-            if self.settings.automatic_failover_enabled and not calls:
-                for other in self.gateways:
-                    other_key = self._route_key(other)
+            if maximum == 2 and not calls:
+                for other in gateways:
+                    other_key = self._route_key(other, gateways)
                     if (
                         other != route
                         and other_key != call.route_key
@@ -463,7 +523,7 @@ class BackgroundGeneration:
                         # Custom gateways without an advertised bound keep the
                         # existing half-budget reservation at the execution site.
                         reserve_recovery = float(
-                            getattr(self.gateways[other], "request_timeout_seconds", float("inf"))
+                            getattr(gateways[other], "request_timeout_seconds", float("inf"))
                         )
                         break
             return call.id, reserve_recovery

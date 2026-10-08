@@ -4,16 +4,18 @@ from collections.abc import Awaitable
 from typing import Annotated, Literal, Protocol, cast
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, Query, Request, Response
+from fastapi import APIRouter, Body, Depends, Header, Query, Request, Response
 
 from enterprise_doc_api.auth import get_current_principal
 from enterprise_doc_api.errors import ApiError
 from enterprise_doc_core.context import PrincipalContext
 from enterprise_doc_core.presales.errors import PresalesError
+from enterprise_doc_core.presales.policy import ExecutionMode
 from enterprise_doc_core.presales.schemas import (
     BatchGenerateInput,
     BatchGenerateResult,
     CreatePacket,
+    GenerateRowInput,
     GenerationReceipt,
     PacketSummary,
     PacketView,
@@ -28,13 +30,25 @@ class PresalesServiceProtocol(Protocol):
     async def list_packets(self, principal: PrincipalContext) -> list[PacketSummary]: ...
     async def get(self, principal: PrincipalContext, packet_id: UUID) -> PacketView: ...
     async def generate(
-        self, principal: PrincipalContext, packet_id: UUID, row_id: UUID, key: str
+        self,
+        principal: PrincipalContext,
+        packet_id: UUID,
+        row_id: UUID,
+        key: str,
+        *,
+        execution_mode: ExecutionMode | None = None,
     ) -> PacketView: ...
     async def generate_batch(
         self, principal: PrincipalContext, packet_id: UUID, payload: BatchGenerateInput, key: str
     ) -> BatchGenerateResult: ...
     async def admit(
-        self, principal: PrincipalContext, packet_id: UUID, row_id: UUID, key: str
+        self,
+        principal: PrincipalContext,
+        packet_id: UUID,
+        row_id: UUID,
+        key: str,
+        *,
+        execution_mode: ExecutionMode | None = None,
     ) -> GenerationReceipt: ...
     async def admit_batch(
         self, principal: PrincipalContext, packet_id: UUID, payload: BatchGenerateInput, key: str
@@ -109,9 +123,11 @@ async def result[T](operation: Awaitable[T]) -> T:
         elif code == "presales_review_evidence_required":
             message = "此判断缺少相应证据或条件。请核对原文后再保存。"
         elif code == "presales_review_prerequisites_invalid":
-            status, message = 422, "请保留全部前提及对应证据。刷新后重新复核。"
+            status, message = 422, "请核对前提来源关联及排除记录。刷新后重新复核。"
         elif code == "presales_review_note_required":
-            status, message = 422, "前提状态已修改。请在复核备注中说明依据。"
+            status, message = 422, "前提已修改。请在复核备注中说明依据。"
+        elif code == "presales_execution_policy_unavailable":
+            status, message = 503, "生成档位配置暂不可用。请联系管理员核查。"
         elif code == "presales_invalid_idempotency_key":
             status, message = 400, "操作标识无效。"
         raise ApiError(status_code=status, code=code, message=message) from error
@@ -146,13 +162,23 @@ async def generate_row(
     key: Key,
     response: Response,
     response_mode: Annotated[Literal["full", "receipt"], Query(alias="response")] = "full",
+    payload: Annotated[GenerateRowInput | None, Body()] = None,
 ) -> PacketView | GenerationReceipt:
+    mode = payload.execution_mode if payload else None
     if response_mode == "receipt":
-        receipt = await result(svc.admit(principal, packet_id, row_id, key))
+        receipt = await result(
+            svc.admit(principal, packet_id, row_id, key, execution_mode=mode)
+            if mode is not None
+            else svc.admit(principal, packet_id, row_id, key)
+        )
         if any(item.disposition == "enqueued" for item in receipt.admissions):
             response.status_code = 202
         return receipt
-    packet = await result(svc.generate(principal, packet_id, row_id, key))
+    packet = await result(
+        svc.generate(principal, packet_id, row_id, key, execution_mode=mode)
+        if mode is not None
+        else svc.generate(principal, packet_id, row_id, key)
+    )
     if any(r.id == row_id and r.state in {"queued", "running", "recovering"} for r in packet.rows):
         response.status_code = 202
     return packet

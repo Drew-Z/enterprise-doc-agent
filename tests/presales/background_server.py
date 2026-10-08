@@ -78,14 +78,20 @@ async def main() -> None:
                 return httpx.Response(400)
             return valid_response(request)
 
+        model_settings = ModelSettings(
+            provider=ModelProvider.OPENAI_COMPATIBLE,
+            base_url="https://primary.invalid/v1",
+            model_name="browser-fixture",
+            api_key=SecretStr("test-only"),
+            fallback_provider=ModelProvider.OPENAI_COMPATIBLE,
+            fallback_base_url="https://fallback.invalid/v1",
+            fallback_model_name="browser-fixture",
+            fallback_api_key=SecretStr("test-only"),
+        )
         models = {
             route: OpenAICompatiblePresalesGateway(
-                ModelSettings(
-                    provider=ModelProvider.OPENAI_COMPATIBLE,
-                    base_url=f"https://{route}.invalid/v1",
-                    model_name="browser-fixture",
-                    api_key=SecretStr("test-only"),
-                ),
+                model_settings,
+                presales_settings=PresalesSettings(model_route=route),
                 transport=httpx.MockTransport(respond),
             )
             for route in ("primary", "fallback")

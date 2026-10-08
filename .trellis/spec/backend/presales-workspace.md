@@ -7,6 +7,73 @@ admission, browser OIDC, invitations and commercial request quotas. Payment,
 automatic requirement extraction and production model/customer acceptance remain
 outside this workflow. Commercial contracts are in [entitlements-usage.md](entitlements-usage.md).
 
+## Persisted execution modes (2026-10-08 candidate)
+
+### 1. Scope / trigger
+
+User-selected `auto` / `deep` must survive admission, replay and Worker replacement.
+This is local candidate behavior; real two-mode quality, latency and cost acceptance
+remains open. Production rc.40 does not include this contract.
+
+### 2. Signatures
+
+Single-row POST accepts optional `GenerateRowInput`; batch accepts
+`BatchGenerateInput.execution_mode`. Both complete and receipt responses retain
+their prior status semantics. `PacketView.available_execution_modes` advertises
+supported choices; `AttemptView.execution_policy` returns the saved policy.
+Migration `20261008_0034` adds nullable object JSONB `presales_attempts.execution_policy`.
+Downgrade locks the table and refuses when any policy history exists.
+
+### 3. Contracts
+
+New clients send `executionMode`; old bodyless or omitted-mode requests retain
+the legacy path and a null policy. `presales.execution.v1` freezes mode, queue/row
+timeouts, maximum provider requests, original daily dispatch cap, ordered routes,
+model/version/revision, reasoning, streaming, per-route timeout, output size, and
+endpoint/prompt SHA. Never store credentials or endpoint text in this snapshot.
+Auto uses accepted operational settings. Deep requires background execution,
+raises reasoning below high to high (preserves xhigh), allows 300 seconds per
+route and at least 660 seconds per row within the 900-second cap. It preserves
+the existing one/two-dispatch and output-size limits.
+
+First start computes the execution deadline from the saved row budget. Recovery
+keeps that deadline and the existing call ledger. Restore private gateways from
+the saved routes using current credentials for the same endpoint and prompt only.
+Enforce the smaller of saved/current daily caps. Worker progress timeout covers
+the maximum persisted row budget, not just the new process default.
+
+### 4. Validation and errors
+
+| Condition | Result |
+|---|---|
+| Invalid mode or client-supplied budget | 422; no attempt/reservation |
+| Same key with changed or omitted original mode | 409 idempotency conflict |
+| Deep on synchronous service | 409 background required |
+| Missing required route during admission | 503 policy unavailable; no admission |
+| Missing route, changed endpoint or prompt during execution | Failed policy unavailable; no provider dispatch, reservation released |
+| Daily limit already used | Dispatch budget failure; ledger is not reset |
+
+### 5. Good / base / bad cases
+
+Good: an interrupted deep task resumes its original fallback/model/deadline even
+when process defaults change. Base: old null-policy rows remain readable. Bad:
+recompute a policy at replay or silently execute it with a new prompt or endpoint.
+
+### 6. Tests and assertion points
+
+`test_presales_execution_policy_integration.py` exercises real API/PostgreSQL and
+controlled HTTP: sync auto, deep admission/replay, interrupted two-route recovery,
+original/current daily caps, rejected requests, batch per-row conflicts, endpoint
+and historical-prompt drift, additive migration and history-preserving downgrade.
+Assert exact provider counts, original deadline/policy and a single settlement.
+The background and ordinary browser suites independently cover new/legacy flows.
+
+### 7. Wrong versus correct
+
+Wrong: mutate the shared gateway or extend the deadline after a restart.
+Correct: restore a private gateway from the durable policy, preserve ledger/deadline,
+and fail explicitly when the original identity cannot be served.
+
 ## Ownership and public contract
 
 - Core: `packages/core/src/enterprise_doc_core/presales/{schemas,access,gateway,generation,service,export}.py`.
