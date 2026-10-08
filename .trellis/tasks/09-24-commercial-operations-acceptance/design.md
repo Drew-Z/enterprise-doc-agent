@@ -1,5 +1,9 @@
 # 当前环境验收设计
 
+## 2026-10-08 CRI混合摘要别名
+
+image_cache_safety提供共用公开别名验证入口。原同摘要路径仍核对每个引用自身摘要与TARGET；混合摘要路径读取有界元数据并验证SHA、schema、唯一linux/amd64成员、描述符类型/大小和配置ID。平台清单必须是获准索引的成员；containerd生成的归档索引须包含同一获准索引与平台清单。现场收集保存已读取的元数据供纯容量守卫重验，临时别名补齐器复用同一入口。容量观察原15秒新鲜度及90秒只读上限不扩大。旧批次失败保留，新补齐仅处理三条尚不存在的应用引用，独立记录期限和读回。
+
 ## 2026-10-08 OCI空配置证明
 
 在现有archive_footprint完成所有内容hash和描述符size核对后，识别BuildKit的application/vnd.docker.attestation.manifest.v1+json。其config必须为application/vnd.oci.empty.v1+json、精确两字节空JSON及相符inline data；layers非空且均为application/vnd.in-toto+json，subject摘要必须属于本次归档描述符、mediaType/size相符且指向linux/amd64运行清单。只有这个明确分支跳过snapshot计算，内容和归档/inode照常计入。旧unknown/unknown证明兼容不扩展，未知空配置仍拒绝。执行器修复的源码与已有rc.42应用934d246分开绑定，不更改签名制品或以重打标签替代。

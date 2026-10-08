@@ -17,6 +17,108 @@ from scripts import image_cache_safety as safety
 from scripts import import_staging_oci_archive as receiver
 
 
+def mixed_alias_image(fault: str | None = None) -> tuple[str, dict[str, object]]:
+    content: dict[str, str] = {}
+
+    def blob(value: dict[str, object], kind: str) -> dict[str, object]:
+        raw = json.dumps(value)
+        digest = "sha256:" + hashlib.sha256(raw.encode()).hexdigest()
+        content[digest] = raw
+        return {"digest": digest, "size": len(raw.encode()), "mediaType": kind}
+
+    config = blob(
+        {
+            "os": "linux",
+            "architecture": "arm64" if fault == "platform" else "amd64",
+            "rootfs": {"type": "layers", "diff_ids": []},
+        },
+        "application/vnd.oci.image.config.v1+json",
+    )
+    manifest = blob(
+        {
+            "schemaVersion": 2,
+            "mediaType": "application/vnd.oci.image.manifest.v1+json",
+            "config": config,
+            "layers": [],
+        },
+        "application/vnd.oci.image.manifest.v1+json",
+    )
+    child = {**manifest, "platform": {"os": "linux", "architecture": "amd64"}}
+    if fault == "child_size":
+        child["size"] += 1
+    root = blob(
+        {
+            "schemaVersion": 2,
+            "mediaType": "application/vnd.oci.image.index.v1+json",
+            "manifests": [child, child] if fault == "ambiguous" else [child],
+        },
+        "application/vnd.oci.image.index.v1+json",
+    )
+    archive = blob(
+        {
+            "schemaVersion": 2,
+            "manifests": [root] if fault == "unrelated_archive" else [root, manifest],
+        },
+        "application/vnd.oci.image.index.v1+json",
+    )
+    ref = "ghcr.io/test/api@" + str(root["digest"])
+    aliases = {
+        ref: root["digest"],
+        **{
+            "docker.io/library/import@" + str(d["digest"]): d["digest"]
+            for d in (root, manifest, archive)
+        },
+    }
+    if fault == "missing_alias":
+        aliases["docker.io/library/import@" + str(manifest["digest"])] = None
+    if fault == "wrong_target":
+        aliases["docker.io/library/import@" + str(manifest["digest"])] = root["digest"]
+    if fault == "corrupt_content":
+        content[str(manifest["digest"])] += " "
+    if fault == "missing_content":
+        del content[str(manifest["digest"])]
+    image = {
+        "ready": True,
+        "target": root["digest"],
+        "aliases": aliases,
+        "cri_id": "sha256:" + "0" * 64 if fault == "cri_id" else config["digest"],
+        "alias_content": content,
+    }
+    return ref, image
+
+
+def test_capacity_accepts_proven_index_platform_and_archive_aliases() -> None:
+    ref, image = mixed_alias_image()
+    state = archive_fixture().healthy_cache_state()
+    state["required_refs"].append(ref)
+    state["images"][ref] = image
+    result = safety.validate_capacity(state, [safety.ArchiveFootprint(0, 0, 0, 0, 0)])
+    assert ref in result["rollback_refs_verified"]
+
+
+@pytest.mark.parametrize(
+    "fault",
+    [
+        "platform",
+        "child_size",
+        "ambiguous",
+        "unrelated_archive",
+        "missing_alias",
+        "wrong_target",
+        "corrupt_content",
+        "missing_content",
+        "cri_id",
+    ],
+)
+def test_mixed_aliases_reject_missing_or_unproven_relationships(fault: str) -> None:
+    ref, image = mixed_alias_image(fault)
+    state = archive_fixture().healthy_cache_state()
+    state["required_refs"].append(ref)
+    state["images"][ref] = image
+    with pytest.raises(safety.ImageCacheSafetyError):
+        safety.validate_capacity(state, [safety.ArchiveFootprint(0, 0, 0, 0, 0)])
+
+
 def archive_fixture() -> ModuleType:
     spec = importlib.util.spec_from_file_location(
         "cache_archive_fixture", Path(__file__).with_name("test_import_staging_oci_archive.py")
@@ -546,7 +648,8 @@ def test_separate_cache_disk_cannot_hide_exhausted_node_filesystem(tmp_path: Pat
 
 
 @pytest.mark.parametrize(
-    "fault", [None, "init_missing", "alias_missing", "content_missing", "late_observation"]
+    "fault",
+    [None, "init_missing", "alias_missing", "content_missing", "late_observation", "mixed_aliases"],
 )
 def test_live_collector_checks_redis_and_init_containers_through_process_boundary(
     monkeypatch: pytest.MonkeyPatch, fault: str | None
@@ -588,6 +691,9 @@ def test_live_collector_checks_redis_and_init_containers_through_process_boundar
         "enterprise-doc-" + role: "docker.io/library/" + role + "@sha256:" + str(i) * 64
         for i, role in enumerate(("api", "worker", "consumer", "web", "redis"), 1)
     }
+    mixed_ref, mixed_image = mixed_alias_image()
+    if fault == "mixed_aliases":
+        refs["enterprise-doc-api"] = mixed_ref
     namespace = {"metadata": {"uid": "namespace"}}
     nodes = {
         "items": [
@@ -630,6 +736,8 @@ def test_live_collector_checks_redis_and_init_containers_through_process_boundar
         ]
     }
     all_refs = [*refs.values(), init]
+    if fault == "mixed_aliases":
+        all_refs.extend(alias for alias in mixed_image["aliases"] if alias not in all_refs)
     commands = []
 
     def run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
@@ -657,7 +765,20 @@ def test_live_collector_checks_redis_and_init_containers_through_process_boundar
             aliases = [command[-1]]
             if fault == "alias_missing" and "redis@" in command[-1]:
                 aliases.append("docker.io/library/old@" + command[-1].split("@")[1])
-            output = json.dumps({"status": {"repoDigests": aliases}})
+            output = (
+                json.dumps(
+                    {
+                        "status": {
+                            "repoDigests": list(mixed_image["aliases"]),
+                            "id": mixed_image["cri_id"],
+                        }
+                    }
+                )
+                if fault == "mixed_aliases" and command[-1] == mixed_ref
+                else json.dumps({"status": {"repoDigests": aliases}})
+            )
+        elif "content" in command and "get" in command:
+            output = mixed_image["alias_content"][command[-1]]
         elif command[-1] == "list":
             output = "REF TYPE DIGEST SIZE\n" + "\n".join(
                 f"{ref} index {ref.split('@')[1]} 1B"
@@ -673,13 +794,15 @@ def test_live_collector_checks_redis_and_init_containers_through_process_boundar
 
     state = safety.collect_cache_state(("k3s", "ctr"), run=run)
     footprint = safety.ArchiveFootprint(100, 100, 1, 100, 100)
-    if fault:
+    if fault and fault != "mixed_aliases":
         with pytest.raises(safety.ImageCacheSafetyError):
             safety.validate_capacity(state, [footprint], clock=lambda: elapsed[0])
     else:
         result = safety.validate_capacity(state, [footprint], clock=lambda: elapsed[0])
         assert init in result["rollback_refs_verified"]
         assert any("redis@" in ref for ref in result["rollback_refs_verified"])
+        if fault == "mixed_aliases":
+            assert state["images"][mixed_ref]["alias_content"] == mixed_image["alias_content"]
     assert all(
         "pull" not in command and "tag" not in command and "import" not in command
         for command in commands

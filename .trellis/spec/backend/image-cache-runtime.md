@@ -7,6 +7,9 @@ Use for OCI imports into the current k3s node before a release or rollback. On
 but the new API could not start because CRI also retained an absent imported alias.
 The rc.41 prewarm later exhausted the root disk and evicted running workloads.
 All candidate archives must therefore be evaluated as one batch before any cache write.
+The rc.42 batch later imported successfully but a same-target-only CRI check rejected
+its legitimate index/platform aliases. Preserve that failed attempt and reconcile
+content relationships before completing the missing application references.
 
 ## Signatures
 
@@ -31,14 +34,27 @@ archive paths resolve against the plan directory. `--confirm` enables the guarde
 import. Live observation supports the reviewed Linux single-node amd64 k3s target;
 missing facts or unsupported targets are rejected, never treated as zero usage.
 
+`validate_image_aliases(reference, image, read_content=None)` is the shared pure
+alias guard. `image` carries `ready`, `target`, `aliases`, and, for mixed digests,
+`cri_id` plus exact UTF-8 `alias_content` keyed by digest. A read-only content callback
+may supply bytes instead. `collect_cache_state` captures this metadata through
+`ctr content get`; `validate_capacity` independently revalidates it.
+
 ## Contracts
 
 - Bind component/source/index digest to the signed release manifest and retain
   original/current/candidate identities separately.
 - Compare each relevant CRI `status.repoDigests` entry with the actual containerd
   image-store `REF` and `DIGEST` columns. ImageStatus can return stale aliases.
-- The approved source and a repaired alias must have the same exact TARGET digest.
-  Inspect OCI index/platform membership separately when runtime digest types differ.
+- Each alias TARGET must equal the digest in that alias's own immutable name. A new
+  deployment alias must have the same exact TARGET as its chosen canonical source.
+  CRI may group an index, its linux/amd64 manifest and a runtime archive index under
+  one config ID. Mixed digests require bounded (64 KiB each) SHA-checked metadata,
+  one exact linux/amd64 member, matching descriptor type/size and a config with that
+  platform and CRI ID. Archive aliases must contain the exact approved index and
+  platform descriptors. Same config ID alone is insufficient; missing/stale aliases,
+  unrelated indexes, ambiguity and metadata corruption reject. Maximum 64 aliases;
+  the original observation/deadline and capacity policy are unchanged.
 - A missing alias may be created only after its binding is proven. Never use
   `--force`, replace image content, delete unknown references or restart k3s/CRI to
   hide the failure. Preserve baseline/repair/readback and the failed Pod state.
@@ -85,6 +101,8 @@ missing facts or unsupported targets are rejected, never treated as zero usage.
 | Approved source and all relevant aliases agree | Cache-reference check passes; container startup is still a separate check |
 | CRI alias absent from containerd store | Cache check fails; prepare exact same-digest alias repair before downtime |
 | Source/alias digest differs or identity is unclear | Refuse tagging; retain evidence |
+| Existing index/platform/archive aliases have different but proven targets | Accept the verified relationships; each alias still needs its own correct TARGET |
+| Missing content, wrong platform/config ID, ambiguous member or unrelated wrapper | Reject before further cache writes |
 | Tag command response unknown | Read back both references before any retry |
 | Active switch reaches original deadline | Existing executor owns recovery; no new arm or budget reset |
 | One archive fits but aggregate batch does not | Reject before normalization or containerd writes |
@@ -100,6 +118,9 @@ Good: verify a missing `docker.io/library/import-2026-09-28@sha256:...` binding,
 create that alias from the approved source and read both TARGET digests back.
 Base: inspect an already consistent cache without mutation.
 Bad: count eight image names and claim all containers are ready to start.
+Good: verify index → unique amd64 manifest → config ID and the wrapper's exact
+members. Base: all aliases resolve to the same immutable digest. Bad: require every
+CRI alias to equal the index digest, or accept any alias merely sharing a config ID.
 Good: pass all four candidate archives in one reviewed batch and retain all three
 guard receipts. Base: produce an offline plan, which does not prove live capacity.
 Bad: import archives independently to hide aggregate peak usage or reuse the old
@@ -119,6 +140,10 @@ type/config/payload/subject cases. Verify that proof bytes/inodes remain budgete
 and that unsupported artifacts create no temporary archive or import command.
 Actual release evidence must additionally retain Pod startup/readiness and image
 identity. Local tests and a live refusal do not establish a successful new release.
+Mixed-alias regressions exercise `validate_capacity` and the process-boundary collector
+with real hashed metadata, including missing/wrong targets, content corruption, size,
+platform, ambiguity, unrelated wrapper and wrong CRI ID. Runtime observations and
+public capacity validation use the same proof contract; no internal validator mocks.
 
 ## Wrong vs Correct
 
@@ -128,6 +153,9 @@ separately verify actual container startup without altering the approved plan.
 Wrong: an OCI config without an OS must be safe to ignore.
 Correct: recognize the exact artifact contract and bound subject, retaining all
 content and temporary-allocation accounting before excluding only its snapshot.
+Wrong: all repoDigests must equal the configured index digest.
+Correct: every alias has its own exact TARGET, and differing digest types require
+cryptographically checked membership and runtime/config identity.
 
 ## Proven Examples
 

@@ -306,6 +306,143 @@ def _quantity(value: object, total: int) -> int:
     return math.ceil(Decimal(match[1]) * units[match[2]])
 
 
+def validate_image_aliases(
+    reference: str,
+    image: dict[str, Any],
+    *,
+    read_content: Callable[[str], bytes] | None = None,
+) -> dict[str, str]:
+    """Prove mixed CRI aliases from immutable OCI metadata, never from image ID alone."""
+    if canonical_reference(reference) != reference:
+        raise ImageCacheSafetyError("image reference is not canonical")
+    target = reference.rsplit("@", 1)[1]
+    aliases = image.get("aliases")
+    if (
+        image.get("ready") is not True
+        or image.get("target") != target
+        or not isinstance(aliases, dict)
+        or not 1 <= len(aliases) <= 64
+        or reference not in aliases
+    ):
+        raise ImageCacheSafetyError("image content, unpacked snapshot or CRI aliases are missing")
+    for alias, digest in aliases.items():
+        if canonical_reference(alias) != alias or alias.rsplit("@", 1)[1] != digest:
+            raise ImageCacheSafetyError("CRI alias is missing or mismatched")
+    proof = {alias: "same_digest" for alias, digest in aliases.items() if digest == target}
+    if len(proof) == len(aliases):
+        return proof
+    indexes = {
+        "application/vnd.oci.image.index.v1+json",
+        "application/vnd.docker.distribution.manifest.list.v2+json",
+    }
+    manifests = {
+        "application/vnd.oci.image.manifest.v1+json",
+        "application/vnd.docker.distribution.manifest.v2+json",
+    }
+    cache: dict[str, tuple[dict[str, Any], int]] = {}
+
+    def content(digest: object) -> tuple[dict[str, Any], int]:
+        if not isinstance(digest, str) or not DIGEST.fullmatch(digest):
+            raise ImageCacheSafetyError("invalid cache metadata digest")
+        if digest not in cache:
+            try:
+                raw = (
+                    read_content(digest)
+                    if read_content is not None
+                    else image["alias_content"][digest].encode("utf-8")
+                )
+                if len(raw) > 65536 or "sha256:" + hashlib.sha256(raw).hexdigest() != digest:
+                    raise ImageCacheSafetyError("cache metadata size or digest mismatch")
+                value = json.loads(raw)
+                if not isinstance(value, dict):
+                    raise ImageCacheSafetyError("cache metadata must be an object")
+                cache[digest] = value, len(raw)
+            except (KeyError, TypeError, AttributeError, OSError, ValueError) as error:
+                raise ImageCacheSafetyError("cache alias metadata is missing or invalid") from error
+        return cache[digest]
+
+    def descriptor(item: Any) -> tuple[dict[str, Any], int]:
+        if not isinstance(item, dict) or type(item.get("size")) is not int:
+            raise ImageCacheSafetyError("cache alias descriptor is invalid")
+        value, size = content(item.get("digest"))
+        if size != item["size"]:
+            raise ImageCacheSafetyError("cache alias descriptor size mismatch")
+        return value, size
+
+    root, root_size = content(target)
+    if root.get("schemaVersion") != 2:
+        raise ImageCacheSafetyError("cache alias schema is invalid")
+    if root.get("mediaType") in indexes:
+        members = root.get("manifests")
+        if not isinstance(members, list) or not all(isinstance(v, dict) for v in members):
+            raise ImageCacheSafetyError("cache index members are invalid")
+        selected = [
+            v
+            for v in members
+            if isinstance(v.get("platform"), dict)
+            and v["platform"].get("os") == "linux"
+            and v["platform"].get("architecture") == "amd64"
+        ]
+        if len(selected) != 1 or selected[0].get("mediaType") not in manifests:
+            raise ImageCacheSafetyError("cache index requires one linux/amd64 runtime manifest")
+        runtime_descriptor = selected[0]
+        runtime, _ = descriptor(runtime_descriptor)
+    elif root.get("mediaType") in manifests:
+        runtime_descriptor = {"digest": target, "size": root_size, "mediaType": root["mediaType"]}
+        runtime = root
+    else:
+        raise ImageCacheSafetyError("cache source is not a supported OCI image")
+    if (
+        runtime.get("schemaVersion") != 2
+        or runtime.get("mediaType") != runtime_descriptor["mediaType"]
+        or runtime.get("artifactType") is not None
+        or not isinstance(runtime.get("layers"), list)
+    ):
+        raise ImageCacheSafetyError("cache runtime manifest is invalid")
+    config_descriptor = runtime.get("config")
+    if not isinstance(config_descriptor, dict):
+        raise ImageCacheSafetyError("cache runtime config descriptor is missing")
+    config, _ = descriptor(config_descriptor)
+    if (
+        config_descriptor.get("mediaType")
+        not in {
+            "application/vnd.oci.image.config.v1+json",
+            "application/vnd.docker.container.image.v1+json",
+        }
+        or config.get("os") != "linux"
+        or config.get("architecture") != "amd64"
+        or config_descriptor["digest"] != image.get("cri_id")
+    ):
+        raise ImageCacheSafetyError("cache runtime platform or CRI config ID mismatch")
+    for alias, digest in aliases.items():
+        if alias in proof:
+            continue
+        if digest == runtime_descriptor["digest"]:
+            proof[alias] = "verified_platform_manifest"
+            continue
+        wrapper, _ = content(digest)
+        members = wrapper.get("manifests")
+        if (
+            root.get("mediaType") not in indexes
+            or wrapper.get("schemaVersion") != 2
+            or wrapper.get("mediaType") not in indexes | {None}
+            or not isinstance(members, list)
+            or not all(isinstance(v, dict) for v in members)
+        ):
+            raise ImageCacheSafetyError("unrelated CRI alias content")
+        for expected in (
+            {"digest": target, "size": root_size, "mediaType": root["mediaType"]},
+            runtime_descriptor,
+        ):
+            matching = [v for v in members if v.get("digest") == expected["digest"]]
+            if len(matching) != 1 or any(
+                matching[0].get(k) != expected[k] for k in ("size", "mediaType")
+            ):
+                raise ImageCacheSafetyError("CRI archive alias lacks exact index/runtime members")
+        proof[alias] = "verified_runtime_archive_index"
+    return proof
+
+
 def validate_capacity(
     state: dict[str, Any],
     footprints: Sequence[ArchiveFootprint],
@@ -351,9 +488,7 @@ def validate_capacity(
         image = images[ref]
         if image.get("ready") is not True or image.get("target") != ref.rsplit("@", 1)[-1]:
             raise ImageCacheSafetyError("original image content or unpacked snapshot is missing")
-        aliases = image.get("aliases", {})
-        if ref not in aliases or any(digest != image["target"] for digest in aliases.values()):
-            raise ImageCacheSafetyError("original CRI alias is missing or mismatched")
+        validate_image_aliases(ref, image)
     cache = state["cache_filesystem"]
     temporary = state["temporary_filesystem"]
     node = state.get("node_filesystem")
@@ -557,7 +692,18 @@ def collect_cache_state(prefix: tuple[str, ...], *, run: Run = subprocess.run) -
             "ready": ref in ready,
             "target": targets.get(ref),
             "aliases": {alias: targets.get(alias) for alias in aliases},
+            "cri_id": status.get("id"),
         }
+        if any(targets.get(alias) not in (None, targets.get(ref)) for alias in aliases):
+            metadata: dict[str, str] = {}
+
+            def read_content(digest: str, *, captured: dict[str, str] = metadata) -> bytes:
+                raw = command(["ctr", "--namespace", "k8s.io", "content", "get", digest])
+                captured[digest] = raw
+                return raw.encode("utf-8")
+
+            validate_image_aliases(ref, images[ref], read_content=read_content)
+            images[ref]["alias_content"] = metadata
 
     def filesystem(path: str) -> dict[str, int]:
         info = os.statvfs(path)
