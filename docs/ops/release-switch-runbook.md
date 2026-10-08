@@ -24,6 +24,35 @@
 
 ## 停服前完成
 
+### 当前镜像预热入口（2026-10-08）
+
+rc.41预热造成DiskPressure后，后续导入必须使用同一版本的
+`scripts/import_staging_oci_archive.py`与同目录的`image_cache_safety.py`。
+中转回执新增`receiver_dependency`及`receiver_batch_option`，两份代码应一起传输。
+将本次全部API/Worker/Consumer/Web完整OCI归档写进一份`--batch-plan`，不要沿用
+只含缺失blob的历史传输器。计划格式为`schema_version: 1`及`archives`数组；每项
+包含`archive`、`expected_sha256`、`base_name`和可选`image_reference`，归档相对路径
+相对于计划文件。只读计划不连接集群，也不证明现场空间充足。
+
+在Linux主机上以参数列表运行（由PowerShell的SSH入口传入）：
+
+```text
+python3 -B import_staging_oci_archive.py --batch-plan /approved/batch.json
+python3 -B import_staging_oci_archive.py --batch-plan /approved/batch.json --confirm --record-path /approved/result.json
+```
+
+确认导入时，先核对全部压缩内容、解压快照、规范化临时副本与元数据峰值；按实际
+node/cache/temp文件系统分别保留有效驱逐阈值和minimum reclaim，以及inode余量。
+原五个工作负载（含Redis及init容器）的摘要、完整/已解包内容、CRI别名必须可用。
+创建临时归档前及每次导入前重新观测，任何原模板、节点、boot、政策或空间漂移均拒绝；
+整批共用600秒截止，不因超时重试。末态再核对原缓存和余量，失败不自动清理镜像或停服。
+
+当前约40GB根盘的硬阈值与minimum reclaim均10%；约4.87GB可用低于两者约8.43GB
+保留量，本次只读检查应拒绝新预热。该数值是本次观察，未来执行必须重新测量。
+历史缓存删除仍需对应精确计划批准；本地守卫通过不表示rc.41已发布或总验收通过。
+
+### 既有发布步骤
+
 1. 固定执行器提交及 CI、rc.2 发布清单和源文件哈希；重新读取 Namespace UID、0031、全部资源、主渠道键、任务和上传状态。主机必须有足够空间，四个候选及四个当前镜像都须在缓存中按摘要确认。
 2. 若直拉镜像失败，使用既有受限网络 OCI 中转；完整校验字节数/摘要，确认复用的内容仍在目标缓存，再导入。失败时保持服务运行，不把拉取超时消耗在停服窗口内。
 

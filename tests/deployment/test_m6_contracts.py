@@ -1917,6 +1917,8 @@ def test_staging_image_relay_binds_the_versioned_canonical_receiver() -> None:
     relay_upload = _named_step(steps, "Upload OCI archive through temporary R2 relay")
     receipt = str(relay_upload["run"])
     assert "receiver_script=scripts/import_staging_oci_archive.py" in receipt
+    assert "receiver_dependency=scripts/image_cache_safety.py" in receipt
+    assert "receiver_batch_option=--batch-plan" in receipt
     assert "receiver_base_name=$RELAY_ID" in receipt
     assert "receiver_canonical_base=docker.io/library/$RELAY_ID" in receipt
     assert "receiver_image_reference=$IMAGE_REF" in receipt
