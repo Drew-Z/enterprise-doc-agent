@@ -33,6 +33,28 @@ The [image cache runtime contract](../../backend/image-cache-runtime.md) covers
 containerd/CRI import aliases, exact digest checks and bounded in-window repairs.
 Successful image listings do not alone establish container startup readiness.
 
+## Schema 0034 image-only release contract (local candidate)
+
+1. Scope: apply or restore already-reviewed application images on an already-expanded
+   `20261008_0034` database. This entry never performs the 0032→0034 migration.
+2. Signatures: existing `ReleasePlan` schema version 2, exact `original_revision`,
+   explicit `release_kind=images_only`; existing `ReleaseCluster.apply/restore`.
+3. Contract: keep configuration, credentials, pools, concurrency and all unrelated
+   workload fields. Bind approved candidate/rollback image digests and source hashes.
+   Preserve 0033/0034 columns and all historical policies/review metadata.
+4. Validation: other modes on 0034 and live revision drift reject before writes.
+   Restore requires idle business before any mutation and again after every application
+   is stopped. Work arriving during close blocks rollback without opening an old Worker.
+5. Cases: good = drained full/partial image rollback; base = unchanged 0031/0032 modes;
+   bad = hand a new-policy task to rc.40, change config, or downgrade history.
+6. Tests: `test_release_switch.py` covers exact schema, scope expansion, complete/partial
+   restore and both idle-check boundaries. `test_presales_release_compatibility_integration.py`
+   executes frozen rc.40 GET/projection/schema against new database content, asserting
+   full readable old fields, two review revisions, tenant denial and unchanged metadata.
+7. Wrong/correct: changing a plan revision is not migration. Verify an independently
+   completed expansion first; use this no-migration executor only on exact 0034. Frozen
+   reader compatibility does not replace signed-image startup or actual rollback evidence.
+
 On schema `20261005_0032`, `ReleasePlan` defaults to the existing same-image upload
 flag switch. A new image release must explicitly declare `release_kind=images_only`;
 configuration, credentials, pool settings, unrelated approvals and workload specs stay

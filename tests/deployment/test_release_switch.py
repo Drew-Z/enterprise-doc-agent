@@ -279,21 +279,26 @@ def test_presales_inference_release_requires_exact_authorized_boundary(mutation)
         ReleasePlan(data)
 
 
-def test_0032_explicit_image_switch_accepts_unchanged_configuration() -> None:
+@pytest.mark.parametrize("revision", ["20261005_0032", "20261008_0034"])
+def test_explicit_image_switch_accepts_unchanged_configuration(revision: str) -> None:
     from scripts.release_switch import ReleasePlan
 
-    plan = ReleasePlan(image_switch_data())
-    assert plan.revision == "20261005_0032"
+    data = image_switch_data()
+    data["original_revision"] = revision
+    plan = ReleasePlan(data)
+    assert plan.revision == revision
     assert plan.old_config == plan.new_config
 
 
 @pytest.mark.parametrize(
     "mutation", ["config", "pool", "credential", "approval", "workload", "schema", "kind"]
 )
-def test_0032_image_only_rejects_scope_expansion(mutation: str) -> None:
+@pytest.mark.parametrize("revision", ["20261005_0032", "20261008_0034"])
+def test_image_only_rejects_scope_expansion(mutation: str, revision: str) -> None:
     from scripts.release_switch import GuardError, ReleasePlan
 
     data = image_switch_data()
+    data["original_revision"] = revision
     if mutation == "config":
         data["candidate_prerequisites"][1]["data"]["UPLOAD__SINGLE_PUT_ENABLED"] = "true"
     elif mutation == "pool":
@@ -315,8 +320,14 @@ def test_0032_image_only_rejects_scope_expansion(mutation: str) -> None:
 
 
 @pytest.mark.parametrize("partial", [False, True])
-@pytest.mark.parametrize("kind", ["images_only", "reasoning_only", "presales_inference"])
-def test_0032_explicit_mode_applies_and_restores_full_specs(partial: bool, kind: str) -> None:
+@pytest.mark.parametrize(
+    "revision,kind",
+    [("20261005_0032", kind) for kind in ("images_only", "reasoning_only", "presales_inference")]
+    + [("20261008_0034", "images_only")],
+)
+def test_explicit_mode_applies_and_restores_full_specs(
+    partial: bool, kind: str, revision: str
+) -> None:
     from scripts.release_switch import ReleaseCluster, ReleasePlan
 
     data = {
@@ -324,11 +335,12 @@ def test_0032_explicit_mode_applies_and_restores_full_specs(partial: bool, kind:
         "reasoning_only": reasoning_switch_data,
         "presales_inference": presales_inference_data,
     }[kind]()
+    data["original_revision"] = revision
     boundary = Boundary(data)
     cluster = ReleaseCluster(
         ReleasePlan(data),
         run=boundary,
-        revision=lambda timeout: "20261005_0032",
+        revision=lambda timeout: revision,
         idle=lambda timeout: True,
         clock=lambda: 1.0,
     )
@@ -370,6 +382,42 @@ def test_0032_explicit_mode_refuses_schema_drift_before_writes(kind: str) -> Non
     with pytest.raises(GuardError):
         cluster.apply(100)
     assert boundary.writes == []
+
+
+@pytest.mark.parametrize(
+    "kind", [None, "reasoning_only", "presales_inference", "presales_concurrency"]
+)
+def test_0034_requires_explicit_image_only_mode(kind: str | None) -> None:
+    from scripts.release_switch import GuardError, ReleasePlan
+
+    data = image_switch_data()
+    data["original_revision"] = "20261008_0034"
+    if kind is None:
+        del data["release_kind"]
+    else:
+        data["release_kind"] = kind
+    with pytest.raises(GuardError, match="0034"):
+        ReleasePlan(data)
+
+
+@pytest.mark.parametrize("actual", ["20261005_0032", "20261008_0033", "unknown"])
+@pytest.mark.parametrize("action", ["apply", "restore"])
+def test_0034_image_switch_rejects_schema_drift_before_writes(actual: str, action: str) -> None:
+    from scripts.release_switch import GuardError, ReleaseCluster, ReleasePlan
+
+    data = image_switch_data()
+    data["original_revision"] = "20261008_0034"
+    boundary = Boundary(data)
+    cluster = ReleaseCluster(
+        ReleasePlan(data),
+        run=boundary,
+        revision=lambda timeout: actual,
+        idle=lambda timeout: True,
+        clock=lambda: 1.0,
+    )
+    with pytest.raises(GuardError):
+        getattr(cluster, action)(100)
+    assert not boundary.writes
 
 
 def release_data() -> dict[str, Any]:
@@ -816,6 +864,43 @@ class Boundary:
         if args[0] == "rollout":
             return "ready"
         raise AssertionError(args)
+
+
+@pytest.mark.parametrize("arrives_during_close", [False, True])
+def test_0034_rollback_never_starts_old_worker_with_pending_policy_work(
+    arrives_during_close: bool,
+) -> None:
+    from scripts.release_switch import GuardError, ReleaseCluster, ReleasePlan
+
+    data = image_switch_data()
+    data["original_revision"] = "20261008_0034"
+    boundary = Boundary(data)
+    cluster = ReleaseCluster(
+        ReleasePlan(data),
+        run=boundary,
+        revision=lambda timeout: "20261008_0034",
+        idle=lambda timeout: True,
+        clock=lambda: 1.0,
+    )
+    cluster.apply(100)
+    boundary.writes.clear()
+    idle_results = iter([True, False] if arrives_during_close else [False])
+    cluster.idle = lambda timeout: next(idle_results)
+    with pytest.raises(GuardError, match="business operations"):
+        cluster.restore(100)
+    if not arrives_during_close:
+        assert not boundary.writes
+    for item in boundary.items:
+        if item["kind"] == "Deployment":
+            original = next(
+                i
+                for i in data["candidate_deployments"]
+                if i["metadata"]["name"] == item["metadata"]["name"]
+            )
+            expected = copy.deepcopy(original["spec"])
+            if arrives_during_close:
+                expected["replicas"] = 0
+            assert item["spec"] == expected
 
 
 @pytest.mark.parametrize("api_pool_override", [False, True])

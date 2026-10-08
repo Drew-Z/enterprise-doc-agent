@@ -1,4 +1,4 @@
-"""Bounded releases and explicit schema 0032 configuration or image changes; no migrations.
+"""Bounded releases, schema 0032 configuration and 0032/0034 image changes; no migrations.
 
 Private plans contain the primary and any explicitly declared fallback API keys. Keep
 them out of Git/logs, and explicitly approve any temporary remote runtime copy.
@@ -137,6 +137,7 @@ class ReleasePlan(Plan):
         if value["schema_version"] != 2 or value["original_revision"] not in {
             "20260924_0031",
             "20261005_0032",
+            "20261008_0034",
         }:
             raise GuardError("release switching requires a reviewed schema")
         self.revision = value["original_revision"]
@@ -144,6 +145,8 @@ class ReleasePlan(Plan):
         self.reasoning_only = value.get("release_kind") == "reasoning_only"
         self.presales_inference = value.get("release_kind") == "presales_inference"
         self.presales_concurrency = value.get("release_kind") == "presales_concurrency"
+        if self.revision == "20261008_0034" and not self.image_only:
+            raise GuardError("schema 0034 only permits explicit image switching")
         if "release_kind" in value and (
             not (
                 self.image_only
@@ -151,7 +154,7 @@ class ReleasePlan(Plan):
                 or self.presales_inference
                 or self.presales_concurrency
             )
-            or self.revision != "20261005_0032"
+            or self.revision not in {"20261005_0032", "20261008_0034"}
         ):
             raise GuardError("explicit release kind requires a supported schema 0032 mode")
         self.original = self.data["original_prerequisites"]
@@ -193,7 +196,7 @@ class ReleasePlan(Plan):
             raise GuardError("presales inference settings require an explicit release mode")
         if "WORKER__PRESALES_CONCURRENCY" in changed and not self.presales_concurrency:
             raise GuardError("presales concurrency requires an explicit release mode")
-        if self.revision == "20261005_0032":
+        if self.revision in {"20261005_0032", "20261008_0034"}:
             if self.image_only and changed:
                 raise GuardError("image-only switching must retain all configuration")
             if self.reasoning_only:
@@ -704,7 +707,14 @@ class ReleaseCluster(Cluster):
         validate_objects(self.plan.candidate, super()._prerequisites(deadline))
 
     def restore(self, deadline: float) -> None:
+        if self.plan.revision == "20261008_0034" and not self.idle(self._remaining(deadline)):
+            raise GuardError("active business operations must finish before application rollback")
         self._close(deadline)
+        # Older Workers do not understand persisted execution policies. Never
+        # hand them work admitted by a partially started candidate, including a
+        # submission racing the first idle check. Keep the expanded schema.
+        if self.plan.revision == "20261008_0034" and not self.idle(self._remaining(deadline)):
+            raise GuardError("business operations arrived while closing the rollback entry")
         self._bundle(False, deadline)
         self._open(deadline)
         self.verify(False, deadline)
