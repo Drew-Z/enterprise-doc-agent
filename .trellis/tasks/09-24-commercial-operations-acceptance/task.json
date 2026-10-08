@@ -61,6 +61,20 @@
     "evaluation/presales_public_r2_v1.gold.json",
     ".trellis/tasks/09-24-commercial-operations-acceptance/remaining-acceptance-validation.json"
   ],
-  "notes": "2026-09-28: independent Cloudflare readiness Worker/D1 observes actual ready; recipient verified and exactly one failure plus one recovery drill email accepted with message IDs. Temporary drill Worker/cron removed; user confirmed both inbox receipts, daily notify activated and exact configuration plus first live ready observation read back. main required backend/frontend checks and force/delete protection applied and read back, independent release reviewer pending. Five authorized public-source grok-4.7 requests completed: 5 valid drafts/classifications, 10 valid citations, 4/5 frozen semantic references met; R2-R3 places a scenario state only in the requirement and conflicts with source-only prerequisite evidence. Preserve this fixture mismatch; no rerun, prompt change or commercial pass. 39242 reported tokens, amount unknown, 0 embeddings/business writes. Python 2030, Web 343 and monitor 24 tests passed. Prior rc.1/0031 deployment and 185.8-minute failure remain recorded. OAuth/browser recovery, Agent actual accounting, 4C4G capacity, independent review/UAT, backup/queue alerting and whole-host recovery remain pending. Keep Draft and in_progress.",
-  "meta": {}
+  "notes": "2026-10-08: Execute approved final A-F plan. A scope/evidence alignment in progress; B atomic propositions and complete human correction; C persistent auto/deep policies; D bounded cache/mail prerequisites; E one candidate quality, full 160-task capacity, browser, new-cost and delivery acceptance; F independent reviews, UAT, handoff and normal merge. Runtime rc.40/aeab213/0032, concurrency 2, rollback rc.39; acceptance baseline 3deeec8. rc.41 failed, current cache guard refuses insufficient space. Strict semantics 5/6, latest full capacity 148/3/9. Current consumption reconciled; no new historical settlement gate. Four Outlook S8002 rejections; two TEST authorizations exhausted. Backup/recovery deferred except release rollback. Preserve 2993 historical changes, failed runs and Draft PR #8; no independent signatures fabricated.",
+  "meta": {
+    "final_delivery_plan": {
+      "scope": "invited",
+      "baseline_commit": "3deeec82c19260ae73a763973a97b4ed3ff23183",
+      "work_packages": {
+        "A": "implemented_pending_ci",
+        "B": "pending",
+        "C": "pending",
+        "D": "pending",
+        "E": "pending",
+        "F": "pending"
+      },
+      "deferral_decision_sha256": "e2b8ff9d814d0191fbc13dfc06a32b40db60b68e1f14f201c7e33a96aefd05d2"
+    }
+  }
 }

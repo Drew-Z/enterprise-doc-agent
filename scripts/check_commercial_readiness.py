@@ -70,6 +70,10 @@ REQUIRED_CHECKS = {
     "self_service": {"onboarding", "abuse_limits", "renewal_expiry", "tenant_exit"},
 }
 PUBLIC_ONLY = {"payments", "self_service"}
+INVITED_DEFERRALS = {
+    "recovery": {"independent_fault_domain", "database_and_objects", "rpo_rto"},
+    "observability": {"backup_freshness"},
+}
 MAX_AGE = timedelta(days=7)
 SHA = re.compile(r"^[0-9a-f]{40}$")
 DIGEST = re.compile(r"^[0-9a-f]{64}$")
@@ -160,6 +164,85 @@ def _bind(report: dict[str, Any], target: dict[str, str]) -> None:
         raise ReadinessError("candidate_binding_mismatch")
 
 
+def _deferrals(
+    root: Path,
+    record: dict[str, Any],
+    target: dict[str, str],
+    scope: str,
+    pin: str | None,
+    now: datetime,
+) -> dict[str, set[str]]:
+    if "deferral_decision" not in record and pin is None:
+        return {}
+    if scope != "invited":
+        raise ReadinessError("deferral_scope_not_allowed")
+    if pin is None or not DIGEST.fullmatch(pin):
+        raise ReadinessError("deferral_pin_required")
+    reference = _object(record.get("deferral_decision"))
+    if reference.get("sha256") != pin:
+        raise ReadinessError("deferral_pin_mismatch")
+    decision = _reference(root, reference)
+    if (
+        decision.get("schema_version") != 1
+        or decision.get("decision") != "deferred"
+        or decision.get("release_scope") != scope
+    ):
+        raise ReadinessError("invalid_deferral_decision")
+    _bind(decision, target)
+    for field in ("decided_by", "recorded_by", "reason", "source"):
+        _identity(decision.get(field))
+    if _time(decision.get("recorded_at")) > now:
+        raise ReadinessError("invalid_deferral_time")
+    checks = _object(decision.get("deferred_checks"))
+    if set(checks) != set(INVITED_DEFERRALS):
+        raise ReadinessError("deferral_checks_not_allowed")
+    for gate_id, allowed in INVITED_DEFERRALS.items():
+        values = checks[gate_id]
+        if (
+            not isinstance(values, list)
+            or not all(isinstance(value, str) for value in values)
+            or len(values) != len(allowed)
+            or set(values) != allowed
+        ):
+            raise ReadinessError("deferral_checks_not_allowed")
+    return {gate_id: set(values) for gate_id, values in INVITED_DEFERRALS.items()}
+
+
+def _rollback(
+    root: Path,
+    report: dict[str, Any],
+    target: dict[str, str],
+    now: datetime,
+    completed: datetime,
+) -> None:
+    source = _reference(root, report.get("measurement_report"))
+    if source.get("status") != "passed" or source.get("evidence_type") != "release_rollback":
+        raise ReadinessError("rollback_measurement_required")
+    _bind(source, target)
+    if not now - MAX_AGE <= _time(source.get("completed_at")) <= completed:
+        raise ReadinessError("source_report_not_current")
+    rollback_commit = source.get("rollback_commit_sha")
+    if (
+        not isinstance(rollback_commit, str)
+        or not SHA.fullmatch(rollback_commit)
+        or rollback_commit == target["commit_sha"]
+    ):
+        raise ReadinessError("invalid_rollback_target")
+    checks = _object(source.get("checks"))
+    if any(
+        checks.get(key) is not True for key in ("rollback_readiness", "restored_commit_verified")
+    ):
+        raise ReadinessError("rollback_checks_not_passed")
+    duration = _object(source.get("measurements")).get("rollback_duration_seconds")
+    if (
+        isinstance(duration, bool)
+        or not isinstance(duration, (int, float))
+        or not math.isfinite(duration)
+        or duration < 0
+    ):
+        raise ReadinessError("invalid_rollback_measurement")
+
+
 def _capacity_objectives(source: dict[str, Any]) -> None:
     objectives = _object(source.get("acceptance_objectives"))
     _identity(objectives.get("approved_by"))
@@ -188,14 +271,20 @@ def _capacity_objectives(source: dict[str, Any]) -> None:
 
 
 def _gate(
-    root: Path, item: dict[str, Any], gate_id: str, target: dict[str, str], now: datetime
+    root: Path,
+    item: dict[str, Any],
+    gate_id: str,
+    target: dict[str, str],
+    now: datetime,
+    deferred: set[str],
 ) -> None:
-    if item.get("status") != "passed":
+    status = "passed_with_deferrals" if deferred else "passed"
+    if item.get("status") != status:
         raise ReadinessError("gate_not_passed")
     report = _reference(root, item.get("evidence"))
     if report.get("schema_version") != 1 or report.get("gate_id") != gate_id:
         raise ReadinessError("evidence_identity_mismatch")
-    if report.get("status") != "passed":
+    if report.get("status") != status:
         raise ReadinessError("evidence_not_passed")
     _bind(report, target)
     completed = _time(report.get("completed_at"))
@@ -211,7 +300,9 @@ def _gate(
     if not completed <= reviewed <= now:
         raise ReadinessError("invalid_review_time")
     checks = _object(report.get("checks"))
-    if any(checks.get(key) is not True for key in REQUIRED_CHECKS[gate_id]):
+    if any(checks.get(key) != "deferred" for key in deferred):
+        raise ReadinessError("deferred_checks_mislabeled")
+    if any(checks.get(key) is not True for key in REQUIRED_CHECKS[gate_id] - deferred):
         raise ReadinessError("required_checks_not_passed")
     artifacts = report.get("artifacts")
     if not isinstance(artifacts, list) or not artifacts:
@@ -230,7 +321,9 @@ def _gate(
         source_completed = _time(source.get("completed_at"))
         if not now - MAX_AGE <= source_completed <= completed:
             raise ReadinessError("source_report_not_current")
-    if gate_id in {"capacity", "recovery"}:
+    if gate_id == "recovery" and deferred:
+        _rollback(root, report, target, now, completed)
+    elif gate_id in {"capacity", "recovery"}:
         source = _reference(root, report.get("measurement_report"))
         if source.get("status") != "passed" or source.get("evidence_type") != gate_id:
             raise ReadinessError("measurement_report_not_passed")
@@ -270,11 +363,14 @@ def check(
     profile: str,
     scope: str,
     now: datetime | None = None,
+    deferral_sha256: str | None = None,
 ) -> dict[str, Any]:
     at = now or datetime.now(UTC)
     target = {"commit_sha": commit, "environment": environment, "profile": profile}
     issues: list[dict[str, str]] = []
     checked: list[str] = []
+    scoped: list[str] = []
+    deferred: dict[str, set[str]] = {}
     try:
         if (
             not SHA.fullmatch(commit)
@@ -287,6 +383,7 @@ def check(
         if record.get("schema_version") != 1 or record.get("release_scope") != scope:
             raise ReadinessError("manifest_scope_mismatch")
         _bind(_object(record.get("candidate")), target)
+        deferred = _deferrals(root, record, target, scope, deferral_sha256, at)
         rows = record.get("gates")
         if not isinstance(rows, list):
             raise ReadinessError("invalid_gate_list")
@@ -304,19 +401,24 @@ def check(
             try:
                 if gate_id not in indexed:
                     raise ReadinessError("required_gate_missing")
-                _gate(root, indexed[gate_id], gate_id, target, at)
-                checked.append(gate_id)
+                _gate(root, indexed[gate_id], gate_id, target, at, deferred.get(gate_id, set()))
+                (scoped if gate_id in deferred else checked).append(gate_id)
             except ReadinessError as error:
                 issues.append({"gate": gate_id, "code": str(error)})
     except ReadinessError as error:
         issues.append({"gate": "manifest", "code": str(error)})
     return {
         "schema_version": 1,
-        "status": "blocked" if issues else "eligible_for_release_review",
+        "status": "blocked"
+        if issues
+        else ("eligible_for_scoped_release_review" if deferred else "eligible_for_release_review"),
         "release_scope": scope,
         "candidate": target,
         "checked_at": at.isoformat(),
         "validated_gates": checked,
+        "validated_scoped_gates": scoped,
+        "deferred_checks": {key: sorted(values) for key, values in sorted(deferred.items())},
+        "deferral_decision_sha256": deferral_sha256 if deferred else None,
         "issues": issues,
         "deployment_authorized": False,
     }
@@ -330,6 +432,9 @@ def main() -> int:
     parser.add_argument("--environment", required=True, choices=["staging", "production"])
     parser.add_argument("--profile", required=True, choices=["single-node-4c4g"])
     parser.add_argument("--scope", required=True, choices=["invited", "public_saas"])
+    parser.add_argument(
+        "--deferral-sha256", help="Externally pinned invited deferral decision digest"
+    )
     args = parser.parse_args()
     report = check(**vars(args))
     print(json.dumps(report, ensure_ascii=True, indent=2))

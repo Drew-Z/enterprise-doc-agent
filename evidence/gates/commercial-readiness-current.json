@@ -2,89 +2,104 @@
   "schema_version": 1,
   "release_scope": "invited",
   "candidate": {
-    "commit_sha": "ad1863dc099326d12d3fc18ed67eb7e072184fa4",
+    "commit_sha": "3deeec82c19260ae73a763973a97b4ed3ff23183",
     "environment": "staging",
     "profile": "single-node-4c4g"
   },
-  "audit": "evidence/gates/commercial-audit-20260924.json",
   "gates": [
     {
       "id": "tenant_isolation",
       "status": "blocked",
-      "blocking_reason": "Existing local/public demo isolation evidence is not a current independently reviewed commercial candidate run.",
+      "blocking_reason": "Historical isolation checks exist; fresh exact-candidate independently reviewed evidence is pending.",
       "evidence": null
     },
     {
       "id": "business_journey",
       "status": "blocked",
-      "blocking_reason": "Public v0.1.43/v0.1.44 journey exists; new candidate exact-version full journey and customer acceptance are pending.",
+      "blocking_reason": "Upload, generation, review and CSV exist; complete prerequisite editing and exact-candidate journey/UAT remain pending.",
       "evidence": null
     },
     {
       "id": "model_quality",
       "status": "blocked",
-      "blocking_reason": "v7 six-call trial has three usable drafts, two timeouts, one upstream failure and an unknown/unmet semantic error; release gate is not passed.",
+      "blocking_reason": "rc.40 six-source technical/classification 6/6, strict semantics 5/6: R5 merges and omits propositions. Original and corrected drafts require separate scoring and independent review.",
       "evidence": null
     },
     {
       "id": "generation_resilience",
       "status": "blocked",
-      "blocking_reason": "Background recovery is locally validated but disabled by default and not deployed.",
+      "blocking_reason": "rc.40 background generation runs with concurrency 2; auto/deep policy persistence and exact-candidate browser/failover review remain pending.",
       "evidence": null
     },
     {
       "id": "commercial_metering",
       "status": "blocked",
-      "blocking_reason": "Formal Presales finite-period enforcement is implemented locally; Agent and embedding lack unified commercial accounting.",
+      "blocking_reason": "Current consumption batches CNY0.046616 and CNY0.089334 have been reconciled. Reuse this accepted scope; verify only new candidate calls and once-only settlement, not historical unknown-cost closure.",
       "evidence": null
     },
     {
       "id": "capacity",
       "status": "blocked",
-      "blocking_reason": "Historical readiness-only 4C8G measurements do not establish current 4C4G business capacity.",
+      "blocking_reason": "Latest complete rc.37 denominator 160: 148 passed, 3 failed, 9 not run. Upload/retrieval/admission p95 6.772/2.279/2.625s miss 5/2/2s; four rc.40 successes do not replace the full run.",
       "evidence": null
     },
     {
       "id": "recovery",
       "status": "blocked",
-      "blocking_reason": "Historical staging-to-local restore passed measured objectives; independent fault-domain current-candidate recovery and review are missing.",
+      "blocking_reason": "Backup, independent fault-domain restoration and RPO/RTO are explicitly deferred for invited scope. Fresh reviewed release-rollback evidence remains required; rc.41 failed deployment is preserved.",
       "evidence": null
     },
     {
       "id": "observability",
       "status": "blocked",
-      "blocking_reason": "Actual alert delivery, recovery receipt, backup freshness and accountable on-call evidence are missing.",
+      "blocking_reason": "Four recent SMTP records were rejected by Outlook Spamhaus S8002; actual fault/recovery receipts and on-call actions remain pending. Backup freshness is explicitly deferred.",
       "evidence": null
     },
     {
       "id": "release_governance",
       "status": "blocked",
-      "blocking_reason": "Read-only GitHub audit: main is unprotected, no repository rulesets, no staging independent reviewer.",
+      "blocking_reason": "main requires backend/frontend, includes administrators and forbids force push/deletion. Real independent business/release review is missing; staging has only a branch policy. New candidate signed images and safe prewarm are pending.",
       "evidence": null
     },
     {
       "id": "data_governance",
       "status": "blocked",
-      "blocking_reason": "Approved customer terms, provider disclosures, retention/deletion proof and customer exit process are not complete.",
+      "blocking_reason": "Map existing data/export/exit evidence and customer disclosures into the final candidate review; no independent approval is recorded.",
       "evidence": null
     },
     {
       "id": "support_acceptance",
       "status": "blocked",
-      "blocking_reason": "Named operating owner, support route and representative customer UAT evidence are not supplied.",
+      "blocking_reason": "Actual operating/support owner, representative customer UAT and acceptance feedback are pending.",
       "evidence": null
     },
     {
       "id": "payments",
-      "status": "blocked",
-      "blocking_reason": "Payment merchant, pricing/refund policies, signed callbacks and live reconciliation are not configured.",
+      "status": "out_of_scope",
+      "blocking_reason": "Outside the approved invited first release; required for future public_saas.",
       "evidence": null
     },
     {
       "id": "self_service",
-      "status": "blocked",
-      "blocking_reason": "Public paid onboarding, renewal/expiry and customer exit acceptance are pending.",
+      "status": "out_of_scope",
+      "blocking_reason": "Outside the approved invited first release; required for future public_saas.",
       "evidence": null
     }
-  ]
+  ],
+  "candidate_role": "acceptance_baseline_not_deployed_or_automatically_reusable",
+  "updated_at": "2026-10-08T01:09:00.258677+00:00",
+  "runtime_snapshot": {
+    "observed_at": "2026-10-08T00:32:01.972567Z",
+    "release": "v0.1.45-rc.40",
+    "commit_sha": "aeab213ed5b305a9c6388de2a27b4eb32bba884e",
+    "database_revision": "20261005_0032",
+    "background_concurrency": 2,
+    "rollback_release": "v0.1.45-rc.39",
+    "source": "docs/ops/final-project-acceptance.md"
+  },
+  "historical_audit": "evidence/gates/commercial-audit-20260924.json",
+  "deferral_decision": {
+    "path": "evidence/gates/invited-deferral-20261008.json",
+    "sha256": "e2b8ff9d814d0191fbc13dfc06a32b40db60b68e1f14f201c7e33a96aefd05d2"
+  }
 }

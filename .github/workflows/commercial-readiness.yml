@@ -23,6 +23,10 @@ on:
         default: staging
         type: choice
         options: [staging, production]
+      deferral_sha256:
+        description: Independently reviewed invited deferral digest (empty for strict full scope)
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -44,11 +48,16 @@ jobs:
           MANIFEST: ${{ inputs.manifest }}
           RELEASE_SCOPE: ${{ inputs.scope }}
           TARGET_ENVIRONMENT: ${{ inputs.target_environment }}
+          DEFERRAL_SHA256: ${{ inputs.deferral_sha256 }}
         run: |
+          deferral_args=()
+          if [ -n "$DEFERRAL_SHA256" ]; then
+            deferral_args=(--deferral-sha256 "$DEFERRAL_SHA256")
+          fi
           python -B scripts/check_commercial_readiness.py \
             --commit "$CANDIDATE_SHA" --manifest "$MANIFEST" \
             --scope "$RELEASE_SCOPE" --environment "$TARGET_ENVIRONMENT" \
-            --profile single-node-4c4g \
+            --profile single-node-4c4g "${deferral_args[@]}" \
             > "$RUNNER_TEMP/commercial-readiness.json"
       - name: Preserve this run's report
         if: always()

@@ -1,5 +1,13 @@
 # 当前环境验收设计
 
+## 2026-10-08 受邀首版限定延期
+
+复用check_commercial_readiness的安全路径、摘要、准确候选、7天执行新鲜度及独立review校验。新增可选deferral_decision引用和调用方--deferral-sha256固定值；两者必须同时存在且一致。决定为schema1/decision=deferred/release_scope=invited，含记录人、记录时间、决策人、来源及理由，延期集合必须恰为已批准的三个recovery检查和backup_freshness，不提供任意豁免引擎。
+
+带延期的两项门槛及报告必须passed_with_deferrals，延期值为deferred，其余仍为true；完整门槛行为不变。recovery改用绑定到候选的release_rollback测量报告，包含不同的rollback_commit_sha、非负有限rollback_duration_seconds、rollback_readiness及restored_commit_verified，原始来源摘要和独立审核仍必需。没有延期时仍执行完整原生恢复校验；capacity始终保持原校验。输出分列validated_gates/validated_scoped_gates/deferred_checks，只有无问题时可为eligible_for_scoped_release_review，deployment_authorized永远false。
+
+通过公开check/CLI红→绿验证正确限定延期、缺pin/错pin、错误目标、篡改、超范围或回退延期、public_saas、伪passed、缺回退测量、自审和过期证据拒绝。当前真实清单保持blocked，不把本地合成夹具发布为实际证据。先以固定基线登记，E冻结新候选时重建延期绑定及验收报告，避免清单提交自身SHA循环。
+
 ## 2026-10-08 镜像缓存预热守卫
 
 扩展现有import_staging_oci_archive接收器，新增公开execute_import_batch；单归档入口委托同一批量流程。先重新校验每个归档SHA和原OCI描述符，真实流式核对压缩层摘要与解压diff_id，计入所有运行平台清单的层与文件数量。缺失/稀疏/不支持格式拒绝，不把缺失层大小猜为零；运输差分包不能直接套用完整接收器。整个批次的内容、快照、规范化临时归档和元数据一次求和，保守不扣共享快照。
