@@ -115,3 +115,23 @@ retrying an uncertain write. All tokens revoked. Actual legacy restore guard ref
 Removed 233 remote temporary files / 315 directories and 43 local transport files / one
 directory. Final five-service readiness and public HTTP 200 passed. Parent acceptance and
 model quality remain open; see `docs/ops/rc49-citation-release-validation.json`.
+
+## Generation diagnostic continuation
+
+- [x] Red/green collector HTTP-boundary retention of safe gateway diagnostics; preserve
+  transport failures, original outputs and single dispatches.
+- [x] Freeze one new public requirement, separately frozen reference criteria, current primary
+  configuration and available call budget; observe its first outcome without retry.
+- [x] Review original evidence, record what it establishes and choose the next concrete
+  action without rewriting historic quality results or claiming competitor parity.
+- [x] Required checks, scoped publication preparation and recovery manifest; final
+  commit, push and temporary-file cleanup receipts are retained centrally.
+
+Recovery phase: generation_failure_diagnostic_20261010; seven clean files are bound
+byte-for-byte to Git 58c1e5c8f35da056e4f21552b5cd5fa75e59f2ab in the existing central group.
+
+First and only CQU03 request completed in40.718s: the status and source checks pass,
+but assistant review finds omitted testing arrangements/remediation and a known rule
+misphrased as an unknown business-event proposition. No repeat. Next quality design
+must address requirement coverage and proposition meaning. This is not historical
+failure attribution or competitor acceptance; see docs/ops/generation-diagnostic-cqu03-20261010.md.

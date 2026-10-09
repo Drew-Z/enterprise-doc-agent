@@ -107,3 +107,13 @@ Live fixture identity binds persisted imported key X7, exact question and B7/C7 
 SWU03 is a public replay label, not the application's imported row key. The first harness
 failed before packet creation, was diagnosed read-only and retained. No product or model
 behavior changed during that correction. Keep historical samples immutable.
+
+## Generation diagnostic evidence
+
+The collector currently catches PresalesError but saves only errorCode, discarding the
+allowlisted diagnostic_code already produced by the real gateway. Add optional
+errorDiagnostic only when present; retain the existing v6 decoder, traces and failed
+state. Do not store exception strings or infer a category when the gateway has none.
+Controlled HTTP proves retention, safe fields and unchanged no-retry behavior before
+any fresh public-source diagnostic. Keep live input and separately frozen review criteria
+outside the collector; existing source/hash validation and exclusive output creation apply.

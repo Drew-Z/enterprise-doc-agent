@@ -194,6 +194,14 @@ Public `collect()` boundary tests cover ConnectError redaction/no retry, partial
 body failure/stream closure and interrupted collection. They test diagnostics, not
 model semantics; frozen raw v5 failures provide the actual semantic regression cases.
 
+New generation-only observations also retain optional `errorDiagnostic` from the
+gateway's allowlisted `PresalesError.diagnostic_code`. Omit it when unavailable,
+including ordinary transport failures; never infer it from exception text. Preserve
+`state=failed`, the original errorCode, bounded traces and one dispatch per row.
+This is additive to run-v6, not a new decoder or permission to rewrite old reports.
+`test_presales_gateway.py` verifies actual HTTP-to-report propagation, absent transport
+categories, credential exclusion and refusal to overwrite the original report.
+
 ## Projected input reports (v7)
 
 The initial v7 collector wrote `presales-gateway-run-v2`. Each observation's `sourceInput`

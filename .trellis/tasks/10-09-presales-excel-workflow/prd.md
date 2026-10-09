@@ -105,3 +105,15 @@ reload and original XLSX/audit CSV delivery passed without model or embedding ca
 The actual guard now refuses rc48 restoration before writes because citation history exists.
 Frozen public and prior human packets remain unchanged. See `validation.md` and
 `docs/ops/rc49-citation-release-validation.json`; model quality and parent acceptance remain open.
+
+## Generation failure diagnosis continuation
+
+Retain the gateway's safe output diagnostic in new generation-only reports so schema,
+quote, incomplete-output and transport failures remain distinguishable. Preserve original
+failed outputs and historical report interpretation. Verify through the collector's HTTP
+boundary with one dispatch per row and no added retry, route or runtime behavior.
+
+Inspect at most one previously unexecuted public CQU requirement on the existing primary
+route after freezing input, semantic criteria, current configuration and available daily
+budget. This is a diagnostic, not another competitor comparison or a reliability rate.
+Stop after its first outcome, including unknown; do not rerun SWU or the lost prior probe.

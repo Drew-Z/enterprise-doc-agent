@@ -262,3 +262,32 @@ cover the final behavior. Closeout checks are JSON/evidence/context/diff integri
 unchanged executable suites are not rerun. Original public results remain 4 drafts / 2
 failures / 9 calls, the diagnostic remains unknown and original160 is unrun. Human repair
 does not establish model accuracy, customer time savings, paid demand or competitor parity.
+
+## Generation failure diagnostics and CQU03 — 2026-10-10
+
+The collector now preserves the existing gateway's allowlisted errorDiagnostic for
+new failed reports, omitting it when unavailable. The real HTTP-boundary regression
+failed with KeyError before the fix;49 collector/stream/scorer/diagnostic cases passed
+afterward. Full checks passed: Ruff739-file format/check, Mypy274 sources,3,029 Python
+nonintegration tests and23 subtests (810 deselected,266.05s). Frontend, application
+gateway/prompt, routes and database code were unchanged.
+
+One previously unused public CQU03 requirement and separate reference were frozen
+before the single current-primary request. It returned a schema-valid draft in40.718s,
+insufficient_evidence, unknown state and the exact relevant citation. Mechanical
+scoring passed. Codex-assisted semantic review failed completeness: no testing
+arrangements, no failed-test remediation in prose, and a necessity rule used as the
+unknown proposition instead of actual completion. This does not explain old failures.
+The first response and all criteria are retained; no retry or second sample occurred.
+
+Read-only rc49/0037 checks before/after found five ready workloads, identical packaged
+gateway sources/policy and unchanged application accounting. One direct request is
+separately reserved:36 app +13 prior known/unknown direct +1 new =50/200 conservative
+budget, including the earlier three unknown calls. No embeddings, tenant writes,
+deployment or frozen-packet edits. Original public replay remains4/2/9.
+
+Report: `docs/ops/generation-diagnostic-cqu03-20261010.md`. Recovery phase
+`generation_failure_diagnostic_20261010` binds seven clean files to58c1e5c and records
+the new report absent. All2,993 unrelated Git entries retain the original status hash.
+Next implementation must address complete requirement coverage and business-event
+versus rule meaning, without treating this one diagnostic as a benchmark or acceptance.

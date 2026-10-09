@@ -266,6 +266,8 @@ async def collect(
                 )
             except PresalesError as error:
                 observation.update(state="failed", errorCode=error.code)
+                if error.diagnostic_code is not None:
+                    observation["errorDiagnostic"] = error.diagnostic_code
             except asyncio.CancelledError:
                 observation.update(state="interrupted", errorCode="evaluation_cancelled")
                 raise

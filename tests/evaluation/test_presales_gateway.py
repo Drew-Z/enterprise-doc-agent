@@ -52,6 +52,7 @@ async def test_gateway_trial_preserves_failed_output_and_refuses_overwrite(tmp_p
     assert all(
         r["state"] == "failed" and r["providerRequests"] == 1 for r in report["observations"]
     )
+    assert all(r["errorDiagnostic"] == "draft_schema" for r in report["observations"])
     assert all(
         r["traces"][0]["response"]["usage"]["total_tokens"] == 11 for r in report["observations"]
     )
@@ -86,6 +87,7 @@ async def test_gateway_trial_records_only_safe_transport_type_and_no_retry(tmp_p
     for row in report["observations"]:
         assert row["state"] == "failed"
         assert row["errorCode"] == "presales_model_transport_error"
+        assert "errorDiagnostic" not in row
         assert row["providerRequests"] == 1
         trace = row["traces"][0]
         assert trace["transportFailure"] == {
