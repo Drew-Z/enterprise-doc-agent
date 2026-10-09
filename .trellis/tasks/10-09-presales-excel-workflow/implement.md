@@ -199,3 +199,22 @@ Ruff743-file format/check and Mypy275 files pass. The one synthetic request retu
 schema-valid JSON in37.563s but failed support_combination and semantic criteria.
 No retry or staging enablement; the result establishes one observed schema response,
 not answer quality. See docs/ops/presales-strict-output-20261010.md.
+
+## Provider-visible evidence combination branches
+
+- [x] Red/green JSON Schema and decoder truth table, valid independent cases and
+  source-bound projection; retain the historical v18 schema accepting the old shape.
+- [x] Strict v19 gateway integration, run-v9 collection/scoring, v18/run-v8 and v15
+  compatibility, real database admission/restoration and accounting checks.
+- [x] Required local checks, code-spec and registered recovery; scoped publication
+  and owned-cleanup outcomes are tracked in the central phase receipts.
+- [ ] Semantic decomposition/completeness acceptance remains separate and open.
+
+Recovery phase prerequisite_support_schema_20261010 binds baseline7a468d9.
+This slice makes zero model or embedding requests and does not enable staging.
+
+34 new tests cover the 24-case truth table and source guards; 45 combined boundary
+tests and 18 real PostgreSQL cases pass. Whole-project validation passes 3,074
+nonintegration tests and 23 subtests, Ruff format/check (745 files), and Mypy
+(276 source files). The original v18 failed result and historical score remain
+unchanged. Larger-schema endpoint compatibility and semantic quality are unproven.

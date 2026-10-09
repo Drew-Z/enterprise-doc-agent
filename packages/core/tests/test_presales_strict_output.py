@@ -65,6 +65,7 @@ async def test_wire_contract_and_valid_draft_keep_legacy_projection(strict):
             Draft202012Validator.check_schema(schema)
             Draft202012Validator(schema).validate(draft())
             assert schema["properties"]["missingInformation"]["type"] == "array"
+            assert len(schema["properties"]["prerequisites"]["items"]["anyOf"]) == 4
             for obj in [schema, *schema["$defs"].values()]:
                 if obj.get("type") == "object":
                     assert obj["additionalProperties"] is False
@@ -82,7 +83,7 @@ async def test_wire_contract_and_valid_draft_keep_legacy_projection(strict):
     assert result.draft.answer == draft()["answer"]
     assert result.draft.prerequisites == result.draft.conditions == []
     assert result.usage["total_tokens"] == 20 and len(requests) == 1
-    assert gateway.provenance["promptVersion"] == ("presales.v18" if strict else "presales.v15")
+    assert gateway.provenance["promptVersion"] == ("presales.v19" if strict else "presales.v15")
     if not strict:
         assert gateway.provenance["promptSha256"] == (
             "318fc29ef2903cef5ad51a59163fad35ff855aca012bbae986e84a0fbb83d2ab"
@@ -144,9 +145,17 @@ def test_selected_route_mode_is_frozen_and_restored_without_changing_other_route
     primary = OpenAICompatiblePresalesGateway(settings(), presales_settings=config)
     frozen = freeze_policy(primary, config, "auto", background=True)
     restored_policy = ExecutionPolicy.model_validate_json(frozen.model_dump_json(by_alias=True))
-    assert [r.prompt_version for r in restored_policy.routes] == ["presales.v18", "presales.v15"]
+    assert [r.prompt_version for r in restored_policy.routes] == ["presales.v19", "presales.v15"]
     restored = restore_gateway(primary, restored_policy.routes[0])
     assert restored.strict_output is True and restored.provenance == primary.provenance
+    historical_v18 = restored_policy.routes[0].model_copy(
+        update={
+            "prompt_version": "presales.v18",
+            "prompt_sha256": "6c65e4674e84d8a6a5639a08905ef270e48dce3a27a474927a0c7038995b4a29",
+        }
+    )
+    with pytest.raises(PresalesError, match="presales_execution_policy_unavailable"):
+        restore_gateway(primary, historical_v18)
     legacy = OpenAICompatiblePresalesGateway(settings())
     with pytest.raises(PresalesError, match="presales_execution_policy_unavailable"):
         restore_gateway(legacy, restored_policy.routes[0])

@@ -46,7 +46,7 @@ async def test_strict_request_survives_admission_execution_and_exactly_once_acco
     admitted = await b.api.post(url, headers=headers, json={"executionMode": "auto"})
     assert admitted.status_code == (202 if durable else 200), admitted.text
     frozen = admitted.json()["rows"][0]["attempts"][0]
-    assert frozen["executionPolicy"]["routes"][0]["promptVersion"] == "presales.v18"
+    assert frozen["executionPolicy"]["routes"][0]["promptVersion"] == "presales.v19"
     if durable:
         assert requests == []
         # A new worker instance must reconstruct strict mode from its bound template.

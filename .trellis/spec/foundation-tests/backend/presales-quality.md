@@ -339,19 +339,26 @@ empty schema and assume search_path alone provides migration isolation.
 ## Strict request collection and historical scoring
 
 `collect(..., strict_output=True)` or the explicit `--strict-output` option selects
-strict schema only for the requested route. It emits presales-gateway-run-v8 and
+strict schema only for the requested route. It emits presales-gateway-run-v9 and
 records the exact responseFormat in each dispatched trace; defaults remain run-v6.
 run-v7 belongs to the rejected answer-aspect experiment and remains unsupported.
 
-Both scorers have an explicit v8 StrictBasisDraft branch. Gateway scoring verifies
-the recorded strict response format before processing success or failure, then
+Both scorers retain an explicit v8 StrictBasisDraft branch and add v9's
+ConstrainedBasisDraft. Gateway scoring verifies the version-specific recorded
+strict response format before processing success or failure, then
 binds accepted original output through the unchanged basis projection. Missing
 required arrays cannot be silently reconstructed. Legacy v1..v6 keep their existing
-parsers and frozen scores; do not use v8 to reclassify a rejected historical output.
+parsers and frozen scores; do not use newer schema versions to reclassify a rejected
+historical output. A v8 request format relabeled v9 is refused.
 
 HTTP-boundary evaluation tests cover successful and failed strict outputs, altered
-request-format rejection, strict omitted-field rejection and v6 compatibility.
-The single 2026-10-10 synthetic observation accepted the request and conformed to
+request-format rejection, strict omitted-field rejection and v6/v8 compatibility.
+The single 2026-10-10 v18 synthetic observation accepted the request and conformed to
 JSON Schema but failed support_combination. Preserve that failed state and semantic
 review. It proves one observed response format only, not constrained decoding,
 reliability, public-task improvement or permission to enable a production route.
+
+v19 development made no provider calls. Offline validation of the original v18
+bytes confirms its contradictory combination is outside the new schema, while the
+original v8 score and failed observation remain identical. Unit truth tables and
+controlled HTTP prove shape contracts, not future model interpretation or quality.

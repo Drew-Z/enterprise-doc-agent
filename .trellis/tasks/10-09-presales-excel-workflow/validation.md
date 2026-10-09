@@ -364,3 +364,31 @@ Recovery phase strict_output_contract_20261010 binds Git baseline500185e and rec
 new files absent. The initial single fullwidth-colon Ruff finding was fixed; evidence,
 final publication and owned-temp cleanup receipts are retained centrally. See
 docs/ops/presales-strict-output-20261010.md. Parent competitor acceptance remains open.
+
+## Provider-visible evidence combinations — 2026-10-10
+
+The new native Pydantic union exposes four mutually exclusive support alternatives
+to strict output v19. The 24-case truth table checks JSON Schema and local decoder
+agreement; five valid states include missing with/without an unconfirmed record.
+Source-bound projections retain met/unmet/unknown and actual version conflict.
+Literal quotes, authorized references, Chinese answers, confirmation questions and
+size bounds remain enforced. This does not prove atomic decomposition or entailment.
+
+Four boundary tests failed against the old producer before integration; all 45
+combined new/gateway/evaluation tests pass. Eighteen real PostgreSQL cases pass
+(40.78s), with owned schemas removed in fixture finally. Full nonintegration:
+3,074 passed, 814 deselected and 23 subtests passed (263.39s). Ruff format/check
+covers 745 files; Mypy passes 276 source files. No frontend/public schema migration.
+
+Run-v9 uses the new schema/resolver; run-v8 retains the byte-identical v18 contract.
+Offline evaluation of the immutable original failed response confirms the new
+schema rejects its first prerequisite at anyOf, while the original failed report
+and historical score remain unchanged. Default v15 prompt identity is unchanged.
+Frozen v18 work cannot be restored as v19; future releases must drain it first.
+
+Recovery phase prerequisite_support_schema_20261010 binds baseline7a468d9 and records
+new-file absence, source hashes, offline evidence, publication and cleanup receipts.
+The 2,993 unrelated workspace status entries retain their original checksum.
+This slice made zero model/embedding calls and no staging changes. Larger-schema
+endpoint compatibility, semantic improvement and competitor acceptance remain open.
+See docs/ops/presales-support-contract-20261010.md.

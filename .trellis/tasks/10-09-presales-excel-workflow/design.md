@@ -178,3 +178,19 @@ Strict evaluation reports use run-v8; v7 remains the rejected answer-aspect
 candidate and is not accepted by historical scorers. Add explicit v8 resolver
 branches; legacy v1..v6 interpretation remains unchanged. No output coercion,
 retry, model/channel switch, database migration or product quota change.
+
+## Provider-visible evidence combination branches
+
+New strict v19 uses four Pydantic prerequisite variants with unchanged fields.
+For uncertainty none, exactly one of positive/negative has minItems1 and the other
+maxItems0; unconfirmed is empty. Missing requires both direction arrays empty and
+allows unconfirmed records. Conflict requires both direction arrays nonempty and
+unconfirmed empty. A nondiscriminated Union emits anyOf without unsupported custom
+schema rewrites; structural branches are mutually exclusive by literals and counts.
+
+The root duplicates only the five stable wire fields and then reuses resolve_basis
+for all shared status/quote/language/public projection checks. Preserve the v18
+StrictBasisDraft and strict_response_format definitions for run-v8 scoring.
+New strict collection emits run-v9, with explicit format/resolver branches in both
+scorers. Legacy JSON-mode identity is unchanged. New strict identity uses the same
+frozen policy guard; historical v18 policies cannot silently become v19.

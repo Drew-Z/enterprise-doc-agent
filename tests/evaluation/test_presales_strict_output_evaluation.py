@@ -11,6 +11,7 @@ from scripts.score_presales_gateway import score
 from scripts.score_presales_prerequisites import score_prerequisites
 
 from enterprise_doc_core.config import ModelProvider, ModelSettings
+from enterprise_doc_core.presales.output_contract import strict_response_format
 
 
 @pytest.fixture
@@ -90,9 +91,9 @@ async def test_strict_collector_and_both_scorers_preserve_first_outcome(tmp_path
         strict_output=True,
         transport=httpx.MockTransport(respond),
     )
-    assert report["schemaVersion"] == "presales-gateway-run-v8"
+    assert report["schemaVersion"] == "presales-gateway-run-v9"
     observation = report["observations"][0]
-    assert observation["provenance"]["promptVersion"] == "presales.v18"
+    assert observation["provenance"]["promptVersion"] == "presales.v19"
     assert observation["providerRequests"] == 1
     if invalid:
         assert observation["state"] == "failed" and observation["errorDiagnostic"] == "draft_schema"
@@ -122,6 +123,27 @@ async def test_strict_collector_and_both_scorers_preserve_first_outcome(tmp_path
     )
     scored = score_prerequisites(*inputs, run_path, expected, review)
     assert scored["prerequisiteCheckPassed"] is not invalid
+
+    historical = copy.deepcopy(report)
+    historical["schemaVersion"] = "presales-gateway-run-v8"
+    historical["observations"][0]["provenance"]["promptVersion"] = "presales.v18"
+    historical["observations"][0]["traces"][0]["responseFormat"] = strict_response_format()
+    assert score(*inputs, historical) == result
+    historical_path = tmp_path / "historical-v8.json"
+    write_json(historical_path, historical)
+    historical_review = json.loads(review.read_bytes())
+    historical_review["runSha256"] = hashlib.sha256(historical_path.read_bytes()).hexdigest()
+    historical_review_path = tmp_path / "historical-review.json"
+    write_json(historical_review_path, historical_review)
+    assert (
+        score_prerequisites(*inputs, historical_path, expected, historical_review_path)[
+            "prerequisiteCheckPassed"
+        ]
+        is not invalid
+    )
+    historical["schemaVersion"] = "presales-gateway-run-v9"
+    with pytest.raises(ValueError, match="strict_output_contract_mismatch"):
+        score(*inputs, historical)
 
     changed = copy.deepcopy(report)
     changed["observations"][0]["traces"][0]["responseFormat"] = {"type": "json_object"}

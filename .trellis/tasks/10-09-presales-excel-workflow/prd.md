@@ -174,3 +174,19 @@ Result: implementation and local/real-database checks pass. One actual primary
 request conformed to JSON Schema but merged three business prerequisites and
 failed the existing support-combination validator. Deliver the explicit capability
 disabled by default; keep staging v15. Semantic quality remains unfulfilled.
+
+## Mutually exclusive prerequisite evidence
+
+The v18 response satisfied field types but violated a cross-field business support
+invariant. Generate an explicit anyOf of the four valid evidence combinations for
+new strict requests, rather than relying only on an after-generation validator.
+Keep exactly the same wire field names and public projection; independent positive,
+negative, missing and conflicting cases must all remain representable. Do not
+discard unknown/conflicting cases merely to make the schema easier to satisfy.
+
+Existing v18/run-v8 source interpretation and default v15 remain unchanged.
+Validate a complete truth table against the JSON Schema and real decoder, including
+the original support-combination failure, exact quotes, language and final limits.
+The schema enforces combinations only: separate business-event decomposition and
+entailment remain model judgments. No live request or staging enablement in this
+implementation slice; offline evidence must establish the boundary first.

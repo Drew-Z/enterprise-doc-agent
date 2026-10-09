@@ -24,6 +24,10 @@ from enterprise_doc_core.presales.output_contract import (
 )
 from enterprise_doc_core.presales.proposition_selection import resolve_proposition_selection
 from enterprise_doc_core.presales.schemas import CitationInput, GeneratedDraft, GenerationInput
+from enterprise_doc_core.presales.support_contract import (
+    constrained_response_format,
+    resolve_constrained_basis,
+)
 from scripts.evaluate_presales_gateway import synthetic_sources
 from scripts.evaluate_presales_quality import Gold, load_dataset, write_json
 
@@ -66,6 +70,7 @@ def score(dataset_path: Path, gold_path: Path, report: dict[str, Any]) -> dict[s
         "presales-gateway-run-v5",
         "presales-gateway-run-v6",
         "presales-gateway-run-v8",
+        "presales-gateway-run-v9",
     }:
         raise ValueError("invalid_report_scope")
     projected = report["schemaVersion"] != "presales-gateway-run-v1"
@@ -74,6 +79,7 @@ def score(dataset_path: Path, gold_path: Path, report: dict[str, Any]) -> dict[s
         "presales-gateway-run-v5",
         "presales-gateway-run-v6",
         "presales-gateway-run-v8",
+        "presales-gateway-run-v9",
     }
     structured = evidence_backed or report["schemaVersion"] == "presales-gateway-run-v3"
     requirements = {r.key: r for r in dataset.requirements}
@@ -117,10 +123,11 @@ def score(dataset_path: Path, gold_path: Path, report: dict[str, Any]) -> dict[s
         evidence = []
         catalog = {}
         for trace in traces:
-            if (
-                report["schemaVersion"] == "presales-gateway-run-v8"
-                and trace.get("responseFormat") != strict_response_format()
-            ):
+            strict_format = {
+                "presales-gateway-run-v8": strict_response_format,
+                "presales-gateway-run-v9": constrained_response_format,
+            }.get(report["schemaVersion"])
+            if strict_format is not None and trace.get("responseFormat") != strict_format():
                 raise ValueError("strict_output_contract_mismatch")
             payload = GenerationInput.model_validate(
                 observation["sourceInput"] if projected else trace["input"]
@@ -174,6 +181,7 @@ def score(dataset_path: Path, gold_path: Path, report: dict[str, Any]) -> dict[s
                         "presales-gateway-run-v5": resolve_proposition_selection,
                         "presales-gateway-run-v6": resolve_basis,
                         "presales-gateway-run-v8": resolve_strict_basis,
+                        "presales-gateway-run-v9": resolve_constrained_basis,
                     }.get(report["schemaVersion"], resolve_selection)
                     resolved = resolver(original, catalog)
                     # v2 saved only the flat projection. Reproduce that contract without
