@@ -316,3 +316,27 @@ includes the previous three unknown calls. No embedding, product write or deploy
 See `docs/ops/answer-coverage-candidate-20261010.md`; recovery phase
 `answer_coverage_candidate_20261010`. Next design separates requested answer aspects
 from source-defined business prerequisites instead of further instruction-only sampling.
+
+## Rejected separate answer protocol — 2026-10-10
+
+Implemented a private CoverageDraft and deterministic question-span projection.
+Thirteen focused tests passed, including red/green per-item evidence-or-gap
+validation, source selection, quote, language and final-size boundaries. Initial
+Ruff import/punctuation findings were corrected; final check/format passed.
+
+One frozen new CQU04 request on the unchanged primary route took9.390s and failed
+with draft_schema: missingInformation was a string, not an array. Rejected raw text
+also lacks separate, concrete encryption and display-masking evidence requests.
+No retry, normalization, historical rerun or scorer reinterpretation. The run-v7
+report is candidate-only; runtime v15 and historical v1..v6 decoders stay unchanged.
+
+The exact two new candidate files were centrally snapshotted and hash-verified
+before withdrawal. Final change is documentation only, so full runtime/DB/browser
+suites are not repeated for a protocol that is not shipped. The 13 local tests do
+not establish model quality. Read-only staging postflight confirms rc49/0037,
+five ready workloads, zero active jobs and unchanged application accounting/policy.
+Conservative UTC-day call budget52/200 includes16 direct known/reserved calls;
+three previous unknowns remain reserved. No embeddings, product write or release.
+
+Recovery phase: answer_coverage_protocol_20261010, baseline8a13ff8. See
+docs/ops/answer-coverage-protocol-20261010.md. Competitor acceptance remains open.

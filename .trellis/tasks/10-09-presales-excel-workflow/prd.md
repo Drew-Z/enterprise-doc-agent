@@ -131,3 +131,25 @@ route; stop after its first outcome. Reference criteria remain separate from inf
 Do not rerun CQU03 or treat a new single case as proof of its repair, a reliability rate,
 customer acceptance or competitor parity. Deploy only after compatible exact-source
 release checks and handling of accepted old prompt policies.
+
+## Requested answer coverage distinct from business prerequisites
+
+The rejected instruction-only candidate established the need for a separate answer
+representation. Every requested question span must have an explicit answer and source
+selection or information gap. Preserve the exact requirement text and reject missing,
+repeated, overlapping or invented coverage. Business prerequisites remain independent
+and require their existing literal source definitions; a reviewer request is not itself
+a supplier obligation. A gap must remain an unanswered fact, not automatic noncompletion.
+
+Keep existing saved drafts, human review and file export readable. Structural coverage
+does not prove correct decomposition or semantic completeness; evaluate both explicitly.
+Before promoting the new provider protocol, freeze one unexecuted CQU04 case and separate
+criteria on the existing primary route, one request only, no retry or old-sample rerun.
+Promotion requires passing that bounded semantic check plus affected protocol, historical
+scorer, persistence and browser checks; public/competitive acceptance remains separate.
+
+Result: the single CQU04 probe rejected v17 for an array/string schema violation
+and generic, incomplete evidence requests. The tested private parser was preserved
+centrally and withdrawn from the runtime checkout. No gateway/scorer integration
+or deployment is eligible under this candidate; parent acceptance remains open.
+See docs/ops/answer-coverage-protocol-20261010.md.

@@ -155,3 +155,27 @@ invented verification completion as a supplier prerequisite. Retain the exact ex
 source and restore runtime v15 byte-for-byte. Do not continue instruction-only sampling;
 next design separates requested answer aspects from source-defined business prerequisites.
 See docs/ops/answer-coverage-candidate-20261010.md. No candidate deployment or second call.
+
+## Requested-answer coverage protocol
+
+- [x] Red/green private module contract: exact complete requirement coverage, independent
+  business prerequisites, deterministic answer/evidence/gap projection.
+- [x] Reject omitted/repeated/foreign spans, unsupported quotes, mismatched citations,
+  invalid status/language and public-size overflow; no model or network mocks needed.
+- [x] Freeze one new CQU04 case and reference, probe once with existing primary policy,
+  retain raw output and review actual decomposition, completeness and event semantics.
+- [ ] If accepted, integrate the call-local gateway plus versioned evaluator/scorers,
+  update controlled HTTP fixtures, and verify persistence/review/export compatibility.
+- [x] Candidate checks, rejection evidence, exact source preservation and scoped
+  documentation preparation; publication receipts retained centrally.
+
+Recovery phase answer_coverage_protocol_20261010 binds source to8a13ff8. Preserve all
+earlier failed candidates and unknown outcomes. No second call under the CQU04 plan.
+
+Candidate rejected: all 13 parser tests and final Ruff checks passed, but the one
+9.390-second live request returned a string for missingInformation instead of an
+array. Its raw prose also omitted concrete encryption/masking scope and evidence
+requests. No integration or deployment. Preserve the module/tests centrally, then
+remove only those two new unpromoted files. Runtime remains byte-identical to8a13ff8.
+See docs/ops/answer-coverage-protocol-20261010.md; the conditional integration item
+remains unfulfilled and does not authorize another call.

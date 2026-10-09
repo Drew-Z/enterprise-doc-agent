@@ -132,3 +132,30 @@ CQU03 outcome is the observed failing baseline; controlled schema tests cannot p
 model now understands it. Preserve historical decoders and score bytes. Before one fresh
 CQU01 request, freeze the candidate and separate coverage/event criteria; retain failures
 and reject broad quality claims. Staging remains rc49/v15 until an exact compatible release.
+
+## Separate answer-aspect protocol
+
+Add a private CoverageDraft with ordered answers (1..12), each holding requirementText,
+answer, citations and missingInformation, plus independent BasisPrerequisite[] and
+overall status. Require each requirementText to match the next exact substring of the
+original question, allowing only whitespace between spans; the complete remainder must
+be whitespace. This proves text coverage/order only, not a meaningful semantic split.
+
+Render each exact question span with its own answer in the existing answer string;
+union selected citations and missing-information entries in first-use order. Pass this
+projection through the unchanged literal-basis resolver and public limits. Preserve
+quote, reference, Chinese-prose, status and prerequisite validation; overflow rejects
+without truncation. No stored schema change or semantic relabeling is involved.
+
+First validate the module boundary with actual parsers and exact source fixtures, then
+probe the distinct private protocol with one frozen CQU04 request before changing the
+runtime gateway. A successful candidate requires a new prompt identity and run-v7 scorer
+branch; old v1..v6 parsers and outcomes remain frozen. The gateway must bind coverage to
+each call's own question, with no shared mutable state. Accepted old prompt policies
+must drain before release. Do not widen routes, retry bounds, source authorization or
+accounting to make a candidate pass.
+
+Observed outcome: v17 failed its first CQU04 schema and semantic checks. The
+private module and tests are archived with exact hashes outside runtime source.
+Do not implement the conditional gateway/scorer promotion for this rejected
+candidate. Complete question-text coverage did not force substantive answers.
