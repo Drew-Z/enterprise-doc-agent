@@ -153,3 +153,24 @@ and generic, incomplete evidence requests. The tested private parser was preserv
 centrally and withdrawn from the runtime checkout. No gateway/scorer integration
 or deployment is eligible under this candidate; parent acceptance remains open.
 See docs/ops/answer-coverage-protocol-20261010.md.
+
+## Explicit provider output contract
+
+The v17 failure exposed a separate transport-contract gap: JSON mode does not ask
+the provider to enforce the schema. Add an opt-in strict JSON Schema request for
+each existing presales route, using Pydantic's schema generation and the unchanged
+business response model. All declared fields are required in the strict variant.
+Keep JSON mode as the default and retain local shape, citation and semantic-rule
+validators. Never silently retry or downgrade an unsupported strict request.
+
+Bind strict execution to a distinct prompt/schema identity through existing frozen
+policies, including restoration. Preserve saved drafts and historical scorer
+contracts. Validate actual HTTP request/response boundaries and offline scoring.
+Before enabling on staging, verify the current primary endpoint accepts one frozen
+synthetic contract request within its existing daily budget. This can establish
+observed schema compatibility only, not answer completeness or competitor parity.
+
+Result: implementation and local/real-database checks pass. One actual primary
+request conformed to JSON Schema but merged three business prerequisites and
+failed the existing support-combination validator. Deliver the explicit capability
+disabled by default; keep staging v15. Semantic quality remains unfulfilled.

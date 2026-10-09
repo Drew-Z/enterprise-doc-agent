@@ -74,6 +74,8 @@ class RecordingTransport(httpx.AsyncBaseTransport):
         # Only frozen fixture input and bounded output, never headers or credentials.
         request_body = json.loads(request.content)
         record["input"] = json.loads(request_body["messages"][1]["content"])
+        if request_body.get("response_format", {}).get("type") == "json_schema":
+            record["responseFormat"] = request_body["response_format"]
         phase = "awaiting_response_headers"
         try:
             response = await self.inner.handle_async_request(request)
@@ -195,16 +197,19 @@ async def collect(
     model_route: ModelRoute = "fallback",
     model_timeout_seconds: float = 120,
     transport: httpx.AsyncBaseTransport | None = None,
+    strict_output: bool = False,
 ) -> dict[str, Any]:
     presales_settings = PresalesSettings(
         model_route=model_route,
         model_timeout_seconds=model_timeout_seconds,
         row_timeout_seconds=model_timeout_seconds + 30,
+        primary_strict_output=strict_output if model_route == "primary" else False,
+        fallback_strict_output=strict_output if model_route == "fallback" else False,
     )
     dataset, digest = load_dataset(dataset_path)
     snapshots, evidence = synthetic_sources(dataset, digest)
     report: dict[str, Any] = {
-        "schemaVersion": "presales-gateway-run-v6",
+        "schemaVersion": "presales-gateway-run-v8" if strict_output else "presales-gateway-run-v6",
         "scope": (
             "generation_only_with_complete_synthetic_sources; no_retrieval_or_persistence"
             if dataset.synthetic
@@ -300,6 +305,7 @@ def main() -> None:
     parser.add_argument("--model-route", choices=("primary", "fallback"), default="fallback")
     parser.add_argument("--model-timeout-seconds", type=float, default=120)
     parser.add_argument("--reasoning-effort", choices=("low", "medium", "high", "xhigh"))
+    parser.add_argument("--strict-output", action="store_true")
     args = parser.parse_args()
     settings = load_route_settings(args.provider_env, args.model_route)
     if args.reasoning_effort is not None:
@@ -314,6 +320,7 @@ def main() -> None:
             settings,
             model_route=args.model_route,
             model_timeout_seconds=args.model_timeout_seconds,
+            strict_output=args.strict_output,
         ),
         loop_factory=selector_event_loop_factory,
     )

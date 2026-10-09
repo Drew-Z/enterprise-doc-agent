@@ -179,3 +179,23 @@ requests. No integration or deployment. Preserve the module/tests centrally, the
 remove only those two new unpromoted files. Runtime remains byte-identical to8a13ff8.
 See docs/ops/answer-coverage-protocol-20261010.md; the conditional integration item
 remains unfulfilled and does not authorize another call.
+
+## Explicit strict output mode
+
+- [x] HTTP-boundary red/green schema request, strict local rejection and unchanged
+  legacy behavior; unsupported provider responses have one dispatch and no downgrade.
+- [x] Frozen primary/fallback identity, serialization/restoration and mismatch guards.
+- [x] Explicit run-v8 collection/scoring and historical report compatibility.
+- [x] Freeze and observe at most one new synthetic primary contract request; no
+  public sample rerun, semantic promotion, retry or automatic staging enablement.
+- [x] Required local checks and spec/evidence updates; final scoped publication
+  and owned-cleanup receipts are recorded in the central manifest.
+
+Recovery phase strict_output_contract_20261010 uses the existing group and500185e.
+
+Implemented opt-in v18; default v15 remains byte-identical in prompt identity.
+143 focused tests,18 real PostgreSQL cases,3,040 nonintegration tests/23 subtests,
+Ruff743-file format/check and Mypy275 files pass. The one synthetic request returned
+schema-valid JSON in37.563s but failed support_combination and semantic criteria.
+No retry or staging enablement; the result establishes one observed schema response,
+not answer quality. See docs/ops/presales-strict-output-20261010.md.

@@ -1050,3 +1050,52 @@ citations. Correct: preserve content, merge each revision's side column and reso
 `review.citations is not None` explicitly. rc48 cannot interpret this history. The0036
 release tooling must keep rejecting0037 until coordinated expansion and reader guards
 are implemented; after new history, rc48 is not an eligible rollback reader.
+
+## Optional provider JSON Schema mode
+
+### 1. Scope / Trigger
+JSON mode guarantees JSON syntax, not field types. Explicit strict mode asks the
+existing endpoint for schema-conforming output while retaining all local business
+checks. Compatibility is endpoint-specific; v18 is opt-in and not enabled on staging.
+
+### 2. Signatures
+`OpenAICompatiblePresalesGateway(..., strict_output: bool = False)` supports direct
+callers. When PresalesSettings is supplied, its selected route controls the mode.
+`StrictBasisDraft(BasisDraft)` requires missingInformation and citations arrays.
+`strict_response_format()` generates the request from that Pydantic model.
+
+### 3. Contracts
+`PRESALES__PRIMARY_STRICT_OUTPUT` and `PRESALES__FALLBACK_STRICT_OUTPUT` both default
+false. True selects `response_format.type=json_schema`, name `presales_response`,
+strict=true and the model-generated schema. No manual schema rewriting or output
+coercion. Existing v15 bytes/hash are unchanged when false; true uses v18 and the
+strict schema in promptSha256. Existing frozen RoutePolicy version/hash binds it;
+restore_gateway carries the matching template mode and refuses identity drift.
+API/Worker settings must agree. Drain old accepted prompt policies before a switch.
+Public drafts, storage, source access, budgets and configured failover stay unchanged.
+
+### 4. Validation & Error Matrix
+Missing arrays, string instead of array and other shape errors remain draft_schema.
+Unknown citations and invalid literal/business evidence retain existing diagnostic
+categories. Unsupported endpoint 400 remains presales_model_failed with one gateway
+dispatch and no hidden same-route JSON-mode retry. Configured background failover
+is a separate bounded policy. Mode drift fails presales_execution_policy_unavailable
+before dispatch and releases the operation reservation; it is not a silent switch.
+
+### 5. Good/Base/Bad Cases
+Good: strict wire schema is generated from the same Pydantic model validated locally.
+Base: omitted mode keeps v15 and historical optional-array parsing exactly.
+Bad: schema-conformant positive+negative with uncertainty=none still fails the
+business contract; strict schema does not establish semantics or source entailment.
+
+### 6. Tests Required
+Core strict-output tests inspect actual HTTP body, every object required list,
+legacy prompt SHA, schema rejection, no hidden downgrade and restored route mode.
+Real PostgreSQL strict-output tests cover synchronous/background persistence,
+idempotent replay, one consumed reservation and both directions of mode drift with
+zero dispatch. Keep the existing execution-policy integration suite passing.
+
+### 7. Wrong vs Correct
+Wrong: set json_schema for every compatible provider and declare quality fixed.
+Correct: explicit route opt-in, endpoint observation, unchanged local evidence
+validation, frozen protocol identity and separate semantic acceptance.

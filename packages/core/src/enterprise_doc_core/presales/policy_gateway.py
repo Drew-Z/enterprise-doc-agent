@@ -102,4 +102,5 @@ def restore_gateway(template: PresalesGateway, policy: RoutePolicy) -> PresalesG
             }
         ),
         transport=template.transport,
+        strict_output=template.strict_output,
     )

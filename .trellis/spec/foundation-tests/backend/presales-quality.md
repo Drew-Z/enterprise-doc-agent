@@ -335,3 +335,23 @@ version table and apply incremental ALTERs to public tables. Assert both schema
 versions and table ownership before tests, verify public is unchanged afterward,
 and remove only the exact owned schema in finally. Do not point a harness at an
 empty schema and assume search_path alone provides migration isolation.
+
+## Strict request collection and historical scoring
+
+`collect(..., strict_output=True)` or the explicit `--strict-output` option selects
+strict schema only for the requested route. It emits presales-gateway-run-v8 and
+records the exact responseFormat in each dispatched trace; defaults remain run-v6.
+run-v7 belongs to the rejected answer-aspect experiment and remains unsupported.
+
+Both scorers have an explicit v8 StrictBasisDraft branch. Gateway scoring verifies
+the recorded strict response format before processing success or failure, then
+binds accepted original output through the unchanged basis projection. Missing
+required arrays cannot be silently reconstructed. Legacy v1..v6 keep their existing
+parsers and frozen scores; do not use v8 to reclassify a rejected historical output.
+
+HTTP-boundary evaluation tests cover successful and failed strict outputs, altered
+request-format rejection, strict omitted-field rejection and v6 compatibility.
+The single 2026-10-10 synthetic observation accepted the request and conformed to
+JSON Schema but failed support_combination. Preserve that failed state and semantic
+review. It proves one observed response format only, not constrained decoding,
+reliability, public-task improvement or permission to enable a production route.

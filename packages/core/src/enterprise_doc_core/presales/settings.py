@@ -15,6 +15,8 @@ class PresalesSettings(BaseModel):
     model_route: Literal["primary", "fallback"] = "primary"
     primary_reasoning_effort: Literal["low", "medium", "high", "xhigh"] | None = None
     primary_streaming: bool | None = None
+    primary_strict_output: bool = False
+    fallback_strict_output: bool = False
     model_timeout_seconds: float | None = Field(default=None, gt=0, le=300)
     fallback_model_timeout_seconds: float | None = Field(default=None, gt=0, le=300)
     row_timeout_seconds: float = Field(default=90, gt=0, le=900)

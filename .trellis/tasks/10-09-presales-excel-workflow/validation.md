@@ -340,3 +340,27 @@ three previous unknowns remain reserved. No embeddings, product write or release
 
 Recovery phase: answer_coverage_protocol_20261010, baseline8a13ff8. See
 docs/ops/answer-coverage-protocol-20261010.md. Competitor acceptance remains open.
+
+## Optional strict output request — 2026-10-10
+
+Nine core and two evaluation tests failed before implementation and passed after.
+The143-test focused suite includes frozen historical scoring. Eighteen real owned
+PostgreSQL cases verify strict synchronous/background persistence, idempotent
+replay, a single charge, and mode drift rejected before dispatch with reservations
+released. Owned schemas are removed in fixture finally. Whole-project checks:
+Ruff format743 files, Ruff check, Mypy275 source files,3,040 nonintegration tests
+and23 subtests pass (814 deselected,262.09s). No frontend or public schema changes.
+
+One newly frozen synthetic primary/low/streaming request returned HTTP200 with
+schema-valid data in37.563s. Actual business validation failed support_combination:
+merged prerequisites, positive and negative with uncertainty none, and no question
+for unknown acceptance. Original failed report stays failed; no normalization,
+retry, public case replay, deployment or staging enablement. Explicit opt-in remains
+false. Read-only pre/postflight confirms unchanged rc49/0037/v15/policy/ledgers,
+five ready services and zero active jobs. Conservative budget53/200 includes17
+direct known/reserved calls and the three prior unknowns; no embedding calls.
+
+Recovery phase strict_output_contract_20261010 binds Git baseline500185e and records
+new files absent. The initial single fullwidth-colon Ruff finding was fixed; evidence,
+final publication and owned-temp cleanup receipts are retained centrally. See
+docs/ops/presales-strict-output-20261010.md. Parent competitor acceptance remains open.

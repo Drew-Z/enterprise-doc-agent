@@ -159,3 +159,22 @@ Observed outcome: v17 failed its first CQU04 schema and semantic checks. The
 private module and tests are archived with exact hashes outside runtime source.
 Do not implement the conditional gateway/scorer promotion for this rejected
 candidate. Complete question-text coverage did not force substantive answers.
+
+## Strict provider request mode
+
+Use StrictBasisDraft inheriting BasisDraft with the two optional arrays made
+required, so the Pydantic schema has no optional object properties. Keep the
+original decoder and legacy prompt exactly unchanged when disabled. In strict
+mode, send response_format json_schema with strict=true and this same schema;
+validate StrictBasisDraft locally before the normal literal-basis projection.
+
+Independent primary/fallback settings default false. Strict mode uses presales.v18
+and includes its schema in the system-message hash; existing RoutePolicy version
+and hash bind the request contract without adding storage fields. Restoration
+must preserve the selected mode and reject a differently configured template.
+Changing mode requires draining accepted old prompt policies before rollout.
+
+Strict evaluation reports use run-v8; v7 remains the rejected answer-aspect
+candidate and is not accepted by historical scorers. Add explicit v8 resolver
+branches; legacy v1..v6 interpretation remains unchanged. No output coercion,
+retry, model/channel switch, database migration or product quota change.
