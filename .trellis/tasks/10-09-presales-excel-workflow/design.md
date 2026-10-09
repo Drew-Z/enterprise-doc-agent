@@ -78,3 +78,21 @@ On selection changes remap retained prerequisite references by exact evidence id
 removed links become visibly unselected and block save until the reviewer resolves them.
 Show effective, original and historical evidence separately, and append original-evidence
 and correction provenance to CSV. Do not reset the response form when browsing evidence.
+
+## Review citation release continuation
+
+Reuse the supervised fixed expansion executor with exactly0036-to-0037 and the same
+private psql session/advisory lock/deadline. Retain all original images and configuration,
+and bind unchanged workbook/manual reader capabilities. Verify inherited schema plus
+nullable/default-free citations JSONB and its exact validated array/length constraint.
+Recovery reconciles complete0036/0037 without replay or downgrade; any nonnull citation
+history on0037 prevents reopening original0036 readers before writes and before reopening.
+
+Image-only0037 plans require independent boolean workbook/manual/citation reader
+capabilities for original and candidate. Apply checks both sides, restore original;
+each incompatible history is checked before writes and after applications stop.
+Preserve existing human/workbook history, credentials, provider settings and all failed
+sample results. Validate controlled cluster races and actual owned PostgreSQL migration,
+unknown commit receipts, schema drift, real corrected review/export and refusal with[].
+Publish and validate exact source before signed release. A live rc48 rollback drill may
+occur only before new citation history; afterwards use compatible images/forward repair.

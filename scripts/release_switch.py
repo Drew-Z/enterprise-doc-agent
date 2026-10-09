@@ -1,4 +1,4 @@
-"""Bounded releases, schema 0032 configuration and 0032/0034/0035/0036 image changes.
+"""Bounded releases, schema 0032 configuration and 0032/0034-0037 image changes.
 
 Private plans contain the primary and any explicitly declared fallback API keys. Keep
 them out of Git/logs, and explicitly approve any temporary remote runtime copy.
@@ -140,6 +140,7 @@ class ReleasePlan(Plan):
             "20261008_0034",
             "20261009_0035",
             "20261009_0036",
+            "20261010_0037",
         }:
             raise GuardError("release switching requires a reviewed schema")
         self.revision = value["original_revision"]
@@ -148,32 +149,42 @@ class ReleasePlan(Plan):
         self.presales_inference = value.get("release_kind") == "presales_inference"
         self.presales_concurrency = value.get("release_kind") == "presales_concurrency"
         if (
-            self.revision in {"20261008_0034", "20261009_0035", "20261009_0036"}
+            self.revision in {"20261008_0034", "20261009_0035", "20261009_0036", "20261010_0037"}
             and not self.image_only
         ):
             raise GuardError(f"schema {self.revision} only permits explicit image switching")
         self.workbook_readers = value.get("workbook_readers")
-        if self.revision in {"20261009_0035", "20261009_0036"}:
+        if self.revision in {"20261009_0035", "20261009_0036", "20261010_0037"}:
             if (
                 not isinstance(self.workbook_readers, dict)
                 or set(self.workbook_readers) != {"original", "candidate"}
                 or any(type(v) is not bool for v in self.workbook_readers.values())
             ):
                 raise GuardError(
-                    "0035/0036 require explicit original and candidate workbook readers"
+                    "0035-0037 require explicit original and candidate workbook readers"
                 )
         elif self.workbook_readers is not None:
-            raise GuardError("workbook reader declarations require schema 0035/0036")
+            raise GuardError("workbook reader declarations require schema 0035-0037")
         self.manual_readers = value.get("manual_readers")
-        if self.revision == "20261009_0036":
+        if self.revision in {"20261009_0036", "20261010_0037"}:
             if (
                 not isinstance(self.manual_readers, dict)
                 or set(self.manual_readers) != {"original", "candidate"}
                 or any(type(v) is not bool for v in self.manual_readers.values())
             ):
-                raise GuardError("0036 requires explicit original and candidate manual readers")
+                raise GuardError("0036/0037 require explicit original and candidate manual readers")
         elif "manual_readers" in value:
-            raise GuardError("manual reader declarations require schema 0036")
+            raise GuardError("manual reader declarations require schema 0036/0037")
+        self.citation_readers = value.get("citation_readers")
+        if self.revision == "20261010_0037":
+            if (
+                not isinstance(self.citation_readers, dict)
+                or set(self.citation_readers) != {"original", "candidate"}
+                or any(type(v) is not bool for v in self.citation_readers.values())
+            ):
+                raise GuardError("0037 requires explicit original and candidate citation readers")
+        elif "citation_readers" in value:
+            raise GuardError("citation reader declarations require schema 0037")
         if "release_kind" in value and (
             not (
                 self.image_only
@@ -182,7 +193,13 @@ class ReleasePlan(Plan):
                 or self.presales_concurrency
             )
             or self.revision
-            not in {"20261005_0032", "20261008_0034", "20261009_0035", "20261009_0036"}
+            not in {
+                "20261005_0032",
+                "20261008_0034",
+                "20261009_0035",
+                "20261009_0036",
+                "20261010_0037",
+            }
         ):
             raise GuardError("explicit release kind requires a supported schema 0032 mode")
         self.original = self.data["original_prerequisites"]
@@ -224,7 +241,13 @@ class ReleasePlan(Plan):
             raise GuardError("presales inference settings require an explicit release mode")
         if "WORKER__PRESALES_CONCURRENCY" in changed and not self.presales_concurrency:
             raise GuardError("presales concurrency requires an explicit release mode")
-        if self.revision in {"20261005_0032", "20261008_0034", "20261009_0035", "20261009_0036"}:
+        if self.revision in {
+            "20261005_0032",
+            "20261008_0034",
+            "20261009_0035",
+            "20261009_0036",
+            "20261010_0037",
+        }:
             if self.image_only and changed:
                 raise GuardError("image-only switching must retain all configuration")
             if self.reasoning_only:
@@ -498,16 +521,19 @@ class ReleaseCluster(Cluster):
         idle: Callable[[float], bool] | None = None,
         workbook_empty: Callable[[float], bool] | None = None,
         manual_empty: Callable[[float], bool] | None = None,
+        citation_empty: Callable[[float], bool] | None = None,
     ) -> None:
         super().__init__(plan, run=run, revision=revision, clock=clock)
         self.idle = idle or database_idle
         self.workbook_empty = workbook_empty or database_workbook_empty
         self.manual_empty = manual_empty or database_manual_empty
+        self.citation_empty = citation_empty or database_citation_empty
 
     def _check_history_readers(self, deadline: float, *, restoring: bool = False) -> None:
         for label, readers, empty in (
             ("workbook", self.plan.workbook_readers, self.workbook_empty),
             ("manual", self.plan.manual_readers, self.manual_empty),
+            ("citation", self.plan.citation_readers, self.citation_empty),
         ):
             if readers is None:
                 continue
@@ -758,6 +784,7 @@ class ReleaseCluster(Cluster):
             "20261008_0034",
             "20261009_0035",
             "20261009_0036",
+            "20261010_0037",
         } and not self.idle(self._remaining(deadline)):
             raise GuardError("active business operations must finish before application rollback")
         self._check_history_readers(deadline, restoring=True)
@@ -769,6 +796,7 @@ class ReleaseCluster(Cluster):
             "20261008_0034",
             "20261009_0035",
             "20261009_0036",
+            "20261010_0037",
         } and not self.idle(self._remaining(deadline)):
             raise GuardError("business operations arrived while closing the rollback entry")
         self._check_history_readers(deadline, restoring=True)
@@ -810,6 +838,13 @@ def database_manual_empty(timeout: float) -> bool:
     SELECT NOT EXISTS (SELECT 1 FROM public.presales_rows WHERE manual_authorship IS NOT NULL);
     COMMIT;"""
     return _database_boolean(query, timeout, "manual history")
+
+
+def database_citation_empty(timeout: float) -> bool:
+    query = """BEGIN READ ONLY; SET LOCAL statement_timeout='2000ms';
+    SELECT NOT EXISTS (SELECT 1 FROM public.presales_reviews WHERE citations IS NOT NULL);
+    COMMIT;"""
+    return _database_boolean(query, timeout, "citation history")
 
 
 def _database_boolean(query: str, timeout: float, label: str) -> bool:

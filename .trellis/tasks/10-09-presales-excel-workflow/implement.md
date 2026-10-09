@@ -93,3 +93,14 @@ suites contain77 unique passing cases after correcting the source-revocation tes
 expected404. Browser model workflow passed both widths; new human correction initially
 timed out on a label locator, then passed both widths using the textbox role locator.
 Both browser schemas were removed. Original evidence and failed runs remain retained.
+
+## Review citation release slices
+
+- [x] Fixed0036-to-0037 expansion, source/SQL binding and exact schema checks.
+- [x] Independent citation-reader guard plus inherited workbook/manual history protection.
+- [x] Controlled cluster race/recovery and owned PostgreSQL migration/real-history tests.
+- [ ] Required checks, exact source publication and candidate CI.
+- [ ] Signed candidate, fresh capacity/preflight, guarded staging release and human citation delivery.
+
+Recovery: existing central group, phase review_citations_release_20261010, baseline
+7cc745ac937dd50c275d0b12d464bb26e55c5f77. No new model calls or frozen replay changes.

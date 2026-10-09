@@ -33,6 +33,35 @@ The [image cache runtime contract](../../backend/image-cache-runtime.md) covers
 containerd/CRI import aliases, exact digest checks and bounded in-window repairs.
 Successful image listings do not alone establish container startup readiness.
 
+## Schema 0037 review-citation publication and rollback
+
+1. Scope: fixed0036-to-0037 expansion retains original applications; a separate
+   image-only window introduces per-review citation readers. Preserve every earlier
+   review, draft, human author, workbook and attempt.
+2. Signatures: ExpansionPlan schema4 binds exact migration/executor hashes and unchanged
+   workbook/manual reader booleans. PsqlSession(citations=True) is mutually exclusive
+   with manual/workbook selection and checks inherited shapes plus nullable/default-free
+   citations JSONB and its exact validated array/length check.
+3. Contract: retain the same credential-private session/advisory lock, verified limits,
+   deadlines and atomic transaction. Lost receipts reconcile complete0036/0037 without
+   DDL replay. Recovery checks inherited reader compatibility and refuses any nonnull
+   citation history before writes and before reopening original applications.
+4. Image validation: schema0037 requires images_only and exact boolean original/candidate
+   workbook_readers, manual_readers and citation_readers. Apply checks both sides; restore
+   original. Before writes and after applications stop, each incompatible capability
+   requires empty corresponding history. Configuration/credentials/specs remain fixed;
+   idle checks protect both rollback boundaries.
+5. Cases: good = rc48 rollback before any independent review citations, or compatible
+   readers with history. Bad = rc48 after an explicit array, including[]. SQL null alone
+   retains original-draft binding. Never erase a revision to enable recovery.
+6. Tests: exact Alembic SQL, source/scope/capability drift, all three history close races,
+   real PostgreSQL atomic failure/lost receipts/schema drift and actual corrected review,
+   original draft/earlier review/workbook/CSV/accounting preservation through refused or
+   compatible recovery. Owned fixtures clean their schemas in finally blocks.
+7. Local verification precedes exact signed publication and live startup/rollback checks.
+   The rc48 drill must precede citation history; afterward recover with compatible images
+   or a forward fix. Human evidence correction does not establish model accuracy.
+
 ## Schema 0036 human-authorship publication and rollback
 
 1. Scope: fixed0035-to-0036 expansion retains original applications; a separate

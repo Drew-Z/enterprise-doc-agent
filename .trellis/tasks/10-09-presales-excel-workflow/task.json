@@ -61,6 +61,7 @@
     "review_citations_report": "docs/ops/presales-review-citations-20261010.md",
     "review_citations_live_model_calls": 0,
     "review_citations_live_embedding_calls": 0,
-    "review_citations_release_guard_status": "0036_tooling_must_reject0037_until_coordinated_reader_guards"
+    "review_citations_release_guard_status": "0037_fixed_expansion_and_reader_guards_locally_verified_publication_pending",
+    "review_citations_release_report": "docs/ops/presales-review-citations-release-20261010.md"
   }
 }

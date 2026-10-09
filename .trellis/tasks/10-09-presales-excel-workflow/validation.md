@@ -198,3 +198,26 @@ This is a0037 candidate; staging remains rc48/0036. A coordinated expansion and 
 reader/rollback guards are still required before deployment. Do not restore rc48 after
 explicit review citation history exists. Frozen public failures and call ledger unchanged;
 human repair does not establish model accuracy, customer time savings or competitor parity.
+
+## Guarded review citation release tooling — 2026-10-10
+
+Fixed0036-to-0037 expansion now verifies all inherited shapes and the nullable citations
+array constraint in the same private locked session. Recovery reconciles complete state
+without replay and refuses citation history before writes/before reopening old readers.
+Schema0037 image plans independently bind workbook/manual/citation capabilities, including
+both close races and explicit[] history. Existing resource and idle restrictions remain.
+
+Final checks:3,029 Python nonintegration tests and23 subtests passed,810 deselected
+(289.55s);1,367 deployment cases passed (163.60s); all four real PostgreSQL expansion
+suites passed50 cases (131.69s), including15 new citation cases. Real records preserve
+original draft, earlier review, workbook, CSV and accounting across refused/compatible
+recovery. Ruff check/format739 and Mypy274 application sources plus two Linux-target
+deployment scripts passed. The initial Windows script check flagged the existing Linux
+clock branch; no ignore or unrelated code change was made. Frontend sources are unchanged.
+
+Report:`docs/ops/presales-review-citations-release-20261010.md`. Recovery phase:
+`review_citations_release_20261010`, baseline7cc745ac937dd50c275d0b12d464bb26e55c5f77.
+Owned PostgreSQL schemas are removed by fixture cleanup. This checkpoint performs no
+shared migration, staging mutation or model/embedding call. Signed publication and live
+release remain next; last verified staging is rc48/0036. Preserve frozen outputs and
+unknown diagnostics; parent commercial acceptance remains open.

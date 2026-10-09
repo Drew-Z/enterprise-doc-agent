@@ -1,4 +1,4 @@
-"""Fixed additive 0032-to-0034, 0034-to-0035 or 0035-to-0036; original apps retained."""
+"""Fixed additive 0032-to-0034 or adjacent 0034-0037 expansions; original apps retained."""
 
 from __future__ import annotations
 
@@ -67,6 +67,14 @@ AND draft IS NOT NULL AND jsonb_typeof(draft) = 'object' AND revision >= 1));
 UPDATE alembic_version SET version_num='20261009_0036'
 WHERE alembic_version.version_num = '20261009_0035';"""
 
+CITATION_REVISION = "20261010_0037"
+CITATION_MIGRATION_BODY = """ALTER TABLE presales_reviews ADD COLUMN citations JSONB;
+ALTER TABLE presales_reviews ADD CONSTRAINT ck_presales_reviews_presales_review_citations_array
+CHECK (citations IS NULL OR CASE WHEN jsonb_typeof(citations) = 'array'
+THEN jsonb_array_length(citations) <= 12 ELSE false END);
+UPDATE alembic_version SET version_num='20261010_0037'
+WHERE alembic_version.version_num = '20261009_0036';"""
+
 IDLE_SQL = """SELECT NOT (
   EXISTS (SELECT 1 FROM jobs WHERE status NOT IN ('succeeded','dead','cancelled'))
   OR EXISTS (SELECT 1 FROM presales_attempts WHERE state NOT IN ('succeeded','failed','expired'))
@@ -123,6 +131,15 @@ MANUAL_SCHEMA_SQL = (
 );"""
 )
 
+CITATION_CHECK = "ck_presales_reviews_presales_review_citations_array"
+CITATION_SCHEMA_SQL = (
+    MANUAL_SCHEMA_SQL.removesuffix("\n);")
+    + f""",
+    'citations', {_column_query("presales_reviews", "citations")},
+    'citation_constraint', {_constraint_query("presales_reviews", CITATION_CHECK)}
+);"""
+)
+
 
 class PsqlSession:
     """One credential-private session; its advisory lock outlives transaction commit."""
@@ -137,19 +154,36 @@ class PsqlSession:
         connect_timeout: float = 10,
         workbook: bool = False,
         manual: bool = False,
+        citations: bool = False,
     ) -> None:
         if POSTGRES_IDENTIFIER.fullmatch(schema) is None:
             raise GuardError("invalid schema identifier")
         self.schema, self.command, self.clock = schema, command, clock
-        if type(workbook) is not bool or type(manual) is not bool or (workbook and manual):
+        if (
+            any(type(flag) is not bool for flag in (workbook, manual, citations))
+            or sum((workbook, manual, citations)) > 1
+        ):
             raise GuardError("invalid fixed migration selection")
         self.workbook = workbook
         self.manual = manual
+        self.citations = citations
         self.original_revision = (
-            WORKBOOK_REVISION if manual else TARGET_REVISION if workbook else ORIGINAL_REVISION
+            MANUAL_REVISION
+            if citations
+            else WORKBOOK_REVISION
+            if manual
+            else TARGET_REVISION
+            if workbook
+            else ORIGINAL_REVISION
         )
         self.target_revision = (
-            MANUAL_REVISION if manual else WORKBOOK_REVISION if workbook else TARGET_REVISION
+            CITATION_REVISION
+            if citations
+            else MANUAL_REVISION
+            if manual
+            else WORKBOOK_REVISION
+            if workbook
+            else TARGET_REVISION
         )
         self.connect_timeout = connect_timeout
         self.environment = postgres_process_environment(database_url)
@@ -273,7 +307,9 @@ class PsqlSession:
 
     def revision(self, timeout: float) -> str:
         query = (
-            MANUAL_SCHEMA_SQL
+            CITATION_SCHEMA_SQL
+            if self.citations
+            else MANUAL_SCHEMA_SQL
             if self.manual
             else WORKBOOK_SCHEMA_SQL
             if self.workbook
@@ -290,13 +326,16 @@ class PsqlSession:
         if (
             not self.workbook
             and not self.manual
+            and not self.citations
             and revision == ORIGINAL_REVISION
             and all(value.get(name) is None for name in fields)
         ):
             return ORIGINAL_REVISION
         column = {"type": "jsonb", "not_null": False, "has_default": False}
         if revision in (
-            {WORKBOOK_REVISION, MANUAL_REVISION}
+            {MANUAL_REVISION, CITATION_REVISION}
+            if self.citations
+            else {WORKBOOK_REVISION, MANUAL_REVISION}
             if self.manual
             else {TARGET_REVISION, WORKBOOK_REVISION}
             if self.workbook
@@ -316,9 +355,12 @@ class PsqlSession:
                     or constraint.get("definition") != expected
                 ):
                     raise GuardError("expanded schema constraint differs from the fixed migration")
-            if self.workbook or self.manual:
+            if self.workbook or self.manual or self.citations:
                 workbook_revision = self._workbook_revision(value)
-                return self._manual_revision(value) if self.manual else workbook_revision
+                if self.manual or self.citations:
+                    manual_revision = self._manual_revision(value)
+                    return self._citation_revision(value) if self.citations else manual_revision
+                return workbook_revision
             return TARGET_REVISION
         raise GuardError("database revision or additive schema shape changed")
 
@@ -335,7 +377,13 @@ class PsqlSession:
         )
         if (
             value["revision"]
-            in ({WORKBOOK_REVISION, MANUAL_REVISION} if self.manual else {WORKBOOK_REVISION})
+            in (
+                {MANUAL_REVISION, CITATION_REVISION}
+                if self.citations
+                else {WORKBOOK_REVISION, MANUAL_REVISION}
+                if self.manual
+                else {WORKBOOK_REVISION}
+            )
             and value.get("workbook_metadata")
             == {"type": "jsonb", "not_null": False, "has_default": False}
             and value.get("workbook_content")
@@ -356,13 +404,44 @@ class PsqlSession:
             "AND (jsonb_typeof(draft) = 'object'::text) AND (revision >= 1))))"
         )
         if (
-            value["revision"] == MANUAL_REVISION
+            value["revision"]
+            in ({MANUAL_REVISION, CITATION_REVISION} if self.citations else {MANUAL_REVISION})
             and value.get("manual_authorship")
             == {"type": "jsonb", "not_null": False, "has_default": False}
             and value.get("manual_constraint") == {"definition": expected, "validated": True}
         ):
             return MANUAL_REVISION
         raise GuardError("database manual authorship schema shape changed")
+
+    def _citation_revision(self, value: dict[str, Any]) -> str:
+        if value["revision"] == MANUAL_REVISION and all(
+            value.get(name) is None for name in ("citations", "citation_constraint")
+        ):
+            return MANUAL_REVISION
+        expected = (
+            "CHECK (((citations IS NULL) OR CASE WHEN (jsonb_typeof(citations) = 'array'::text) "
+            "THEN (jsonb_array_length(citations) <= 12) ELSE false END))"
+        )
+        constraint = value.get("citation_constraint")
+        if (
+            value["revision"] == CITATION_REVISION
+            and value.get("citations") == {"type": "jsonb", "not_null": False, "has_default": False}
+            and isinstance(constraint, dict)
+            and constraint.get("validated") is True
+            and isinstance(constraint.get("definition"), str)
+            and " ".join(constraint["definition"].split()) == expected
+        ):
+            return CITATION_REVISION
+        raise GuardError("database review citation schema shape changed")
+
+    def citation_empty(self, timeout: float) -> bool:
+        value = self.query(
+            "SELECT NOT EXISTS (SELECT 1 FROM presales_reviews WHERE citations IS NOT NULL);",
+            timeout,
+        )
+        if value not in {"t", "f"}:
+            raise GuardError("database citation history observation is invalid")
+        return value == "t"
 
     def manual_empty(self, timeout: float) -> bool:
         value = self.query(
@@ -371,6 +450,16 @@ class PsqlSession:
         )
         if value not in {"t", "f"}:
             raise GuardError("database manual history observation is invalid")
+        return value == "t"
+
+    def workbook_empty(self, timeout: float) -> bool:
+        value = self.query(
+            "SELECT NOT EXISTS (SELECT 1 FROM presales_packets "
+            "WHERE workbook_metadata IS NOT NULL OR workbook_content IS NOT NULL);",
+            timeout,
+        )
+        if value not in {"t", "f"}:
+            raise GuardError("database workbook history observation is invalid")
         return value == "t"
 
     def idle(self, timeout: float) -> bool:
@@ -389,7 +478,9 @@ class PsqlSession:
 
         try:
             tables = (
-                "presales_rows"
+                "presales_reviews"
+                if self.citations
+                else "presales_rows"
                 if self.manual
                 else "presales_packets"
                 if self.workbook
@@ -402,7 +493,9 @@ class PsqlSession:
             if self.revision(remaining()) != self.original_revision or not self.idle(remaining()):
                 raise GuardError("schema expansion preconditions changed")
             body = (
-                MANUAL_MIGRATION_BODY
+                CITATION_MIGRATION_BODY
+                if self.citations
+                else MANUAL_MIGRATION_BODY
                 if self.manual
                 else WORKBOOK_MIGRATION_BODY
                 if self.workbook
@@ -470,28 +563,38 @@ class ExpansionPlan(ReleasePlan):
         if not required <= value.keys() or value.keys() - required - {
             "executor_sources",
             "workbook_readers",
+            "manual_readers",
         }:
             raise GuardError("unsupported schema expansion plan fields")
         self.workbook = value["target_revision"] == WORKBOOK_REVISION
         self.manual = value["target_revision"] == MANUAL_REVISION
-        if not self.manual and "workbook_readers" in value:
+        self.citations = value["target_revision"] == CITATION_REVISION
+        if not (self.manual or self.citations) and "workbook_readers" in value:
             raise GuardError("workbook reader declarations require the manual schema expansion")
+        if not self.citations and "manual_readers" in value:
+            raise GuardError("manual reader declarations require the citation schema expansion")
         self.original_revision = (
-            WORKBOOK_REVISION
+            MANUAL_REVISION
+            if self.citations
+            else WORKBOOK_REVISION
             if self.manual
             else TARGET_REVISION
             if self.workbook
             else ORIGINAL_REVISION
         )
         self.target_revision = (
-            MANUAL_REVISION
+            CITATION_REVISION
+            if self.citations
+            else MANUAL_REVISION
             if self.manual
             else WORKBOOK_REVISION
             if self.workbook
             else TARGET_REVISION
         )
         body = (
-            MANUAL_MIGRATION_BODY
+            CITATION_MIGRATION_BODY
+            if self.citations
+            else MANUAL_MIGRATION_BODY
             if self.manual
             else WORKBOOK_MIGRATION_BODY
             if self.workbook
@@ -510,10 +613,14 @@ class ExpansionPlan(ReleasePlan):
         super().__init__(projected)
         if self.original != self.candidate or self.deployments != self.desired:
             raise GuardError("schema expansion must retain every original application resource")
-        if self.manual:
+        if self.manual or self.citations:
             assert self.workbook_readers is not None
             if self.workbook_readers["original"] != self.workbook_readers["candidate"]:
                 raise GuardError("schema expansion must retain workbook reader capabilities")
+        if self.citations:
+            assert self.manual_readers is not None
+            if self.manual_readers["original"] != self.manual_readers["candidate"]:
+                raise GuardError("schema expansion must retain manual reader capabilities")
         self.data = copy.deepcopy(value)
 
     def accepted_revisions(self) -> tuple[str, ...]:
@@ -525,6 +632,8 @@ class ExpansionDatabase(Protocol):
     def idle(self, timeout: float) -> bool: ...
     def expand(self, timeout: float) -> None: ...
     def manual_empty(self, timeout: float) -> bool: ...
+    def citation_empty(self, timeout: float) -> bool: ...
+    def workbook_empty(self, timeout: float) -> bool: ...
 
 
 class ExpansionCluster(ReleaseCluster):
@@ -538,16 +647,34 @@ class ExpansionCluster(ReleaseCluster):
         run: Run = kubectl,
         clock: Callable[[], float] | None = None,
     ) -> None:
-        super().__init__(plan, run=run, revision=database.revision, idle=database.idle, clock=clock)
+        super().__init__(
+            plan,
+            run=run,
+            revision=database.revision,
+            idle=database.idle,
+            clock=clock,
+            workbook_empty=database.workbook_empty if plan.citations else None,
+            manual_empty=database.manual_empty if plan.citations else None,
+        )
         self.database = database
 
     def _check_manual_recovery(self, deadline: float) -> None:
+        if self.plan.citations:
+            self._check_history_readers(deadline, restoring=True)
         if (
             self.plan.manual
             and self.revision(self._remaining(deadline)) == MANUAL_REVISION
             and not self.database.manual_empty(self._remaining(deadline))
         ):
             raise GuardError("manual history prevents reopening schema expansion original readers")
+        if (
+            self.plan.citations
+            and self.revision(self._remaining(deadline)) == CITATION_REVISION
+            and not self.database.citation_empty(self._remaining(deadline))
+        ):
+            raise GuardError(
+                "citation history prevents reopening schema expansion original readers"
+            )
 
     def _open(self, deadline: float) -> None:
         self._check_manual_recovery(deadline)
@@ -599,7 +726,11 @@ def locked_cluster(plan: ExpansionPlan, deadline: float) -> Iterator[ExpansionCl
     url = base64.b64decode(secret["data"]["DATABASE__URL"], validate=True).decode()
     remaining = min(10, deadline - host_clock().elapsed)
     with PsqlSession(
-        url, connect_timeout=remaining, workbook=plan.workbook, manual=plan.manual
+        url,
+        connect_timeout=remaining,
+        workbook=plan.workbook,
+        manual=plan.manual,
+        citations=plan.citations,
     ) as database:
         yield ExpansionCluster(plan, database)
 

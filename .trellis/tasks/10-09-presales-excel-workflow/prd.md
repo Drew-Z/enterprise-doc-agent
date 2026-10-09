@@ -84,3 +84,14 @@ review snapshots, idempotency/conflicts/revocation, no accounting changes; deskt
 selection, prerequisite-link correction, reload/export and uncertain-save GET recovery.
 Keep this capability distinct from improvement in original model accuracy. Additive
 persistence and history-preserving migration guards precede any coordinated deployment.
+
+## Authorized review citation release continuation
+
+Extend the existing fixed expansion with0036-to-0037, then publish the coordinated
+application through the existing supervised image window. Both windows must preserve
+workbook/manual history and refuse reopening citation-incompatible readers once any
+review owns its evidence, including an empty list. Reconcile uncertain migration receipts
+without replay. Verify with owned PostgreSQL cases, exact signed sources and a fresh
+staging preflight. Exercise rc48 rollback before new citation history, then use one new
+labeled human-only fixture for correction, reload and export with zero model/embedding
+calls. Frozen samples, failures and usage remain unchanged; parent acceptance stays open.
