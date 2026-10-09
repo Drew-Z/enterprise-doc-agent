@@ -25,3 +25,23 @@ Recovery and evidence: `D:/Agent/codex/backups/tasks/20260924T015840.986Z-commer
 The feature commit includes only the Excel implementation, its tests, presales contracts, the usage guide and this child task. Existing commercial/product plan edits and the untracked commercial parent task remain outside that commit. Historical workspace changes are retained. The parent commercial acceptance remains open.
 
 Next: prepare schema 0035 candidate publication and application rollback compatibility, then replay one sourced public customer questionnaire through the complete file workflow. This verification does not establish competitor parity, commercial acceptance, user time savings or willingness to pay.
+
+## Approved continuation: release tooling
+
+The user approved the next stage. The fixed expansion now accepts 0034-to-0035,
+and image-only switching on 0035 requires explicit reader capabilities. Legacy
+rollback is refused before and after closing admission when workbook history exists.
+
+Validation after these changes: full Python non-integration suite **2,912 passed,
+758 deselected, 23 subtests passed** (240.35 seconds); real new and existing schema
+expansion PostgreSQL suites **23 passed**; repository Ruff check/format **725 files**
+and Mypy **271 source files** passed. Frontend code is unchanged in this continuation.
+The first PostgreSQL run exposed a mismatch in the expected PostgreSQL rendering of
+the BETWEEN constraint; the exact expected grouping was corrected without weakening
+shape validation. The original 0034 error-code context was preserved after regression.
+
+Fresh read-only staging observation remains rc.45/0034, five workloads ready, idle
+business, unchanged credential fingerprints and approximately 14.41 GiB free. This
+is a preflight, not a live schema upgrade or release. Evidence is in the central task
+group: `excel-release-preflight.json` and `excel-release-pytest-nonintegration.log`.
+Candidate publication and public file replay remain pending at this commit.

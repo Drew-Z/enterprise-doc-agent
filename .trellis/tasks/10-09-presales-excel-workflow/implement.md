@@ -14,3 +14,14 @@ Recovery: D:/Agent/codex/backups/tasks/20260924T015840.986Z-commercial-productio
 ## Local acceptance result (2026-10-09)
 
 All implementation criteria passed locally. See `docs/ops/presales-excel-workflow.md` for the supported workflow, limits and release boundary, and `validation.md` for exact check results. Release tooling support for schema 0035 and a public questionnaire replay are subsequent work; this task excludes deployment and does not change commercial acceptance.
+
+## Newly authorized continuation
+
+- [x] Red/green fixed 0035 expansion contract and original resource retention.
+- [x] Red/green 0035 image switching and legacy-reader history guards at both race boundaries.
+- [x] Real owned PostgreSQL migration/receipt/constraint tests and retained workbook roundtrip.
+- [ ] Required checks, exact scoped commit, candidate CI and signed-artifact preparation.
+- [ ] Fresh live preflight, sufficient cache capacity, supervised migration and deployment/rollback when guards pass.
+- [ ] Public-source freeze, bounded complete selected-range workbook replay, original/model/review separation and final delivery.
+
+Recovery continues in the existing central group, phase `excel_release_20261009`. The approval extends the previous local-only boundary; commercial acceptance and historical workspace changes remain untouched.

@@ -1,4 +1,4 @@
-"""Fixed additive 0032-to-0034 schema expansion with original applications retained."""
+"""Fixed additive 0032-to-0034 or 0034-to-0035 expansion; original apps retained."""
 
 from __future__ import annotations
 
@@ -49,6 +49,16 @@ CHECK (execution_policy IS NULL OR jsonb_typeof(execution_policy) = 'object');
 UPDATE alembic_version SET version_num='20261008_0034'
 WHERE alembic_version.version_num = '20261008_0033';"""
 
+WORKBOOK_REVISION = "20261009_0035"
+WORKBOOK_MIGRATION_BODY = """ALTER TABLE presales_packets ADD COLUMN workbook_metadata JSONB;
+ALTER TABLE presales_packets ADD COLUMN workbook_content BYTEA;
+ALTER TABLE presales_packets ADD CONSTRAINT ck_presales_packets_presales_workbook_valid
+CHECK ((workbook_metadata IS NULL AND workbook_content IS NULL) OR
+(workbook_metadata IS NOT NULL AND jsonb_typeof(workbook_metadata) = 'object'
+AND workbook_content IS NOT NULL AND octet_length(workbook_content) BETWEEN 1 AND 2097152));
+UPDATE alembic_version SET version_num='20261009_0035'
+WHERE alembic_version.version_num = '20261008_0034';"""
+
 IDLE_SQL = """SELECT NOT (
   EXISTS (SELECT 1 FROM jobs WHERE status NOT IN ('succeeded','dead','cancelled'))
   OR EXISTS (SELECT 1 FROM presales_attempts WHERE state NOT IN ('succeeded','failed','expired'))
@@ -86,6 +96,16 @@ SCHEMA_SQL = f"""SELECT json_build_object(
     'attempt_constraint', {_constraint_query("presales_attempts", ATTEMPT_CHECK)}
 );"""
 
+WORKBOOK_CHECK = "ck_presales_packets_presales_workbook_valid"
+WORKBOOK_SCHEMA_SQL = (
+    SCHEMA_SQL.removesuffix("\n);")
+    + f""",
+    'workbook_metadata', {_column_query("presales_packets", "workbook_metadata")},
+    'workbook_content', {_column_query("presales_packets", "workbook_content")},
+    'workbook_constraint', {_constraint_query("presales_packets", WORKBOOK_CHECK)}
+);"""
+)
+
 
 class PsqlSession:
     """One credential-private session; its advisory lock outlives transaction commit."""
@@ -98,10 +118,16 @@ class PsqlSession:
         command: tuple[str, ...] = ("psql",),
         clock: Callable[[], float] = time.monotonic,
         connect_timeout: float = 10,
+        workbook: bool = False,
     ) -> None:
         if POSTGRES_IDENTIFIER.fullmatch(schema) is None:
             raise GuardError("invalid schema identifier")
         self.schema, self.command, self.clock = schema, command, clock
+        if type(workbook) is not bool:
+            raise GuardError("invalid fixed migration selection")
+        self.workbook = workbook
+        self.original_revision = TARGET_REVISION if workbook else ORIGINAL_REVISION
+        self.target_revision = WORKBOOK_REVISION if workbook else TARGET_REVISION
         self.connect_timeout = connect_timeout
         self.environment = postgres_process_environment(database_url)
         for key in ("MAINTENANCE_GUARD_DATABASE_URL", "PGHOSTADDR", "PGSERVICEFILE"):
@@ -224,17 +250,25 @@ class PsqlSession:
 
     def revision(self, timeout: float) -> str:
         try:
-            value = json.loads(self.query(SCHEMA_SQL, timeout))
+            value = json.loads(
+                self.query(WORKBOOK_SCHEMA_SQL if self.workbook else SCHEMA_SQL, timeout)
+            )
         except (ValueError, TypeError):
             raise GuardError("database schema observation is invalid") from None
         if not isinstance(value, dict) or value.get("version_count") != 1:
             raise GuardError("database revision is missing or ambiguous")
         revision = value.get("revision")
         fields = ("review_column", "attempt_column", "review_constraint", "attempt_constraint")
-        if revision == ORIGINAL_REVISION and all(value.get(name) is None for name in fields):
+        if (
+            not self.workbook
+            and revision == ORIGINAL_REVISION
+            and all(value.get(name) is None for name in fields)
+        ):
             return ORIGINAL_REVISION
         column = {"type": "jsonb", "not_null": False, "has_default": False}
-        if revision == TARGET_REVISION and all(value.get(name) == column for name in fields[:2]):
+        if revision in (
+            {TARGET_REVISION, WORKBOOK_REVISION} if self.workbook else {TARGET_REVISION}
+        ) and all(value.get(name) == column for name in fields[:2]):
             for name, field in (
                 ("review_constraint", "prerequisite_changes"),
                 ("attempt_constraint", "execution_policy"),
@@ -249,8 +283,32 @@ class PsqlSession:
                     or constraint.get("definition") != expected
                 ):
                     raise GuardError("expanded schema constraint differs from the fixed migration")
+            if self.workbook:
+                return self._workbook_revision(value)
             return TARGET_REVISION
         raise GuardError("database revision or additive schema shape changed")
+
+    def _workbook_revision(self, value: dict[str, Any]) -> str:
+        fields = ("workbook_metadata", "workbook_content", "workbook_constraint")
+        if value["revision"] == TARGET_REVISION and all(value.get(name) is None for name in fields):
+            return TARGET_REVISION
+        expected = (
+            "CHECK ((((workbook_metadata IS NULL) AND (workbook_content IS NULL)) OR "
+            "((workbook_metadata IS NOT NULL) "
+            "AND (jsonb_typeof(workbook_metadata) = 'object'::text) "
+            "AND (workbook_content IS NOT NULL) AND ((octet_length(workbook_content) >= 1) "
+            "AND (octet_length(workbook_content) <= 2097152)))))"
+        )
+        if (
+            value["revision"] == WORKBOOK_REVISION
+            and value.get("workbook_metadata")
+            == {"type": "jsonb", "not_null": False, "has_default": False}
+            and value.get("workbook_content")
+            == {"type": "bytea", "not_null": False, "has_default": False}
+            and value.get("workbook_constraint") == {"definition": expected, "validated": True}
+        ):
+            return WORKBOOK_REVISION
+        raise GuardError("database workbook schema shape changed")
 
     def idle(self, timeout: float) -> bool:
         value = self.query(IDLE_SQL, timeout)
@@ -267,15 +325,16 @@ class PsqlSession:
             return min(10, deadline - self.clock())
 
         try:
+            tables = "presales_packets" if self.workbook else "presales_reviews, presales_attempts"
             self.query(
-                "BEGIN;\nLOCK TABLE alembic_version, presales_reviews, presales_attempts "
-                "IN ACCESS EXCLUSIVE MODE;",
+                f"BEGIN;\nLOCK TABLE alembic_version, {tables} IN ACCESS EXCLUSIVE MODE;",
                 remaining(),
             )
-            if self.revision(remaining()) != ORIGINAL_REVISION or not self.idle(remaining()):
+            if self.revision(remaining()) != self.original_revision or not self.idle(remaining()):
                 raise GuardError("schema expansion preconditions changed")
-            self.query(MIGRATION_BODY + "\nCOMMIT;", deadline - self.clock())
-            if self.revision(remaining()) != TARGET_REVISION:
+            body = WORKBOOK_MIGRATION_BODY if self.workbook else MIGRATION_BODY
+            self.query(body + "\nCOMMIT;", deadline - self.clock())
+            if self.revision(remaining()) != self.target_revision:
                 raise GuardError("schema expansion verification failed")
         except Exception:
             # Closing rolls back an uncommitted transaction. A possibly committed
@@ -335,14 +394,18 @@ class ExpansionPlan(ReleasePlan):
         }
         if not required <= value.keys() or value.keys() - required - {"executor_sources"}:
             raise GuardError("unsupported schema expansion plan fields")
+        self.workbook = value["target_revision"] == WORKBOOK_REVISION
+        self.original_revision = TARGET_REVISION if self.workbook else ORIGINAL_REVISION
+        self.target_revision = WORKBOOK_REVISION if self.workbook else TARGET_REVISION
+        body = WORKBOOK_MIGRATION_BODY if self.workbook else MIGRATION_BODY
         if (
             value["schema_version"] != 4
             or value["release_kind"] != "presales_schema_expand"
-            or value["original_revision"] != ORIGINAL_REVISION
-            or value["target_revision"] != TARGET_REVISION
-            or value["migration_sha256"] != hashlib.sha256(MIGRATION_BODY.encode()).hexdigest()
+            or value["original_revision"] != self.original_revision
+            or value["target_revision"] != self.target_revision
+            or value["migration_sha256"] != hashlib.sha256(body.encode()).hexdigest()
         ):
-            raise GuardError("schema expansion requires the fixed 0032-to-0034 migration")
+            raise GuardError("schema expansion requires a fixed reviewed migration")
         projected = copy.deepcopy(value)
         projected.update(schema_version=2, release_kind="images_only")
         super().__init__(projected)
@@ -351,7 +414,7 @@ class ExpansionPlan(ReleasePlan):
         self.data = copy.deepcopy(value)
 
     def accepted_revisions(self) -> tuple[str, ...]:
-        return ORIGINAL_REVISION, TARGET_REVISION
+        return self.original_revision, self.target_revision
 
 
 class ExpansionDatabase(Protocol):
@@ -376,8 +439,8 @@ class ExpansionCluster(ReleaseCluster):
 
     def check_original(self, deadline: float) -> None:
         super().check_original(deadline)
-        if self.revision(self._remaining(deadline)) != ORIGINAL_REVISION:
-            raise GuardError("schema expansion requires the original 0032 revision")
+        if self.revision(self._remaining(deadline)) != self.plan.original_revision:
+            raise GuardError("schema expansion requires its exact original revision")
 
     def apply(self, deadline: float) -> None:
         try:
@@ -388,7 +451,7 @@ class ExpansionCluster(ReleaseCluster):
         if not self.idle(self._remaining(deadline)):
             raise GuardError("business operations arrived while closing the schema window")
         self.database.expand(min(60, deadline - self.clock()))
-        if self.revision(self._remaining(deadline)) != TARGET_REVISION:
+        if self.revision(self._remaining(deadline)) != self.plan.target_revision:
             raise GuardError("schema expansion target was not verified")
         self._open(deadline)
         self.verify(False, deadline)
@@ -418,7 +481,7 @@ def locked_cluster(plan: ExpansionPlan, deadline: float) -> Iterator[ExpansionCl
     secret = bootstrap._secret(deadline)
     url = base64.b64decode(secret["data"]["DATABASE__URL"], validate=True).decode()
     remaining = min(10, deadline - host_clock().elapsed)
-    with PsqlSession(url, connect_timeout=remaining) as database:
+    with PsqlSession(url, connect_timeout=remaining, workbook=plan.workbook) as database:
         yield ExpansionCluster(plan, database)
 
 
@@ -446,8 +509,8 @@ def main() -> None:
                 json.dumps(
                     {
                         "status": "valid",
-                        "original_revision": ORIGINAL_REVISION,
-                        "target_revision": TARGET_REVISION,
+                        "original_revision": plan.original_revision,
+                        "target_revision": plan.target_revision,
                         "migration": "fixed_additive",
                     }
                 )

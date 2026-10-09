@@ -26,6 +26,8 @@
     "implementation_status": "locally_verified",
     "deployed": false,
     "live_provider_calls": 0,
-    "schema_revision": "20261009_0035"
+    "schema_revision": "20261009_0035",
+    "release_continuation_authorized": "2026-10-09: user approved the proposed release and public-questionnaire next step",
+    "release_status": "in_progress"
   }
 }

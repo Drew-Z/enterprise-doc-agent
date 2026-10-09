@@ -13,3 +13,11 @@ Add nullable workbook metadata and deferred bytea on PresalesPacket in additive 
 Frontend shares title/source selection with manual entry. File lives only in component memory, discarded with form/auth-context unmount. Mapping changes invalidate confirmation. Display exact question/answer cells before creation. Reopen uses durable metadata. Paginate rows in groups of 12; generation buttons submit only the next <=12 pending/failed rows, without automatic replay or quota increases. XLSX export and existing audit CSV remain distinct controls. Draft workbook marks unreviewed/unavailable rows; reviewed export requires all rows reviewed. Both include conditions and missing information without silent truncation; detailed evidence/review history remains in existing CSV and app.
 
 Mock only provider/network boundaries. Test genuine ZIP/XLSX parsing, persistence and real PostgreSQL constraints in owned loopback schemas; browser assertions cover upload, mapping confirmation, reload, batch boundaries and download. No public schema migration.
+
+## Approved release continuation
+
+Reuse the existing supervised expansion executor with a second fixed migration, 0034-to-0035. Plans select only a known original/target pair and the exact built-in SQL digest. The same credential-private psql session, advisory lock, deadlines and resource fences apply; compare complete column/check shapes and recover by observing the committed state, never by replaying or dropping columns.
+
+On 0035, an image-only plan explicitly binds whether original and candidate images support workbook records. A legacy side requires an empty-workbook read before writes and again after admission closes. Check both deployment and recovery sides before apply, and the original side before restore. Preserve all metadata/content and the expanded schema. rc.45 may be rolled back to only before workbook import; after history exists, use a compatible candidate or a forward fix, never erase history to make rollback possible.
+
+Freeze the public source, original file hash, selected range, source applicability, call budget and review criteria before product replay. Keep this file-flow exercise distinct from the previously completed six-call generation comparison and failed commercial acceptance.

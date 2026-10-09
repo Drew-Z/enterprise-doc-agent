@@ -1,4 +1,4 @@
-"""Bounded releases, schema 0032 configuration and 0032/0034 image changes; no migrations.
+"""Bounded releases, schema 0032 configuration and 0032/0034/0035 image changes.
 
 Private plans contain the primary and any explicitly declared fallback API keys. Keep
 them out of Git/logs, and explicitly approve any temporary remote runtime copy.
@@ -138,6 +138,7 @@ class ReleasePlan(Plan):
             "20260924_0031",
             "20261005_0032",
             "20261008_0034",
+            "20261009_0035",
         }:
             raise GuardError("release switching requires a reviewed schema")
         self.revision = value["original_revision"]
@@ -145,8 +146,18 @@ class ReleasePlan(Plan):
         self.reasoning_only = value.get("release_kind") == "reasoning_only"
         self.presales_inference = value.get("release_kind") == "presales_inference"
         self.presales_concurrency = value.get("release_kind") == "presales_concurrency"
-        if self.revision == "20261008_0034" and not self.image_only:
-            raise GuardError("schema 0034 only permits explicit image switching")
+        if self.revision in {"20261008_0034", "20261009_0035"} and not self.image_only:
+            raise GuardError(f"schema {self.revision} only permits explicit image switching")
+        self.workbook_readers = value.get("workbook_readers")
+        if self.revision == "20261009_0035":
+            if (
+                not isinstance(self.workbook_readers, dict)
+                or set(self.workbook_readers) != {"original", "candidate"}
+                or any(type(v) is not bool for v in self.workbook_readers.values())
+            ):
+                raise GuardError("0035 requires explicit original and candidate workbook readers")
+        elif self.workbook_readers is not None:
+            raise GuardError("workbook reader declarations require schema 0035")
         if "release_kind" in value and (
             not (
                 self.image_only
@@ -154,7 +165,7 @@ class ReleasePlan(Plan):
                 or self.presales_inference
                 or self.presales_concurrency
             )
-            or self.revision not in {"20261005_0032", "20261008_0034"}
+            or self.revision not in {"20261005_0032", "20261008_0034", "20261009_0035"}
         ):
             raise GuardError("explicit release kind requires a supported schema 0032 mode")
         self.original = self.data["original_prerequisites"]
@@ -196,7 +207,7 @@ class ReleasePlan(Plan):
             raise GuardError("presales inference settings require an explicit release mode")
         if "WORKER__PRESALES_CONCURRENCY" in changed and not self.presales_concurrency:
             raise GuardError("presales concurrency requires an explicit release mode")
-        if self.revision in {"20261005_0032", "20261008_0034"}:
+        if self.revision in {"20261005_0032", "20261008_0034", "20261009_0035"}:
             if self.image_only and changed:
                 raise GuardError("image-only switching must retain all configuration")
             if self.reasoning_only:
@@ -468,9 +479,22 @@ class ReleaseCluster(Cluster):
         revision: Callable[[float], str] = database_revision,
         clock: Callable[[], float] | None = None,
         idle: Callable[[float], bool] | None = None,
+        workbook_empty: Callable[[float], bool] | None = None,
     ) -> None:
         super().__init__(plan, run=run, revision=revision, clock=clock)
         self.idle = idle or database_idle
+        self.workbook_empty = workbook_empty or database_workbook_empty
+
+    def _check_workbook_readers(self, deadline: float, *, restoring: bool = False) -> None:
+        if self.plan.revision != "20261009_0035":
+            return
+        readers = self.plan.workbook_readers
+        assert readers is not None
+        compatible = readers["original"] if restoring else all(readers.values())
+        if not compatible and not self.workbook_empty(self._remaining(deadline)):
+            raise GuardError(
+                "workbook history requires compatible application and rollback readers"
+            )
 
     def _check_fence(self, item: dict[str, Any]) -> None:
         fence = item["metadata"].get("annotations", {}).get(FENCE)
@@ -687,6 +711,7 @@ class ReleaseCluster(Cluster):
         self.verify(False, deadline)
         if not self.idle(self._remaining(deadline)):
             raise GuardError("active business operations must finish before switching")
+        self._check_workbook_readers(deadline)
 
     def apply(self, deadline: float) -> None:
         try:
@@ -700,6 +725,7 @@ class ReleaseCluster(Cluster):
         # processes. A race with a final user submission must abort this switch.
         if not self.idle(self._remaining(deadline)):
             raise GuardError("business operations arrived while closing the entry")
+        self._check_workbook_readers(deadline)
         self._bundle(True, deadline)
         self._open(deadline)
         self.verify(True, deadline)
@@ -707,14 +733,20 @@ class ReleaseCluster(Cluster):
         validate_objects(self.plan.candidate, super()._prerequisites(deadline))
 
     def restore(self, deadline: float) -> None:
-        if self.plan.revision == "20261008_0034" and not self.idle(self._remaining(deadline)):
+        if self.plan.revision in {"20261008_0034", "20261009_0035"} and not self.idle(
+            self._remaining(deadline)
+        ):
             raise GuardError("active business operations must finish before application rollback")
+        self._check_workbook_readers(deadline, restoring=True)
         self._close(deadline)
         # Older Workers do not understand persisted execution policies. Never
         # hand them work admitted by a partially started candidate, including a
         # submission racing the first idle check. Keep the expanded schema.
-        if self.plan.revision == "20261008_0034" and not self.idle(self._remaining(deadline)):
+        if self.plan.revision in {"20261008_0034", "20261009_0035"} and not self.idle(
+            self._remaining(deadline)
+        ):
             raise GuardError("business operations arrived while closing the rollback entry")
+        self._check_workbook_readers(deadline, restoring=True)
         self._bundle(False, deadline)
         self._open(deadline)
         self.verify(False, deadline)
@@ -723,19 +755,6 @@ class ReleaseCluster(Cluster):
 
 
 def database_idle(timeout: float) -> bool:
-    from scripts.backup_database import postgres_process_environment
-
-    url = os.environ.get("MAINTENANCE_GUARD_DATABASE_URL")
-    if not url:
-        raise GuardError("read-only database connection is unavailable")
-    environment = postgres_process_environment(url)
-    for key in ("MAINTENANCE_GUARD_DATABASE_URL", "PGHOSTADDR", "PGSERVICEFILE"):
-        environment.pop(key, None)
-    environment.update(
-        PGCONNECT_TIMEOUT="5",
-        PGPASSFILE=os.devnull,
-        PGOPTIONS="-c default_transaction_read_only=on -c statement_timeout=2000",
-    )
     query = """BEGIN READ ONLY; SET LOCAL statement_timeout='2000ms';
     SELECT NOT (
       EXISTS (SELECT 1 FROM public.jobs WHERE status NOT IN ('succeeded','dead','cancelled'))
@@ -750,6 +769,31 @@ def database_idle(timeout: float) -> bool:
       OR EXISTS (SELECT 1 FROM public.upload_sessions
                  WHERE status IN ('initializing','active','completing') AND expires_at > now())
     ); COMMIT;"""
+    return _database_boolean(query, timeout, "idle")
+
+
+def database_workbook_empty(timeout: float) -> bool:
+    query = """BEGIN READ ONLY; SET LOCAL statement_timeout='2000ms';
+    SELECT NOT EXISTS (SELECT 1 FROM public.presales_packets
+        WHERE workbook_metadata IS NOT NULL OR workbook_content IS NOT NULL);
+    COMMIT;"""
+    return _database_boolean(query, timeout, "workbook history")
+
+
+def _database_boolean(query: str, timeout: float, label: str) -> bool:
+    from scripts.backup_database import postgres_process_environment
+
+    url = os.environ.get("MAINTENANCE_GUARD_DATABASE_URL")
+    if not url:
+        raise GuardError("read-only database connection is unavailable")
+    environment = postgres_process_environment(url)
+    for key in ("MAINTENANCE_GUARD_DATABASE_URL", "PGHOSTADDR", "PGSERVICEFILE"):
+        environment.pop(key, None)
+    environment.update(
+        PGCONNECT_TIMEOUT="5",
+        PGPASSFILE=os.devnull,
+        PGOPTIONS="-c default_transaction_read_only=on -c statement_timeout=2000",
+    )
     result = subprocess.run(
         [
             "psql",
@@ -769,7 +813,7 @@ def database_idle(timeout: float) -> bool:
         check=True,
     )
     if result.stdout.strip() not in {"t", "f"}:
-        raise GuardError("database idle result is invalid")
+        raise GuardError(f"database {label} result is invalid")
     return result.stdout.strip() == "t"
 
 

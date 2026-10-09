@@ -33,6 +33,32 @@ The [image cache runtime contract](../../backend/image-cache-runtime.md) covers
 containerd/CRI import aliases, exact digest checks and bounded in-window repairs.
 Successful image listings do not alone establish container startup readiness.
 
+## Schema 0035 workbook publication and rollback
+
+1. Scope: extend the fixed expansion executor with exactly 0034-to-0035; image
+   switching remains a separate operation. Neither window removes workbook history.
+2. Signatures: `ExpansionPlan` retains schema version 4 and exact SQL/source hashes.
+   `PsqlSession(workbook=True)` validates both old JSONB fields plus the new nullable
+   JSONB/bytea pair and its exact validated size/pair constraint. `ReleasePlan` on
+   0035 requires `images_only` and boolean `workbook_readers.original/candidate`.
+3. Contract: use the same session advisory lock and deadlines for both fixed
+   expansions. Keep all original resources during migration. Lost receipt recovery
+   reconciles one complete schema; never resend DDL or downgrade to erase an import.
+   Reader capabilities must be bound to the reviewed signed image digests in the plan.
+4. Validation: a legacy reader requires no saved workbook before writes and again
+   after every application stops. Apply checks both candidate and recovery readers;
+   restore checks the original reader. Active work, unknown revision, partial schema,
+   configuration changes or ambiguous capability values refuse the operation.
+5. Cases: good = initial deployment and rc.45 rollback before imports, or switching
+   between compatible readers with saved imports. Base = 0032/0034 contracts unchanged.
+   Bad = returning to rc.45 after an import or deleting history to make that possible.
+6. Tests: fixed SQL versus real Alembic output; resource/idle race checks; real owned
+   PostgreSQL atomic DDL failure, lost receipts, exact shape drift and 13-row workbook
+   preservation after a refused legacy rollback. Existing expansion regressions remain.
+7. Wrong/correct: a readiness response does not establish workbook-reader compatibility.
+   After an import, retain a compatible image or deploy a forward fix. Local tests are
+   separate from signed-image startup, supervised live rollback and public file replay.
+
 ## Schema 0034 image-only release contract (local candidate)
 
 1. Scope: apply or restore already-reviewed application images on an already-expanded
