@@ -285,3 +285,43 @@ submission, recovery, failed allowance and exhausted attempts have distinct copy
   preselection, unavailable sources, review/recovery and authorization failures.
 - `apps/web/presales-ingestion-e2e/workspace.spec.ts`: real uploaded files and
   controlled responses at 1440px and 390px, with tenant denial and cleanup receipts.
+
+## Scenario: Excel import and original-workbook export
+
+### 1. Scope / Trigger
+`PacketForm` offers manual entry or Excel import while sharing source/title/applicability.
+
+### 2. Signatures
+`WorkbookImport`, `workbook.ts` boundary schemas, and `presalesApi.previewWorkbook`,
+`importWorkbook`, `exportWorkbook`. `Packet.workbook` is nullable/optional metadata.
+
+### 3. Contracts
+Keep the selected file only in component memory; abort reads/preview on unmount.
+Every file/mapping change clears confirmed intent. Show actual question/answer coordinates
+and all selected questions before confirmation. Save requires both source and mapping
+confirmation. Idempotency intent stores filename/hash/mapping, not base64 file bodies.
+Use the existing authenticated transport, scoped query cache, server-side recent list and
+UUID-only sessionStorage recovery. Preview/import response schemas remain strict.
+
+### 4. Validation & Error Matrix
+Files >2 MiB or non-XLSX reject locally; server validates content and supported features.
+Invalid mapping or unavailable sheet cannot enable save. Demo maxRequirements<12 also
+limits imported rows. API errors are shown without raw file content. XLSX downloads
+must have the exact workbook MIME and use a revoked object URL after browser download.
+
+### 5. Good/Base/Bad Cases
+Render up to120 rows in pages of12. Generate/retry only the next<=12 eligible rows per
+user action; existing per-row/uncertain-admission recovery stays unchanged. Preserve
+page while saving a review on the current packet. Excel draft/reviewed controls sit
+alongside existing CSV; reviewed stays disabled until all rows have reviews.
+
+### 6. Tests Required
+Mapping invalidates confirmation;13-row packet renders12 then1 and submits only12;
+desktop/mobile import, review, refresh, download and XLSX reopen; no file bodies in
+browser persistence. Run `playwright.workbook.config.ts` with WORKBOOK_E2E_OUTPUT_DIR
+pointing to task evidence; it owns a loopback PostgreSQL schema and uses controlled models.
+
+### 7. Wrong vs Correct
+Wrong: assume frontend max120 permits a120-row API batch, or leave confirmation valid
+after editing a column. Correct: separate questionnaire capacity from admission limits,
+re-preview changed mapping, and use durable server metadata after reopening.

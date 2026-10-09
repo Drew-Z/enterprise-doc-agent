@@ -846,3 +846,59 @@ are never registered in the product API entrypoint.
 - `tests/presales/ingestion_server.py` and
   `apps/web/presales-ingestion-e2e/workspace.spec.ts`: real uploaded sources, passage
   metadata, review/export/recovery, parser failure and tenant-scoped teardown.
+
+## Scenario: Original Excel questionnaire delivery
+
+### 1. Scope / Trigger
+Customer XLSX intake and original-format delivery reuse Presales packets, evidence,
+generation and reviews. They do not ingest questionnaire cells as retrieval sources.
+
+### 2. Signatures
+`POST /api/presales/workbooks/preview`, `POST /api/presales/workbooks` with
+`Idempotency-Key`, and `GET /api/presales/{id}/workbook?mode=draft|reviewed`.
+Migration `20261009_0035` adds nullable JSONB `workbook_metadata` and deferred bytea
+`workbook_content` to packets; normal packet reads must not load the bytes.
+
+### 3. Contracts
+Bound streamed JSON before Pydantic parsing. Payload carries filename/contentBase64;
+mapping has sheet/questionColumn/answerColumn/firstRow/lastRow. Import also carries
+title/sources/confirmedSha256. Reparse original bytes, bind fingerprint to mapping
+and SHA256, and atomically save file/rows/metadata under the existing tenant lock.
+Manual create stays <=12 rows; imported packets <=120; generation admissions stay <=12.
+`PacketView.workbook` exposes metadata only. Existing demo and generation limits remain.
+Originals have an independent 20 MiB tenant storage cap; they are retained/deleted
+with packets and are not counted as document-ingestion or embedding consumption.
+
+### 4. Validation & Error Matrix
+2 MiB compressed, 20 MiB expanded, 256 members, 20 sheets, 50,000 physical cells,
+row<=10000/column<=256; limit -> `presales_workbook_size`/413. Invalid ZIP/XML,
+duplicate/misaligned cells -> `presales_workbook_invalid`/422. Unsupported macros,
+signatures, external links, active embedded parts or protection reject. Question
+cells must be visible unmerged text <=2000 characters. Populated/formula/merged/
+validation/table/formula-range targets -> `presales_workbook_target`/422. Check grouped
+hidden column bounds and array/shared formula ranges, not only the target cell value.
+Storage cap -> 429; mismatched confirmation -> 409; reviewed export before all reviews ->409.
+
+### 5. Good/Base/Bad Cases
+Use openpyxl to read; write inline strings through bounded lxml/ZIP editing. Copy all
+unmodified ZIP member bytes and preserve unrelated worksheet nodes. Never save through
+a lossy whole-workbook serializer. Mark unreviewed/missing/failed rows, retain conditions
+and missing information, reject overflow rather than truncate. Existing formula caches
+are not recalculated. Reauthorize source/actor access before returning download bytes.
+
+### 6. Tests Required
+Real XLSX round-trip, unchanged ZIP members/styles/formulas, formula-like text, unsafe
+targets and malformed bounds; real owned PostgreSQL replay/conflict/isolation/quota,
+deferred file reads, review/export/revocation, migration round-trip and history guard;
+desktop/mobile browser download and reopen. No public-schema migration or live provider.
+Examples: `tests/presales/test_workbook.py`, `test_workbook_integration.py`, API body tests,
+`apps/web/presales-e2e/workbook.spec.ts`. Browser fixture cleanup must run over its test-only
+endpoint before Windows process termination; write the owned schema and cleanup receipt.
+
+### 7. Wrong vs Correct
+Wrong: raise batch/provider limits to 120, store original bytes in browser storage,
+or downgrade away imported history. Correct: retain <=12 admissions, persist file and
+mapping server-side, expand schema before coordinated API/Worker/Web release, and refuse
+downgrade with workbook history. Existing rc.45 release scripts stop at 0034; a separate
+0035 release/rollback plan is required before deployment. Local checks do not certify
+commercial quality or native desktop Excel support for arbitrary features.

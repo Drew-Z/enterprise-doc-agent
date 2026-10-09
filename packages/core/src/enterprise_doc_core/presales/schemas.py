@@ -8,6 +8,12 @@ from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_vali
 from pydantic.alias_generators import to_camel
 
 from enterprise_doc_core.presales.policy import ExecutionMode, ExecutionPolicy
+from enterprise_doc_core.presales.workbook_schemas import (
+    MAX_WORKBOOK_ROWS,
+    WorkbookMapping,
+    WorkbookMetadata,
+    WorkbookUpload,
+)
 
 Status = Literal[
     "supported", "conditional", "contradicted", "insufficient_evidence", "conflicting_evidence"
@@ -53,6 +59,25 @@ class SourceSnapshot(SourceInput):
     version_number: int
     latest_version_number: int
     content_sha256: str
+
+
+class WorkbookPacket(CreatePacket):
+    """Internal validated packet; the manual HTTP create contract remains twelve rows."""
+
+    requirements: list[RequirementInput] = Field(min_length=1, max_length=MAX_WORKBOOK_ROWS)
+
+
+class WorkbookImportInput(WorkbookUpload):
+    title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=160)]
+    sources: list[SourceInput] = Field(min_length=1, max_length=6)
+    mapping: WorkbookMapping
+    confirmed_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+
+    @model_validator(mode="after")
+    def unique_sources(self) -> Self:
+        if len({source.version_id for source in self.sources}) != len(self.sources):
+            raise ValueError("Source versions must be unique")
+        return self
 
 
 class CitationInput(PresalesModel):
@@ -247,6 +272,7 @@ class PacketView(PacketSummary):
     rows: list[RowView]
     generation_mode: Literal["synchronous", "background"] = "synchronous"
     available_execution_modes: list[ExecutionMode] = Field(default_factory=list)
+    workbook: WorkbookMetadata | None = None
 
 
 class GenerateRowInput(PresalesModel):

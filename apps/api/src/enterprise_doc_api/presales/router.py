@@ -8,6 +8,7 @@ from fastapi import APIRouter, Body, Depends, Header, Query, Request, Response
 
 from enterprise_doc_api.auth import get_current_principal
 from enterprise_doc_api.errors import ApiError
+from enterprise_doc_api.presales.workbook import WORKBOOK_ERRORS, bounded_workbook_payload
 from enterprise_doc_core.context import PrincipalContext
 from enterprise_doc_core.presales.errors import PresalesError
 from enterprise_doc_core.presales.policy import ExecutionMode
@@ -20,10 +21,22 @@ from enterprise_doc_core.presales.schemas import (
     PacketSummary,
     PacketView,
     ReviewInput,
+    WorkbookImportInput,
 )
+from enterprise_doc_core.presales.workbook import XLSX_MIME
+from enterprise_doc_core.presales.workbook_schemas import WorkbookPreview, WorkbookUpload
 
 
 class PresalesServiceProtocol(Protocol):
+    async def preview_workbook(
+        self, principal: PrincipalContext, payload: WorkbookUpload
+    ) -> WorkbookPreview: ...
+    async def import_workbook(
+        self, principal: PrincipalContext, payload: WorkbookImportInput, key: str
+    ) -> PacketView: ...
+    async def export_workbook(
+        self, principal: PrincipalContext, packet_id: UUID, mode: Literal["draft", "reviewed"]
+    ) -> bytes: ...
     async def create(
         self, principal: PrincipalContext, payload: CreatePacket, key: str
     ) -> PacketView: ...
@@ -130,6 +143,8 @@ async def result[T](operation: Awaitable[T]) -> T:
             status, message = 503, "生成档位配置暂不可用。请联系管理员核查。"
         elif code == "presales_invalid_idempotency_key":
             status, message = 400, "操作标识无效。"
+        elif code in WORKBOOK_ERRORS:
+            status, message = WORKBOOK_ERRORS[code]
         raise ApiError(status_code=status, code=code, message=message) from error
 
 
@@ -146,6 +161,39 @@ async def create_packet(
     payload: CreatePacket, principal: Principal, svc: Service, key: Key
 ) -> PacketView:
     return await result(svc.create(principal, payload, key))
+
+
+@router.post("/workbooks/preview", response_model=WorkbookPreview)
+async def preview_workbook(request: Request, principal: Principal, svc: Service) -> WorkbookPreview:
+    payload = await bounded_workbook_payload(request, WorkbookUpload)
+    return await result(svc.preview_workbook(principal, payload))
+
+
+@router.post("/workbooks", response_model=PacketView, status_code=201)
+async def import_workbook(
+    request: Request, principal: Principal, svc: Service, key: Key
+) -> PacketView:
+    payload = await bounded_workbook_payload(request, WorkbookImportInput)
+    return await result(svc.import_workbook(principal, payload, key))
+
+
+@router.get("/{packet_id}/workbook")
+async def export_workbook(
+    packet_id: UUID,
+    principal: Principal,
+    svc: Service,
+    mode: Annotated[Literal["draft", "reviewed"], Query()] = "draft",
+) -> Response:
+    content = await result(svc.export_workbook(principal, packet_id, mode))
+    return Response(
+        content,
+        media_type=XLSX_MIME,
+        headers={
+            "Cache-Control": "no-store",
+            "X-Content-Type-Options": "nosniff",
+            "Content-Disposition": f'attachment; filename="presales-{mode}.xlsx"',
+        },
+    )
 
 
 @router.get("/{packet_id}", response_model=PacketView)

@@ -14,6 +14,7 @@ from sqlalchemy import (
     ForeignKeyConstraint,
     Index,
     Integer,
+    LargeBinary,
     String,
     Text,
     UniqueConstraint,
@@ -37,6 +38,13 @@ class PresalesPacket(UUIDPrimaryKeyMixin, TimestampMixin, Base):
             ondelete="CASCADE",
         ),
         Index("ix_presales_packets_actor_created", "tenant_id", "actor_id", "created_at"),
+        CheckConstraint(
+            "(workbook_metadata IS NULL AND workbook_content IS NULL) OR "
+            "(workbook_metadata IS NOT NULL AND jsonb_typeof(workbook_metadata) = 'object' "
+            "AND workbook_content IS NOT NULL "
+            "AND octet_length(workbook_content) BETWEEN 1 AND 2097152)",
+            name="presales_workbook_valid",
+        ),
     )
     tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id", ondelete="CASCADE"))
     actor_id: Mapped[UUID] = mapped_column(nullable=False)
@@ -44,6 +52,12 @@ class PresalesPacket(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     idempotency_key: Mapped[str] = mapped_column(String(128))
     fingerprint: Mapped[str] = mapped_column(String(64))
     sources: Mapped[list[dict[str, Any]]] = mapped_column(JSONB)
+    workbook_metadata: Mapped[dict[str, Any] | None] = mapped_column(
+        JSONB(none_as_null=True), nullable=True
+    )
+    workbook_content: Mapped[bytes | None] = mapped_column(
+        LargeBinary, nullable=True, deferred=True
+    )
 
 
 class PresalesRow(UUIDPrimaryKeyMixin, TimestampMixin, Base):

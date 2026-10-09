@@ -1,0 +1,31 @@
+{
+  "id": "presales-excel-workflow",
+  "name": "presales-excel-workflow",
+  "title": "Customer Excel questionnaire workflow",
+  "description": "",
+  "status": "in_progress",
+  "dev_type": null,
+  "scope": null,
+  "package": "core",
+  "priority": "P2",
+  "creator": "developer",
+  "assignee": "developer",
+  "createdAt": "2026-10-09",
+  "completedAt": null,
+  "branch": "codex/presales-prerequisite-assessment",
+  "base_branch": "codex/presales-prerequisite-assessment",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "09-24-commercial-production-readiness",
+  "relatedFiles": [],
+  "notes": "Local implementation and acceptance complete on 2026-10-09. Deployment excluded; commercial parent remains open. Exact verification is recorded in validation.md.",
+  "meta": {
+    "implementation_status": "locally_verified",
+    "deployed": false,
+    "live_provider_calls": 0,
+    "schema_revision": "20261009_0035"
+  }
+}

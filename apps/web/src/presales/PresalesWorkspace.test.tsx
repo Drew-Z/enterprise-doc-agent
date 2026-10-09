@@ -617,4 +617,29 @@ describe("PresalesWorkspace HTTP boundary", () => {
     expect(screen.queryByText("The source states 30 days.")).not.toBeInTheDocument();
     expect(screen.queryByText("Reviewed")).not.toBeInTheDocument();
   });
+
+  it("paginates 13 imported rows and only admits the next twelve", async () => {
+    sessionStorage.setItem(storageKey, packetId);
+    const base = makePacket();
+    let current: Packet = { ...base, generationMode: "background", rowCount: 13,
+      rows: Array.from({ length: 13 }, (_, index) => ({ ...structuredClone(base.rows[0]), id: crypto.randomUUID(), requirement: { key: `X${index + 2}`, text: `Question ${index + 1}`, sourceLocation: `B${index + 2}` } })),
+      workbook: { filename: "customer.xlsx", sha256: "a".repeat(64), mapping: { sheet: "Sheet1", questionColumn: "B", answerColumn: "C", firstRow: 2, lastRow: 14 }, rows: Array.from({ length: 13 }, (_, index) => index + 2) } };
+    const fetch = mockApi(() => current, (_path, init) => {
+      if (typeof init.body !== "string") throw new Error("Expected JSON body");
+      const body = JSON.parse(init.body) as { rowIds: string[] };
+      expect(body.rowIds).toHaveLength(12);
+      current = { ...current, rows: current.rows.map(row => body.rowIds.includes(row.id) ? { ...row, state: "drafted", revision: 1, draft: makePacket(true).rows[0].draft } : row) };
+      return json({ packetId, admissions: body.rowIds.map(rowId => ({ rowId, disposition: "enqueued", attemptId: crypto.randomUUID() })), rejected: [] }, 202);
+    });
+    mount();
+    await screen.findByRole("button", { name: "Generate next batch (up to 12)" });
+    expect(screen.getAllByRole("article")).toHaveLength(12);
+    fireEvent.click(screen.getByRole("button", { name: "Next page" }));
+    expect(screen.getAllByRole("article")).toHaveLength(1);
+    expect(screen.getByRole("article", { name: "X14" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Generate next batch (up to 12)" }));
+    await screen.findByRole("button", { name: "Fill draft Excel" });
+    expect(current.rows[12].state).toBe("pending");
+    expect(fetch.mock.calls.filter(([, init]) => init?.method === "POST")).toHaveLength(1);
+  });
 });

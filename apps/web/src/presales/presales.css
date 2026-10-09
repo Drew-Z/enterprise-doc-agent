@@ -97,3 +97,11 @@
 .presales-execution-mode { font-size: 0.875rem; font-weight: 600; }
 .presales-generation-history { margin: 0.5rem 0; font-size: 0.875rem; overflow-wrap: anywhere; }
 .presales-generation-history small { display: block; margin-top: 0.25rem; }
+.presales-form .presales-workbook { display: grid; gap: 14px; }
+.presales-workbook-mapping { display: grid; grid-template-columns: minmax(140px, 2fr) repeat(4, minmax(70px, 1fr)); gap: 12px; }
+.presales-workbook-preview { max-height: 330px; overflow: auto; border: 1px solid var(--ps-line); border-radius: 6px; padding: 8px; font-size: 13px; }
+.presales-workbook-preview table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+.presales-workbook-preview th, .presales-workbook-preview td { text-align: left; padding: 8px; border-bottom: 1px solid var(--ps-line); vertical-align: top; overflow-wrap: anywhere; white-space: pre-wrap; }
+.presales-workbook-preview th:nth-child(-n+2) { width: 58px; }
+.presales-workbook-preview span { display: inline-block; margin: 4px 10px 4px 0; overflow-wrap: anywhere; }
+@media (max-width: 620px) { .presales-workbook-mapping { grid-template-columns: repeat(2, minmax(0, 1fr)); } .presales-workbook-mapping > :first-child { grid-column: 1 / -1; } }

@@ -1,6 +1,7 @@
 import { z, type ZodType } from "zod";
 import { errorResponseSchema } from "../agent/api/schemas";
 import { authenticatedFetch, type ApiCredential } from "../auth/transport";
+import { workbookMetadataSchema, workbookPreviewSchema, workbookMime, type ConfirmedWorkbook, type WorkbookUpload } from "./workbook";
 
 const id = z.string().uuid();
 const time = z.iso.datetime({ offset: true });
@@ -25,7 +26,7 @@ const sourceInput = z.object({ versionId: id, applicability: z.string().min(1).m
 const source = sourceInput.extend({ documentId: id, generationId: id, filename: z.string(), versionNumber: z.number().int().positive(), latestVersionNumber: z.number().int().positive(), contentSha256: z.string().regex(/^[0-9a-f]{64}$/) });
 const row = z.object({ id, requirement, revision: z.number().int().nonnegative(), state: z.enum(["pending", "queued", "running", "recovering", "drafted", "failed"]), draft: draft.nullable(), review: review.nullable(), reviewHistory: z.array(review), attempts: z.array(attempt).max(3) }).strict().refine(value => [value.review, ...value.reviewHistory].every(entry => validPrerequisiteIndexes(entry?.prerequisites ?? null, value.draft?.citations.length ?? 0) && validReviewChanges(entry?.prerequisiteChanges, entry?.prerequisites ?? null, value.draft?.prerequisites?.length ?? 0)));
 export const packetSummarySchema = z.object({ id, title: z.string(), createdAt: time, rowCount: z.number().int().nonnegative(), staleSources: z.boolean() }).strict();
-export const packetSchema = packetSummarySchema.extend({ sources: z.array(source).min(1).max(6), rows: z.array(row).min(1).max(12), generationMode: z.enum(["synchronous", "background"]).default("synchronous"), availableExecutionModes: z.array(executionModeSchema).max(2).refine(values => new Set(values).size === values.length).optional() });
+export const packetSchema = packetSummarySchema.extend({ sources: z.array(source).min(1).max(6), rows: z.array(row).min(1).max(120), generationMode: z.enum(["synchronous", "background"]).default("synchronous"), availableExecutionModes: z.array(executionModeSchema).max(2).refine(values => new Set(values).size === values.length).optional(), workbook: workbookMetadataSchema.nullable().optional() });
 export const createPacketSchema = z.object({ title: z.string().trim().min(1).max(160), sources: z.array(sourceInput).min(1).max(6), requirements: z.array(requirement).min(1).max(12) }).strict();
 export const reviewInputSchema = z.object({ ...reviewFields, expectedRevision: z.number().int().positive(), note: z.string().max(1000) }).strict().refine(value =>
   (value.status !== "conditional" || value.conditions.length > 0)
@@ -37,6 +38,7 @@ export const reviewInputSchema = z.object({ ...reviewFields, expectedRevision: z
 export type Packet = z.infer<typeof packetSchema>;
 export type PresalesRow = z.infer<typeof row>;
 export type CreatePacket = z.infer<typeof createPacketSchema>;
+export type WorkbookImportInput = ConfirmedWorkbook & Pick<CreatePacket, "title" | "sources">;
 export type ReviewInput = z.input<typeof reviewInputSchema>;
 export type ResponseStatus = z.infer<typeof responseStatus>;
 export type PrerequisiteAssessment = z.infer<typeof prerequisite>;
@@ -97,6 +99,14 @@ export function presalesApi(token: ApiCredential) {
   };
   const packetPath = (value: string) => "/" + id.parse(value);
   return {
+    previewWorkbook: (payload: WorkbookUpload, signal: AbortSignal) => request("/workbooks/preview", workbookPreviewSchema, signal, "POST", payload),
+    importWorkbook: (payload: WorkbookImportInput, key: string, signal: AbortSignal) => request("/workbooks", packetSchema, signal, "POST", payload, key),
+    exportWorkbook: async (packetId: string, mode: "draft" | "reviewed", signal: AbortSignal) => {
+      const response = await authenticatedFetch(base() + packetPath(packetId) + "/workbook?mode=" + mode, token, { headers: { Accept: workbookMime }, signal, cache: "no-store" });
+      await check(response);
+      if (!response.headers.get("Content-Type")?.startsWith(workbookMime)) throw new Error("Invalid workbook response.");
+      return response.blob();
+    },
     list: (signal: AbortSignal) => request("", z.array(packetSummarySchema), signal),
     get: (packetId: string, signal: AbortSignal) => request(packetPath(packetId), packetSchema, signal),
     create: (payload: CreatePacket, key: string, signal: AbortSignal) => request("", packetSchema, signal, "POST", createPacketSchema.parse(payload), key),

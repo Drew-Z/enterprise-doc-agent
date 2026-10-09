@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import hashlib
 from collections.abc import Callable
 from datetime import UTC, datetime
@@ -52,8 +53,23 @@ from enterprise_doc_core.presales.schemas import (
     SavedDraft,
     SavedReview,
     SourceSnapshot,
+    WorkbookImportInput,
+    WorkbookPacket,
 )
 from enterprise_doc_core.presales.settings import PresalesSettings
+from enterprise_doc_core.presales.workbook import (
+    decode_workbook,
+    inspect_workbook,
+)
+from enterprise_doc_core.presales.workbook import (
+    export_workbook as render_workbook,
+)
+from enterprise_doc_core.presales.workbook_schemas import (
+    MAX_TENANT_WORKBOOK_BYTES,
+    WorkbookMetadata,
+    WorkbookPreview,
+    WorkbookUpload,
+)
 
 
 class PresalesService:
@@ -81,8 +97,60 @@ class PresalesService:
     async def create(
         self, principal: PrincipalContext, payload: CreatePacket, key: str
     ) -> PacketView:
+        return await self._create(principal, payload, key)
+
+    async def preview_workbook(
+        self, principal: PrincipalContext, payload: WorkbookUpload
+    ) -> WorkbookPreview:
+        async with read_only_session(self.session_factory) as session:
+            await authorize_principal(session, principal)
+        content = decode_workbook(payload)
+        return await asyncio.to_thread(inspect_workbook, content, payload.filename, payload.mapping)
+
+    async def import_workbook(
+        self, principal: PrincipalContext, payload: WorkbookImportInput, key: str
+    ) -> PacketView:
+        check_key(key)
+        preview = await self.preview_workbook(principal, payload)
+        if preview.sha256 != payload.confirmed_sha256:
+            raise PresalesError("presales_workbook_mismatch")
+        packet = WorkbookPacket(
+            title=payload.title,
+            sources=payload.sources,
+            requirements=[
+                RequirementInput(
+                    key=f"X{question.row}",
+                    text=question.text,
+                    source_location=(
+                        f"{payload.mapping.sheet}!{question.question_cell} → {question.answer_cell}"
+                    ),
+                )
+                for question in preview.questions
+            ],
+        )
+        metadata = WorkbookMetadata(
+            filename=preview.filename,
+            sha256=preview.sha256,
+            mapping=payload.mapping,
+            rows=[question.row for question in preview.questions],
+        )
+        return await self._create(
+            principal, packet, key, metadata=metadata, content=decode_workbook(payload)
+        )
+
+    async def _create(
+        self,
+        principal: PrincipalContext,
+        payload: CreatePacket,
+        key: str,
+        *,
+        metadata: WorkbookMetadata | None = None,
+        content: bytes | None = None,
+    ) -> PacketView:
         check_key(key)
         digest = fingerprint(payload)
+        if metadata is not None:
+            digest = hashlib.sha256((digest + metadata.model_dump_json()).encode()).hexdigest()
         context = get_request_context()
         async with self.session_factory.begin() as session:
             tenant_id, actor_id = await authorize_principal(session, principal, lock=True)
@@ -99,6 +167,16 @@ class PresalesService:
                 packet_id = packet.id
             else:
                 await check_packet(session, tenant_id, len(payload.requirements), self.clock())
+                if content is not None:
+                    stored = await session.scalar(
+                        select(
+                            func.coalesce(
+                                func.sum(func.octet_length(PresalesPacket.workbook_content)), 0
+                            )
+                        ).where(PresalesPacket.tenant_id == tenant_id)
+                    )
+                    if (stored or 0) + len(content) > MAX_TENANT_WORKBOOK_BYTES:
+                        raise PresalesError("presales_workbook_storage_limit")
                 sources = await source_snapshots(session, tenant_id, actor_id, payload.sources)
                 packet_id = uuid4()
                 session.add(
@@ -110,6 +188,8 @@ class PresalesService:
                         idempotency_key=key,
                         fingerprint=digest,
                         sources=[s.model_dump(mode="json") for s in sources],
+                        workbook_metadata=metadata.model_dump(mode="json") if metadata else None,
+                        workbook_content=content,
                     )
                 )
                 await session.flush()
@@ -253,6 +333,9 @@ class PresalesService:
                 row_count=len(rows),
                 sources=[SourceSnapshot.model_validate(s) for s in packet.sources],
                 rows=views,
+                workbook=WorkbookMetadata.model_validate(packet.workbook_metadata)
+                if packet.workbook_metadata
+                else None,
                 generation_mode=(
                     "background"
                     if self.generation.settings.background_generation_enabled
@@ -462,6 +545,44 @@ class PresalesService:
                 request_id=context.request_id if context else None,
                 correlation_id=context.correlation_id if context else None,
                 metadata={"mode": mode, "row_count": len(packet.rows)},
+            )
+        return content
+
+    async def export_workbook(
+        self, principal: PrincipalContext, packet_id: UUID, mode: Literal["draft", "reviewed"]
+    ) -> bytes:
+        packet = await self.get(principal, packet_id)
+        if packet.workbook is None:
+            raise PresalesError("presales_workbook_missing")
+        async with read_only_session(self.session_factory) as session:
+            current = await load_packet(session, principal, packet_id)
+            original = await session.scalar(
+                select(PresalesPacket.workbook_content).where(
+                    PresalesPacket.id == current.id,
+                    PresalesPacket.tenant_id == current.tenant_id,
+                    PresalesPacket.actor_id == current.actor_id,
+                )
+            )
+        if original is None:
+            raise PresalesError("presales_workbook_missing")
+        content = await asyncio.to_thread(render_workbook, original, packet.workbook, packet, mode)
+        context = get_request_context()
+        async with self.session_factory.begin() as session:
+            current = await load_packet(session, principal, packet_id)
+            await append_audit_event(
+                session,
+                tenant_id=current.tenant_id,
+                actor_id=current.actor_id,
+                action="presales.workbook.exported",
+                resource_type="presales_packet",
+                resource_id=packet_id,
+                request_id=context.request_id if context else None,
+                correlation_id=context.correlation_id if context else None,
+                metadata={
+                    "mode": mode,
+                    "row_count": len(packet.rows),
+                    "sha256": packet.workbook.sha256,
+                },
             )
         return content
 
