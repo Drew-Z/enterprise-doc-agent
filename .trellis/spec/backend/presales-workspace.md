@@ -223,7 +223,11 @@ do not prove logical entailment or complete capture of contractual conditions.
 
 ## Controlled citation selection
 
-### Focused public replay candidate (2026-10-09, not deployed)
+### Focused public replay candidate (2026-10-09, deployed rc47)
+
+Release/compatible rc46 rollback/reapply and workbook history passed; the deployed
+SWU03 keyword query finds both required clauses first without provider dispatch.
+Semantic quality remains open; see docs/ops/rc47-release-validation.json.
 
 1. **Scope / trigger:** SWU03 showed zero keyword recall despite the clause existing in
    two stored chunks. PostgreSQL simple FTS represented its unspaced Chinese query as

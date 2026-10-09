@@ -38,3 +38,12 @@ Final result: release/rollback/reapply and file preservation passed; six-row gen
 Recovery phase: public_replay_remediation_20261009 in the existing central group. Original rc46 results are immutable.
 
 Candidate verification: 2,920 non-integration tests / 23 subtests, 3 new real PostgreSQL tests, Ruff and Mypy passed. A bounded live diagnostic lost its SSH control receipt; outcomes are unknown, three calls remain conservatively reserved, and no repeat was made. The exact orphan was stopped and unchanged rc46/0035 identity, original replay ledger and readiness independently rechecked. Prompt quality and deployment remain open, distinct from the completed Excel milestone.
+
+## rc47 deployment result
+
+- [x] Exact-source signed candidate, capacity guard and complete OCI preservation passed.
+- [x] Actual rc47 release, compatible rc46 rollback and reapply; all three windows passed22 independent checks including workbook history.
+- [x] Deployed keyword query retrieves the previously missed two clauses first, with zero new provider calls.
+- [x] Owned temporary resources cleaned; signed evidence and original failures retained.
+- [ ] Real-model completion and semantic quality verified.
+- [ ] Human response entry, evidence, review and export for rows without a model draft.

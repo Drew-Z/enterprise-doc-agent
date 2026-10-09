@@ -48,3 +48,7 @@ The user approved the three follow-up priorities. Preserve the completed rc46 re
 - [x] Prepare exact scoped candidate and checks; preserve historical outputs and state which reliability/semantic issues remain unproven.
 
 Implementation checks passed; the bounded live diagnostic lost its control receipt and remains unknown, with at most three calls conservatively reserved and no rerun. Publication/CI receipt is retained centrally. The candidate is not deployed and actual quality remediation remains open; see `docs/ops/public-replay-remediation-20261009.md`.
+
+## rc47 release continuation
+
+The focused candidate is now deployed on staging. Actual rc46 rollback/reapply, retained workbook history and deployed SWU03 keyword recall passed without new model/embedding calls. Historical quality failures and the unknown diagnostic remain. Human takeover for pending/failed rows is the next delivery gap; current implementation still requires a model draft before review/export. See `docs/ops/rc47-remediation-release-20261009.md`.
