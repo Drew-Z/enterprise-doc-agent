@@ -194,3 +194,27 @@ StrictBasisDraft and strict_response_format definitions for run-v8 scoring.
 New strict collection emits run-v9, with explicit format/resolver branches in both
 scorers. Legacy JSON-mode identity is unchanged. New strict identity uses the same
 frozen policy guard; historical v18 policies cannot silently become v19.
+
+## Discriminating v19 observation
+
+Reuse the production gateway and run-v9 collector with exactly one new synthetic
+requirement. Include four independently worded prerequisite rules plus separate
+same-scope records: positive, negative, explicitly missing and contradictory peer
+records with no stated precedence. Freeze a gold file separately; never pass it
+to the collector. Assess array/schema validity separately from event decomposition,
+direction, genuine conflict and answer/missing-information coverage.
+
+Bind the current source hashes, controller hash, v19 provenance, primary endpoint
+digest and deployed policy; recheck active jobs and daily usage immediately before
+dispatch. Reserve one direct call durably before entering the collector. Refuse
+existing intent/output paths and expired plans. No retry after a timeout, unknown
+receipt or rejected output. Preserve the source report and a read-only postflight;
+only observations and documentation may change in this continuation.
+
+Observed boundary: source identity and legal array combinations do not constrain
+the text of a quote or its semantic direction. The v19 output reconstructed two
+quotes by attaching shared date/order context to a later clause; strict literal
+validation correctly rejected them. Missing rehearsal records were also assigned
+to negative evidence while the prose called them unknown. Do not normalize quotes
+or infer correctness from prose. Investigate immutable offered evidence selections
+as a separate protocol design; this alone would not establish semantic entailment.

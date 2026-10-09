@@ -218,3 +218,23 @@ tests and 18 real PostgreSQL cases pass. Whole-project validation passes 3,074
 nonintegration tests and 23 subtests, Ruff format/check (745 files), and Mypy
 (276 source files). The original v18 failed result and historical score remain
 unchanged. Larger-schema endpoint compatibility and semantic quality are unproven.
+
+## Bounded v19 live observation
+
+- [x] Freeze one new mixed-state fixture and independent criteria; bind the exact
+  gateway/controller, deployed primary identity and conservative daily budget.
+- [x] Reserve and observe at most one provider dispatch; retain first outcome,
+  version-specific mechanical score and a separate semantic review.
+- [x] Confirm unchanged staging/ledgers and record the remaining semantic gap in
+  specs/evidence; scoped publication is tracked in the central phase receipts.
+- [ ] Public-task quality, reliability and competitor acceptance remain open.
+
+Recovery phase support_schema_live_probe_20261010 uses baseline d74df4e and the
+existing recovery group. Maximum one primary model call, zero embedding calls.
+
+Completed one request,39.765s,7,146 reported tokens: HTTP200/schema valid but failed
+support_quote and semantic criteria. Two nonliteral quotes and missing-as-negative
+are retained without repair. Read-only postflight confirms unchanged rc49/0037/v15,
+five ready services, zero active jobs and unchanged ledgers. Conservative54/200
+includes18 known/reserved direct requests, including the prior three unknowns.
+Initial ASCII-filename validation failed before any dispatch; its artifact is kept.

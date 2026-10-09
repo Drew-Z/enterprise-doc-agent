@@ -392,3 +392,33 @@ The 2,993 unrelated workspace status entries retain their original checksum.
 This slice made zero model/embedding calls and no staging changes. Larger-schema
 endpoint compatibility, semantic improvement and competitor acceptance remain open.
 See docs/ops/presales-support-contract-20261010.md.
+
+## V19 mixed-state observation — 2026-10-10
+
+One new synthetic S1901 fixture and separate frozen criteria exercise four distinct
+business events on the existing primary/low/streaming route. The exact d74df4e
+gateway/controller, v19 prompt/schema, source hashes and fresh daily budget were
+bound before a durable single-call intent. No old sample, gold, route or retry changed.
+
+HTTP200 returned in39.765s, one dispatch and7,146 reported tokens. Both JSON Schema
+and ConstrainedBasisDraft accept the field combinations. The real gateway rejects
+support_quote: prerequisites[1].negative[0] and prerequisites[2].negative[0] add a
+date/order prefix not present as a literal span in that source. No quote repair.
+Mechanical scoring retains failed with zero accepted drafts. Separate semantic
+review finds missing rehearsal status wrongly represented as negative/none, despite
+unknown wording in prose. Four events were separated and the same-scope peer-record
+conflict was retained; neither fact repairs the old STRICT01 sample or proves a rate.
+
+Read-only postflight confirms the original policy, module hashes, DB0037, ledgers,
+zero active jobs and five ready services. UTC2026-10-09 conservative usage54/200
+includes36 app dispatches and18 known/reserved direct calls. Zero new embedding,
+staging writes, retries or deployment. The initial freeze hit the existing synthetic
+ASCII filename constraint before gold/plan/intent or inference; only filenames were
+corrected and the rejected pre-inference artifact remains preserved.
+
+Recovery phase support_schema_live_probe_20261010 binds baseline d74df4e; central
+input, criteria, plan, intent, original result, mechanical score, semantic review
+and postflight hashes are retained. Documentation-only repository changes need no
+new runtime test run; d74df4e's prior test/CI results remain that code's evidence.
+See docs/ops/presales-support-contract-probe-20261010.md. Promotion and competitor
+acceptance remain unfulfilled.

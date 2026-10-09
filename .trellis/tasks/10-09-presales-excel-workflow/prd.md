@@ -190,3 +190,21 @@ the original support-combination failure, exact quotes, language and final limit
 The schema enforces combinations only: separate business-event decomposition and
 entailment remain model judgments. No live request or staging enablement in this
 implementation slice; offline evidence must establish the boundary first.
+
+## Bounded v19 endpoint and meaning observation
+
+Offline evidence is complete at d74df4e. Observe one fresh, explicitly synthetic
+mixed-state requirement on the unchanged current primary route. Freeze input and
+separate semantic criteria before inference; cover independent met, unmet, missing
+and genuinely conflicting events rather than an easier missing-only public case.
+Retain the first result, including failure/unknown, without retry or replay of any
+old sample. Respect the live daily budget including direct-call reservations.
+One observation may establish endpoint interaction and identify the next semantic
+gap; it cannot establish a quality rate, public-task repair or competitor parity.
+No staging enablement, route/model changes, embedding or deployment in this slice.
+
+Result: the one request returned schema-valid v19 output in39.765s, but the original
+gateway rejected support_quote. Two copied excerpts were rewritten with shared
+context prefixes, and unregistered rehearsal status was incorrectly negative/none.
+Four separate events and the actual authorization conflict were represented, but
+the full frozen criteria failed. No retry or promotion; staging stays rc49/v15.

@@ -362,3 +362,15 @@ v19 development made no provider calls. Offline validation of the original v18
 bytes confirms its contradictory combination is outside the new schema, while the
 original v8 score and failed observation remain identical. Unit truth tables and
 controlled HTTP prove shape contracts, not future model interpretation or quality.
+
+The separately frozen S1901 v19 observation returned HTTP200 and valid anyOf
+branches, but failed support_quote and semantic review. Two quotations reconstructed
+shared date/order prefixes instead of selecting literal spans. The model also put
+"pass status unregistered" in negative/none, although its prose called that state
+unknown. Preserve the original failed report: legal support combinations, four
+separate propositions and a correct conflict do not make the whole draft valid.
+Review must compare structured direction, prose and original evidence separately.
+Never repair a quote or change missing to unmet to obtain an accepted draft. Future
+immutable evidence selection would address transcription only; it would still need
+independent missing-vs-negative and entailment criteria. See the bounded diagnostic
+record in docs/ops/presales-support-contract-probe-20261010.md.
