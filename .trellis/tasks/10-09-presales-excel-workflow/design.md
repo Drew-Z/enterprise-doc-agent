@@ -218,3 +218,27 @@ validation correctly rejected them. Missing rehearsal records were also assigned
 to negative evidence while the prose called them unknown. Do not normalize quotes
 or infer correctness from prose. Investigate immutable offered evidence selections
 as a separate protocol design; this alone would not establish semantic entailment.
+
+## Strict span-selection protocol
+
+Reuse prepare_citations and its call-local source catalog. For each authorized
+excerpt, offer its complete text and exact punctuation-delimited substrings as
+immutable span IDs. Keep the full existing evidence text/source metadata alongside
+the spans, including shared subjects and qualifications; boundaries are lexical,
+not asserted atomic business events. Discard only surrounding whitespace and
+deduplicate exact repeated spans within an excerpt. Existing request-byte limits
+reject oversized expanded inputs before dispatch, with no truncation.
+
+SpanBasisDraft retains the four support alternatives and stable top-level fields,
+but every quote becomes only {spanId}. Deterministically resolve each ID through
+the original catalog into its parent citationId and exact substring, then reuse
+ConstrainedBasisDraft and resolve_basis. This is a declared selection protocol,
+not a repair of generated quotes; old free-text objects are invalid. No model
+semantic choices are changed by the server. Keep source authorization and public
+projection unchanged. Span catalogs are local values, never gateway instance state.
+
+New strict identity is v20; legacy JSON remains v15. New run-v10 traces record the
+offered spans. Scorers verify the entire reconstructed input/spans against the
+frozen source input before interpreting any result; v8/v9 keep their old formats
+and resolvers. Accepted v19 policies cannot silently resume as v20. Source code
+and decoder checks precede any later bounded real-provider observation.

@@ -1057,24 +1057,39 @@ are implemented; after new history, rc48 is not an eligible rollback reader.
 JSON mode guarantees JSON syntax, not field types. Explicit strict mode asks the
 existing endpoint for schema-conforming output while retaining all local business
 checks. Compatibility is endpoint-specific; strict mode is opt-in and not enabled
-on staging. Current v19 adds provider-visible combinations; v18 remains historical.
+on staging. Current v20 selects immutable offered spans; v18/v19 remain historical.
 
 ### 2. Signatures
 `OpenAICompatiblePresalesGateway(..., strict_output: bool = False)` supports direct
 callers. When PresalesSettings is supplied, its selected route controls the mode.
-`ConstrainedBasisDraft` requires all five top-level fields and four typed prerequisite
-alternatives. `constrained_response_format()` generates the current request.
-Historical StrictBasisDraft/strict_response_format remain unchanged for run-v8.
+`SpanBasisDraft` requires all five top-level fields and four typed prerequisite
+alternatives. `span_response_format()` generates the current request.
+`offer_spans(SelectionInput) -> SpanSelectionInput` retains full source context and
+adds offered `{spanId, citationId, text}` selections. Each quote in the output is
+only `{spanId}`. `resolve_span_basis(content, catalog)` materializes the selected
+literal text, then reuses ConstrainedBasisDraft/resolve_basis business checks.
+Historical StrictBasisDraft and ConstrainedBasisDraft remain unchanged for run-v8/v9.
 
 ### 3. Contracts
 `PRESALES__PRIMARY_STRICT_OUTPUT` and `PRESALES__FALLBACK_STRICT_OUTPUT` both default
 false. True selects `response_format.type=json_schema`, name `presales_response`,
 strict=true and the model-generated schema. No manual schema rewriting or output
-coercion. Existing v15 bytes/hash are unchanged when false; true uses v19 and the
+coercion. Existing v15 bytes/hash are unchanged when false; true uses v20 and the
 strict schema in promptSha256. Existing frozen RoutePolicy version/hash binds it;
 restore_gateway carries the matching template mode and refuses identity drift.
 API/Worker settings must agree. Drain old accepted prompt policies before a switch.
 Public drafts, storage, source access, budgets and configured failover stay unchanged.
+
+Span IDs derive from each request's existing random citation prefix. Catalogs are
+local values and are never stored on a gateway shared by concurrent requests.
+Offer each complete authorized excerpt plus exact punctuation-delimited substrings,
+deduplicating identical text only within that excerpt. Discard only surrounding
+whitespace; never attach a shared subject/date to a later clause. Boundaries are
+lexical and do not assert independent events or entailment. Full evidence text and
+source metadata remain visible beside spans. The existing128KiB request limit may
+reject expanded span input before dispatch; never truncate it or change the quota.
+Any future change to this offering/interpretation needs a distinct protocol identity
+and must preserve run-v10's historical interpretation.
 
 ### 4. Validation & Error Matrix
 Missing arrays, string instead of array and other shape errors remain draft_schema.
@@ -1083,22 +1098,26 @@ categories. Unsupported endpoint 400 remains presales_model_failed with one gate
 dispatch and no hidden same-route JSON-mode retry. Configured background failover
 is a separate bounded policy. Mode drift fails presales_execution_policy_unavailable
 before dispatch and releases the operation reservation; it is not a silent switch.
-In v19, invalid prerequisite combinations reject as draft_schema before projection.
+Invalid prerequisite combinations and old free-text quote objects reject as
+draft_schema before projection. Unknown definition/unconfirmed spans use basis_quote;
+unknown positive/negative spans use support_quote. No guessed/fuzzy matching.
 Other valid-shape business-rule failures retain their normal downstream checks.
 
 The generated anyOf branches use identical fields with these count constraints:
 
 | Branch | uncertainty | positive | negative | unconfirmed |
 | --- | --- | --- | --- | --- |
-| PositiveSupport | none | 1..12 | 0 | 0 |
-| NegativeSupport | none | 0 | 1..12 | 0 |
-| MissingSupport | missing | 0 | 0 | 0..12 |
-| ConflictingSupport | conflict | 1..12 | 1..12 | 0 |
+| PositiveSpanSupport | none | 1..12 | 0 | 0 |
+| NegativeSpanSupport | none | 0 | 1..12 | 0 |
+| MissingSpanSupport | missing | 0 | 0 | 0..12 |
+| ConflictingSpanSupport | conflict | 1..12 | 1..12 | 0 |
 
-Every branch retains proposition and1..12 literal definition quotes. Native
+Every branch retains proposition and1..12 definition span references. Native
 Pydantic Union generation supplies anyOf/$defs; do not manually patch JSON Schema.
 Root status/quote/language/final-size validation still goes through resolve_basis.
-Schema-valid output may still merge unrelated events or select irrelevant quotes.
+Schema-valid output may still merge unrelated events or select irrelevant spans.
+Selecting a real missing-status span as negative remains a semantic error; the
+selection mapper does not secretly relabel it or claim to validate its meaning.
 
 ### 5. Good/Base/Bad Cases
 Good: strict wire schema is generated from the same Pydantic model validated locally.
@@ -1114,8 +1133,12 @@ idempotent replay, one consumed reservation and both directions of mode drift wi
 zero dispatch. Keep the existing execution-policy integration suite passing.
 Check all24 combinations against both generated JSON Schema and Pydantic, preserve
 all five valid combinations (including missing with/without unconfirmed text),
-and verify old v18 schema/results remain unchanged. Never silently restore a v18
-accepted policy through a v19 template even when both use strict_output=true.
+and verify old v18/v19 schemas/results remain unchanged. Never silently restore
+v18/v19 accepted policies through v20 even when both use strict_output=true.
+Span tests cover all four fields, exact context/qualifiers, source identity, four
+business states, concurrent cross-call ID rejection and pre-dispatch size refusal.
+Database tests persist actual selected spans as original authorized citations in
+synchronous and restored background execution, retaining exactly-once accounting.
 
 ### 7. Wrong vs Correct
 Wrong: set json_schema for every compatible provider and declare quality fixed.

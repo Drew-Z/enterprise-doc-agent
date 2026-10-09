@@ -24,6 +24,12 @@ from enterprise_doc_core.presales.output_contract import (
 )
 from enterprise_doc_core.presales.proposition_selection import resolve_proposition_selection
 from enterprise_doc_core.presales.schemas import CitationInput, GeneratedDraft, GenerationInput
+from enterprise_doc_core.presales.span_selection import (
+    SpanSelectionInput,
+    offer_spans,
+    resolve_span_basis,
+    span_response_format,
+)
 from enterprise_doc_core.presales.support_contract import (
     constrained_response_format,
     resolve_constrained_basis,
@@ -33,10 +39,13 @@ from scripts.evaluate_presales_quality import Gold, load_dataset, write_json
 
 
 def bind_projected_input(
-    wire: dict[str, Any], source_input: GenerationInput
+    wire: dict[str, Any], source_input: GenerationInput, *, spans: bool = False
 ) -> dict[str, CitationInput]:
     """Verify the recorded wire projection, without decoding any failed response."""
-    offered = SelectionInput.model_validate(wire)
+    span_input = SpanSelectionInput.model_validate(wire) if spans else None
+    offered = SelectionInput.model_validate(
+        span_input.model_dump(exclude={"spans"}) if span_input is not None else wire
+    )
     expected, identities = prepare_citations(source_input)
     if offered.requirement != expected.requirement or len(offered.evidence) != len(
         expected.evidence
@@ -54,6 +63,8 @@ def bind_projected_input(
         ) != wanted.model_dump(exclude={"citation_id"}):
             raise ValueError("wire_projection_mismatch")
         catalog[actual.citation_id] = identity
+    if span_input is not None and span_input.spans != offer_spans(offered).spans:
+        raise ValueError("wire_span_projection_mismatch")
     return catalog
 
 
@@ -71,6 +82,7 @@ def score(dataset_path: Path, gold_path: Path, report: dict[str, Any]) -> dict[s
         "presales-gateway-run-v6",
         "presales-gateway-run-v8",
         "presales-gateway-run-v9",
+        "presales-gateway-run-v10",
     }:
         raise ValueError("invalid_report_scope")
     projected = report["schemaVersion"] != "presales-gateway-run-v1"
@@ -80,6 +92,7 @@ def score(dataset_path: Path, gold_path: Path, report: dict[str, Any]) -> dict[s
         "presales-gateway-run-v6",
         "presales-gateway-run-v8",
         "presales-gateway-run-v9",
+        "presales-gateway-run-v10",
     }
     structured = evidence_backed or report["schemaVersion"] == "presales-gateway-run-v3"
     requirements = {r.key: r for r in dataset.requirements}
@@ -126,6 +139,7 @@ def score(dataset_path: Path, gold_path: Path, report: dict[str, Any]) -> dict[s
             strict_format = {
                 "presales-gateway-run-v8": strict_response_format,
                 "presales-gateway-run-v9": constrained_response_format,
+                "presales-gateway-run-v10": span_response_format,
             }.get(report["schemaVersion"])
             if strict_format is not None and trace.get("responseFormat") != strict_format():
                 raise ValueError("strict_output_contract_mismatch")
@@ -138,7 +152,11 @@ def score(dataset_path: Path, gold_path: Path, report: dict[str, Any]) -> dict[s
                 )
                 if payload != expected_input:
                     raise ValueError("source_binding_mismatch")
-                catalog = bind_projected_input(trace["input"], payload)
+                catalog = bind_projected_input(
+                    trace["input"],
+                    payload,
+                    spans=report["schemaVersion"] == "presales-gateway-run-v10",
+                )
             if payload.requirement != requirements[key]:
                 raise ValueError("requirement_mismatch")
             if {str(s.version_id) for s in payload.sources} != set(reverse):
@@ -182,6 +200,7 @@ def score(dataset_path: Path, gold_path: Path, report: dict[str, Any]) -> dict[s
                         "presales-gateway-run-v6": resolve_basis,
                         "presales-gateway-run-v8": resolve_strict_basis,
                         "presales-gateway-run-v9": resolve_constrained_basis,
+                        "presales-gateway-run-v10": resolve_span_basis,
                     }.get(report["schemaVersion"], resolve_selection)
                     resolved = resolver(original, catalog)
                     # v2 saved only the flat projection. Reproduce that contract without

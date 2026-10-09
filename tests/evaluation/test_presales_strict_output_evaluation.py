@@ -12,6 +12,7 @@ from scripts.score_presales_prerequisites import score_prerequisites
 
 from enterprise_doc_core.config import ModelProvider, ModelSettings
 from enterprise_doc_core.presales.output_contract import strict_response_format
+from enterprise_doc_core.presales.support_contract import constrained_response_format
 
 
 @pytest.fixture
@@ -91,9 +92,9 @@ async def test_strict_collector_and_both_scorers_preserve_first_outcome(tmp_path
         strict_output=True,
         transport=httpx.MockTransport(respond),
     )
-    assert report["schemaVersion"] == "presales-gateway-run-v9"
+    assert report["schemaVersion"] == "presales-gateway-run-v10"
     observation = report["observations"][0]
-    assert observation["provenance"]["promptVersion"] == "presales.v19"
+    assert observation["provenance"]["promptVersion"] == "presales.v20"
     assert observation["providerRequests"] == 1
     if invalid:
         assert observation["state"] == "failed" and observation["errorDiagnostic"] == "draft_schema"
@@ -124,26 +125,37 @@ async def test_strict_collector_and_both_scorers_preserve_first_outcome(tmp_path
     scored = score_prerequisites(*inputs, run_path, expected, review)
     assert scored["prerequisiteCheckPassed"] is not invalid
 
-    historical = copy.deepcopy(report)
-    historical["schemaVersion"] = "presales-gateway-run-v8"
-    historical["observations"][0]["provenance"]["promptVersion"] = "presales.v18"
-    historical["observations"][0]["traces"][0]["responseFormat"] = strict_response_format()
-    assert score(*inputs, historical) == result
-    historical_path = tmp_path / "historical-v8.json"
-    write_json(historical_path, historical)
-    historical_review = json.loads(review.read_bytes())
-    historical_review["runSha256"] = hashlib.sha256(historical_path.read_bytes()).hexdigest()
-    historical_review_path = tmp_path / "historical-review.json"
-    write_json(historical_review_path, historical_review)
-    assert (
-        score_prerequisites(*inputs, historical_path, expected, historical_review_path)[
-            "prerequisiteCheckPassed"
-        ]
-        is not invalid
-    )
-    historical["schemaVersion"] = "presales-gateway-run-v9"
-    with pytest.raises(ValueError, match="strict_output_contract_mismatch"):
-        score(*inputs, historical)
+    for version, prompt, format_fn in [
+        ("v8", "presales.v18", strict_response_format),
+        ("v9", "presales.v19", constrained_response_format),
+    ]:
+        historical = copy.deepcopy(report)
+        historical["schemaVersion"] = "presales-gateway-run-" + version
+        historical["observations"][0]["provenance"]["promptVersion"] = prompt
+        trace = historical["observations"][0]["traces"][0]
+        trace["responseFormat"] = format_fn()
+        trace["input"].pop("spans")
+        assert score(*inputs, historical) == result
+        historical_path = tmp_path / f"historical-{version}.json"
+        write_json(historical_path, historical)
+        historical_review = json.loads(review.read_bytes())
+        historical_review["runSha256"] = hashlib.sha256(historical_path.read_bytes()).hexdigest()
+        historical_review_path = tmp_path / f"historical-review-{version}.json"
+        write_json(historical_review_path, historical_review)
+        assert (
+            score_prerequisites(*inputs, historical_path, expected, historical_review_path)[
+                "prerequisiteCheckPassed"
+            ]
+            is not invalid
+        )
+        historical["schemaVersion"] = "presales-gateway-run-v10"
+        with pytest.raises(ValueError, match="strict_output_contract_mismatch"):
+            score(*inputs, historical)
+
+    changed = copy.deepcopy(report)
+    changed["observations"][0]["traces"][0]["input"]["spans"][0]["text"] = "伪造原文。"
+    with pytest.raises(ValueError, match="wire_span_projection_mismatch"):
+        score(*inputs, changed)
 
     changed = copy.deepcopy(report)
     changed["observations"][0]["traces"][0]["responseFormat"] = {"type": "json_object"}
@@ -159,4 +171,122 @@ async def test_strict_collector_and_both_scorers_preserve_first_outcome(tmp_path
             score(*inputs, changed)
         # Omitted optional arrays remain accepted only by the historical v6 contract.
         changed["schemaVersion"] = "presales-gateway-run-v6"
+        changed["observations"][0]["traces"][0]["input"].pop("spans")
         assert score(*inputs, changed)["acceptedDrafts"] == 1
+
+
+async def test_span_evidence_and_prerequisites_are_bound_through_both_scorers(tmp_path, inputs):
+    dataset = json.loads(inputs[0].read_bytes())
+    source = "启用前必须配置驻留区域。驻留区域已配置为境内。"
+    dataset["sources"][0]["content"] = source
+    write_json(inputs[0], dataset)
+    digest = hashlib.sha256(inputs[0].read_bytes()).hexdigest()
+    gold = json.loads(inputs[1].read_bytes())
+    gold["datasetSha256"] = digest
+    anchor = {"sourceKey": "S1", "excerpt": source}
+    gold["rows"][0].update(status="supported", requiredEvidence=[anchor])
+    write_json(inputs[1], gold)
+
+    def respond(request):
+        wire = json.loads(json.loads(request.content)["messages"][1]["content"])
+        refs = {span["text"]: {"spanId": span["spanId"]} for span in wire["spans"]}
+        value = {
+            "status": "supported",
+            "answer": "驻留区域已配置为境内。",
+            "missingInformation": [],
+            "citations": [],
+            "prerequisites": [
+                {
+                    "proposition": "驻留区域已配置",
+                    "definition": [refs["启用前必须配置驻留区域。"]],
+                    "positive": [refs["驻留区域已配置为境内。"]],
+                    "negative": [],
+                    "unconfirmed": [],
+                    "uncertainty": "none",
+                }
+            ],
+        }
+        return httpx.Response(
+            200,
+            json={
+                "choices": [{"finish_reason": "stop", "message": {"content": json.dumps(value)}}]
+            },
+        )
+
+    run_path = tmp_path / "span-run.json"
+    report = await collect(
+        inputs[0],
+        run_path,
+        ModelSettings(
+            provider=ModelProvider.OPENAI_COMPATIBLE,
+            base_url="https://model.invalid/v1",
+            api_key=SecretStr("test-only"),
+            model_name="controlled",
+        ),
+        model_route="primary",
+        strict_output=True,
+        transport=httpx.MockTransport(respond),
+    )
+    baseline = score(*inputs, report)
+    assert baseline["acceptedDrafts"] == baseline["coveredRequiredEvidence"] == 1
+    expected = tmp_path / "span-expected.json"
+    write_json(
+        expected,
+        {
+            "schemaVersion": "presales-prerequisite-gold-v1",
+            "datasetSha256": digest,
+            "reviewStatus": "Controlled fixture",
+            "rows": [
+                {
+                    "key": "R1",
+                    "prerequisites": [
+                        {
+                            "key": "REGION",
+                            "description": "驻留区域已配置",
+                            "state": "met",
+                            "requiredEvidence": [anchor],
+                        }
+                    ],
+                }
+            ],
+        },
+    )
+    review = tmp_path / "span-review.json"
+    write_json(
+        review,
+        {
+            "schemaVersion": "presales-prerequisite-review-v1",
+            "runSha256": hashlib.sha256(run_path.read_bytes()).hexdigest(),
+            "expectationsSha256": hashlib.sha256(expected.read_bytes()).hexdigest(),
+            "reviewer": "test",
+            "reviewType": "assistant",
+            "rows": [
+                {
+                    "key": "R1",
+                    "reviewed": True,
+                    "mappings": [
+                        {
+                            "expectedKey": "REGION",
+                            "observedIndex": 0,
+                            "reason": "Controlled region prerequisite",
+                        }
+                    ],
+                }
+            ],
+        },
+    )
+    assert score_prerequisites(*inputs, run_path, expected, review)["prerequisiteCheckPassed"]
+
+    for fault in ("spanId", "citationId", "remove", "duplicate", "order"):
+        changed = copy.deepcopy(report)
+        spans = changed["observations"][0]["traces"][0]["input"]["spans"]
+        if fault in {"spanId", "citationId"}:
+            spans[0][fault] = "foreign"
+        elif fault == "remove":
+            spans.pop()
+        elif fault == "duplicate":
+            spans.append(spans[0])
+        else:
+            spans.reverse()
+        with pytest.raises(ValueError, match="wire_span_projection_mismatch"):
+            score(*inputs, changed)

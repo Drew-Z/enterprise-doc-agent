@@ -208,3 +208,23 @@ gateway rejected support_quote. Two copied excerpts were rewritten with shared
 context prefixes, and unregistered rehearsal status was incorrectly negative/none.
 Four separate events and the actual authorization conflict were represented, but
 the full frozen criteria failed. No retry or promotion; staging stays rc49/v15.
+
+## Immutable evidence selection
+
+Strict generation must select offered source spans for definition, positive,
+negative and unconfirmed evidence without regenerating their text. Preserve exact
+source context, qualifier text, public citation identity, legitimate four-way
+support combinations and all existing business checks. Unknown/foreign span IDs
+and legacy free-text quote objects must reject, never be repaired. Different calls
+must not share mutable span state. No automatic semantic labeling of source text.
+
+Default v15 and historical v18/v19 reports keep their original interpretation.
+Version the new strict protocol and offline reports; validate real HTTP boundaries,
+concurrent call isolation, historical scoring and database execution restoration.
+This implementation makes no live provider/embedding calls and does not enable
+staging. Preventing transcription does not prove evidence entailment, correct
+unknown-vs-negative classification or competitor acceptance.
+
+Implemented with54 focused tests,18 actual PostgreSQL cases and3,117 nonintegration
+tests/23 subtests passing. V18/v19 schema modules and original failed scores remain
+unchanged. No live v20 call or staging change; actual semantic acceptance stays open.

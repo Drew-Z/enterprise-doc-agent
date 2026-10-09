@@ -339,17 +339,25 @@ empty schema and assume search_path alone provides migration isolation.
 ## Strict request collection and historical scoring
 
 `collect(..., strict_output=True)` or the explicit `--strict-output` option selects
-strict schema only for the requested route. It emits presales-gateway-run-v9 and
+strict schema only for the requested route. It emits presales-gateway-run-v10 and
 records the exact responseFormat in each dispatched trace; defaults remain run-v6.
 run-v7 belongs to the rejected answer-aspect experiment and remains unsupported.
 
-Both scorers retain an explicit v8 StrictBasisDraft branch and add v9's
-ConstrainedBasisDraft. Gateway scoring verifies the version-specific recorded
+Both scorers retain v8 StrictBasisDraft and v9 ConstrainedBasisDraft branches, and
+add v10's SpanBasisDraft/resolve_span_basis. Gateway scoring verifies the version-specific recorded
 strict response format before processing success or failure, then
 binds accepted original output through the unchanged basis projection. Missing
 required arrays cannot be silently reconstructed. Legacy v1..v6 keep their existing
 parsers and frozen scores; do not use newer schema versions to reclassify a rejected
-historical output. A v8 request format relabeled v9 is refused.
+historical output. Relabeling old request formats as a newer version is refused.
+
+Run-v10 records spans in the provider input. `bind_projected_input(..., spans=True)`
+first binds the original full evidence/source projection, then reconstructs the
+complete span list with the same deterministic offering function. Reject changed
+text, IDs, parent references, ordering, duplicates or omissions before evaluating
+even a failed observation. Older versions use their original input parser. Both
+scorers resolve accepted v10 selections through the same core decoder; do not
+rebuild quote materialization or semantic inference in scripts.
 
 HTTP-boundary evaluation tests cover successful and failed strict outputs, altered
 request-format rejection, strict omitted-field rejection and v6/v8 compatibility.
@@ -374,3 +382,11 @@ Never repair a quote or change missing to unmet to obtain an accepted draft. Fut
 immutable evidence selection would address transcription only; it would still need
 independent missing-vs-negative and entailment criteria. See the bounded diagnostic
 record in docs/ops/presales-support-contract-probe-20261010.md.
+
+V20 development makes zero provider calls. Controlled HTTP tests cover correct
+selection, cross-call IDs and byte-limit refusal; real database tests preserve
+selected evidence and one charge through admission/restoration. Offline checks
+retain the exact v18/v19 failed reports and original scores. The old v19 generated
+quote objects are invalid v20 selections, not inputs to a quote repair. A valid
+span can still be selected in the wrong semantic direction, so frozen criteria
+must continue assessing missing-vs-negative, event decomposition and entailment.

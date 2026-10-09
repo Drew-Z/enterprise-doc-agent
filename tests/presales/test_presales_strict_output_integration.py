@@ -9,7 +9,9 @@ from enterprise_doc_core.billing.models import UsageEvent, UsageReservation
 from enterprise_doc_core.presales.background import BackgroundGeneration
 from enterprise_doc_core.presales.gateway import OpenAICompatiblePresalesGateway
 from enterprise_doc_core.presales.models import PresalesAttempt, PresalesProviderCall
+from enterprise_doc_core.presales.schemas import SourceInput
 from tests.browser_sessions.conftest import browser_db as browser_db
+from tests.presales.fixtures import add_chunk, add_document
 from tests.presales.test_presales_background_integration import background as background
 from tests.presales.test_presales_background_integration import valid_response
 
@@ -23,6 +25,19 @@ async def test_strict_request_survives_admission_execution_and_exactly_once_acco
     b = background
     b.settings.primary_strict_output = True
     b.settings.background_generation_enabled = durable
+    span_source = "Retention: 启用30天保留前必须配置策略。30天保留策略已配置。"
+    span_version, span_generation = await add_document(b.sessions, b.context)
+    await add_chunk(b.sessions, b.context, span_version, span_generation, span_source)
+    b.payload = b.payload.model_copy(
+        update={
+            "sources": [
+                *b.payload.sources,
+                SourceInput(
+                    version_id=span_version, applicability="Current purchase configuration rule"
+                ),
+            ]
+        }
+    )
     requests = []
 
     def respond(request):
@@ -31,6 +46,19 @@ async def test_strict_request_survives_admission_execution_and_exactly_once_acco
         message = response["choices"][0]["message"]
         content = json.loads(message["content"])
         content["missingInformation"] = []
+        wire = json.loads(requests[-1]["messages"][1]["content"])
+        refs = {span["text"]: {"spanId": span["spanId"]} for span in wire["spans"]}
+        content["prerequisites"] = [
+            {
+                "proposition": "30天保留策略已配置",
+                "definition": [refs["Retention: 启用30天保留前必须配置策略。"]],
+                "positive": [refs["30天保留策略已配置。"]],
+                "negative": [],
+                "unconfirmed": [],
+                "uncertainty": "none",
+            }
+        ]
+        content["answer"] = "策略已配置\uff0c资料支持30天保留。"
         message["content"] = json.dumps(content)
         return httpx.Response(200, json=response)
 
@@ -46,7 +74,7 @@ async def test_strict_request_survives_admission_execution_and_exactly_once_acco
     admitted = await b.api.post(url, headers=headers, json={"executionMode": "auto"})
     assert admitted.status_code == (202 if durable else 200), admitted.text
     frozen = admitted.json()["rows"][0]["attempts"][0]
-    assert frozen["executionPolicy"]["routes"][0]["promptVersion"] == "presales.v19"
+    assert frozen["executionPolicy"]["routes"][0]["promptVersion"] == "presales.v20"
     if durable:
         assert requests == []
         # A new worker instance must reconstruct strict mode from its bound template.
@@ -58,6 +86,8 @@ async def test_strict_request_survives_admission_execution_and_exactly_once_acco
     refreshed = await b.api.get(f"/api/presales/{packet.id}", headers=headers)
     row = refreshed.json()["rows"][0]
     assert row["state"] == "drafted" and row["draft"]["status"] == "supported"
+    assert row["draft"]["prerequisites"][0]["state"] == "met"
+    assert any(c["excerpt"] == span_source for c in row["draft"]["citations"])
     assert row["attempts"][0]["executionPolicy"] == frozen["executionPolicy"]
     assert len(requests) == 1 and requests[0]["response_format"]["type"] == "json_schema"
     operation_id = UUID(frozen["id"])

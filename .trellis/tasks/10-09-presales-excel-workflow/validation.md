@@ -422,3 +422,41 @@ and postflight hashes are retained. Documentation-only repository changes need n
 new runtime test run; d74df4e's prior test/CI results remain that code's evidence.
 See docs/ops/presales-support-contract-probe-20261010.md. Promotion and competitor
 acceptance remain unfulfilled.
+
+## Immutable evidence span selection — 2026-10-10
+
+The new strict v20 contract selects only offered span IDs for every definition and
+directional/missing quote. Complete original context and lexical substrings remain
+available; exact parent citations are materialized server-side and then traverse
+the unchanged v19/basis rules. No source relabeling or generated-text normalization.
+
+Red/green checks began with absent offering/projection APIs, one HTTP-boundary
+failure against the old gateway and two collector-version failures. Final focused
+suite:54 passed, including42 new module cases and24 truth-table combinations.
+Tests cover all four quote fields, contextual qualifiers, states and source versions,
+foreign/cross-call IDs, old quote objects, wrong semantic direction left unchanged,
+input-size refusal before dispatch, changed span catalogs and both scorers.
+
+Eighteen real PostgreSQL cases pass in40.85s: synchronous and restored background
+execution persist selected original evidence, replay safely and charge once; mode
+drift refuses before dispatch. The first run had two setup failures because a new
+chunk reused generation index0. A fresh owned document/generation fixes the fixture;
+no product constraint was relaxed. Fixture-owned schemas are removed in finally.
+
+Full nonintegration:3,117 passed,814 deselected and23 subtests passed in268.00s.
+Ruff format/check passes747 files; Mypy passes277 source files. Initial escaped
+punctuation/line-length findings were fixed without changing the runtime strings.
+Default v15 prompt SHA remains318fc29ef2903cef5ad51a59163fad35ff855aca012bbae986e84a0fbb83d2ab.
+Strict v20 prompt SHA isb2edcfdc8b9f9296f629ace9bf9255b6e7f9b34e86b787ef392cdc265b517375.
+
+Offline rescoring preserves exact v18/v19 failed reports and score values. Their
+schema modules remain byte-identical to8dc0b31. Run-v10 verifies the entire recorded
+span input before interpreting success or failure; old reports keep old resolvers.
+Accepted v18/v19 policies cannot restore through v20. No new model/embedding calls,
+deployment or staging enablement. Actual endpoint behavior, semantic correction
+and competitor acceptance remain unproven.
+
+Recovery phase presales_span_selection_20261010 registers16 paths at baseline8dc0b31;
+the central manifest records checks, offline evidence, source hashes, publication
+and owned-temp cleanup. The2,993 unrelated status entries retain their baseline
+checksum. See docs/ops/presales-span-selection-20261010.md.

@@ -238,3 +238,24 @@ are retained without repair. Read-only postflight confirms unchanged rc49/0037/v
 five ready services, zero active jobs and unchanged ledgers. Conservative54/200
 includes18 known/reserved direct requests, including the prior three unknowns.
 Initial ASCII-filename validation failed before any dispatch; its artifact is kept.
+
+## Immutable span selection implementation
+
+- [x] Red/green public module tests for literal/context-preserving span offering,
+  all four support alternatives, foreign/free-text rejection and business guards.
+- [x] HTTP-boundary v20 integration, concurrent call isolation, request limits and
+  unchanged default v15; no hidden retry or downgrade.
+- [x] Run-v10 source/span binding and both scorers, historical v8/v9 preservation,
+  frozen-policy drift rejection and real PostgreSQL persistence/accounting.
+- [x] Full required local checks and relevant spec updates; scoped publication and
+  owned temporary cleanup outcomes are tracked in the central phase receipts.
+- [ ] Actual-model semantics and competitor acceptance remain open.
+
+Recovery phase presales_span_selection_20261010 uses baseline8dc0b31. Only external
+HTTP/model boundaries are controlled in tests; source parsing and database are real.
+No new live model/embedding calls or staging changes in this implementation.
+
+54 focused cases (42 new module tests),18 actual PostgreSQL cases,3,117
+nonintegration tests and23 subtests pass. Ruff format/check covers747 files and
+Mypy277 source files. The initial duplicate-index fixture failure and lint fixes
+are retained in validation notes. Existing v18/v19 failures are unchanged.

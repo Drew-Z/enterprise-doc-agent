@@ -21,6 +21,7 @@ from enterprise_doc_core.presales.evidence_selection import resolve_evidence_sel
 from enterprise_doc_core.presales.output_contract import resolve_strict_basis
 from enterprise_doc_core.presales.proposition_selection import resolve_proposition_selection
 from enterprise_doc_core.presales.schemas import GenerationInput, PresalesModel, TextItem
+from enterprise_doc_core.presales.span_selection import resolve_span_basis
 from enterprise_doc_core.presales.support_contract import resolve_constrained_basis
 from scripts.evaluate_presales_quality import Anchor, load_dataset, write_json
 from scripts.score_presales_gateway import bind_projected_input, score
@@ -103,6 +104,7 @@ def score_prerequisites(
         "presales-gateway-run-v6",
         "presales-gateway-run-v8",
         "presales-gateway-run-v9",
+        "presales-gateway-run-v10",
     }:
         raise ValueError("prerequisite_report_scope_unsupported")
     baseline = score(dataset_path, gold_path, report)
@@ -155,7 +157,9 @@ def score_prerequisites(
         if observable:
             trace = observation["traces"][0]
             catalog = bind_projected_input(
-                trace["input"], GenerationInput.model_validate(observation["sourceInput"])
+                trace["input"],
+                GenerationInput.model_validate(observation["sourceInput"]),
+                spans=report["schemaVersion"] == "presales-gateway-run-v10",
             )
             # Baseline scoring has already bound this accepted output to its result.
             # Historical v2 states are read for a new analysis, never written back.
@@ -165,6 +169,7 @@ def score_prerequisites(
                 "presales-gateway-run-v6": resolve_basis,
                 "presales-gateway-run-v8": resolve_strict_basis,
                 "presales-gateway-run-v9": resolve_constrained_basis,
+                "presales-gateway-run-v10": resolve_span_basis,
             }.get(report["schemaVersion"], resolve_selection)
             draft = resolver(trace["response"]["choices"][0]["message"]["content"], catalog)
             actual = draft.prerequisites or []
