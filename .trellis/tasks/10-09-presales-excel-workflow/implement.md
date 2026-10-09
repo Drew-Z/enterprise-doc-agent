@@ -135,3 +135,23 @@ but assistant review finds omitted testing arrangements/remediation and a known 
 misphrased as an unknown business-event proposition. No repeat. Next quality design
 must address requirement coverage and proposition meaning. This is not historical
 failure attribution or competitor acceptance; see docs/ops/generation-diagnostic-cqu03-20261010.md.
+
+## Answer coverage candidate
+
+- [x] Bind the preserved CQU03 semantic failure and unchanged current source as baseline.
+- [x] Implement v16 business-event and complete-answer guidance without new fields,
+  validators, model routes or repair calls; verify existing protocol/scorer contracts.
+- [x] Freeze one previously unexecuted CQU01 case and reference before a single current
+  primary request; stop on success, failure or unknown and review the original prose.
+- [x] Candidate checks, explicit semantic rejection, exact runtime restoration and
+  scoped documentation publication preparation; final receipts retained centrally.
+
+Recovery phase answer_coverage_candidate_20261010 uses the existing group and Git
+d95475e5556301753317ddfe7045688579aecd8c. No original CQU03/SWU/unknown probe rerun.
+
+Candidate rejected: CQU01 returned one valid draft in27.625s and passed mechanical
+classification/citation checks, but omitted the concrete integration arrangements and
+invented verification completion as a supplier prerequisite. Retain the exact executed
+source and restore runtime v15 byte-for-byte. Do not continue instruction-only sampling;
+next design separates requested answer aspects from source-defined business prerequisites.
+See docs/ops/answer-coverage-candidate-20261010.md. No candidate deployment or second call.

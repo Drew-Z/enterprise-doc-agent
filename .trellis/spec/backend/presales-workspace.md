@@ -229,6 +229,15 @@ Release/compatible rc46 rollback/reapply and workbook history passed; the deploy
 SWU03 keyword query finds both required clauses first without provider dispatch.
 Semantic quality remains open; see docs/ops/rc47-release-validation.json.
 
+The 2026-10-10 v16 coverage/field-description candidate was rejected after one frozen
+CQU01 response: valid classification and literal citations did not prevent it from
+turning the question's assessment verb into a supplier verification obligation. Keep
+runtime v15; do not promote that candidate's description-only change. The next design
+must distinguish requested answer aspects from source-defined business prerequisites,
+without inferring semantics by keyword rewriting. Its observed rejection and exact
+source snapshots are in docs/ops/answer-coverage-candidate-20261010.md and the central
+recovery phase. CQU03 and SWU originals remain unchanged; no broad accuracy claim follows.
+
 1. **Scope / trigger:** SWU03 showed zero keyword recall despite the clause existing in
    two stored chunks. PostgreSQL simple FTS represented its unspaced Chinese query as
    one whole token. Historical provider errors retain only an overall code, so their

@@ -117,3 +117,17 @@ Inspect at most one previously unexecuted public CQU requirement on the existing
 route after freezing input, semantic criteria, current configuration and available daily
 budget. This is a diagnostic, not another competitor comparison or a reliability rate.
 Stop after its first outcome, including unknown; do not rerun SWU or the lost prior probe.
+
+## Answer coverage and business-event meaning
+
+The frozen v15 CQU03 response omitted testing arrangements and remediation, and assessed
+a known necessity rule as unknown instead of assessing actual completion. Address these
+observed semantics in model-facing instructions and field descriptions. Preserve all
+decoder validators, historical outputs, public drafts, current routes and dispatch caps.
+
+Verify existing protocol/persistence-policy contracts locally. One separately frozen,
+previously unexecuted CQU01 requirement may probe the candidate on the current primary
+route; stop after its first outcome. Reference criteria remain separate from inference.
+Do not rerun CQU03 or treat a new single case as proof of its repair, a reliability rate,
+customer acceptance or competitor parity. Deploy only after compatible exact-source
+release checks and handling of accepted old prompt policies.

@@ -117,3 +117,18 @@ state. Do not store exception strings or infer a category when the gateway has n
 Controlled HTTP proves retention, safe fields and unchanged no-retry behavior before
 any fresh public-source diagnostic. Keep live input and separately frozen review criteria
 outside the collector; existing source/hash validation and exclusive output creation apply.
+
+## Coverage candidate
+
+Keep the v14/v15 BasisDraft field names, bounds, validators and projection unchanged.
+Describe proposition as a concrete business event/capability to assess; definition alone
+contains the rule establishing necessity. Explicitly distinguish known rules from unknown
+current facts. Describe answer as the response to every requested aspect, and require
+specific missing arrangements rather than an invented plan or a generic proof request.
+Use prompt v16 so new execution policies bind the changed system/schema description SHA.
+
+This is a model-instruction change, not deterministic semantic enforcement. The original
+CQU03 outcome is the observed failing baseline; controlled schema tests cannot prove the
+model now understands it. Preserve historical decoders and score bytes. Before one fresh
+CQU01 request, freeze the candidate and separate coverage/event criteria; retain failures
+and reject broad quality claims. Staging remains rc49/v15 until an exact compatible release.

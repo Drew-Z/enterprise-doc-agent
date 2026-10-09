@@ -291,3 +291,28 @@ Report: `docs/ops/generation-diagnostic-cqu03-20261010.md`. Recovery phase
 the new report absent. All2,993 unrelated Git entries retain the original status hash.
 Next implementation must address complete requirement coverage and business-event
 versus rule meaning, without treating this one diagnostic as a benchmark or acceptance.
+
+## Rejected coverage instruction candidate — 2026-10-10
+
+The v16 candidate changed only model-facing field descriptions and prompt wording.
+It passed174 focused protocol/scoring tests,739-file format, Mypy274, and3,029
+nonintegration tests/23 subtests (810 deselected,262.29s). Ruff rejected17 fullwidth
+punctuation occurrences in new strings; this failed check is retained. Unit/schema
+success does not establish semantic performance.
+
+One pre-frozen new CQU01 case completed in27.625s with a valid draft and exact citations.
+Classification/anchors passed; separate assistant review rejected it against the frozen
+criteria: no specific interface/data-model/integration-plan inquiry, and the proposition
+converted the question's verification request into a supplier verification obligation.
+The prompt-only candidate therefore is not eligible for release. No second call.
+
+Both runtime source files were snapshotted with hashes in the existing recovery group,
+then restored byte-for-byte to d95475e. Runtime remains v15; historical outputs and
+decoder behavior are unchanged. Only task/spec/report documentation is delivered.
+Read-only staging checks confirmed rc49/0037, same policy, idle workloads and unchanged
+application ledgers. One direct call is separately reserved; conservative budget51/200
+includes the previous three unknown calls. No embedding, product write or deployment.
+
+See `docs/ops/answer-coverage-candidate-20261010.md`; recovery phase
+`answer_coverage_candidate_20261010`. Next design separates requested answer aspects
+from source-defined business prerequisites instead of further instruction-only sampling.
