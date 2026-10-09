@@ -96,3 +96,14 @@ sample results. Validate controlled cluster races and actual owned PostgreSQL mi
 unknown commit receipts, schema drift, real corrected review/export and refusal with[].
 Publish and validate exact source before signed release. A live rc48 rollback drill may
 occur only before new citation history; afterwards use compatible images/forward repair.
+
+Executed: rc49 / 0037 passed the schema window and release/rc48 rollback/reapply before
+independent citation history. A new human-only fixture then verified two separate review
+snapshots, original draft/authorship, corrected export and unchanged accounting. Actual
+restoration now refuses rc48 before writes. Capacity stayed under the existing complete-batch
+guard after the specifically approved rc36–37 cleanup; no reserve or import-contract change.
+
+Live fixture identity binds persisted imported key X7, exact question and B7/C7 location;
+SWU03 is a public replay label, not the application's imported row key. The first harness
+failed before packet creation, was diagnosed read-only and retained. No product or model
+behavior changed during that correction. Keep historical samples immutable.

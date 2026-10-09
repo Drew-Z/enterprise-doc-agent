@@ -95,3 +95,13 @@ without replay. Verify with owned PostgreSQL cases, exact signed sources and a f
 staging preflight. Exercise rc48 rollback before new citation history, then use one new
 labeled human-only fixture for correction, reload and export with zero model/embedding
 calls. Frozen samples, failures and usage remain unchanged; parent acceptance stays open.
+
+## rc49 citation delivery result — 2026-10-10
+
+The continuation is deployed as signed rc49 / schema 0037. Expansion, actual rc48 rollback
+before citation history, reapply and one new labeled human-only correction fixture passed.
+Original draft/quote and earlier review remain separate from corrected review evidence;
+reload and original XLSX/audit CSV delivery passed without model or embedding calls.
+The actual guard now refuses rc48 restoration before writes because citation history exists.
+Frozen public and prior human packets remain unchanged. See `validation.md` and
+`docs/ops/rc49-citation-release-validation.json`; model quality and parent acceptance remain open.

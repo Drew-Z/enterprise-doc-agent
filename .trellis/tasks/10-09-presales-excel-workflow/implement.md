@@ -99,8 +99,19 @@ Both browser schemas were removed. Original evidence and failed runs remain reta
 - [x] Fixed0036-to-0037 expansion, source/SQL binding and exact schema checks.
 - [x] Independent citation-reader guard plus inherited workbook/manual history protection.
 - [x] Controlled cluster race/recovery and owned PostgreSQL migration/real-history tests.
-- [ ] Required checks, exact source publication and candidate CI.
-- [ ] Signed candidate, fresh capacity/preflight, guarded staging release and human citation delivery.
+- [x] Required checks, exact source publication and candidate CI.
+- [x] Signed candidate, fresh capacity/preflight, guarded staging release and human citation delivery.
 
 Recovery: existing central group, phase review_citations_release_20261010, baseline
 7cc745ac937dd50c275d0b12d464bb26e55c5f77. No new model calls or frozen replay changes.
+
+Completed staging continuation: application fe99567 / rc49 / 0037, all four supervised
+windows independently verified. Only the approved 32 rc36–37 cache references were removed,
+freeing 2.06 GiB before the unchanged aggregate import guard passed. New human citation
+correction retained original draft/quote and old review, reloaded and exported XLSX/CSV;
+all accounting stayed unchanged. Initial harness confused SWU03 with imported X7 and stopped
+before creation; read-only diagnosis and exact key/question/cell binding resolved it without
+retrying an uncertain write. All tokens revoked. Actual legacy restore guard refused rc48.
+Removed 233 remote temporary files / 315 directories and 43 local transport files / one
+directory. Final five-service readiness and public HTTP 200 passed. Parent acceptance and
+model quality remain open; see `docs/ops/rc49-citation-release-validation.json`.

@@ -221,3 +221,44 @@ Owned PostgreSQL schemas are removed by fixture cleanup. This checkpoint perform
 shared migration, staging mutation or model/embedding call. Signed publication and live
 release remain next; last verified staging is rc48/0036. Preserve frozen outputs and
 unknown diagnostics; parent commercial acceptance remains open.
+
+## Executed rc49 release and citation delivery
+
+- Exact application `fe995676649570328892e2b48d80f02ee9526dd8`, signed tag
+  `v0.1.45-rc.49`: Quality 37981892144, Container 37981892045 and signed build
+  37982424490 passed; five artifacts / 56 evidence files verified.
+- Initial full-batch capacity preflight rejected before target writes, short by
+  836,391,680 bytes. User approved exactly 32 rc36–37 cache references; independent
+  verification found no unselected changes, all 40 protected references retained and
+  2,214,735,872 bytes net space released. The unchanged aggregate capacity guard passed.
+  All 19 actual-archive alias-preservation checks passed against the fresh baseline.
+- Fixed 0036→0037 expansion took 74.649 seconds; release / actual rc48 rollback / rc49
+  reapply took 85.770 / 83.024 / 86.277 seconds. All 28 schema checks and 22 checks per
+  image window passed, including complete resources, signed packaged sources/assets,
+  credentials, original workbook/frozen packet, previous human history and idle accounting.
+- One newly labeled one-row workbook passed HTTP import, human draft using an irrelevant
+  old quote, legacy review, independent corrected review, GET reload and reviewed XLSX/CSV.
+  Original draft/citation/authorship and earlier review remain intact. Current evidence and
+  prerequisite index bind the corrected quote; original formula and other sheet remain.
+- The first harness confused external label SWU03 with persisted key X7 and failed before
+  creation. Read-only diagnosis proved no prior owned packet, no citation history and unchanged
+  ledger. Corrected key/question/B7–C7 binding passed. Original failure retained; no uncertain
+  write retried. Failed, diagnostic and successful-run tokens were all revoked.
+- Six global accounting counters stayed unchanged: jobs 3553, attempts 541, provider calls
+  597, usage reservations 541, product reservations 613 and dispatches 597. Zero new model
+  or embedding calls. Frozen public and prior human packets remained identical through GET.
+- With new citation history present, actual `ReleaseCluster.restore` refused old readers
+  before any Kubernetes write through a read-only boundary. rc48/rc47/rc46 are now ineligible
+  recovery targets; retain all history and use compatible readers or a forward repair.
+- Removed only 233 remote temporary files / 315 directories and 43 local transport files /
+  one directory, in addition to the separately approved cache references. Final unchanged
+  five-service identity, homepage 200 and readiness 200 passed. Historical data, signed
+  artifacts, failures, backup evidence and unrelated worktree entries remain.
+
+See `docs/ops/rc49-citation-release-validation.json` and
+`docs/ops/presales-review-citations-release-20261010.md`. Recovery stays in phase
+`review_citations_release_20261010`; doc baseline is fe99567. Existing release specifications
+cover the final behavior. Closeout checks are JSON/evidence/context/diff integrity only;
+unchanged executable suites are not rerun. Original public results remain 4 drafts / 2
+failures / 9 calls, the diagnostic remains unknown and original160 is unrun. Human repair
+does not establish model accuracy, customer time savings, paid demand or competitor parity.
