@@ -34,7 +34,7 @@
     {
       "id": "commercial_metering",
       "status": "blocked",
-      "blocking_reason": "Current consumption batches CNY0.046616 and CNY0.089334 have been reconciled. Reuse this accepted scope; verify only new candidate calls and once-only settlement, not historical unknown-cost closure.",
+      "blocking_reason": "Current consumption batches CNY0.046616 and CNY0.089334 have been reconciled. Reuse this accepted scope; verify new language-model calls and once-only business settlement, not historical unknown-cost closure. The user excluded embedding supplier cost calculation, price tables and financial reconciliation from invited-release acceptance on 2026-10-09; retain dispatch/usage records, finite limits, quotas and unknown amounts. See evidence/gates/embedding-cost-scope-20261009.json. This does not mark the gate passed.",
       "evidence": null
     },
     {

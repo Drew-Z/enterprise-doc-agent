@@ -1,0 +1,176 @@
+{
+  "at": "2026-10-09T00:28:26.103516+00:00",
+  "status": "technical_quality_failed",
+  "application_commit": "acbbda9c51d29f3595a8467bfea2f0574dc3079a",
+  "release_tag": "v0.1.45-rc.44",
+  "planned_denominator": 12,
+  "original_batch": {
+    "local_process_exit_code": 0,
+    "completed_and_review_verified": 9,
+    "observation_failed": 1,
+    "unsubmitted": 2,
+    "uncertain_outcome_at_sampler_stop": true,
+    "business_acceptance_passed": false
+  },
+  "after_readonly_recovery": {
+    "drafted_rows": 10,
+    "successful_attempts": 10,
+    "successful_task_consumptions": 10,
+    "outstanding_reservations": 0,
+    "active_jobs": 0,
+    "classification_correct": 10,
+    "assistant_semantics_passed": 9,
+    "assistant_semantics_failed": 1,
+    "unsubmitted": 2,
+    "original_copy_reviews": 9,
+    "new_generations": 0
+  },
+  "known_debits": {
+    "CNY": "0.199192",
+    "USD": "0.002"
+  },
+  "billing_matched": 11,
+  "billing_unknown": 0,
+  "currency_basis": "Primary CNY follows explicit user confirmation; fallback USD follows live display; no conversion or combined total.",
+  "embedding_calls": 66,
+  "embedding_known_tokens": 2847,
+  "embedding_actual_debit": null,
+  "document_bytes_consumed": 1949,
+  "client_observation_failure": {
+    "code": null,
+    "cause": "unknown",
+    "detail": "TimedBusinessIO records status only after successful return; BusinessFailure code was not retained. Bounded server-log query returned no lines in the selected time window. No evidence establishes 429 or a connection failure."
+  },
+  "recovery_helper": {
+    "packet_gets": 2,
+    "draft_csv_gets": 2,
+    "business_writes": 0,
+    "process_exit_code": 1,
+    "cleanup_error": "http_404",
+    "detail": "Both packets and CSVs recovered; helper used the wrong logout path /api/auth/logout instead of /api/session/logout. Its local JWT stayed only in the exited API process and was limited to 600 seconds; revocation was not confirmed. No rerun or generation."
+  },
+  "decision": {
+    "r6_continuation": "not_executed_after_semantic_failure_discovery",
+    "full_160_capacity": "not_started_quality_gate_failed",
+    "quality_threshold_changed": false,
+    "failed_draft_rewritten": false,
+    "needs_new_candidate_validation": true
+  },
+  "independent_business_approval": false,
+  "capacity_approval": false,
+  "new_email_sends": 0,
+  "historical_failures_unchanged": true,
+  "mode_results": {
+    "auto": {
+      "planned": 6,
+      "drafted": 5,
+      "semantic_passed": 5,
+      "semantic_failed": 0,
+      "unsubmitted": 1
+    },
+    "deep": {
+      "planned": 6,
+      "drafted": 5,
+      "semantic_passed": 4,
+      "semantic_failed": 1,
+      "unsubmitted": 1
+    }
+  },
+  "failure": {
+    "mode": "deep",
+    "key": "H3-R5",
+    "source": "归档恢复验收状态未登记",
+    "actual_answer_excerpt": "保留策略和验收尚未完成",
+    "actual_acceptance_state": "unmet",
+    "expected_acceptance_state": "unknown",
+    "missing_information": [],
+    "missing_per_prerequisite_source": "H3-FEATURE",
+    "original_sha256": "5ad13fc155132d1453ff1dda8929481ce70c778941a581f7489156e0942f5126",
+    "unchanged_original_retained": true
+  },
+  "recovered_attempt": {
+    "finished_at": "2026-10-09 00:14:55.728757+00:00",
+    "deadline_at": "2026-10-09 00:22:14.650409+00:00",
+    "attempt_count": 1,
+    "provider_calls": 2,
+    "primary": "presales_model_transport_error",
+    "fallback": "succeeded",
+    "task_consumptions": 1,
+    "draft_semantics_passed": false
+  },
+  "artifacts": [
+    {
+      "local_name": "capacity-envelope-v2.json",
+      "sha256": "032543ff704cbf38a6dd7da74aa0d2f313cc90ef4eba07a7322bd1b56958af49",
+      "availability": "private local evidence; no credentials"
+    },
+    {
+      "local_name": "capacity-execute.jsonl",
+      "sha256": "4ea930dd8e03df1e7566429fb220a97ae5fb768b1be1f6a2b6f0e32c03f0aa0b",
+      "availability": "private local evidence; no credentials"
+    },
+    {
+      "local_name": "business-process-terminal.json",
+      "sha256": "05c0a822f458a52a8b2745865ea7586edb713e4d9f76ed423ef981c61b4c886a",
+      "availability": "private local evidence; no credentials"
+    },
+    {
+      "local_name": "readback-terminal.json",
+      "sha256": "ec9029ccd0dcf448d318a7c07536ae1642a53224f930cbdf792cb8759281ff01",
+      "availability": "private local evidence; no credentials"
+    },
+    {
+      "local_name": "readback-interim.json",
+      "sha256": "cf4317261d3f72a03174b5c092b36f84c0961b03940f354af254055cd3201633",
+      "availability": "private local evidence; no credentials"
+    },
+    {
+      "local_name": "recovery-readonly.jsonl",
+      "sha256": "07cf5fa4a73c7cf4b721375b7692d846eb7c141081c0d1de8c4aed324aa39d65",
+      "availability": "private local evidence; no credentials"
+    },
+    {
+      "local_name": "recovery-readonly.stderr",
+      "sha256": "5b2505d0e53f7ca71eae7821d9c5b81b2404831aeaa2509f74e3a16857fdfbf5",
+      "availability": "private local evidence; no credentials"
+    },
+    {
+      "local_name": "observation-server-log-window.json",
+      "sha256": "914d0e35719835312c256428bfbf08477683d3add05c5d1996259e026094d06e",
+      "availability": "private local evidence; no credentials"
+    },
+    {
+      "local_name": "supplier-logs-direct.json",
+      "sha256": "145e473d78870000db7b2cb58debf687af45d37c278446828751208f6433e8be",
+      "availability": "private local evidence; no credentials"
+    },
+    {
+      "local_name": "supplier-currency-settings.json",
+      "sha256": "da688a73def9cd57ba248e7ea3b2dacb36e8def902e96c5936e4f08665311e84",
+      "availability": "private local evidence; no credentials"
+    }
+  ],
+  "embedding_actual_cost_required_for_invited_release": false,
+  "embedding_cost_scope_decision": "evidence/gates/embedding-cost-scope-20261009.json",
+  "followup_generation_only_diagnostic": {
+    "status": "candidate_rejected",
+    "candidate_prompt_version": "presales.v13-candidate",
+    "planned_denominator": 1,
+    "generation_succeeded": 1,
+    "semantic_passed": 0,
+    "semantic_failed": 1,
+    "provider_calls": 1,
+    "elapsed_seconds": 91.312,
+    "known_usage": {
+      "prompt_tokens": 3504,
+      "completion_tokens": 7234,
+      "total_tokens": 10738
+    },
+    "actual_debit": null,
+    "production_changed": false,
+    "candidate_deployed": false,
+    "retries": 0,
+    "decision": "Reject this prompt-only candidate. No repeated sampling. Assess route/model alternatives with separately frozen limits before any further paid call.",
+    "extra_direct_dispatches_utc_20261009": 1
+  }
+}
