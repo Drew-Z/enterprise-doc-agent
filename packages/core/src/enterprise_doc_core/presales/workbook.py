@@ -285,6 +285,8 @@ def _answer(row: RowView) -> str:
         STATUS_LABELS[effective.status],
         effective.answer,
     ]
+    if row.manual_authorship is not None:
+        parts.insert(1, "人工填写")
     if effective.conditions:
         parts.append("响应条件：\n" + "\n".join(effective.conditions))
     if effective.missing_information:

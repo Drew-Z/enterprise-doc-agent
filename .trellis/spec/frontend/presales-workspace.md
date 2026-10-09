@@ -79,6 +79,31 @@ and later ordinary navigation does not reuse the consumed selection.
 
 ## Response and review behavior
 
+### Manual completion (0036 local candidate)
+
+1. **Scope:** pending or failed rows expose `ManualResponseEditor`; active generation
+   and existing drafts cannot be overwritten. Exhausted model attempts still allow it.
+2. **Signatures:** typed `manualEvidence` and `manualResponse` use existing authenticated
+   transport; optional nullable `row.manualAuthorship` contains actorId/createdAt/note.
+3. **Contracts:** literal source search and pagination run only on explicit actions.
+   Select <=12 exact600-character passages across fixed authorized sources, confirm,
+   then reuse ReviewEditor and PrerequisiteEditor. Save a human draft; separate review
+   enables reviewed export. Show origin/author/time/note and retained failure history.
+   Original-human panels and draft counts must never label human text as model output.
+4. **Errors:** strict schemas reject missing citations/status constraints and malformed
+   authorship. Revocation discovered by evidence reads hides the packet cache. Unmount
+   aborts reads. An uncertain PUT recovers by GET, preserving the operation key and
+   never automatically replaying the write. Bodies stay out of browser storage.
+5. **Good/base/bad:** human completion with evidence and review; existing model/legacy
+   rows retain their workflow; never call generation to create an editable blank draft.
+6. **Tests:** new form unit test, existing HTTP-boundary tests and real workbook browser
+   journeys at1440/390px; assert download contents, no provider count increase, a lost
+   acknowledgement with exactly one write per row, reload and no horizontal overflow.
+7. **Wrong vs correct:** implicit wrapping-select labels can include option text in
+   Chromium exact-label locators. Give the shared assessment select an explicit
+   aria-label and verify actual browser operation. Publish API and Web together;
+   old readers do not understand new human attribution.
+
 The sheet lists fixed sources and requirements, five outcome labels, conditions,
 missing information, exact source excerpts, filenames and passage locations.
 Finite retrieval and truncation are explicitly disclosed. Generation is per row;

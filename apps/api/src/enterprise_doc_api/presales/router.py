@@ -18,6 +18,8 @@ from enterprise_doc_core.presales.schemas import (
     CreatePacket,
     GenerateRowInput,
     GenerationReceipt,
+    ManualEvidencePage,
+    ManualResponseInput,
     PacketSummary,
     PacketView,
     ReviewInput,
@@ -28,6 +30,22 @@ from enterprise_doc_core.presales.workbook_schemas import WorkbookPreview, Workb
 
 
 class PresalesServiceProtocol(Protocol):
+    async def manual_evidence(
+        self,
+        principal: PrincipalContext,
+        packet_id: UUID,
+        version_id: UUID,
+        query: str = "",
+        offset: int = 0,
+    ) -> ManualEvidencePage: ...
+    async def manual_response(
+        self,
+        principal: PrincipalContext,
+        packet_id: UUID,
+        row_id: UUID,
+        payload: ManualResponseInput,
+        key: str,
+    ) -> PacketView: ...
     async def preview_workbook(
         self, principal: PrincipalContext, payload: WorkbookUpload
     ) -> WorkbookPreview: ...
@@ -127,6 +145,10 @@ async def result[T](operation: Awaitable[T]) -> T:
             status, message = 429, "已达到本次操作限额。请联系管理员。"
         elif code == "presales_generation_busy":
             message = "已有生成正在进行。请稍后刷新查看结果。"
+        elif code == "presales_manual_evidence_invalid":
+            status, message = 422, "请从本表授权资料中选择原文证据。不要改写引用内容。"
+        elif code == "presales_manual_draft_exists":
+            message = "本条已有草稿。请使用复核功能修改。原稿将保留。"
         elif code == "presales_background_required":
             message = "当前仅支持逐条生成。请刷新页面后重试。"
         elif code == "presales_revision_conflict":
@@ -251,6 +273,30 @@ async def generate_batch(
     if any(r.state in {"queued", "running", "recovering"} for r in batch.packet.rows):
         response.status_code = 202
     return batch
+
+
+@router.get("/{packet_id}/manual-evidence", response_model=ManualEvidencePage)
+async def manual_evidence(
+    packet_id: UUID,
+    principal: Principal,
+    svc: Service,
+    version_id: Annotated[UUID, Query(alias="versionId")],
+    query: Annotated[str, Query(max_length=200)] = "",
+    offset: Annotated[int, Query(ge=0, le=100000)] = 0,
+) -> ManualEvidencePage:
+    return await result(svc.manual_evidence(principal, packet_id, version_id, query, offset))
+
+
+@router.put("/{packet_id}/rows/{row_id}/manual-response", response_model=PacketView)
+async def manual_response(
+    packet_id: UUID,
+    row_id: UUID,
+    payload: ManualResponseInput,
+    principal: Principal,
+    svc: Service,
+    key: Key,
+) -> PacketView:
+    return await result(svc.manual_response(principal, packet_id, row_id, payload, key))
 
 
 @router.put("/{packet_id}/rows/{row_id}/review", response_model=PacketView)

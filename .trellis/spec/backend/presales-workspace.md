@@ -714,6 +714,46 @@ or replay of an already generated draft. Reservations retain their original peri
 
 ## Review, export and diagnostics
 
+### Human completion without a model draft (0036 candidate)
+
+1. **Scope / trigger:** pending/terminal failed rows must remain deliverable without
+   another provider request. This is a local candidate; staging remains rc47/0035.
+2. **Signatures:** `PUT /api/presales/{packet}/rows/{row}/manual-response` accepts
+   `ManualResponseInput` with expectedRevision>=0, existing response/prerequisite fields,
+   <=12 CitationInput values and a required note. `GET /{packet}/manual-evidence`
+   accepts versionId, literal query<=200 and offset0..100000, returning <=10 snippets
+   of <=600 characters and nextOffset. PresalesService owns both entry points.
+3. **Contracts:** source browse/save reauthorize actor, tenant, packet ownership and
+   frozen ready versions/generations. The save resolves literal quote containment and
+   server filename/location. Existing status/citation/prerequisite validation applies.
+   Tenant/packet/row locks serialize manual and generation writers. Never invoke
+   retrieval/embedding/model, reserve quota, create a Job/attempt, cancel active work,
+   or fabricate a successful attempt. Keep SavedDraft JSON unchanged as revision1;
+   migration0036 adds nullable `presales_rows.manual_authorship` holding actor/time/note
+   plus private idempotency key/fingerprint. Only actor/time/note leave the API.
+   Review is a separate explicit action and retains the immutable original response.
+   CSV leaves model-original columns empty for human drafts and appends human origin,
+   author/time/note/original text and prerequisite columns. Workbook marks human origin.
+4. **Validation / errors:** raw queued/running/recovering states (including not yet
+   reconciled expiry) ->409 generation_busy; existing drafts ->409; stale revision or
+   changed same-key intent ->409; foreign/nonliteral/stale evidence ->422/404/409.
+   Replay reauthorizes and keeps later reviews. Model entitlement expiry does not deny
+   authorized manual completion. Migration downgrade locks rows and refuses non-null
+   authorship with `presales_manual_history_present`.
+5. **Good/base/bad:** good: preserve a failed attempt, manually cite an authorized
+   clause, review, return the workbook. Base: null authorship keeps existing model
+   histories readable. Bad: count human text as model success or overwrite a worker.
+6. **Tests:** `test_manual_response_integration.py` uses real owned PostgreSQL/API,
+   no-embedding boundary, expired entitlement, replay, concurrent saves, active states,
+   literal/source/tenant checks, failure ledger, audit redaction, separate review,
+   XLSX/CSV and downgrade refusal. The workbook browser suite covers1440/390px and
+   a lost committed PUT response followed by GET, without a second write.
+7. **Wrong vs correct:** old rc47/rc46 strict draft decoders can parse unchanged JSON
+   but cannot interpret authorship: they are NOT valid rollback readers once human
+   history exists. Do not erase attribution or downgrade0036. Prepare coordinated
+   API/Worker/Web release and verified reader guards before staging writes; current
+  0035 release tooling rejects0036. Human completion is separate from model quality.
+
 ### Complete human prerequisite correction (2026-10-08 candidate)
 
 The review PUT now optionally accepts `prerequisiteChanges: {origins: (number|null)[],

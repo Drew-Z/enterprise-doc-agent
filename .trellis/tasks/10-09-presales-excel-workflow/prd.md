@@ -52,3 +52,7 @@ Implementation checks passed; the bounded live diagnostic lost its control recei
 ## rc47 release continuation
 
 The focused candidate is now deployed on staging. Actual rc46 rollback/reapply, retained workbook history and deployed SWU03 keyword recall passed without new model/embedding calls. Historical quality failures and the unknown diagnostic remain. Human takeover for pending/failed rows is the next delivery gap; current implementation still requires a model draft before review/export. See `docs/ops/rc47-remediation-release-20261009.md`.
+
+## Authorized human completion continuation
+
+Pending or terminal failed rows can receive a human-authored response with selected authorized literal evidence, then use ordinary review and original workbook/CSV delivery. Preserve original attempts and reviews. Explicit author/time and original human text survive refresh/export. No model, embedding, Job or quota dispatch occurs. Reject active generation, existing drafts, stale revisions and revoked sources. Same-key retries are idempotent. Keep the six-row public replay immutable and verify with owned fixtures. Human completion does not establish model quality or competitor parity.

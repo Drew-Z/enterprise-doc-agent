@@ -46,7 +46,10 @@ async def review_case(workspace):
                     "uncertainty": "missing",
                     "positive": [],
                     "negative": [],
-                    "citations": refs,
+                    "definition": [
+                        {"citationId": e["citationId"], "text": e["text"]} for e in sent["evidence"]
+                    ],
+                    "unconfirmed": [],
                 }
                 for text in ["期限与验收均已确认。", "采购培训是服务前提。"]
             ],

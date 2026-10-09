@@ -72,6 +72,11 @@ class PresalesRow(UUIDPrimaryKeyMixin, TimestampMixin, Base):
             ondelete="CASCADE",
         ),
         CheckConstraint("revision >= 0", name="presales_row_revision_valid"),
+        CheckConstraint(
+            "manual_authorship IS NULL OR (jsonb_typeof(manual_authorship) = 'object' "
+            "AND draft IS NOT NULL AND jsonb_typeof(draft) = 'object' AND revision >= 1)",
+            name="presales_manual_authorship_valid",
+        ),
     )
     tenant_id: Mapped[UUID] = mapped_column(nullable=False)
     packet_id: Mapped[UUID] = mapped_column(nullable=False)
@@ -81,6 +86,9 @@ class PresalesRow(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     source_location: Mapped[str] = mapped_column(String(300))
     revision: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     draft: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    manual_authorship: Mapped[dict[str, Any] | None] = mapped_column(
+        JSONB(none_as_null=True), nullable=True
+    )
 
 
 class PresalesAttempt(UUIDPrimaryKeyMixin, TimestampMixin, Base):

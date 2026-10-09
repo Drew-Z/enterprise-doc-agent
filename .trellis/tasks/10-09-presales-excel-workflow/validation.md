@@ -77,3 +77,29 @@ The candidate report is `docs/ops/public-replay-remediation-20261009.md`; exact 
 ## rc47 staging verification
 
 Candidate `bdf007ad442d81c48b9f2fa206a4ff38ee761326` / rc47 is deployed on schema0035. Source Quality37940137954, Container37940137868 and signed build37941563636 succeeded;5 artifacts/56 evidence files verified. Actual release/rc46 rollback/reapply took83.853/86.694/85.888 seconds;22 checks per window passed, including existing workbook bytes and mapping. The deployed SWU03 keyword query now returns the two required clauses first; day dispatches remained36, with zero model/embedding calls and no business mutations. This is live retrieval evidence, not model-semantic acceptance. See `docs/ops/rc47-release-validation.json`. Removed only185 remote temporary files/252 directories and43 local transport files plus the earlier owned fragment; retained all images, business history and previous failures.
+
+## Manual completion candidate — 2026-10-10
+
+Pending/failed rows now support human responses with authorized literal evidence,
+explicit immutable authorship, separate review and original-file delivery. Migration0036
+preserves strict draft JSON in place and refuses downgrade with human history. Old
+application readers cannot retain correct attribution; deployment/rollback guards are
+still required before staging writes. Original public replay is untouched.
+
+Python non-integration2920 passed/23 subtests; Web451 tests/57 files and monitor103 tests
+passed. Real PostgreSQL:44 passed in the broader manual/workbook/workflow run;18 older
+review cases initially failed on a stale synthetic private model protocol, then all18
+passed after updating only that fixture. Final seven manual cases passed including
+expired entitlement, no embeddings, audit redaction, raw active states, preservation of
+failed accounting, races and migration refusal. Ruff730 files and Mypy273 sources passed.
+
+Four actual browser cases passed at1440/390px with unchanged workbook content and no
+new calls for manual cases; one lost committed PUT response recovered via GET without
+repeating the write. Initial label-locator failures remain in evidence; explicit
+aria-label fixed the shared select. Web lint/typecheck/build passed with the existing
+chunk-size warning. Browser-owned schemas were removed with cleanup receipts; integration
+fixtures assert their owned schema removal. Historical2993 workspace entries retained.
+
+See `docs/ops/presales-manual-completion-20261010.md` and recovery phase
+`manual_takeover_20261009`. This is local product completion, not live deployment,
+provider reliability/semantic acceptance or real-user value evidence.

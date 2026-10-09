@@ -30,6 +30,7 @@ from enterprise_doc_core.presales.errors import PresalesError
 from enterprise_doc_core.presales.export import export_csv
 from enterprise_doc_core.presales.gateway import OpenAICompatiblePresalesGateway, PresalesGateway
 from enterprise_doc_core.presales.generation import ACTIVE_STATES, GenerationService, Retriever
+from enterprise_doc_core.presales.manual import browse_evidence, save_response
 from enterprise_doc_core.presales.models import (
     PresalesAttempt,
     PresalesPacket,
@@ -44,6 +45,10 @@ from enterprise_doc_core.presales.schemas import (
     BatchGenerateResult,
     CreatePacket,
     GenerationReceipt,
+    ManualAuthorship,
+    ManualAuthorshipRecord,
+    ManualEvidencePage,
+    ManualResponseInput,
     PacketSummary,
     PacketView,
     RequirementInput,
@@ -431,6 +436,30 @@ class PresalesService:
                 rejected.append(RowRejection(row_id=row_id, code=error.code))
         return GenerationReceipt(packet_id=packet_id, admissions=admissions, rejected=rejected)
 
+    async def manual_evidence(
+        self,
+        principal: PrincipalContext,
+        packet_id: UUID,
+        version_id: UUID,
+        query: str = "",
+        offset: int = 0,
+    ) -> ManualEvidencePage:
+        async with read_only_session(self.session_factory) as session:
+            return await browse_evidence(session, principal, packet_id, version_id, query, offset)
+
+    async def manual_response(
+        self,
+        principal: PrincipalContext,
+        packet_id: UUID,
+        row_id: UUID,
+        payload: ManualResponseInput,
+        key: str,
+    ) -> PacketView:
+        check_key(key)
+        async with self.session_factory.begin() as session:
+            await save_response(session, principal, packet_id, row_id, payload, key, self.clock())
+        return await self.get(principal, packet_id)
+
     async def review(
         self,
         principal: PrincipalContext,
@@ -625,5 +654,12 @@ class PresalesService:
                 review=history[-1] if history else None,
                 review_history=history,
                 attempts=attempt_views,
+                manual_authorship=ManualAuthorship.model_validate(
+                    ManualAuthorshipRecord.model_validate(row.manual_authorship).model_dump(
+                        exclude={"idempotency_key", "fingerprint"}
+                    )
+                )
+                if row.manual_authorship is not None
+                else None,
             )
         )

@@ -16,6 +16,8 @@ const originalIndex = z.number().int().min(0).max(11);
 const prerequisiteChanges = z.object({ origins: z.array(originalIndex.nullable()).max(12), excludedIndexes: z.array(originalIndex).max(12).refine(values => new Set(values).size === values.length) }).strict();
 const reviewFields = { ...responseFields, prerequisiteChanges: prerequisiteChanges.nullable().optional() };
 const review = z.object({ ...reviewFields, revision: z.number().int().positive(), note: z.string(), actorId: id, reviewedAt: time }).strict();
+const manualAuthorship = z.object({ actorId: id, createdAt: time, note: z.string().min(1).max(1000) }).strict();
+const manualEvidencePage = z.object({ items: z.array(evidence).max(10), nextOffset: z.number().int().min(0).max(100000).nullable() }).strict();
 export const executionModeSchema = z.enum(["auto", "deep"]);
 const digest = z.string().regex(/^[0-9a-f]{64}$/);
 const routePolicy = z.object({ route: z.enum(["primary", "fallback"]), provider: z.literal("openai_compatible"), endpointSha256: digest, modelName: z.string().min(1).max(200), modelVersion: z.string().nullable(), modelRevision: z.string().nullable(), reasoningEffort: z.enum(["low", "medium", "high", "xhigh"]).nullable(), streaming: z.boolean(), timeoutSeconds: z.number().positive().max(300), maxOutputBytes: z.number().int().min(1024).max(4 * 1024 ** 2), promptVersion: z.string(), promptSha256: digest }).strict();
@@ -24,7 +26,7 @@ const attempt = z.object({ id, number: z.number().int().positive(), state: z.enu
 const requirement = z.object({ key: z.string().regex(/^[A-Za-z0-9_-]{1,40}$/), text: z.string().min(1).max(2000), sourceLocation: z.string().max(300) }).strict();
 const sourceInput = z.object({ versionId: id, applicability: z.string().min(1).max(500) }).strict();
 const source = sourceInput.extend({ documentId: id, generationId: id, filename: z.string(), versionNumber: z.number().int().positive(), latestVersionNumber: z.number().int().positive(), contentSha256: z.string().regex(/^[0-9a-f]{64}$/) });
-const row = z.object({ id, requirement, revision: z.number().int().nonnegative(), state: z.enum(["pending", "queued", "running", "recovering", "drafted", "failed"]), draft: draft.nullable(), review: review.nullable(), reviewHistory: z.array(review), attempts: z.array(attempt).max(3) }).strict().refine(value => [value.review, ...value.reviewHistory].every(entry => validPrerequisiteIndexes(entry?.prerequisites ?? null, value.draft?.citations.length ?? 0) && validReviewChanges(entry?.prerequisiteChanges, entry?.prerequisites ?? null, value.draft?.prerequisites?.length ?? 0)));
+const row = z.object({ id, requirement, revision: z.number().int().nonnegative(), state: z.enum(["pending", "queued", "running", "recovering", "drafted", "failed"]), draft: draft.nullable(), manualAuthorship: manualAuthorship.nullable().optional(), review: review.nullable(), reviewHistory: z.array(review), attempts: z.array(attempt).max(3) }).strict().refine(value => (!value.manualAuthorship || (value.draft !== null && !value.attempts.some(a => a.state === "succeeded"))) && [value.review, ...value.reviewHistory].every(entry => validPrerequisiteIndexes(entry?.prerequisites ?? null, value.draft?.citations.length ?? 0) && validReviewChanges(entry?.prerequisiteChanges, entry?.prerequisites ?? null, value.draft?.prerequisites?.length ?? 0)));
 export const packetSummarySchema = z.object({ id, title: z.string(), createdAt: time, rowCount: z.number().int().nonnegative(), staleSources: z.boolean() }).strict();
 export const packetSchema = packetSummarySchema.extend({ sources: z.array(source).min(1).max(6), rows: z.array(row).min(1).max(120), generationMode: z.enum(["synchronous", "background"]).default("synchronous"), availableExecutionModes: z.array(executionModeSchema).max(2).refine(values => new Set(values).size === values.length).optional(), workbook: workbookMetadataSchema.nullable().optional() });
 export const createPacketSchema = z.object({ title: z.string().trim().min(1).max(160), sources: z.array(sourceInput).min(1).max(6), requirements: z.array(requirement).min(1).max(12) }).strict();
@@ -40,6 +42,15 @@ export type PresalesRow = z.infer<typeof row>;
 export type CreatePacket = z.infer<typeof createPacketSchema>;
 export type WorkbookImportInput = ConfirmedWorkbook & Pick<CreatePacket, "title" | "sources">;
 export type ReviewInput = z.input<typeof reviewInputSchema>;
+export const manualResponseSchema = z.object({ ...responseFields, expectedRevision: z.number().int().nonnegative(), note: z.string().trim().min(1).max(1000), citations: z.array(evidence.pick({ chunkId: true, documentVersionId: true, excerpt: true })).max(12) }).strict().refine(({ citations, ...value }) =>
+  reviewInputSchema.safeParse({ ...value, expectedRevision: 1 }).success
+  && validPrerequisiteIndexes(value.prerequisites, citations.length)
+  && (value.status === "insufficient_evidence" || citations.length > 0)
+  && (value.status !== "conflicting_evidence" || new Set(citations.map(c => c.documentVersionId)).size >= 2)
+  && new Set(citations.map(c => JSON.stringify(c))).size === citations.length
+);
+export type ManualResponseInput = z.infer<typeof manualResponseSchema>;
+export type ManualEvidencePage = z.infer<typeof manualEvidencePage>;
 export type ResponseStatus = z.infer<typeof responseStatus>;
 export type PrerequisiteAssessment = z.infer<typeof prerequisite>;
 export type Evidence = z.infer<typeof evidence>;
@@ -115,6 +126,8 @@ export function presalesApi(token: ApiCredential) {
     admit: (packetId: string, rowId: string, key: string, signal: AbortSignal, executionMode?: ExecutionMode) => request(packetPath(packetId) + "/rows/" + id.parse(rowId) + "/generate?response=receipt", receiptFor(packetId, [rowId]), signal, "POST", executionMode ? { executionMode: executionModeSchema.parse(executionMode) } : undefined, key),
     admitBatch: (packetId: string, rowIds: string[], key: string, signal: AbortSignal, executionMode?: ExecutionMode) => request(packetPath(packetId) + "/generate?response=receipt", receiptFor(packetId, rowIds), signal, "POST", { rowIds: z.array(id).min(1).max(12).refine(values => new Set(values).size === values.length).parse(rowIds), ...(executionMode ? { executionMode: executionModeSchema.parse(executionMode) } : {}) }, key),
     review: (packetId: string, rowId: string, payload: ReviewInput, key: string, signal: AbortSignal) => request(packetPath(packetId) + "/rows/" + id.parse(rowId) + "/review", packetSchema, signal, "PUT", reviewInputSchema.parse(payload), key),
+    manualResponse: (packetId: string, rowId: string, payload: ManualResponseInput, key: string, signal: AbortSignal) => request(packetPath(packetId) + "/rows/" + id.parse(rowId) + "/manual-response", packetSchema, signal, "PUT", manualResponseSchema.parse(payload), key),
+    manualEvidence: (packetId: string, versionId: string, query: string, offset: number, signal: AbortSignal) => request(packetPath(packetId) + "/manual-evidence?" + new URLSearchParams({ versionId: id.parse(versionId), query, offset: String(offset) }).toString(), manualEvidencePage, signal),
     export: async (packetId: string, mode: "draft" | "reviewed", signal: AbortSignal) => {
       const response = await authenticatedFetch(base() + packetPath(packetId) + "/export?mode=" + mode, token, { headers: { Accept: "text/csv" }, signal, cache: "no-store" });
       await check(response);

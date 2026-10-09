@@ -51,3 +51,61 @@ for (const width of [1440, 390]) {
     expect(await page.evaluate(() => JSON.stringify({ ...sessionStorage, ...localStorage }))).not.toContain("contentBase64");
   });
 }
+
+for (const width of [1440, 390]) {
+  test(`Human completion without generation and reviewed delivery at ${width}px`, async ({ page, request }, info) => {
+    const context = await (await request.get(api + "/__workbook_test__/context", { headers })).json() as { token: string };
+    const before = await (await request.get(api + "/__workbook_test__/stats", { headers })).json() as { modelCalls: number };
+    await page.addInitScript(token => { sessionStorage.setItem("enterprise-doc.upload-token.v1", token); localStorage.setItem("enterprise-doc-agent.locale", "zh"); }, context.token);
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/#/presales");
+    await page.getByLabel("响应表名称").fill(`人工问卷 ${width}`);
+    await page.locator(".presales-source-option").first().getByRole("checkbox").check();
+    await page.getByLabel("资料适用范围", { exact: true }).fill("人工核验测试");
+    await page.getByRole("checkbox", { name: "我已确认所选版本适用于本次客户要求" }).check();
+    await page.getByLabel("客户要求录入方式").selectOption("excel");
+    const fixture = await request.get(api + "/__workbook_test__/fixture", { headers });
+    await page.getByLabel("客户 Excel 文件").setInputFiles({ name: "人工问卷.xlsx", mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", buffer: await fixture.body() });
+    await expect(page.getByLabel("工作表", { exact: true })).toHaveValue("技术要求");
+    await page.getByRole("button", { name: "预览所选单元格" }).click();
+    await page.getByRole("checkbox", { name: /我已核对以下问题/ }).check();
+    await page.getByRole("button", { name: "保存响应表", exact: true }).click();
+    let writes = 0;
+    await page.route("**/manual-response", async route => {
+      writes++;
+      const response = await route.fetch();
+      expect(response.status()).toBe(200);
+      if (width === 1440 && writes === 1) await route.abort("failed");
+      else await route.fulfill({ response });
+    });
+    for (const key of ["X2", "X3"]) {
+      const row = page.getByRole("article", { name: key, exact: true });
+      await row.getByRole("button", { name: "人工填写", exact: true }).click();
+      await row.getByRole("button", { name: "查询原文", exact: true }).click();
+      await row.getByRole("button", { name: "选择证据 1", exact: true }).click();
+      await row.getByRole("button", { name: "确认所选证据并填写" }).click();
+      await row.getByLabel("判断", { exact: true }).selectOption("supported");
+      await row.getByLabel("响应文案", { exact: true }).fill(`人工填写 ${key}`);
+      await row.getByLabel("填写依据", { exact: true }).fill("人工核对原文及适用范围");
+      await row.getByRole("button", { name: "保存人工草稿" }).click();
+      await expect(row.getByText(/初稿由人工填写/)).toBeVisible();
+      await expect(page.getByRole("button", { name: "回填已复核 Excel" })).toBeDisabled();
+      await row.getByRole("button", { name: `${key} 查看证据与复核` }).click();
+      await row.getByLabel("复核备注", { exact: true }).fill("独立复核测试，不代表客户验收");
+      await row.getByRole("button", { name: "保存复核", exact: true }).click();
+      await expect(row.locator(".presales-reviewed")).toHaveText("已复核");
+    }
+    expect(writes).toBe(2);
+    await page.reload();
+    await expect(page.getByText(/初稿由人工填写/)).toHaveCount(2);
+    const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "回填已复核 Excel" }).click()]);
+    const file = info.outputPath(`manual-reviewed-${width}.xlsx`);
+    await download.saveAs(file);
+    execFileSync(python, ["-B", "-X", "utf8", "-c", "import sys; from openpyxl import load_workbook; w=load_workbook(sys.argv[1]); assert '人工填写 X2' in w['技术要求']['C2'].value; assert '人工填写 X3' in w['技术要求']['C3'].value; assert w['技术要求']['D2'].value == '=A2'; assert w['采购说明']['A1'].value == '请保留本页。'", file]);
+    const after = await (await request.get(api + "/__workbook_test__/stats", { headers })).json() as { modelCalls: number };
+    expect(after.modelCalls).toBe(before.modelCalls);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
+    expect(await page.evaluate(() => JSON.stringify({ ...sessionStorage, ...localStorage }))).not.toContain("人工填写 X2");
+    await page.screenshot({ path: info.outputPath(`manual-reviewed-${width}.png`), fullPage: true });
+  });
+}

@@ -21,7 +21,7 @@
   "children": [],
   "parent": "09-24-commercial-production-readiness",
   "relatedFiles": [],
-  "notes": "Excel workflow and authorized release/replay completed on 2026-10-09. rc46/0035 deployed and actual rc45 rollback/reapply verified before workbook import. Public six-row replay: four drafts, two failures, nine calls; four assisted reviews and partial draft export preserve failures. Answer quality and parent commercial acceptance remain open. See validation.md. Focused candidate subsequently deployed as rc47; compatible rc46 rollback/reapply and live Chinese clause recall verified. Real model quality and manual completion remain open.",
+  "notes": "Excel workflow and authorized release/replay completed on 2026-10-09. rc46/0035 deployed and actual rc45 rollback/reapply verified before workbook import. Public six-row replay: four drafts, two failures, nine calls; four assisted reviews and partial draft export preserve failures. Answer quality and parent commercial acceptance remain open. See validation.md. Focused candidate subsequently deployed as rc47; compatible rc46 rollback/reapply and live Chinese clause recall verified. Human completion is now locally verified; coordinated release and real model quality remain open.",
   "meta": {
     "implementation_status": "deployed_and_file_workflow_verified",
     "deployed": true,
@@ -44,6 +44,10 @@
     "focused_diagnostic_confirmed_calls": null,
     "focused_report": "docs/ops/public-replay-remediation-20261009.md",
     "focused_release_report": "docs/ops/rc47-release-validation.json",
-    "next_product_gap": "human_takeover_for_rows_without_model_draft"
+    "manual_completion_status": "locally_verified_release_pending",
+    "manual_completion_deployed": false,
+    "manual_completion_schema": "20261009_0036",
+    "manual_completion_report": "docs/ops/presales-manual-completion-20261010.md",
+    "next_product_gap": "guarded_manual_authorship_release_and_live_quality"
   }
 }

@@ -95,6 +95,13 @@ def export_csv(packet: PacketView, mode: Literal["draft", "reviewed"]) -> bytes:
             "前提状态与对应证据",
             "原模型前提状态与对应证据",
             "人工前提修订记录",
+            "初稿来源",
+            "初稿填写人",
+            "初稿填写时间",
+            "初稿填写备注",
+            "原人工判断",
+            "原人工文案",
+            "原人工前提状态与对应证据",
         ]
     )
     source_versions = "\n".join(
@@ -120,13 +127,24 @@ def export_csv(packet: PacketView, mode: Literal["draft", "reviewed"]) -> bytes:
             str(row.review.actor_id) if row.review else "",
             row.review.reviewed_at.isoformat() if row.review else "",
             row.review.note if row.review else "",
-            STATUS_LABELS[row.draft.status] if row.draft else "",
-            row.draft.answer if row.draft else "",
+            STATUS_LABELS[row.draft.status] if row.draft and not row.manual_authorship else "",
+            row.draft.answer if row.draft and not row.manual_authorship else "",
             prerequisite_text(effective.prerequisites, row.draft.citations)
             if effective and row.draft
             else "",
-            prerequisite_text(row.draft.prerequisites, row.draft.citations) if row.draft else "",
+            prerequisite_text(row.draft.prerequisites, row.draft.citations)
+            if row.draft and not row.manual_authorship
+            else "",
             changes_text(row.review, row.draft.prerequisites if row.draft else None),
+            "人工填写" if row.manual_authorship else "模型生成" if row.draft else "",
+            str(row.manual_authorship.actor_id) if row.manual_authorship else "",
+            row.manual_authorship.created_at.isoformat() if row.manual_authorship else "",
+            row.manual_authorship.note if row.manual_authorship else "",
+            STATUS_LABELS[row.draft.status] if row.draft and row.manual_authorship else "",
+            row.draft.answer if row.draft and row.manual_authorship else "",
+            prerequisite_text(row.draft.prerequisites, row.draft.citations)
+            if row.draft and row.manual_authorship
+            else "",
         ]
         writer.writerow([safe_cell(value) for value in values])
     return stream.getvalue().encode("utf-8-sig")

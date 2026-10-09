@@ -46,4 +46,12 @@ Candidate verification: 2,920 non-integration tests / 23 subtests, 3 new real Po
 - [x] Deployed keyword query retrieves the previously missed two clauses first, with zero new provider calls.
 - [x] Owned temporary resources cleaned; signed evidence and original failures retained.
 - [ ] Real-model completion and semantic quality verified.
-- [ ] Human response entry, evidence, review and export for rows without a model draft.
+- [x] Human response entry, evidence, review and export for rows without a model draft (local candidate; staging rollout remains separate).
+
+## Human completion slices
+
+- [x] Real PostgreSQL service/API: pending manual response, literal evidence, immutable authorship, replay, separate review, original XLSX/CSV; fail before implementation.
+- [x] Active/terminal generation, stale revision, competing saves, invalid/foreign/stale evidence and revoked membership; no new calls/reservations; migration history refusal.
+- [x] Typed browser evidence selection/manual form, explicit provenance, review/reload/download at desktop/mobile; controlled external boundaries only.
+- [x] Full affected-package checks, recovery hashes and current limitations. Scoped publication recorded in central manifest.
+- [ ] Guarded0036 expansion/reader-compatible release. Staging remains rc47/0035 until that verified window.

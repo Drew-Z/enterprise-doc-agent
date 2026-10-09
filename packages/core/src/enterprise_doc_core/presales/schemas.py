@@ -174,6 +174,34 @@ class SavedDraft(ResponseText):
         return self
 
 
+class ManualResponseInput(ModelDraft):
+    expected_revision: int = Field(ge=0, strict=True)
+    note: str = Field(min_length=1, max_length=1000)
+
+    @model_validator(mode="after")
+    def unique_evidence(self) -> Self:
+        keys = [(c.chunk_id, c.document_version_id, c.excerpt) for c in self.citations]
+        if len(set(keys)) != len(keys):
+            raise ValueError("manual evidence must not contain duplicates")
+        return self
+
+
+class ManualAuthorship(PresalesModel):
+    actor_id: UUID
+    created_at: datetime
+    note: str = Field(min_length=1, max_length=1000)
+
+
+class ManualAuthorshipRecord(ManualAuthorship):
+    idempotency_key: str
+    fingerprint: str
+
+
+class ManualEvidencePage(PresalesModel):
+    items: list[Evidence] = Field(max_length=10)
+    next_offset: int | None
+
+
 OriginalIndex = Annotated[int, Field(ge=0, lt=12, strict=True)]
 
 
@@ -245,9 +273,14 @@ class RowView(PresalesModel):
     review: SavedReview | None
     review_history: list[SavedReview]
     attempts: list[AttemptView]
+    manual_authorship: ManualAuthorship | None = None
 
     @model_validator(mode="after")
     def review_bindings(self) -> Self:
+        if self.manual_authorship is not None and (
+            self.draft is None or any(a.state == "succeeded" for a in self.attempts)
+        ):
+            raise ValueError("manual authorship requires an independent human draft")
         for review in [self.review, *self.review_history]:
             if review is None:
                 continue

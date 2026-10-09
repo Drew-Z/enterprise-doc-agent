@@ -6,10 +6,11 @@ import { formatApiError } from "../api/errorDisplay";
 import type { ApiCredential } from "../auth/transport";
 import { useLocale } from "../i18n";
 import { fetchDocumentInventory } from "../product/documentsApi";
-import { executionModeSchema, generationActive, PresalesApiError, presalesApi, type CreatePacket, type ExecutionMode, type Packet, type PresalesRow, type ReviewInput, type WorkbookImportInput } from "./api";
+import { executionModeSchema, generationActive, PresalesApiError, presalesApi, type CreatePacket, type ExecutionMode, type ManualResponseInput, type Packet, type PresalesRow, type ReviewInput, type WorkbookImportInput } from "./api";
 import { presalesCopy } from "./copy";
 import { PacketForm } from "./PacketForm";
 import { ResponseRow } from "./ResponseRow";
+import { ManualResponseEditor } from "./ManualResponseEditor";
 import { workbookCopy } from "./workbook";
 import "./presales.css";
 
@@ -61,6 +62,15 @@ export function PresalesWorkspace({ token, contextKey, storageKey, openDocuments
   const select = (id: string | null) => { if (id !== activeId) setPage(0); setActiveId(id); setEntryVersionId(undefined); if (!id) setFormRevision(current => current + 1); setBlockedId(null); setError(""); setNotice(""); setReadRecovery(current => current?.id === id ? current : null); try { if (id) sessionStorage.setItem(storageKey, id); else sessionStorage.removeItem(storageKey); } catch { /* Recovery is optional; bodies stay in memory. */ } };
   const keyFor = (operation: string, payload: unknown) => { const body = JSON.stringify(payload); const previous = keys.current.get(operation); if (previous?.body === body) return previous.key; const key = crypto.randomUUID(); keys.current.set(operation, { body, key }); return key; };
   const saveResult = (value: Packet, signal: AbortSignal) => { if (!alive.current || signal.aborted) return; queryClient.setQueryData(["presales", contextKey, value.id], value); select(value.id); };
+  const hideRevokedPacket = async (failure: unknown, id: string | null, signal: AbortSignal) => {
+    if (!alive.current || signal.aborted) return;
+    if (failure instanceof PresalesApiError && ["presales_forbidden", "presales_not_found", "presales_source_unavailable", "presales_stale_sources"].includes(failure.code)) {
+      setBlockedId(id);
+      await queryClient.cancelQueries({ queryKey: ["presales", contextKey, id], exact: true });
+      queryClient.removeQueries({ queryKey: ["presales", contextKey, id], exact: true });
+      if (alive.current && !signal.aborted) void recent.refetch();
+    }
+  };
   const run = async (label: string, operation: (signal: AbortSignal) => Promise<string | void>) => {
     if (controller.current !== null) return;
     const current = new AbortController(); controller.current = current; setBusy(label); setError(""); setNotice(""); setReadRecovery(null);
@@ -70,12 +80,7 @@ export function PresalesWorkspace({ token, contextKey, storageKey, openDocuments
     } catch (failure) {
       if (alive.current && !current.signal.aborted) {
         setError(formatApiError(failure, c.error, c.requestId));
-        if (failure instanceof PresalesApiError && ["presales_forbidden", "presales_not_found", "presales_source_unavailable", "presales_stale_sources"].includes(failure.code)) {
-          setBlockedId(activeId);
-          await queryClient.cancelQueries({ queryKey: ["presales", contextKey, activeId], exact: true });
-          queryClient.removeQueries({ queryKey: ["presales", contextKey, activeId], exact: true });
-          if (alive.current && !current.signal.aborted) void recent.refetch();
-        }
+        await hideRevokedPacket(failure, activeId, current.signal);
       }
     }
     finally { if (controller.current === current) controller.current = null; if (alive.current) setBusy(""); }
@@ -160,6 +165,23 @@ export function PresalesWorkspace({ token, contextKey, storageKey, openDocuments
     }
   });
   const review = (value: Packet, row: PresalesRow, payload: ReviewInput) => void run("review:" + row.id, async signal => { const next = await api.review(value.id, row.id, payload, keyFor("review:" + row.id, payload), signal); saveResult(next, signal); });
+  const manualResponse = (value: Packet, row: PresalesRow, payload: ManualResponseInput) => void run("manual:" + row.id, async signal => {
+    let next: Packet;
+    try { next = await api.manualResponse(value.id, row.id, payload, keyFor("manual:" + row.id, payload), signal); }
+    catch (failure) {
+      if (signal.aborted || !alive.current || (failure instanceof PresalesApiError && failure.status < 500)) throw failure;
+      const recovered = await recoverGeneration(value.id, signal);
+      if (!recovered) return c.readFailed;
+      next = recovered;
+      if (!next.rows.find(item => item.id === row.id)?.draft) throw failure;
+    }
+    await queryClient.cancelQueries({ queryKey: ["presales", contextKey, value.id], exact: true });
+    saveResult(next, signal);
+  });
+  const manualEvidence = async (id: string, version: string, query: string, offset: number, signal: AbortSignal) => {
+    try { return await api.manualEvidence(id, version, query, offset, signal); }
+    catch (failure) { await hideRevokedPacket(failure, id, signal); throw failure; }
+  };
   const download = (id: string, mode: "draft" | "reviewed", excel = false) => void run("export", async signal => {
     const blob = await (excel ? api.exportWorkbook(id, mode, signal) : api.export(id, mode, signal));
     if (!alive.current || signal.aborted) return;
@@ -194,7 +216,7 @@ export function PresalesWorkspace({ token, contextKey, storageKey, openDocuments
           <div className="presales-toolbar"><button type="button" className="presales-primary" disabled={Boolean(busy) || !visible.rows.some(r => r.state === "pending")} onClick={() => generate(visible, visible.rows.filter(r => r.state === "pending").slice(0, 12))}>{busy === "all" ? c.generating : visible.rows.length > 12 ? w.batch : c.generateAll}</button>{visible.rows.some(r => r.state === "failed" && r.attempts.length < 3) && <button type="button" disabled={Boolean(busy)} onClick={() => generate(visible, visible.rows.filter(r => r.state === "failed" && r.attempts.length < 3).slice(0, 12))}>{c.retryFailed}</button>}<button type="button" disabled={Boolean(busy)} onClick={() => download(visible.id, "draft")}><Download aria-hidden="true" />{c.exportDraft}</button><button type="button" disabled={Boolean(busy) || !visible.rows.every(r => r.review)} onClick={() => download(visible.id, "reviewed")}><Download aria-hidden="true" />{c.exportReviewed}</button></div>
           {visible.workbook && <><p className="presales-hint">{w.saved}: {visible.workbook.filename} · {visible.workbook.mapping.sheet} · {visible.workbook.mapping.questionColumn} → {visible.workbook.mapping.answerColumn}</p><div className="presales-toolbar"><button type="button" disabled={Boolean(busy)} onClick={() => download(visible.id, "draft", true)}><Download aria-hidden="true" />{w.draft}</button><button type="button" disabled={Boolean(busy) || !visible.rows.every(row => row.review)} onClick={() => download(visible.id, "reviewed", true)}><Download aria-hidden="true" />{w.reviewed}</button></div></>}
           {visible.rows.length > 12 && <><p className="presales-hint">{w.batchHelp}</p><nav className="presales-toolbar" aria-label={w.page.replace("{page}", String(page + 1)).replace("{total}", String(Math.ceil(visible.rows.length / 12)))}><button type="button" disabled={Boolean(busy) || page === 0} onClick={() => setPage(value => value - 1)}>{w.previous}</button><span>{w.page.replace("{page}", String(page + 1)).replace("{total}", String(Math.ceil(visible.rows.length / 12)))}</span><button type="button" disabled={Boolean(busy) || (page + 1) * 12 >= visible.rows.length} onClick={() => setPage(value => value + 1)}>{w.next}</button></nav></>}
-          <p className="presales-hint">{c.draftOnly}</p><div className="presales-rows">{visible.rows.slice(page * 12, (page + 1) * 12).map(row => <ResponseRow key={row.id} row={row} busy={Boolean(busy)} generating={busy === row.id || (busy === "all" && row.state === "pending")} onGenerate={() => generate(visible, [row])} onReview={payload => review(visible, row, payload)} />)}</div>
+          <p className="presales-hint">{c.draftOnly}</p><div className="presales-rows">{visible.rows.slice(page * 12, (page + 1) * 12).map(row => <ResponseRow key={row.id} row={row} busy={Boolean(busy)} generating={busy === row.id || (busy === "all" && row.state === "pending")} onGenerate={() => generate(visible, [row])} onReview={payload => review(visible, row, payload)} manualEditor={<ManualResponseEditor key={row.id + ":" + row.revision} row={row} sources={visible.sources} busy={Boolean(busy)} readEvidence={(version, query, offset, signal) => manualEvidence(visible.id, version, query, offset, signal)} onSave={payload => manualResponse(visible, row, payload)} />} />)}</div>
         </>}
       </div>
     </div>}
