@@ -163,7 +163,14 @@ async def complete_run(tmp_path):
                     ]
                     if state == "unmet"
                     else [],
-                    "citations": references,
+                    "definition": [
+                        {"citationId": e["citationId"], "text": e["text"]} for e in wire["evidence"]
+                    ],
+                    "unconfirmed": [
+                        {"citationId": e["citationId"], "text": "归档恢复验收状态未登记"}
+                        for e in wire["evidence"]
+                        if state == "unknown" and "归档恢复验收状态未登记" in e["text"]
+                    ],
                 }
                 for state, proposition in (
                     ("unknown", "归档恢复验收已通过。"),

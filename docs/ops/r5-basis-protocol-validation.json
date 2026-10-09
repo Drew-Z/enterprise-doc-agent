@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "status": "local_validation_passed_not_deployed",
+  "completed_at": "2026-10-09T02:31:10.949566+00:00",
+  "recovery_commit": "faa5dabf15339c93d69b9ed3e55e817173954ca2",
+  "deployed_application_commit": "acbbda9c51d29f3595a8467bfea2f0574dc3079a",
+  "prompt_version": "presales.v14",
+  "evaluation_schema": "presales-gateway-run-v6",
+  "scope": "Separate prerequisite definition and knowledge-gap evidence; preserve public drafts, review history, CSV and historical evaluation decoders",
+  "source_sha256": {
+    "packages/core/src/enterprise_doc_core/presales/basis_selection.py": "513164893ea802a336435285b1d43ad155586a0d3ee4edde9a7663beda70a95d",
+    "packages/core/src/enterprise_doc_core/presales/gateway.py": "d179ea78a8d6317d866572c0ef2da57c89f5bf29b6492e8f67e0d524ee2976a9",
+    "packages/core/tests/test_presales_basis_selection.py": "f7a809b732387d06d382b8f094ccb8908a72218490f2655ed8bb9f65c184e3eb",
+    "packages/core/tests/test_presales_evidence_selection.py": "449fb89d630ddce1c139a7ee886b5a2820b874e6c340661c2bbc3de39d5de096",
+    "packages/core/tests/test_presales_citation_selection.py": "bed621066d71d136bcad25ad3015689892881ec42cc7514b8b4c4ebe20327b6a",
+    "scripts/evaluate_presales_gateway.py": "bd723f4c2a09f9ccd84fc3d98b9052332a58c1cf7d712736a9376e260e0ce8ad",
+    "scripts/score_presales_gateway.py": "3a9d043eeb2563ddf7e42358233a2ab8d9261f89f1b00d8c451e0e4e42301dbd",
+    "scripts/score_presales_prerequisites.py": "203c764ff73651e8c0aeb20636bd0b5deebfc9247b718c809b6fabcebdd2fd4d",
+    "tests/evaluation/test_presales_gateway.py": "257d297b985dbf36867df6a38648cf516ecadae0a0e873906bd58acf23252dd8",
+    "tests/evaluation/test_presales_gateway_score.py": "952a785ec8c6bbb6cf9d2f30e9f47d09cd657bb8919af0300757b2bd34dd5d45",
+    "tests/presales/test_presales_workflow_integration.py": "b36190475030554b29d47156cf136cadb9316688254fb009dc70ed9abe73a0ee",
+    "tests/presales/browser_server.py": "5f53380efdf9b5756033b5955eda2ff9f3c0aa65d3c62e3175480a9d2ccb127c",
+    "tests/evaluation/test_presales_prerequisites.py": "69717249664010f944f6be6319bff3a219189d94248559f1ee3c86503ba23978"
+  },
+  "checks": {
+    "public_http_red": {
+      "failed": 5,
+      "passed": 13
+    },
+    "public_http_green": {
+      "passed": 18
+    },
+    "direct_regression": {
+      "passed": 343,
+      "subtests": 23
+    },
+    "nonintegration": {
+      "passed": 2882,
+      "deselected": 746,
+      "subtests": 23,
+      "includes_existing_uncommitted_tests": true,
+      "additional_existing_uncommitted_tests": 144
+    },
+    "postgresql_integration": {
+      "passed": 88,
+      "owned_schema_removed": true,
+      "public_migrated": false
+    },
+    "browser": {
+      "passed": 7,
+      "skipped": 1,
+      "skip_reason": "background journey requires its separate configuration; not counted as passed",
+      "viewports": [
+        1440,
+        390
+      ],
+      "owned_schema_removed": true,
+      "screenshots_reviewed": true
+    },
+    "ruff_format": true,
+    "ruff_check": true,
+    "mypy": {
+      "passed": true,
+      "source_files": 267
+    },
+    "frozen_candidate_prompt_and_schema_exact_match": true,
+    "frozen_successful_output_exact_replay": true
+  },
+  "targeted_live_regression": {
+    "passed": true,
+    "route_changed": false,
+    "model": "grok-4.7",
+    "reasoning_effort": "high",
+    "model_dispatches": 1,
+    "elapsed_seconds": 169.359,
+    "reported_tokens": 15512,
+    "known_regression_not_holdout": true,
+    "independent_business_approval": false,
+    "cost_amount": null,
+    "original_rc44_quality": "11/12; failed deep R5 unchanged"
+  },
+  "implementation_validation": {
+    "external_model_calls": 0,
+    "email_sends": 0,
+    "production_changes": 0
+  },
+  "daily_budget": {
+    "limit": 200,
+    "extra_direct_calls_on_20261009": 4,
+    "fresh_application_count_required": true,
+    "reset_or_increase": false
+  },
+  "still_required": [
+    "Exact committed candidate CI and signed artifacts",
+    "Supervised deployment and release rollback",
+    "Fixed-candidate twelve-item quality and original 160-item capacity",
+    "Actual business revisions and independent approvals, on-call action, customer UAT",
+    "Normal reviewed merge"
+  ],
+  "historical_results_rewritten": false,
+  "fallback_selection_stopped": true,
+  "embedding_actual_cost_is_gate": false,
+  "backups_deferral_unchanged": true
+}

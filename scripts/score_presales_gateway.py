@@ -10,6 +10,7 @@ import statistics
 from pathlib import Path
 from typing import Any
 
+from enterprise_doc_core.presales.basis_selection import resolve_basis
 from enterprise_doc_core.presales.citation_selection import (
     SelectionInput,
     prepare_citations,
@@ -59,12 +60,14 @@ def score(dataset_path: Path, gold_path: Path, report: dict[str, Any]) -> dict[s
         "presales-gateway-run-v3",
         "presales-gateway-run-v4",
         "presales-gateway-run-v5",
+        "presales-gateway-run-v6",
     }:
         raise ValueError("invalid_report_scope")
     projected = report["schemaVersion"] != "presales-gateway-run-v1"
     evidence_backed = report["schemaVersion"] in {
         "presales-gateway-run-v4",
         "presales-gateway-run-v5",
+        "presales-gateway-run-v6",
     }
     structured = evidence_backed or report["schemaVersion"] == "presales-gateway-run-v3"
     requirements = {r.key: r for r in dataset.requirements}
@@ -158,6 +161,7 @@ def score(dataset_path: Path, gold_path: Path, report: dict[str, Any]) -> dict[s
                     resolver = {
                         "presales-gateway-run-v4": resolve_evidence_selection,
                         "presales-gateway-run-v5": resolve_proposition_selection,
+                        "presales-gateway-run-v6": resolve_basis,
                     }.get(report["schemaVersion"], resolve_selection)
                     resolved = resolver(original, catalog)
                     # v2 saved only the flat projection. Reproduce that contract without

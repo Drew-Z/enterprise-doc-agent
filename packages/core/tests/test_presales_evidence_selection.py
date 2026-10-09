@@ -51,7 +51,8 @@ def item(reference, uncertainty="missing", positive=None, negative=None):
         "uncertainty": uncertainty,
         "positive": [{"citationId": reference, "text": positive}] if positive else [],
         "negative": [{"citationId": reference, "text": negative}] if negative else [],
-        "citations": [{"citationId": reference}],
+        "definition": [{"citationId": reference, "text": "归档须采购、配置并验收。"}],
+        "unconfirmed": [],
     }
 
 
@@ -128,7 +129,7 @@ async def test_evidence_directions_derive_states_and_keep_public_projection():
 async def test_conflicting_literal_support_stays_unknown():
     result = await invoke(
         lambda ref: [item(ref, "conflict", "验收已通过。", "验收未通过。")],
-        source_text="记录甲称验收已通过。记录乙称验收未通过。两份记录效力相同。",
+        source_text="归档须采购、配置并验收。记录甲称验收已通过。记录乙称验收未通过。两份记录效力相同。",
     )
     assert result.draft.prerequisites[0].state == "unknown"
     assert result.draft.conditions == ["核验事项\uff1a该前提已经满足。"]
@@ -145,6 +146,9 @@ def test_literal_support_is_bound_to_its_own_fragment_and_joined_to_context(wron
         ),
     }
     selected = item("context", "none", negative="配置尚未完成。")
+    selected.pop("definition")
+    selected.pop("unconfirmed")
+    selected["citations"] = [{"citationId": "context"}]
     selected["condition"] = "需完成配置。"  # Historical v4 keeps its model-written condition.
     selected["negative"][0]["citationId"] = "context" if wrong_source else "status"
     content = json.dumps(
@@ -183,7 +187,7 @@ async def test_inconsistent_evidence_rejects_with_accounting(uncertainty, positi
     assert error.usage["total_tokens"] == 34
 
 
-@pytest.mark.parametrize("mode", ["invented", "foreign", "state", "duplicate"])
+@pytest.mark.parametrize("mode", ["invented", "foreign", "state", "legacy_citations"])
 async def test_untrusted_evidence_is_not_repaired(mode):
     def items(ref):
         value = item(ref)
@@ -196,7 +200,7 @@ async def test_untrusted_evidence_is_not_repaired(mode):
         elif mode == "state":
             value["state"] = "met"
         else:
-            value["citations"] *= 2
+            value["citations"] = [{"citationId": ref}]
         return [value]
 
     with pytest.raises(PresalesError) as caught:

@@ -72,15 +72,20 @@ async def projected_run(tmp_path):
                                 {
                                     "status": "conditional",
                                     "answer": "需确认前提。",
+                                    "missingInformation": ["请确认验收是否完成。"],
                                     "prerequisites": [
                                         {
                                             "proposition": "验收已通过。",
                                             "uncertainty": "missing",
                                             "positive": [],
                                             "negative": [],
-                                            "citations": [
-                                                {"citationId": wire["evidence"][0]["citationId"]}
+                                            "definition": [
+                                                {
+                                                    "citationId": wire["evidence"][0]["citationId"],
+                                                    "text": wire["evidence"][0]["text"],
+                                                }
                                             ],
+                                            "unconfirmed": [],
                                         }
                                     ],
                                 }
@@ -116,12 +121,37 @@ async def test_projected_run_keeps_exact_wire_binding_and_original_failure(proje
     assert result["acceptedDrafts"] == 5 and result["realProviderRequests"] == 6
 
 
+async def test_v5_reports_keep_historical_missing_question_contract(projected_run):
+    report = copy.deepcopy(projected_run)
+    report["schemaVersion"] = "presales-gateway-run-v5"
+    for observation in report["observations"]:
+        message = observation["traces"][0]["response"]["choices"][0]["message"]
+        raw = json.loads(message["content"])
+        item = raw["prerequisites"][0]
+        item["citations"] = [{"citationId": q["citationId"]} for q in item.pop("definition")]
+        item.pop("unconfirmed")
+        raw.pop("missingInformation")
+        message["content"] = json.dumps(raw)
+        observation["result"]["draft"]["missingInformation"] = []
+    root = Path("evaluation/presales_quality_holdout_v4")
+    assert (
+        score(root.with_suffix(".json"), root.with_suffix(".gold.json"), report)["acceptedDrafts"]
+        == 6
+    )
+    report["schemaVersion"] = "presales-gateway-run-v6"
+    with pytest.raises(ValueError):
+        score(root.with_suffix(".json"), root.with_suffix(".gold.json"), report)
+
+
 async def test_v4_reports_keep_the_original_condition_instead_of_new_projection(projected_run):
     report = copy.deepcopy(projected_run)
     report["schemaVersion"] = "presales-gateway-run-v4"
     for observation in report["observations"]:
         message = observation["traces"][0]["response"]["choices"][0]["message"]
         raw = json.loads(message["content"])
+        item = raw["prerequisites"][0]
+        item["citations"] = [{"citationId": q["citationId"]} for q in item.pop("definition")]
+        item.pop("unconfirmed")
         raw["prerequisites"][0]["condition"] = "旧协议要求补充验收记录。"
         message["content"] = json.dumps(raw)
         observation["result"]["draft"]["prerequisites"][0]["condition"] = "旧协议要求补充验收记录。"

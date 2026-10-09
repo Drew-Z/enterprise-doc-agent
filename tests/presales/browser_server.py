@@ -31,10 +31,10 @@ from enterprise_doc_core.documents import Document, DocumentVersion, HashEmbeddi
 from enterprise_doc_core.documents.models import DocumentGrant
 from enterprise_doc_core.documents.retrieval_service import HybridRetrievalService
 from enterprise_doc_core.identity import Membership, Tenant, User
+from enterprise_doc_core.presales.basis_selection import BasisDraft
 from enterprise_doc_core.presales.citation_selection import SelectionInput
 from enterprise_doc_core.presales.gateway import OpenAICompatiblePresalesGateway
 from enterprise_doc_core.presales.models import PresalesPacket
-from enterprise_doc_core.presales.proposition_selection import PropositionDraft
 from enterprise_doc_core.presales.service import PresalesService
 from enterprise_doc_core.presales.settings import PresalesSettings
 from tests.agent.test_agent_run_integration import SeededAgentContext, _seed_agent_context
@@ -147,7 +147,7 @@ async def main() -> None:
                 citations = citations[:1]
             if status == "insufficient_evidence":
                 citations = []
-            draft = PropositionDraft.model_validate(
+            draft = BasisDraft.model_validate(
                 {
                     "status": status,
                     "prerequisites": [
@@ -156,14 +156,18 @@ async def main() -> None:
                             "uncertainty": "missing",
                             "positive": [],
                             "negative": [],
-                            "citations": citations,
+                            "definition": [
+                                {"citationId": e.citation_id, "text": e.text}
+                                for e in payload.evidence[:1]
+                            ],
+                            "unconfirmed": [],
                         }
                     ]
                     if status == "conditional"
                     else [],
                     "answer": "受控浏览器验收输出。请核对合成资料中的保留期限。",
                     "missingInformation": ["请补充当前有效的证明材料。"]
-                    if status in {"insufficient_evidence", "conflicting_evidence"}
+                    if status in {"conditional", "insufficient_evidence", "conflicting_evidence"}
                     else [],
                     "citations": citations,
                 }

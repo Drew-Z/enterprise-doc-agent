@@ -15,6 +15,7 @@ from typing import Annotated, Any, Literal
 
 from pydantic import Field
 
+from enterprise_doc_core.presales.basis_selection import resolve_basis
 from enterprise_doc_core.presales.citation_selection import resolve_selection
 from enterprise_doc_core.presales.evidence_selection import resolve_evidence_selection
 from enterprise_doc_core.presales.proposition_selection import resolve_proposition_selection
@@ -97,6 +98,7 @@ def score_prerequisites(
         "presales-gateway-run-v3",
         "presales-gateway-run-v4",
         "presales-gateway-run-v5",
+        "presales-gateway-run-v6",
     }:
         raise ValueError("prerequisite_report_scope_unsupported")
     baseline = score(dataset_path, gold_path, report)
@@ -156,6 +158,7 @@ def score_prerequisites(
             resolver = {
                 "presales-gateway-run-v4": resolve_evidence_selection,
                 "presales-gateway-run-v5": resolve_proposition_selection,
+                "presales-gateway-run-v6": resolve_basis,
             }.get(report["schemaVersion"], resolve_selection)
             draft = resolver(trace["response"]["choices"][0]["message"]["content"], catalog)
             actual = draft.prerequisites or []

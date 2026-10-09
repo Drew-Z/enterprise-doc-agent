@@ -315,6 +315,41 @@ ignored. No added inference, keyword relabeling, or promise of semantic entailme
 Examples: `test_presales_proposition_selection.py`, the v4/v5 scoring regression,
 and the real workflow integration's state-correction/CSV case.
 
+### Separate definitions and missing records (v14 candidate)
+
+The private `BasisDraft` schema replaces each prerequisite's context IDs with
+`definition` (1–12 literal quotes) and `unconfirmed` (0–12 literal quotes), alongside
+the unchanged proposition, positive/negative support and uncertainty. Every quote
+uses a current-call citation ID and 1–600 characters from that exact fragment.
+Definitions explain why the obligation applies; unconfirmed records describe a
+gap in knowledge. They do not establish noncompletion. Distinct definition quotes
+may share a fragment; the public citation union retains each ID once in order.
+
+`unconfirmed` requires `uncertainty=missing`. Any missing or conflicting assessment
+requires nonempty Chinese `missingInformation`. Existing support-combination,
+language and total-status checks still run through the historical proposition
+resolver. Empty definitions, unsupported definition/gap quotes, foreign proof IDs,
+and legacy per-item citations fail as `presales_invalid_model_output`; top-level
+foreign citation IDs retain `presales_invalid_citation`. Rejection preserves safe
+request/response IDs and observed usage, with no repair or extra HTTP dispatch.
+
+`presales.v14` and `presales-gateway-run-v6` use `resolve_basis`. Both offline scorers
+select it explicitly for v6; v1–v5 keep their original decoders and failure records.
+Public drafts, saved JSONB, revision history and CSV schemas do not change. No DB
+migration, route change or budget increase is required. The prompt and schema match
+the successful one-call v14 candidate; this is a known regression, not full quality
+or independent business approval. Literal source binding cannot prove semantic
+entailment, and the server never relabels state using words in the evidence.
+
+Good: a training completion obligation plus an unupdated training status gives
+unknown and a confirmation question. A literal failure gives unmet. A separate
+obligation to submit a certificate can be unmet even when training is complete.
+Bad: treat a missing training record as proof training did not happen, or cite the
+order alone without an enabling rule. Public HTTP cases live in
+`test_presales_basis_selection.py`; historical scorers, actual PostgreSQL workflow
+and 1440/390px browser journeys retain draft/review/export coverage. All local model
+HTTP responses are controlled; full deployed quality and capacity remain separate.
+
 ### Literal prerequisite evidence (v11 candidate)
 
 The rc.34 deployed gateway uses the private `EvidenceDraft` provider schema. Every
