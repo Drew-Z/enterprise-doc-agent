@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-09T01:15:56.992019+00:00",
+  "scope": "invited_enterprise_release",
+  "user_instruction": "为什么还在执着于测试备用的可替代项测试渠道，可以快速推进吗",
+  "status": "in_progress",
+  "application_commit": "acbbda9c51d29f3595a8467bfea2f0574dc3079a",
+  "release_tag": "v0.1.45-rc.44",
+  "alternative_model_exploration": {
+    "status": "stopped_by_user",
+    "actual_diagnostic_calls": 2,
+    "protocol_validation_passed": 0,
+    "remaining_calls_cancelled": 4,
+    "further_calls_authorized_by_this_record": 0,
+    "production_routes_changed": false
+  },
+  "original_quality_continuation": {
+    "scope": "Only previously unsubmitted auto/deep H3-R6 rows",
+    "new_rows_completed": 2,
+    "new_model_calls": 2,
+    "r5_regenerations": 0,
+    "original_denominator": 12,
+    "drafted_rows": 12,
+    "assistant_semantics_passed": 11,
+    "assistant_semantics_failed": 1,
+    "unsubmitted": 0,
+    "auto_semantics": "6/6",
+    "deep_semantics": "5/6",
+    "quality_status": "failed",
+    "remaining_defect": "Deep H3-R5: acceptance status not recorded was interpreted as unmet; confirmation request and per-prerequisite FEATURE evidence missing.",
+    "failed_draft_preserved": true,
+    "original_interruption_record_preserved": true,
+    "independent_business_approval": false
+  },
+  "post_continuation_ledger": {
+    "successful_task_consumptions": 12,
+    "model_calls": 13,
+    "embedding_calls": 78,
+    "outstanding_reservations": 0,
+    "global_active_jobs": 0,
+    "original_period_unchanged": true,
+    "temporary_token_revoked": true,
+    "model_billing_exact_matches": 13,
+    "model_billing_unknown": 0,
+    "known_debits": {
+      "CNY": "0.228188",
+      "USD": "0.002"
+    },
+    "currency_totals_combined": false,
+    "embedding_actual_cost_required": false
+  },
+  "daily_budget_snapshot": {
+    "utc_day": "2026-10-09",
+    "daily_limit": 200,
+    "application_calls": 13,
+    "direct_diagnostic_calls_outside_application_ledger": 3,
+    "remaining": 184,
+    "fresh_preflight_required_before_next_execution": true
+  },
+  "remaining_route": [
+    "Resolve the recorded quality defect and validate its disposition with the existing model routes; retain original and reviewed scores separately.",
+    "Complete the original 160-task capacity matrix after the quality prerequisite is satisfied; retain original performance targets.",
+    "Obtain actual business and release approval, on-call actions, and customer UAT; do not substitute assistant checks.",
+    "Complete normal reviewed merge and delivery when original gates are met."
+  ],
+  "capacity_started": false,
+  "quality_gate_waived": false,
+  "new_email_sends": 0,
+  "deployment_authorized": false,
+  "private_evidence": [
+    {
+      "recovery_group_relative_path": "fallback-model-evidence/rc44-mode-comparison/post-continuation-quality-analysis.json",
+      "sha256": "0be07c77f4d141b58f66a06b350e0765d11e9722e4097e9e8de73f05f4ceb4c2"
+    },
+    {
+      "recovery_group_relative_path": "fallback-model-evidence/rc44-mode-comparison/semantic-review-part6.json",
+      "sha256": "ec14371d6c224058e4ce0531b5a1c48fe56783ea4c3f3a6ec3ea7cfb1794f34c"
+    },
+    {
+      "recovery_group_relative_path": "fallback-model-evidence/rc44-mode-comparison/readback-post-continuation.json",
+      "sha256": "8eac75e5d30e0ed308be04a0d4e89d87ddabb5b8ea177e5bff1052e13266f25b"
+    },
+    {
+      "recovery_group_relative_path": "fallback-model-evidence/model-alternative-closeout-20261009.json",
+      "sha256": "456fe33de7fc08b7775067fe3b8d78416e92c9c3eeb92d8fe81fa7b961634c08"
+    }
+  ]
+}
