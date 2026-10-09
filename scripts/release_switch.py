@@ -1,4 +1,4 @@
-"""Bounded releases, schema 0032 configuration and 0032/0034/0035 image changes.
+"""Bounded releases, schema 0032 configuration and 0032/0034/0035/0036 image changes.
 
 Private plans contain the primary and any explicitly declared fallback API keys. Keep
 them out of Git/logs, and explicitly approve any temporary remote runtime copy.
@@ -139,6 +139,7 @@ class ReleasePlan(Plan):
             "20261005_0032",
             "20261008_0034",
             "20261009_0035",
+            "20261009_0036",
         }:
             raise GuardError("release switching requires a reviewed schema")
         self.revision = value["original_revision"]
@@ -146,18 +147,33 @@ class ReleasePlan(Plan):
         self.reasoning_only = value.get("release_kind") == "reasoning_only"
         self.presales_inference = value.get("release_kind") == "presales_inference"
         self.presales_concurrency = value.get("release_kind") == "presales_concurrency"
-        if self.revision in {"20261008_0034", "20261009_0035"} and not self.image_only:
+        if (
+            self.revision in {"20261008_0034", "20261009_0035", "20261009_0036"}
+            and not self.image_only
+        ):
             raise GuardError(f"schema {self.revision} only permits explicit image switching")
         self.workbook_readers = value.get("workbook_readers")
-        if self.revision == "20261009_0035":
+        if self.revision in {"20261009_0035", "20261009_0036"}:
             if (
                 not isinstance(self.workbook_readers, dict)
                 or set(self.workbook_readers) != {"original", "candidate"}
                 or any(type(v) is not bool for v in self.workbook_readers.values())
             ):
-                raise GuardError("0035 requires explicit original and candidate workbook readers")
+                raise GuardError(
+                    "0035/0036 require explicit original and candidate workbook readers"
+                )
         elif self.workbook_readers is not None:
-            raise GuardError("workbook reader declarations require schema 0035")
+            raise GuardError("workbook reader declarations require schema 0035/0036")
+        self.manual_readers = value.get("manual_readers")
+        if self.revision == "20261009_0036":
+            if (
+                not isinstance(self.manual_readers, dict)
+                or set(self.manual_readers) != {"original", "candidate"}
+                or any(type(v) is not bool for v in self.manual_readers.values())
+            ):
+                raise GuardError("0036 requires explicit original and candidate manual readers")
+        elif "manual_readers" in value:
+            raise GuardError("manual reader declarations require schema 0036")
         if "release_kind" in value and (
             not (
                 self.image_only
@@ -165,7 +181,8 @@ class ReleasePlan(Plan):
                 or self.presales_inference
                 or self.presales_concurrency
             )
-            or self.revision not in {"20261005_0032", "20261008_0034", "20261009_0035"}
+            or self.revision
+            not in {"20261005_0032", "20261008_0034", "20261009_0035", "20261009_0036"}
         ):
             raise GuardError("explicit release kind requires a supported schema 0032 mode")
         self.original = self.data["original_prerequisites"]
@@ -207,7 +224,7 @@ class ReleasePlan(Plan):
             raise GuardError("presales inference settings require an explicit release mode")
         if "WORKER__PRESALES_CONCURRENCY" in changed and not self.presales_concurrency:
             raise GuardError("presales concurrency requires an explicit release mode")
-        if self.revision in {"20261005_0032", "20261008_0034", "20261009_0035"}:
+        if self.revision in {"20261005_0032", "20261008_0034", "20261009_0035", "20261009_0036"}:
             if self.image_only and changed:
                 raise GuardError("image-only switching must retain all configuration")
             if self.reasoning_only:
@@ -480,21 +497,25 @@ class ReleaseCluster(Cluster):
         clock: Callable[[], float] | None = None,
         idle: Callable[[float], bool] | None = None,
         workbook_empty: Callable[[float], bool] | None = None,
+        manual_empty: Callable[[float], bool] | None = None,
     ) -> None:
         super().__init__(plan, run=run, revision=revision, clock=clock)
         self.idle = idle or database_idle
         self.workbook_empty = workbook_empty or database_workbook_empty
+        self.manual_empty = manual_empty or database_manual_empty
 
-    def _check_workbook_readers(self, deadline: float, *, restoring: bool = False) -> None:
-        if self.plan.revision != "20261009_0035":
-            return
-        readers = self.plan.workbook_readers
-        assert readers is not None
-        compatible = readers["original"] if restoring else all(readers.values())
-        if not compatible and not self.workbook_empty(self._remaining(deadline)):
-            raise GuardError(
-                "workbook history requires compatible application and rollback readers"
-            )
+    def _check_history_readers(self, deadline: float, *, restoring: bool = False) -> None:
+        for label, readers, empty in (
+            ("workbook", self.plan.workbook_readers, self.workbook_empty),
+            ("manual", self.plan.manual_readers, self.manual_empty),
+        ):
+            if readers is None:
+                continue
+            compatible = readers["original"] if restoring else all(readers.values())
+            if not compatible and not empty(self._remaining(deadline)):
+                raise GuardError(
+                    f"{label} history requires compatible application and rollback readers"
+                )
 
     def _check_fence(self, item: dict[str, Any]) -> None:
         fence = item["metadata"].get("annotations", {}).get(FENCE)
@@ -711,7 +732,7 @@ class ReleaseCluster(Cluster):
         self.verify(False, deadline)
         if not self.idle(self._remaining(deadline)):
             raise GuardError("active business operations must finish before switching")
-        self._check_workbook_readers(deadline)
+        self._check_history_readers(deadline)
 
     def apply(self, deadline: float) -> None:
         try:
@@ -725,7 +746,7 @@ class ReleaseCluster(Cluster):
         # processes. A race with a final user submission must abort this switch.
         if not self.idle(self._remaining(deadline)):
             raise GuardError("business operations arrived while closing the entry")
-        self._check_workbook_readers(deadline)
+        self._check_history_readers(deadline)
         self._bundle(True, deadline)
         self._open(deadline)
         self.verify(True, deadline)
@@ -733,20 +754,24 @@ class ReleaseCluster(Cluster):
         validate_objects(self.plan.candidate, super()._prerequisites(deadline))
 
     def restore(self, deadline: float) -> None:
-        if self.plan.revision in {"20261008_0034", "20261009_0035"} and not self.idle(
-            self._remaining(deadline)
-        ):
+        if self.plan.revision in {
+            "20261008_0034",
+            "20261009_0035",
+            "20261009_0036",
+        } and not self.idle(self._remaining(deadline)):
             raise GuardError("active business operations must finish before application rollback")
-        self._check_workbook_readers(deadline, restoring=True)
+        self._check_history_readers(deadline, restoring=True)
         self._close(deadline)
         # Older Workers do not understand persisted execution policies. Never
         # hand them work admitted by a partially started candidate, including a
         # submission racing the first idle check. Keep the expanded schema.
-        if self.plan.revision in {"20261008_0034", "20261009_0035"} and not self.idle(
-            self._remaining(deadline)
-        ):
+        if self.plan.revision in {
+            "20261008_0034",
+            "20261009_0035",
+            "20261009_0036",
+        } and not self.idle(self._remaining(deadline)):
             raise GuardError("business operations arrived while closing the rollback entry")
-        self._check_workbook_readers(deadline, restoring=True)
+        self._check_history_readers(deadline, restoring=True)
         self._bundle(False, deadline)
         self._open(deadline)
         self.verify(False, deadline)
@@ -778,6 +803,13 @@ def database_workbook_empty(timeout: float) -> bool:
         WHERE workbook_metadata IS NOT NULL OR workbook_content IS NOT NULL);
     COMMIT;"""
     return _database_boolean(query, timeout, "workbook history")
+
+
+def database_manual_empty(timeout: float) -> bool:
+    query = """BEGIN READ ONLY; SET LOCAL statement_timeout='2000ms';
+    SELECT NOT EXISTS (SELECT 1 FROM public.presales_rows WHERE manual_authorship IS NOT NULL);
+    COMMIT;"""
+    return _database_boolean(query, timeout, "manual history")
 
 
 def _database_boolean(query: str, timeout: float, label: str) -> bool:

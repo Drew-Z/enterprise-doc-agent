@@ -47,6 +47,7 @@
     "manual_completion_status": "locally_verified_release_pending",
     "manual_completion_deployed": false,
     "manual_completion_schema": "20261009_0036",
+    "manual_release_tooling_status": "locally_verified_publication_pending",
     "manual_completion_report": "docs/ops/presales-manual-completion-20261010.md",
     "next_product_gap": "guarded_manual_authorship_release_and_live_quality"
   }

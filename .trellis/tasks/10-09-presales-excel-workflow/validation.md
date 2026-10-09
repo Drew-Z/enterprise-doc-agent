@@ -103,3 +103,26 @@ fixtures assert their owned schema removal. Historical2993 workspace entries ret
 See `docs/ops/presales-manual-completion-20261010.md` and recovery phase
 `manual_takeover_20261009`. This is local product completion, not live deployment,
 provider reliability/semantic acceptance or real-user value evidence.
+
+## Guarded manual release tooling — 2026-10-10
+
+Fixed0035-to-0036 expansion now validates inherited/workbook/manual schema shapes and
+recovers without replay. Image switching requires separate exact workbook/manual reader
+capabilities and refuses incompatible recovery before writes and after all apps stop.
+The schema expansion recovery also refuses newly appearing human history.
+
+Validation:2,963 non-integration cases and23 subtests passed (249.17s);286 affected release
+tests passed;12 new real PostgreSQL cases and23 earlier expansion regressions passed.
+The final extra guard rejecting reader fields on earlier expansion modes then passed
+all13 manual expansion tests. Repository Ruff check/format passed733 files; Mypy passed
+273 application sources plus the two changed deployment scripts using their Linux target.
+The first direct script-type check used Windows and flagged an existing Linux clock
+branch as unreachable; the same check also caught one new optional-reader narrowing,
+which was fixed. No application code or historical fixtures were changed in this phase.
+
+Real database coverage includes commit/rollback receipt loss, atomic DDL interruption,
+missing/defaulted/unvalidated/wrong checks and preserved reviewed human text/authorship,
+original XLSX and audit CSV through both compatible recovery and refused legacy recovery.
+Owned PostgreSQL schemas were removed by their fixture finally blocks. No provider calls
+or staging mutations were made. Signed publication and supervised live acceptance remain
+the next gate. Evidence prefix:manual-release-, central manifest phase:manual_release_20261010.

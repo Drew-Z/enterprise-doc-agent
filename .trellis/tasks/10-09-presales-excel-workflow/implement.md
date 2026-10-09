@@ -55,3 +55,14 @@ Candidate verification: 2,920 non-integration tests / 23 subtests, 3 new real Po
 - [x] Typed browser evidence selection/manual form, explicit provenance, review/reload/download at desktop/mobile; controlled external boundaries only.
 - [x] Full affected-package checks, recovery hashes and current limitations. Scoped publication recorded in central manifest.
 - [ ] Guarded0036 expansion/reader-compatible release. Staging remains rc47/0035 until that verified window.
+
+## Guarded manual release slices
+
+- [x] Red/green0036 image plan with independent workbook/manual capabilities; apply/restore races preserve history and refuse incompatible readers.
+- [x] Red/green fixed0035-to-0036 expansion, exact Alembic SQL/schema shapes, original-resource retention and recovery without DDL replay.
+- [x] Owned PostgreSQL atomic failure/lost receipt/drift and real manual history preservation.
+- [ ] Affected required checks, scoped commit and exact-source signed candidate.
+- [ ] Fresh capacity/preflight, supervised expansion/release, rc47 rollback before manual history, reapply.
+- [ ] New owned live human-only fixture and evidence/review/export check, zero new model calls; independent final identity and cleanup.
+
+Continuation recovery: existing central group, phase manual_release_20261010, Git baseline c21144d2b1283ded2508bd81c5c29a53675f3309. All2,993 unrelated status entries retain baseline hash af4f34fc3084af8f1a015cd78a40f6f141b040b84e16ec3ded0db4b544524f25.

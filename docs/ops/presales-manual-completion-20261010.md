@@ -45,10 +45,13 @@ Migration0036 adds a nullable authorship side column; it leaves historical stric
 SavedDraft JSON unchanged. Schema downgrade refuses any manual history. Old rc47/rc46
 applications can parse draft bytes but would misattribute human text, so neither is a
 valid rollback target after human records exist. API/Worker/Web must move together.
-Before deployment, extend the guarded0035→0036 expansion and reader-capability checks,
-verify rollback restrictions, publish exact signed artifacts and execute a fresh guarded
-window. No staging schema, application, source packet or model-call budget changed in
-this implementation phase; staging remains rc47/0035.
+The release continuation implements guarded0035→0036 expansion and independent
+workbook/manual reader checks. Both release race boundaries reject incompatible readers;
+schema recovery also refuses reopening the original applications if manual history appears.
+Twelve new real PostgreSQL cases and23 earlier expansion regressions passed, including
+atomic rollback, lost receipts, exact shape checks and human-record/workbook preservation.
+Signed candidate publication and a fresh supervised staging window remain pending at this
+code checkpoint; staging remains rc47/0035. No source packet or model-call budget changed.
 
 This is human delivery capability, not proof of improved model reliability or semantic
 accuracy. The frozen public six-row replay remains4 drafts/2 failures/9 calls with its

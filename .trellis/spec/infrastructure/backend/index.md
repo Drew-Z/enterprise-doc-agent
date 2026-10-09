@@ -33,6 +33,31 @@ The [image cache runtime contract](../../backend/image-cache-runtime.md) covers
 containerd/CRI import aliases, exact digest checks and bounded in-window repairs.
 Successful image listings do not alone establish container startup readiness.
 
+## Schema 0036 human-authorship publication and rollback
+
+1. Scope: fixed0035-to-0036 expansion retains original applications; a separate
+   coordinated image-only window introduces manual-author readers. No history deletion.
+2. Signatures: ExpansionPlan schema4 binds the exact manual migration/source digests
+   and unchanged boolean workbook_readers. PsqlSession(manual=True) checks all inherited
+   shapes and the nullable/default-free manual_authorship JSONB with its exact validated
+   draft/revision check. Manual and workbook migration selectors are mutually exclusive.
+3. Contract: same private session/advisory lock, verified limits and atomic transaction.
+   Lost receipts reconcile complete0035/0036 without DDL replay. Expansion recovery
+   refuses any manual history before writes and before reopening original applications.
+4. Image validation: schema0036 requires images_only and exact boolean original/candidate
+   capabilities for both workbook_readers and manual_readers. Before writes and after
+   all applications stop, each incompatible capability requires its history to be empty.
+   Apply checks both sides; restore checks original. Preserve all workload/credential
+   and configuration restrictions, including idle checks at both rollback boundaries.
+5. Cases: good = initial rc47 rollback before any human record, or compatible-reader
+   recovery with records. Bad = rc47/rc46 after human history: unchanged draft JSON parses
+   but loses correct attribution. Never erase authorship to make rollback possible.
+6. Tests: actual Alembic SQL equality, plan/resource/capability drift, both close races,
+   owned PostgreSQL atomic failure/lost receipts/exact constraint drift, and actual
+   reviewed human response plus XLSX/CSV retention through compatible/refused recovery.
+7. Local checks do not prove deployed startup. Verify exact signed images and exercise
+   rollback before live manual fixtures. Keep frozen public samples and failed results.
+
 ## Schema 0035 workbook publication and rollback
 
 1. Scope: extend the fixed expansion executor with exactly 0034-to-0035; image
