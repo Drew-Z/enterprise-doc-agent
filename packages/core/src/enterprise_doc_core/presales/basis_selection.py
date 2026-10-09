@@ -7,6 +7,7 @@ from typing import Literal, Self
 from pydantic import Field, model_validator
 
 from enterprise_doc_core.presales.citation_selection import CitationReference
+from enterprise_doc_core.presales.errors import OutputContractError, OutputDiagnostic
 from enterprise_doc_core.presales.evidence_selection import EvidenceQuote
 from enterprise_doc_core.presales.proposition_selection import (
     PropositionDraft,
@@ -61,7 +62,7 @@ def resolve_basis(content: str, catalog: dict[str, CitationInput]) -> ModelDraft
         for quote in [*item.definition, *item.unconfirmed]:
             source = catalog.get(quote.citation_id)
             if source is None or quote.text not in source.excerpt:
-                raise ValueError("unsupported literal prerequisite basis")
+                raise OutputContractError(OutputDiagnostic.BASIS_QUOTE)
             if quote.citation_id not in references:
                 references.append(quote.citation_id)
         projected.append(

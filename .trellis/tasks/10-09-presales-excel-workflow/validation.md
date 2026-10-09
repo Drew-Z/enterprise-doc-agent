@@ -63,3 +63,13 @@ See [public replay](../../../docs/ops/public-excel-replay-20261009.md), [release
 Spec-sync review: schema0035 and workbook-reader contracts were already captured by the implementation/release commits. This closeout changes documentation only; unresolved semantic findings belong to the follow-up report, not a claim of changed executable behavior. Validation for this documentation batch is JSON/context/link integrity and scoped diff checks; previously successful implementation suites are not rerun without code changes.
 
 The bounded Excel milestone is complete with an honestly partial output. Parent commercial acceptance remains open: rc45 seven-success/three-failure/two-unsubmitted history, unrun original160 capacity and independent business/release approval gaps are unchanged. No competitor parity or measured user benefit is claimed.
+
+## Focused remediation candidate
+
+Chinese empty-keyword recall now uses bounded literal character windows within the existing authorization query. Fixed diagnostic categories persist without source/model bodies; prompt v15 clarifies evidence scope and relevant citations. This candidate has not been deployed.
+
+Full non-integration: **2,920 passed / 761 deselected / 23 subtests passed**, 253.92 seconds, using `-B -X utf8`. Three new real PostgreSQL cases passed within an affected run of 192 passed / 1 failed; the sole literal-exception compatibility failure was fixed, then all 26 directly affected tests and the full non-integration suite passed. Ruff format checked 727 files, Ruff check and Mypy 271 sources passed. An earlier non-integration run without UTF-8 failed one evaluation-tool read; no unrelated test was changed.
+
+One bounded maximum-three-call diagnostic lost its SSH control receipt: no reliable request count or output, no retry, three calls conservatively reserved. Its exact orphan was terminated. Fresh read-only verification at 13:47:54 UTC confirmed unchanged deployment/configuration fingerprints, DB0035, six attempts/nine calls, original workbook hash, zero active jobs/pending reservations and public readiness 200. Application day count36 plus previous direct10 plus reserved3 = conservative49/200, not a confirmed call count. This does not establish model reliability, scope reasoning or citation quality.
+
+The candidate report is `docs/ops/public-replay-remediation-20261009.md`; exact source publication, CI, hashes, recovery and unchanged historical worktree state are recorded in the existing central group's `public_replay_remediation_20261009` phase. Keep focused quality work open while preserving the completed Excel milestone.

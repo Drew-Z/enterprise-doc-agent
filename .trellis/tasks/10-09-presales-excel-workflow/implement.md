@@ -27,3 +27,14 @@ All initial implementation criteria passed locally. See `docs/ops/presales-excel
 Recovery continues in the existing central group, phase `excel_release_20261009`. The approval extends the previous local-only boundary; commercial acceptance and historical workspace changes remain untouched.
 
 Final result: release/rollback/reapply and file preservation passed; six-row generation ended with four drafts and two failures, nine calls and no manual retries. Four assisted reviews preserve originals and produce a partially reviewed draft workbook. Quality failures remain open in `docs/ops/public-excel-replay-20261009.md`; no further repair batch was started.
+
+## Focused remediation after user approval
+
+- [x] Red/green actual PostgreSQL Chinese recall and isolation tests.
+- [x] Red/green gateway safe diagnostics and durable/synchronous persistence checks.
+- [x] Scope-aware prompt revision; controlled positive/negative/unknown cases retain semantics.
+- [x] Required local checks, scoped candidate preparation and honest evidence report. Exact publication/CI is recorded in the central recovery group.
+
+Recovery phase: public_replay_remediation_20261009 in the existing central group. Original rc46 results are immutable.
+
+Candidate verification: 2,920 non-integration tests / 23 subtests, 3 new real PostgreSQL tests, Ruff and Mypy passed. A bounded live diagnostic lost its SSH control receipt; outcomes are unknown, three calls remain conservatively reserved, and no repeat was made. The exact orphan was stopped and unchanged rc46/0035 identity, original replay ledger and readiness independently rechecked. Prompt quality and deployment remain open, distinct from the completed Excel milestone.

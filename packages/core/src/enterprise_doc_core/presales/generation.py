@@ -228,7 +228,7 @@ class GenerationService:
                     },
                 )
         except PresalesError as error:
-            await self._fail(attempt_id, error.code, provider_requests)
+            await self._fail(attempt_id, error.code, provider_requests, error.diagnostic_code)
         except TimeoutError:
             await self._fail(attempt_id, "presales_generation_timeout", provider_requests)
         except asyncio.CancelledError:
@@ -552,7 +552,13 @@ class GenerationService:
                 raise PresalesError("presales_attempt_expired")
             attempt.provider_request_count = None
 
-    async def _fail(self, attempt_id: UUID, code: str, provider_requests: int | None) -> None:
+    async def _fail(
+        self,
+        attempt_id: UUID,
+        code: str,
+        provider_requests: int | None,
+        diagnostic: str | None = None,
+    ) -> None:
         tenant_id: UUID | None = None
         async with self.session_factory.begin() as session:
             attempt = await session.get(PresalesAttempt, attempt_id, with_for_update=True)
@@ -560,6 +566,11 @@ class GenerationService:
                 tenant_id = attempt.tenant_id
                 await finish_attempt(session, tenant_id, attempt_id)
             if attempt is not None and attempt.state == "running":
+                if diagnostic is not None:
+                    attempt.provenance = {
+                        **attempt.provenance,
+                        "providerCall1Diagnostic": diagnostic,
+                    }
                 attempt.state = "expired" if attempt.deadline_at <= self.clock() else "failed"
                 attempt.error_code, attempt.finished_at = code, self.clock()
                 attempt.provider_request_count = provider_requests

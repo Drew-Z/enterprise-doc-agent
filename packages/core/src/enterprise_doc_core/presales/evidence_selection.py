@@ -12,6 +12,7 @@ from enterprise_doc_core.presales.citation_selection import (
     SelectionDraft,
     resolve_selection,
 )
+from enterprise_doc_core.presales.errors import OutputContractError, OutputDiagnostic
 from enterprise_doc_core.presales.schemas import (
     CitationInput,
     ModelDraft,
@@ -37,11 +38,11 @@ class EvidencePrerequisite(PresalesModel):
     def consistent_support(self) -> Self:
         positive, negative = bool(self.positive), bool(self.negative)
         if self.uncertainty == "none" and positive == negative:
-            raise ValueError("determinate evidence requires exactly one direction")
+            raise OutputContractError(OutputDiagnostic.SUPPORT_COMBINATION)
         if self.uncertainty == "missing" and (positive or negative):
-            raise ValueError("missing evidence cannot have a supported direction")
+            raise OutputContractError(OutputDiagnostic.SUPPORT_COMBINATION)
         if self.uncertainty == "conflict" and not (positive and negative):
-            raise ValueError("conflicting evidence requires both quoted directions")
+            raise OutputContractError(OutputDiagnostic.SUPPORT_COMBINATION)
         return self
 
     @property
@@ -71,7 +72,7 @@ def resolve_evidence_selection(content: str, catalog: dict[str, CitationInput]) 
         for quote in [*item.positive, *item.negative]:
             source = catalog.get(quote.citation_id)
             if source is None or quote.text not in source.excerpt:
-                raise ValueError("unsupported literal quotation")
+                raise OutputContractError(OutputDiagnostic.SUPPORT_QUOTE)
             if quote.citation_id not in references:
                 references.append(quote.citation_id)
         prerequisites.append(

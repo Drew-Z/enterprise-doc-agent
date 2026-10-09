@@ -37,3 +37,14 @@ The user's subsequent approval extends this task to schema 0035 release/rollback
 - [x] Freeze a sourced public questionnaire and a bounded row range before execution; import, generate, review and return the workbook, retaining original drafts and failures. No competitor-parity or user-time-savings claim.
 
 Continuation completed: rc46/0035 released, actual rc45 rollback/reapply verified before workbook history existed. Six derived public SWU rows produced four drafts and two failures in nine calls, with four assisted reviews and a partial draft workbook export. This completes the bounded file-workflow task, not answer-quality or commercial acceptance; see `validation.md`.
+
+## Authorized focused remediation
+
+The user approved the three follow-up priorities. Preserve the completed rc46 replay and its failures. Add safe failure diagnostics, fix demonstrated Chinese keyword recall, and clarify same-scope support in the model instruction; do not add routes, retries, budget or platform features.
+
+- [x] Chinese procurement requirements retrieve the matching clause through real PostgreSQL even when the controlled vector boundary contributes no match; tenant/version/active-generation filters and top-k limits remain.
+- [x] Failed output records a fixed diagnostic category without raw model/source text, arbitrary exceptions or new schema; synchronous and durable executions preserve exactly-once accounting and normal fallback bounds.
+- [x] Different edition/time/entitlement is explicitly excluded as same-scope counterevidence; existing missing-evidence fixtures preserve unknown. This verifies the instruction and controlled decoder contract only, not live model scope reasoning.
+- [x] Prepare exact scoped candidate and checks; preserve historical outputs and state which reliability/semantic issues remain unproven.
+
+Implementation checks passed; the bounded live diagnostic lost its control receipt and remains unknown, with at most three calls conservatively reserved and no rerun. Publication/CI receipt is retained centrally. The candidate is not deployed and actual quality remediation remains open; see `docs/ops/public-replay-remediation-20261009.md`.

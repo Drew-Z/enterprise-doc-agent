@@ -223,6 +223,43 @@ do not prove logical entailment or complete capture of contractual conditions.
 
 ## Controlled citation selection
 
+### Focused public replay candidate (2026-10-09, not deployed)
+
+1. **Scope / trigger:** SWU03 showed zero keyword recall despite the clause existing in
+   two stored chunks. PostgreSQL simple FTS represented its unspaced Chinese query as
+   one whole token. Historical provider errors retain only an overall code, so their
+   original rejection causes cannot be reconstructed.
+2. **Signatures:** HybridRetrievalService keeps its public retrieve signature.
+   When primary keyword recall is empty, Chinese queries use at most32 unique
+   literal three-character windows (two for a two-character run), sampled across
+   long input; require at least two matching windows when available. Existing
+   authorized query, one roundtrip, vector call, RRF, top-k and source checks remain.
+3. **Contracts:** PresalesError optionally carries an allowlisted OutputDiagnostic.
+   Save only its fixed value in existing attempt provenance as
+   providerCall1Diagnostic / providerCall2Diagnostic. Keep public error codes,
+   accounting, route health, recovery eligibility, deadlines and stored call history.
+   No migration, raw responses, quoted text, arbitrary error messages or credentials
+   are added to product persistence. Prompt presales.v15 keeps the v14 basis schema
+   and decoder while clarifying edition/entitlement/time scope and relevant citations.
+4. **Validation / errors:** categories distinguish envelope_json, envelope_shape,
+   incomplete_output, unsafe_response, draft_json, draft_schema, basis_quote,
+   support_quote, support_combination, draft_contract, citation and stream_contract.
+   Classification never turns an invalid response into a draft. Unknown/malformed
+   diagnostics are not accepted as arbitrary strings.
+5. **Good / base / bad:** good: a Chinese requirement finds its literal certificate
+   clause without a vector match; base: non-Chinese fallback and exact primary matches
+   retain existing behavior. Bad: infer compliance from lexical overlap, relabel
+   unmet by keyword, or claim a commercial trial disproves education entitlement.
+6. **Tests:** test_public_replay_remediation_integration.py checks real PostgreSQL
+   recall, inactive-generation/tenant rejection, synchronous diagnostics and durable
+   failure/recovery/replay. test_presales_output_diagnostics.py checks HTTP envelopes,
+   quote/support errors, one dispatch, observed usage and absence of sentinel bodies.
+   Existing literal-basis and public workflow tests continue unchanged semantically.
+7. **Wrong vs correct:** diagnostic visibility is not proof failure rate improved;
+   stronger scope instructions are not an entailment guarantee. Keep original failures,
+   separate controlled tests from live diagnostics, and do not alter old scorer schemas.
+   New policies freeze the v15 SHA; drain accepted old policies before any deployment.
+
 1. **Scope:** `presales.v3` replaces model-transcribed quotes with request-local
    references. It does not adopt the rejected v2 classification prompt. Saved
    drafts, public API fields, reviews, CSV, schema and existing rows are unchanged.

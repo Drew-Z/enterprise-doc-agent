@@ -21,3 +21,11 @@ Reuse the existing supervised expansion executor with a second fixed migration, 
 On 0035, an image-only plan explicitly binds whether original and candidate images support workbook records. A legacy side requires an empty-workbook read before writes and again after admission closes. Check both deployment and recovery sides before apply, and the original side before restore. Preserve all metadata/content and the expanded schema. rc.45 may be rolled back to only before workbook import; after history exists, use a compatible candidate or a forward fix, never erase history to make rollback possible.
 
 Freeze the public source, original file hash, selected range, source applicability, call budget and review criteria before product replay. Keep this file-flow exercise distinct from the previously completed six-call generation comparison and failed commercial acceptance.
+
+## Focused public replay remediation
+
+Read-only observation confirms PostgreSQL simple full text treats the unspaced SWU03 query as one whole token; neither primary nor OR fallback matches any of17 chunks, including two containing the required clause. Add a bounded character n-gram fallback within the existing authorized document query when primary full-text recall is empty. Keep one keyword query roundtrip and existing vector calls/RRF/top-k; do not infer semantic truth from lexical matching.
+
+Output failure details were not persisted, so the historical invalid outputs cannot be reconstructed. Add allowlisted diagnostic categories to PresalesError and existing attempt provenance (per dispatch number for background, one field for synchronous), never raw content. Keep public error codes, outage/recovery classification, usage and deadlines unchanged. Do not claim this diagnostic patch alone fixes historical model failures.
+
+Prompt v15 keeps the v14 literal-basis schema/decoder and adds scope/negative-evidence guidance plus relevant-citation selection. It cannot deterministically prove entailment. Old decoder reports and saved attempts remain unchanged; new admission freezes the new prompt SHA. A deployment must drain old accepted policies before switching.

@@ -3,7 +3,7 @@
   "name": "presales-excel-workflow",
   "title": "Customer Excel questionnaire workflow",
   "description": "",
-  "status": "completed",
+  "status": "in_progress",
   "dev_type": null,
   "scope": null,
   "package": "core",
@@ -11,7 +11,7 @@
   "creator": "developer",
   "assignee": "developer",
   "createdAt": "2026-10-09",
-  "completedAt": "2026-10-09",
+  "completedAt": null,
   "branch": "codex/presales-prerequisite-assessment",
   "base_branch": "codex/presales-prerequisite-assessment",
   "worktree_path": null,
@@ -35,6 +35,13 @@
     "public_replay_drafts": 4,
     "public_replay_failures": 2,
     "independent_business_approval": false,
-    "commercial_acceptance": "not_passed"
+    "commercial_acceptance": "not_passed",
+    "focused_remediation_authorized": "2026-10-09 user approved next three priorities",
+    "focused_remediation_status": "candidate_locally_verified_live_quality_open",
+    "focused_remediation_deployed": false,
+    "focused_diagnostic_outcome": "control_connection_timeout_unknown_not_retried",
+    "focused_diagnostic_reserved_calls": 3,
+    "focused_diagnostic_confirmed_calls": null,
+    "focused_report": "docs/ops/public-replay-remediation-20261009.md"
   }
 }

@@ -553,6 +553,11 @@ class BackgroundGeneration:
             call.usage, call.provider_response_id = error.usage, error.provider_response_id
             call.provider_request_id = error.provider_request_id
             await route_health.observed(session, call, now=self.clock(), settings=self.settings)
+            if error.diagnostic_code is not None:
+                operation.provenance = {
+                    **operation.provenance,
+                    f"providerCall{call.number}Diagnostic": error.diagnostic_code,
+                }
             operation.state = (
                 "recovering"
                 if _can_recover(error.code, error.retryable, bool(error.provider_requests))

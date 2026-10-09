@@ -8,7 +8,7 @@ from time import perf_counter
 from typing import Any
 from uuid import UUID, uuid4
 
-from sqlalchemy import Select, desc, func, literal, select, union_all
+from sqlalchemy import Select, case, desc, func, literal, select, union_all
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.sql.elements import ColumnElement
 
@@ -284,16 +284,32 @@ class HybridRetrievalService:
         # document. Evaluate the meaningful-term fallback only when the scoped
         # primary recall is empty, within the same snapshot and round trip.
         fallback_query = self._keyword_fallback_query(query)
-        if fallback_query is not None:
+        chinese_terms = self._chinese_query_terms(query)
+        if fallback_query is not None or chinese_terms:
             primary = statement.cte("primary_keyword_recall").prefix_with("MATERIALIZED")
             fallback_ts_query = func.websearch_to_tsquery("simple", fallback_query)
-            fallback_rank = func.ts_rank_cd(DocumentChunk.search_vector, fallback_ts_query)
+            fallback_rank: Any = func.ts_rank_cd(DocumentChunk.search_vector, fallback_ts_query)
+            fallback_match = None
+            if chinese_terms:
+                # PostgreSQL simple FTS treats an unspaced Chinese sentence as a
+                # single token. Match bounded literal character windows inside the
+                # same authorized document; no wildcard or extra model query.
+                hits = sum(
+                    (
+                        case((func.strpos(DocumentChunk.normalized_text, term) > 0, 1), else_=0)
+                        for term in chinese_terms
+                    ),
+                    literal(0),
+                )
+                fallback_rank = hits
+                fallback_match = hits >= min(2, len(chinese_terms))
             fallback = self._keyword_statement(
                 tenant_id=tenant_id,
                 actor_id=actor_id,
                 document_version_id=document_version_id,
                 ts_query=fallback_ts_query,
                 rank=fallback_rank,
+                match=fallback_match,
             ).where(~select(primary.c.id).exists())
             recalled = union_all(select(primary), fallback).subquery()
             statement = select(recalled).order_by(
@@ -311,6 +327,7 @@ class HybridRetrievalService:
         document_version_id: UUID,
         ts_query: Any,
         rank: Any,
+        match: ColumnElement[bool] | None = None,
     ) -> Select[Any]:
         statement = (
             select(
@@ -345,7 +362,7 @@ class HybridRetrievalService:
                 DocumentIngestionGeneration.active.is_(True),
                 DocumentIngestionGeneration.embedding_dimension == self.embedding_dimension,
                 DocumentVersion.tenant_id == DocumentChunk.tenant_id,
-                DocumentChunk.search_vector.op("@@")(ts_query),
+                DocumentChunk.search_vector.op("@@")(ts_query) if match is None else match,
             )
             .order_by(desc(rank), DocumentChunk.chunk_index)
             .limit(self.top_k)
@@ -365,6 +382,21 @@ class HybridRetrievalService:
         if not meaningful_terms:
             return None
         return " OR ".join(meaningful_terms)
+
+    @staticmethod
+    def _chinese_query_terms(query: str) -> tuple[str, ...]:
+        # Long input must not create unbounded SQL. Evenly sample at most32 unique
+        # windows so the final clause is not silently lost to a prefix-only cap.
+        terms = list(
+            dict.fromkeys(
+                run[index : index + min(3, len(run))]
+                for run in re.findall(r"[\u3400-\u4dbf\u4e00-\u9fff]{2,}", query)
+                for index in range(max(1, len(run) - 2))
+            )
+        )
+        if len(terms) > 32:
+            terms = [terms[index * (len(terms) - 1) // 31] for index in range(32)]
+        return tuple(terms)
 
     async def _vector_recall(
         self,
