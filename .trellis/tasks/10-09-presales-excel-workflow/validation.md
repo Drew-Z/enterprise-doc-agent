@@ -83,8 +83,8 @@ Candidate `bdf007ad442d81c48b9f2fa206a4ff38ee761326` / rc47 is deployed on schem
 Pending/failed rows now support human responses with authorized literal evidence,
 explicit immutable authorship, separate review and original-file delivery. Migration0036
 preserves strict draft JSON in place and refuses downgrade with human history. Old
-application readers cannot retain correct attribution; deployment/rollback guards are
-still required before staging writes. Original public replay is untouched.
+application readers cannot retain correct attribution; deployment/rollback guards were
+still required at this checkpoint and were subsequently verified below. Original public replay is untouched.
 
 Python non-integration2920 passed/23 subtests; Web451 tests/57 files and monitor103 tests
 passed. Real PostgreSQL:44 passed in the broader manual/workbook/workflow run;18 older
@@ -101,8 +101,8 @@ chunk-size warning. Browser-owned schemas were removed with cleanup receipts; in
 fixtures assert their owned schema removal. Historical2993 workspace entries retained.
 
 See `docs/ops/presales-manual-completion-20261010.md` and recovery phase
-`manual_takeover_20261009`. This is local product completion, not live deployment,
-provider reliability/semantic acceptance or real-user value evidence.
+`manual_takeover_20261009`. This checkpoint records local product completion; the later
+live deployment below does not establish provider reliability, semantics or real-user value.
 
 ## Guarded manual release tooling — 2026-10-10
 
@@ -124,5 +124,43 @@ Real database coverage includes commit/rollback receipt loss, atomic DDL interru
 missing/defaulted/unvalidated/wrong checks and preserved reviewed human text/authorship,
 original XLSX and audit CSV through both compatible recovery and refused legacy recovery.
 Owned PostgreSQL schemas were removed by their fixture finally blocks. No provider calls
-or staging mutations were made. Signed publication and supervised live acceptance remain
-the next gate. Evidence prefix:manual-release-, central manifest phase:manual_release_20261010.
+or staging mutations were made during the local tooling checks. Signed publication and
+supervised live acceptance subsequently passed below. Evidence prefix:manual-release-,
+central manifest phase:manual_release_20261010.
+
+## Executed rc48 release and human delivery
+
+- Exact signed application6516bd0342d809f1de3a2340b2207bdc94869c75 /v0.1.45-rc.48:
+  Quality37964206823, Container37964206894 and signed build37964844999 passed;
+  five artifacts /56 evidence files verified.
+- Session-pooler backend stability, transaction-surviving advisory lock and contention
+  behavior passed before expansion. Full-cache import preserved every original reference;
+  no historical image cleanup was needed.
+- Actual0035-to-0036 expansion, release/rc47 rollback/reapply completed in69.210 /86.419
+  /86.398 /80.947 seconds. Independent schema verification and all22 image-window checks
+  passed, including signed packaged sources/assets, credentials, original workbook/frozen
+  packet, history, idle accounting, capacity and five ready workloads.
+- One new labeled one-row workbook passed public HTTP preview/import, literal evidence,
+  human save, reviewed-export409 before review, separate review, GET reload and reviewed
+  XLSX/CSV. Human authorship/original text remained explicit; the formula and separate
+  worksheet were intact. All global Job/attempt/provider-call/reservation/dispatch counts
+  remained unchanged. No model/embedding calls, route changes or budget increases.
+- The initial harness failed before import when openpyxl tried to create temporary files
+  inside the read-only application container; its token was revoked. Retained the failure,
+  generated the workbook locally, and checked that no prior owned packet or human record
+  existed before continuing. No uncertain write was retried. Final token revocation200 passed.
+- Human history now exists: the actual ReleaseCluster.restore path was refused before
+  any Kubernetes write through a read-only boundary. rc47/rc46 are no longer eligible
+  recovery targets; retain authorship and use compatible readers or a forward fix.
+- Removed only233 remote temporary files /315 directories and43 local transport files
+  /1 directory. Kept images, signed evidence, original failures, business data and all2,993
+  unrelated worktree entries. Post-cleanup five-service identity and public readiness200 passed.
+
+See `docs/ops/rc48-manual-release-validation.json` for receipt hashes. Central recovery
+phase:manual_release_20261010; source baseline:c21144d2b1283ded2508bd81c5c29a53675f3309;
+doc checkpoint:6516bd0342d809f1de3a2340b2207bdc94869c75. This closes the authorized
+human-delivery release milestone. The six-row model replay remains4 drafts/2 failures/9
+calls, the unknown diagnostic is not retried, and original160 capacity is still unrun.
+No real-customer or independent business approval, measured time saving, paid demand or
+competitor-parity claim. Doc closeout uses JSON/evidence/context/diff integrity checks;
+successful code suites are not repeated for unchanged executable sources.

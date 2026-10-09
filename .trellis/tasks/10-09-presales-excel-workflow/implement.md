@@ -46,7 +46,7 @@ Candidate verification: 2,920 non-integration tests / 23 subtests, 3 new real Po
 - [x] Deployed keyword query retrieves the previously missed two clauses first, with zero new provider calls.
 - [x] Owned temporary resources cleaned; signed evidence and original failures retained.
 - [ ] Real-model completion and semantic quality verified.
-- [x] Human response entry, evidence, review and export for rows without a model draft (local candidate; staging rollout remains separate).
+- [x] Human response entry, evidence, review and export for rows without a model draft (local candidate, subsequently deployed and verified below).
 
 ## Human completion slices
 
@@ -54,15 +54,24 @@ Candidate verification: 2,920 non-integration tests / 23 subtests, 3 new real Po
 - [x] Active/terminal generation, stale revision, competing saves, invalid/foreign/stale evidence and revoked membership; no new calls/reservations; migration history refusal.
 - [x] Typed browser evidence selection/manual form, explicit provenance, review/reload/download at desktop/mobile; controlled external boundaries only.
 - [x] Full affected-package checks, recovery hashes and current limitations. Scoped publication recorded in central manifest.
-- [ ] Guarded0036 expansion/reader-compatible release. Staging remains rc47/0035 until that verified window.
+- [x] Guarded0036 expansion/reader-compatible release; staging is now rc48/0036.
 
 ## Guarded manual release slices
 
 - [x] Red/green0036 image plan with independent workbook/manual capabilities; apply/restore races preserve history and refuse incompatible readers.
 - [x] Red/green fixed0035-to-0036 expansion, exact Alembic SQL/schema shapes, original-resource retention and recovery without DDL replay.
 - [x] Owned PostgreSQL atomic failure/lost receipt/drift and real manual history preservation.
-- [ ] Affected required checks, scoped commit and exact-source signed candidate.
-- [ ] Fresh capacity/preflight, supervised expansion/release, rc47 rollback before manual history, reapply.
-- [ ] New owned live human-only fixture and evidence/review/export check, zero new model calls; independent final identity and cleanup.
+- [x] Affected required checks, scoped commit and exact-source signed candidate.
+- [x] Fresh capacity/preflight, supervised expansion/release, rc47 rollback before manual history, reapply.
+- [x] New owned live human-only fixture and evidence/review/export check, zero new model calls; independent final identity and cleanup.
 
 Continuation recovery: existing central group, phase manual_release_20261010, Git baseline c21144d2b1283ded2508bd81c5c29a53675f3309. All2,993 unrelated status entries retain baseline hash af4f34fc3084af8f1a015cd78a40f6f141b040b84e16ec3ded0db4b544524f25.
+
+Completed staging continuation: application6516bd0 /rc48 /0036, four supervised windows
+independently verified, one labeled human-only workbook reviewed/exported, original replay
+preserved and old-reader restoration refused before writes. Initial harness failed before
+import due to read-only container temporary-file access; retained that failure, generated
+the input locally and proved no prior owned packet before proceeding. Removed only233
+remote temporary files /315 directories and43 local transport files /1 directory; final
+public readiness200 and five unchanged ready workloads passed. Human history is retained;
+future recovery requires compatible readers. Model reliability and semantic quality remain open.

@@ -51,8 +51,19 @@ Implementation checks passed; the bounded live diagnostic lost its control recei
 
 ## rc47 release continuation
 
-The focused candidate is now deployed on staging. Actual rc46 rollback/reapply, retained workbook history and deployed SWU03 keyword recall passed without new model/embedding calls. Historical quality failures and the unknown diagnostic remain. Human takeover for pending/failed rows is the next delivery gap; current implementation still requires a model draft before review/export. See `docs/ops/rc47-remediation-release-20261009.md`.
+The focused candidate was deployed on staging. Actual rc46 rollback/reapply, retained workbook history and deployed SWU03 keyword recall passed without new model/embedding calls. Historical quality failures and the unknown diagnostic remain. Human takeover for pending/failed rows was the next delivery gap at that checkpoint; the continuation below addresses it. See `docs/ops/rc47-remediation-release-20261009.md`.
 
 ## Authorized human completion continuation
 
 Pending or terminal failed rows can receive a human-authored response with selected authorized literal evidence, then use ordinary review and original workbook/CSV delivery. Preserve original attempts and reviews. Explicit author/time and original human text survive refresh/export. No model, embedding, Job or quota dispatch occurs. Reject active generation, existing drafts, stale revisions and revoked sources. Same-key retries are idempotent. Keep the six-row public replay immutable and verify with owned fixtures. Human completion does not establish model quality or competitor parity.
+
+## rc48 human delivery result — 2026-10-10
+
+The authorized continuation is deployed on schema0036: exact signed rc48, actual rc47
+rollback before human history, and rc48 reapply passed. A new labeled pending-row workbook
+completed evidence selection, human save, separate review, reload and reviewed XLSX/CSV
+through public HTTP with zero new model/embedding calls. Original failures and the frozen
+six-row replay remain unchanged. With human history present, the real restore guard refuses
+legacy readers before writes. The initial read-only-container harness failure is retained;
+the corrected harness supplied a local workbook before any import. See `validation.md`
+and `docs/ops/rc48-manual-release-validation.json`. Model quality and parent acceptance remain open.

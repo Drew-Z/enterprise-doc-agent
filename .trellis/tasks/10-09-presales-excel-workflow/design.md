@@ -36,7 +36,7 @@ Keep SavedDraft JSON unchanged as the immutable response baseline; add nullable 
 
 Manual evidence browse is a reauthorized, bounded literal substring search within packet snapshot versions/generations,10 chunks per page with600-character snippets. No retriever/provider is called. Save resolves every chosen chunk and exact substring against the current authorized generation and reconstructs filename/location server-side, then applies existing response/citation/prerequisite rules. Tenant/packet/row lock ordering serializes competing manual/generation writes; same-key replay precedes revision checks and always reauthorizes.
 
-Migration downgrade locks rows and refuses any manual history. Older rc47/rc46 JSON readers can parse the unchanged draft bytes but misattribute human content; they are therefore NOT compatible rollback targets once manual history exists. Do not deploy0036 or write staging manual records until coordinated API/Worker/Web release and explicit manual-reader rollback guards are implemented and verified. Existing0035 release tooling fails closed on0036. This phase implements and validates local product behavior only; preserve staging and frozen public packets.
+Migration downgrade locks rows and refuses any manual history. Older rc47/rc46 JSON readers can parse the unchanged draft bytes but misattribute human content; they are therefore NOT compatible rollback targets once manual history exists. Do not deploy0036 or write staging manual records until coordinated API/Worker/Web release and explicit manual-reader rollback guards are implemented and verified. Existing0035 release tooling fails closed on0036. The initial phase validated local product behavior; the authorized release continuation below subsequently satisfied those deployment guards. Preserve frozen public packets.
 
 ## Authorized manual release continuation (2026-10-10)
 
@@ -45,3 +45,10 @@ Extend the fixed executor with exactly0035-to-0036, retaining all original image
 On0036, image-only plans require separate exact boolean original/candidate workbook_readers and manual_readers. Apply checks both deployment and recovery readers; restore checks the original reader. For each incompatible capability, require empty corresponding history before writes and after all applications stop. A racing submission keeps applications stopped and cannot change image/configuration/credential bindings. Existing workbook history must remain readable throughout. No configuration, provider route, retry or budget changes.
 
 Validate through ReleasePlan/ReleaseCluster and PsqlSession boundaries: controlled Kubernetes I/O and clock, actual Alembic SQL and owned PostgreSQL schemas. Cover migration rollback/lost receipts/shape drift, both history races, compatible recovery with real human responses, and immutable workbook/human metadata. Then publish exact signed images, expand, release, exercise rc47 rollback only before manual history, and reapply. New owned manual-only live fixtures verify evidence -> save -> review -> export without provider calls. Preserve the frozen public packet and all failed model results. After human history exists, recovery requires compatible images or forward repair.
+
+Executed: rc48/0036 passed expansion, release/rc47 rollback/reapply, followed by one new
+human-only workbook and the actual history-aware refusal through a read-only Kubernetes
+boundary. Human records now exist, so the pre-history rc47 drill is not an available
+current rollback. Input workbook creation belongs outside the read-only application
+container; the product imports existing bytes and exports through its narrow OOXML path.
+The corrected acceptance harness follows that boundary without relaxing runtime mounts.
