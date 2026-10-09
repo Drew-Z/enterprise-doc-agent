@@ -239,6 +239,14 @@ class ReviewText(ResponseText):
 class ReviewInput(ReviewText):
     expected_revision: int = Field(ge=1, strict=True)
     note: str = Field(default="", max_length=1000)
+    citations: list[CitationInput] | None = Field(default=None, max_length=12)
+
+    @model_validator(mode="after")
+    def unique_evidence(self) -> Self:
+        keys = [(c.chunk_id, c.document_version_id, c.excerpt) for c in self.citations or []]
+        if len(set(keys)) != len(keys):
+            raise ValueError("review evidence must not contain duplicates")
+        return self
 
 
 class SavedReview(ReviewText):
@@ -246,6 +254,14 @@ class SavedReview(ReviewText):
     note: str
     actor_id: UUID
     reviewed_at: datetime
+    # Null retains the original draft binding; [] is an explicit empty selection.
+    citations: list[Evidence] | None = Field(default=None, max_length=12)
+
+
+def review_citations(draft: SavedDraft | None, review: SavedReview | None) -> list[Evidence]:
+    if review is not None and review.citations is not None:
+        return review.citations
+    return draft.citations if draft is not None else []
 
 
 class AttemptView(PresalesModel):
@@ -284,7 +300,7 @@ class RowView(PresalesModel):
         for review in [self.review, *self.review_history]:
             if review is None:
                 continue
-            review.validate_prerequisite_citations(len(self.draft.citations) if self.draft else 0)
+            review.validate_prerequisite_citations(len(review_citations(self.draft, review)))
             if review.prerequisite_changes is not None:
                 review.prerequisite_changes.validate_originals(
                     len(self.draft.prerequisites or []) if self.draft else 0

@@ -2,6 +2,7 @@ import type { Locale } from "../i18n";
 import type { PrerequisiteAssessment, ResponseStatus } from "./api";
 
 const zh = {
+  editEvidence: "更正引用证据", reviewEvidenceHelp: "从本表资料中选择正确条款，并在复核备注中说明。移除引用后，请重新选择受影响前提的证据。原稿和各次复核引用都会保留。", evidenceNoteRequired: "修改引用时，请在复核备注中说明依据。", reviewEvidenceSaved: "以下引用由复核人选择，各次复核保留独立记录。", reviewReadRecovered: "已重新读取保存结果，请核对最新复核和引用。",
   manual: "人工填写", manualOrigin: "初稿由人工填写", manualOriginal: "原人工草稿", manualNote: "填写依据", manualSave: "保存人工草稿",
   manualHelp: "人工草稿会保留填写人、时间和依据，不消耗生成额度。保存后请单独复核再交付。",
   manualEvidenceHelp: "以下证据由填写人从本表资料中选择。请核对原文、适用范围及条件。",
@@ -35,6 +36,7 @@ const zh = {
   generateAll: "生成待处理要求", generating: "正在生成", generate: "生成响应", retry: "重试本条", pending: "待生成", failed: "生成失败", waiting: "生成中，请稍后刷新", reviewed: "已复核", unreviewed: "待复核", complete: "已保存", exportDraft: "导出草稿 CSV", exportReviewed: "导出已复核 CSV", progress: "条已复核", sourceSnapshot: "本表资料版本", frozen: "要求与资料版本已固定。需要更换资料时，请新建响应表。", stale: "资料已变化，请新建响应表", rowDetail: "查看证据与复核", evidence: "原文证据", noEvidence: "尚无可引用的证据，请补充资料。", retrievalNotice: "基于有限召回片段生成，未命中不代表资料中不存在。", truncated: "部分片段已按长度或数量限制截取，请复核完整原文。", conditions: "响应条件", missing: "待补材料", response: "响应文案", original: "原模型草稿", reviewTitle: "逐行复核", status: "判断", note: "复核备注", saveReview: "保存复核", reviewHelp: "确认文案、条件和证据后保存。原模型草稿会保留，人工修改不会覆盖它。", history: "复核历史", reviewer: "复核人", location: "原文位置", page: "页", offsets: "字符范围", version: "版本", applicable: "适用范围", requestId: "请求编号", error: "操作未完成，请刷新后重试。", rowError: "本条未生成可用响应，失败记录已保存。", modelTimeout: "本次暂时未能完成生成。要求和资料已保留，请稍后重试本条。", attempts: "次生成尝试", draftOnly: "未复核草稿仅供内部核查。全部复核后可导出已复核版本。", sourceUnavailable: "资料不可访问或已变化，请刷新资料并新建响应表。", reset: "返回新建响应表", none: "无", reviewInvalid: "请检查文案、条件与待补材料；有条件支持需填写条件，证据不足需填写待补材料。",
 };
 const en: typeof zh = {
+  editEvidence: "Correct source evidence", reviewEvidenceHelp: "Select the correct passages from this sheet's sources and explain the correction. After removing a citation, select evidence again for affected prerequisites. The original and each review retain their citations.", evidenceNoteRequired: "Explain citation changes in the review note.", reviewEvidenceSaved: "These citations were selected by the reviewer. Each review retains its own evidence.", reviewReadRecovered: "The saved result was read again. Check the latest review and citations.",
   manual: "Write manually", manualOrigin: "Human-authored draft", manualOriginal: "Original human draft", manualNote: "Author note", manualSave: "Save human draft",
   manualHelp: "Human drafts retain their author, time and rationale without generation usage. Review separately before delivery.",
   manualEvidenceHelp: "The author selected these passages from this sheet's sources. Check the text, scope and conditions.",

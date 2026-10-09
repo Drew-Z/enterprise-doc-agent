@@ -18,8 +18,9 @@ from enterprise_doc_core.presales.access import (
 )
 from enterprise_doc_core.presales.errors import PresalesError
 from enterprise_doc_core.presales.generation import ACTIVE_STATES
-from enterprise_doc_core.presales.models import PresalesAttempt
+from enterprise_doc_core.presales.models import PresalesAttempt, PresalesPacket
 from enterprise_doc_core.presales.schemas import (
+    CitationInput,
     Evidence,
     ManualAuthorshipRecord,
     ManualEvidencePage,
@@ -86,6 +87,50 @@ async def browse_evidence(
     return result
 
 
+async def resolve_evidence(
+    session: AsyncSession,
+    packet: PresalesPacket,
+    citations: list[CitationInput],
+    *,
+    error_code: str,
+) -> list[Evidence]:
+    sources = {s.version_id: s for s in await check_sources(session, packet)}
+    evidence = []
+    for citation in citations:
+        source = sources.get(citation.document_version_id)
+        if source is None:
+            raise PresalesError(error_code)
+        chunk = (
+            await session.execute(
+                select(
+                    DocumentChunk.page_number,
+                    DocumentChunk.heading,
+                    DocumentChunk.start_offset,
+                    DocumentChunk.end_offset,
+                ).where(
+                    DocumentChunk.id == citation.chunk_id,
+                    DocumentChunk.tenant_id == packet.tenant_id,
+                    DocumentChunk.document_version_id == source.version_id,
+                    DocumentChunk.generation_id == source.generation_id,
+                    DocumentChunk.normalized_text.contains(citation.excerpt, autoescape=True),
+                )
+            )
+        ).one_or_none()
+        if chunk is None:
+            raise PresalesError(error_code)
+        evidence.append(
+            Evidence(
+                **citation.model_dump(),
+                filename=source.filename,
+                page_number=chunk.page_number,
+                heading=chunk.heading,
+                start_offset=chunk.start_offset,
+                end_offset=chunk.end_offset,
+            )
+        )
+    return evidence
+
+
 async def save_response(
     session: AsyncSession,
     principal: PrincipalContext,
@@ -122,40 +167,9 @@ async def save_response(
         is not None
     ):
         raise PresalesError("presales_generation_busy")
-    sources = {s.version_id: s for s in await check_sources(session, packet)}
-    evidence = []
-    for citation in payload.citations:
-        source = sources.get(citation.document_version_id)
-        if source is None:
-            raise PresalesError("presales_manual_evidence_invalid")
-        chunk = (
-            await session.execute(
-                select(
-                    DocumentChunk.page_number,
-                    DocumentChunk.heading,
-                    DocumentChunk.start_offset,
-                    DocumentChunk.end_offset,
-                ).where(
-                    DocumentChunk.id == citation.chunk_id,
-                    DocumentChunk.tenant_id == packet.tenant_id,
-                    DocumentChunk.document_version_id == source.version_id,
-                    DocumentChunk.generation_id == source.generation_id,
-                    DocumentChunk.normalized_text.contains(citation.excerpt, autoescape=True),
-                )
-            )
-        ).one_or_none()
-        if chunk is None:
-            raise PresalesError("presales_manual_evidence_invalid")
-        evidence.append(
-            Evidence(
-                **citation.model_dump(),
-                filename=source.filename,
-                page_number=chunk.page_number,
-                heading=chunk.heading,
-                start_offset=chunk.start_offset,
-                end_offset=chunk.end_offset,
-            )
-        )
+    evidence = await resolve_evidence(
+        session, packet, payload.citations, error_code="presales_manual_evidence_invalid"
+    )
     saved = SavedDraft(
         **payload.model_dump(exclude={"expected_revision", "note", "citations"}),
         citations=evidence,

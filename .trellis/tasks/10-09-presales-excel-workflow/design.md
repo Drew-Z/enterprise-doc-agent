@@ -52,3 +52,29 @@ boundary. Human records now exist, so the pre-history rc47 drill is not an avail
 current rollback. Input workbook creation belongs outside the read-only application
 container; the product imports existing bytes and exports through its narrow OOXML path.
 The corrected acceptance harness follows that boundary without relaxing runtime mounts.
+
+## Review evidence correction
+
+ReviewInput adds nullable citations (<=12 unique CitationInput values). Omission/null
+retains the historical original-draft contract and fingerprint. Once the latest review
+has its own citations, a new review must explicitly supply its evidence; an old request
+cannot silently revert it. Existing-key replay remains valid and reauthorized.
+
+Resolve explicit citations against the packet's tenant/version/active-generation and
+literal text, using the same bounded resolver as manual entry. Derive locations on the
+server. Validate status, conflict and prerequisite indexes against this exact ordered
+set. Changing evidence or prior assumptions requires a note. Preserve the tenant/row
+transaction and final authorization checks; no generation/accounting operation occurs.
+
+Add nullable JSONB presales_reviews.citations in0037. SavedReview exposes the full
+server-resolved evidence snapshot; keep historical content JSON unchanged and merge
+the side column in the existing MVCC history query. Each revision's indexes refer to
+its own evidence; null means immutable draft evidence. Downgrade locks and refuses any
+non-null citation history. rc48 cannot interpret new citations, so no staging writes
+until a coordinated release and reader guard is verified; existing0036 tooling rejects0037.
+
+Extract the existing literal evidence selector for reuse by manual creation and review.
+On selection changes remap retained prerequisite references by exact evidence identity;
+removed links become visibly unselected and block save until the reviewer resolves them.
+Show effective, original and historical evidence separately, and append original-evidence
+and correction provenance to CSV. Do not reset the response form when browsing evidence.

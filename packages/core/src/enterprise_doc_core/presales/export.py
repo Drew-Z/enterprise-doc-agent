@@ -10,6 +10,7 @@ from enterprise_doc_core.presales.schemas import (
     PacketView,
     PrerequisiteAssessment,
     SavedReview,
+    review_citations,
 )
 
 STATUS_LABELS = {
@@ -102,6 +103,8 @@ def export_csv(packet: PacketView, mode: Literal["draft", "reviewed"]) -> bytes:
             "原人工判断",
             "原人工文案",
             "原人工前提状态与对应证据",
+            "原始引用证据",
+            "人工引用修订记录",
         ]
     )
     source_versions = "\n".join(
@@ -111,7 +114,8 @@ def export_csv(packet: PacketView, mode: Literal["draft", "reviewed"]) -> bytes:
     )
     for row in packet.rows:
         effective = row.review or row.draft
-        evidence = "\n".join(evidence_text(c) for c in row.draft.citations) if row.draft else ""
+        citations = review_citations(row.draft, row.review)
+        evidence = "\n".join(evidence_text(c) for c in citations)
         values = [
             packet.title,
             row.requirement.key,
@@ -129,7 +133,7 @@ def export_csv(packet: PacketView, mode: Literal["draft", "reviewed"]) -> bytes:
             row.review.note if row.review else "",
             STATUS_LABELS[row.draft.status] if row.draft and not row.manual_authorship else "",
             row.draft.answer if row.draft and not row.manual_authorship else "",
-            prerequisite_text(effective.prerequisites, row.draft.citations)
+            prerequisite_text(effective.prerequisites, citations)
             if effective and row.draft
             else "",
             prerequisite_text(row.draft.prerequisites, row.draft.citations)
@@ -145,6 +149,14 @@ def export_csv(packet: PacketView, mode: Literal["draft", "reviewed"]) -> bytes:
             prerequisite_text(row.draft.prerequisites, row.draft.citations)
             if row.draft and row.manual_authorship
             else "",
+            "\n".join(evidence_text(c) for c in row.draft.citations) if row.draft else "",
+            "\n\n".join(
+                f"版本 {review.revision} · {review.actor_id} · {review.reviewed_at.isoformat()}\n"
+                f"{review.note}\n"
+                + ("\n".join(evidence_text(c) for c in review.citations) or "无引用证据")
+                for review in row.review_history
+                if review.citations is not None
+            ),
         ]
         writer.writerow([safe_cell(value) for value in values])
     return stream.getvalue().encode("utf-8-sig")

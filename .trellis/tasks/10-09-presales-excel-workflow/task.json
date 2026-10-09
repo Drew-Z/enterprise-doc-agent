@@ -54,6 +54,13 @@
     "manual_live_embedding_calls": 0,
     "manual_history_exists": true,
     "legacy_rc47_rc46_recovery_allowed": false,
-    "next_product_gap": "model_completion_reliability_evidence_scope_and_citation_quality"
+    "next_product_gap": "model_completion_reliability_evidence_scope_and_citation_quality",
+    "review_citations_status": "candidate_published_release_pending",
+    "review_citations_deployed": false,
+    "review_citations_schema": "20261010_0037",
+    "review_citations_report": "docs/ops/presales-review-citations-20261010.md",
+    "review_citations_live_model_calls": 0,
+    "review_citations_live_embedding_calls": 0,
+    "review_citations_release_guard_status": "0036_tooling_must_reject0037_until_coordinated_reader_guards"
   }
 }

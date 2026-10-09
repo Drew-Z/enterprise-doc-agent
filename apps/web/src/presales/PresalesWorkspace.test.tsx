@@ -99,6 +99,54 @@ beforeEach(() => { sessionStorage.clear(); localStorage.clear(); });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 describe("PresalesWorkspace HTTP boundary", () => {
+  it("recovers a saved citation correction with GET after losing PUT and preserves it on reload", async () => {
+    sessionStorage.setItem(storageKey, packetId);
+    let current = makePacket(true);
+    const corrected = { ...current.rows[0].draft!.citations[0], chunkId: actorId, excerpt: "Correct certificate clause." };
+    const fetch = mockApi(() => current, (path, init) => {
+      if (path.includes("/manual-evidence?")) return json({ items: [corrected], nextOffset: null });
+      expect(path).toContain("/review");
+      if (typeof init.body !== "string") throw new Error("Expected JSON review input");
+      const payload = reviewInputSchema.parse(JSON.parse(init.body));
+      expect(payload.citations?.[0].excerpt).toBe(corrected.excerpt);
+      const { expectedRevision, ...content } = payload;
+      const review = { ...content, citations: [corrected], revision: expectedRevision + 1, actorId, reviewedAt: timestamp };
+      current = makePacket(true); current.rows[0].revision = 2;
+      current.rows[0].review = review; current.rows[0].reviewHistory = [review];
+      throw new TypeError("Saved PUT response lost");
+    });
+    const view = mount();
+    fireEvent.click(await screen.findByRole("button", { name: "R1 Evidence and review" }));
+    fireEvent.change(screen.getByLabelText("Response"), { target: { value: "Use the certificate clause." } });
+    fireEvent.click(screen.getByRole("button", { name: "Correct source evidence" }));
+    fireEvent.click(screen.getByRole("button", { name: "Search source text" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Select evidence 1" }));
+    fireEvent.click(screen.getByRole("button", { name: "Remove evidence 1" }));
+    fireEvent.change(screen.getByLabelText("Review note"), { target: { value: "Replaced the unrelated quotation." } });
+    fireEvent.click(screen.getByRole("button", { name: "Save review" }));
+    await screen.findByText("The saved result was read again. Check the latest review and citations.");
+    expect(screen.getByRole("button", { name: "Export reviewed CSV" })).toBeEnabled();
+    expect(fetch.mock.calls.filter(([, init]) => init?.method === "PUT")).toHaveLength(1);
+    expect(fetch.mock.calls.filter(([, init]) => init?.method === "POST")).toHaveLength(0);
+    view.unmount(); mount();
+    fireEvent.click(await screen.findByRole("button", { name: "R1 Evidence and review" }));
+    expect(screen.getByLabelText("Response")).toHaveValue("Use the certificate clause.");
+    expect(screen.getAllByText(corrected.excerpt).length).toBeGreaterThan(0);
+    expect(fetch.mock.calls.filter(([, init]) => init?.method === "PUT")).toHaveLength(1);
+  });
+
+  it("hides source text and unsaved review when browsing reveals revoked access", async () => {
+    sessionStorage.setItem(storageKey, packetId);
+    const fetch = mockApi(() => makePacket(true), () => json({ error: { code: "presales_source_unavailable", message: "Source access revoked", requestId: "citation-revoked" } }, 409));
+    mount();
+    fireEvent.click(await screen.findByRole("button", { name: "R1 Evidence and review" }));
+    fireEvent.click(screen.getByRole("button", { name: "Correct source evidence" }));
+    fireEvent.click(screen.getByRole("button", { name: "Search source text" }));
+    await waitFor(() => expect(screen.queryByRole("article")).not.toBeInTheDocument());
+    expect(screen.queryByText("Retention is 30 days.")).not.toBeInTheDocument();
+    expect(fetch.mock.calls.filter(([, init]) => init?.method === "PUT")).toHaveLength(0);
+  });
+
   it.each([1, 2])("submits the selected deep mode for %i rows and restores it after a lost response and reload", async count => {
     sessionStorage.setItem(storageKey, packetId);
     let current = { ...makePacket(), generationMode: "background" as const, availableExecutionModes: ["auto", "deep"] as ("auto" | "deep")[] };
@@ -511,7 +559,7 @@ describe("PresalesWorkspace HTTP boundary", () => {
         const payload = reviewInputSchema.parse(JSON.parse(init.body));
         const { expectedRevision, ...text } = payload;
         expect(expectedRevision).toBe(1);
-        const review = { ...text, revision: 2, actorId, reviewedAt: timestamp };
+        const review = { ...text, citations: current.rows[0].draft!.citations, revision: 2, actorId, reviewedAt: timestamp };
         current = makePacket(true); current.rows[0].revision = 2;
         current.rows[0].review = review; current.rows[0].reviewHistory = [review];
         return json(current);

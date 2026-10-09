@@ -350,3 +350,50 @@ pointing to task evidence; it owns a loopback PostgreSQL schema and uses control
 Wrong: assume frontend max120 permits a120-row API batch, or leave confirmation valid
 after editing a column. Correct: separate questionnaire capacity from admission limits,
 re-preview changed mapping, and use durable server metadata after reopening.
+
+## Scenario: review citation correction
+
+### 1. Scope / Trigger
+Allow correction of an irrelevant draft citation within the existing review workflow.
+The original draft and each review must continue to display their own source evidence.
+
+### 2. Signatures
+`EvidencePicker` takes controlled `selected`, `onChange`, packet sources and an
+`EvidenceReader`; manual authorship also supplies `onConfirm`. Review input sends
+`citations: { chunkId, documentVersionId, excerpt }[]`. Returned review citations are
+nullable/optional for older records and contain complete server metadata.
+
+### 3. Contracts
+`reviewCitations(draft, review)` uses nullish fallback; explicit[] stays empty. Zod checks
+each current/history prerequisite against its own citation length. Input additionally
+checks unique quotes, <=12, evidence for non-insufficient status and >=2 versions for
+conflict. The picker shares literal search, cancellation, paging and selection with
+manual authorship, without resetting the review's unsaved text. On selection change,
+remap prerequisite indexes by exact `(chunkId, documentVersionId, excerpt)` identity;
+removed references become unselected. Restoring an excluded original must also remap its
+links. Preserve raw original items for provenance comparisons. Store no body in browsers.
+
+### 4. Validation & Error Matrix
+No correction note -> local error. Missing prerequisite evidence or invalid selection
+-> no PUT. Source revocation during browsing -> remove cached packet and hide editor.
+Transient browse failures preserve current edits and selection. Lost review PUT response
+-> GET only; cancel older reads before applying the recovery result. A higher revision
+shows a read-recovery notice requiring the user to verify it, not a claim that this exact
+intent won. An unchanged revision shows failure and keeps the explicit retry key.
+
+### 5. Good/Base/Bad Cases
+Base: old null/omitted review citations render draft evidence. Good: remove citation1,
+retain citation2's identity under its new index, deliberately relink affected items and
+save with a note. Bad: attach a different source to an unchanged numeric index, reset
+the draft while searching, or automatically repeat a PUT after losing its acknowledgement.
+
+### 6. Tests Required
+ResponseRow/API/Workspace tests cover rebinding, restoring exclusions, unchanged unsaved
+text, per-history evidence, invalid bindings, explicit empty/conflict, lost PUT and access
+revocation. Real1440/390 browser runs cover human completion, corrected review, GET recovery,
+reload, CSV provenance and unchanged workbook formulas/other sheets with zero live calls.
+
+### 7. Wrong vs Correct
+Wrong: `review.citations?.length ? review.citations : draft.citations`,
+or `row.draft.citations` for every history entry. Correct: use the revision's explicit list
+when present, preserve[] and keep original/history evidence separately visible.

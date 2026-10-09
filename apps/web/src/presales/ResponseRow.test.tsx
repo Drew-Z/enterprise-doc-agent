@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
-import { type PresalesRow, reviewInputSchema } from "./api";
+import { type Packet, type PresalesRow, reviewInputSchema } from "./api";
 import { ResponseRow } from "./ResponseRow";
 
 const draft = {
@@ -97,4 +97,54 @@ it("requires evidence on additions, supports restoring exclusions and disables e
   expect(screen.getByLabelText("Prerequisite text 1")).toBeDisabled();
   expect(screen.getByLabelText("Prerequisite evidence 4-1")).toBeDisabled();
   expect(screen.getByRole("button", { name: "Add prerequisite" })).toBeDisabled();
+});
+
+const sources: Packet["sources"] = [{ versionId: draft.citations[0].documentVersionId, documentId: draft.citations[0].documentVersionId, generationId: draft.citations[0].documentVersionId, filename: "contract.txt", versionNumber: 1, latestVersionNumber: 1, contentSha256: "a".repeat(64), applicability: "Current procurement" }];
+
+it("corrects citations without resetting text or silently relinking removed prerequisite evidence", async () => {
+  const row = fixture(); const onReview = vi.fn();
+  const replacement = { ...draft.citations[0], chunkId: "10000000-0000-4000-8000-000000000003", excerpt: "Correct certificate clause." };
+  const readEvidence = vi.fn().mockResolvedValue({ items: [replacement], nextOffset: null });
+  render(<ResponseRow row={row} busy={false} generating={false} onGenerate={vi.fn()} onReview={onReview} sources={sources} readEvidence={readEvidence} />);
+  fireEvent.click(screen.getByRole("button", { name: "R1 Evidence and review" }));
+  fireEvent.change(screen.getByLabelText("Response"), { target: { value: "Retain my unsaved correction." } });
+  fireEvent.click(screen.getByRole("button", { name: "Correct source evidence" }));
+  fireEvent.click(screen.getByRole("button", { name: "Remove evidence 1" }));
+  expect(screen.getByLabelText("Prerequisite evidence 3-1")).toBeChecked();
+  expect(screen.getByLabelText("Prerequisite evidence 1-1")).not.toBeChecked();
+  fireEvent.click(screen.getByRole("button", { name: "Search source text" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Select evidence 1" }));
+  expect(screen.getByLabelText("Response")).toHaveValue("Retain my unsaved correction.");
+  fireEvent.change(screen.getByLabelText("Review note"), { target: { value: "Use certificate clause." } });
+  fireEvent.click(screen.getByRole("button", { name: "Save review" }));
+  expect(onReview).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("button", { name: "Exclude prerequisite 1" }));
+  fireEvent.click(screen.getByRole("button", { name: "Restore original item 1" }));
+  expect(screen.getByLabelText("Prerequisite evidence 3-1")).not.toBeChecked();
+  expect(screen.getByLabelText("Prerequisite evidence 3-2")).not.toBeChecked();
+  fireEvent.click(screen.getByLabelText("Prerequisite evidence 1-2"));
+  fireEvent.click(screen.getByLabelText("Prerequisite evidence 3-2"));
+  fireEvent.click(screen.getByRole("button", { name: "Save review" }));
+  expect(onReview).toHaveBeenCalledOnce();
+  const saved = reviewInputSchema.parse(onReview.mock.calls[0][0]);
+  expect(saved.citations!.map(c => c.excerpt)).toEqual([draft.citations[1].excerpt, replacement.excerpt]);
+  expect(saved.prerequisites!.map(p => p.citationIndexes)).toEqual([[1], [0], [1]]);
+  expect(row.draft!.citations).toEqual(draft.citations);
+});
+
+it("renders each review with its own evidence while preserving original citations", () => {
+  const row = fixture();
+  const review = { status: "supported" as const, answer: "Corrected.", prerequisites: [], conditions: [], missingInformation: [], note: "Fixed source.", actorId: row.id, reviewedAt: "2026-10-10T00:00:00Z", revision: 2, citations: [{ ...draft.citations[0], excerpt: "First correction." }] };
+  row.reviewHistory = [review, { ...review, revision: 3, citations: [{ ...draft.citations[0], excerpt: "Latest correction." }] }];
+  row.review = row.reviewHistory[1]; row.revision = 3;
+  const { container } = render(<ResponseRow row={row} busy={false} generating={false} onGenerate={vi.fn()} onReview={vi.fn()} />);
+  fireEvent.click(screen.getByRole("button", { name: "R1 Evidence and review" }));
+  const current = container.querySelector(".presales-row-details > .presales-evidence")!;
+  expect(current).toHaveTextContent("Latest correction.");
+  expect(current).not.toHaveTextContent("First correction.");
+  const originals = container.querySelectorAll(".presales-original");
+  expect(originals[0]).toHaveTextContent(draft.citations[0].excerpt);
+  expect(originals[0]).not.toHaveTextContent("Latest correction.");
+  expect(originals[1]).toHaveTextContent("First correction.");
+  expect(originals[1]).toHaveTextContent("Latest correction.");
 });

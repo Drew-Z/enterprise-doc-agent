@@ -15,7 +15,7 @@ const draft = z.object({ ...responseFields, citations: z.array(evidence), retrie
 const originalIndex = z.number().int().min(0).max(11);
 const prerequisiteChanges = z.object({ origins: z.array(originalIndex.nullable()).max(12), excludedIndexes: z.array(originalIndex).max(12).refine(values => new Set(values).size === values.length) }).strict();
 const reviewFields = { ...responseFields, prerequisiteChanges: prerequisiteChanges.nullable().optional() };
-const review = z.object({ ...reviewFields, revision: z.number().int().positive(), note: z.string(), actorId: id, reviewedAt: time }).strict();
+const review = z.object({ ...reviewFields, revision: z.number().int().positive(), note: z.string(), actorId: id, reviewedAt: time, citations: z.array(evidence).max(12).nullable().optional() }).strict();
 const manualAuthorship = z.object({ actorId: id, createdAt: time, note: z.string().min(1).max(1000) }).strict();
 const manualEvidencePage = z.object({ items: z.array(evidence).max(10), nextOffset: z.number().int().min(0).max(100000).nullable() }).strict();
 export const executionModeSchema = z.enum(["auto", "deep"]);
@@ -26,16 +26,23 @@ const attempt = z.object({ id, number: z.number().int().positive(), state: z.enu
 const requirement = z.object({ key: z.string().regex(/^[A-Za-z0-9_-]{1,40}$/), text: z.string().min(1).max(2000), sourceLocation: z.string().max(300) }).strict();
 const sourceInput = z.object({ versionId: id, applicability: z.string().min(1).max(500) }).strict();
 const source = sourceInput.extend({ documentId: id, generationId: id, filename: z.string(), versionNumber: z.number().int().positive(), latestVersionNumber: z.number().int().positive(), contentSha256: z.string().regex(/^[0-9a-f]{64}$/) });
-const row = z.object({ id, requirement, revision: z.number().int().nonnegative(), state: z.enum(["pending", "queued", "running", "recovering", "drafted", "failed"]), draft: draft.nullable(), manualAuthorship: manualAuthorship.nullable().optional(), review: review.nullable(), reviewHistory: z.array(review), attempts: z.array(attempt).max(3) }).strict().refine(value => (!value.manualAuthorship || (value.draft !== null && !value.attempts.some(a => a.state === "succeeded"))) && [value.review, ...value.reviewHistory].every(entry => validPrerequisiteIndexes(entry?.prerequisites ?? null, value.draft?.citations.length ?? 0) && validReviewChanges(entry?.prerequisiteChanges, entry?.prerequisites ?? null, value.draft?.prerequisites?.length ?? 0)));
+const row = z.object({ id, requirement, revision: z.number().int().nonnegative(), state: z.enum(["pending", "queued", "running", "recovering", "drafted", "failed"]), draft: draft.nullable(), manualAuthorship: manualAuthorship.nullable().optional(), review: review.nullable(), reviewHistory: z.array(review), attempts: z.array(attempt).max(3) }).strict().refine(value => (!value.manualAuthorship || (value.draft !== null && !value.attempts.some(a => a.state === "succeeded"))) && [value.review, ...value.reviewHistory].every(entry => validPrerequisiteIndexes(entry?.prerequisites ?? null, (entry?.citations ?? value.draft?.citations ?? []).length) && validReviewChanges(entry?.prerequisiteChanges, entry?.prerequisites ?? null, value.draft?.prerequisites?.length ?? 0)));
 export const packetSummarySchema = z.object({ id, title: z.string(), createdAt: time, rowCount: z.number().int().nonnegative(), staleSources: z.boolean() }).strict();
 export const packetSchema = packetSummarySchema.extend({ sources: z.array(source).min(1).max(6), rows: z.array(row).min(1).max(120), generationMode: z.enum(["synchronous", "background"]).default("synchronous"), availableExecutionModes: z.array(executionModeSchema).max(2).refine(values => new Set(values).size === values.length).optional(), workbook: workbookMetadataSchema.nullable().optional() });
 export const createPacketSchema = z.object({ title: z.string().trim().min(1).max(160), sources: z.array(sourceInput).min(1).max(6), requirements: z.array(requirement).min(1).max(12) }).strict();
-export const reviewInputSchema = z.object({ ...reviewFields, expectedRevision: z.number().int().positive(), note: z.string().max(1000) }).strict().refine(value =>
+const citationInput = evidence.pick({ chunkId: true, documentVersionId: true, excerpt: true });
+export const reviewInputSchema = z.object({ ...reviewFields, expectedRevision: z.number().int().positive(), note: z.string().max(1000), citations: z.array(citationInput).max(12).nullable().optional() }).strict().refine(value =>
   (value.status !== "conditional" || value.conditions.length > 0)
   && (value.status !== "insufficient_evidence" || value.missingInformation.length > 0)
   && (value.status !== "supported" || value.conditions.length === 0)
   && (value.prerequisites === null || JSON.stringify(value.conditions) === JSON.stringify(prerequisiteConditions(value.prerequisites)))
   && (!value.prerequisiteChanges || (value.prerequisites !== null && value.prerequisiteChanges.origins.length === value.prerequisites.length))
+  && (value.citations == null || (
+    validPrerequisiteIndexes(value.prerequisites, value.citations.length)
+    && (value.status === "insufficient_evidence" || value.citations.length > 0)
+    && (value.status !== "conflicting_evidence" || new Set(value.citations.map(c => c.documentVersionId)).size >= 2)
+    && new Set(value.citations.map(c => JSON.stringify(c))).size === value.citations.length
+  ))
 );
 export type Packet = z.infer<typeof packetSchema>;
 export type PresalesRow = z.infer<typeof row>;
@@ -56,6 +63,9 @@ export type PrerequisiteAssessment = z.infer<typeof prerequisite>;
 export type Evidence = z.infer<typeof evidence>;
 export type PrerequisiteChanges = z.infer<typeof prerequisiteChanges>;
 export type ExecutionMode = z.infer<typeof executionModeSchema>;
+export function reviewCitations(draft: PresalesRow["draft"], review: PresalesRow["review"]): Evidence[] {
+  return review?.citations ?? draft?.citations ?? [];
+}
 export function prerequisiteConditions(items: PrerequisiteAssessment[]): string[] {
   return [...new Set(items.filter(item => item.state !== "met").map(item => item.condition))];
 }

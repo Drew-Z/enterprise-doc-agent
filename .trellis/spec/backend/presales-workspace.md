@@ -983,3 +983,61 @@ mapping server-side, expand schema before coordinated API/Worker/Web release, an
 downgrade with workbook history. Existing rc.45 release scripts stop at 0034; a separate
 0035 release/rollback plan is required before deployment. Local checks do not certify
 commercial quality or native desktop Excel support for arbitrary features.
+
+## Scenario: correct source citations during human review (0037 candidate)
+
+### 1. Scope / Trigger
+An existing draft can cite the wrong clause. Review must replace that evidence as well
+as the response, without mutating the original draft, earlier reviews or model accounting.
+
+### 2. Signatures
+`PUT /api/presales/{packet}/rows/{row}/review` adds nullable `citations: CitationInput[]`
+(at most12). `PresalesReview.citations` is a nullable JSONB side column; migration
+`20261010_0037` follows0036. `manual.resolve_evidence(session, packet, citations,
+error_code=...)` is shared by manual authorship and review. No new environment keys.
+
+### 3. Contracts
+Omitted/null citations retain the original draft binding and historical fingerprint.
+An explicit array is ordered and complete; `[]` means no evidence, never a fallback.
+Once the latest review has explicit citations, a new review must supply its selection;
+an old idempotency key still replays before new-intent validation and reauthorizes access.
+Resolve each `(chunk_id, document_version_id, excerpt)` against the packet's tenant,
+frozen version and ingestion generation, using literal escaped substring matching.
+Only the server supplies filename/page/heading/offset metadata. Reauthorize before commit.
+Store `Evidence[]` in the side column, excluding both citations and prerequisite_changes
+from historical strict content JSON. Merge side columns in the existing single MVCC
+history query. All prerequisite indexes and conflict-version checks use that review's
+ordered selection. Changing citations or prerequisites needs a nonempty note.
+CSV current evidence uses the latest selection; appended original-citation and human
+citation-history columns preserve provenance. Workbook rendering uses reviewed text.
+
+### 4. Validation & Error Matrix
+- Duplicate inputs, >12 citations or client-supplied metadata ->422 validation failure.
+- Nonliteral/foreign/stale chunk, missing evidence, invalid prerequisite indexes,
+  one-version conflict or omitted selection after a correction ->409
+  `presales_review_evidence_required`.
+- Citation/prerequisite change without a note ->422 `presales_review_note_required`.
+- Changed key intent/revision race ->409 existing idempotency/revision conflict.
+- Actor/source revocation -> existing403/404 access error, no content or committed review.
+- Downgrade locks presales_reviews and refuses any nonnull citation history (including[])
+  with `presales_review_citations_history_present` before dropping the column.
+
+### 5. Good/Base/Bad Cases
+Base: an old request and stored content retain their digest/reader contract. Good: select
+the actual certificate clause, explain the change, reload and export it while the original
+quote remains in history. Bad: reuse old numeric links after removing a citation, silently
+revert to the draft on a later review, or treat human correction as model-quality evidence.
+
+### 6. Tests Required
+`test_presales_review_citations.py` and `test_review_citations_integration.py`: replacement,
+ordered bindings, explicit empty/revert, note, duplicates, literal wildcard, metadata,
+authorization/replay/revocation, races, original draft/attempt/reservation invariance,
+legacy content/digest stability, owned-schema migration round-trip and history refusal.
+Retain existing workflow/review-change/manual/workbook integration checks.
+
+### 7. Wrong vs Correct
+Wrong: add citations to old strict content, or render every history entry using draft
+citations. Correct: preserve content, merge each revision's side column and resolve
+`review.citations is not None` explicitly. rc48 cannot interpret this history. The0036
+release tooling must keep rejecting0037 until coordinated expansion and reader guards
+are implemented; after new history, rc48 is not an eligible rollback reader.

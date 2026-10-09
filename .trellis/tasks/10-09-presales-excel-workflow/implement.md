@@ -75,3 +75,21 @@ the input locally and proved no prior owned packet before proceeding. Removed on
 remote temporary files /315 directories and43 local transport files /1 directory; final
 public readiness200 and five unchanged ready workloads passed. Human history is retained;
 future recovery requires compatible readers. Model reliability and semantic quality remain open.
+
+## Review citation correction slices
+
+- [x] Red/green public review validation for explicit evidence, note, legacy requests and per-revision indexes.
+- [x] Actual PostgreSQL/API save/reload/history/export with original draft and accounting intact; migration history refusal, authorization, concurrency and idempotency.
+- [x] Shared literal evidence picker; review editing and prerequisite rebinding; current/original/history rendering and CSV.
+- [x] Desktop/mobile browser flow and lost-acknowledgement GET recovery; required package checks and specification update.
+- [x] Scoped candidate publication; keep staging rc48 until separate0037 release guards and exact candidate preflight pass.
+
+Recovery: existing commercial task group, phase review_evidence_20261010; baseline
+9fb1d4454cf42782f6443634ce4abf84c748476a. No new provider calls or historical replay retries.
+
+Candidate checks passed: Ruff,736-file format,274-file mypy,2,967 nonintegration tests
+(23 subtests),457 frontend tests and production build. The five affected PostgreSQL
+suites contain77 unique passing cases after correcting the source-revocation test's
+expected404. Browser model workflow passed both widths; new human correction initially
+timed out on a label locator, then passed both widths using the textbox role locator.
+Both browser schemas were removed. Original evidence and failed runs remain retained.

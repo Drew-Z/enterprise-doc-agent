@@ -164,3 +164,37 @@ calls, the unknown diagnostic is not retried, and original160 capacity is still 
 No real-customer or independent business approval, measured time saving, paid demand or
 competitor-parity claim. Doc closeout uses JSON/evidence/context/diff integrity checks;
 successful code suites are not repeated for unchanged executable sources.
+
+## Review citation correction candidate — 2026-10-10
+
+An existing draft can now be reviewed with a new ordered selection of exact authorized
+source passages. Each review owns its evidence snapshot; the original draft, earlier
+reviews and all attempts remain unchanged. Current/history UI and CSV follow those
+bindings, including an explicit empty selection. Correcting citations requires a note;
+removing citations unselects affected prerequisite links and forces deliberate rebinding.
+Shared literal search does not reset unsaved response text. A lost review PUT result is
+recovered only by GET. No new model routes, calls, budgets or embedding requirements.
+
+- Backend contract red:3 rejected-citations tests, then3 green. Real API red additionally
+  reproduced missing server metadata; after resolver/storage work,10 cases passed.
+- Final Python checks: Ruff,format736,mypy274;2,967 nonintegration tests and23 subtests.
+- Affected PostgreSQL suites: review-citations,review-changes,manual-response,workflow,
+  workbook:77 unique cases passed. First combined run had39 pass/1 test assertion failure
+  (source revocation actually returns404); corrected expectation then passed in the
+  38-case workflow/workbook/revocation run. No shared schema migration.
+- Web: lint,typecheck,457 tests,production build passed. Existing>500kB bundle advisory remains.
+- Browser: original model workbook workflow passed at1440/390; human correction initially
+  timed out using an exact label locator despite the rendered textbox. Switching the test
+  to its accessible textbox role passed both widths (5.0s/4.2s). Preserved failure traces.
+  Verified lost manual/review responses, one PUT per intent, read/reload, corrected CSV,
+  original quote, formula and other-sheet preservation, no horizontal overflow and no
+  source/file bodies in browser storage. Human flows added zero controlled gateway calls.
+- Browser schemas removed with matching ownership/cleanup receipts. Screenshots visually
+  checked at both widths. All2,993 unrelated Git entries retain their original status hash.
+
+Report: `docs/ops/presales-review-citations-20261010.md`. Central recovery phase:
+`review_evidence_20261010`, Git baseline `9fb1d4454cf42782f6443634ce4abf84c748476a`.
+This is a0037 candidate; staging remains rc48/0036. A coordinated expansion and compatible
+reader/rollback guards are still required before deployment. Do not restore rc48 after
+explicit review citation history exists. Frozen public failures and call ledger unchanged;
+human repair does not establish model accuracy, customer time savings or competitor parity.

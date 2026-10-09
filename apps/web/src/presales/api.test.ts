@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { presalesApi } from "./api";
+import { presalesApi, reviewInputSchema } from "./api";
 
 const packetId = "10000000-0000-4000-8000-000000000001";
 const rowId = "10000000-0000-4000-8000-000000000002";
@@ -59,6 +59,24 @@ function reviewedPacket(review: Record<string, unknown>, history: Record<string,
 }
 
 describe("Presales review source bindings at the HTTP boundary", () => {
+  it("binds each review to its own citation list and rejects invalid historical links", async () => {
+    const original = reviewedPacket(savedReview).rows[0].draft.citations[0];
+    const corrected = { ...savedReview, citations: [original, { ...original, chunkId: rowId, excerpt: "Correct clause." }], prerequisites: [{ ...reviewedText.prerequisites[0], citationIndexes: [1] }] };
+    const fetch = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify(reviewedPacket(corrected))));
+    expect((await presalesApi("token").get(packetId, new AbortController().signal)).rows[0].review?.citations?.[1].excerpt).toBe("Correct clause.");
+    fetch.mockResolvedValue(new Response(JSON.stringify(reviewedPacket(corrected, [{ ...corrected, citations: [original] }, corrected]))));
+    await expect(presalesApi("token").get(packetId, new AbortController().signal)).rejects.toThrow();
+  });
+
+  it("validates explicit selection, duplication and conflict versions before a review write", () => {
+    const citation = { chunkId: rowId, documentVersionId: otherId, excerpt: "Original source." };
+    const body = { ...reviewedText, expectedRevision: 1, note: "Correct evidence.", citations: [citation] };
+    expect(reviewInputSchema.safeParse(body).success).toBe(true);
+    for (const patch of [{ citations: [] }, { citations: [citation, citation] }, { status: "conflicting_evidence" }, { citations: [{ ...citation, filename: "forged.txt" }] }]) {
+      expect(reviewInputSchema.safeParse({ ...body, ...patch }).success).toBe(false);
+    }
+    expect(reviewInputSchema.safeParse({ ...body, citations: [], prerequisites: [], conditions: [], status: "insufficient_evidence", missingInformation: ["Need source."] }).success).toBe(true);
+  });
   it("preserves split, human-added and excluded origins on read and accepts older responses", async () => {
     const revised = { ...savedReview, prerequisites: [reviewedText.prerequisites[0], reviewedText.prerequisites[0], reviewedText.prerequisites[0]], prerequisiteChanges: { origins: [0, 0, null], excludedIndexes: [1] } };
     const fetch = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify(reviewedPacket(revised))));

@@ -211,6 +211,11 @@ class PresalesReview(UUIDPrimaryKeyMixin, TimestampMixin, Base):
             "prerequisite_changes IS NULL OR jsonb_typeof(prerequisite_changes) = 'object'",
             name="presales_review_changes_object",
         ),
+        CheckConstraint(
+            "citations IS NULL OR CASE WHEN jsonb_typeof(citations) = 'array' "
+            "THEN jsonb_array_length(citations) <= 12 ELSE false END",
+            name="presales_review_citations_array",
+        ),
     )
     tenant_id: Mapped[UUID] = mapped_column(nullable=False)
     row_id: Mapped[UUID] = mapped_column(nullable=False)
@@ -220,5 +225,8 @@ class PresalesReview(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     fingerprint: Mapped[str] = mapped_column(String(64))
     content: Mapped[dict[str, Any]] = mapped_column(JSONB)
     prerequisite_changes: Mapped[dict[str, Any] | None] = mapped_column(
+        JSONB(none_as_null=True), nullable=True
+    )
+    citations: Mapped[list[dict[str, Any]] | None] = mapped_column(
         JSONB(none_as_null=True), nullable=True
     )

@@ -30,7 +30,7 @@ from enterprise_doc_core.presales.errors import PresalesError
 from enterprise_doc_core.presales.export import export_csv
 from enterprise_doc_core.presales.gateway import OpenAICompatiblePresalesGateway, PresalesGateway
 from enterprise_doc_core.presales.generation import ACTIVE_STATES, GenerationService, Retriever
-from enterprise_doc_core.presales.manual import browse_evidence, save_response
+from enterprise_doc_core.presales.manual import browse_evidence, resolve_evidence, save_response
 from enterprise_doc_core.presales.models import (
     PresalesAttempt,
     PresalesPacket,
@@ -299,7 +299,10 @@ class PresalesService:
                         aggregate_order_by(
                             PresalesReview.content.op("||")(
                                 func.jsonb_build_object(
-                                    "prerequisite_changes", PresalesReview.prerequisite_changes
+                                    "prerequisite_changes",
+                                    PresalesReview.prerequisite_changes,
+                                    "citations",
+                                    PresalesReview.citations,
                                 )
                             ),
                             PresalesReview.revision,
@@ -473,6 +476,8 @@ class PresalesService:
         excluded = {"prerequisite_changes"} if payload.prerequisite_changes is None else set()
         if payload.prerequisites is None:
             excluded.add("prerequisites")
+        if payload.citations is None:
+            excluded.add("citations")
         digest = fingerprint(payload, exclude=excluded)
         context = get_request_context()
         async with self.session_factory.begin() as session:
@@ -512,15 +517,27 @@ class PresalesService:
                             {
                                 **previous.content,
                                 "prerequisite_changes": previous.prerequisite_changes,
+                                "citations": previous.citations,
                             }
                         )
                         if previous is not None
                         else None
                     )
                 validate_review(draft, payload, previous_review)
+                citations = (
+                    await resolve_evidence(
+                        session,
+                        packet,
+                        payload.citations,
+                        error_code="presales_review_evidence_required",
+                    )
+                    if payload.citations is not None
+                    else None
+                )
                 row.revision += 1
                 saved = SavedReview(
-                    **payload.model_dump(exclude={"expected_revision"}),
+                    **payload.model_dump(exclude={"expected_revision", "citations"}),
+                    citations=citations,
                     revision=row.revision,
                     actor_id=packet.actor_id,
                     reviewed_at=self.clock(),
@@ -533,9 +550,14 @@ class PresalesService:
                         revision=row.revision,
                         idempotency_key=key,
                         fingerprint=digest,
-                        content=saved.model_dump(mode="json", exclude={"prerequisite_changes"}),
+                        content=saved.model_dump(
+                            mode="json", exclude={"prerequisite_changes", "citations"}
+                        ),
                         prerequisite_changes=saved.prerequisite_changes.model_dump(mode="json")
                         if saved.prerequisite_changes is not None
+                        else None,
+                        citations=[c.model_dump(mode="json") for c in saved.citations]
+                        if saved.citations is not None
                         else None,
                     )
                 )
@@ -554,6 +576,8 @@ class PresalesService:
                         "status": saved.status,
                     },
                 )
+            await authorize_principal(session, principal)
+            await check_sources(session, packet)
         return await self.get(principal, packet_id)
 
     async def export(

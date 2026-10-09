@@ -67,3 +67,20 @@ six-row replay remain unchanged. With human history present, the real restore gu
 legacy readers before writes. The initial read-only-container harness failure is retained;
 the corrected harness supplied a local workbook before any import. See `validation.md`
 and `docs/ops/rc48-manual-release-validation.json`. Model quality and parent acceptance remain open.
+
+## Evidence correction during review
+
+The SWU03 replay exposed a delivery gap: review can correct response/prerequisite text,
+but cannot replace irrelevant model-selected citations with the actual authorized clause.
+Within the authorized evidence-quality remediation, allow an existing model or human
+draft to be reviewed with a new explicit set of literal source passages. Preserve the
+original draft/citations, every earlier review and all model attempts. Require an
+explanatory note, exact authorization and independent review evidence snapshots; use
+the corrected evidence consistently in current/history views and CSV. No provider,
+embedding, ingestion, generation budget or frozen public-packet changes.
+
+Acceptance: actual API/PostgreSQL round-trip with an initially wrong source, separate
+review snapshots, idempotency/conflicts/revocation, no accounting changes; desktop/mobile
+selection, prerequisite-link correction, reload/export and uncertain-save GET recovery.
+Keep this capability distinct from improvement in original model accuracy. Additive
+persistence and history-preserving migration guards precede any coordinated deployment.

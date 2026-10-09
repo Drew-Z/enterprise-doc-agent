@@ -53,7 +53,7 @@ for (const width of [1440, 390]) {
 }
 
 for (const width of [1440, 390]) {
-  test(`Human completion without generation and reviewed delivery at ${width}px`, async ({ page, request }, info) => {
+  test(`Human completion, corrected citations and reviewed delivery at ${width}px`, async ({ page, request }, info) => {
     const context = await (await request.get(api + "/__workbook_test__/context", { headers })).json() as { token: string };
     const before = await (await request.get(api + "/__workbook_test__/stats", { headers })).json() as { modelCalls: number };
     await page.addInitScript(token => { sessionStorage.setItem("enterprise-doc.upload-token.v1", token); localStorage.setItem("enterprise-doc-agent.locale", "zh"); }, context.token);
@@ -78,6 +78,14 @@ for (const width of [1440, 390]) {
       if (width === 1440 && writes === 1) await route.abort("failed");
       else await route.fulfill({ response });
     });
+    let reviews = 0;
+    await page.route("**/review", async route => {
+      reviews++;
+      const response = await route.fetch();
+      expect(response.status()).toBe(200);
+      if (width === 1440 && reviews === 1) await route.abort("failed");
+      else await route.fulfill({ response });
+    });
     for (const key of ["X2", "X3"]) {
       const row = page.getByRole("article", { name: key, exact: true });
       await row.getByRole("button", { name: "人工填写", exact: true }).click();
@@ -85,27 +93,44 @@ for (const width of [1440, 390]) {
       await row.getByRole("button", { name: "选择证据 1", exact: true }).click();
       await row.getByRole("button", { name: "确认所选证据并填写" }).click();
       await row.getByLabel("判断", { exact: true }).selectOption("supported");
-      await row.getByLabel("响应文案", { exact: true }).fill(`人工填写 ${key}`);
+      await row.getByRole("textbox", { name: "响应文案", exact: true }).fill(`人工填写 ${key}`);
       await row.getByLabel("填写依据", { exact: true }).fill("人工核对原文及适用范围");
       await row.getByRole("button", { name: "保存人工草稿" }).click();
       await expect(row.getByText(/初稿由人工填写/)).toBeVisible();
       await expect(page.getByRole("button", { name: "回填已复核 Excel" })).toBeDisabled();
       await row.getByRole("button", { name: `${key} 查看证据与复核` }).click();
+      await row.getByRole("textbox", { name: "响应文案", exact: true }).fill(`人工更正 ${key}`);
+      await row.getByRole("button", { name: "更正引用证据" }).click();
+      await row.getByLabel("原文关键词").fill("days.");
+      await row.getByRole("button", { name: "查询原文", exact: true }).click();
+      await row.getByRole("button", { name: "选择证据 1", exact: true }).click();
+      await row.getByRole("button", { name: "移除证据 1", exact: true }).click();
+      await expect(row.getByRole("textbox", { name: "响应文案", exact: true })).toHaveValue(`人工更正 ${key}`);
       await row.getByLabel("复核备注", { exact: true }).fill("独立复核测试，不代表客户验收");
       await row.getByRole("button", { name: "保存复核", exact: true }).click();
       await expect(row.locator(".presales-reviewed")).toHaveText("已复核");
     }
     expect(writes).toBe(2);
+    expect(reviews).toBe(2);
     await page.reload();
     await expect(page.getByText(/初稿由人工填写/)).toHaveCount(2);
     const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "回填已复核 Excel" }).click()]);
     const file = info.outputPath(`manual-reviewed-${width}.xlsx`);
     await download.saveAs(file);
-    execFileSync(python, ["-B", "-X", "utf8", "-c", "import sys; from openpyxl import load_workbook; w=load_workbook(sys.argv[1]); assert '人工填写 X2' in w['技术要求']['C2'].value; assert '人工填写 X3' in w['技术要求']['C3'].value; assert w['技术要求']['D2'].value == '=A2'; assert w['采购说明']['A1'].value == '请保留本页。'", file]);
+    execFileSync(python, ["-B", "-X", "utf8", "-c", "import sys; from openpyxl import load_workbook; w=load_workbook(sys.argv[1]); assert '人工更正 X2' in w['技术要求']['C2'].value; assert '人工更正 X3' in w['技术要求']['C3'].value; assert w['技术要求']['D2'].value == '=A2'; assert w['采购说明']['A1'].value == '请保留本页。'", file]);
+    const [audit] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "导出已复核 CSV", exact: true }).click()]);
+    const auditFile = info.outputPath(`citations-audit-${width}.csv`);
+    await audit.saveAs(auditFile);
+    execFileSync(python, ["-B", "-X", "utf8", "-c", "import sys,csv; rows=list(csv.DictReader(open(sys.argv[1],encoding='utf-8-sig'))); assert len(rows)==2; assert all(r['原文证据'].endswith(': days.') and 'Retention' in r['原始引用证据'] and '版本 2' in r['人工引用修订记录'] and '人工填写' in r['原人工文案'] for r in rows)", auditFile]);
     const after = await (await request.get(api + "/__workbook_test__/stats", { headers })).json() as { modelCalls: number };
     expect(after.modelCalls).toBe(before.modelCalls);
     expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
     expect(await page.evaluate(() => JSON.stringify({ ...sessionStorage, ...localStorage }))).not.toContain("人工填写 X2");
+    const first = page.getByRole("article", { name: "X2", exact: true });
+    await first.getByRole("button", { name: "X2 查看证据与复核" }).click();
+    await expect(first.locator(".presales-row-details > .presales-evidence blockquote")).toHaveText("days.");
+    await first.getByText("原人工草稿", { exact: true }).click();
+    await expect(first.locator(".presales-original").first()).toContainText("Retention");
     await page.screenshot({ path: info.outputPath(`manual-reviewed-${width}.png`), fullPage: true });
   });
 }

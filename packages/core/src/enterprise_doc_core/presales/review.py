@@ -10,10 +10,22 @@ from enterprise_doc_core.presales.schemas import (
     ReviewInput,
     SavedDraft,
     SavedReview,
+    review_citations,
 )
 
 
 def validate_review(draft: SavedDraft, payload: ReviewInput, previous: SavedReview | None) -> None:
+    if payload.citations is None and previous is not None and previous.citations is not None:
+        raise PresalesError("presales_review_evidence_required")
+    original_citations = [
+        CitationInput(**c.model_dump(include={"chunk_id", "document_version_id", "excerpt"}))
+        for c in draft.citations
+    ]
+    previous_citations = [
+        CitationInput(**c.model_dump(include={"chunk_id", "document_version_id", "excerpt"}))
+        for c in review_citations(draft, previous)
+    ]
+    citations = payload.citations if payload.citations is not None else original_citations
     original, proposed = draft.prerequisites, payload.prerequisites
     changes = payload.prerequisite_changes
     if changes is None:
@@ -39,17 +51,16 @@ def validate_review(draft: SavedDraft, payload: ReviewInput, previous: SavedRevi
         or proposed != (previous.prerequisites if previous is not None else original)
         or effective_mapping != original_mapping
         or effective_mapping != previous_mapping
+        or citations != original_citations
+        or citations != previous_citations
     ):
         raise PresalesError("presales_review_note_required")
     try:
         ModelDraft(
-            **payload.model_dump(exclude={"expected_revision", "note", "prerequisite_changes"}),
-            citations=[
-                CitationInput(
-                    **c.model_dump(include={"chunk_id", "document_version_id", "excerpt"})
-                )
-                for c in draft.citations
-            ],
+            **payload.model_dump(
+                exclude={"expected_revision", "note", "prerequisite_changes", "citations"}
+            ),
+            citations=citations,
         )
     except ValidationError as error:
         raise PresalesError("presales_review_evidence_required") from error
