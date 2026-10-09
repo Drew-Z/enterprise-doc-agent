@@ -1,6 +1,6 @@
 # Local verification — 2026-10-09
 
-The Excel workflow is implemented and locally verified. No staging deployment, shared-schema migration, remote push, or live model/embedding calls were made.
+The initial Excel implementation phase was locally verified without staging deployment, shared-schema migration, remote push, or live model/embedding calls. Later authorized release and public-replay results are recorded below; this opening table is historical local evidence.
 
 | Check | Result |
 | --- | --- |
@@ -24,7 +24,7 @@ Recovery and evidence: `D:/Agent/codex/backups/tasks/20260924T015840.986Z-commer
 
 The feature commit includes only the Excel implementation, its tests, presales contracts, the usage guide and this child task. Existing commercial/product plan edits and the untracked commercial parent task remain outside that commit. Historical workspace changes are retained. The parent commercial acceptance remains open.
 
-Next: prepare schema 0035 candidate publication and application rollback compatibility, then replay one sourced public customer questionnaire through the complete file workflow. This verification does not establish competitor parity, commercial acceptance, user time savings or willingness to pay.
+The next phase at that time was schema0035 publication/rollback and a sourced public file replay; that continuation is now complete below. This verification does not establish competitor parity, commercial acceptance, user time savings or willingness to pay.
 
 ## Approved continuation: release tooling
 
@@ -40,8 +40,26 @@ The first PostgreSQL run exposed a mismatch in the expected PostgreSQL rendering
 the BETWEEN constraint; the exact expected grouping was corrected without weakening
 shape validation. The original 0034 error-code context was preserved after regression.
 
-Fresh read-only staging observation remains rc.45/0034, five workloads ready, idle
+The pre-release read-only staging observation was rc.45/0034, five workloads ready, idle
 business, unchanged credential fingerprints and approximately 14.41 GiB free. This
 is a preflight, not a live schema upgrade or release. Evidence is in the central task
 group: `excel-release-preflight.json` and `excel-release-pytest-nonintegration.log`.
-Candidate publication and public file replay remain pending at this commit.
+Candidate publication and public file replay were pending at application commit 9ed3857; the subsequent execution follows.
+
+## Executed release and bounded public file replay
+
+- Exact application commit `9ed3857b361573b27abc9f6c245afb1dfdd9feaa`, tag `v0.1.45-rc.46`: Quality 37910201893, Container 37910201958 and signed build 37911371360 succeeded. Five artifacts / 56 evidence files verified. Local test counts above are not remote CI counts.
+- Staging0034→0035 expansion, rc46 release, actual rc45 rollback and rc46 reapply passed independent technical verification, taking 72.347 / 90.303 / 83.114 / 85.121 seconds. Complete resources, schema, credentials, history, packaged code, image identity and public assets were checked. No historical cache cleanup was needed.
+- Actual rollback preceded the first workbook import. Workbook history now exists: reject legacy readers and preserve history; use compatible images or forward fixes.
+- Six frozen SWU requirements derived from a historical public procurement, plus three complete sources (67,879 bytes), ran through actual HTTP upload, ingestion, retrieval, preview/confirmation, import/replay, reload, background generation, assisted review and XLSX/CSV export. This is not the buyer's original workbook or the whole tender.
+- **4 drafts / 2 failures / 0 unsubmitted; 9 model calls; 0 manual generation retries.** Both terminal failures followed invalid primary output and fallback timeout. One other invalid primary output recovered through the existing fallback. All four drafts are insufficient-evidence; SWU01 incorrectly used unmet and SWU03 saved irrelevant citations. SWU05 receives a clarity improvement without a new severe-error claim.
+- Four Codex-assisted reviews preserved every original draft and attempt; failed rows were untouched. Fully reviewed export returned409. Partial draft workbook contains four reviewed rows plus two failure markers; every unrelated ZIP member, original cell/style and dimension remains unchanged. Native Excel visual acceptance and independent business approval remain absent.
+- Independent post-review DB observation: four consumes/two releases exactly once, no active jobs or pending reservations; original workbook hash retained. Review added no model calls or financial/document consumption. Normal ingestion/retrieval made27 embedding calls. Model usage is57,853 known tokens across7 calls,2 calls unknown; financial reconciliation not performed. UTC daily accounting36 application +10 earlier direct =46/200.
+- Post-review five-workload identity/readiness and public readiness200 passed. Both short-lived replay/review JWTs were revoked200.
+- Owned cleanup: remote233 files/315 directories, local43 transport files and its directory, plus two interrupted-download remnants. Historical caches, records, backups and unrelated worktree differences retained.
+
+See [public replay](../../../docs/ops/public-excel-replay-20261009.md), [release evidence](../../../docs/ops/rc46-release-rollback-validation.json) and [replay evidence](../../../docs/ops/rc46-public-excel-replay-validation.json). Recovery remains in the existing central task group, phase `excel_release_20261009`.
+
+Spec-sync review: schema0035 and workbook-reader contracts were already captured by the implementation/release commits. This closeout changes documentation only; unresolved semantic findings belong to the follow-up report, not a claim of changed executable behavior. Validation for this documentation batch is JSON/context/link integrity and scoped diff checks; previously successful implementation suites are not rerun without code changes.
+
+The bounded Excel milestone is complete with an honestly partial output. Parent commercial acceptance remains open: rc45 seven-success/three-failure/two-unsubmitted history, unrun original160 capacity and independent business/release approval gaps are unchanged. No competitor parity or measured user benefit is claimed.

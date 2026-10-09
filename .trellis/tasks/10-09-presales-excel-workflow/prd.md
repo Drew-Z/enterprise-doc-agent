@@ -24,7 +24,7 @@ Import a customer XLSX, confirm its question/answer columns and row range, gener
 
 ## Notes
 
-- Local acceptance completed on 2026-10-09; see `validation.md` and `docs/ops/presales-excel-workflow.md`. Deployment and real-user value remain unverified.
+- Local acceptance completed on 2026-10-09; see `validation.md` and `docs/ops/presales-excel-workflow.md`. Deployment was subsequently verified in the authorized continuation below; real-user value remains unverified.
 
 ## Authorized continuation — 2026-10-09
 
@@ -33,5 +33,7 @@ The user's subsequent approval extends this task to schema 0035 release/rollback
 - [x] Fixed 0034-to-0035 expansion preserves original resources and reconciles unknown outcomes without downgrading history.
 - [x] Image-only 0035 switching preserves configuration; legacy readers are refused whenever workbook history exists, before and after closing admission.
 - [x] Actual PostgreSQL verifies migration, interrupted receipts, exact constraints, old-reader compatibility boundary and unchanged history.
-- [ ] Candidate source CI, signed artifacts, space guards and fresh staging state bind the release; application rollback retains schema 0035. Record any genuine blocker rather than bypassing it.
-- [ ] Freeze a sourced public questionnaire and a bounded row range before execution; import, generate, review and return the workbook, retaining original drafts and failures. No competitor-parity or user-time-savings claim.
+- [x] Candidate source CI, signed artifacts, space guards and fresh staging state bind the release; application rollback retains schema 0035. Record any genuine blocker rather than bypassing it.
+- [x] Freeze a sourced public questionnaire and a bounded row range before execution; import, generate, review and return the workbook, retaining original drafts and failures. No competitor-parity or user-time-savings claim.
+
+Continuation completed: rc46/0035 released, actual rc45 rollback/reapply verified before workbook history existed. Six derived public SWU rows produced four drafts and two failures in nine calls, with four assisted reviews and a partial draft workbook export. This completes the bounded file-workflow task, not answer-quality or commercial acceptance; see `validation.md`.
