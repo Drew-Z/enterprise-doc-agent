@@ -523,3 +523,29 @@ Correct: preserve that text and unknown state for separate action-neutrality rev
 Likewise, question-part coverage does not establish substantive answer completeness.
 Tests live in packages/core/tests/test_presales_question_assessment.py; frozen GP01
 remains rejected by the original candidate and is never repaired through this one.
+
+## Public meaning preservation after question-ID coverage
+
+QP01 passes all 11 frozen criteria for one synthetic case, but CQU02/CQU05 demonstrate
+that correct question IDs, source references and unknown states are insufficient.
+CQU02 retains thresholds and missing supplier proof but incompletely asks for test
+conditions. CQU05 cites authentic clauses yet changes specific software project
+management experience into general work experience OR the specific category.
+
+Keep original mechanical states and semantic reviews distinct. For prospective
+source-grounded review, compare the generated obligation/action with the exact
+source: subject, qualification category, quantity, scope and conjunction/alternative.
+Do not implement a bare OR keyword ban or automatically fix prose. A valid OR in
+the source must remain possible; a stronger source requirement cannot silently
+become an optional alternative. Frozen review controls must cover both directions.
+
+Wrong: classify CQU05 as accepted because its citation exists and state is unknown.
+Correct: retain its succeeded draft and both source clauses, flag the weakened
+experience category and require review; missing supplier records stay unknown.
+Wrong: call CQU02 a false performance assertion or claim the empty answer citation
+array means no saved citation. Correct: requiredBy preserves the exact source;
+its deficit is resource/measurement-method clarification under frozen criterion 7.
+
+These are assistant observations against pre-frozen references, not independent
+business approval or changed historical score contracts. Original GP01 and earlier
+results remain intact. See docs/ops/presales-question-candidate-observation-20261010.md.

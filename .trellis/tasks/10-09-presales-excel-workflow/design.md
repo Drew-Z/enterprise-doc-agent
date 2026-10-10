@@ -403,3 +403,40 @@ resolve_assessment. Do not sort, deduplicate, truncate, infer truth or alter pro
 No gateway/settings/policy/scorer import or runtime switch is added. Retain unknown
 action ambiguity for semantic review. Rollback is Git removal of the two new files
 and restoration of documentation; original candidates and observations remain intact.
+
+## Question-part observation adapter
+
+Reuse the unchanged assessment collector in a dedicated process. Scope gateway
+bindings to the question candidate schema/prompt/resolver and compose existing
+source-span offering with offer_question_assessment. The HTTP boundary binds exact
+question parts and full source/spans before forwarding one streaming low-effort
+request, 120-second deadline and 4,000 requested tokens. Copy only model_name from
+primary settings to glm-5.3. Restore original gateway identity on all exit paths.
+
+Use presales-question-candidate-run-v1, outside historical scorers and application
+persistence. Local controlled success, duplicate IDs, HTTP 503 and cancellation
+check one dispatch and restored bindings. Fresh preflight and exclusive intent
+prevent reruns; preserve requested/returned identity separately from unresolved
+provider alias mapping. All semantic gates remain separate from mechanics.
+
+## Public question-candidate observation
+
+Reuse the frozen question adapter/collector unchanged. Each CQU case receives only
+its literal relevant buyer sections with public URL/fetch/content/excerpt hashes.
+No synthetic supplier facts, hidden expected answer or prior model output enters
+the input. Keep the same primary endpoint, GLM model name, limits and candidate
+identity. Reserve two calls upfront and recheck preflight before each; save both
+planned/unattempted cases and every first/final state. Stop on failed/unknown first
+output or policy drift. Use a distinct presales-question-public-run-v1 report;
+no historical scorer, database persistence or deployment. Identity alias mapping
+still blocks runtime promotion. Observations assess evidence-gap drafting only,
+not supported supplier performance, full procurement completion or user time savings.
+
+Observed public boundary: exact citation identity and correct unknown status do not
+ensure the generated obligation preserves its source. CQU05 cites both genuine
+clauses but rewrites specific software project management experience as generic
+experience OR that category. Future review must compare obligations and actions
+against source scope, retaining each original wording and review finding. A lexical
+OR ban is insufficient: valid alternatives also exist. Keep review separate from
+generation, with frozen detection controls before evaluating it. CQU02's issue is
+clarification completeness, not a false performance claim or missing citation.

@@ -405,3 +405,34 @@ question_assessment_candidate_20261010 uses 3a02c92 in the existing central grou
 Completed: 31 new / 114 focused cases, 3,189 nonintegration tests + 23 subtests,
 Ruff 751 and mypy 279 passed. Full prior source and seven outcome hashes are intact.
 No live request or runtime integration; candidate remains unqualified for promotion.
+
+## Question-part observation
+
+- [x] Verify scoped input/schema/resolver bindings and restoration with controlled
+  success, duplicate-ID output, HTTP failure and interrupted request.
+- [x] Freeze QP01 input/reference and unchanged candidate hashes, reserve one call
+  after fresh policy/budget checks, then retain its first complete or unknown result.
+- [x] Inspect original output and all semantic criteria; record postflight and
+  next action, publish evidence without changing old results or deployed settings.
+
+Recovery phase question_candidate_observation_20261010 uses b678ce4 and six
+documentation paths in the existing central recovery group. Code remains frozen.
+
+## Two public clauses after QP01
+
+- [x] Bind official procurement excerpts and frozen assistant reference for CQU02
+  performance and CQU05 personnel, preserving historical/requirements-only scope.
+- [x] Verify finite batch success and stop-on-failure/interruption/drift locally;
+  freeze both cases, then retain at most two first outcomes without retry.
+- [x] Review each original response, check unchanged application and budgets, and
+  publish results alongside QP01 with precise limits and next implementation gate.
+
+Public observation has a separate phase and two-call reservation. It reuses this
+ongoing task's six documentation recovery entries, not a new baseline over edits.
+
+Completed: one synthetic mechanical/semantic pass followed by two original public
+mechanical successes with semantic limitations. Four adapter and four batch controls
+pass; full input/output/projection and unchanged deployment/ledger/source binding
+verified. Three new calls only; no further generation, deployment or promotion.
+Next isolate source-grounded review of weakened qualifications and incomplete
+measurement conditions with frozen controls before any additional model call.

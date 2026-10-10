@@ -373,3 +373,30 @@ Every offered question part must receive exactly one ordered response; omissions
 duplicates and foreign IDs fail. Preserve the full original question, source context,
 state/action obligations and existing public limits. No inferred semantic coverage,
 GP01 output repair, deployment or extra live request belongs to this implementation.
+
+## Prospective question-part observation
+
+Observe the frozen question-assessment-candidate.v1 once on the same primary
+endpoint with glm-5.3 and a new reordered six-state synthetic case. Freeze input
+and independent criteria before dispatch; preserve the first result, including
+failed/unknown. Require every offered question ID, real rule evidence, all six
+correct states, neutral unknown-state actions, no added proof duty and cross-order
+exclusion. No prompt change, extra request, fallback, embedding or production switch.
+A mechanical pass does not establish substantive answer completeness.
+
+QP01 passes all 11 frozen mechanical/semantic criteria in assistant review; no
+reliability or independent approval is established. Advance to a separate bounded
+public-task observation: CQU02 performance and CQU05 team qualification from the
+historical December 2024 Chongqing University procurement. Current official fetch
+binds exact buyer clauses. No supplier performance/personnel evidence is provided;
+the correct deliverable is a precise evidence-gap response, not a compliance claim.
+Freeze both inputs and separate references before at most one request per case.
+Stop the remaining case after failure/unknown; no retries or model/prompt change.
+
+Public outcomes: both original generations succeed, but neither fully satisfies
+its frozen semantic checklist. CQU02 correctly reports absent performance evidence,
+but omits resource/measurement-method details from the follow-up. CQU05 treats
+general work experience as an alternative to specifically required software project
+management experience. Preserve both successes and semantic failures. Investigate
+a separate source-grounded review step for altered qualification/category/scope;
+do not promote, expand schemas again or repeat generation until success.

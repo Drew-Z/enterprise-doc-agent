@@ -736,3 +736,53 @@ files were created or removed, and no historical file was cleaned. The active ta
 and parent goal remain open.
 
 Candidate system/schema SHA-256: 0a7968e8c538024f9f87d962205047e93453b9584e7fd98be05b44ddf5bb8799.
+
+## QP01 live question-part observation
+
+One new reordered six-state case succeeds in 28.157s, HTTP 200/stop, with 4,449
+input and 1,806 completion tokens (6,255). All three question IDs, complete sources,
+strict schema and original resolver bind; offline projection equals the saved draft.
+All 11 pre-frozen semantic criteria pass assistant review for this case. Verification
+action first asks whether it passed, then records the actual outcome; conflict
+remediation is explicitly conditional, training adds no proof duty and other-order
+evidence is excluded. This is not an accuracy estimate, independent review or a
+matched causal comparison against GP01. Requested glm-5.3 returns z-ai/glm-5.3;
+canonical mapping remains unverified and runtime promotion remains prohibited.
+
+Four controlled cases pass after pre-dispatch missing-adapter/identity failures.
+No product source, original result, policy or ledger is changed. Postflight keeps
+rc49/0037, five ready deployments and zero active jobs. Seven known current-day
+direct calls plus 18 prior-day reservations give conservative 25/200. Public
+observation is separately planned/frozen; it does not expand QP01's single-call cap.
+See docs/ops/presales-question-candidate-observation-20261010.md.
+
+## CQU02 / CQU05 public question-candidate observation
+
+Official historical procurement text was freshly fetched via Smart Search/Tavily.
+Exact performance and team sections with URL, content/excerpt hashes and offsets
+were frozen with both assistant-authored references before any public model call.
+Only buyer rules are supplied; no supplier evidence is fabricated. Four batch
+control scenarios pass: both success, first failure, interrupted first and drift
+before second; the fixed adapter separately passed four HTTP-boundary checks.
+
+CQU02 succeeds in 9.750s (2,833 input + 423 completion = 3,256 tokens). CQU05 succeeds
+in 34.907s (3,845 + 584 = 4,429). Both HTTP 200/stop, original schema/bindings/resolver
+and saved-draft equality pass. Requested glm-5.3 returns z-ai/glm-5.3 with mapping
+unresolved. Public calls total 7,685 reported tokens; billed cost is unknown.
+
+Semantic acceptance fails: CQU02 criterion 7 is incomplete on resource configuration
+and measurement method, despite correct uncertainty, numerical targets and requests
+for environment/network/load/concurrency/tools. CQU05 criteria 7/8 fail because
+software project management experience becomes general work experience OR that
+category; evidence requests do not reliably retain the more specific requirement.
+Correct source IDs, PMP, seven-person scope and unknown states remain recorded.
+No fabricated performance, people or certificates are alleged. Original succeeded
+states are not relabeled; assistant review is not independent domain approval.
+
+QP01 plus these two public calls add three requests and 13,940 reported tokens.
+The final read-only postflight keeps rc49/0037, five ready deployments, zero jobs and
+unchanged policies/source hashes/ledgers. Nine known current-day direct calls plus
+18 prior-day reservations give conservative 27/200. No fallback, embedding, retry,
+production switch or historical repair. Original deployed public replay stays
+4 drafts / 2 failures / 9 calls. Scoped documentation checks replace redundant local
+full-suite reruns for unchanged product code. See the question-candidate report.
