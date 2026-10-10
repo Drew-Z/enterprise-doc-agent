@@ -460,3 +460,32 @@ Recovery phase presales_span_selection_20261010 registers16 paths at baseline8dc
 the central manifest records checks, offline evidence, source hashes, publication
 and owned-temp cleanup. The2,993 unrelated status entries retain their baseline
 checksum. See docs/ops/presales-span-selection-20261010.md.
+
+## V20 mixed-state observation — 2026-10-10
+
+One new S2001 synthetic fixture was frozen with separate criteria against c3ab10d.
+The unchanged primary route returned HTTP200 in52.016s, with9,130 reported tokens.
+Strict schema, immutable span resolution, the production decoder and mechanical
+source/status checks passed. Semantic criteria3/4/8/9 failed: a missing verification
+record became negative/none, four definition slots held current-state facts instead
+of necessity rules, and two next actions were absent. Five separate events, training
+met despite absent certificate, correct authorization conflict and exclusion of the
+other order do not outweigh those failures. Keep original results without repair.
+
+The original run-v10 result SHA is
+ebab2f645c31cb4c28b0aa9a43d6f9979085d8974fc8ad74879341306405e74a.
+Input/reference/controller/source hashes bind the first and only request. Controller
+syntax/import and strict schema validation passed. No runtime source changed, so
+the prior exact-source CI and3,117-test result remain the product check evidence;
+no redundant model or unit-test run was used to manufacture a new outcome.
+
+Read-only postflight verifies rc49/0037/v15, source/policy hashes, five ready services,
+zero active jobs and unchanged ledgers. UTC2026-10-10 has0 application dispatches and
+one new direct request; conservatively retaining18 previous-day known/unknown
+reservations yields19/200, not19 observed current-day calls. No embedding or staging
+change. Six documentation paths have Git/new-file recovery at c3ab10d under phase
+span_selection_live_probe_20261010. Final documentation/publication and workspace
+checks are recorded centrally. No disposable resources were created.
+
+See docs/ops/presales-span-selection-probe-20261010.md. Strict mode promotion, public
+task quality, independent review and the competitor-standard goal remain open.

@@ -228,3 +228,24 @@ unknown-vs-negative classification or competitor acceptance.
 Implemented with54 focused tests,18 actual PostgreSQL cases and3,117 nonintegration
 tests/23 subtests passing. V18/v19 schema modules and original failed scores remain
 unchanged. No live v20 call or staging change; actual semantic acceptance stays open.
+
+## Bounded v20 endpoint and meaning observation
+
+Observe one fresh synthetic requirement through the unchanged primary route using
+the committed v20 gateway. Freeze five independent prerequisite expectations and
+separate reference criteria before inference: met, unmet, missing, conflict, and
+completed training with an absent certificate; include another order as a scope
+distractor. Require exact source selection, correct event direction, complete
+state/next-action coverage and no invented obligation. Keep the first outcome,
+including failure or unknown, with no retry or frozen-sample replay. Charge one
+conservative direct reservation within the existing daily cap. This establishes
+only one observed interaction, not public-task improvement or competitor parity.
+No embedding, deployment, route/model change or automatic staging enablement.
+
+Observed: one52.016-second request passed strict schema, exact span resolution and
+the production decoder, but failed semantic acceptance. Verification status not
+registered was still negative/none; four definitions selected current-state facts
+instead of necessity rules; configuration and verification next actions were
+omitted. Training and same-scope conflict were correct, and another order did not
+fill the gap. Retain the accepted mechanical result and failed semantic review
+separately; no retry or staging enablement. See the span-selection probe report.

@@ -242,3 +242,23 @@ offered spans. Scorers verify the entire reconstructed input/spans against the
 frozen source input before interpreting any result; v8/v9 keep their old formats
 and resolvers. Accepted v19 policies cannot silently resume as v20. Source code
 and decoder checks precede any later bounded real-provider observation.
+
+## V20 discriminating observation
+
+Reuse the run-v10 collector, real gateway, existing credential loader and read-only
+staging preflight; the reference never enters the request. Bind the complete input,
+criteria, candidate sources, controller/helpers and route identity before one
+dispatch. Recheck the UTC day, active work, deployed policy and conservative direct
+reservations immediately before recording exclusive intent. Carry the prior18
+known/unknown reservations even across a UTC rollover rather than erasing them.
+Record the first raw report and separate semantic review. Five independent events,
+adjacent contrary/missing statements, absent training documentation and other-order
+facts test the remaining meaning boundary. Do not alter product source or repair
+generated output during this observation; keep all previous failures immutable.
+
+Observed: fixed IDs eliminate transcription in this request but leave role and
+entailment errors intact. Definition and state selections are separate fields,
+yet four definitions used state records. The decoder accepted a genuine missing
+record assigned to negative. Do not infer semantic quality from the accepted
+projection or aggregate source coverage; any subsequent design must explicitly
+address evidence roles and per-item requested actions without keyword relabeling.

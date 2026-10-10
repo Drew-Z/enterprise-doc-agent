@@ -390,3 +390,13 @@ retain the exact v18/v19 failed reports and original scores. The old v19 generat
 quote objects are invalid v20 selections, not inputs to a quote repair. A valid
 span can still be selected in the wrong semantic direction, so frozen criteria
 must continue assessing missing-vs-negative, event decomposition and entailment.
+
+S2001's first v20 observation passes JSON Schema, span resolution and the original
+decoder, but fails semantic review: a genuine unregistered result is negative/none,
+four definition references point to state records rather than necessity rules,
+and requested next actions are missing. `acceptedDraft`, `statusMatch` and complete
+required-source coverage therefore do not constitute semantic acceptance. Compare
+each definition's role, support direction, prose and requested action separately.
+Preserve the accepted mechanical report and rejected semantic review without
+rewriting either. The new record is in docs/ops/presales-span-selection-probe-20261010.md;
+do not promote strict mode or repeat frozen samples from these checks alone.

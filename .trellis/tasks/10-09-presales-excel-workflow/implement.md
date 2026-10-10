@@ -259,3 +259,22 @@ No new live model/embedding calls or staging changes in this implementation.
 nonintegration tests and23 subtests pass. Ruff format/check covers747 files and
 Mypy277 source files. The initial duplicate-index fixture failure and lint fixes
 are retained in validation notes. Existing v18/v19 failures are unchanged.
+
+## Bounded v20 live observation
+
+- [x] Freeze new S2001 mixed-state input and separate criteria against exact c3ab10d
+  source, current primary policy and conservative daily budget.
+- [x] Reserve one dispatch and retain its first output; mechanically score source
+  binding and separately review every frozen semantic criterion without repair.
+- [x] Verify staging identity/ledgers and original evidence preservation; record
+  the result and remaining public-task/competitor gaps in the task/spec and PR.
+
+Recovery phase span_selection_live_probe_20261010 uses the existing central group.
+No product implementation changes, embedding calls, retry or deployment.
+
+Completed one request in52.016s with9,130 reported tokens. The draft is mechanically
+accepted but fails separate semantic criteria3/4/8/9: missing-as-negative, wrong
+definition roles and omitted next actions. Five ready workloads and application
+ledgers remain unchanged. Current-day app dispatches are0;1 direct request plus18
+conservatively carried prior-day reservations gives19/200. No repeat or promotion.
+Source/evidence, scoped documentation checks and publication are recorded centrally.
