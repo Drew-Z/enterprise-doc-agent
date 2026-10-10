@@ -440,3 +440,20 @@ against source scope, retaining each original wording and review finding. A lexi
 OR ban is insufficient: valid alternatives also exist. Keep review separate from
 generation, with frozen detection controls before evaluating it. CQU02's issue is
 clarification completeness, not a false performance claim or missing citation.
+
+## Fixed Grok/GPT regression comparison
+
+Reuse the existing question candidate, complete frozen inputs, source/span binding,
+gateway and bounded response collector. A dedicated process reads only the explicitly
+selected second channel's `FALLBACK_*2` fields; credentials never enter evidence.
+Keep identical prompts, schemas, low effort, streaming, 120-second deadlines and
+4,000 requested tokens. GPT uses `max_completion_tokens` and omits empty tool fields;
+record the exact effective request and endpoint digest. These are two channel/model
+configurations, so the comparison does not isolate model weights from the provider.
+
+Run one planned request per input/channel, preserving structural failures while
+continuing independent planned cases. Transport/non-200 failure stops that channel;
+cancellation stops the batch. Reserve calls before dispatch, bind source hashes,
+and retain separate source-grounded semantic review. A later Grok correction, if
+needed, receives a distinct identity and results; original candidate and outputs
+remain intact. No new runtime setting or schema is needed for this comparison.

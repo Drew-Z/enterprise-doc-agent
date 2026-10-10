@@ -549,3 +549,37 @@ its deficit is resource/measurement-method clarification under frozen criterion 
 These are assistant observations against pre-frozen references, not independent
 business approval or changed historical score contracts. Original GP01 and earlier
 results remain intact. See docs/ops/presales-question-candidate-observation-20261010.md.
+
+## Fixed regression channel comparisons
+
+The user-authorized 2026-10-10 comparison explicitly selects GPT channel two using
+`FALLBACK_PROVIDER_NAME2`, `FALLBACK_BASE_URL2`, `FALLBACK_API_KEY2`,
+`FALLBACK_MODEL_NAME2` and `FALLBACK_PROTOCOL2` in the local provider file. These
+are diagnostic inputs, not new production routing settings. Verify `gpt`,
+`gpt-6-luna`, `chat_completions`, nonempty credentials and a credential-free HTTPS
+endpoint before dispatch. The legacy collector still supports only primary/fallback.
+
+Reuse known CQU02/CQU05/QP01 inputs and label them regression cases. Freeze all
+arms, common substantive-error criteria, separate improvement items and a hard
+call cap before dispatch. Do not turn optional resource/measurement clarification
+into a false factual-error finding. A category substitution, rule-as-fact or
+unknown-as-unmet error remains substantive. Existing historical verdicts are unchanged.
+
+Record exact effective wire requests without headers or secrets. GPT uses
+`max_completion_tokens=4000` and omits empty tools; Grok retains `max_tokens=4000`.
+Prompt/schema, semantic source content, low effort, streaming and deadlines remain
+common. Citation IDs contain per-call nonces: verify each complete source binding,
+not byte equality across otherwise equivalent requests. Endpoint and credentials
+also differ, so observations compare channel/model configurations rather than
+isolating model weights or verifying provider internals.
+
+Success, HTTP503 and cancellation controls verify one dispatch, redaction and
+restoration of scoped adapters for each channel. Non-200/transport failure stops
+that channel; schema failures remain failed but do not erase other preplanned arms.
+Cancellation preserves the uncertain attempted outcome. No automatic retry.
+
+Wrong: declare semantic failure for an undecodable stream, or infer semantic success
+from a resolved draft. Correct: mark semantics unassessable for the former; review
+the original prose, each state and each action against sources for the latter.
+One planned prompt correction may have separate same-input regression observations;
+never overwrite the baseline, weaken the resolver or continue sampling until success.

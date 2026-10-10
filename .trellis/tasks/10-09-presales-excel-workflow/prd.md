@@ -400,3 +400,27 @@ general work experience as an alternative to specifically required software proj
 management experience. Preserve both successes and semantic failures. Investigate
 a separate source-grounded review step for altered qualification/category/scope;
 do not promote, expand schemas again or repeat generation until success.
+
+## User-directed Grok priority and GPT comparison — 2026-10-10
+
+The user explicitly authorizes testing `gpt-6-luna` through the newly supplied
+`FALLBACK_PROVIDER_NAME2=gpt` channel, while keeping `grok-4.7` semantic correctness
+as the main objective. Use the same known CQU02, CQU05 and QP01 regression inputs
+for both channels; do not call this unseen evaluation or rewrite prior results.
+Separate substantive errors (facts, obligations, scope, state or required-answer
+omissions) from optional clarification detail. CQU02 resource/measurement detail
+is an improvement item, not by itself a rejection of useful draft generation.
+
+Bound this continuation to six comparison calls and, only if Grok shows substantive
+errors, one versioned correction with at most three further Grok regression calls.
+No automatic retry, repeated sampling until success, added review-model dependency,
+embedding or production model switch. Preserve every outcome and provide reviewable
+answers. Human-reviewed file delivery remains useful while automatic quality improves.
+
+Result: the six comparison calls and three revised-Grok calls are complete. GPT
+returns three valid drafts with correct central uncertainty/state handling and
+documented wording limitations. Grok baseline has one undecodable stream and two
+substantive failures; one prompt correction retains rule-as-fact/unknown-as-unmet
+and adds a rejected zero-based-index error. This continuation does not achieve Grok
+semantic acceptance. Stop at the frozen cap; no candidate or route is promoted.
+See `docs/ops/grok-gpt-semantic-comparison-20261010.md` and retained original answers.

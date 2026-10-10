@@ -436,3 +436,26 @@ pass; full input/output/projection and unchanged deployment/ledger/source bindin
 verified. Three new calls only; no further generation, deployment or promotion.
 Next isolate source-grounded review of weakened qualifications and incomplete
 measurement conditions with frozen controls before any additional model call.
+
+## User-directed fixed comparison and Grok remediation
+
+- [x] Confirm second GPT channel fields without exposing credentials; retain Grok
+  production policy and verify both request mappings with controlled HTTP boundaries.
+- [x] Freeze the three existing regression inputs, common major-error criteria and
+  improvement-only detail criteria; collect at most six paired first observations.
+- [x] Review original outputs against source; if Grok has substantive errors, make
+  one explicit correction and run at most three same-input regression observations.
+- [x] Prepare reviewable answers, honest per-channel results and bounded next action;
+  validate owned changes and preserve unrelated work and the current release.
+
+Recovery phase `grok_gpt_semantic_comparison_20261010` uses the existing commercial
+group and clean Git baseline da791d6. Prior outcomes remain immutable. This user's
+direction supersedes the previous next-step suggestion to add a model review stage.
+
+Completed nine bounded calls; no retries, embedding, source repair or deployment.
+Twelve controlled HTTP scenarios and all nine offline source/request checks pass;
+seven accepted projections match unchanged resolvers. Two original failures remain
+failed. Eight known usages total59,034 tokens; the failed stream's usage is unknown.
+The revised Grok semantic gate remains rejected. Scoped documentation validation,
+publication and unchanged workspace receipts are retained centrally. Keep the task
+open; do not infer broad reliability or business acceptance from GPT's three drafts.
