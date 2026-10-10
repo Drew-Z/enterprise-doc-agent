@@ -157,8 +157,16 @@ class OpenAICompatiblePresalesGateway:
         transport: httpx.AsyncBaseTransport | None = None,
         strict_output: bool = False,
         question_assessment: bool = False,
+        question_prompt_version: str = QUESTION_PROMPT_VERSION,
     ) -> None:
         self.source_settings = settings
+        self.question_prompt_version = (
+            presales_settings.question_prompt_version
+            if presales_settings is not None
+            else question_prompt_version
+        )
+        if self.question_prompt_version not in {"presales.v21", QUESTION_PROMPT_VERSION}:
+            raise ValueError("Unsupported question prompt version")
         self.question_assessment = (
             (
                 presales_settings.primary_question_assessment
@@ -235,7 +243,9 @@ class OpenAICompatiblePresalesGateway:
     @property
     def system_message(self) -> str:
         if self.question_assessment:
-            return question_assessment_system_message(numeric_boundaries=True)
+            return question_assessment_system_message(
+                numeric_boundaries=self.question_prompt_version == QUESTION_PROMPT_VERSION
+            )
         draft_type = SpanBasisDraft if self.strict_output else BasisDraft
         prompt = STRICT_SYSTEM_PROMPT if self.strict_output else SYSTEM_PROMPT
         return prompt + "\n" + json.dumps(draft_type.model_json_schema(), ensure_ascii=False)
@@ -243,7 +253,7 @@ class OpenAICompatiblePresalesGateway:
     @property
     def provenance(self) -> dict[str, str | None]:
         return {
-            "promptVersion": QUESTION_PROMPT_VERSION
+            "promptVersion": self.question_prompt_version
             if self.question_assessment
             else STRICT_PROMPT_VERSION
             if self.strict_output
@@ -370,6 +380,8 @@ class OpenAICompatiblePresalesGateway:
                 catalog,
                 strict_output=self.strict_output,
                 question_assessment=self.question_assessment,
+                expanded_missing_information=self.question_prompt_version
+                == QUESTION_PROMPT_VERSION,
                 requirement=payload.requirement,
             ).model_copy(update={"provider_request_id": request_id})
         except asyncio.CancelledError as error:
@@ -407,6 +419,7 @@ class OpenAICompatiblePresalesGateway:
         strict_output: bool = False,
         question_assessment: bool = False,
         requirement: RequirementInput | None = None,
+        expanded_missing_information: bool = True,
     ) -> GeneratedDraft:
         usage: dict[str, int | None] | None = None
         response_id: str | None = None
@@ -454,7 +467,10 @@ class OpenAICompatiblePresalesGateway:
                 if requirement is None:
                     raise ValueError("question assessment requires the original requirement")
                 draft = resolve_question_assessment(
-                    message["content"], requirement, catalog, expanded_missing_information=True
+                    message["content"],
+                    requirement,
+                    catalog,
+                    expanded_missing_information=expanded_missing_information,
                 )
             else:
                 resolver = resolve_span_basis if strict_output else resolve_basis

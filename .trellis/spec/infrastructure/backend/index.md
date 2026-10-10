@@ -35,10 +35,27 @@ Successful image listings do not alone establish container startup readiness.
 
 ## Schema 0037 review-citation publication and rollback
 
+Extended missing-information records also require exact boolean
+`missing_information_readers.original/candidate` declarations on0037. Apply checks
+both readers; restore checks original, before writes and after closing admission.
+The read-only query examines every `presales_rows.draft.missing_information` and every
+`presales_reviews.content.missing_information`, including old review revisions.
+A list longer than12 or an unexpected nonarray type blocks an incompatible reader.
+Do not erase history to enable recovery. All previously required readers still apply.
+
+`PRESALES__QUESTION_PROMPT_VERSION` selects exactly `presales.v21` or `presales.v24`
+(default v24), with the original v21 projection or expanded v24 projection respectively.
+Question prompt changes use explicit primary_model windows and retain policy version/hash
+guards and drain checks. First publish expanded readers pinned to v21, then activate v24
+with the same signed images. The latter window can restore v21 without losing read/review/
+export support for new records. The former rc50 rollback ceases to be compatible after
+extended history appears. Models, fallback, credentials and budgets need not change.
+
 On exact0037 an explicit `release_kind=primary_model` also permits changing only
-the primary endpoint/model/version/credential and primary question-assessment flag,
+the primary endpoint/model/version/credential, primary question-assessment flag and
+reviewed question prompt version,
 with approved signed image changes. Preserve fallback, budgets, resources, schema,
-history and all three reader capabilities. Validate endpoint identity and restrict
+history and all four reader capabilities. Validate endpoint identity and restrict
 approval deltas to primary identity, images and configuration/prerequisite digests.
 Recheck idle state before writes and after admission closes on apply and restore;
 recovery restores the complete original key/configuration/spec bundle. Tests cover

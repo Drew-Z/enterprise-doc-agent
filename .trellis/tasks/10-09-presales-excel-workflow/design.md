@@ -603,3 +603,24 @@ boundary instruction, retaining原词 and inclusion unless the source defines ot
 It passed unchanged decoding and source review in31.390s. The earlier passing CQU06
 and QP01 observations remain attributed to v23; no claim of another full v24 live suite.
 Historical scoring accepts expanded projection for succeeded v23 and v24 only.
+
+## Authorized compatible release and v24 activation
+
+Publish one coordinated API/Worker/Web build with expanded readers and exactly two
+selectable question prompt versions: v21 for recovery, v24 for the new behavior.
+Default remains v24; the compatibility deployment explicitly pins v21. Each choice
+retains its exact system message, version/hash and original decoder projection.
+Policy restoration preserves the selected choice and rejects cross-version work.
+No model route, credential, deadline, budget or database schema change is needed.
+
+On0037 require independent missing-information reader declarations. Check every saved
+draft and every review, including older revisions, for lists exceeding12 items before
+mutation and after admission closes. Incompatible original readers cannot be reopened
+once such history exists. First deploy compatible readers with explicit v21, verify
+source/history/readiness, then activate v24 in a second bounded drained window using
+the same immutable images. Recovery from that second window restores v21 with the new
+readers; rc50 is no longer a valid recovery after extended records exist.
+
+Reserve only the fixed CQU06/CQU05/QP01 product replay, at most six normal primary and
+fallback dispatches. Preserve first model outcomes and attributed manual corrections,
+then verify save/reload and XLSX/CSV. Historical model results remain unchanged.

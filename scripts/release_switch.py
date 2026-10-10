@@ -72,6 +72,7 @@ CONFIG_KEYS = {
     "PRESALES__PRIMARY_REASONING_EFFORT",
     "PRESALES__PRIMARY_STREAMING",
     "PRESALES__PRIMARY_QUESTION_ASSESSMENT",
+    "PRESALES__QUESTION_PROMPT_VERSION",
     "PRESALES__FALLBACK_MODEL_TIMEOUT_SECONDS",
     "PRESALES__ROW_TIMEOUT_SECONDS",
     "PRESALES__MODEL_ROUTE",
@@ -191,6 +192,16 @@ class ReleasePlan(Plan):
                 raise GuardError("0037 requires explicit original and candidate citation readers")
         elif "citation_readers" in value:
             raise GuardError("citation reader declarations require schema 0037")
+        self.missing_information_readers = value.get("missing_information_readers")
+        if self.revision == "20261010_0037":
+            if (
+                not isinstance(self.missing_information_readers, dict)
+                or set(self.missing_information_readers) != {"original", "candidate"}
+                or any(type(v) is not bool for v in self.missing_information_readers.values())
+            ):
+                raise GuardError("0037 requires explicit extended missing-information readers")
+        elif "missing_information_readers" in value:
+            raise GuardError("missing-information reader declarations require schema 0037")
         if "release_kind" in value and (
             not (
                 self.image_only
@@ -250,6 +261,8 @@ class ReleasePlan(Plan):
             raise GuardError("presales concurrency requires an explicit release mode")
         if "PRESALES__PRIMARY_QUESTION_ASSESSMENT" in changed and not self.primary_model:
             raise GuardError("question assessment requires an explicit primary model release")
+        if "PRESALES__QUESTION_PROMPT_VERSION" in changed and not self.primary_model:
+            raise GuardError("question prompt switching requires an explicit primary model release")
         if self.revision in {
             "20261005_0032",
             "20261008_0034",
@@ -265,6 +278,7 @@ class ReleasePlan(Plan):
                     "MODEL__MODEL_NAME",
                     "MODEL__MODEL_VERSION",
                     "PRESALES__PRIMARY_QUESTION_ASSESSMENT",
+                    "PRESALES__QUESTION_PROMPT_VERSION",
                 }
                 if not changed or changed - primary_keys:
                     raise GuardError("primary model switching exceeds the selected route scope")
@@ -295,6 +309,12 @@ class ReleasePlan(Plan):
                         "false",
                     }:
                         raise GuardError("invalid primary question assessment setting")
+                    if config.get("PRESALES__QUESTION_PROMPT_VERSION") not in {
+                        None,
+                        "presales.v21",
+                        "presales.v24",
+                    }:
+                        raise GuardError("invalid question prompt version")
             elif self.reasoning_only:
                 effort_keys = {"MODEL__REASONING_EFFORT", "MODEL__FALLBACK_REASONING_EFFORT"}
                 if (
@@ -576,18 +596,27 @@ class ReleaseCluster(Cluster):
         workbook_empty: Callable[[float], bool] | None = None,
         manual_empty: Callable[[float], bool] | None = None,
         citation_empty: Callable[[float], bool] | None = None,
+        missing_information_empty: Callable[[float], bool] | None = None,
     ) -> None:
         super().__init__(plan, run=run, revision=revision, clock=clock)
         self.idle = idle or database_idle
         self.workbook_empty = workbook_empty or database_workbook_empty
         self.manual_empty = manual_empty or database_manual_empty
         self.citation_empty = citation_empty or database_citation_empty
+        self.missing_information_empty = (
+            missing_information_empty or database_extended_missing_information_empty
+        )
 
     def _check_history_readers(self, deadline: float, *, restoring: bool = False) -> None:
         for label, readers, empty in (
             ("workbook", self.plan.workbook_readers, self.workbook_empty),
             ("manual", self.plan.manual_readers, self.manual_empty),
             ("citation", self.plan.citation_readers, self.citation_empty),
+            (
+                "extended missing-information",
+                self.plan.missing_information_readers,
+                self.missing_information_empty,
+            ),
         ):
             if readers is None:
                 continue
@@ -899,6 +928,30 @@ def database_citation_empty(timeout: float) -> bool:
     SELECT NOT EXISTS (SELECT 1 FROM public.presales_reviews WHERE citations IS NOT NULL);
     COMMIT;"""
     return _database_boolean(query, timeout, "citation history")
+
+
+EXTENDED_MISSING_INFORMATION_HISTORY_QUERY = """
+    SELECT NOT EXISTS (
+      SELECT 1 FROM (
+        SELECT draft->'missing_information' AS gaps FROM public.presales_rows
+        UNION ALL
+        SELECT content->'missing_information' AS gaps FROM public.presales_reviews
+      ) history
+      WHERE CASE WHEN gaps IS NULL OR gaps = 'null'::jsonb THEN false
+                 WHEN jsonb_typeof(gaps) = 'array' THEN jsonb_array_length(gaps) > 12
+                 ELSE true END
+    )"""
+
+
+def database_extended_missing_information_empty(timeout: float) -> bool:
+    # Every immutable draft and review revision must remain readable, not just
+    # the latest effective answer. Unexpected persisted types fail closed.
+    query = (
+        "BEGIN READ ONLY; SET LOCAL statement_timeout='2000ms';"
+        + EXTENDED_MISSING_INFORMATION_HISTORY_QUERY
+        + "; COMMIT;"
+    )
+    return _database_boolean(query, timeout, "extended missing-information history")
 
 
 def _database_boolean(query: str, timeout: float, label: str) -> bool:

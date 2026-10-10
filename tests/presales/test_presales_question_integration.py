@@ -6,12 +6,13 @@ from uuid import UUID
 import httpx
 import pytest
 from openpyxl import Workbook, load_workbook
-from sqlalchemy import select
+from scripts.release_switch import EXTENDED_MISSING_INFORMATION_HISTORY_QUERY
+from sqlalchemy import select, text
 
 from enterprise_doc_core.billing.models import UsageEvent
 from enterprise_doc_core.presales.background import BackgroundGeneration
 from enterprise_doc_core.presales.gateway import OpenAICompatiblePresalesGateway
-from enterprise_doc_core.presales.models import PresalesProviderCall
+from enterprise_doc_core.presales.models import PresalesProviderCall, PresalesReview, PresalesRow
 from enterprise_doc_core.presales.schemas import SourceInput
 from enterprise_doc_core.presales.workbook import inspect_workbook
 from tests.browser_sessions.conftest import browser_db as browser_db
@@ -175,6 +176,15 @@ async def test_question_generation_review_reload_and_workbook_keep_draft_and_acc
         ]
         assert row["draft"]["missingInformation"] == expected
     draft = row["draft"]
+    if primary_fault == "many_gaps":
+        # Simulate the admitted-work drain followed by a prompt rollback. The
+        # compatibility build must still read and review the new v24 record.
+        b.settings.question_prompt_version = "presales.v21"
+        b.service.generation.gateway = OpenAICompatiblePresalesGateway(
+            root, presales_settings=b.settings, transport=transport
+        )
+        assert b.service.generation.gateway.provenance["promptVersion"] == "presales.v21"
+        assert (await b.api.get(url, headers=headers)).json()["rows"][0]["draft"] == draft
     response_text = "人工核对后的交付说明\uff1a" + draft["answer"]
     review = {
         "expectedRevision": row["revision"],
@@ -224,3 +234,32 @@ async def test_question_generation_review_reload_and_workbook_keep_draft_and_acc
             await session.scalars(select(UsageEvent).where(UsageEvent.operation_id == operation))
         ).all()
         assert len([e for e in events if e.event_type == "consume"]) == 1
+    if primary_fault == "many_gaps":
+        # Execute the actual release guard against this owned schema. A short
+        # current draft and short newest review cannot hide an older long review.
+        query = text(EXTENDED_MISSING_INFORMATION_HISTORY_QUERY.replace("public.", ""))
+        async with b.sessions.begin() as session:
+            assert not await session.scalar(query)
+            stored = await session.get(PresalesRow, UUID(row["id"]))
+            stored.draft = {**stored.draft, "missing_information": []}
+        async with b.sessions() as session:
+            assert not await session.scalar(query)
+        current = (await b.api.get(url, headers=headers)).json()["rows"][0]
+        second = {**review, "expectedRevision": current["revision"], "missingInformation": []}
+        result = await b.api.put(
+            row_url + "/review",
+            headers={**headers, "Idempotency-Key": "question-short-review"},
+            json=second,
+        )
+        assert result.status_code == 200, result.text
+        async with b.sessions.begin() as session:
+            assert not await session.scalar(query)
+            history = (
+                await session.scalars(
+                    select(PresalesReview).where(PresalesReview.row_id == UUID(row["id"]))
+                )
+            ).all()
+            for item in history:
+                item.content = {**item.content, "missing_information": []}
+        async with b.sessions() as session:
+            assert await session.scalar(query)

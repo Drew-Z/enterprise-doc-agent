@@ -10,6 +10,7 @@ def citation_switch_data(original=False, candidate=True):
     data.update(
         original_revision="20261010_0037",
         citation_readers={"original": original, "candidate": candidate},
+        missing_information_readers={"original": True, "candidate": True},
     )
     return data
 

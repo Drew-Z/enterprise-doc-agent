@@ -19,6 +19,7 @@ class PresalesSettings(BaseModel):
     fallback_strict_output: bool = False
     primary_question_assessment: bool = False
     fallback_question_assessment: bool = False
+    question_prompt_version: Literal["presales.v21", "presales.v24"] = "presales.v24"
     model_timeout_seconds: float | None = Field(default=None, gt=0, le=300)
     fallback_model_timeout_seconds: float | None = Field(default=None, gt=0, le=300)
     row_timeout_seconds: float = Field(default=90, gt=0, le=900)

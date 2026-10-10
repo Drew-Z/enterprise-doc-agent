@@ -577,3 +577,22 @@ was performed; staging remains rc50/v21. See the semantic correction report.
   reader on rollback or explicitly restore pre-release data. Staging unchanged rc50.
 - [x] Preserve2,993 unrelated status entries and historical artifacts; database fixture
   schemas cleaned by verified finally. Evidence controllers/reports are deliverables.
+
+## Authorized v24 publication continuation
+
+- [x] Verified Git recovery at15bbacf in the existing recovery group; unrelated status retained.
+- [x] Red/green exact v21/v24 selection, policy restoration and cross-version refusal.
+- [x] Explicit extended-history readers with both closing races and compatible rollback.
+- [x] Actual PostgreSQL14-item read/review/reload/XLSX/CSV under v21 recovery policy;
+  actual release query finds extended immutable drafts and historical review revisions.
+- [ ] Required final checks, exact candidate publication and signed artifact verification.
+- [ ] Compatible-reader release at explicit v21, then guarded v24 activation.
+- [ ] Fixed three-sample product delivery, original results and attributed corrections.
+
+Recovery phase: semantic_release_v24_20261010. No new model dispatch at implementation;
+publication and live acceptance receipts will record their separate outcomes.
+
+Local gate passed:3377 full-suite cases plus23 subtests, and the single Windows GBK
+reading failure passes under explicit UTF-8 mode; four real PostgreSQL cases, Ruff,
+759-file format and mypy279 pass. No product-code change was needed for that encoding
+failure. Explicit351-file collection avoids ignored frontend dependency traversal.
