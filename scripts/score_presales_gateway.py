@@ -23,6 +23,12 @@ from enterprise_doc_core.presales.output_contract import (
     strict_response_format,
 )
 from enterprise_doc_core.presales.proposition_selection import resolve_proposition_selection
+from enterprise_doc_core.presales.question_assessment import (
+    QuestionAssessmentInput,
+    offer_requirement_parts,
+    question_assessment_response_format,
+    resolve_question_assessment,
+)
 from enterprise_doc_core.presales.schemas import CitationInput, GeneratedDraft, GenerationInput
 from enterprise_doc_core.presales.span_selection import (
     SpanSelectionInput,
@@ -39,9 +45,19 @@ from scripts.evaluate_presales_quality import Gold, load_dataset, write_json
 
 
 def bind_projected_input(
-    wire: dict[str, Any], source_input: GenerationInput, *, spans: bool = False
+    wire: dict[str, Any],
+    source_input: GenerationInput,
+    *,
+    spans: bool = False,
+    questions: bool = False,
 ) -> dict[str, CitationInput]:
     """Verify the recorded wire projection, without decoding any failed response."""
+    if questions:
+        question_input = QuestionAssessmentInput.model_validate(wire)
+        if question_input.requirement_parts != offer_requirement_parts(source_input.requirement):
+            raise ValueError("wire_question_projection_mismatch")
+        wire = question_input.model_dump(by_alias=True, exclude={"requirement_parts"})
+        spans = True
     span_input = SpanSelectionInput.model_validate(wire) if spans else None
     offered = SelectionInput.model_validate(
         span_input.model_dump(exclude={"spans"}) if span_input is not None else wire
@@ -83,6 +99,7 @@ def score(dataset_path: Path, gold_path: Path, report: dict[str, Any]) -> dict[s
         "presales-gateway-run-v8",
         "presales-gateway-run-v9",
         "presales-gateway-run-v10",
+        "presales-gateway-run-v11",
     }:
         raise ValueError("invalid_report_scope")
     projected = report["schemaVersion"] != "presales-gateway-run-v1"
@@ -93,6 +110,7 @@ def score(dataset_path: Path, gold_path: Path, report: dict[str, Any]) -> dict[s
         "presales-gateway-run-v8",
         "presales-gateway-run-v9",
         "presales-gateway-run-v10",
+        "presales-gateway-run-v11",
     }
     structured = evidence_backed or report["schemaVersion"] == "presales-gateway-run-v3"
     requirements = {r.key: r for r in dataset.requirements}
@@ -140,6 +158,7 @@ def score(dataset_path: Path, gold_path: Path, report: dict[str, Any]) -> dict[s
                 "presales-gateway-run-v8": strict_response_format,
                 "presales-gateway-run-v9": constrained_response_format,
                 "presales-gateway-run-v10": span_response_format,
+                "presales-gateway-run-v11": question_assessment_response_format,
             }.get(report["schemaVersion"])
             if strict_format is not None and trace.get("responseFormat") != strict_format():
                 raise ValueError("strict_output_contract_mismatch")
@@ -156,6 +175,7 @@ def score(dataset_path: Path, gold_path: Path, report: dict[str, Any]) -> dict[s
                     trace["input"],
                     payload,
                     spans=report["schemaVersion"] == "presales-gateway-run-v10",
+                    questions=report["schemaVersion"] == "presales-gateway-run-v11",
                 )
             if payload.requirement != requirements[key]:
                 raise ValueError("requirement_mismatch")
@@ -202,7 +222,11 @@ def score(dataset_path: Path, gold_path: Path, report: dict[str, Any]) -> dict[s
                         "presales-gateway-run-v9": resolve_constrained_basis,
                         "presales-gateway-run-v10": resolve_span_basis,
                     }.get(report["schemaVersion"], resolve_selection)
-                    resolved = resolver(original, catalog)
+                    resolved = (
+                        resolve_question_assessment(original, requirements[key], catalog)
+                        if report["schemaVersion"] == "presales-gateway-run-v11"
+                        else resolver(original, catalog)
+                    )
                     # v2 saved only the flat projection. Reproduce that contract without
                     # rewriting the historical result or accepting a formerly failed call.
                     if not structured:

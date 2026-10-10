@@ -71,6 +71,7 @@ CONFIG_KEYS = {
     "PRESALES__MODEL_TIMEOUT_SECONDS",
     "PRESALES__PRIMARY_REASONING_EFFORT",
     "PRESALES__PRIMARY_STREAMING",
+    "PRESALES__PRIMARY_QUESTION_ASSESSMENT",
     "PRESALES__FALLBACK_MODEL_TIMEOUT_SECONDS",
     "PRESALES__ROW_TIMEOUT_SECONDS",
     "PRESALES__MODEL_ROUTE",
@@ -148,10 +149,15 @@ class ReleasePlan(Plan):
         self.reasoning_only = value.get("release_kind") == "reasoning_only"
         self.presales_inference = value.get("release_kind") == "presales_inference"
         self.presales_concurrency = value.get("release_kind") == "presales_concurrency"
-        if (
-            self.revision in {"20261008_0034", "20261009_0035", "20261009_0036", "20261010_0037"}
-            and not self.image_only
-        ):
+        self.primary_model = value.get("release_kind") == "primary_model"
+        if self.primary_model and self.revision != "20261010_0037":
+            raise GuardError("primary model switching requires exact schema 0037")
+        if self.revision in {
+            "20261008_0034",
+            "20261009_0035",
+            "20261009_0036",
+            "20261010_0037",
+        } and not (self.image_only or self.primary_model):
             raise GuardError(f"schema {self.revision} only permits explicit image switching")
         self.workbook_readers = value.get("workbook_readers")
         if self.revision in {"20261009_0035", "20261009_0036", "20261010_0037"}:
@@ -191,6 +197,7 @@ class ReleasePlan(Plan):
                 or self.reasoning_only
                 or self.presales_inference
                 or self.presales_concurrency
+                or self.primary_model
             )
             or self.revision
             not in {
@@ -241,6 +248,8 @@ class ReleasePlan(Plan):
             raise GuardError("presales inference settings require an explicit release mode")
         if "WORKER__PRESALES_CONCURRENCY" in changed and not self.presales_concurrency:
             raise GuardError("presales concurrency requires an explicit release mode")
+        if "PRESALES__PRIMARY_QUESTION_ASSESSMENT" in changed and not self.primary_model:
+            raise GuardError("question assessment requires an explicit primary model release")
         if self.revision in {
             "20261005_0032",
             "20261008_0034",
@@ -250,7 +259,43 @@ class ReleasePlan(Plan):
         }:
             if self.image_only and changed:
                 raise GuardError("image-only switching must retain all configuration")
-            if self.reasoning_only:
+            if self.primary_model:
+                primary_keys = {
+                    "MODEL__BASE_URL",
+                    "MODEL__MODEL_NAME",
+                    "MODEL__MODEL_VERSION",
+                    "PRESALES__PRIMARY_QUESTION_ASSESSMENT",
+                }
+                if not changed or changed - primary_keys:
+                    raise GuardError("primary model switching exceeds the selected route scope")
+                for config in (old, new):
+                    endpoint = config.get("MODEL__BASE_URL", "")
+                    name = config.get("MODEL__MODEL_NAME", "")
+                    try:
+                        parsed = urlsplit(endpoint)
+                        if (
+                            not endpoint
+                            or any(char.isspace() for char in endpoint)
+                            or parsed.scheme != "https"
+                            or not parsed.hostname
+                            or parsed.username is not None
+                            or parsed.password is not None
+                            or parsed.query
+                            or parsed.fragment
+                            or parsed.port == 0
+                        ):
+                            raise ValueError
+                    except ValueError:
+                        raise GuardError("invalid primary endpoint") from None
+                    if not name or name != name.strip():
+                        raise GuardError("invalid primary model name")
+                    if config.get("PRESALES__PRIMARY_QUESTION_ASSESSMENT") not in {
+                        None,
+                        "true",
+                        "false",
+                    }:
+                        raise GuardError("invalid primary question assessment setting")
+            elif self.reasoning_only:
                 effort_keys = {"MODEL__REASONING_EFFORT", "MODEL__FALLBACK_REASONING_EFFORT"}
                 if (
                     not changed
@@ -291,7 +336,7 @@ class ReleasePlan(Plan):
                 raise GuardError("0032 release switching only permits the explicit upload switch")
             if "api_database_pool_size" in self.data or self.fallback_secret is not None:
                 raise GuardError("0032 switching cannot change pool or credentials")
-            if self.secret.get("old_key") != self.secret.get("new_key"):
+            if not self.primary_model and self.secret.get("old_key") != self.secret.get("new_key"):
                 raise GuardError("0032 switching must retain the primary credential")
         elif "UPLOAD__SINGLE_PUT_ENABLED" in changed:
             raise GuardError("upload switching requires schema 0032")
@@ -346,6 +391,15 @@ class ReleasePlan(Plan):
         } | {PREFIX + "prerequisites-sha256"}
         if self.image_only and {k for k in before if before[k] != after[k]} - image_approvals:
             raise GuardError("image-only switching cannot change unrelated approvals")
+        if self.primary_model and {k for k in before if before[k] != after[k]} - (
+            image_approvals
+            | {
+                PREFIX + "approved-config-sha256",
+                PREFIX + "approved-model-base-url",
+                PREFIX + "approved-model-name",
+            }
+        ):
+            raise GuardError("primary model switching cannot change unrelated approvals")
         if self.reasoning_only and {k for k in before if before[k] != after[k]} - {
             PREFIX + "approved-config-sha256",
             PREFIX + "prerequisites-sha256",

@@ -600,3 +600,26 @@ correct uncertainty and detailed test questions. Exact input binding and success
 projection are not semantic acceptance. A retryable502 remains a channel failure;
 the direct collector does not exercise normal bounded background fallback.
 See `docs/ops/gpt-product-qualification-20261010.md`.
+
+## Integrated question assessment (v21 / run-v11)
+
+Independent primary/fallback question-assessment flags default false. Opt-in mode
+uses the existing candidate schema, literal source spans and original question IDs;
+the resolver receives each call's own RequirementInput. Keep v15/v20 request and
+decoder behavior unchanged. V21 sends max_completion_tokens=4000 and omits empty
+tool fields, matching the previously observed successful GPT candidate contract.
+Changing those parameters is not proof that an earlier HTTP502 was caused by them.
+
+Freeze v21 prompt/version/hash into the existing route policy; restoration preserves
+mode and rejects drift. No new public draft or database format is introduced. New
+run-v11 scorers bind full source plus ordered question parts and preserve rejected
+outputs. Text coverage and exact citations still do not prove semantic correctness.
+
+Exercise concurrent call-local binding, foreign/omitted parts, source substitution,
+streaming, original failures and historical decoder preservation. Real PostgreSQL
+tests cover background generation, existing bounded502 fallback, separate attributed
+review, reload, unchanged original drafts, XLSX/CSV and exactly-once successful use.
+Public sample qualification must retain every first outcome and state clearly when
+ingestion/authentication are local fixtures. Review by Codex is assisted review, not
+independent customer approval. A single upstream failure does not disable normal
+fallback or establish a semantic defect.

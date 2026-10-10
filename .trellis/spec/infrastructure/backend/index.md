@@ -35,6 +35,18 @@ Successful image listings do not alone establish container startup readiness.
 
 ## Schema 0037 review-citation publication and rollback
 
+On exact0037 an explicit `release_kind=primary_model` also permits changing only
+the primary endpoint/model/version/credential and primary question-assessment flag,
+with approved signed image changes. Preserve fallback, budgets, resources, schema,
+history and all three reader capabilities. Validate endpoint identity and restrict
+approval deltas to primary identity, images and configuration/prerequisite digests.
+Recheck idle state before writes and after admission closes on apply and restore;
+recovery restores the complete original key/configuration/spec bundle. Tests cover
+partial credential failure and active-policy races. Deployment rendering forwards
+independent question-mode settings explicitly, removes stale omitted overrides and
+recomputes configuration fingerprints. Controlled tests do not establish live model
+quality; qualify useful product delivery before retaining the primary replacement.
+
 1. Scope: fixed0036-to-0037 expansion retains original applications; a separate
    image-only window introduces per-review citation readers. Preserve every earlier
    review, draft, human author, workbook and attempt.

@@ -265,6 +265,8 @@ jobs:
           PRESALES_MODEL_ROUTE: ${{ vars.STAGING_PRESALES_MODEL_ROUTE || 'primary' }}
           PRESALES_PRIMARY_REASONING_EFFORT: ${{ vars.STAGING_PRESALES_PRIMARY_REASONING_EFFORT }}
           PRESALES_PRIMARY_STREAMING: ${{ vars.STAGING_PRESALES_PRIMARY_STREAMING }}
+          PRESALES_PRIMARY_QUESTION_ASSESSMENT: ${{ vars.STAGING_PRESALES_PRIMARY_QUESTION_ASSESSMENT }}
+          PRESALES_FALLBACK_QUESTION_ASSESSMENT: ${{ vars.STAGING_PRESALES_FALLBACK_QUESTION_ASSESSMENT }}
           PRESALES_MODEL_TIMEOUT_SECONDS: ${{ vars.STAGING_PRESALES_MODEL_TIMEOUT_SECONDS }}
           PRESALES_FALLBACK_MODEL_TIMEOUT_SECONDS: ${{ vars.STAGING_PRESALES_FALLBACK_MODEL_TIMEOUT_SECONDS }}
           PRESALES_ROW_TIMEOUT_SECONDS: ${{ vars.STAGING_PRESALES_ROW_TIMEOUT_SECONDS || '90' }}
@@ -369,6 +371,8 @@ jobs:
             --presales-model-route "$PRESALES_MODEL_ROUTE" \
             --presales-primary-reasoning-effort "$PRESALES_PRIMARY_REASONING_EFFORT" \
             --presales-primary-streaming "$PRESALES_PRIMARY_STREAMING" \
+            --presales-primary-question-assessment "$PRESALES_PRIMARY_QUESTION_ASSESSMENT" \
+            --presales-fallback-question-assessment "$PRESALES_FALLBACK_QUESTION_ASSESSMENT" \
             --presales-model-timeout-seconds "$PRESALES_MODEL_TIMEOUT_SECONDS" \
             --presales-fallback-model-timeout-seconds "$PRESALES_FALLBACK_MODEL_TIMEOUT_SECONDS" \
             --presales-row-timeout-seconds "$PRESALES_ROW_TIMEOUT_SECONDS" \

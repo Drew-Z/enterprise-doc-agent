@@ -168,6 +168,8 @@ def _presales_environment(
     concurrent_attempt_limit: str | None = None,
     primary_reasoning_effort: str | None = None,
     primary_streaming: str | None = None,
+    primary_question_assessment: str | None = None,
+    fallback_question_assessment: str | None = None,
 ) -> dict[str, str]:
     enabled = generation_enabled.strip()
     route = model_route.strip()
@@ -224,6 +226,16 @@ def _presales_environment(
         raise ValueError("presales primary streaming must be true or false")
     if primary_streaming:
         result["PRESALES__PRIMARY_STREAMING"] = primary_streaming
+    for name, value in (
+        ("PRIMARY", primary_question_assessment),
+        ("FALLBACK", fallback_question_assessment),
+    ):
+        if value not in (None, "", "true", "false"):
+            raise ValueError("presales question assessment must be true or false")
+        if name == "FALLBACK" and value == "true" and not fallback_configured:
+            raise ValueError("presales fallback question assessment requires a configured route")
+        if value:
+            result[f"PRESALES__{name}_QUESTION_ASSESSMENT"] = value
     if model_timeout_seconds and model_timeout_seconds.strip():
         model_timeout = timeout(model_timeout_seconds, "model timeout", 300)
         if float(model_timeout) >= float(row_timeout):
@@ -519,6 +531,8 @@ def configure_manifest(
     presales_model_route: str = "primary",
     presales_primary_reasoning_effort: str | None = None,
     presales_primary_streaming: str | None = None,
+    presales_primary_question_assessment: str | None = None,
+    presales_fallback_question_assessment: str | None = None,
     presales_model_timeout_seconds: str | None = None,
     presales_fallback_model_timeout_seconds: str | None = None,
     presales_row_timeout_seconds: str = "90",
@@ -627,6 +641,8 @@ def configure_manifest(
         model_route=presales_model_route,
         primary_reasoning_effort=presales_primary_reasoning_effort,
         primary_streaming=presales_primary_streaming,
+        primary_question_assessment=presales_primary_question_assessment,
+        fallback_question_assessment=presales_fallback_question_assessment,
         model_timeout_seconds=presales_model_timeout_seconds,
         fallback_model_timeout_seconds=presales_fallback_model_timeout_seconds,
         row_timeout_seconds=presales_row_timeout_seconds,
@@ -736,6 +752,8 @@ def configure_manifest(
     data.pop("PRESALES__MODEL_TIMEOUT_SECONDS", None)
     data.pop("PRESALES__PRIMARY_REASONING_EFFORT", None)
     data.pop("PRESALES__PRIMARY_STREAMING", None)
+    data.pop("PRESALES__PRIMARY_QUESTION_ASSESSMENT", None)
+    data.pop("PRESALES__FALLBACK_QUESTION_ASSESSMENT", None)
     data.pop("PRESALES__FALLBACK_MODEL_TIMEOUT_SECONDS", None)
     data.pop("PRESALES__CONCURRENT_ATTEMPT_LIMIT", None)
     data.update(presales_config)
@@ -1018,6 +1036,8 @@ def main() -> None:
     parser.add_argument("--presales-model-timeout-seconds")
     parser.add_argument("--presales-primary-reasoning-effort")
     parser.add_argument("--presales-primary-streaming")
+    parser.add_argument("--presales-primary-question-assessment")
+    parser.add_argument("--presales-fallback-question-assessment")
     parser.add_argument("--presales-fallback-model-timeout-seconds")
     parser.add_argument("--presales-row-timeout-seconds", default="90")
     parser.add_argument(
@@ -1074,6 +1094,8 @@ def main() -> None:
         presales_model_route=args.presales_model_route,
         presales_primary_reasoning_effort=args.presales_primary_reasoning_effort,
         presales_primary_streaming=args.presales_primary_streaming,
+        presales_primary_question_assessment=args.presales_primary_question_assessment,
+        presales_fallback_question_assessment=args.presales_fallback_question_assessment,
         presales_model_timeout_seconds=args.presales_model_timeout_seconds,
         presales_fallback_model_timeout_seconds=args.presales_fallback_model_timeout_seconds,
         presales_row_timeout_seconds=args.presales_row_timeout_seconds,

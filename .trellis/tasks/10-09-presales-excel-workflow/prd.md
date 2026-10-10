@@ -439,3 +439,18 @@ and improves test-detail requests, but represents a requested explanation as a
 source-defined business prerequisite. Replacement is not qualified in this
 observation; no runtime switch occurred. See
 `docs/ops/gpt-product-qualification-20261010.md`.
+
+## Authorized GPT product integration and delivery
+
+The user approves the next concrete implementation: reuse the demonstrated question
+assessment candidate in the product, complete one bounded questionnaire through
+generation/review/reload/XLSX, and switch staging primary to GPT after checks pass.
+Keep human review mandatory for reviewed delivery. Fabricated facts, wrong commitments
+and unsupported citations block promotion; wording and supplementary detail may be
+corrected in an attributed review. One transient upstream failure uses existing bounded
+fallback, without adding retry budgets or a mandatory second-model review stage.
+
+Preserve all old drafts, attempts and source snapshots. Reuse the proven protocol;
+do not add another schema. The original Grok configuration and compatible rc49 images
+must remain recoverable. Fixed public inputs and call limits precede the live workflow;
+public replay establishes product delivery only, not customer savings or willingness to pay.

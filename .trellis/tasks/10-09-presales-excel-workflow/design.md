@@ -473,3 +473,36 @@ GPT adapter is not established as necessary. A later HTTP502 stops the batch. Th
 successful answer adds a requested explanation to business prerequisites. Preserve
 that distinction from transport availability; neither a new compatibility layer nor
 a simple configuration swap is demonstrated as the remedy by this observation.
+
+## GPT integration design
+
+Add explicit independent primary/fallback question-assessment opt-ins, default false.
+The gateway uses the existing question-assessment schema, prompt, offered spans/parts
+and resolver directly under new runtime prompt identity presales.v21. Legacy v15/v20
+bytes and historical report decoders stay unchanged. Each call keeps its original
+requirement locally; concurrent requests cannot share question state. Persisted policy
+already binds prompt version/hash, model and endpoint; restoration preserves mode and
+rejects drift. No stored draft, API response or database migration is required.
+
+The collector/scorers add a distinct v11 branch that binds complete source and question
+parts. Production HTTP parameters remain unchanged unless actual compatibility evidence
+requires a separate explicit change. Preserve raw outcomes and existing no-repair limits.
+
+Extend the supervised release plan only for an explicit primary-model mode on exact0037:
+primary endpoint/name/version/key plus primary question-assessment selection, with approved
+signed image changes if needed. Keep fallback, budgets, resource limits, schema and
+unrelated settings fixed. Retain workbook/manual/citation readers, idle checks before
+writes and after admission closes, endpoint/key binding, original-spec recovery and fences.
+
+First test public gateway/HTTP, policy restoration, actual isolated PostgreSQL delivery
+and release apply/recovery. Then publish exact signed source and deploy through existing
+bounded tooling. A new small questionnaire preserves original model drafts and separate
+reviews and exports through the normal product API. Retain all prior replay packets.
+
+The first integrated local workflow kept legacy request parameters and received
+HTTP502 before an answer. Retain that original source/request/result. Align only
+v21 with the previously successful GPT candidate wire contract: max_completion_tokens
+and no empty tool fields; v15/v20 remain unchanged. This is a bounded compatibility
+correction, not a demonstrated root cause for502. The next two-row workflow uses
+the existing primary/fallback policy with at most two calls per row and no automatic
+resampling. Preserve original drafts separately from assisted review and exports.

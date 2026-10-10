@@ -17,6 +17,8 @@ class PresalesSettings(BaseModel):
     primary_streaming: bool | None = None
     primary_strict_output: bool = False
     fallback_strict_output: bool = False
+    primary_question_assessment: bool = False
+    fallback_question_assessment: bool = False
     model_timeout_seconds: float | None = Field(default=None, gt=0, le=300)
     fallback_model_timeout_seconds: float | None = Field(default=None, gt=0, le=300)
     row_timeout_seconds: float = Field(default=90, gt=0, le=900)

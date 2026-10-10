@@ -1,4 +1,4 @@
-"""Private question-ID candidate; not imported by any production gateway."""
+"""Question-ID contract shared by original candidate reports and opt-in v21 generation."""
 
 from __future__ import annotations
 

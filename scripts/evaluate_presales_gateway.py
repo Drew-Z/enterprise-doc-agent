@@ -198,6 +198,7 @@ async def collect(
     model_timeout_seconds: float = 120,
     transport: httpx.AsyncBaseTransport | None = None,
     strict_output: bool = False,
+    question_assessment: bool = False,
 ) -> dict[str, Any]:
     presales_settings = PresalesSettings(
         model_route=model_route,
@@ -205,11 +206,17 @@ async def collect(
         row_timeout_seconds=model_timeout_seconds + 30,
         primary_strict_output=strict_output if model_route == "primary" else False,
         fallback_strict_output=strict_output if model_route == "fallback" else False,
+        primary_question_assessment=question_assessment if model_route == "primary" else False,
+        fallback_question_assessment=question_assessment if model_route == "fallback" else False,
     )
     dataset, digest = load_dataset(dataset_path)
     snapshots, evidence = synthetic_sources(dataset, digest)
     report: dict[str, Any] = {
-        "schemaVersion": "presales-gateway-run-v10" if strict_output else "presales-gateway-run-v6",
+        "schemaVersion": "presales-gateway-run-v11"
+        if question_assessment
+        else "presales-gateway-run-v10"
+        if strict_output
+        else "presales-gateway-run-v6",
         "scope": (
             "generation_only_with_complete_synthetic_sources; no_retrieval_or_persistence"
             if dataset.synthetic
@@ -306,6 +313,7 @@ def main() -> None:
     parser.add_argument("--model-timeout-seconds", type=float, default=120)
     parser.add_argument("--reasoning-effort", choices=("low", "medium", "high", "xhigh"))
     parser.add_argument("--strict-output", action="store_true")
+    parser.add_argument("--question-assessment", action="store_true")
     args = parser.parse_args()
     settings = load_route_settings(args.provider_env, args.model_route)
     if args.reasoning_effort is not None:
@@ -321,6 +329,7 @@ def main() -> None:
             model_route=args.model_route,
             model_timeout_seconds=args.model_timeout_seconds,
             strict_output=args.strict_output,
+            question_assessment=args.question_assessment,
         ),
         loop_factory=selector_event_loop_factory,
     )

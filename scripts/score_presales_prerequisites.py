@@ -20,6 +20,7 @@ from enterprise_doc_core.presales.citation_selection import resolve_selection
 from enterprise_doc_core.presales.evidence_selection import resolve_evidence_selection
 from enterprise_doc_core.presales.output_contract import resolve_strict_basis
 from enterprise_doc_core.presales.proposition_selection import resolve_proposition_selection
+from enterprise_doc_core.presales.question_assessment import resolve_question_assessment
 from enterprise_doc_core.presales.schemas import GenerationInput, PresalesModel, TextItem
 from enterprise_doc_core.presales.span_selection import resolve_span_basis
 from enterprise_doc_core.presales.support_contract import resolve_constrained_basis
@@ -105,6 +106,7 @@ def score_prerequisites(
         "presales-gateway-run-v8",
         "presales-gateway-run-v9",
         "presales-gateway-run-v10",
+        "presales-gateway-run-v11",
     }:
         raise ValueError("prerequisite_report_scope_unsupported")
     baseline = score(dataset_path, gold_path, report)
@@ -160,6 +162,7 @@ def score_prerequisites(
                 trace["input"],
                 GenerationInput.model_validate(observation["sourceInput"]),
                 spans=report["schemaVersion"] == "presales-gateway-run-v10",
+                questions=report["schemaVersion"] == "presales-gateway-run-v11",
             )
             # Baseline scoring has already bound this accepted output to its result.
             # Historical v2 states are read for a new analysis, never written back.
@@ -171,7 +174,16 @@ def score_prerequisites(
                 "presales-gateway-run-v9": resolve_constrained_basis,
                 "presales-gateway-run-v10": resolve_span_basis,
             }.get(report["schemaVersion"], resolve_selection)
-            draft = resolver(trace["response"]["choices"][0]["message"]["content"], catalog)
+            original = trace["response"]["choices"][0]["message"]["content"]
+            draft = (
+                resolve_question_assessment(
+                    original,
+                    GenerationInput.model_validate(observation["sourceInput"]).requirement,
+                    catalog,
+                )
+                if report["schemaVersion"] == "presales-gateway-run-v11"
+                else resolver(original, catalog)
+            )
             actual = draft.prerequisites or []
         if any(index >= len(actual) for index in indexes):
             raise ValueError("prerequisite_mapping_index_out_of_range")

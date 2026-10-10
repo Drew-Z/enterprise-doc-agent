@@ -475,3 +475,21 @@ Recovery phase `gpt_product_qualification_20261010` uses the existing group and
 clean baseline e7a18a5. Two actual new calls, no retries or embedding. One known
 usage is3,693 tokens; the failed request's usage is unknown. Postflight confirms
 unchanged readiness/policy/ledgers. See `docs/ops/gpt-product-qualification-20261010.md`.
+
+## GPT product integration and bounded delivery
+
+- [x] Red/green public gateway: opt-in question protocol, exact original parts/spans,
+  four-state projection, concurrent isolation, invalid IDs, one request and safe errors.
+- [x] Frozen policy restoration/drift and distinct v11 collector/scorer preservation.
+- [x] Real PostgreSQL generation, attributed review, reload and original XLSX/CSV;
+  preserve old history and exactly-once accounting, including controlled502 fallback.
+- [x] Red/green exact0037 primary-model release scope, credential/config binding,
+  compatible history readers, close races and complete apply/restore.
+- [ ] Required local checks, scoped source publication and exact signed candidate.
+- [ ] Fresh bounded live qualification/delivery, guarded staging primary replacement
+  if criteria pass, recoverable original configuration and final identity verification.
+
+Recovery phase `gpt_product_integration_20261010` uses the existing central group and
+baseline992ea46. Controlled tests mock only external HTTP/cluster boundaries; database,
+parsers, source selection and workbook generation are real. Do not repeat a failed
+live sample until success or treat assistant review as independent business approval.

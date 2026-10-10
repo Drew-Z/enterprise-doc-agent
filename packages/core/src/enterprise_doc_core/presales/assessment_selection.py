@@ -1,4 +1,4 @@
-"""Unpromoted rule/assessment/response contract; no runtime gateway imports this module."""
+"""Rule/assessment projection shared by candidate reports and question-based generation."""
 
 from __future__ import annotations
 
