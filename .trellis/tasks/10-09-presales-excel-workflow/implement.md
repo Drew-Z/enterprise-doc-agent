@@ -585,9 +585,9 @@ was performed; staging remains rc50/v21. See the semantic correction report.
 - [x] Explicit extended-history readers with both closing races and compatible rollback.
 - [x] Actual PostgreSQL14-item read/review/reload/XLSX/CSV under v21 recovery policy;
   actual release query finds extended immutable drafts and historical review revisions.
-- [ ] Required final checks, exact candidate publication and signed artifact verification.
-- [ ] Compatible-reader release at explicit v21, then guarded v24 activation.
-- [ ] Fixed three-sample product delivery, original results and attributed corrections.
+- [x] Required final checks, exact candidate publication and signed artifact verification.
+- [x] Compatible-reader release at explicit v21, then guarded v24 activation.
+- [x] Fixed three-sample product delivery, original results and attributed corrections.
 
 Recovery phase: semantic_release_v24_20261010. No new model dispatch at implementation;
 publication and live acceptance receipts will record their separate outcomes.
@@ -596,3 +596,24 @@ Local gate passed:3377 full-suite cases plus23 subtests, and the single Windows 
 reading failure passes under explicit UTF-8 mode; four real PostgreSQL cases, Ruff,
 759-file format and mypy279 pass. No product-code change was needed for that encoding
 failure. Explicit351-file collection avoids ignored frontend dependency traversal.
+
+Live continuation completed on2026-10-11 Asia/Shanghai: signed rc51 at3b44a567 was
+published with explicit v21, then activated at v24. Exactly three primary calls delivered
+CQU06/CQU05/QP01 with22/14/6 independent gaps; all original results pass the separately
+frozen Codex source review. Eight source uploads and16 document/query embedding calls
+used the normal product path. One attributed review per row preserves original drafts,
+attempts, evidence and all gaps. No fallback or regeneration occurred.
+
+Actual same-image v21 rollback and v24 reapply both passed22 independent checks. Each
+packet and all XLSX/CSV export bytes survived both switches unchanged; original workbook
+members outside the selected worksheet remain byte-identical. Historical business data
+hashes and budgets are unchanged except the exact labeled fixture delta. No recovery or
+review model calls occurred. rc50 is incompatible with the new extended history.
+
+The initial activation retained one strict failure for30 disappeared historical terminal
+Pods. Four absent owner ReplicaSets and ten historical plus one current RS per affected
+Deployment support existing revisionHistoryLimit GC; deletion actor attribution remains
+inferred without audit records. A separate finite exception receipt preserves the failed
+check and every original artifact. Later windows pass the normal check against a fresh
+baseline. This is a completed bounded delivery/recovery check, not customer or commercial
+acceptance; see docs/ops/presales-v24-release-20261010.md and the central manifest.

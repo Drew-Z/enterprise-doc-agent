@@ -171,8 +171,35 @@ Verify packaged Python against the signed application commit, separately from th
 executor commit, and compare served Web assets with the running signed image. Count only
 nonterminal Pods as active replicas; retain and compare historical Failed/Succeeded Pod
 identities separately. Historical failures must neither be deleted nor counted as extra
-current replicas. A stopped transient unit may have been garbage-collected: its default
+current replicas. Do not issue Pod/ReplicaSet deletion to make verification pass. A stopped transient unit may have been garbage-collected: its default
 not-found properties are not evidence of the limits used while it ran.
+
+### Historical terminal Pod changes during rollout
+
+1. Scope: a rollout can trigger the existing Deployment `revisionHistoryLimit` cleanup
+   and cascading removal of terminal Pods owned by old ReplicaSets. This is distinct
+   from application records and requires a separately recorded operational exception.
+2. Read interfaces: capture `kubectl get deployments,replicasets,pods -o json`, owner
+   UIDs, phases, revisions and available events before interpreting a missing Pod.
+3. Receipt contract: preserve the original failed `historical_terminal_pods_preserved`
+   check and its file hash. A new receipt may use `passed_with_runtime_gc_exception`
+   only for a named, finite set of terminal Pods, with all business-history, source,
+   configuration, credentials and current-readiness checks still passing.
+4. Validation: missing owner ReplicaSets plus the configured historical count support
+   GC attribution; they do not prove the deleting actor without an audit record.
+   New failed Pods, surviving owners, active-Pod loss or business-data drift require
+   investigation and cannot inherit an earlier exception.
+5. Cases: unchanged terminal identities pass normally. Thirty missing terminal Pods
+   across four absent owners, each deployment retaining ten old and one current RS,
+   support a qualified observation when `revisionHistoryLimit=10`. A changed data
+   hash remains a failure even when runtime GC is plausible.
+6. Required assertions: compare exact missing UIDs against the frozen exception,
+   reject added terminal Pods, check retained phases, owner absence and replica counts,
+   then independently recheck all other release invariants. rc51's separately hashed
+   qualified receipt exercises these assertions; it is not a generic GC exemption.
+7. Wrong: overwrite the failed receipt or change its preservation check to true.
+   Correct: retain it, document facts versus inferred attribution, and use a fresh
+   post-investigation baseline for subsequent maintenance windows.
 
 ## Fixed 0032-to-0034 expansion (local candidate)
 
