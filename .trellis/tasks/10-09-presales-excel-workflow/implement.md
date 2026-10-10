@@ -703,3 +703,24 @@ and mypy280 pass. The96 prior trial artifacts and2993 unrelated status entries r
 their hashes. Default v24, model routes, dispatch policy and live history are unchanged.
 V25 remains explicit opt-in; whole-row offering and literal evidence reachability do
 not yet establish live-model semantic acceptance. No browser/UI/storage schema change.
+
+## Finite live v25 regression completed
+
+- [x] Register Git recovery atf55da6a in existing phase v25_live_regression_20261011.
+- [x] Freeze four known cases, source excerpts, code/prompt/criteria and four new calls.
+- [x] Recheck staging policy, no active jobs and conservative daily admission before
+  each call; retain prior reservations rather than reuse an old unused allowance.
+- [x] Collect one primary response per case:4/4 contracts accepted;51,876 known tokens,
+  zero unknown usage, embeddings, retries, fallback calls or product writes.
+- [x] Review unchanged outputs: scope and CQU06 pass; password still misclassifies
+  a descriptive policy fact as a prerequisite; device conclusion needs neutral wording.
+- [x] Reconstruct actual wire inputs with recorded citation nonces and re-resolve
+  original outputs without edits. Relevant collector/context tests:24 passed.
+- [x] Deliver a concrete two-slot error-specific retry proposal, with no live changes.
+- [x] Preserve96 previous trial artifacts and2993 unrelated status entries; scoped
+  verification/commit and cleanup inventory are retained in the central closeout.
+
+No promotion. The per-response2000-character limit was not reached (270–522), but
+CQU06 renders2256 characters with repeated structured details. This generation-only
+observation does not establish live retrieval or independent user acceptance.
+See docs/ops/v25-live-regression-20261011.md and the linked retry-policy proposal.

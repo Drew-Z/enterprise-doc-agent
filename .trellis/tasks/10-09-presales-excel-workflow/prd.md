@@ -560,3 +560,16 @@ already recalled scope/number evidence within the existing two-chunk source budg
 Keep old inputs/results/version behavior, literal source guards and human review.
 Deliver an opt-in candidate with local known-regression evidence, not a claim of
 unseen/model semantic acceptance or automatic staging promotion.
+
+## Authorized finite live v25 regression
+
+The user approved the next finite real-model qualification. Freeze four known
+regressions, literal public excerpts, independent review criteria and a new
+four-request ceiling before dispatch. Keep each first result, including any
+failure or unknown usage; do not tune or resample to pass. This observation uses
+the generation gateway without live retrieval or product writes. It cannot qualify
+the actual embedding/retrieval path or replace independent participant acceptance.
+
+Prepare a concrete error-specific primary-retry/fallback proposal, retaining the
+two-dispatch ceiling in the recommendation. No live route, quota, retry, default
+prompt or deployment change is authorized by this observation alone.

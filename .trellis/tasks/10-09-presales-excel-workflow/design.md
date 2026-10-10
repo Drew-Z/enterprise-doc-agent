@@ -710,3 +710,25 @@ missing top10 evidence remain limits. Old policies retain original selection.
 Default remains v24 until a separately frozen model observation and compatible
 release. Reject v24/v25 policy drift; keep legacy decoding and report interpretation.
 Known GitLab scope/password failures become labeled regressions, never held-out data.
+
+## Finite live observation and next retry-policy design
+
+Bind candidate f55da6a, the v25 prompt, source/input hashes, full offered row, public
+provenance and review criteria before the first call. Evaluate known scope, password,
+remote-device and CQU06 service cases once each with the current primary, without
+fallback or embeddings. Two manually selected excerpts per GitLab source isolate
+the generation question; they do not recreate real retrieval ranks. Recover the
+recorded per-call citation nonce for offline input reconstruction, then re-resolve
+the original output unchanged. Preserve source IDs, citations and first results.
+
+Keep mechanical contract, substantive review and suggested reviewer corrections
+separate. Preserve unknown supplier state, exact limits and all service obligations.
+Do not claim an unseen success rate or promotion based on four known cases.
+
+The retry proposal retains two accounted requests. An eligible short transient
+error may spend slot2 on one primary retry; it then has no fallback slot. Persistent
+route faults may select a qualified alternative. Uncertain transmitted requests and
+rejected model output require retained evidence/review rather than an automatic
+model change. A versioned execution policy, normalized Retry-After, scheduled delay,
+per-call accounting, fencing and compatible readers are prerequisites to implementing
+that proposal. No runtime implementation is included in this phase.
