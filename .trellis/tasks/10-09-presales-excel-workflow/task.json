@@ -21,7 +21,7 @@
   "children": [],
   "parent": "09-24-commercial-production-readiness",
   "relatedFiles": [],
-  "notes": "Staging remains rc51/0037/v24. Four frozen first v25 primary responses passed the decoder using manually selected public excerpts: scope and complex service cases pass review; the password case still misclassifies a policy fact as a prerequisite, and the device conclusion needs neutral wording. No v25 promotion. Real retrieval and independent user acceptance remain open. Original trial records and second-supplier materials remain immutable. The two-slot error-specific primary retry/fallback proposal is documented but not implemented.",
+  "notes": "V25 remains unpromoted; first-result metrics are preserved. Following the user's market-first challenge, official product/OSS research and current-code diagnosis support reusing approved-content workflows, retrieval components and evaluation tools. The next design should separate descriptive Q&A from condition assessment and test retrieval/semantic causes independently. Vendor success on our cases, component compatibility and real retrieval improvement remain unverified. No runtime, model, retry, quota or deployment change occurred.",
   "meta": {
     "implementation_status": "deployed_and_file_workflow_verified",
     "deployed": true,
@@ -54,7 +54,7 @@
     "manual_live_embedding_calls": 0,
     "manual_history_exists": true,
     "legacy_rc47_rc46_recovery_allowed": false,
-    "next_product_gap": "Resolve policy-fact/prerequisite classification and neutralize the device conclusion, then freeze actual embedding/retrieval and product-delivery qualification. Review the concrete two-slot retry proposal before implementing versioned transitions; no route or budget change yet.",
+    "next_product_gap": "Use the market-first diagnosis to freeze component and semantic-path comparisons: retain existing workflow boundaries, compare Haystack-style reranking/context recovery, constrain descriptive versus condition-assessment outputs, and evaluate with source-bound references plus Ragas assistance. Do not continue isolated prompt patches or treat retry policy as a semantic remedy.",
     "review_citations_status": "deployed_and_live_citation_delivery_verified",
     "review_citations_deployed": true,
     "review_citations_schema": "20261010_0037",
@@ -193,6 +193,26 @@
       "second_supplier": "GitHub Enterprise Cloud",
       "trial_pack_questions": 6,
       "trial_pack_official_documents": 3
+    },
+    "methods_root_cause_review": {
+      "status": "researched_not_implemented",
+      "report": "docs/ops/questionnaire-methods-root-cause-20261011.md",
+      "baseline_commit": "b4f1e6a88fccc875259c8a0fd5471b1740764788",
+      "recovery_phase": "questionnaire_methods_root_cause_20261011",
+      "official_product_candidates": ["Vanta", "Conveyor", "Loopio"],
+      "component_candidates": ["Haystack", "Ragas"],
+      "vendor_account_trials": 0,
+      "new_questionnaire_generation_calls": 0,
+      "new_embedding_calls": 0,
+      "frameworks_installed": false,
+      "product_code_changed": false,
+      "deployed": false,
+      "open_questions": [
+        "Component compatibility, model weight licenses and resource requirements",
+        "Matched retrieval and generation-path comparisons",
+        "Model/protocol contribution under controlled inputs",
+        "Chinese quality, reviewer time savings and independent user acceptance"
+      ]
     },
     "v25_live_regression": {
       "status": "reviewed_not_promoted",

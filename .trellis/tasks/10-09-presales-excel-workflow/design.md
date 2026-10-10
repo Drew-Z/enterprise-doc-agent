@@ -732,3 +732,25 @@ rejected model output require retained evidence/review rather than an automatic
 model change. A versioned execution policy, normalized Retry-After, scheduled delay,
 per-call accounting, fencing and compatible readers are prerequisites to implementing
 that proposal. No runtime implementation is included in this phase.
+
+## Methods review: constrain task roles and reuse established components
+
+Official Vanta, Conveyor and Loopio material establishes reusable approved-content,
+source-traceability and review workflows, not measured success on this project's cases.
+Haystack offers reranking and neighboring/parent context retrieval; Ragas offers
+faithfulness, context-recall and reference-fact evaluation. Prefer component adapters
+over replacing the existing tenant-scoped storage and workflow infrastructure.
+
+Current ordinary Q&A and business-condition assessment share one protocol. The resolver
+checks declared roles and literal references without establishing semantic entailment.
+The proposed change is an explicit constrained path for descriptive answers and a
+separate condition-assessment path when the question actually requires it. Routing
+itself must be evaluated; no keyword-only classification or unreviewed obligation
+extraction is assumed correct. Approved answer reuse remains bound to source, supplier,
+product, version, time and applicability; previous-order state cannot transfer.
+
+Compare retrieval selectors under identical candidates/budgets before testing context
+expansion. Compare generation paths with identical correct evidence before changing
+models. Keep auxiliary semantic evaluation offline initially; no silent extra per-row
+LLM call. Preserve unknown states and explicit evidence for obligations. Full research,
+limitations and finite next gates: docs/ops/questionnaire-methods-root-cause-20261011.md.

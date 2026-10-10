@@ -573,3 +573,16 @@ the actual embedding/retrieval path or replace independent participant acceptanc
 Prepare a concrete error-specific primary-retry/fallback proposal, retaining the
 two-dispatch ceiling in the recommendation. No live route, quota, retry, default
 prompt or deployment change is authorized by this observation alone.
+
+## Market-first methods and recurrent-failure diagnosis
+
+The user challenged repeated case-by-case corrections and requested existing market
+or open-source methods before further custom implementation, followed by a concrete
+explanation of the remaining failures and a solution. Research official capabilities,
+distinguish verified source claims from untested vendor performance, and inspect
+current code plus original experiment records. No procurement, framework installation,
+new questionnaire inference, model change or deployment belongs to this research step.
+
+The next plan must separate retrieval reachability, semantic interpretation, contract
+validity and editorial issues. Prioritize reusable components and a bounded comparison
+over more prompt patches. Retain existing permissions, accounting, review and export.

@@ -724,3 +724,23 @@ No promotion. The per-response2000-character limit was not reached (270–522), 
 CQU06 renders2256 characters with repeated structured details. This generation-only
 observation does not establish live retrieval or independent user acceptance.
 See docs/ops/v25-live-regression-20261011.md and the linked retry-policy proposal.
+
+## Market-first research and root-cause review
+
+- [x] Check official Vanta, Conveyor and Loopio pages; distinguish available features
+  from marketing accuracy and unperformed account trials.
+- [x] Check Haystack context/reranking and Ragas evaluation documentation through
+  Context7 discovery and actual page fetches; retain exact research receipts.
+- [x] Inspect current retrieval, shared question/assessment protocol and resolver;
+  trace observed gaps to source selection and unverified semantic interpretation.
+- [x] Incorporate historical minimal-output and paired reasoning experiments; they
+  rule out simple claims that more schema or medium effort necessarily fixes semantics.
+- [x] Record component reuse, task-role separation, approved-content scope and
+  controlled comparison plan, with remaining hypotheses explicitly unproven.
+- [x] Preserve existing code/results and register documentation recovery at b4f1e6a;
+  verification, scoped commit and cleanup receipt reside in the central recovery phase.
+
+Research only. No new questionnaire-generation/embedding calls, product changes,
+framework installation, procurement or deployment. Web research and the search-tool
+connection probe did use external services. Runtime tests were not rerun for these
+documentation changes. Do not implement another prompt-only patch as the next default.
