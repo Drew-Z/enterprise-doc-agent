@@ -520,3 +520,52 @@ or recorded new-file absence. Zero provider/embedding calls and staging changes.
 Central records retain offline evidence, checks, publication and exact owned-temp
 cleanup. No historical outputs or unrelated files are discarded. See
 docs/ops/presales-assessment-candidate-20261010.md for promotion boundaries.
+
+## Assessment candidate observation — 2026-10-10
+
+AR01 freezes six prerequisite states for fictional order CH-2610 before a single
+primary grok-4.7/low streaming request, with a separate reference and another-order
+scope distractor. Controlled adapter success/503 each dispatched once without retry
+and restored the original gateway identity. The first local fixture lacked three
+metadata fields and failed before any mock or real dispatch; it was corrected
+before input/reference freezing. The real request took 103.5s, returned HTTP 200
+with finish_reason stop and reported 5,532 input plus 3,458 completion tokens.
+There is no verified price or billed-cost claim.
+
+The original observation remains failed/presales_invalid_model_output with
+draft_contract; offline resolution reproduces
+`responses must cover the exact requirement in order`. Strict schema, complete
+input/source binding, all 17 offered spans and selected IDs pass. The top-level
+conflicting_evidence status matches the reference. None creates an accepted draft.
+All six response requirementText values copy necessity rules instead of the question.
+
+Separate assistant review against 11 pre-frozen criteria passes only 3 and 6:
+necessity-rule references and preservation of both authorization-conflict sides.
+Failures include normative rather than affirmative propositions, unregistered
+verification treated as unmet, an action assuming verification passed, an invented
+certificate-submission obligation, and claims that CH-2599 evidence fills CH-2610
+gaps. Conclusion/prose also contradict the met licence and training assessments.
+This is not independent domain approval, a reliability estimate or public-task repair.
+
+The original result SHA is
+a3153f653869ab85b2a15c457e8558ebf67117f21c878ebac86d9ade69f059f1.
+Keep its distinct presales-assessment-candidate-run-v1 identity; historical scorers
+must not consume it as run-v10. No retry, output repair, reference change, embedding
+or runtime integration occurred. Candidate promotion is rejected. Before further
+product changes, separately investigate protocol burden versus basic primary-model
+interpretation; do not add schema fields in place of semantic evidence.
+
+Postflight records unchanged rc49/source fe995676, DB 0037, default v15/strict off,
+five ready workloads, zero active jobs and unchanged source hashes, policy and
+ledgers. UTC 2026-10-10 has 0 application dispatches and 2 known direct requests;
+18 conservatively carried prior-day reservations yield 20/200, not 20 observed
+current-day requests. Runtime sources and the v18/v19/v20 original results retain
+their hashes. Product code is unchanged from fca01bb, whose 3,158 nonintegration
+tests/23 subtests, Ruff, Mypy and exact-source CI passed; they were not rerun locally
+for documentation-only changes. Documentation/publication checks and exact new-head
+CI are recorded in the central manifest phase assessment_candidate_observation_20261010.
+
+Six registered documentation paths use Git/new-file recovery at fca01bb. The 2,993
+unrelated status entries are preserved. No disposable files or directories were
+created; central evidence remains a deliverable. See
+docs/ops/presales-assessment-observation-20261010.md. The parent task stays active.

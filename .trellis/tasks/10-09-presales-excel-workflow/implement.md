@@ -298,3 +298,30 @@ Local checks passed:41 candidate tests,86 combined focused tests,3,158 nonintegr
 tests/23 subtests in277.32s, Ruff749 files and Mypy278 source files. Original v18/v19/v20
 result hashes and10 runtime files are unchanged. Publication/CI and cleanup receipts
 are tracked centrally; the later semantic gate remains unfulfilled.
+
+## Candidate observation
+
+- [x] Controlled one-request adapter: actual gateway/recorder, success and503,
+  no retry, candidate schema identity and restoration of original runtime bindings.
+- [x] Freeze new AR01 input and separate role/state/action reference against fca01bb,
+  current primary identity and conservative reservations; retain one first outcome.
+- [x] Source-bound mechanical inspection, separate frozen-criterion review and unchanged
+  staging/ledger check; publish the actual gate decision and preserve prior failures.
+
+Recovery phase assessment_candidate_observation_20261010 reuses the central group.
+No gateway integration, deployment, embedding or additional route in this observation.
+
+The observation is complete; semantic acceptance and runtime promotion are rejected.
+One request returned in 103.5s with 8,990 reported tokens, then failed draft_contract
+because responses did not cover the original requirement. Frozen criteria 1, 2,
+4, 5, 7, 8, 9, 10 and 11 fail; only 3 and 6 pass. This is assistant review against
+pre-frozen criteria, not independent domain approval. No retry or output repair.
+
+Read-only postflight retains rc49/0037/v15, five ready workloads, zero active jobs
+and unchanged ledgers. Current UTC-day application dispatches are 0; two known
+direct requests plus 18 carried prior-day reservations give a conservative 20/200,
+not 20 current-day calls. Source/evidence hashes, documentation checks, publication
+and cleanup receipts are recorded centrally. No disposable resources were created.
+
+- [ ] Candidate semantic acceptance and integration remain unfulfilled; do not promote.
+- [ ] Public-task quality, independent domain review and competitor acceptance remain open.

@@ -411,3 +411,19 @@ negative selection remain wrong: separate arrays, exact coverage and valid actio
 do not prove source entailment or semantic completeness. A combined rule/state
 passage must remain legal. Candidate schema identity is separate from gateway v20;
 no historical scorer or frozen policy may silently start using the new resolver.
+
+AR01's isolated candidate observation passes strict schema and source/span binding
+but fails exact question coverage: every requirementText copies a necessity rule.
+Its original draft_contract failure must remain failed. Separate frozen-criterion
+review also finds missing-as-unmet, an assumed verification pass, an invented
+training-certificate duty, cross-order substitution and structured/prose conflicts.
+Correct requiredBy roles and a correct conflict state do not establish acceptance.
+Compare the conclusion and every response with typed assessments and source scope;
+null nextAction on a met assessment does not prevent prose from inventing a duty.
+
+Preserve the presales-assessment-candidate-run-v1 report separately from run-v10
+and the assistant review separately from independent domain approval. Reject this
+candidate's runtime promotion. Any subsequent minimal-contract investigation must
+keep semantic criteria and original outcomes intact; do not replay AR01, repair
+its output, weaken the validators or infer quality from another set of fields.
+See docs/ops/presales-assessment-observation-20261010.md.

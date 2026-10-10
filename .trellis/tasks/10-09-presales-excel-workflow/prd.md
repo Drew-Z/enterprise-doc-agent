@@ -274,3 +274,24 @@ Implemented as a standalone candidate with41 new cases,86 combined focused cases
 3,158 nonintegration tests and23 subtests passing. Raw-language, link, source and
 public-size boundaries remain enforced. A wrong-role/missing-as-negative controlled
 case remains explicitly wrong; no claim of semantic correction or runtime promotion.
+
+## Candidate semantic observation
+
+Freeze one new synthetic requirement with six independent prerequisites, including
+unregistered verification versus explicitly required-but-unsubmitted paperwork,
+completed training with an absent certificate, genuine conflict and another-order
+facts. Use the committed candidate on the unchanged primary route exactly once,
+with input/reference separation and conservative budget reservation. Assess every
+necessity role, state, scope, requested response and action independently of schema
+acceptance. Preserve the first outcome, including failure/unknown, without repair
+or replay. No automatic runtime integration, staging enablement or competitor claim.
+
+AR01 has now been observed once: HTTP 200 after 103.5 seconds, but candidate
+projection and semantic acceptance both fail. It copies necessity rules into the
+customer-question fields, treats an unregistered result as unmet, adds a training
+certificate obligation and claims another order can fill current-order gaps.
+Correct rule references and authorization conflict do not override those failures.
+Do not integrate this candidate. The next investigation must distinguish protocol
+overload from primary-model reasoning limitations before further product changes;
+adding more selection fields is not evidence of semantic improvement. Preserve
+AR01 and all earlier outcomes without replay or relaxed acceptance criteria.

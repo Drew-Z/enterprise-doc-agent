@@ -289,3 +289,24 @@ storage/UI/export in this candidate phase. The candidate schema/identity and loc
 resolver are independently testable before an actual observation and conditional
 integration. A source span may legitimately be both a rule and a fact; field-level
 role separation is not a semantic oracle and must be tested/documented as such.
+
+## Isolated candidate observation adapter
+
+Use a dedicated one-request process and a scoped adapter over the existing gateway
+schema/prompt/resolver bindings. Keep its transport, streaming, request/response
+limits, source offering and accounting unchanged. The candidate resolver closes
+over that request's original requirement; restoration leaves v20 identity intact.
+Controlled HTTP success/503 checks precede any real dispatch. Record a distinct
+presales-assessment-candidate-run-v1 report; never relabel it as historical run-v10.
+Freeze all adapter/helper/source hashes and separate criteria, then recheck live
+identity, active work and budget immediately before exclusive intent. Raw outcome
+and per-criterion semantic review stay separate; do not coerce a failed response.
+
+The AR01 result rejects this design's promotion: source IDs and schema are valid,
+but responses contain rule text instead of exact requirement text. Structured
+states also disagree with generated prose, and source applicability is violated.
+The adapter remains an isolated diagnostic; production gateway/settings/scorers
+continue unchanged. A separately planned minimal contract on the same primary
+route should investigate whether protocol burden or basic interpretation causes
+these errors, with the same semantic standards. This is an investigation direction,
+not a new runtime design, authorization to rerun AR01, or proof of either cause.
