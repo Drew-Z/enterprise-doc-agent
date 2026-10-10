@@ -493,3 +493,18 @@ Recovery phase `gpt_product_integration_20261010` uses the existing central grou
 baseline992ea46. Controlled tests mock only external HTTP/cluster boundaries; database,
 parsers, source selection and workbook generation are real. Do not repeat a failed
 live sample until success or treat assistant review as independent business approval.
+
+Source implementation is published at c713b51. Local format/Ruff/mypy and3226
+nonintegration cases (23 subtests) passed;26 affected cases passed after aligning v21
+with the previously successful candidate request. Two finite workflow observations
+made three actual calls: GPT502, then GPT502 followed by the real configured Grok
+fallback stream timeout. The second planned row remained unattempted. Keep all
+outcomes; the failure is upstream delivery, not observed wrong answer semantics.
+
+A separate attributed manual packet delivered both public rows through actual
+import/manual-save/review/reload/XLSX/CSV with zero model calls. This is an assisted
+manual deliverable, not GPT acceptance. Three owned local schemas were removed and
+verified. Fresh postflight confirms unchanged rc49/Grok/0037 readiness, source,
+policy and accounting. Automatic delivery and conditional GPT staging replacement
+remain open for the concrete channel blocker; no further inference or new release
+tag is justified until that blocker changes.
