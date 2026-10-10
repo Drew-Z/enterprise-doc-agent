@@ -346,3 +346,23 @@ cross-order criteria 6 and 9 pass. The original output remains unchanged, with n
 accepted public draft, retry or second live request. Staging identity/policy/ledgers
 remain unchanged. Three current-day known direct calls plus 18 prior-day carried
 reservations give a conservative 21/200. Publication/check receipts are central.
+
+## Paired primary reasoning observation
+
+- [x] Controlled paired orchestration: identical inputs except requested effort,
+  separate first outcomes, no prior output leakage, stop on failure/interruption.
+- [x] Freeze fresh RC01 input/reference and both requests before two reserved
+  dispatches; recheck staging policy/budget and preserve every attempted outcome.
+- [x] Review all semantic criteria for each arm, compare original evidence, verify
+  unchanged runtime/ledgers and publish the next decision with scoped checks.
+
+Recovery phase reasoning_comparison_20261010 uses baseline 1444979 and six registered
+documentation paths in the existing central group. No production source changes.
+
+Four controlled orchestration scenarios pass after an initial missing-implementation
+failure before dispatch. The two real arms return schema_valid: medium 32.438s and
+3,091 reported tokens; low 24.531s and 2,693 tokens. Neither passes semantic review.
+One read-only model-catalog GET lists grok-4.7 and glm-5.3; no other-model inference
+occurs. Staging policy/ledgers are unchanged. Five current-day direct calls plus
+18 prior-day reservations give a conservative 23/200, not 23 current-day calls.
+Original outcomes, scoped publication and cleanup receipts are retained centrally.

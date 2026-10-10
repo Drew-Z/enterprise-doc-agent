@@ -617,3 +617,56 @@ Recovery phase minimal_contract_observation_20261010 binds six documentation pat
 to 9b46e81 or new-file absence and retains the collector/evidence. All 2,993 unrelated
 status entries are preserved. No disposable resources are created or historical
 files removed. See docs/ops/presales-minimal-contract-observation-20261010.md.
+
+## Matched-input primary effort comparison — 2026-10-10
+
+RC01 freezes one new six-state synthetic input and 11 semantic criteria for two
+prospective arms before either dispatch. Both requests use the unchanged minimal
+collector, complete source input and same grok-4.7 primary endpoint. The only body
+difference is reasoning_effort: medium first, then low. Both keep streaming, the
+120-second deadline, 4,000 requested tokens and 4,000-character answer limit. The
+second input never includes the first output. This is not a retry of historical data.
+
+The first controlled pair check fails before dispatch at absent orchestration. Four
+scenarios then pass: two successful arms, HTTP 503 stopping the second, cancellation
+preserving unknown and stopping the second, and preflight drift before the second.
+Each actual arm is limited to one dispatch; both pending arms and every first/final
+state are durably recorded. No resume/retry path is provided.
+
+Both actual arms return HTTP 200/stop and schema_valid. Requested medium takes
+32.438s, with 1,260 input and 1,831 completion tokens (3,091); low takes 24.531s,
+with 1,260 input and 1,433 completion tokens (2,693). Total reported usage is 5,784;
+billed cost is unknown. Returned model names are grok-4.7. The request field is
+verified; provider-internal enforcement of effort is not independently attested.
+
+Neither arm passes semantic review. Low explicitly says the unregistered test did
+not pass and asks to complete it. Medium says its result is unregistered, then asks
+to register a pass without first establishing it. Both add submission of a training
+transcript after training is completed, despite no such rule. Overall decision,
+conflict preservation and cross-order exclusion are present in both. Medium passes
+criteria 1/5/6/9 and low 1/6/9. Criterion 5 narrowly checks absence of an explicit
+negative inference; medium's implied positive result still fails criteria 4 and 8.
+These are criterion results from assistant review, not accuracy rates or independent
+domain approval. No production setting change is justified by this pair.
+
+Result SHA: 862ff888efd8670a522639c06f4416a0c84afed70be16c6e663e038fa446eb04.
+Offline binding verifies both full source projections, exact requests and unchanged
+original answers. Keep presales-reasoning-comparison-run-v1 outside public drafts
+and historical scorers. A single sequential pair cannot establish reliability,
+universal model limits or a dominant causal explanation.
+
+One subsequent read-only GET /models on the same primary endpoint returns grok-4.7
+and glm-5.3. This is advertised availability only, with zero additional inference.
+The next investigation is a separately planned same-endpoint alternate-primary-model
+qualification; no switch, fallback-channel trial or further request occurs here.
+
+Read-only postflight retains rc49/source fe995676, DB 0037, v15, five ready deployments,
+zero active jobs and unchanged policy, source hashes and ledgers. Current UTC-day
+application dispatches are zero; five known direct calls plus 18 carried prior-day
+reservations give a conservative 23/200. Zero embedding and staging changes.
+Product code is unchanged at 1444979; local validation covers the diagnostic, frozen
+evidence and documentation, without a redundant local full-suite run. Exact new-head
+CI, publication and recovery are recorded under reasoning_comparison_20261010.
+Six documentation paths use Git/new-file recovery; the 2,993 unrelated status entries
+remain unchanged. No disposable or historical files are deleted. See
+docs/ops/presales-reasoning-comparison-20261010.md.

@@ -335,3 +335,30 @@ No source repair, public-draft coercion or automatic semantic classifier is adde
 Next investigate the same primary route's inference settings with separately frozen
 criteria before changing the product design; this result does not prove a model's
 universal capability limit or justify a production configuration change.
+
+## Paired reasoning diagnostic
+
+Reuse the frozen minimal-observation collector unchanged. Prepare source/citation
+input once, then clone its request with only reasoning_effort set to medium or low.
+Run medium first, then low, in independent HTTP calls with no prior response in the
+second input. Persist both planned arms before dispatch and each arm's first/final
+state. Reserve two direct calls before starting; recheck unchanged primary policy,
+source/ledger identity and active work before each arm. Stop rather than resume an
+unknown request. The same 120-second deadline and 4,000-token/character limits apply.
+
+Freeze input, separate reference, both exact request hashes, helper/source hashes,
+arm order and decision rules. If medium alone passes, investigate its compatibility
+with the actual product contract before promotion. If both fail, do not treat the
+reasoning setting as a demonstrated remedy. Both passing or low-only passing also
+requires further evidence, not an automatic configuration change. Transport or
+incomplete observations cannot establish a semantic contrast. Record requested
+effort separately from provider-returned metadata; its internal enforcement is
+not independently attested. Use presales-reasoning-comparison-run-v1 only.
+
+Observed: medium and low both pass the minimal format but fail meaning criteria.
+The only request difference is the requested effort string; both retain the same
+full evidence and prompt. Medium changes the unsupported test assumption from
+negative to positive, not to known uncertainty, and retains the extra transcript
+duty. Keep both outputs and reject a production setting change. A prospective
+same-endpoint glm-5.3 qualification is the next inference-quality investigation;
+do not infer its availability from GET /models or silently substitute it in runtime.

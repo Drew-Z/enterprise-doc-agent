@@ -318,3 +318,26 @@ decision and never identifies the necessity-rule source. Conflict and cross-orde
 exclusion are correct. Do not implement or promote this diagnostic contract. Errors
 persist without nested output structure; investigate primary inference quality and
 settings before any further schema expansion. The cause is not fully established.
+
+## Prospective primary reasoning comparison
+
+Freeze a new six-prerequisite sample and the same semantic standard for two planned
+first observations on the existing primary endpoint: requested medium and low
+reasoning. Both arms use exactly the same source input, prompt, model, output
+format and limits; only reasoning_effort differs. Fix both requests and their order
+before either dispatch. At most one request per arm, two total within the existing
+daily cap. This is a prospective paired comparison, not a retry of MC01 or AR01.
+
+Keep each original result, including failure or unknown, and stop remaining work
+after a non-schema-valid first outcome or a changed live preflight. No embedding,
+fallback route, production configuration or product integration. Evaluate all
+criteria per arm before comparing them. One pair can reveal an observed contrast,
+not establish reliability, statistical causality or competitor acceptance.
+
+RC01 completed both planned first observations with identical input. Both requested
+settings fail semantic acceptance: low calls the unregistered test result not passed;
+medium asks to register a passing result without establishing it. Both invent a
+training-transcript submission duty. Do not promote medium. A read-only catalog on
+the same primary endpoint lists glm-5.3 alongside grok-4.7; separately qualify that
+alternate primary candidate before further schema/effort tuning. Catalog presence
+alone proves neither inference availability nor quality. Production remains unchanged.

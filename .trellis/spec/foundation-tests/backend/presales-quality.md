@@ -443,3 +443,19 @@ if the next action assumes noncompletion. Do not present a new sample plus a cha
 prompt as a matched ablation or a model-capability ceiling. Stop schema expansion
 when unchanged meaning errors survive simpler output, and investigate inference
 quality before product integration. See the minimal-contract observation report.
+
+Prospective setting comparisons freeze both arms, order and separate semantic
+criteria before either request. Prepare source references once and verify the full
+request differs only in the intended field. Persist planned/unattempted arms and
+stop after failure, unknown outcome or preflight drift; never convert a stopped arm
+into a retry or silently remove it from the planned comparison. The second request
+must not receive the first answer. Requested settings are distinct from attested
+provider internals, and one sequential pair establishes no reliability rate.
+
+RC01 compares requested medium versus low on the same primary with identical input.
+Both are schema-valid but semantically rejected: low interprets an unregistered test
+as not passed; medium presupposes a pass; both invent a training-transcript duty.
+Review actual actions as well as status wording, and keep narrow criterion passes
+separate from overall semantic rejection. Do not promote a setting from these data.
+GET /models lists only advertised model IDs; it neither performs inference nor
+qualifies an alternate model. See docs/ops/presales-reasoning-comparison-20261010.md.
