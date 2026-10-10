@@ -624,3 +624,39 @@ readers; rc50 is no longer a valid recovery after extended records exist.
 Reserve only the fixed CQU06/CQU05/QP01 product replay, at most six normal primary and
 fallback dispatches. Preserve first model outcomes and attributed manual corrections,
 then verify save/reload and XLSX/CSV. Historical model results remain unchanged.
+
+## Public-source workflow continuation (2026-10-11)
+
+Use the deployed rc51/v24 API and workers with one new labeled tenant, eight admitted
+attempts, at most sixteen generation dispatches, and a 131072-byte document entitlement.
+Six frozen source bundles contain 68767 bytes and preserve the original official
+documents' scope. Dedicated and Self-Managed documents are explicitly inapplicable
+to claims about the shared GitLab.com offering. Nineteen official supplier documents
+are collected for the expanded library; six later additions do not enter the frozen
+live packet. Source comparison criteria stay outside every model request.
+
+Keep failed transport/preflight receipts separately versioned. The first health probe
+received HTTP403 before any product mutation; a read-only database check confirmed no
+trial tenant or business rows. A second controller uses the established health-check
+User-Agent, revalidates exact deployment identity, and preserves the first receipt.
+
+Successful model drafts are reviewed through the normal attributed endpoint. Failed
+rows may be completed through manual-response only after terminal state, retaining all
+failed attempts, then receive an attributed review. Original model outcomes are never
+renamed as successful generations. Compare non-answer workbook content, effective
+answers and gaps, reload snapshots, export bytes, call accounting and other tenants'
+history. This is an API workflow trial, not browser interaction or customer approval.
+
+Observed input-design limitation: the accepted training draft treated original IDs,
+translations and display metadata in the question cell as answer aspects. The future
+24-row workbook keeps original question/options in B and answers in C, rows2-7 in each
+of four sheets, with auxiliary metadata in separate columns. The frozen live input and
+its failures remain unchanged. This workbook adjustment has passed import inspection,
+not a new model-quality trial, and does not explain all draft_contract failures.
+
+The next expansion should select an unexecuted topic, explicitly resolve original
+display conditions, bind the relevant offering and freeze a new finite batch. Unknown
+auditor/vendor lists, customer settings and physical-control evidence remain gaps.
+Preserve generation, manual authorship and review as separate records. Public policies
+do not establish actual execution; the expanded library still uses one supplier and
+does not establish cross-industry or independent customer acceptance.

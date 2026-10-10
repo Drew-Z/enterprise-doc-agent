@@ -617,3 +617,38 @@ inferred without audit records. A separate finite exception receipt preserves th
 check and every original artifact. Later windows pass the normal check against a fresh
 baseline. This is a completed bounded delivery/recovery check, not customer or commercial
 acceptance; see docs/ops/presales-v24-release-20261010.md and the central manifest.
+
+## Authorized public questionnaire trial and expansion (2026-10-11)
+
+- [x] Preserve Git recovery at41f9c1c and reuse the existing central recovery group.
+- [x] Collect four original VSAQ templates and nineteen official GitLab documents;
+  record URL, UTC retrieval time, SHA-256, license attribution and offering scope.
+- [x] Freeze eight live rows, six source bundles and independent review criteria.
+- [x] Prepare24 mapped expansion questions;16 remain unexecuted. Keep later source
+  additions outside the live packet and auxiliary metadata outside future question columns.
+- [x] Preserve failed v1 health preflight; prove zero business mutation before v2.
+- [x] Complete the bounded eight-row generation; retain each original result and failure.
+- [x] Browse exact evidence, perform attributed reviews/manual completions, reload and export.
+- [x] Record call accounting, preservation checks, semantic findings and scoped cleanup.
+- [x] Deliver the usable question/material package and finite workflow report.
+
+Completed on deployed rc51/v24: three model drafts and five failed rows, fifteen
+generation calls (eight primary/seven fallback), no regeneration. Five attributed
+Codex manual completions and eight attributed reviews preserve every original attempt
+and model draft. Final answers retain seven evidence gaps at row level; only documented
+incident procedures are fully supported. Reloaded snapshots and repeated XLSX/CSV bytes
+match; non-answer cells and nine untouched workbook members are preserved.
+
+The24-question/four-template library and19 official documents are delivered with raw
+sources, reading copies, source mappings, licenses and hashes. Sixteen questions remain
+unexecuted. All four sheets pass the real workbook inspector; native Excel visual QA
+was unavailable, so structural checks and four independent content previews are recorded
+without claiming native rendering.59 embedding calls (11 document/48 query) and15
+generation calls are accounted separately; three timeout usages remain unknown.
+
+Spec review: no executable product contract changed. Trial-specific evidence, input
+metadata lessons and the next bounded-use procedure are captured in the design and
+docs/ops/public-vsaq-trial-20261011.md. The broader quality/customer acceptance task
+remains open. Final documentation checks, scoped commit and unchanged unrelated-status
+receipts are retained in the existing recovery manifest. Only the owned temporary Edge
+preview profile was removed; public sources, live history and recovery evidence remain.

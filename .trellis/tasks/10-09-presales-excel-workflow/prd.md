@@ -496,3 +496,19 @@ requirements into supplier facts or widening the number of provider calls per ro
 Validate one primary response each for CQU06, CQU05 and QP01, then report original
 outcomes and remaining limitations. Do not replace prior failed observations,
 change model routes, or claim that public regressions prove customer value.
+
+## Authorized public-source trial and expanded use cases (2026-10-11)
+
+The user has no private questionnaire or supplier material and authorizes collecting
+real public sources, completing one product workflow, and preparing materials for
+expanded use. Use an attributed Google VSAQ extract and matching GitLab official
+documents. Freeze eight live questions and separate substantive review criteria before
+generation; prepare a 24-question library across four original templates, with the
+remaining sixteen explicitly unexecuted. Preserve original IDs, choices, conditional
+branches, source URLs, retrieval times, hashes and offering applicability.
+
+Complete upload, ingestion, workbook import, one bounded generation attempt per row,
+evidence browsing, attributed correction or manual completion, reload, XLSX and CSV
+export. Keep first failures and drafts immutable. Public policies are not customer
+configuration or independent audit evidence. No model or budget changes, repeated
+sampling, customer acceptance claim, or time-savings claim are authorized by this trial.
