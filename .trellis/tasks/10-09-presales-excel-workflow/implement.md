@@ -386,3 +386,22 @@ behavior and separately rejects the passing-result action ambiguity. Identity al
 mapping is unresolved. Observation is complete; qualification/promotion is not passed.
 No product implementation, embedding, retry, fallback or deployment occurs in this
 phase. Original result, review, postflight and publication receipts are central.
+
+## Question-part candidate implementation
+
+- [x] Red/green: offer bounded immutable parts whose concatenation is the full
+  original requirement, while keeping complete source evidence and spans.
+- [x] Red/green: resolve ordered IDs to exact original question text with the
+  existing resolver; reject duplicate/omitted/reversed/foreign IDs.
+- [x] Check strict schema, language/evidence/public-size guards, uncertainty/action
+  preservation, historical parser isolation and unchanged runtime identity.
+- [x] Run focused tests, Ruff, mypy and required nonintegration suite; record
+  validation and publish exact owned paths while preserving unrelated status.
+
+Tests use public offer/resolve interfaces with local synthetic requirements and
+real Pydantic/resolvers; no HTTP mocks or live services are needed. Recovery phase
+question_assessment_candidate_20261010 uses 3a02c92 in the existing central group.
+
+Completed: 31 new / 114 focused cases, 3,189 nonintegration tests + 23 subtests,
+Ruff 751 and mypy 279 passed. Full prior source and seven outcome hashes are intact.
+No live request or runtime integration; candidate remains unqualified for promotion.

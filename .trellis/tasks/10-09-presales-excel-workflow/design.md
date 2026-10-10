@@ -385,3 +385,21 @@ items copy the entire question. No result is normalized or passed through a rela
 resolver. Requested glm-5.3 returns z-ai/glm-5.3; GET /models advertises only the former
 with owned_by=custom and proves no canonical alias mapping. The verification action
 is ambiguous despite correct unknown/missing classification. Keep both findings.
+
+## Private question-part adapter
+
+Add question_assessment.py beside the unchanged full assessment candidate. Offer
+contiguous literal question parts at punctuation/newline boundaries, preserving all
+characters and joining the remainder into the twelfth part if needed. Keep the full
+requirement and complete evidence/spans. Parts are frozen and IDs derive from the
+validated requirement key/text/location plus occurrence index; identical wording at
+different positions remains distinct. These are lexical, not semantic, question units.
+
+Use a distinct presales.question-assessment-candidate.v1 identity. Replace only the
+response's requirementText with requirementPartId; reuse rule/assessment models.
+Recompute the expected parts from the trusted server requirement at resolution,
+require the exact ID sequence, materialize original text and call unchanged
+resolve_assessment. Do not sort, deduplicate, truncate, infer truth or alter prose.
+No gateway/settings/policy/scorer import or runtime switch is added. Retain unknown
+action ambiguity for semantic review. Rollback is Git removal of the two new files
+and restoration of documentation; original candidates and observations remain intact.

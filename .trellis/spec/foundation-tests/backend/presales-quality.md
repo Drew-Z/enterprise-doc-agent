@@ -470,3 +470,56 @@ Do not misreport this as a failed unknown classification. Requested/returned mod
 alias differences remain unresolved without authoritative mapping. Question-part
 IDs may remove transcription burden, but cannot prove substantive answer coverage
 or authorize repair of prior outputs. See the GP01 qualification report.
+
+## Private server-owned question parts
+
+### Scope and signatures
+
+The unpromoted question_assessment module removes question transcription from a
+prospective model output; production gateways, policies and historical scorers do
+not import it. Public module boundaries are offer_requirement_parts(requirement),
+offer_question_assessment(span_input), question_assessment_response_format(),
+question_assessment_system_message() and resolve_question_assessment(content,
+requirement, catalog). Protocol: presales.question-assessment-candidate.v1.
+
+### Contracts
+
+Offered requirementParts contain frozen requirementPartId/text pairs, retaining all
+original characters and the complete requirement/evidence/spans beside them. At most
+12 contiguous lexical parts are offered; after 11 boundaries the full remaining
+tail is kept together. Repeated wording has distinct occurrence IDs. IDs derive
+from requirement key/text/sourceLocation plus index; they are deterministic identity
+bindings, not authorization capabilities or semantic decomposition.
+
+Each response selects requirementPartId instead of copying requirementText. All rule
+and assessment types remain shared with assessment_selection. The resolver recomputes
+parts from its trusted requirement, compares the exact ordered ID list, materializes
+only original text, then calls unchanged resolve_assessment. No sorting, deduplication,
+truncation, state inference, action repair or review approval occurs.
+
+### Validation and error matrix
+
+| Input/output condition | Result |
+| --- | --- |
+| All offered IDs once, in order | Materialize text and run original resolver |
+| Missing, duplicate, reversed, foreign or extra ID | ValueError before projection |
+| Changed key, text or source location with old IDs | Same coverage rejection |
+| Copied requirementText instead of/in addition to ID | Strict schema rejection |
+| Unknown source ID, no evidence/gap, non-Chinese prose or oversized public answer | Existing resolver rejection |
+| Correct IDs but unsupported business assumption | Remains a semantic review failure; parser does not claim approval |
+
+### Cases and required tests
+
+Base: one question without punctuation retains its complete text. Good: repeated
+sentences and whitespace retain exact characters with separate IDs. Bad: copying
+the first ID for every answer fails even when JSON is valid. A >12-sentence input
+keeps the entire bounded tail, including scope limitations; a 2,000-character input
+is not truncated. Test immutability, source/span preservation, all four assessment
+states, missing/foreign/repeated/reordered IDs and unchanged v15/v20 identities.
+
+Wrong: regard a mechanically valid unknown-state action of "register a passing
+result or confirm whether it passed" as semantic approval, or rewrite it server-side.
+Correct: preserve that text and unknown state for separate action-neutrality review.
+Likewise, question-part coverage does not establish substantive answer completeness.
+Tests live in packages/core/tests/test_presales_question_assessment.py; frozen GP01
+remains rejected by the original candidate and is never repaired through this one.

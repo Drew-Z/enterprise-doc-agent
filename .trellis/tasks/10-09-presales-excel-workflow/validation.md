@@ -699,3 +699,40 @@ active jobs and unchanged policy/module hashes/ledgers. UTC 2026-10-10 has zero
 application dispatches and six known direct requests; carrying 18 prior-day
 reservations gives conservative 24/200, not 24 actual current-day calls. No new
 inference during offline review. See docs/ops/presales-glm-candidate-20261010.md.
+
+## Server-owned question-part candidate validation
+
+The new private question_assessment.py offers frozen literal parts, retains the full
+requirement and source/span context, and accepts exactly one response per offered
+ID in order. It materializes original question text before reusing unchanged
+resolve_assessment. No legacy parser, gateway, settings, policy or scorer changes.
+Its distinct identity is presales.question-assessment-candidate.v1.
+
+Three incremental red/green slices first fail at the absent offering module, absent
+resolver and absent provider-input/identity exports, then pass. The final 31 new
+cases cover lossless bounded splitting, repeated occurrences, immutability, changed
+requirement identity, missing/duplicate/reordered/foreign IDs, all four assessment
+states, unchanged evidence/language/public-size rejection and separate semantic
+action review. Existing assessment/span tests plus these total 114 passed.
+
+Required local gates: Ruff format 751 files, Ruff checks, strict mypy 279 source
+files, and 3,189 nonintegration tests plus 23 subtests pass (814 integration tests
+deselected). Initial formatting/fullwidth-literal lint and a list annotation issue
+were fixed; checks and focused tests passed afterward. The full suite ran once;
+subsequent source edits only format/annotate or escape identical literal characters.
+No integration/runtime deployment or model-quality success is claimed.
+
+All earlier candidate/runtime source hashes and the seven original v18/v19/v20/AR01/
+MC01/RC01/GP01 outcomes remain unchanged. GP01 is never transformed or re-scored.
+No new inference, embedding, fallback or deployment occurs in this implementation.
+The requested/returned GLM identity mapping and action-neutrality qualification
+remain unresolved, as do public-task quality and independent user-value acceptance.
+
+Recovery phase question_assessment_candidate_20261010 registers seven paths at
+3a02c92, with Git recovery for tracked files and absent-file entries for new source
+and tests. Central validation/publication/CI receipts and pre-update PR metadata
+are retained. The 2,993 unrelated status entries remain unchanged; no disposable
+files were created or removed, and no historical file was cleaned. The active task
+and parent goal remain open.
+
+Candidate system/schema SHA-256: 0a7968e8c538024f9f87d962205047e93453b9584e7fd98be05b44ddf5bb8799.

@@ -365,3 +365,11 @@ action offers registering a pass without an explicit if-passed condition, and
 requested/returned model aliases are not verified. Preserve the original failure.
 A separate server-owned question-part identifier candidate will address mechanical
 coverage only; it cannot establish semantic action safety or model qualification.
+
+## Server-owned question coverage candidate
+
+Remove the requirement-text transcription task from prospective candidate outputs.
+Every offered question part must receive exactly one ordered response; omissions,
+duplicates and foreign IDs fail. Preserve the full original question, source context,
+state/action obligations and existing public limits. No inferred semantic coverage,
+GP01 output repair, deployment or extra live request belongs to this implementation.
