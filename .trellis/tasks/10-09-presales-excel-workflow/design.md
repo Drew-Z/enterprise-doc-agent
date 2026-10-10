@@ -457,3 +457,19 @@ cancellation stops the batch. Reserve calls before dispatch, bind source hashes,
 and retain separate source-grounded semantic review. A later Grok correction, if
 needed, receives a distinct identity and results; original candidate and outputs
 remain intact. No new runtime setting or schema is needed for this comparison.
+
+## Current-product GPT qualification
+
+Use the actual default v15 gateway without scoped schema/resolver or transport
+rewrites. Freeze the same known inputs and major criteria; retain both request
+bytes and original results. Stop the batch on non-200/transport failure without
+retrying. Bind projections offline through the existing public scorer helper.
+The user's conditional replacement authorization permits a later guarded switch
+with compatible history readers and a frozen-policy drain; it does not convert
+private-candidate evidence into proof of current-product behavior.
+
+Observed: the original max_tokens/empty-tools request succeeds once, so the earlier
+GPT adapter is not established as necessary. A later HTTP502 stops the batch. The
+successful answer adds a requested explanation to business prerequisites. Preserve
+that distinction from transport availability; neither a new compatibility layer nor
+a simple configuration swap is demonstrated as the remedy by this observation.

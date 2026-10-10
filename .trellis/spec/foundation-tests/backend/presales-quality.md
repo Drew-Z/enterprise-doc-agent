@@ -583,3 +583,20 @@ from a resolved draft. Correct: mark semantics unassessable for the former; revi
 the original prose, each state and each action against sources for the latter.
 One planned prompt correction may have separate same-input regression observations;
 never overwrite the baseline, weaken the resolver or continue sampling until success.
+
+## Candidate evidence versus current-product qualification
+
+The user's later approval permits GPT replacement if better; the earlier diagnostic
+no-switch scope is not a standing approval requirement. Verify the actual selected
+product contract before promoting a channel. The current v15 observation succeeded
+once with unmodified max_tokens/empty-tools parameters, then stopped on HTTP502;
+do not infer that the comparison adapter was required or that GPT was rejected for
+unsupported parameters. The third planned mixed-state case remains unattempted.
+
+Preserve useful missing-evidence answers separately from source-role errors: asking
+for test conditions can answer the question, but does not make that question a
+source-defined business prerequisite. CQU02 v15 contains this latter defect despite
+correct uncertainty and detailed test questions. Exact input binding and successful
+projection are not semantic acceptance. A retryable502 remains a channel failure;
+the direct collector does not exercise normal bounded background fallback.
+See `docs/ops/gpt-product-qualification-20261010.md`.

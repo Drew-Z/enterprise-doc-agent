@@ -459,3 +459,19 @@ failed. Eight known usages total59,034 tokens; the failed stream's usage is unkn
 The revised Grok semantic gate remains rejected. Scoped documentation validation,
 publication and unchanged workspace receipts are retained centrally. Keep the task
 open; do not infer broad reliability or business acceptance from GPT's three drafts.
+
+## Authorized GPT replacement qualification
+
+- [x] Verify live rc49/v15 identity, primary policy, idle state and conservative budget.
+- [x] Freeze known inputs and run the unmodified v15 gateway: CQU02 succeeds;
+  CQU05 returns HTTP502; QP01 remains unattempted under the frozen stop rule.
+- [x] Reproduce complete source/wire bindings and the accepted projection offline;
+  verify retryable502 classification through controlled HTTP with no real request.
+- [x] Preserve source/configuration and all original outcomes; record the semantic
+  role error separately from channel availability and document no promotion.
+- [ ] Conditional runtime replacement and product delivery qualification remain open.
+
+Recovery phase `gpt_product_qualification_20261010` uses the existing group and
+clean baseline e7a18a5. Two actual new calls, no retries or embedding. One known
+usage is3,693 tokens; the failed request's usage is unknown. Postflight confirms
+unchanged readiness/policy/ledgers. See `docs/ops/gpt-product-qualification-20261010.md`.

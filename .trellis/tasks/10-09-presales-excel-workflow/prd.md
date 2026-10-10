@@ -424,3 +424,18 @@ substantive failures; one prompt correction retains rule-as-fact/unknown-as-unme
 and adds a rejected zero-based-index error. This continuation does not achieve Grok
 semantic acceptance. Stop at the frozen cap; no candidate or route is promoted.
 See `docs/ops/grok-gpt-semantic-comparison-20261010.md` and retained original answers.
+
+## Authorized GPT replacement evaluation
+
+The user now authorizes replacing the primary channel with `gpt-6-luna` if its
+product behavior is better. Evaluate the actual product contract and normal delivery
+compatibility; the earlier private-candidate comparison alone cannot qualify a swap.
+Preserve original outcomes, bounded failover and a recoverable Grok configuration.
+No repeat replacement permission is required within this scope.
+
+The unmodified v15 gateway produced one accepted CQU02 draft, then CQU05 failed
+with HTTP502. The frozen stop rule left QP01 unattempted. CQU02 preserves uncertainty
+and improves test-detail requests, but represents a requested explanation as a
+source-defined business prerequisite. Replacement is not qualified in this
+observation; no runtime switch occurred. See
+`docs/ops/gpt-product-qualification-20261010.md`.
