@@ -786,3 +786,32 @@ unchanged policies/source hashes/ledgers. Nine known current-day direct calls pl
 production switch or historical repair. Original deployed public replay stays
 4 drafts / 2 failures / 9 calls. Scoped documentation checks replace redundant local
 full-suite reruns for unchanged product code. See the question-candidate report.
+
+## Wuye selection and executed rc50 primary replacement
+
+The user authorized three named models on the newly added suffix3 channel. The
+configured `//v1` path returned HTML; preserve all nine failures, then correct only
+that same-origin path with a verified private local backup. On `/v1`, seven bounded
+requests selected gpt-5.6-sol: two accepted comparison drafts and one upstream error.
+Claude's three original responses failed JSON framing; luna returned503 and stopped.
+
+The selected primary plus existing fallback delivered both new local worksheet rows
+through actual PostgreSQL, API, worker, review, reload and XLSX/CSV with three calls.
+The second primary answer was rejected for contradictory states/duplicate question
+IDs; Grok completed that row. Do not count it as GPT success. Review adds omitted
+source detail, with immutable drafts and all failures retained. Zero external
+embeddings; the owned local schema was removed and verified.
+
+Signed rc50/a99b376 release run38044856887 passed; five artifact digests and56 evidence
+files matched. Full transfer/import capacity passed with no historical image cleanup.
+Nineteen alias-preservation checks and18 primary-switch/recovery tests passed.
+The supervised primary_model window finished in87.946s. Twenty-two independent
+postflight checks passed, including actual source, key, resources, all presales history
+hashes, accounting, exact0037 and five ready services. One installed-gateway smoke
+returned the correct gpt-5.6-sol/v21 draft in11.559s without embeddings/business writes.
+
+Staging primary is now wuye/gpt-5.6-sol; existing Grok fallback and budgets are unchanged.
+Twenty generation HTTP requests total include nine wrong-path responses; the carried
+conservative reservation ceiling is68/200. No actual customer or independent expert
+participated. Overall commercial acceptance remains open. Full observations, failure
+details, limitations and recovery are in `docs/ops/wuye-model-selection-20261010.md`.

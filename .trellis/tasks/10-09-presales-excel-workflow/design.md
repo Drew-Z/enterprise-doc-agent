@@ -506,3 +506,25 @@ and no empty tool fields; v15/v20 remain unchanged. This is a bounded compatibil
 correction, not a demonstrated root cause for502. The next two-row workflow uses
 the existing primary/fallback policy with at most two calls per row and no automatic
 resampling. Preserve original drafts separately from assisted review and exports.
+
+## Wuye continuation
+
+Use suffix3 credentials in memory and select one model ID from its comma-separated
+model list. The supplied path `//v1` returns HTML even with HTTP200; a same-origin
+`/v1/models` check establishes the corrected API path. Retain the original nine
+invalid-stream outcomes separately from the seven corrected-path model requests.
+The corrected endpoint is bound by its digest, not by credentials in reports.
+
+Select `gpt-5.6-sol` for usable current-interface output, retaining Grok fallback.
+Keep v21, the strict decoder, source selection and budgets unchanged; do not strip
+Claude's Markdown fences or relabel rejected GPT output. A two-row real local
+PostgreSQL/API/worker workflow qualifies reviewed delivery with original failure,
+draft and attributed review retained. No external embedding calls are needed there.
+
+Publish the existing exact source as rc50. Use primary_model release mode on0037,
+with compatible original/candidate workbook, manual and citation readers. Pin the
+original/new primary keys as protected runtime inputs so recovery after a partial
+switch can accept either current key and restore the original. Verify other secret
+data, all deployment specs, packaged source, schema, full presales history hashes,
+readiness and accounting independently. Remove owned transport/runtime inputs after
+terminal verification; keep local recovery and all historical images and evidence.

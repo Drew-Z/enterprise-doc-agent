@@ -485,9 +485,10 @@ unchanged readiness/policy/ledgers. See `docs/ops/gpt-product-qualification-2026
   preserve old history and exactly-once accounting, including controlled502 fallback.
 - [x] Red/green exact0037 primary-model release scope, credential/config binding,
   compatible history readers, close races and complete apply/restore.
-- [ ] Required local checks, scoped source publication and exact signed candidate.
-- [ ] Fresh bounded live qualification/delivery, guarded staging primary replacement
-  if criteria pass, recoverable original configuration and final identity verification.
+- [x] Required local checks, scoped source publication and exact signed candidate.
+- [x] Fresh bounded qualification/delivery, guarded staging primary replacement,
+  recoverable original configuration and final identity verification; completed by
+  the subsequently authorized wuye continuation below. Original suffix2 failures remain.
 
 Recovery phase `gpt_product_integration_20261010` uses the existing central group and
 baseline992ea46. Controlled tests mock only external HTTP/cluster boundaries; database,
@@ -508,3 +509,20 @@ verified. Fresh postflight confirms unchanged rc49/Grok/0037 readiness, source,
 policy and accounting. Automatic delivery and conditional GPT staging replacement
 remain open for the concrete channel blocker; no further inference or new release
 tag is justified until that blocker changes.
+
+## User-authorized wuye continuation completed
+
+- [x] Compare exactly the three suffix3 models on frozen inputs; preserve nine initial
+  wrong-path failures and seven corrected-path observations without resampling.
+- [x] Back up and correct only the same-origin double-slash endpoint path.
+- [x] Select gpt-5.6-sol; complete one actual two-row PostgreSQL/API/worker worksheet,
+  attributed review, reload and XLSX/CSV, with three calls and existing Grok fallback.
+- [x] Publish signed rc50 at a99b376; verify artifacts, full cache capacity and retained
+  references, then apply the bounded primary_model window on exact0037.
+- [x] Independently verify complete deployment/source/key/history/readiness; one
+  deployed-primary request succeeded at11.559s without embedding or business writes.
+
+The selected primary still has recorded failures; fallback and review remain active.
+This does not close customer-value or commercial acceptance. See the wuye model report
+for exact boundaries, receipts and retained limitations. The earlier GPT-only502
+observations remain unchanged historical evidence.

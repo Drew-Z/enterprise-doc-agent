@@ -454,3 +454,18 @@ Preserve all old drafts, attempts and source snapshots. Reuse the proven protoco
 do not add another schema. The original Grok configuration and compatible rc49 images
 must remain recoverable. Fixed public inputs and call limits precede the live workflow;
 public replay establishes product delivery only, not customer savings or willingness to pay.
+
+## Authorized wuye model selection and replacement
+
+The user added provider suffix3 `wuye` and explicitly authorizes comparing
+`gpt-5.6-sol`, `claude-opus-5` and `gpt-6-luna`, then switching to the better usable
+model. Reuse the integrated v21 product interface, existing fallback, review and
+release boundaries. No additional replacement permission is needed. Preserve every
+original observation; useful reviewed delivery, not perfect repeated model answers,
+is the product condition. Known failures and incomplete details remain visible.
+
+Correct the proved same-origin configuration typo `//v1` to `/v1` with a verified
+local recovery point. Keep all provider secrets private. The comparison is limited
+to three fixed cases per model, followed by one two-row product workflow and one
+deployed-primary smoke request using supplied evidence without external embeddings.
+Customer value, independent business approval and commercial acceptance remain open.
