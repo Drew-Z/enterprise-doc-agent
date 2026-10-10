@@ -130,9 +130,16 @@ def assessment_system_message() -> str:
 
 
 def resolve_assessment(
-    content: str, requirement: RequirementInput, catalog: dict[str, CitationInput]
+    content: str,
+    requirement: RequirementInput,
+    catalog: dict[str, CitationInput],
+    *,
+    compact_missing_information: bool = False,
+    expanded_missing_information: bool = False,
 ) -> ModelDraft:
     """Project declared roles and actions; never infer whether a span entails a claim."""
+    if compact_missing_information and expanded_missing_information:
+        raise ValueError("choose one missing-information projection")
     selected = AssessmentDraft.model_validate_json(content)
     by_rule = {item.rule_index: item for item in selected.assessments}
     if len(by_rule) != len(selected.assessments) or set(by_rule) != set(range(len(selected.rules))):
@@ -197,16 +204,42 @@ def resolve_assessment(
             f"事项\uff1a{rule.proposition}\n状态说明\uff1a{item.summary}\n下一步\uff1a{action}"
         )
 
-    return resolve_span_basis(
-        json.dumps(
-            {
-                "prerequisites": prerequisites,
-                "status": selected.status,
-                "answer": "\n\n".join(answer),
-                "missingInformation": list(dict.fromkeys(missing)),
-                "citations": [{"citationId": ref} for ref in dict.fromkeys(citations)],
-            },
-            ensure_ascii=False,
-        ),
-        catalog,
-    )
+    missing = list(dict.fromkeys(missing))
+    if compact_missing_information and len(missing) > 12:
+        # The wire has per-response gaps plus per-rule actions. Preserve their exact
+        # order/text when projecting to the smaller public list; infer no equivalence.
+        grouped: list[str] = []
+        for index, gap_text in enumerate(missing):
+            if (
+                grouped
+                and len(grouped) + len(missing) - index > 12
+                and len(grouped[-1]) + 1 + len(gap_text) <= 1000
+            ):
+                grouped[-1] += "\n" + gap_text
+            else:
+                grouped.append(gap_text)
+        missing = grouped
+        # Existing public item/count/answer limits still reject genuine overflow.
+
+    value = {
+        "prerequisites": prerequisites,
+        "status": selected.status,
+        "answer": "\n\n".join(answer),
+        "missingInformation": missing,
+        "citations": [{"citationId": ref} for ref in dict.fromkeys(citations)],
+    }
+    if expanded_missing_information and len(missing) > 12:
+        # Keep legacy provider schemas reproducible. Every complete gap passes the
+        # same local source/state/language guards; the public draft keeps the full
+        # ordered list. These validation batches never dispatch a provider request.
+        drafts = [
+            resolve_span_basis(
+                json.dumps(
+                    {**value, "missingInformation": missing[start : start + 12]}, ensure_ascii=False
+                ),
+                catalog,
+            )
+            for start in range(0, len(missing), 12)
+        ]
+        return ModelDraft.model_validate({**drafts[0].model_dump(), "missing_information": missing})
+    return resolve_span_basis(json.dumps(value, ensure_ascii=False), catalog)

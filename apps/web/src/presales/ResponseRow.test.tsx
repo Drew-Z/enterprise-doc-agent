@@ -21,6 +21,16 @@ function fixture(): PresalesRow {
 }
 afterEach(() => { cleanup(); localStorage.clear(); });
 
+it("saves fourteen gaps and preserves unchanged multiline entries during review", () => {
+  const row = fixture(); const onReview = vi.fn();
+  row.draft!.missingInformation = Array.from({ length: 14 }, (_, i) => `确认第${i}项。\n补充适用范围。`);
+  render(<ResponseRow row={row} busy={false} generating={false} onGenerate={vi.fn()} onReview={onReview} />);
+  fireEvent.click(screen.getByRole("button", { name: "R1 Evidence and review" }));
+  fireEvent.click(screen.getByRole("button", { name: "Save review" }));
+  expect(onReview).toHaveBeenCalledOnce();
+  expect(onReview.mock.calls[0][0]).toMatchObject({ missingInformation: row.draft!.missingInformation });
+});
+
 it("keeps three states and the evidence for each prerequisite, and requires a correction note", () => {
   const row = fixture(); const onReview = vi.fn();
   render(<ResponseRow row={row} busy={false} generating={false} onGenerate={vi.fn()} onReview={onReview} />);

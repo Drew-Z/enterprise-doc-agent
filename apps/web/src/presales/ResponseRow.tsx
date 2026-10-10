@@ -64,7 +64,8 @@ export function ReviewEditor({ row, busy, onSave, onManual, manualEvidence = [],
   const submit = (event: FormEvent) => {
     event.preventDefault();
     const proposed = prerequisites?.map(item => ({ ...item, condition: item.condition.trim() })) ?? null;
-    const content = { expectedRevision: row.revision, status, answer: answer.trim(), conditions: proposed === null ? conditions.split("\n").map(s => s.trim()).filter(Boolean) : prerequisiteConditions(proposed), prerequisites: proposed, missingInformation: missing.split("\n").map(s => s.trim()).filter(Boolean), note: note.trim() };
+    const gaps = initial && missing === initial.missingInformation.join("\n") ? initial.missingInformation : missing.split("\n").map(s => s.trim()).filter(Boolean);
+    const content = { expectedRevision: row.revision, status, answer: answer.trim(), conditions: proposed === null ? conditions.split("\n").map(s => s.trim()).filter(Boolean) : prerequisiteConditions(proposed), prerequisites: proposed, missingInformation: gaps, note: note.trim() };
     if (onManual) {
       const parsed = manualResponseSchema.safeParse({ ...content, citations: manualEvidence.map(({ chunkId, documentVersionId, excerpt }) => ({ chunkId, documentVersionId, excerpt })) });
       if (!parsed.success) { setError(c.manualInvalid); return; }
@@ -80,12 +81,13 @@ export function ReviewEditor({ row, busy, onSave, onManual, manualEvidence = [],
     if (!parsed.success) { setError(c.reviewInvalid); return; }
     setError(""); onSave?.(parsed.data);
   };
+  // Missing text permits 12,000 code points (at most 24,000 UTF-16 units) plus 155 separators.
   return <form onSubmit={submit} className="presales-review-form"><h4>{onManual ? c.manual : c.reviewTitle}</h4><p className="presales-hint">{onManual || row.manualAuthorship ? c.manualHelp : c.reviewHelp}</p>
     <label className="presales-field">{c.status}<select aria-label={c.status} value={status} onChange={e => setStatus(responseStatus.parse(e.target.value))} disabled={busy}>{responseStatus.options.map(s => <option key={s} value={s}>{statusLabel(s, locale)}</option>)}</select></label>
     <label className="presales-field">{c.response}<textarea value={answer} onChange={e => setAnswer(e.target.value)} rows={4} maxLength={4000} required disabled={busy} /></label>
     {!onManual && sources && readEvidence && <details className="presales-evidence-picker"><summary role="button">{c.editEvidence}</summary><EvidencePicker sources={sources} busy={busy} readEvidence={readEvidence} selected={citations} onChange={selectEvidence} /></details>}
     <PrerequisiteEditor value={assessment} original={remapPrerequisites(original, row.draft?.citations ?? [], citations)} citations={citations} busy={busy} onChange={setAssessment} />
-    <div className="presales-two-fields">{prerequisites === null && <label className="presales-field">{c.conditions}<textarea value={conditions} onChange={e => setConditions(e.target.value)} rows={3} maxLength={12000} disabled={busy} /></label>}<label className="presales-field">{c.missing}<textarea value={missing} onChange={e => setMissing(e.target.value)} rows={3} maxLength={12000} disabled={busy} /></label></div>
+    <div className="presales-two-fields">{prerequisites === null && <label className="presales-field">{c.conditions}<textarea value={conditions} onChange={e => setConditions(e.target.value)} rows={3} maxLength={12000} disabled={busy} /></label>}<label className="presales-field">{c.missing}<textarea value={missing} onChange={e => setMissing(e.target.value)} rows={3} maxLength={24155} disabled={busy} /></label></div>
     <label className="presales-field">{onManual ? c.manualNote : c.note}<input value={note} onChange={e => setNote(e.target.value)} maxLength={1000} disabled={busy} required={Boolean(onManual)} /></label>
     {error && <p role="alert" className="presales-error">{error}</p>}
     <button className="presales-primary" type="submit" disabled={busy}>{onManual ? c.manualSave : c.saveReview}</button>

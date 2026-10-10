@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 import json
 from uuid import uuid4
 
@@ -106,7 +107,9 @@ async def test_explicit_question_protocol_uses_existing_schema_and_projects_orig
     def respond(request):
         body = json.loads(request.content)
         requests.append(body)
-        assert body["messages"][0]["content"] == question_assessment_system_message()
+        assert body["messages"][0]["content"] == question_assessment_system_message(
+            numeric_boundaries=True
+        )
         assert body["max_completion_tokens"] == 4000
         assert "max_tokens" not in body and "tools" not in body and "tool_choice" not in body
         schema = body["response_format"]["json_schema"]
@@ -129,7 +132,7 @@ async def test_explicit_question_protocol_uses_existing_schema_and_projects_orig
         transport=httpx.MockTransport(respond),
     )
     result = await gateway.generate(payload())
-    assert gateway.provenance["promptVersion"] == "presales.v21"
+    assert gateway.provenance["promptVersion"] == "presales.v24"
     assert result.returned_model == "gpt-6-luna" and result.usage["total_tokens"] == 42
     assert len(requests) == 1 and len(result.draft.prerequisites) == 1
     assert result.draft.prerequisites[0].state == "unknown"
@@ -139,7 +142,8 @@ async def test_explicit_question_protocol_uses_existing_schema_and_projects_orig
 
 
 @pytest.mark.parametrize(
-    "fault", ["foreign_question", "omitted_question", "foreign_span", "503", "502"]
+    "fault",
+    ["foreign_question", "omitted_question", "duplicate_question", "foreign_span", "503", "502"],
 )
 async def test_question_output_rejects_invalid_selection_and_never_repairs_or_retries(fault):
     calls = []
@@ -153,6 +157,8 @@ async def test_question_output_rejects_invalid_selection_and_never_repairs_or_re
             value["responses"][0]["requirementPartId"] = "foreign"
         elif fault == "omitted_question":
             value["responses"].pop()
+        elif fault == "duplicate_question":
+            value["responses"][1]["requirementPartId"] = value["responses"][0]["requirementPartId"]
         else:
             value["rules"][0]["requiredBy"] = [{"spanId": "foreign"}]
         return httpx.Response(200, json=envelope(value))
@@ -199,7 +205,7 @@ def test_question_mode_is_independent_frozen_and_restored_with_drift_rejection()
     frozen = ExecutionPolicy.model_validate_json(
         freeze_policy(primary, config, "auto", background=True).model_dump_json()
     )
-    assert [r.prompt_version for r in frozen.routes] == ["presales.v21", "presales.v15"]
+    assert [r.prompt_version for r in frozen.routes] == ["presales.v24", "presales.v15"]
     restored = restore_gateway(primary, frozen.routes[0])
     assert restored.question_assessment and restored.provenance == primary.provenance
     for legacy in (
@@ -215,3 +221,43 @@ def test_question_mode_is_independent_frozen_and_restored_with_drift_rejection()
         ),
     )
     assert fallback.question_assessment and fallback.model_name == "grok-4.7"
+
+
+def test_revised_question_prompt_rejects_previously_accepted_execution_policy():
+    config = PresalesSettings(primary_question_assessment=True)
+    gateway = OpenAICompatiblePresalesGateway(settings(), presales_settings=config)
+    assert gateway.provenance["promptVersion"] == "presales.v24"
+    legacy_message = question_assessment_system_message()
+    assert gateway.system_message != legacy_message
+    policy = freeze_policy(gateway, config, "auto", background=True)
+    legacy_route = policy.routes[0].model_copy(
+        update={
+            "prompt_version": "presales.v21",
+            "prompt_sha256": hashlib.sha256(legacy_message.encode()).hexdigest(),
+        }
+    )
+    with pytest.raises(PresalesError, match="presales_execution_policy_unavailable"):
+        restore_gateway(gateway, legacy_route)
+
+
+async def test_question_generation_keeps_all_gaps_when_projection_exceeds_item_count():
+    gaps = [f"待确认资料{i}:" + "具体资料待确认。" * 10 for i in range(12)]
+    calls = []
+
+    def respond(request):
+        value = output(json.loads(request.content))
+        value["responses"][0]["missingInformation"] = gaps
+        value["responses"][1]["missingInformation"] = []
+        calls.append(value)
+        return httpx.Response(200, json=envelope(value))
+
+    gateway = OpenAICompatiblePresalesGateway(
+        settings(), question_assessment=True, transport=httpx.MockTransport(respond)
+    )
+    result = await gateway.generate(payload())
+    assert len(calls) == 1
+    expected = [*gaps, calls[0]["assessments"][0]["nextAction"]]
+    assert result.draft.missing_information == expected
+    assert all(len(item) <= 1000 for item in result.draft.missing_information)
+    assert all(item in result.draft.answer for item in expected)
+    assert result.draft.prerequisites[0].state == "unknown"

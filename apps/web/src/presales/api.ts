@@ -8,7 +8,9 @@ const time = z.iso.datetime({ offset: true });
 export const responseStatus = z.enum(["supported", "conditional", "contradicted", "insufficient_evidence", "conflicting_evidence"]);
 export const prerequisiteState = z.enum(["met", "unmet", "unknown"]);
 const prerequisite = z.object({ condition: z.string().trim().min(1).max(1000), state: prerequisiteState, citationIndexes: z.array(z.number().int().min(0).max(11)).min(1).max(12).refine(indexes => new Set(indexes).size === indexes.length) }).strict();
-const responseFields = { status: responseStatus, answer: z.string().min(1).max(4000), conditions: z.array(z.string()).max(12), missingInformation: z.array(z.string()).max(12), prerequisites: z.array(prerequisite).max(12).nullable().default(null) };
+// Match Python's Unicode code-point budget, not JavaScript's UTF-16 length.
+const missingInformation = z.array(z.string().trim().min(1).refine(text => Array.from(text).length <= 1000)).max(12 * 12 + 12).refine(items => items.reduce((total, text) => total + Array.from(text).length, 0) <= 12000);
+const responseFields = { status: responseStatus, answer: z.string().min(1).max(4000), conditions: z.array(z.string()).max(12), missingInformation, prerequisites: z.array(prerequisite).max(12).nullable().default(null) };
 const evidence = z.object({ chunkId: id, documentVersionId: id, excerpt: z.string().min(1).max(600), filename: z.string(), pageNumber: z.number().int().nullable(), heading: z.string().nullable(), startOffset: z.number().int().nonnegative(), endOffset: z.number().int().nonnegative() }).strict();
 const retrieval = z.object({ versionId: id, retrievedCount: z.number().int().nonnegative(), usedCount: z.number().int().nonnegative(), truncated: z.boolean() }).strict();
 const draft = z.object({ ...responseFields, citations: z.array(evidence), retrieval: z.array(retrieval) }).strict().refine(value => validPrerequisiteIndexes(value.prerequisites, value.citations.length));

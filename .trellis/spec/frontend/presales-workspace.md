@@ -397,3 +397,19 @@ reload, CSV provenance and unchanged workbook formulas/other sheets with zero li
 Wrong: `review.citations?.length ? review.citations : draft.citations`,
 or `row.draft.citations` for every history entry. Correct: use the revision's explicit list
 when present, preserve[] and keep original/history evidence separately visible.
+
+## Missing-information budget (v23 candidate)
+
+Public missingInformation accepts at most156 independent strings (12 question parts
+*12 gaps +12 unknown-rule actions), each at most1,000 Unicode code points, totaling
+at most12,000 code points after trim. Use Array.from for the matching JS count; native
+string.length measures UTF-16 units. No other twelve-item boundary is widened.
+Review keeps the original list when the textarea text is unchanged, including
+embedded newlines. Explicitly edited text retains the existing one-line-per-item
+entry convention. The textarea's24,155-unit physical ceiling allows the full Unicode
+budget plus155 separators; Zod and server validation enforce the semantic limits.
+Original/current/history readers share the same schema. Publish API/Worker/Web
+together; old readers reject new>12 lists, so a rollback must retain compatible
+readers or explicitly restore the pre-release data snapshot. Tests cover14-item
+HTTP read/review, supplementary characters, total/item/count rejection and unchanged
+multiline review. This does not mark generated answers as business-approved.

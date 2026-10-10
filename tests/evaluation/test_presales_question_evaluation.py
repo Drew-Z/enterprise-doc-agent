@@ -15,9 +15,18 @@ from enterprise_doc_core.config import ModelProvider, ModelSettings
 
 
 @pytest.mark.parametrize("invalid", [False, True])
+@pytest.mark.parametrize("many_gaps", [False, True])
 async def test_question_collector_and_scorers_bind_complete_input_and_original_result(
-    tmp_path, inputs, invalid
+    tmp_path, inputs, invalid, many_gaps
 ):
+    if many_gaps:
+        dataset = json.loads(inputs[0].read_bytes())
+        dataset["requirements"][0]["text"] = "说明数据驻留区域。说明适用版本。"
+        write_json(inputs[0], dataset)
+        gold = json.loads(inputs[1].read_bytes())
+        gold["datasetSha256"] = hashlib.sha256(inputs[0].read_bytes()).hexdigest()
+        write_json(inputs[1], gold)
+
     def respond(request):
         body = json.loads(request.content)
         wire = json.loads(body["messages"][1]["content"])
@@ -31,9 +40,13 @@ async def test_question_collector_and_scorers_bind_complete_input_and_original_r
                     "requirementPartId": p["requirementPartId"],
                     "answer": "现有资料没有说明数据驻留区域。",
                     "citations": [],
-                    "missingInformation": ["请补充数据驻留区域说明。"],
+                    "missingInformation": [
+                        f"请确认第{index}部分的第{gap}项驻留信息。" for gap in range(7)
+                    ]
+                    if many_gaps
+                    else ["请补充数据驻留区域说明。"],
                 }
-                for p in wire["requirementParts"]
+                for index, p in enumerate(wire["requirementParts"])
             ],
         }
         if invalid:
@@ -61,9 +74,17 @@ async def test_question_collector_and_scorers_bind_complete_input_and_original_r
     )
     assert report["schemaVersion"] == "presales-gateway-run-v11"
     row = report["observations"][0]
-    assert row["provenance"]["promptVersion"] == "presales.v21"
+    assert row["provenance"]["promptVersion"] == "presales.v24"
     assert row["providerRequests"] == 1
     assert score(*inputs, report)["acceptedDrafts"] == (0 if invalid else 1)
+    if many_gaps and not invalid:
+        legacy = copy.deepcopy(report)
+        legacy["observations"][0]["provenance"]["promptVersion"] = "presales.v21"
+        with pytest.raises(ValueError, match="at most 12 items"):
+            score(*inputs, legacy)
+        legacy["observations"][0]["state"] = "failed"
+        legacy["observations"][0].pop("result")
+        assert score(*inputs, legacy)["acceptedDrafts"] == 0
     expected, review = tmp_path / "expected.json", tmp_path / "review.json"
     write_json(
         expected,

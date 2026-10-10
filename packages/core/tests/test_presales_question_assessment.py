@@ -161,7 +161,8 @@ def test_changed_requirement_identity_cannot_reuse_previous_ids(field):
 
 
 @pytest.mark.parametrize("fault", ["omitted", "duplicate", "reversed", "foreign", "extra"])
-def test_every_offered_question_requires_exactly_one_ordered_answer(fault):
+@pytest.mark.parametrize("compact", [False, True])
+def test_every_offered_question_requires_exactly_one_ordered_answer(fault, compact):
     requirement, catalog, value = fixture()
     if fault == "omitted":
         value["responses"].pop()
@@ -174,7 +175,9 @@ def test_every_offered_question_requires_exactly_one_ordered_answer(fault):
     else:
         value["responses"].append(value["responses"][0].copy())
     with pytest.raises(ValueError, match="every offered requirement part"):
-        resolve_question_assessment(json.dumps(value), requirement, catalog)
+        resolve_question_assessment(
+            json.dumps(value), requirement, catalog, compact_missing_information=compact
+        )
 
 
 @pytest.mark.parametrize("state", ["met", "unmet", "conflict", "missing"])
@@ -219,7 +222,8 @@ def test_legacy_assessment_states_and_actions_survive_question_materialization(s
 
 
 @pytest.mark.parametrize("fault", ["span", "citation", "gap", "language", "size", "rule"])
-def test_existing_source_language_and_public_output_guards_still_reject(fault):
+@pytest.mark.parametrize("compact", [False, True])
+def test_existing_source_language_and_public_output_guards_still_reject(fault, compact):
     requirement, catalog, value = fixture()
     if fault == "span":
         value["rules"][0]["requiredBy"] = [{"spanId": "foreign_s1"}]
@@ -235,7 +239,9 @@ def test_existing_source_language_and_public_output_guards_still_reject(fault):
     else:
         value["assessments"][0]["ruleIndex"] = 1
     with pytest.raises((ValueError, OutputContractError, PresalesError)):
-        resolve_question_assessment(json.dumps(value), requirement, catalog)
+        resolve_question_assessment(
+            json.dumps(value), requirement, catalog, compact_missing_information=compact
+        )
 
 
 def test_ids_do_not_silently_repair_action_meaning_or_invent_semantic_approval():
@@ -293,3 +299,52 @@ def test_candidate_does_not_change_gateway_identities():
         gateway = OpenAICompatiblePresalesGateway(ModelSettings(), strict_output=strict)
         assert gateway.provenance["promptVersion"] == version
         assert gateway.provenance["promptSha256"] == digest
+
+
+@pytest.mark.parametrize("count", [11, 12, 24])
+def test_lossless_gap_grouping_preserves_legacy_projection_and_all_original_text(count):
+    requirement, catalog, value = fixture()
+    gaps = [f"待确认资料{i}:" + "具体资料待确认。" * 10 for i in range(count)]
+    value["responses"][0]["missingInformation"] = gaps[:12]
+    value["responses"][1]["missingInformation"] = gaps[12:]
+    expected = [*gaps, value["assessments"][0]["nextAction"]]
+    content = json.dumps(value)
+    if len(expected) > 12:
+        with pytest.raises(ValidationError, match="at most 12 items"):
+            resolve_question_assessment(content, requirement, catalog)
+    draft = resolve_question_assessment(
+        content, requirement, catalog, compact_missing_information=True
+    )
+    assert "\n".join(draft.missing_information) == "\n".join(expected)
+    assert len(draft.missing_information) <= 12
+    assert all(len(item) <= 1000 for item in draft.missing_information)
+    assert all(item in draft.answer for item in expected)
+    assert draft.prerequisites[0].state == "unknown"
+    if len(expected) <= 12:
+        assert draft.missing_information == expected
+        assert draft == resolve_question_assessment(content, requirement, catalog)
+
+
+@pytest.mark.parametrize("fault", [None, "late_language", "foreign_span", "duplicate_question"])
+def test_expanded_projection_retains_individual_gaps_and_legacy_guards(fault):
+    requirement, catalog, value = fixture()
+    gaps = [f"确认资料{i}。" for i in range(24)]
+    value["responses"][0]["missingInformation"] = gaps[:12]
+    value["responses"][1]["missingInformation"] = gaps[12:]
+    if fault == "late_language":
+        value["responses"][1]["missingInformation"][-1] = "Unknown."
+    elif fault == "foreign_span":
+        value["rules"][0]["requiredBy"] = [{"spanId": "foreign"}]
+    elif fault == "duplicate_question":
+        value["responses"][1]["requirementPartId"] = value["responses"][0]["requirementPartId"]
+    if fault:
+        with pytest.raises((ValueError, PresalesError)):
+            resolve_question_assessment(
+                json.dumps(value), requirement, catalog, expanded_missing_information=True
+            )
+    else:
+        draft = resolve_question_assessment(
+            json.dumps(value), requirement, catalog, expanded_missing_information=True
+        )
+        assert draft.missing_information == [*gaps, value["assessments"][0]["nextAction"]]
+        assert draft.prerequisites[0].state == "unknown"

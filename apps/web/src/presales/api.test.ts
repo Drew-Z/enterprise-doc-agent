@@ -47,6 +47,18 @@ describe("Presales durable receipt HTTP contract", () => {
 
 const reviewedText = { status: "conditional", answer: "人工核查。", conditions: ["需确认验收。"], missingInformation: [], prerequisites: [{ condition: "需确认验收。", state: "unknown", citationIndexes: [0] }] };
 const savedReview = { ...reviewedText, revision: 2, note: "排除无依据条目。", actorId: otherId, reviewedAt: "2026-10-08T00:00:00Z", prerequisiteChanges: { origins: [0], excludedIndexes: [1] } };
+
+it("accepts independent information gaps with the same character budget as the server", async () => {
+  const gaps = Array.from({ length: 14 }, (_, index) => `确认第${index}项。`);
+  const body = { ...reviewedText, missingInformation: gaps, expectedRevision: 1, note: "" };
+  expect(reviewInputSchema.parse(body).missingInformation).toEqual(gaps);
+  vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify(reviewedPacket({ ...savedReview, missingInformation: gaps }))));
+  expect((await presalesApi("token").get(packetId, new AbortController().signal)).rows[0].review?.missingInformation).toEqual(gaps);
+  expect(reviewInputSchema.safeParse({ ...body, missingInformation: Array<string>(12).fill("𠀀".repeat(1000)) }).success).toBe(true);
+  for (const missingInformation of [["确".repeat(1001)], Array<string>(157).fill("确认"), [...Array<string>(24).fill("确".repeat(500)), "认"]]) {
+    expect(reviewInputSchema.safeParse({ ...body, missingInformation }).success).toBe(false);
+  }
+});
 function reviewedPacket(review: Record<string, unknown>, history: Record<string, unknown>[] = [review]) {
   return {
     id: packetId, title: "Review contract", createdAt: "2026-10-08T00:00:00Z", rowCount: 1, staleSources: false,

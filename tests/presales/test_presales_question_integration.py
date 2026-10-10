@@ -23,11 +23,12 @@ from tests.presales.test_workbook import mapping
 pytestmark = pytest.mark.integration
 
 
-@pytest.mark.parametrize("first_502", [False, True])
+@pytest.mark.parametrize("primary_fault", [None, "502", "duplicate_question", "many_gaps"])
 async def test_question_generation_review_reload_and_workbook_keep_draft_and_accounting(
-    background, first_502
+    background, primary_fault
 ):
     b = background
+    needs_fallback = primary_fault in {"502", "duplicate_question"}
     version, generation = await add_document(b.sessions, b.context)
     await add_chunk(
         b.sessions,
@@ -45,13 +46,13 @@ async def test_question_generation_review_reload_and_workbook_keep_draft_and_acc
         }
     )
     b.settings.primary_question_assessment = True
-    b.settings.automatic_failover_enabled = first_502
+    b.settings.automatic_failover_enabled = needs_fallback
     calls = []
 
     def respond(request):
         body = json.loads(request.content)
         calls.append((request.url.host, body))
-        if first_502 and request.url.host == "primary.invalid":
+        if primary_fault == "502" and request.url.host == "primary.invalid":
             return httpx.Response(502)
         if request.url.host == "fallback.invalid":
             return valid_response(request)
@@ -86,6 +87,13 @@ async def test_question_generation_review_reload_and_workbook_keep_draft_and_acc
             "status": "conditional",
             "conclusion": "完成策略配置后方可启用。",
         }
+        if primary_fault == "duplicate_question":
+            value["responses"].append(dict(value["responses"][0]))
+        elif primary_fault == "many_gaps":
+            for index, response in enumerate(value["responses"]):
+                response["missingInformation"] = [
+                    f"请确认第{index}部分的第{gap}项后续安排。" for gap in range(7)
+                ]
         return httpx.Response(
             200,
             json={
@@ -97,7 +105,7 @@ async def test_question_generation_review_reload_and_workbook_keep_draft_and_acc
         )
 
     root = b.service.generation.gateway.source_settings
-    if first_502:
+    if needs_fallback:
         root = root.model_copy(
             update={
                 "fallback_provider": root.provider,
@@ -112,7 +120,7 @@ async def test_question_generation_review_reload_and_workbook_keep_draft_and_acc
     )
     b.service.generation.gateway = primary
     gateways = {"primary": primary}
-    if first_502:
+    if needs_fallback:
         gateways["fallback"] = OpenAICompatiblePresalesGateway(
             root,
             presales_settings=b.settings.model_copy(update={"model_route": "fallback"}),
@@ -122,7 +130,8 @@ async def test_question_generation_review_reload_and_workbook_keep_draft_and_acc
     sheet = book.active
     sheet.title = "技术要求"
     sheet.append(["编号", "问题", "答复", "保留内容"])
-    sheet.append(["R1", "Retention", None, "不可改写"])
+    question = "Retention. Retention." if primary_fault == "many_gaps" else "Retention"
+    sheet.append(["R1", question, None, "不可改写"])
     buffer = BytesIO()
     book.save(buffer)
     content = buffer.getvalue()
@@ -156,10 +165,15 @@ async def test_question_generation_review_reload_and_workbook_keep_draft_and_acc
     loaded = await b.api.get(url, headers=headers)
     row = loaded.json()["rows"][0]
     assert row["state"] == "drafted", json.dumps(row, ensure_ascii=False)
-    assert row["attempts"][0]["executionPolicy"]["routes"][0]["promptVersion"] == "presales.v21"
-    if not first_502:
+    assert row["attempts"][0]["executionPolicy"]["routes"][0]["promptVersion"] == "presales.v24"
+    if not needs_fallback:
         assert row["draft"]["prerequisites"][0]["state"] == "unmet"
         assert "完成所需策略配置。" in row["draft"]["answer"]
+    if primary_fault == "many_gaps":
+        expected = [
+            f"请确认第{index}部分的第{gap}项后续安排。" for index in range(2) for gap in range(7)
+        ]
+        assert row["draft"]["missingInformation"] == expected
     draft = row["draft"]
     response_text = "人工核对后的交付说明\uff1a" + draft["answer"]
     review = {
@@ -181,6 +195,7 @@ async def test_question_generation_review_reload_and_workbook_keep_draft_and_acc
     assert reviewed.status_code == 200, reviewed.text
     refreshed = (await b.api.get(url, headers=headers)).json()["rows"][0]
     assert refreshed["draft"] == draft and len(refreshed["reviewHistory"]) == 1
+    assert refreshed["review"]["missingInformation"] == draft["missingInformation"]
     assert refreshed["review"]["actorId"] == str(b.context.actor_id)
     downloaded = await b.api.get(url + "/workbook?mode=reviewed", headers=headers)
     assert downloaded.status_code == 200
@@ -189,7 +204,10 @@ async def test_question_generation_review_reload_and_workbook_keep_draft_and_acc
     assert exported["技术要求"]["D2"].value == "不可改写"
     csv = await b.api.get(url + "/export?mode=reviewed", headers=headers)
     assert csv.status_code == 200 and response_text in csv.content.decode("utf-8-sig")
-    assert len(calls) == (2 if first_502 else 1)
+    if primary_fault == "many_gaps":
+        assert "\n".join(expected) in exported["技术要求"]["C2"].value
+        assert all(gap in csv.content.decode("utf-8-sig") for gap in expected)
+    assert len(calls) == (2 if needs_fallback else 1)
     async with b.sessions() as session:
         operation = UUID(row["attempts"][0]["id"])
         records = (
@@ -200,7 +218,7 @@ async def test_question_generation_review_reload_and_workbook_keep_draft_and_acc
             )
         ).all()
         assert [c.state for c in records] == (
-            ["failed", "succeeded"] if first_502 else ["succeeded"]
+            ["failed", "succeeded"] if needs_fallback else ["succeeded"]
         )
         events = (
             await session.scalars(select(UsageEvent).where(UsageEvent.operation_id == operation))

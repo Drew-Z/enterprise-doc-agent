@@ -76,6 +76,39 @@
     "primary_replacement_external_embedding_calls": 0,
     "primary_replacement_smoke_calls": 1,
     "primary_replacement_smoke_status": "succeeded",
-    "primary_replacement_commercial_acceptance": false
+    "primary_replacement_commercial_acceptance": false,
+    "semantic_correction_status": "local_v24_candidate_verified_known_regression_followup_complete",
+    "semantic_correction_prompt_version": "presales.v24",
+    "semantic_correction_report": "docs/ops/presales-semantic-correction-20261010.md",
+    "semantic_correction_deployed": false,
+    "semantic_correction_live_calls": 5,
+    "semantic_correction_external_embedding_calls": 0,
+    "semantic_correction_original_live_drafts": 3,
+    "semantic_correction_original_projection_failures": 2,
+    "semantic_correction_final_offline_projections": 5,
+    "semantic_correction_complete_semantic_cases": 4,
+    "semantic_correction_remaining_review_case": null,
+    "semantic_limits_followup": {
+      "status": "verified_local_not_deployed",
+      "live_calls": 4,
+      "external_embedding_calls": 0,
+      "v23": {
+        "live_calls": 3,
+        "contract_passed": 3,
+        "semantic_passed": 2,
+        "semantic_failed": 1
+      },
+      "v24": {
+        "live_calls": 1,
+        "case": "CQU05",
+        "contract": "passed",
+        "semantic": "passed"
+      },
+      "missing_information_items": 156,
+      "missing_information_item_characters": 1000,
+      "missing_information_total_characters": 12000,
+      "prior_v22_observation_metrics_retained": true,
+      "legacy_reader_can_read_expanded_records": false
+    }
   }
 }

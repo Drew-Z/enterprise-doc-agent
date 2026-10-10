@@ -180,6 +180,14 @@ def score_prerequisites(
                     original,
                     GenerationInput.model_validate(observation["sourceInput"]).requirement,
                     catalog,
+                    compact_missing_information=observation.get("provenance", {}).get(
+                        "promptVersion"
+                    )
+                    == "presales.v22",
+                    expanded_missing_information=observation.get("provenance", {}).get(
+                        "promptVersion"
+                    )
+                    in {"presales.v23", "presales.v24"},
                 )
                 if report["schemaVersion"] == "presales-gateway-run-v11"
                 else resolver(original, catalog)

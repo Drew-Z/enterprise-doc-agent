@@ -4,7 +4,14 @@ from datetime import datetime
 from typing import Annotated, Literal, Self
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StringConstraints,
+    field_validator,
+    model_validator,
+)
 from pydantic.alias_generators import to_camel
 
 from enterprise_doc_core.presales.policy import ExecutionMode, ExecutionPolicy
@@ -19,6 +26,9 @@ Status = Literal[
     "supported", "conditional", "contradicted", "insufficient_evidence", "conflicting_evidence"
 ]
 TextItem = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1000)]
+# Twelve question responses with twelve gaps each, plus twelve unknown-rule actions.
+MAX_MISSING_INFORMATION_ITEMS = 12 * 12 + 12
+MAX_MISSING_INFORMATION_CHARACTERS = 12 * 1000
 
 
 class PresalesModel(BaseModel):
@@ -108,9 +118,18 @@ class ResponseText(PresalesModel):
     status: Status
     answer: str = Field(min_length=1, max_length=4000)
     conditions: list[TextItem] = Field(default_factory=list, max_length=12)
-    missing_information: list[TextItem] = Field(default_factory=list, max_length=12)
+    missing_information: list[TextItem] = Field(
+        default_factory=list, max_length=MAX_MISSING_INFORMATION_ITEMS
+    )
     # None means the older contract did not record an assessment; [] is explicit.
     prerequisites: list[PrerequisiteAssessment] | None = Field(default=None, max_length=12)
+
+    @field_validator("missing_information")
+    @classmethod
+    def missing_information_budget(cls, value: list[str]) -> list[str]:
+        if sum(map(len, value)) > MAX_MISSING_INFORMATION_CHARACTERS:
+            raise ValueError("missing information exceeds the 12000-character total budget")
+        return value
 
     @model_validator(mode="after")
     def required_details(self) -> Self:

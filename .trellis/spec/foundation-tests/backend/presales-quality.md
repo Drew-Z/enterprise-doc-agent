@@ -623,3 +623,81 @@ Public sample qualification must retain every first outcome and state clearly wh
 ingestion/authentication are local fixtures. Review by Codex is assisted review, not
 independent customer approval. A single upstream failure does not disable normal
 fallback or establish a semantic defect.
+
+## Question semantics and bounded projection (v22)
+
+### Scope and signatures
+
+New question-mode requests use `presales.v22` and
+`question_assessment_system_message(revised=True)`. The default helper still
+reproduces the original candidate/v21 message. Both `resolve_question_assessment`
+and `resolve_assessment` accept keyword-only `compact_missing_information=False`;
+only the new runtime opts in. The provider schema and public/storage formats stay
+unchanged. V15/v20 and historical question resolvers retain their behavior.
+
+### Contracts
+
+The instruction distinguishes buyer requirements from supplier-state evidence and
+preserves roles, categories, thresholds, time triggers and conjunctions. Multiple
+business rules do not multiply the response count for one offered question ID.
+These instructions guide model judgment; they are not a semantic classifier.
+
+Per-response information gaps and unknown-rule next actions can jointly exceed
+the public12-item list despite valid individual arrays. After existing exact-text
+deduplication, v22 joins adjacent complete strings with a newline only as needed
+to reach12 items. Keep order and every character; each grouped item remains at
+most1,000 characters. Do not infer semantic equivalence or alter answer, state,
+action, citation, or source. Final answer4,000-character and all other limits stay.
+
+### Validation and error matrix
+
+| Case | Result |
+| --- | --- |
+| Combined gaps at most12 | Identical public list |
+|13 short gaps; v22 projection |12 groups with every original gap retained |
+| Individual field or final answer too long | Original rejection, no truncation |
+| Foreign, duplicate, omitted or reordered question IDs | Original rejection |
+| Wrong source, state combination or raw language | Original validation |
+| Previously admitted v21 policy under v22 | Policy drift rejection; drain before release |
+| Historical failed observation | Remains failed in both scorers |
+
+### Examples and tests
+
+Good: retain all13 distinct requests by joining two complete strings. Base: retain
+the original list when it fits. Bad: `missing[:12]`, semantic deduplication, or
+changing unknown to unmet to reduce follow-up entries.
+
+Tests cover gateway/SSE, original IDs and source limits, exact joined text and item
+bounds, v21/v22 scorer selection and original failure retention. Actual PostgreSQL
+generation/review/reload/XLSX/CSV verifies grouped gaps and one successful usage
+charge;502 and duplicate-ID failures exercise the existing bounded fallback.
+Offline frozen-response replay must be labeled separately from live generation.
+## v23 missing-information and clause-coverage continuation
+
+Question generation uses presales.v23 and the clause_coverage instruction selector;
+the original v21 message and revised=True v22 message remain reproducible. Provider
+JSON schemas and all question/reference/state bounds are unchanged. Historical
+scorers select compact_missing_information only for succeeded v22 and
+expanded_missing_information only for succeeded v23; failed observations stay failed.
+
+The public missing-information list has a156-item structural ceiling and12,000 total
+Unicode-code-point budget, retaining1,000 per item. Question projection deduplicates
+exact strings in the existing order, validates every nonempty twelve-item group with
+the unchanged legacy source/state/language pipeline, then validates the combined
+public draft. There is no model call or semantic merge in this batching. Empty lists
+still pass through normal validation. Do not widen other limits or silently truncate.
+
+Regression boundaries: public draft/review budget rejection; question projection of
+25 independent gaps; late English-only text, bad source and duplicate question rejection;
+14-item real PostgreSQL generation/review/reload and original XLSX/CSV output; legacy
+v15/v20 hashes; v21/v22 scoring behavior. All saved historical failures stay immutable.
+Finite real-provider checks are known CQU06/CQU05/QP01 regressions, not new held-out
+samples. Score their unchanged originals separately from assistant semantic review.
+
+Final numeric-only instruction version isv24. Keep clause_coverage=True as the v23
+message and numeric_boundaries=True as v24; current gateway uses the latter.
+Both succeeded versions use expanded projection in scorers. CQU05 showed that
+explicit“以上” -> “超过” is a semantic failure even when every field validates.
+Preserve原比较词 and source-defined inclusivity; absence of a special definition
+does not authorize a stricter threshold. One separately frozen CQU05 follow-up passed;
+the earlier v23 CQU06/QP01 observations are not relabelled as v24 live results.

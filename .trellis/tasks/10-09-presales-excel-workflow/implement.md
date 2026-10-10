@@ -526,3 +526,54 @@ The selected primary still has recorded failures; fallback and review remain act
 This does not close customer-value or commercial acceptance. See the wuye model report
 for exact boundaries, receipts and retained limitations. The earlier GPT-only502
 observations remain unchanged historical evidence.
+
+## Bounded semantic correction
+
+- [x] Register clean Git recovery at4a891aa in the existing central group and preserve
+  the2,993 unrelated working-tree entries.
+- [x] Red/green v22 instruction identity and refusal of accepted v21 policy drift;
+  retain the original message/schema/resolver and exact-ID rejection.
+- [x]44 focused cases and three actual PostgreSQL delivery cases pass, including
+  original502 and duplicate-ID failure followed by ordinary fallback/review/export.
+- [x] Whole-project Ruff/format and mypy pass.
+- [x] Required nonintegration regression suite completes:3,245 cases and23 subtests.
+- [x] Five frozen original model outcomes, source-based review and finite conclusion.
+- [x] Final changed-file/recovery/temporary-resource inventory and report.
+
+Recovery phase: bounded_semantic_correction_20261010. Five primary calls are reserved
+on top of the prior conservative68; no external embedding or staging business write.
+
+Completed local v22 candidate: known regression semantics improve; four of five
+cases meet substantive completeness checks. CQU06 omits two groups of ancillary
+obligations and retains a separate assistant review suggestion. Original live
+results are three successes and two projection failures. Both failed only because
+13/14 combined information gaps exceeded the public12-item list. The bounded,
+lossless grouping correction preserves all text/order and existing limits; final
+offline projection succeeds for all five without new live calls or relabeling old
+failures.102 focused cases, four actual PostgreSQL delivery cases, full Ruff/format,
+mypy279 and3,245 nonintegration cases/23 subtests pass. The2,993 unrelated status
+entries are unchanged; no historical files were deleted. Existing recovery and
+all owned evidence remain central. No release, task archive or commercial approval
+was performed; staging remains rc50/v21. See the semantic correction report.
+
+## Limit audit and clause/numeric correction continuation (2026-10-10)
+
+- [x] Trace1,000/12 to b6d1420 and verify JSONB, UI and XLSX consumers; no measured
+  numeric justification found. Keep per-item1,000, total12,000, derive156-item ceiling.
+- [x] Save v22 dirty-file stage checkpoints before edits. Preserve legacy provider
+  schemas and v21/v22 scoring, expand only current public missing information.
+- [x] Red/green public13/14/156-item and budget tests; exact projection, source/language
+  guard tests; frontend14-item read/review and unchanged multiline item preservation.
+- [x] Original five-response offline decoder replay: exact independent gaps retained,
+  original three successful drafts unchanged, both failed observations still failed.
+- [x] Frozen v23 primary calls CQU06/CQU05/QP01, one each: all decode; CQU06 and QP01
+  pass source review, CQU05 strictly-over reinterpretation recorded as semantic failure.
+- [x] Close that round. Save v23 source checkpoint; add numeric-boundary-only v24
+  instruction and separately freeze exactly one CQU05 call. It passes original decode
+  and source review,31.390s, all six supplier states unknown; no additional calls.
+- [x] v23 full nonintegration3256+23 subtests; v24 targeted76 including four real DB
+  cases; Web73 and final42; typecheck/lint/format/mypy. No schema or budget change.
+- [x] Record release compatibility: synchronize API/Worker/Web, retain a compatible
+  reader on rollback or explicitly restore pre-release data. Staging unchanged rc50.
+- [x] Preserve2,993 unrelated status entries and historical artifacts; database fixture
+  schemas cleaned by verified finally. Evidence controllers/reports are deliverables.

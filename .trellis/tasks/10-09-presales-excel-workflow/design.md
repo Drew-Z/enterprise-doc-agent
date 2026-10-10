@@ -528,3 +528,78 @@ switch can accept either current key and restore the original. Verify other secr
 data, all deployment specs, packaged source, schema, full presales history hashes,
 readiness and accounting independently. Remove owned transport/runtime inputs after
 terminal verification; keep local recovery and all historical images and evidence.
+
+## Bounded semantic instruction revision
+
+Retain the question-ID schema, decoder, source offering and original system message.
+Add a separately selected instruction revision, presales.v22, for new question-mode
+generation. Explain the evidence decision in source terms: buyer rules alone do not
+establish supplier state; absent proof is unknown/missing; explicit noncompletion is
+unmet; applicable unresolved opposing facts require unknown/conflict and both sides.
+Require separate preservation of roles, experience categories, numeric thresholds,
+time triggers and conjunctions. Multiple business rules inside one offered question
+still have one response for that ID. Do not infer semantics with keyword rewrites.
+
+The unchanged policy fingerprint refuses resuming a v21 admitted route under v22;
+a later release must drain old accepted work. Existing run-v11 reports retain their
+schema and decoder; each report records its exact prompt version/hash. Preserve
+legacy v15/v20 and v21 reproducibility, public draft/storage/export schemas and the
+original strict rejection of malformed selections. No additional provider call is
+introduced by this instruction change.
+
+Use five frozen first observations and separate assistant review, with complete
+public source receipts and original response traces. Controlled HTTP503/502 and
+duplicate-ID failures remain failures; actual local PostgreSQL/API/worker tests
+verify ordinary fallback, one successful usage charge, review and original XLSX/CSV.
+This continuation changes local source and evidence; the deployed rc50 policy remains
+the baseline until an exact-source guarded release is performed.
+
+Observed projection defect: correct CQU05/CQU06 states and question IDs still failed
+because per-response gaps plus unknown-rule actions totaled13/14 distinct strings.
+Retain those failed live reports. Add an opt-in, lossless ordered grouping step to
+the existing projection: combine adjacent whole strings with newlines only as needed
+to fit12 items, each at most1,000 characters. All raw field, source, state, question
+and final-answer limits remain. Original helpers default to the old behavior;
+run-v11 scorers select grouping only for succeeded v22 observations and never turn
+a failed historical observation into a draft. Validate frozen responses offline
+without another generation call. The new CQU06 semantic completeness omission is
+separate from this mechanical defect and remains an attributed review item.
+
+## Limit review and numbered-clause coverage (v23 continuation)
+
+The 1,000-character TextItem and twelve-item missingInformation bounds first appear
+in b6d1420 (2026-09-19). No measured workload justification was found. They are
+application policy, not model, JSONB or XLSX limits. Keep the individual bound;
+replace the aggregate item limit with the existing worst-case text budget of12,000
+Unicode code points and a structural cap of156 (12 responses *12 gaps +12 actions).
+Keep each exact-deduplicated string separate and ordered. Preserve all unrelated
+twelve-item limits. Public API, saved drafts/reviews and Web accept the new list;
+legacy provider schemas and old scoring retain their original contracts.
+
+For v23 projection, validate nonempty groups of at most12 through the unchanged
+span/support/source/state/language pipeline, then validate the combined public draft.
+This is local validation only, with no added inference or semantic rewriting.
+Keep v22 grouping as an explicitly selected historical replay path. New generation
+uses a separately fingerprinted v23 clause-coverage instruction: enumerate relevant
+numbered/nested obligations, including ancillary scope, remedies and cost allocation,
+without importing unrelated clauses or treating buyer requirements as supplier facts.
+
+No database migration is needed. Old<=12 records remain readable by the candidate;
+old binaries cannot read new>12 lists. Any later release must coordinate API/Web/Worker
+and retain this reader on rollback, or stop writes and restore the pre-release data
+snapshot with an explicit recovery decision. Do not claim rc50 is rollback-compatible
+after v23 writes. XLSX keeps its explicit32,767 UTF-16-unit final-cell guard.
+
+Validation slices: first a public draft/review boundary accepts13/14 independent
+items and rejects oversize item/total/count; then question projection retains every
+item and all rejection guards; then browser review preserves unchanged multiline
+items; then real PostgreSQL save/review/reload/CSV/XLSX. Freeze three primary calls
+(CQU06, CQU05, QP01), one each, no retuning, retries, embeddings or model survey.
+
+The frozen v23 round closed with two semantic passes and one failure: CQU05 changed
+inclusive Chinese thresholds into strictly greater values. Preserve that output as
+a failure. A separately frozen, single-case v24 follow-up adds only a generic numeric
+boundary instruction, retaining原词 and inclusion unless the source defines otherwise.
+It passed unchanged decoding and source review in31.390s. The earlier passing CQU06
+and QP01 observations remain attributed to v23; no claim of another full v24 live suite.
+Historical scoring accepts expanded projection for succeeded v23 and v24 only.

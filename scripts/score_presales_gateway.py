@@ -223,7 +223,19 @@ def score(dataset_path: Path, gold_path: Path, report: dict[str, Any]) -> dict[s
                         "presales-gateway-run-v10": resolve_span_basis,
                     }.get(report["schemaVersion"], resolve_selection)
                     resolved = (
-                        resolve_question_assessment(original, requirements[key], catalog)
+                        resolve_question_assessment(
+                            original,
+                            requirements[key],
+                            catalog,
+                            compact_missing_information=observation.get("provenance", {}).get(
+                                "promptVersion"
+                            )
+                            == "presales.v22",
+                            expanded_missing_information=observation.get("provenance", {}).get(
+                                "promptVersion"
+                            )
+                            in {"presales.v23", "presales.v24"},
+                        )
                         if report["schemaVersion"] == "presales-gateway-run-v11"
                         else resolver(original, catalog)
                     )

@@ -469,3 +469,30 @@ local recovery point. Keep all provider secrets private. The comparison is limit
 to three fixed cases per model, followed by one two-row product workflow and one
 deployed-primary smoke request using supplied evidence without external embeddings.
 Customer value, independent business approval and commercial acceptance remain open.
+
+## Authorized bounded semantic correction
+
+The user approved one focused correction of evidence-state selection, requirement
+completeness and response-ID stability. Keep wuye/gpt-5.6-sol primary, Grok fallback,
+existing schema/resolver, dispatch limits and attributed review. Version the revised
+instruction separately and retain the original v21 message and all failed outputs.
+
+Reuse CQU02/CQU05/QP01 once, plus two new public question cases frozen after the
+prompt revision, with at most five primary requests total and no resampling or
+further prompt tuning in this round. The new cases concern service and payment
+clauses in the same archived official procurement document, not an independent
+corpus. Check original outputs against separately frozen substantive criteria.
+Prove bounded fallback and reviewed delivery through the actual local product.
+Record the finite outcome and any remaining error; do not restart an open-ended
+semantic gate or claim customer value from these examples.
+## User-approved continuation: explain limits and complete semantic correction
+
+Explain the evidence behind1,000 characters/twelve items, distinguish application
+policy from model/storage/export limits, and correct an aggregate boundary that
+rejects otherwise valid13/14-item results. Preserve each original item and order,
+retain a bounded total, and make review/reload/export support the same result.
+Complete the relevant ancillary after-sales obligations without turning buyer
+requirements into supplier facts or widening the number of provider calls per row.
+Validate one primary response each for CQU06, CQU05 and QP01, then report original
+outcomes and remaining limitations. Do not replace prior failed observations,
+change model routes, or claim that public regressions prove customer value.
