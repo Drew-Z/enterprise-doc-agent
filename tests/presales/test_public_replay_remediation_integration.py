@@ -1,10 +1,13 @@
+import json
+
 import httpx
 import pytest
 from sqlalchemy import select
 
+from enterprise_doc_core.billing.models import UsageReservation
 from enterprise_doc_core.documents.retrieval_service import HybridRetrievalService
 from enterprise_doc_core.presales.background import BackgroundGeneration
-from enterprise_doc_core.presales.models import PresalesAttempt
+from enterprise_doc_core.presales.models import PresalesAttempt, PresalesProviderCall
 from tests.browser_sessions.conftest import browser_db as browser_db
 from tests.jobs.test_m3_retrieval_integration import (
     VECTOR_A,
@@ -110,11 +113,22 @@ async def test_sync_error_and_background_recovery_both_keep_fixed_diagnostics(ba
     assert "sensitive-partial" not in restored.model_dump_json()
 
 
-async def test_background_rejection_keeps_safe_diagnostic_on_refresh_without_redispatch(background):
+@pytest.mark.parametrize(
+    "fault,diagnostic", [("json", "draft_json"), ("language", "generated_language")]
+)
+async def test_background_rejection_keeps_safe_diagnostic_on_refresh_without_redispatch(
+    background, fault, diagnostic
+):
     b = background
 
     def invalid(request):
         b.requests.append(request)
+        if fault == "language":
+            envelope = valid_response(request).json()
+            draft = json.loads(envelope["choices"][0]["message"]["content"])
+            draft["answer"] = "private-provider-body"
+            envelope["choices"][0]["message"]["content"] = json.dumps(draft)
+            return httpx.Response(200, json=envelope)
         return httpx.Response(
             200,
             json={
@@ -135,7 +149,7 @@ async def test_background_rejection_keeps_safe_diagnostic_on_refresh_without_red
     refreshed = await b.service.get(b.context.principal, packet.id)
     attempt = refreshed.rows[0].attempts[0]
     assert attempt.error_code == "presales_invalid_model_output"
-    assert attempt.provenance["providerCall1Diagnostic"] == "draft_json"
+    assert attempt.provenance["providerCall1Diagnostic"] == diagnostic
     assert "private-provider-body" not in refreshed.model_dump_json()
     await b.service.generate(b.context.principal, packet.id, row.id, "diagnostic-once")
     assert not await worker.run_once("diagnostic-worker")
@@ -145,4 +159,8 @@ async def test_background_rejection_keeps_safe_diagnostic_on_refresh_without_red
             select(PresalesAttempt).where(PresalesAttempt.row_id == row.id)
         )
         assert stored.provider_request_count == 1
-        assert stored.provenance["providerCall1Diagnostic"] == "draft_json"
+        assert stored.provenance["providerCall1Diagnostic"] == diagnostic
+        calls = (await session.scalars(select(PresalesProviderCall))).all()
+        reservations = (await session.scalars(select(UsageReservation))).all()
+        assert len(calls) == 1 and calls[0].state == "failed" and not calls[0].retryable
+        assert len(reservations) == 1 and reservations[0].state == "released"

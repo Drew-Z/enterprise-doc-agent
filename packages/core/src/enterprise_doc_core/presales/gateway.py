@@ -493,6 +493,10 @@ class OpenAICompatiblePresalesGateway:
             if isinstance(error, OutputContractError):
                 diagnostic = error.diagnostic
             elif isinstance(error, ValidationError):
+                if diagnostic is OutputDiagnostic.DRAFT_CONTRACT:
+                    # The wire schema passed; a derived schema rejected projection.
+                    # Preserve the original exception and prefer fixed business causes.
+                    diagnostic = OutputDiagnostic.DRAFT_PROJECTION
                 for detail in error.errors(include_input=False, include_url=False):
                     cause = detail.get("ctx", {}).get("error")
                     if isinstance(cause, OutputContractError):

@@ -8,6 +8,7 @@ from typing import Any, Literal
 from pydantic import Field
 
 from enterprise_doc_core.presales.citation_selection import CitationReference, SelectionDraft
+from enterprise_doc_core.presales.errors import OutputContractError, OutputDiagnostic
 from enterprise_doc_core.presales.schemas import (
     CitationInput,
     ModelDraft,
@@ -143,17 +144,17 @@ def resolve_assessment(
     selected = AssessmentDraft.model_validate_json(content)
     by_rule = {item.rule_index: item for item in selected.assessments}
     if len(by_rule) != len(selected.assessments) or set(by_rule) != set(range(len(selected.rules))):
-        raise ValueError("every rule requires exactly one assessment")
+        raise OutputContractError(OutputDiagnostic.RULE_COVERAGE)
     cursor = 0
     for part in selected.responses:
         start = requirement.text.find(part.requirement_text, cursor)
         if start < 0 or requirement.text[cursor:start].strip():
-            raise ValueError("responses must cover the exact requirement in order")
+            raise OutputContractError(OutputDiagnostic.REQUIREMENT_COVERAGE)
         cursor = start + len(part.requirement_text)
         if not part.citations and not part.missing_information:
-            raise ValueError("each answer requires evidence or an explicit information gap")
+            raise OutputContractError(OutputDiagnostic.ANSWER_EVIDENCE)
     if requirement.text[cursor:].strip():
-        raise ValueError("responses leave requirement text unanswered")
+        raise OutputContractError(OutputDiagnostic.REQUIREMENT_COVERAGE)
 
     prose = [selected.conclusion, *(rule.proposition for rule in selected.rules)]
     for part in selected.responses:

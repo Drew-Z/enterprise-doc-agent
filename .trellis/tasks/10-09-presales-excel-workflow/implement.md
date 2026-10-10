@@ -652,3 +652,34 @@ docs/ops/public-vsaq-trial-20261011.md. The broader quality/customer acceptance 
 remains open. Final documentation checks, scoped commit and unchanged unrelated-status
 receipts are retained in the existing recovery manifest. Only the owned temporary Edge
 preview profile was removed; public sources, live history and recovery evidence remain.
+
+## Four-step invited trial continuation (2026-10-11)
+
+- [x] User approved four steps; no participants available, so prepare step4 materials.
+- [x] Register Git recovery atadd855d; preserve2,993 unrelated status entries.
+- [x] Synchronize current release/trial status without rewriting historical metrics.
+- [x] Red/green safe detailed rejection diagnostics at the public gateway boundary;
+  verify durable provenance and unchanged failed quota/dispatch behavior.
+- [x] Freeze4 development /12 held-out questions, sources, criteria and finite budget.
+- [x] Observe development outputs, make evidence-based corrections and verify regressions;
+  preserve original outputs, source scope, unknown usage and every failed attempt.
+- [x] Run held-out acceptance once under the qualified fixed candidate and report all outcomes.
+- [x] Verify browser workflow at desktop/mobile, including attributed failure takeover.
+- [x] Reconcile quota/provider/embedding accounting; current-version operations evidence
+  for capacity, alerts and recovery; record real remaining external dependencies.
+- [x] Collect a second supplier's official sources and prepare usage/feedback trial pack.
+- [x] Required affected-package checks, scoped commit/publication when required,
+  final evidence/temporary inventory and honest remaining acceptance boundary.
+
+Recovery phase invited_trial_progress_20261011 uses the existing central group.
+Subagent prompt delivery is currently empty; the attempted read-only scout was stopped
+without file changes. The main agent performs exploration, implementation and verification.
+
+Finite result:4/4 generation-only development drafts;11/12 held-out product drafts,
+1 retained failure with separate manual completion;12 attributed reviews and byte-identical
+reloaded XLSX/CSV.17 generation calls total of40 maximum,74 embeddings; no further
+regression.3386 nonintegration/23 subtests,15 focused PostgreSQL cases and4 desktop/mobile
+browser cases pass. Second-supplier6-question/3-document pack ready; no participants.
+Detailed diagnostic code is a checked local candidate, not deployed. Current rc51 runtime,
+original samples and2993 unrelated workspace entries remain. See the invited-trial report
+for substantive retrieval/decomposition gaps, unknown usage and deferred operational gates.

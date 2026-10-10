@@ -21,6 +21,7 @@ from enterprise_doc_core.presales.assessment_selection import (
     resolve_assessment,
 )
 from enterprise_doc_core.presales.citation_selection import CitationReference
+from enterprise_doc_core.presales.errors import OutputContractError, OutputDiagnostic
 from enterprise_doc_core.presales.schemas import (
     CitationInput,
     ModelDraft,
@@ -190,7 +191,7 @@ def resolve_question_assessment(
     if [part.requirement_part_id for part in selected.responses] != [
         part.requirement_part_id for part in offered
     ]:
-        raise ValueError("responses must cover every offered requirement part once in order")
+        raise OutputContractError(OutputDiagnostic.REQUIREMENT_COVERAGE)
     value = selected.model_dump(by_alias=True)
     for response, part in zip(value["responses"], offered, strict=True):
         del response["requirementPartId"]

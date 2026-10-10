@@ -512,3 +512,36 @@ evidence browsing, attributed correction or manual completion, reload, XLSX and 
 export. Keep first failures and drafts immutable. Public policies are not customer
 configuration or independent audit evidence. No model or budget changes, repeated
 sampling, customer acceptance claim, or time-savings claim are authorized by this trial.
+
+## Authorized four-step invited trial continuation (2026-10-11)
+
+The user approved reliability repair, bounded expansion, browser/operational acceptance,
+and invited trial preparation. They subsequently confirmed there are no participants;
+step4 delivers a second-supplier public-source pack, instructions and feedback forms,
+while independent user/value acceptance remains pending. Reuse this active task and
+the existing recovery group; preserve all original results and unrelated workspace work.
+
+Make output rejection reasons actionable without logging model/source text or weakening
+evidence guards. Separate auxiliary workbook metadata from the question text and verify
+the change through product import and a finite development observation. Reserve four
+previously unexecuted questions for development and twelve for held-out acceptance.
+Freeze both memberships and criteria before inference; retain failures, unknown usage
+and attributed corrections. Report generation availability separately from substantive
+correctness, appropriate abstention, editing work, latency and measured provider usage.
+
+Exercise desktop/mobile browser read/write/export and failure takeover, verify business
+quota versus provider cost accounting including embeddings, and assess current release
+capacity, alert and recovery evidence. Resolve locally executable gaps; identify exact
+external dependencies instead of manufacturing customer approval or recovery capability.
+Public self-service payment remains a later milestone. Do not archive overall commercial
+acceptance merely because this finite continuation has completed.
+
+Finite result: four development diagnostics produced drafts; twelve held-out product
+attempts produced eleven drafts and one retained failure. One attributed manual
+completion and twelve reviews completed reload and original XLSX/CSV delivery. At
+least three original drafts need substantive source completion or correction. Desktop
+and mobile workflow, usage reconciliation and current health checks passed within
+their stated boundaries. A six-question, three-document GitHub trial pack is ready;
+participants remain unavailable. Detailed diagnostics are locally tested, undeployed
+code. Preserve open retrieval/decomposition, full capacity and independent acceptance
+work; see `docs/ops/invited-trial-progress-20261011.md`.

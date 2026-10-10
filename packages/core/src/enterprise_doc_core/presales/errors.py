@@ -14,6 +14,12 @@ class OutputDiagnostic(StrEnum):
     SUPPORT_QUOTE = "support_quote"
     SUPPORT_COMBINATION = "support_combination"
     DRAFT_CONTRACT = "draft_contract"
+    REQUIREMENT_COVERAGE = "requirement_coverage"
+    RULE_COVERAGE = "rule_coverage"
+    ANSWER_EVIDENCE = "answer_evidence"
+    GENERATED_LANGUAGE = "generated_language"
+    DRAFT_PROJECTION = "draft_projection"
+    STATUS_CONSISTENCY = "status_consistency"
     CITATION = "citation"
     STREAM_CONTRACT = "stream_contract"
 
@@ -25,6 +31,20 @@ class OutputContractError(ValueError):
             {
                 OutputDiagnostic.BASIS_QUOTE: "unsupported literal prerequisite basis",
                 OutputDiagnostic.SUPPORT_QUOTE: "unsupported literal quotation",
+                OutputDiagnostic.REQUIREMENT_COVERAGE: (
+                    "responses must cover every offered requirement part once in order"
+                ),
+                OutputDiagnostic.RULE_COVERAGE: "every rule requires exactly one assessment",
+                OutputDiagnostic.ANSWER_EVIDENCE: (
+                    "each answer requires evidence or an explicit information gap"
+                ),
+                OutputDiagnostic.GENERATED_LANGUAGE: (
+                    "generated business prose must include Chinese text"
+                ),
+                OutputDiagnostic.DRAFT_PROJECTION: "projected draft violates the public contract",
+                OutputDiagnostic.STATUS_CONSISTENCY: (
+                    "status requires consistent prerequisites and missing information"
+                ),
             }.get(diagnostic, diagnostic.value)
         )
 

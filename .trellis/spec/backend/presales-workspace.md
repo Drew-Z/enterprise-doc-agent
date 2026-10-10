@@ -257,6 +257,14 @@ recovery phase. CQU03 and SWU originals remain unchanged; no broad accuracy clai
 4. **Validation / errors:** categories distinguish envelope_json, envelope_shape,
    incomplete_output, unsafe_response, draft_json, draft_schema, basis_quote,
    support_quote, support_combination, draft_contract, citation and stream_contract.
+   Question-assessment projection additionally distinguishes requirement_coverage,
+   rule_coverage, answer_evidence, generated_language, draft_projection and
+   status_consistency. Missing/reordered/duplicate question IDs remain rejected;
+   rule coverage, literal evidence, Chinese prose, public limits and status rules
+   are unchanged. Classify Pydantic projection failures at the gateway boundary
+   after the wire schema passes; preserve the original parser exception API and
+   prefer a nested fixed OutputContractError when one exists. Diagnostics retain
+   one-dispatch usage and replay/accounting semantics, including failed reservations.
    Classification never turns an invalid response into a draft. Unknown/malformed
    diagnostics are not accepted as arbitrary strings.
 5. **Good / base / bad:** good: a Chinese requirement finds its literal certificate

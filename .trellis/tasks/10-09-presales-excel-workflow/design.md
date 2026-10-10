@@ -660,3 +660,31 @@ auditor/vendor lists, customer settings and physical-control evidence remain gap
 Preserve generation, manual authorship and review as separate records. Public policies
 do not establish actual execution; the expanded library still uses one supplier and
 does not establish cross-industry or independent customer acceptance.
+
+## Four-step continuation design (2026-10-11)
+
+Keep public rejection codes, dispatch/recovery rules, prompt identities and immutable
+draft history. Add fixed safe diagnostic values at the actual question/rule coverage,
+answer evidence/language and public projection boundaries; unknown exceptions still
+receive the existing generic category. No raw response text, exception strings or
+validation inputs enter normal product provenance. Prove the diagnostic through real
+gateway HTTP fixtures and existing durable persistence tests before live observations.
+
+The four development IDs are secprog_standard_name, testing_pentests_scope,
+application_authentication_roles_description and dc_acclogs. The remaining twelve
+unexecuted IDs in the frozen24-row library are held out of tuning. Later plans bind
+exact normalized inputs, source bytes and criteria. Maximum for this continuation is
+40 generation dispatches: up to8 for the first four-row observation, up to8 for one
+explicitly justified development regression, and up to24 for twelve acceptance rows.
+The regression is conditional, never a repeat-until-pass loop. Recheck actual daily
+ledger and carried reservations before each stage; do not raise200/day or two/attempt.
+Model/schema/deadline changes require a separately recorded concrete finding and
+versioned candidate; never silently change the comparator or rescore old failures.
+
+Use existing operational/browser harnesses where their boundaries fit. Mark controlled
+external boundaries separately from deployed-product and real-provider evidence. A
+browser refresh/export of an existing packet must not trigger additional generation.
+Preserve business fixtures, revoke transient credentials and clean only owned temporary
+resources. The user-facing trial package includes source attribution, scope/gaps,
+step-by-step use, elapsed-work recording and a blank feedback form; no invitations or
+real participant accounts are created while participants are unavailable.

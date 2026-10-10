@@ -6,7 +6,7 @@ from uuid import UUID, uuid4
 
 from pydantic import Field, ValidationError, model_validator
 
-from enterprise_doc_core.presales.errors import PresalesError
+from enterprise_doc_core.presales.errors import OutputContractError, OutputDiagnostic, PresalesError
 from enterprise_doc_core.presales.schemas import (
     CitationInput,
     GenerationInput,
@@ -64,14 +64,14 @@ class SelectionDraft(PresalesModel):
     @model_validator(mode="after")
     def consistent_prerequisites(self) -> Self:
         if self.status == "conflicting_evidence" and not self.missing_information:
-            raise ValueError("conflicting evidence requires a clarification question")
+            raise OutputContractError(OutputDiagnostic.STATUS_CONSISTENCY)
         if self.status == "insufficient_evidence" and not self.missing_information:
-            raise ValueError("insufficient evidence requires a follow-up question")
+            raise OutputContractError(OutputDiagnostic.STATUS_CONSISTENCY)
         outstanding = {item.condition for item in self.prerequisites if item.state != "met"}
         if self.status == "supported" and outstanding:
-            raise ValueError("supported requires all stated prerequisites to be met")
+            raise OutputContractError(OutputDiagnostic.STATUS_CONSISTENCY)
         if self.status == "conditional" and not outstanding:
-            raise ValueError("conditional requires an unmet or unknown prerequisite")
+            raise OutputContractError(OutputDiagnostic.STATUS_CONSISTENCY)
         for item in self.prerequisites:
             references = [citation.citation_id for citation in item.citations]
             if len(set(references)) != len(references):
@@ -88,7 +88,7 @@ class SelectionDraft(PresalesModel):
             *self.missing_information,
         ]:
             if not re.search(r"[\u3400-\u4dbf\u4e00-\u9fff\U00020000-\U0002fa1f]", text):
-                raise ValueError("generated business prose must include Chinese text")
+                raise OutputContractError(OutputDiagnostic.GENERATED_LANGUAGE)
         return self
 
 
