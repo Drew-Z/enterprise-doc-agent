@@ -670,3 +670,32 @@ CI, publication and recovery are recorded under reasoning_comparison_20261010.
 Six documentation paths use Git/new-file recovery; the 2,993 unrelated status entries
 remain unchanged. No disposable or historical files are deleted. See
 docs/ops/presales-reasoning-comparison-20261010.md.
+
+## GLM full-candidate qualification (GP01)
+
+One prospective same-primary-endpoint request uses glm-5.3 with unchanged full
+assessment-candidate.v1, low effort, streaming and a 120-second deadline. Only
+model_name is overridden. Controlled success/503 verify the request boundary, one
+dispatch and restored runtime identity. GP01 returns HTTP 200/stop in 34.109s with
+4,132 input + 1,529 completion = 5,661 tokens; billed cost is unknown.
+
+Original state remains failed / presales_invalid_model_output / draft_contract.
+Strict schema and full source/span bindings pass; the unchanged resolver reproduces
+responses must cover the exact requirement in order, because all three answers
+repeat the complete requirementText. Returned z-ai/glm-5.3 differs from requested
+glm-5.3; one metadata GET does not verify their canonical mapping.
+
+Frozen criteria 2-7, 9 and 11 are satisfied in assistant review: all six states and
+necessary rules, no added training proof duty, conflict sides and order scope are
+correct. Criterion 1 fails coverage/identity. Criteria 8/10 are not fully satisfied:
+verification is correctly unknown, but the action offers registering a passing
+result without an explicit if-passed condition. This is action ambiguity, not an
+incorrect unknown-state classification or an explicit assertion that the test passed.
+No accuracy, independent approval or competitor-parity claim follows.
+
+Original result SHA: d3229ad89e081a43ef97b218e4996ad0ba7593f2fffa9f14325bee0efa0de1c6.
+Postflight keeps rc49/fe995676, DB 0037, default v15, five ready deployments, zero
+active jobs and unchanged policy/module hashes/ledgers. UTC 2026-10-10 has zero
+application dispatches and six known direct requests; carrying 18 prior-day
+reservations gives conservative 24/200, not 24 actual current-day calls. No new
+inference during offline review. See docs/ops/presales-glm-candidate-20261010.md.

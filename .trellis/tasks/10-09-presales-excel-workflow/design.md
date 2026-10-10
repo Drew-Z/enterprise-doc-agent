@@ -362,3 +362,26 @@ negative to positive, not to known uncertainty, and retains the extra transcript
 duty. Keep both outputs and reject a production setting change. A prospective
 same-endpoint glm-5.3 qualification is the next inference-quality investigation;
 do not infer its availability from GET /models or silently substitute it in runtime.
+
+## GLM qualification adapter
+
+Reuse the unchanged isolated assessment adapter and real gateway, including its
+strict schema, prompt, source-span offering and public resolver. Copy settings from
+the currently verified primary policy and change only model_name to glm-5.3 inside
+the dedicated diagnostic process. Bind the same endpoint and credential source;
+never load fallback credentials or alter local/staging configuration.
+
+An HTTP-boundary transport asserts the actual model, endpoint, effort, prompt,
+schema, limits and complete source projection before forwarding, then records only
+the credential-free request body and its hash. Controlled success/503 prove the
+override, one dispatch and restoration of the original gateway identity. Freeze
+all source/helper/controller hashes and a separate reference before exclusive intent.
+Use presales-primary-model-qualification-run-v1, retain raw results separately from
+review, and reject promotion on identity, mechanical or semantic failure.
+
+GP01's original resolver error is `responses must cover the exact requirement in
+order`; strict schema and complete source/span binding pass. All three response
+items copy the entire question. No result is normalized or passed through a relaxed
+resolver. Requested glm-5.3 returns z-ai/glm-5.3; GET /models advertises only the former
+with owned_by=custom and proves no canonical alias mapping. The verification action
+is ambiguous despite correct unknown/missing classification. Keep both findings.

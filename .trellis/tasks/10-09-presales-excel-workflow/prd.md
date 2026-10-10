@@ -341,3 +341,27 @@ training-transcript submission duty. Do not promote medium. A read-only catalog 
 the same primary endpoint lists glm-5.3 alongside grok-4.7; separately qualify that
 alternate primary candidate before further schema/effort tuning. Catalog presence
 alone proves neither inference availability nor quality. Production remains unchanged.
+
+## Alternate primary model qualification
+
+Qualify the advertised glm-5.3 on the same primary endpoint with one new six-state
+synthetic requirement and the existing full assessment-candidate contract. Preserve
+rule/source roles, exact requirement coverage, all four states, per-item actions,
+completed training without an extra proof duty and other-order exclusion. Freeze
+input and independent criteria before one request; keep its first outcome without
+retry, repair or historical replay. Keep primary low/streaming/120-second limits
+and existing daily cap. No embedding, fallback or production setting changes.
+
+Qualification requires matching requested/returned model identity, the unchanged
+strict schema and resolver, and all semantic criteria. Catalog membership, accepted
+HTTP or well-formed JSON alone is insufficient. A successful observation permits
+integration planning, not deployment or competitor acceptance; a failed observation
+must remain failed and cannot justify silently changing the product contract.
+
+GP01 preserves all six correct states, necessity-rule links, both conflict sides,
+completed training without a proof duty and other-order exclusion. Qualification
+still fails: three responses each repeat the full requirement, the verification
+action offers registering a pass without an explicit if-passed condition, and
+requested/returned model aliases are not verified. Preserve the original failure.
+A separate server-owned question-part identifier candidate will address mechanical
+coverage only; it cannot establish semantic action safety or model qualification.

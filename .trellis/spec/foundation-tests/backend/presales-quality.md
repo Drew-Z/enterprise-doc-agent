@@ -459,3 +459,14 @@ Review actual actions as well as status wording, and keep narrow criterion passe
 separate from overall semantic rejection. Do not promote a setting from these data.
 GET /models lists only advertised model IDs; it neither performs inference nor
 qualifies an alternate model. See docs/ops/presales-reasoning-comparison-20261010.md.
+
+GP01 demonstrates why mechanical and semantic results must stay distinct. The full
+GLM output passes strict schema and source/span bindings and correctly classifies
+all six states, but repeats the whole requirement in each response and fails the
+unchanged exact ordered-coverage resolver. Preserve that original failed outcome.
+Its unknown verification state is correct; its optional registration of a passing
+result lacks an explicit if-passed condition and fails the action-neutrality gate.
+Do not misreport this as a failed unknown classification. Requested/returned model
+alias differences remain unresolved without authoritative mapping. Question-part
+IDs may remove transcription burden, but cannot prove substantive answer coverage
+or authorize repair of prior outputs. See the GP01 qualification report.

@@ -366,3 +366,23 @@ One read-only model-catalog GET lists grok-4.7 and glm-5.3; no other-model infer
 occurs. Staging policy/ledgers are unchanged. Five current-day direct calls plus
 18 prior-day reservations give a conservative 23/200, not 23 current-day calls.
 Original outcomes, scoped publication and cleanup receipts are retained centrally.
+
+## Alternate primary model qualification
+
+- [x] Verify the isolated glm-5.3 override at the real HTTP/gateway boundary without
+  changing endpoint, production settings, candidate schema or resolver behavior.
+- [x] Freeze one new GP01 sample/reference, verify live policy/budget and retain one
+  first actual outcome with full request/source binding and no retry.
+- [x] Review identity, mechanical and semantic gates; verify unchanged deployment,
+  source/evidence and ledgers; publish the decision with scoped recovery/checks.
+
+Recovery phase glm_candidate_qualification_20261010 binds six documentation paths
+to d9c4257 in the existing central group. Product source remains unchanged.
+
+The two controlled HTTP cases pass. GP01 returns HTTP 200 in 34.109s with 5,661
+reported tokens but original draft_contract failure. Offline inspection reproduces
+exact coverage rejection; semantic review preserves correct state/role/conflict/scope
+behavior and separately rejects the passing-result action ambiguity. Identity alias
+mapping is unresolved. Observation is complete; qualification/promotion is not passed.
+No product implementation, embedding, retry, fallback or deployment occurs in this
+phase. Original result, review, postflight and publication receipts are central.
