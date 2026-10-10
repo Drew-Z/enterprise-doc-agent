@@ -249,3 +249,28 @@ instead of necessity rules; configuration and verification next actions were
 omitted. Training and same-scope conflict were correct, and another order did not
 fill the gap. Retain the accepted mechanical result and failed semantic review
 separately; no retry or staging enablement. See the span-selection probe report.
+
+## Evidence-role and per-item action candidate
+
+S2001 shows that an accepted source selection can still use state facts as necessity
+rules, classify an unregistered result as negative and omit requested actions.
+Develop a separate candidate contract that first selects necessity rules, assesses
+each rule exactly once and supplies a source-linked response for every exact part
+of the requirement. Preserve explicit met, unmet, missing and conflicting states;
+every outstanding item requires its own concrete action or confirmation question.
+Completed items cannot acquire a new prerequisite action. Rule selection and state
+selection must remain separately inspectable; no lexical semantic classifier,
+source repair, extra route or extra model call may substitute for that distinction.
+
+The public draft must retain each response, state summary and next action without
+silent truncation, plus all required evidence and unknown-item questions. Validate
+the standalone public parser with real source catalogs; preserve historical schema
+bytes and v15/v20 runtime behavior. Controlled tests prove links/coverage/projection,
+not source-role truth, entailment or semantic completeness. Do not integrate this
+candidate into generation/scoring until a separately frozen real observation passes
+its full semantic gate. No live call or staging change in this implementation slice.
+
+Implemented as a standalone candidate with41 new cases,86 combined focused cases,
+3,158 nonintegration tests and23 subtests passing. Raw-language, link, source and
+public-size boundaries remain enforced. A wrong-role/missing-as-negative controlled
+case remains explicitly wrong; no claim of semantic correction or runtime promotion.

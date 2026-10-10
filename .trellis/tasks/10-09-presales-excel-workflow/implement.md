@@ -278,3 +278,23 @@ definition roles and omitted next actions. Five ready workloads and application
 ledgers remain unchanged. Current-day app dispatches are0;1 direct request plus18
 conservatively carried prior-day reservations gives19/200. No repeat or promotion.
 Source/evidence, scoped documentation checks and publication are recorded centrally.
+
+## Evidence-role and per-item action candidate
+
+- [x] Red/green standalone parser: separate rules, one assessment per rule, all
+  four states and source-bound projection with an action for each outstanding item.
+- [x] Red/green exact requirement coverage, rule links, per-part source/gap bounds,
+  raw-language and final-size checks; preserve legitimate shared rule/state spans.
+- [x] Strict schema truth table and controlled cases that expose remaining semantic
+  errors rather than silently fixing them. Old v20 payloads must not be relabeled.
+- [x] Required checks, historical source preservation, scoped publication and
+  recovery/cleanup records. No real provider or staging changes in this slice.
+- [ ] Later independent semantic gate before gateway/scorer/policy promotion.
+
+Recovery phase presales_assessment_candidate_20261010 binds baseline adb07d6 in the
+existing commercial group. Only owned candidate code/tests and documentation change.
+
+Local checks passed:41 candidate tests,86 combined focused tests,3,158 nonintegration
+tests/23 subtests in277.32s, Ruff749 files and Mypy278 source files. Original v18/v19/v20
+result hashes and10 runtime files are unchanged. Publication/CI and cleanup receipts
+are tracked centrally; the later semantic gate remains unfulfilled.

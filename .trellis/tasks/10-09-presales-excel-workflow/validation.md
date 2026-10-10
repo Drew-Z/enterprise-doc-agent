@@ -489,3 +489,34 @@ checks are recorded centrally. No disposable resources were created.
 
 See docs/ops/presales-span-selection-probe-20261010.md. Strict mode promotion, public
 task quality, independent review and the competitor-standard goal remain open.
+
+## Standalone rule/assessment/response candidate — 2026-10-10
+
+Private protocol presales.assessment-candidate.v1 separates selected necessity
+rules from typed state assessments and exact requirement-part responses. Every
+rule must have one assessment; each unmet/unknown item requires its own action.
+Per-part gaps remain next to their question and in the global missing-information
+list. Reuse the original literal span resolver; labels cannot mask non-Chinese
+prose, and final-size overflow rejects without truncation.
+
+The first public parser test failed while the API was absent. A second red test
+demonstrated loss of per-question gap placement before the projection fix. Final
+checks:41 candidate tests and86 combined boundary cases pass;3,158 nonintegration
+tests and23 subtests pass in277.32s (814 deselected). Ruff format/check covers749
+files, Mypy passes278 source files. Initial ambiguous punctuation and long lines
+were corrected with equivalent Unicode escapes and formatting. No behavior was
+suppressed to pass checks.
+
+The candidate has no production gateway/scorer/settings import. Ten runtime source
+files, v15/v20 prompt identities and the original v18/v19/v20 result hashes remain
+unchanged. No database or execution-policy code changed, so no additional database
+integration run is claimed. Controlled wrong-role/missing-as-negative examples
+remain semantic errors; the parser does not repair them. A source clause may
+legitimately serve both rule and state roles. Actual-model acceptance is unproven.
+
+Candidate prompt SHA f274eeba7c7f7c32b7420c2c2d0f37246f170bde0504f496b0f3bf8677f13b07.
+Recovery phase presales_assessment_candidate_20261010 binds eight paths to adb07d6
+or recorded new-file absence. Zero provider/embedding calls and staging changes.
+Central records retain offline evidence, checks, publication and exact owned-temp
+cleanup. No historical outputs or unrelated files are discarded. See
+docs/ops/presales-assessment-candidate-20261010.md for promotion boundaries.

@@ -400,3 +400,14 @@ each definition's role, support direction, prose and requested action separately
 Preserve the accepted mechanical report and rejected semantic review without
 rewriting either. The new record is in docs/ops/presales-span-selection-probe-20261010.md;
 do not promote strict mode or repeat frozen samples from these checks alone.
+
+The standalone assessment candidate uses `resolve_assessment(content, requirement,
+catalog)` before any runtime integration. Verify every necessity rule is assessed
+exactly once, each requirement substring is covered in order, each answer retains
+its own information gap and every unmet/unknown item has its own action. Met cannot
+add an action. Reuse literal span resolution and validate raw prose before labels;
+reject final-size overflow. Keep a test where a wrong evidence role and missing-as-
+negative selection remain wrong: separate arrays, exact coverage and valid actions
+do not prove source entailment or semantic completeness. A combined rule/state
+passage must remain legal. Candidate schema identity is separate from gateway v20;
+no historical scorer or frozen policy may silently start using the new resolver.

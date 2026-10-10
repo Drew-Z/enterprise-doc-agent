@@ -262,3 +262,30 @@ yet four definitions used state records. The decoder accepted a genuine missing
 record assigned to negative. Do not infer semantic quality from the accepted
 projection or aggregate source coverage; any subsequent design must explicitly
 address evidence roles and per-item requested actions without keyword relabeling.
+
+## Standalone assessment candidate
+
+Use a distinct private protocol identity and strict schema, reusing the v20 offered
+span catalog. `rules` contains affirmative business propositions and selected
+`requiredBy` spans; `assessments` binds every zero-based ruleIndex exactly once.
+Four mutually exclusive variants carry met evidence/no action, unmet evidence/a
+completion action, missing observations/a confirmation question, or conflicting
+peer evidence/a reconciliation question. Require a short source-grounded state
+summary, not hidden reasoning. The model remains responsible for each semantic
+choice; do not reject legal combined rule/state text or relabel unknown words.
+
+Ordered `responses` contain exact requirementText substrings, an answer, selected
+citations and specific information gaps. Reject omitted, duplicated, reordered or
+invented requirement text; whitespace gaps are allowed. This verifies textual
+coverage, not independent semantic aspects. Require source evidence or an explicit
+gap per response. A conclusion, all per-part answers and every state/action block
+are rendered into the unchanged public answer string. Preserve unknown/conflict
+questions individually in missingInformation, and reuse resolve_span_basis for
+literal source, language, final limits and business validators. Validate each raw
+prose field before adding Chinese formatting so labels cannot hide English prose.
+
+Do not add a runtime setting, replace gateway v20, reinterpret run-v10 or change
+storage/UI/export in this candidate phase. The candidate schema/identity and local
+resolver are independently testable before an actual observation and conditional
+integration. A source span may legitimately be both a rule and a fact; field-level
+role separation is not a semantic oracle and must be tested/documented as such.
