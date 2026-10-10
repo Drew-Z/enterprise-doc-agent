@@ -325,3 +325,24 @@ and cleanup receipts are recorded centrally. No disposable resources were create
 
 - [ ] Candidate semantic acceptance and integration remain unfulfilled; do not promote.
 - [ ] Public-task quality, independent domain review and competitor acceptance remain open.
+
+## Minimal-contract observation
+
+- [x] Verify isolated HTTP/streaming collection with original evidence, one answer
+  field, bounded failure retention and no retry at the network boundary.
+- [x] Freeze new MC01 input/reference and exact same-primary request; reserve and
+  retain at most one actual outcome, including unknown.
+- [x] Review all semantic criteria separately, verify unchanged application and
+  source/evidence hashes, publish the result and choose the next intervention.
+
+Recovery phase minimal_contract_observation_20261010 binds six documentation paths
+to 9b46e81 in the existing central group. Product source remains unchanged. The
+diagnostic cannot establish public-task repair, structured acceptance or parity.
+
+Five controlled HTTP cases pass after the absent collector first failed before
+dispatch. The one real request returned schema_valid in 32.0s with 2,760 reported
+tokens; semantic criteria 1, 2, 3, 4, 5, 7, 8, 10 and 11 fail. Only conflict and
+cross-order criteria 6 and 9 pass. The original output remains unchanged, with no
+accepted public draft, retry or second live request. Staging identity/policy/ledgers
+remain unchanged. Three current-day known direct calls plus 18 prior-day carried
+reservations give a conservative 21/200. Publication/check receipts are central.

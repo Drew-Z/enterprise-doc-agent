@@ -569,3 +569,51 @@ Six registered documentation paths use Git/new-file recovery at fca01bb. The 2,9
 unrelated status entries are preserved. No disposable files or directories were
 created; central evidence remains a deliverable. See
 docs/ops/presales-assessment-observation-20261010.md. The parent task stays active.
+
+## Minimal output diagnostic — 2026-10-10
+
+MC01 uses fresh fictional CL-3106 evidence, all six prerequisite states and another
+order, with a separate pre-frozen 11-point semantic reference. The input retains
+full source text and applicability through prepare_citations. Only output mechanics
+change to a JSON object with one answer string; no product schema or decoder changes.
+The 959-byte system prompt and complete 4,569-byte request are frozen before dispatch.
+
+The controller's first local HTTP-boundary test fails at the absent implementation,
+before any dispatch. Five controlled cases then pass: streaming success, HTTP 503,
+invalid answer type, non-stop completion and cancellation. Each dispatches once;
+first/final state and original traces are retained, including interrupted_unknown.
+These are collector checks, not model-quality evidence. Existing bounded stream
+reading, response recording, credential loading and read-only preflight are reused.
+
+The single grok-4.7/low streaming primary request returns HTTP 200/stop in 32.0s,
+with 1,236 input and 1,524 completion tokens (2,760 total), response chatcmpl-4a041e53.
+Billed cost is unknown. Original state is schema_valid, not an accepted product
+draft. Offline checks bind the five full sources and exact request bytes to frozen
+input and confirm the inspected answer is the unmodified original response.
+
+Semantic review fails 9 of 11 criteria. It repeats the can-enable question without
+answering it; says verification is unrecorded but assigns "完成扫描件读取验收";
+and says training is complete but assigns "提交培训证书" without a source duty.
+It cites no necessity-rule source. Both authorization-conflict sides and rejection
+of other-order substitution are correct (criteria 6 and 9). Review is assistant
+adjudication against pre-frozen criteria, not independent business approval.
+
+Result SHA: 2f9c0ebe13564de846819ec065c2853d548eb00293ac04e18e8f4f8e62cae3e9.
+Keep its presales-minimal-contract-run-v1 identity outside historical scorers and
+public drafts. It shows these errors can occur without nested output structure;
+different input and prompt prevent matched causal attribution. Do not add more
+schema fields or integrate this failed diagnostic. Investigate primary inference
+quality/settings next, retaining original outcomes and semantic criteria.
+
+Fresh pre/postflight verifies unchanged rc49, source fe995676, DB 0037, v15 policy,
+five ready deployments, zero active jobs and unchanged ledgers/source hashes. UTC
+2026-10-10 has zero application dispatches and three known direct requests; 18
+prior-day known/unknown reservations yield a conservative 21/200. Zero embedding,
+fallback or deployment; no live retry or historical replay. Product code is unchanged
+from 9b46e81, so no new local full-suite run is claimed. Frozen source/evidence,
+documentation and exact new-head CI are checked and recorded centrally.
+
+Recovery phase minimal_contract_observation_20261010 binds six documentation paths
+to 9b46e81 or new-file absence and retains the collector/evidence. All 2,993 unrelated
+status entries are preserved. No disposable resources are created or historical
+files removed. See docs/ops/presales-minimal-contract-observation-20261010.md.

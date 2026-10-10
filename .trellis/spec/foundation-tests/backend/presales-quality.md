@@ -427,3 +427,19 @@ candidate's runtime promotion. Any subsequent minimal-contract investigation mus
 keep semantic criteria and original outcomes intact; do not replay AR01, repair
 its output, weaken the validators or infer quality from another set of fields.
 See docs/ops/presales-assessment-observation-20261010.md.
+
+A minimal-format diagnostic is a separate contract, never a weakened public draft.
+MC01 keeps complete source text/applicability and the same primary route, but asks
+only for an answer string. The original response is schema-valid and semantically
+rejected: unrecorded verification becomes a completion task, completed training
+gains a certificate duty, and the overall decision is absent. Retain both outcomes.
+Full source binding and simpler formatting do not establish substantive coverage.
+
+When investigating protocol burden, freeze meaning criteria independently of output
+shape. Keep all four evidence states, genuine conflicting peers, completed work with
+absent proof, explicitly unsubmitted required paperwork and cross-scope distractors.
+Inspect prose actions as well as stated status; repeating "unrecorded" does not pass
+if the next action assumes noncompletion. Do not present a new sample plus a changed
+prompt as a matched ablation or a model-capability ceiling. Stop schema expansion
+when unchanged meaning errors survive simpler output, and investigate inference
+quality before product integration. See the minimal-contract observation report.

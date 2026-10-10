@@ -310,3 +310,28 @@ continue unchanged. A separately planned minimal contract on the same primary
 route should investigate whether protocol burden or basic interpretation causes
 these errors, with the same semantic standards. This is an investigation direction,
 not a new runtime design, authorization to rerun AR01, or proof of either cause.
+
+## Minimal generation diagnostic
+
+Reuse complete prepare_citations input, RecordingTransport and the bounded
+OpenAIResponseReader, but use a separate local diagnostic collector with JSON mode
+and a single answer string. Keep the primary endpoint/model/reasoning effort,
+streaming, 120-second deadline, 4,000-token request cap and 4,000-character answer
+limit unchanged. Do not feed the answer into a public draft, historical scorer,
+application persistence or a relaxed production validator. Preserve source names
+and applicability, all original text and the first raw provider response.
+
+Freeze exact request bytes, source/helper/controller hashes and independent gold;
+verify current policy, ledger and conservative direct reservations before exclusive
+intent. Test streaming success, HTTP 503, invalid shape and incomplete output at
+the HTTP boundary, one mock dispatch each. Output format is
+presales-minimal-contract-run-v1. A new-source observation is not a matched ablation;
+report only the evidence it supplies about interpretation under simpler formatting.
+
+Observed MC01 does not support a formatting-only remedy: a 959-byte system prompt
+and one answer field still produce unsupported actions and incomplete coverage.
+The collector and diagnostic decoder remain central evidence, outside product code.
+No source repair, public-draft coercion or automatic semantic classifier is added.
+Next investigate the same primary route's inference settings with separately frozen
+criteria before changing the product design; this result does not prove a model's
+universal capability limit or justify a production configuration change.

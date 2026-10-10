@@ -295,3 +295,26 @@ Do not integrate this candidate. The next investigation must distinguish protoco
 overload from primary-model reasoning limitations before further product changes;
 adding more selection fields is not evidence of semantic improvement. Preserve
 AR01 and all earlier outcomes without replay or relaxed acceptance criteria.
+
+## Minimal-contract discriminating observation
+
+Observe one new six-prerequisite synthetic case on the same primary route with
+one answer string instead of linked rules/assessments/responses. Preserve complete
+source context, distinct met/unmet/missing/conflict states, absent training proof
+versus actual unsubmitted paperwork, source roles, requested actions and another
+order as a distractor. Freeze the input and all semantic criteria before inference.
+Stop after the first outcome; no replay, retry, embedding or product integration.
+
+This diagnostic changes output mechanics, not the meaning standard. It cannot pass
+the structured product contract or establish causal attribution by itself: the new
+sample and protocol differ from AR01. A pass permits further investigation of a
+simpler design; a semantic failure shows nested schema is not required for errors
+on this route and redirects work toward inference quality before more schema code.
+
+MC01 returned one schema-valid answer in 32.0s, but only semantic criteria 6 and 9
+passed. The answer still turns unrecorded verification into a completion task,
+adds certificate submission after completed training, omits the overall enablement
+decision and never identifies the necessity-rule source. Conflict and cross-order
+exclusion are correct. Do not implement or promote this diagnostic contract. Errors
+persist without nested output structure; investigate primary inference quality and
+settings before any further schema expansion. The cause is not fully established.
