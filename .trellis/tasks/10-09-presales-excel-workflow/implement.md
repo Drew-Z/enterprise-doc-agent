@@ -780,3 +780,25 @@ receipts record exact file hashes, commands and the local commit under
 oss_context_adapter_20261011. No new deployment, generation, embedding or judge calls.
 This remains an opt-in local candidate; semantic quality, target capacity and independent
 user acceptance remain open. Prior test figures and failures remain historical evidence.
+
+## Authorized paired comparison execution — 2026-10-11
+
+- [x] Record baseline34c54c4, preserve earlier evidence, freeze prospective criteria/corpus.
+- [x] Validate controller bounds offline, then collect at most15 metered query embeddings.
+- [x] Bind both arms to the same retrieval snapshots, verify seed/citation/budget invariants.
+- [x] Collect at most8 frozen first generation responses without retries or fallback.
+- [x] Review originals against frozen criteria; report evidence, omissions, false obligations,
+  latency and usage, including failures and identical-evidence variation.
+- [x] Recheck unchanged deployed policy and questionnaire ledger counts; preserve query accounting,
+  source artifacts and unrelated work; validate documentation, record scoped commit/closeout.
+
+Result:8 decoder passes are not8 semantic passes. Both arms retain password-policy
+misclassification; v26 recovers endpoint controls but overclaims centralized management.
+The scope-neighbor tie and cross-source slot order have concrete failure evidence.
+CQU06 passes both arms with12/11 grouping and23.071/40.914-second latency respectively.
+Known usage:179045 generation tokens plus1135 embedding tokens; no unknown usage this
+round, no reconciled monetary price.42 related tests and4 controller checks passed;
+6 actual-chunk citation resolutions and2 diagnostic-control checks passed. Defaultv24,
+questionnaire ledger counts and corpus hashes unchanged. Retain the15 query ledger rows.
+No v26 deployment, new ingestion, judge call, independent participant or second-supplier use.
+Final hashes, scoped commit and cleanup receipts reside in v26_paired_comparison_20261011.

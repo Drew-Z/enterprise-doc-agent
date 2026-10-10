@@ -603,3 +603,13 @@ Preserve original hits and their source identities, add context only within expl
 budgets, enforce source access and active-version bindings, and verify real PostgreSQL
 boundaries and both generation paths. Provide an explicit opt-in with immutable old
 behavior; no new real inference, deployment or semantic acceptance claim in this step.
+
+## Authorized fixed v25/v26 comparison — 2026-10-11
+
+The user approved the next fixed-questionnaire comparison after local commit34c54c4.
+Observe evidence arrival, answer completeness/false prerequisites, latency and token usage.
+Use three known VSAQ questions over the unchanged five-source GitLab corpus and the known
+CQU06 clause as an identical-evidence generation control. Preserve first results and prior
+failures; this is neither an unseen accuracy estimate nor independent user acceptance.
+Cap new work at8 generation calls and15 metered query-embedding requests, without retries,
+fallback, new document ingestion, release, default change or reuse of prior unused budgets.

@@ -789,3 +789,24 @@ verify sync/background citation persistence, old-version behavior and frozen-pol
 rejection. Foreign/stale sources, revocation, forged seed text, budget exhaustion and
 multi-source limits must fail or remain bounded before provider dispatch. This is a
 component/contract change, not proof of semantic answer improvement or a deployment.
+
+## Prospective paired context comparison — 2026-10-11
+
+Freeze question text, criteria, all five authorized source snapshots and98 original chunks
+before calls. Run the deployed hybrid retrieval once per question/source (15 metered query
+requests maximum), retaining its original ranked candidates and refusal decisions. Both
+arms replay those identical candidates using the local pinned v25 complementary selector;
+v26 additionally uses the pinned Haystack window selector on the authorized chunk snapshot.
+Preserve first hits, original IDs/offsets,1800/3600-character and12-chunk budgets. SQL window
+authorization was tested in the preceding PostgreSQL suite; this experiment executes
+snapshot-based window selection locally and does not claim a deployed v26 product run.
+
+Freeze both final GenerationInputs before any generation, keeping criteria outside requests.
+Use the same current primary route, low reasoning, streaming,120-second deadline and4000
+completion-token cap, alternating which arm goes first across cases. CQU06 has identical
+evidence in both arms and indicates possible generation variability. One request per arm;
+stop on transport uncertainty, missing receipt, code/input/policy/day drift or exhausted
+budget. Retain the preceding121 direct-call reservations plus current product count and
+the new8-call reservation. Embedding requests retain normal live provider metering; no
+questionnaire attempts/drafts/reviews/exports are created. Report observed latency and
+tokens separately; no reconciled price card means monetary cost stays unknown.
