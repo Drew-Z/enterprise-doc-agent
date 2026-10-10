@@ -1,7 +1,117 @@
 # Model And Embedding Routing
 
+## Optional Streamed Model Responses
+
+### 1. Scope / Trigger
+
+Agent and Presales may receive OpenAI-compatible SSE while preserving complete-result
+validation, durable dispatch accounting, cancellation and existing total deadlines.
+Streaming is transport support; it does not establish semantic quality or prove that
+a particular proxy permits requests longer than its read timeout.
+
+### 2. Signatures
+
+- `OpenAIResponseReader(*, streaming: bool, max_bytes: int,
+  max_stream_bytes: int | None = None)` is created per request. Omitted stream
+  budget preserves the original wire bound for direct callers.
+- `retryable_provider_error(envelope)` checks explicit `type`/`code` values only.
+  `ModelResponseError.retryable` carries that classification without retaining error text;
+  Presales maps an SSE upstream error to `presales_model_upstream_error`, preserving
+  already observed usage and request/response IDs. The gateway never dispatches a retry.
+- `await reader.read(response: httpx.Response) -> httpx.Response` reconstructs a
+  complete JSON envelope; `accounting_response` retains only observed metadata.
+- `recorded_post(..., response_reader: OpenAIResponseReader | None = None)` records
+  the dispatch before entering HTTP and preserves observed accounting on failure.
+- Staging CLI accepts `--model-streaming` and `--fallback-model-streaming`.
+
+### 3. Contracts
+
+- `MODEL__STREAMING` and `MODEL__FALLBACK_STREAMING` default to false, independently.
+  Deployment inputs accept only omitted/empty/`true`/`false`; false removes stale keys.
+  Release fingerprints, guarded apply and rollback bind both keys. Workflow inputs
+  are `STAGING_MODEL_STREAMING` and `STAGING_MODEL_FALLBACK_STREAMING`.
+- Enabled requests send `stream: true` and `stream_options: {include_usage: true}`.
+  Choice zero must finish with `stop` followed by `[DONE]`. UTF-8 and CR/LF boundaries
+  may span transport chunks. Tool calls and changing response identities are rejected.
+- Agent and Presales explicitly use `MAX_MODEL_STREAM_BYTES` (8 MiB) for decoded
+  SSE traffic, including framing, ignored reasoning and heartbeats. The configured
+  `max_output_bytes` still bounds accumulated UTF-8 answer content, each event and
+  unterminated line, and the complete reconstructed JSON envelope (including escape
+  expansion). Plain JSON responses retain their original configured byte limit.
+  Heartbeat events never reset the enclosing route or persisted row deadline.
+- Only complete assembled content enters the existing schema/citation validation.
+  An explicit provider error takes precedence over any accompanying choices; Agent
+  rejects unknown/permanent errors even if the envelope also contains a valid-looking answer.
+  Unknown usage and monetary cost remain unknown. Accounting excludes answer/reasoning.
+- Background Presales cancellation persists observed usage and IDs under the lease,
+  retains the unresolved `running` call and rethrows cancellation. It does not confirm
+  cancellation at the provider. Outer row timeout retains usage and records timeout.
+
+### 4. Validation & Error Matrix
+
+| Condition | Outcome |
+| --- | --- |
+| Complete stop and DONE | Original business validation before publication |
+| Truncation, malformed SSE, identity drift, tool delta | Contract rejection; no partial publication or implicit retry |
+| Explicit upstream SSE error | Presales uses the same code/type retry allowlist as JSON errors; only its existing coordinator may switch routes within the original budget. Agent maps the same explicit transient codes to ModelServerError in JSON and SSE so its existing bounded router can recover. Unknown/permanent errors stay non-retryable. |
+| Excessive wire, event, line, content or reconstructed envelope bytes | Response-too-large rejection; framing allowance does not expand accepted answer size |
+| Invalid Unicode in content or metadata | Contract rejection, never an uncaught encoding error |
+| HTTP/transport timeout or network error | Existing retryable route policy with observed usage retained |
+| External cancellation | Close stream, preserve bounded accounting, rethrow cancellation |
+| No usage frame | Unknown usage, never inferred zero |
+
+### 5. Good/Base/Bad Cases
+
+- Good: primary non-streaming, fallback streaming, each with its own effort/timeout.
+- Base: omitted flags preserve existing non-streaming behavior.
+- Bad: accepting partial JSON after connection close or treating a heartbeat as a new budget.
+
+### 6. Tests Required
+
+- `test_model_stream_response.py`: chunk framing, byte bounds, malformed streams,
+  final business checks, independent fallback settings, closure, deadlines and usage.
+- `test_stream_provider_dispatch_integration.py`: one durable dispatch, budget denial
+  before the next HTTP call, known/unknown usage under truncation/cancellation/network loss.
+- `test_stream_background_integration.py`: cancellation/row timeout keep observed usage,
+  preserve recovery state and publish no draft.
+- `test_model_stream_configuration.py`: reject invalid configuration before writing,
+  apply/restore both flags and detect fingerprint drift.
+- `test_stream_presales_evaluation.py`: reconstructed envelope retains usage and supports
+  offline scoring, including small answers with more than 256 KiB of framing. The
+  evaluator shares the stream ceiling and receives the model output setting instead
+  of truncating all responses at a separate hardcoded 128 KiB. Evaluator buffering
+  is not evidence of live time to first token.
+
+### 7. Wrong vs Correct
+
+Wrong: return the accumulated answer at EOF and record missing token counters as zero.
+Correct: require `stop` plus `[DONE]`, pass the envelope through the original validator,
+and preserve unavailable token counters as unknown even when a request was charged.
+
+Wrong: classify a stream as an oversized answer solely because repeated SSE envelopes
+or discarded reasoning exceed the answer budget. Correct: enforce independent bounded
+wire and result budgets. Controlled HTTP tests prove framing compatibility; they do
+not prove that an earlier truncated provider response contained a correct final answer.
+
 ## Adopted Facts
 
+- Presales model calls allow up to 300 seconds and rows up to 900 seconds, with
+  unchanged defaults. An optional fallback_model_timeout_seconds overrides only
+  the fallback route; both explicit model overrides must remain below the row budget.
+- A first background Presales dispatch reserves the smaller of half the remaining
+  time and an available distinct fallback's advertised request timeout. Unknown
+  custom-gateway bounds retain the half-budget reservation. The persisted row
+  deadline, lease fence, two-dispatch cap and unknown-usage handling remain enforced.
+- Deployment rendering and release guards bind Presales, model-route and Agent
+  execution budgets. The release guard requires no active or queued work before
+  configuration changes; it does not reset an in-flight task's deadline.
+- ModelSettings exposes independent optional reasoning_effort and fallback_reasoning_effort
+  values (low, medium, high, xhigh). Agent and Presales requests omit the field unless
+  configured; fallback never inherits primary effort, and bounded Agent schema repairs
+  keep the selected route's effort. This does not automatically select a task quality tier.
+- Staging rendering and guarded release switching bind both settings to the existing
+  configuration fingerprint and restore the original values or absence on rollback.
+  The generation-only evaluator records configuredReasoningEffort for comparisons.
 - `RoutedChatModelGateway` uses fallback only for retryable gateway errors.
 - Exhausted bounded provider-output schema repair is retryable; permanent auth,
   provider-envelope contract, authorization and grounding failures do not silently
@@ -25,6 +135,9 @@
 
 ## Proven Examples
 
+- Settings, model gateway, Presales citation selection, Worker composition, staging
+  rendering, release switching and evaluator tests cover explicit effort and omission,
+  invalid-value rejection, request preservation, fingerprint mismatch and rollback.
 - `packages/core/tests/test_model_routing.py` proves retryable-only fallback, permanent
   failure propagation, schema-failure telemetry merging, raw observed identity retention,
   shared deadline enforcement, cancellation propagation, single-probe HALF_OPEN behavior

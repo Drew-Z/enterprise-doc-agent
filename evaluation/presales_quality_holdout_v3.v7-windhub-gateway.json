@@ -1,0 +1,1572 @@
+{
+  "schemaVersion": "presales-gateway-run-v2",
+  "scope": "generation_only_with_complete_synthetic_sources; no_retrieval_or_persistence",
+  "datasetSha256": "260759bf6314153a9ca48ff80c9e6dbd148b917e828fefb57e1db3c9852d33a6",
+  "runnerSha256": "b00c3823165f17810b86fecc123aa65d7a823f7ee9a743b41012c6ea6bfc75c7",
+  "startedAt": "2026-09-23T16:45:52.212756+00:00",
+  "maxGenerationAttempts": 6,
+  "automaticRetries": 0,
+  "selectedRoute": "primary",
+  "configuredModelName": "grok-4.7",
+  "versions": {
+    "H3-ORDER": "80fdd834-05fd-5cd2-a92e-657c510ed7cd",
+    "H3-FEATURE": "c91eaa1c-6ac3-52e9-87ae-1f74681b0f81",
+    "H3-AUDIT": "f7869ba7-f33a-589f-9d79-3da3ce49bff5",
+    "H3-BASE": "831d3dad-7e66-5cc8-a946-d57a1273c839",
+    "H3-ADD": "0cdaa06e-54d7-5183-b432-dc7cf429a954",
+    "H3-LIMIT": "9ade3b1d-d89b-5d47-9e95-3c3c9454eab3"
+  },
+  "observations": [
+    {
+      "key": "H3-R1",
+      "startedAt": "2026-09-23T16:45:52.297026+00:00",
+      "state": "failed",
+      "provenance": {
+        "promptVersion": "presales.v7",
+        "promptSha256": "11542919c2ebb588715fa788def38325b9e4384883fdb277bb6b9046d8dce55f",
+        "configuredModelVersion": null,
+        "configuredModelRevision": null,
+        "providerResponseId": null,
+        "returnedModel": null
+      },
+      "sourceInput": {
+        "requirement": {
+          "key": "H3-R1",
+          "text": "服务运营方须持有覆盖当前服务的有效 ISO 27001 认证。",
+          "sourceLocation": "H3-1"
+        },
+        "sources": [
+          {
+            "versionId": "80fdd834-05fd-5cd2-a92e-657c510ed7cd",
+            "applicability": "岚帆巡检本次已签署企业订单，按当前交付状态评估。全部内容虚构。",
+            "documentId": "07e8110c-67a3-5afd-9e8b-0ec9edf9a876",
+            "generationId": "acaa5000-c1c6-5eca-b6e4-4ddf658bfd9f",
+            "filename": "H3-ORDER-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "a2438359bf0ab5d4d94f4ebe1354a376ccdd1d98e077522414178f273461f0cc"
+          },
+          {
+            "versionId": "c91eaa1c-6ac3-52e9-87ae-1f74681b0f81",
+            "applicability": "当前正式版本可选模块规格，启用以正文规定的前提为准。",
+            "documentId": "73fbcf91-2f3d-5589-b596-3e2c853918b6",
+            "generationId": "2fa32d42-55f5-5764-ab2f-8271543c9124",
+            "filename": "H3-FEATURE-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "2129484aa3cba1e60ad999219cc92ff916a1f47207b2416fc8819651b2bacfbe"
+          },
+          {
+            "versionId": "f7869ba7-f33a-589f-9d79-3da3ce49bff5",
+            "applicability": "当前签署日的资质说明，ISO与PCI为不同事项。",
+            "documentId": "bc3cbb1f-5efa-5678-bf22-741f3d975d75",
+            "generationId": "6a0b3943-9a52-5ab5-bc6b-3e9b5e57ded8",
+            "filename": "H3-AUDIT-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "feb29f8eb629e20c8128729eaf65096c808f0b8416be3dfb477709e0acac6ff4"
+          },
+          {
+            "versionId": "831d3dad-7e66-5cc8-a946-d57a1273c839",
+            "applicability": "已签署基础协议，吞吐指标按已签署补充协议替代，存储位置互不优先。",
+            "documentId": "e86b0ffe-c503-54d8-84fb-443859ab5db7",
+            "generationId": "4aeb5600-71d9-5b07-8f16-c4ea010dee02",
+            "filename": "H3-BASE-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "9f69d99af90124ffd3421aa844ccac13f82f51eee4972f4e9a1809418dd9c6ba"
+          },
+          {
+            "versionId": "0cdaa06e-54d7-5183-b432-dc7cf429a954",
+            "applicability": "已签署补充协议，只有吞吐指标具备明示优先级。",
+            "documentId": "0687fcb8-22b2-51ae-ae60-ced1d7187f7d",
+            "generationId": "ecbd63dd-0a74-5266-beee-1b1eac4a61be",
+            "filename": "H3-ADD-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "468b59e4cf1a252f52bed780ffd7c64f47548d88f6bd46adbf494576591fb5f1"
+          },
+          {
+            "versionId": "9ade3b1d-d89b-5d47-9e95-3c3c9454eab3",
+            "applicability": "当前正式版本所有套餐和模块均适用。",
+            "documentId": "419742fb-e478-54ba-b938-8f5768e8ee92",
+            "generationId": "3b894e1e-d5fc-5687-b169-70da6c9f0f05",
+            "filename": "H3-LIMIT-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "37d777269480186bda9f4fe6cccbd93dd2824d3bfcc3d285e3c32fb95cfef35a"
+          }
+        ],
+        "evidence": [
+          {
+            "chunkId": "10490e3e-986d-5c9b-b19a-1a29d55b5ed1",
+            "documentVersionId": "80fdd834-05fd-5cd2-a92e-657c510ed7cd",
+            "text": "# H3-ORDER 采购与验收记录\n本订单已采购历史归档 ARC180；归档保留策略尚未配置，归档恢复验收状态未登记。\nH3-BASE 与 H3-ADD 均已签署并适用于同一企业、同一生产服务及全部备份。H3-ADD 仅在查询吞吐指标上优先于 H3-BASE；该优先级不适用于存储位置，存储位置条款互不优先且没有例外。",
+            "filename": "H3-ORDER-v1.txt",
+            "heading": "",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "573b60fc-43b2-5bfd-96c2-5b1c690c1f54",
+            "documentVersionId": "c91eaa1c-6ac3-52e9-87ae-1f74681b0f81",
+            "text": "# H3-FEATURE 历史归档模块\n基础套餐历史巡检记录保存15天。ARC180模块能保存历史巡检记录180天，期间企业管理员无法提前删除。\nARC180生产启用前必须购买模块、配置180天保留策略并完成归档恢复验收。当前订单记录见 H3-ORDER。",
+            "filename": "H3-FEATURE-v1.txt",
+            "heading": "",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "4a632ac5-90d2-51d9-a5d6-a8a640227bff",
+            "documentVersionId": "f7869ba7-f33a-589f-9d79-3da3ce49bff5",
+            "text": "# H3-AUDIT 资质材料清单\nISO 27001：附件仅有内部体系检查表，未附有效认证证书，证书覆盖范围及有效期均未说明。本清单不声明服务运营方是否持有该认证。\nPCI DSS：运营方明确声明本服务截至当前签署日尚未通过 PCI DSS 评估，不能提供当前有效的 PCI DSS 合规证明。这是对尚未通过评估的确认，不是附件遗漏，亦无已约定的完成时间或交付路径。",
+            "filename": "H3-AUDIT-v1.txt",
+            "heading": "",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "02f9235a-4edc-5e2d-8115-6082eb9bc760",
+            "documentVersionId": "831d3dad-7e66-5cc8-a946-d57a1273c839",
+            "text": "# H3-BASE 基础服务协议\n本企业生产查询服务每秒保证处理200个请求。\n本企业全部生产数据及全部备份必须只保存在德国，任何情况下均禁止将这些数据或备份复制到新加坡。",
+            "filename": "H3-BASE-v1.txt",
+            "heading": "",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "845a883f-b14c-5117-b8a2-26914d8e1476",
+            "documentVersionId": "0cdaa06e-54d7-5183-b432-dc7cf429a954",
+            "text": "# H3-ADD 补充服务协议\n本企业生产查询服务每秒保证处理300个请求；本项替代 H3-BASE 的200个请求指标，优先级仅限查询吞吐指标。\n本企业全部生产数据及全部备份必须每日完整复制一份到新加坡，不得省略任何副本。本存储位置条款与 H3-BASE 的德国独占条款均生效且互不优先，不存在例外。",
+            "filename": "H3-ADD-v1.txt",
+            "heading": "",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "c8c78aed-b51e-59b7-ac41-348a3293af1a",
+            "documentVersionId": "9ade3b1d-d89b-5d47-9e95-3c3c9454eab3",
+            "text": "# H3-LIMIT 工单附件限制\n单张巡检工单的附件数量硬上限为12个。所有当前套餐均没有提高该上限的配置或选购项。拆分到多张工单不属于单张工单能力。",
+            "filename": "H3-LIMIT-v1.txt",
+            "heading": "",
+            "pageNumber": ""
+          }
+        ]
+      },
+      "errorCode": "presales_model_timeout",
+      "elapsedSeconds": 120.016,
+      "providerRequests": 1,
+      "traces": [
+        {
+          "requestDispatched": true,
+          "input": {
+            "requirement": {
+              "key": "H3-R1",
+              "text": "服务运营方须持有覆盖当前服务的有效 ISO 27001 认证。",
+              "sourceLocation": "H3-1"
+            },
+            "evidence": [
+              {
+                "citationId": "cite_092cd776ae76_1",
+                "text": "# H3-ORDER 采购与验收记录\n本订单已采购历史归档 ARC180；归档保留策略尚未配置，归档恢复验收状态未登记。\nH3-BASE 与 H3-ADD 均已签署并适用于同一企业、同一生产服务及全部备份。H3-ADD 仅在查询吞吐指标上优先于 H3-BASE；该优先级不适用于存储位置，存储位置条款互不优先且没有例外。",
+                "source": {
+                  "label": "来源 1",
+                  "filename": "H3-ORDER-v1.txt",
+                  "applicability": "岚帆巡检本次已签署企业订单，按当前交付状态评估。全部内容虚构。",
+                  "versionNumber": 1,
+                  "latestVersionNumber": 1
+                },
+                "heading": "",
+                "pageNumber": ""
+              },
+              {
+                "citationId": "cite_092cd776ae76_2",
+                "text": "# H3-FEATURE 历史归档模块\n基础套餐历史巡检记录保存15天。ARC180模块能保存历史巡检记录180天，期间企业管理员无法提前删除。\nARC180生产启用前必须购买模块、配置180天保留策略并完成归档恢复验收。当前订单记录见 H3-ORDER。",
+                "source": {
+                  "label": "来源 2",
+                  "filename": "H3-FEATURE-v1.txt",
+                  "applicability": "当前正式版本可选模块规格，启用以正文规定的前提为准。",
+                  "versionNumber": 1,
+                  "latestVersionNumber": 1
+                },
+                "heading": "",
+                "pageNumber": ""
+              },
+              {
+                "citationId": "cite_092cd776ae76_3",
+                "text": "# H3-AUDIT 资质材料清单\nISO 27001：附件仅有内部体系检查表，未附有效认证证书，证书覆盖范围及有效期均未说明。本清单不声明服务运营方是否持有该认证。\nPCI DSS：运营方明确声明本服务截至当前签署日尚未通过 PCI DSS 评估，不能提供当前有效的 PCI DSS 合规证明。这是对尚未通过评估的确认，不是附件遗漏，亦无已约定的完成时间或交付路径。",
+                "source": {
+                  "label": "来源 3",
+                  "filename": "H3-AUDIT-v1.txt",
+                  "applicability": "当前签署日的资质说明，ISO与PCI为不同事项。",
+                  "versionNumber": 1,
+                  "latestVersionNumber": 1
+                },
+                "heading": "",
+                "pageNumber": ""
+              },
+              {
+                "citationId": "cite_092cd776ae76_4",
+                "text": "# H3-BASE 基础服务协议\n本企业生产查询服务每秒保证处理200个请求。\n本企业全部生产数据及全部备份必须只保存在德国，任何情况下均禁止将这些数据或备份复制到新加坡。",
+                "source": {
+                  "label": "来源 4",
+                  "filename": "H3-BASE-v1.txt",
+                  "applicability": "已签署基础协议，吞吐指标按已签署补充协议替代，存储位置互不优先。",
+                  "versionNumber": 1,
+                  "latestVersionNumber": 1
+                },
+                "heading": "",
+                "pageNumber": ""
+              },
+              {
+                "citationId": "cite_092cd776ae76_5",
+                "text": "# H3-ADD 补充服务协议\n本企业生产查询服务每秒保证处理300个请求；本项替代 H3-BASE 的200个请求指标，优先级仅限查询吞吐指标。\n本企业全部生产数据及全部备份必须每日完整复制一份到新加坡，不得省略任何副本。本存储位置条款与 H3-BASE 的德国独占条款均生效且互不优先，不存在例外。",
+                "source": {
+                  "label": "来源 5",
+                  "filename": "H3-ADD-v1.txt",
+                  "applicability": "已签署补充协议，只有吞吐指标具备明示优先级。",
+                  "versionNumber": 1,
+                  "latestVersionNumber": 1
+                },
+                "heading": "",
+                "pageNumber": ""
+              },
+              {
+                "citationId": "cite_092cd776ae76_6",
+                "text": "# H3-LIMIT 工单附件限制\n单张巡检工单的附件数量硬上限为12个。所有当前套餐均没有提高该上限的配置或选购项。拆分到多张工单不属于单张工单能力。",
+                "source": {
+                  "label": "来源 6",
+                  "filename": "H3-LIMIT-v1.txt",
+                  "applicability": "当前正式版本所有套餐和模块均适用。",
+                  "versionNumber": 1,
+                  "latestVersionNumber": 1
+                },
+                "heading": "",
+                "pageNumber": ""
+              }
+            ]
+          },
+          "transportFailure": {
+            "type": "CancelledError",
+            "phase": "awaiting_response_headers"
+          }
+        }
+      ]
+    },
+    {
+      "key": "H3-R2",
+      "startedAt": "2026-09-23T16:47:52.324367+00:00",
+      "state": "failed",
+      "provenance": {
+        "promptVersion": "presales.v7",
+        "promptSha256": "11542919c2ebb588715fa788def38325b9e4384883fdb277bb6b9046d8dce55f",
+        "configuredModelVersion": null,
+        "configuredModelRevision": null,
+        "providerResponseId": null,
+        "returnedModel": null
+      },
+      "sourceInput": {
+        "requirement": {
+          "key": "H3-R2",
+          "text": "本服务当前已通过 PCI DSS 评估且能够提供有效合规证明。",
+          "sourceLocation": "H3-2"
+        },
+        "sources": [
+          {
+            "versionId": "80fdd834-05fd-5cd2-a92e-657c510ed7cd",
+            "applicability": "岚帆巡检本次已签署企业订单，按当前交付状态评估。全部内容虚构。",
+            "documentId": "07e8110c-67a3-5afd-9e8b-0ec9edf9a876",
+            "generationId": "acaa5000-c1c6-5eca-b6e4-4ddf658bfd9f",
+            "filename": "H3-ORDER-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "a2438359bf0ab5d4d94f4ebe1354a376ccdd1d98e077522414178f273461f0cc"
+          },
+          {
+            "versionId": "c91eaa1c-6ac3-52e9-87ae-1f74681b0f81",
+            "applicability": "当前正式版本可选模块规格，启用以正文规定的前提为准。",
+            "documentId": "73fbcf91-2f3d-5589-b596-3e2c853918b6",
+            "generationId": "2fa32d42-55f5-5764-ab2f-8271543c9124",
+            "filename": "H3-FEATURE-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "2129484aa3cba1e60ad999219cc92ff916a1f47207b2416fc8819651b2bacfbe"
+          },
+          {
+            "versionId": "f7869ba7-f33a-589f-9d79-3da3ce49bff5",
+            "applicability": "当前签署日的资质说明，ISO与PCI为不同事项。",
+            "documentId": "bc3cbb1f-5efa-5678-bf22-741f3d975d75",
+            "generationId": "6a0b3943-9a52-5ab5-bc6b-3e9b5e57ded8",
+            "filename": "H3-AUDIT-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "feb29f8eb629e20c8128729eaf65096c808f0b8416be3dfb477709e0acac6ff4"
+          },
+          {
+            "versionId": "831d3dad-7e66-5cc8-a946-d57a1273c839",
+            "applicability": "已签署基础协议，吞吐指标按已签署补充协议替代，存储位置互不优先。",
+            "documentId": "e86b0ffe-c503-54d8-84fb-443859ab5db7",
+            "generationId": "4aeb5600-71d9-5b07-8f16-c4ea010dee02",
+            "filename": "H3-BASE-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "9f69d99af90124ffd3421aa844ccac13f82f51eee4972f4e9a1809418dd9c6ba"
+          },
+          {
+            "versionId": "0cdaa06e-54d7-5183-b432-dc7cf429a954",
+            "applicability": "已签署补充协议，只有吞吐指标具备明示优先级。",
+            "documentId": "0687fcb8-22b2-51ae-ae60-ced1d7187f7d",
+            "generationId": "ecbd63dd-0a74-5266-beee-1b1eac4a61be",
+            "filename": "H3-ADD-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "468b59e4cf1a252f52bed780ffd7c64f47548d88f6bd46adbf494576591fb5f1"
+          },
+          {
+            "versionId": "9ade3b1d-d89b-5d47-9e95-3c3c9454eab3",
+            "applicability": "当前正式版本所有套餐和模块均适用。",
+            "documentId": "419742fb-e478-54ba-b938-8f5768e8ee92",
+            "generationId": "3b894e1e-d5fc-5687-b169-70da6c9f0f05",
+            "filename": "H3-LIMIT-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "37d777269480186bda9f4fe6cccbd93dd2824d3bfcc3d285e3c32fb95cfef35a"
+          }
+        ],
+        "evidence": [
+          {
+            "chunkId": "10490e3e-986d-5c9b-b19a-1a29d55b5ed1",
+            "documentVersionId": "80fdd834-05fd-5cd2-a92e-657c510ed7cd",
+            "text": "# H3-ORDER 采购与验收记录\n本订单已采购历史归档 ARC180；归档保留策略尚未配置，归档恢复验收状态未登记。\nH3-BASE 与 H3-ADD 均已签署并适用于同一企业、同一生产服务及全部备份。H3-ADD 仅在查询吞吐指标上优先于 H3-BASE；该优先级不适用于存储位置，存储位置条款互不优先且没有例外。",
+            "filename": "H3-ORDER-v1.txt",
+            "heading": "",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "573b60fc-43b2-5bfd-96c2-5b1c690c1f54",
+            "documentVersionId": "c91eaa1c-6ac3-52e9-87ae-1f74681b0f81",
+            "text": "# H3-FEATURE 历史归档模块\n基础套餐历史巡检记录保存15天。ARC180模块能保存历史巡检记录180天，期间企业管理员无法提前删除。\nARC180生产启用前必须购买模块、配置180天保留策略并完成归档恢复验收。当前订单记录见 H3-ORDER。",
+            "filename": "H3-FEATURE-v1.txt",
+            "heading": "",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "4a632ac5-90d2-51d9-a5d6-a8a640227bff",
+            "documentVersionId": "f7869ba7-f33a-589f-9d79-3da3ce49bff5",
+            "text": "# H3-AUDIT 资质材料清单\nISO 27001：附件仅有内部体系检查表，未附有效认证证书，证书覆盖范围及有效期均未说明。本清单不声明服务运营方是否持有该认证。\nPCI DSS：运营方明确声明本服务截至当前签署日尚未通过 PCI DSS 评估，不能提供当前有效的 PCI DSS 合规证明。这是对尚未通过评估的确认，不是附件遗漏，亦无已约定的完成时间或交付路径。",
+            "filename": "H3-AUDIT-v1.txt",
+            "heading": "",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "02f9235a-4edc-5e2d-8115-6082eb9bc760",
+            "documentVersionId": "831d3dad-7e66-5cc8-a946-d57a1273c839",
+            "text": "# H3-BASE 基础服务协议\n本企业生产查询服务每秒保证处理200个请求。\n本企业全部生产数据及全部备份必须只保存在德国，任何情况下均禁止将这些数据或备份复制到新加坡。",
+            "filename": "H3-BASE-v1.txt",
+            "heading": "",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "845a883f-b14c-5117-b8a2-26914d8e1476",
+            "documentVersionId": "0cdaa06e-54d7-5183-b432-dc7cf429a954",
+            "text": "# H3-ADD 补充服务协议\n本企业生产查询服务每秒保证处理300个请求；本项替代 H3-BASE 的200个请求指标，优先级仅限查询吞吐指标。\n本企业全部生产数据及全部备份必须每日完整复制一份到新加坡，不得省略任何副本。本存储位置条款与 H3-BASE 的德国独占条款均生效且互不优先，不存在例外。",
+            "filename": "H3-ADD-v1.txt",
+            "heading": "",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "c8c78aed-b51e-59b7-ac41-348a3293af1a",
+            "documentVersionId": "9ade3b1d-d89b-5d47-9e95-3c3c9454eab3",
+            "text": "# H3-LIMIT 工单附件限制\n单张巡检工单的附件数量硬上限为12个。所有当前套餐均没有提高该上限的配置或选购项。拆分到多张工单不属于单张工单能力。",
+            "filename": "H3-LIMIT-v1.txt",
+            "heading": "",
+            "pageNumber": ""
+          }
+        ]
+      },
+      "errorCode": "presales_invalid_model_output",
+      "elapsedSeconds": 23.453,
+      "providerRequests": 1,
+      "traces": [
+        {
+          "requestDispatched": true,
+          "input": {
+            "requirement": {
+              "key": "H3-R2",
+              "text": "本服务当前已通过 PCI DSS 评估且能够提供有效合规证明。",
+              "sourceLocation": "H3-2"
+            },
+            "evidence": [
+              {
+                "citationId": "cite_2cbe4fcde32b_1",
+                "text": "# H3-ORDER 采购与验收记录\n本订单已采购历史归档 ARC180；归档保留策略尚未配置，归档恢复验收状态未登记。\nH3-BASE 与 H3-ADD 均已签署并适用于同一企业、同一生产服务及全部备份。H3-ADD 仅在查询吞吐指标上优先于 H3-BASE；该优先级不适用于存储位置，存储位置条款互不优先且没有例外。",
+                "source": {
+                  "label": "来源 1",
+                  "filename": "H3-ORDER-v1.txt",
+                  "applicability": "岚帆巡检本次已签署企业订单，按当前交付状态评估。全部内容虚构。",
+                  "versionNumber": 1,
+                  "latestVersionNumber": 1
+                },
+                "heading": "",
+                "pageNumber": ""
+              },
+              {
+                "citationId": "cite_2cbe4fcde32b_2",
+                "text": "# H3-FEATURE 历史归档模块\n基础套餐历史巡检记录保存15天。ARC180模块能保存历史巡检记录180天，期间企业管理员无法提前删除。\nARC180生产启用前必须购买模块、配置180天保留策略并完成归档恢复验收。当前订单记录见 H3-ORDER。",
+                "source": {
+                  "label": "来源 2",
+                  "filename": "H3-FEATURE-v1.txt",
+                  "applicability": "当前正式版本可选模块规格，启用以正文规定的前提为准。",
+                  "versionNumber": 1,
+                  "latestVersionNumber": 1
+                },
+                "heading": "",
+                "pageNumber": ""
+              },
+              {
+                "citationId": "cite_2cbe4fcde32b_3",
+                "text": "# H3-AUDIT 资质材料清单\nISO 27001：附件仅有内部体系检查表，未附有效认证证书，证书覆盖范围及有效期均未说明。本清单不声明服务运营方是否持有该认证。\nPCI DSS：运营方明确声明本服务截至当前签署日尚未通过 PCI DSS 评估，不能提供当前有效的 PCI DSS 合规证明。这是对尚未通过评估的确认，不是附件遗漏，亦无已约定的完成时间或交付路径。",
+                "source": {
+                  "label": "来源 3",
+                  "filename": "H3-AUDIT-v1.txt",
+                  "applicability": "当前签署日的资质说明，ISO与PCI为不同事项。",
+                  "versionNumber": 1,
+                  "latestVersionNumber": 1
+                },
+                "heading": "",
+                "pageNumber": ""
+              },
+              {
+                "citationId": "cite_2cbe4fcde32b_4",
+                "text": "# H3-BASE 基础服务协议\n本企业生产查询服务每秒保证处理200个请求。\n本企业全部生产数据及全部备份必须只保存在德国，任何情况下均禁止将这些数据或备份复制到新加坡。",
+                "source": {
+                  "label": "来源 4",
+                  "filename": "H3-BASE-v1.txt",
+                  "applicability": "已签署基础协议，吞吐指标按已签署补充协议替代，存储位置互不优先。",
+                  "versionNumber": 1,
+                  "latestVersionNumber": 1
+                },
+                "heading": "",
+                "pageNumber": ""
+              },
+              {
+                "citationId": "cite_2cbe4fcde32b_5",
+                "text": "# H3-ADD 补充服务协议\n本企业生产查询服务每秒保证处理300个请求；本项替代 H3-BASE 的200个请求指标，优先级仅限查询吞吐指标。\n本企业全部生产数据及全部备份必须每日完整复制一份到新加坡，不得省略任何副本。本存储位置条款与 H3-BASE 的德国独占条款均生效且互不优先，不存在例外。",
+                "source": {
+                  "label": "来源 5",
+                  "filename": "H3-ADD-v1.txt",
+                  "applicability": "已签署补充协议，只有吞吐指标具备明示优先级。",
+                  "versionNumber": 1,
+                  "latestVersionNumber": 1
+                },
+                "heading": "",
+                "pageNumber": ""
+              },
+              {
+                "citationId": "cite_2cbe4fcde32b_6",
+                "text": "# H3-LIMIT 工单附件限制\n单张巡检工单的附件数量硬上限为12个。所有当前套餐均没有提高该上限的配置或选购项。拆分到多张工单不属于单张工单能力。",
+                "source": {
+                  "label": "来源 6",
+                  "filename": "H3-LIMIT-v1.txt",
+                  "applicability": "当前正式版本所有套餐和模块均适用。",
+                  "versionNumber": 1,
+                  "latestVersionNumber": 1
+                },
+                "heading": "",
+                "pageNumber": ""
+              }
+            ]
+          },
+          "httpStatus": 200,
+          "response": {}
+        }
+      ]
+    },
+    {
+      "key": "H3-R3",
+      "startedAt": "2026-09-23T16:48:15.790121+00:00",
+      "state": "failed",
+      "provenance": {
+        "promptVersion": "presales.v7",
+        "promptSha256": "11542919c2ebb588715fa788def38325b9e4384883fdb277bb6b9046d8dce55f",
+        "configuredModelVersion": null,
+        "configuredModelRevision": null,
+        "providerResponseId": null,
+        "returnedModel": null
+      },
+      "sourceInput": {
+        "requirement": {
+          "key": "H3-R3",
+          "text": "本企业生产数据及全部备份必须仅存德国，不得复制至新加坡。",
+          "sourceLocation": "H3-3"
+        },
+        "sources": [
+          {
+            "versionId": "80fdd834-05fd-5cd2-a92e-657c510ed7cd",
+            "applicability": "岚帆巡检本次已签署企业订单，按当前交付状态评估。全部内容虚构。",
+            "documentId": "07e8110c-67a3-5afd-9e8b-0ec9edf9a876",
+            "generationId": "acaa5000-c1c6-5eca-b6e4-4ddf658bfd9f",
+            "filename": "H3-ORDER-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "a2438359bf0ab5d4d94f4ebe1354a376ccdd1d98e077522414178f273461f0cc"
+          },
+          {
+            "versionId": "c91eaa1c-6ac3-52e9-87ae-1f74681b0f81",
+            "applicability": "当前正式版本可选模块规格，启用以正文规定的前提为准。",
+            "documentId": "73fbcf91-2f3d-5589-b596-3e2c853918b6",
+            "generationId": "2fa32d42-55f5-5764-ab2f-8271543c9124",
+            "filename": "H3-FEATURE-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "2129484aa3cba1e60ad999219cc92ff916a1f47207b2416fc8819651b2bacfbe"
+          },
+          {
+            "versionId": "f7869ba7-f33a-589f-9d79-3da3ce49bff5",
+            "applicability": "当前签署日的资质说明，ISO与PCI为不同事项。",
+            "documentId": "bc3cbb1f-5efa-5678-bf22-741f3d975d75",
+            "generationId": "6a0b3943-9a52-5ab5-bc6b-3e9b5e57ded8",
+            "filename": "H3-AUDIT-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "feb29f8eb629e20c8128729eaf65096c808f0b8416be3dfb477709e0acac6ff4"
+          },
+          {
+            "versionId": "831d3dad-7e66-5cc8-a946-d57a1273c839",
+            "applicability": "已签署基础协议，吞吐指标按已签署补充协议替代，存储位置互不优先。",
+            "documentId": "e86b0ffe-c503-54d8-84fb-443859ab5db7",
+            "generationId": "4aeb5600-71d9-5b07-8f16-c4ea010dee02",
+            "filename": "H3-BASE-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "9f69d99af90124ffd3421aa844ccac13f82f51eee4972f4e9a1809418dd9c6ba"
+          },
+          {
+            "versionId": "0cdaa06e-54d7-5183-b432-dc7cf429a954",
+            "applicability": "已签署补充协议，只有吞吐指标具备明示优先级。",
+            "documentId": "0687fcb8-22b2-51ae-ae60-ced1d7187f7d",
+            "generationId": "ecbd63dd-0a74-5266-beee-1b1eac4a61be",
+            "filename": "H3-ADD-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "468b59e4cf1a252f52bed780ffd7c64f47548d88f6bd46adbf494576591fb5f1"
+          },
+          {
+            "versionId": "9ade3b1d-d89b-5d47-9e95-3c3c9454eab3",
+            "applicability": "当前正式版本所有套餐和模块均适用。",
+            "documentId": "419742fb-e478-54ba-b938-8f5768e8ee92",
+            "generationId": "3b894e1e-d5fc-5687-b169-70da6c9f0f05",
+            "filename": "H3-LIMIT-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "37d777269480186bda9f4fe6cccbd93dd2824d3bfcc3d285e3c32fb95cfef35a"
+          }
+        ],
+        "evidence": [
+          {
+            "chunkId": "10490e3e-986d-5c9b-b19a-1a29d55b5ed1",
+            "documentVersionId": "80fdd834-05fd-5cd2-a92e-657c510ed7cd",
+            "text": "# H3-ORDER 采购与验收记录\n本订单已采购历史归档 ARC180；归档保留策略尚未配置，归档恢复验收状态未登记。\nH3-BASE 与 H3-ADD 均已签署并适用于同一企业、同一生产服务及全部备份。H3-ADD 仅在查询吞吐指标上优先于 H3-BASE；该优先级不适用于存储位置，存储位置条款互不优先且没有例外。",
+            "filename": "H3-ORDER-v1.txt",
+            "heading": "",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "573b60fc-43b2-5bfd-96c2-5b1c690c1f54",
+            "documentVersionId": "c91eaa1c-6ac3-52e9-87ae-1f74681b0f81",
+            "text": "# H3-FEATURE 历史归档模块\n基础套餐历史巡检记录保存15天。ARC180模块能保存历史巡检记录180天，期间企业管理员无法提前删除。\nARC180生产启用前必须购买模块、配置180天保留策略并完成归档恢复验收。当前订单记录见 H3-ORDER。",
+            "filename": "H3-FEATURE-v1.txt",
+            "heading": "",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "4a632ac5-90d2-51d9-a5d6-a8a640227bff",
+            "documentVersionId": "f7869ba7-f33a-589f-9d79-3da3ce49bff5",
+            "text": "# H3-AUDIT 资质材料清单\nISO 27001：附件仅有内部体系检查表，未附有效认证证书，证书覆盖范围及有效期均未说明。本清单不声明服务运营方是否持有该认证。\nPCI DSS：运营方明确声明本服务截至当前签署日尚未通过 PCI DSS 评估，不能提供当前有效的 PCI DSS 合规证明。这是对尚未通过评估的确认，不是附件遗漏，亦无已约定的完成时间或交付路径。",
+            "filename": "H3-AUDIT-v1.txt",
+            "heading": "",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "02f9235a-4edc-5e2d-8115-6082eb9bc760",
+            "documentVersionId": "831d3dad-7e66-5cc8-a946-d57a1273c839",
+            "text": "# H3-BASE 基础服务协议\n本企业生产查询服务每秒保证处理200个请求。\n本企业全部生产数据及全部备份必须只保存在德国，任何情况下均禁止将这些数据或备份复制到新加坡。",
+            "filename": "H3-BASE-v1.txt",
+            "heading": "",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "845a883f-b14c-5117-b8a2-26914d8e1476",
+            "documentVersionId": "0cdaa06e-54d7-5183-b432-dc7cf429a954",
+            "text": "# H3-ADD 补充服务协议\n本企业生产查询服务每秒保证处理300个请求；本项替代 H3-BASE 的200个请求指标，优先级仅限查询吞吐指标。\n本企业全部生产数据及全部备份必须每日完整复制一份到新加坡，不得省略任何副本。本存储位置条款与 H3-BASE 的德国独占条款均生效且互不优先，不存在例外。",
+            "filename": "H3-ADD-v1.txt",
+            "heading": "",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "c8c78aed-b51e-59b7-ac41-348a3293af1a",
+            "documentVersionId": "9ade3b1d-d89b-5d47-9e95-3c3c9454eab3",
+            "text": "# H3-LIMIT 工单附件限制\n单张巡检工单的附件数量硬上限为12个。所有当前套餐均没有提高该上限的配置或选购项。拆分到多张工单不属于单张工单能力。",
+            "filename": "H3-LIMIT-v1.txt",
+            "heading": "",
+            "pageNumber": ""
+          }
+        ]
+      },
+      "errorCode": "presales_model_timeout",
+      "elapsedSeconds": 120.0,
+      "providerRequests": 1,
+      "traces": [
+        {
+          "requestDispatched": true,
+          "input": {
+            "requirement": {
+              "key": "H3-R3",
+              "text": "本企业生产数据及全部备份必须仅存德国，不得复制至新加坡。",
+              "sourceLocation": "H3-3"
+            },
+            "evidence": [
+              {
+                "citationId": "cite_3fcf5c07738c_1",
+                "text": "# H3-ORDER 采购与验收记录\n本订单已采购历史归档 ARC180；归档保留策略尚未配置，归档恢复验收状态未登记。\nH3-BASE 与 H3-ADD 均已签署并适用于同一企业、同一生产服务及全部备份。H3-ADD 仅在查询吞吐指标上优先于 H3-BASE；该优先级不适用于存储位置，存储位置条款互不优先且没有例外。",
+                "source": {
+                  "label": "来源 1",
+                  "filename": "H3-ORDER-v1.txt",
+                  "applicability": "岚帆巡检本次已签署企业订单，按当前交付状态评估。全部内容虚构。",
+                  "versionNumber": 1,
+                  "latestVersionNumber": 1
+                },
+                "heading": "",
+                "pageNumber": ""
+              },
+              {
+                "citationId": "cite_3fcf5c07738c_2",
+                "text": "# H3-FEATURE 历史归档模块\n基础套餐历史巡检记录保存15天。ARC180模块能保存历史巡检记录180天，期间企业管理员无法提前删除。\nARC180生产启用前必须购买模块、配置180天保留策略并完成归档恢复验收。当前订单记录见 H3-ORDER。",
+                "source": {
+                  "label": "来源 2",
+                  "filename": "H3-FEATURE-v1.txt",
+                  "applicability": "当前正式版本可选模块规格，启用以正文规定的前提为准。",
+                  "versionNumber": 1,
+                  "latestVersionNumber": 1
+                },
+                "heading": "",
+                "pageNumber": ""
+              },
+              {
+                "citationId": "cite_3fcf5c07738c_3",
+                "text": "# H3-AUDIT 资质材料清单\nISO 27001：附件仅有内部体系检查表，未附有效认证证书，证书覆盖范围及有效期均未说明。本清单不声明服务运营方是否持有该认证。\nPCI DSS：运营方明确声明本服务截至当前签署日尚未通过 PCI DSS 评估，不能提供当前有效的 PCI DSS 合规证明。这是对尚未通过评估的确认，不是附件遗漏，亦无已约定的完成时间或交付路径。",
+                "source": {
+                  "label": "来源 3",
+                  "filename": "H3-AUDIT-v1.txt",
+                  "applicability": "当前签署日的资质说明，ISO与PCI为不同事项。",
+                  "versionNumber": 1,
+                  "latestVersionNumber": 1
+                },
+                "heading": "",
+                "pageNumber": ""
+              },
+              {
+                "citationId": "cite_3fcf5c07738c_4",
+                "text": "# H3-BASE 基础服务协议\n本企业生产查询服务每秒保证处理200个请求。\n本企业全部生产数据及全部备份必须只保存在德国，任何情况下均禁止将这些数据或备份复制到新加坡。",
+                "source": {
+                  "label": "来源 4",
+                  "filename": "H3-BASE-v1.txt",
+                  "applicability": "已签署基础协议，吞吐指标按已签署补充协议替代，存储位置互不优先。",
+                  "versionNumber": 1,
+                  "latestVersionNumber": 1
+                },
+                "heading": "",
+                "pageNumber": ""
+              },
+              {
+                "citationId": "cite_3fcf5c07738c_5",
+                "text": "# H3-ADD 补充服务协议\n本企业生产查询服务每秒保证处理300个请求；本项替代 H3-BASE 的200个请求指标，优先级仅限查询吞吐指标。\n本企业全部生产数据及全部备份必须每日完整复制一份到新加坡，不得省略任何副本。本存储位置条款与 H3-BASE 的德国独占条款均生效且互不优先，不存在例外。",
+                "source": {
+                  "label": "来源 5",
+                  "filename": "H3-ADD-v1.txt",
+                  "applicability": "已签署补充协议，只有吞吐指标具备明示优先级。",
+                  "versionNumber": 1,
+                  "latestVersionNumber": 1
+                },
+                "heading": "",
+                "pageNumber": ""
+              },
+              {
+                "citationId": "cite_3fcf5c07738c_6",
+                "text": "# H3-LIMIT 工单附件限制\n单张巡检工单的附件数量硬上限为12个。所有当前套餐均没有提高该上限的配置或选购项。拆分到多张工单不属于单张工单能力。",
+                "source": {
+                  "label": "来源 6",
+                  "filename": "H3-LIMIT-v1.txt",
+                  "applicability": "当前正式版本所有套餐和模块均适用。",
+                  "versionNumber": 1,
+                  "latestVersionNumber": 1
+                },
+                "heading": "",
+                "pageNumber": ""
+              }
+            ]
+          },
+          "transportFailure": {
+            "type": "CancelledError",
+            "phase": "awaiting_response_headers"
+          }
+        }
+      ]
+    },
+    {
+      "key": "H3-R4",
+      "startedAt": "2026-09-23T16:50:15.807683+00:00",
+      "state": "succeeded",
+      "provenance": {
+        "promptVersion": "presales.v7",
+        "promptSha256": "11542919c2ebb588715fa788def38325b9e4384883fdb277bb6b9046d8dce55f",
+        "configuredModelVersion": null,
+        "configuredModelRevision": null,
+        "providerResponseId": null,
+        "returnedModel": null
+      },
+      "sourceInput": {
+        "requirement": {
+          "key": "H3-R4",
+          "text": "本订单生产查询吞吐承诺至少为每秒250个请求。",
+          "sourceLocation": "H3-4"
+        },
+        "sources": [
+          {
+            "versionId": "80fdd834-05fd-5cd2-a92e-657c510ed7cd",
+            "applicability": "岚帆巡检本次已签署企业订单，按当前交付状态评估。全部内容虚构。",
+            "documentId": "07e8110c-67a3-5afd-9e8b-0ec9edf9a876",
+            "generationId": "acaa5000-c1c6-5eca-b6e4-4ddf658bfd9f",
+            "filename": "H3-ORDER-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "a2438359bf0ab5d4d94f4ebe1354a376ccdd1d98e077522414178f273461f0cc"
+          },
+          {
+            "versionId": "c91eaa1c-6ac3-52e9-87ae-1f74681b0f81",
+            "applicability": "当前正式版本可选模块规格，启用以正文规定的前提为准。",
+            "documentId": "73fbcf91-2f3d-5589-b596-3e2c853918b6",
+            "generationId": "2fa32d42-55f5-5764-ab2f-8271543c9124",
+            "filename": "H3-FEATURE-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "2129484aa3cba1e60ad999219cc92ff916a1f47207b2416fc8819651b2bacfbe"
+          },
+          {
+            "versionId": "f7869ba7-f33a-589f-9d79-3da3ce49bff5",
+            "applicability": "当前签署日的资质说明，ISO与PCI为不同事项。",
+            "documentId": "bc3cbb1f-5efa-5678-bf22-741f3d975d75",
+            "generationId": "6a0b3943-9a52-5ab5-bc6b-3e9b5e57ded8",
+            "filename": "H3-AUDIT-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "feb29f8eb629e20c8128729eaf65096c808f0b8416be3dfb477709e0acac6ff4"
+          },
+          {
+            "versionId": "831d3dad-7e66-5cc8-a946-d57a1273c839",
+            "applicability": "已签署基础协议，吞吐指标按已签署补充协议替代，存储位置互不优先。",
+            "documentId": "e86b0ffe-c503-54d8-84fb-443859ab5db7",
+            "generationId": "4aeb5600-71d9-5b07-8f16-c4ea010dee02",
+            "filename": "H3-BASE-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "9f69d99af90124ffd3421aa844ccac13f82f51eee4972f4e9a1809418dd9c6ba"
+          },
+          {
+            "versionId": "0cdaa06e-54d7-5183-b432-dc7cf429a954",
+            "applicability": "已签署补充协议，只有吞吐指标具备明示优先级。",
+            "documentId": "0687fcb8-22b2-51ae-ae60-ced1d7187f7d",
+            "generationId": "ecbd63dd-0a74-5266-beee-1b1eac4a61be",
+            "filename": "H3-ADD-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "468b59e4cf1a252f52bed780ffd7c64f47548d88f6bd46adbf494576591fb5f1"
+          },
+          {
+            "versionId": "9ade3b1d-d89b-5d47-9e95-3c3c9454eab3",
+            "applicability": "当前正式版本所有套餐和模块均适用。",
+            "documentId": "419742fb-e478-54ba-b938-8f5768e8ee92",
+            "generationId": "3b894e1e-d5fc-5687-b169-70da6c9f0f05",
+            "filename": "H3-LIMIT-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "37d777269480186bda9f4fe6cccbd93dd2824d3bfcc3d285e3c32fb95cfef35a"
+          }
+        ],
+        "evidence": [
+          {
+            "chunkId": "10490e3e-986d-5c9b-b19a-1a29d55b5ed1",
+            "documentVersionId": "80fdd834-05fd-5cd2-a92e-657c510ed7cd",
+            "text": "# H3-ORDER 采购与验收记录\n本订单已采购历史归档 ARC180；归档保留策略尚未配置，归档恢复验收状态未登记。\nH3-BASE 与 H3-ADD 均已签署并适用于同一企业、同一生产服务及全部备份。H3-ADD 仅在查询吞吐指标上优先于 H3-BASE；该优先级不适用于存储位置，存储位置条款互不优先且没有例外。",
+            "filename": "H3-ORDER-v1.txt",
+            "heading": "",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "573b60fc-43b2-5bfd-96c2-5b1c690c1f54",
+            "documentVersionId": "c91eaa1c-6ac3-52e9-87ae-1f74681b0f81",
+            "text": "# H3-FEATURE 历史归档模块\n基础套餐历史巡检记录保存15天。ARC180模块能保存历史巡检记录180天，期间企业管理员无法提前删除。\nARC180生产启用前必须购买模块、配置180天保留策略并完成归档恢复验收。当前订单记录见 H3-ORDER。",
+            "filename": "H3-FEATURE-v1.txt",
+            "heading": "",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "4a632ac5-90d2-51d9-a5d6-a8a640227bff",
+            "documentVersionId": "f7869ba7-f33a-589f-9d79-3da3ce49bff5",
+            "text": "# H3-AUDIT 资质材料清单\nISO 27001：附件仅有内部体系检查表，未附有效认证证书，证书覆盖范围及有效期均未说明。本清单不声明服务运营方是否持有该认证。\nPCI DSS：运营方明确声明本服务截至当前签署日尚未通过 PCI DSS 评估，不能提供当前有效的 PCI DSS 合规证明。这是对尚未通过评估的确认，不是附件遗漏，亦无已约定的完成时间或交付路径。",
+            "filename": "H3-AUDIT-v1.txt",
+            "heading": "",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "02f9235a-4edc-5e2d-8115-6082eb9bc760",
+            "documentVersionId": "831d3dad-7e66-5cc8-a946-d57a1273c839",
+            "text": "# H3-BASE 基础服务协议\n本企业生产查询服务每秒保证处理200个请求。\n本企业全部生产数据及全部备份必须只保存在德国，任何情况下均禁止将这些数据或备份复制到新加坡。",
+            "filename": "H3-BASE-v1.txt",
+            "heading": "",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "845a883f-b14c-5117-b8a2-26914d8e1476",
+            "documentVersionId": "0cdaa06e-54d7-5183-b432-dc7cf429a954",
+            "text": "# H3-ADD 补充服务协议\n本企业生产查询服务每秒保证处理300个请求；本项替代 H3-BASE 的200个请求指标，优先级仅限查询吞吐指标。\n本企业全部生产数据及全部备份必须每日完整复制一份到新加坡，不得省略任何副本。本存储位置条款与 H3-BASE 的德国独占条款均生效且互不优先，不存在例外。",
+            "filename": "H3-ADD-v1.txt",
+            "heading": "",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "c8c78aed-b51e-59b7-ac41-348a3293af1a",
+            "documentVersionId": "9ade3b1d-d89b-5d47-9e95-3c3c9454eab3",
+            "text": "# H3-LIMIT 工单附件限制\n单张巡检工单的附件数量硬上限为12个。所有当前套餐均没有提高该上限的配置或选购项。拆分到多张工单不属于单张工单能力。",
+            "filename": "H3-LIMIT-v1.txt",
+            "heading": "",
+            "pageNumber": ""
+          }
+        ]
+      },
+      "result": {
+        "draft": {
+          "status": "supported",
+          "answer": "本订单的生产查询吞吐承诺以已签署的 H3-ADD 为准：每秒保证处理300个请求，并明确替代 H3-BASE 的每秒200个请求；H3-ORDER 亦确认该优先关系仅适用于查询吞吐指标。300个请求每秒不低于所要求的250个请求每秒，且该承诺未附带额外采购、配置或验收前提，因此本要求成立。",
+          "conditions": [],
+          "missingInformation": [],
+          "citations": [
+            {
+              "chunkId": "10490e3e-986d-5c9b-b19a-1a29d55b5ed1",
+              "documentVersionId": "80fdd834-05fd-5cd2-a92e-657c510ed7cd",
+              "excerpt": "# H3-ORDER 采购与验收记录\n本订单已采购历史归档 ARC180；归档保留策略尚未配置，归档恢复验收状态未登记。\nH3-BASE 与 H3-ADD 均已签署并适用于同一企业、同一生产服务及全部备份。H3-ADD 仅在查询吞吐指标上优先于 H3-BASE；该优先级不适用于存储位置，存储位置条款互不优先且没有例外。"
+            },
+            {
+              "chunkId": "02f9235a-4edc-5e2d-8115-6082eb9bc760",
+              "documentVersionId": "831d3dad-7e66-5cc8-a946-d57a1273c839",
+              "excerpt": "# H3-BASE 基础服务协议\n本企业生产查询服务每秒保证处理200个请求。\n本企业全部生产数据及全部备份必须只保存在德国，任何情况下均禁止将这些数据或备份复制到新加坡。"
+            },
+            {
+              "chunkId": "845a883f-b14c-5117-b8a2-26914d8e1476",
+              "documentVersionId": "0cdaa06e-54d7-5183-b432-dc7cf429a954",
+              "excerpt": "# H3-ADD 补充服务协议\n本企业生产查询服务每秒保证处理300个请求；本项替代 H3-BASE 的200个请求指标，优先级仅限查询吞吐指标。\n本企业全部生产数据及全部备份必须每日完整复制一份到新加坡，不得省略任何副本。本存储位置条款与 H3-BASE 的德国独占条款均生效且互不优先，不存在例外。"
+            }
+          ]
+        },
+        "usage": {
+          "prompt_tokens": 3699,
+          "completion_tokens": 2370,
+          "total_tokens": 6069
+        },
+        "returnedModel": "grok-4.7",
+        "providerResponseId": "chatcmpl-dc7c1780"
+      },
+      "elapsedSeconds": 24.25,
+      "providerRequests": 1,
+      "traces": [
+        {
+          "requestDispatched": true,
+          "input": {
+            "requirement": {
+              "key": "H3-R4",
+              "text": "本订单生产查询吞吐承诺至少为每秒250个请求。",
+              "sourceLocation": "H3-4"
+            },
+            "evidence": [
+              {
+                "citationId": "cite_96f44c06c2d4_1",
+                "text": "# H3-ORDER 采购与验收记录\n本订单已采购历史归档 ARC180；归档保留策略尚未配置，归档恢复验收状态未登记。\nH3-BASE 与 H3-ADD 均已签署并适用于同一企业、同一生产服务及全部备份。H3-ADD 仅在查询吞吐指标上优先于 H3-BASE；该优先级不适用于存储位置，存储位置条款互不优先且没有例外。",
+                "source": {
+                  "label": "来源 1",
+                  "filename": "H3-ORDER-v1.txt",
+                  "applicability": "岚帆巡检本次已签署企业订单，按当前交付状态评估。全部内容虚构。",
+                  "versionNumber": 1,
+                  "latestVersionNumber": 1
+                },
+                "heading": "",
+                "pageNumber": ""
+              },
+              {
+                "citationId": "cite_96f44c06c2d4_2",
+                "text": "# H3-FEATURE 历史归档模块\n基础套餐历史巡检记录保存15天。ARC180模块能保存历史巡检记录180天，期间企业管理员无法提前删除。\nARC180生产启用前必须购买模块、配置180天保留策略并完成归档恢复验收。当前订单记录见 H3-ORDER。",
+                "source": {
+                  "label": "来源 2",
+                  "filename": "H3-FEATURE-v1.txt",
+                  "applicability": "当前正式版本可选模块规格，启用以正文规定的前提为准。",
+                  "versionNumber": 1,
+                  "latestVersionNumber": 1
+                },
+                "heading": "",
+                "pageNumber": ""
+              },
+              {
+                "citationId": "cite_96f44c06c2d4_3",
+                "text": "# H3-AUDIT 资质材料清单\nISO 27001：附件仅有内部体系检查表，未附有效认证证书，证书覆盖范围及有效期均未说明。本清单不声明服务运营方是否持有该认证。\nPCI DSS：运营方明确声明本服务截至当前签署日尚未通过 PCI DSS 评估，不能提供当前有效的 PCI DSS 合规证明。这是对尚未通过评估的确认，不是附件遗漏，亦无已约定的完成时间或交付路径。",
+                "source": {
+                  "label": "来源 3",
+                  "filename": "H3-AUDIT-v1.txt",
+                  "applicability": "当前签署日的资质说明，ISO与PCI为不同事项。",
+                  "versionNumber": 1,
+                  "latestVersionNumber": 1
+                },
+                "heading": "",
+                "pageNumber": ""
+              },
+              {
+                "citationId": "cite_96f44c06c2d4_4",
+                "text": "# H3-BASE 基础服务协议\n本企业生产查询服务每秒保证处理200个请求。\n本企业全部生产数据及全部备份必须只保存在德国，任何情况下均禁止将这些数据或备份复制到新加坡。",
+                "source": {
+                  "label": "来源 4",
+                  "filename": "H3-BASE-v1.txt",
+                  "applicability": "已签署基础协议，吞吐指标按已签署补充协议替代，存储位置互不优先。",
+                  "versionNumber": 1,
+                  "latestVersionNumber": 1
+                },
+                "heading": "",
+                "pageNumber": ""
+              },
+              {
+                "citationId": "cite_96f44c06c2d4_5",
+                "text": "# H3-ADD 补充服务协议\n本企业生产查询服务每秒保证处理300个请求；本项替代 H3-BASE 的200个请求指标，优先级仅限查询吞吐指标。\n本企业全部生产数据及全部备份必须每日完整复制一份到新加坡，不得省略任何副本。本存储位置条款与 H3-BASE 的德国独占条款均生效且互不优先，不存在例外。",
+                "source": {
+                  "label": "来源 5",
+                  "filename": "H3-ADD-v1.txt",
+                  "applicability": "已签署补充协议，只有吞吐指标具备明示优先级。",
+                  "versionNumber": 1,
+                  "latestVersionNumber": 1
+                },
+                "heading": "",
+                "pageNumber": ""
+              },
+              {
+                "citationId": "cite_96f44c06c2d4_6",
+                "text": "# H3-LIMIT 工单附件限制\n单张巡检工单的附件数量硬上限为12个。所有当前套餐均没有提高该上限的配置或选购项。拆分到多张工单不属于单张工单能力。",
+                "source": {
+                  "label": "来源 6",
+                  "filename": "H3-LIMIT-v1.txt",
+                  "applicability": "当前正式版本所有套餐和模块均适用。",
+                  "versionNumber": 1,
+                  "latestVersionNumber": 1
+                },
+                "heading": "",
+                "pageNumber": ""
+              }
+            ]
+          },
+          "httpStatus": 200,
+          "response": {
+            "id": "chatcmpl-dc7c1780",
+            "model": "grok-4.7",
+            "choices": [
+              {
+                "index": 0,
+                "message": {
+                  "role": "assistant",
+                  "content": "{\"status\":\"supported\",\"answer\":\"本订单的生产查询吞吐承诺以已签署的 H3-ADD 为准：每秒保证处理300个请求，并明确替代 H3-BASE 的每秒200个请求；H3-ORDER 亦确认该优先关系仅适用于查询吞吐指标。300个请求每秒不低于所要求的250个请求每秒，且该承诺未附带额外采购、配置或验收前提，因此本要求成立。\",\"prerequisites\":[],\"citations\":[{\"citationId\":\"cite_96f44c06c2d4_1\"},{\"citationId\":\"cite_96f44c06c2d4_4\"},{\"citationId\":\"cite_96f44c06c2d4_5\"}]}",
+                  "reasoning": "The user wants me to act as a pre-sales requirement response assistant and evaluate a specific requirement based only on the provided evidence. I need to return a JSON object matching the schema.\n",
+                  "reasoning_content": "The user wants me to act as a pre-sales requirement response assistant and evaluate a specific requirement based only on the provided evidence. I need to return a JSON object matching the schema.\n"
+                },
+                "finish_reason": "stop"
+              }
+            ],
+            "usage": {
+              "prompt_tokens": 3699,
+              "completion_tokens": 2370,
+              "total_tokens": 6069,
+              "input_tokens": 3699,
+              "output_tokens": 2370,
+              "reasoning_tokens": 2205,
+              "cached_tokens": 1152,
+              "prompt_tokens_details": {
+                "cached_tokens": 1152
+              },
+              "input_tokens_details": {
+                "cached_tokens": 1152
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "key": "H3-R5",
+      "startedAt": "2026-09-23T16:50:40.070401+00:00",
+      "state": "succeeded",
+      "provenance": {
+        "promptVersion": "presales.v7",
+        "promptSha256": "11542919c2ebb588715fa788def38325b9e4384883fdb277bb6b9046d8dce55f",
+        "configuredModelVersion": null,
+        "configuredModelRevision": null,
+        "providerResponseId": null,
+        "returnedModel": null
+      },
+      "sourceInput": {
+        "requirement": {
+          "key": "H3-R5",
+          "text": "本企业可将历史巡检记录保留180天，期间管理员也不能提前删除。",
+          "sourceLocation": "H3-5"
+        },
+        "sources": [
+          {
+            "versionId": "80fdd834-05fd-5cd2-a92e-657c510ed7cd",
+            "applicability": "岚帆巡检本次已签署企业订单，按当前交付状态评估。全部内容虚构。",
+            "documentId": "07e8110c-67a3-5afd-9e8b-0ec9edf9a876",
+            "generationId": "acaa5000-c1c6-5eca-b6e4-4ddf658bfd9f",
+            "filename": "H3-ORDER-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "a2438359bf0ab5d4d94f4ebe1354a376ccdd1d98e077522414178f273461f0cc"
+          },
+          {
+            "versionId": "c91eaa1c-6ac3-52e9-87ae-1f74681b0f81",
+            "applicability": "当前正式版本可选模块规格，启用以正文规定的前提为准。",
+            "documentId": "73fbcf91-2f3d-5589-b596-3e2c853918b6",
+            "generationId": "2fa32d42-55f5-5764-ab2f-8271543c9124",
+            "filename": "H3-FEATURE-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "2129484aa3cba1e60ad999219cc92ff916a1f47207b2416fc8819651b2bacfbe"
+          },
+          {
+            "versionId": "f7869ba7-f33a-589f-9d79-3da3ce49bff5",
+            "applicability": "当前签署日的资质说明，ISO与PCI为不同事项。",
+            "documentId": "bc3cbb1f-5efa-5678-bf22-741f3d975d75",
+            "generationId": "6a0b3943-9a52-5ab5-bc6b-3e9b5e57ded8",
+            "filename": "H3-AUDIT-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "feb29f8eb629e20c8128729eaf65096c808f0b8416be3dfb477709e0acac6ff4"
+          },
+          {
+            "versionId": "831d3dad-7e66-5cc8-a946-d57a1273c839",
+            "applicability": "已签署基础协议，吞吐指标按已签署补充协议替代，存储位置互不优先。",
+            "documentId": "e86b0ffe-c503-54d8-84fb-443859ab5db7",
+            "generationId": "4aeb5600-71d9-5b07-8f16-c4ea010dee02",
+            "filename": "H3-BASE-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "9f69d99af90124ffd3421aa844ccac13f82f51eee4972f4e9a1809418dd9c6ba"
+          },
+          {
+            "versionId": "0cdaa06e-54d7-5183-b432-dc7cf429a954",
+            "applicability": "已签署补充协议，只有吞吐指标具备明示优先级。",
+            "documentId": "0687fcb8-22b2-51ae-ae60-ced1d7187f7d",
+            "generationId": "ecbd63dd-0a74-5266-beee-1b1eac4a61be",
+            "filename": "H3-ADD-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "468b59e4cf1a252f52bed780ffd7c64f47548d88f6bd46adbf494576591fb5f1"
+          },
+          {
+            "versionId": "9ade3b1d-d89b-5d47-9e95-3c3c9454eab3",
+            "applicability": "当前正式版本所有套餐和模块均适用。",
+            "documentId": "419742fb-e478-54ba-b938-8f5768e8ee92",
+            "generationId": "3b894e1e-d5fc-5687-b169-70da6c9f0f05",
+            "filename": "H3-LIMIT-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "37d777269480186bda9f4fe6cccbd93dd2824d3bfcc3d285e3c32fb95cfef35a"
+          }
+        ],
+        "evidence": [
+          {
+            "chunkId": "10490e3e-986d-5c9b-b19a-1a29d55b5ed1",
+            "documentVersionId": "80fdd834-05fd-5cd2-a92e-657c510ed7cd",
+            "text": "# H3-ORDER 采购与验收记录\n本订单已采购历史归档 ARC180；归档保留策略尚未配置，归档恢复验收状态未登记。\nH3-BASE 与 H3-ADD 均已签署并适用于同一企业、同一生产服务及全部备份。H3-ADD 仅在查询吞吐指标上优先于 H3-BASE；该优先级不适用于存储位置，存储位置条款互不优先且没有例外。",
+            "filename": "H3-ORDER-v1.txt",
+            "heading": "",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "573b60fc-43b2-5bfd-96c2-5b1c690c1f54",
+            "documentVersionId": "c91eaa1c-6ac3-52e9-87ae-1f74681b0f81",
+            "text": "# H3-FEATURE 历史归档模块\n基础套餐历史巡检记录保存15天。ARC180模块能保存历史巡检记录180天，期间企业管理员无法提前删除。\nARC180生产启用前必须购买模块、配置180天保留策略并完成归档恢复验收。当前订单记录见 H3-ORDER。",
+            "filename": "H3-FEATURE-v1.txt",
+            "heading": "",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "4a632ac5-90d2-51d9-a5d6-a8a640227bff",
+            "documentVersionId": "f7869ba7-f33a-589f-9d79-3da3ce49bff5",
+            "text": "# H3-AUDIT 资质材料清单\nISO 27001：附件仅有内部体系检查表，未附有效认证证书，证书覆盖范围及有效期均未说明。本清单不声明服务运营方是否持有该认证。\nPCI DSS：运营方明确声明本服务截至当前签署日尚未通过 PCI DSS 评估，不能提供当前有效的 PCI DSS 合规证明。这是对尚未通过评估的确认，不是附件遗漏，亦无已约定的完成时间或交付路径。",
+            "filename": "H3-AUDIT-v1.txt",
+            "heading": "",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "02f9235a-4edc-5e2d-8115-6082eb9bc760",
+            "documentVersionId": "831d3dad-7e66-5cc8-a946-d57a1273c839",
+            "text": "# H3-BASE 基础服务协议\n本企业生产查询服务每秒保证处理200个请求。\n本企业全部生产数据及全部备份必须只保存在德国，任何情况下均禁止将这些数据或备份复制到新加坡。",
+            "filename": "H3-BASE-v1.txt",
+            "heading": "",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "845a883f-b14c-5117-b8a2-26914d8e1476",
+            "documentVersionId": "0cdaa06e-54d7-5183-b432-dc7cf429a954",
+            "text": "# H3-ADD 补充服务协议\n本企业生产查询服务每秒保证处理300个请求；本项替代 H3-BASE 的200个请求指标，优先级仅限查询吞吐指标。\n本企业全部生产数据及全部备份必须每日完整复制一份到新加坡，不得省略任何副本。本存储位置条款与 H3-BASE 的德国独占条款均生效且互不优先，不存在例外。",
+            "filename": "H3-ADD-v1.txt",
+            "heading": "",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "c8c78aed-b51e-59b7-ac41-348a3293af1a",
+            "documentVersionId": "9ade3b1d-d89b-5d47-9e95-3c3c9454eab3",
+            "text": "# H3-LIMIT 工单附件限制\n单张巡检工单的附件数量硬上限为12个。所有当前套餐均没有提高该上限的配置或选购项。拆分到多张工单不属于单张工单能力。",
+            "filename": "H3-LIMIT-v1.txt",
+            "heading": "",
+            "pageNumber": ""
+          }
+        ]
+      },
+      "result": {
+        "draft": {
+          "status": "conditional",
+          "answer": "ARC180模块可支持历史巡检记录保留180天，且期间企业管理员无法提前删除；本订单已采购该模块。但归档保留策略尚未配置，归档恢复验收状态未登记，生产启用前提尚未全部满足，因此当前不能无条件承诺该要求已生效。",
+          "conditions": [
+            "需完成180天归档保留策略配置",
+            "需完成归档恢复验收"
+          ],
+          "missingInformation": [],
+          "citations": [
+            {
+              "chunkId": "10490e3e-986d-5c9b-b19a-1a29d55b5ed1",
+              "documentVersionId": "80fdd834-05fd-5cd2-a92e-657c510ed7cd",
+              "excerpt": "# H3-ORDER 采购与验收记录\n本订单已采购历史归档 ARC180；归档保留策略尚未配置，归档恢复验收状态未登记。\nH3-BASE 与 H3-ADD 均已签署并适用于同一企业、同一生产服务及全部备份。H3-ADD 仅在查询吞吐指标上优先于 H3-BASE；该优先级不适用于存储位置，存储位置条款互不优先且没有例外。"
+            },
+            {
+              "chunkId": "573b60fc-43b2-5bfd-96c2-5b1c690c1f54",
+              "documentVersionId": "c91eaa1c-6ac3-52e9-87ae-1f74681b0f81",
+              "excerpt": "# H3-FEATURE 历史归档模块\n基础套餐历史巡检记录保存15天。ARC180模块能保存历史巡检记录180天，期间企业管理员无法提前删除。\nARC180生产启用前必须购买模块、配置180天保留策略并完成归档恢复验收。当前订单记录见 H3-ORDER。"
+            }
+          ]
+        },
+        "usage": {
+          "prompt_tokens": 3684,
+          "completion_tokens": 3669,
+          "total_tokens": 7353
+        },
+        "returnedModel": "grok-4.7",
+        "providerResponseId": "chatcmpl-e1dabb82"
+      },
+      "elapsedSeconds": 22.078,
+      "providerRequests": 1,
+      "traces": [
+        {
+          "requestDispatched": true,
+          "input": {
+            "requirement": {
+              "key": "H3-R5",
+              "text": "本企业可将历史巡检记录保留180天，期间管理员也不能提前删除。",
+              "sourceLocation": "H3-5"
+            },
+            "evidence": [
+              {
+                "citationId": "cite_02cfa24f5513_1",
+                "text": "# H3-ORDER 采购与验收记录\n本订单已采购历史归档 ARC180；归档保留策略尚未配置，归档恢复验收状态未登记。\nH3-BASE 与 H3-ADD 均已签署并适用于同一企业、同一生产服务及全部备份。H3-ADD 仅在查询吞吐指标上优先于 H3-BASE；该优先级不适用于存储位置，存储位置条款互不优先且没有例外。",
+                "source": {
+                  "label": "来源 1",
+                  "filename": "H3-ORDER-v1.txt",
+                  "applicability": "岚帆巡检本次已签署企业订单，按当前交付状态评估。全部内容虚构。",
+                  "versionNumber": 1,
+                  "latestVersionNumber": 1
+                },
+                "heading": "",
+                "pageNumber": ""
+              },
+              {
+                "citationId": "cite_02cfa24f5513_2",
+                "text": "# H3-FEATURE 历史归档模块\n基础套餐历史巡检记录保存15天。ARC180模块能保存历史巡检记录180天，期间企业管理员无法提前删除。\nARC180生产启用前必须购买模块、配置180天保留策略并完成归档恢复验收。当前订单记录见 H3-ORDER。",
+                "source": {
+                  "label": "来源 2",
+                  "filename": "H3-FEATURE-v1.txt",
+                  "applicability": "当前正式版本可选模块规格，启用以正文规定的前提为准。",
+                  "versionNumber": 1,
+                  "latestVersionNumber": 1
+                },
+                "heading": "",
+                "pageNumber": ""
+              },
+              {
+                "citationId": "cite_02cfa24f5513_3",
+                "text": "# H3-AUDIT 资质材料清单\nISO 27001：附件仅有内部体系检查表，未附有效认证证书，证书覆盖范围及有效期均未说明。本清单不声明服务运营方是否持有该认证。\nPCI DSS：运营方明确声明本服务截至当前签署日尚未通过 PCI DSS 评估，不能提供当前有效的 PCI DSS 合规证明。这是对尚未通过评估的确认，不是附件遗漏，亦无已约定的完成时间或交付路径。",
+                "source": {
+                  "label": "来源 3",
+                  "filename": "H3-AUDIT-v1.txt",
+                  "applicability": "当前签署日的资质说明，ISO与PCI为不同事项。",
+                  "versionNumber": 1,
+                  "latestVersionNumber": 1
+                },
+                "heading": "",
+                "pageNumber": ""
+              },
+              {
+                "citationId": "cite_02cfa24f5513_4",
+                "text": "# H3-BASE 基础服务协议\n本企业生产查询服务每秒保证处理200个请求。\n本企业全部生产数据及全部备份必须只保存在德国，任何情况下均禁止将这些数据或备份复制到新加坡。",
+                "source": {
+                  "label": "来源 4",
+                  "filename": "H3-BASE-v1.txt",
+                  "applicability": "已签署基础协议，吞吐指标按已签署补充协议替代，存储位置互不优先。",
+                  "versionNumber": 1,
+                  "latestVersionNumber": 1
+                },
+                "heading": "",
+                "pageNumber": ""
+              },
+              {
+                "citationId": "cite_02cfa24f5513_5",
+                "text": "# H3-ADD 补充服务协议\n本企业生产查询服务每秒保证处理300个请求；本项替代 H3-BASE 的200个请求指标，优先级仅限查询吞吐指标。\n本企业全部生产数据及全部备份必须每日完整复制一份到新加坡，不得省略任何副本。本存储位置条款与 H3-BASE 的德国独占条款均生效且互不优先，不存在例外。",
+                "source": {
+                  "label": "来源 5",
+                  "filename": "H3-ADD-v1.txt",
+                  "applicability": "已签署补充协议，只有吞吐指标具备明示优先级。",
+                  "versionNumber": 1,
+                  "latestVersionNumber": 1
+                },
+                "heading": "",
+                "pageNumber": ""
+              },
+              {
+                "citationId": "cite_02cfa24f5513_6",
+                "text": "# H3-LIMIT 工单附件限制\n单张巡检工单的附件数量硬上限为12个。所有当前套餐均没有提高该上限的配置或选购项。拆分到多张工单不属于单张工单能力。",
+                "source": {
+                  "label": "来源 6",
+                  "filename": "H3-LIMIT-v1.txt",
+                  "applicability": "当前正式版本所有套餐和模块均适用。",
+                  "versionNumber": 1,
+                  "latestVersionNumber": 1
+                },
+                "heading": "",
+                "pageNumber": ""
+              }
+            ]
+          },
+          "httpStatus": 200,
+          "response": {
+            "id": "chatcmpl-e1dabb82",
+            "model": "grok-4.7",
+            "choices": [
+              {
+                "index": 0,
+                "message": {
+                  "role": "assistant",
+                  "content": "{\"status\":\"conditional\",\"answer\":\"ARC180模块可支持历史巡检记录保留180天，且期间企业管理员无法提前删除；本订单已采购该模块。但归档保留策略尚未配置，归档恢复验收状态未登记，生产启用前提尚未全部满足，因此当前不能无条件承诺该要求已生效。\",\"prerequisites\":[{\"condition\":\"已采购历史归档ARC180模块\",\"state\":\"met\",\"citations\":[{\"citationId\":\"cite_02cfa24f5513_1\"},{\"citationId\":\"cite_02cfa24f5513_2\"}]},{\"condition\":\"需完成180天归档保留策略配置\",\"state\":\"unmet\",\"citations\":[{\"citationId\":\"cite_02cfa24f5513_1\"},{\"citationId\":\"cite_02cfa24f5513_2\"}]},{\"condition\":\"需完成归档恢复验收\",\"state\":\"unmet\",\"citations\":[{\"citationId\":\"cite_02cfa24f5513_1\"},{\"citationId\":\"cite_02cfa24f5513_2\"}]}],\"citations\":[{\"citationId\":\"cite_02cfa24f5513_1\"},{\"citationId\":\"cite_02cfa24f5513_2\"}]}",
+                  "reasoning": "The user wants me to act as a pre-sales requirement response assistant and evaluate a specific requirement against the provided evidence, returning only JSON matching the schema.\n",
+                  "reasoning_content": "The user wants me to act as a pre-sales requirement response assistant and evaluate a specific requirement against the provided evidence, returning only JSON matching the schema.\n"
+                },
+                "finish_reason": "stop"
+              }
+            ],
+            "usage": {
+              "prompt_tokens": 3684,
+              "completion_tokens": 3669,
+              "total_tokens": 7353,
+              "input_tokens": 3684,
+              "output_tokens": 3669,
+              "reasoning_tokens": 3405,
+              "cached_tokens": 1152,
+              "prompt_tokens_details": {
+                "cached_tokens": 1152
+              },
+              "input_tokens_details": {
+                "cached_tokens": 1152
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "key": "H3-R6",
+      "startedAt": "2026-09-23T16:51:02.173901+00:00",
+      "state": "succeeded",
+      "provenance": {
+        "promptVersion": "presales.v7",
+        "promptSha256": "11542919c2ebb588715fa788def38325b9e4384883fdb277bb6b9046d8dce55f",
+        "configuredModelVersion": null,
+        "configuredModelRevision": null,
+        "providerResponseId": null,
+        "returnedModel": null
+      },
+      "sourceInput": {
+        "requirement": {
+          "key": "H3-R6",
+          "text": "单张巡检工单须支持20个附件，不接受拆分到多张工单。",
+          "sourceLocation": "H3-6"
+        },
+        "sources": [
+          {
+            "versionId": "80fdd834-05fd-5cd2-a92e-657c510ed7cd",
+            "applicability": "岚帆巡检本次已签署企业订单，按当前交付状态评估。全部内容虚构。",
+            "documentId": "07e8110c-67a3-5afd-9e8b-0ec9edf9a876",
+            "generationId": "acaa5000-c1c6-5eca-b6e4-4ddf658bfd9f",
+            "filename": "H3-ORDER-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "a2438359bf0ab5d4d94f4ebe1354a376ccdd1d98e077522414178f273461f0cc"
+          },
+          {
+            "versionId": "c91eaa1c-6ac3-52e9-87ae-1f74681b0f81",
+            "applicability": "当前正式版本可选模块规格，启用以正文规定的前提为准。",
+            "documentId": "73fbcf91-2f3d-5589-b596-3e2c853918b6",
+            "generationId": "2fa32d42-55f5-5764-ab2f-8271543c9124",
+            "filename": "H3-FEATURE-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "2129484aa3cba1e60ad999219cc92ff916a1f47207b2416fc8819651b2bacfbe"
+          },
+          {
+            "versionId": "f7869ba7-f33a-589f-9d79-3da3ce49bff5",
+            "applicability": "当前签署日的资质说明，ISO与PCI为不同事项。",
+            "documentId": "bc3cbb1f-5efa-5678-bf22-741f3d975d75",
+            "generationId": "6a0b3943-9a52-5ab5-bc6b-3e9b5e57ded8",
+            "filename": "H3-AUDIT-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "feb29f8eb629e20c8128729eaf65096c808f0b8416be3dfb477709e0acac6ff4"
+          },
+          {
+            "versionId": "831d3dad-7e66-5cc8-a946-d57a1273c839",
+            "applicability": "已签署基础协议，吞吐指标按已签署补充协议替代，存储位置互不优先。",
+            "documentId": "e86b0ffe-c503-54d8-84fb-443859ab5db7",
+            "generationId": "4aeb5600-71d9-5b07-8f16-c4ea010dee02",
+            "filename": "H3-BASE-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "9f69d99af90124ffd3421aa844ccac13f82f51eee4972f4e9a1809418dd9c6ba"
+          },
+          {
+            "versionId": "0cdaa06e-54d7-5183-b432-dc7cf429a954",
+            "applicability": "已签署补充协议，只有吞吐指标具备明示优先级。",
+            "documentId": "0687fcb8-22b2-51ae-ae60-ced1d7187f7d",
+            "generationId": "ecbd63dd-0a74-5266-beee-1b1eac4a61be",
+            "filename": "H3-ADD-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "468b59e4cf1a252f52bed780ffd7c64f47548d88f6bd46adbf494576591fb5f1"
+          },
+          {
+            "versionId": "9ade3b1d-d89b-5d47-9e95-3c3c9454eab3",
+            "applicability": "当前正式版本所有套餐和模块均适用。",
+            "documentId": "419742fb-e478-54ba-b938-8f5768e8ee92",
+            "generationId": "3b894e1e-d5fc-5687-b169-70da6c9f0f05",
+            "filename": "H3-LIMIT-v1.txt",
+            "versionNumber": 1,
+            "latestVersionNumber": 1,
+            "contentSha256": "37d777269480186bda9f4fe6cccbd93dd2824d3bfcc3d285e3c32fb95cfef35a"
+          }
+        ],
+        "evidence": [
+          {
+            "chunkId": "10490e3e-986d-5c9b-b19a-1a29d55b5ed1",
+            "documentVersionId": "80fdd834-05fd-5cd2-a92e-657c510ed7cd",
+            "text": "# H3-ORDER 采购与验收记录\n本订单已采购历史归档 ARC180；归档保留策略尚未配置，归档恢复验收状态未登记。\nH3-BASE 与 H3-ADD 均已签署并适用于同一企业、同一生产服务及全部备份。H3-ADD 仅在查询吞吐指标上优先于 H3-BASE；该优先级不适用于存储位置，存储位置条款互不优先且没有例外。",
+            "filename": "H3-ORDER-v1.txt",
+            "heading": "",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "573b60fc-43b2-5bfd-96c2-5b1c690c1f54",
+            "documentVersionId": "c91eaa1c-6ac3-52e9-87ae-1f74681b0f81",
+            "text": "# H3-FEATURE 历史归档模块\n基础套餐历史巡检记录保存15天。ARC180模块能保存历史巡检记录180天，期间企业管理员无法提前删除。\nARC180生产启用前必须购买模块、配置180天保留策略并完成归档恢复验收。当前订单记录见 H3-ORDER。",
+            "filename": "H3-FEATURE-v1.txt",
+            "heading": "",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "4a632ac5-90d2-51d9-a5d6-a8a640227bff",
+            "documentVersionId": "f7869ba7-f33a-589f-9d79-3da3ce49bff5",
+            "text": "# H3-AUDIT 资质材料清单\nISO 27001：附件仅有内部体系检查表，未附有效认证证书，证书覆盖范围及有效期均未说明。本清单不声明服务运营方是否持有该认证。\nPCI DSS：运营方明确声明本服务截至当前签署日尚未通过 PCI DSS 评估，不能提供当前有效的 PCI DSS 合规证明。这是对尚未通过评估的确认，不是附件遗漏，亦无已约定的完成时间或交付路径。",
+            "filename": "H3-AUDIT-v1.txt",
+            "heading": "",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "02f9235a-4edc-5e2d-8115-6082eb9bc760",
+            "documentVersionId": "831d3dad-7e66-5cc8-a946-d57a1273c839",
+            "text": "# H3-BASE 基础服务协议\n本企业生产查询服务每秒保证处理200个请求。\n本企业全部生产数据及全部备份必须只保存在德国，任何情况下均禁止将这些数据或备份复制到新加坡。",
+            "filename": "H3-BASE-v1.txt",
+            "heading": "",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "845a883f-b14c-5117-b8a2-26914d8e1476",
+            "documentVersionId": "0cdaa06e-54d7-5183-b432-dc7cf429a954",
+            "text": "# H3-ADD 补充服务协议\n本企业生产查询服务每秒保证处理300个请求；本项替代 H3-BASE 的200个请求指标，优先级仅限查询吞吐指标。\n本企业全部生产数据及全部备份必须每日完整复制一份到新加坡，不得省略任何副本。本存储位置条款与 H3-BASE 的德国独占条款均生效且互不优先，不存在例外。",
+            "filename": "H3-ADD-v1.txt",
+            "heading": "",
+            "pageNumber": ""
+          },
+          {
+            "chunkId": "c8c78aed-b51e-59b7-ac41-348a3293af1a",
+            "documentVersionId": "9ade3b1d-d89b-5d47-9e95-3c3c9454eab3",
+            "text": "# H3-LIMIT 工单附件限制\n单张巡检工单的附件数量硬上限为12个。所有当前套餐均没有提高该上限的配置或选购项。拆分到多张工单不属于单张工单能力。",
+            "filename": "H3-LIMIT-v1.txt",
+            "heading": "",
+            "pageNumber": ""
+          }
+        ]
+      },
+      "result": {
+        "draft": {
+          "status": "contradicted",
+          "answer": "单张巡检工单附件数量的硬上限为12个，且所有当前套餐都没有可提高该上限的配置或选购项。要求单张工单支持20个附件已超过该硬上限；证据同时明确，拆分到多张工单不属于单张工单能力，因此不能以拆分方式满足且客户亦不接受。该要求已被直接否定，不能承诺。",
+          "conditions": [],
+          "missingInformation": [],
+          "citations": [
+            {
+              "chunkId": "c8c78aed-b51e-59b7-ac41-348a3293af1a",
+              "documentVersionId": "9ade3b1d-d89b-5d47-9e95-3c3c9454eab3",
+              "excerpt": "# H3-LIMIT 工单附件限制\n单张巡检工单的附件数量硬上限为12个。所有当前套餐均没有提高该上限的配置或选购项。拆分到多张工单不属于单张工单能力。"
+            }
+          ]
+        },
+        "usage": {
+          "prompt_tokens": 3701,
+          "completion_tokens": 1380,
+          "total_tokens": 5081
+        },
+        "returnedModel": "grok-4.7",
+        "providerResponseId": "chatcmpl-9737934a"
+      },
+      "elapsedSeconds": 9.234,
+      "providerRequests": 1,
+      "traces": [
+        {
+          "requestDispatched": true,
+          "input": {
+            "requirement": {
+              "key": "H3-R6",
+              "text": "单张巡检工单须支持20个附件，不接受拆分到多张工单。",
+              "sourceLocation": "H3-6"
+            },
+            "evidence": [
+              {
+                "citationId": "cite_4fdd3d951aa9_1",
+                "text": "# H3-ORDER 采购与验收记录\n本订单已采购历史归档 ARC180；归档保留策略尚未配置，归档恢复验收状态未登记。\nH3-BASE 与 H3-ADD 均已签署并适用于同一企业、同一生产服务及全部备份。H3-ADD 仅在查询吞吐指标上优先于 H3-BASE；该优先级不适用于存储位置，存储位置条款互不优先且没有例外。",
+                "source": {
+                  "label": "来源 1",
+                  "filename": "H3-ORDER-v1.txt",
+                  "applicability": "岚帆巡检本次已签署企业订单，按当前交付状态评估。全部内容虚构。",
+                  "versionNumber": 1,
+                  "latestVersionNumber": 1
+                },
+                "heading": "",
+                "pageNumber": ""
+              },
+              {
+                "citationId": "cite_4fdd3d951aa9_2",
+                "text": "# H3-FEATURE 历史归档模块\n基础套餐历史巡检记录保存15天。ARC180模块能保存历史巡检记录180天，期间企业管理员无法提前删除。\nARC180生产启用前必须购买模块、配置180天保留策略并完成归档恢复验收。当前订单记录见 H3-ORDER。",
+                "source": {
+                  "label": "来源 2",
+                  "filename": "H3-FEATURE-v1.txt",
+                  "applicability": "当前正式版本可选模块规格，启用以正文规定的前提为准。",
+                  "versionNumber": 1,
+                  "latestVersionNumber": 1
+                },
+                "heading": "",
+                "pageNumber": ""
+              },
+              {
+                "citationId": "cite_4fdd3d951aa9_3",
+                "text": "# H3-AUDIT 资质材料清单\nISO 27001：附件仅有内部体系检查表，未附有效认证证书，证书覆盖范围及有效期均未说明。本清单不声明服务运营方是否持有该认证。\nPCI DSS：运营方明确声明本服务截至当前签署日尚未通过 PCI DSS 评估，不能提供当前有效的 PCI DSS 合规证明。这是对尚未通过评估的确认，不是附件遗漏，亦无已约定的完成时间或交付路径。",
+                "source": {
+                  "label": "来源 3",
+                  "filename": "H3-AUDIT-v1.txt",
+                  "applicability": "当前签署日的资质说明，ISO与PCI为不同事项。",
+                  "versionNumber": 1,
+                  "latestVersionNumber": 1
+                },
+                "heading": "",
+                "pageNumber": ""
+              },
+              {
+                "citationId": "cite_4fdd3d951aa9_4",
+                "text": "# H3-BASE 基础服务协议\n本企业生产查询服务每秒保证处理200个请求。\n本企业全部生产数据及全部备份必须只保存在德国，任何情况下均禁止将这些数据或备份复制到新加坡。",
+                "source": {
+                  "label": "来源 4",
+                  "filename": "H3-BASE-v1.txt",
+                  "applicability": "已签署基础协议，吞吐指标按已签署补充协议替代，存储位置互不优先。",
+                  "versionNumber": 1,
+                  "latestVersionNumber": 1
+                },
+                "heading": "",
+                "pageNumber": ""
+              },
+              {
+                "citationId": "cite_4fdd3d951aa9_5",
+                "text": "# H3-ADD 补充服务协议\n本企业生产查询服务每秒保证处理300个请求；本项替代 H3-BASE 的200个请求指标，优先级仅限查询吞吐指标。\n本企业全部生产数据及全部备份必须每日完整复制一份到新加坡，不得省略任何副本。本存储位置条款与 H3-BASE 的德国独占条款均生效且互不优先，不存在例外。",
+                "source": {
+                  "label": "来源 5",
+                  "filename": "H3-ADD-v1.txt",
+                  "applicability": "已签署补充协议，只有吞吐指标具备明示优先级。",
+                  "versionNumber": 1,
+                  "latestVersionNumber": 1
+                },
+                "heading": "",
+                "pageNumber": ""
+              },
+              {
+                "citationId": "cite_4fdd3d951aa9_6",
+                "text": "# H3-LIMIT 工单附件限制\n单张巡检工单的附件数量硬上限为12个。所有当前套餐均没有提高该上限的配置或选购项。拆分到多张工单不属于单张工单能力。",
+                "source": {
+                  "label": "来源 6",
+                  "filename": "H3-LIMIT-v1.txt",
+                  "applicability": "当前正式版本所有套餐和模块均适用。",
+                  "versionNumber": 1,
+                  "latestVersionNumber": 1
+                },
+                "heading": "",
+                "pageNumber": ""
+              }
+            ]
+          },
+          "httpStatus": 200,
+          "response": {
+            "id": "chatcmpl-9737934a",
+            "model": "grok-4.7",
+            "choices": [
+              {
+                "index": 0,
+                "message": {
+                  "role": "assistant",
+                  "content": "{\"status\":\"contradicted\",\"answer\":\"单张巡检工单附件数量的硬上限为12个，且所有当前套餐都没有可提高该上限的配置或选购项。要求单张工单支持20个附件已超过该硬上限；证据同时明确，拆分到多张工单不属于单张工单能力，因此不能以拆分方式满足且客户亦不接受。该要求已被直接否定，不能承诺。\",\"prerequisites\":[],\"citations\":[{\"citationId\":\"cite_4fdd3d951aa9_6\"}]}",
+                  "reasoning": "The user wants me to act as a pre-sales requirements response assistant and evaluate a requirement against evidence, returning only JSON matching the schema.\n",
+                  "reasoning_content": "The user wants me to act as a pre-sales requirements response assistant and evaluate a requirement against evidence, returning only JSON matching the schema.\n"
+                },
+                "finish_reason": "stop"
+              }
+            ],
+            "usage": {
+              "prompt_tokens": 3701,
+              "completion_tokens": 1380,
+              "total_tokens": 5081,
+              "input_tokens": 3701,
+              "output_tokens": 1380,
+              "reasoning_tokens": 1257,
+              "cached_tokens": 1152,
+              "prompt_tokens_details": {
+                "cached_tokens": 1152
+              },
+              "input_tokens_details": {
+                "cached_tokens": 1152
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "status": "collected",
+  "finishedAt": "2026-09-23T16:51:11.425514+00:00"
+}

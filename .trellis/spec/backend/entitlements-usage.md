@@ -22,10 +22,11 @@ entitlements remain separate and are not rewritten by commercial period configur
 ```python
 EntitlementAdministrationService(session_factory=..., clock=None)
 await service.configure(tenant_id=..., operator=..., configuration=...)
+await service.configure_products(tenant_id=..., operator=..., configuration=...)
 await service.show(tenant_id=..., entitlement_id=..., operator=...)
 await service.list(tenant_id=..., operator=..., limit=20)
 
-EntitlementUsageService(session_factory=..., clock=None, reservation_ttl_seconds=900)
+EntitlementUsageService(session_factory=..., clock=None, reservation_ttl_seconds=900, app_env=AppEnvironment.LOCAL)
 await usage.reserve_provider_request(tenant_id=..., operation_id=..., session=None)
 await usage.settle_provider_request(tenant_id=..., operation_id=..., session=None)
 await usage.release_provider_request(tenant_id=..., operation_id=..., session=None)
@@ -38,10 +39,13 @@ existing author/source authorization and `Idempotency-Key`.
 `UsageSummary.resources: TenantResourceUsage` is a frozen value object, projected
 as `TenantUsageResponse.resources: TenantResourceUsageResponse`.
 
-CLI commands are `configure`, `list`, and `show`. All require `--tenant-id`,
+CLI commands are `configure`, `configure-products`, `list`, and `show`. All require `--tenant-id`,
 `--operator`, and `--reason`; configure/show require `--entitlement-id`.
 Configure additionally requires `--expected-version`, `--plan-code`, `--period-start`,
-`--period-end`, and `--request-limit`; only `--execute` writes.
+`--period-end`, and `--request-limit`; only `--execute` writes. Configure accepts
+`--agent-task-limit` and `--document-bytes-limit`, both defaulting to zero.
+Configure-products requires both limits, an existing entitlement ID and that
+period's own version. It only fills missing quotas and never resets counters.
 
 ## 3. Contracts
 
@@ -65,7 +69,9 @@ Configure additionally requires `--expected-version`, `--plan-code`, `--period-s
   The audit has actor_id=null and records these labels, receipt ID and configuration.
   Local labels are attribution, not evidence of production RBAC.
 - Configure/reserve/settle/release/summary lock Tenant before child rows, using
-  `SET LOCAL lock_timeout = '5s'`. They read the injected/default Python UTC clock
+  `FOR NO KEY UPDATE` and `SET LOCAL lock_timeout = '5s'`. This serializes quota
+  changes while allowing event/dispatch FK key-share locks after business locks.
+  They read the injected/default Python UTC clock
   after obtaining the lock. Presales already locks Tenant before packet/row and
   reuses its transaction. The earlier Presales access lock retains its own contract.
 - Usage-owned transaction scopes convert DBAPI failures, including commit-time
@@ -114,6 +120,23 @@ failure/cancellation releases the reservation. This local quota policy does not 
 a failed or unknown upstream request cost nothing. Provider observations and nullable
 cost fields remain separate from payments and customer-approved pricing.
 
+`ReservationResult.expires_at` is the stored reservation deadline, including on
+same-operation replay; legacy/no-reservation results keep it null. It is an internal
+service value, not a new public HTTP field. Presales uses this receipt in the same
+transaction to bound its queue deadline, avoiding a duplicate SELECT. Never recompute
+the TTL on replay or extend a stored deadline. The admission integration suite checks
+exact stored expiry, replay, clipping and rollback when no execution time remains.
+
+New reservation insertion and the entitlement reserved-counter update share a
+data-modifying CTE after all existing lock, lifecycle, expiry and limit checks.
+The insert depends on the updated entitlement ID. Flush pending expiry/caller
+writes first; synchronize the already-loaded entitlement counter and returned
+database timestamp without another write. Same-session reserve/settle/release
+must use those current counters. The caller still owns the final commit and all
+writes roll back together. Presales persists its attempt only after determining
+the final reservation-bounded deadline, before the final source recheck. The public
+receipt and stored TTL remain unchanged; see `database-guidelines.md` for tests.
+
 CLI settings come from `FoundationSettings` (`APP_ENV`, `DATABASE__URL`, including
 the repository `.env`). Only local/test and loopback hosts are accepted; URL query
 host/hostaddr/service/servicefile overrides are rejected. Default configure returns
@@ -134,10 +157,76 @@ preview, list checks its 1-100 bound before connecting, and execution is bounded
 30 seconds. Required inputs, period validation, stable receipts and audit stay in
 EntitlementAdministrationService; the adapter does not change quota or lifecycle rules.
 
-Admission acceptance and period configuration are separate transactions. The initial
-pilot must keep generation disabled until its configured active period is confirmed.
-This operator workflow does not solve atomic paid onboarding: unconfigured tenants
-still retain legacy behavior. A future self-service flow needs a separate design.
+Admission acceptance and period configuration are separate transactions. API and the
+Presales Worker pass their actual app_env to EntitlementUsageService. Staging/production
+require a current finite period for a new reservation; unconfigured and historical
+unlimited periods are projected as inactive with remaining zero. Local/test keep legacy
+compatibility. This is not a configurable production bypass. Existing reservation
+replay, original-period settlement and release remain valid across policy/period changes.
+Formal settlement without a durable reservation fails with usage_reservation_not_found;
+release without one remains an idempotent no-op. Zero finite quota keeps usage_limit_reached.
+Read/review/export do not acquire this new generation restriction.
+
+This change is an unreleased candidate, not a claim about v0.1.44. Before rollout, configure
+finite periods for existing tenants and drain old unledgered work. The formal adapter
+does not implement payments or atomic paid onboarding. Agent and embedding calls
+use the separate product/dispatch contracts below, not the Presales request metric.
+
+### Product quotas and dispatch records (0029/0030 candidate)
+
+- `product_quotas` binds `(tenant, entitlement, metric)`; `agent_task` and
+  `document_bytes` have finite nonnegative limits and separate used/reserved counts.
+  A new formal operation requires a current period and its explicit product quota.
+  Local/test allow legacy only if the tenant has no entitlement history.
+- `ProductUsageService.reserve` takes Tenant before business/quota/reservation;
+  callers that hold business locks must already have taken Tenant. Counter changes
+  always lock quota before reservation. Existing terminal settlement/release does
+  not acquire Tenant after Job/AgentRun. Agent admission/cancel/approval Tenant
+  locks also use NO KEY UPDATE so receipt/event FK insertion cannot invert locks.
+- Agent run ID reserves one unit. Successful terminal state and consumption share
+  one transaction; rejection/cancel/permanent failure releases. Approval waiting
+  keeps the reservation without the Presales 900-second TTL; settlement remains
+  attached to its original period after expiry. Released work cannot call a model.
+- A document processing receipt derives from Job ID and max_attempts. Automatic
+  retries reuse it; operator retry_dead establishes a fresh receipt. Successful
+  generation activation and consumption share a transaction. Processing ownership,
+  Job fence/lease/cancel and generation are checked at every write/dispatch boundary.
+  Quota rejection persists a failed generation for the inventory's error display.
+- Composite foreign keys enforce tenant/metric consistency. Terminal events are
+  unique per reservation. No history is discarded on migration downgrade.
+- `ProviderCallService.scope` carries tenant, durable operation, kind and a guard.
+  Every actual Agent Chat or embedding HTTP attempt commits a dispatch intent in
+  a short transaction after authorization/lease/reservation checks. Network I/O
+  occurs outside the transaction. Repairs, fallback, retries and split batches each
+  consume one dispatch slot, even when the business later fails.
+- Day and operation advisory locks enforce the finite `ProviderUsageSettings`:
+  default per-tenant UTC-day 1000, Agent run 12, document receipt 2048, query 6.
+  These limits are not money and do not include the separate Presales Chat budget.
+  API, both Worker entrypoints and MCP pass actual environment and provider settings.
+- MCP's production tool service explicitly enforces ProductUsageService's formal
+  reservation policy. Query embeddings recheck ACL plus the caller's durable guard
+  before every retry. The guard permits original-period Agent approvals, rejects
+  released/missing product reservations, and rejects expired/missing formal Presales
+  reservations. Unguarded formal retrieval requires a current finite entitlement.
+- `responded` means HTTP success only. Crashes retain `dispatched`; cancellation,
+  timeout and transport failure remain uncertain. Ledger finish failure never turns
+  a committed intent into zero calls. Store no payload, secrets, URL or error body;
+  channel identity is a hash of URL components after removing credentials.
+- No rate card is configured: monetary estimates and currency remain null even
+  when tokens are reported. Presales Chat keeps `presales_provider_calls`; standalone
+  administrative embedding probes are outside customer usage. Real reconciliation
+  with suppliers remains a release gate.
+- Owner API adds `productQuotas[{metric,limit,used,reserved,remaining}]` and
+  `modelCalls{calls,unresolvedCalls,unknownCostCalls,usageKnownCalls,knownTotalTokens}`.
+  Quotas belong to the current period; dispatch aggregates use started_at within
+  that period. A late dispatch can be observed in a new period while its business
+  reservation settles the old one. No-period responses use empty/zero placeholders,
+  not historical totals; the view does not sum money or merge Presales Chat counts.
+
+Before rollout apply 0029/0030, drain old unledgered work including approvals,
+fill existing product quotas via configure-products, and release API/Worker/Web
+together. Existing demos require expiry/cleanup or reviewed backfill; new demos
+receive Agent=0 and document_bytes=10 MiB. See `docs/ops/platform-operations.md`.
 
 ## 4. Validation & Error Matrix
 
@@ -196,8 +285,95 @@ review and export retain their authorization rules and remain available after ex
   a period through the formal adapter, consumes one request, and replays the exact
   configuration. Verify one configuration audit, unchanged consumption, show/list and
   remaining quota. This is controlled local infrastructure, not a public pilot.
+- `tests/billing/test_commercial_entitlement_integration.py` checks missing/unlimited/
+  zero/finite formal periods and old-reservation settlement on PostgreSQL. Foundation
+  runtime tests execute API/Worker composition across all four environments. Presales
+  integration covers synchronous/background rejection before attempts or dispatch.
 
 ## 7. Wrong vs Correct
+
+Product/dispatch coverage additionally lives in `tests/billing/test_product_usage_integration.py`,
+`test_agent_product_metering_integration.py`, `test_document_product_metering_integration.py`,
+`test_provider_dispatch_integration.py`, and `test_query_product_metering_integration.py`.
+They use real PostgreSQL for idempotency, concurrency, rollback, cancellation/fencing,
+cross-period approval, migration preservation and dispatch/tenant lock compatibility.
+Presales background tests verify no embedding retry after reservation loss. HTTP is
+replaced at the external boundary; these tests do not prove supplier pricing or quality.
+
+The Agent success test must inject `OpenAICompatibleChatGateway(require_metering=True)`
+through `build_durable_agent_handler(gateway=...)`. `ModelSettings()` alone uses the
+deterministic gateway and cannot prove nonempty dispatch accounting. Exercise the real
+`JobDeliveryConsumer`, same-key `AgentRunService.create`, usage summary and reconciliation
+export against one isolated PostgreSQL schema. Direct success records one call; schema
+repair records two calls; each settles one `agent_task` in the reservation's original
+quota period. Repeated delivery, same-key replay, status and artifact listing add neither
+calls nor settlement. Agent calls do not consume the Presales `provider_request` quota.
+
+| Agent outcome | Product quota | Provider evidence |
+|---|---|---|
+| Direct / repaired success | One consume, no reservation left | One / two responded rows with supplier IDs and tokens |
+| Timeout / HTTP 503 at final attempt | One release, zero used | Preserve timeout / http_error; missing tokens and cost remain unknown |
+| Repair exceeds `agent_call_limit=1` | One release | Reject before second HTTP; first responded row does not imply task success |
+| Retry exceeds the same operation limit | Keep reservation while retry_wait, release at terminal failure | Original dispatch survives; retry cannot reset the per-run budget |
+
+For artifact reads, use `AgentToolService` to create and verify the artifact with a
+boundary object store. The older graph fake writes metadata without `verified_at` and
+correctly fails `AgentArtifactService.list_for_run` integrity checks. A memory store can
+verify generated bytes and their hash, but proves neither real object download nor MCP
+stdio. Tests must state these boundaries; never fabricate verification timestamps to
+turn that fixture into release evidence. Use an owned schema for billing migrations;
+do not migrate the developer's default `public` to make acceptance pass.
+
+For an online smoke, reuse `scripts/staging_smoke.py::run_staging_smoke` and bind the
+actual deployment, relevant process settings, source hashes, principal, period and
+fixed input before submission. Its `sample_count=1` is not a supplier request bound.
+`ProviderCallService` limits Agent Chat by run ID; query embeddings use the durable
+search tool execution ID, distinct from the Agent execution ID. The Worker search key
+includes run ID and execution sequence, so automatic Job retries share that key but a
+new approval resume must not be assumed to share the same query budget. Document
+receipts include `max_attempts`; manual retry is a new receipt and must be excluded
+from a previously approved automatic-retry budget.
+
+Bound a single-chunk upload using both actual ingestion attempts and embedding HTTP
+retries (five attempts with two retries means at most fifteen sends). Check the exact
+bytes through the real parser/chunker before relying on that formula; larger inputs
+also need batch splitting accounted for. Freeze a one-shot execution intent and exact
+idempotency keys, count every HTTP before sending, reject redirects/changed object
+origins, and keep accepted jobs after interruption. Client timeout is not proof of
+server cancellation. Success requires nonempty per-operation dispatches, original-period
+consumption, stable replay and downloaded artifact SHA, not just successful metadata.
+`tests/deployment/test_staging_smoke.py` covers the reusable protocol; the private
+batch also needs approval/expiry, duplicate launch, HTTP limit and credential-separation
+checks. Its plan and actual validation boundary are documented in
+`docs/ops/online-business-acceptance.md`; preparing or testing it does not authorize
+supplier calls or claim OAuth/browser/capacity acceptance.
+
+The initial Agent execution is `sequence=0, kind=initial`, as created by
+`AgentRunService.create`; `next_event_seq=1` is an event counter, not an execution
+sequence. An initial-only acceptance snapshot must contain exactly one execution,
+with both the sequence and kind checked, and a succeeded Job. Sequence 1, a resume
+kind, an extra execution or a nonterminal Job must be rejected. Do not write an
+acceptance fixture that merely repeats the validator's assumed sequence: derive
+it from the service contract or a captured real ledger, and test those negative
+cases. Wrong: `executions[0]['sequence'] == 1`. Correct: one succeeded `initial/0`.
+
+If a post-business assertion fails, retain its exit code, original source and
+execution intent. Read-only evidence recovery may verify existing status, object
+hash/citations and stable ledgers, but does not prove an omitted same-key POST
+replay. Report business outcome, verifier outcome and unexecuted checks separately;
+never rerun the complete batch to obtain a green report. Pod-local authenticated
+HTTP does not prove the public ingress or interactive OAuth path.
+
+An authorized continuation can complete an omitted same-key POST without restarting
+the original batch. First verify the existing terminal run, original document/input,
+`publish_requested=false`, original key, single initial/0 execution and unchanged
+ledger. Keep the old intent and add an exclusive bounded step intent. Require HTTP
+200, `replayed=true`, the exact original run/job IDs, and equality of the full scoped
+ledger before and after POST plus status GET. Do not renew the old client window or
+infer a new supplier budget. Preserve the original failure separately from the
+continuation result. Only a proven SSH connection-establishment failure with empty
+stdout permits a bounded retry of the same frozen transport; exit 255 alone or an
+uncertain remote outcome is insufficient.
 
 Wrong: `if current is None: return legacy`, or choosing `now` before a contended lock.
 
@@ -206,6 +382,92 @@ no historical configuration from no currently active period. Keep the reservatio
 stored entitlement ID when settling. Preserve rows during rollback; never delete
 configuration to restore legacy access.
 
+## Private reconciliation export (0031 candidate)
+
+### Scope / Trigger
+
+CM-5 adds operator evidence preparation, not prices, invoices or proof of live supplier
+reconciliation. Agent/embedding and background Presales use different call ledgers;
+business success events must never be added to call counts as a single bill.
+
+### Signatures
+
+```python
+await UsageReconciliationService(session_factory=...).export(
+    tenant_id=..., operator=PlatformEntitlementOperator(...),
+    window=UsageExportWindow(start=..., end=..., limit_per_source=5000),
+)
+```
+
+The packaged private CLI adds `usage export --tenant-id UUID --start ISO --end ISO
+--limit-per-source 5000` after the existing explicit target/operator arguments.
+Existing administrator/DB authorization applies; no public endpoint or tenant principal
+grants this access. Local/test entitlement scripts remain restricted.
+
+### Contracts
+
+- Dates require offsets, normalize to UTC and select `[start,end)` over at most 31 days.
+  Each of five sources has a 1..5000 row cap; query cap+1 and reject the whole export on
+  overflow. No truncated report or unlimited scan. Use REPEATABLE READ / READ ONLY,
+  statement timeout 10s, lock timeout 2s and whole operation timeout 30s.
+- `usage-reconciliation.v1` returns tenant/window/generated_at, source_counts,
+  provider_calls, business_events, legacy_presales_attempts, summary and warnings.
+  Calls filter started_at; events filter occurred_at and retain original entitlement,
+  reservation and operation IDs. Legacy non-Job attempts without any call row filter
+  created_at. An out-of-window call must not create a false legacy gap.
+- The report observes current row states in one snapshot, not states as of window_end.
+  Re-exporting may show later confirmation. No DB mutation, quota settlement or audit
+  insertion occurs; attribution is in the private CLI response.
+- Keep original states, routes/channel hashes and separate ledger IDs. Never deduplicate
+  on supplier ID. Presales `not_sent` is visible but excluded from potentially billable
+  counts. Uncertain outcomes, missing tokens and missing cost/currency stay explicit.
+  Business quantities group metric and consume/release separately; no sum of currencies.
+- 0031 adds nullable request/response IDs to provider_dispatches, a nullable request ID
+  and tenant/time index to presales_provider_calls. No old-row backfill. Supplier header
+  priority is x-oneapi-request-id, x-request-id, then request-id; JSON id is the
+  response ID. A New API gateway's billing ID takes precedence over any forwarded
+  upstream ID, so a provider statement can join the gateway's own request. An invalid
+  gateway ID falls back to the next safe ID. Historical upstream IDs are not rewritten
+  or joined by timestamps/token similarity. The shared
+  allowlist is `[A-Za-z0-9][A-Za-z0-9_.-]{0,199}`; reject instead of truncate.
+  Agent/embedding parse bounded JSON; Presales records the header on HTTP errors,
+  invalid output, overlarge bodies and body timeouts too. No arbitrary header/body dump.
+  Downgrade locks both tables and refuses to discard populated new identifier columns.
+- Warnings explicitly exclude pre-metering/admin calls, mark legacy aggregate gaps and
+  state that supplier prices are unreconciled. Summary counts exclude legacy aggregates.
+
+### Validation & Error Matrix
+
+| Condition | Stable outcome |
+|---|---|
+| Naive/reversed/>31-day window or invalid row cap | CLI exit 2, reconciliation_invalid_window |
+| Wrong formal target / bad attribution | Existing operations/entitlement errors, no export |
+| Tenant does not exist | reconciliation_tenant_not_found |
+| Any source exceeds cap | reconciliation_export_limit_exceeded, no partial export |
+| Database read/statement timeout failure | reconciliation_store_unavailable |
+| Whole operation times out | CLI operations_timeout |
+| New supplier IDs exist during downgrade | provider_reconciliation_history_present |
+
+### Good / Base / Bad Cases
+
+Good: a primary timeout and fallback success yield two calls and one consumed business
+event. Base: historical IDs and all unpriced amounts remain null. Bad: treating HTTP 200
+as business success, unknown as free, or a call-less legacy attempt as a synthetic call.
+
+### Tests Required
+
+`test_usage_reconciliation_integration.py` verifies real PostgreSQL read-only enforcement,
+concurrent snapshot consistency, tenant/time isolation, original-period settlement,
+caps, operator adapter and additive migration/history guard. Presales background tests
+cover primary/fallback/error IDs, not_sent, legacy gaps and separate source limits.
+Metadata/window/CLI tests cover invalid fields, body timeouts and safe failures.
+
+### Wrong vs Correct
+
+Wrong: export the first 5000 rows with status confirmed and infer missing cost as zero.
+Correct: fetch 5001, reject if needed, narrow the time window, preserve null amounts
+and independently reconcile the exported identifiers against supplier records.
+
 ## Proven Examples
 
 - `packages/core/src/enterprise_doc_core/billing/service.py`
@@ -213,3 +475,5 @@ configuration to restore legacy access.
 - `apps/api/src/enterprise_doc_api/tenant_usage/router.py`
 - `tests/billing/test_entitlement_lifecycle_integration.py`
 - `tests/billing/test_tenant_resource_usage_integration.py`
+- `packages/core/src/enterprise_doc_core/billing/reconciliation.py`
+- `tests/billing/test_usage_reconciliation_integration.py`

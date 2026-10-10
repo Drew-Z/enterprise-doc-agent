@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "at": "2026-10-02T12:12:23.991853+00:00",
+  "status": "operator_catalog_and_real_ciphertext_validation_complete_production_pending",
+  "implementation": "scripts/server_backup/restore_catalog.py",
+  "backup_tests_passed": 58,
+  "catalog_tests_passed": 16,
+  "documentation_tests_passed": 5,
+  "ruff_check": "passed",
+  "ruff_format": "passed",
+  "real_validation": {
+    "ciphertexts_authenticated": 3,
+    "logical_contents": 1,
+    "tables_per_snapshot": 56,
+    "rows_per_snapshot": 82705,
+    "objects_per_snapshot": 1669,
+    "actual_restore_proofs": 0,
+    "protected_snapshots": 3,
+    "original_failed_status_preserved": "original_container_state_changed",
+    "original_evidence_unchanged": true,
+    "real_restore_reruns": 0
+  },
+  "catalog_sha256": "4223cfb53fe6ff33bb8eb100312cb10860079d89df9d97d5247fc01fafd3b081",
+  "local_evidence_sha256": "06fdd9a5f0f152e6626650b936e1f7fa6ced408b55b0a2a49b33f82fb56c264d",
+  "new_package_id": "8915b9fbe3eeb4e7cafda8b8f87071f0796d52e5e9cd753d1460f00fccfb9abb",
+  "previous_native_package_id": "3573ac5a5fc5b7486f46b6bf21e434abed41e6c0e9a6d89d6197e5f7fc12203f",
+  "new_native_installation_verified": false,
+  "original_dirty_entries_preserved": 2993,
+  "independent_review": "subagent unavailable; main-agent review only",
+  "boundaries": [
+    "operator-selected execution/evidence trust anchors, not uploader assertions",
+    "operator must maintain all owner references; no automatic external-owner discovery",
+    "catalog and sensitive restore data remain local",
+    "retention planning only; no deletion",
+    "old native installation proof is not evidence for the new package"
+  ],
+  "production_writes": 0,
+  "remote_uploads": 0,
+  "private_identity_copied": false,
+  "remaining": [
+    "production target minimal credentials and source/target storage separation",
+    "specific remote sensitive-backup storage exception",
+    "production package activation and monitor configuration",
+    "off-personal-computer continuity",
+    "other four acceptance gates"
+  ],
+  "five_acceptance_gates_complete": false
+}

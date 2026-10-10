@@ -94,7 +94,7 @@ test("desktop owner usage, failed refresh, recovery and all period states", asyn
   state.usageStatus = 503;
   await page.getByRole("button", { name: "刷新用量" }).click();
   await expect(page.getByRole("alert")).toContainText("req-browser-usage");
-  await expect(page.getByRole("region", { name: "生成额度" })).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "售前生成额度" })).toHaveCount(0);
 
   state.usageStatus = 200;
   for (const status of ["legacy", "inactive"] as const) {

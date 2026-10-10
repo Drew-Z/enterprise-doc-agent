@@ -41,6 +41,22 @@ class TenantResourceUsageResponse(ApiModel):
     seats_remaining: int | None
 
 
+class ProductQuotaResponse(ApiModel):
+    metric: Literal["agent_task", "document_bytes"]
+    limit: int
+    used: int
+    reserved: int
+    remaining: int
+
+
+class ProviderUsageResponse(ApiModel):
+    calls: int
+    unresolved_calls: int
+    unknown_cost_calls: int
+    usage_known_calls: int
+    known_total_tokens: int
+
+
 class TenantUsageResponse(ApiModel):
     tenant_id: UUID
     enabled: bool
@@ -56,6 +72,8 @@ class TenantUsageResponse(ApiModel):
     cost_status: str = Field(pattern="^(known|unknown)$")
     recent_events: list[UsageEventResponse]
     resources: TenantResourceUsageResponse
+    product_quotas: list[ProductQuotaResponse]
+    model_calls: ProviderUsageResponse
 
 
 router = APIRouter(prefix="/api/tenant-usage", tags=["tenant-usage"])
@@ -117,6 +135,23 @@ def _response(summary: UsageSummary) -> TenantUsageResponse:
         provider_requests_remaining=summary.provider_requests_remaining,
         cost_status=summary.cost_status,
         recent_events=[_event(item) for item in summary.recent_events],
+        model_calls=ProviderUsageResponse(
+            calls=summary.model_calls.calls,
+            unresolved_calls=summary.model_calls.unresolved_calls,
+            unknown_cost_calls=summary.model_calls.unknown_cost_calls,
+            usage_known_calls=summary.model_calls.usage_known_calls,
+            known_total_tokens=summary.model_calls.known_total_tokens,
+        ),
+        product_quotas=[
+            ProductQuotaResponse(
+                metric=q.metric,
+                limit=q.limit,
+                used=q.used,
+                reserved=q.reserved,
+                remaining=q.remaining,
+            )
+            for q in summary.product_quotas
+        ],
         resources=TenantResourceUsageResponse(
             storage_limit_bytes=summary.resources.storage_limit_bytes,
             storage_used_bytes=summary.resources.storage_used_bytes,

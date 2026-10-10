@@ -8,6 +8,7 @@ from typing import Any
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
+from httpx import AsyncBaseTransport
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.trace import Span
 from pydantic import BaseModel
@@ -79,8 +80,10 @@ from enterprise_doc_api.middleware import (
 )
 from enterprise_doc_api.presales.router import PresalesServiceProtocol
 from enterprise_doc_api.presales.router import router as presales_router
+from enterprise_doc_api.queue_probe import QueueProbe
 from enterprise_doc_api.tenant_usage.router import router as tenant_usage_router
 from enterprise_doc_api.uploads import router as upload_router
+from enterprise_doc_api.uploads.content import router as upload_content_router
 from enterprise_doc_api.uploads.router import (
     UploadCreationServiceProtocol,
     UploadSessionServiceProtocol,
@@ -118,6 +121,10 @@ from enterprise_doc_core.object_store import (
     Boto3MultipartObjectStore,
     MultipartObjectStore,
 )
+from enterprise_doc_core.object_store.signed_upload import (
+    Boto3SignedUploadWriter,
+    SignedUploadWriter,
+)
 from enterprise_doc_core.presales.gateway import OpenAICompatiblePresalesGateway
 from enterprise_doc_core.presales.service import PresalesService
 from enterprise_doc_core.telemetry import (
@@ -125,11 +132,16 @@ from enterprise_doc_core.telemetry import (
     TelemetryRuntime,
     instrument_health_checkers,
 )
+from enterprise_doc_core.telemetry.queue_health import QueueObservation
 from enterprise_doc_core.uploads import UploadCreationService, UploadSessionService
 
 
 class LivenessResponse(BaseModel):
     status: str = "alive"
+
+
+class ObservedReadinessResponse(ReadinessResponse):
+    queue: QueueObservation
 
 
 def _required_session_factory(
@@ -178,6 +190,7 @@ def create_app(
     external_principal_resolver: PrincipalResolver | None = None,
     upload_creation_service: UploadCreationServiceProtocol | None = None,
     upload_session_service: UploadSessionServiceProtocol | None = None,
+    signed_upload_writer: SignedUploadWriter | None = None,
     document_inventory_service: DocumentInventoryServiceProtocol | None = None,
     document_policy_service: DocumentPolicyServiceProtocol | None = None,
     agent_run_service: AgentRunServiceProtocol | None = None,
@@ -194,6 +207,7 @@ def create_app(
     browser_oidc_client: OidcClient | None = None,
     browser_identity_client: BrowserIdentityClient | None = None,
     metrics: MetricsRuntime | None = None,
+    queue_probe_transport: AsyncBaseTransport | None = None,
 ) -> FastAPI:
     resolved_settings = settings if settings is not None else ApiSettings()
     if browser_oidc_client is not None and (
@@ -249,6 +263,11 @@ def create_app(
     owned_database_engine: AsyncEngine | None = None
     owned_multipart_object_store: Boto3MultipartObjectStore | None = None
     owned_artifact_object_store: Boto3ArtifactObjectStore | None = None
+    owned_signed_upload_writer = (
+        Boto3SignedUploadWriter(settings=resolved_settings.object_store, metrics=resolved_metrics)
+        if resolved_settings.upload.single_put_enabled and signed_upload_writer is None
+        else None
+    )
     if resources is not None:
         business_database_engine: AsyncEngine | None = resources.database_engine
         business_object_store: MultipartObjectStore | None = resources.multipart_object_store
@@ -277,7 +296,9 @@ def create_app(
     resolved_usage_service = (
         usage_service
         if usage_service is not None
-        else EntitlementUsageService(session_factory=session_factory)
+        else EntitlementUsageService(
+            session_factory=session_factory, app_env=resolved_settings.app_env
+        )
         if session_factory is not None
         else None
     )
@@ -309,11 +330,17 @@ def create_app(
             else readiness_cache_ttl_seconds
         ),
     )
+    queue_probe = (
+        QueueProbe(transport=queue_probe_transport)
+        if resolved_settings.api.queue_observation_enabled
+        else None
+    )
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         cleanup_stop = asyncio.Event()
         cleanup_task: asyncio.Task[None] | None = None
+        queue_task: asyncio.Task[None] | None = None
         if resolved_settings.browser_auth.enabled:
             cleaner = DemoCleanupService(
                 session_factory=_required_session_factory(session_factory),
@@ -322,8 +349,17 @@ def create_app(
             )
             cleanup_task = asyncio.create_task(cleaner.run(cleanup_stop))
         try:
+            if queue_probe is not None:
+                await queue_probe.sample_once()
+                queue_task = asyncio.create_task(queue_probe.run(cleanup_stop))
             yield
         finally:
+            cleanup_stop.set()
+            if queue_task is not None:
+                queue_task.cancel()
+                await asyncio.gather(queue_task, return_exceptions=True)
+            if queue_probe is not None:
+                await queue_probe.close()
             if cleanup_task is not None:
                 cleanup_stop.set()
                 cleanup_task.cancel()
@@ -337,6 +373,8 @@ def create_app(
                     await owned_multipart_object_store.close()
             if owned_artifact_object_store is not None:
                 await owned_artifact_object_store.close()
+            if owned_signed_upload_writer is not None:
+                await owned_signed_upload_writer.close()
 
     app = FastAPI(
         title="Enterprise Document Agent API",
@@ -415,6 +453,8 @@ def create_app(
         )
     app.state.metrics = resolved_metrics
     app.state.readiness_cache = readiness_cache
+    app.state.upload_content_enabled = resolved_settings.upload.single_put_enabled
+    app.state.signed_upload_writer = signed_upload_writer or owned_signed_upload_writer
     app.state.upload_creation_service = (
         upload_creation_service
         if upload_creation_service is not None
@@ -465,6 +505,7 @@ def create_app(
             session_factory=_required_session_factory(session_factory),
             agent_settings=resolved_settings.agent,
             model_settings=resolved_settings.model,
+            app_env=resolved_settings.app_env,
         )
     )
     app.state.approval_service = (
@@ -545,10 +586,11 @@ def create_app(
         if session_factory is not None
         else None
     )
+    app.include_router(upload_content_router)
     app.include_router(upload_router)
     if presales_service is None:
         embedding_provider, embedding_model, embedding_dimension = build_embedding_provider(
-            resolved_settings.embedding
+            resolved_settings.embedding, app_env=resolved_settings.app_env
         )
         app.state.presales_service = PresalesService(
             session_factory=_required_session_factory(session_factory),
@@ -559,6 +601,8 @@ def create_app(
                 embedding_dimension=embedding_dimension,
                 query_instruction=resolved_settings.embedding.query_instruction,
                 require_vector_evidence=resolved_settings.retrieval.require_vector_evidence,
+                app_env=resolved_settings.app_env,
+                provider_usage_settings=resolved_settings.provider_usage,
                 metrics=resolved_metrics,
             ),
             gateway=OpenAICompatiblePresalesGateway(
@@ -610,11 +654,18 @@ def create_app(
 
     @app.get(
         "/health/ready",
-        response_model=ReadinessResponse,
-        responses={503: {"model": ReadinessResponse}},
+        response_model=ObservedReadinessResponse | ReadinessResponse,
+        responses={503: {"model": ObservedReadinessResponse | ReadinessResponse}},
     )
     async def ready(response: Response) -> ReadinessResponse | JSONResponse:
         result = await readiness_cache.get()
+        if queue_probe is not None:
+            result = ObservedReadinessResponse(
+                status=result.status,
+                checks=result.checks,
+                checked_at=result.checked_at,
+                queue=queue_probe.current,
+            )
         response.headers["Cache-Control"] = "no-store"
         if result.status is OverallStatus.NOT_READY:
             return JSONResponse(

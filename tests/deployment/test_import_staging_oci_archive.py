@@ -1,21 +1,18 @@
 from __future__ import annotations
 
 import hashlib
-import importlib.util
 import io
 import json
 import subprocess
 import tarfile
+import time
 from pathlib import Path
 
 import pytest
+from scripts import import_staging_oci_archive as MODULE
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "scripts" / "import_staging_oci_archive.py"
-SPEC = importlib.util.spec_from_file_location("import_staging_oci_archive", SCRIPT)
-assert SPEC is not None and SPEC.loader is not None
-MODULE = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(MODULE)
 
 
 def _json_bytes(payload: object) -> bytes:
@@ -31,15 +28,15 @@ def _descriptor(media_type: str, payload: bytes) -> dict[str, object]:
 
 
 def _write_oci_archive(path: Path, *, member_prefix: str = "") -> tuple[str, tuple[str, ...]]:
+    runtime_config = _json_bytes(
+        {"os": "linux", "architecture": "amd64", "rootfs": {"type": "layers", "diff_ids": []}}
+    )
+    attestation_config = _json_bytes({"os": "unknown", "architecture": "unknown"})
     runtime_manifest = _json_bytes(
         {
             "schemaVersion": 2,
             "mediaType": "application/vnd.oci.image.manifest.v1+json",
-            "config": {
-                "mediaType": "application/vnd.oci.image.config.v1+json",
-                "digest": "sha256:" + "1" * 64,
-                "size": 2,
-            },
+            "config": _descriptor("application/vnd.oci.image.config.v1+json", runtime_config),
             "layers": [],
         }
     )
@@ -47,11 +44,7 @@ def _write_oci_archive(path: Path, *, member_prefix: str = "") -> tuple[str, tup
         {
             "schemaVersion": 2,
             "mediaType": "application/vnd.oci.image.manifest.v1+json",
-            "config": {
-                "mediaType": "application/vnd.unknown.config.v1+json",
-                "digest": "sha256:" + "2" * 64,
-                "size": 2,
-            },
+            "config": _descriptor("application/vnd.unknown.config.v1+json", attestation_config),
             "layers": [],
         }
     )
@@ -83,6 +76,9 @@ def _write_oci_archive(path: Path, *, member_prefix: str = "") -> tuple[str, tup
         str(attestation_descriptor["digest"]): attestation_manifest,
         str(index_descriptor["digest"]): image_index,
     }
+    expected = tuple(sorted(blobs))
+    for content in (runtime_config, attestation_config):
+        blobs["sha256:" + hashlib.sha256(content).hexdigest()] = content
     with tarfile.open(path, "w") as archive:
         for name, content in {
             "oci-layout": b'{"imageLayoutVersion":"1.0.0"}',
@@ -95,8 +91,41 @@ def _write_oci_archive(path: Path, *, member_prefix: str = "") -> tuple[str, tup
             info = tarfile.TarInfo(f"{member_prefix}{name}")
             info.size = len(content)
             archive.addfile(info, io.BytesIO(content))
-    expected = tuple(sorted(blobs))
     return hashlib.sha256(path.read_bytes()).hexdigest(), expected
+
+
+def healthy_cache_state() -> dict[str, object]:
+    refs = [
+        f"docker.io/library/{role}@sha256:" + str(i) * 64
+        for i, role in enumerate(("api", "worker", "consumer", "web", "redis"), 1)
+    ]
+    fs = {
+        "device": 1,
+        "total_bytes": 10 * 1024**3,
+        "available_bytes": 8 * 1024**3,
+        "total_inodes": 1000000,
+        "available_inodes": 800000,
+    }
+    return {
+        "observed_at": time.monotonic(),
+        "ready": True,
+        "disk_pressure": False,
+        "namespace_uid": "namespace",
+        "node_uid": "node",
+        "boot_id": "boot",
+        "workloads_sha256": "specs",
+        "eviction_hard": {"nodefs.available": "10%", "imagefs.available": "10%"},
+        "eviction_soft": {},
+        "minimum_reclaim": {"nodefs.available": "10%", "imagefs.available": "10%"},
+        "required_refs": refs,
+        "images": {
+            ref: {"ready": True, "target": ref.split("@")[1], "aliases": {ref: ref.split("@")[1]}}
+            for ref in refs
+        },
+        "cache_filesystem": fs,
+        "temporary_filesystem": dict(fs),
+        "node_filesystem": dict(fs),
+    }
 
 
 def test_import_plan_accepts_root_dot_slash_tar_members(tmp_path: Path) -> None:
@@ -171,7 +200,7 @@ def test_execute_import_verifies_every_canonical_digest_alias(tmp_path: Path) ->
             return subprocess.CompletedProcess(command, 0, "\n".join(plan.expected_refs) + "\n", "")
         return subprocess.CompletedProcess(command, 0, "", "")
 
-    report = MODULE.execute_import_plan(plan, run=run)
+    report = MODULE.execute_import_plan(plan, run=run, probe=lambda _: healthy_cache_state())
 
     assert report["status"] == "passed"
     assert report["canonical_base"] == plan.canonical_base
@@ -203,7 +232,7 @@ def test_execute_import_fails_when_any_canonical_alias_is_missing(tmp_path: Path
         return subprocess.CompletedProcess(command, 0, "", "")
 
     with pytest.raises(MODULE.StagingOciImportError, match="canonical digest aliases"):
-        MODULE.execute_import_plan(plan, run=run)
+        MODULE.execute_import_plan(plan, run=run, probe=lambda _: healthy_cache_state())
 
 
 def test_execute_import_tags_and_verifies_the_exact_deployment_reference(tmp_path: Path) -> None:
@@ -235,7 +264,7 @@ def test_execute_import_tags_and_verifies_the_exact_deployment_reference(tmp_pat
             return subprocess.CompletedProcess(command, 0, table, "")
         return subprocess.CompletedProcess(command, 0, "", "")
 
-    report = MODULE.execute_import_plan(plan, run=run)
+    report = MODULE.execute_import_plan(plan, run=run, probe=lambda _: healthy_cache_state())
 
     canonical_source = f"{plan.canonical_base}@{root_digest}"
     assert (

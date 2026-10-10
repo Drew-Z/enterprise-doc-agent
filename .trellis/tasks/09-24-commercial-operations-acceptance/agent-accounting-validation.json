@@ -1,0 +1,84 @@
+{
+  "schema_version": "agent-accounting-acceptance.v1",
+  "date": "2026-09-28",
+  "status": "local_controlled_verified_live_supplier_pending",
+  "baseline_commit": "8fbd48d809c7cdacb6818290be59155b24ab740c",
+  "task_status": "in_progress",
+  "production_application_changes": false,
+  "coverage_gap": {
+    "deterministic_success_fixture": "Consumed one task but produced no ProviderDispatch; the new assertion failed with zero receipts.",
+    "old_artifact_fixture": "Writes metadata without verified_at and is rejected by the real artifact listing integrity check.",
+    "change": "Use the metered OpenAI-compatible gateway, real job consumer, product accounting, reconciliation and AgentToolService for successful graph runs."
+  },
+  "boundaries": {
+    "real": ["isolated PostgreSQL", "formal entitlement policy", "job leases and failure projection", "Agent graph", "provider dispatch ledger", "quota settlement", "usage summary", "reconciliation export", "artifact construction and metadata listing"],
+    "controlled": ["HTTP provider via MockTransport", "fixed retrieval", "memory artifact object store", "MCP adapter in process", "in-memory graph checkpoint"],
+    "not_proven": ["live supplier quality and prices", "production Agent journey", "MCP stdio", "real object download", "production capacity", "host-loss RPO/RTO"]
+  },
+  "observed_cases": [
+    {"case": "direct_success", "provider_calls": 1, "task_consumes": 1, "reserved_after": 0},
+    {"case": "schema_repair_success", "provider_calls": 2, "task_consumes": 1, "reserved_after": 0},
+    {"case": "timeout", "provider_calls": 1, "task_consumes": 0, "task_releases": 1, "provider_state": "timeout"},
+    {"case": "http_503", "provider_calls": 1, "task_consumes": 0, "task_releases": 1, "provider_state": "http_error"},
+    {"case": "repair_budget", "provider_calls": 1, "task_consumes": 0, "task_releases": 1, "second_http_blocked": true},
+    {"case": "job_retry_budget", "job_attempts": 2, "provider_calls": 1, "task_consumes": 0, "task_releases": 1, "reservation_kept_during_retry": true, "second_http_blocked": true}
+  ],
+  "replay_and_read": {
+    "same_run_and_job": true,
+    "duplicate_queue_delivery_rejected": true,
+    "status_and_artifact_listing_add_no_dispatch_or_settlement": true,
+    "artifact_bytes_match_sha256": true,
+    "ledger_operation_reservation_quota_period_link_verified": true,
+    "presales_quota_not_consumed_by_agent_calls": true,
+    "unpriced_cost_and_currency_remain_null": true
+  },
+  "validation": {
+    "related_database_integration_passed": 29,
+    "nonintegration_passed": 2030,
+    "nonintegration_subtests_passed": 23,
+    "integration_deselected_from_nonintegration": 445,
+    "ruff_format": "passed",
+    "ruff_check": "passed",
+    "strict_mypy": "passed",
+    "trellis": "passed",
+    "bounded_runner_controlled_success": "one dispatch, one consume, one artifact, same-key replay unchanged",
+    "bounded_runner_controlled_budget": "one dispatch, no second request, one release",
+    "bounded_runner_missing_authorization": "refused before execution marker or network"
+  },
+  "retained_failures": [
+    "Initial private runner used Windows Proactor loop, rejected before DB setup; corrected to Selector loop.",
+    "Expected nonempty-dispatch red assertion against the old deterministic fixture.",
+    "Intermediate fixture timing argument, error-code/message assertion and status-field assertion errors.",
+    "Old fake artifact metadata correctly failed integrity checks; successful tests now use the real artifact construction service.",
+    "First full run: one pre-existing 25ms max_run_seconds timing assertion failed (not_run 6 vs 7); targeted three cases and full rerun passed."
+  ],
+  "external_effects": {
+    "real_model_requests": 0,
+    "embedding_requests": 0,
+    "emails": 0,
+    "production_writes": 0,
+    "application_deployments": 0,
+    "pilot_expiry_extended": false
+  },
+  "cleanup": {
+    "owned_database_schemas_removed": true,
+    "remaining_browser_test_schemas": 0,
+    "default_public_migrated": false,
+    "default_public_tenants": 0
+  },
+  "next_live_scope": {
+    "environment": "owned local database and memory object boundary, real primary supplier only",
+    "max_model_requests": 1,
+    "request_timeout_seconds": 120,
+    "task_timeout_seconds": 150,
+    "job_max_attempts": 1,
+    "fallback_enabled": false,
+    "repair_shares_request_limit": true,
+    "currency_cost_limit": null,
+    "price_verified": false,
+    "new_budget_required": true,
+    "production_acceptance_complete": false
+  },
+  "evidence_location": "Existing CODEX_HOME commercial-production-readiness recovery group / agent-accounting-evidence",
+  "formal_commercial_acceptance_complete": false
+}

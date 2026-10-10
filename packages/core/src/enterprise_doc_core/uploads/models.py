@@ -36,6 +36,11 @@ class UploadSessionStatus(StrEnum):
     FAILED = "failed"
 
 
+class UploadTransport(StrEnum):
+    MULTIPART = "multipart"
+    SINGLE_PUT = "single_put"
+
+
 class UploadSession(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "upload_sessions"
     __table_args__ = (
@@ -55,6 +60,19 @@ class UploadSession(UUIDPrimaryKeyMixin, TimestampMixin, Base):
             name="expected_part_count_range",
         ),
         CheckConstraint("reserved_bytes >= 0", name="reserved_bytes_non_negative"),
+        CheckConstraint("transport IN ('multipart', 'single_put')", name="transport_valid"),
+        CheckConstraint(
+            "transport = 'single_put' OR signed_put_expires_at IS NULL",
+            name="signed_put_transport",
+        ),
+        CheckConstraint(
+            "transport = 'single_put' OR single_put_retired_at IS NULL",
+            name="retired_put_transport",
+        ),
+        CheckConstraint(
+            "transport = 'multipart' OR object_store_upload_id IS NULL",
+            name="single_put_no_multipart_id",
+        ),
         CheckConstraint(
             "(cleanup_claimed_at IS NULL AND cleanup_claim_token IS NULL) OR "
             "(cleanup_claimed_at IS NOT NULL AND cleanup_claim_token IS NOT NULL)",
@@ -101,6 +119,20 @@ class UploadSession(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     request_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
     object_key: Mapped[str] = mapped_column(String(512), nullable=False, unique=True)
     object_store_upload_id: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    transport: Mapped[str] = mapped_column(
+        String(16),
+        nullable=False,
+        default=UploadTransport.MULTIPART.value,
+        server_default=UploadTransport.MULTIPART.value,
+    )
+    signed_put_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    single_put_retired_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
     original_filename: Mapped[str] = mapped_column(String(255), nullable=False)
     extension: Mapped[str] = mapped_column(String(16), nullable=False)
     declared_media_type: Mapped[str] = mapped_column(String(128), nullable=False)

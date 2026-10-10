@@ -12,11 +12,18 @@ from enum import StrEnum
 from typing import Any, Protocol
 from uuid import UUID, uuid4
 
-from sqlalchemy import and_, exists, func, or_, select, text
+from sqlalchemy import ColumnElement, Select, and_, exists, func, insert, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import aliased
 
 from enterprise_doc_core.audit import append_audit_event
+from enterprise_doc_core.audit.models import AuditEvent
+from enterprise_doc_core.billing.product_contracts import (
+    ProductMetric,
+    document_processing_operation_id,
+)
+from enterprise_doc_core.billing.product_models import ProductUsageReservation
+from enterprise_doc_core.billing.product_usage import ProductUsageService
 from enterprise_doc_core.jobs.diagnostics import is_allowed_job_diagnostic_code
 from enterprise_doc_core.jobs.models import (
     Job,
@@ -80,6 +87,12 @@ class JobCreateResult:
     job_id: UUID
     outbox_event_id: UUID | None
     replayed: bool
+
+
+@dataclass(frozen=True, slots=True)
+class PreparedJobRecords:
+    statement: Select[Any] | None
+    result: JobCreateResult
 
 
 @dataclass(frozen=True, slots=True)
@@ -204,11 +217,13 @@ async def _append_job_event(
     event_type: str,
     payload: Mapping[str, Any] | None = None,
     actor_id: UUID | None = None,
+    initial: bool = False,
 ) -> JobEvent:
     event = JobEvent(
         tenant_id=job.tenant_id,
         job_id=job.id,
-        seq=await _next_event_sequence(session, job_id=job.id),
+        # A new, uncommitted Job cannot have events from another transaction.
+        seq=1 if initial else await _next_event_sequence(session, job_id=job.id),
         event_type=event_type,
         status=job.status,
         actor_id=actor_id,
@@ -217,6 +232,29 @@ async def _append_job_event(
     )
     session.add(event)
     await session.flush()
+    if job.type == "document.ingest" and job.status in {
+        JobStatus.DEAD.value,
+        JobStatus.CANCELLED.value,
+    }:
+        operation_id = document_processing_operation_id(job.id, job.max_attempts)
+        reservation = await session.scalar(
+            select(ProductUsageReservation).where(
+                ProductUsageReservation.tenant_id == job.tenant_id,
+                ProductUsageReservation.operation_id == operation_id,
+                ProductUsageReservation.metric == ProductMetric.DOCUMENT_BYTES.value,
+            )
+        )
+        # Activation and cancellation both lock Job. A completed activation remains
+        # counted even if its delivery acknowledgement is later lost or cancelled.
+        if reservation is not None and reservation.state == "reserved":
+            await ProductUsageService.finish_in_session(
+                session,
+                tenant_id=job.tenant_id,
+                operation_id=operation_id,
+                metric=ProductMetric.DOCUMENT_BYTES,
+                consume=False,
+                source=f"document.{job.status}",
+            )
     metadata: dict[str, Any] = {"event_type": event_type, "status": job.status}
     if job.type:
         metadata["job_type"] = job.type
@@ -277,7 +315,53 @@ async def create_job_records(
     available_at: datetime | None = None,
     outbox_event_type: str | None = "job.created",
 ) -> JobCreateResult:
+    prepared = await prepare_job_records(
+        session,
+        tenant_id=tenant_id,
+        actor_id=actor_id,
+        job_type=job_type,
+        idempotency_key=idempotency_key,
+        payload=payload,
+        document_version_id=document_version_id,
+        max_attempts=max_attempts,
+        priority=priority,
+        request_id=request_id,
+        correlation_id=correlation_id,
+        available_at=available_at,
+        outbox_event_type=outbox_event_type,
+    )
+    if prepared.statement is not None:
+        await session.execute(prepared.statement)
+    return prepared.result
+
+
+async def prepare_job_records(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    actor_id: UUID,
+    job_type: str,
+    idempotency_key: str,
+    payload: Mapping[str, Any],
+    document_version_id: UUID | None = None,
+    max_attempts: int = 3,
+    priority: int = 0,
+    request_id: str | None = None,
+    correlation_id: str | None = None,
+    available_at: datetime | None = None,
+    outbox_event_type: str | None = "job.created",
+    document_version_reference: ColumnElement[UUID] | None = None,
+) -> PreparedJobRecords:
+    """Check idempotency and prepare a composable insert in the caller's transaction.
+
+    Flush pending ORM parents as ordinary creation does. A trusted caller may
+    instead supply a RETURNING expression for its new version's declared UUID,
+    then compose its own dependent writes before executing the returned statement.
+    A replay has no statement and must never execute new dependent writes.
+    """
     importlib.import_module("enterprise_doc_core.db.metadata")
+    if document_version_reference is not None and document_version_id is None:
+        raise ValueError("a version reference requires its declared document_version_id")
     if not 1 <= max_attempts <= 100:
         raise ValueError("max_attempts must be between 1 and 100")
     if len(idempotency_key) == 0 or len(idempotency_key) > 128:
@@ -309,52 +393,100 @@ async def create_job_records(
             if outbox_event_type is not None
             else None
         )
-        return JobCreateResult(existing.id, event.id if event else None, True)
-
-    job = Job(
-        tenant_id=tenant_id,
-        actor_id=actor_id,
-        document_version_id=document_version_id,
-        type=job_type,
-        status=JobStatus.PENDING.value,
-        priority=priority,
-        idempotency_key=idempotency_key,
-        request_fingerprint=fingerprint,
-        payload=dict(payload),
-        max_attempts=max_attempts,
-        available_at=available_at or _utcnow(),
-        request_id=request_id,
-        correlation_id=correlation_id,
-    )
-    session.add(job)
-    await session.flush()
-    await _append_job_event(
-        session,
-        job=job,
-        event_type="job.created",
-        payload={"job_type": job_type},
-        actor_id=actor_id,
-    )
-    outbox_event: OutboxEvent | None = None
-    if outbox_event_type is not None:
-        outbox_event = OutboxEvent(
-            tenant_id=tenant_id,
-            aggregate_id=job.id,
-            event_type=outbox_event_type,
-            payload={
-                "job_id": str(job.id),
-                "tenant_id": str(tenant_id),
-                "document_version_id": str(document_version_id)
-                if document_version_id is not None
-                else None,
-            },
-            payload_version=1,
-            status=OutboxEventStatus.PENDING.value,
-            available_at=available_at or _utcnow(),
+        return PreparedJobRecords(
+            None, JobCreateResult(existing.id, event.id if event else None, True)
         )
-        session.add(outbox_event)
-        await session.flush()
-    return JobCreateResult(job.id, outbox_event.id if outbox_event else None, False)
+
+    # Flush caller-owned parents even when autoflush is disabled, as the previous
+    # ORM creation path did. All initial job records then share one database
+    # round trip and the caller's transaction; later events keep their own path.
+    await session.flush()
+    job_id = uuid4()
+    created_job = (
+        insert(Job)
+        .values(
+            id=job_id,
+            tenant_id=tenant_id,
+            actor_id=actor_id,
+            document_version_id=(
+                document_version_reference
+                if document_version_reference is not None
+                else document_version_id
+            ),
+            type=job_type,
+            status=JobStatus.PENDING.value,
+            priority=priority,
+            idempotency_key=idempotency_key,
+            request_fingerprint=fingerprint,
+            payload=dict(payload),
+            max_attempts=max_attempts,
+            available_at=available_at or _utcnow(),
+            request_id=request_id,
+            correlation_id=correlation_id,
+        )
+        .returning(Job.id)
+        .cte("created_job")
+    )
+    created_job_id = select(created_job.c.id).scalar_subquery()
+    initial_event = (
+        insert(JobEvent)
+        .values(
+            id=uuid4(),
+            tenant_id=tenant_id,
+            job_id=created_job_id,
+            seq=1,
+            event_type="job.created",
+            status=JobStatus.PENDING.value,
+            payload={"job_type": job_type},
+            payload_version=1,
+            actor_id=actor_id,
+        )
+        .cte("initial_job_event")
+    )
+    metadata = {"event_type": "job.created", "status": JobStatus.PENDING.value}
+    if job_type:
+        metadata["job_type"] = job_type
+    initial_audit = (
+        insert(AuditEvent)
+        .values(
+            id=uuid4(),
+            tenant_id=tenant_id,
+            actor_id=actor_id,
+            action="job.created",
+            resource_type="job",
+            resource_id=created_job_id,
+            event_metadata=metadata,
+            request_id=request_id,
+            correlation_id=correlation_id,
+        )
+        .cte("initial_job_audit")
+    )
+    statement = select(created_job.c.id).add_cte(initial_event, initial_audit)
+    outbox_event_id: UUID | None = None
+    if outbox_event_type is not None:
+        outbox_event_id = uuid4()
+        initial_outbox = (
+            insert(OutboxEvent)
+            .values(
+                id=outbox_event_id,
+                tenant_id=tenant_id,
+                aggregate_id=created_job_id,
+                event_type=outbox_event_type,
+                payload={
+                    "job_id": str(job_id),
+                    "tenant_id": str(tenant_id),
+                    "document_version_id": str(document_version_id)
+                    if document_version_id is not None
+                    else None,
+                },
+                payload_version=1,
+                status=OutboxEventStatus.PENDING.value,
+                available_at=available_at or _utcnow(),
+            )
+            .cte("initial_job_outbox")
+        )
+        statement = statement.add_cte(initial_outbox)
+    return PreparedJobRecords(statement, JobCreateResult(job_id, outbox_event_id, False))
 
 
 async def cancel_job_records(
@@ -842,7 +974,9 @@ class JobRuntimeService:
             )
             if job is None:
                 raise JobNotFound()
-            if job.status != JobStatus.DEAD.value:
+            # Presales retries are new domain operations with fresh authorization
+            # and quota checks; a generic retry would bypass them and emit Celery work.
+            if job.status != JobStatus.DEAD.value or job.type == "presales.generate":
                 raise JobNotClaimable()
             job.status = JobStatus.PENDING.value
             job.max_attempts += 1

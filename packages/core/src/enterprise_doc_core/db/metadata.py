@@ -23,6 +23,12 @@ from enterprise_doc_core.audit.models import (
 )
 from enterprise_doc_core.auth.models import LocalTokenRevocation
 from enterprise_doc_core.billing.models import TenantEntitlement, UsageEvent, UsageReservation
+from enterprise_doc_core.billing.product_models import (
+    ProductQuota,
+    ProductUsageEvent,
+    ProductUsageReservation,
+)
+from enterprise_doc_core.billing.provider_models import ProviderDispatch
 from enterprise_doc_core.browser_sessions.models import (
     BrowserLoginAttempt,
     BrowserSession,
@@ -54,6 +60,10 @@ REGISTERED_MODELS = (
     TenantEntitlement,
     UsageReservation,
     UsageEvent,
+    ProductQuota,
+    ProductUsageReservation,
+    ProductUsageEvent,
+    ProviderDispatch,
     MembershipInvitation,
     MembershipInvitationEvent,
     BrowserLoginAttempt,

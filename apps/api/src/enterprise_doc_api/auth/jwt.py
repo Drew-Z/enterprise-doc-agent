@@ -13,6 +13,7 @@ from enterprise_doc_api.config import AuthSettings
 from enterprise_doc_api.errors import ApiError
 from enterprise_doc_core.auth import LocalTokenRevocation
 from enterprise_doc_core.context import PrincipalContext
+from enterprise_doc_core.db import read_only_session
 from enterprise_doc_core.identity import Membership, Tenant, User
 
 
@@ -134,7 +135,7 @@ class DatabasePrincipalResolver:
         if self.session_factory is None:
             raise RuntimeError("principal resolver session factory is unavailable")
 
-        statement = (
+        membership_role = (
             select(Membership.role)
             .join(Tenant, Tenant.id == Membership.tenant_id)
             .join(User, User.id == Membership.user_id)
@@ -146,16 +147,21 @@ class DatabasePrincipalResolver:
                 User.is_active.is_(True),
             )
         )
-        async with self.session_factory() as session:
-            revoked = await session.scalar(
-                select(LocalTokenRevocation.id).where(
-                    LocalTokenRevocation.tenant_id == claims.tenant_id,
-                    LocalTokenRevocation.token_id == claims.token_id,
+        revoked_token = select(LocalTokenRevocation.id).where(
+            LocalTokenRevocation.tenant_id == claims.tenant_id,
+            LocalTokenRevocation.token_id == claims.token_id,
+        )
+        async with read_only_session(self.session_factory) as session:
+            # Both checks share one statement and snapshot. Scalar subqueries
+            # retain a row even when membership is missing, so revocation keeps
+            # its 401 precedence over a missing/inactive membership's 403.
+            revoked, role = (
+                await session.execute(
+                    select(revoked_token.exists(), membership_role.scalar_subquery())
                 )
-            )
-            if revoked is not None:
+            ).one()
+            if revoked:
                 raise InvalidBearerToken()
-            role = await session.scalar(statement)
         if role is None:
             raise PrincipalForbidden()
         return PrincipalContext(

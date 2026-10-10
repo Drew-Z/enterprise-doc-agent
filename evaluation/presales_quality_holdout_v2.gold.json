@@ -1,0 +1,106 @@
+{
+  "schemaVersion": "presales-quality-gold-v1",
+  "datasetSha256": "c93361e9b1ffac60b6026172a79360aac9bf0a18f7186c818190fa938e37d55c",
+  "reviewStatus": "assistant_authored_and_self_reviewed_before_first_request; no independent domain adjudication",
+  "rows": [
+    {
+      "key": "H2-R1",
+      "status": "supported",
+      "requiredEvidence": [
+        {
+          "sourceKey": "H2-ORDER",
+          "excerpt": "SYNC 模块已购买，连接密钥验证通过，客户签署了同步验收单。"
+        },
+        {
+          "sourceKey": "H2-FEATURES",
+          "excerpt": "SYNC 可每五分钟同步一次新增工单。"
+        }
+      ],
+      "referenceAnswer": "已购买 SYNC，密钥验证和客户验收均完成，可每五分钟同步。",
+      "reviewPoints": [
+        "三个前提已有完成证明，不额外列为条件。"
+      ]
+    },
+    {
+      "key": "H2-R2",
+      "status": "conditional",
+      "requiredEvidence": [
+        {
+          "sourceKey": "H2-ORDER",
+          "excerpt": "OCR 模块未购买，资料约定的版面验收尚未进行。"
+        },
+        {
+          "sourceKey": "H2-FEATURES",
+          "excerpt": "启用 OCR 必须先购买模块并通过版面验收。"
+        }
+      ],
+      "referenceAnswer": "需购买 OCR 并通过版面验收，目前两项都未完成。",
+      "reviewPoints": [
+        "同时列出采购和版面验收，不承诺已开通。"
+      ]
+    },
+    {
+      "key": "H2-R3",
+      "status": "conditional",
+      "requiredEvidence": [
+        {
+          "sourceKey": "H2-ORDER",
+          "excerpt": "HOOK 模块已购买，本订单及附件均未记载其接收域名验证的状态。"
+        },
+        {
+          "sourceKey": "H2-FEATURES",
+          "excerpt": "启用 HOOK 必须购买模块并完成接收域名验证。"
+        }
+      ],
+      "referenceAnswer": "HOOK 已购，但需确认并完成接收域名验证；状态未记载不代表已完成，也不代表明确失败。",
+      "reviewPoints": [
+        "只将域名验证列为未决事项，不能重复要求已完成的采购。"
+      ]
+    },
+    {
+      "key": "H2-R4",
+      "status": "contradicted",
+      "requiredEvidence": [
+        {
+          "sourceKey": "H2-LIMITS",
+          "excerpt": "一次 CSV 导出的工单行数硬上限是 80000 行。"
+        },
+        {
+          "sourceKey": "H2-LIMITS",
+          "excerpt": "当前版本没有增加该上限的配置或选购方案。"
+        }
+      ],
+      "referenceAnswer": "80000 行硬上限小于 120000 行，无提升方案，多次合并不满足要求。",
+      "reviewPoints": [
+        "硬限制判为不满足，不建议不存在的升级。"
+      ]
+    },
+    {
+      "key": "H2-R5",
+      "status": "insufficient_evidence",
+      "requiredEvidence": [],
+      "referenceAnswer": "内部检查不能替代 SOC 2 Type II 报告，需补充报告及覆盖期，不能据此说公司肯定没有报告。",
+      "reviewPoints": [
+        "给出具体补证问题，不作肯定或否定认证结论。"
+      ]
+    },
+    {
+      "key": "H2-R6",
+      "status": "conflicting_evidence",
+      "requiredEvidence": [
+        {
+          "sourceKey": "H2-SERVICE",
+          "excerpt": "本企业的生产查询 API 每周七天、每天二十四小时保持可访问，不得安排任何停机窗口。"
+        },
+        {
+          "sourceKey": "H2-WINDOW",
+          "excerpt": "本企业的同一生产查询 API 每周六 02:00 至 03:00 必须停机维护，期间禁止接受任何查询请求。"
+        }
+      ],
+      "referenceAnswer": "两份同范围互不优先条款分别要求无停机和强制停机，需明确条款优先级或修订条款后才能承诺。",
+      "reviewPoints": [
+        "保留冲突两侧，以中文解释并提出优先级或范围澄清。"
+      ]
+    }
+  ]
+}

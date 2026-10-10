@@ -100,6 +100,10 @@ function formatBytes(value: number): string {
 }
 
 function progressForState(state: UploadMachineState, t: ReturnType<typeof useT>): { percent: number; label: string } {
+  if (state.phase === "completed" && state.fileIdentity !== null) {
+    const size = formatBytes(state.fileIdentity.sizeBytes);
+    return { percent: 100, label: t("upload.progress.of", { uploaded: size, total: size }) };
+  }
   if (state.phase === "hashing" && state.file !== null) {
     const percent = (state.hashProcessedBytes / state.file.size) * 100;
     return {
@@ -130,6 +134,7 @@ function canCancel(state: UploadMachineState): boolean {
   return (
     ["awaiting_file", "hashing", "creating", "uploading", "paused", "failed"].includes(state.phase) &&
     !state.reconciling && state.failure?.code !== "session_completing" &&
+    (state.contentIntent === null || state.contentStatus === "active") &&
     !(state.phase === "failed" && state.failure?.stage === "complete")
   );
 }
@@ -145,7 +150,7 @@ interface QueuedFile {
 function canClear(state: UploadMachineState): boolean {
   return (
     ["completed", "canceled", "failed"].includes(state.phase) &&
-    !(state.phase === "failed" && state.session !== null)
+    !(state.phase === "failed" && state.session !== null) && state.contentIntent === null
   );
 }
 
@@ -397,7 +402,7 @@ export function UploadWorkspace({
             )}
           </div>
           <div>
-            <h2>{state.reconciling ? copy.checking : t(phaseLabelKeys[state.phase])}</h2>
+            <h2>{state.reconciling ? copy.checking : t(phaseLabelKeys[state.contentIntent !== null && state.phase === "creating" ? "uploading" : state.phase])}</h2>
             <p>
               {state.fileIdentity?.filename ?? state.file?.name ?? t("upload.noDocument")}
               {(state.fileIdentity?.sizeBytes ?? state.file?.size) !== undefined

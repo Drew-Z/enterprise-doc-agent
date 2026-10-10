@@ -20,7 +20,9 @@ from enterprise_doc_core.object_store.metrics import instrument_object_store_ope
 from enterprise_doc_core.object_store.models import (
     CompletedMultipartUpload,
     IncompleteUpload,
+    ObjectContent,
     ObjectHead,
+    PresignedObjectUpload,
     PresignedUploadPart,
     UploadedPart,
 )
@@ -28,6 +30,20 @@ from enterprise_doc_core.telemetry import MetricsRuntime
 
 
 class MultipartObjectStore(Protocol):
+    async def retire_upload_object(
+        self, *, bucket: str, key: str, metadata: Mapping[str, str]
+    ) -> bool: ...
+
+    async def presign_object_put(
+        self,
+        *,
+        bucket: str,
+        key: str,
+        size_bytes: int,
+        metadata: Mapping[str, str],
+        expires_in_seconds: int,
+    ) -> PresignedObjectUpload: ...
+
     async def create_upload(
         self,
         *,
@@ -65,6 +81,8 @@ class MultipartObjectStore(Protocol):
     ) -> CompletedMultipartUpload: ...
 
     async def head_object(self, *, bucket: str, key: str) -> ObjectHead: ...
+
+    async def read_object(self, *, bucket: str, key: str, max_bytes: int) -> ObjectContent: ...
 
     async def get_range(
         self,
@@ -194,6 +212,46 @@ class Boto3MultipartObjectStore:
             expires_in_seconds=effective_ttl,
         )
 
+    @instrument_object_store_operation("write")
+    async def presign_object_put(
+        self,
+        *,
+        bucket: str,
+        key: str,
+        size_bytes: int,
+        metadata: Mapping[str, str],
+        expires_in_seconds: int,
+    ) -> PresignedObjectUpload:
+        """Sign a create-only PUT; callers still own readback and session lifecycle."""
+        if type(size_bytes) is not int or size_bytes < 1:
+            raise ObjectStoreProtocolError()
+        _validate_presign_ttl(expires_in_seconds)
+        effective_ttl = min(expires_in_seconds, self.settings.presign_ttl_seconds)
+        url = await self._call(
+            self.presign_client.generate_presigned_url,
+            ClientMethod="put_object",
+            Params={
+                "Bucket": bucket,
+                "Key": key,
+                "ContentLength": size_bytes,
+                "IfNoneMatch": "*",
+                "Metadata": dict(metadata),
+            },
+            ExpiresIn=effective_ttl,
+            HttpMethod="PUT",
+        )
+        if not isinstance(url, str) or not url:
+            raise ObjectStoreProtocolError()
+        return PresignedObjectUpload(
+            url=url,
+            headers={
+                "Content-Length": str(size_bytes),
+                "If-None-Match": "*",
+                **{f"x-amz-meta-{name}": value for name, value in metadata.items()},
+            },
+            expires_in_seconds=effective_ttl,
+        )
+
     @instrument_object_store_operation("list")
     async def list_parts(
         self,
@@ -304,22 +362,42 @@ class Boto3MultipartObjectStore:
                 **parameters,
             ),
         )
-        checksum = response.get("ChecksumSHA256")
-        content_type = response.get("ContentType")
-        metadata = response.get("Metadata", {})
-        if checksum is not None and not isinstance(checksum, str):
+        return _object_head(response)
+
+    @instrument_object_store_operation("read")
+    async def read_object(self, *, bucket: str, key: str, max_bytes: int) -> ObjectContent:
+        """Return one response's metadata and bounded bytes; oversize bodies stay unread."""
+        if type(max_bytes) is not int or max_bytes < 1:
             raise ObjectStoreProtocolError()
-        if content_type is not None and not isinstance(content_type, str):
-            raise ObjectStoreProtocolError()
-        if not isinstance(metadata, Mapping):
-            raise ObjectStoreProtocolError()
-        return ObjectHead(
-            size_bytes=_require_int(response, "ContentLength", minimum=0),
-            etag=_require_str(response, "ETag"),
-            checksum_sha256_b64=checksum,
-            content_type=content_type,
-            metadata={str(name): str(value) for name, value in metadata.items()},
-        )
+
+        def read() -> ObjectContent:
+            parameters: dict[str, Any] = {"Bucket": bucket, "Key": key}
+            if self.settings.multipart_checksum_mode is ObjectStoreChecksumMode.NATIVE_SHA256:
+                parameters["ChecksumMode"] = "ENABLED"
+            response = _require_mapping(self.control_client.get_object(**parameters))
+            raw_body = response.get("Body")
+            if not callable(getattr(raw_body, "read", None)) or not callable(
+                getattr(raw_body, "close", None)
+            ):
+                close = getattr(raw_body, "close", None)
+                if callable(close):
+                    close()
+                raise ObjectStoreProtocolError()
+            body = cast(_ReadableBody, raw_body)
+            try:
+                head = _object_head(response)
+                if response.get("ContentRange") is not None:
+                    raise ObjectStoreProtocolError()
+                if head.size_bytes > max_bytes:
+                    return ObjectContent(head=head, content=None)
+                content = body.read(head.size_bytes + 1)
+                if not isinstance(content, bytes) or len(content) != head.size_bytes:
+                    raise ObjectStoreProtocolError()
+                return ObjectContent(head=head, content=content)
+            finally:
+                body.close()
+
+        return cast(ObjectContent, await self._call(read))
 
     @instrument_object_store_operation("read")
     async def get_range(
@@ -380,6 +458,54 @@ class Boto3MultipartObjectStore:
             Key=key,
             UploadId=upload_id,
         )
+
+    @instrument_object_store_operation("write")
+    async def retire_upload_object(
+        self, *, bucket: str, key: str, metadata: Mapping[str, str]
+    ) -> bool:
+        """Erase owned content while preventing outstanding create-only PUTs.
+
+        Keep the zero-byte marker: deleting it would re-enable an in-flight PUT.
+        False means a conditional race; the durable cleanup task must retry.
+        """
+        if any(
+            not metadata.get(name)
+            for name in ("contract", "upload-session-id", "version-id", "declared-size")
+        ):
+            raise ObjectStoreProtocolError()
+
+        def retire() -> bool:
+            condition: dict[str, str]
+            try:
+                head = _object_head(
+                    _require_mapping(self.control_client.head_object(Bucket=bucket, Key=key))
+                )
+            except ClientError as error:
+                if error.response.get("ResponseMetadata", {}).get("HTTPStatusCode") != 404:
+                    raise
+                condition = {"IfNoneMatch": "*"}
+            else:
+                if any(head.metadata.get(name) != value for name, value in metadata.items()):
+                    raise ObjectStoreProtocolError()
+                if head.size_bytes == 0 and head.metadata.get("upload-retired") == "true":
+                    return True
+                condition = {"IfMatch": head.etag}
+            try:
+                self.control_client.put_object(
+                    Bucket=bucket,
+                    Key=key,
+                    Body=b"",
+                    ContentLength=0,
+                    Metadata={**metadata, "upload-retired": "true"},
+                    **condition,
+                )
+            except ClientError as error:
+                if error.response.get("ResponseMetadata", {}).get("HTTPStatusCode") in {409, 412}:
+                    return False
+                raise
+            return True
+
+        return cast(bool, await self._call(retire))
 
     @instrument_object_store_operation("write")
     async def delete_object(self, *, bucket: str, key: str) -> None:
@@ -471,6 +597,25 @@ class Boto3MultipartObjectStore:
         except (BotoCoreError, ClientError) as error:
             normalized_error: ObjectStoreError = normalize_object_store_error(error)
         raise normalized_error
+
+
+def _object_head(response: Mapping[str, Any]) -> ObjectHead:
+    checksum = response.get("ChecksumSHA256")
+    content_type = response.get("ContentType")
+    metadata = response.get("Metadata", {})
+    if checksum is not None and not isinstance(checksum, str):
+        raise ObjectStoreProtocolError()
+    if content_type is not None and not isinstance(content_type, str):
+        raise ObjectStoreProtocolError()
+    if not isinstance(metadata, Mapping):
+        raise ObjectStoreProtocolError()
+    return ObjectHead(
+        size_bytes=_require_int(response, "ContentLength", minimum=0),
+        etag=_require_str(response, "ETag"),
+        checksum_sha256_b64=checksum,
+        content_type=content_type,
+        metadata={str(name): str(value) for name, value in metadata.items()},
+    )
 
 
 def _validate_part_number(part_number: int) -> None:

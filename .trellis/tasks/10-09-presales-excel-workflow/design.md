@@ -1,0 +1,626 @@
+# Excel questionnaire workflow
+
+User authorization: implement the previously proposed bounded Excel workflow (2026-10-09). Reuse canonical checkout and the commercial task recovery group; no deployment or new provider acceptance claim.
+
+Flow: authenticated bounded JSON upload -> XLSX inspection -> user confirms one visible worksheet, question/answer columns and row range -> server reparses identical SHA256 content -> atomic packet, requirements, mapping and original-byte persistence -> existing per-row generation/review -> authorized original-workbook export.
+
+Use openpyxl for reading Excel values/coordinates and lxml for a narrow OOXML worksheet edit. Do not save through a workbook reserializer: copy all ZIP members except the selected worksheet verbatim, and retain all unrelated nodes/styles there. This is application runtime code, not an authored spreadsheet artifact. Answer values are inline strings, never formulas. No formula evaluation, macro execution, external URL fetch or provider calls during import/export.
+
+Boundaries: ordinary transitional XLSX, 2 MiB compressed, 20 MiB expanded, 256 ZIP members, 20 worksheets, 50,000 physical cells, rows <=10,000 and columns <=256. At most 120 nonblank questions in an explicitly selected range. Reject encrypted/macro/signed/embedded/external-link packages and unsafe XML/ZIP; reject protected/hidden selected sheets, hidden selected questions, merged/formula questions or answer targets, populated targets, table/validation targets and oversized text. Return stable safe errors, no file bodies in logs. Preview is ephemeral and requires membership authorization. Creation checks existing demo limits and a separate 20 MiB original-workbook tenant storage cap under the existing tenant lock. This attachment storage is bounded PostgreSQL bytea, retained/deleted with its packet/tenant, not a document ingestion or embedding.
+
+Add nullable workbook metadata and deferred bytea on PresalesPacket in additive migration 0035. Manual packets remain <=12 rows. Imported packets use an internal validated create payload <=120; batch admission remains <=12. Fingerprint includes original SHA256 and confirmed mapping; same-key replay rechecks authorization and returns the same packet. Packet metadata contains filename, SHA256, selected mapping, ordered Excel rows. Never include bytes in packet GET. Downgrade refuses if any workbook exists; old release readers may not support imported packets, so deploy API/frontend together and retain schema on application rollback.
+
+Frontend shares title/source selection with manual entry. File lives only in component memory, discarded with form/auth-context unmount. Mapping changes invalidate confirmation. Display exact question/answer cells before creation. Reopen uses durable metadata. Paginate rows in groups of 12; generation buttons submit only the next <=12 pending/failed rows, without automatic replay or quota increases. XLSX export and existing audit CSV remain distinct controls. Draft workbook marks unreviewed/unavailable rows; reviewed export requires all rows reviewed. Both include conditions and missing information without silent truncation; detailed evidence/review history remains in existing CSV and app.
+
+Mock only provider/network boundaries. Test genuine ZIP/XLSX parsing, persistence and real PostgreSQL constraints in owned loopback schemas; browser assertions cover upload, mapping confirmation, reload, batch boundaries and download. No public schema migration.
+
+## Approved release continuation
+
+Reuse the existing supervised expansion executor with a second fixed migration, 0034-to-0035. Plans select only a known original/target pair and the exact built-in SQL digest. The same credential-private psql session, advisory lock, deadlines and resource fences apply; compare complete column/check shapes and recover by observing the committed state, never by replaying or dropping columns.
+
+On 0035, an image-only plan explicitly binds whether original and candidate images support workbook records. A legacy side requires an empty-workbook read before writes and again after admission closes. Check both deployment and recovery sides before apply, and the original side before restore. Preserve all metadata/content and the expanded schema. rc.45 may be rolled back to only before workbook import; after history exists, use a compatible candidate or a forward fix, never erase history to make rollback possible.
+
+Freeze the public source, original file hash, selected range, source applicability, call budget and review criteria before product replay. Keep this file-flow exercise distinct from the previously completed six-call generation comparison and failed commercial acceptance.
+
+## Focused public replay remediation
+
+Read-only observation confirms PostgreSQL simple full text treats the unspaced SWU03 query as one whole token; neither primary nor OR fallback matches any of17 chunks, including two containing the required clause. Add a bounded character n-gram fallback within the existing authorized document query when primary full-text recall is empty. Keep one keyword query roundtrip and existing vector calls/RRF/top-k; do not infer semantic truth from lexical matching.
+
+Output failure details were not persisted, so the historical invalid outputs cannot be reconstructed. Add allowlisted diagnostic categories to PresalesError and existing attempt provenance (per dispatch number for background, one field for synchronous), never raw content. Keep public error codes, outage/recovery classification, usage and deadlines unchanged. Do not claim this diagnostic patch alone fixes historical model failures.
+
+Prompt v15 keeps the v14 literal-basis schema/decoder and adds scope/negative-evidence guidance plus relevant-citation selection. It cannot deterministically prove entailment. Old decoder reports and saved attempts remain unchanged; new admission freezes the new prompt SHA. A deployment must drain old accepted policies before switching.
+
+## Human response persistence and compatibility
+
+Keep SavedDraft JSON unchanged as the immutable response baseline; add nullable row manual_authorship JSONB in additive migration0036 with server actor/time/note and private operation-key/fingerprint. Public RowView exposes only actor/time/note. Null retains historical model attribution. The same row.draft fence protects against generation overwrite and existing review/export rules are reused. Manual creation writes revision1, no attempt/review success is fabricated; review remains a separate explicit action. Existing drafts cannot be replaced. All raw active attempt states reject, including expired-but-unreconciled executions; no implicit cancellation or settlement.
+
+Manual evidence browse is a reauthorized, bounded literal substring search within packet snapshot versions/generations,10 chunks per page with600-character snippets. No retriever/provider is called. Save resolves every chosen chunk and exact substring against the current authorized generation and reconstructs filename/location server-side, then applies existing response/citation/prerequisite rules. Tenant/packet/row lock ordering serializes competing manual/generation writes; same-key replay precedes revision checks and always reauthorizes.
+
+Migration downgrade locks rows and refuses any manual history. Older rc47/rc46 JSON readers can parse the unchanged draft bytes but misattribute human content; they are therefore NOT compatible rollback targets once manual history exists. Do not deploy0036 or write staging manual records until coordinated API/Worker/Web release and explicit manual-reader rollback guards are implemented and verified. Existing0035 release tooling fails closed on0036. The initial phase validated local product behavior; the authorized release continuation below subsequently satisfied those deployment guards. Preserve frozen public packets.
+
+## Authorized manual release continuation (2026-10-10)
+
+Extend the fixed executor with exactly0035-to-0036, retaining all original images/configuration. Validate the complete0034/0035 column/check shape plus the nullable, default-free manual_authorship JSONB and its exact validated check. Share the existing advisory lock, private psql session, timeout/readback and atomic transaction. The expansion plan binds unchanged workbook-reader capabilities; recovery observes either complete revision without replay or downgrade. Expansion recovery must refuse original applications if manual history has appeared, both before closing and before reopening.
+
+On0036, image-only plans require separate exact boolean original/candidate workbook_readers and manual_readers. Apply checks both deployment and recovery readers; restore checks the original reader. For each incompatible capability, require empty corresponding history before writes and after all applications stop. A racing submission keeps applications stopped and cannot change image/configuration/credential bindings. Existing workbook history must remain readable throughout. No configuration, provider route, retry or budget changes.
+
+Validate through ReleasePlan/ReleaseCluster and PsqlSession boundaries: controlled Kubernetes I/O and clock, actual Alembic SQL and owned PostgreSQL schemas. Cover migration rollback/lost receipts/shape drift, both history races, compatible recovery with real human responses, and immutable workbook/human metadata. Then publish exact signed images, expand, release, exercise rc47 rollback only before manual history, and reapply. New owned manual-only live fixtures verify evidence -> save -> review -> export without provider calls. Preserve the frozen public packet and all failed model results. After human history exists, recovery requires compatible images or forward repair.
+
+Executed: rc48/0036 passed expansion, release/rc47 rollback/reapply, followed by one new
+human-only workbook and the actual history-aware refusal through a read-only Kubernetes
+boundary. Human records now exist, so the pre-history rc47 drill is not an available
+current rollback. Input workbook creation belongs outside the read-only application
+container; the product imports existing bytes and exports through its narrow OOXML path.
+The corrected acceptance harness follows that boundary without relaxing runtime mounts.
+
+## Review evidence correction
+
+ReviewInput adds nullable citations (<=12 unique CitationInput values). Omission/null
+retains the historical original-draft contract and fingerprint. Once the latest review
+has its own citations, a new review must explicitly supply its evidence; an old request
+cannot silently revert it. Existing-key replay remains valid and reauthorized.
+
+Resolve explicit citations against the packet's tenant/version/active-generation and
+literal text, using the same bounded resolver as manual entry. Derive locations on the
+server. Validate status, conflict and prerequisite indexes against this exact ordered
+set. Changing evidence or prior assumptions requires a note. Preserve the tenant/row
+transaction and final authorization checks; no generation/accounting operation occurs.
+
+Add nullable JSONB presales_reviews.citations in0037. SavedReview exposes the full
+server-resolved evidence snapshot; keep historical content JSON unchanged and merge
+the side column in the existing MVCC history query. Each revision's indexes refer to
+its own evidence; null means immutable draft evidence. Downgrade locks and refuses any
+non-null citation history. rc48 cannot interpret new citations, so no staging writes
+until a coordinated release and reader guard is verified; existing0036 tooling rejects0037.
+
+Extract the existing literal evidence selector for reuse by manual creation and review.
+On selection changes remap retained prerequisite references by exact evidence identity;
+removed links become visibly unselected and block save until the reviewer resolves them.
+Show effective, original and historical evidence separately, and append original-evidence
+and correction provenance to CSV. Do not reset the response form when browsing evidence.
+
+## Review citation release continuation
+
+Reuse the supervised fixed expansion executor with exactly0036-to-0037 and the same
+private psql session/advisory lock/deadline. Retain all original images and configuration,
+and bind unchanged workbook/manual reader capabilities. Verify inherited schema plus
+nullable/default-free citations JSONB and its exact validated array/length constraint.
+Recovery reconciles complete0036/0037 without replay or downgrade; any nonnull citation
+history on0037 prevents reopening original0036 readers before writes and before reopening.
+
+Image-only0037 plans require independent boolean workbook/manual/citation reader
+capabilities for original and candidate. Apply checks both sides, restore original;
+each incompatible history is checked before writes and after applications stop.
+Preserve existing human/workbook history, credentials, provider settings and all failed
+sample results. Validate controlled cluster races and actual owned PostgreSQL migration,
+unknown commit receipts, schema drift, real corrected review/export and refusal with[].
+Publish and validate exact source before signed release. A live rc48 rollback drill may
+occur only before new citation history; afterwards use compatible images/forward repair.
+
+Executed: rc49 / 0037 passed the schema window and release/rc48 rollback/reapply before
+independent citation history. A new human-only fixture then verified two separate review
+snapshots, original draft/authorship, corrected export and unchanged accounting. Actual
+restoration now refuses rc48 before writes. Capacity stayed under the existing complete-batch
+guard after the specifically approved rc36–37 cleanup; no reserve or import-contract change.
+
+Live fixture identity binds persisted imported key X7, exact question and B7/C7 location;
+SWU03 is a public replay label, not the application's imported row key. The first harness
+failed before packet creation, was diagnosed read-only and retained. No product or model
+behavior changed during that correction. Keep historical samples immutable.
+
+## Generation diagnostic evidence
+
+The collector currently catches PresalesError but saves only errorCode, discarding the
+allowlisted diagnostic_code already produced by the real gateway. Add optional
+errorDiagnostic only when present; retain the existing v6 decoder, traces and failed
+state. Do not store exception strings or infer a category when the gateway has none.
+Controlled HTTP proves retention, safe fields and unchanged no-retry behavior before
+any fresh public-source diagnostic. Keep live input and separately frozen review criteria
+outside the collector; existing source/hash validation and exclusive output creation apply.
+
+## Coverage candidate
+
+Keep the v14/v15 BasisDraft field names, bounds, validators and projection unchanged.
+Describe proposition as a concrete business event/capability to assess; definition alone
+contains the rule establishing necessity. Explicitly distinguish known rules from unknown
+current facts. Describe answer as the response to every requested aspect, and require
+specific missing arrangements rather than an invented plan or a generic proof request.
+Use prompt v16 so new execution policies bind the changed system/schema description SHA.
+
+This is a model-instruction change, not deterministic semantic enforcement. The original
+CQU03 outcome is the observed failing baseline; controlled schema tests cannot prove the
+model now understands it. Preserve historical decoders and score bytes. Before one fresh
+CQU01 request, freeze the candidate and separate coverage/event criteria; retain failures
+and reject broad quality claims. Staging remains rc49/v15 until an exact compatible release.
+
+## Separate answer-aspect protocol
+
+Add a private CoverageDraft with ordered answers (1..12), each holding requirementText,
+answer, citations and missingInformation, plus independent BasisPrerequisite[] and
+overall status. Require each requirementText to match the next exact substring of the
+original question, allowing only whitespace between spans; the complete remainder must
+be whitespace. This proves text coverage/order only, not a meaningful semantic split.
+
+Render each exact question span with its own answer in the existing answer string;
+union selected citations and missing-information entries in first-use order. Pass this
+projection through the unchanged literal-basis resolver and public limits. Preserve
+quote, reference, Chinese-prose, status and prerequisite validation; overflow rejects
+without truncation. No stored schema change or semantic relabeling is involved.
+
+First validate the module boundary with actual parsers and exact source fixtures, then
+probe the distinct private protocol with one frozen CQU04 request before changing the
+runtime gateway. A successful candidate requires a new prompt identity and run-v7 scorer
+branch; old v1..v6 parsers and outcomes remain frozen. The gateway must bind coverage to
+each call's own question, with no shared mutable state. Accepted old prompt policies
+must drain before release. Do not widen routes, retry bounds, source authorization or
+accounting to make a candidate pass.
+
+Observed outcome: v17 failed its first CQU04 schema and semantic checks. The
+private module and tests are archived with exact hashes outside runtime source.
+Do not implement the conditional gateway/scorer promotion for this rejected
+candidate. Complete question-text coverage did not force substantive answers.
+
+## Strict provider request mode
+
+Use StrictBasisDraft inheriting BasisDraft with the two optional arrays made
+required, so the Pydantic schema has no optional object properties. Keep the
+original decoder and legacy prompt exactly unchanged when disabled. In strict
+mode, send response_format json_schema with strict=true and this same schema;
+validate StrictBasisDraft locally before the normal literal-basis projection.
+
+Independent primary/fallback settings default false. Strict mode uses presales.v18
+and includes its schema in the system-message hash; existing RoutePolicy version
+and hash bind the request contract without adding storage fields. Restoration
+must preserve the selected mode and reject a differently configured template.
+Changing mode requires draining accepted old prompt policies before rollout.
+
+Strict evaluation reports use run-v8; v7 remains the rejected answer-aspect
+candidate and is not accepted by historical scorers. Add explicit v8 resolver
+branches; legacy v1..v6 interpretation remains unchanged. No output coercion,
+retry, model/channel switch, database migration or product quota change.
+
+## Provider-visible evidence combination branches
+
+New strict v19 uses four Pydantic prerequisite variants with unchanged fields.
+For uncertainty none, exactly one of positive/negative has minItems1 and the other
+maxItems0; unconfirmed is empty. Missing requires both direction arrays empty and
+allows unconfirmed records. Conflict requires both direction arrays nonempty and
+unconfirmed empty. A nondiscriminated Union emits anyOf without unsupported custom
+schema rewrites; structural branches are mutually exclusive by literals and counts.
+
+The root duplicates only the five stable wire fields and then reuses resolve_basis
+for all shared status/quote/language/public projection checks. Preserve the v18
+StrictBasisDraft and strict_response_format definitions for run-v8 scoring.
+New strict collection emits run-v9, with explicit format/resolver branches in both
+scorers. Legacy JSON-mode identity is unchanged. New strict identity uses the same
+frozen policy guard; historical v18 policies cannot silently become v19.
+
+## Discriminating v19 observation
+
+Reuse the production gateway and run-v9 collector with exactly one new synthetic
+requirement. Include four independently worded prerequisite rules plus separate
+same-scope records: positive, negative, explicitly missing and contradictory peer
+records with no stated precedence. Freeze a gold file separately; never pass it
+to the collector. Assess array/schema validity separately from event decomposition,
+direction, genuine conflict and answer/missing-information coverage.
+
+Bind the current source hashes, controller hash, v19 provenance, primary endpoint
+digest and deployed policy; recheck active jobs and daily usage immediately before
+dispatch. Reserve one direct call durably before entering the collector. Refuse
+existing intent/output paths and expired plans. No retry after a timeout, unknown
+receipt or rejected output. Preserve the source report and a read-only postflight;
+only observations and documentation may change in this continuation.
+
+Observed boundary: source identity and legal array combinations do not constrain
+the text of a quote or its semantic direction. The v19 output reconstructed two
+quotes by attaching shared date/order context to a later clause; strict literal
+validation correctly rejected them. Missing rehearsal records were also assigned
+to negative evidence while the prose called them unknown. Do not normalize quotes
+or infer correctness from prose. Investigate immutable offered evidence selections
+as a separate protocol design; this alone would not establish semantic entailment.
+
+## Strict span-selection protocol
+
+Reuse prepare_citations and its call-local source catalog. For each authorized
+excerpt, offer its complete text and exact punctuation-delimited substrings as
+immutable span IDs. Keep the full existing evidence text/source metadata alongside
+the spans, including shared subjects and qualifications; boundaries are lexical,
+not asserted atomic business events. Discard only surrounding whitespace and
+deduplicate exact repeated spans within an excerpt. Existing request-byte limits
+reject oversized expanded inputs before dispatch, with no truncation.
+
+SpanBasisDraft retains the four support alternatives and stable top-level fields,
+but every quote becomes only {spanId}. Deterministically resolve each ID through
+the original catalog into its parent citationId and exact substring, then reuse
+ConstrainedBasisDraft and resolve_basis. This is a declared selection protocol,
+not a repair of generated quotes; old free-text objects are invalid. No model
+semantic choices are changed by the server. Keep source authorization and public
+projection unchanged. Span catalogs are local values, never gateway instance state.
+
+New strict identity is v20; legacy JSON remains v15. New run-v10 traces record the
+offered spans. Scorers verify the entire reconstructed input/spans against the
+frozen source input before interpreting any result; v8/v9 keep their old formats
+and resolvers. Accepted v19 policies cannot silently resume as v20. Source code
+and decoder checks precede any later bounded real-provider observation.
+
+## V20 discriminating observation
+
+Reuse the run-v10 collector, real gateway, existing credential loader and read-only
+staging preflight; the reference never enters the request. Bind the complete input,
+criteria, candidate sources, controller/helpers and route identity before one
+dispatch. Recheck the UTC day, active work, deployed policy and conservative direct
+reservations immediately before recording exclusive intent. Carry the prior18
+known/unknown reservations even across a UTC rollover rather than erasing them.
+Record the first raw report and separate semantic review. Five independent events,
+adjacent contrary/missing statements, absent training documentation and other-order
+facts test the remaining meaning boundary. Do not alter product source or repair
+generated output during this observation; keep all previous failures immutable.
+
+Observed: fixed IDs eliminate transcription in this request but leave role and
+entailment errors intact. Definition and state selections are separate fields,
+yet four definitions used state records. The decoder accepted a genuine missing
+record assigned to negative. Do not infer semantic quality from the accepted
+projection or aggregate source coverage; any subsequent design must explicitly
+address evidence roles and per-item requested actions without keyword relabeling.
+
+## Standalone assessment candidate
+
+Use a distinct private protocol identity and strict schema, reusing the v20 offered
+span catalog. `rules` contains affirmative business propositions and selected
+`requiredBy` spans; `assessments` binds every zero-based ruleIndex exactly once.
+Four mutually exclusive variants carry met evidence/no action, unmet evidence/a
+completion action, missing observations/a confirmation question, or conflicting
+peer evidence/a reconciliation question. Require a short source-grounded state
+summary, not hidden reasoning. The model remains responsible for each semantic
+choice; do not reject legal combined rule/state text or relabel unknown words.
+
+Ordered `responses` contain exact requirementText substrings, an answer, selected
+citations and specific information gaps. Reject omitted, duplicated, reordered or
+invented requirement text; whitespace gaps are allowed. This verifies textual
+coverage, not independent semantic aspects. Require source evidence or an explicit
+gap per response. A conclusion, all per-part answers and every state/action block
+are rendered into the unchanged public answer string. Preserve unknown/conflict
+questions individually in missingInformation, and reuse resolve_span_basis for
+literal source, language, final limits and business validators. Validate each raw
+prose field before adding Chinese formatting so labels cannot hide English prose.
+
+Do not add a runtime setting, replace gateway v20, reinterpret run-v10 or change
+storage/UI/export in this candidate phase. The candidate schema/identity and local
+resolver are independently testable before an actual observation and conditional
+integration. A source span may legitimately be both a rule and a fact; field-level
+role separation is not a semantic oracle and must be tested/documented as such.
+
+## Isolated candidate observation adapter
+
+Use a dedicated one-request process and a scoped adapter over the existing gateway
+schema/prompt/resolver bindings. Keep its transport, streaming, request/response
+limits, source offering and accounting unchanged. The candidate resolver closes
+over that request's original requirement; restoration leaves v20 identity intact.
+Controlled HTTP success/503 checks precede any real dispatch. Record a distinct
+presales-assessment-candidate-run-v1 report; never relabel it as historical run-v10.
+Freeze all adapter/helper/source hashes and separate criteria, then recheck live
+identity, active work and budget immediately before exclusive intent. Raw outcome
+and per-criterion semantic review stay separate; do not coerce a failed response.
+
+The AR01 result rejects this design's promotion: source IDs and schema are valid,
+but responses contain rule text instead of exact requirement text. Structured
+states also disagree with generated prose, and source applicability is violated.
+The adapter remains an isolated diagnostic; production gateway/settings/scorers
+continue unchanged. A separately planned minimal contract on the same primary
+route should investigate whether protocol burden or basic interpretation causes
+these errors, with the same semantic standards. This is an investigation direction,
+not a new runtime design, authorization to rerun AR01, or proof of either cause.
+
+## Minimal generation diagnostic
+
+Reuse complete prepare_citations input, RecordingTransport and the bounded
+OpenAIResponseReader, but use a separate local diagnostic collector with JSON mode
+and a single answer string. Keep the primary endpoint/model/reasoning effort,
+streaming, 120-second deadline, 4,000-token request cap and 4,000-character answer
+limit unchanged. Do not feed the answer into a public draft, historical scorer,
+application persistence or a relaxed production validator. Preserve source names
+and applicability, all original text and the first raw provider response.
+
+Freeze exact request bytes, source/helper/controller hashes and independent gold;
+verify current policy, ledger and conservative direct reservations before exclusive
+intent. Test streaming success, HTTP 503, invalid shape and incomplete output at
+the HTTP boundary, one mock dispatch each. Output format is
+presales-minimal-contract-run-v1. A new-source observation is not a matched ablation;
+report only the evidence it supplies about interpretation under simpler formatting.
+
+Observed MC01 does not support a formatting-only remedy: a 959-byte system prompt
+and one answer field still produce unsupported actions and incomplete coverage.
+The collector and diagnostic decoder remain central evidence, outside product code.
+No source repair, public-draft coercion or automatic semantic classifier is added.
+Next investigate the same primary route's inference settings with separately frozen
+criteria before changing the product design; this result does not prove a model's
+universal capability limit or justify a production configuration change.
+
+## Paired reasoning diagnostic
+
+Reuse the frozen minimal-observation collector unchanged. Prepare source/citation
+input once, then clone its request with only reasoning_effort set to medium or low.
+Run medium first, then low, in independent HTTP calls with no prior response in the
+second input. Persist both planned arms before dispatch and each arm's first/final
+state. Reserve two direct calls before starting; recheck unchanged primary policy,
+source/ledger identity and active work before each arm. Stop rather than resume an
+unknown request. The same 120-second deadline and 4,000-token/character limits apply.
+
+Freeze input, separate reference, both exact request hashes, helper/source hashes,
+arm order and decision rules. If medium alone passes, investigate its compatibility
+with the actual product contract before promotion. If both fail, do not treat the
+reasoning setting as a demonstrated remedy. Both passing or low-only passing also
+requires further evidence, not an automatic configuration change. Transport or
+incomplete observations cannot establish a semantic contrast. Record requested
+effort separately from provider-returned metadata; its internal enforcement is
+not independently attested. Use presales-reasoning-comparison-run-v1 only.
+
+Observed: medium and low both pass the minimal format but fail meaning criteria.
+The only request difference is the requested effort string; both retain the same
+full evidence and prompt. Medium changes the unsupported test assumption from
+negative to positive, not to known uncertainty, and retains the extra transcript
+duty. Keep both outputs and reject a production setting change. A prospective
+same-endpoint glm-5.3 qualification is the next inference-quality investigation;
+do not infer its availability from GET /models or silently substitute it in runtime.
+
+## GLM qualification adapter
+
+Reuse the unchanged isolated assessment adapter and real gateway, including its
+strict schema, prompt, source-span offering and public resolver. Copy settings from
+the currently verified primary policy and change only model_name to glm-5.3 inside
+the dedicated diagnostic process. Bind the same endpoint and credential source;
+never load fallback credentials or alter local/staging configuration.
+
+An HTTP-boundary transport asserts the actual model, endpoint, effort, prompt,
+schema, limits and complete source projection before forwarding, then records only
+the credential-free request body and its hash. Controlled success/503 prove the
+override, one dispatch and restoration of the original gateway identity. Freeze
+all source/helper/controller hashes and a separate reference before exclusive intent.
+Use presales-primary-model-qualification-run-v1, retain raw results separately from
+review, and reject promotion on identity, mechanical or semantic failure.
+
+GP01's original resolver error is `responses must cover the exact requirement in
+order`; strict schema and complete source/span binding pass. All three response
+items copy the entire question. No result is normalized or passed through a relaxed
+resolver. Requested glm-5.3 returns z-ai/glm-5.3; GET /models advertises only the former
+with owned_by=custom and proves no canonical alias mapping. The verification action
+is ambiguous despite correct unknown/missing classification. Keep both findings.
+
+## Private question-part adapter
+
+Add question_assessment.py beside the unchanged full assessment candidate. Offer
+contiguous literal question parts at punctuation/newline boundaries, preserving all
+characters and joining the remainder into the twelfth part if needed. Keep the full
+requirement and complete evidence/spans. Parts are frozen and IDs derive from the
+validated requirement key/text/location plus occurrence index; identical wording at
+different positions remains distinct. These are lexical, not semantic, question units.
+
+Use a distinct presales.question-assessment-candidate.v1 identity. Replace only the
+response's requirementText with requirementPartId; reuse rule/assessment models.
+Recompute the expected parts from the trusted server requirement at resolution,
+require the exact ID sequence, materialize original text and call unchanged
+resolve_assessment. Do not sort, deduplicate, truncate, infer truth or alter prose.
+No gateway/settings/policy/scorer import or runtime switch is added. Retain unknown
+action ambiguity for semantic review. Rollback is Git removal of the two new files
+and restoration of documentation; original candidates and observations remain intact.
+
+## Question-part observation adapter
+
+Reuse the unchanged assessment collector in a dedicated process. Scope gateway
+bindings to the question candidate schema/prompt/resolver and compose existing
+source-span offering with offer_question_assessment. The HTTP boundary binds exact
+question parts and full source/spans before forwarding one streaming low-effort
+request, 120-second deadline and 4,000 requested tokens. Copy only model_name from
+primary settings to glm-5.3. Restore original gateway identity on all exit paths.
+
+Use presales-question-candidate-run-v1, outside historical scorers and application
+persistence. Local controlled success, duplicate IDs, HTTP 503 and cancellation
+check one dispatch and restored bindings. Fresh preflight and exclusive intent
+prevent reruns; preserve requested/returned identity separately from unresolved
+provider alias mapping. All semantic gates remain separate from mechanics.
+
+## Public question-candidate observation
+
+Reuse the frozen question adapter/collector unchanged. Each CQU case receives only
+its literal relevant buyer sections with public URL/fetch/content/excerpt hashes.
+No synthetic supplier facts, hidden expected answer or prior model output enters
+the input. Keep the same primary endpoint, GLM model name, limits and candidate
+identity. Reserve two calls upfront and recheck preflight before each; save both
+planned/unattempted cases and every first/final state. Stop on failed/unknown first
+output or policy drift. Use a distinct presales-question-public-run-v1 report;
+no historical scorer, database persistence or deployment. Identity alias mapping
+still blocks runtime promotion. Observations assess evidence-gap drafting only,
+not supported supplier performance, full procurement completion or user time savings.
+
+Observed public boundary: exact citation identity and correct unknown status do not
+ensure the generated obligation preserves its source. CQU05 cites both genuine
+clauses but rewrites specific software project management experience as generic
+experience OR that category. Future review must compare obligations and actions
+against source scope, retaining each original wording and review finding. A lexical
+OR ban is insufficient: valid alternatives also exist. Keep review separate from
+generation, with frozen detection controls before evaluating it. CQU02's issue is
+clarification completeness, not a false performance claim or missing citation.
+
+## Fixed Grok/GPT regression comparison
+
+Reuse the existing question candidate, complete frozen inputs, source/span binding,
+gateway and bounded response collector. A dedicated process reads only the explicitly
+selected second channel's `FALLBACK_*2` fields; credentials never enter evidence.
+Keep identical prompts, schemas, low effort, streaming, 120-second deadlines and
+4,000 requested tokens. GPT uses `max_completion_tokens` and omits empty tool fields;
+record the exact effective request and endpoint digest. These are two channel/model
+configurations, so the comparison does not isolate model weights from the provider.
+
+Run one planned request per input/channel, preserving structural failures while
+continuing independent planned cases. Transport/non-200 failure stops that channel;
+cancellation stops the batch. Reserve calls before dispatch, bind source hashes,
+and retain separate source-grounded semantic review. A later Grok correction, if
+needed, receives a distinct identity and results; original candidate and outputs
+remain intact. No new runtime setting or schema is needed for this comparison.
+
+## Current-product GPT qualification
+
+Use the actual default v15 gateway without scoped schema/resolver or transport
+rewrites. Freeze the same known inputs and major criteria; retain both request
+bytes and original results. Stop the batch on non-200/transport failure without
+retrying. Bind projections offline through the existing public scorer helper.
+The user's conditional replacement authorization permits a later guarded switch
+with compatible history readers and a frozen-policy drain; it does not convert
+private-candidate evidence into proof of current-product behavior.
+
+Observed: the original max_tokens/empty-tools request succeeds once, so the earlier
+GPT adapter is not established as necessary. A later HTTP502 stops the batch. The
+successful answer adds a requested explanation to business prerequisites. Preserve
+that distinction from transport availability; neither a new compatibility layer nor
+a simple configuration swap is demonstrated as the remedy by this observation.
+
+## GPT integration design
+
+Add explicit independent primary/fallback question-assessment opt-ins, default false.
+The gateway uses the existing question-assessment schema, prompt, offered spans/parts
+and resolver directly under new runtime prompt identity presales.v21. Legacy v15/v20
+bytes and historical report decoders stay unchanged. Each call keeps its original
+requirement locally; concurrent requests cannot share question state. Persisted policy
+already binds prompt version/hash, model and endpoint; restoration preserves mode and
+rejects drift. No stored draft, API response or database migration is required.
+
+The collector/scorers add a distinct v11 branch that binds complete source and question
+parts. Production HTTP parameters remain unchanged unless actual compatibility evidence
+requires a separate explicit change. Preserve raw outcomes and existing no-repair limits.
+
+Extend the supervised release plan only for an explicit primary-model mode on exact0037:
+primary endpoint/name/version/key plus primary question-assessment selection, with approved
+signed image changes if needed. Keep fallback, budgets, resource limits, schema and
+unrelated settings fixed. Retain workbook/manual/citation readers, idle checks before
+writes and after admission closes, endpoint/key binding, original-spec recovery and fences.
+
+First test public gateway/HTTP, policy restoration, actual isolated PostgreSQL delivery
+and release apply/recovery. Then publish exact signed source and deploy through existing
+bounded tooling. A new small questionnaire preserves original model drafts and separate
+reviews and exports through the normal product API. Retain all prior replay packets.
+
+The first integrated local workflow kept legacy request parameters and received
+HTTP502 before an answer. Retain that original source/request/result. Align only
+v21 with the previously successful GPT candidate wire contract: max_completion_tokens
+and no empty tool fields; v15/v20 remain unchanged. This is a bounded compatibility
+correction, not a demonstrated root cause for502. The next two-row workflow uses
+the existing primary/fallback policy with at most two calls per row and no automatic
+resampling. Preserve original drafts separately from assisted review and exports.
+
+## Wuye continuation
+
+Use suffix3 credentials in memory and select one model ID from its comma-separated
+model list. The supplied path `//v1` returns HTML even with HTTP200; a same-origin
+`/v1/models` check establishes the corrected API path. Retain the original nine
+invalid-stream outcomes separately from the seven corrected-path model requests.
+The corrected endpoint is bound by its digest, not by credentials in reports.
+
+Select `gpt-5.6-sol` for usable current-interface output, retaining Grok fallback.
+Keep v21, the strict decoder, source selection and budgets unchanged; do not strip
+Claude's Markdown fences or relabel rejected GPT output. A two-row real local
+PostgreSQL/API/worker workflow qualifies reviewed delivery with original failure,
+draft and attributed review retained. No external embedding calls are needed there.
+
+Publish the existing exact source as rc50. Use primary_model release mode on0037,
+with compatible original/candidate workbook, manual and citation readers. Pin the
+original/new primary keys as protected runtime inputs so recovery after a partial
+switch can accept either current key and restore the original. Verify other secret
+data, all deployment specs, packaged source, schema, full presales history hashes,
+readiness and accounting independently. Remove owned transport/runtime inputs after
+terminal verification; keep local recovery and all historical images and evidence.
+
+## Bounded semantic instruction revision
+
+Retain the question-ID schema, decoder, source offering and original system message.
+Add a separately selected instruction revision, presales.v22, for new question-mode
+generation. Explain the evidence decision in source terms: buyer rules alone do not
+establish supplier state; absent proof is unknown/missing; explicit noncompletion is
+unmet; applicable unresolved opposing facts require unknown/conflict and both sides.
+Require separate preservation of roles, experience categories, numeric thresholds,
+time triggers and conjunctions. Multiple business rules inside one offered question
+still have one response for that ID. Do not infer semantics with keyword rewrites.
+
+The unchanged policy fingerprint refuses resuming a v21 admitted route under v22;
+a later release must drain old accepted work. Existing run-v11 reports retain their
+schema and decoder; each report records its exact prompt version/hash. Preserve
+legacy v15/v20 and v21 reproducibility, public draft/storage/export schemas and the
+original strict rejection of malformed selections. No additional provider call is
+introduced by this instruction change.
+
+Use five frozen first observations and separate assistant review, with complete
+public source receipts and original response traces. Controlled HTTP503/502 and
+duplicate-ID failures remain failures; actual local PostgreSQL/API/worker tests
+verify ordinary fallback, one successful usage charge, review and original XLSX/CSV.
+This continuation changes local source and evidence; the deployed rc50 policy remains
+the baseline until an exact-source guarded release is performed.
+
+Observed projection defect: correct CQU05/CQU06 states and question IDs still failed
+because per-response gaps plus unknown-rule actions totaled13/14 distinct strings.
+Retain those failed live reports. Add an opt-in, lossless ordered grouping step to
+the existing projection: combine adjacent whole strings with newlines only as needed
+to fit12 items, each at most1,000 characters. All raw field, source, state, question
+and final-answer limits remain. Original helpers default to the old behavior;
+run-v11 scorers select grouping only for succeeded v22 observations and never turn
+a failed historical observation into a draft. Validate frozen responses offline
+without another generation call. The new CQU06 semantic completeness omission is
+separate from this mechanical defect and remains an attributed review item.
+
+## Limit review and numbered-clause coverage (v23 continuation)
+
+The 1,000-character TextItem and twelve-item missingInformation bounds first appear
+in b6d1420 (2026-09-19). No measured workload justification was found. They are
+application policy, not model, JSONB or XLSX limits. Keep the individual bound;
+replace the aggregate item limit with the existing worst-case text budget of12,000
+Unicode code points and a structural cap of156 (12 responses *12 gaps +12 actions).
+Keep each exact-deduplicated string separate and ordered. Preserve all unrelated
+twelve-item limits. Public API, saved drafts/reviews and Web accept the new list;
+legacy provider schemas and old scoring retain their original contracts.
+
+For v23 projection, validate nonempty groups of at most12 through the unchanged
+span/support/source/state/language pipeline, then validate the combined public draft.
+This is local validation only, with no added inference or semantic rewriting.
+Keep v22 grouping as an explicitly selected historical replay path. New generation
+uses a separately fingerprinted v23 clause-coverage instruction: enumerate relevant
+numbered/nested obligations, including ancillary scope, remedies and cost allocation,
+without importing unrelated clauses or treating buyer requirements as supplier facts.
+
+No database migration is needed. Old<=12 records remain readable by the candidate;
+old binaries cannot read new>12 lists. Any later release must coordinate API/Web/Worker
+and retain this reader on rollback, or stop writes and restore the pre-release data
+snapshot with an explicit recovery decision. Do not claim rc50 is rollback-compatible
+after v23 writes. XLSX keeps its explicit32,767 UTF-16-unit final-cell guard.
+
+Validation slices: first a public draft/review boundary accepts13/14 independent
+items and rejects oversize item/total/count; then question projection retains every
+item and all rejection guards; then browser review preserves unchanged multiline
+items; then real PostgreSQL save/review/reload/CSV/XLSX. Freeze three primary calls
+(CQU06, CQU05, QP01), one each, no retuning, retries, embeddings or model survey.
+
+The frozen v23 round closed with two semantic passes and one failure: CQU05 changed
+inclusive Chinese thresholds into strictly greater values. Preserve that output as
+a failure. A separately frozen, single-case v24 follow-up adds only a generic numeric
+boundary instruction, retaining原词 and inclusion unless the source defines otherwise.
+It passed unchanged decoding and source review in31.390s. The earlier passing CQU06
+and QP01 observations remain attributed to v23; no claim of another full v24 live suite.
+Historical scoring accepts expanded projection for succeeded v23 and v24 only.
+
+## Authorized compatible release and v24 activation
+
+Publish one coordinated API/Worker/Web build with expanded readers and exactly two
+selectable question prompt versions: v21 for recovery, v24 for the new behavior.
+Default remains v24; the compatibility deployment explicitly pins v21. Each choice
+retains its exact system message, version/hash and original decoder projection.
+Policy restoration preserves the selected choice and rejects cross-version work.
+No model route, credential, deadline, budget or database schema change is needed.
+
+On0037 require independent missing-information reader declarations. Check every saved
+draft and every review, including older revisions, for lists exceeding12 items before
+mutation and after admission closes. Incompatible original readers cannot be reopened
+once such history exists. First deploy compatible readers with explicit v21, verify
+source/history/readiness, then activate v24 in a second bounded drained window using
+the same immutable images. Recovery from that second window restores v21 with the new
+readers; rc50 is no longer a valid recovery after extended records exist.
+
+Reserve only the fixed CQU06/CQU05/QP01 product replay, at most six normal primary and
+fallback dispatches. Preserve first model outcomes and attributed manual corrections,
+then verify save/reload and XLSX/CSV. Historical model results remain unchanged.

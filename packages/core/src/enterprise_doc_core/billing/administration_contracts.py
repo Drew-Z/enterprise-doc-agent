@@ -8,6 +8,7 @@ from uuid import UUID
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from enterprise_doc_core.billing.errors import UsageError
+from enterprise_doc_core.billing.product_contracts import ProductQuotaView
 
 
 @dataclass(frozen=True, slots=True)
@@ -32,6 +33,17 @@ def require_entitlement_operator(value: object) -> PlatformEntitlementOperator:
     return value
 
 
+class ProductQuotaConfiguration(BaseModel):
+    """Append missing product quotas to an existing period; never reset its counters."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", hide_input_in_errors=True)
+
+    entitlement_id: UUID
+    expected_version: int = Field(strict=True, ge=1, le=2**31 - 1)
+    agent_task_limit: int = Field(strict=True, ge=0, le=2**63 - 1)
+    document_bytes_limit: int = Field(strict=True, ge=0, le=2**63 - 1)
+
+
 class EntitlementConfiguration(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid", hide_input_in_errors=True)
 
@@ -41,6 +53,8 @@ class EntitlementConfiguration(BaseModel):
     period_start: AwareDatetime
     period_end: AwareDatetime
     provider_request_limit: int = Field(strict=True, ge=0, le=2**63 - 1)
+    agent_task_limit: int = Field(default=0, strict=True, ge=0, le=2**63 - 1)
+    document_bytes_limit: int = Field(default=0, strict=True, ge=0, le=2**63 - 1)
 
     @field_validator("period_start", "period_end")
     @classmethod
@@ -66,6 +80,7 @@ class EntitlementSnapshot:
     provider_requests_used: int
     provider_requests_reserved: int
     created_at: datetime
+    product_quotas: tuple[ProductQuotaView, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

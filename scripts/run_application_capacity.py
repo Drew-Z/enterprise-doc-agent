@@ -19,10 +19,10 @@ from enterprise_doc_core.evaluation import build_percentile_summary, nearest_ran
 
 try:
     from scripts.load_m5 import execute_load
-    from scripts.validate_recovery_capacity_evidence import validate_evidence
+    from scripts.validate_recovery_capacity_evidence import COMMIT_PATTERN, validate_evidence
 except ModuleNotFoundError:
     from load_m5 import execute_load
-    from validate_recovery_capacity_evidence import validate_evidence
+    from validate_recovery_capacity_evidence import COMMIT_PATTERN, validate_evidence
 
 REQUIRED_PHASES = ("ramp", "steady_state", "burst", "recovery")
 REQUIRED_TELEMETRY = (
@@ -381,12 +381,28 @@ async def run_capacity_matrix(
     cluster: str | None,
     image_digests: dict[str, str] | None,
     operator: str,
+    deployed_commit_sha: str | None = None,
 ) -> dict[str, Any]:
     if external_execution:
         for label, value in (("provider", provider), ("region", region), ("cluster", cluster)):
             _string(value, label)
         if not image_digests:
             raise ApplicationCapacityError("external execution requires immutable image digests")
+        if (
+            not isinstance(deployed_commit_sha, str)
+            or COMMIT_PATTERN.fullmatch(deployed_commit_sha) is None
+        ):
+            raise ApplicationCapacityError("external execution requires the deployed commit SHA")
+    git_result = await asyncio.to_thread(
+        subprocess.run,
+        ["git", "rev-parse", "HEAD"],
+        cwd=root,
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    executor_commit_sha = git_result.stdout.strip()
     await asyncio.to_thread(output_dir.mkdir, parents=True, exist_ok=True)
     _relative(root, output_dir)
     started_at = datetime.now(UTC)
@@ -492,15 +508,6 @@ async def run_capacity_matrix(
     )
     artifact_paths.append((execution_path, "capacity-execution-manifest"))
     completed_at = datetime.now(UTC)
-    git_result = await asyncio.to_thread(
-        subprocess.run,
-        ["git", "rev-parse", "HEAD"],
-        cwd=root,
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    commit_sha = git_result.stdout.strip()
     latency = build_percentile_summary(latency_values)
     throughput = completed_requests / duration_seconds if duration_seconds > 0 else 0.0
     measurements = {
@@ -530,7 +537,8 @@ async def run_capacity_matrix(
             "region": region,
             "cluster": cluster,
         },
-        "commit_sha": commit_sha,
+        "commit_sha": deployed_commit_sha if external_execution else executor_commit_sha,
+        "executor_commit_sha": executor_commit_sha,
         "image_digest": image_digests,
         "operator": operator,
         "started_at": started_at.isoformat(),
@@ -548,6 +556,7 @@ async def run_capacity_matrix(
             "The runner only claims the exact configured target, image digests, and time window.",
             "Prometheus queries must aggregate away tenant, user, document, run, and session IDs.",
             "Capacity approval still requires workload-owner review and production-like isolation.",
+            "Deployed commit and image digests are operator inputs requiring runtime verification.",
         ],
         "owner": "performance-engineering",
     }
@@ -580,6 +589,9 @@ def main() -> None:
     parser.add_argument("--region")
     parser.add_argument("--cluster")
     parser.add_argument("--image-digest", action="append", default=[])
+    parser.add_argument(
+        "--deployed-commit", help="Observed server source SHA, distinct from evaluator HEAD"
+    )
     parser.add_argument(
         "--operator", default=os.environ.get("USERNAME") or os.environ.get("USER") or "operator"
     )
@@ -615,6 +627,7 @@ def main() -> None:
                 cluster=args.cluster,
                 image_digests=image_digests,
                 operator=args.operator,
+                deployed_commit_sha=args.deployed_commit,
             )
         )
         args.report_path.parent.mkdir(parents=True, exist_ok=True)

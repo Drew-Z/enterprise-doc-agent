@@ -176,6 +176,67 @@ def _render_browser_manifest(tmp_path: Path, **overrides: str | None) -> list[di
     return [item for item in yaml.safe_load_all(destination.read_text(encoding="utf-8")) if item]
 
 
+@pytest.mark.parametrize("enabled", ["true", "false"])
+def test_single_put_switch_is_rendered_explicitly(tmp_path: Path, enabled: str) -> None:
+    documents = _render_browser_manifest(tmp_path, upload_single_put_enabled=enabled)
+    config = next(
+        item
+        for item in documents
+        if item.get("kind") == "ConfigMap" and item["metadata"]["name"] == "enterprise-doc-config"
+    )
+    assert config["data"]["UPLOAD__SINGLE_PUT_ENABLED"] == enabled
+
+
+@pytest.mark.parametrize("invalid", ["", "yes", "1", "False"])
+def test_single_put_switch_rejects_invalid_values(tmp_path: Path, invalid: str) -> None:
+    with pytest.raises(ValueError, match="single PUT enablement"):
+        _render_browser_manifest(tmp_path, upload_single_put_enabled=invalid)
+    assert not (tmp_path / "browser-staging.yaml").exists()
+
+
+@pytest.mark.parametrize("streaming", ["true", "false", ""])
+def test_presales_primary_inference_render_preserves_shared_model(tmp_path, streaming):
+    documents = _render_browser_manifest(
+        tmp_path,
+        model_reasoning_effort="high",
+        model_streaming="true",
+        presales_primary_reasoning_effort="low",
+        presales_primary_streaming=streaming,
+    )
+    data = next(d for d in documents if d["kind"] == "ConfigMap")["data"]
+    assert data["MODEL__REASONING_EFFORT"] == "high" and data["MODEL__STREAMING"] == "true"
+    assert data["PRESALES__PRIMARY_REASONING_EFFORT"] == "low"
+    assert data.get("PRESALES__PRIMARY_STREAMING") == (streaming or None)
+
+
+def test_presales_primary_defaults_remove_stale_overrides(tmp_path):
+    source = tmp_path / "browser-template.yaml"
+    _write_template(source)
+    documents = list(yaml.safe_load_all(source.read_text(encoding="utf-8")))
+    config = next(d for d in documents if d["kind"] == "ConfigMap")
+    config["data"].update(
+        {"PRESALES__PRIMARY_REASONING_EFFORT": "low", "PRESALES__PRIMARY_STREAMING": "false"}
+    )
+    source.write_text(yaml.safe_dump_all(documents), encoding="utf-8")
+    rendered = _render_browser_manifest(tmp_path)
+    data = next(d for d in rendered if d["kind"] == "ConfigMap")["data"]
+    assert "PRESALES__PRIMARY_REASONING_EFFORT" not in data
+    assert "PRESALES__PRIMARY_STREAMING" not in data
+
+
+@pytest.mark.parametrize(
+    "options",
+    [
+        {"presales_primary_reasoning_effort": "maximum"},
+        {"presales_primary_streaming": "yes"},
+    ],
+)
+def test_presales_primary_inference_render_rejects_invalid_values(tmp_path, options):
+    with pytest.raises(ValueError):
+        _render_browser_manifest(tmp_path, **options)
+    assert not (tmp_path / "browser-staging.yaml").exists()
+
+
 def test_configure_manifest_preserves_explicit_presales_route_and_wait_budget(
     tmp_path: Path,
 ) -> None:
@@ -196,6 +257,12 @@ def test_configure_manifest_preserves_explicit_presales_route_and_wait_budget(
         "PRESALES__MODEL_ROUTE": "fallback",
         "PRESALES__MODEL_TIMEOUT_SECONDS": "120",
         "PRESALES__ROW_TIMEOUT_SECONDS": "150",
+        "PRESALES__BACKGROUND_GENERATION_ENABLED": "false",
+        "PRESALES__AUTOMATIC_FAILOVER_ENABLED": "false",
+        "PRESALES__DAILY_DISPATCH_LIMIT": "200",
+        "PRESALES__QUEUE_TIMEOUT_SECONDS": "900",
+        "PRESALES__ROUTE_FAILURE_THRESHOLD": "3",
+        "PRESALES__ROUTE_COOLDOWN_SECONDS": "30",
     }
     settings = PresalesSettings.model_validate(
         {
@@ -221,6 +288,98 @@ def test_configure_manifest_preserves_explicit_presales_route_and_wait_budget(
             )
 
 
+@pytest.mark.parametrize("budgets", [(120, None, 150), (300, 90, 660), (180, 300, 900)])
+def test_presales_background_flags_and_budget_reach_api_and_worker(tmp_path: Path, budgets) -> None:
+    from enterprise_doc_api.config import ApiSettings
+    from enterprise_doc_worker.config import WorkerSettings
+
+    documents = _render_browser_manifest(
+        tmp_path,
+        presales_generation_enabled="true",
+        presales_background_generation_enabled="true",
+        presales_automatic_failover_enabled="true",
+        presales_daily_dispatch_limit="50",
+        presales_model_timeout_seconds=str(budgets[0]),
+        presales_fallback_model_timeout_seconds=str(budgets[1]) if budgets[1] is not None else None,
+        presales_row_timeout_seconds=str(budgets[2]),
+        fallback_model_base_url="https://fallback.example.com/v1",
+        fallback_model_name="fallback",
+    )
+    data = next(item for item in documents if item["kind"] == "ConfigMap")["data"]
+    values = {
+        k.removeprefix("PRESALES__").lower(): v
+        for k, v in data.items()
+        if k.startswith("PRESALES__")
+    }
+    for cls in (ApiSettings, WorkerSettings):
+        settings = cls(_env_file=None, presales=values)
+        assert settings.presales.background_generation_enabled
+        assert settings.presales.automatic_failover_enabled
+        assert settings.presales.daily_dispatch_limit == 50
+        assert settings.presales.model_timeout_seconds == budgets[0]
+        assert settings.presales.fallback_model_timeout_seconds == budgets[1]
+        assert settings.presales.row_timeout_seconds == budgets[2]
+
+
+def test_single_node_limits_survive_rendering_and_bind_runtime_settings(tmp_path: Path) -> None:
+    from enterprise_doc_core.presales.settings import PresalesSettings
+
+    documents = _render_browser_manifest(
+        tmp_path, model_timeout_seconds="120", presales_concurrent_attempt_limit="1"
+    )
+    data = next(item for item in documents if item["kind"] == "ConfigMap")["data"]
+    assert data["MODEL__TIMEOUT_SECONDS"] == "120"
+    assert (
+        PresalesSettings.model_validate(
+            {
+                key.removeprefix("PRESALES__").lower(): value
+                for key, value in data.items()
+                if key.startswith("PRESALES__")
+            }
+        ).concurrent_attempt_limit
+        == 1
+    )
+
+
+@pytest.mark.parametrize(
+    "route_budget,agent_budget,valid",
+    [(600, 900, True), (600, 300, False), (601, 900, False), (120, 3601, False)],
+)
+def test_agent_route_and_execution_budget_are_rendered_together(
+    tmp_path, route_budget, agent_budget, valid
+):
+    args = {
+        "model_route_deadline_seconds": str(route_budget),
+        "agent_execution_timeout_seconds": str(agent_budget),
+    }
+    if not valid:
+        with pytest.raises(ValueError):
+            _render_browser_manifest(tmp_path, **args)
+        return
+    docs = _render_browser_manifest(tmp_path, **args)
+    config = next(item for item in docs if item["kind"] == "ConfigMap")["data"]
+    assert config["MODEL__ROUTE_DEADLINE_SECONDS"] == str(route_budget)
+    assert config["AGENT__EXECUTION_TIMEOUT_SECONDS"] == str(agent_budget)
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {"model_timeout_seconds": "0"},
+        {"model_timeout_seconds": "NaN"},
+        {"presales_concurrent_attempt_limit": "0"},
+        {"presales_concurrent_attempt_limit": "5"},
+        {"presales_concurrent_attempt_limit": "1.5"},
+    ],
+)
+def test_release_limits_refuse_invalid_values_before_output(
+    tmp_path: Path, overrides: dict
+) -> None:
+    with pytest.raises(ValueError, match=r"model timeout|presales"):
+        _render_browser_manifest(tmp_path, **overrides)
+    assert not (tmp_path / "browser-staging.yaml").exists()
+
+
 @pytest.mark.parametrize(
     "overrides",
     [
@@ -231,14 +390,24 @@ def test_configure_manifest_preserves_explicit_presales_route_and_wait_budget(
         {"presales_model_timeout_seconds": "NaN"},
         {"presales_model_timeout_seconds": "inf"},
         {"presales_model_timeout_seconds": "0"},
-        {"presales_model_timeout_seconds": "181"},
+        {"presales_model_timeout_seconds": "301"},
+        {"presales_fallback_model_timeout_seconds": "301"},
+        {"presales_fallback_model_timeout_seconds": "90"},
+        {"presales_fallback_model_timeout_seconds": "nan"},
         {"presales_model_timeout_seconds": "90"},
         {"presales_model_timeout_seconds": "not-a-number"},
         {"presales_row_timeout_seconds": "NaN"},
         {"presales_row_timeout_seconds": "inf"},
         {"presales_row_timeout_seconds": "0"},
-        {"presales_row_timeout_seconds": "181"},
+        {"presales_row_timeout_seconds": "901"},
         {"presales_row_timeout_seconds": ""},
+        {"presales_background_generation_enabled": "yes"},
+        {"presales_automatic_failover_enabled": "true"},
+        {"presales_daily_dispatch_limit": "0"},
+        {"presales_daily_dispatch_limit": "10001"},
+        {"presales_queue_timeout_seconds": "NaN"},
+        {"presales_route_failure_threshold": "0"},
+        {"presales_route_cooldown_seconds": "301"},
     ],
 )
 def test_invalid_presales_release_settings_fail_before_output(
@@ -271,6 +440,12 @@ def test_presales_defaults_disable_generation_and_clear_old_model_override(tmp_p
         "PRESALES__GENERATION_ENABLED": "false",
         "PRESALES__MODEL_ROUTE": "primary",
         "PRESALES__ROW_TIMEOUT_SECONDS": "90",
+        "PRESALES__BACKGROUND_GENERATION_ENABLED": "false",
+        "PRESALES__AUTOMATIC_FAILOVER_ENABLED": "false",
+        "PRESALES__DAILY_DISPATCH_LIMIT": "200",
+        "PRESALES__QUEUE_TIMEOUT_SECONDS": "900",
+        "PRESALES__ROUTE_FAILURE_THRESHOLD": "3",
+        "PRESALES__ROUTE_COOLDOWN_SECONDS": "30",
     }
     disabled_annotations = next(item for item in disabled if item["kind"] == "Namespace")[
         "metadata"
@@ -300,6 +475,7 @@ def test_presales_cli_binds_approved_pilot_configuration(
         "model-provider": "openai_compatible",
         "model-base-url": "https://model.example.com/v1",
         "model-name": "primary-model",
+        "model-timeout-seconds": "120",
         "fallback-model-base-url": "https://fallback.example.com/v1",
         "fallback-model-name": "fallback-model",
         "embedding-base-url": "https://embedding.example.com/v1",
@@ -308,6 +484,9 @@ def test_presales_cli_binds_approved_pilot_configuration(
         "presales-model-route": "fallback",
         "presales-model-timeout-seconds": "120",
         "presales-row-timeout-seconds": "150",
+        "presales-concurrent-attempt-limit": "1",
+        "presales-primary-reasoning-effort": "low",
+        "presales-primary-streaming": "false",
     }
     monkeypatch.setattr(
         sys,
@@ -317,11 +496,21 @@ def test_presales_cli_binds_approved_pilot_configuration(
     configure_staging_manifest.main()
     documents = list(yaml.safe_load_all(output.read_text(encoding="utf-8")))
     data = next(item for item in documents if item["kind"] == "ConfigMap")["data"]
+    assert data["MODEL__TIMEOUT_SECONDS"] == "120"
     assert {key: value for key, value in data.items() if key.startswith("PRESALES__")} == {
         "PRESALES__GENERATION_ENABLED": "true",
         "PRESALES__MODEL_ROUTE": "fallback",
         "PRESALES__MODEL_TIMEOUT_SECONDS": "120",
         "PRESALES__ROW_TIMEOUT_SECONDS": "150",
+        "PRESALES__CONCURRENT_ATTEMPT_LIMIT": "1",
+        "PRESALES__PRIMARY_REASONING_EFFORT": "low",
+        "PRESALES__PRIMARY_STREAMING": "false",
+        "PRESALES__BACKGROUND_GENERATION_ENABLED": "false",
+        "PRESALES__AUTOMATIC_FAILOVER_ENABLED": "false",
+        "PRESALES__DAILY_DISPATCH_LIMIT": "200",
+        "PRESALES__QUEUE_TIMEOUT_SECONDS": "900",
+        "PRESALES__ROUTE_FAILURE_THRESHOLD": "3",
+        "PRESALES__ROUTE_COOLDOWN_SECONDS": "30",
     }
 
 
@@ -336,12 +525,36 @@ def test_staging_workflow_passes_presales_environment_to_the_renderer() -> None:
         if "scripts/configure_staging_manifest.py" in step.get("run", "")
     )
     expected = {
+        "PRESALES_PRIMARY_REASONING_EFFORT": (
+            "${{ vars.STAGING_PRESALES_PRIMARY_REASONING_EFFORT }}"
+        ),
+        "PRESALES_PRIMARY_STREAMING": "${{ vars.STAGING_PRESALES_PRIMARY_STREAMING }}",
+        "MODEL_TIMEOUT_SECONDS": "${{ vars.STAGING_MODEL_TIMEOUT_SECONDS }}",
+        "PRESALES_CONCURRENT_ATTEMPT_LIMIT": (
+            "${{ vars.STAGING_PRESALES_CONCURRENT_ATTEMPT_LIMIT }}"
+        ),
         "DEMO_ENABLED": "${{ vars.STAGING_DEMO_ENABLED || 'false' }}",
         "PRESALES_GENERATION_ENABLED": "${{ vars.STAGING_PRESALES_GENERATION_ENABLED || 'false' }}",
         "PRESALES_MODEL_ROUTE": "${{ vars.STAGING_PRESALES_MODEL_ROUTE || 'primary' }}",
         "PRESALES_MODEL_TIMEOUT_SECONDS": "${{ vars.STAGING_PRESALES_MODEL_TIMEOUT_SECONDS }}",
+        "PRESALES_FALLBACK_MODEL_TIMEOUT_SECONDS": (
+            "${{ vars.STAGING_PRESALES_FALLBACK_MODEL_TIMEOUT_SECONDS }}"
+        ),
+        "MODEL_ROUTE_DEADLINE_SECONDS": "${{ vars.STAGING_MODEL_ROUTE_DEADLINE_SECONDS }}",
+        "AGENT_EXECUTION_TIMEOUT_SECONDS": "${{ vars.STAGING_AGENT_EXECUTION_TIMEOUT_SECONDS }}",
         "PRESALES_ROW_TIMEOUT_SECONDS": "${{ vars.STAGING_PRESALES_ROW_TIMEOUT_SECONDS || '90' }}",
     }
+    for name, default in {
+        "BACKGROUND_GENERATION_ENABLED": "false",
+        "AUTOMATIC_FAILOVER_ENABLED": "false",
+        "DAILY_DISPATCH_LIMIT": "200",
+        "QUEUE_TIMEOUT_SECONDS": "900",
+        "ROUTE_FAILURE_THRESHOLD": "3",
+        "ROUTE_COOLDOWN_SECONDS": "30",
+    }.items():
+        expected["PRESALES_" + name] = (
+            "${{ vars.STAGING_PRESALES_" + name + " || '" + default + "' }}"
+        )
     for name, expression in expected.items():
         assert step["env"].get(name) == expression
         assert f'--{name.lower().replace("_", "-")} "${name}"' in step["run"]
@@ -1057,6 +1270,8 @@ def _configure_model(
     model_provider: str = "openai_compatible",
     model_base_url: str = "https://model.example.com/v1",
     model_name: str = "staging-model",
+    model_reasoning_effort: str | None = None,
+    fallback_model_reasoning_effort: str | None = None,
     fallback_model_base_url: str | None = None,
     fallback_model_name: str | None = None,
     fallback_model_version: str | None = None,
@@ -1075,12 +1290,74 @@ def _configure_model(
         model_provider=model_provider,
         model_base_url=model_base_url,
         model_name=model_name,
+        model_reasoning_effort=model_reasoning_effort,
+        fallback_model_reasoning_effort=fallback_model_reasoning_effort,
         fallback_model_base_url=fallback_model_base_url,
         fallback_model_name=fallback_model_name,
         fallback_model_version=fallback_model_version,
         fallback_model_timeout_seconds=fallback_model_timeout_seconds,
         embedding_version=embedding_version,
     )
+
+
+@pytest.mark.parametrize("primary,fallback", [("high", "medium"), ("low", "xhigh"), (None, "high")])
+def test_reasoning_rendering_is_explicit_and_stale_values_are_removed(tmp_path, primary, fallback):
+    source = tmp_path / "template.yaml"
+    destination = tmp_path / "configured.yaml"
+    cleared = tmp_path / "cleared.yaml"
+    _write_template(source)
+    _configure_model(
+        source,
+        destination,
+        model_reasoning_effort=primary,
+        fallback_model_reasoning_effort=fallback,
+        fallback_model_base_url="https://fallback.example.com/v1",
+        fallback_model_name="fallback-model",
+    )
+    docs = list(yaml.safe_load_all(destination.read_text(encoding="utf-8")))
+    config = next(d for d in docs if d["kind"] == "ConfigMap")["data"]
+    assert config.get("MODEL__REASONING_EFFORT") == primary
+    assert config["MODEL__FALLBACK_REASONING_EFFORT"] == fallback
+    from enterprise_doc_core.config import ModelSettings
+
+    loaded = ModelSettings.model_validate(
+        {
+            key.removeprefix("MODEL__").lower(): value
+            for key, value in config.items()
+            if key.startswith("MODEL__")
+        }
+        | {"api_key": "fixture-only", "fallback_api_key": "fallback-fixture-only"}
+    )
+    assert loaded.reasoning_effort == primary
+    assert loaded.fallback_reasoning_effort == fallback
+    _configure_model(destination, cleared)
+    reset = next(
+        d
+        for d in yaml.safe_load_all(cleared.read_text(encoding="utf-8"))
+        if d["kind"] == "ConfigMap"
+    )["data"]
+    assert "MODEL__REASONING_EFFORT" not in reset
+    assert "MODEL__FALLBACK_REASONING_EFFORT" not in reset
+
+
+@pytest.mark.parametrize("field", ["model_reasoning_effort", "fallback_model_reasoning_effort"])
+@pytest.mark.parametrize("effort", ["automatic", "HIGH", " high", "unknown"])
+def test_renderer_rejects_invalid_reasoning_before_writing(tmp_path, field, effort):
+    source = tmp_path / "template.yaml"
+    destination = tmp_path / "configured.yaml"
+    _write_template(source)
+    with pytest.raises(ValueError, match="reasoning effort"):
+        _configure_model(source, destination, **{field: effort})
+    assert not destination.exists()
+
+
+def test_renderer_rejects_reasoning_for_unconfigured_fallback(tmp_path):
+    source = tmp_path / "template.yaml"
+    destination = tmp_path / "configured.yaml"
+    _write_template(source)
+    with pytest.raises(ValueError, match="configured fallback"):
+        _configure_model(source, destination, fallback_model_reasoning_effort="high")
+    assert not destination.exists()
 
 
 def test_configure_manifest_binds_optional_fallback_route_without_secret_data(

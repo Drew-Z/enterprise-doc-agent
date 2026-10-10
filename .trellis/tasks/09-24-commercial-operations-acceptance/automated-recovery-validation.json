@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "at": "2026-10-02T07:41:45.292347+00:00",
+  "status": "local_automatic_cold_recovery_and_new_presales_verified",
+  "application_release": "v0.1.45-rc.16",
+  "application_source": "63de37c080cd83a02682ad1d2dd30c217a6aecd7",
+  "target": {
+    "hypervisor": "QEMU WHPX",
+    "os": "Ubuntu 24.04",
+    "vcpus": 2,
+    "memory_mib": 3072,
+    "fresh_overlay": true,
+    "restored_disk_reused": false
+  },
+  "rpo_seconds": 117.036157,
+  "rto_seconds": 353.050533,
+  "rpo_target_seconds": 300,
+  "rto_target_seconds": 1800,
+  "rpo_met": true,
+  "rto_met": true,
+  "automatic_without_manual_continuation": true,
+  "restored": {
+    "tables": 56,
+    "rows": 82622,
+    "table_fingerprints_match": true,
+    "objects": 1668,
+    "object_bytes": 1872148,
+    "all_object_sha256_match": true,
+    "inventory_exact": true,
+    "historical_packets": 33
+  },
+  "new_business": {
+    "flow": "Presales",
+    "document_bytes": 22,
+    "controlled_model_requests": 1,
+    "same_key_replays": 2,
+    "new_client_refresh": true,
+    "technical_review_and_csv": true,
+    "one_document_consumption": true,
+    "one_task_consumption": true,
+    "three_state_prerequisites_preserved": true,
+    "cross_tenant_denied": true,
+    "historical_tenant_tables_unchanged": 43,
+    "nullable_historical_tenant_rows_included": true
+  },
+  "cleanup": {
+    "verifier_resources_removed": 7,
+    "original_api_configuration_restored": true,
+    "local_recovery_vm_retained": true
+  },
+  "measurement_boundary": {
+    "clock_includes_new_business_and_cleanup": true,
+    "advance_media_preparation_excluded": true,
+    "active_historical_work_precondition": {
+      "jobs": 0,
+      "outbox": 0,
+      "presales": 0
+    },
+    "historical_in_flight_recovery_verified": false,
+    "new_agent_mcp_flow_verified": false,
+    "cloud_provisioning_or_public_cutover_verified": false,
+    "production_oauth_verified": false,
+    "real_supplier_requests": 0,
+    "production_writes": 0,
+    "off_computer_backup_continuity_verified": false,
+    "on_call_sla_verified": false
+  },
+  "prior_results_preserved": {
+    "hardware_round1_rto_seconds": 2681.425523,
+    "hardware_round1_rto_met": false,
+    "hardware_round2_rto_seconds": 883.363552,
+    "hardware_round2_included_manual_repairs": true,
+    "software_emulation_rto_seconds": 9899.813
+  },
+  "five_gates_complete": false,
+  "remaining": [
+    "performance and two-round capacity",
+    "supplier monetary reconciliation",
+    "independent business and release review",
+    "off-computer backup continuity",
+    "historical in-flight recovery and on-call arrangements"
+  ],
+  "private_evidence_directory": "whpx-recovery-evidence",
+  "evidence": [
+    {
+      "file": "round3/cold-recovery-result.json",
+      "sha256": "525d571a3bae11909b5b93602a8f263134ea19d974aa24a40e656db872ebb403"
+    },
+    {
+      "file": "round3/cold-recovery-plan.json",
+      "sha256": "7649d7bd43dbdb8260587f02585553bd4d9ff59d02b94b77ed0587c1000a0ce5"
+    },
+    {
+      "file": "round3/cold-recovery-intent.json",
+      "sha256": "3c2d80d989dc63773917e44d76345e47c617ff6533e85d20fde48057c9dd0006"
+    },
+    {
+      "file": "round3/cold-recovery-events.jsonl",
+      "sha256": "fdff9765e6c0dd20713ba59cc4781fdb07226965c224b822c3bed7223659bed1"
+    },
+    {
+      "file": "round3/guest-database-restore-result.json",
+      "sha256": "cf46b44ff47256d9675aff3581f626ab170dbcb494c824e191755b9709b11162"
+    },
+    {
+      "file": "round3/guest-object-restore-result.json",
+      "sha256": "f37ea08a2b4bada076d20a4161e84ee00db1fec22f7b191e59ca67a225779254"
+    },
+    {
+      "file": "round3/guest-application-result.json",
+      "sha256": "54aed21250cd3d929d0987cf437a03f7d0112f7b18a5c86e2d742839520abee8"
+    },
+    {
+      "file": "round3/guest-new-business-result.json",
+      "sha256": "89124b01a0df840206c45d3807ae8741a59be1d28cfd0cb54aa19c92baa9c43f"
+    },
+    {
+      "file": "round3/guest-new-business-probe.log",
+      "sha256": "688e97f4c5894aa6922ed0e191375410d84b876853232cca8c561f57ad226560"
+    },
+    {
+      "file": "round3/round3-preparation.json",
+      "sha256": "40691fb287e68d611c15ae9f18fce848400ccee64ba1b6c468167f4f376749f7"
+    }
+  ]
+}

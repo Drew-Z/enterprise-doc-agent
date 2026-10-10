@@ -5,7 +5,7 @@ import hashlib
 import logging
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 from uuid import UUID, uuid4
 
@@ -14,15 +14,14 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from enterprise_doc_core.config import ObjectStoreChecksumMode, UploadSettings
 from enterprise_doc_core.context import PrincipalContext
+from enterprise_doc_core.db import read_only_session
 from enterprise_doc_core.documents import (
-    Document,
     DocumentEnvelopeViolation,
     DocumentVersion,
-    DocumentVersionStatus,
     validate_document_envelope,
 )
+from enterprise_doc_core.documents.envelope import MAX_BUFFERED_ENVELOPE_BYTES
 from enterprise_doc_core.identity import Tenant
-from enterprise_doc_core.jobs import create_job_records
 from enterprise_doc_core.object_store import (
     CompletedMultipartUpload,
     MultipartObjectStore,
@@ -31,11 +30,16 @@ from enterprise_doc_core.object_store import (
     ObjectStoreNotFound,
     UploadedPart,
 )
+from enterprise_doc_core.object_store.errors import ObjectStoreError
+from enterprise_doc_core.object_store.models import ObjectContent, PresignedObjectUpload
+from enterprise_doc_core.object_store.signed_upload import SignedUploadWriter
+from enterprise_doc_core.uploads.completion_records import insert_completion_records
 from enterprise_doc_core.uploads.models import (
     UPLOAD_PART_OBSERVATION_VERSION_SEQUENCE,
     UploadPart,
     UploadSession,
     UploadSessionStatus,
+    UploadTransport,
 )
 
 _LOGGER = logging.getLogger("enterprise_doc_core.uploads")
@@ -152,6 +156,7 @@ class GetUploadSessionResult:
     expected_part_count: int
     expires_at: datetime
     uploaded_parts: tuple[VerifiedUploadPart, ...]
+    transport: str = UploadTransport.MULTIPART.value
 
 
 @dataclass(frozen=True, slots=True)
@@ -221,6 +226,7 @@ class _UploadSessionSnapshot:
     completed_at: datetime | None
     cleanup_claimed_at: datetime | None
     cleanup_claim_token: UUID | None
+    transport: str = UploadTransport.MULTIPART.value
 
 
 @dataclass(frozen=True, slots=True)
@@ -257,6 +263,54 @@ class UploadSessionService:
     @property
     def uses_readback_checksum_verification(self) -> bool:
         return self.checksum_mode is ObjectStoreChecksumMode.READBACK_SHA256
+
+    async def presign_single_put(
+        self,
+        *,
+        principal: PrincipalContext,
+        session_id: UUID,
+    ) -> PresignedObjectUpload:
+        tenant_id, actor_id = _principal_ids(principal)
+        async with self._session_factory().begin() as database:
+            upload_session = await database.scalar(
+                _owned_session_query(
+                    session_id=session_id, tenant_id=tenant_id, actor_id=actor_id
+                ).with_for_update()
+            )
+            if upload_session is None:
+                raise UploadSessionNotFound()
+            now = self.clock()
+            _require_active(upload_session, now=now)
+            if upload_session.transport != UploadTransport.SINGLE_PUT.value:
+                raise UploadSessionNotActive()
+            if not 0 < upload_session.size_bytes <= MAX_BUFFERED_ENVELOPE_BYTES:
+                raise UploadPartSizeInvalid()
+            ttl = int((upload_session.expires_at - now).total_seconds())
+            if ttl < 1:
+                raise UploadSessionExpired()
+            # Signing is local SDK work. Never expose this capability until the
+            # transaction commits its expiry, including when COMMIT is ambiguous.
+            signed = await self.object_store.presign_object_put(
+                bucket=self.documents_bucket,
+                key=upload_session.object_key,
+                size_bytes=upload_session.size_bytes,
+                metadata={
+                    "contract": "m1",
+                    "upload-session-id": str(upload_session.id),
+                    "version-id": str(upload_session.pending_version_id),
+                    "declared-size": str(upload_session.size_bytes),
+                },
+                expires_in_seconds=ttl,
+            )
+            # Use the time after signing and a rounding margin, so delayed SDK
+            # execution cannot produce a URL outliving the persisted upper bound.
+            expires_at = self.clock() + timedelta(seconds=signed.expires_in_seconds + 1)
+            if (
+                upload_session.signed_put_expires_at is None
+                or upload_session.signed_put_expires_at < expires_at
+            ):
+                upload_session.signed_put_expires_at = expires_at
+        return signed
 
     async def presign_part(
         self,
@@ -359,21 +413,26 @@ class UploadSessionService:
             if upload_session is None:
                 raise UploadSessionNotFound()
             snapshot = _snapshot(upload_session)
-            expected_parts = tuple(
-                (
-                    await database.scalars(
-                        select(UploadPart).where(
-                            UploadPart.tenant_id == tenant_id,
-                            UploadPart.upload_session_id == session_id,
+            expected_parts = (
+                ()
+                if snapshot.transport == UploadTransport.SINGLE_PUT.value
+                else tuple(
+                    (
+                        await database.scalars(
+                            select(UploadPart).where(
+                                UploadPart.tenant_id == tenant_id,
+                                UploadPart.upload_session_id == session_id,
+                            )
                         )
-                    )
-                ).all()
+                    ).all()
+                )
             )
             observation_at = self.clock()
             observation_version = None
             if (
                 snapshot.status == UploadSessionStatus.ACTIVE.value
                 and snapshot.expires_at > observation_at
+                and snapshot.transport == UploadTransport.MULTIPART.value
             ):
                 observation_version = await database.scalar(
                     select(UPLOAD_PART_OBSERVATION_VERSION_SEQUENCE.next_value())
@@ -388,6 +447,8 @@ class UploadSessionService:
             and snapshot.expires_at <= observation_at
         ):
             raise UploadSessionExpired()
+        if snapshot.transport == UploadTransport.SINGLE_PUT.value:
+            return await self._get_single_put(snapshot)
         if snapshot.status != UploadSessionStatus.ACTIVE.value:
             return _get_result(snapshot, uploaded_parts=())
         if snapshot.object_store_upload_id is None:
@@ -420,6 +481,57 @@ class UploadSessionService:
         )
         return _get_result(snapshot, uploaded_parts=verified_parts)
 
+    async def _get_single_put(self, snapshot: _UploadSessionSnapshot) -> GetUploadSessionResult:
+        if snapshot.status not in {
+            UploadSessionStatus.ACTIVE.value,
+            UploadSessionStatus.COMPLETING.value,
+        }:
+            return _get_result(snapshot, uploaded_parts=())
+        if not 0 < snapshot.size_bytes <= MAX_BUFFERED_ENVELOPE_BYTES:
+            raise UploadCompletionStateInvalid()
+        parts: tuple[VerifiedUploadPart, ...] = ()
+        try:
+            result = await self.object_store.read_object(
+                bucket=self.documents_bucket, key=snapshot.object_key, max_bytes=snapshot.size_bytes
+            )
+        except ObjectStoreNotFound:
+            pass
+        else:
+            _verified_single_put_content(snapshot, result)
+            parts = (
+                VerifiedUploadPart(
+                    part_number=1,
+                    size_bytes=snapshot.size_bytes,
+                    etag=result.head.etag,
+                    checksum_sha256_b64=base64.b64encode(
+                        bytes.fromhex(snapshot.declared_sha256)
+                    ).decode("ascii"),
+                ),
+            )
+        # Observe concurrent cancellation/completion after remote I/O. Never
+        # overwrite a terminal state with an old "ready to complete" observation.
+        async with read_only_session(self._session_factory()) as database:
+            current = await database.scalar(
+                _owned_session_query(
+                    session_id=snapshot.session_id,
+                    tenant_id=snapshot.tenant_id,
+                    actor_id=snapshot.actor_id,
+                )
+            )
+            if current is None:
+                raise UploadSessionNotFound()
+            if current.object_key != snapshot.object_key or current.transport != snapshot.transport:
+                raise UploadCompletionStateInvalid()
+            latest = _snapshot(current)
+        if latest.status == UploadSessionStatus.ACTIVE.value and latest.expires_at <= self.clock():
+            raise UploadSessionExpired()
+        if latest.status not in {
+            UploadSessionStatus.ACTIVE.value,
+            UploadSessionStatus.COMPLETING.value,
+        }:
+            parts = ()
+        return _get_result(latest, uploaded_parts=parts)
+
     async def complete(
         self,
         *,
@@ -428,6 +540,15 @@ class UploadSessionService:
         request: CompleteUploadSessionInput,
     ) -> CompleteUploadSessionResult:
         tenant_id, actor_id = _principal_ids(principal)
+        if not request.parts:
+            # An unfinished multipart upload cannot complete without parts.
+            # Claim a direct upload from its owned row in one transaction.
+            snapshot, completed = await self._claim_owned_completion(
+                session_id=session_id, tenant_id=tenant_id, actor_id=actor_id
+            )
+            if completed is not None:
+                return completed
+            return await self._complete_single_put(snapshot)
         snapshot, expected_parts, completed = await self._load_completion_state(
             session_id=session_id,
             tenant_id=tenant_id,
@@ -435,6 +556,8 @@ class UploadSessionService:
         )
         if completed is not None:
             return completed
+        if snapshot.transport == UploadTransport.SINGLE_PUT.value:
+            raise UploadCompletionPartsInvalid()
         completion_parts = _validate_completion_request(
             snapshot=snapshot,
             expected_parts=expected_parts,
@@ -490,10 +613,7 @@ class UploadSessionService:
             except MultipartUploadNotFound:
                 completion_result = None
 
-        head = await self.object_store.head_object(
-            bucket=self.documents_bucket,
-            key=snapshot.object_key,
-        )
+        head, readback_content = await self._read_completed_object(snapshot)
         identity_verified = _object_identity_matches(snapshot=snapshot, head=head)
         try:
             (
@@ -505,6 +625,7 @@ class UploadSessionService:
                 head=head,
                 completion_result=completion_result,
                 expected_parts=expected_parts,
+                readback_content=readback_content,
             )
         except (DocumentEnvelopeViolation, UploadCompletionVerificationFailed) as error:
             await self._mark_invalid_completion(
@@ -520,6 +641,112 @@ class UploadSessionService:
             detected_media_type=detected_media_type,
             transport_checksum=transport_checksum,
             content_sha256_verified_at=content_sha256_verified_at,
+        )
+
+    async def _complete_single_put(
+        self, snapshot: _UploadSessionSnapshot
+    ) -> CompleteUploadSessionResult:
+        if not 0 < snapshot.size_bytes <= MAX_BUFFERED_ENVELOPE_BYTES:
+            raise UploadCompletionStateInvalid()
+        # A missing object is not a terminal failure: the client's PUT response
+        # may have been lost or its request may still be in flight.
+        result = await self.object_store.read_object(
+            bucket=self.documents_bucket, key=snapshot.object_key, max_bytes=snapshot.size_bytes
+        )
+        try:
+            content = _verified_single_put_content(snapshot, result)
+            envelope = await validate_document_envelope(
+                object_store=self.object_store,
+                bucket=self.documents_bucket,
+                key=snapshot.object_key,
+                size_bytes=snapshot.size_bytes,
+                extension=snapshot.extension,
+                settings=self.settings,
+                verified_content=content,
+            )
+        except (DocumentEnvelopeViolation, UploadCompletionVerificationFailed) as error:
+            # Retain the object and durable failed session for capability-aware
+            # cleanup. Deleting here would allow an unexpired URL to recreate it.
+            await self._mark_invalid_completion(
+                snapshot=snapshot, error_code=error.code, delete_object=False
+            )
+            raise
+        return await self._finalize_completion(
+            snapshot=snapshot,
+            head=result.head,
+            detected_media_type=envelope.detected_media_type,
+            transport_checksum=None,
+            content_sha256_verified_at=self.clock(),
+        )
+
+    async def complete_content(
+        self,
+        *,
+        principal: PrincipalContext,
+        session_id: UUID,
+        content: bytes,
+        writer: SignedUploadWriter,
+    ) -> CompleteUploadSessionResult:
+        """Complete server-received bytes through a trusted payload-signed writer.
+
+        An existing or ambiguously written object always takes the original
+        readback path. Callers must never accept a writer/receipt from a client.
+        """
+        if type(content) is not bytes or not 0 < len(content) <= MAX_BUFFERED_ENVELOPE_BYTES:
+            raise UploadPartSizeInvalid()
+        digest = hashlib.sha256(content).hexdigest()
+        tenant_id, actor_id = _principal_ids(principal)
+        snapshot, completed = await self._claim_owned_completion(
+            session_id=session_id,
+            tenant_id=tenant_id,
+            actor_id=actor_id,
+            expected_content=(len(content), digest),
+        )
+        if completed is not None:
+            return completed
+        try:
+            envelope = await validate_document_envelope(
+                object_store=self.object_store,
+                bucket=self.documents_bucket,
+                key=snapshot.object_key,
+                size_bytes=snapshot.size_bytes,
+                extension=snapshot.extension,
+                settings=self.settings,
+                verified_content=content,
+            )
+        except DocumentEnvelopeViolation as error:
+            await self._mark_invalid_completion(
+                snapshot=snapshot, error_code=error.code, delete_object=False
+            )
+            raise
+        try:
+            receipt = await writer.write_content(
+                bucket=self.documents_bucket,
+                key=snapshot.object_key,
+                body=content,
+                content_type=envelope.detected_media_type,
+                metadata={
+                    "contract": "m1",
+                    "upload-session-id": str(snapshot.session_id),
+                    "version-id": str(snapshot.pending_version_id),
+                    "declared-size": str(snapshot.size_bytes),
+                },
+            )
+            if receipt.content_sha256 != digest:
+                raise UploadCompletionVerificationFailed()
+            _verified_single_put_content(snapshot, ObjectContent(receipt.head, content))
+        except (ObjectStoreError, UploadCompletionVerificationFailed) as error:
+            _LOGGER.info(
+                "signed upload requires readback recovery",
+                extra={"event_data": {"error_code": error.code}},
+            )
+            return await self._complete_single_put(snapshot)
+        return await self._finalize_completion(
+            snapshot=snapshot,
+            head=receipt.head,
+            detected_media_type=envelope.detected_media_type,
+            transport_checksum=None,
+            content_sha256_verified_at=self.clock(),
         )
 
     async def reconcile_stale_completion(
@@ -544,6 +771,8 @@ class UploadSessionService:
                 outcome=StaleCompletionOutcome.COMPLETED,
                 completion=completed,
             )
+        if snapshot.transport == UploadTransport.SINGLE_PUT.value:
+            return await self._reconcile_single_put(snapshot, cleanup_claim_token)
 
         completion_parts: tuple[UploadedPart, ...] = ()
         if not self.uses_readback_checksum_verification:
@@ -599,10 +828,7 @@ class UploadSessionService:
                 multipart_missing = True
 
         try:
-            head = await self.object_store.head_object(
-                bucket=self.documents_bucket,
-                key=snapshot.object_key,
-            )
+            head, readback_content = await self._read_completed_object(snapshot)
         except ObjectStoreNotFound as error:
             if not multipart_missing:
                 raise
@@ -631,6 +857,7 @@ class UploadSessionService:
                 head=head,
                 completion_result=completion_result,
                 expected_parts=expected_parts,
+                readback_content=readback_content,
             )
         except (DocumentEnvelopeViolation, UploadCompletionVerificationFailed) as error:
             marked_failed = await self._mark_invalid_completion(
@@ -661,6 +888,66 @@ class UploadSessionService:
             completion=completed,
         )
 
+    async def _reconcile_single_put(
+        self, snapshot: _UploadSessionSnapshot, token: UUID
+    ) -> ReconcileStaleCompletionResult:
+        if not 0 < snapshot.size_bytes <= MAX_BUFFERED_ENVELOPE_BYTES:
+            raise UploadCompletionStateInvalid()
+        try:
+            result = await self.object_store.read_object(
+                bucket=self.documents_bucket, key=snapshot.object_key, max_bytes=snapshot.size_bytes
+            )
+        except ObjectStoreNotFound as error:
+            failed = await self._mark_completion_failed(
+                snapshot=snapshot,
+                expected_status=UploadSessionStatus.COMPLETING.value,
+                error_code=error.code,
+                cleanup_claim_token=token,
+            )
+            return ReconcileStaleCompletionResult(
+                outcome=StaleCompletionOutcome.FAILED_MISSING
+                if failed
+                else StaleCompletionOutcome.SKIPPED
+            )
+        owned = _object_identity_matches(snapshot=snapshot, head=result.head)
+        try:
+            content = _verified_single_put_content(snapshot, result)
+            envelope = await validate_document_envelope(
+                object_store=self.object_store,
+                bucket=self.documents_bucket,
+                key=snapshot.object_key,
+                size_bytes=snapshot.size_bytes,
+                extension=snapshot.extension,
+                settings=self.settings,
+                verified_content=content,
+            )
+        except (DocumentEnvelopeViolation, UploadCompletionVerificationFailed) as error:
+            failed = await self._mark_invalid_completion(
+                snapshot=snapshot,
+                error_code=error.code,
+                delete_object=False,
+                cleanup_claim_token=token,
+            )
+            outcome = StaleCompletionOutcome.SKIPPED
+            if failed:
+                outcome = (
+                    StaleCompletionOutcome.FAILED_INVALID_OWNED
+                    if owned
+                    else StaleCompletionOutcome.FAILED_AMBIGUOUS
+                )
+            return ReconcileStaleCompletionResult(outcome=outcome)
+        completed = await self._finalize_completion(
+            snapshot=snapshot,
+            head=result.head,
+            detected_media_type=envelope.detected_media_type,
+            transport_checksum=None,
+            content_sha256_verified_at=self.clock(),
+            cleanup_claim_token=token,
+        )
+        return ReconcileStaleCompletionResult(
+            outcome=StaleCompletionOutcome.COMPLETED, completion=completed
+        )
+
     async def _load_stale_completion_state(
         self,
         *,
@@ -677,7 +964,7 @@ class UploadSessionService:
         | None
     ):
         session_factory = self._session_factory()
-        async with session_factory() as database:
+        async with read_only_session(session_factory) as database:
             upload_session = await database.scalar(
                 select(UploadSession).where(
                     UploadSession.id == session_id,
@@ -714,6 +1001,26 @@ class UploadSessionService:
             )
             return _snapshot(upload_session), expected_parts, None
 
+    async def _read_completed_object(
+        self, snapshot: _UploadSessionSnapshot
+    ) -> tuple[ObjectHead, bytes | None]:
+        if (
+            self.uses_readback_checksum_verification
+            and snapshot.size_bytes <= MAX_BUFFERED_ENVELOPE_BYTES
+        ):
+            result = await self.object_store.read_object(
+                bucket=self.documents_bucket,
+                key=snapshot.object_key,
+                max_bytes=snapshot.size_bytes,
+            )
+            return result.head, result.content
+        return (
+            await self.object_store.head_object(
+                bucket=self.documents_bucket, key=snapshot.object_key
+            ),
+            None,
+        )
+
     async def _validate_completed_object(
         self,
         *,
@@ -721,13 +1028,16 @@ class UploadSessionService:
         head: ObjectHead,
         completion_result: CompletedMultipartUpload | None,
         expected_parts: Sequence[UploadPart],
+        readback_content: bytes | None = None,
     ) -> tuple[str, str | None, datetime | None]:
         content_sha256_verified_at: datetime | None = None
+        verified_content: bytes | None = None
         if self.uses_readback_checksum_verification:
-            await self._verify_readback_content(
+            verified_content = await self._verify_readback_content(
                 snapshot=snapshot,
                 head=head,
                 expected_parts=expected_parts,
+                content=readback_content,
             )
             transport_checksum = None
             content_sha256_verified_at = self.clock()
@@ -744,6 +1054,7 @@ class UploadSessionService:
             size_bytes=head.size_bytes,
             extension=snapshot.extension,
             settings=self.settings,
+            verified_content=verified_content,
         )
         return envelope.detected_media_type, transport_checksum, content_sha256_verified_at
 
@@ -753,15 +1064,22 @@ class UploadSessionService:
         snapshot: _UploadSessionSnapshot,
         head: ObjectHead,
         expected_parts: Sequence[UploadPart],
-    ) -> None:
+        content: bytes | None = None,
+    ) -> bytes | None:
         if (
             head.size_bytes != snapshot.size_bytes
             or not _object_identity_matches(snapshot=snapshot, head=head)
             or len(expected_parts) != snapshot.expected_part_count
+            or (content is not None and len(content) != snapshot.size_bytes)
         ):
             raise UploadCompletionVerificationFailed()
 
         whole_hasher = hashlib.sha256()
+        buffered = (
+            bytearray()
+            if content is None and snapshot.size_bytes <= MAX_BUFFERED_ENVELOPE_BYTES
+            else None
+        )
         expected_numbers = list(range(1, snapshot.expected_part_count + 1))
         if [part.part_number for part in expected_parts] != expected_numbers:
             raise UploadCompletionVerificationFailed()
@@ -778,16 +1096,22 @@ class UploadSessionService:
             offset = part_start
             while remaining:
                 length = min(READBACK_HASH_CHUNK_BYTES, remaining)
-                chunk = await self.object_store.get_range(
-                    bucket=self.documents_bucket,
-                    key=snapshot.object_key,
-                    start=offset,
-                    end_inclusive=offset + length - 1,
+                chunk = (
+                    content[offset : offset + length]
+                    if content is not None
+                    else await self.object_store.get_range(
+                        bucket=self.documents_bucket,
+                        key=snapshot.object_key,
+                        start=offset,
+                        end_inclusive=offset + length - 1,
+                    )
                 )
                 if len(chunk) != length:
                     raise UploadCompletionVerificationFailed()
                 part_hasher.update(chunk)
                 whole_hasher.update(chunk)
+                if buffered is not None:
+                    buffered.extend(chunk)
                 offset += length
                 remaining -= length
             actual_part_checksum = base64.b64encode(part_hasher.digest()).decode("ascii")
@@ -796,6 +1120,7 @@ class UploadSessionService:
 
         if whole_hasher.hexdigest() != snapshot.declared_sha256:
             raise UploadCompletionVerificationFailed()
+        return content if content is not None else bytes(buffered) if buffered is not None else None
 
     async def abort(
         self,
@@ -809,6 +1134,9 @@ class UploadSessionService:
             tenant_id=tenant_id,
             actor_id=actor_id,
         )
+        if snapshot.transport == UploadTransport.SINGLE_PUT.value:
+            if not await self.retire_single_put(principal=principal, session_id=session_id):
+                raise UploadAbortFailed()
         if snapshot.object_store_upload_id is not None:
             try:
                 await self.object_store.abort_upload(
@@ -824,6 +1152,57 @@ class UploadSessionService:
             status=UploadSessionStatus.ABORTED.value,
             replayed=replayed,
         )
+
+    async def retire_single_put(self, *, principal: PrincipalContext, session_id: UUID) -> bool:
+        tenant_id, actor_id = _principal_ids(principal)
+        terminal = {
+            UploadSessionStatus.ABORTED.value,
+            UploadSessionStatus.EXPIRED.value,
+            UploadSessionStatus.FAILED.value,
+        }
+        async with read_only_session(self._session_factory()) as database:
+            row = await database.scalar(
+                _owned_session_query(session_id=session_id, tenant_id=tenant_id, actor_id=actor_id)
+            )
+            if row is None:
+                raise UploadSessionNotFound()
+            if (
+                row.transport != UploadTransport.SINGLE_PUT.value
+                or row.status not in terminal
+                or row.document_version_id is not None
+            ):
+                raise UploadAbortConflict()
+            if row.single_put_retired_at is not None:
+                return True
+            snapshot = _snapshot(row)
+        retired = await self.object_store.retire_upload_object(
+            bucket=self.documents_bucket,
+            key=snapshot.object_key,
+            metadata={
+                "contract": "m1",
+                "upload-session-id": str(snapshot.session_id),
+                "version-id": str(snapshot.pending_version_id),
+                "declared-size": str(snapshot.size_bytes),
+            },
+        )
+        if not retired:
+            return False
+        async with self._session_factory().begin() as database:
+            row = await database.scalar(
+                _owned_session_query(
+                    session_id=session_id, tenant_id=tenant_id, actor_id=actor_id
+                ).with_for_update()
+            )
+            if (
+                row is None
+                or row.transport != snapshot.transport
+                or row.object_key != snapshot.object_key
+                or row.status not in terminal
+                or row.document_version_id is not None
+            ):
+                raise UploadAbortConflict()
+            row.single_put_retired_at = row.single_put_retired_at or self.clock()
+        return True
 
     async def _claim_abort(
         self,
@@ -973,7 +1352,7 @@ class UploadSessionService:
         CompleteUploadSessionResult | None,
     ]:
         session_factory = self._session_factory()
-        async with session_factory() as database:
+        async with read_only_session(session_factory) as database:
             upload_session = await database.scalar(
                 _owned_session_query(
                     session_id=session_id,
@@ -995,6 +1374,8 @@ class UploadSessionService:
                     raise UploadSessionExpired()
             elif upload_session.status != UploadSessionStatus.COMPLETING.value:
                 raise UploadSessionNotActive()
+            if upload_session.transport == UploadTransport.SINGLE_PUT.value:
+                return _snapshot(upload_session), (), None
             expected_parts = tuple(
                 (
                     await database.scalars(
@@ -1014,19 +1395,41 @@ class UploadSessionService:
         *,
         snapshot: _UploadSessionSnapshot,
     ) -> tuple[_UploadSessionSnapshot, CompleteUploadSessionResult | None]:
+        return await self._claim_owned_completion(
+            session_id=snapshot.session_id,
+            tenant_id=snapshot.tenant_id,
+            actor_id=snapshot.actor_id,
+            expected_snapshot=snapshot,
+        )
+
+    async def _claim_owned_completion(
+        self,
+        *,
+        session_id: UUID,
+        tenant_id: UUID,
+        actor_id: UUID,
+        expected_snapshot: _UploadSessionSnapshot | None = None,
+        expected_content: tuple[int, str] | None = None,
+    ) -> tuple[_UploadSessionSnapshot, CompleteUploadSessionResult | None]:
         session_factory = self._session_factory()
         claimed_snapshot: _UploadSessionSnapshot | None = None
         completed: CompleteUploadSessionResult | None = None
         async with session_factory.begin() as database:
             upload_session = await database.scalar(
                 _owned_session_query(
-                    session_id=snapshot.session_id,
-                    tenant_id=snapshot.tenant_id,
-                    actor_id=snapshot.actor_id,
+                    session_id=session_id,
+                    tenant_id=tenant_id,
+                    actor_id=actor_id,
                 ).with_for_update()
             )
             if upload_session is None:
                 raise UploadSessionNotFound()
+            if expected_content is not None:
+                if upload_session.transport != UploadTransport.SINGLE_PUT.value:
+                    raise UploadCompletionPartsInvalid()
+                if expected_content != (upload_session.size_bytes, upload_session.declared_sha256):
+                    # Invalid input must not claim or fail a valid in-flight upload.
+                    raise UploadCompletionVerificationFailed()
             completed = await _completed_result(
                 database,
                 upload_session=upload_session,
@@ -1040,21 +1443,26 @@ class UploadSessionService:
                     upload_session.completion_started_at = self.clock()
                 elif upload_session.status != UploadSessionStatus.COMPLETING.value:
                     raise UploadSessionNotActive()
-                if (
-                    upload_session.object_key != snapshot.object_key
-                    or upload_session.object_store_upload_id != snapshot.object_store_upload_id
-                    or upload_session.pending_document_id != snapshot.pending_document_id
-                    or upload_session.pending_version_id != snapshot.pending_version_id
+                if expected_snapshot is None:
+                    if upload_session.transport != UploadTransport.SINGLE_PUT.value:
+                        raise UploadCompletionPartsInvalid()
+                    if not 0 < upload_session.size_bytes <= MAX_BUFFERED_ENVELOPE_BYTES:
+                        raise UploadCompletionStateInvalid()
+                elif (
+                    upload_session.object_key != expected_snapshot.object_key
+                    or upload_session.object_store_upload_id
+                    != expected_snapshot.object_store_upload_id
+                    or upload_session.pending_document_id != expected_snapshot.pending_document_id
+                    or upload_session.pending_version_id != expected_snapshot.pending_version_id
+                    or upload_session.transport != expected_snapshot.transport
                 ):
                     raise UploadCompletionStateInvalid()
                 upload_session.cleanup_claimed_at = None
                 upload_session.cleanup_claim_token = None
-                claimed_snapshot = _snapshot(upload_session)
-        if completed is not None:
-            return snapshot, completed
+            claimed_snapshot = _snapshot(upload_session)
         if claimed_snapshot is None:
             raise UploadCompletionStateInvalid()
-        return claimed_snapshot, None
+        return claimed_snapshot, completed
 
     async def _finalize_completion(
         self,
@@ -1071,7 +1479,9 @@ class UploadSessionService:
         try:
             async with session_factory.begin() as database:
                 tenant = await database.scalar(
-                    select(Tenant).where(Tenant.id == snapshot.tenant_id).with_for_update()
+                    select(Tenant)
+                    .where(Tenant.id == snapshot.tenant_id)
+                    .with_for_update(of=Tenant, key_share=True)
                 )
                 if tenant is None:
                     raise UploadCompletionStateInvalid()
@@ -1095,6 +1505,7 @@ class UploadSessionService:
                         or upload_session.object_key != snapshot.object_key
                         or upload_session.pending_document_id != snapshot.pending_document_id
                         or upload_session.pending_version_id != snapshot.pending_version_id
+                        or upload_session.transport != snapshot.transport
                         or upload_session.reserved_bytes != upload_session.size_bytes
                         or tenant.reserved_storage_bytes < upload_session.reserved_bytes
                         or (
@@ -1103,60 +1514,23 @@ class UploadSessionService:
                         )
                     ):
                         raise UploadCompletionStateInvalid()
-                    document = Document(
-                        id=upload_session.pending_document_id,
-                        tenant_id=upload_session.tenant_id,
-                        created_by=upload_session.actor_id,
-                        title=upload_session.original_filename,
-                    )
-                    database.add(document)
-                    await database.flush()
-                    version = DocumentVersion(
-                        id=upload_session.pending_version_id,
-                        tenant_id=upload_session.tenant_id,
-                        document_id=upload_session.pending_document_id,
-                        upload_session_id=upload_session.id,
-                        version_number=1,
-                        status=DocumentVersionStatus.UPLOADED.value,
-                        object_key=upload_session.object_key,
-                        original_filename=upload_session.original_filename,
-                        declared_media_type=upload_session.declared_media_type,
-                        detected_media_type=detected_media_type,
-                        size_bytes=head.size_bytes,
-                        declared_sha256=upload_session.declared_sha256,
-                        content_sha256_verified_at=content_sha256_verified_at,
-                        transport_checksum_sha256=transport_checksum,
-                        created_by=upload_session.actor_id,
-                    )
-                    database.add(version)
-                    await database.flush()
-                    await create_job_records(
+                    completed_at = self.clock()
+                    await insert_completion_records(
                         database,
-                        tenant_id=upload_session.tenant_id,
-                        actor_id=upload_session.actor_id,
-                        job_type="document.ingest",
-                        idempotency_key=f"document-version:{version.id}",
-                        payload={"document_version_id": str(version.id)},
-                        document_version_id=version.id,
-                        max_attempts=self.ingestion_max_attempts,
-                        request_id=None,
-                        correlation_id=None,
-                        outbox_event_type="document.ingest.requested",
+                        upload=upload_session,
+                        size_bytes=head.size_bytes,
+                        detected_media_type=detected_media_type,
+                        transport_checksum=transport_checksum,
+                        content_sha256_verified_at=content_sha256_verified_at,
+                        completed_at=completed_at,
+                        ingestion_max_attempts=self.ingestion_max_attempts,
                     )
-                    reserved_bytes = upload_session.reserved_bytes
-                    tenant.reserved_storage_bytes -= reserved_bytes
-                    tenant.used_storage_bytes += head.size_bytes
-                    upload_session.reserved_bytes = 0
-                    upload_session.document_version_id = version.id
-                    upload_session.status = UploadSessionStatus.COMPLETED.value
-                    upload_session.completed_at = self.clock()
-                    upload_session.last_error_code = None
-                    upload_session.cleanup_claimed_at = None
-                    upload_session.cleanup_claim_token = None
-                    await database.flush()
-                    result = _result_from_completed_models(
-                        upload_session=upload_session,
-                        version=version,
+                    result = CompleteUploadSessionResult(
+                        session_id=upload_session.id,
+                        status=UploadSessionStatus.COMPLETED.value,
+                        document_id=upload_session.pending_document_id,
+                        version_id=upload_session.pending_version_id,
+                        completed_at=completed_at,
                         replayed=False,
                     )
         except Exception as error:
@@ -1184,7 +1558,7 @@ class UploadSessionService:
         replayed: bool,
     ) -> CompleteUploadSessionResult | None:
         session_factory = self._session_factory()
-        async with session_factory() as database:
+        async with read_only_session(session_factory) as database:
             upload_session = await database.scalar(
                 _owned_session_query(
                     session_id=session_id,
@@ -1731,6 +2105,7 @@ def _snapshot(upload_session: UploadSession) -> _UploadSessionSnapshot:
         completed_at=upload_session.completed_at,
         cleanup_claimed_at=upload_session.cleanup_claimed_at,
         cleanup_claim_token=upload_session.cleanup_claim_token,
+        transport=upload_session.transport,
     )
 
 
@@ -1810,6 +2185,18 @@ def _verified_parts_from_rows(
     return tuple(sorted(verified, key=lambda part: part.part_number))
 
 
+def _verified_single_put_content(snapshot: _UploadSessionSnapshot, result: ObjectContent) -> bytes:
+    if (
+        result.head.size_bytes != snapshot.size_bytes
+        or not _object_identity_matches(snapshot=snapshot, head=result.head)
+        or result.content is None
+        or len(result.content) != snapshot.size_bytes
+        or hashlib.sha256(result.content).hexdigest() != snapshot.declared_sha256
+    ):
+        raise UploadCompletionVerificationFailed()
+    return result.content
+
+
 def _get_result(
     snapshot: _UploadSessionSnapshot,
     *,
@@ -1827,6 +2214,7 @@ def _get_result(
         expected_part_count=snapshot.expected_part_count,
         expires_at=snapshot.expires_at,
         uploaded_parts=uploaded_parts,
+        transport=snapshot.transport,
     )
 
 

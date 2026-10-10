@@ -327,6 +327,37 @@ async def test_graph_executor_records_bounded_outcomes(
     assert f'boundary="graph",operation="run",result="{expected_result}"' in rendered
 
 
+@pytest.mark.parametrize("primary,fallback", [("high", "medium"), ("xhigh", None), (None, "high")])
+async def test_configured_agent_routes_keep_independent_reasoning(primary, fallback):
+    from enterprise_doc_core.agents import OpenAICompatibleChatGateway, RoutedChatModelGateway
+
+    settings = ModelSettings.model_validate(
+        {
+            "provider": "openai_compatible",
+            "base_url": "https://primary.invalid/v1",
+            "api_key": "primary-fixture",
+            "model_name": "primary-model",
+            "reasoning_effort": primary,
+            "fallback_provider": "openai_compatible",
+            "fallback_base_url": "https://fallback.invalid/v1",
+            "fallback_api_key": "fallback-fixture",
+            "fallback_model_name": "fallback-model",
+            "fallback_reasoning_effort": fallback,
+        }
+    )
+    gateway = _configured_gateway(settings, require_metering=True)
+    assert isinstance(gateway, RoutedChatModelGateway)
+    assert isinstance(gateway.primary, OpenAICompatibleChatGateway)
+    assert isinstance(gateway.fallback, OpenAICompatibleChatGateway)
+    try:
+        assert gateway.primary.settings.reasoning_effort == primary
+        assert gateway.fallback.settings.reasoning_effort == fallback
+        assert gateway.primary.require_metering and gateway.fallback.require_metering
+    finally:
+        await gateway.primary.client.aclose()
+        await gateway.fallback.client.aclose()
+
+
 def test_configured_gateway_uses_explicit_route_deadline() -> None:
     gateway = _configured_gateway(
         ModelSettings(

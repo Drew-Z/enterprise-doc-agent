@@ -1,0 +1,741 @@
+"""Read-only capacity and original-cache checks for a complete OCI import batch."""
+
+from __future__ import annotations
+
+import copy
+import gzip
+import hashlib
+import io
+import json
+import math
+import os
+import re
+import subprocess
+import sys
+import tarfile
+import tempfile
+import time
+import zlib
+from collections.abc import Callable, Sequence
+from decimal import Decimal, InvalidOperation
+from pathlib import Path, PurePosixPath
+from typing import IO, Any, NamedTuple
+
+NAMESPACE = "enterprise-doc-agent-staging"
+WORKLOADS = {"enterprise-doc-" + role for role in ("api", "worker", "consumer", "web", "redis")}
+CACHE_DIRECTORY = "/var/lib/rancher/k3s/agent/containerd"
+MAX_ARCHIVE_BYTES = 4 * 1024**3
+MAX_LAYER_BYTES = 8 * 1024**3
+MAX_LAYER_INODES = 2_000_000
+DIGEST = re.compile(r"sha256:[0-9a-f]{64}")
+LAYER_TYPES = {
+    "application/vnd.oci.image.layer.v1.tar": False,
+    "application/vnd.oci.image.layer.v1.tar+gzip": True,
+    "application/vnd.docker.image.rootfs.diff.tar.gzip": True,
+}
+Run = Callable[..., subprocess.CompletedProcess[str]]
+
+
+class ImageCacheSafetyError(ValueError):
+    """A missing fact or failed guard must stop the cache write."""
+
+
+class ArchiveFootprint(NamedTuple):
+    content_bytes: int
+    snapshot_bytes: int
+    snapshot_inodes: int
+    unpack_temporary_bytes: int
+    normalized_archive_bytes: int
+    content_inodes: int = 0
+
+
+class LayerReader(io.RawIOBase):
+    def __init__(self, stream: gzip.GzipFile | IO[bytes], checkpoint: Callable[[], None]) -> None:
+        super().__init__()
+        self.stream = stream
+        self.checkpoint = checkpoint
+        self.sha256 = hashlib.sha256()
+        self.bytes = 0
+
+    def read(self, size: int = -1) -> bytes:
+        self.checkpoint()
+        if size < 0:
+            size = 1024 * 1024
+        data = self.stream.read(min(size, MAX_LAYER_BYTES - self.bytes + 1))
+        self.bytes += len(data)
+        if self.bytes > MAX_LAYER_BYTES:
+            raise ImageCacheSafetyError("OCI layer exceeds the expansion bound")
+        self.sha256.update(data)
+        return data
+
+
+def _blob(archive: tarfile.TarFile, digest: object) -> tarfile.TarInfo:
+    if not isinstance(digest, str) or not DIGEST.fullmatch(digest):
+        raise ImageCacheSafetyError("invalid OCI content digest")
+    name = "blobs/sha256/" + digest.removeprefix("sha256:")
+    matches = [item for item in archive.getmembers() if item.name.removeprefix("./") == name]
+    if len(matches) != 1 or not matches[0].isfile():
+        raise ImageCacheSafetyError("OCI archive is missing unique required content")
+    return matches[0]
+
+
+def _json_blob(archive: tarfile.TarFile, digest: object) -> dict[str, Any]:
+    item = _blob(archive, digest)
+    if item.size > 16 * 1024**2:
+        raise ImageCacheSafetyError("OCI metadata is not bounded")
+    stream = archive.extractfile(item)
+    if stream is None:
+        raise ImageCacheSafetyError("OCI metadata is unreadable")
+    with stream:
+        value = json.load(stream)
+    if not isinstance(value, dict):
+        raise ImageCacheSafetyError("OCI metadata must be an object")
+    return value
+
+
+def _validate_empty_config_attestation(
+    archive: tarfile.TarFile,
+    manifest: dict[str, Any],
+    config: dict[str, Any],
+    image_config: dict[str, Any],
+    image_digests: Sequence[str],
+) -> None:
+    """Recognize BuildKit OCI artifacts without exempting unknown runtime content."""
+    layers = manifest.get("layers")
+    if (
+        manifest.get("artifactType") != "application/vnd.docker.attestation.manifest.v1+json"
+        or manifest.get("mediaType") != "application/vnd.oci.image.manifest.v1+json"
+        or image_config != {}
+        or config.get("digest") != "sha256:" + hashlib.sha256(b"{}").hexdigest()
+        or config.get("size") != 2
+        or config.get("data", "e30=") != "e30="
+        or not isinstance(layers, list)
+        or not layers
+        or any(layer.get("mediaType") != "application/vnd.in-toto+json" for layer in layers)
+    ):
+        raise ImageCacheSafetyError("unsupported OCI empty-config attestation")
+    subject = manifest.get("subject")
+    if (
+        not isinstance(subject, dict)
+        or subject.get("mediaType") != "application/vnd.oci.image.manifest.v1+json"
+        or subject.get("digest") not in image_digests
+        or type(subject.get("size")) is not int
+        or _blob(archive, subject.get("digest")).size != subject["size"]
+    ):
+        raise ImageCacheSafetyError("OCI attestation subject is missing or mismatched")
+    runtime = _json_blob(archive, subject["digest"])
+    runtime_config = runtime.get("config")
+    if not isinstance(runtime_config, dict):
+        raise ImageCacheSafetyError("OCI attestation subject has no runtime config")
+    platform = _json_blob(archive, runtime_config.get("digest"))
+    if platform.get("os") != "linux" or platform.get("architecture") != "amd64":
+        raise ImageCacheSafetyError("OCI attestation subject is not a supported runtime image")
+
+
+def archive_footprint(
+    path: Path,
+    image_digests: Sequence[str],
+    *,
+    checkpoint: Callable[[], None] = lambda: None,
+) -> ArchiveFootprint:
+    """Measure verified content and native snapshots without extracting any layer."""
+    if path.stat().st_size > MAX_ARCHIVE_BYTES:
+        raise ImageCacheSafetyError("OCI archive exceeds the input bound")
+    content_bytes = 0
+    snapshot_bytes = 0
+    inodes = 0
+    largest_layer = 0
+    layer_sizes: dict[str, tuple[int, int, str]] = {}
+    archive_bytes = 0
+    runtime_images = 0
+    try:
+        with tarfile.open(path, "r:*") as archive:
+            seen = set()
+            for member in archive.getmembers():
+                checkpoint()
+                name = member.name.removeprefix("./").rstrip("/")
+                if name in seen:
+                    raise ImageCacheSafetyError("duplicate OCI archive member")
+                seen.add(name)
+                if member.isdir() and name in {".", "blobs", "blobs/sha256"}:
+                    continue
+                if not member.isfile() or member.sparse is not None:
+                    raise ImageCacheSafetyError("unsupported OCI archive member")
+                if name not in {"index.json", "oci-layout"} and not re.fullmatch(
+                    r"blobs/sha256/[0-9a-f]{64}", name
+                ):
+                    raise ImageCacheSafetyError("unexpected OCI archive member")
+                if member.size > MAX_ARCHIVE_BYTES:
+                    raise ImageCacheSafetyError("OCI content exceeds the input bound")
+                content_bytes += math.ceil(member.size / 4096) * 4096
+                archive_bytes += 512 + math.ceil(member.size / 512) * 512
+                if archive_bytes > MAX_ARCHIVE_BYTES or len(seen) > 100000:
+                    raise ImageCacheSafetyError("expanded OCI archive exceeds the input bound")
+                stream = archive.extractfile(member)
+                if stream is None:
+                    raise ImageCacheSafetyError("OCI content is unreadable")
+                with stream:
+                    content_hash = hashlib.sha256()
+                    while chunk := stream.read(1024**2):
+                        checkpoint()
+                        content_hash.update(chunk)
+                    sha256 = content_hash.hexdigest()
+                if name.startswith("blobs/") and sha256 != name.rsplit("/", 1)[-1]:
+                    raise ImageCacheSafetyError("OCI content digest mismatch")
+            for image_digest in image_digests:
+                manifest = _json_blob(archive, image_digest)
+                if "layers" not in manifest:
+                    continue  # Index metadata is counted above; leaf manifests are measured here.
+                config = manifest.get("config")
+                layers = manifest["layers"]
+                if not isinstance(config, dict) or not isinstance(layers, list):
+                    raise ImageCacheSafetyError("OCI manifest lacks its config or layers")
+                image_config = _json_blob(archive, config.get("digest"))
+                for descriptor in [config, *layers]:
+                    if not isinstance(descriptor, dict):
+                        raise ImageCacheSafetyError("invalid OCI content descriptor")
+                    item = _blob(archive, descriptor.get("digest"))
+                    if type(descriptor.get("size")) is not int or item.size != descriptor["size"]:
+                        raise ImageCacheSafetyError("OCI content size mismatch")
+                if config.get("mediaType") == "application/vnd.oci.empty.v1+json":
+                    _validate_empty_config_attestation(
+                        archive, manifest, config, image_config, image_digests
+                    )
+                    continue  # Content/temporary files are counted; artifacts have no snapshot.
+                if image_config.get("os") == image_config.get("architecture") == "unknown":
+                    continue  # Attestation payloads have no runtime snapshot.
+                if image_config.get("os") != "linux" or image_config.get("architecture") != "amd64":
+                    raise ImageCacheSafetyError(
+                        "only reviewed linux/amd64 runtime images are supported"
+                    )
+                runtime_images += 1
+                rootfs = image_config.get("rootfs", {})
+                diff_ids = rootfs.get("diff_ids") if isinstance(rootfs, dict) else None
+                if (
+                    not isinstance(diff_ids, list)
+                    or rootfs.get("type") != "layers"
+                    or len(diff_ids) != len(layers)
+                ):
+                    raise ImageCacheSafetyError("OCI rootfs layer identities are missing")
+                for descriptor, diff_id in zip(layers, diff_ids, strict=True):
+                    digest = descriptor["digest"]
+                    compressed = LAYER_TYPES.get(descriptor.get("mediaType"))
+                    if compressed is None:
+                        raise ImageCacheSafetyError("OCI layer encoding is not supported")
+                    if digest not in layer_sizes:
+                        stream = archive.extractfile(_blob(archive, digest))
+                        if stream is None:
+                            raise ImageCacheSafetyError("OCI layer is unreadable")
+                        with stream:
+                            decoded = gzip.GzipFile(fileobj=stream) if compressed else stream
+                            try:
+                                reader = LayerReader(decoded, checkpoint)
+                                paths: set[PurePosixPath] = set()
+                                with tarfile.open(fileobj=reader, mode="r|") as layer:
+                                    for member in layer:
+                                        if member.sparse is not None:
+                                            raise ImageCacheSafetyError(
+                                                "sparse OCI layers are unsupported"
+                                            )
+                                        layer_path = PurePosixPath(member.name.removeprefix("./"))
+                                        if layer_path.is_absolute() or ".." in layer_path.parts:
+                                            raise ImageCacheSafetyError("invalid OCI layer path")
+                                        paths.update(
+                                            parent
+                                            for parent in (layer_path, *layer_path.parents)
+                                            if str(parent) != "."
+                                        )
+                                        if len(paths) > MAX_LAYER_INODES:
+                                            raise ImageCacheSafetyError(
+                                                "OCI layer exceeds the inode bound"
+                                            )
+                                while reader.read(1024 * 1024):
+                                    pass
+                                layer_sizes[digest] = (
+                                    reader.bytes,
+                                    len(paths),
+                                    "sha256:" + reader.sha256.hexdigest(),
+                                )
+                            finally:
+                                if compressed:
+                                    decoded.close()
+                    size, count, observed_diff = layer_sizes[digest]
+                    if observed_diff != diff_id:
+                        raise ImageCacheSafetyError("OCI expanded layer diff_id mismatch")
+                    # Count shared layers in every image chain; do not assume snapshot reuse.
+                    snapshot_bytes += size + count * 16384
+                    inodes += count
+                    largest_layer = max(largest_layer, size)
+    except (OSError, EOFError, tarfile.TarError, json.JSONDecodeError, zlib.error) as error:
+        raise ImageCacheSafetyError("unable to measure complete OCI content") from error
+    if not runtime_images:
+        raise ImageCacheSafetyError("OCI archive has no supported runtime image")
+    return ArchiveFootprint(
+        content_bytes,
+        snapshot_bytes,
+        inodes,
+        largest_layer,
+        archive_bytes + 16 * 1024**2,
+        len(seen),
+    )
+
+
+def _quantity(value: object, total: int) -> int:
+    if not isinstance(value, str):
+        raise ImageCacheSafetyError("eviction policy is missing or invalid")
+    if value.endswith("%"):
+        try:
+            percent = Decimal(value[:-1])
+        except InvalidOperation:
+            raise ImageCacheSafetyError("invalid eviction percentage") from None
+        if not percent.is_finite() or not 0 <= percent <= 100:
+            raise ImageCacheSafetyError("invalid eviction percentage")
+        return math.ceil(Decimal(total) * percent / 100)
+    match = re.fullmatch(r"([0-9]+(?:\.[0-9]+)?)(Ki|Mi|Gi|K|M|G)?", value)
+    if match is None:
+        raise ImageCacheSafetyError("unsupported eviction quantity")
+    units = {
+        None: 1,
+        "Ki": 1024,
+        "Mi": 1024**2,
+        "Gi": 1024**3,
+        "K": 1000,
+        "M": 1000**2,
+        "G": 1000**3,
+    }
+    return math.ceil(Decimal(match[1]) * units[match[2]])
+
+
+def validate_image_aliases(
+    reference: str,
+    image: dict[str, Any],
+    *,
+    read_content: Callable[[str], bytes] | None = None,
+) -> dict[str, str]:
+    """Prove mixed CRI aliases from immutable OCI metadata, never from image ID alone."""
+    if canonical_reference(reference) != reference:
+        raise ImageCacheSafetyError("image reference is not canonical")
+    target = reference.rsplit("@", 1)[1]
+    aliases = image.get("aliases")
+    if (
+        image.get("ready") is not True
+        or image.get("target") != target
+        or not isinstance(aliases, dict)
+        or not 1 <= len(aliases) <= 64
+        or reference not in aliases
+    ):
+        raise ImageCacheSafetyError("image content, unpacked snapshot or CRI aliases are missing")
+    for alias, digest in aliases.items():
+        if canonical_reference(alias) != alias or alias.rsplit("@", 1)[1] != digest:
+            raise ImageCacheSafetyError("CRI alias is missing or mismatched")
+    proof = {alias: "same_digest" for alias, digest in aliases.items() if digest == target}
+    if len(proof) == len(aliases):
+        return proof
+    indexes = {
+        "application/vnd.oci.image.index.v1+json",
+        "application/vnd.docker.distribution.manifest.list.v2+json",
+    }
+    manifests = {
+        "application/vnd.oci.image.manifest.v1+json",
+        "application/vnd.docker.distribution.manifest.v2+json",
+    }
+    cache: dict[str, tuple[dict[str, Any], int]] = {}
+
+    def content(digest: object) -> tuple[dict[str, Any], int]:
+        if not isinstance(digest, str) or not DIGEST.fullmatch(digest):
+            raise ImageCacheSafetyError("invalid cache metadata digest")
+        if digest not in cache:
+            try:
+                raw = (
+                    read_content(digest)
+                    if read_content is not None
+                    else image["alias_content"][digest].encode("utf-8")
+                )
+                if len(raw) > 65536 or "sha256:" + hashlib.sha256(raw).hexdigest() != digest:
+                    raise ImageCacheSafetyError("cache metadata size or digest mismatch")
+                value = json.loads(raw)
+                if not isinstance(value, dict):
+                    raise ImageCacheSafetyError("cache metadata must be an object")
+                cache[digest] = value, len(raw)
+            except (KeyError, TypeError, AttributeError, OSError, ValueError) as error:
+                raise ImageCacheSafetyError("cache alias metadata is missing or invalid") from error
+        return cache[digest]
+
+    def descriptor(item: Any) -> tuple[dict[str, Any], int]:
+        if not isinstance(item, dict) or type(item.get("size")) is not int:
+            raise ImageCacheSafetyError("cache alias descriptor is invalid")
+        value, size = content(item.get("digest"))
+        if size != item["size"]:
+            raise ImageCacheSafetyError("cache alias descriptor size mismatch")
+        return value, size
+
+    root, root_size = content(target)
+    if root.get("schemaVersion") != 2:
+        raise ImageCacheSafetyError("cache alias schema is invalid")
+    if root.get("mediaType") in indexes:
+        members = root.get("manifests")
+        if not isinstance(members, list) or not all(isinstance(v, dict) for v in members):
+            raise ImageCacheSafetyError("cache index members are invalid")
+        selected = [
+            v
+            for v in members
+            if isinstance(v.get("platform"), dict)
+            and v["platform"].get("os") == "linux"
+            and v["platform"].get("architecture") == "amd64"
+        ]
+        if len(selected) != 1 or selected[0].get("mediaType") not in manifests:
+            raise ImageCacheSafetyError("cache index requires one linux/amd64 runtime manifest")
+        runtime_descriptor = selected[0]
+        runtime, _ = descriptor(runtime_descriptor)
+    elif root.get("mediaType") in manifests:
+        runtime_descriptor = {"digest": target, "size": root_size, "mediaType": root["mediaType"]}
+        runtime = root
+    else:
+        raise ImageCacheSafetyError("cache source is not a supported OCI image")
+    if (
+        runtime.get("schemaVersion") != 2
+        or runtime.get("mediaType") != runtime_descriptor["mediaType"]
+        or runtime.get("artifactType") is not None
+        or not isinstance(runtime.get("layers"), list)
+    ):
+        raise ImageCacheSafetyError("cache runtime manifest is invalid")
+    config_descriptor = runtime.get("config")
+    if not isinstance(config_descriptor, dict):
+        raise ImageCacheSafetyError("cache runtime config descriptor is missing")
+    config, _ = descriptor(config_descriptor)
+    if (
+        config_descriptor.get("mediaType")
+        not in {
+            "application/vnd.oci.image.config.v1+json",
+            "application/vnd.docker.container.image.v1+json",
+        }
+        or config.get("os") != "linux"
+        or config.get("architecture") != "amd64"
+        or config_descriptor["digest"] != image.get("cri_id")
+    ):
+        raise ImageCacheSafetyError("cache runtime platform or CRI config ID mismatch")
+    for alias, digest in aliases.items():
+        if alias in proof:
+            continue
+        if digest == runtime_descriptor["digest"]:
+            proof[alias] = "verified_platform_manifest"
+            continue
+        wrapper, _ = content(digest)
+        members = wrapper.get("manifests")
+        if (
+            root.get("mediaType") not in indexes
+            or wrapper.get("schemaVersion") != 2
+            or wrapper.get("mediaType") not in indexes | {None}
+            or not isinstance(members, list)
+            or not all(isinstance(v, dict) for v in members)
+        ):
+            raise ImageCacheSafetyError("unrelated CRI alias content")
+        for expected in (
+            {"digest": target, "size": root_size, "mediaType": root["mediaType"]},
+            runtime_descriptor,
+        ):
+            matching = [v for v in members if v.get("digest") == expected["digest"]]
+            if len(matching) != 1 or any(
+                matching[0].get(k) != expected[k] for k in ("size", "mediaType")
+            ):
+                raise ImageCacheSafetyError("CRI archive alias lacks exact index/runtime members")
+        proof[alias] = "verified_runtime_archive_index"
+    return proof
+
+
+def validate_capacity(
+    state: dict[str, Any],
+    footprints: Sequence[ArchiveFootprint],
+    *,
+    normalized: bool = False,
+    previous: dict[str, Any] | None = None,
+    clock: Callable[[], float] = time.monotonic,
+) -> dict[str, Any]:
+    if not footprints or not 0 <= clock() - state.get("observed_at", -math.inf) <= 15:
+        raise ImageCacheSafetyError("cache observation is missing or stale")
+    if state.get("ready") is not True or state.get("disk_pressure") is not False:
+        raise ImageCacheSafetyError("node readiness or DiskPressure prevents prewarm")
+    binding: dict[str, Any] = {
+        key: state.get(key)
+        for key in (
+            "namespace_uid",
+            "node_uid",
+            "boot_id",
+            "workloads_sha256",
+            "eviction_hard",
+            "eviction_soft",
+            "minimum_reclaim",
+            "required_refs",
+        )
+    }
+    if any(binding[key] is None for key in binding):
+        raise ImageCacheSafetyError("cache target binding is incomplete")
+    binding = copy.deepcopy(binding)
+    if any(
+        not isinstance(binding[key], dict)
+        for key in ("eviction_hard", "eviction_soft", "minimum_reclaim")
+    ):
+        raise ImageCacheSafetyError("eviction policy is missing or invalid")
+    if previous is not None and binding != previous["binding"]:
+        raise ImageCacheSafetyError("original cache target or eviction policy changed")
+    refs = state.get("required_refs", [])
+    images = state.get("images", {})
+    if not refs or set(refs) != set(images):
+        raise ImageCacheSafetyError("original runtime image inventory is incomplete")
+    for ref in refs:
+        if canonical_reference(ref) != ref:
+            raise ImageCacheSafetyError("original runtime image reference is not canonical")
+        image = images[ref]
+        if image.get("ready") is not True or image.get("target") != ref.rsplit("@", 1)[-1]:
+            raise ImageCacheSafetyError("original image content or unpacked snapshot is missing")
+        validate_image_aliases(ref, image)
+    cache = state["cache_filesystem"]
+    temporary = state["temporary_filesystem"]
+    node = state.get("node_filesystem")
+    if not isinstance(node, dict):
+        raise ImageCacheSafetyError("node filesystem observation is missing")
+    devices = [cache["device"], temporary["device"], node["device"]]
+    if previous is not None and devices != previous["devices"]:
+        raise ImageCacheSafetyError("image or temporary filesystem changed")
+    permanent = sum(item.content_bytes + item.snapshot_bytes for item in footprints)
+    unpack_temp = max(item.unpack_temporary_bytes for item in footprints)
+    cache_bytes = math.ceil((permanent + unpack_temp) * 5 / 4) + 64 * 1024**2
+    cache_inodes = (
+        math.ceil(sum(item.snapshot_inodes + item.content_inodes for item in footprints) * 5 / 4)
+        + 4096
+    )
+    temp_bytes = 0 if normalized else sum(item.normalized_archive_bytes for item in footprints)
+    allocations = [
+        (cache, cache_bytes, cache_inodes, "imagefs"),
+        (temporary, temp_bytes, len(footprints) + 1, "nodefs"),
+        (node, 0, 0, "nodefs"),
+    ]
+    requirements: dict[int, tuple[dict[str, Any], int, int, set[str]]] = {}
+    for fs, allocated_bytes, allocated_inodes, signal in allocations:
+        previous_allocation = requirements.get(fs["device"])
+        if previous_allocation is None:
+            requirements[fs["device"]] = (dict(fs), allocated_bytes, allocated_inodes, {signal})
+        else:
+            shared, old_bytes, old_inodes, signals = previous_allocation
+            if any(fs[key] != shared[key] for key in ("total_bytes", "total_inodes")):
+                raise ImageCacheSafetyError("filesystem capacity changed during observation")
+            shared["available_bytes"] = min(fs["available_bytes"], shared["available_bytes"])
+            shared["available_inodes"] = min(fs["available_inodes"], shared["available_inodes"])
+            requirements[fs["device"]] = (
+                shared,
+                old_bytes + allocated_bytes,
+                old_inodes + allocated_inodes,
+                signals | {signal},
+            )
+    checks = []
+    for filesystem, bytes_needed, inodes_needed, signals in requirements.values():
+        for key in ("device", "total_bytes", "available_bytes", "total_inodes", "available_inodes"):
+            if type(filesystem.get(key)) is not int or filesystem[key] < 0:
+                raise ImageCacheSafetyError("filesystem observation is invalid")
+        if filesystem["total_bytes"] <= 0 or filesystem["total_inodes"] <= 0:
+            raise ImageCacheSafetyError("filesystem size or inode capacity is missing")
+        floors = []
+        inode_floors = [math.ceil(filesystem["total_inodes"] * 0.05)]
+        for prefix in signals:
+            key = prefix + ".available"
+            hard = binding["eviction_hard"].get(key)
+            soft = binding["eviction_soft"].get(key, "0")
+            reclaim = binding["minimum_reclaim"].get(key, "0")
+            floors.append(
+                max(
+                    _quantity(hard, filesystem["total_bytes"]),
+                    _quantity(soft, filesystem["total_bytes"]),
+                )
+                + _quantity(reclaim, filesystem["total_bytes"])
+            )
+            inode_key = prefix + ".inodesFree"
+            if inode_key in binding["eviction_hard"] or inode_key in binding["eviction_soft"]:
+                inode_floors.append(
+                    max(
+                        _quantity(
+                            binding["eviction_hard"].get(inode_key, "0"), filesystem["total_inodes"]
+                        ),
+                        _quantity(
+                            binding["eviction_soft"].get(inode_key, "0"), filesystem["total_inodes"]
+                        ),
+                    )
+                    + _quantity(
+                        binding["minimum_reclaim"].get(inode_key, "0"), filesystem["total_inodes"]
+                    )
+                )
+        reserve, inode_reserve = max(floors), max(inode_floors)
+        if filesystem["available_bytes"] - bytes_needed < reserve:
+            raise ImageCacheSafetyError(
+                "insufficient aggregate image-cache space including eviction/reclaim reserve"
+            )
+        if filesystem["available_inodes"] - inodes_needed < inode_reserve:
+            raise ImageCacheSafetyError("insufficient image-cache inode reserve")
+        checks.append(
+            {
+                "device": filesystem["device"],
+                "required_bytes": bytes_needed,
+                "reserve_bytes": reserve,
+                "available_bytes": filesystem["available_bytes"],
+                "required_inodes": inodes_needed,
+                "reserve_inodes": inode_reserve,
+            }
+        )
+    return {
+        "binding": binding,
+        "devices": devices,
+        "filesystems": checks,
+        "rollback_refs_verified": refs,
+        "observed_at": state["observed_at"],
+    }
+
+
+def canonical_reference(ref: str) -> str:
+    if not isinstance(ref, str) or "@" not in ref or not DIGEST.fullmatch(ref.rsplit("@", 1)[1]):
+        raise ImageCacheSafetyError("original runtime images must use immutable digests")
+    if "/" not in ref:
+        return "docker.io/library/" + ref
+    first = ref.split("/", 1)[0]
+    return ref if "." in first or ":" in first or first == "localhost" else "docker.io/" + ref
+
+
+def temporary_directory() -> str:
+    """Select a directory without tempfile.gettempdir's write-based discovery probe."""
+    candidates: list[str | None]
+    if tempfile.tempdir is not None:
+        if not isinstance(tempfile.tempdir, str):
+            raise ImageCacheSafetyError("temporary directory must be a text path")
+        candidates = [tempfile.tempdir]
+    else:
+        candidates = [os.environ.get(key) for key in ("TMPDIR", "TEMP", "TMP")]
+        candidates.extend(["/tmp", "/var/tmp", "/usr/tmp"])
+    for candidate in candidates:
+        if candidate and os.path.isdir(candidate) and os.access(candidate, os.W_OK | os.X_OK):
+            return os.path.abspath(candidate)
+    raise ImageCacheSafetyError("no writable temporary directory is available")
+
+
+def collect_cache_state(prefix: tuple[str, ...], *, run: Run = subprocess.run) -> dict[str, Any]:
+    """Do not read Secrets, pull images, tag aliases or change kubelet configuration."""
+    if sys.platform != "linux" or Path(prefix[0]).name != "k3s":
+        raise ImageCacheSafetyError("live prewarm requires the reviewed Linux k3s target")
+    deadline = time.monotonic() + 90
+    observed_at = time.monotonic()
+
+    def command(args: list[str]) -> str:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise ImageCacheSafetyError("cache observation deadline expired")
+        try:
+            return run(
+                [prefix[0], *args],
+                check=True,
+                capture_output=True,
+                text=True,
+                timeout=min(20, remaining),
+            ).stdout
+        except (OSError, subprocess.SubprocessError):
+            raise ImageCacheSafetyError("read-only cache observation failed") from None
+
+    def payload(args: list[str]) -> dict[str, Any]:
+        try:
+            value = json.loads(command(args))
+        except json.JSONDecodeError:
+            raise ImageCacheSafetyError("invalid cache observation response") from None
+        if not isinstance(value, dict):
+            raise ImageCacheSafetyError("invalid cache observation response")
+        return value
+
+    namespace = payload(["kubectl", "get", "namespace", NAMESPACE, "-o", "json"])
+    nodes = payload(["kubectl", "get", "nodes", "-o", "json"])["items"]
+    if len(nodes) != 1 or nodes[0]["status"]["nodeInfo"]["architecture"] != "amd64":
+        raise ImageCacheSafetyError("prewarm requires the reviewed single amd64 node")
+    node = nodes[0]
+    cfg = payload(
+        ["kubectl", "get", "--raw", "/api/v1/nodes/" + node["metadata"]["name"] + "/proxy/configz"]
+    )["kubeletconfig"]
+    deployments = payload(["kubectl", "-n", NAMESPACE, "get", "deployments", "-o", "json"])["items"]
+    if {item["metadata"]["name"] for item in deployments} != WORKLOADS:
+        raise ImageCacheSafetyError("original five-workload inventory changed")
+    refs: set[str] = set()
+    specs = []
+    for item in deployments:
+        if item["spec"].get("replicas") != 1 or item.get("status", {}).get("readyReplicas") != 1:
+            raise ImageCacheSafetyError("original workload is not ready")
+        specs.append(
+            {"uid": item["metadata"]["uid"], "name": item["metadata"]["name"], "spec": item["spec"]}
+        )
+        pod = item["spec"]["template"]["spec"]
+        refs.update(
+            canonical_reference(container["image"])
+            for container in [*pod.get("containers", []), *pod.get("initContainers", [])]
+        )
+    rows = command(["ctr", "--namespace", "k8s.io", "images", "list"]).splitlines()
+    targets = {row[0]: row[2] for line in rows[1:] if len(row := line.split()) >= 3}
+    images = {}
+    for ref in sorted(refs):
+        ready = command(
+            [
+                "ctr",
+                "--namespace",
+                "k8s.io",
+                "images",
+                "check",
+                "--snapshotter",
+                "overlayfs",
+                "--quiet",
+                "name==" + ref,
+            ]
+        ).splitlines()
+        status = payload(["crictl", "inspecti", "-o", "json", ref])["status"]
+        aliases = status.get("repoDigests", [])
+        images[ref] = {
+            "ready": ref in ready,
+            "target": targets.get(ref),
+            "aliases": {alias: targets.get(alias) for alias in aliases},
+            "cri_id": status.get("id"),
+        }
+        if any(targets.get(alias) not in (None, targets.get(ref)) for alias in aliases):
+            metadata: dict[str, str] = {}
+
+            def read_content(digest: str, *, captured: dict[str, str] = metadata) -> bytes:
+                raw = command(["ctr", "--namespace", "k8s.io", "content", "get", digest])
+                captured[digest] = raw
+                return raw.encode("utf-8")
+
+            validate_image_aliases(ref, images[ref], read_content=read_content)
+            images[ref]["alias_content"] = metadata
+
+    def filesystem(path: str) -> dict[str, int]:
+        info = os.statvfs(path)
+        if info.f_frsize > 4096:
+            raise ImageCacheSafetyError("filesystem allocation size exceeds reviewed OCI estimate")
+        return {
+            "device": os.stat(path).st_dev,
+            "total_bytes": info.f_blocks * info.f_frsize,
+            "available_bytes": info.f_bavail * info.f_frsize,
+            "total_inodes": info.f_files,
+            "available_inodes": info.f_favail,
+        }
+
+    conditions = {item["type"]: item["status"] for item in node["status"]["conditions"]}
+    return {
+        "observed_at": observed_at,
+        "namespace_uid": namespace["metadata"]["uid"],
+        "node_uid": node["metadata"]["uid"],
+        "boot_id": Path("/proc/sys/kernel/random/boot_id").read_text().strip(),
+        "workloads_sha256": hashlib.sha256(
+            json.dumps(
+                sorted(specs, key=lambda item: item["name"]), sort_keys=True, separators=(",", ":")
+            ).encode()
+        ).hexdigest(),
+        "ready": conditions.get("Ready") == "True",
+        "disk_pressure": conditions.get("DiskPressure") != "False",
+        "eviction_hard": cfg.get("evictionHard"),
+        "eviction_soft": cfg.get("evictionSoft") or {},
+        "minimum_reclaim": cfg.get("evictionMinimumReclaim") or {},
+        "required_refs": sorted(refs),
+        "images": images,
+        "cache_filesystem": filesystem(CACHE_DIRECTORY),
+        "temporary_filesystem": filesystem(temporary_directory()),
+        "node_filesystem": filesystem("/"),
+    }

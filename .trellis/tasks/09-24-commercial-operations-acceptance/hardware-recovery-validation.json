@@ -1,0 +1,168 @@
+{
+  "schema_version": 1,
+  "at": "2026-10-02T06:26:49.002082+00:00",
+  "status": "local_cold_recovery_targets_observed_with_repairs",
+  "application_release": "v0.1.45-rc.16",
+  "application_source": "63de37c080cd83a02682ad1d2dd30c217a6aecd7",
+  "local_target": {
+    "hypervisor": "QEMU WHPX",
+    "memory_mib": 3072,
+    "vcpus": 2,
+    "os": "Ubuntu 24.04",
+    "fresh_overlay": true,
+    "old_restored_disk_reused": false,
+    "network": "loopback SSH; QEMU restricted network; namespace-local plus DNS"
+  },
+  "first_hardware_round": {
+    "rpo_seconds": 112.382341,
+    "completed_after_seconds": 2681.425523,
+    "rto_met": false,
+    "failure_preserved": true
+  },
+  "second_hardware_round": {
+    "elapsed_seconds": 883.363552,
+    "rpo_seconds": 189.324571,
+    "rpo_met": true,
+    "rto_met": true,
+    "packets_verified": 33
+  },
+  "restored": {
+    "tables": 56,
+    "rows": 82622,
+    "table_fingerprints_match": true,
+    "objects": 1668,
+    "object_bytes": 1872148,
+    "all_object_sha256_match": true,
+    "web_readiness": true,
+    "historical_csv_and_cross_tenant_checks": true
+  },
+  "repairs": [
+    "WHPX kernel-irqchip=off",
+    "SSH host key from owned serial console",
+    "preposition implicit BusyBox volume helper",
+    "validate CRI digest aliases before container creation",
+    "avoid kubectl stdin truncation: SSH file transfer and verified owned-container copy"
+  ],
+  "measurement_boundary": {
+    "clock_includes_repairs_and_controller_gaps": true,
+    "media_preparation_excluded": true,
+    "automatic_unattended_recovery_proven": false,
+    "cloud_provisioning_or_public_cutover_proven": false,
+    "production_credentials_or_real_suppliers_used": false,
+    "new_business_generation_on_restored_vm_proven": false
+  },
+  "prepared_statement_diagnostic": {
+    "constant_queries": 144,
+    "sessions": 6,
+    "table_data_reads": 0,
+    "catalog_proves_three_prepared_constants_in_threshold_0_and_5_sessions": true,
+    "large_query_comparison": [
+      {
+        "prepare_threshold": null,
+        "samples": 16,
+        "cold_samples": 2,
+        "cold_median_ms": 725.127,
+        "warm_samples": 4,
+        "warm_median_ms": 74.566,
+        "all_retransmissions": 33,
+        "warm_retransmissions": 3
+      },
+      {
+        "prepare_threshold": 0,
+        "samples": 16,
+        "cold_samples": 2,
+        "cold_median_ms": 636.541,
+        "warm_samples": 4,
+        "warm_median_ms": 50.872,
+        "all_retransmissions": 10,
+        "warm_retransmissions": 0
+      },
+      {
+        "prepare_threshold": 5,
+        "samples": 16,
+        "cold_samples": 2,
+        "cold_median_ms": 1557.326,
+        "warm_samples": 4,
+        "warm_median_ms": 48.618,
+        "all_retransmissions": 42,
+        "warm_retransmissions": 0
+      }
+    ],
+    "production_configuration_changed": false,
+    "business_performance_passed": false
+  },
+  "application_model_requests": 0,
+  "application_embedding_requests": 0,
+  "production_writes": 0,
+  "five_gates_complete": false,
+  "remaining": [
+    "performance and two-round capacity",
+    "supplier failure and monetary reconciliation",
+    "actual independent review",
+    "off-computer backup continuity",
+    "on-call and broader recovery scope"
+  ],
+  "private_evidence_directory": "whpx-recovery-evidence",
+  "evidence": [
+    {
+      "file": "whpx-probe-result.json",
+      "sha256": "f278cd7645700a27c163e3af57af1f4563d2da901b82f3b48d50cbcc9e299816"
+    },
+    {
+      "file": "boot-probe-result.json",
+      "sha256": "e6b8d44e333937f11d622aa5352a141abc2ab181f01c4f2ac515bfbcfd9cb455"
+    },
+    {
+      "file": "boot-probe-v2-result.json",
+      "sha256": "d70abc4240e8551e1e7493ec6f0e89880310c398656ce43a8c75b0fd6a6b651c"
+    },
+    {
+      "file": "failed-drill-completed.json",
+      "sha256": "9a2bc0db0b7647f4200069d7be8abfdd1f3a5d40304ce32cb4ae7281aed73408"
+    },
+    {
+      "file": "round2/cold-recovery-plan.json",
+      "sha256": "c7f9c823adb56d54301d2cb47be1f2e197ce4d8c5a9d5f37d69bbf82a044440e"
+    },
+    {
+      "file": "round2/cold-recovery-intent.json",
+      "sha256": "fe309ad2bedc8309e5d7d7a5a1d577c63e4582d98ec19c92c1333cc25e9866e8"
+    },
+    {
+      "file": "round2/cold-recovery-result.json",
+      "sha256": "3ffa6c2fd45b48005eb0425687e98ed772bbeb9a63a174d8792d18264a7bfa3d"
+    },
+    {
+      "file": "round2/stream-resume-result.json",
+      "sha256": "ededecb5ac73ab8e3590f3411a7f3477d8c7f18a3a88fb898c5333e58e8cb3ac"
+    },
+    {
+      "file": "round2/hostcopy-resume-result.json",
+      "sha256": "430c4c64b5ca19ecd391ccb48d44582e3fe63c15a4ff30871723ac854593407b"
+    },
+    {
+      "file": "round2/guest-database-restore-hostcopy-result.json",
+      "sha256": "f3c3ecbda5808231078cf6361efda83ddf53f82e4a2bea6e4576e2ebc31adb1b"
+    },
+    {
+      "file": "round2/guest-object-restore-result.json",
+      "sha256": "6aac379135fc0197a3a40843cfe523d9ae77431f5ff9c0d4495afdca7a447ce1"
+    },
+    {
+      "file": "round2/guest-application-result.json",
+      "sha256": "b8560a581dd7613da286ad98b8c62f70a1d8c8986537f66578cc817007c77c81"
+    },
+    {
+      "file": "prepared-reuse-intent.json",
+      "sha256": "e28b0644229fd769ed75e2dcba5666ffe197e457fcfef04f511f585bba0a6897"
+    },
+    {
+      "file": "prepared-reuse.jsonl",
+      "sha256": "1432958b28024ffef6642956c5293313dccb51db66373d10a5c1660808318778"
+    },
+    {
+      "file": "prepared-reuse-result.json",
+      "sha256": "0f56c97e3b60abba7154ff51eb3d4929808c2ddce54ab5b29f886606d933c683"
+    }
+  ]
+}

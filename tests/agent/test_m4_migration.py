@@ -284,7 +284,7 @@ def test_m4_migration_enforces_contracts_and_downgrades_after_cleanup() -> None:
     try:
         with psycopg.connect(DATABASE_URL) as connection, connection.cursor() as cursor:
             cursor.execute(
-                "SELECT tablename FROM pg_tables WHERE schemaname = 'public' "
+                "SELECT tablename FROM pg_tables WHERE schemaname = current_schema() "
                 "AND tablename = ANY(%s)",
                 (list(AGENT_TABLES),),
             )
@@ -361,12 +361,12 @@ def test_m4_migration_enforces_contracts_and_downgrades_after_cleanup() -> None:
         _run_alembic("downgrade", "20260718_0008")
         with psycopg.connect(DATABASE_URL) as connection, connection.cursor() as cursor:
             cursor.execute(
-                "SELECT tablename FROM pg_tables WHERE schemaname = 'public' "
+                "SELECT tablename FROM pg_tables WHERE schemaname = current_schema() "
                 "AND tablename = ANY(%s)",
                 (list(AGENT_TABLES),),
             )
             assert cursor.fetchall() == []
-            cursor.execute("SELECT to_regclass('public.document_chunks')")
+            cursor.execute("SELECT to_regclass(current_schema() || '.document_chunks')")
             assert cursor.fetchone() == ("document_chunks",)
     finally:
         _run_alembic("upgrade", "head")

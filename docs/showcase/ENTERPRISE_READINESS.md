@@ -2,6 +2,8 @@
 
 这份文档是项目展示和面试沟通的边界说明。它把当前仓库已经验证的能力、已经落地的最小企业策略，以及仍需要外部条件或后续开发的部分分开记录。
 
+2026-09-24 更新：当前产业化状态以[产业化审计与正式交付计划](../ops/commercial-production-plan.md)为准。GitHub OAuth 浏览器登录、服务端会话、企业准入/邀请和独立演示企业已经实现并有公网使用记录；下文外部企业 SSO/SCIM 的待验收事项不能再表述成“产品尚无正常登录”。当前仍是受控试点，不是已验收的正式商业服务。
+
 ## 当前授权策略
 
 当前身份模型只有两种租户成员角色：`owner` 和 `member`。
@@ -23,7 +25,7 @@
 
 ## SSO 接入契约
 
-当前仓库验证的是本地 JWT bearer 流程：token 包含租户和 actor 标识，服务端通过 active membership 解析角色。服务端现在提供了可注入的 external principal adapter 契约，并实现了 provider-agnostic 的 JWKS-backed OIDC JWT decoder：校验签名算法、`kid`、issuer、audience、`iat/exp`，再标准化 subject、tenant、actor、groups/role。非 UUID 的标准 OIDC subject 通过显式 `(issuer, subject) -> user` 绑定解析，不按 email 自动匹配；最终角色仍由服务端 active membership 复核。默认仍关闭外部认证；开启 `external_auth_enabled` 后可通过 `external_jwks_url` 自动装配，也可注入自定义 resolver。
+以下是独立的机器令牌/外部企业 IdP 接入契约，不代表公网浏览器登录的当前状态。机器令牌入口验证本地 JWT bearer 流程：token 包含租户和 actor 标识，服务端通过 active membership 解析角色。服务端现在提供了可注入的 external principal adapter 契约，并实现了 provider-agnostic 的 JWKS-backed OIDC JWT decoder：校验签名算法、`kid`、issuer、audience、`iat/exp`，再标准化 subject、tenant、actor、groups/role。非 UUID 的标准 OIDC subject 通过显式 `(issuer, subject) -> user` 绑定解析，不按 email 自动匹配；最终角色仍由服务端 active membership 复核。默认仍关闭外部认证；开启 `external_auth_enabled` 后可通过 `external_jwks_url` 自动装配，也可注入自定义 resolver。
 
 外部角色映射现在是显式、可配置且冲突安全的：`external_owner_groups` 和 `external_member_groups` 由服务端配置，启动时拒绝空白、重复和重叠组名；一个 token 同时命中 owner/member 组，或启用 role claim 后 role 与组映射冲突，都会拒绝访问。`external_role_claim_enabled` 默认关闭，因此 IdP 的 `role` claim 不会在未评审时直接改变应用角色；即使显式开启，数据库 active membership 仍是最终授权事实。
 
@@ -104,7 +106,7 @@ JWKS 会短暂缓存以降低请求量；遇到未知 `kid` 时会执行一次�
 - GPU/vLLM、量化模型或长上下文容量；
 - managed observability、告警投递和事件响应值守。
 
-当前 4C4G 设备足以继续控制面、权限、审计、UI 和 CPU staging 验证；真正缺少的是备用节点，因此不能证明节点故障恢复、零停机升级、RPO/RTO 或多故障域灾备。真实模型容量矩阵和灾备演练应在具备相应基础设施后再执行。Swap 只能作为事故缓冲，不能作为容量证据。
+当前 4C4G 设备可继续控制面、权限、审计、UI 和 CPU staging 验证。已有 staging→本地 Docker 恢复演练测得当次 RPO/RTO 达标，但尚未证明当前版本的独立故障域恢复或零停机升级。用户另有2C3G容器和2C2G服务器可供评估，尚无已完成的恢复部署。当前业务容量、真实告警和独立恢复仍须实测；Swap 只能作为事故缓冲，不能作为容量证据。
 
 ## 面试中的准确表述
 
@@ -121,7 +123,7 @@ JWKS 会短暂缓存以降低请求量；遇到未知 `kid` 时会执行一次�
 
 ## 后续优先级
 
-1. P0：完成真实 IdP 选择、批量 IdP/SCIM 同步、首次登录 provisioning 和端到端验收；当前 role claim/group 映射已支持显式配置、启动校验和冲突拒绝，手工成员生命周期与显式 binding 管理已具备 API/UI、离职撤权和审计证据。
-2. P0：确定 retention/legal hold 的合规要求，并补齐自动化恢复、删除证明和独立存储策略。
-3. P1：按真实业务需要评估属性策略或外部 PDP；当前不把 ACL 夸大为完整 ABAC。
-4. P1：在目标环境执行真实模型质量、容量和恢复演练，保存脱敏证据。
+1. P0：按产业化计划完善真实模型质量、后台恢复的公网验收、正式额度及所有模型入口的成本边界。
+2. P0：当前4C4G业务容量、告警投递、独立恢复、发布治理和客户数据政策。
+3. P1：受邀企业运营验收、支付和自助生命周期；不重复建设已经上线的GitHub登录。
+4. 企业专用SSO、完整SCIM、属性策略或外部PDP由实际客户需求决定；当前不把ACL夸大为完整ABAC。

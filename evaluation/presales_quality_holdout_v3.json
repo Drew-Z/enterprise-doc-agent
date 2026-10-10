@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "presales-quality-input-v1",
+  "synthetic": true,
+  "provenance": "H3 fictional corpus and separate gold frozen before any presales.v5 live output. H1 and H2 are known regressions. Assistant authored and self reviewed, not independent expert adjudication. These short complete sources test classification boundaries and do not represent retrieval or customer accuracy.",
+  "title": "岚帆巡检合成条款核对",
+  "sources": [
+    {
+      "key": "H3-ORDER", "filename": "H3-ORDER-v1.txt",
+      "applicability": "岚帆巡检本次已签署企业订单，按当前交付状态评估。全部内容虚构。",
+      "content": "# H3-ORDER 采购与验收记录\n本订单已采购历史归档 ARC180；归档保留策略尚未配置，归档恢复验收状态未登记。\nH3-BASE 与 H3-ADD 均已签署并适用于同一企业、同一生产服务及全部备份。H3-ADD 仅在查询吞吐指标上优先于 H3-BASE；该优先级不适用于存储位置，存储位置条款互不优先且没有例外。\n"
+    },
+    {
+      "key": "H3-FEATURE", "filename": "H3-FEATURE-v1.txt",
+      "applicability": "当前正式版本可选模块规格，启用以正文规定的前提为准。",
+      "content": "# H3-FEATURE 历史归档模块\n基础套餐历史巡检记录保存15天。ARC180模块能保存历史巡检记录180天，期间企业管理员无法提前删除。\nARC180生产启用前必须购买模块、配置180天保留策略并完成归档恢复验收。当前订单记录见 H3-ORDER。\n"
+    },
+    {
+      "key": "H3-AUDIT", "filename": "H3-AUDIT-v1.txt",
+      "applicability": "当前签署日的资质说明，ISO与PCI为不同事项。",
+      "content": "# H3-AUDIT 资质材料清单\nISO 27001：附件仅有内部体系检查表，未附有效认证证书，证书覆盖范围及有效期均未说明。本清单不声明服务运营方是否持有该认证。\nPCI DSS：运营方明确声明本服务截至当前签署日尚未通过 PCI DSS 评估，不能提供当前有效的 PCI DSS 合规证明。这是对尚未通过评估的确认，不是附件遗漏，亦无已约定的完成时间或交付路径。\n"
+    },
+    {
+      "key": "H3-BASE", "filename": "H3-BASE-v1.txt",
+      "applicability": "已签署基础协议，吞吐指标按已签署补充协议替代，存储位置互不优先。",
+      "content": "# H3-BASE 基础服务协议\n本企业生产查询服务每秒保证处理200个请求。\n本企业全部生产数据及全部备份必须只保存在德国，任何情况下均禁止将这些数据或备份复制到新加坡。\n"
+    },
+    {
+      "key": "H3-ADD", "filename": "H3-ADD-v1.txt",
+      "applicability": "已签署补充协议，只有吞吐指标具备明示优先级。",
+      "content": "# H3-ADD 补充服务协议\n本企业生产查询服务每秒保证处理300个请求；本项替代 H3-BASE 的200个请求指标，优先级仅限查询吞吐指标。\n本企业全部生产数据及全部备份必须每日完整复制一份到新加坡，不得省略任何副本。本存储位置条款与 H3-BASE 的德国独占条款均生效且互不优先，不存在例外。\n"
+    },
+    {
+      "key": "H3-LIMIT", "filename": "H3-LIMIT-v1.txt",
+      "applicability": "当前正式版本所有套餐和模块均适用。",
+      "content": "# H3-LIMIT 工单附件限制\n单张巡检工单的附件数量硬上限为12个。所有当前套餐均没有提高该上限的配置或选购项。拆分到多张工单不属于单张工单能力。\n"
+    }
+  ],
+  "requirements": [
+    {"key": "H3-R1", "text": "服务运营方须持有覆盖当前服务的有效 ISO 27001 认证。", "sourceLocation": "H3-1"},
+    {"key": "H3-R2", "text": "本服务当前已通过 PCI DSS 评估且能够提供有效合规证明。", "sourceLocation": "H3-2"},
+    {"key": "H3-R3", "text": "本企业生产数据及全部备份必须仅存德国，不得复制至新加坡。", "sourceLocation": "H3-3"},
+    {"key": "H3-R4", "text": "本订单生产查询吞吐承诺至少为每秒250个请求。", "sourceLocation": "H3-4"},
+    {"key": "H3-R5", "text": "本企业可将历史巡检记录保留180天，期间管理员也不能提前删除。", "sourceLocation": "H3-5"},
+    {"key": "H3-R6", "text": "单张巡检工单须支持20个附件，不接受拆分到多张工单。", "sourceLocation": "H3-6"}
+  ]
+}

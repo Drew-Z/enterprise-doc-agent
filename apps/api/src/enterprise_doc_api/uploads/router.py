@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Annotated, Protocol, cast
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, Request, Response, status
+from fastapi import APIRouter, Depends, Header, Query, Request, Response, status
 from pydantic import Field, StrictInt
 
 from enterprise_doc_api.auth import get_current_principal
@@ -19,6 +19,7 @@ from enterprise_doc_core.object_store import (
     ObjectStoreProtocolError,
     ObjectStoreUnavailable,
 )
+from enterprise_doc_core.object_store.models import PresignedObjectUpload
 from enterprise_doc_core.uploads import (
     CompleteUploadPartInput,
     CompleteUploadSessionInput,
@@ -47,6 +48,8 @@ from enterprise_doc_core.uploads import (
     UploadSessionNotFound,
     UploadTenantUnavailable,
 )
+from enterprise_doc_core.uploads.models import UploadTransport
+from enterprise_doc_core.uploads.service import UploadTransportInvalid
 
 
 class UploadCreationServiceProtocol(Protocol):
@@ -60,6 +63,10 @@ class UploadCreationServiceProtocol(Protocol):
 
 
 class UploadSessionServiceProtocol(Protocol):
+    async def presign_single_put(
+        self, *, principal: PrincipalContext, session_id: UUID
+    ) -> PresignedObjectUpload: ...
+
     async def get(
         self,
         *,
@@ -97,6 +104,13 @@ class UploadSessionCreateRequest(ApiModel):
     size_bytes: StrictInt
     media_type: str
     sha256: str
+    transport: UploadTransport = UploadTransport.MULTIPART
+
+
+class PresignSinglePutResponse(ApiModel):
+    url: str
+    headers: dict[str, str]
+    expires_in_seconds: int
 
 
 class UploadSessionCreateResponse(ApiModel):
@@ -111,6 +125,8 @@ class UploadSessionCreateResponse(ApiModel):
     expected_part_count: int
     expires_at: datetime
     replayed: bool
+    transport: UploadTransport = UploadTransport.MULTIPART
+    initial_upload: PresignSinglePutResponse | None = None
 
 
 class UploadedPartResponse(ApiModel):
@@ -132,6 +148,7 @@ class UploadSessionResponse(ApiModel):
     expected_part_count: int
     expires_at: datetime
     uploaded_parts: list[UploadedPartResponse]
+    transport: UploadTransport = UploadTransport.MULTIPART
 
 
 class PresignUploadPartRequest(ApiModel):
@@ -146,6 +163,10 @@ class PresignUploadPartResponse(ApiModel):
     url: str
     headers: dict[str, str]
     expires_in_seconds: int
+
+
+class SinglePutRequest(ApiModel):
+    pass
 
 
 class CompleteUploadPartRequest(ApiModel):
@@ -174,6 +195,7 @@ router = APIRouter(prefix="/api/upload-sessions", tags=["uploads"])
 @router.post(
     "",
     response_model=UploadSessionCreateResponse,
+    response_model_exclude_defaults=True,
     status_code=status.HTTP_201_CREATED,
     responses={
         200: {
@@ -197,6 +219,7 @@ async def create_upload_session(
     request: Request,
     principal: Annotated[PrincipalContext, Depends(get_current_principal)],
     idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
+    include_signature: Annotated[bool, Query(alias="includeSignature")] = False,
 ) -> UploadSessionCreateResponse:
     if idempotency_key is None:
         raise ApiError(
@@ -214,6 +237,7 @@ async def create_upload_session(
                 size_bytes=payload.size_bytes,
                 media_type=payload.media_type,
                 sha256=payload.sha256,
+                transport=payload.transport,
             ),
         )
     except UploadPolicyViolation as error:
@@ -226,7 +250,7 @@ async def create_upload_session(
             code=error.code,
             message=error.message,
         ) from error
-    except UploadIdempotencyKeyInvalid as error:
+    except (UploadIdempotencyKeyInvalid, UploadTransportInvalid) as error:
         raise ApiError(
             status_code=status.HTTP_400_BAD_REQUEST,
             code=error.code,
@@ -261,6 +285,30 @@ async def create_upload_session(
 
     if result.replayed:
         response.status_code = status.HTTP_200_OK
+    initial_upload = None
+    if (
+        include_signature
+        and result.transport == UploadTransport.SINGLE_PUT.value
+        and result.status == "active"
+    ):
+        response.headers["Cache-Control"] = "no-store"
+        session_service = cast(
+            UploadSessionServiceProtocol, request.app.state.upload_session_service
+        )
+        try:
+            signed = await session_service.presign_single_put(
+                principal=principal, session_id=result.session_id
+            )
+        except (UploadSessionError, ObjectStoreError):
+            # Creation is already durable. The separate presign endpoint retains
+            # its typed failure/recovery contract if this optional capability fails.
+            pass
+        else:
+            initial_upload = PresignSinglePutResponse(
+                url=signed.url,
+                headers=signed.headers,
+                expires_in_seconds=signed.expires_in_seconds,
+            )
     return UploadSessionCreateResponse(
         session_id=result.session_id,
         status=result.status,
@@ -273,12 +321,15 @@ async def create_upload_session(
         expected_part_count=result.expected_part_count,
         expires_at=result.expires_at,
         replayed=result.replayed,
+        transport=UploadTransport(result.transport),
+        initial_upload=initial_upload,
     )
 
 
 @router.get(
     "/{session_id}",
     response_model=UploadSessionResponse,
+    response_model_exclude_defaults=True,
     responses={
         401: {"model": ErrorResponse},
         404: {"model": ErrorResponse},
@@ -321,6 +372,7 @@ async def get_upload_session(
             )
             for part in result.uploaded_parts
         ],
+        transport=UploadTransport(result.transport),
     )
 
 
@@ -399,6 +451,37 @@ async def presign_upload_part(
     )
 
 
+@router.post("/{session_id}/object/presign", response_model=PresignSinglePutResponse)
+async def presign_single_put(
+    session_id: UUID,
+    payload: SinglePutRequest,
+    request: Request,
+    principal: Annotated[PrincipalContext, Depends(get_current_principal)],
+) -> PresignSinglePutResponse:
+    service = cast(UploadSessionServiceProtocol, request.app.state.upload_session_service)
+    try:
+        result = await service.presign_single_put(principal=principal, session_id=session_id)
+    except UploadSessionError as error:
+        raise _upload_session_api_error(error) from error
+    except ObjectStoreError as error:
+        raise _object_store_api_error(error) from error
+    return PresignSinglePutResponse(
+        url=result.url, headers=dict(result.headers), expires_in_seconds=result.expires_in_seconds
+    )
+
+
+@router.post("/{session_id}/object/complete", response_model=UploadSessionCompleteResponse)
+async def complete_single_put(
+    session_id: UUID,
+    payload: SinglePutRequest,
+    request: Request,
+    principal: Annotated[PrincipalContext, Depends(get_current_principal)],
+) -> UploadSessionCompleteResponse:
+    return await _complete_upload(
+        session_id, CompleteUploadSessionInput(parts=()), request, principal
+    )
+
+
 @router.post(
     "/{session_id}/complete",
     response_model=UploadSessionCompleteResponse,
@@ -419,22 +502,36 @@ async def complete_upload_session(
     request: Request,
     principal: Annotated[PrincipalContext, Depends(get_current_principal)],
 ) -> UploadSessionCompleteResponse:
+    return await _complete_upload(
+        session_id,
+        CompleteUploadSessionInput(
+            parts=tuple(
+                CompleteUploadPartInput(
+                    part_number=part.part_number,
+                    size_bytes=part.size_bytes,
+                    etag=part.etag,
+                    checksum_sha256_b64=part.checksum_sha256,
+                )
+                for part in payload.parts
+            )
+        ),
+        request,
+        principal,
+    )
+
+
+async def _complete_upload(
+    session_id: UUID,
+    completion: CompleteUploadSessionInput,
+    request: Request,
+    principal: PrincipalContext,
+) -> UploadSessionCompleteResponse:
     service = cast(UploadSessionServiceProtocol, request.app.state.upload_session_service)
     try:
         result = await service.complete(
             principal=principal,
             session_id=session_id,
-            request=CompleteUploadSessionInput(
-                parts=tuple(
-                    CompleteUploadPartInput(
-                        part_number=part.part_number,
-                        size_bytes=part.size_bytes,
-                        etag=part.etag,
-                        checksum_sha256_b64=part.checksum_sha256,
-                    )
-                    for part in payload.parts
-                )
-            ),
+            request=completion,
         )
     except DocumentEnvelopeViolation as error:
         raise ApiError(

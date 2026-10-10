@@ -138,8 +138,33 @@ async def test_capacity_matrix_builds_validator_accepted_external_report(
         cluster="test-cluster",
         image_digests={"api": "sha256:" + "b" * 64},
         operator="test-operator",
+        deployed_commit_sha="c" * 40,
     )
 
     assert report["status"] == "passed"
+    assert report["commit_sha"] == "c" * 40
+    assert report["executor_commit_sha"] == "a" * 40
     assert report["measurements"]["telemetry"]["queue"]["sample_count"] == 16
     assert len(report["artifacts"]) == 74
+
+
+async def test_external_capacity_requires_deployed_source_identity_before_load(
+    tmp_path, monkeypatch
+):
+    async def unexpected_request(*args, **kwargs):
+        pytest.fail("missing deployed identity reached the HTTP boundary")
+
+    monkeypatch.setattr(capacity.httpx.AsyncClient, "send", unexpected_request)
+    with pytest.raises(ApplicationCapacityError, match="deployed commit"):
+        await capacity.run_capacity_matrix(
+            root=tmp_path,
+            config=validate_capacity_config(_config()),
+            output_dir=tmp_path / "capacity",
+            external_execution=True,
+            provider="test-cloud",
+            region="test-1",
+            cluster="test-cluster",
+            image_digests={"api": "sha256:" + "b" * 64},
+            operator="test-operator",
+        )
+    assert not (tmp_path / "capacity").exists()

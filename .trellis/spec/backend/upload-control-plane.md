@@ -23,9 +23,41 @@ PostgreSQL owns business state; the object store owns multipart bytes and observ
 - Create reserves quota once and never returns an `initializing` session as a successful
   replay. A replay waits briefly for activation, then returns active/terminal state or
   typed `upload_initialization_in_progress`.
+- Creation locks Tenant, then Membership and User with `FOR NO KEY UPDATE`; it changes
+  counters, not identity keys. Keep all three locks: tenant quota competition and
+  tenant/member/user deactivation must still serialize and recheck active status.
+  Unrelated audit/event FK inserts holding `KEY SHARE` must not block create or replay.
+  Restrict the lock targets explicitly; do not remove the User lock merely because it
+  is joined for authorization. Multipart initialization remains outside the transaction.
+- After those locks, creation reads the optional same-key UploadSession and DemoWorkspace
+  in one Tenant-rooted outer-join statement. A replay retains the original actor/fingerprint
+  checks and does not run new-upload demo admission. A new upload still validates demo
+  expiry/revocation/cleanup, upload count/size and the locked storage quota.
+- `insert_upload_reservation` flushes caller-owned pending changes, then writes the
+  storage-reservation UPDATE and UploadSession INSERT in one dependent CTE statement.
+  The INSERT's tenant ID comes from UPDATE RETURNING; constraint failure or caller rollback
+  restores both. It returns the saved ORM session and synchronizes loaded Tenant counters
+  and database timestamp without a second UPDATE. Keep original reservation/activation
+  COMMIT-acknowledgment recovery. The single-PUT create path has four business statements;
+  this local query budget is not evidence of deployed p95 or public capacity.
+- Completion takes the Tenant `FOR NO KEY UPDATE` lock before the upload-session lock.
+  It changes storage counters, not identity keys. Keep this serialization and the atomic
+  document/version/job/outbox creation plus reserved-to-used conversion. An unrelated
+  audit FK insert must not block either transport's completion or completed replay.
 - A part has one immutable expected base64 SHA-256 value per upload generation.
 - Presign TTL is `min(configured_ttl, floor(session_expires_at - now))`; less than one
   remaining second is expired.
+- `?includeSignature=true` on creation opts into an optional `initialUpload` for
+  active single PUT sessions, including active replays. No opt-in or a multipart/
+  terminal result retains the legacy response. Call the existing signing service
+  after durable creation so ownership, TTL and persisted capability expiry still
+  apply. The capability response is `Cache-Control: no-store`; expected signing
+  errors omit the optional field and retain the separate presign recovery route.
+- The Web client keeps at most one initial capability in instance memory, strips it
+  before returning session state, and consumes it once. Bind it to the captured
+  credential and session ID; use a monotonic expiry measured before the create request
+  with a five-second margin. Expiry, retired credentials and retries use the normal
+  presign route. Both paths must share origin, session, size and header validation.
 - A listed checksum/size mismatch clears prior verification. Absence from one complete
   listing is not destructive evidence because a part cannot be deleted independently
   inside the same multipart generation.
@@ -58,12 +90,29 @@ PostgreSQL owns business state; the object store owns multipart bytes and observ
 
 - Fault injection after reservation and activation COMMIT; assert one row, one quota
   reservation, one multipart creation, and no abort of a committed active upload.
+- `test_upload_creation_batch_integration.py` checks four creation statements, one
+  reservation on replay, INSERT-constraint rollback, caller rollback with no-autoflush
+  pending changes, repeated same-session writes, and demo count/expiry boundaries.
 - Blocking initiate tests for replay wait, timeout, owner failure, and concurrent expiry.
 - Concurrent GET tests where an older remote result returns after a newer result, plus
   repeated wall-clock timestamps; assert the database sequence CAS prevents stale writes.
+- `test_upload_create_lock_integration.py` holds a real AuditEvent insert open while
+  both transports create and replay through ASGI. Separate tests observe PostgreSQL
+  blocking during tenant/user/member deactivation and verify rejection after commit;
+  competing last-quota creates still admit only one. These isolated tests do not prove
+  deployed upload p95 or attribute earlier public latency to this lock.
+- `test_upload_completion_lock_integration.py` holds an actual AuditEvent transaction
+  open while competing completions and replay run for both transports. Exactly one
+  document, version, job and outbox record survive, with one storage conversion and no
+  remaining reservation. This uses a local isolated schema and a controlled object store.
 - Real MinIO tests for checksum-bound PUT, session-bounded TTL, GET expiry, immutable
   expectation uniqueness, malformed checksum mapping, and owner boundaries.
 - OpenAPI tests for BearerAuth and every declared typed error response.
+- Initial-signature HTTP tests cover opt-in, replay, terminal/multipart omission and
+  signing failure after durable creation. A real isolated PostgreSQL test verifies
+  one reservation and stored signature expiry across creation/replay. Web tests
+  verify one initial control request, no capability in returned state, one-use and
+  credential/expiry fallback, and refusal of invalid inline capabilities.
 
 ### 7. Wrong vs Correct
 

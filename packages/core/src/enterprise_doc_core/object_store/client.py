@@ -12,6 +12,7 @@ def create_s3_client(
     settings: ObjectStoreSettings,
     *,
     endpoint_url: str,
+    sign_payload: bool = False,
 ) -> Any:
     return boto3.client(
         "s3",
@@ -27,7 +28,10 @@ def create_s3_client(
         use_ssl=settings.secure,
         config=Config(
             signature_version="s3v4",
-            s3={"addressing_style": "path"},
+            s3={
+                "addressing_style": "path",
+                **({"payload_signing_enabled": True} if sign_payload else {}),
+            },
             request_checksum_calculation="when_required",
             response_checksum_validation="when_required",
             connect_timeout=settings.connect_timeout_seconds,

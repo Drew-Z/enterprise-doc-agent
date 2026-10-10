@@ -1,0 +1,264 @@
+{
+  "at": "2026-10-09T20:34:18.065299+00:00",
+  "status": "staging_schema_release_rollback_reapply_and_citation_delivery_verified",
+  "application_commit": "fe995676649570328892e2b48d80f02ee9526dd8",
+  "tag": "v0.1.45-rc.49",
+  "schema_revision": "20261010_0037",
+  "source_ci": {
+    "quality": 37981892144,
+    "container": 37981892045
+  },
+  "signed_build": 37982424490,
+  "artifact_digests_verified": 5,
+  "signed_evidence_files": 56,
+  "images": {
+    "api": "ghcr.io/drew-z/enterprise-doc-api@sha256:4aa0f712aeb3c043960885faa187b1a092a61b29b9d9386813d1fae16eb2951f",
+    "consumer": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:42acb7a4acfc2355a0c41a79056b38af47e5aa0903865f6519a5354c220e4189",
+    "web": "ghcr.io/drew-z/enterprise-doc-web@sha256:0d764914dd42fc645abdc774dd9909b1ef00cb9bb6a17fedd0e1e8714661f6bd",
+    "worker": "ghcr.io/drew-z/enterprise-doc-worker@sha256:91e99273390ff1c15758f943316f22dfad87617f822d0c2a28b5d29e4f1130d7"
+  },
+  "schema_expansion": {
+    "elapsed_seconds": 74.649,
+    "checks": {
+      "revision_0037": true,
+      "columns": true,
+      "original_workload_specs": true,
+      "secret_binding": true,
+      "history_status_counts": true,
+      "existing_column_counts_unchanged": true,
+      "idle": true,
+      "five_ready": true,
+      "backup_remains_deferred": true,
+      "homepage": true,
+      "readiness": true,
+      "queue": true,
+      "review_constraint": true,
+      "attempt_constraint": true,
+      "workbook_metadata_column": true,
+      "workbook_content_column": true,
+      "workbook_constraint": true,
+      "manual_column": true,
+      "manual_constraint": true,
+      "manual_history_unchanged": true,
+      "original_workbook_and_packet_unchanged": true,
+      "citation_column": true,
+      "citation_constraint": true,
+      "citation_history_empty": true,
+      "operation_binding": true,
+      "deadline": true,
+      "namespace_unchanged": true,
+      "prerequisites_unchanged": true
+    }
+  },
+  "windows": {
+    "release": {
+      "at": "2026-10-09T20:12:27.778954+00:00",
+      "application_commit": "fe995676649570328892e2b48d80f02ee9526dd8",
+      "checks": {
+        "complete_deployment_specs": true,
+        "candidate_prerequisites": true,
+        "namespace_uid": true,
+        "credentials_unchanged": true,
+        "full_schema_0037": true,
+        "history_counts_unchanged": true,
+        "business_idle": true,
+        "jobs_unchanged": true,
+        "no_other_controllers": true,
+        "five_ready": true,
+        "historical_terminal_pods_preserved": true,
+        "pod_readiness_and_image_identity": true,
+        "packaged_source_matches_application_commit": true,
+        "worker_concurrency_two": true,
+        "tiff_patch_matches_phase": true,
+        "nginx_matches_application_commit": true,
+        "public_signed_assets": true,
+        "backup_remains_deferred": true,
+        "homepage": true,
+        "readiness_and_queue": true,
+        "operation_deadlines": true,
+        "capacity_and_policy": true
+      },
+      "elapsed_seconds": 85.77
+    },
+    "rollback": {
+      "at": "2026-10-09T20:16:10.717477+00:00",
+      "application_commit": "6516bd0342d809f1de3a2340b2207bdc94869c75",
+      "checks": {
+        "complete_deployment_specs": true,
+        "candidate_prerequisites": true,
+        "namespace_uid": true,
+        "credentials_unchanged": true,
+        "full_schema_0037": true,
+        "history_counts_unchanged": true,
+        "business_idle": true,
+        "jobs_unchanged": true,
+        "no_other_controllers": true,
+        "five_ready": true,
+        "historical_terminal_pods_preserved": true,
+        "pod_readiness_and_image_identity": true,
+        "packaged_source_matches_application_commit": true,
+        "worker_concurrency_two": true,
+        "tiff_patch_matches_phase": true,
+        "nginx_matches_application_commit": true,
+        "public_signed_assets": true,
+        "backup_remains_deferred": true,
+        "homepage": true,
+        "readiness_and_queue": true,
+        "operation_deadlines": true,
+        "capacity_and_policy": true
+      },
+      "elapsed_seconds": 83.024
+    },
+    "reapply": {
+      "at": "2026-10-09T20:29:46.729689+00:00",
+      "application_commit": "fe995676649570328892e2b48d80f02ee9526dd8",
+      "checks": {
+        "complete_deployment_specs": true,
+        "candidate_prerequisites": true,
+        "namespace_uid": true,
+        "credentials_unchanged": true,
+        "full_schema_0037": true,
+        "history_counts_unchanged": true,
+        "business_idle": true,
+        "jobs_unchanged": true,
+        "no_other_controllers": true,
+        "five_ready": true,
+        "historical_terminal_pods_preserved": true,
+        "pod_readiness_and_image_identity": true,
+        "packaged_source_matches_application_commit": true,
+        "worker_concurrency_two": true,
+        "tiff_patch_matches_phase": true,
+        "nginx_matches_application_commit": true,
+        "public_signed_assets": true,
+        "backup_remains_deferred": true,
+        "homepage": true,
+        "readiness_and_queue": true,
+        "operation_deadlines": true,
+        "capacity_and_policy": true
+      },
+      "elapsed_seconds": 86.277
+    }
+  },
+  "citation_delivery": {
+    "scope": "One new labeled one-row workbook; Codex-assisted technical acceptance, not a real customer or independent business approval",
+    "packet_id": "d52b2410-049f-4f9f-b7db-f92096818235",
+    "original_public_packet_unchanged": true,
+    "previous_human_packet_unchanged": true,
+    "original_wrong_citation_retained": true,
+    "legacy_review_retained": true,
+    "independent_corrected_review_snapshot": true,
+    "human_authorship_retained": true,
+    "separate_review_and_reload": true,
+    "reviewed_xlsx_and_audit_csv": true,
+    "unrelated_formula_and_worksheet_retained": true,
+    "accounting_before": {
+      "jobs": 3553,
+      "presales_attempts": 541,
+      "presales_provider_calls": 597,
+      "usage_reservations": 541,
+      "product_usage_reservations": 613,
+      "all_dispatches": 597
+    },
+    "accounting_after": {
+      "jobs": 3553,
+      "presales_attempts": 541,
+      "presales_provider_calls": 597,
+      "usage_reservations": 541,
+      "product_usage_reservations": 613,
+      "all_dispatches": 597
+    },
+    "token_revoked": true,
+    "automatic_retries": 0,
+    "old_reader_guard": {
+      "status": "passed",
+      "citation_reviews": 1,
+      "old_reader_restore_refused": true,
+      "kubernetes_writes_attempted": 0,
+      "deployment_specs_unchanged": true,
+      "five_ready": true
+    },
+    "harness_correction": "SWU03 is the external sample label; imported workbook uses X7 at B7/C7. Bind exact imported key, question and location instead of assuming SWU03 is a persisted key.",
+    "exports": {
+      "rc49-citation-reviewed-20261010.xlsx": {
+        "sha256": "b7393bebca32f480080d7d0f727c9a9efc141acdddb0806fb14020ea24af0dcc",
+        "bytes": 5920
+      },
+      "rc49-citation-audit-20261010.csv": {
+        "sha256": "257b242f164650d34d2eda52f151d3737eacf4066bc4ea20eb01e7905904c0d6",
+        "bytes": 7370
+      }
+    }
+  },
+  "new_model_calls": 0,
+  "new_embedding_calls": 0,
+  "provider_routes_or_budget_changes": 0,
+  "legacy_rc48_rc47_rc46_recovery_allowed": false,
+  "recovery_boundary": "Independent citation history now exists. Use rc49-compatible readers or a forward fix; never erase review evidence or downgrade schema to permit rollback.",
+  "original_rc46_replay": {
+    "drafts": 4,
+    "failures": 2,
+    "calls": 9,
+    "changed": false
+  },
+  "previous_unknown_diagnostic_reserved_calls": 3,
+  "real_model_semantic_quality": "unproven",
+  "competitor_parity": "not_achieved",
+  "independent_business_approval": false,
+  "real_user_time_savings_or_paid_demand": "unverified",
+  "next_product_gap": "Model completion reliability and correct evidence scope/citation selection; keep answer reuse, assignments and new channels deferred.",
+  "cleanup": {
+    "remote_files": 233,
+    "remote_directories": 315,
+    "local_transport_files": 43,
+    "local_transport_directories": 1,
+    "approved_cache_versions": [
+      "rc36",
+      "rc37"
+    ],
+    "image_cache_reference_deletions": 32,
+    "cache_plan_sha256": "ebef92bb32eac33dfeb2b64d7c695a7e14512ecc073b1429b7bb75cb83017b40",
+    "net_cache_free_bytes_increase": 2214735872,
+    "unselected_cache_references_preserved": true,
+    "business_or_backup_deletions": 0
+  },
+  "initial_capacity_rejection": {
+    "shortfall_bytes": 836391680,
+    "target_writes": 0,
+    "retained": true
+  },
+  "final_readiness": {
+    "five_ready": true,
+    "deployment_specs_unchanged": true,
+    "owned_runtime_roots_absent": true,
+    "homepage_http": 200,
+    "readiness_http": 200
+  },
+  "central_evidence": {
+    "directory": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\fallback-model-evidence",
+    "files": {
+      "rc49-release-verification-20261010.json": "1b203618a76b1df67d2d544b56a28d21f1810eb2b6a45c50a9f0e5d2c1d0122f",
+      "rc49-schema-window-verification-20261010.json": "69e3df01fdae2d4dd8bb28511bd0df4a5d269d021f6369c59346e7ee757797c7",
+      "rc49-release-verified-v3-20261010.json": "a26818c0496de759827a0b66e2e7a8a66ea79154e93d8abac78c4ef6a6e9c512",
+      "rc49-rollback-verified-v3-20261010.json": "8a902adca50011a5c7a06bc5134911307ae1e8f75121960957f1bafaf52a61f4",
+      "rc49-reapply-verified-v3-20261010.json": "1e06c5e08843ab25db74bdf6856192b4fe35081873e895ff917de72092d7cc75",
+      "rc49-citation-live-verification-20261010.json": "612d48fddb35760f1a5417531bf86d95fbe47dd7deddb8df2eb187bb4ff81ba8",
+      "rc49-citation-harness-correction-20261010.json": "efa4349232d93d8320663d6d3222b02a3459119aea88ee35d25446551783f171",
+      "rc49-citation-live-terminal-20261010.json": "07eea114f114307c849c45438cf7776d7aa3d518dd57e980f38aefafd95a1be7",
+      "rc49-citation-live-terminal-v2-20261010.json": "2ae60486ddcb3d5d82074564af341e8caff848cec9bfdae2c6665c3d4093e681",
+      "rc49-owned-runtime-cleanup-receipt-20261010.json": "2729503b595e8f0801f1dd969b05949e3c60f6512663971540c66aeff74338cb",
+      "rc49-owned-local-cleanup-receipt-20261010.json": "9b6df3bdc2bc72a7574d393fcc536a69fa22df917b324a5212ca5807202e3845",
+      "rc49-final-readiness-20261010.json": "7437657c342636b606463630f73ee3cfdf1a6d5e1a05301a65354f65e09269e2",
+      "rc49-full-cache-preflight-20261010.json": "a8a26508caa1d0400973da2fb2f763e640e14ed64cab0804df8ddac4e7fff087",
+      "rc49-image-cache-authorization-20261010.json": "4b620a012306ff1442983714fe6f72c38c9afc347fb3473c429423403b990152",
+      "rc49-image-cache-post-cleanup-verification-20261010.json": "1a36e3f1bf1f47015613b82c7aa7a851267ceee06e0e0b117f17b5968a9e40dc",
+      "rc49-full-cache-preflight-after-approved-cleanup-20261010.json": "7ae8cafcf53f271d9c681749c734508f0cb1022d96a190912bf06b8e38ac94c4",
+      "rc49-post-capacity-baseline-20261010.json": "8a9072c12761a1cf2bcc9617d0fd5311494b769d56cafdec10699e5379d98e70"
+    }
+  },
+  "recovery": {
+    "manifest": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\manifest.json",
+    "phase": "review_citations_release_20261010",
+    "source_baseline": "7cc745ac937dd50c275d0b12d464bb26e55c5f77",
+    "documentation_baseline": "fe995676649570328892e2b48d80f02ee9526dd8"
+  }
+}

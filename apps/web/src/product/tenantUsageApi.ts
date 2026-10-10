@@ -34,6 +34,13 @@ const eventSchema = z.object({
   occurredAt: date,
 }).strict();
 
+const productQuotaSchema = z.object({
+  metric: z.enum(["agent_task", "document_bytes"]),
+  limit: count, used: count, reserved: count, remaining: count,
+}).strict().refine(value => value.used <= value.limit - value.reserved
+  && value.remaining === value.limit - value.used - value.reserved,
+{ message: "Product quota totals are inconsistent." });
+
 const tenantUsageSchema = z.object({
   tenantId: z.string().uuid(),
   enabled: z.boolean(),
@@ -49,6 +56,12 @@ const tenantUsageSchema = z.object({
   costStatus: z.enum(["known", "unknown"]),
   recentEvents: z.array(eventSchema).max(20),
   resources: resourcesSchema,
+  productQuotas: z.array(productQuotaSchema).max(2)
+    .refine(values => new Set(values.map(value => value.metric)).size === values.length),
+  modelCalls: z.object({ calls: count, unresolvedCalls: count, unknownCostCalls: count,
+    usageKnownCalls: count, knownTotalTokens: count }).strict().refine(value =>
+    value.unresolvedCalls <= value.calls && value.unknownCostCalls <= value.calls
+    && value.usageKnownCalls <= value.calls && (value.usageKnownCalls > 0 || value.knownTotalTokens === 0)),
 }).strict().refine(value => {
   if (value.entitlementStatus === "active") {
     return value.enabled && value.planCode !== null && value.version !== null
@@ -61,7 +74,8 @@ const tenantUsageSchema = z.object({
     && value.periodStart === null && value.periodEnd === null && value.providerRequestLimit === null
     && value.providerRequestsUsed === 0 && value.providerRequestsReserved === 0
     && value.providerRequestsRemaining === (value.entitlementStatus === "inactive" ? 0 : null)
-    && value.costStatus === "unknown" && value.recentEvents.length === 0;
+    && value.costStatus === "unknown" && value.recentEvents.length === 0 && value.productQuotas.length === 0
+    && value.modelCalls.calls === 0;
 }, { message: "Entitlement state is inconsistent." });
 
 export type TenantUsage = z.infer<typeof tenantUsageSchema>;

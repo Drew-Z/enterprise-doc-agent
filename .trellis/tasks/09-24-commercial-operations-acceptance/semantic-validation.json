@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "scope": "CO-2 source-bound prerequisite checks and one authorized live v8 H3 known regression; independent and production acceptance pending",
+  "baseCommit": "7631d7b80b46dd5f301087907f6143628974f7ba",
+  "status": "local_checks_and_single_h3_regression_passed_external_acceptance_pending",
+  "checks": {
+    "pythonNonIntegration": {
+      "passed": 1795,
+      "deselected": 437,
+      "elapsedSeconds": 145.9
+    },
+    "newPrerequisiteTests": {
+      "passed": 29
+    },
+    "ruff": {
+      "passed": true,
+      "formattedFiles": 586
+    },
+    "mypy": {
+      "passed": true,
+      "sourceFiles": 250
+    },
+    "historicalScores": {
+      "v5": "unchanged",
+      "v6": "unchanged",
+      "v7": "unchanged",
+      "v7-windhub": "unchanged",
+      "v8": "reproduced unchanged after collection"
+    },
+    "originalV7Analysis": {
+      "expectedRows": 6,
+      "observableRows": 3,
+      "passedRows": 2,
+      "h3r5MatchingStates": 2,
+      "h3r5MismatchedStates": 1,
+      "exitCode": 1,
+      "expectedFailure": true
+    },
+    "postTrialFrozenScoreTests": {
+      "passed": 53,
+      "scope": "Both offline score suites, including two newly added v8 reproducibility checks"
+    }
+  },
+  "redToGreen": [
+    "New public prerequisite scorer absent; original v7 wrong-state regression then passed",
+    "CLI initially returned zero for failed semantic state check; now saves failure and exits 1"
+  ],
+  "contracts": {
+    "mapping": "Explicit reviewed output indexes bound to original run and expectation SHA; no keyword matching",
+    "evidence": "Each prerequisite must cover its own exact source anchors",
+    "failures": "Failed/unattempted/unreviewed rows remain in complete denominator; no failed-response replay",
+    "prompt": "Assess factual state before condition/status; public/schema fields unchanged, model schema display order adjusted"
+  },
+  "newRealProviderRequests": 6,
+  "productionDeployment": false,
+  "limits": [
+    "v8 H3 passed once on complete short synthetic sources; no independent domain/customer or production acceptance",
+    "Expected prerequisite reference is known-regression supplement, not fresh holdout",
+    "State checker must be used alongside classification/citation scoring and full-prose review",
+    "Existing database/browser evidence is not counted as new validation for this slice; no persistence, API or UI change",
+    "Supplier prices and actual costs remain unknown"
+  ],
+  "files": [
+    "packages/core/src/enterprise_doc_core/presales/gateway.py",
+    "packages/core/src/enterprise_doc_core/presales/citation_selection.py",
+    "scripts/score_presales_prerequisites.py",
+    "tests/evaluation/test_presales_prerequisites.py",
+    "evaluation/presales_quality_holdout_v3.prerequisites.json",
+    "evaluation/presales_quality_v7.windhub.prerequisite-review.json",
+    "evaluation/presales_quality_v7.windhub.prerequisite-score.json",
+    "evaluation/presales_quality_v8.candidate-prompt.txt",
+    ".trellis/tasks/09-24-commercial-operations-acceptance/prd.md",
+    ".trellis/tasks/09-24-commercial-operations-acceptance/design.md",
+    ".trellis/tasks/09-24-commercial-operations-acceptance/implement.md",
+    ".trellis/tasks/09-24-commercial-operations-acceptance/task.json",
+    ".trellis/tasks/09-24-commercial-operations-acceptance/semantic-validation.json",
+    ".trellis/tasks/09-24-commercial-operations-acceptance/v8-trial-plan.json",
+    ".trellis/spec/backend/presales-workspace.md",
+    ".trellis/spec/foundation-tests/backend/presales-quality.md",
+    "docs/ops/commercial-production-plan.md",
+    "docs/ops/presales-quality-evaluation.md",
+    "tests/evaluation/test_presales_gateway_score.py",
+    "evaluation/presales_quality_holdout_v3.v8-gateway.json",
+    "evaluation/presales_quality_holdout_v3.v8-gateway.score.json",
+    "evaluation/presales_quality_v8.prerequisite-review.json",
+    "evaluation/presales_quality_v8.prerequisite-score.json",
+    "evaluation/presales_quality_v8.review.json",
+    ".trellis/tasks/09-24-commercial-operations-acceptance/v8-live-execution.json"
+  ],
+  "liveTrial": {
+    "candidateCommit": "4368be04f2db8905e51da089433cb72874385ee1",
+    "requests": 6,
+    "acceptedDrafts": 6,
+    "statusMatches": 6,
+    "validCitations": 11,
+    "coveredRequiredEvidence": 9,
+    "prerequisiteChecksPassed": true,
+    "assistantSemanticPasses": 6,
+    "automaticRetries": 0,
+    "automaticFailover": false,
+    "otherDatasetsCalled": [],
+    "releaseGatePassed": false,
+    "minSeconds": 10.156,
+    "medianSeconds": 40.258,
+    "maxSeconds": 111.188,
+    "reportedTotalTokens": 41193,
+    "verifiedCostAmount": null,
+    "record": ".trellis/tasks/09-24-commercial-operations-acceptance/v8-live-execution.json",
+    "review": "evaluation/presales_quality_v8.review.json"
+  }
+}

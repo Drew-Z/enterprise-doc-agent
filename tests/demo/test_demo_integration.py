@@ -10,6 +10,7 @@ from sqlalchemy import Connection, func, select
 from tests.browser_sessions.conftest import BrowserDatabase
 
 from enterprise_doc_core.billing.models import TenantEntitlement
+from enterprise_doc_core.billing.product_models import ProductQuota
 from enterprise_doc_core.browser_sessions.errors import BrowserContextStale, BrowserSessionInvalid
 from enterprise_doc_core.demo.limits import finish_attempt, reserve_attempt
 from enterprise_doc_core.demo.models import DemoDay, DemoWorkspace
@@ -48,6 +49,15 @@ async def test_isolated_visitors_no_external_identity_and_expiry(demo_db: Browse
                 select(TenantEntitlement).where(TenantEntitlement.tenant_id == tenant.id)
             )
             assert entitlement is not None and entitlement.plan_code == "public-demo"
+            quotas = (
+                await session.scalars(
+                    select(ProductQuota).where(ProductQuota.tenant_id == tenant.id)
+                )
+            ).all()
+            assert {q.metric: q.unit_limit for q in quotas} == {
+                "agent_task": 0,
+                "document_bytes": 10 * 1024 * 1024,
+            }
     now += timedelta(hours=3)
     with pytest.raises(BrowserSessionInvalid):
         await service.get(first.credential)
@@ -162,8 +172,10 @@ async def test_migration_round_trip(demo_db: BrowserDatabase) -> None:
 async def test_start_with_migrated_entitlement_tables(demo_db: BrowserDatabase) -> None:
     # The deployed migration has no timestamp defaults, unlike metadata.create_all.
     async with demo_db.engine.begin() as connection:
+        await connection.run_sync(migrate, "downgrade", "20260924_0029_product_usage")
         await connection.run_sync(migrate, "downgrade", "20260914_0026_entitlements_usage")
         await connection.run_sync(migrate, "upgrade", "20260914_0026_entitlements_usage")
+        await connection.run_sync(migrate, "upgrade", "20260924_0029_product_usage")
     now = datetime.now(UTC)
     service = DemoService(
         session_factory=demo_db.sessions, settings=DemoSettings(enabled=True), clock=lambda: now

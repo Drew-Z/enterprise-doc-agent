@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "at": "2026-09-29T22:14:23.626703+00:00",
+  "status": "local_validation_passed_online_pending",
+  "baseline_commit": "19e280e0d65a5c97d96e6a1f618f0c422762ff6e",
+  "selects_before": {
+    "single": 25,
+    "batch": 25
+  },
+  "selects_after": {
+    "single": 23,
+    "batch": 23
+  },
+  "validation": {
+    "admission_cases": 19,
+    "related_integration": 85,
+    "non_integration": 2088,
+    "subtests": 23,
+    "format_files": 617,
+    "mypy_files": 251,
+    "ruff": "passed"
+  },
+  "boundaries": [
+    "isolated local PostgreSQL and actual ASGI HTTP",
+    "controlled model/embedding boundary",
+    "no production p95 or 160-task capacity claim",
+    "no migration or production mutation"
+  ],
+  "supplier_requests": {
+    "model": 0,
+    "embedding": 0
+  },
+  "evidence": {
+    "single-admission-red.txt": {
+      "sha256": "d3fe31374d8ac04b9de63c53348a053fa74a083bfb8b241bfebc7abebd410ff5",
+      "bytes": 3973
+    },
+    "single-admission-boundaries.txt": {
+      "sha256": "71a6ca46ac2d90ccda27b78ec9a92551cb1190e29efa86a7b7b99beebdaa1bf6",
+      "bytes": 88
+    },
+    "single-admission-integration.txt": {
+      "sha256": "2bcba4ac62244d740251c53592db61127c45737b09e5703bfdbe498f36bd88c6",
+      "bytes": 194
+    },
+    "single-admission-unit.txt": {
+      "sha256": "c8b1dd13686047dbc6505f75211853412350a98de74543b6d71a19418c4cfdc1",
+      "bytes": 2468
+    },
+    "single-admission-lint.txt": {
+      "sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0",
+      "bytes": 20
+    },
+    "single-admission-format.txt": {
+      "sha256": "f2cca65f4ff308d0dc317198840aa8be75d53d83278b48846c77cb451f542b46",
+      "bytes": 29
+    },
+    "single-admission-types.txt": {
+      "sha256": "82bcf5599efd0efb5189f1184e77fc0bb53e4c14436e4a10d3365c12bd56b53c",
+      "bytes": 46
+    }
+  },
+  "recovery_group": "20260924T015840.986Z-commercial-production-readiness",
+  "remaining": [
+    "online release and fresh admission",
+    "capacity",
+    "monetary reconciliation",
+    "independent review",
+    "computer-independent backups and whole-host RPO/RTO"
+  ]
+}

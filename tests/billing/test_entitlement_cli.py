@@ -48,6 +48,38 @@ def test_configuration_defaults_to_preview_without_database_access(
     assert result["status"] == "preview"
     assert result["databaseValidated"] is False
     assert result["request"]["provider_request_limit"] == 2
+    assert result["request"]["agent_task_limit"] == 0
+    assert result["request"]["document_bytes_limit"] == 0
+
+
+def test_product_quota_cli_preview_is_explicit_and_does_not_open_database(monkeypatch, capsys):
+    monkeypatch.setattr(cli, "create_database_engine", lambda *_: pytest.fail("database opened"))
+    assert (
+        cli.main(
+            [
+                "configure-products",
+                "--tenant-id",
+                str(uuid4()),
+                "--entitlement-id",
+                str(uuid4()),
+                "--expected-version",
+                "1",
+                "--agent-task-limit",
+                "10",
+                "--document-bytes-limit",
+                "4096",
+                "--operator",
+                "test",
+                "--reason",
+                "enable products",
+            ]
+        )
+        == 0
+    )
+    output = json.loads(capsys.readouterr().out)
+    assert output["status"] == "preview" and output["databaseValidated"] is False
+    assert output["request"]["agent_task_limit"] == 10
+    assert output["request"]["document_bytes_limit"] == 4096
 
 
 @pytest.mark.parametrize("environment", [AppEnvironment.STAGING, AppEnvironment.PRODUCTION])

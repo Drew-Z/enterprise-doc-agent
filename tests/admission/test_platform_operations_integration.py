@@ -266,6 +266,9 @@ async def add_usage_schema(database: AdmissionDatabase) -> None:
             MigrationContext.configure(connection, opts={"target_metadata": metadata})
         ):
             migration.upgrade()
+        # This minimal fixture omits Job/document tables. Product quotas alone
+        # depend only on the migrated entitlement table used by these CLI tests.
+        metadata.tables["product_quotas"].create(connection)
 
     async with database.engine.begin() as connection:
         await connection.run_sync(upgrade)

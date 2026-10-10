@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-09-27T18:02:06.456774+00:00",
+  "status": "blocked_external",
+  "task_status": "in_progress",
+  "source_baseline": "bd288377fd668ed4df2104e2f78c54ae360cab45",
+  "deployed_application_source": "1ac873b06f265a415ed128ed55b9f54f81bdf0b9",
+  "deployed_application_release": "v0.1.45-rc.1",
+  "database_revision": "20260924_0031",
+  "application_deployed_this_phase": false,
+  "local_checks": {
+    "python_non_integration_passed": 2030,
+    "python_integration_outside_full_run": 440,
+    "web_tests_passed": 343,
+    "monitor_tests_passed": 24,
+    "monitor_real_runtime": "local workerd and D1; target HTTP, email and clocks controlled",
+    "ruff": "passed",
+    "ruff_format_files": 610,
+    "mypy_source_files": 253,
+    "web_and_monitor_lint_typecheck": "passed",
+    "web_build": "passed",
+    "wrangler_dry_run": "passed"
+  },
+  "alerting": {
+    "external_worker": "docagent-ops-monitor",
+    "current_mode": "notify",
+    "recipient_verified": true,
+    "version_id": "bec0182c-62de-4863-b5b3-23e72a7ffb29",
+    "first_live_observation": "ready",
+    "different_minute_healthy_observations_at_least": 3,
+    "verification_email_requests": 1,
+    "test_send_attempts": 2,
+    "test_binding_acknowledgements_with_message_id": 2,
+    "test_failure_events": 1,
+    "test_recovery_events": 1,
+    "user_test_receipt": "both_confirmed",
+    "daily_notifications_enabled": true,
+    "drill_worker_and_cron_removed": true,
+    "d1_events_retained": true,
+    "production_outage_injected": false,
+    "complete_operations_gate_passed": false
+  },
+  "github_governance": {
+    "main_protection_applied_and_readback": true,
+    "required_checks": [
+      "backend",
+      "frontend"
+    ],
+    "strict": true,
+    "enforce_admins": true,
+    "force_push_allowed": false,
+    "deletion_allowed": false,
+    "candidate_required_checks_run_for_docs_changes": true,
+    "main_workflow_update": "pending_draft_pr_merge; old-main documentation-only PRs may still omit required jobs",
+    "independent_staging_reviewer": "pending",
+    "main_merged": false,
+    "new_source_ci": "recorded_separately_after_exact_commit"
+  },
+  "public_source_trial": {
+    "model": "grok-4.7",
+    "route": "primary",
+    "prompt_version": "presales.v8",
+    "sources": 3,
+    "planned_questions": 5,
+    "real_requests": 5,
+    "valid_drafts": 5,
+    "classification_matches": 5,
+    "valid_citations": 10,
+    "required_anchors_covered": 5,
+    "frozen_semantic_reference_matches": 4,
+    "fixture_contract_mismatches": 1,
+    "mismatch_question": "R2-R3",
+    "mismatch": "Frozen reference unmet vs original unknown. Scenario execution fact was only in requirement; source-only status contract requires source evidence. Preserve mismatch, no post-inference reference edits.",
+    "independent_domain_review": false,
+    "user_review": "pending",
+    "semantic_acceptance_passed": false,
+    "usage": {
+      "prompt_tokens": 18422,
+      "completion_tokens": 20820,
+      "total_tokens": 39242
+    },
+    "amount": null,
+    "latency_seconds": {
+      "min": 13.469,
+      "median": 25.328,
+      "max": 109.515
+    },
+    "requested_output_tokens": 4000,
+    "reported_output_over_limit": [
+      {
+        "key": "R2-R3",
+        "completion_tokens": 10583
+      },
+      {
+        "key": "R2-R4",
+        "completion_tokens": 4331
+      }
+    ],
+    "automatic_retries": 0,
+    "automatic_failover": false,
+    "embedding_requests": 0,
+    "online_business_writes": 0,
+    "input_sha256": "bc4f68e3909249654f934c5aa26abae0e06f1d7094bd22d10838db27d2d79cc5",
+    "gold_sha256": "00beff9842c430cbc1e2ce3e4ea4b6c202957c78c6532cc34e9f8fb2d9f43ea4",
+    "original_run_sha256": "4c0a2fc00c707fe34c36e2cfc224fa0bff4a26a4cb11d27c24a5889021ddfda0",
+    "mechanical_score_sha256": "d8387af0468f3f28cc547467578f070328e120c04470bcf438deaa3132611288",
+    "assistant_review_sha256": "8f4f815ac37e69a43e16d008186481d2bc058fa7c1419627668caae0a4b4cd87"
+  },
+  "preserved": {
+    "historical_working_tree_entries": 2993,
+    "prior_frozen_indexes": 12,
+    "prior_failures_and_trial_materials": true
+  },
+  "remaining": [
+    "Queue/backup/monitor-loss alerts and duty response beyond activated readiness notifications",
+    "Public fixture contract correction, user and independent domain review; customer UAT",
+    "Interactive OAuth and browser disconnect recovery on the deployed candidate",
+    "Nonempty real Agent metering and supplier invoice/price reconciliation",
+    "Two bounded 4C4G business capacity rounds bound to approved objectives and target identity",
+    "Recurring complete DB/object backups, whole-host RPO/RTO and independent review",
+    "Independent release approval, data policy and customer operating agreement"
+  ],
+  "commercial_acceptance_passed": false
+}

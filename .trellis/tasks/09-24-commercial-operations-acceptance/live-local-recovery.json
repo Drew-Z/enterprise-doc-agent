@@ -1,0 +1,161 @@
+{
+  "schema_version": 1,
+  "evidence_type": "local-private-recovery-summary",
+  "status": "local_data_checks_passed",
+  "commercial_acceptance": "blocked_external",
+  "source_baseline_commit": "16acc01af7d54abb3a087b0280f31f7e786fb664",
+  "started_at": "2026-09-25T03:49:12.657341+00:00",
+  "data_checks_completed_at": "2026-09-25T04:44:44.958785+00:00",
+  "source": {
+    "deployed_release": "v0.1.44",
+    "alembic_revisions": [
+      "20260923_0027"
+    ],
+    "postgres_version": "17.6",
+    "pg_dump_version": "pg_dump (PostgreSQL) 17.10 (Ubuntu 17.10-1.pgdg24.04+1)",
+    "application_schema": "public",
+    "mutation_mode": "read_only",
+    "deployment_images": [
+      {
+        "name": "enterprise-doc-api",
+        "images": [
+          "ghcr.io/drew-z/enterprise-doc-api@sha256:95d6dd43752c0c56a59e40278a8af8ed3c0b4d897fa47f069d50afc4c8c86d9d"
+        ]
+      },
+      {
+        "name": "enterprise-doc-consumer",
+        "images": [
+          "ghcr.io/drew-z/enterprise-doc-consumer@sha256:cfe0e5feb3ed852a095abb4ef74f892fffdcf110509e4d1d66b6cab5fa2d2677"
+        ]
+      },
+      {
+        "name": "enterprise-doc-redis",
+        "images": [
+          "redis@sha256:6ab0b6e7381779332f97b8ca76193e45b0756f38d4c0dcda72dbb3c32061ab99"
+        ]
+      },
+      {
+        "name": "enterprise-doc-web",
+        "images": [
+          "ghcr.io/drew-z/enterprise-doc-web@sha256:109e070fa0cbe668ce71ae2a39f2249e502d15b1ff3c4cd386c5c0828ccfbe92"
+        ]
+      },
+      {
+        "name": "enterprise-doc-worker",
+        "images": [
+          "ghcr.io/drew-z/enterprise-doc-worker@sha256:3fe165ee379702c3f0c18189f495693911230205a9b570ba568a8cf239ce48f1"
+        ]
+      }
+    ],
+    "configuration_sha256": "48b8b5e23a651ff7fd83aa84fce0adb99094defbdb9b48024fe86650292a724e",
+    "deployments_and_configuration_unchanged": true,
+    "all_containers_ready_without_restarts": true
+  },
+  "database": {
+    "tables": 49,
+    "rows": 79388,
+    "dump_bytes": 23657879,
+    "dump_sha256": "721c6506872d93cdbeab927f4ba3d02b5ca4d3131797a3a31d0c7b15c671178e",
+    "dump_elapsed_seconds": 89.296,
+    "restore_elapsed_seconds": 2.125,
+    "restore_postgres_version": "17.10 (Debian 17.10-1.pgdg12+1)",
+    "restore_vector_version": "0.8.2",
+    "table_content_verification": {
+      "original_json_hash_matches": 48,
+      "ieee_float_canonical_hash_matches": 1,
+      "canonical_table": "agent_run_evidence",
+      "canonical_column": "rrf_score",
+      "same_source_state_reverified": true,
+      "original_mismatch_retained": true
+    },
+    "archive_selection": {
+      "skipped_entries": [
+        "SCHEMA public"
+      ],
+      "sha256": "852c4edbec086620ceddb6cb816dddf597bca2626ceb3009cd8f694f5a90db7f"
+    }
+  },
+  "objects": {
+    "documents": 642,
+    "durable_agent_artifacts": 942,
+    "total": 1584,
+    "bytes": 1083398,
+    "manifest_sha256": "4b7eb1db807638516148545a8df9a535db3cf08197debf55afb62b58fa711054",
+    "all_local_blobs_reverified": true,
+    "restored_and_readback_verified": 1584,
+    "database_reference_set_matches": true,
+    "document_upload_key_mismatches": 0,
+    "local_restore_and_readback_seconds": 5.875,
+    "capture_failures_retained": true,
+    "source_bucket_writes": 0,
+    "remote_backup_files": 0,
+    "resumption": {
+      "local_transport_deadline_seconds": 900,
+      "completed_at_local_deadline": 1278,
+      "reused_verified_files": 1278,
+      "ssh_remaining_files": 306,
+      "ssh_get_requests": 306,
+      "ssh_retries": 0,
+      "ssh_elapsed_seconds": 54.922
+    }
+  },
+  "resources": {
+    "cpus": 4,
+    "memory_total_kib": 3812556,
+    "memory_available_before_kib": 1657624,
+    "memory_available_after_kib": 1647296,
+    "pod_memory_observed_mib": 548,
+    "pod_cpu_observed_millicores": 25,
+    "business_capacity_measured": false
+  },
+  "public_readiness": {
+    "status": 200,
+    "state": "ready",
+    "database": "up",
+    "redis": "up",
+    "object_store": "up",
+    "request_headers": [
+      "Accept: application/json",
+      "User-Agent: docagent-ops-readiness/1.0"
+    ],
+    "initial_default_client_http_failure_retained": true
+  },
+  "validation": {
+    "new_object_tests_passed": 17,
+    "related_recovery_tests_passed": 47,
+    "full_non_integration_tests_passed": 1814,
+    "integration_tests_deselected": 437,
+    "subtests_passed": 23,
+    "ruff": "passed",
+    "format_files": 588,
+    "mypy_source_files": 250,
+    "first_full_test_run": "One pre-existing test failed with Windows GBK; complete UTF-8 rerun passed without editing that test."
+  },
+  "cleanup": {
+    "status": "passed",
+    "owned_containers_removed": 2,
+    "owned_networks_removed": 1,
+    "synthetic_test_files_removed": 2049,
+    "incomplete_empty_downloads_removed_before_resumption": 4,
+    "verified_private_snapshot_retained": true,
+    "preexisting_services_preserved": true
+  },
+  "limitations": [
+    "Application public schema only; Supabase managed schemas, grants and owners excluded.",
+    "Incomplete uploads and non-durable artifacts excluded.",
+    "No application startup, model calls or notification sends.",
+    "No failover, production RPO/RTO, permanent backup schedule or capacity acceptance.",
+    "This is current deployed data, not candidate migration 0031 or a restored-application business journey.",
+    "No capacity promise, production RPO/RTO or permanent backup schedule is inferred from these local checks.",
+    "Initial toolchain, image-tag and Docker network failures are retained in private evidence."
+  ],
+  "private_evidence": {
+    "publication": "sanitized summary only; database, blobs, reference keys and runtime credentials are never committed",
+    "centralized_recovery_group": "20260924T015840.986Z-commercial-production-readiness",
+    "artifact_index_sha256": "4fa0f3e6f0415919b3ee91d8908216f242bcb193112aa3b2749174af4aa635b0"
+  },
+  "code_sha256": {
+    "scripts/local_object_recovery.py": "aab5d365e753cae7cf0371ffe6a8b8dad6d4f50f66c2d0c5d64aa94147a388e8",
+    "tests/deployment/test_local_object_recovery.py": "26a9ae7e9dc7218401de756c8d5f13ac4d2da21df3d830fbc99a6930287bacdf"
+  }
+}
