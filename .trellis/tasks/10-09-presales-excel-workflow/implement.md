@@ -744,3 +744,18 @@ Research only. No new questionnaire-generation/embedding calls, product changes,
 framework installation, procurement or deployment. Web research and the search-tool
 connection probe did use external services. Runtime tests were not rerun for these
 documentation changes. Do not implement another prompt-only patch as the next default.
+
+## Open-source reuse qualification
+
+- [x] Register Git recovery at21d9919 in the existing recovery group.
+- [x] Fetch pinned Haystack3.3.0, Sentence Transformers5.2.0 and Ragas0.4.3 licenses/source.
+- [x] Execute actual Haystack window retrieval in an isolated environment, without models.
+- [x] Preserve both known cases, radius/budget outcomes and eight synthetic boundary checks.
+- [x] Record dependency/resource observations, citation adaptation and remaining semantic gates.
+- [x] Main-agent review, Ruff checks and scoped verification; exact test/cleanup/commit receipts
+  reside in the central oss_component_reuse_20261011 phase.
+
+No runtime integration or semantic-quality claim. Existing project dependencies, original
+fixtures, failures, second-supplier expansion materials and unrelated work stay intact.
+No new shared runtime specification is introduced; the standalone experiment contract
+is documented in docs/ops/oss-component-reuse-20261011.md.

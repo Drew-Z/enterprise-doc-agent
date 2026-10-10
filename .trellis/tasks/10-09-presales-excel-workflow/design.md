@@ -754,3 +754,17 @@ expansion. Compare generation paths with identical correct evidence before chang
 models. Keep auxiliary semantic evaluation offline initially; no silent extra per-row
 LLM call. Preserve unknown states and explicit evidence for obligations. Full research,
 limitations and finite next gates: docs/ops/questionnaire-methods-root-cause-20261011.md.
+
+## Open-source component qualification
+
+Run the pinned Haystack3.3.0 window component in an isolated Python3.12 process using
+known public source bytes and historical cited offsets as controlled seeds. Compare
+window radii independently of ranking; record actual text growth and prefix-cap loss.
+Bind all source identity fields, validate literal contiguous ranges, and reject missing
+or foreign provenance. Merged windows are diagnostic text, never new production citations.
+
+Keep reranking and Ragas evaluation separate: Python support and root license checks
+do not qualify weight memory or semantic performance. Ragas semantic metrics can make
+multiple model requests and require a separately frozen budget. Do not copy framework
+implementations or import them into runtime until the bounded adapter passes real DB,
+source authorization, citation identity and budget checks. See the offline report.

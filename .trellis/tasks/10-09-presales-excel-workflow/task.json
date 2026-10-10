@@ -21,7 +21,7 @@
   "children": [],
   "parent": "09-24-commercial-production-readiness",
   "relatedFiles": [],
-  "notes": "V25 remains unpromoted; first-result metrics are preserved. Following the user's market-first challenge, official product/OSS research and current-code diagnosis support reusing approved-content workflows, retrieval components and evaluation tools. The next design should separate descriptive Q&A from condition assessment and test retrieval/semantic causes independently. Vendor success on our cases, component compatibility and real retrieval improvement remain unverified. No runtime, model, retry, quota or deployment change occurred.",
+  "notes": "V25 remains unpromoted; first-result metrics are preserved. Following the user's market-first challenge, official product/OSS research and current-code diagnosis support reusing approved-content workflows, retrieval components and evaluation tools. The next design should separate descriptive Q&A from condition assessment and test retrieval/semantic causes independently. Haystack3.3.0 now passes an isolated offline context experiment; direct integration fails evidence-budget requirements. Runtime compatibility, real retrieval improvement and semantic repair remain unverified. No runtime, model, retry, quota or deployment change occurred.",
   "meta": {
     "implementation_status": "deployed_and_file_workflow_verified",
     "deployed": true,
@@ -193,6 +193,22 @@
       "second_supplier": "GitHub Enterprise Cloud",
       "trial_pack_questions": 6,
       "trial_pack_official_documents": 3
+    },
+    "oss_component_reuse": {
+      "status": "offline_component_qualified_integration_pending",
+      "report": "docs/ops/oss-component-reuse-20261011.md",
+      "recovery_phase": "oss_component_reuse_20261011",
+      "baseline_commit": "21d99196541e224b0b3a66719fc8240b4aa7d9cf",
+      "executed_component": "haystack-ai==3.3.0 SentenceWindowRetriever",
+      "known_cases": 2,
+      "boundary_checks_passed": 8,
+      "scope": "actual component with in-memory store and controlled historical seeds",
+      "runtime_dependencies_changed": false,
+      "new_questionnaire_generation_calls": 0,
+      "new_embedding_calls": 0,
+      "ragas_judge_calls": 0,
+      "semantic_quality_verified": false,
+      "deployed": false
     },
     "methods_root_cause_review": {
       "status": "researched_not_implemented",

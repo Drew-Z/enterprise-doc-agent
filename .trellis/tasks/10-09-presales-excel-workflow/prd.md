@@ -586,3 +586,12 @@ new questionnaire inference, model change or deployment belongs to this research
 The next plan must separate retrieval reachability, semantic interpretation, contract
 validity and editorial issues. Prioritize reusable components and a bounded comparison
 over more prompt patches. Retain existing permissions, accounting, review and export.
+
+## Authorized open-source reuse qualification
+
+The user approved continuing with open-source implementations. Verify fixed component
+versions, licenses and dependency/resource boundaries, then execute a small isolated
+offline experiment on known public failures. Preserve project dependencies and all
+historical outcomes. Distinguish source reachability from answer semantics and actual
+production retrieval. No model-call budget, production deployment or broader rewrite
+is implied. Deliver concrete adoption decisions and remaining integration criteria.
