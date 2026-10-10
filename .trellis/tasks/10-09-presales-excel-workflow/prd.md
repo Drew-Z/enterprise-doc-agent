@@ -545,3 +545,18 @@ their stated boundaries. A six-question, three-document GitHub trial pack is rea
 participants remain unavailable. Detailed diagnostics are locally tested, undeployed
 code. Preserve open retrieval/decomposition, full capacity and independent acceptance
 work; see `docs/ops/invited-trial-progress-20261011.md`.
+
+## Authorized question context and retrieval continuation
+
+The user approved the identified recall and excessive-decomposition repairs, and
+asked whether one primary failure immediately invokes fallback. Audit the actual
+policy and retained failure receipts; do not infer a channel outage from an output
+rejection or add dispatches without a separate bounded policy decision.
+
+Preserve each question's background, options and actual asks together. They must
+not acquire separate mandatory answers or invented evidence requests solely from
+punctuation. All substantive asks still require an answer. Improve selection of
+already recalled scope/number evidence within the existing two-chunk source budget.
+Keep old inputs/results/version behavior, literal source guards and human review.
+Deliver an opt-in candidate with local known-regression evidence, not a claim of
+unseen/model semantic acceptance or automatic staging promotion.

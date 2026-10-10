@@ -683,3 +683,23 @@ browser cases pass. Second-supplier6-question/3-document pack ready; no particip
 Detailed diagnostic code is a checked local candidate, not deployed. Current rc51 runtime,
 original samples and2993 unrelated workspace entries remain. See the invited-trial report
 for substantive retrieval/decomposition gaps, unknown usage and deferred operational gates.
+
+## Question context and retrieval continuation
+
+- [x] Audit gateway retries, row failover, circuit health and retained dc_certifications failure.
+- [x] Register Git recovery at329a607 in the existing group before modification.
+- [x] Red/green complementary evidence selection with fixed two-chunk/1800-character bounds.
+- [x] Red/green v25 full-row HTTP input, exact IDs, legacy identity and frozen-policy rejection.
+- [x] Real PostgreSQL recall/authorization and sync/background delivery with controlled providers.
+- [x] Required checks, main-agent diff review, spec/report and scoped commit preparation;
+  final commit and cleanup inventory are recorded in the central closeout receipt.
+
+Recovery phase question_context_retrieval_20261011. No real provider calls or release
+in this implementation slice; model-semantic qualification is a separate next step.
+
+Completed local gate:3406 nonintegration cases/23 subtests and68 PostgreSQL cases pass,
+including eight old/new-version public-source regressions. Ruff762-file format/check
+and mypy280 pass. The96 prior trial artifacts and2993 unrelated status entries retain
+their hashes. Default v24, model routes, dispatch policy and live history are unchanged.
+V25 remains explicit opt-in; whole-row offering and literal evidence reachability do
+not yet establish live-model semantic acceptance. No browser/UI/storage schema change.

@@ -1152,3 +1152,55 @@ synchronous and restored background execution, retaining exactly-once accounting
 Wrong: set json_schema for every compatible provider and declare quality fixed.
 Correct: explicit route opt-in, endpoint observation, unchanged local evidence
 validation, frozen protocol identity and separate semantic acceptance.
+
+## Scenario: Opt-in question context and complementary recall (v25)
+
+### 1. Scope / Trigger
+Public VSAQ regressions exposed background/options becoming mandatory answer parts,
+and a second repetitive hit displacing explicit ISMS scope/password thresholds.
+This candidate is opt-in; v24 remains the default and deployed behavior is unchanged.
+
+### 2. Signatures
+`PRESALES__QUESTION_PROMPT_VERSION=presales.v25` with the corresponding route's
+question-assessment switch enables full-row offering. `offer_requirement_parts`,
+`offer_question_assessment`, `resolve_question_assessment` and the system-message
+builder accept `whole_requirement=False` for historical compatibility. The collector
+accepts `--question-prompt-version`; v11 report readers bind IDs to that exact version.
+
+### 3. Contracts
+V25 offers one version-bound ID whose text is the complete original requirement.
+The unchanged schema permits one response; rules and actual subquestions remain
+independent semantic obligations. Background/examples/options are context, not facts.
+Only eligible v25 routes opt into complementary evidence selection. Per authorized
+version, keep hybrid rank1, then choose one of the remaining accepted top10 by novel
+IDF-weighted query-term coverage. Equal scores preserve original order. Only the first
+1800 characters count; keep the existing two candidates, six sources, exact substrings,
+128KiB request bound, query/embedding count and provider dispatch budget.
+
+### 4. Validation & Error Matrix
+Foreign/reordered/duplicate/missing question IDs still reject. V24/v25 restoration
+drift fails before dispatch; even a one-part old ID differs. Every candidate examined
+must match tenant/version/active generation or return presales_invalid_evidence.
+Rejected retrieval remains empty. Citation, language, business-state and size guards
+remain unchanged. Contextual source selection never converts a failure into a draft.
+
+### 5. Good/Base/Bad Cases
+Good: preserve the strongest hit while adding a recalled minimum-length or scope
+clause. Base: v21/v24 retain original parts and top2; no novel coverage keeps rank2.
+Bad: treat lexical coverage as entailment, add a third request, silently enlarge the
+source window, or call known development questions held-out evaluation.
+
+### 6. Tests Required
+HTTP tests inspect full-row text, streaming/nonstreaming projection, legacy prompt
+hashes, one-dispatch rejection and both directions of policy drift. Real PostgreSQL
+tests use frozen attributed public source bytes and controlled external vectors to
+exercise keyword/RRF/selection/gateway/persistence in sync and background modes,
+including original v24 omission, v25 literal reachability and one quota settlement.
+Scorers reject changed version/part/source bindings and retain failed outcomes.
+
+### 7. Wrong vs Correct
+Wrong: answer a PCI example independently or interpret successful decoding as correct
+semantics. Correct: keep the entire question together and qualify actual model behavior
+separately. Preserve unknown usage and original failures. Full-row answer text still
+has the existing2000-character per-response limit; missing top10 evidence, paraphrases
+and semantic omissions are not solved by lexical diversity.

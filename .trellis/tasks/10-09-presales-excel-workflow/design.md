@@ -688,3 +688,25 @@ Preserve business fixtures, revoke transient credentials and clean only owned te
 resources. The user-facing trial package includes source attribution, scope/gaps,
 step-by-step use, elapsed-work recording and a blank feedback form; no invitations or
 real participant accounts are created while participants are unavailable.
+
+## Opt-in v25 context and coverage selection
+
+Keep v21/v24 and historical scorers reproducible. Explicit presales.v25 offers one
+immutable part containing the full original worksheet row, with version-separated
+IDs, and uses the existing strict schema and resolver. Its instruction distinguishes
+background/examples/options from independent requests, preserves actual subquestions,
+and forbids inventing extra proof duties or narrowing central management to one tool.
+This removes forced fragment answers; it does not prove model interpretation.
+
+Only a frozen route with v25 enables complementary retrieval selection. Retain the
+first hybrid-ranked candidate, then choose the second from the same accepted top10
+by IDF-weighted query terms absent from the first. Ties preserve hybrid order; no
+novel lexical coverage preserves the old second candidate. Score only the existing
+1800-character visible window, retain exact source substrings, and authorize every
+candidate examined. No new embedding, keyword query, source, chunk budget or provider
+dispatch is introduced. Lexical coverage is not factual entailment; paraphrases and
+missing top10 evidence remain limits. Old policies retain original selection.
+
+Default remains v24 until a separately frozen model observation and compatible
+release. Reject v24/v25 policy drift; keep legacy decoding and report interpretation.
+Known GitLab scope/password failures become labeled regressions, never held-out data.

@@ -24,6 +24,7 @@ from enterprise_doc_core.presales.output_contract import (
 )
 from enterprise_doc_core.presales.proposition_selection import resolve_proposition_selection
 from enterprise_doc_core.presales.question_assessment import (
+    CONTEXT_PROMPT_VERSION,
     QuestionAssessmentInput,
     offer_requirement_parts,
     question_assessment_response_format,
@@ -50,11 +51,14 @@ def bind_projected_input(
     *,
     spans: bool = False,
     questions: bool = False,
+    whole_requirement: bool = False,
 ) -> dict[str, CitationInput]:
     """Verify the recorded wire projection, without decoding any failed response."""
     if questions:
         question_input = QuestionAssessmentInput.model_validate(wire)
-        if question_input.requirement_parts != offer_requirement_parts(source_input.requirement):
+        if question_input.requirement_parts != offer_requirement_parts(
+            source_input.requirement, whole_requirement=whole_requirement
+        ):
             raise ValueError("wire_question_projection_mismatch")
         wire = question_input.model_dump(by_alias=True, exclude={"requirement_parts"})
         spans = True
@@ -176,6 +180,8 @@ def score(dataset_path: Path, gold_path: Path, report: dict[str, Any]) -> dict[s
                     payload,
                     spans=report["schemaVersion"] == "presales-gateway-run-v10",
                     questions=report["schemaVersion"] == "presales-gateway-run-v11",
+                    whole_requirement=observation.get("provenance", {}).get("promptVersion")
+                    == CONTEXT_PROMPT_VERSION,
                 )
             if payload.requirement != requirements[key]:
                 raise ValueError("requirement_mismatch")
@@ -234,7 +240,9 @@ def score(dataset_path: Path, gold_path: Path, report: dict[str, Any]) -> dict[s
                             expanded_missing_information=observation.get("provenance", {}).get(
                                 "promptVersion"
                             )
-                            in {"presales.v23", "presales.v24"},
+                            in {"presales.v23", "presales.v24", CONTEXT_PROMPT_VERSION},
+                            whole_requirement=observation.get("provenance", {}).get("promptVersion")
+                            == CONTEXT_PROMPT_VERSION,
                         )
                         if report["schemaVersion"] == "presales-gateway-run-v11"
                         else resolver(original, catalog)

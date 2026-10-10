@@ -21,7 +21,7 @@
   "children": [],
   "parent": "09-24-commercial-production-readiness",
   "relatedFiles": [],
-  "notes": "Current staging remains rc51/0037/v24 with wuye gpt-5.6-sol primary and Grok fallback. The original eight-row public trial remains immutable. The authorized four-step continuation completed four development observations and twelve held-out product attempts (eleven drafts, one failed then attributed manual completion), twelve reviews and verified XLSX/CSV. Local detailed diagnostics passed required checks and remain undeployed. Second-supplier six-question/three-document trial pack is ready; zero participants. Retrieval coverage, unnecessary decomposition, complete capacity and independent user/commercial acceptance remain open. Historical phase metrics remain historical.",
+  "notes": "The last verified staging release is rc51/0037/v24; this continuation makes no live changes. Original public trial outcomes and prepared second-supplier materials remain immutable. The opt-in local v25 candidate repairs forced background/option fragmentation and adds complementary scope/number evidence within the original retrieval budget. Current one-failure background failover was audited and left unchanged. Local checks do not establish real-model semantic quality, independent user value, capacity or commercial acceptance.",
   "meta": {
     "implementation_status": "deployed_and_file_workflow_verified",
     "deployed": true,
@@ -54,7 +54,7 @@
     "manual_live_embedding_calls": 0,
     "manual_history_exists": true,
     "legacy_rc47_rc46_recovery_allowed": false,
-    "next_product_gap": "Source retrieval omits explicit ISMS scope/password thresholds; background/choices over-decompose; central management gains single-platform constraint. Preserve current heldout labels when planning the next candidate.",
+    "next_product_gap": "Qualify the explicit v25 candidate in a separately frozen finite real-model regression before release. Define error-specific retry/failover policy and its dispatch/latency budget before changing the current primary-once/fallback-once behavior.",
     "review_citations_status": "deployed_and_live_citation_delivery_verified",
     "review_citations_deployed": true,
     "review_citations_schema": "20261010_0037",
@@ -193,6 +193,30 @@
       "second_supplier": "GitHub Enterprise Cloud",
       "trial_pack_questions": 6,
       "trial_pack_official_documents": 3
+    },
+    "question_context_continuation": {
+      "status": "local_candidate_validated_undeployed",
+      "report": "docs/ops/question-context-retrieval-20261011.md",
+      "prompt_version": "presales.v25",
+      "default_prompt_unchanged": "presales.v24",
+      "live_model_calls": 0,
+      "live_embedding_calls": 0,
+      "deployed": false,
+      "retry_policy_changed": false,
+      "original_trial_artifacts_verified": 96,
+      "known_regressions": [
+        "secprog_allinscope",
+        "application_custom_auth_pwdreq"
+      ],
+      "validation": {
+        "nonintegration": 3406,
+        "subtests": 23,
+        "integration": 68,
+        "format_files": 762,
+        "mypy_files": 280,
+        "ruff": "passed",
+        "mypy": "passed"
+      }
     }
   }
 }

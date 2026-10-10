@@ -16,8 +16,9 @@ from enterprise_doc_core.config import ModelProvider, ModelSettings
 
 @pytest.mark.parametrize("invalid", [False, True])
 @pytest.mark.parametrize("many_gaps", [False, True])
+@pytest.mark.parametrize("version", ["presales.v24", "presales.v25"])
 async def test_question_collector_and_scorers_bind_complete_input_and_original_result(
-    tmp_path, inputs, invalid, many_gaps
+    tmp_path, inputs, invalid, many_gaps, version
 ):
     if many_gaps:
         dataset = json.loads(inputs[0].read_bytes())
@@ -70,14 +71,15 @@ async def test_question_collector_and_scorers_bind_complete_input_and_original_r
         ),
         model_route="primary",
         question_assessment=True,
+        question_prompt_version=version,
         transport=httpx.MockTransport(respond),
     )
     assert report["schemaVersion"] == "presales-gateway-run-v11"
     row = report["observations"][0]
-    assert row["provenance"]["promptVersion"] == "presales.v24"
+    assert row["provenance"]["promptVersion"] == version
     assert row["providerRequests"] == 1
     assert score(*inputs, report)["acceptedDrafts"] == (0 if invalid else 1)
-    if many_gaps and not invalid:
+    if many_gaps and not invalid and version == "presales.v24":
         legacy = copy.deepcopy(report)
         legacy["observations"][0]["provenance"]["promptVersion"] = "presales.v21"
         with pytest.raises(ValueError, match="at most 12 items"):
@@ -119,3 +121,8 @@ async def test_question_collector_and_scorers_bind_complete_input_and_original_r
     old["schemaVersion"] = "presales-gateway-run-v10"
     with pytest.raises(ValueError, match="strict_output_contract_mismatch"):
         score(*inputs, old)
+    if version == "presales.v25":
+        changed_version = copy.deepcopy(report)
+        changed_version["observations"][0]["provenance"]["promptVersion"] = "presales.v24"
+        with pytest.raises(ValueError, match="wire_question_projection_mismatch"):
+            score(*inputs, changed_version)

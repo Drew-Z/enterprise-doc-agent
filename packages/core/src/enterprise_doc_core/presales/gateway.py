@@ -22,6 +22,7 @@ from enterprise_doc_core.presales.citation_selection import (
 )
 from enterprise_doc_core.presales.errors import OutputContractError, OutputDiagnostic, PresalesError
 from enterprise_doc_core.presales.question_assessment import (
+    CONTEXT_PROMPT_VERSION,
     QuestionAssessmentDraft,
     offer_question_assessment,
     question_assessment_response_format,
@@ -165,7 +166,11 @@ class OpenAICompatiblePresalesGateway:
             if presales_settings is not None
             else question_prompt_version
         )
-        if self.question_prompt_version not in {"presales.v21", QUESTION_PROMPT_VERSION}:
+        if self.question_prompt_version not in {
+            "presales.v21",
+            QUESTION_PROMPT_VERSION,
+            CONTEXT_PROMPT_VERSION,
+        }:
             raise ValueError("Unsupported question prompt version")
         self.question_assessment = (
             (
@@ -244,7 +249,8 @@ class OpenAICompatiblePresalesGateway:
     def system_message(self) -> str:
         if self.question_assessment:
             return question_assessment_system_message(
-                numeric_boundaries=self.question_prompt_version == QUESTION_PROMPT_VERSION
+                numeric_boundaries=self.question_prompt_version != "presales.v21",
+                whole_requirement=self.question_prompt_version == CONTEXT_PROMPT_VERSION,
             )
         draft_type = SpanBasisDraft if self.strict_output else BasisDraft
         prompt = STRICT_SYSTEM_PROMPT if self.strict_output else SYSTEM_PROMPT
@@ -273,7 +279,10 @@ class OpenAICompatiblePresalesGateway:
             raise PresalesError("presales_input_too_large")
         selected_payload, catalog = prepare_citations(payload)
         if self.question_assessment:
-            selected_payload = offer_question_assessment(offer_spans(selected_payload))
+            selected_payload = offer_question_assessment(
+                offer_spans(selected_payload),
+                whole_requirement=self.question_prompt_version == CONTEXT_PROMPT_VERSION,
+            )
         elif self.strict_output:
             selected_payload = offer_spans(selected_payload)
         request: dict[str, Any] = {
@@ -380,8 +389,8 @@ class OpenAICompatiblePresalesGateway:
                 catalog,
                 strict_output=self.strict_output,
                 question_assessment=self.question_assessment,
-                expanded_missing_information=self.question_prompt_version
-                == QUESTION_PROMPT_VERSION,
+                expanded_missing_information=self.question_prompt_version != "presales.v21",
+                whole_requirement=self.question_prompt_version == CONTEXT_PROMPT_VERSION,
                 requirement=payload.requirement,
             ).model_copy(update={"provider_request_id": request_id})
         except asyncio.CancelledError as error:
@@ -420,6 +429,7 @@ class OpenAICompatiblePresalesGateway:
         question_assessment: bool = False,
         requirement: RequirementInput | None = None,
         expanded_missing_information: bool = True,
+        whole_requirement: bool = False,
     ) -> GeneratedDraft:
         usage: dict[str, int | None] | None = None
         response_id: str | None = None
@@ -471,6 +481,7 @@ class OpenAICompatiblePresalesGateway:
                     requirement,
                     catalog,
                     expanded_missing_information=expanded_missing_information,
+                    whole_requirement=whole_requirement,
                 )
             else:
                 resolver = resolve_span_basis if strict_output else resolve_basis

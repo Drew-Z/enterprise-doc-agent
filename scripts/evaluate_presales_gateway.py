@@ -199,6 +199,9 @@ async def collect(
     transport: httpx.AsyncBaseTransport | None = None,
     strict_output: bool = False,
     question_assessment: bool = False,
+    question_prompt_version: Literal[
+        "presales.v21", "presales.v24", "presales.v25"
+    ] = "presales.v24",
 ) -> dict[str, Any]:
     presales_settings = PresalesSettings(
         model_route=model_route,
@@ -208,6 +211,7 @@ async def collect(
         fallback_strict_output=strict_output if model_route == "fallback" else False,
         primary_question_assessment=question_assessment if model_route == "primary" else False,
         fallback_question_assessment=question_assessment if model_route == "fallback" else False,
+        question_prompt_version=question_prompt_version,
     )
     dataset, digest = load_dataset(dataset_path)
     snapshots, evidence = synthetic_sources(dataset, digest)
@@ -314,6 +318,11 @@ def main() -> None:
     parser.add_argument("--reasoning-effort", choices=("low", "medium", "high", "xhigh"))
     parser.add_argument("--strict-output", action="store_true")
     parser.add_argument("--question-assessment", action="store_true")
+    parser.add_argument(
+        "--question-prompt-version",
+        choices=("presales.v21", "presales.v24", "presales.v25"),
+        default="presales.v24",
+    )
     args = parser.parse_args()
     settings = load_route_settings(args.provider_env, args.model_route)
     if args.reasoning_effort is not None:
@@ -330,6 +339,7 @@ def main() -> None:
             model_timeout_seconds=args.model_timeout_seconds,
             strict_output=args.strict_output,
             question_assessment=args.question_assessment,
+            question_prompt_version=args.question_prompt_version,
         ),
         loop_factory=selector_event_loop_factory,
     )

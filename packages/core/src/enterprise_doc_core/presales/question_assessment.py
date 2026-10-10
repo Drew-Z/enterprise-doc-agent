@@ -33,6 +33,7 @@ from enterprise_doc_core.presales.schemas import (
 from enterprise_doc_core.presales.span_selection import SpanSelectionInput
 
 PROTOCOL_VERSION = "presales.question-assessment-candidate.v1"
+CONTEXT_PROMPT_VERSION = "presales.v25"
 SYSTEM_PROMPT = ASSESSMENT_SYSTEM_PROMPT.replace(
     "responses按要求原文顺序覆盖全部内容\uff0c每项requirementText是连续逐字片段\uff0c不遗漏、不重复、不改写问题。",
     "responses按requirementParts的顺序\uff0c每项requirementPartId只选择对应原文片段编号\uff0c"
@@ -92,6 +93,24 @@ NUMERIC_BOUNDARY_SYSTEM_PROMPT = (
 """
 )
 
+CONTEXT_SYSTEM_PROMPT = (
+    NUMERIC_BOUNDARY_SYSTEM_PROMPT.replace(
+        "requirementParts只是原文的标点分段\uff0c不是独立的语义问题\uff1b"
+        "须结合完整requirement理解限定与上下文\uff0c回答每个片段的全部要点。",
+        "requirementParts只有一个编号\uff0c对应完整的原始问卷行\uff1b"
+        "在一个response中结合上下文回答该行的全部实质询问。",
+    )
+    + """
+7. 问卷语境\uff1a背景、举例和备选答案用于理解实际询问\uff0c不自动构成独立问题、供应商事实或
+补料义务。不要逐句评论背景\uff0c也不要分别回答互斥选项。按已有证据回应实际问题及其所有
+子问题\uff0c明确可以选择的答案、适用范围和真正未决的事实。例子中的认证不等于要求该认证。
+公开政策说明可以回答政策内容\uff0c只有实际询问涉及执行时才核对执行证明。不能把每个政策
+事实都列为业务前提\uff1brules仅包含原文规定且与当前事项相关的必要条件。集中管理不意味着
+单一平台\uff1b不得自行增加产品数量、架构或实施证明等限制。已经提供的范围和数值直接引用\uff0c
+不重复要求补充。保留未获证明的真实缺口\uff0c无需为了减少篇幅而隐藏实质问题。
+"""
+)
+
 
 class OfferedRequirementPart(PresalesModel):
     model_config = ConfigDict(frozen=True, str_strip_whitespace=False)
@@ -100,8 +119,19 @@ class OfferedRequirementPart(PresalesModel):
     text: str = Field(min_length=1, max_length=2000)
 
 
-def offer_requirement_parts(requirement: RequirementInput) -> tuple[OfferedRequirementPart, ...]:
+def offer_requirement_parts(
+    requirement: RequirementInput, *, whole_requirement: bool = False
+) -> tuple[OfferedRequirementPart, ...]:
     """Partition literal text, not business meaning; keep a bounded, lossless tail."""
+    if whole_requirement:
+        prefix = hashlib.sha256(
+            (CONTEXT_PROMPT_VERSION + requirement.model_dump_json()).encode()
+        ).hexdigest()[:24]
+        return (
+            OfferedRequirementPart(
+                requirement_part_id=f"question_{prefix}_1", text=requirement.text
+            ),
+        )
     parts: list[str] = []
     start = 0
     for boundary in re.finditer(
@@ -128,9 +158,14 @@ class QuestionAssessmentInput(SpanSelectionInput):
     requirement_parts: tuple[OfferedRequirementPart, ...] = Field(min_length=1, max_length=12)
 
 
-def offer_question_assessment(selected: SpanSelectionInput) -> QuestionAssessmentInput:
+def offer_question_assessment(
+    selected: SpanSelectionInput, *, whole_requirement: bool = False
+) -> QuestionAssessmentInput:
     return QuestionAssessmentInput(
-        **selected.model_dump(), requirement_parts=offer_requirement_parts(selected.requirement)
+        **selected.model_dump(),
+        requirement_parts=offer_requirement_parts(
+            selected.requirement, whole_requirement=whole_requirement
+        ),
     )
 
 
@@ -163,7 +198,11 @@ def question_assessment_response_format() -> dict[str, Any]:
 
 
 def question_assessment_system_message(
-    *, revised: bool = False, clause_coverage: bool = False, numeric_boundaries: bool = False
+    *,
+    revised: bool = False,
+    clause_coverage: bool = False,
+    numeric_boundaries: bool = False,
+    whole_requirement: bool = False,
 ) -> str:
     prompt = (
         CLAUSE_COVERAGE_SYSTEM_PROMPT
@@ -172,6 +211,8 @@ def question_assessment_system_message(
     )
     if numeric_boundaries:
         prompt = NUMERIC_BOUNDARY_SYSTEM_PROMPT
+    if whole_requirement:
+        prompt = CONTEXT_SYSTEM_PROMPT
     return (
         prompt + "\n" + json.dumps(QuestionAssessmentDraft.model_json_schema(), ensure_ascii=False)
     )
@@ -184,10 +225,11 @@ def resolve_question_assessment(
     *,
     compact_missing_information: bool = False,
     expanded_missing_information: bool = False,
+    whole_requirement: bool = False,
 ) -> ModelDraft:
     """Materialize only offered text; leave all meaning and legacy guards unchanged."""
     selected = QuestionAssessmentDraft.model_validate_json(content)
-    offered = offer_requirement_parts(requirement)
+    offered = offer_requirement_parts(requirement, whole_requirement=whole_requirement)
     if [part.requirement_part_id for part in selected.responses] != [
         part.requirement_part_id for part in offered
     ]:

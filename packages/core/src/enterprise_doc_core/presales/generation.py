@@ -32,6 +32,8 @@ from enterprise_doc_core.presales.gateway import PresalesGateway
 from enterprise_doc_core.presales.models import PresalesAttempt
 from enterprise_doc_core.presales.policy import ExecutionMode, ExecutionPolicy
 from enterprise_doc_core.presales.policy_gateway import freeze_policy, restore_gateway
+from enterprise_doc_core.presales.question_assessment import CONTEXT_PROMPT_VERSION
+from enterprise_doc_core.presales.retrieval_selection import select_complementary_evidence
 from enterprise_doc_core.presales.schemas import (
     Evidence,
     GenerationInput,
@@ -149,6 +151,8 @@ class GenerationService:
                     sources,
                     provider_guard=guard,
                     provider_operation_id=attempt_id,
+                    complementary_evidence=gateway.provenance.get("promptVersion")
+                    == CONTEXT_PROMPT_VERSION,
                 )
                 # ACL may have changed during retrieval. Recheck before sending any evidence.
                 async with self.session_factory() as session:
@@ -453,6 +457,7 @@ class GenerationService:
         *,
         provider_guard: Guard | None = None,
         provider_operation_id: UUID | None = None,
+        complementary_evidence: bool = False,
     ) -> tuple[tuple[RetrievalCandidate, ...], list[RetrievalNote]]:
         candidates: list[RetrievalCandidate] = []
         notes = []
@@ -478,14 +483,19 @@ class GenerationService:
                     query=requirement.text,
                 )
             available = result.candidates if result.accepted else ()
-            used = available[:2]
+            pool = available[:10] if complementary_evidence else available[:2]
             if any(
                 c.tenant_id != tenant_id
                 or c.document_version_id != source.version_id
                 or c.generation_id != source.generation_id
-                for c in used
+                for c in pool
             ):
                 raise PresalesError("presales_invalid_evidence")
+            used = (
+                select_complementary_evidence(pool, requirement.text)
+                if complementary_evidence
+                else pool
+            )
             notes.append(
                 RetrievalNote(
                     version_id=source.version_id,
