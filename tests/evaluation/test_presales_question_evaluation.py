@@ -16,7 +16,7 @@ from enterprise_doc_core.config import ModelProvider, ModelSettings
 
 @pytest.mark.parametrize("invalid", [False, True])
 @pytest.mark.parametrize("many_gaps", [False, True])
-@pytest.mark.parametrize("version", ["presales.v24", "presales.v25"])
+@pytest.mark.parametrize("version", ["presales.v24", "presales.v25", "presales.v26"])
 async def test_question_collector_and_scorers_bind_complete_input_and_original_result(
     tmp_path, inputs, invalid, many_gaps, version
 ):
@@ -121,7 +121,7 @@ async def test_question_collector_and_scorers_bind_complete_input_and_original_r
     old["schemaVersion"] = "presales-gateway-run-v10"
     with pytest.raises(ValueError, match="strict_output_contract_mismatch"):
         score(*inputs, old)
-    if version == "presales.v25":
+    if version in {"presales.v25", "presales.v26"}:
         changed_version = copy.deepcopy(report)
         changed_version["observations"][0]["provenance"]["promptVersion"] = "presales.v24"
         with pytest.raises(ValueError, match="wire_question_projection_mismatch"):

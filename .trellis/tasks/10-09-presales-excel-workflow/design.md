@@ -768,3 +768,24 @@ do not qualify weight memory or semantic performance. Ragas semantic metrics can
 multiple model requests and require a separately frozen budget. Do not copy framework
 implementations or import them into runtime until the bounded adapter passes real DB,
 source authorization, citation identity and budget checks. See the offline report.
+
+## Authorized bounded Haystack adapter
+
+Opt-in v26 keeps v25's generation prompt/schema and whole-row IDs; its distinct route
+identity freezes the changed evidence policy. Defaults and v21/v24/v25 remain unchanged.
+Pin Haystack3.3.0 and use its window component with a per-call authorized bounded store,
+not a second persistent index. Disable Haystack telemetry. Query actual PostgreSQL chunks
+with tenant, actor visibility, version and active-generation bindings; validate seeds
+against stored text before using them. Recheck source snapshots before model dispatch.
+
+Preserve the exact two existing visible seeds (<=1800 each). Within3600 characters per
+source and12 chunks globally, add complete visible neighboring chunks (radius1, then
+radius2/3, stable seed/order priority) only if they fit. Never merge texts under a seed
+ID or displace a seed. Reserve all source seeds before extras so expansion cannot starve
+later sources. Record used/retrieved/truncated counts. No extra embedding or model calls.
+
+Tests use actual Haystack, literal sources and PostgreSQL. Controlled provider responses
+verify sync/background citation persistence, old-version behavior and frozen-policy
+rejection. Foreign/stale sources, revocation, forged seed text, budget exhaustion and
+multi-source limits must fail or remain bounded before provider dispatch. This is a
+component/contract change, not proof of semantic answer improvement or a deployment.

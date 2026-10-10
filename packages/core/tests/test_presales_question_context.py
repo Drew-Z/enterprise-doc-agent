@@ -84,7 +84,10 @@ def test_candidate_pool_stays_bounded_to_existing_top_ten():
 
 
 @pytest.mark.parametrize("streaming", [False, True])
-async def test_v25_keeps_context_examples_options_and_subquestions_in_one_literal_unit(streaming):
+@pytest.mark.parametrize("version", ["presales.v25", "presales.v26"])
+async def test_v25_keeps_context_examples_options_and_subquestions_in_one_literal_unit(
+    streaming, version
+):
     text = (
         "Standards may have limited scope. For example, PCI DSS covers payment processing. "
         "Does your program cover all operations? Explain exclusions.\nYes / No"
@@ -109,9 +112,7 @@ async def test_v25_keeps_context_examples_options_and_subquestions_in_one_litera
             )
         return httpx.Response(200, json=result)
 
-    config = PresalesSettings(
-        primary_question_assessment=True, question_prompt_version="presales.v25"
-    )
+    config = PresalesSettings(primary_question_assessment=True, question_prompt_version=version)
     gateway = OpenAICompatiblePresalesGateway(
         settings().model_copy(update={"streaming": streaming}),
         presales_settings=config,
@@ -122,7 +123,15 @@ async def test_v25_keeps_context_examples_options_and_subquestions_in_one_litera
     draft = (await restored.generate(original)).draft
     assert len(calls) == 1 and draft.answer.count("问题\uff1a") == 1
     assert text in draft.answer and len(draft.prerequisites) == 1
-    assert restored.provenance["promptVersion"] == "presales.v25"
+    assert restored.provenance["promptVersion"] == version
+    other = OpenAICompatiblePresalesGateway(
+        settings(),
+        question_assessment=True,
+        question_prompt_version="presales.v26" if version == "presales.v25" else "presales.v25",
+    )
+    assert other.system_message == gateway.system_message
+    with pytest.raises(PresalesError, match="presales_execution_policy_unavailable"):
+        restore_gateway(other, policy.routes[0])
     legacy = OpenAICompatiblePresalesGateway(settings(), question_assessment=True)
     assert legacy.provenance["promptVersion"] == "presales.v24"
     assert (

@@ -25,6 +25,8 @@ from enterprise_doc_core.presales.output_contract import (
 from enterprise_doc_core.presales.proposition_selection import resolve_proposition_selection
 from enterprise_doc_core.presales.question_assessment import (
     CONTEXT_PROMPT_VERSION,
+    WHOLE_REQUIREMENT_VERSIONS,
+    WINDOW_PROMPT_VERSION,
     QuestionAssessmentInput,
     offer_requirement_parts,
     question_assessment_response_format,
@@ -181,7 +183,7 @@ def score(dataset_path: Path, gold_path: Path, report: dict[str, Any]) -> dict[s
                     spans=report["schemaVersion"] == "presales-gateway-run-v10",
                     questions=report["schemaVersion"] == "presales-gateway-run-v11",
                     whole_requirement=observation.get("provenance", {}).get("promptVersion")
-                    == CONTEXT_PROMPT_VERSION,
+                    in WHOLE_REQUIREMENT_VERSIONS,
                 )
             if payload.requirement != requirements[key]:
                 raise ValueError("requirement_mismatch")
@@ -240,9 +242,14 @@ def score(dataset_path: Path, gold_path: Path, report: dict[str, Any]) -> dict[s
                             expanded_missing_information=observation.get("provenance", {}).get(
                                 "promptVersion"
                             )
-                            in {"presales.v23", "presales.v24", CONTEXT_PROMPT_VERSION},
+                            in {
+                                "presales.v23",
+                                "presales.v24",
+                                CONTEXT_PROMPT_VERSION,
+                                WINDOW_PROMPT_VERSION,
+                            },
                             whole_requirement=observation.get("provenance", {}).get("promptVersion")
-                            == CONTEXT_PROMPT_VERSION,
+                            in WHOLE_REQUIREMENT_VERSIONS,
                         )
                         if report["schemaVersion"] == "presales-gateway-run-v11"
                         else resolver(original, catalog)

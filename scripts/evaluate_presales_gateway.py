@@ -200,7 +200,7 @@ async def collect(
     strict_output: bool = False,
     question_assessment: bool = False,
     question_prompt_version: Literal[
-        "presales.v21", "presales.v24", "presales.v25"
+        "presales.v21", "presales.v24", "presales.v25", "presales.v26"
     ] = "presales.v24",
 ) -> dict[str, Any]:
     presales_settings = PresalesSettings(
@@ -320,7 +320,7 @@ def main() -> None:
     parser.add_argument("--question-assessment", action="store_true")
     parser.add_argument(
         "--question-prompt-version",
-        choices=("presales.v21", "presales.v24", "presales.v25"),
+        choices=("presales.v21", "presales.v24", "presales.v25", "presales.v26"),
         default="presales.v24",
     )
     args = parser.parse_args()

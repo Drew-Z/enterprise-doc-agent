@@ -40,7 +40,10 @@ from enterprise_doc_core.presales.models import PresalesAttempt, PresalesProvide
 from enterprise_doc_core.presales.policy import ExecutionPolicy
 from enterprise_doc_core.presales.policy_gateway import restore_gateway
 from enterprise_doc_core.presales.provider_calls import abandon_calls, summarize_calls
-from enterprise_doc_core.presales.question_assessment import CONTEXT_PROMPT_VERSION
+from enterprise_doc_core.presales.question_assessment import (
+    WHOLE_REQUIREMENT_VERSIONS,
+    WINDOW_PROMPT_VERSION,
+)
 from enterprise_doc_core.presales.schemas import (
     GeneratedDraft,
     GenerationInput,
@@ -266,7 +269,14 @@ class BackgroundGeneration:
                         provider_guard=guard,
                         provider_operation_id=UUID(claim.payload["operation_id"]),
                         complementary_evidence=any(
-                            gateway.provenance.get("promptVersion") == CONTEXT_PROMPT_VERSION
+                            gateway.provenance.get("promptVersion") in WHOLE_REQUIREMENT_VERSIONS
+                            for route, gateway in gateways.items()
+                            if policy is not None
+                            or route == self.settings.model_route
+                            or self.settings.automatic_failover_enabled
+                        ),
+                        context_window=any(
+                            gateway.provenance.get("promptVersion") == WINDOW_PROMPT_VERSION
                             for route, gateway in gateways.items()
                             if policy is not None
                             or route == self.settings.model_route

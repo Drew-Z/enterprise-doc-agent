@@ -1204,3 +1204,61 @@ semantics. Correct: keep the entire question together and qualify actual model b
 separately. Preserve unknown usage and original failures. Full-row answer text still
 has the existing2000-character per-response limit; missing top10 evidence, paraphrases
 and semantic omissions are not solved by lexical diversity.
+
+## Scenario: Opt-in Haystack context windows (v26)
+
+### 1. Scope / Trigger
+Neighbor expansion can recover omitted text, but merged windows or prefix trimming
+must not replace original evidence. V26 is an explicit retrieval-policy opt-in with
+the unchanged v25 generation prompt/schema and whole-row IDs. Default remains v24.
+
+### 2. Signatures
+`expand_context(session_factory, *, tenant_id, actor_id, source, seeds, extra_slots)`
+returns `WindowEvidence(candidates, available_ids, truncated)`.
+`select_context(seeds, chunks, *, extra_slots)` uses the pinned Haystack3.3.0
+SentenceWindowRetriever over a per-call bounded read-only DocumentStore adapter.
+No persistent secondary index, executor or Haystack model is instantiated.
+
+### 3. Contracts
+The shared GenerationService._retrieve reserves all sources' original <=2 visible
+seeds first. Each retains its exact ID/text/offsets and the historical1800-character
+prefix bound. At most3600 characters per source and12 total chunks enter generation.
+Only whole additional chunks <=1800 are eligible; oversized or unaffordable neighbors
+are skipped and truncation is recorded. Neighbors are ordered by distance, seed rank,
+then chunk index, within radius3. This is deterministic proximity, not semantic ranking.
+
+Reload source snapshots and query PostgreSQL with actor visibility, tenant, version
+and active successful ready generation. Read at most14 scoped chunks (plus an overflow
+sentinel), bound text projection, and verify each seed against stored source metadata.
+Run actual Haystack filters on those rows; use only context_documents, never merged
+context_windows as citation text. Each neighbor keeps its original chunk and offsets.
+Do not infer atomic clauses or continuous original text across neighboring chunks.
+
+Only eligible v26 routes enable expansion. Sync and durable background use the same
+adapter and retain final source/attempt checks before dispatch. Frozen policies reject
+v25/v26 drift despite equal prompt bytes. Old reader behavior and saved drafts remain
+unchanged; collector/scorers recognize v26 without relabeling historical outcomes.
+Haystack telemetry and auto tracing are disabled before its first lazy import.
+
+### 4. Validation & Error Matrix
+Foreign/missing/modified seeds and invalid budgets return presales_invalid_evidence.
+Revoked or changed snapshots retain presales_source_unavailable/presales_stale_sources.
+No-room expansion retains the seeds. Source-count reservation prevents earlier sources
+from exhausting later sources' original slots. Existing128KiB request rejection,
+strict citation/output validation and original accounting/failover limits still apply.
+
+### 5. Good/Base/Bad Cases
+Good: two1200-character seeds plus one whole1200-character neighboring chunk, all
+individually citable. Base: six sources with two seeds each leave no extra citation
+slots. Bad: label a merged multi-chunk window with one seed ID or trim away a seed.
+
+### 6. Tests Required
+Use actual Haystack with blocked network, budget/foreign/missing/oversize controls,
+real PostgreSQL scopes and revocation, source-slot reservation, original citation
+persistence and exactly-once accounting in both generation modes. Keep known public
+regressions and legacy policy/scorer tests; controlled providers are not quality evidence.
+
+### 7. Wrong vs Correct
+Wrong: count more context as proven model accuracy, or report a generation-only
+collector as live retrieval. Correct: separately qualify actual ranking and semantic
+answers with frozen inputs/budgets before any release; do not change default routing.

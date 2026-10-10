@@ -23,6 +23,8 @@ from enterprise_doc_core.presales.citation_selection import (
 from enterprise_doc_core.presales.errors import OutputContractError, OutputDiagnostic, PresalesError
 from enterprise_doc_core.presales.question_assessment import (
     CONTEXT_PROMPT_VERSION,
+    WHOLE_REQUIREMENT_VERSIONS,
+    WINDOW_PROMPT_VERSION,
     QuestionAssessmentDraft,
     offer_question_assessment,
     question_assessment_response_format,
@@ -170,6 +172,7 @@ class OpenAICompatiblePresalesGateway:
             "presales.v21",
             QUESTION_PROMPT_VERSION,
             CONTEXT_PROMPT_VERSION,
+            WINDOW_PROMPT_VERSION,
         }:
             raise ValueError("Unsupported question prompt version")
         self.question_assessment = (
@@ -250,7 +253,7 @@ class OpenAICompatiblePresalesGateway:
         if self.question_assessment:
             return question_assessment_system_message(
                 numeric_boundaries=self.question_prompt_version != "presales.v21",
-                whole_requirement=self.question_prompt_version == CONTEXT_PROMPT_VERSION,
+                whole_requirement=self.question_prompt_version in WHOLE_REQUIREMENT_VERSIONS,
             )
         draft_type = SpanBasisDraft if self.strict_output else BasisDraft
         prompt = STRICT_SYSTEM_PROMPT if self.strict_output else SYSTEM_PROMPT
@@ -281,7 +284,7 @@ class OpenAICompatiblePresalesGateway:
         if self.question_assessment:
             selected_payload = offer_question_assessment(
                 offer_spans(selected_payload),
-                whole_requirement=self.question_prompt_version == CONTEXT_PROMPT_VERSION,
+                whole_requirement=self.question_prompt_version in WHOLE_REQUIREMENT_VERSIONS,
             )
         elif self.strict_output:
             selected_payload = offer_spans(selected_payload)
@@ -390,7 +393,7 @@ class OpenAICompatiblePresalesGateway:
                 strict_output=self.strict_output,
                 question_assessment=self.question_assessment,
                 expanded_missing_information=self.question_prompt_version != "presales.v21",
-                whole_requirement=self.question_prompt_version == CONTEXT_PROMPT_VERSION,
+                whole_requirement=self.question_prompt_version in WHOLE_REQUIREMENT_VERSIONS,
                 requirement=payload.requirement,
             ).model_copy(update={"provider_request_id": request_id})
         except asyncio.CancelledError as error:

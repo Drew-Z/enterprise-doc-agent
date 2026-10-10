@@ -595,3 +595,11 @@ offline experiment on known public failures. Preserve project dependencies and a
 historical outcomes. Distinguish source reachability from answer semantics and actual
 production retrieval. No model-call budget, production deployment or broader rewrite
 is implied. Deliver concrete adoption decisions and remaining integration criteria.
+
+## Authorized context adaptation
+
+The user approved implementing the proposed adapter after reviewing the offline results.
+Preserve original hits and their source identities, add context only within explicit
+budgets, enforce source access and active-version bindings, and verify real PostgreSQL
+boundaries and both generation paths. Provide an explicit opt-in with immutable old
+behavior; no new real inference, deployment or semantic acceptance claim in this step.

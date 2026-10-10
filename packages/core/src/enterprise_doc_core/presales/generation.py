@@ -27,12 +27,16 @@ from enterprise_doc_core.documents.retrieval import (
 from enterprise_doc_core.documents.retrieval_service import HybridRetrievalService
 from enterprise_doc_core.jobs.service import create_job_records
 from enterprise_doc_core.presales.access import check_key, check_sources, load_packet, load_row
+from enterprise_doc_core.presales.context_window import TOTAL_CHUNK_BUDGET, expand_context
 from enterprise_doc_core.presales.errors import PresalesError
 from enterprise_doc_core.presales.gateway import PresalesGateway
 from enterprise_doc_core.presales.models import PresalesAttempt
 from enterprise_doc_core.presales.policy import ExecutionMode, ExecutionPolicy
 from enterprise_doc_core.presales.policy_gateway import freeze_policy, restore_gateway
-from enterprise_doc_core.presales.question_assessment import CONTEXT_PROMPT_VERSION
+from enterprise_doc_core.presales.question_assessment import (
+    WHOLE_REQUIREMENT_VERSIONS,
+    WINDOW_PROMPT_VERSION,
+)
 from enterprise_doc_core.presales.retrieval_selection import select_complementary_evidence
 from enterprise_doc_core.presales.schemas import (
     Evidence,
@@ -152,7 +156,8 @@ class GenerationService:
                     provider_guard=guard,
                     provider_operation_id=attempt_id,
                     complementary_evidence=gateway.provenance.get("promptVersion")
-                    == CONTEXT_PROMPT_VERSION,
+                    in WHOLE_REQUIREMENT_VERSIONS,
+                    context_window=gateway.provenance.get("promptVersion") == WINDOW_PROMPT_VERSION,
                 )
                 # ACL may have changed during retrieval. Recheck before sending any evidence.
                 async with self.session_factory() as session:
@@ -458,9 +463,12 @@ class GenerationService:
         provider_guard: Guard | None = None,
         provider_operation_id: UUID | None = None,
         complementary_evidence: bool = False,
+        context_window: bool = False,
     ) -> tuple[tuple[RetrievalCandidate, ...], list[RetrievalNote]]:
         candidates: list[RetrievalCandidate] = []
         notes = []
+        source_seeds = []
+        source_candidate_ids = []
         for source in sources:
             if isinstance(self.retriever, HybridRetrievalService):
                 result = await self.retriever.retrieve(
@@ -504,10 +512,38 @@ class GenerationService:
                     truncated=len(available) > 2 or any(len(c.text) > 1800 for c in used),
                 )
             )
-            candidates.extend(
+            visible = tuple(
                 replace(c, text=c.text[:1800], end_offset=min(c.end_offset, c.start_offset + 1800))
                 for c in used
             )
+            candidates.extend(visible)
+            source_seeds.append(visible)
+            source_candidate_ids.append({c.chunk_id for c in result.candidates})
+        if context_window:
+            # Reserve every source's original hits before admitting any context.
+            # Later sources cannot lose evidence because earlier ones had neighbors.
+            slots = TOTAL_CHUNK_BUDGET - len(candidates)
+            expanded: list[RetrievalCandidate] = []
+            for index, (source, seeds) in enumerate(zip(sources, source_seeds, strict=True)):
+                window = await expand_context(
+                    self.session_factory,
+                    tenant_id=tenant_id,
+                    actor_id=actor_id,
+                    source=source,
+                    seeds=seeds,
+                    extra_slots=slots,
+                )
+                slots -= len(window.candidates) - len(seeds)
+                expanded.extend(window.candidates)
+                note = notes[index]
+                notes[index] = note.model_copy(
+                    update={
+                        "retrieved_count": len(source_candidate_ids[index] | window.available_ids),
+                        "used_count": len(window.candidates),
+                        "truncated": note.truncated or window.truncated,
+                    }
+                )
+            candidates = expanded
         return tuple(candidates), notes
 
     async def _guard_retrieval(

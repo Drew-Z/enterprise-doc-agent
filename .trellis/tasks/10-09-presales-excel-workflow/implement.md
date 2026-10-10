@@ -759,3 +759,24 @@ No runtime integration or semantic-quality claim. Existing project dependencies,
 fixtures, failures, second-supplier expansion materials and unrelated work stay intact.
 No new shared runtime specification is introduced; the standalone experiment contract
 is documented in docs/ops/oss-component-reuse-20261011.md.
+
+## Bounded context adapter implementation
+
+- [x] Freeze baseline913c3f9 and owned files in the existing recovery group.
+- [x] Red/green actual-component tests: preserve seed content/identity, whole-neighbor budget,
+  no cross-source mixing and explicit no-room behavior.
+- [x] Red/green actual PostgreSQL: authorized windows, revoked/stale/generation boundaries,
+  forged seeds, source-count reservation and exact original citations.
+- [x] Bind opt-in v26 across gateway, sync/background retrieval and historical scorer paths;
+  reject frozen-policy drift. Keep defaultv24 and generation prompt text unchanged.
+- [x] Run required formatting/type/unit gates and relevant PostgreSQL suites; preserve prior
+  evidence/unrelated work, update spec/report, record cleanup and scoped local commit.
+
+Final checks:3322 nonintegration tests and23 subtests passed (851 deselected),104 actual
+PostgreSQL tests passed including24 new window cases; Ruff format766 files, Ruff check
+passed and mypy281 source files clean. Haystack3.3.0 is pinned;128 original locked and126
+original installed package versions are unchanged. The central verification/closeout
+receipts record exact file hashes, commands and the local commit under
+oss_context_adapter_20261011. No new deployment, generation, embedding or judge calls.
+This remains an opt-in local candidate; semantic quality, target capacity and independent
+user acceptance remain open. Prior test figures and failures remain historical evidence.

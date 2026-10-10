@@ -34,6 +34,8 @@ from enterprise_doc_core.presales.span_selection import SpanSelectionInput
 
 PROTOCOL_VERSION = "presales.question-assessment-candidate.v1"
 CONTEXT_PROMPT_VERSION = "presales.v25"
+WINDOW_PROMPT_VERSION = "presales.v26"
+WHOLE_REQUIREMENT_VERSIONS = frozenset({CONTEXT_PROMPT_VERSION, WINDOW_PROMPT_VERSION})
 SYSTEM_PROMPT = ASSESSMENT_SYSTEM_PROMPT.replace(
     "responses按要求原文顺序覆盖全部内容\uff0c每项requirementText是连续逐字片段\uff0c不遗漏、不重复、不改写问题。",
     "responses按requirementParts的顺序\uff0c每项requirementPartId只选择对应原文片段编号\uff0c"
