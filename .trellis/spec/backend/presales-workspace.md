@@ -1205,6 +1205,75 @@ separately. Preserve unknown usage and original failures. Full-row answer text s
 has the existing2000-character per-response limit; missing top10 evidence, paraphrases
 and semantic omissions are not solved by lexical diversity.
 
+## Scenario: Isolated relevance and question-role qualification
+
+### 1. Scope / Trigger
+The fixed v25/v26 comparison exposed proximity/source-order starvation and factual
+policies being projected as business prerequisites. New modules are private candidates;
+they do not enable a v27 gateway/settings value, replace default v24, or alter old decoders.
+
+### 2. Signatures
+`context_candidates(seeds, chunks) -> tuple[RetrievalCandidate, ...]` performs the same
+validated Haystack window discovery before admission. `select_context` retains v26 order.
+`select_ranked_context(windows, scores: Mapping[UUID, float]) -> tuple[WindowEvidence, ...]`
+reserves every seed and allocates extras across all sources. `question_routing` exposes
+`RoutedQuestionDraft`, `routed_response_format`, `routed_system_message` and
+`resolve_routed_question(content, requirement, catalog)` under the distinct private
+`presales.question-routing-candidate.v1` identity. No runtime caller imports that module.
+
+### 3. Contracts
+At most6 scoped windows,2 seeds/source,14 pool chunks/source,1800 characters/chunk,
+3600 characters/source and12 admitted chunks remain. Every score must be finite and
+bound to exactly one validated candidate, including seeds. Duplicate/foreign/missing IDs,
+cross-tenant or repeated source versions reject. Scores never carry replacement text.
+Order extras by descending score, then stable version identity and original proximity;
+equal scores cannot depend on request source order. Skip unaffordable chunks whole.
+
+The routing envelope has an anyOf facts/conditions result. Facts has no business-rule
+fields. Known findings declare description/execution and policy/state evidence roles;
+known execution must include declared state evidence. Unknown findings retain a concrete
+question and optional context. Each conflict must cite at least two distinct versions.
+Top-level factual status must match declared conflicts/unknowns without server relabeling.
+Negative descriptive answers can be supported; conditional business status uses conditions.
+Each raw answer/question passes language checks before joining. Projection retains the
+whole-row ID, exact answer text, ordered citation/gap union and empty prerequisites, then
+passes existing question/public validators. Overflow rejects without text truncation.
+Conditions uses the existing full question-assessment resolver, including unknown actions.
+
+Question routing, source role, requested aspect, scope and entailment are model decisions.
+A policy wrongly labeled state is structurally legal; retain raw role selections during
+evaluation. No keyword classifier, extra inference call, factual truth oracle or approval
+is introduced. Mixed business/description questions use conditions and preserve both parts.
+
+### 4. Validation & Error Matrix
+Invalid window/score inputs return presales_invalid_evidence. Private schema/role/status
+violations raise validation errors; existing public language/citation/coverage/size guards
+retain their errors. `evaluate_presales_relevance.py` rejects changed plan/query/text/IDs,
+duplicate scores, changed actual window content or a v26 result that no longer reproduces
+the frozen input. Reports are created exclusively, never overwritten. Offline score maps
+must record their exact source/model identity; they are not authorization to dispatch.
+
+### 5. Good/Base/Bad Cases
+Good: later-source relevant neighbors compete for2 remaining slots while10 seeds remain.
+Base:6 sources with2 seeds each leave no extras. Policy description yields zero business
+prerequisites; a known execution record can answer execution; missing coverage stays unknown.
+Bad: count structural fact routing as proven classification, mistake scores for calibrated
+truth, choose a passing batch composition, or attribute local Windows memory to4C4G capacity.
+
+### 6. Tests Required
+Actual Haystack, no-network discovery, seeds/scopes/budgets/ties, invalid scores, unchanged
+v26 PostgreSQL authorization/citations/accounting; strict facts-field rejection, policy-only
+execution rejection, unknown/conflict preservation, unchanged conditions, public guards and
+an explicit semantic mislabel counterexample. Replay known snapshots with exact score/input
+bindings and record batch/tokenizer differences. No held-out quality or deployment claim.
+
+### 7. Wrong vs Correct
+Wrong: integrate BM25/FlashRank after one favorable known-case ranking. Correct: retain all
+ranking outcomes and compare invariant input/weights with controlled batching. Current
+FlashRank qualification remains unpromoted: singleton scores are order-stable but omit
+known scope/device anchors; one query-passage pair exceeds512 tokens. A future candidate
+needs stable relevance, complete scoring input, resource and generation-role qualification.
+
 ## Scenario: Opt-in Haystack context windows (v26)
 
 ### 1. Scope / Trigger

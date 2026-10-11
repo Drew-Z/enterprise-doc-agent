@@ -1,5 +1,32 @@
 # Excel questionnaire workflow
 
+## Relevance and explicit question-role candidate (2026-10-11)
+
+Separate Haystack window discovery from budget admission. A pure allocator validates
+each original window, reserves all seeds, then consumes one complete external score
+map across sources. Scores must be finite, complete and bound to exact candidate IDs;
+ties use stable version/neighbor order. No global index or implicit ranking service.
+Ranker output cannot replace source text or supply foreign IDs. Keep the existing v26
+distance allocator reproducible. Qualify Haystack BM25 and FlashRank0.2.10 in isolated
+offline experiments, including model digest, tokenizer limits and actual memory/time.
+The FlashRank model export has CC-BY-SA4.0 attribution, distinct from the Apache library.
+
+Use a private routing envelope with mutually exclusive facts/conditions branches.
+The facts branch has no rules or assessments fields. Each requested aspect selects a
+known fact with role-labeled evidence or an unknown fact with context and a concrete
+question. Descriptive policy evidence is allowed for descriptions; execution claims
+require explicitly labeled state evidence. Structural validation rejects a declared
+policy-only execution claim; it cannot establish that a model labeled a span correctly.
+Project factual text, citations and gaps through existing question/public validators,
+with an empty prerequisite list by construction. The conditions branch reuses the full
+question assessment protocol, preserving obligations, unknown states and actions.
+Mixed questions use conditions and retain their descriptive answers in responses.
+
+Do not enable presales.v27 in settings/gateway merely because schema tests pass.
+Local real-source ranking has to preserve the known scope/password/device anchors;
+failure keeps the candidate isolated. A later finite generation comparison must freeze
+this distinct schema/identity, identical evidence, criteria and a fresh call budget.
+
 User authorization: implement the previously proposed bounded Excel workflow (2026-10-09). Reuse canonical checkout and the commercial task recovery group; no deployment or new provider acceptance claim.
 
 Flow: authenticated bounded JSON upload -> XLSX inspection -> user confirms one visible worksheet, question/answer columns and row range -> server reparses identical SHA256 content -> atomic packet, requirements, mapping and original-byte persistence -> existing per-row generation/review -> authorized original-workbook export.

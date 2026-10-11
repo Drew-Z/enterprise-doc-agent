@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import math
 import os
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, cast
 from uuid import UUID
@@ -68,8 +70,27 @@ def select_context(
 ) -> WindowEvidence:
     if not 0 <= extra_slots <= TOTAL_CHUNK_BUDGET - len(seeds) or len(seeds) > 2:
         raise PresalesError("presales_invalid_evidence")
+    available = context_candidates(seeds, chunks)
+    remaining = SOURCE_CHAR_BUDGET - sum(len(seed.text) for seed in seeds)
+    selected = list(seeds)
+    for item in available[len(seeds) :]:
+        if extra_slots > 0 and len(item.text) <= remaining:
+            selected.append(item)
+            remaining -= len(item.text)
+            extra_slots -= 1
+    return WindowEvidence(
+        tuple(selected), frozenset(c.chunk_id for c in available), len(selected) < len(available)
+    )
+
+
+def context_candidates(
+    seeds: tuple[RetrievalCandidate, ...], chunks: tuple[WindowChunk, ...]
+) -> tuple[RetrievalCandidate, ...]:
+    """Discover and validate an unallocated window, seeds first, then proximity order."""
+    if len(seeds) > 2:
+        raise PresalesError("presales_invalid_evidence")
     if not seeds:
-        return WindowEvidence((), frozenset(), False)
+        return ()
     if len(chunks) > MAX_WINDOW_CHUNKS:
         raise PresalesError("presales_invalid_evidence")
     scope = tuple(getattr(seeds[0], key) for key in _SCOPE_FIELDS)
@@ -134,8 +155,6 @@ def select_context(
     window_ids = {UUID(d.id) for d in result["context_documents"]}
     if not {c.chunk_id for c in seeds} <= window_ids or not window_ids <= by_id.keys():
         raise PresalesError("presales_invalid_evidence")
-    remaining = SOURCE_CHAR_BUDGET - sum(len(seed.text) for seed in seeds)
-    selected = list(seeds)
     seed_ids = {seed.chunk_id for seed in seeds}
     neighbors = sorted(
         (by_id[key] for key in window_ids - seed_ids),
@@ -145,13 +164,56 @@ def select_context(
             c.index,
         ),
     )
-    for neighbor in neighbors:
-        item = neighbor.candidate
-        if extra_slots > 0 and len(item.text) <= remaining:
-            selected.append(item)
-            remaining -= len(item.text)
-            extra_slots -= 1
-    return WindowEvidence(tuple(selected), frozenset(window_ids), len(selected) < len(window_ids))
+    return (*seeds, *(neighbor.candidate for neighbor in neighbors))
+
+
+ContextWindow = tuple[tuple[RetrievalCandidate, ...], tuple[WindowChunk, ...]]
+
+
+def select_ranked_context(
+    windows: tuple[ContextWindow, ...], scores: Mapping[UUID, float]
+) -> tuple[WindowEvidence, ...]:
+    """Candidate-only allocator; scores never supply text, authorization or semantics."""
+    if len(windows) > 6:
+        raise PresalesError("presales_invalid_evidence")
+    pools = [context_candidates(seeds, chunks) for seeds, chunks in windows]
+    all_candidates = [c for pool in pools for c in pool]
+    ids = {c.chunk_id for c in all_candidates}
+    versions = [pool[0].document_version_id for pool in pools if pool]
+    if (
+        len(ids) != len(all_candidates)
+        or len(set(versions)) != len(versions)
+        or len({c.tenant_id for c in all_candidates}) > 1
+        or set(scores) != ids
+        or any(
+            type(score) not in {float, int} or not math.isfinite(score) for score in scores.values()
+        )
+    ):
+        raise PresalesError("presales_invalid_evidence")
+    selected = [list(seeds) for seeds, _ in windows]
+    remaining = [SOURCE_CHAR_BUDGET - sum(len(c.text) for c in seeds) for seeds, _ in windows]
+    slots = TOTAL_CHUNK_BUDGET - sum(len(seeds) for seeds, _ in windows)
+    neighbors = sorted(
+        (
+            (source_index, proximity, candidate)
+            for source_index, ((seeds, _), pool) in enumerate(zip(windows, pools, strict=True))
+            for proximity, candidate in enumerate(pool[len(seeds) :])
+        ),
+        key=lambda item: (
+            -scores[item[2].chunk_id],
+            str(item[2].document_version_id),
+            item[1],
+        ),
+    )
+    for source_index, _, candidate in neighbors:
+        if slots > 0 and len(candidate.text) <= remaining[source_index]:
+            selected[source_index].append(candidate)
+            remaining[source_index] -= len(candidate.text)
+            slots -= 1
+    return tuple(
+        WindowEvidence(tuple(chosen), frozenset(c.chunk_id for c in pool), len(chosen) < len(pool))
+        for chosen, pool in zip(selected, pools, strict=True)
+    )
 
 
 async def expand_context(

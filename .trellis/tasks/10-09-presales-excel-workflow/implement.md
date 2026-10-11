@@ -1,5 +1,31 @@
 # Implementation and verification
 
+## Relevance and question-role qualification (2026-10-11)
+
+1. Register current6e3d1ed and12 owned paths in the existing recovery manifest; hash
+   all4413 preceding evidence files and the2993 unrelated Git entries before editing.
+2. Add failing allocator and routed-protocol tests before implementation. Validate
+   finite/complete scores, global allocation, stable ties, seeds, scopes and empty pools;
+   factual-field rejection, policy/execution mismatch, unknown gaps, unchanged condition
+   assessment and public citation/language/size validation.
+3. Reuse actual Haystack windows and separately pinned FlashRank in an isolated environment.
+   Preserve both truncated weight-download failures; use verified range retrieval and
+   upstream SHA256 before loading. Block sockets during inference; do not modify project
+   dependency locks. Record all real-source outcomes, including regressions.
+4. Run relevant component and PostgreSQL regression checks; update executable spec and
+   report. If ranking does not pass, retain an isolated candidate and document the exact
+   remaining gate rather than changing runtime defaults or making extra generation calls.
+
+Executed: global allocator and private facts/conditions projection are implemented.
+Final155 related tests pass, including real PostgreSQL; Ruff770 files/check pass and
+mypy282 source files pass. BM25 misses known anchors. FlashRank batch4 recovers them,
+but stable singleton scores miss scope/device anchors, and one pair exceeds512 tokens.
+Keep all score/selection outcomes; no runtime integration, dependency change or new
+generation/embedding calls. Facts structurally exclude prerequisites and reject declared
+policy-only execution, but routing/role semantics remain unverified. Temporary isolated
+environment and downloads were removed; historical evidence/worktrees remain. Report:
+docs/ops/question-routing-relevance-20261011.md. Overall task remains in_progress.
+
 - [x] Workbook preview public behavior: real XLSX fixture, sheet/cell mapping, blank row handling; red then green.
 - [x] Workbook export and unsupported inputs: preserve untouched members, literal formula-like answers, reject overwrite/protection/malformed/oversize input.
 - [x] Atomic authorized persistence and migration: same-key replay/conflict, tenant isolation, demo/storage limits, restart/read/export, safe downgrade in owned PostgreSQL schema.

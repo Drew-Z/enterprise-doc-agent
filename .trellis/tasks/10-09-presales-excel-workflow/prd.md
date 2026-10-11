@@ -1,5 +1,19 @@
 # Customer Excel questionnaire workflow
 
+## Authorized relevance and question-role continuation (2026-10-11)
+
+Qualify a bounded global neighbor allocator and a separately typed factual-answer path.
+Retain original seeds, tenant/version/generation, literal citations and the existing
+1800/3600-character and12-chunk budgets. Rank all eligible sources together; do not
+assume source order or keyword overlap means relevance. Compare pinned open-source
+rankers on the frozen v26 retrieval snapshot before connecting any new runtime route.
+Ordinary policy facts must not create business prerequisites. Declared policy evidence
+cannot establish implementation; unknown execution must retain a concrete question.
+Routing and evidence-role labels remain semantic model choices requiring later evaluation.
+Keep production defaults, gateway, historical decoders and failed observations unchanged
+until both selection and answer-quality gates pass. No new remote generation is included
+in this local qualification phase; do not reuse earlier call reservations.
+
 ## Goal
 
 Import a customer XLSX, confirm its question/answer columns and row range, generate and review using existing evidence, and download the answers in the original workbook. User explicitly authorized implementation on 2026-10-09.
