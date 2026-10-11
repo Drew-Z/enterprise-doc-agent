@@ -122,6 +122,13 @@ class RecordingTransport(httpx.AsyncBaseTransport):
             record["transportFailure"] = {"type": "CancelledError", "phase": phase}
             raise
         if response.status_code == 200:
+            # Bounded framing diagnostics, never raw provider text, reasoning or headers.
+            record["responseBodySha256"] = hashlib.sha256(body).hexdigest()
+            record["eventStreamContentType"] = (
+                response.headers.get("content-type", "").split(";", 1)[0].strip().lower()
+                == "text/event-stream"
+            )
+            reader = None
             try:
                 if streaming:
                     reader = OpenAIResponseReader(
@@ -143,8 +150,27 @@ class RecordingTransport(httpx.AsyncBaseTransport):
                 record["response"] = {
                     k: raw[k] for k in ("id", "model", "choices", "usage") if k in raw
                 }
-            except (ValueError, TypeError, ModelResponseError):
+            except (ValueError, TypeError) as error:
                 record["invalidJson"] = True
+                record["responseFailure"] = {
+                    "code": error.code
+                    if isinstance(error, ModelResponseError)
+                    else "invalid_response_json",
+                    "retryable": isinstance(error, ModelResponseError) and error.retryable,
+                }
+                # A failed stream may already have reported counters. Keep them separate
+                # from accepted output; never fabricate zero usage for missing counters.
+                if reader is not None and reader.accounting_response is not None:
+                    metadata = reader.accounting_response.json()
+                    usage = metadata.get("usage")
+                    if isinstance(usage, dict):
+                        record["observedUsage"] = {
+                            key: value
+                            for key, value in usage.items()
+                            if key in {"prompt_tokens", "completion_tokens", "total_tokens"}
+                            and type(value) is int
+                            and value >= 0
+                        }
         return httpx.Response(
             response.status_code,
             content=bytes(body),
