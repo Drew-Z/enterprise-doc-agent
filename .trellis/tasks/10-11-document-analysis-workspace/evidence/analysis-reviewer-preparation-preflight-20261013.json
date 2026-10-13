@@ -1,0 +1,57 @@
+{
+  "schema_version": "analysis.review-preparation-preflight.v1",
+  "recorded_at": "2026-10-13T00:47:39.338626+00:00",
+  "status": "blocked",
+  "blocking_codes": [
+    "analysis_auth_token_missing",
+    "analysis_execution_disabled",
+    "analysis_model_route_unconfigured",
+    "structured_uploads_disabled"
+  ],
+  "expected_policy": {
+    "route_id": "analysis-primary",
+    "model": "gpt-5.6-sol",
+    "model_revision": null,
+    "reasoning_effort": null,
+    "max_dispatches_per_unit": 2,
+    "streaming": false
+  },
+  "pack_id": "validation-01",
+  "planned_denominator": 60,
+  "planned_max_dispatches": 120,
+  "effective_daily_dispatch_limit": 200,
+  "external_model_calls": 0,
+  "network_requests": 0,
+  "reference_opened": false,
+  "reference_in_model_input": false,
+  "limitations": [
+    "This is a local configuration and frozen-material preflight only.",
+    "No API, model, embedding, or scoring request was made.",
+    "The target API and database budgets are rechecked before live execution."
+  ],
+  "source": "scripts/evaluate_analysis_holdout.py preflight output",
+  "note": "The temporary preflight output was copied into this task-scoped, non-secret evidence record before cleanup.",
+  "staging_probe": {
+    "observed_at": "2026-10-13",
+    "host_alias": "enterprise-doc-staging-4c4g",
+    "node": {
+      "name": "vm-4-7-ubuntu",
+      "cpu": "4",
+      "memory": "3812556Ki",
+      "ready": true
+    },
+    "namespace": "enterprise-doc-agent-staging",
+    "workloads_ready": {
+      "api": true,
+      "worker": true,
+      "consumer": true,
+      "web": true
+    },
+    "model_provider": "openai_compatible",
+    "model": "gpt-5.6-sol",
+    "analysis_config_keys_present": false,
+    "structured_upload_config_key_present": false,
+    "analysis_candidate_commit_on_remote": false,
+    "conclusion": "The existing staging host and primary model can be reused only after the analysis candidate is committed, reviewed and deployed with the required disabled-by-default configuration keys. Enabling flags on the older image would not make the analysis APIs available."
+  }
+}

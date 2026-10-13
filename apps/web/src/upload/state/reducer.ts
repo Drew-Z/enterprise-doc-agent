@@ -27,6 +27,8 @@ export const initialUploadState: UploadMachineState = {
   parts: [],
   completion: null,
   failure: null,
+  contentIntent: null,
+  contentStatus: null,
 };
 
 function accept(state: UploadMachineState, effects: UploadEffect[] = []): UploadTransition {
@@ -109,6 +111,7 @@ function queuePartsEffect(state: UploadMachineState, parts: readonly UploadPartS
     ? null
     : {
         type: "queue_parts",
+        ...(state.session.transport === "single_put" ? { transport: "single_put" as const } : {}),
         generation: state.generation,
         sessionId: state.session.sessionId,
         file: state.file,
@@ -122,6 +125,7 @@ function completionEffect(state: UploadMachineState, parts: readonly UploadPartS
   }
   return {
     type: "complete_session",
+    ...(state.session.transport === "single_put" ? { transport: "single_put" as const } : {}),
     generation: state.generation,
     sessionId: state.session.sessionId,
     parts: parts.map((part) => ({
@@ -171,6 +175,7 @@ function resetActiveParts(parts: readonly UploadPartState[]): UploadPartState[] 
 }
 
 function persistedSessionFromResponse(response: {
+  transport?: "multipart" | "single_put";
   sessionId: string;
   filename: string;
   sizeBytes: number;
@@ -180,6 +185,7 @@ function persistedSessionFromResponse(response: {
 }): PersistedUploadSession {
   return {
     version: 1,
+    ...(response.transport === "single_put" ? { transport: "single_put" as const } : {}),
     sessionId: response.sessionId,
     filename: response.filename,
     sizeBytes: response.sizeBytes,
@@ -229,6 +235,11 @@ function handleHashSuccess(state: UploadMachineState, result: HashResult): Uploa
       sizeBytes: state.file.size,
       declaredSha256: result.wholeSha256,
     };
+    if (state.contentIntent !== null && state.fileIdentity !== null &&
+        compareHashedFileIdentity(state.fileIdentity, fileIdentity) !== null) {
+      return fail(state, { stage: "file_identity", code: "different_file",
+        message: "The selected file does not match the pending upload.", retryable: false });
+    }
     return accept(
       { ...state, phase: "creating", fileIdentity, hashResult: null, hashProcessedBytes: state.file.size },
       [
@@ -240,6 +251,7 @@ function handleHashSuccess(state: UploadMachineState, result: HashResult): Uploa
             sizeBytes: state.file.size,
             mediaType: state.mediaType,
             sha256: result.wholeSha256,
+            ...(state.file.size <= 1_048_576 ? { transport: "single_put" as const } : {}),
           },
           idempotencyKey: state.idempotencyKey,
         },
@@ -295,10 +307,59 @@ function handleHashSuccess(state: UploadMachineState, result: HashResult): Uploa
 
 export function reduceUpload(state: UploadMachineState, action: UploadAction): UploadTransition {
   switch (action.type) {
+    case "restore_content_intent": {
+      if (state.phase !== "idle") return reject(state);
+      const { request } = action.intent;
+      const generation = state.generation + 1;
+      return accept({ ...initialUploadState, generation, phase: "awaiting_file", reconciling: true,
+        contentIntent: action.intent, idempotencyKey: action.intent.idempotencyKey, mediaType: request.mediaType,
+        fileIdentity: { filename: request.filename, sizeBytes: request.sizeBytes, declaredSha256: request.sha256 },
+      }, [{ type: "recover_content", generation, intent: action.intent }]);
+    }
+    case "content_started":
+      if (state.phase !== "creating" || !isCurrent(state, action.generation)) return reject(state);
+      return accept({ ...state, contentIntent: action.intent, contentStatus: null });
+    case "content_completed": {
+      if (state.phase !== "creating" || !isCurrent(state, action.generation) || state.contentIntent === null ||
+          action.session.sessionId !== action.result.sessionId || state.fileIdentity === null ||
+          action.session.filename !== state.fileIdentity.filename || action.session.sizeBytes !== state.fileIdentity.sizeBytes ||
+          action.session.declaredSha256 !== state.fileIdentity.declaredSha256) return reject(state);
+      return accept({ ...state, phase: "completed", session: persistedSessionFromResponse(action.session),
+        completion: action.result, failure: null, contentIntent: null, contentStatus: "completed",
+      }, [{ type: "clear_persistence" }]);
+    }
+    case "content_recovered": {
+      if (!isCurrent(state, action.generation) || !state.reconciling || state.contentIntent === null || state.fileIdentity === null) return reject(state);
+      const session = action.session;
+      if (session.filename !== state.fileIdentity.filename || session.sizeBytes !== state.fileIdentity.sizeBytes ||
+          session.declaredSha256 !== state.fileIdentity.declaredSha256) {
+        return fail(state, { stage: "create", code: "session_identity_mismatch", message: "Pending upload identity could not be confirmed.", retryable: true });
+      }
+      if (session.status === "completed") {
+        return accept({ ...state, phase: "completed", session: persistedSessionFromResponse(session), reconciling: false,
+          failure: null, contentIntent: null, contentStatus: session.status }, [{ type: "clear_persistence" }]);
+      }
+      if (["failed", "expired", "aborted"].includes(session.status)) {
+        return fail({ ...state, session: null, contentIntent: null, contentStatus: session.status },
+          { stage: "create", code: `session_${session.status}`, message: "The upload did not complete. Select the file to start again.", retryable: false }, [{ type: "clear_persistence" }]);
+      }
+      return accept({ ...state, session: persistedSessionFromResponse(session), reconciling: false,
+        contentStatus: session.status, phase: state.file === null ? "awaiting_file" : "failed",
+        failure: state.file === null ? null : state.failure ?? { stage: "create", code: "upload_completion_pending", message: "The upload has not completed. Retry the same file.", retryable: true },
+      });
+    }
+    case "content_recovery_failed":
+      if (!isCurrent(state, action.generation) || state.contentIntent === null) return reject(state);
+      return accept({ ...state, reconciling: false, phase: state.file === null ? "awaiting_file" : "failed" });
+    case "content_canceled":
+      if (!isCurrent(state, action.generation) || !state.reconciling || state.contentIntent === null) return reject(state);
+      return accept({ ...state, phase: "canceled", generation: state.generation + 1, reconciling: false,
+        contentIntent: null, contentStatus: "aborted", failure: null }, [{ type: "clear_persistence" }]);
     case "select_file": {
       if (
         !["idle", "failed", "canceled", "completed"].includes(state.phase) ||
         (state.phase === "failed" && state.session !== null) ||
+        state.contentIntent !== null ||
         action.file.size <= 0
       ) {
         return reject(state);
@@ -339,7 +400,7 @@ export function reduceUpload(state: UploadMachineState, action: UploadAction): U
     }
 
     case "reselect_file": {
-      if (state.reconciling || (state.phase !== "awaiting_file" && !(state.phase === "failed" && state.failure?.stage === "file_identity")) || state.fileIdentity === null || state.session === null) {
+      if (state.reconciling || (state.phase !== "awaiting_file" && !(state.phase === "failed" && state.failure?.stage === "file_identity")) || state.fileIdentity === null || (state.session === null && state.contentIntent === null)) {
         return reject(state);
       }
       if (compareFileMetadata(state.fileIdentity, action.file) !== null) {
@@ -357,7 +418,7 @@ export function reduceUpload(state: UploadMachineState, action: UploadAction): U
           phase: "hashing",
           generation,
           file: action.file,
-          hashMode: "resume",
+          hashMode: state.contentIntent !== null ? "initial" : "resume",
           hashProcessedBytes: 0,
           reconciling: false,
           failure: null,
@@ -366,9 +427,9 @@ export function reduceUpload(state: UploadMachineState, action: UploadAction): U
           {
             type: "hash_file",
             generation,
-            mode: "resume",
+            mode: state.contentIntent !== null ? "initial" : "resume",
             file: action.file,
-            partSizeBytes: state.session.partSizeBytes,
+            partSizeBytes: state.contentIntent !== null ? action.file.size : state.session!.partSizeBytes,
           },
         ],
       );
@@ -404,6 +465,9 @@ export function reduceUpload(state: UploadMachineState, action: UploadAction): U
     }
 
     case "session_created": {
+      if (state.contentIntent !== null && state.phase === "creating" && isCurrent(state, action.generation) && action.session.status !== "active") {
+        return reduceUpload({ ...state, reconciling: true }, { type: "content_recovered", generation: action.generation, session: action.session });
+      }
       if (
         !isCurrent(state, action.generation) &&
         state.session?.sessionId !== action.session.sessionId
@@ -418,6 +482,8 @@ export function reduceUpload(state: UploadMachineState, action: UploadAction): U
         action.session.sizeBytes !== state.fileIdentity.sizeBytes ||
         action.session.declaredSha256 !== state.fileIdentity.declaredSha256 ||
         action.session.status !== "active" ||
+        (action.session.transport === "single_put" &&
+          (action.session.sizeBytes > 1_048_576 || action.session.expectedPartCount !== 1)) ||
         action.session.expectedPartCount !== Math.ceil(action.session.sizeBytes / action.session.partSizeBytes)
       ) {
         return fail(
@@ -442,6 +508,8 @@ export function reduceUpload(state: UploadMachineState, action: UploadAction): U
           hashMode: "parts",
           hashProcessedBytes: 0,
           failure: null,
+          contentIntent: null,
+          contentStatus: null,
         },
         [
           { type: "persist_session", session },
@@ -460,7 +528,12 @@ export function reduceUpload(state: UploadMachineState, action: UploadAction): U
       if (state.phase !== "creating" || !isCurrent(state, action.generation)) {
         return reject(state);
       }
-      return fail(state, { stage: "create", code: action.code, message: action.message, retryable: true, requestId: action.requestId });
+      const failed = fail(state, { stage: "create", code: action.code, message: action.message, retryable: true, requestId: action.requestId });
+      if (state.contentIntent !== null) {
+        failed.state.reconciling = true;
+        failed.effects.push({ type: "recover_content", generation: state.generation, intent: state.contentIntent });
+      }
+      return failed;
     }
 
     case "session_reconciled": {
@@ -469,6 +542,7 @@ export function reduceUpload(state: UploadMachineState, action: UploadAction): U
       }
       if (
         action.session.sessionId !== state.session.sessionId ||
+        (action.session.transport ?? "multipart") !== (state.session.transport ?? "multipart") ||
         action.session.filename !== state.session.filename ||
         action.session.sizeBytes !== state.session.sizeBytes ||
         action.session.declaredSha256 !== state.session.declaredSha256 ||
@@ -681,6 +755,7 @@ export function reduceUpload(state: UploadMachineState, action: UploadAction): U
                 sizeBytes: state.fileIdentity.sizeBytes,
                 mediaType: state.mediaType,
                 sha256: state.fileIdentity.declaredSha256,
+                ...(state.fileIdentity.sizeBytes <= 1_048_576 ? { transport: "single_put" as const } : {}),
               },
               idempotencyKey: state.idempotencyKey,
             },
@@ -730,6 +805,7 @@ export function reduceUpload(state: UploadMachineState, action: UploadAction): U
       if (
         !["awaiting_file", "hashing", "creating", "uploading", "paused", "failed"].includes(state.phase) ||
         state.reconciling || state.failure?.code === "session_completing" ||
+        (state.contentIntent !== null && state.contentStatus !== "active") ||
         (state.phase === "failed" && state.failure?.stage === "complete")
       ) {
         return reject(state);
@@ -740,16 +816,23 @@ export function reduceUpload(state: UploadMachineState, action: UploadAction): U
         { type: "clear_scheduler" },
         { type: "clear_persistence" },
       ];
+      if (state.contentIntent !== null && state.session !== null) {
+        return accept({ ...state, generation: state.generation + 1, reconciling: true }, [
+          { type: "abort_hash" }, { type: "abort_transfers" }, { type: "clear_scheduler" },
+          { type: "cancel_content", generation: state.generation + 1, sessionId: state.session.sessionId, intent: state.contentIntent },
+        ]);
+      }
       if (state.session !== null) {
         effects.push({ type: "abort_session", sessionId: state.session.sessionId });
       }
-      return accept({ ...state, phase: "canceled", generation: state.generation + 1, failure: null }, effects);
+      return accept({ ...state, phase: "canceled", generation: state.generation + 1, failure: null, contentIntent: null }, effects);
     }
 
     case "clear": {
       if (
         !["completed", "canceled", "failed"].includes(state.phase) ||
         (state.phase === "failed" && state.session !== null)
+        || state.contentIntent !== null
       ) {
         return reject(state);
       }

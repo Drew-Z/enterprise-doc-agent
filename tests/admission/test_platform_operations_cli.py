@@ -288,6 +288,8 @@ def test_entitlement_preview_preserves_explicit_zero_limit() -> None:
             (now + timedelta(days=7)).isoformat(),
             "--request-limit",
             "0",
+            "--analysis-cell-limit",
+            "30",
         ],
         environment={"BROWSER_AUTH__ENABLED": "false"},
     )
@@ -295,6 +297,7 @@ def test_entitlement_preview_preserves_explicit_zero_limit() -> None:
     output = json.loads(result.stdout)
     assert output["status"] == "preview" and output["databaseValidated"] is False
     assert output["request"]["provider_request_limit"] == 0
+    assert output["request"]["analysis_cell_limit"] == 30
 
 
 def test_entitlement_list_bound_is_checked_before_connection() -> None:

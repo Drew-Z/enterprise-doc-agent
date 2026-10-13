@@ -26,7 +26,14 @@ from enterprise_doc_core.agents.schemas import (
     StructuredExtractionModelOutput,
     SummaryModelOutput,
 )
+from enterprise_doc_core.billing.provider_calls import recorded_post
 from enterprise_doc_core.config import ModelProvider, ModelSettings
+from enterprise_doc_core.model_response import (
+    MAX_MODEL_STREAM_BYTES,
+    ModelResponseError,
+    OpenAIResponseReader,
+    retryable_provider_error,
+)
 
 
 class ModelGatewayError(Exception):
@@ -595,6 +602,7 @@ class OpenAICompatibleChatGateway:
         *,
         settings: ModelSettings,
         client: httpx.AsyncClient | None = None,
+        require_metering: bool = False,
     ) -> None:
         if settings.provider is not ModelProvider.OPENAI_COMPATIBLE:
             raise ValueError("OpenAICompatibleChatGateway requires the openai_compatible provider")
@@ -605,6 +613,7 @@ class OpenAICompatibleChatGateway:
         self.endpoint = f"{settings.base_url.rstrip('/')}/chat/completions"
         self.client = client or httpx.AsyncClient(trust_env=False)
         self._owns_client = client is None
+        self.require_metering = require_metering
 
     async def aclose(self) -> None:
         if self._owns_client:
@@ -774,16 +783,38 @@ class OpenAICompatibleChatGateway:
             "response_format": {"type": "json_object"},
             "messages": messages,
         }
+        if self.settings.reasoning_effort is not None:
+            body["reasoning_effort"] = self.settings.reasoning_effort
+        reader = None
+        if self.settings.streaming:
+            body["stream"] = True
+            body["stream_options"] = {"include_usage": True}
+            reader = OpenAIResponseReader(
+                streaming=True,
+                max_bytes=self.settings.max_output_bytes,
+                max_stream_bytes=MAX_MODEL_STREAM_BYTES,
+            )
         try:
-            response = await self.client.post(
+            response = await recorded_post(
+                self.client,
                 self.endpoint,
+                provider="openai_compatible",
+                model=self.settings.model_name,
+                require_metering=self.require_metering,
                 headers={
                     "Authorization": f"Bearer {self.settings.api_key.get_secret_value()}",
                     "Content-Type": "application/json",
                 },
-                json=body,
-                timeout=httpx.Timeout(self.settings.timeout_seconds),
+                json_body=body,
+                request_timeout=httpx.Timeout(self.settings.timeout_seconds),
+                response_reader=reader,
             )
+        except ModelResponseError as error:
+            if error.code == "model_response_too_large":
+                raise ModelResponseTooLarge() from error
+            if error.code == "model_stream_upstream_error" and error.retryable:
+                raise ModelServerError() from error
+            raise ModelContractError() from error
         except httpx.TimeoutException as error:
             raise ModelTimeoutError() from error
         except httpx.RequestError as error:
@@ -800,6 +831,10 @@ class OpenAICompatibleChatGateway:
             raise ModelResponseTooLarge()
         try:
             raw_envelope = json.loads(response.content)
+            if isinstance(raw_envelope, dict) and raw_envelope.get("error") is not None:
+                if retryable_provider_error(raw_envelope["error"]):
+                    raise ModelServerError()
+                raise ModelContractError()
             envelope = _OpenAIResponse.model_validate(raw_envelope)
         except (json.JSONDecodeError, ValidationError, UnicodeDecodeError) as error:
             raise ModelContractError() from error

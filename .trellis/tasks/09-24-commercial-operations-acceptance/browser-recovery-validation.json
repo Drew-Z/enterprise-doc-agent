@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "phase": "CO-3k local browser connectivity recovery",
+  "recorded_at": "2026-09-27T18:56:32.883556+00:00",
+  "base_commit": "6cce5801a3c0ce1f7b11c876c3f923030da3cf37",
+  "status": "local_browser_verified",
+  "commercial_status": "blocked_external",
+  "task_status": "in_progress",
+  "changes": [
+    "In-place retry of the same response-sheet GET after read failure.",
+    "Hide stale rows after lost generation admission and failed recovery read until a fresh authorized GET succeeds.",
+    "Reconnect clears obsolete connection failure without repeating generation; selecting the same sheet cannot bypass the recovery guard."
+  ],
+  "checks": {
+    "web_unit": {
+      "command": "pnpm test (Web portion)",
+      "passed": 347,
+      "files": 48
+    },
+    "monitor": {
+      "command": "pnpm test (ops-monitor portion)",
+      "passed": 24,
+      "real_cloudflare_writes": 0
+    },
+    "final_targeted_ui": {
+      "command": "pnpm --filter web exec vitest run src/presales/PresalesWorkspace.test.tsx",
+      "passed": 18
+    },
+    "background_browser": {
+      "command": "pnpm --filter web exec playwright test --config playwright.presales-background.config.ts",
+      "passed": 1,
+      "skipped": 0,
+      "retries": 0,
+      "evidence": "browser-attempt-03/results.json"
+    },
+    "synchronous_browser": {
+      "command": "playwright.presales.config.ts inside newly owned local schema",
+      "passed": 5,
+      "skipped": 1,
+      "skip_reason": "Background journey runs only under its separate background fixture.",
+      "evidence": "browser-sync-isolated/results.json"
+    },
+    "lint": {
+      "command": "pnpm lint",
+      "status": "passed"
+    },
+    "typecheck": {
+      "command": "pnpm typecheck",
+      "status": "passed"
+    },
+    "build": {
+      "command": "pnpm build",
+      "status": "passed"
+    },
+    "documentation": {
+      "command": "python -B -X utf8 -m pytest tests/foundation/test_documentation_contract.py -q",
+      "passed": 5
+    }
+  },
+  "source_sha256": {
+    "apps/web/src/presales/PresalesWorkspace.tsx": "f0de2fc997539175c6f96b260d64db1c38fbf7c80fe82346f2a95915d11e9d9c",
+    "apps/web/src/presales/PresalesWorkspace.test.tsx": "910cc1a15ec5b89dde3db43d00d40d763dfc62ce4a79b924706effd93e3bcf96",
+    "apps/web/src/presales/copy.ts": "392b05193356b0d3f721fba5b342ee305004751d60da396786aefd90dce44158",
+    "apps/web/presales-e2e/background.spec.ts": "484647aabc62a75520f3062f4cd5479a3324ea1c3c7e0044253e15f6a43113e9"
+  },
+  "browser_accounting": {
+    "initial_batch_posts": 1,
+    "explicit_failed_row_retry_posts": 1,
+    "generation_posts_from_recovery": 0,
+    "controlled_provider_dispatches": 5,
+    "consumed_reservations": 3,
+    "released_reservations": 1,
+    "unchanged_after_read_reload_review_export": true,
+    "reviews_restored": 3,
+    "csv_verified": true,
+    "mobile_width": 390,
+    "cross_tenant_read_denied": true
+  },
+  "retained_failures": [
+    "Unit red: no in-place read action.",
+    "Real browser red: drafts restored on reconnect but obsolete operation error remained.",
+    "Unit red: selecting same sidebar sheet exposed cached rows before successful recovery.",
+    "Two lint attempts: unsafe JSON return typing and async/await test annotations; corrected without suppressions.",
+    "Synchronous fixture startup against old local public schema failed before seed commit; isolated schema rerun passed.",
+    "Private wrapper initial import failed without repository PYTHONPATH; retried with explicit path.",
+    "Initial status comparison used NUL framing against a newline baseline; same-format byte comparison verified all historical entries.",
+    "Initial staged whitespace check rejected CRLF in the new JSON report before commit; normalized to LF and rechecked."
+  ],
+  "isolation": {
+    "api_database_worker": "real local",
+    "identity": "synthetic bearer; not real GitHub OAuth",
+    "model_http": "controlled transport",
+    "embedding": "controlled hash provider",
+    "real_model_requests": 0,
+    "real_embedding_requests": 0,
+    "emails_sent": 0,
+    "production_writes": 0,
+    "schema_cleanup_verified": true,
+    "remaining_browser_test_schemas": 0,
+    "original_public_tenant_count_unchanged": true
+  },
+  "preserved": {
+    "historical_status_entries": 2993,
+    "frozen_artifact_indexes": 13,
+    "existing_worktrees": "unchanged",
+    "recovery": "exact clean tracked-file baseline at base_commit; working and Git blob hashes distinguished in centralized manifest"
+  },
+  "remaining": [
+    "Production browser/proxy recovery on an approved enabled deployment.",
+    "Nonempty live Agent task accounting and supplier invoice reconciliation.",
+    "Bounded current-host capacity rounds, independent domain review, recurring backups, whole-host RPO/RTO and release approval."
+  ],
+  "publication": "Candidate commit, remote PR and exact-head CI are recorded separately in the private phase closeout."
+}

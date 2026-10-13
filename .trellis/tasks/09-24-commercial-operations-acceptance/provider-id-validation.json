@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "at": "2026-09-29T21:47:57.479299+00:00",
+  "status": "candidate_locally_verified",
+  "baseline_commit": "587d72713711ed278a166f083e1467f4e7efbb32",
+  "deployed_release": "v0.1.45-rc.7",
+  "candidate_deployed": false,
+  "problem": "Gateway bills using x-oneapi-request-id while forwarded x-request-id identifies its upstream",
+  "header_priority": [
+    "x-oneapi-request-id",
+    "x-request-id",
+    "request-id"
+  ],
+  "upstream_source": "https://github.com/QuantumNous/new-api/blob/789c970199ea527e6a26e071915f4a4cd2c64178/common/constants.go",
+  "live_gateway_header_observed": true,
+  "historical_rows_backfilled": 0,
+  "targeted_passed": 24,
+  "isolated_postgres_cases": 6,
+  "non_integration_passed": 2088,
+  "subtests_passed": 23,
+  "non_integration_deselected": 459,
+  "ruff_passed": true,
+  "formatted_files": 617,
+  "mypy_source_files": 251,
+  "supplier_statement": {
+    "rows": 52,
+    "quota_total": 300694,
+    "token_total_used": 300694,
+    "totals_match": true,
+    "quota_per_unit": 500000,
+    "display_unit_type": "CUSTOM",
+    "custom_units": "0.601388",
+    "fiat_currency": null,
+    "exact_application_id_matches": 0,
+    "historical_per_call_reconciliation_complete": false
+  },
+  "confirmed_readonly_provider_http_requests": 5,
+  "failed_readonly_probe_http_upper_bound": 2,
+  "failed_readonly_probe_actual_http_count": null,
+  "real_generation_requests": 0,
+  "real_embedding_requests": 0,
+  "preserved_failures": [
+    "wrong_upstream_id_pre_fix",
+    "fixture_missing_quota_bytes",
+    "initial_format_and_line_length",
+    "mixed_provider_success_and_code_envelopes"
+  ],
+  "evidence": {
+    "provider-id-red.txt": {
+      "sha256": "ef158ae505d5e2c1975ca247d6c1cb5bdae8746c9ee3113d5b413d2966334a55",
+      "bytes": 936
+    },
+    "provider-id-green.txt": {
+      "sha256": "83a5d4ad1ccc90fb6a3555c902d5a57d9c92a5075aab8c57ced4755ea825a1b2",
+      "bytes": 88470
+    },
+    "provider-id-green-final.txt": {
+      "sha256": "4fb052880da057cc1c949f1d7074ff52ae960cd32109e654796060ac5e81fe85",
+      "bytes": 116
+    },
+    "provider-id-lint.txt": {
+      "sha256": "bdb2ff16a622e1fcb745b019748fd174fd0ab4f685f68633df38823812591199",
+      "bytes": 509
+    },
+    "provider-id-lint-final.txt": {
+      "sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0",
+      "bytes": 20
+    },
+    "provider-id-format.txt": {
+      "sha256": "a55c1b5ac790a6d106c4aa0a6dddbf652bf54e4fd2daa77548b7296507d49863",
+      "bytes": 127
+    },
+    "provider-id-format-final.txt": {
+      "sha256": "f2cca65f4ff308d0dc317198840aa8be75d53d83278b48846c77cb451f542b46",
+      "bytes": 29
+    },
+    "provider-id-types.txt": {
+      "sha256": "82bcf5599efd0efb5189f1184e77fc0bb53e4c14436e4a10d3365c12bd56b53c",
+      "bytes": 46
+    },
+    "provider-id-unit.txt": {
+      "sha256": "8bec161684922b86003e60b38451e89051f8b3158c93dfb243e3fed08806d392",
+      "bytes": 2468
+    }
+  },
+  "private_evidence_directory": "acceptance-completion-evidence",
+  "supplier_amount_acceptance_approved": false,
+  "commercial_acceptance_approved": false
+}

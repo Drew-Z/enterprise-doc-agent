@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
 from typing import cast
 from uuid import UUID
@@ -15,11 +15,14 @@ from enterprise_doc_core.billing.administration_contracts import (
     EntitlementConfigurationResult,
     EntitlementSnapshot,
     PlatformEntitlementOperator,
+    ProductQuotaConfiguration,
     require_entitlement_operator,
 )
 from enterprise_doc_core.billing.errors import UsageError
 from enterprise_doc_core.billing.locking import lock_usage_tenant
 from enterprise_doc_core.billing.models import TenantEntitlement
+from enterprise_doc_core.billing.product_contracts import ProductMetric, ProductQuotaView
+from enterprise_doc_core.billing.product_models import ProductQuota
 from enterprise_doc_core.identity.models import Tenant
 
 
@@ -46,9 +49,14 @@ class EntitlementAdministrationService:
                 await lock_usage_tenant(session, tenant_id)
                 existing = await self._find(session, tenant_id, configuration.entitlement_id)
                 if existing is not None:
-                    if not self._matches(existing, configuration):
+                    quotas = await self._quotas(session, tenant_id, [existing.id])
+                    if not self._matches(existing, configuration) or not self._quotas_match(
+                        quotas.get(existing.id, ()), configuration
+                    ):
                         raise UsageError("entitlement_idempotency_conflict")
-                    return EntitlementConfigurationResult(self._snapshot(existing), True)
+                    return EntitlementConfigurationResult(
+                        self._snapshot(existing, quotas.get(existing.id, ())), True
+                    )
                 now = self.clock()
                 if configuration.period_end <= now:
                     raise UsageError("entitlement_period_ended")
@@ -91,6 +99,18 @@ class EntitlementAdministrationService:
                 )
                 session.add(entitlement)
                 await session.flush()
+                product_quotas = self._configured_quotas(configuration)
+                session.add_all(
+                    ProductQuota(
+                        tenant_id=tenant_id,
+                        entitlement_id=entitlement.id,
+                        metric=quota.metric.value,
+                        unit_limit=quota.limit,
+                        units_used=0,
+                        units_reserved=0,
+                    )
+                    for quota in product_quotas
+                )
                 await append_audit_event(
                     session,
                     tenant_id=tenant_id,
@@ -108,9 +128,94 @@ class EntitlementAdministrationService:
                         "period_start": entitlement.period_start.isoformat(),
                         "period_end": entitlement.period_end.isoformat(),
                         "provider_request_limit": entitlement.provider_request_limit,
+                        "agent_task_limit": configuration.agent_task_limit,
+                        "document_bytes_limit": configuration.document_bytes_limit,
+                        **(
+                            {"analysis_cell_limit": configuration.analysis_cell_limit}
+                            if configuration.analysis_cell_limit is not None
+                            else {}
+                        ),
                     },
                 )
-                return EntitlementConfigurationResult(self._snapshot(entitlement), False)
+                return EntitlementConfigurationResult(
+                    self._snapshot(entitlement, product_quotas), False
+                )
+        except IntegrityError as error:
+            raise UsageError("entitlement_configuration_conflict") from error
+        except DBAPIError as error:
+            raise UsageError("entitlement_store_unavailable") from error
+
+    async def configure_products(
+        self,
+        *,
+        tenant_id: UUID,
+        operator: PlatformEntitlementOperator,
+        configuration: ProductQuotaConfiguration,
+    ) -> EntitlementConfigurationResult:
+        operator = require_entitlement_operator(operator)
+        try:
+            async with self.session_factory.begin() as session:
+                await lock_usage_tenant(session, tenant_id)
+                row = await self._find(session, tenant_id, configuration.entitlement_id)
+                if row is None:
+                    raise UsageError("entitlement_not_found")
+                if row.version != configuration.expected_version:
+                    raise UsageError("entitlement_version_conflict")
+                existing = (await self._quotas(session, tenant_id, [row.id])).get(row.id, ())
+                requested = {
+                    ProductMetric.AGENT_TASK: configuration.agent_task_limit,
+                    ProductMetric.DOCUMENT_BYTES: configuration.document_bytes_limit,
+                }
+                if configuration.analysis_cell_limit is not None:
+                    requested[ProductMetric.ANALYSIS_CELL] = configuration.analysis_cell_limit
+                limits = {quota.metric: quota.limit for quota in existing}
+                if any(
+                    metric in limits and limits[metric] != limit
+                    for metric, limit in requested.items()
+                ):
+                    raise UsageError("entitlement_idempotency_conflict")
+                if requested.keys() <= limits.keys():
+                    return EntitlementConfigurationResult(self._snapshot(row, existing), True)
+                now = self.clock()
+                if row.period_end <= now:
+                    raise UsageError("entitlement_period_ended")
+                session.add_all(
+                    ProductQuota(
+                        tenant_id=tenant_id,
+                        entitlement_id=row.id,
+                        metric=metric.value,
+                        unit_limit=limit,
+                        units_used=0,
+                        units_reserved=0,
+                    )
+                    for metric, limit in requested.items()
+                    if metric not in limits
+                )
+                await session.flush()
+                await append_audit_event(
+                    session,
+                    tenant_id=tenant_id,
+                    actor_id=None,
+                    action="billing.product_quotas.configured",
+                    resource_type="tenant_entitlement",
+                    resource_id=row.id,
+                    request_id=str(row.id),
+                    occurred_at=now,
+                    metadata={
+                        "operator_id": operator.operator_id,
+                        "reason": operator.reason,
+                        "version": row.version,
+                        "agent_task_limit": configuration.agent_task_limit,
+                        "document_bytes_limit": configuration.document_bytes_limit,
+                        **(
+                            {"analysis_cell_limit": configuration.analysis_cell_limit}
+                            if configuration.analysis_cell_limit is not None
+                            else {}
+                        ),
+                    },
+                )
+                quotas = (await self._quotas(session, tenant_id, [row.id]))[row.id]
+                return EntitlementConfigurationResult(self._snapshot(row, quotas), False)
         except IntegrityError as error:
             raise UsageError("entitlement_configuration_conflict") from error
         except DBAPIError as error:
@@ -129,7 +234,8 @@ class EntitlementAdministrationService:
                 entitlement = await self._find(session, tenant_id, entitlement_id)
                 if entitlement is None:
                     raise UsageError("entitlement_not_found")
-                return self._snapshot(entitlement)
+                quotas = await self._quotas(session, tenant_id, [entitlement.id])
+                return self._snapshot(entitlement, quotas.get(entitlement.id, ()))
         except DBAPIError as error:
             raise UsageError("entitlement_store_unavailable") from error
 
@@ -147,13 +253,16 @@ class EntitlementAdministrationService:
             async with self.session_factory() as session:
                 if await session.scalar(select(Tenant.id).where(Tenant.id == tenant_id)) is None:
                     raise UsageError("entitlement_not_found")
-                rows = await session.scalars(
-                    select(TenantEntitlement)
-                    .where(TenantEntitlement.tenant_id == tenant_id)
-                    .order_by(desc(TenantEntitlement.version))
-                    .limit(limit)
-                )
-                return tuple(self._snapshot(row) for row in rows)
+                rows = (
+                    await session.scalars(
+                        select(TenantEntitlement)
+                        .where(TenantEntitlement.tenant_id == tenant_id)
+                        .order_by(desc(TenantEntitlement.version))
+                        .limit(limit)
+                    )
+                ).all()
+                quotas = await self._quotas(session, tenant_id, [row.id for row in rows])
+                return tuple(self._snapshot(row, quotas.get(row.id, ())) for row in rows)
         except DBAPIError as error:
             raise UsageError("entitlement_store_unavailable") from error
 
@@ -181,7 +290,9 @@ class EntitlementAdministrationService:
         )
 
     @staticmethod
-    def _snapshot(row: TenantEntitlement) -> EntitlementSnapshot:
+    def _snapshot(
+        row: TenantEntitlement, quotas: tuple[ProductQuotaView, ...] = ()
+    ) -> EntitlementSnapshot:
         return EntitlementSnapshot(
             entitlement_id=row.id,
             tenant_id=row.tenant_id,
@@ -193,4 +304,60 @@ class EntitlementAdministrationService:
             provider_requests_used=row.provider_requests_used,
             provider_requests_reserved=row.provider_requests_reserved,
             created_at=row.created_at,
+            product_quotas=quotas,
         )
+
+    @staticmethod
+    async def _quotas(
+        session: AsyncSession, tenant_id: UUID, entitlement_ids: Sequence[UUID]
+    ) -> dict[UUID, tuple[ProductQuotaView, ...]]:
+        rows = await session.scalars(
+            select(ProductQuota)
+            .where(
+                ProductQuota.tenant_id == tenant_id,
+                ProductQuota.entitlement_id.in_(entitlement_ids),
+            )
+            .order_by(ProductQuota.metric)
+        )
+        result: dict[UUID, tuple[ProductQuotaView, ...]] = {}
+        for row in rows:
+            result[row.entitlement_id] = (
+                *result.get(row.entitlement_id, ()),
+                ProductQuotaView(
+                    ProductMetric(row.metric), row.unit_limit, row.units_used, row.units_reserved
+                ),
+            )
+        return result
+
+    @staticmethod
+    def _quotas_match(
+        quotas: tuple[ProductQuotaView, ...], configuration: EntitlementConfiguration
+    ) -> bool:
+        limits = {quota.metric: quota.limit for quota in quotas}
+        # Old periods without a product quota never silently gain one on replay.
+        return (
+            limits.get(ProductMetric.AGENT_TASK, 0) == configuration.agent_task_limit
+            and limits.get(ProductMetric.DOCUMENT_BYTES, 0) == configuration.document_bytes_limit
+            and (
+                configuration.analysis_cell_limit is None
+                or limits.get(ProductMetric.ANALYSIS_CELL) == configuration.analysis_cell_limit
+            )
+        )
+
+    @staticmethod
+    def _configured_quotas(
+        configuration: EntitlementConfiguration,
+    ) -> tuple[ProductQuotaView, ...]:
+        quotas = [
+            ProductQuotaView(ProductMetric.AGENT_TASK, configuration.agent_task_limit, 0, 0),
+            ProductQuotaView(
+                ProductMetric.DOCUMENT_BYTES, configuration.document_bytes_limit, 0, 0
+            ),
+        ]
+        if configuration.analysis_cell_limit is not None:
+            quotas.append(
+                ProductQuotaView(
+                    ProductMetric.ANALYSIS_CELL, configuration.analysis_cell_limit, 0, 0
+                )
+            )
+        return tuple(quotas)

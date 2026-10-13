@@ -9,6 +9,53 @@ ready/succeeded generations, and asks the user to confirm source applicability.
 Each pasted line is one requirement; an optional tab separates the location.
 This is manual entry, not automatic splitting of a tender document.
 
+## Execution mode UI (2026-10-08 candidate)
+
+### 1. Scope / trigger
+
+Expose the server's supported generation modes and the durable mode of each attempt.
+This local feature does not claim that deep has passed real model quality acceptance.
+
+### 2. Signatures
+
+`Packet.availableExecutionModes?: ("auto" | "deep")[]` and
+`Attempt.executionPolicy?: ExecutionPolicy | null`; API generate/admit and batch
+methods accept an optional final `executionMode` argument.
+
+### 3. Contracts
+
+Render a picker only when modes are advertised. Default to the latest recorded
+attempt's mode or auto; send the choice with single/batch requests and include it
+in the idempotency intent. Legacy servers without the field receive legacy bodies.
+Row history renders the saved mode, time budget and model names from the API.
+Lost acknowledgement triggers the existing GET recovery, never an automatic POST.
+
+### 4. Validation and errors
+
+The strict Zod policy decoder rejects extra fields, invalid/duplicate routes,
+dispatch-count mismatches, nonfinite/oversized budgets and malformed digests.
+Missing legacy policy is unrecorded, not inferred. Display the explicit unavailable
+policy error when the server cannot restore its accepted configuration.
+
+### 5. Good / base / bad cases
+
+Good: deep remains visible after refresh and offline completion. Base: no picker
+for a legacy server. Bad: derive a task's mode from the current picker or automatically
+resubmit generation after a lost response.
+
+### 6. Tests and assertion points
+
+Workspace tests assert single/batch selection and persisted-mode restoration;
+API tests reject nine malformed policies. The real background browser journey
+checks deep payloads, refreshed history, lost acknowledgements, offline completion,
+one-time settlement and mobile layout. Ordinary review/export E2E remains separate.
+
+### 7. Wrong versus correct
+
+Wrong: treat a longer timeout as proof of improved quality or add internal budget
+controls to the user form. Correct: offer the supported modes, explain the longer
+wait, and show the strategy actually saved by the service.
+
 ## Entry from uploaded documents
 
 `apps/web/src/product/DocumentsPage.tsx` refreshes the inventory every two seconds
@@ -32,15 +79,99 @@ and later ordinary navigation does not reuse the consumed selection.
 
 ## Response and review behavior
 
+### Manual completion (0036 local candidate)
+
+1. **Scope:** pending or failed rows expose `ManualResponseEditor`; active generation
+   and existing drafts cannot be overwritten. Exhausted model attempts still allow it.
+2. **Signatures:** typed `manualEvidence` and `manualResponse` use existing authenticated
+   transport; optional nullable `row.manualAuthorship` contains actorId/createdAt/note.
+3. **Contracts:** literal source search and pagination run only on explicit actions.
+   Select <=12 exact600-character passages across fixed authorized sources, confirm,
+   then reuse ReviewEditor and PrerequisiteEditor. Save a human draft; separate review
+   enables reviewed export. Show origin/author/time/note and retained failure history.
+   Original-human panels and draft counts must never label human text as model output.
+4. **Errors:** strict schemas reject missing citations/status constraints and malformed
+   authorship. Revocation discovered by evidence reads hides the packet cache. Unmount
+   aborts reads. An uncertain PUT recovers by GET, preserving the operation key and
+   never automatically replaying the write. Bodies stay out of browser storage.
+5. **Good/base/bad:** human completion with evidence and review; existing model/legacy
+   rows retain their workflow; never call generation to create an editable blank draft.
+6. **Tests:** new form unit test, existing HTTP-boundary tests and real workbook browser
+   journeys at1440/390px; assert download contents, no provider count increase, a lost
+   acknowledgement with exactly one write per row, reload and no horizontal overflow.
+7. **Wrong vs correct:** implicit wrapping-select labels can include option text in
+   Chromium exact-label locators. Give the shared assessment select an explicit
+   aria-label and verify actual browser operation. Publish API and Web together;
+   old readers do not understand new human attribution.
+
 The sheet lists fixed sources and requirements, five outcome labels, conditions,
 missing information, exact source excerpts, filenames and passage locations.
 Finite retrieval and truncation are explicitly disclosed. Generation is per row;
-the batch button sequences pending rows and stops at the first failure. Failed
-rows require an explicit retry. Existing successful rows remain available.
+the batch button submits multiple pending rows in one request when PacketView
+generationMode is background. Exactly one eligible row uses
+`POST /api/presales/{packet}/rows/{row}/generate?response=receipt`. Multiple background
+rows use `POST /api/presales/{packet}/generate?response=receipt` with `{rowIds: [...]}`.
+When supported, both carry `executionMode`; the legacy single-row request is bodyless.
+Both return a GenerationReceipt, validated against the exact packet and complete
+requested row set across admissions and rejections. Only enqueued/replayed rows
+carry attemptId; already_drafted has null. The compatibility API methods without
+the query option still return PacketView/BatchGenerateResult. Acceptance request gates must match the actual selected-row
+count and response schema; the toolbar label alone does not identify the endpoint.
+After a valid receipt, cancel older sheet reads, reset the old sheet cache and start
+a new authorized GET without waiting before releasing submission busy. Show submission
+confirmation while reading; no optimistic row state, draft or success is fabricated.
+Clearing the old cache prevents navigation away/back from exposing a stale pending
+row. A failed GET hides content and follows existing bounded/manual read recovery;
+authorization/protocol failures do not poll. No automatic generation replay is added.
+`api.test.ts` verifies malformed/duplicate/mismatched receipt rejection, and the
+workspace tests cover delayed/failed GETs and discarded pre-admission reads. The real
+background browser test delays the first GET after an actual three-row receipt,
+checks navigation and hidden stale content, then completes the existing recovery/ledger flow.
+The default synchronous mode retains separate row
+requests, avoiding a multi-row inference request that exceeds proxy limits. Missing
+generationMode from an older server defaults to synchronous. Per-row background
+rejections do not stop other eligible rows. A separate retry-failed action submits
+only failed rows with remaining attempts. Existing successful rows remain available.
 
 Human review keeps the original model draft and adds editable text/status/details,
 note, actor, time and history. Reviewed export stays disabled until every row has
 a review. Download Blob URLs are revoked after use or component unmount.
+
+Structured prerequisites display Met / Not met / Needs confirmation with text
+labels as well as distinct colors. Each item expands only its linked exact evidence;
+the complete numbered evidence list remains available. The API field is
+`prerequisites: {condition, state, citationIndexes}[] | null`, with zero-based
+indexes into original draft citations. Zod rejects malformed, duplicate or out-of-range
+links before rendering. Missing legacy fields default to null, shown as unrecorded;
+an empty list explicitly means no prerequisites. Never infer state from old prose.
+
+`ReviewEditor` and `PrerequisiteEditor` permit text/state edits, selecting immutable
+saved evidence, splitting, adding, excluding and restoring prerequisites (maximum 12).
+Every effective item explicitly identifies its original draft item or Human added.
+Repeated origins represent a split; unreferenced originals appear in an exclusion
+list with restoration actions. The payload carries `prerequisiteChanges: {origins,
+excludedIndexes}` alongside prerequisites. It cannot modify excerpt bytes or acquire
+new document access. New evidence still requires the existing source workflow.
+
+Trim edited prerequisite text before deriving conditions from unmet/unknown items;
+supported cannot retain an outstanding
+condition. Content/mapping changes relative to original/latest review require a note.
+The server remains authoritative for range, coverage, citation, conflict and note
+checks. Buttons and fields disable while saving. Empty newly added items/evidence
+cannot save. Legacy null stays unrecorded unless the user explicitly starts recording;
+its additions use null origins and do not invent model assessments.
+
+Effective/original/history panels retain their separate states, links and revision
+maps. Zod verifies origin count, exact original coverage, disjoint exclusions and saved
+citation ranges before rendering. Older reviews without maps remain readable. CSV
+includes effective/original states and the human correction record; every row still
+needs review for reviewed export. Unit tests and both 1440/390px browser journeys cover
+split/add/exclude, restoration, notes, disabled state, refresh and real CSV. This is
+human-correction capability; model original quality is scored independently.
+Give each repeated textarea/select an explicit accessible label. A wrapping label
+whose text includes the control value/options is unstable in the real Chromium
+label locator even when jsdom finds it. Validate current and historical mappings at
+the HTTP boundary before rendering either list.
 
 `api.ts` validates HTTP responses with strict Zod schemas. In-memory operation keys
 are reused after uncertain create/generate/review responses. Failed recorded
@@ -48,15 +179,39 @@ attempts receive a new key only for an explicit retry. These keys are not a brow
 durable queue; after reload, recover the existing server sheet and its attempts.
 
 For a generate network/5xx/response-parse failure, read the same sheet once without
-another POST. A drafted row restores its saved result; a running row uses the existing
-2.5s read polling; a failed row displays the recorded error and an explicit retry.
+another POST. A drafted row restores its saved result; queued/running/recovering rows
+use 2.5s read polling; a failed row displays the recorded error and an explicit retry.
 A still-pending row keeps its original operation key and uncertainty. Authorization
 and business 4xx responses retain their normal failure path. Non-JSON errors preserve
 HTTP status (`presales_http_<status>`) and a safe `X-Request-ID` fallback.
-Timeout copy says that the application did not save a result while the provider may
-still complete/charge, and that retry sends a new request. No synthetic draft or billing
-correction is inferred from a provider dashboard. Tests must assert exactly one POST
-when a 504 is followed by either a persisted draft or a persisted model timeout.
+When background mode is enabled, 202 admission releases the page busy state;
+navigation or refresh recovers persisted work through GET, without another POST.
+Show actual phase and generated/total counts, never invented percentages. Completion
+replaces the background-running notice. Terminal failure copy retains requirements
+and sources and offers later retry without exposing internal routes or exception
+stacks. It does not promise zero upstream cost or fabricate a draft from a provider
+dashboard. Tests assert exactly one POST when a 504 is followed by either a persisted
+draft or a persisted model timeout. A lost batch response followed by completed rows
+restores those results without a false whole-batch HTTP error or a second POST.
+Automatic route recovery belongs to the server.
+
+A failed sheet GET keeps an in-place **Retry reading** action next to the error,
+even though the sheet heading and its ordinary refresh action are hidden. The
+action only calls the current query's `refetch()` for the same sheet/context;
+it cannot create a sheet or dispatch generation. It is disabled while a read is
+fetching or paused. Cached bodies remain hidden during the retry and after a
+denied/malformed response; only a successful authorized GET restores them.
+
+If an uncertain generate response is followed by a failed recovery GET,
+`recoverGeneration` records the sheet ID, the current query `dataUpdatedAt` and
+the read error in memory. Old rows stay hidden until a later successful read.
+Reconnection uses the normal Query read path; the same manual read action remains
+available. A successful read clears the displayed connection failure and reports
+that current row states were recovered, without inferring generation success.
+Selecting the same sidebar sheet cannot clear this guard; a different sheet or
+new operation retires it. Business/authorization 4xx errors keep the existing
+failure path. No write is replayed, no body/operation queue is added to storage,
+and a failed row still requires explicit generation retry.
 
 Query keys include tenant/actor/auth revision. App remounts the workspace when its
 authentication context changes. Unmount aborts the operation and removes queries;
@@ -79,8 +234,41 @@ model output; it is separate from the ordinary development/production entrypoint
 
 Regression files: `src/presales/PresalesWorkspace.test.tsx` (fetch boundary) and
 `presales-e2e/workspace.spec.ts` (real local API/DB, controlled identity/model).
+`playwright.presales-background.config.ts` selects `presales-e2e/background.spec.ts`:
+accepted batch, navigation/reload, actual browser offline completion, GET 503 and
+in-place read recovery, dropped real 202 response plus failed recovery GET,
+primary failure, partial completion, failed-only retry, persisted reviews/CSV,
+commercial settlement, tenant isolation and 390px layout. An independent
+APIRequestContext observes worker/database completion while the browser context
+is offline. Two generation POSTs cover the initial batch and explicit failed-row
+retry; reconnect, refresh and read retry keep five controlled provider dispatches,
+three consumed reservations and one released reservation unchanged. This is a
+local API/DB/worker test with a synthetic bearer and controlled model/embedding
+boundaries, not live OAuth, real-provider capacity or deployed-feature evidence.
+The background
+spec is skipped in the legacy configuration; that skip is not a background pass.
 `playwright.presales.config.ts` is separate from the existing full platform E2E
 configuration, and its fixture deletes only the records it created.
+
+For interactive deployed acceptance, reuse a user-authorized dedicated persistent
+browser profile after real OAuth has been established. Keep that profile private;
+do not export cookies or copy unrelated personal profiles. Waiting for the user to
+sign in must not automatically close their browser or consume the generation
+window. Start the bounded business window only after verifying the current tenant
+and fresh server preflight. Failed checks stop automation and preserve the visible
+browser; they do not authorize another generation, a new tenant, or new supplier
+budget. Record separate authentication, generation, recovery and review outcomes.
+
+Interactive OAuth need not be repeated for every business check. For an authorized
+staging functional test, `issue_staging_smoke_token` can issue a short-lived JWT
+for an existing active member. Verify `/api/session` before adapting the browser
+authentication response; do not stub business endpoints. With `connectOverCDP`,
+configure the new context's proxy explicitly: launcher options are not inherited
+by the independent CDP client. Keep tokens only in memory and retire them afterward.
+If reconnection already replaced the recovery button, do not wait for that vanished
+button before inspecting the current result. A new browser/refresh check is separate
+from proof of automatic recovery in the original window. Automated review must
+identify its author and preserve the original model error, never imply customer approval.
 
 The separate `apps/web/playwright.presales-ingestion.config.ts` suite covers real
 TXT/PDF/DOCX browser uploads, automatic ready-state refresh, source preselection,
@@ -90,6 +278,15 @@ MinIO and Redis/Celery boundaries are real; model HTTP and embeddings are contro
 The [ingestion contract](../foundation-tests/backend/presales-ingestion.md) records
 the ports, resource isolation and diagnostic-secret handling.
 
+Isolated recovery runs may publish MinIO on a random loopback port. Set
+`VITE_OBJECT_STORE_ORIGINS` to that exact origin before starting Vite; the browser's
+presign allowlist and the ingestion test's successful PUT counter must use the same
+origin list, not port 9000. `tests.presales.browser_server` resolves one
+`ApiSettings(_env_file=None)` instance and shares its database settings between the
+seed engine and API. A standalone `DatabaseSettings()` ignores `DATABASE__URL` and
+can seed the wrong local database. Restored-data runs must retain the selected DB
+identity, explicit local endpoints, failed attempts and tenant cleanup receipts.
+
 The [integrated first-use suite](../foundation-tests/backend/first-use.md) now
 connects browser admission and invitations to the real ingestion and Presales
 path, including both roles' review/CSV, usage settlement, parser/model recovery,
@@ -97,6 +294,13 @@ two-tab switching and member revocation. It uses the production API factory with
 synthetic signed IdP and local model HTTP; it is not real-provider/customer acceptance.
 
 ## Proven Examples
+
+Background generation and ordinary JSON requests use a 15-second response deadline.
+An uncertain response recovers through the same sheet GET; legacy synchronous
+generation retains 180 seconds. Transient GET failures can retry twice at 2.5/5-second
+intervals, including when no packet loaded. Permission/protocol failures stop automatic
+polling and hide cached bodies. Active work carries background guidance after remount;
+submission, recovery, failed allowance and exhausted attempts have distinct copy.
 
 - `apps/web/src/product/DocumentsPage.test.tsx`: polling stops at terminal states
   or read errors, explicit retry recovers, and only ready sources enable entry.
@@ -106,3 +310,106 @@ synthetic signed IdP and local model HTTP; it is not real-provider/customer acce
   preselection, unavailable sources, review/recovery and authorization failures.
 - `apps/web/presales-ingestion-e2e/workspace.spec.ts`: real uploaded files and
   controlled responses at 1440px and 390px, with tenant denial and cleanup receipts.
+
+## Scenario: Excel import and original-workbook export
+
+### 1. Scope / Trigger
+`PacketForm` offers manual entry or Excel import while sharing source/title/applicability.
+
+### 2. Signatures
+`WorkbookImport`, `workbook.ts` boundary schemas, and `presalesApi.previewWorkbook`,
+`importWorkbook`, `exportWorkbook`. `Packet.workbook` is nullable/optional metadata.
+
+### 3. Contracts
+Keep the selected file only in component memory; abort reads/preview on unmount.
+Every file/mapping change clears confirmed intent. Show actual question/answer coordinates
+and all selected questions before confirmation. Save requires both source and mapping
+confirmation. Idempotency intent stores filename/hash/mapping, not base64 file bodies.
+Use the existing authenticated transport, scoped query cache, server-side recent list and
+UUID-only sessionStorage recovery. Preview/import response schemas remain strict.
+
+### 4. Validation & Error Matrix
+Files >2 MiB or non-XLSX reject locally; server validates content and supported features.
+Invalid mapping or unavailable sheet cannot enable save. Demo maxRequirements<12 also
+limits imported rows. API errors are shown without raw file content. XLSX downloads
+must have the exact workbook MIME and use a revoked object URL after browser download.
+
+### 5. Good/Base/Bad Cases
+Render up to120 rows in pages of12. Generate/retry only the next<=12 eligible rows per
+user action; existing per-row/uncertain-admission recovery stays unchanged. Preserve
+page while saving a review on the current packet. Excel draft/reviewed controls sit
+alongside existing CSV; reviewed stays disabled until all rows have reviews.
+
+### 6. Tests Required
+Mapping invalidates confirmation;13-row packet renders12 then1 and submits only12;
+desktop/mobile import, review, refresh, download and XLSX reopen; no file bodies in
+browser persistence. Run `playwright.workbook.config.ts` with WORKBOOK_E2E_OUTPUT_DIR
+pointing to task evidence; it owns a loopback PostgreSQL schema and uses controlled models.
+
+### 7. Wrong vs Correct
+Wrong: assume frontend max120 permits a120-row API batch, or leave confirmation valid
+after editing a column. Correct: separate questionnaire capacity from admission limits,
+re-preview changed mapping, and use durable server metadata after reopening.
+
+## Scenario: review citation correction
+
+### 1. Scope / Trigger
+Allow correction of an irrelevant draft citation within the existing review workflow.
+The original draft and each review must continue to display their own source evidence.
+
+### 2. Signatures
+`EvidencePicker` takes controlled `selected`, `onChange`, packet sources and an
+`EvidenceReader`; manual authorship also supplies `onConfirm`. Review input sends
+`citations: { chunkId, documentVersionId, excerpt }[]`. Returned review citations are
+nullable/optional for older records and contain complete server metadata.
+
+### 3. Contracts
+`reviewCitations(draft, review)` uses nullish fallback; explicit[] stays empty. Zod checks
+each current/history prerequisite against its own citation length. Input additionally
+checks unique quotes, <=12, evidence for non-insufficient status and >=2 versions for
+conflict. The picker shares literal search, cancellation, paging and selection with
+manual authorship, without resetting the review's unsaved text. On selection change,
+remap prerequisite indexes by exact `(chunkId, documentVersionId, excerpt)` identity;
+removed references become unselected. Restoring an excluded original must also remap its
+links. Preserve raw original items for provenance comparisons. Store no body in browsers.
+
+### 4. Validation & Error Matrix
+No correction note -> local error. Missing prerequisite evidence or invalid selection
+-> no PUT. Source revocation during browsing -> remove cached packet and hide editor.
+Transient browse failures preserve current edits and selection. Lost review PUT response
+-> GET only; cancel older reads before applying the recovery result. A higher revision
+shows a read-recovery notice requiring the user to verify it, not a claim that this exact
+intent won. An unchanged revision shows failure and keeps the explicit retry key.
+
+### 5. Good/Base/Bad Cases
+Base: old null/omitted review citations render draft evidence. Good: remove citation1,
+retain citation2's identity under its new index, deliberately relink affected items and
+save with a note. Bad: attach a different source to an unchanged numeric index, reset
+the draft while searching, or automatically repeat a PUT after losing its acknowledgement.
+
+### 6. Tests Required
+ResponseRow/API/Workspace tests cover rebinding, restoring exclusions, unchanged unsaved
+text, per-history evidence, invalid bindings, explicit empty/conflict, lost PUT and access
+revocation. Real1440/390 browser runs cover human completion, corrected review, GET recovery,
+reload, CSV provenance and unchanged workbook formulas/other sheets with zero live calls.
+
+### 7. Wrong vs Correct
+Wrong: `review.citations?.length ? review.citations : draft.citations`,
+or `row.draft.citations` for every history entry. Correct: use the revision's explicit list
+when present, preserve[] and keep original/history evidence separately visible.
+
+## Missing-information budget (v23 candidate)
+
+Public missingInformation accepts at most156 independent strings (12 question parts
+*12 gaps +12 unknown-rule actions), each at most1,000 Unicode code points, totaling
+at most12,000 code points after trim. Use Array.from for the matching JS count; native
+string.length measures UTF-16 units. No other twelve-item boundary is widened.
+Review keeps the original list when the textarea text is unchanged, including
+embedded newlines. Explicitly edited text retains the existing one-line-per-item
+entry convention. The textarea's24,155-unit physical ceiling allows the full Unicode
+budget plus155 separators; Zod and server validation enforce the semantic limits.
+Original/current/history readers share the same schema. Publish API/Worker/Web
+together; old readers reject new>12 lists, so a rollback must retain compatible
+readers or explicitly restore the pre-release data snapshot. Tests cover14-item
+HTTP read/review, supplementary characters, total/item/count rejection and unchanged
+multiline review. This does not mark generated answers as business-approved.

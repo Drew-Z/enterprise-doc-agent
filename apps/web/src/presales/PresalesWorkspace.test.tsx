@@ -53,6 +53,10 @@ function json(value: unknown, status = 200) {
   return new Response(JSON.stringify(value), { status, headers: { "Content-Type": "application/json" } });
 }
 
+function receipt(value: Packet, rejected: { rowId: string; code: string }[] = []) {
+  return { packetId: value.id, admissions: value.rows.filter(row => !rejected.some(item => item.rowId === row.id)).map(row => ({ rowId: row.id, disposition: "enqueued", attemptId: row.attempts[0]?.id ?? crypto.randomUUID() })), rejected };
+}
+
 function requestPath(input: RequestInfo | URL): string {
   return typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
 }
@@ -95,6 +99,366 @@ beforeEach(() => { sessionStorage.clear(); localStorage.clear(); });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 describe("PresalesWorkspace HTTP boundary", () => {
+  it("recovers a saved citation correction with GET after losing PUT and preserves it on reload", async () => {
+    sessionStorage.setItem(storageKey, packetId);
+    let current = makePacket(true);
+    const corrected = { ...current.rows[0].draft!.citations[0], chunkId: actorId, excerpt: "Correct certificate clause." };
+    const fetch = mockApi(() => current, (path, init) => {
+      if (path.includes("/manual-evidence?")) return json({ items: [corrected], nextOffset: null });
+      expect(path).toContain("/review");
+      if (typeof init.body !== "string") throw new Error("Expected JSON review input");
+      const payload = reviewInputSchema.parse(JSON.parse(init.body));
+      expect(payload.citations?.[0].excerpt).toBe(corrected.excerpt);
+      const { expectedRevision, ...content } = payload;
+      const review = { ...content, citations: [corrected], revision: expectedRevision + 1, actorId, reviewedAt: timestamp };
+      current = makePacket(true); current.rows[0].revision = 2;
+      current.rows[0].review = review; current.rows[0].reviewHistory = [review];
+      throw new TypeError("Saved PUT response lost");
+    });
+    const view = mount();
+    fireEvent.click(await screen.findByRole("button", { name: "R1 Evidence and review" }));
+    fireEvent.change(screen.getByLabelText("Response"), { target: { value: "Use the certificate clause." } });
+    fireEvent.click(screen.getByRole("button", { name: "Correct source evidence" }));
+    fireEvent.click(screen.getByRole("button", { name: "Search source text" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Select evidence 1" }));
+    fireEvent.click(screen.getByRole("button", { name: "Remove evidence 1" }));
+    fireEvent.change(screen.getByLabelText("Review note"), { target: { value: "Replaced the unrelated quotation." } });
+    fireEvent.click(screen.getByRole("button", { name: "Save review" }));
+    await screen.findByText("The saved result was read again. Check the latest review and citations.");
+    expect(screen.getByRole("button", { name: "Export reviewed CSV" })).toBeEnabled();
+    expect(fetch.mock.calls.filter(([, init]) => init?.method === "PUT")).toHaveLength(1);
+    expect(fetch.mock.calls.filter(([, init]) => init?.method === "POST")).toHaveLength(0);
+    view.unmount(); mount();
+    fireEvent.click(await screen.findByRole("button", { name: "R1 Evidence and review" }));
+    expect(screen.getByLabelText("Response")).toHaveValue("Use the certificate clause.");
+    expect(screen.getAllByText(corrected.excerpt).length).toBeGreaterThan(0);
+    expect(fetch.mock.calls.filter(([, init]) => init?.method === "PUT")).toHaveLength(1);
+  });
+
+  it("hides source text and unsaved review when browsing reveals revoked access", async () => {
+    sessionStorage.setItem(storageKey, packetId);
+    const fetch = mockApi(() => makePacket(true), () => json({ error: { code: "presales_source_unavailable", message: "Source access revoked", requestId: "citation-revoked" } }, 409));
+    mount();
+    fireEvent.click(await screen.findByRole("button", { name: "R1 Evidence and review" }));
+    fireEvent.click(screen.getByRole("button", { name: "Correct source evidence" }));
+    fireEvent.click(screen.getByRole("button", { name: "Search source text" }));
+    await waitFor(() => expect(screen.queryByRole("article")).not.toBeInTheDocument());
+    expect(screen.queryByText("Retention is 30 days.")).not.toBeInTheDocument();
+    expect(fetch.mock.calls.filter(([, init]) => init?.method === "PUT")).toHaveLength(0);
+  });
+
+  it.each([1, 2])("submits the selected deep mode for %i rows and restores it after a lost response and reload", async count => {
+    sessionStorage.setItem(storageKey, packetId);
+    let current = { ...makePacket(), generationMode: "background" as const, availableExecutionModes: ["auto", "deep"] as ("auto" | "deep")[] };
+    if (count === 2) current.rows.push({ ...structuredClone(current.rows[0]), id: versionId, requirement: { key: "R2", text: "Second requirement", sourceLocation: "" } });
+    const policy: NonNullable<Packet["rows"][number]["attempts"][number]["executionPolicy"]> = { version: "presales.execution.v1", mode: "deep", rowTimeoutSeconds: 660, queueTimeoutSeconds: 900, maxProviderRequests: 1, dailyDispatchLimit: 200,
+      routes: [{ route: "primary", provider: "openai_compatible", endpointSha256: "a".repeat(64), modelName: "fixture-model", modelVersion: null, modelRevision: null, reasoningEffort: "high", streaming: false, timeoutSeconds: 300, maxOutputBytes: 262144, promptVersion: "presales.v12", promptSha256: "b".repeat(64) }] };
+    const fetch = mockApi(() => current, () => {
+      current = { ...current, rows: current.rows.map(row => ({ ...row, revision: 1, state: "drafted", draft: makePacket(true).rows[0].draft, attempts: [{ ...attempt("succeeded"), executionPolicy: policy }] })) };
+      return Promise.reject(new TypeError("admission response was lost"));
+    });
+    const view = mount();
+    const picker = await screen.findByLabelText("Generation mode");
+    fireEvent.change(picker, { target: { value: "deep" } });
+    fireEvent.click(screen.getByRole("button", { name: "Generate pending responses" }));
+    await screen.findAllByText("Saved mode: Deep");
+    const writes = fetch.mock.calls.filter(([, init]) => init?.method === "POST");
+    expect(writes).toHaveLength(1);
+    const submitted = writes[0][1]?.body;
+    if (typeof submitted !== "string") throw new Error("Expected a JSON request body");
+    expect(JSON.parse(submitted)).toEqual(count === 1 ? { executionMode: "deep" } : { rowIds: [rowId, versionId], executionMode: "deep" });
+    view.unmount();
+    mount();
+    await screen.findAllByText("Saved mode: Deep");
+    expect(screen.getByLabelText("Generation mode")).toHaveValue("deep");
+    expect(fetch.mock.calls.filter(([, init]) => init?.method === "POST")).toHaveLength(1);
+  });
+
+  it.each([403, 503])("keeps content hidden after a receipt followed by HTTP %i, with read-only recovery", async status => {
+    sessionStorage.setItem(storageKey, packetId);
+    const current = makePacket(); current.generationMode = "background";
+    let posted = false;
+    let recovered = false;
+    const fetch = vi.spyOn(globalThis, "fetch").mockImplementation((input, init) => {
+      if (init?.method === "POST") { posted = true; return Promise.resolve(json(receipt(current), 202)); }
+      if (requestPath(input) === "/api/presales/" + packetId) {
+        if (posted && !recovered) return Promise.resolve(json({ error: { code: status === 403 ? "presales_forbidden" : "temporarily_unavailable", message: "Result read unavailable", requestId: "receipt-read" } }, status));
+        return Promise.resolve(json(recovered ? makePacket(true) : current));
+      }
+      return Promise.resolve(json([]));
+    });
+    mount();
+    fireEvent.click(await screen.findByRole("button", { name: "Generate response" }));
+    await screen.findByRole("alert");
+    expect(screen.queryByRole("article")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "New response sheet" })).toBeEnabled();
+    recovered = true;
+    fireEvent.click(screen.getByRole("button", { name: "Retry reading" }));
+    await screen.findByText("The source states 30 days.", { selector: "p" });
+    expect(fetch.mock.calls.filter(([, init]) => init?.method === "POST")).toHaveLength(1);
+  });
+
+  it("discards a pre-admission read that returns late instead of restoring a stale pending row", async () => {
+    sessionStorage.setItem(storageKey, packetId);
+    const current = makePacket(); current.generationMode = "background";
+    let reads = 0;
+    let posted = false;
+    let finishOld!: (response: Response) => void;
+    let oldSignal: AbortSignal | null | undefined;
+    const fetch = vi.spyOn(globalThis, "fetch").mockImplementation((input, init) => {
+      if (init?.method === "POST") { posted = true; return Promise.resolve(json(receipt(current), 202)); }
+      if (requestPath(input) === "/api/presales/" + packetId) {
+        reads += 1;
+        if (reads === 2) { oldSignal = init?.signal; return new Promise<Response>(resolve => { finishOld = resolve; }); }
+        return Promise.resolve(json(posted ? makePacket(true) : current));
+      }
+      return Promise.resolve(json([]));
+    });
+    mount();
+    await screen.findByRole("article");
+    fireEvent.click(screen.getAllByRole("button", { name: "Refresh" })[1]);
+    await waitFor(() => expect(finishOld).toBeDefined());
+    fireEvent.click(screen.getByRole("button", { name: "Generate response" }));
+    await screen.findByText("The source states 30 days.", { selector: "p" });
+    expect(oldSignal?.aborted).toBe(true);
+    await act(() => Promise.resolve(finishOld(json(current))));
+    expect(screen.getByText("The source states 30 days.", { selector: "p" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Generate response" })).not.toBeInTheDocument();
+    expect(fetch.mock.calls.filter(([, init]) => init?.method === "POST")).toHaveLength(1);
+  });
+
+  it("releases navigation on a durable receipt while a fresh authorized read is still pending", async () => {
+    sessionStorage.setItem(storageKey, packetId);
+    const current = makePacket(); current.generationMode = "background";
+    let posted = false;
+    let finishRead!: (response: Response) => void;
+    const fetch = vi.spyOn(globalThis, "fetch").mockImplementation((input, init) => {
+      if (init?.method === "POST") {
+        posted = true;
+        return Promise.resolve(json({ packetId, admissions: [{ rowId, disposition: "enqueued", attemptId: crypto.randomUUID() }], rejected: [] }, 202));
+      }
+      if (requestPath(input) === "/api/presales/" + packetId) {
+        return posted ? new Promise<Response>(resolve => { finishRead = resolve; }) : Promise.resolve(json(current));
+      }
+      return Promise.resolve(json([]));
+    });
+    mount();
+    fireEvent.click(await screen.findByRole("button", { name: "Generate response" }));
+    await waitFor(() => expect(finishRead).toBeDefined());
+    await waitFor(() => expect(screen.getByRole("button", { name: "New response sheet" })).toBeEnabled());
+    expect(screen.queryByRole("article")).not.toBeInTheDocument();
+    expect(screen.getByText(/Submission confirmed. Reading the latest/)).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    act(() => { finishRead(json(makePacket(true))); });
+    await screen.findByText("The source states 30 days.", { selector: "p" });
+    expect(fetch.mock.calls.filter(([, init]) => init?.method === "POST").map(([input]) => requestPath(input))).toEqual([`/api/presales/${packetId}/rows/${rowId}/generate?response=receipt`]);
+  });
+
+  it("automatically recovers an initial temporary read failure without generating", async () => {
+    sessionStorage.setItem(storageKey, packetId);
+    let reads = 0;
+    const fetch = vi.spyOn(globalThis, "fetch").mockImplementation(input => {
+      if (requestPath(input) !== "/api/presales/" + packetId) return Promise.resolve(json([]));
+      reads += 1;
+      return Promise.resolve(reads === 1 ? new Response("Proxy unavailable", { status: 503 }) : json(makePacket(true)));
+    });
+    mount();
+    await screen.findByRole("alert");
+    expect(screen.queryByRole("article")).not.toBeInTheDocument();
+    await screen.findByText("The source states 30 days.", { selector: "p" }, { timeout: 4000 });
+    expect(reads).toBe(2);
+    expect(fetch.mock.calls.every(([, init]) => (init?.method ?? "GET") === "GET")).toBe(true);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("shows immediate submission feedback before slow admission, then background recovery guidance", async () => {
+    sessionStorage.setItem(storageKey, packetId);
+    const current = makePacket(); current.generationMode = "background";
+    let finish!: (response: Response) => void;
+    const fetch = mockApi(() => current, () => new Promise<Response>(resolve => { finish = resolve; }));
+    mount();
+    fireEvent.click(await screen.findByRole("button", { name: "Generate response" }));
+    expect(screen.getByText(/Submitting generation/)).toBeInTheDocument();
+    expect(screen.queryByText(/Accepted. Generation/)).not.toBeInTheDocument();
+    current.rows[0].state = "recovering";
+    act(() => { finish(json(receipt(current), 202)); });
+    await screen.findByText(/Recovery is in progress/);
+    expect(screen.getByRole("button", { name: "Generate response" })).toBeDisabled();
+    expect(fetch.mock.calls.filter(([, init]) => init?.method === "POST")).toHaveLength(1);
+  });
+
+  it("retries a failed sheet read in place without creating or generating anything", async () => {
+    sessionStorage.setItem(storageKey, packetId);
+    let reads = 0;
+    let finishRead!: (response: Response) => void;
+    const fetch = vi.spyOn(globalThis, "fetch").mockImplementation(async input => {
+      if (requestPath(input) !== "/api/presales/" + packetId) return json([]);
+      reads += 1;
+      if (reads === 2) return json({ error: { code: "temporarily_unavailable", message: "Temporary read failure", requestId: "read-retry" } }, 503);
+      if (reads === 3) return new Promise<Response>(resolve => { finishRead = resolve; });
+      return json(makePacket(true));
+    });
+    mount();
+    await screen.findByText("The source states 30 days.", { selector: "p" });
+    fireEvent.click(screen.getAllByRole("button", { name: "Refresh" })[1]);
+    await screen.findByRole("alert");
+    expect(screen.queryByRole("article")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Retry reading" }));
+    await waitFor(() => expect(reads).toBe(3));
+    expect(screen.getByRole("button", { name: "Retry reading" })).toBeDisabled();
+    expect(screen.queryByRole("article")).not.toBeInTheDocument();
+    act(() => { finishRead(json(makePacket(true))); });
+    await screen.findByText("The source states 30 days.", { selector: "p" });
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(sessionStorage.getItem(storageKey)).toBe(packetId);
+    expect(fetch.mock.calls.every(([, init]) => (init?.method ?? "GET") === "GET")).toBe(true);
+  });
+
+  it.each([1, 2])("recovers %i row generation after both admission and recovery reads lose their responses", async rowCount => {
+    sessionStorage.setItem(storageKey, packetId);
+    const pending = makePacket();
+    pending.generationMode = "background";
+    if (rowCount === 2) pending.rows.push({ ...pending.rows[0], id: crypto.randomUUID(), requirement: { ...pending.rows[0].requirement, key: "R2" } });
+    pending.rowCount = rowCount;
+    let posted = false;
+    let connected = true;
+    const fetch = vi.spyOn(globalThis, "fetch").mockImplementation((input, init) => {
+      const path = requestPath(input);
+      if (path.split("?")[0].endsWith("/generate")) { posted = true; connected = false; return Promise.reject(new TypeError("Admission response lost")); }
+      if (path === "/api/presales/" + packetId) {
+        if (!connected) return Promise.reject(new TypeError("Recovery read lost"));
+        return Promise.resolve(json(posted ? { ...pending, rows: pending.rows.map(row => ({ ...row, state: "drafted", draft: makePacket(true).rows[0].draft, attempts: [attempt("succeeded")], revision: 1 })) } : pending));
+      }
+      expect(init?.method ?? "GET").toBe("GET");
+      return Promise.resolve(json([{ id: packetId, title: pending.title, createdAt: timestamp, rowCount, staleSources: false }]));
+    });
+    mount();
+    fireEvent.click(await screen.findByRole("button", { name: "Generate pending responses" }));
+    await screen.findByText("Recovery read lost");
+    expect(screen.queryByRole("article")).not.toBeInTheDocument();
+    expect(sessionStorage.getItem(storageKey)).toBe(packetId);
+    fireEvent.click(screen.getByRole("button", { name: /Customer retention response/ }));
+    expect(screen.queryByRole("article")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Retry reading" })).toBeInTheDocument();
+    connected = true;
+    fireEvent.click(screen.getByRole("button", { name: "Retry reading" }));
+    await waitFor(() => expect(screen.getAllByText("The source states 30 days.", { selector: "p" })).toHaveLength(rowCount));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getByText("The response sheet was read again. Check each row's current state.")).toBeInTheDocument();
+    expect(fetch.mock.calls.filter(([, init]) => init?.method === "POST")).toHaveLength(1);
+    expect(screen.getByRole("button", { name: "Generate pending responses" })).toBeDisabled();
+  });
+
+  it("keeps cached content hidden when a read retry is denied by the server", async () => {
+    sessionStorage.setItem(storageKey, packetId);
+    let reads = 0;
+    vi.spyOn(globalThis, "fetch").mockImplementation(input => {
+      if (requestPath(input) !== "/api/presales/" + packetId) return Promise.resolve(json([]));
+      reads += 1;
+      return Promise.resolve(reads === 1 ? json(makePacket(true)) : json({ error: { code: "presales_forbidden", message: "Access revoked", requestId: "read-denied" } }, 403));
+    });
+    mount();
+    await screen.findByText("The source states 30 days.", { selector: "p" });
+    fireEvent.click(screen.getAllByRole("button", { name: "Refresh" })[1]);
+    await screen.findByText(/Access revoked/);
+    fireEvent.click(screen.getByRole("button", { name: "Retry reading" }));
+    await waitFor(() => expect(reads).toBe(3));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Retry reading" })).toBeEnabled());
+    expect(screen.queryByRole("article")).not.toBeInTheDocument();
+    expect(screen.queryByText("The source states 30 days.")).not.toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("Access revoked");
+  });
+
+  it("keeps synchronous servers on separate row requests instead of one long batch", async () => {
+    sessionStorage.setItem(storageKey, packetId);
+    const current = makePacket();
+    current.rows.push({ ...current.rows[0], id: crypto.randomUUID(), requirement: { ...current.rows[0].requirement, key: "R2" } });
+    current.rowCount = 2;
+    const requests: string[] = [];
+    mockApi(() => current, path => {
+      requests.push(path);
+      const row = current.rows.find(r => path === `/api/presales/${packetId}/rows/${r.id}/generate`);
+      if (!row) throw new Error("Synchronous generation must submit one row per request.");
+      row.state = "drafted";
+      row.draft = makePacket(true).rows[0].draft;
+      row.revision = 1;
+      return json(current);
+    });
+    mount();
+    fireEvent.click(await screen.findByRole("button", { name: "Generate pending responses" }));
+    await waitFor(() => expect(screen.getAllByText("The source states 30 days.", { selector: "p" })).toHaveLength(2));
+    expect(requests).toEqual(current.rows.map(r => `/api/presales/${packetId}/rows/${r.id}/generate`));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("recovers all saved batch results after a lost response without a false error or another POST", async () => {
+    sessionStorage.setItem(storageKey, packetId);
+    const current = makePacket();
+    current.generationMode = "background";
+    current.rows.push({ ...current.rows[0], id: crypto.randomUUID(), requirement: { ...current.rows[0].requirement, key: "R2" } });
+    current.rowCount = 2;
+    const requests: string[] = [];
+    mockApi(() => current, path => {
+      requests.push(path);
+      for (const row of current.rows) {
+        row.state = "drafted";
+        row.draft = makePacket(true).rows[0].draft;
+        row.revision = 1;
+      }
+      return new Response("Gateway Timeout", { status: 504 });
+    });
+    mount();
+    fireEvent.click(await screen.findByRole("button", { name: "Generate pending responses" }));
+    await waitFor(() => expect(screen.getAllByText("The source states 30 days.", { selector: "p" })).toHaveLength(2));
+    await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
+    expect(requests).toEqual([`/api/presales/${packetId}/generate?response=receipt`]);
+  });
+
+  it("accepts background work, releases navigation, and restores queued state on remount", async () => {
+    sessionStorage.setItem(storageKey, packetId);
+    const current = makePacket();
+    current.generationMode = "background";
+    const requests: string[] = [];
+    mockApi(() => current, path => {
+      requests.push(path);
+      current.rows[0].state = "queued";
+      current.rows[0].attempts = [{ ...attempt("failed"), state: "queued", errorCode: null, providerRequestCount: 0, finishedAt: null }];
+      return json(receipt(current), 202);
+    });
+    const first = mount();
+    fireEvent.click(await screen.findByRole("button", { name: "Generate response" }));
+    await screen.findByText("Queued");
+    expect(screen.getByRole("button", { name: "New response sheet" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Generate response" })).toBeDisabled();
+    expect(screen.getByText(/Generation continues in the background/)).toBeInTheDocument();
+    first.unmount();
+    mount();
+    await screen.findByText("Queued");
+    expect(requests).toHaveLength(1);
+  });
+
+  it("submits one server batch and keeps accepted rows visible after a partial rejection", async () => {
+    sessionStorage.setItem(storageKey, packetId);
+    const current = makePacket();
+    current.generationMode = "background";
+    current.rows.push({ ...current.rows[0], id: crypto.randomUUID(), requirement: { ...current.rows[0].requirement, key: "R2" } });
+    current.rowCount = 2;
+    const requests: string[] = [];
+    mockApi(() => current, (path, init) => {
+      requests.push(path);
+      expect(path).toBe(`/api/presales/${packetId}/generate?response=receipt`);
+      if (typeof init.body !== "string") throw new Error("Expected a JSON batch body.");
+      expect(JSON.parse(init.body)).toEqual({ rowIds: current.rows.map(r => r.id) });
+      current.rows[0].state = "queued";
+      return json(receipt(current, [{ rowId: current.rows[1].id, code: "presales_usage_limit" }]), 202);
+    });
+    mount();
+    fireEvent.click(await screen.findByRole("button", { name: "Generate pending responses" }));
+    await screen.findByText("Queued");
+    expect(screen.getByText(/1 row could not be queued/)).toBeInTheDocument();
+    expect(requests).toHaveLength(1);
+    expect(within(screen.getByRole("article", { name: "R2" })).getByRole("button", { name: "Generate response" })).toBeEnabled();
+  });
   it("starts a new sheet with the selected ready source instead of reopening the previous sheet", async () => {
     sessionStorage.setItem(storageKey, packetId);
     const fetch = mockApi(() => makePacket());
@@ -167,7 +531,7 @@ describe("PresalesWorkspace HTTP boundary", () => {
     await screen.findByText("Connection lost");
     expect(keys).toHaveLength(1);
     fireEvent.click(screen.getByRole("button", { name: "Generate response" }));
-    await screen.findByText(/provider may still complete and charge/);
+    await screen.findByText(/Your requirements and sources are saved/);
     expect(keys[1]).toBe(keys[0]);
     fireEvent.click(screen.getByRole("button", { name: "Retry this row" }));
     await screen.findByText("The source states 30 days.", { selector: "p" });
@@ -195,7 +559,7 @@ describe("PresalesWorkspace HTTP boundary", () => {
         const payload = reviewInputSchema.parse(JSON.parse(init.body));
         const { expectedRevision, ...text } = payload;
         expect(expectedRevision).toBe(1);
-        const review = { ...text, revision: 2, actorId, reviewedAt: timestamp };
+        const review = { ...text, citations: current.rows[0].draft!.citations, revision: 2, actorId, reviewedAt: timestamp };
         current = makePacket(true); current.rows[0].revision = 2;
         current.rows[0].review = review; current.rows[0].reviewHistory = [review];
         return json(current);
@@ -251,7 +615,7 @@ describe("PresalesWorkspace HTTP boundary", () => {
     });
     mount();
     fireEvent.click(await screen.findByRole("button", { name: "Generate response" }));
-    await screen.findByText(/provider may still complete and charge/);
+    await screen.findByText(/Your requirements and sources are saved/);
     expect(screen.getByRole("button", { name: "Retry this row" })).toBeEnabled();
     expect(calls).toHaveLength(1);
     expect(screen.queryByText(/Request failed/)).not.toBeInTheDocument();
@@ -300,5 +664,30 @@ describe("PresalesWorkspace HTTP boundary", () => {
     await screen.findByRole("alert");
     expect(screen.queryByText("The source states 30 days.")).not.toBeInTheDocument();
     expect(screen.queryByText("Reviewed")).not.toBeInTheDocument();
+  });
+
+  it("paginates 13 imported rows and only admits the next twelve", async () => {
+    sessionStorage.setItem(storageKey, packetId);
+    const base = makePacket();
+    let current: Packet = { ...base, generationMode: "background", rowCount: 13,
+      rows: Array.from({ length: 13 }, (_, index) => ({ ...structuredClone(base.rows[0]), id: crypto.randomUUID(), requirement: { key: `X${index + 2}`, text: `Question ${index + 1}`, sourceLocation: `B${index + 2}` } })),
+      workbook: { filename: "customer.xlsx", sha256: "a".repeat(64), mapping: { sheet: "Sheet1", questionColumn: "B", answerColumn: "C", firstRow: 2, lastRow: 14 }, rows: Array.from({ length: 13 }, (_, index) => index + 2) } };
+    const fetch = mockApi(() => current, (_path, init) => {
+      if (typeof init.body !== "string") throw new Error("Expected JSON body");
+      const body = JSON.parse(init.body) as { rowIds: string[] };
+      expect(body.rowIds).toHaveLength(12);
+      current = { ...current, rows: current.rows.map(row => body.rowIds.includes(row.id) ? { ...row, state: "drafted", revision: 1, draft: makePacket(true).rows[0].draft } : row) };
+      return json({ packetId, admissions: body.rowIds.map(rowId => ({ rowId, disposition: "enqueued", attemptId: crypto.randomUUID() })), rejected: [] }, 202);
+    });
+    mount();
+    await screen.findByRole("button", { name: "Generate next batch (up to 12)" });
+    expect(screen.getAllByRole("article")).toHaveLength(12);
+    fireEvent.click(screen.getByRole("button", { name: "Next page" }));
+    expect(screen.getAllByRole("article")).toHaveLength(1);
+    expect(screen.getByRole("article", { name: "X14" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Generate next batch (up to 12)" }));
+    await screen.findByRole("button", { name: "Fill draft Excel" });
+    expect(current.rows[12].state).toBe("pending");
+    expect(fetch.mock.calls.filter(([, init]) => init?.method === "POST")).toHaveLength(1);
   });
 });

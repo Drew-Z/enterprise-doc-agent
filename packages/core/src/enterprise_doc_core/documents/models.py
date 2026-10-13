@@ -177,6 +177,15 @@ class DocumentIngestionGeneration(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "document_ingestion_generations"
     __table_args__ = (
         UniqueConstraint(
+            "tenant_id", "document_version_id", "id", name="uq_ingestion_generation_scope"
+        ),
+        ForeignKeyConstraint(
+            ["tenant_id", "processing_job_id"],
+            ["jobs.tenant_id", "jobs.id"],
+            name="fk_ingestion_generation_processing_job",
+        ),
+        Index("ix_ingestion_generation_processing_job", "tenant_id", "processing_job_id"),
+        UniqueConstraint(
             "document_version_id",
             "parser_version",
             "chunker_version",
@@ -222,6 +231,7 @@ class DocumentIngestionGeneration(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     document_version_id: Mapped[UUID] = mapped_column(
         ForeignKey("document_versions.id", ondelete="CASCADE"), nullable=False
     )
+    processing_job_id: Mapped[UUID | None] = mapped_column(nullable=True)
     parser_version: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("1"))
     chunker_version: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("1"))
     embedding_version: Mapped[int] = mapped_column(

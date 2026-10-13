@@ -1,0 +1,145 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-09-28T16:58:15.874444+00:00",
+  "status": "public_read_and_interactive_oauth_passed_with_preserved_network_failures",
+  "task_status": "in_progress",
+  "formal_commercial_acceptance": false,
+  "runtime_changed": false,
+  "deployed_source": "f2910011fc219028a2611a22215e4e3e045919a3",
+  "public_https_reads": {
+    "at": "2026-09-28T16:36:31.995364+00:00",
+    "vantage": "API Pod through public HTTPS ingress",
+    "requests": 6,
+    "seconds_limit": 120,
+    "methods": [
+      "GET"
+    ],
+    "anonymous_github_session": true,
+    "anonymous_protected_status": 401,
+    "existing_run_status": "succeeded",
+    "artifact_sha256": "8fb6250286207e3e29b22993633ff3a6860c37a87ec256764333a2ad9a3d1aca",
+    "artifact_bytes": 594,
+    "artifact_citation_verified": true,
+    "ledger_unchanged_before_after_and_original": true,
+    "staging_bearer_created_only_inside_pod_memory": true,
+    "transport": {
+      "first_attempt": "SSH connection establishment timeout; exit 255 and empty stdout",
+      "remote_executions": 1,
+      "identical_program_retry": true,
+      "prior_failure_preserved": true
+    }
+  },
+  "local_anonymous_reads": {
+    "http_attempts": 6,
+    "results": [
+      {
+        "step": "readiness",
+        "schema_version": 1,
+        "scope": "single-external-readiness-probe",
+        "healthy": false,
+        "reason": "transport_error",
+        "http_status": null,
+        "observed_at": "2026-09-28T16:37:31.491293+00:00",
+        "checked_at": null,
+        "elapsed_ms": 703.0,
+        "notifications_sent": 0,
+        "network_route": "direct"
+      },
+      {
+        "step": "session",
+        "network_route": "direct",
+        "at": "2026-09-28T16:37:31.491293+00:00",
+        "error_type": "ConnectError"
+      },
+      {
+        "step": "protected",
+        "network_route": "direct",
+        "at": "2026-09-28T16:37:31.712013+00:00",
+        "error_type": "ConnectError"
+      },
+      {
+        "step": "readiness",
+        "schema_version": 1,
+        "scope": "single-external-readiness-probe",
+        "healthy": false,
+        "reason": "timeout",
+        "http_status": null,
+        "observed_at": "2026-09-28T16:37:42.239467+00:00",
+        "checked_at": null,
+        "elapsed_ms": 10000.0,
+        "notifications_sent": 0,
+        "network_route": "configured-proxy"
+      },
+      {
+        "step": "session",
+        "network_route": "configured-proxy",
+        "at": "2026-09-28T16:37:42.240080+00:00",
+        "error_type": "TimeoutError"
+      },
+      {
+        "step": "protected",
+        "network_route": "configured-proxy",
+        "at": "2026-09-28T16:37:52.245606+00:00",
+        "http_status": 401,
+        "received_cookie": false
+      }
+    ]
+  },
+  "interactive_oauth": {
+    "provider": "github",
+    "user_entered_credentials": true,
+    "fresh_browser_context": true,
+    "injected_bearer_or_cookie": false,
+    "authenticated_at": "2026-09-28T16:49:20.748Z",
+    "demo": false,
+    "login_and_callback_303_observed": true,
+    "selected_original_pilot": true,
+    "protected_business_read": {
+      "at": "2026-09-28T16:50:58.503Z",
+      "status": "passed",
+      "http_status": 200,
+      "route_kind": "existing_agent_run",
+      "same_original_run": true,
+      "run_status": "succeeded",
+      "initial_sequence": 0,
+      "browser_cookie_authentication": true,
+      "bearer_used": false
+    },
+    "first_attempt": {
+      "authenticated_confirmed": false,
+      "callback_303": true,
+      "session_reads": 25,
+      "login_to_callback_minutes_approx": 17,
+      "server_failure_reason_observed": "missing_login_cookie",
+      "helper_window_minutes": 20,
+      "expired_attempt_preserved": true,
+      "user_reported_return_to_app": true
+    },
+    "browser_helpers_closed": true,
+    "credentials_exported": false
+  },
+  "final_ledger_check": {
+    "at": "2026-09-28T16:53:35.822672+00:00",
+    "status": "unchanged_from_original",
+    "application_http_requests": 0
+  },
+  "new_business_uploads": 0,
+  "new_agent_runs": 0,
+  "new_model_requests": 0,
+  "new_embedding_requests": 0,
+  "new_product_events": 0,
+  "new_tenants_or_invitations": 0,
+  "repository_integration": "GitHub plugin for PR and CI; separate from application OAuth",
+  "local_boundary_tests": 6,
+  "evidence_location": "Existing centralized recovery group/public-ingress-evidence; private identifiers and credentials omitted",
+  "remaining": [
+    "public business writes",
+    "online Presales background/browser disconnect and refresh recovery",
+    "two current-host capacity rounds",
+    "supplier invoice reconciliation",
+    "independent domain/customer review",
+    "complete backup/alerting/on-call operations",
+    "whole-host RPO/RTO",
+    "independent release approval and invited-customer UAT"
+  ]
+}

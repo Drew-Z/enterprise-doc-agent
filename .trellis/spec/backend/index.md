@@ -16,6 +16,7 @@ These guidelines record backend conventions proven by implemented milestones.
 | [Multipart Operations And Evidence](./multipart-operations.md) | Restart/resume smoke, CI, RSS, and immutable evidence boundary | Adopted in M1 Slice 10 |
 | [Agent MCP HITL](./agent-mcp-hitl.md) | LangGraph, MCP, approval, SSE and artifact contracts | Adopted in M4 |
 | [Observability Evaluation And Load](./observability-eval-load.md) | Metrics, fault injection, eval and bounded load reports | Adopted in M5 worktree |
+| [Network Latency Diagnostics](./network-latency-diagnostics.md) | Separate query cost, transport retransmission and object/API timings | Validated in rc.16 diagnosis; transport fix remains open |
 | [CI/CD And Kubernetes](./cicd-kubernetes.md) | Images, manifests, supply chain, backup and rollback | Adopted in M6 worktree |
 | [Model Routing](./model-routing.md) | Fallback, circuit breaking, route identity and embedding dimensions | Adopted in M7 worktree |
 | [Public Demo Enterprises](./public-demo.md) | Guest tenant binding, cost limits, scoped access and cleanup | Implemented; local live-provider acceptance |

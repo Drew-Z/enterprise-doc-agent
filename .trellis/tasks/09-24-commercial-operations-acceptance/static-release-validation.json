@@ -1,0 +1,351 @@
+{
+  "at": "2026-09-29T17:40:23.368123+00:00",
+  "status": "static_release_and_public_readonly_browser_verified",
+  "commercial_approval": false,
+  "source": "fde6217492fefc06461fb5577b19fe4e2a601310",
+  "release": "v0.1.45-rc.6",
+  "release_workflow": 36602916574,
+  "quality_workflow": 36602741213,
+  "container_workflow": 36602741308,
+  "manifest_sha256": "9ad3d1e80ae430aa23cbb30ee5d897aa33aa1cca27b0fd4f2e29054f30c7ccdc",
+  "images": {
+    "api": "ghcr.io/drew-z/enterprise-doc-api@sha256:192f8b5e198da6232c7762603f10f98d8e9bd263ff644ffa015839dfb10a8626",
+    "consumer": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:4ea4ba6355a90a931482797e7ac335e0cc3cde5ef689be7effb3a8ffd10cc77e",
+    "web": "ghcr.io/drew-z/enterprise-doc-web@sha256:74e0619ff5b4d3bfd9de7a9c577d9d88f33ec0d35616d69daf6edc6de8733619",
+    "worker": "ghcr.io/drew-z/enterprise-doc-worker@sha256:ae9aace76fda33cb9f0154aca9544dd04c71fd09a67766cf9a917572c1a22f9b"
+  },
+  "rollback_release": "v0.1.45-rc.5",
+  "rollback_images": {
+    "api": "ghcr.io/drew-z/enterprise-doc-api@sha256:32e8e1b98ee2ff6a9d9057208f0e6a36c29cb16164254e11d431aa2169290967",
+    "worker": "ghcr.io/drew-z/enterprise-doc-worker@sha256:44602e0238d34a145f955660ae6c41d039d638ebdf1767545a895cb6009cfd91",
+    "consumer": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:969bf6eaac00433f8667d269ba13ceb47231a7ad38373b5087d2a46beafebf45",
+    "web": "ghcr.io/drew-z/enterprise-doc-web@sha256:e280faa02c0ae98be415f532c70e5a409785215f10aeaaacf108ce5a92624e76"
+  },
+  "switch_seconds": 94.214,
+  "database_revision": "20260924_0031",
+  "all_five_deployments_ready": true,
+  "configuration_and_secret_unchanged": true,
+  "public_assets": {
+    "at": "2026-09-29T17:37:16.675457+00:00",
+    "status": "passed",
+    "release": "v0.1.45-rc.6",
+    "source": "real public HTTPS via configured proxy; decoded bytes compared with ready container",
+    "new_business_submissions": 0,
+    "supplier_calls": 0,
+    "checks": [
+      {
+        "path": "/",
+        "status": 200,
+        "headers": {
+          "cache-control": "no-store",
+          "content-encoding": "gzip",
+          "vary": null,
+          "cf-cache-status": "DYNAMIC",
+          "age": null,
+          "content-type": "text/html",
+          "x-content-type-options": "nosniff",
+          "referrer-policy": "no-referrer"
+        },
+        "bytes": 487,
+        "sha256": "0e268171786d3c19482d465b0491ed7f66a491f37ec5e15df60b8859de8202dc",
+        "milliseconds": 1469.0,
+        "passed": true
+      },
+      {
+        "path": "/assets/index-C0AP4u6q.css",
+        "status": 200,
+        "headers": {
+          "cache-control": "public, max-age=31536000, immutable",
+          "content-encoding": "gzip",
+          "vary": "Accept-Encoding",
+          "cf-cache-status": "HIT",
+          "age": "2229",
+          "content-type": "text/css",
+          "x-content-type-options": "nosniff",
+          "referrer-policy": "no-referrer"
+        },
+        "bytes": 98575,
+        "sha256": "3ea5e0ac9f1c4a13f53f2b4aebfdc0b7b69743bb33a0e52f52b677620ec873af",
+        "milliseconds": 188.0,
+        "passed": true
+      },
+      {
+        "path": "/assets/index-CAqKrqq3.js",
+        "status": 200,
+        "headers": {
+          "cache-control": "public, max-age=31536000, immutable",
+          "content-encoding": "gzip",
+          "vary": "Accept-Encoding",
+          "cf-cache-status": "HIT",
+          "age": "1629",
+          "content-type": "application/javascript",
+          "x-content-type-options": "nosniff",
+          "referrer-policy": "no-referrer"
+        },
+        "bytes": 518056,
+        "sha256": "9470bb166c8ffc9f60cf2b89e30ffead2c3b72b49eaa79a717022d8a9b4ca90e",
+        "milliseconds": 515.0,
+        "passed": true
+      },
+      {
+        "path": "/assets/vendor-DN_zSrd3.js",
+        "status": 200,
+        "headers": {
+          "cache-control": "public, max-age=31536000, immutable",
+          "content-encoding": "gzip",
+          "vary": "Accept-Encoding",
+          "cf-cache-status": "HIT",
+          "age": "2198",
+          "content-type": "application/javascript",
+          "x-content-type-options": "nosniff",
+          "referrer-policy": "no-referrer"
+        },
+        "bytes": 135567,
+        "sha256": "3282879c1ffffd77c908c0684f45bc2f07563342e72eff66ab3d5c247a4d2eba",
+        "milliseconds": 156.0,
+        "passed": true
+      },
+      {
+        "path": "/assets/missing-rc6check0001.js",
+        "status": 404,
+        "headers": {
+          "cache-control": "no-store",
+          "content-encoding": "gzip",
+          "vary": null,
+          "cf-cache-status": "BYPASS",
+          "age": null,
+          "content-type": "text/html",
+          "x-content-type-options": "nosniff",
+          "referrer-policy": "no-referrer"
+        },
+        "bytes": 153,
+        "sha256": "151e314f66e8c4cbdda04804a57f9bead5cc2f048767aacbf816d8d1f9563e64",
+        "milliseconds": 844.0,
+        "passed": true
+      }
+    ]
+  },
+  "rc5_cold_probe": {
+    "at": "2026-09-29T17:00:41.531096+00:00",
+    "status": "failed",
+    "release": "v0.1.45-rc.5",
+    "source": "real public HTTPS via configured proxy; decoded bytes compared with ready container",
+    "new_business_submissions": 0,
+    "supplier_calls": 0,
+    "checks": [
+      {
+        "path": "/",
+        "status": 200,
+        "headers": {
+          "cache-control": "no-store",
+          "content-encoding": "gzip",
+          "vary": null,
+          "cf-cache-status": "DYNAMIC",
+          "age": null,
+          "content-type": "text/html",
+          "x-content-type-options": "nosniff",
+          "referrer-policy": "no-referrer"
+        },
+        "bytes": 487,
+        "sha256": "0e268171786d3c19482d465b0491ed7f66a491f37ec5e15df60b8859de8202dc",
+        "milliseconds": 1672.0,
+        "passed": true
+      },
+      {
+        "path": "/assets/index-C0AP4u6q.css",
+        "status": 200,
+        "headers": {
+          "cache-control": "public, max-age=31536000, immutable",
+          "content-encoding": "gzip",
+          "vary": "Accept-Encoding",
+          "cf-cache-status": "MISS",
+          "age": null,
+          "content-type": "text/css",
+          "x-content-type-options": "nosniff",
+          "referrer-policy": "no-referrer"
+        },
+        "bytes": 98575,
+        "sha256": "3ea5e0ac9f1c4a13f53f2b4aebfdc0b7b69743bb33a0e52f52b677620ec873af",
+        "milliseconds": 4609.0,
+        "passed": true
+      },
+      {
+        "path": "/assets/index-CAqKrqq3.js",
+        "passed": false,
+        "error": "RemoteProtocolError",
+        "milliseconds": 24891.0
+      },
+      {
+        "path": "/assets/vendor-DN_zSrd3.js",
+        "status": 200,
+        "headers": {
+          "cache-control": "public, max-age=31536000, immutable",
+          "content-encoding": "gzip",
+          "vary": "Accept-Encoding",
+          "cf-cache-status": "MISS",
+          "age": null,
+          "content-type": "application/javascript",
+          "x-content-type-options": "nosniff",
+          "referrer-policy": "no-referrer"
+        },
+        "bytes": 135567,
+        "sha256": "3282879c1ffffd77c908c0684f45bc2f07563342e72eff66ab3d5c247a4d2eba",
+        "milliseconds": 8375.0,
+        "passed": true
+      },
+      {
+        "path": "/assets/missing-rc5check0001.js",
+        "status": 404,
+        "headers": {
+          "cache-control": "max-age=14400",
+          "content-encoding": "gzip",
+          "vary": null,
+          "cf-cache-status": "MISS",
+          "age": null,
+          "content-type": "text/html",
+          "x-content-type-options": "nosniff",
+          "referrer-policy": "no-referrer"
+        },
+        "bytes": 153,
+        "sha256": "151e314f66e8c4cbdda04804a57f9bead5cc2f048767aacbf816d8d1f9563e64",
+        "milliseconds": 1250.0,
+        "passed": true
+      }
+    ]
+  },
+  "rc5_missing_asset_predicate_correction": {
+    "original_per_check_pass_too_weak": true,
+    "observed_cache_control": "max-age=14400",
+    "correct_no_store_contract_passed": false,
+    "original_record_retained": true
+  },
+  "rc5_warm_observations": {
+    "at": "2026-09-29T17:10:09.808518+00:00",
+    "scope": "Warm-cache observations after real public browser traversal; original cold transport failure retained",
+    "checks": [
+      {
+        "path": "/assets/index-C0AP4u6q.css",
+        "status": 200,
+        "sha256_matches": true,
+        "cache_control": "public, max-age=31536000, immutable",
+        "cdn": "HIT",
+        "age": "595",
+        "encoding": "gzip",
+        "ms": 1516.0
+      },
+      {
+        "path": "/assets/index-CAqKrqq3.js",
+        "status": 200,
+        "sha256_matches": true,
+        "cache_control": "public, max-age=31536000, immutable",
+        "cdn": "MISS",
+        "age": null,
+        "encoding": "gzip",
+        "ms": 7688.0
+      },
+      {
+        "path": "/assets/vendor-DN_zSrd3.js",
+        "status": 200,
+        "sha256_matches": true,
+        "cache_control": "public, max-age=31536000, immutable",
+        "cdn": "HIT",
+        "age": "572",
+        "encoding": "gzip",
+        "ms": 265.0
+      }
+    ]
+  },
+  "browser": {
+    "at": "2026-09-29T17:04:10.275Z",
+    "status": "passed",
+    "real_deployed_assets": true,
+    "real_business_responses": true,
+    "interactive_auth_adapter": true,
+    "agent_result_download_refresh": true,
+    "presales_review_csv_reopen": true,
+    "read_only_offline_recovery": true,
+    "background_generation_offline_retest": false,
+    "original_packet_unchanged": true,
+    "application_http": 22,
+    "control_http": 3,
+    "new_business_submissions": 0,
+    "supplier_calls": 0,
+    "csv_sha256": "403527e8c01c12aa11d175c4b3c8fbfae06559f04e62d592d238914cd07cea80",
+    "tested_release": "v0.1.45-rc.5",
+    "rc6_html_js_css_identical": true,
+    "static_asset_substitution": false,
+    "offline_error_document_test_initializer_security_error_recorded": true
+  },
+  "nginx_missing_asset_http_before_passed": false,
+  "nginx_missing_asset_http_after_passed": true,
+  "deployment_and_documentation_checks_passed": 43,
+  "supplier_calls": 0,
+  "new_business_submissions": 0,
+  "rc5_remote_files_removed": 11,
+  "rc6_remote_files_removed": 11,
+  "rc5_transport_cleanup": {
+    "status": "removed",
+    "bytes": 506818494.0,
+    "files": 30,
+    "at": "2026-09-29T17:19:35.8019931Z",
+    "directory": "C:\\Users\\zhang\\AppData\\Local\\Temp\\docagent-image-transport-rc5-1_lu45f8"
+  },
+  "rc6_transport_cleanup": {
+    "files": 30,
+    "status": "removed",
+    "bytes": 506834086.0,
+    "at": "2026-09-29T17:38:56.2162873Z",
+    "directory": "C:\\Users\\zhang\\AppData\\Local\\Temp\\docagent-image-transport-rc6-m72vqzcc"
+  },
+  "frozen_evidence": {
+    "at": "2026-09-29T16:43:04.507360+00:00",
+    "frozen_artifacts": 506,
+    "old_root_indexes": 25,
+    "failures": [],
+    "status": "passed"
+  },
+  "ongoing_operations": {
+    "at": "2026-09-29T17:24:56.754659+00:00",
+    "windowless-queue.jsonl": [
+      {
+        "started_at": "2026-09-29T17:22:51.579270+00:00",
+        "completed_at": "2026-09-29T17:22:54.104549+00:00",
+        "exit_code": 0
+      },
+      {
+        "started_at": "2026-09-29T17:23:51.598780+00:00",
+        "completed_at": "2026-09-29T17:23:53.907866+00:00",
+        "exit_code": 0
+      },
+      {
+        "started_at": "2026-09-29T17:24:51.597618+00:00",
+        "completed_at": "2026-09-29T17:24:54.218296+00:00",
+        "exit_code": 0
+      }
+    ],
+    "windowless-backup.jsonl": [
+      {
+        "started_at": "2026-09-29T17:18:32.688919+00:00",
+        "completed_at": "2026-09-29T17:20:21.452501+00:00",
+        "exit_code": 0
+      },
+      {
+        "started_at": "2026-09-29T17:20:32.704528+00:00",
+        "completed_at": "2026-09-29T17:22:19.023196+00:00",
+        "exit_code": 0
+      },
+      {
+        "started_at": "2026-09-29T17:22:32.717507+00:00",
+        "completed_at": "2026-09-29T17:24:43.253203+00:00",
+        "exit_code": 0
+      }
+    ]
+  },
+  "remaining": [
+    "server_admission_latency_and_representative_capacity",
+    "supplier_monetary_reconciliation",
+    "independent_business_and_release_review",
+    "backup_continuity_without_personal_machine",
+    "whole_host_rpo_rto_and_on_call"
+  ]
+}

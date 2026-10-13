@@ -11,7 +11,7 @@ import statistics
 import time
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, Self
 from urllib.parse import urlsplit
 from uuid import uuid4
 
@@ -34,16 +34,14 @@ class Source(PresalesModel):
     content: str = Field(min_length=1, max_length=20000)
 
 
-class Dataset(PresalesModel):
-    schema_version: Literal["presales-quality-input-v1"]
-    synthetic: Literal[True]
+class DatasetContent(PresalesModel):
     provenance: str
     title: str = Field(min_length=1, max_length=160)
     sources: list[Source] = Field(min_length=1, max_length=6)
     requirements: list[RequirementInput] = Field(min_length=1, max_length=6)
 
     @model_validator(mode="after")
-    def unique_keys(self) -> Dataset:
+    def unique_keys(self) -> Self:
         for values in (
             [s.key for s in self.sources],
             [s.filename for s in self.sources],
@@ -51,6 +49,55 @@ class Dataset(PresalesModel):
         ):
             if len(set(values)) != len(values):
                 raise ValueError("duplicate_input_key")
+        return self
+
+
+class Dataset(DatasetContent):
+    schema_version: Literal["presales-quality-input-v1"]
+    synthetic: Literal[True]
+
+
+class Publication(PresalesModel):
+    source_key: str
+    url: str = Field(max_length=2000)
+    fetched_at: datetime
+    extracted_content_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    fetch_receipt_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    excerpt_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+
+    @model_validator(mode="after")
+    def public_source_identity(self) -> Self:
+        url = urlsplit(self.url)
+        if (
+            url.scheme != "https"
+            or not url.hostname
+            or url.username
+            or url.password
+            or url.query
+            or url.fragment
+            or self.fetched_at.utcoffset() is None
+        ):
+            raise ValueError("invalid_public_source_identity")
+        return self
+
+
+class PublicDataset(DatasetContent):
+    schema_version: Literal["presales-public-quality-input-v1"]
+    synthetic: Literal[False]
+    publications: list[Publication] = Field(min_length=1, max_length=6)
+
+    @model_validator(mode="after")
+    def publication_bindings(self) -> Self:
+        sources = {source.key: source for source in self.sources}
+        if (
+            len(self.publications) != len(sources)
+            or {publication.source_key for publication in self.publications} != sources.keys()
+        ):
+            raise ValueError("public_source_coverage_mismatch")
+        for publication in self.publications:
+            actual = hashlib.sha256(sources[publication.source_key].content.encode()).hexdigest()
+            if actual != publication.excerpt_sha256:
+                raise ValueError("public_excerpt_hash_mismatch")
         return self
 
 
@@ -74,11 +121,14 @@ class Gold(PresalesModel):
     rows: list[Expected]
 
 
-def load_dataset(path: Path) -> tuple[Dataset, str]:
+def load_dataset(path: Path) -> tuple[Dataset | PublicDataset, str]:
     if path.stat().st_size > 256 * 1024:
         raise ValueError("dataset_too_large")
     raw = path.read_bytes()
-    return Dataset.model_validate_json(raw), hashlib.sha256(raw).hexdigest()
+    discriminator = json.loads(raw)
+    kind = discriminator.get("schemaVersion", discriminator.get("schema_version"))
+    model = PublicDataset if kind == "presales-public-quality-input-v1" else Dataset
+    return model.model_validate_json(raw), hashlib.sha256(raw).hexdigest()
 
 
 def write_json(path: Path, payload: object, *, exclusive: bool = False) -> None:
@@ -203,7 +253,7 @@ def collect(
         "plannedRepeats": repeats,
         "maxGenerationAttempts": repeats * len(dataset.requirements),
         "automaticRetries": 0,
-        "syntheticOnly": True,
+        "syntheticOnly": dataset.synthetic,
         "runs": [],
         "status": "running",
     }
@@ -440,7 +490,7 @@ def score(dataset_path: Path, gold_path: Path, report: dict[str, Any]) -> dict[s
     result: dict[str, Any] = {
         "schemaVersion": "presales-quality-score-v1",
         "datasetSha256": digest,
-        "syntheticOnly": True,
+        "syntheticOnly": dataset.synthetic,
         "independentDomainReview": False,
         "semanticReviewRequired": True,
         "expectedRows": repeats * len(requirements),

@@ -13,6 +13,11 @@ spec:
     spec:
       containers:
         - name: api
+          env:
+            - name: DATABASE__POOL_SIZE
+              value: "4"
+            - name: DATABASE__MAX_OVERFLOW
+              value: "0"
           resources:
             requests: {cpu: 150m, memory: 256Mi}
             limits: {cpu: 600m, memory: 512Mi}

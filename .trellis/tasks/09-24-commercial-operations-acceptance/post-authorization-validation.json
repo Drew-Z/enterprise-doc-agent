@@ -1,0 +1,188 @@
+{
+  "at": "2026-09-29T10:36:41.439924+00:00",
+  "status": "engineering_updated_acceptance_not_passed",
+  "production_approved": false,
+  "authorization": "User approved subsequent permissions; no repeated authorization gate",
+  "release": "v0.1.45-rc.3",
+  "revision": "20260924_0031",
+  "application_deployment_changed": false,
+  "backup_rotation": {
+    "status": "operational",
+    "retired_groups": 56,
+    "retained_verified_groups": 40,
+    "frozen_artifacts_verified": 506,
+    "keep_recent_distinct": 5,
+    "shared_new_object_pool": "synthetic_boundary_verified",
+    "historical_referenced_objects_moved": false,
+    "retirement_uses_exact_paths": true
+  },
+  "windowless_scheduler": {
+    "status": "verified",
+    "entrypoint": "pythonw.exe",
+    "subprocess_creationflags": "CREATE_NO_WINDOW",
+    "dpapi": "current_user",
+    "last_three_queue_and_backup_runs_succeeded": true,
+    "requires_online_logged_in_machine": true
+  },
+  "capacity": {
+    "status": "failed",
+    "plan_tasks": 160,
+    "completed_business_checks": 9,
+    "failed_started_tasks": 4,
+    "not_run": 147,
+    "summary": {
+      "planned_tasks": 160,
+      "business_successes": 9,
+      "business_non_successes": 151,
+      "expected_failures": 0,
+      "not_run": 147,
+      "interrupted": 0,
+      "expectations_met": 9,
+      "normal_failure_rate": 0.94375,
+      "boundaries": {
+        "upload": {
+          "planned": 160,
+          "observed": 13,
+          "passed": 12,
+          "failed": 1,
+          "expected_failure": 0,
+          "interrupted": 0,
+          "not_run": 147,
+          "sample_count": 13,
+          "min_ms": 7823.756721802056,
+          "p50_ms": 11056.58236797899,
+          "p95_ms": 18699.672000017017,
+          "p99_ms": 18699.672000017017,
+          "max_ms": 18699.672000017017,
+          "proposed_target_ms": 5000.0,
+          "proposed_target_met": false
+        },
+        "ingestion": {
+          "planned": 160,
+          "observed": 12,
+          "passed": 12,
+          "failed": 0,
+          "expected_failure": 0,
+          "interrupted": 0,
+          "not_run": 148,
+          "sample_count": 12,
+          "min_ms": 10327.362061012536,
+          "p50_ms": 13718.709480948746,
+          "p95_ms": 21349.972716066986,
+          "p99_ms": 21349.972716066986,
+          "max_ms": 21349.972716066986,
+          "proposed_target_ms": 30000.0,
+          "proposed_target_met": true
+        },
+        "retrieval": {
+          "planned": 160,
+          "observed": 12,
+          "passed": 12,
+          "failed": 0,
+          "expected_failure": 0,
+          "interrupted": 0,
+          "not_run": 148,
+          "sample_count": 12,
+          "min_ms": 1861.1426227726042,
+          "p50_ms": 2417.292966041714,
+          "p95_ms": 5558.649450074881,
+          "p99_ms": 5558.649450074881,
+          "max_ms": 5558.649450074881,
+          "proposed_target_ms": 2000.0,
+          "proposed_target_met": false
+        },
+        "generation_recovery": {
+          "planned": 160,
+          "observed": 12,
+          "passed": 9,
+          "failed": 3,
+          "expected_failure": 0,
+          "interrupted": 0,
+          "not_run": 148,
+          "sample_count": 12,
+          "min_ms": 35129.60733193904,
+          "p50_ms": 66203.84779432788,
+          "p95_ms": 180001.25532085076,
+          "p99_ms": 180001.25532085076,
+          "max_ms": 180001.25532085076,
+          "proposed_target_ms": 180000.0,
+          "proposed_target_met": false
+        }
+      },
+      "generation_acceptance": {
+        "observed": 12,
+        "sample_count": 12,
+        "min_ms": 2308.177233673632,
+        "p50_ms": 2875.933629926294,
+        "p95_ms": 5688.582630362362,
+        "p99_ms": 5688.582630362362,
+        "max_ms": 5688.582630362362,
+        "proposed_target_ms": 250.0
+      },
+      "generation_terminal": {
+        "observed": 10,
+        "sample_count": 10,
+        "min_ms": 25189.57937695086,
+        "p50_ms": 40679.987974930555,
+        "p95_ms": 157885.24731295183,
+        "p99_ms": 157885.24731295183,
+        "max_ms": 157885.24731295183
+      }
+    },
+    "model_calls": 18,
+    "model_states": {
+      "succeeded": 11,
+      "failed": 6,
+      "unknown": 1,
+      "running": 0
+    },
+    "embedding_calls": 36,
+    "final_attempt_states": {
+      "succeeded": 11,
+      "expired": 1,
+      "running": 0
+    },
+    "later_success_does_not_change_timeout_samples": true,
+    "fixture_sizes": [
+      59,
+      678,
+      36618
+    ]
+  },
+  "supplier_money": {
+    "status": "unverified",
+    "model_usage_endpoint": "quota_units_only",
+    "embedding_account_endpoint": "410_deprecated",
+    "currency": null,
+    "cost": null
+  },
+  "validation": {
+    "python_passed": 2083,
+    "python_subtests_passed": 23,
+    "integration_deselected": 445,
+    "ruff": "passed",
+    "format_files": 616,
+    "mypy_source_files": 251,
+    "private_powershell_boundary_cases": 4
+  },
+  "remaining": [
+    "performance_targets_and_repeat_capacity",
+    "supplier_money_reconciliation",
+    "independent_business_and_release_review",
+    "continuous_backup_without_personal_machine",
+    "full_host_rpo_rto_drill"
+  ],
+  "evidence_sha256": {
+    "capacity-envelope.json": "6d16903d9d05064b2af52f756e2eab2a2a3a6537cb5a2fe0e35603bf81b1564c",
+    "capacity-execute.jsonl": "1d42f6b47764e73841f06b6af18525168bc23b34e09327d7fab45ebd76724083",
+    "capacity-final-diagnostics-v2.json": "b159496785a588a93cc863301eec8a16aa34566d7700c2fb669c8f3062ecc3ff",
+    "capacity-telemetry-summary.json": "8bf147e73b25c602857e8d6e8c51fffc3c058da94d1276f762e79b4843eefbd6",
+    "provider-account-readonly-v2.json": "b79bac5f2414dcb53803c5c0404475d45b6c5fbe107dcf5867c932b4cc185686",
+    "latency-probe.json": "7788abdb6a82ddb9cdaa1b0fb095f0ee41996409dbf7891fd2881ff24b8736e6",
+    "tasks-before-windowless.json": "c085b4470220ca91b2b0cd7030a0cb1f41976bfc6dfd060919d42bdf866c4dee",
+    "tasks-after-windowless.json": "7978b2b090c3c0a160229cfab1d30da70904b7720fe05600dbf591139d84d246",
+    "object-pool-validation.json": "7272f1c66094bb08a285f07f09359bde847bd26399756baffd06c9d9abc078b2",
+    "retention-powershell-validation.json": "17af002c350d09814eb48a2e5053e30c4efa44e4ff6f05f1c1bdc8483df8d52a",
+    "python-regression.log": "3b86025d752af892020990d0f034d0317721e7db38bf3ec08edd128e6338b2d4"
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "status": "local_guard_verified_activation_pending",
+  "task_status": "in_progress",
+  "changes": [
+    "Host-local SQLite fencing shared by supervisor and deployment runner",
+    "Bounded administrator pause and joint ConfigMap/Namespace update",
+    "Workflow migration claim before any scale/delete/apply mutation",
+    "Fresh heartbeat, boot identity, operation, executor, namespace and candidate binding",
+    "Old-revision and original-template checks before bounded recovery; Web starts last"
+  ],
+  "verification": {
+    "focused_tests_passed": 111,
+    "documentation_tests_passed": 5,
+    "non_integration_tests_passed": 2023,
+    "integration_tests_deselected": 440,
+    "ruff_format_files": 610,
+    "ruff_check": "passed",
+    "production_mypy_files": 251,
+    "guard_linux_mypy_files": 2,
+    "detached_process_after_launcher_exit": "passed",
+    "native_linux_clock_and_process_check": "passed_in_network_disabled_local_container",
+    "native_psql_revision_and_read_only_transaction": "passed_in_new_network_disabled_postgresql_container_removed_after_test",
+    "host_read_only_capability_probe": "systemd_boottime_sqlite_yaml_and_psql_available",
+    "database_adapter": "existing_psql_and_postgres_process_environment_no_new_host_driver",
+    "actual_workflow_shell_and_guard_cli": "passed_with_only_clock_and_cluster_boundaries_substituted",
+    "historical_configuration_plan": "passed_offline_18_resources_4_application_specs",
+    "final_refinements": "full_regression_rerun_after_all_refinements_exact_commit_ci_recorded_separately",
+    "real_systemd_installation": "not_executed",
+    "live_cluster_recovery": "not_executed"
+  },
+  "timing_contract": {
+    "pre_migration_seconds": 1500,
+    "recovery_budget_seconds": 300,
+    "heartbeat_max_age_seconds": 10,
+    "administrator_receipt_max_seconds": 30,
+    "clock": "Linux CLOCK_BOOTTIME and boot ID",
+    "guaranteed_outage_rto": false,
+    "migration_phase_covered_by_automatic_old_runtime_restore": false
+  },
+  "external_changes": {
+    "remote_configuration_or_workload_mutations": 0,
+    "model_http_attempts": 0,
+    "embedding_http_attempts": 0,
+    "emails": 0,
+    "new_maintenance_window_started": false,
+    "previous_upload_cleanup_repeated": false
+  },
+  "remaining_activation_conditions": [
+    "Review the new exact executor commit and its CI; do not reuse or rewrite ops-maintenance-2148a8f",
+    "Approve an attended maintenance window and the temporary remote runtime plan/state exception to centralized backup storage",
+    "Verify systemd, toolchain, file ownership, shared SQLite access and the administrator read-only DB connection before any pause",
+    "Rebuild the plan from fresh inventory and capture a new consistent recovery point while paused",
+    "Keep the original pilot period and acceptance cap of one model attempt, eighteen embedding attempts and zero emails",
+    "Inspect actual migration state and use the separately reviewed compatible resumption plan after migration ownership is claimed"
+  ],
+  "commercial_acceptance_passed": false,
+  "production_capacity_approved": false
+}

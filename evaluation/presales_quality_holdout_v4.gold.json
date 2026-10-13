@@ -1,0 +1,127 @@
+{
+  "schemaVersion": "presales-quality-gold-v1",
+  "datasetSha256": "77ad69107ed3314306ea50ada45ac6a02f87d922b5ceeaa2c07e57e63a6dac3f",
+  "reviewStatus": "Assistant authored and self reviewed before first v6 request; no independent adjudication",
+  "rows": [
+    {
+      "key": "H4-R1",
+      "status": "conditional",
+      "referenceAnswer": "模块已购、90天策略已配置，禁删验证状态未知，需确认结果并提供验收凭证后才能无条件承诺。",
+      "reviewPoints": [
+        "采购、配置为met，验证为unknown，不能把空白结果当成验证失败或尚未执行。",
+        "已满足前提不重复列待办；正文和待补材料明确未知的是验证状态。"
+      ],
+      "requiredEvidence": [
+        {
+          "sourceKey": "H4-ORDER",
+          "excerpt": "LOCK90 已购数量1"
+        },
+        {
+          "sourceKey": "H4-ORDER",
+          "excerpt": "LOCK90 的90天保留策略已配置；管理员禁删验证结果栏为空。"
+        },
+        {
+          "sourceKey": "H4-FEATURE",
+          "excerpt": "LOCK90 将客服审计记录保留90天，期间企业管理员不能提前删除。"
+        },
+        {
+          "sourceKey": "H4-FEATURE",
+          "excerpt": "启用前须购买LOCK90、配置90天保留策略并完成管理员禁删验证。"
+        }
+      ]
+    },
+    {
+      "key": "H4-R2",
+      "status": "conditional",
+      "referenceAnswer": "有功能支持，但模块未购、联调未完成；需采购并联调。域名验证已通过，不再列待办。",
+      "reviewPoints": [
+        "模块采购与联调为unmet，域名验证为met。",
+        "即使规格重复订单现状，仍保留订单直接出处。"
+      ],
+      "requiredEvidence": [
+        {
+          "sourceKey": "H4-ORDER",
+          "excerpt": "SAML-ORG 已购数量0"
+        },
+        {
+          "sourceKey": "H4-ORDER",
+          "excerpt": "SAML-ORG 的客户域名验证已通过，双方联调验收尚未进行。"
+        },
+        {
+          "sourceKey": "H4-FEATURE",
+          "excerpt": "SAML-ORG 可接入客户自有身份提供方进行SAML 2.0单点登录。"
+        },
+        {
+          "sourceKey": "H4-FEATURE",
+          "excerpt": "启用前须购买SAML-ORG、完成客户域名验证并通过双方联调验收。"
+        }
+      ]
+    },
+    {
+      "key": "H4-R3",
+      "status": "insufficient_evidence",
+      "referenceAnswer": "附件不含SOC2报告，不能确认是否有覆盖当前服务的有效报告；需补充报告、覆盖期和适用范围，不断言运营方没有报告。",
+      "reviewPoints": [
+        "缺报告不是明确无报告；不自行承诺未来可获得。",
+        "不能补问目录是否附报告，原文已明确未收录。"
+      ],
+      "requiredEvidence": []
+    },
+    {
+      "key": "H4-R4",
+      "status": "conflicting_evidence",
+      "referenceAnswer": "BASE与客户要求一致；ADD要求爱尔兰副本，与BASE同范围互不优先，资料冲突。须双方统一并签署修订后的地域条款。",
+      "reviewPoints": [
+        "正文不能说加拿大独占的BASE与客户要求矛盾。",
+        "不因吞吐条款优先、补充协议名称或强制语气就消除存储冲突。",
+        "原文已给出同范围互不优先，需请求新修订而非询问既有已知事项。"
+      ],
+      "requiredEvidence": [
+        {
+          "sourceKey": "H4-BASE",
+          "excerpt": "本企业生产数据及全部备份仅保存在加拿大，禁止复制到加拿大境外。"
+        },
+        {
+          "sourceKey": "H4-ADD",
+          "excerpt": "本企业生产数据及全部备份每晚须完整复制一份到爱尔兰，禁止省略副本。"
+        },
+        {
+          "sourceKey": "H4-ORDER",
+          "excerpt": "备份地域条款同日生效、互不优先且没有例外。"
+        }
+      ]
+    },
+    {
+      "key": "H4-R5",
+      "status": "supported",
+      "referenceAnswer": "吞吐补充条款明确替代基础值，480不小于400，支持；地域争议不覆盖本项。",
+      "reviewPoints": [
+        "有限优先条款不得扩展到备份地域。"
+      ],
+      "requiredEvidence": [
+        {
+          "sourceKey": "H4-ADD",
+          "excerpt": "本订单生产查询服务保证每秒处理480个请求；本项取代H4-BASE的每秒300个请求，优先级仅限查询吞吐。"
+        }
+      ]
+    },
+    {
+      "key": "H4-R6",
+      "status": "contradicted",
+      "referenceAnswer": "单次500条硬上限不能支持800条，且无提高路径；分多次不能满足单次要求。",
+      "reviewPoints": [
+        "不能虚构升级或配置方案。"
+      ],
+      "requiredEvidence": [
+        {
+          "sourceKey": "H4-LIMIT",
+          "excerpt": "单次导入最多500条工单。"
+        },
+        {
+          "sourceKey": "H4-LIMIT",
+          "excerpt": "当前全部套餐均无提高该上限的配置或选购项；拆成多次导入不属于单次能力。"
+        }
+      ]
+    }
+  ]
+}

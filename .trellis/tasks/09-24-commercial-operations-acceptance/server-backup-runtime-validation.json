@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-10-02T09:32:03.477085+00:00",
+  "status": "server_backup_locally_validated_production_pending",
+  "production_release": "v0.1.45-rc.16",
+  "production_source": "63de37c080cd83a02682ad1d2dd30c217a6aecd7",
+  "implementation_scope": "private centralized task recovery group; not a deployed production package",
+  "consistent_capture": {
+    "source": "isolated local PostgreSQL copy",
+    "tables": 57,
+    "rows": 82623,
+    "source_read_only": true,
+    "concurrent_source_updates": 26,
+    "restored_counter": 0,
+    "source_counter_after_capture": 26,
+    "restored_fingerprints_match": true,
+    "objects": 1668,
+    "second_capture_object_source_gets": 0
+  },
+  "native_schedule": {
+    "scope": "existing local QEMU Linux recovery VM and MinIO",
+    "snapshots": 3,
+    "source_tables": 56,
+    "source_rows": 82705,
+    "source_objects": 1669,
+    "forced_exit_after_remote_readback": 17,
+    "automatic_restart_verified_by_journal": true,
+    "same_id_and_ciphertext_resume": true,
+    "transport_spool_empty": true,
+    "private_identity_copied": false,
+    "service_terminal_after_bounded_test": true,
+    "first_attempt_stale_after_manual_sdk_repair_is_not_rpo_pass": true
+  },
+  "latest_ciphertext_restore": {
+    "tables": 56,
+    "rows": 82705,
+    "objects": 1669,
+    "object_bytes": 1872170,
+    "database_fingerprints_and_object_bytes_match": true,
+    "elapsed_seconds_including_cleanup": 21.047,
+    "whole_machine_rto": false,
+    "original_harness_status": "original_container_state_changed",
+    "supplemental_status": "restored_data_verified_and_independent_scheduler_cleanup_explained",
+    "owned_restore_containers_removed": 2,
+    "stable_original_containers": 5,
+    "docker_event_history_was_empty": true,
+    "independent_scheduler_cleanup_owner_receipts_preserved": true
+  },
+  "remote_capacity_and_retention": {
+    "default_managed_prefix_cap_bytes": 3221225472,
+    "single_namespace_writer_required": true,
+    "existing_bytes": 85516410,
+    "existing_objects": 6,
+    "actual_native_service_replay_at_exact_cap": true,
+    "actual_native_service_new_id_refused": true,
+    "inventory_and_etags_unchanged": true,
+    "retained_native_snapshots": 3,
+    "retention_candidates": 0,
+    "retention_mode": "exact_plan_only_requires_explicit_approval",
+    "latest_distinct_actually_restored_contents_to_keep": 5,
+    "unverified_incomplete_failed_pinned_referenced_in_progress_protected": true,
+    "trusted_restore_catalog_and_production_cleanup_not_implemented": true,
+    "remote_deletions": 0
+  },
+  "validation": {
+    "private_contract_tests": 21,
+    "private_contract_result": "passed",
+    "documentation_contract_tests_passed": 5,
+    "new_retention_tests": 11,
+    "python_sources_parsed": 11,
+    "real_age_and_native_minio_used": true
+  },
+  "preserved_failures": [
+    "initial native SDK rejected IfNoneMatch and preserved pending ciphertext",
+    "initial SQLite handle leak left synthetic test fixtures; fixed and fixtures cleaned",
+    "original restore global-container assertion failed during independent scheduler cleanup"
+  ],
+  "remaining": [
+    "external monitoring of source freshness and capacity/unknown uploads",
+    "production package installation and narrowly scoped target credentials",
+    "specific remote sensitive-backup storage exception",
+    "trusted restore/protection catalog and approved retention execution",
+    "personal-computer-offline continuous capture and actual restore evidence"
+  ],
+  "production_writes": 0,
+  "production_backup_uploads": 0,
+  "supplier_calls": 0,
+  "five_acceptance_gates_complete": false,
+  "source_sha256": {
+    "backup_runtime.py": "9b015e3e2501590756cd9306f6ce862e83999b6634121753197f3f7484e5e1b6",
+    "backup_daemon.py": "0ab51f71e343ae30dd0e30ac0d7491c5c9c66d561657dba7958adb9bd109e43c",
+    "server_capture.py": "04717704bc838a406838e2d8bbc20d1230021b55304dcf48a6378e65b2db7488",
+    "server_publication.py": "39a91a0458d00f6e46d81f93d9c1f598af92bc8f68c916070ddd3e99e620aff3",
+    "remote_retention.py": "2f88592fadc9fadc11674dd9da36f2c4f0014c93dbbdc8e01596c565284c57ab",
+    "recovery_bundle.py": "b07252af933281298b920118dc6b6545154d0c93c4ef942759399775d0cfee47",
+    "database_environment.py": "1af0b91f8abc76c0ada525a67e3627ec8229d523976466e905700e9d15a79cdf",
+    "test_backup_runtime.py": "f5ec665dbf2702f0d283b775786d17ade5c3a139290acbcbc34bbaa6136ddd52",
+    "test_server_publication.py": "b87c889b62d8defce7b940f119329a2866d4f51c7ed4ba284f450e5b4285012e",
+    "test_bundle_crypto.py": "b6b5544dedadee7a5ac73a639c8d8d5df0d713c334b37570664a81c98d3bdae1",
+    "test_remote_retention.py": "b7ee25b6f5bd1720d49ca4652951539f9776890e9e902b3e7dc19da8902235c5"
+  },
+  "evidence_sha256": {
+    "server-capture-restore-result.json": "362ee1892f48a6fa0eaec17ab3ae94b331ab895d190926e516d9a1b5433e5eda",
+    "native-runtime-start-intent.json": "a2d4e4379f8c8eeb5f3145c8cb16eedba88e2d6a9ac34570be64510dab0d07e0",
+    "native-runtime-final-evidence.json": "762d10f4a2e49218a821320890eccb36bab3c6290855c105834c9d3a5564c262",
+    "native-runtime-collection.json": "387244c85db191fe5620d103da0e06f8179134b37e3421106cd08680dd1dd47d",
+    "native-ciphertext-restore-result.json": "a765809ab35c885d6faa6ca15345ee36ccf4ff09dbf236db5f141b4e01d2cc78",
+    "native-restore-lifecycle-audit.json": "dd10a65b462a26f6e3fe4bf834e529c2b91978355bc65f2920f48e921c0244e1",
+    "native-budget-result.json": "1934b690ee0ccf86e3c3414168936224c22be27d4eb377bfc6afe934046c906b",
+    "runtime-fixture-cleanup-result.json": "f762e6609b939af964945264e7106c08e1e96fff34578d7d501536418278efe7"
+  },
+  "cleanup": {
+    "prior_owned_synthetic_sqlite_files_removed": 3,
+    "prior_empty_fixture_directories_removed": 3,
+    "new_retention_test_temp_directories_cleaned_by_fixture": true,
+    "local_vm_validation_code_and_backup_objects_retained": true,
+    "historical_backups_removed": 0
+  }
+}

@@ -48,7 +48,7 @@ const cases: ClientCase[] = [
   ["upload abort", "DELETE", credential => upload(credential).abortSession(id)],
   ["presales list", "GET", credential => presalesApi(credential).list(signal())],
   ["presales generation", "POST", credential => presalesApi(credential).generate(id, id, id, signal())],
-  ["presales review", "PUT", credential => presalesApi(credential).review(id, id, { status: "insufficient_evidence", answer: "Further evidence required.", conditions: [], missingInformation: [], expectedRevision: 1, note: "" }, id, signal())],
+  ["presales review", "PUT", credential => presalesApi(credential).review(id, id, { status: "insufficient_evidence", answer: "Further evidence required.", conditions: [], missingInformation: ["Supply the applicable contract."], expectedRevision: 1, note: "" }, id, signal())],
   ["presales CSV", "GET", credential => presalesApi(credential).export(id, "reviewed", signal())],
 ];
 

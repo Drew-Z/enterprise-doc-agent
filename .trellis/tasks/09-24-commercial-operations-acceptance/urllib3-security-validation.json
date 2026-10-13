@@ -1,0 +1,31 @@
+{
+  "at": "2026-10-01T16:31:11.537451+00:00",
+  "status": "locally_verified_ci_pending_not_deployed",
+  "base_commit": "6de8c4f54701a0d41912976375dfbf7dde8d1acb",
+  "failed_container_run": 36887773339,
+  "affected_components": [
+    "api",
+    "worker",
+    "consumer"
+  ],
+  "findings": [
+    "CVE-2026-97687",
+    "CVE-2026-97689"
+  ],
+  "dependency_change": {
+    "name": "urllib3",
+    "before": "2.7.0",
+    "after": "2.8.0",
+    "other_packages_changed": 0
+  },
+  "verification": {
+    "nonintegration_passed": 2128,
+    "nonintegration_deselected": 474,
+    "ruff": "passed",
+    "format_files": 622,
+    "mypy_linux_source_files": 251,
+    "frozen_sync": "passed",
+    "lock_check": "passed"
+  },
+  "scope": "No scanner suppression, threshold, application contract or database migration changes. Online remains rc.12; admission and capacity targets remain unverified for this candidate."
+}

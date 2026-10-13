@@ -1,0 +1,190 @@
+{
+  "schema_version": 1,
+  "status": "deployed_rollback_reapply_verified_not_commercially_approved",
+  "application_commit": "40f8de0ec6ff74524655754decf36c346b32db73",
+  "executor_commit": "40f8de0ec6ff74524655754decf36c346b32db73",
+  "tag": "v0.1.45-rc.43",
+  "environment": "staging",
+  "profile": "single-node-4c4g",
+  "database_revision": "20261008_0034",
+  "completed_at": "2026-10-08T19:37:40.328145+00:00",
+  "executed_by": "codex-primary-assistant",
+  "review": {
+    "status": "pending",
+    "independent_release_approval": false
+  },
+  "phases": {
+    "release": {
+      "at": "2026-10-08T19:24:08.568295+00:00",
+      "status": "passed",
+      "application_commit": "40f8de0ec6ff74524655754decf36c346b32db73",
+      "executor_commit": "40f8de0ec6ff74524655754decf36c346b32db73",
+      "checks": {
+        "complete_deployment_specs": true,
+        "candidate_prerequisites": true,
+        "namespace_uid": true,
+        "credentials_unchanged": true,
+        "full_schema_0034": true,
+        "history_counts_unchanged": true,
+        "business_idle": true,
+        "jobs_unchanged": true,
+        "no_other_controllers": true,
+        "five_ready": true,
+        "historical_terminal_pods_preserved": true,
+        "pod_readiness_and_image_identity": true,
+        "packaged_source_matches_application_commit": true,
+        "worker_concurrency_two": true,
+        "tiff_patch_matches_phase": true,
+        "nginx_matches_application_commit": true,
+        "public_signed_assets": true,
+        "backup_remains_deferred": true,
+        "homepage": true,
+        "readiness_and_queue": true,
+        "operation_deadlines": true,
+        "capacity_and_policy": true
+      },
+      "elapsed_seconds": 88.06040382385254,
+      "source_files_per_package": {
+        "enterprise_doc_core": 194,
+        "enterprise_doc_api": 50,
+        "enterprise_doc_worker": 15
+      },
+      "verifier_sha256": "f35762c18a9755cbdeb69699e939de443b50928cbf96ca0a3ebb06effc7f9339",
+      "tiff_package": "tiff-4.7.2-r0"
+    },
+    "rollback": {
+      "at": "2026-10-08T19:28:26.215400+00:00",
+      "status": "passed",
+      "application_commit": "934d2469f70586018aa1cdce053af89ca08cf21f",
+      "executor_commit": "40f8de0ec6ff74524655754decf36c346b32db73",
+      "checks": {
+        "complete_deployment_specs": true,
+        "candidate_prerequisites": true,
+        "namespace_uid": true,
+        "credentials_unchanged": true,
+        "full_schema_0034": true,
+        "history_counts_unchanged": true,
+        "business_idle": true,
+        "jobs_unchanged": true,
+        "no_other_controllers": true,
+        "five_ready": true,
+        "historical_terminal_pods_preserved": true,
+        "pod_readiness_and_image_identity": true,
+        "packaged_source_matches_application_commit": true,
+        "worker_concurrency_two": true,
+        "tiff_patch_matches_phase": true,
+        "nginx_matches_application_commit": true,
+        "public_signed_assets": true,
+        "backup_remains_deferred": true,
+        "homepage": true,
+        "readiness_and_queue": true,
+        "operation_deadlines": true,
+        "capacity_and_policy": true
+      },
+      "elapsed_seconds": 85.44231629371643,
+      "source_files_per_package": {
+        "enterprise_doc_core": 194,
+        "enterprise_doc_api": 50,
+        "enterprise_doc_worker": 15
+      },
+      "verifier_sha256": "f35762c18a9755cbdeb69699e939de443b50928cbf96ca0a3ebb06effc7f9339",
+      "tiff_package": "tiff-4.7.1-r0"
+    },
+    "reapply": {
+      "at": "2026-10-08T19:33:48.399974+00:00",
+      "status": "passed",
+      "application_commit": "40f8de0ec6ff74524655754decf36c346b32db73",
+      "executor_commit": "40f8de0ec6ff74524655754decf36c346b32db73",
+      "checks": {
+        "complete_deployment_specs": true,
+        "candidate_prerequisites": true,
+        "namespace_uid": true,
+        "credentials_unchanged": true,
+        "full_schema_0034": true,
+        "history_counts_unchanged": true,
+        "business_idle": true,
+        "jobs_unchanged": true,
+        "no_other_controllers": true,
+        "five_ready": true,
+        "historical_terminal_pods_preserved": true,
+        "pod_readiness_and_image_identity": true,
+        "packaged_source_matches_application_commit": true,
+        "worker_concurrency_two": true,
+        "tiff_patch_matches_phase": true,
+        "nginx_matches_application_commit": true,
+        "public_signed_assets": true,
+        "backup_remains_deferred": true,
+        "homepage": true,
+        "readiness_and_queue": true,
+        "operation_deadlines": true,
+        "capacity_and_policy": true
+      },
+      "elapsed_seconds": 87.67145991325378,
+      "source_files_per_package": {
+        "enterprise_doc_core": 194,
+        "enterprise_doc_api": 50,
+        "enterprise_doc_worker": 15
+      },
+      "verifier_sha256": "f35762c18a9755cbdeb69699e939de443b50928cbf96ca0a3ebb06effc7f9339",
+      "tiff_package": "tiff-4.7.2-r0"
+    }
+  },
+  "post_cleanup_checks": {
+    "all_cache_references_unchanged": true,
+    "deployment_specs_unchanged": true,
+    "credentials_unchanged": true,
+    "schema_and_history_unchanged": true,
+    "business_idle": true,
+    "five_ready": true,
+    "owned_roots_absent": true,
+    "homepage_200": true,
+    "readiness_and_queue": true
+  },
+  "post_cleanup_available_bytes": 13391372288,
+  "cleanup": {
+    "local_files": 43,
+    "local_bytes": 665816294,
+    "remote_files": 222,
+    "remote_bytes": 334663439,
+    "remote_directories": 314,
+    "cache_references_unchanged": true
+  },
+  "retained_failures": [
+    "Original import stopped after one shared empty-config attestation alias changed; exact alias restoration and four candidate aliases completed separately without another import.",
+    "Original release verifier apk info -v returned descriptions, not an installed version; failure retained and replaced by exact P/V installed-database verification.",
+    "Original TIFF HIGH scan failure, old capacity failures and the new rc42 timeout remain historical evidence."
+  ],
+  "alias_recovery": {
+    "exact_signed_metadata_cases": 7,
+    "elapsed_seconds": 32.72481465898454,
+    "original_references_restored": true,
+    "repeated_oci_imports": 0
+  },
+  "apply_budget_seconds": 600,
+  "recovery_budget_seconds": 300,
+  "worker_concurrency": 2,
+  "model_calls_initiated": 0,
+  "emails_sent": 0,
+  "backup_deferral_unchanged": true,
+  "source_hashes": {
+    "rc43-post-capacity-baseline-20261008.json": "1f91ecd058c595dcb1b012dabacb68752af3db6efdf0638ccbcfb9c7fbda3412",
+    "rc43-release-verified-v2-20261008.json": "e5e646d4a8172d0f587082480d3f320ba329d0155e67f8aeab49423a48268fee",
+    "rc43-release-verified-v3-20261008.json": "6a49a659c994f67ca9a31675d183b729759ad3cd379b0f9434080543dd812f10",
+    "rc43-rollback-verified-v3-20261008.json": "628ddcfe07a1cbefccc04adc9515c73d4bb142168cc521720cc5e9a88f503b1a",
+    "rc43-reapply-verified-v3-20261008.json": "05423c8fa9cd116303e1502f9eb81678a526752f109fe027a46d53e2d9191cfc",
+    "rc43-post-cleanup-verification-20261008.json": "6c568370e4cca41487880b83e6388b68779bc3a317a67a5970b0605ac3f434ed",
+    "rc43-import-alias-drift-inspection-20261008.json": "c7914934b86e858de58a646acef81a2737183f7414e698476802bee22d2f64c0",
+    "rc43-alias-completion-observations-20261008.jsonl": "9b3172abf1556a7980ed97cd53389da4a88980d433901b3e0db22efec7c5c239",
+    "rc43-transfer-tag-fix-validation-20261008.json": "0e966919b9e426d26b6d6f8a6a0051d6b9a9b09bdc0134b584f5e55eb0dc8034",
+    "rc43-tiff-verifier-fix-validation-20261008.json": "fd2845fedd9c1be26fc39a718c211c0975c69223739364e76dbf9cdfefac266d",
+    "rc43-owned-cleanup-plan-20261008.json": "28773b7aaf15439f4a716216e829a5fd7616be40a299219eefb877f9f9d7d15e",
+    "rc43-owned-local-cleanup-receipt-20261008.json": "8f3948b8fb3eb91c668de121fd20193d22e78b830bf009e3d83148da4f5ad9db",
+    "rc43-owned-remote-cleanup-receipt-20261008.json": "30b4b0c6fd2b8bac838052d66483910bdb01d3851a0c99d80b48238c13e9f396"
+  },
+  "limitations": [
+    "Independent verification means a separate read-only technical probe, not an independent human reviewer.",
+    "No new rc43 business generation, browser-offline completion or actual human correction was exercised in these windows.",
+    "The rc42 full160 measurements retain their exact rc42 source and unmet targets.",
+    "Outlook receipt, monitor activation, named reviewers/support and customer UAT remain pending."
+  ]
+}

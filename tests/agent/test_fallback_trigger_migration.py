@@ -33,7 +33,7 @@ def _has_fallback_trigger_column() -> bool:
     with psycopg.connect(DATABASE_URL) as connection, connection.cursor() as cursor:
         cursor.execute(
             "SELECT EXISTS (SELECT 1 FROM information_schema.columns "
-            "WHERE table_schema = 'public' AND table_name = 'agent_runs' "
+            "WHERE table_schema = current_schema() AND table_name = 'agent_runs' "
             "AND column_name = 'fallback_trigger_code')"
         )
         row = cursor.fetchone()

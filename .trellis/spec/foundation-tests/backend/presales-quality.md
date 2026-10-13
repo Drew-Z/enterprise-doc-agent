@@ -89,3 +89,615 @@ tuning on its results may be reported as a holdout measurement.
 Keep model-protocol/real-database/browser correctness separate from live semantic
 quality. A rejected reference or classifier error remains a failure in the planned
 denominator. Unknown billing remains null.
+
+## Prerequisites and generation-only trials
+
+`presales.v4` fixtures explicitly return `prerequisites: []` when none apply.
+Use the real gateway at the HTTP boundary to verify unmet/unknown prerequisites
+cannot accompany supported, conditional output retains every outstanding condition,
+and prerequisite-only citation selections resolve without requiring duplicate
+top-level selections. Wrong: deleting valid citations to satisfy the adapter.
+Correct: resolve the ordered union of explicit references with the same catalog.
+
+`python -m scripts.evaluate_presales_gateway --input <dataset.json> --output
+<new-run.json> --provider-env <local-env> [--model-route primary|fallback]` makes one
+call per requirement, at most six, using the explicitly selected route and a
+120-second deadline. The default remains fallback. It never reads
+gold or writes tenants. Sources must each fit the 1800-character evidence bound.
+Existing output files fail before dispatch; raw bounded responses and usage survive
+invalid draft/schema results. Secrets/headers and non-200 bodies are not recorded.
+
+These `presales-gateway-run-v1` reports are generation-only observations with complete
+synthetic sources, not public retrieval/persistence results or equivalents of the
+public evaluator. H1 is now a known regression corpus. Freeze H2 and its gold hash
+before first inference; retain initial failures separately from deterministic decoder
+replay. Never present a replay as an extra successful live inference or independent
+adjudication. Inspect meaning/conditions in addition to labels and exact quotations.
+
+## Official public-source fixtures
+
+`presales-public-quality-input-v1` is a separate input format with `synthetic=false`.
+Each source must have exactly one publication identity: HTTPS URL without credentials
+or query, timezone-aware retrieval time, extracted-page/receipt/excerpt SHA-256.
+The loader binds the excerpt hash to the parsed source text and rejects incomplete
+coverage. The collector still never reads gold; classification, quotes and all
+failed/unattempted questions use the existing scorer. Reports must not label public
+material synthetic or imply that assistant-authored scenarios are customer facts.
+
+`evaluation/presales_public_r2_v1.*` freezes limited official excerpts and five
+assistant-authored requirements before inference. Check unmet cache purge separately
+from unknown jurisdiction/endpoint configuration. Public product documentation is
+not proof of actual customer configuration or end-to-end disaster-recovery guarantees.
+Page/receipt membership is verified when freezing; the loader checks bindings, not
+the truth of a remote page. Do not rewrite old synthetic fixtures, runs or scores.
+
+The first public R2 trial exposed a fixture-contract mismatch: R2-R3 put a current
+execution fact only in the requirement hypothesis, while `presales.v8` requires
+source evidence for prerequisite states. Preserve the original unmet/unknown
+mismatch and count the item outside accepted semantics; do not change gold after
+inference or call a prompt-compliant response a demonstrated model defect. Before
+another trial, separate public capability evidence, hypothetical scenarios and
+project records explicitly. Synthetic project records must not claim official
+publication provenance or independent customer approval.
+
+## Ordered decision regression and original-outcome scoring
+
+`presales.v5` explicitly orders unresolved source conflict, direct counterevidence,
+proof shortage, established enabling conditions, and full support. H1/H2 are known
+regressions; H3 and its separate gold are frozen before v5 calls. Include contrasting
+absent-vs-explicitly-unobtained certificates and limited-vs-no-priority clauses.
+Do not change gold after seeing outputs. A timeout is retained in the full planned
+denominator; unknown token usage for that attempt makes the aggregate unknown.
+
+`python -m scripts.score_presales_gateway --input <input> --gold <gold> --run <run>
+--output <new-score>` scores original `presales-gateway-run-v1` results offline.
+It checks dataset/gold hashes, unique planned rows, requirement text, version/hash/
+scope bindings, evidence text, and citation identity against the actual offered
+fragments. Rejected drafts do not become successes by decoding their raw responses.
+All observed requests, including rejected output, contribute usage when known.
+
+Wrong: count only accepted drafts or present deterministic replay as first-attempt
+success. Correct: keep rejection and semantic errors in the denominator, check
+both exact quotations and meaning, and record unverified billing as null. Tests
+use the frozen failed v4 run to guard this distinction and reject tampered bindings.
+
+The v5 trial demonstrates why label and citation success are insufficient. H3-R3
+selected both conflict sides with the expected label, but inverted which source
+agreed with the requirement in its answer. H3-R5 labeled an unrecorded acceptance
+state as unmet instead of unknown. Review these propositions and prerequisite
+states explicitly; do not infer semantic correctness from a valid schema or label.
+Clarifications must ask for missing facts or revised terms, not facts already stated
+by the cited sources (H1-R4). Preserve required-anchor gaps even when another source
+contains a similar fact (H1-R2); changing gold after inference hides the observation.
+
+## Semantic grounding and transport diagnostics
+
+The v6 candidate keeps the selection schema unchanged. H1/H2/H3 are known regressions;
+H4 is frozen separately before its first use and remains assistant-authored material.
+Review every prerequisite state and the answer's source-to-requirement relation,
+not only final classification. Predeclare dataset order, request cap and stop rules;
+an unattempted gated dataset is not a successful test. Never silently continue sampling
+after a declared stop or describe assistant review as independent adjudication.
+
+`RecordingTransport` adds optional `transportFailure: {type, phase}` to synthetic
+generation reports. Types are fixed HTTPX library names or HTTPError; cancellations
+use CancelledError. Phases distinguish awaiting_response_headers from
+reading_response_body (including stream cleanup). Exception messages, URLs, headers,
+partial response bodies and credentials are excluded. A received HTTP 200 followed
+by a body read failure is still a failed generation with unknown usage. Always close
+received streams; rethrow rather than repairing or retrying. External cancellation
+leaves the row/run interrupted and saves the trace; the gateway's own deadline still
+maps to its existing presales_model_timeout. These client observations cannot identify
+which network intermediary failed or whether the provider completed and billed work.
+
+Public `collect()` boundary tests cover ConnectError redaction/no retry, partial 200
+body failure/stream closure and interrupted collection. They test diagnostics, not
+model semantics; frozen raw v5 failures provide the actual semantic regression cases.
+
+New generation-only observations also retain optional `errorDiagnostic` from the
+gateway's allowlisted `PresalesError.diagnostic_code`. Omit it when unavailable,
+including ordinary transport failures; never infer it from exception text. Preserve
+`state=failed`, the original errorCode, bounded traces and one dispatch per row.
+This is additive to run-v6, not a new decoder or permission to rewrite old reports.
+`test_presales_gateway.py` verifies actual HTTP-to-report propagation, absent transport
+categories, credential exclusion and refusal to overwrite the original report.
+
+## Projected input reports (v7)
+
+The initial v7 collector wrote `presales-gateway-run-v2`. Each observation's `sourceInput`
+is the complete synthetic internal GenerationInput actually passed to the gateway;
+`traces[].input` is still exactly the JSON sent to the provider, now SelectionInput.
+Never inject hidden UUIDs into a recorded wire request for scorer convenience.
+
+The offline scorer supports historical run-v1 unchanged. For run-v2, it checks the
+deterministic dataset-to-source bindings (including UUIDs, full content, filenames,
+scope and versions), then verifies every projected fragment, display label and
+request-local citation ID against that input. It checks that an accepted draft
+matches its original selected references and projected conditions. Failed rows stay
+failed even when their raw response could be decoded; no replay becomes a success.
+Tests mutate internal source IDs, source scope, source labels, fragment text,
+references, fragment coverage, accepted conditions and raw output to verify rejection.
+
+The structured prerequisite-review candidate writes `presales-gateway-run-v3`.
+Its result must retain every prerequisite state and its zero-based citation indexes;
+the scorer compares the complete resolved result to the recorded draft. Missing/null
+states, changed state (including unknown to unmet), changed links or flat projection
+tampering fail scoring. Historical run-v2 reproduces its original flat projection
+only; v1/v2 results cannot acquire new assessments. Frozen v5/v6/v7 scores are
+regression-tested unchanged, including rejected or unattempted rows. Do not rewrite
+run or score files or claim that application state preservation fixes model semantics.
+
+Run the real PostgreSQL and both presales browser suites when changing this protocol:
+wire fixtures must consume SelectionInput, not GenerationInput. A fixture cannot
+recover internal chunk/version IDs from provider input; check those identities in
+saved public evidence and the actual database chunks instead. Browser model-call
+records describe only the offered reference/source and retain the dispatch count.
+
+## Source-bound prerequisite regression review
+
+1. **Scope / trigger:** a correct conditional label and exact citations can hide an
+   unknown-to-unmet error. `scripts/score_presales_prerequisites.py` checks the
+   prerequisite states and their own evidence separately from the original scores.
+   It never dispatches HTTP or grants full semantic/production acceptance.
+2. **Signature:** `score_prerequisites(dataset_path, gold_path, run_path,
+   expectations_path, review_path) -> dict`; CLI requires `--input --gold --run
+   --expectations --review --output`. Output creation is exclusive. Exit 1 after
+   saving a valid failing score; exit 0 only when all prerequisite rows pass.
+   Always inspect the original classification/citation score and full answer too.
+3. **Contracts:** `presales-prerequisite-gold-v1` binds dataset SHA and all row keys;
+   each expected prerequisite has key, description, state and source/excerpt anchors.
+   `presales-prerequisite-review-v1` binds exact run/expectation bytes by SHA, names
+   the reviewer/type and explicitly maps expected keys to zero-based output indexes
+   with a reason. Null means an omitted prerequisite. The reviewer, not a keyword
+   heuristic, establishes semantic correspondence. Accepted v2/v3 original outputs
+   are validated with the existing scorer before reading prerequisite states; failed
+   responses are never reinterpreted as successes. Old scores remain byte-for-byte
+   unchanged. The run is bounded to 2 MiB; reference and review files to 256 KiB.
+4. **Validation / errors:** stale hashes, wrong dataset coverage, duplicate keys or
+   indexes, unknown/invalid anchors, out-of-range/non-integer indexes, incomplete
+   mappings marked reviewed, and reviewing unavailable results raise ValueError.
+   Missing reviews, absent/extra prerequisites, state or per-item anchor mismatch
+   yield a failing score. Every planned row remains in the denominator, including
+   failures and unattempted rows. Existing output is never overwritten.
+5. **Good / base / bad:** good: explicit mappings survive changed order and paraphrase;
+   base: controlled HTTP outputs verify the checker, not model quality; bad: overall
+   citations contain an anchor but the relevant prerequisite does not cite it.
+   `semanticReviewRequired=true` and `independentDomainReview=false` remain explicit,
+   even with a human-typed reviewer field: the file is not identity attestation.
+6. **Tests:** `test_presales_prerequisites.py` reproduces the immutable v7 Windhub
+   H3-R5 failure, verifies source/state checks, strict bindings, complete denominators,
+   explicit omissions, tampered mapping rejection, CLI exit and overwrite refusal.
+   Its controlled v3 run proves no matching relies on prose or array order.
+7. **Wrong vs correct:** wrong: edit the original gold or call an after-the-fact
+   reference a holdout. Correct: add an explicitly labeled H3 regression supplement,
+   retain the original input/gold/runs/scores, and freeze new candidate criteria
+   before the next inference. Prerequisite checks alone cannot approve prose.
+
+The frozen v8 candidate changes the order of assessment in the prompt and schema
+display only; the field contract is unchanged. A batch plan specifies exact hashes,
+route/model, six single attempts, 120-second deadlines and no failover/retry. Stop
+after the batch. Other datasets, additional paid requests and deployment require
+their own applicable authorization; local checks do not satisfy those boundaries.
+
+The authorized v8 H3 batch has six original successful outputs with matching labels,
+anchors, prerequisites and assistant prose review. Preserve this known-regression
+run alongside the failed v7 run, and regression-test both recorded scores. Do not
+call it a holdout or independent sign-off: no H4/H1/H2 request was made in that batch.
+The slowest call took 111.188 seconds and reported completion tokens can exceed the
+requested 4000, so neither six passes nor max_tokens establish a latency or cost SLO.
+
+## Explicit alternate-channel trials
+
+`load_route_settings(provider_env, model_route)` selects BASE_URL/API_KEY/MODEL_NAME
+for primary and the FALLBACK_ fields for fallback; unselected credentials need not
+be present. It does not rewrite the file or swap route names. The collector records
+selectedRoute and configuredModelName, passes the explicit route to the same gateway
+and preserves single attempts, the deadline and unknown usage. Tests inspect actual
+HTTP URL, authorization, model and dispatch count for each route, including failures.
+
+Identify the route actually in use before interpreting "backup": presales can already
+be using configured fallback, making primary the available alternate. Freeze the new
+channel/model with the unchanged prompt and cases, keep original-channel failures,
+and retain the semantic release gate. A new channel's result is a separate experiment,
+not a retry that makes the original attempt successful. Evaluation never switches
+routes automatically. Product background recovery is separately gated as below.
+
+When the user updates the local file, identify the selected endpoint, model and
+protocol again; a stale PROVIDER_NAME label does not select the route. Create a new
+freeze and output path for a different designated channel. Preserve an interrupted
+candidate's original bytes and record cancellation uncertainty separately. A 200
+model catalog listing proves discovery only; a generation 200 without the standard
+choices envelope is still an invalid response, not a draft or semantic score.
+
+## Background recovery fault injection
+
+`tests/presales/test_presales_background_integration.py` uses real PostgreSQL,
+ASGI, Job leases, commercial reservations and demo limits with controlled HTTP
+transport. Verify admission without inference, idempotency, 503/timeout/200-error
+failover, terminal output failures, two-route exhaustion, unknown outcomes across
+restart, stale fencing, expired observed usage, pre-HTTP not_sent accounting,
+authorization/source changes, cancellation, daily budgets and one half-open probe.
+Batch tests must continue after per-row rejection and never create duplicate work
+on same-key replay. Migration tests cover empty upgrade/downgrade and refusal once
+dispatch history would be lost.
+
+The dedicated background browser harness exercises the real API/database/worker
+coordinator with synthetic sources and a controlled model. Verify page navigation,
+refresh, partial completion, failed-only retry, quota settlement/release, tenant
+isolation and mobile layout. Keep legacy synchronous, review and CSV suites passing.
+No live provider is required for these tests. Never alter frozen runs/gold, hide
+original failures, or count fault-injection success as a semantic release pass.
+
+For isolated migration validation, create a uniquely owned PostgreSQL schema and
+an empty alembic_version table in that schema **before** upgrading. With
+search_path=temporary_schema,public, Alembic can otherwise discover the public
+version table and apply incremental ALTERs to public tables. Assert both schema
+versions and table ownership before tests, verify public is unchanged afterward,
+and remove only the exact owned schema in finally. Do not point a harness at an
+empty schema and assume search_path alone provides migration isolation.
+
+## Strict request collection and historical scoring
+
+`collect(..., strict_output=True)` or the explicit `--strict-output` option selects
+strict schema only for the requested route. It emits presales-gateway-run-v10 and
+records the exact responseFormat in each dispatched trace; defaults remain run-v6.
+run-v7 belongs to the rejected answer-aspect experiment and remains unsupported.
+
+Both scorers retain v8 StrictBasisDraft and v9 ConstrainedBasisDraft branches, and
+add v10's SpanBasisDraft/resolve_span_basis. Gateway scoring verifies the version-specific recorded
+strict response format before processing success or failure, then
+binds accepted original output through the unchanged basis projection. Missing
+required arrays cannot be silently reconstructed. Legacy v1..v6 keep their existing
+parsers and frozen scores; do not use newer schema versions to reclassify a rejected
+historical output. Relabeling old request formats as a newer version is refused.
+
+Run-v10 records spans in the provider input. `bind_projected_input(..., spans=True)`
+first binds the original full evidence/source projection, then reconstructs the
+complete span list with the same deterministic offering function. Reject changed
+text, IDs, parent references, ordering, duplicates or omissions before evaluating
+even a failed observation. Older versions use their original input parser. Both
+scorers resolve accepted v10 selections through the same core decoder; do not
+rebuild quote materialization or semantic inference in scripts.
+
+HTTP-boundary evaluation tests cover successful and failed strict outputs, altered
+request-format rejection, strict omitted-field rejection and v6/v8 compatibility.
+The single 2026-10-10 v18 synthetic observation accepted the request and conformed to
+JSON Schema but failed support_combination. Preserve that failed state and semantic
+review. It proves one observed response format only, not constrained decoding,
+reliability, public-task improvement or permission to enable a production route.
+
+v19 development made no provider calls. Offline validation of the original v18
+bytes confirms its contradictory combination is outside the new schema, while the
+original v8 score and failed observation remain identical. Unit truth tables and
+controlled HTTP prove shape contracts, not future model interpretation or quality.
+
+The separately frozen S1901 v19 observation returned HTTP200 and valid anyOf
+branches, but failed support_quote and semantic review. Two quotations reconstructed
+shared date/order prefixes instead of selecting literal spans. The model also put
+"pass status unregistered" in negative/none, although its prose called that state
+unknown. Preserve the original failed report: legal support combinations, four
+separate propositions and a correct conflict do not make the whole draft valid.
+Review must compare structured direction, prose and original evidence separately.
+Never repair a quote or change missing to unmet to obtain an accepted draft. Future
+immutable evidence selection would address transcription only; it would still need
+independent missing-vs-negative and entailment criteria. See the bounded diagnostic
+record in docs/ops/presales-support-contract-probe-20261010.md.
+
+V20 development makes zero provider calls. Controlled HTTP tests cover correct
+selection, cross-call IDs and byte-limit refusal; real database tests preserve
+selected evidence and one charge through admission/restoration. Offline checks
+retain the exact v18/v19 failed reports and original scores. The old v19 generated
+quote objects are invalid v20 selections, not inputs to a quote repair. A valid
+span can still be selected in the wrong semantic direction, so frozen criteria
+must continue assessing missing-vs-negative, event decomposition and entailment.
+
+S2001's first v20 observation passes JSON Schema, span resolution and the original
+decoder, but fails semantic review: a genuine unregistered result is negative/none,
+four definition references point to state records rather than necessity rules,
+and requested next actions are missing. `acceptedDraft`, `statusMatch` and complete
+required-source coverage therefore do not constitute semantic acceptance. Compare
+each definition's role, support direction, prose and requested action separately.
+Preserve the accepted mechanical report and rejected semantic review without
+rewriting either. The new record is in docs/ops/presales-span-selection-probe-20261010.md;
+do not promote strict mode or repeat frozen samples from these checks alone.
+
+The standalone assessment candidate uses `resolve_assessment(content, requirement,
+catalog)` before any runtime integration. Verify every necessity rule is assessed
+exactly once, each requirement substring is covered in order, each answer retains
+its own information gap and every unmet/unknown item has its own action. Met cannot
+add an action. Reuse literal span resolution and validate raw prose before labels;
+reject final-size overflow. Keep a test where a wrong evidence role and missing-as-
+negative selection remain wrong: separate arrays, exact coverage and valid actions
+do not prove source entailment or semantic completeness. A combined rule/state
+passage must remain legal. Candidate schema identity is separate from gateway v20;
+no historical scorer or frozen policy may silently start using the new resolver.
+
+AR01's isolated candidate observation passes strict schema and source/span binding
+but fails exact question coverage: every requirementText copies a necessity rule.
+Its original draft_contract failure must remain failed. Separate frozen-criterion
+review also finds missing-as-unmet, an assumed verification pass, an invented
+training-certificate duty, cross-order substitution and structured/prose conflicts.
+Correct requiredBy roles and a correct conflict state do not establish acceptance.
+Compare the conclusion and every response with typed assessments and source scope;
+null nextAction on a met assessment does not prevent prose from inventing a duty.
+
+Preserve the presales-assessment-candidate-run-v1 report separately from run-v10
+and the assistant review separately from independent domain approval. Reject this
+candidate's runtime promotion. Any subsequent minimal-contract investigation must
+keep semantic criteria and original outcomes intact; do not replay AR01, repair
+its output, weaken the validators or infer quality from another set of fields.
+See docs/ops/presales-assessment-observation-20261010.md.
+
+A minimal-format diagnostic is a separate contract, never a weakened public draft.
+MC01 keeps complete source text/applicability and the same primary route, but asks
+only for an answer string. The original response is schema-valid and semantically
+rejected: unrecorded verification becomes a completion task, completed training
+gains a certificate duty, and the overall decision is absent. Retain both outcomes.
+Full source binding and simpler formatting do not establish substantive coverage.
+
+When investigating protocol burden, freeze meaning criteria independently of output
+shape. Keep all four evidence states, genuine conflicting peers, completed work with
+absent proof, explicitly unsubmitted required paperwork and cross-scope distractors.
+Inspect prose actions as well as stated status; repeating "unrecorded" does not pass
+if the next action assumes noncompletion. Do not present a new sample plus a changed
+prompt as a matched ablation or a model-capability ceiling. Stop schema expansion
+when unchanged meaning errors survive simpler output, and investigate inference
+quality before product integration. See the minimal-contract observation report.
+
+Prospective setting comparisons freeze both arms, order and separate semantic
+criteria before either request. Prepare source references once and verify the full
+request differs only in the intended field. Persist planned/unattempted arms and
+stop after failure, unknown outcome or preflight drift; never convert a stopped arm
+into a retry or silently remove it from the planned comparison. The second request
+must not receive the first answer. Requested settings are distinct from attested
+provider internals, and one sequential pair establishes no reliability rate.
+
+RC01 compares requested medium versus low on the same primary with identical input.
+Both are schema-valid but semantically rejected: low interprets an unregistered test
+as not passed; medium presupposes a pass; both invent a training-transcript duty.
+Review actual actions as well as status wording, and keep narrow criterion passes
+separate from overall semantic rejection. Do not promote a setting from these data.
+GET /models lists only advertised model IDs; it neither performs inference nor
+qualifies an alternate model. See docs/ops/presales-reasoning-comparison-20261010.md.
+
+GP01 demonstrates why mechanical and semantic results must stay distinct. The full
+GLM output passes strict schema and source/span bindings and correctly classifies
+all six states, but repeats the whole requirement in each response and fails the
+unchanged exact ordered-coverage resolver. Preserve that original failed outcome.
+Its unknown verification state is correct; its optional registration of a passing
+result lacks an explicit if-passed condition and fails the action-neutrality gate.
+Do not misreport this as a failed unknown classification. Requested/returned model
+alias differences remain unresolved without authoritative mapping. Question-part
+IDs may remove transcription burden, but cannot prove substantive answer coverage
+or authorize repair of prior outputs. See the GP01 qualification report.
+
+## Private server-owned question parts
+
+### Scope and signatures
+
+The unpromoted question_assessment module removes question transcription from a
+prospective model output; production gateways, policies and historical scorers do
+not import it. Public module boundaries are offer_requirement_parts(requirement),
+offer_question_assessment(span_input), question_assessment_response_format(),
+question_assessment_system_message() and resolve_question_assessment(content,
+requirement, catalog). Protocol: presales.question-assessment-candidate.v1.
+
+### Contracts
+
+Offered requirementParts contain frozen requirementPartId/text pairs, retaining all
+original characters and the complete requirement/evidence/spans beside them. At most
+12 contiguous lexical parts are offered; after 11 boundaries the full remaining
+tail is kept together. Repeated wording has distinct occurrence IDs. IDs derive
+from requirement key/text/sourceLocation plus index; they are deterministic identity
+bindings, not authorization capabilities or semantic decomposition.
+
+Each response selects requirementPartId instead of copying requirementText. All rule
+and assessment types remain shared with assessment_selection. The resolver recomputes
+parts from its trusted requirement, compares the exact ordered ID list, materializes
+only original text, then calls unchanged resolve_assessment. No sorting, deduplication,
+truncation, state inference, action repair or review approval occurs.
+
+### Validation and error matrix
+
+| Input/output condition | Result |
+| --- | --- |
+| All offered IDs once, in order | Materialize text and run original resolver |
+| Missing, duplicate, reversed, foreign or extra ID | ValueError before projection |
+| Changed key, text or source location with old IDs | Same coverage rejection |
+| Copied requirementText instead of/in addition to ID | Strict schema rejection |
+| Unknown source ID, no evidence/gap, non-Chinese prose or oversized public answer | Existing resolver rejection |
+| Correct IDs but unsupported business assumption | Remains a semantic review failure; parser does not claim approval |
+
+### Cases and required tests
+
+Base: one question without punctuation retains its complete text. Good: repeated
+sentences and whitespace retain exact characters with separate IDs. Bad: copying
+the first ID for every answer fails even when JSON is valid. A >12-sentence input
+keeps the entire bounded tail, including scope limitations; a 2,000-character input
+is not truncated. Test immutability, source/span preservation, all four assessment
+states, missing/foreign/repeated/reordered IDs and unchanged v15/v20 identities.
+
+Wrong: regard a mechanically valid unknown-state action of "register a passing
+result or confirm whether it passed" as semantic approval, or rewrite it server-side.
+Correct: preserve that text and unknown state for separate action-neutrality review.
+Likewise, question-part coverage does not establish substantive answer completeness.
+Tests live in packages/core/tests/test_presales_question_assessment.py; frozen GP01
+remains rejected by the original candidate and is never repaired through this one.
+
+## Public meaning preservation after question-ID coverage
+
+QP01 passes all 11 frozen criteria for one synthetic case, but CQU02/CQU05 demonstrate
+that correct question IDs, source references and unknown states are insufficient.
+CQU02 retains thresholds and missing supplier proof but incompletely asks for test
+conditions. CQU05 cites authentic clauses yet changes specific software project
+management experience into general work experience OR the specific category.
+
+Keep original mechanical states and semantic reviews distinct. For prospective
+source-grounded review, compare the generated obligation/action with the exact
+source: subject, qualification category, quantity, scope and conjunction/alternative.
+Do not implement a bare OR keyword ban or automatically fix prose. A valid OR in
+the source must remain possible; a stronger source requirement cannot silently
+become an optional alternative. Frozen review controls must cover both directions.
+
+Wrong: classify CQU05 as accepted because its citation exists and state is unknown.
+Correct: retain its succeeded draft and both source clauses, flag the weakened
+experience category and require review; missing supplier records stay unknown.
+Wrong: call CQU02 a false performance assertion or claim the empty answer citation
+array means no saved citation. Correct: requiredBy preserves the exact source;
+its deficit is resource/measurement-method clarification under frozen criterion 7.
+
+These are assistant observations against pre-frozen references, not independent
+business approval or changed historical score contracts. Original GP01 and earlier
+results remain intact. See docs/ops/presales-question-candidate-observation-20261010.md.
+
+## Fixed regression channel comparisons
+
+The user-authorized 2026-10-10 comparison explicitly selects GPT channel two using
+`FALLBACK_PROVIDER_NAME2`, `FALLBACK_BASE_URL2`, `FALLBACK_API_KEY2`,
+`FALLBACK_MODEL_NAME2` and `FALLBACK_PROTOCOL2` in the local provider file. These
+are diagnostic inputs, not new production routing settings. Verify `gpt`,
+`gpt-6-luna`, `chat_completions`, nonempty credentials and a credential-free HTTPS
+endpoint before dispatch. The legacy collector still supports only primary/fallback.
+
+Reuse known CQU02/CQU05/QP01 inputs and label them regression cases. Freeze all
+arms, common substantive-error criteria, separate improvement items and a hard
+call cap before dispatch. Do not turn optional resource/measurement clarification
+into a false factual-error finding. A category substitution, rule-as-fact or
+unknown-as-unmet error remains substantive. Existing historical verdicts are unchanged.
+
+Record exact effective wire requests without headers or secrets. GPT uses
+`max_completion_tokens=4000` and omits empty tools; Grok retains `max_tokens=4000`.
+Prompt/schema, semantic source content, low effort, streaming and deadlines remain
+common. Citation IDs contain per-call nonces: verify each complete source binding,
+not byte equality across otherwise equivalent requests. Endpoint and credentials
+also differ, so observations compare channel/model configurations rather than
+isolating model weights or verifying provider internals.
+
+Success, HTTP503 and cancellation controls verify one dispatch, redaction and
+restoration of scoped adapters for each channel. Non-200/transport failure stops
+that channel; schema failures remain failed but do not erase other preplanned arms.
+Cancellation preserves the uncertain attempted outcome. No automatic retry.
+
+Wrong: declare semantic failure for an undecodable stream, or infer semantic success
+from a resolved draft. Correct: mark semantics unassessable for the former; review
+the original prose, each state and each action against sources for the latter.
+One planned prompt correction may have separate same-input regression observations;
+never overwrite the baseline, weaken the resolver or continue sampling until success.
+
+## Candidate evidence versus current-product qualification
+
+The user's later approval permits GPT replacement if better; the earlier diagnostic
+no-switch scope is not a standing approval requirement. Verify the actual selected
+product contract before promoting a channel. The current v15 observation succeeded
+once with unmodified max_tokens/empty-tools parameters, then stopped on HTTP502;
+do not infer that the comparison adapter was required or that GPT was rejected for
+unsupported parameters. The third planned mixed-state case remains unattempted.
+
+Preserve useful missing-evidence answers separately from source-role errors: asking
+for test conditions can answer the question, but does not make that question a
+source-defined business prerequisite. CQU02 v15 contains this latter defect despite
+correct uncertainty and detailed test questions. Exact input binding and successful
+projection are not semantic acceptance. A retryable502 remains a channel failure;
+the direct collector does not exercise normal bounded background fallback.
+See `docs/ops/gpt-product-qualification-20261010.md`.
+
+## Integrated question assessment (v21 / run-v11)
+
+Independent primary/fallback question-assessment flags default false. Opt-in mode
+uses the existing candidate schema, literal source spans and original question IDs;
+the resolver receives each call's own RequirementInput. Keep v15/v20 request and
+decoder behavior unchanged. V21 sends max_completion_tokens=4000 and omits empty
+tool fields, matching the previously observed successful GPT candidate contract.
+Changing those parameters is not proof that an earlier HTTP502 was caused by them.
+
+Freeze v21 prompt/version/hash into the existing route policy; restoration preserves
+mode and rejects drift. No new public draft or database format is introduced. New
+run-v11 scorers bind full source plus ordered question parts and preserve rejected
+outputs. Text coverage and exact citations still do not prove semantic correctness.
+
+Exercise concurrent call-local binding, foreign/omitted parts, source substitution,
+streaming, original failures and historical decoder preservation. Real PostgreSQL
+tests cover background generation, existing bounded502 fallback, separate attributed
+review, reload, unchanged original drafts, XLSX/CSV and exactly-once successful use.
+Public sample qualification must retain every first outcome and state clearly when
+ingestion/authentication are local fixtures. Review by Codex is assisted review, not
+independent customer approval. A single upstream failure does not disable normal
+fallback or establish a semantic defect.
+
+## Question semantics and bounded projection (v22)
+
+### Scope and signatures
+
+New question-mode requests use `presales.v22` and
+`question_assessment_system_message(revised=True)`. The default helper still
+reproduces the original candidate/v21 message. Both `resolve_question_assessment`
+and `resolve_assessment` accept keyword-only `compact_missing_information=False`;
+only the new runtime opts in. The provider schema and public/storage formats stay
+unchanged. V15/v20 and historical question resolvers retain their behavior.
+
+### Contracts
+
+The instruction distinguishes buyer requirements from supplier-state evidence and
+preserves roles, categories, thresholds, time triggers and conjunctions. Multiple
+business rules do not multiply the response count for one offered question ID.
+These instructions guide model judgment; they are not a semantic classifier.
+
+Per-response information gaps and unknown-rule next actions can jointly exceed
+the public12-item list despite valid individual arrays. After existing exact-text
+deduplication, v22 joins adjacent complete strings with a newline only as needed
+to reach12 items. Keep order and every character; each grouped item remains at
+most1,000 characters. Do not infer semantic equivalence or alter answer, state,
+action, citation, or source. Final answer4,000-character and all other limits stay.
+
+### Validation and error matrix
+
+| Case | Result |
+| --- | --- |
+| Combined gaps at most12 | Identical public list |
+|13 short gaps; v22 projection |12 groups with every original gap retained |
+| Individual field or final answer too long | Original rejection, no truncation |
+| Foreign, duplicate, omitted or reordered question IDs | Original rejection |
+| Wrong source, state combination or raw language | Original validation |
+| Previously admitted v21 policy under v22 | Policy drift rejection; drain before release |
+| Historical failed observation | Remains failed in both scorers |
+
+### Examples and tests
+
+Good: retain all13 distinct requests by joining two complete strings. Base: retain
+the original list when it fits. Bad: `missing[:12]`, semantic deduplication, or
+changing unknown to unmet to reduce follow-up entries.
+
+Tests cover gateway/SSE, original IDs and source limits, exact joined text and item
+bounds, v21/v22 scorer selection and original failure retention. Actual PostgreSQL
+generation/review/reload/XLSX/CSV verifies grouped gaps and one successful usage
+charge;502 and duplicate-ID failures exercise the existing bounded fallback.
+Offline frozen-response replay must be labeled separately from live generation.
+## v23 missing-information and clause-coverage continuation
+
+Question generation uses presales.v23 and the clause_coverage instruction selector;
+the original v21 message and revised=True v22 message remain reproducible. Provider
+JSON schemas and all question/reference/state bounds are unchanged. Historical
+scorers select compact_missing_information only for succeeded v22 and
+expanded_missing_information only for succeeded v23; failed observations stay failed.
+
+The public missing-information list has a156-item structural ceiling and12,000 total
+Unicode-code-point budget, retaining1,000 per item. Question projection deduplicates
+exact strings in the existing order, validates every nonempty twelve-item group with
+the unchanged legacy source/state/language pipeline, then validates the combined
+public draft. There is no model call or semantic merge in this batching. Empty lists
+still pass through normal validation. Do not widen other limits or silently truncate.
+
+Regression boundaries: public draft/review budget rejection; question projection of
+25 independent gaps; late English-only text, bad source and duplicate question rejection;
+14-item real PostgreSQL generation/review/reload and original XLSX/CSV output; legacy
+v15/v20 hashes; v21/v22 scoring behavior. All saved historical failures stay immutable.
+Finite real-provider checks are known CQU06/CQU05/QP01 regressions, not new held-out
+samples. Score their unchanged originals separately from assistant semantic review.
+
+Final numeric-only instruction version isv24. Keep clause_coverage=True as the v23
+message and numeric_boundaries=True as v24; current gateway uses the latter.
+Both succeeded versions use expanded projection in scorers. CQU05 showed that
+explicit“以上” -> “超过” is a semantic failure even when every field validates.
+Preserve原比较词 and source-defined inclusivity; absence of a special definition
+does not authorize a stricter threshold. One separately frozen CQU05 follow-up passed;
+the earlier v23 CQU06/QP01 observations are not relabelled as v24 live results.

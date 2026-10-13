@@ -5,13 +5,37 @@ import re
 import struct
 import unicodedata
 from dataclasses import dataclass
+from typing import Protocol
 
 from enterprise_doc_core.config import UploadSettings
-from enterprise_doc_core.object_store import MultipartObjectStore
+
+MAX_BUFFERED_ENVELOPE_BYTES = 1024 * 1024
+
+
+class ObjectRangeReader(Protocol):
+    async def get_range(
+        self, *, bucket: str, key: str, start: int, end_inclusive: int
+    ) -> bytes: ...
+
+
+@dataclass(frozen=True, slots=True)
+class _VerifiedContentReader:
+    bucket: str
+    key: str
+    content: bytes
+
+    async def get_range(self, *, bucket: str, key: str, start: int, end_inclusive: int) -> bytes:
+        if (bucket, key) != (self.bucket, self.key) or not (
+            0 <= start <= end_inclusive < len(self.content)
+        ):
+            raise ValueError("Verified content range does not match the current object")
+        return self.content[start : end_inclusive + 1]
+
 
 _PDF_MEDIA_TYPE = "application/pdf"
 _TXT_MEDIA_TYPE = "text/plain"
 _DOCX_MEDIA_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+_XLSX_MEDIA_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 _ZIP_EOCD_SIGNATURE = b"PK\x05\x06"
 _ZIP_CENTRAL_SIGNATURE = b"PK\x01\x02"
 _ZIP_EOCD = struct.Struct("<4s4H2LH")
@@ -22,6 +46,7 @@ _ZIP64_UINT32 = 0xFFFFFFFF
 _ZIP64_EXTRA_FIELD_ID = 0x0001
 _WINDOWS_DRIVE_PREFIX = re.compile(r"^[A-Za-z]:")
 _DOCX_REQUIRED_ENTRIES = frozenset({"[Content_Types].xml", "word/document.xml"})
+_XLSX_REQUIRED_ENTRIES = frozenset({"[Content_Types].xml", "xl/workbook.xml"})
 
 _MESSAGES = {
     "document_type_unsupported": "The uploaded document type is unsupported.",
@@ -46,6 +71,14 @@ _MESSAGES = {
     "document_envelope_read_budget_exceeded": "The document envelope read budget was exceeded.",
 }
 
+_MESSAGES.update(
+    {
+        key.replace("docx", "xlsx"): value.replace("DOCX", "XLSX")
+        for key, value in tuple(_MESSAGES.items())
+        if "docx" in key
+    }
+)
+
 
 class DocumentEnvelopeViolation(ValueError):
     def __init__(self, *, code: str) -> None:
@@ -61,7 +94,7 @@ class ValidatedDocumentEnvelope:
 
 @dataclass(slots=True)
 class _RangeBudget:
-    object_store: MultipartObjectStore
+    object_store: ObjectRangeReader
     bucket: str
     key: str
     remaining_bytes: int
@@ -81,13 +114,18 @@ class _RangeBudget:
 
 async def validate_document_envelope(
     *,
-    object_store: MultipartObjectStore,
+    object_store: ObjectRangeReader,
     bucket: str,
     key: str,
     size_bytes: int,
     extension: str,
     settings: UploadSettings,
+    verified_content: bytes | None = None,
 ) -> ValidatedDocumentEnvelope:
+    if verified_content is not None:
+        if len(verified_content) != size_bytes or size_bytes > MAX_BUFFERED_ENVELOPE_BYTES:
+            raise ValueError("Verified content must be complete and within the buffer limit")
+        object_store = _VerifiedContentReader(bucket, key, verified_content)
     if size_bytes < 1:
         raise DocumentEnvelopeViolation(code="document_type_unsupported")
     if extension == ".pdf":
@@ -107,21 +145,31 @@ async def validate_document_envelope(
             sample_bytes=settings.envelope_sample_bytes,
         )
         return ValidatedDocumentEnvelope(detected_media_type=_TXT_MEDIA_TYPE)
-    if extension == ".docx":
-        await _validate_docx(
-            object_store=object_store,
-            bucket=bucket,
-            key=key,
-            size_bytes=size_bytes,
-            settings=settings,
+    if extension in {".docx", ".xlsx"}:
+        try:
+            await _validate_docx(
+                object_store=object_store,
+                bucket=bucket,
+                key=key,
+                size_bytes=size_bytes,
+                settings=settings,
+                required_entries=(
+                    _DOCX_REQUIRED_ENTRIES if extension == ".docx" else _XLSX_REQUIRED_ENTRIES
+                ),
+            )
+        except DocumentEnvelopeViolation as error:
+            if extension == ".xlsx":
+                raise DocumentEnvelopeViolation(code=error.code.replace("docx", "xlsx")) from error
+            raise
+        return ValidatedDocumentEnvelope(
+            detected_media_type=_DOCX_MEDIA_TYPE if extension == ".docx" else _XLSX_MEDIA_TYPE
         )
-        return ValidatedDocumentEnvelope(detected_media_type=_DOCX_MEDIA_TYPE)
     raise DocumentEnvelopeViolation(code="document_type_unsupported")
 
 
 async def _validate_pdf(
     *,
-    object_store: MultipartObjectStore,
+    object_store: ObjectRangeReader,
     bucket: str,
     key: str,
     size_bytes: int,
@@ -140,7 +188,7 @@ async def _validate_pdf(
 
 async def _validate_txt(
     *,
-    object_store: MultipartObjectStore,
+    object_store: ObjectRangeReader,
     bucket: str,
     key: str,
     size_bytes: int,
@@ -194,11 +242,12 @@ def _reject_txt_nul(content: bytes) -> None:
 
 async def _validate_docx(
     *,
-    object_store: MultipartObjectStore,
+    object_store: ObjectRangeReader,
     bucket: str,
     key: str,
     size_bytes: int,
     settings: UploadSettings,
+    required_entries: frozenset[str] = _DOCX_REQUIRED_ENTRIES,
 ) -> None:
     if size_bytes < _ZIP_EOCD.size:
         raise DocumentEnvelopeViolation(code="document_docx_zip_invalid")
@@ -211,6 +260,25 @@ async def _validate_docx(
     )
     tail_start = size_bytes - tail_bytes
     tail = await budget.read(start=tail_start, end_inclusive=size_bytes - 1)
+    central_offset, central_size, entry_count = _office_directory_bounds(
+        tail, tail_start=tail_start, size_bytes=size_bytes, settings=settings
+    )
+    central_directory = await budget.read(
+        start=central_offset,
+        end_inclusive=central_offset + central_size - 1,
+    )
+    _validate_central_directory(
+        central_directory,
+        central_directory_offset=central_offset,
+        expected_entry_count=entry_count,
+        settings=settings,
+        required_entries=required_entries,
+    )
+
+
+def _office_directory_bounds(
+    tail: bytes, *, tail_start: int, size_bytes: int, settings: UploadSettings
+) -> tuple[int, int, int]:
     eocd_offset = _find_eocd(tail)
     (
         _,
@@ -239,16 +307,33 @@ async def _validate_docx(
         raise DocumentEnvelopeViolation(code="document_docx_zip_invalid")
     if central_size < 1 or central_offset < 0 or central_offset >= size_bytes:
         raise DocumentEnvelopeViolation(code="document_docx_zip_invalid")
-    central_directory = await budget.read(
-        start=central_offset,
-        end_inclusive=central_offset + central_size - 1,
-    )
-    _validate_central_directory(
-        central_directory,
-        central_directory_offset=central_offset,
-        expected_entry_count=entry_count,
-        settings=settings,
-    )
+    return central_offset, central_size, entry_count
+
+
+def validate_office_archive_bytes(
+    content: bytes, *, extension: str, settings: UploadSettings
+) -> None:
+    """Apply the existing envelope checks before in-memory Office parsing."""
+    if extension not in {".docx", ".xlsx"}:
+        raise DocumentEnvelopeViolation(code="document_type_unsupported")
+    try:
+        tail_start = max(0, len(content) - _ZIP_EOCD_MAX_BYTES)
+        offset, size, count = _office_directory_bounds(
+            content[tail_start:], tail_start=tail_start, size_bytes=len(content), settings=settings
+        )
+        _validate_central_directory(
+            content[offset : offset + size],
+            central_directory_offset=offset,
+            expected_entry_count=count,
+            settings=settings,
+            required_entries=(
+                _DOCX_REQUIRED_ENTRIES if extension == ".docx" else _XLSX_REQUIRED_ENTRIES
+            ),
+        )
+    except DocumentEnvelopeViolation as error:
+        if extension == ".xlsx":
+            raise DocumentEnvelopeViolation(code=error.code.replace("docx", "xlsx")) from error
+        raise
 
 
 def _find_eocd(tail: bytes) -> int:
@@ -270,6 +355,7 @@ def _validate_central_directory(
     central_directory_offset: int,
     expected_entry_count: int,
     settings: UploadSettings,
+    required_entries: frozenset[str] = _DOCX_REQUIRED_ENTRIES,
 ) -> None:
     offset = 0
     entry_count = 0
@@ -337,7 +423,7 @@ def _validate_central_directory(
         offset = entry_end
     if entry_count != expected_entry_count or offset != len(content):
         raise DocumentEnvelopeViolation(code="document_docx_zip_invalid")
-    if not _DOCX_REQUIRED_ENTRIES <= present_files:
+    if not required_entries <= present_files:
         raise DocumentEnvelopeViolation(code="document_docx_required_entry_missing")
 
 

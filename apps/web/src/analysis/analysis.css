@@ -1,0 +1,72 @@
+.analysis-workspace { max-width: 1180px; margin: 0 auto; }
+.analysis-workspace p { line-height: 1.65; }
+.analysis-workspace label { display: grid; gap: 6px; font-size: 14px; }
+.analysis-workspace input:not([type="checkbox"]), .analysis-workspace select, .analysis-workspace textarea { min-width: 0; width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; color: #172333; font: inherit; }
+.analysis-workspace button { cursor: pointer; }
+.analysis-workspace button:disabled { cursor: default; opacity: .55; }
+.analysis-workspace .product-page-header { display: flex; align-items: flex-start; gap: 16px; }
+.analysis-workspace .product-page-header > div { flex: 1; }
+.analysis-editor button:not(.command-button), .analysis-actions button {
+  padding: 8px 14px; min-height: 36px; border: 1px solid #cbd5e1; border-radius: 6px;
+  background: #fff; color: #25374b; font: inherit; font-size: 14px;
+}
+.analysis-editor fieldset > button { justify-self: start; }
+.analysis-workspace .product-section > .command-button { margin-top: 16px; }
+.analysis-actions { display: flex; align-items: end; gap: 12px; margin: 20px 0; flex-wrap: wrap; }
+.analysis-actions label { flex: 1; max-width: 540px; }
+.analysis-mode { display: flex; align-items: center; gap: 12px; min-height: 36px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; }
+.analysis-mode legend { padding: 0 4px; font-size: 13px; }
+.analysis-mode label { display: flex; align-items: center; gap: 6px; }
+.analysis-input-form { display: grid; gap: 10px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0; }
+.analysis-input-form button { justify-self: start; min-height: 36px; padding: 8px 14px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; color: #25374b; font: inherit; }
+.analysis-workspace .product-section { padding: 24px; margin: 20px 0; }
+.analysis-editor fieldset { padding: 0; border: 0; min-width: 0; display: grid; gap: 14px; }
+.analysis-editor h3 { margin: 16px 0 0; }
+.analysis-objects { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.analysis-objects > div { display: grid; gap: 8px; }
+.analysis-objects button { justify-self: start; }
+.analysis-table-wrap { overflow: auto; }
+.analysis-workspace table { width: 100%; text-align: left; border-collapse: collapse; }
+.analysis-workspace th, .analysis-workspace td { padding: 12px; border-bottom: 1px solid #e2e8f0; overflow-wrap: anywhere; }
+.analysis-workspace td { max-width: 400px; }
+.analysis-workspace small { display: block; color: #546477; margin: 5px 0; }
+.analysis-field { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(0, 3fr); gap: 12px; align-items: center; }
+.analysis-field > label { display: flex; gap: 8px; align-items: center; }
+.analysis-upload { padding: 16px 0; }
+.analysis-upload summary { cursor: pointer; font-weight: 600; }
+.analysis-inspector { margin-top: 24px; }
+.analysis-inspector > label { max-width: 540px; }
+.analysis-blocks { list-style: none; padding: 0; }
+.analysis-blocks li { border-top: 1px solid #dde4ec; padding: 16px 0; overflow-wrap: anywhere; }
+.analysis-blocks p { white-space: pre-wrap; margin: 8px 0; max-height: 360px; overflow: auto; }
+.analysis-warning { background: #fffbeb; color: #805a17; padding: 12px 16px; border-left: 3px solid #d49a2b; }
+.analysis-matrix { min-width: 0; }
+.analysis-matrix td { min-width: 220px; vertical-align: top; }
+.analysis-matrix blockquote { margin: 8px 0; padding-left: 12px; border-left: 3px solid #cbd5e1; white-space: pre-wrap; }
+.analysis-review-panel { margin-top: 14px; padding-top: 12px; border-top: 1px solid #dbe3ec; }
+.analysis-review-panel summary { display: flex; align-items: center; gap: 7px; cursor: pointer; color: #24435f; font-weight: 650; }
+.analysis-review-panel summary svg, .analysis-review-panel button svg, .analysis-delivery button svg, .analysis-review-state svg, .analysis-revision-history h4 svg { width: 16px; height: 16px; flex: none; }
+.analysis-review-panel form, .analysis-review-decision { display: grid; gap: 10px; margin-top: 12px; }
+.analysis-review-panel button, .analysis-delivery button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 36px; padding: 8px 12px; border: 1px solid #b9c7d5; border-radius: 6px; background: #fff; color: #1f3d57; font: inherit; font-size: 13px; white-space: normal; text-align: center; }
+.analysis-review-panel form > button { justify-self: start; }
+.analysis-review-decision > div { display: flex; gap: 8px; flex-wrap: wrap; }
+.analysis-value-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.analysis-review-state { display: flex; align-items: center; gap: 7px; color: #17603a; }
+.analysis-revision-history { display: grid; gap: 8px; margin-top: 16px; }
+.analysis-revision-history h4 { display: flex; align-items: center; gap: 7px; margin: 0; }
+.analysis-revision-history > div { display: grid; gap: 3px; padding: 9px 0; border-top: 1px solid #e4eaf0; }
+.analysis-delivery { margin-top: 24px; padding-top: 20px; border-top: 1px solid #d9e1e9; }
+.analysis-delivery h3 { margin: 0; }
+.analysis-delivery > div:first-child p { margin: 6px 0 0; }
+.analysis-artifacts { display: grid; gap: 8px; margin-top: 16px; }
+.analysis-artifacts article { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; border-top: 1px solid #e0e7ee; }
+.analysis-artifacts article > div { min-width: 0; }
+.analysis-artifacts article > div:last-child { display: flex; gap: 8px; flex-wrap: wrap; flex: none; }
+.analysis-artifacts strong { display: block; overflow-wrap: anywhere; }
+@media (max-width: 700px) {
+  .analysis-objects, .analysis-field { grid-template-columns: minmax(0, 1fr); }
+  .analysis-value-grid { grid-template-columns: minmax(0, 1fr); }
+  .analysis-artifacts article { align-items: flex-start; flex-direction: column; }
+  .analysis-workspace .product-section { padding: 16px; }
+  .analysis-workspace th, .analysis-workspace td { padding: 8px; }
+}

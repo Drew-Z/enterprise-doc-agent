@@ -62,8 +62,13 @@ from enterprise_doc_core.agents.state import (
     transition_approval_request,
     transition_tool_execution,
 )
+from enterprise_doc_core.billing.errors import UsageError
+from enterprise_doc_core.billing.product_contracts import ProductMetric
+from enterprise_doc_core.billing.product_usage import ProductUsageService
+from enterprise_doc_core.config import AppEnvironment
 from enterprise_doc_core.documents.models import DocumentChunk, DocumentVersion
 from enterprise_doc_core.documents.retrieval import RefusalReason, RetrievalDecision
+from enterprise_doc_core.jobs.models import Job
 from enterprise_doc_core.object_store import ArtifactObjectStore
 
 _SEARCH_INTERRUPTED_ERROR_CODE = "search_execution_interrupted"
@@ -276,6 +281,7 @@ class AgentToolService:
         stale_execution_seconds: int = 30,
         max_search_results: int = 50,
         artifact_bucket: str = "artifacts",
+        app_env: AppEnvironment = AppEnvironment.LOCAL,
     ) -> None:
         if stale_execution_seconds < 1:
             raise ValueError("stale_execution_seconds must be positive")
@@ -288,6 +294,7 @@ class AgentToolService:
         self.stale_execution_seconds = stale_execution_seconds
         self.max_search_results = max_search_results
         self.artifact_bucket = artifact_bucket
+        self.app_env = app_env
 
     async def search_document(
         self,
@@ -326,6 +333,47 @@ class AgentToolService:
             }
             if "actor_id" in inspect.signature(self.retrieval_service.retrieve).parameters:
                 retrieval_kwargs["actor_id"] = context.actor_id
+            if "provider_guard" in inspect.signature(self.retrieval_service.retrieve).parameters:
+
+                async def guard(session: AsyncSession) -> None:
+                    await session.execute(
+                        text("SELECT pg_advisory_xact_lock(hashtextextended(:key, 0))"),
+                        {"key": f"agent-run:{context.tenant_id}:{context.run_id}"},
+                    )
+                    if self.clock() >= context.expires_at:
+                        raise UsageError("provider_execution_stale")
+                    if context.job_id is not None:
+                        job = await session.scalar(
+                            select(Job)
+                            .where(Job.id == context.job_id, Job.tenant_id == context.tenant_id)
+                            .with_for_update()
+                        )
+                        if (
+                            job is None
+                            or job.cancel_requested_at is not None
+                            or job.lease_expires_at is None
+                            or job.lease_expires_at <= self.clock()
+                        ):
+                            raise UsageError("provider_execution_stale")
+                    await reload_tool_policy(
+                        session,
+                        context=context,
+                        capability=ToolCapability.READ_EVIDENCE,
+                        now=self.clock(),
+                        for_update=True,
+                    )
+                    await ProductUsageService(
+                        session_factory=self.session_factory,
+                        app_env=self.app_env,
+                    ).require_reserved(
+                        session=session,
+                        tenant_id=context.tenant_id,
+                        operation_id=context.run_id,
+                        metric=ProductMetric.AGENT_TASK,
+                    )
+
+                retrieval_kwargs["provider_guard"] = guard
+                retrieval_kwargs["provider_operation_id"] = begin.execution_id
             decision = await self.retrieval_service.retrieve(**retrieval_kwargs)  # type: ignore[arg-type]
         except asyncio.CancelledError:
             await self._interrupt_search(

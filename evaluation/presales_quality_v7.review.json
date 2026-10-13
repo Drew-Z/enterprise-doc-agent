@@ -1,0 +1,110 @@
+{
+  "schemaVersion": "presales-gateway-semantic-review-v1",
+  "reviewType": "assistant authored and self reviewed, non-blind; not independent domain or customer review",
+  "decision": "retain_v7_protocol_candidate_as_draft; no_deploy; stop_remaining_datasets",
+  "promptVersion": "presales.v7",
+  "promptSha256": "11542919c2ebb588715fa788def38325b9e4384883fdb277bb6b9046d8dce55f",
+  "scope": "original_generation_only_outcomes_with_complete_short_synthetic_sources",
+  "plan": {
+    "maximumRequests": 24,
+    "sequence": [
+      "H3",
+      "H4",
+      "H1",
+      "H2"
+    ],
+    "stopAfterFailedDatasetReview": true
+  },
+  "realProviderRequests": 6,
+  "automaticRetries": 0,
+  "additionalReplayRequests": 0,
+  "unattemptedDatasets": [
+    "H4",
+    "H1",
+    "H2"
+  ],
+  "unattemptedRequirements": 18,
+  "acceptedDrafts": 4,
+  "statusMatches": 4,
+  "attemptedRows": 6,
+  "unsafeAffirmativeLabels": 0,
+  "exactCitations": 5,
+  "coveredRequiredEvidence": 4,
+  "requiredEvidenceInAttemptedDataset": 9,
+  "releaseGatePassed": false,
+  "usage": {
+    "prompt_tokens": null,
+    "completion_tokens": null,
+    "total_tokens": null
+  },
+  "knownPartialUsage": {
+    "requestsWithCompleteUsage": 4,
+    "prompt_tokens": 10133,
+    "completion_tokens": 13155,
+    "total_tokens": 23288,
+    "providerReportedReasoningTokens": 12767
+  },
+  "costAmount": null,
+  "costReason": "Two timeout requests have unknown usage; provider-specific cost ticks have not been verified as an invoice or unit price.",
+  "latencySeconds": {
+    "min": 42.828,
+    "median": 77.789,
+    "max": 120.0
+  },
+  "runPath": "evaluation/presales_quality_holdout_v3.v7-gateway.json",
+  "runSha256": "97e10ebc3c2919a5970d8490b236645d1b55cc18b0ec543d03cb7deb55894d43",
+  "rows": [
+    {
+      "key": "H3-R1",
+      "acceptedDraft": true,
+      "statusMatch": true,
+      "semanticReview": "pass",
+      "notes": "正确区分未附认证证书与明确无认证；索取证书、覆盖范围及有效期。"
+    },
+    {
+      "key": "H3-R2",
+      "acceptedDraft": true,
+      "statusMatch": true,
+      "semanticReview": "pass",
+      "notes": "明确尚未通过PCI评估，正确拒绝已通过且提供当前有效证明的要求。"
+    },
+    {
+      "key": "H3-R3",
+      "acceptedDraft": false,
+      "statusMatch": false,
+      "semanticReview": "not_observable",
+      "notes": "120秒在等待响应头阶段取消。无HTTP状态、正文或用量，条款冲突与要求关系未能验证；不能确定根因或上游执行状态。",
+      "errorCode": "presales_model_timeout",
+      "transportFailure": {
+        "type": "CancelledError",
+        "phase": "awaiting_response_headers"
+      }
+    },
+    {
+      "key": "H3-R4",
+      "acceptedDraft": true,
+      "statusMatch": true,
+      "semanticReview": "pass",
+      "notes": "正确采用吞吐有限优先关系，300大于250；引用订单与补充协议。没有再使用内部UUID为citationId。"
+    },
+    {
+      "key": "H3-R5",
+      "acceptedDraft": false,
+      "statusMatch": false,
+      "semanticReview": "not_observable",
+      "notes": "120秒在等待响应头阶段取消。无正文，不能验证验收unknown状态或真实条件投影效果。",
+      "errorCode": "presales_model_timeout",
+      "transportFailure": {
+        "type": "CancelledError",
+        "phase": "awaiting_response_headers"
+      }
+    },
+    {
+      "key": "H3-R6",
+      "acceptedDraft": true,
+      "statusMatch": true,
+      "semanticReview": "pass",
+      "notes": "说明单张附件12个硬上限低于20且无提升途径；未建议用拆单或虚构选购项满足要求。"
+    }
+  ]
+}

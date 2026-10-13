@@ -41,7 +41,9 @@ from enterprise_doc_core.object_store.errors import (
 from enterprise_doc_core.object_store.models import (
     CompletedMultipartUpload,
     IncompleteUpload,
+    ObjectContent,
     ObjectHead,
+    PresignedObjectUpload,
     PresignedUploadPart,
     UploadedPart,
 )
@@ -245,6 +247,30 @@ class FaultInjectingMultipartObjectStore:
         await self._before("create_upload")
         return await self.inner.create_upload(bucket=bucket, key=key, metadata=metadata)
 
+    async def presign_object_put(
+        self,
+        *,
+        bucket: str,
+        key: str,
+        size_bytes: int,
+        metadata: Mapping[str, str],
+        expires_in_seconds: int,
+    ) -> PresignedObjectUpload:
+        await self._before("presign_object_put")
+        return await self.inner.presign_object_put(
+            bucket=bucket,
+            key=key,
+            size_bytes=size_bytes,
+            metadata=metadata,
+            expires_in_seconds=expires_in_seconds,
+        )
+
+    async def retire_upload_object(
+        self, *, bucket: str, key: str, metadata: Mapping[str, str]
+    ) -> bool:
+        await self._before("retire_upload_object")
+        return await self.inner.retire_upload_object(bucket=bucket, key=key, metadata=metadata)
+
     async def presign_upload_part(
         self,
         *,
@@ -294,6 +320,17 @@ class FaultInjectingMultipartObjectStore:
     async def head_object(self, *, bucket: str, key: str) -> ObjectHead:
         await self._before("head_object")
         return await self.inner.head_object(bucket=bucket, key=key)
+
+    async def read_object(self, *, bucket: str, key: str, max_bytes: int) -> ObjectContent:
+        short_read = await self._before("read_object")
+        result = await self.inner.read_object(bucket=bucket, key=key, max_bytes=max_bytes)
+        if (
+            short_read
+            and self.controller.settings.mode == "short_read"
+            and result.content is not None
+        ):
+            return ObjectContent(head=result.head, content=result.content[:-1])
+        return result
 
     async def get_range(
         self,

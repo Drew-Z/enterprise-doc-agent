@@ -1,0 +1,188 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-09-26T04:38:29.932847+00:00",
+  "scope": "CO-3 bounded read-only resource observations",
+  "base_commit": "646161603e6b8b401ee5f325ee6068bdb4281c1f",
+  "status": "tooling_verified_observation_incomplete",
+  "task_status": "in_progress",
+  "production_capacity_approved": false,
+  "checks": {
+    "focused_tests": 32,
+    "full_nonintegration_passed": 1888,
+    "subtests_passed": 23,
+    "integration_deselected": 439,
+    "ruff": "passed",
+    "formatted_files": 599,
+    "strict_mypy_source_files": 252,
+    "trellis_context_validation": "passed; inline mode, zero injected context entries",
+    "log_sha256": {
+      "ruff": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0",
+      "format": "0507ea103b1b892c8b1f9801a6bb27ffa57f56cace0b128c614788bd46c4a4ec",
+      "pytest": "31a0bac47c48d3794ede66349354431860bda49085f0b99f7b74a333eeae5b90",
+      "trellis": "9446777880d68ffcc15e89d68614f2bba5d447bb7c95908d68bff1ce37e261a3",
+      "mypy": "73fc0b7128108440f9cb2377c4b5230c73c729368e5c0dda2a902e190e59375b",
+      "focused": "fe7619ace8129cb47966f17964e3421e770697d63beab20548e7ed2305f4d6dc"
+    }
+  },
+  "observations": [
+    {
+      "id": "observation-01",
+      "run_sha256": "32ea08d92b5f5b966980415ee9af0a773fa61632218dead4de22d3939ce53579",
+      "journal_sha256": "453ca2eea3d381b75a888780a0f55cf0b0b3235ad596e10c09ededd358cd755a",
+      "started_at": "2026-09-25T11:55:55.422576+00:00",
+      "completed_at": "2026-09-25T11:56:56.790907+00:00",
+      "source_sha256": {
+        "capacity_host_probe.py": "ba6b9dc56562a7940c4b626120b7f724e5e6e13b2232628f32a0735743902164",
+        "collect_business_telemetry.py": "f19b3010bec07a36d7a67ae95fcca762e083fbc50cee55eab3db431d320938ef",
+        "business_capacity_telemetry.py": "7d5a8192c05357d12a8b6e6272a9c27491230449450155f23e269853863f96e7"
+      },
+      "planned_samples": 13,
+      "observed_samples": 13,
+      "unique_node_metric_samples": 5,
+      "status": "observation_incomplete",
+      "issues": [
+        "image_identity_missing_or_mismatched"
+      ],
+      "resource_window": {
+        "memory_available_bytes_min": 1647054848,
+        "root_disk_available_bytes_min": 17671868416,
+        "cpu_busy_percent_max": 26.568265682656826,
+        "kubernetes_cpu_cores_max": 0.480483178
+      },
+      "node_memory_total_bytes": 3904057344,
+      "all_observed_restart_counts_zero": true,
+      "oom_observed": false,
+      "purpose": "Initial observation; unresolved image identities and earlier counter names retained"
+    },
+    {
+      "id": "observation-02",
+      "run_sha256": "39140e99c50170a4b4fa427f0d5b5109d1acc92acab0a6b37ed1a6e6cef3df3f",
+      "journal_sha256": "1ef99a896aef79d58accafca76ccf874d807e72a086346b341afaf78a84600e9",
+      "started_at": "2026-09-25T12:03:50.195502+00:00",
+      "completed_at": "2026-09-25T12:05:21.550795+00:00",
+      "source_sha256": {
+        "capacity_host_probe.py": "1da90708d5122e25dc1d8fda161d85ef0b20ee9ee92190126e2c02c419fa2a11",
+        "collect_business_telemetry.py": "501e058ed2af66020f0bf78eae1b4d82f181aaeb31c6c4aeaeb4bedb09b588ab",
+        "business_capacity_telemetry.py": "50944a7f18662580cad8dbc7fc1f09626c5fb68ce3c343a9743c9853cbdcbd48"
+      },
+      "planned_samples": 13,
+      "observed_samples": 13,
+      "unique_node_metric_samples": 7,
+      "status": "observation_incomplete",
+      "issues": [
+        "image_identity_missing_or_mismatched",
+        "queue_and_redis_producer_freshness_unverified"
+      ],
+      "resource_window": {
+        "memory_available_bytes_min": 1673691136,
+        "root_disk_available_bytes_min": 17670619136,
+        "cpu_busy_percent_max": 10.081541882876204,
+        "kubernetes_cpu_cores_max": 0.449680511
+      },
+      "node_memory_total_bytes": 3904057344,
+      "all_observed_restart_counts_zero": true,
+      "oom_observed": false,
+      "purpose": "Bounded resource observation; Worker archive identity unresolved"
+    },
+    {
+      "id": "observation-03",
+      "run_sha256": "e76e3d0e697589f2de2d46d4bceceba73af4cd02b18f9efe8c7bc971ca6f5221",
+      "journal_sha256": "55202a263e79a472664b57823edacf0b0a80929812b3f0ae6ce7db35c5d9375e",
+      "started_at": "2026-09-25T12:23:37.608367+00:00",
+      "completed_at": "2026-09-25T12:23:49.806160+00:00",
+      "source_sha256": {
+        "capacity_host_probe.py": "7ab1b8ddbd69d1d357c130d38cca446ac98112fe3671a1940b738879b68fc32a",
+        "collect_business_telemetry.py": "71e87159f3740f49d5241ba0204525c40cc59f1b5c8a94101f4e32b5be3a4ff9",
+        "business_capacity_telemetry.py": "f4d38aa4b47ca3c5a293e509fe23a238bcf03ab92d6da6f71ed3079d7f69e775"
+      },
+      "planned_samples": 2,
+      "observed_samples": 2,
+      "unique_node_metric_samples": 1,
+      "status": "observation_incomplete",
+      "issues": [
+        "queue_and_redis_producer_freshness_unverified"
+      ],
+      "resource_window": {
+        "memory_available_bytes_min": 1650315264,
+        "root_disk_available_bytes_min": 17735143424,
+        "cpu_busy_percent_max": 9.88929889298893,
+        "kubernetes_cpu_cores_max": 0.128795445
+      },
+      "node_memory_total_bytes": 3904057344,
+      "all_observed_restart_counts_zero": true,
+      "oom_observed": false,
+      "purpose": "Two short samples to verify runtime archive-index support only",
+      "verified_image_relationships": [
+        {
+          "configured_digest": "sha256:109e070fa0cbe668ce71ae2a39f2249e502d15b1ff3c4cd386c5c0828ccfbe92",
+          "running_digest": "sha256:109e070fa0cbe668ce71ae2a39f2249e502d15b1ff3c4cd386c5c0828ccfbe92",
+          "architecture": "amd64",
+          "verified": true,
+          "kind": "same_digest"
+        },
+        {
+          "configured_digest": "sha256:3fe165ee379702c3f0c18189f495693911230205a9b570ba568a8cf239ce48f1",
+          "running_digest": "sha256:29516466a0b263e1a375ff041486099569864c5b346eee84f9b6028a9cd386ca",
+          "architecture": "amd64",
+          "verified": true,
+          "kind": "verified_runtime_archive_index",
+          "platform_manifest_digest": "sha256:3682cacebd77bea0faca06fa8ce8546312d92cd38fadb8953047e61839e66ec2"
+        },
+        {
+          "configured_digest": "sha256:6ab0b6e7381779332f97b8ca76193e45b0756f38d4c0dcda72dbb3c32061ab99",
+          "running_digest": "sha256:6ab0b6e7381779332f97b8ca76193e45b0756f38d4c0dcda72dbb3c32061ab99",
+          "architecture": "amd64",
+          "verified": true,
+          "kind": "same_digest"
+        },
+        {
+          "configured_digest": "sha256:95d6dd43752c0c56a59e40278a8af8ed3c0b4d897fa47f069d50afc4c8c86d9d",
+          "running_digest": "sha256:4e9f82cdafb6121ac0797aa2d5716c11113d89804e4d58d07f3109de46a8cfad",
+          "architecture": "amd64",
+          "verified": true,
+          "kind": "verified_platform_manifest",
+          "platform_manifest_digest": "sha256:4e9f82cdafb6121ac0797aa2d5716c11113d89804e4d58d07f3109de46a8cfad"
+        },
+        {
+          "configured_digest": "sha256:cfe0e5feb3ed852a095abb4ef74f892fffdcf110509e4d1d66b6cab5fa2d2677",
+          "running_digest": "sha256:a22d62a0fae05d441230e44ed2a14001d7d56e32df6b50be0f172c3e082f3053",
+          "architecture": "amd64",
+          "verified": true,
+          "kind": "verified_platform_manifest",
+          "platform_manifest_digest": "sha256:a22d62a0fae05d441230e44ed2a14001d7d56e32df6b50be0f172c3e082f3053"
+        }
+      ]
+    }
+  ],
+  "execution": {
+    "real_model_or_embedding_requests_submitted": 0,
+    "business_tasks_submitted": 0,
+    "emails_sent": 0,
+    "remote_deployments_or_migrations": 0,
+    "remote_probe_files_written": 0,
+    "constant_monitoring_services_added": 0
+  },
+  "failure_evidence": [
+    "Initial metric/projection/summary/collector/index/interruption red tests retained.",
+    "Projection fixture ordering failure and archive-index red test retained.",
+    "All three raw observations retained unchanged; first two unresolved image results not rewritten.",
+    "All execution exits remain 1 because the observation contract is incomplete, not because SSH failed."
+  ],
+  "remaining_gaps": [
+    "Queue-age and Redis gauges have no verified production updater/freshness contract; exported zero is not idle proof.",
+    "Current-node business load, approved targets, full phase/target binding and browser/proxy recovery remain unverified.",
+    "Dependency histogram changes are process-observed events, not model calls submitted by this task or provider invoices.",
+    "No source commit, migration version, Secret version or registry-signature attestation is provided by the probe.",
+    "Observation-03 contains one distinct Kubernetes timestamp and cannot extend the earlier resource window."
+  ],
+  "next_implementation": "Wire queue/Redis gauges and producer freshness; verify backlog/drain/disconnection/staleness in isolation before a reviewed candidate rollout.",
+  "workspace": {
+    "historical_status_entries_preserved": 2993,
+    "original_frozen_indexes_unchanged": {
+      "business-capacity-artifact-index.json": "a746f9254cb8e3f14728bad8be4ef7e4ba29cc90cd40193b4b64745f55bcda00",
+      "application-operations-artifact-index.json": "b6f355d0ca594f23fe4abb1e236189d2afd2f37875ed074c686af723253fc3da",
+      "live-source-recovery/artifact-index.json": "4fa0f3e6f0415919b3ee91d8908216f242bcb193112aa3b2749174af4aa635b0"
+    }
+  },
+  "private_evidence": "Existing centralized task recovery group; business-telemetry-artifact-index.json. No raw observations or private output paths committed."
+}

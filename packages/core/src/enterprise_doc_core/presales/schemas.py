@@ -4,13 +4,31 @@ from datetime import datetime
 from typing import Annotated, Literal, Self
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StringConstraints,
+    field_validator,
+    model_validator,
+)
 from pydantic.alias_generators import to_camel
+
+from enterprise_doc_core.presales.policy import ExecutionMode, ExecutionPolicy
+from enterprise_doc_core.presales.workbook_schemas import (
+    MAX_WORKBOOK_ROWS,
+    WorkbookMapping,
+    WorkbookMetadata,
+    WorkbookUpload,
+)
 
 Status = Literal[
     "supported", "conditional", "contradicted", "insufficient_evidence", "conflicting_evidence"
 ]
 TextItem = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1000)]
+# Twelve question responses with twelve gaps each, plus twelve unknown-rule actions.
+MAX_MISSING_INFORMATION_ITEMS = 12 * 12 + 12
+MAX_MISSING_INFORMATION_CHARACTERS = 12 * 1000
 
 
 class PresalesModel(BaseModel):
@@ -53,20 +71,72 @@ class SourceSnapshot(SourceInput):
     content_sha256: str
 
 
+class WorkbookPacket(CreatePacket):
+    """Internal validated packet; the manual HTTP create contract remains twelve rows."""
+
+    requirements: list[RequirementInput] = Field(min_length=1, max_length=MAX_WORKBOOK_ROWS)
+
+
+class WorkbookImportInput(WorkbookUpload):
+    title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=160)]
+    sources: list[SourceInput] = Field(min_length=1, max_length=6)
+    mapping: WorkbookMapping
+    confirmed_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+
+    @model_validator(mode="after")
+    def unique_sources(self) -> Self:
+        if len({source.version_id for source in self.sources}) != len(self.sources):
+            raise ValueError("Source versions must be unique")
+        return self
+
+
 class CitationInput(PresalesModel):
     chunk_id: UUID
     document_version_id: UUID
     excerpt: str = Field(min_length=1, max_length=600)
 
 
+class PrerequisiteAssessment(PresalesModel):
+    condition: TextItem
+    state: Literal["met", "unmet", "unknown"]
+    citation_indexes: list[Annotated[int, Field(ge=0, lt=12, strict=True)]] = Field(
+        min_length=1, max_length=12
+    )
+
+    @model_validator(mode="after")
+    def unique_citations(self) -> Self:
+        if len(set(self.citation_indexes)) != len(self.citation_indexes):
+            raise ValueError("prerequisite references must not contain duplicates")
+        return self
+
+
+def prerequisite_conditions(items: list[PrerequisiteAssessment]) -> list[str]:
+    return list(dict.fromkeys(item.condition for item in items if item.state != "met"))
+
+
 class ResponseText(PresalesModel):
     status: Status
     answer: str = Field(min_length=1, max_length=4000)
     conditions: list[TextItem] = Field(default_factory=list, max_length=12)
-    missing_information: list[TextItem] = Field(default_factory=list, max_length=12)
+    missing_information: list[TextItem] = Field(
+        default_factory=list, max_length=MAX_MISSING_INFORMATION_ITEMS
+    )
+    # None means the older contract did not record an assessment; [] is explicit.
+    prerequisites: list[PrerequisiteAssessment] | None = Field(default=None, max_length=12)
+
+    @field_validator("missing_information")
+    @classmethod
+    def missing_information_budget(cls, value: list[str]) -> list[str]:
+        if sum(map(len, value)) > MAX_MISSING_INFORMATION_CHARACTERS:
+            raise ValueError("missing information exceeds the 12000-character total budget")
+        return value
 
     @model_validator(mode="after")
     def required_details(self) -> Self:
+        if self.prerequisites is not None and self.conditions != prerequisite_conditions(
+            self.prerequisites
+        ):
+            raise ValueError("conditions must match outstanding prerequisites")
         if self.status == "conditional" and not self.conditions:
             raise ValueError("conditional response requires conditions")
         if self.status == "insufficient_evidence" and not self.missing_information:
@@ -75,12 +145,19 @@ class ResponseText(PresalesModel):
             raise ValueError("unmet conditions require conditional status")
         return self
 
+    def validate_prerequisite_citations(self, count: int) -> None:
+        if any(
+            index >= count for item in self.prerequisites or [] for index in item.citation_indexes
+        ):
+            raise ValueError("prerequisite references must identify saved evidence")
+
 
 class ModelDraft(ResponseText):
     citations: list[CitationInput] = Field(default_factory=list, max_length=12)
 
     @model_validator(mode="after")
     def required_citations(self) -> Self:
+        self.validate_prerequisite_citations(len(self.citations))
         if self.status != "insufficient_evidence" and not self.citations:
             raise ValueError("this status requires evidence")
         if (
@@ -110,43 +187,144 @@ class SavedDraft(ResponseText):
     citations: list[Evidence]
     retrieval: list[RetrievalNote]
 
+    @model_validator(mode="after")
+    def bound_prerequisites(self) -> Self:
+        self.validate_prerequisite_citations(len(self.citations))
+        return self
 
-class ReviewInput(ResponseText):
+
+class ManualResponseInput(ModelDraft):
+    expected_revision: int = Field(ge=0, strict=True)
+    note: str = Field(min_length=1, max_length=1000)
+
+    @model_validator(mode="after")
+    def unique_evidence(self) -> Self:
+        keys = [(c.chunk_id, c.document_version_id, c.excerpt) for c in self.citations]
+        if len(set(keys)) != len(keys):
+            raise ValueError("manual evidence must not contain duplicates")
+        return self
+
+
+class ManualAuthorship(PresalesModel):
+    actor_id: UUID
+    created_at: datetime
+    note: str = Field(min_length=1, max_length=1000)
+
+
+class ManualAuthorshipRecord(ManualAuthorship):
+    idempotency_key: str
+    fingerprint: str
+
+
+class ManualEvidencePage(PresalesModel):
+    items: list[Evidence] = Field(max_length=10)
+    next_offset: int | None
+
+
+OriginalIndex = Annotated[int, Field(ge=0, lt=12, strict=True)]
+
+
+class PrerequisiteChanges(PresalesModel):
+    # Positions identify immutable model items; null explicitly means human-added.
+    origins: list[OriginalIndex | None] = Field(max_length=12)
+    excluded_indexes: list[OriginalIndex] = Field(default_factory=list, max_length=12)
+
+    @model_validator(mode="after")
+    def distinct_exclusions(self) -> Self:
+        if len(set(self.excluded_indexes)) != len(self.excluded_indexes):
+            raise ValueError("excluded original items must be unique")
+        return self
+
+    def validate_originals(self, count: int) -> None:
+        included = {index for index in self.origins if index is not None}
+        excluded = set(self.excluded_indexes)
+        if included & excluded or included | excluded != set(range(count)):
+            raise ValueError("each original item must be mapped or explicitly excluded")
+
+
+class ReviewText(ResponseText):
+    prerequisite_changes: PrerequisiteChanges | None = None
+
+    @model_validator(mode="after")
+    def mapped_items(self) -> Self:
+        if self.prerequisite_changes is not None and (
+            self.prerequisites is None
+            or len(self.prerequisite_changes.origins) != len(self.prerequisites)
+        ):
+            raise ValueError("each effective prerequisite needs an explicit origin")
+        return self
+
+
+class ReviewInput(ReviewText):
     expected_revision: int = Field(ge=1, strict=True)
     note: str = Field(default="", max_length=1000)
+    citations: list[CitationInput] | None = Field(default=None, max_length=12)
+
+    @model_validator(mode="after")
+    def unique_evidence(self) -> Self:
+        keys = [(c.chunk_id, c.document_version_id, c.excerpt) for c in self.citations or []]
+        if len(set(keys)) != len(keys):
+            raise ValueError("review evidence must not contain duplicates")
+        return self
 
 
-class SavedReview(ResponseText):
+class SavedReview(ReviewText):
     revision: int
     note: str
     actor_id: UUID
     reviewed_at: datetime
+    # Null retains the original draft binding; [] is an explicit empty selection.
+    citations: list[Evidence] | None = Field(default=None, max_length=12)
+
+
+def review_citations(draft: SavedDraft | None, review: SavedReview | None) -> list[Evidence]:
+    if review is not None and review.citations is not None:
+        return review.citations
+    return draft.citations if draft is not None else []
 
 
 class AttemptView(PresalesModel):
     id: UUID
     number: int
-    state: Literal["running", "succeeded", "failed", "expired"]
+    state: Literal["queued", "running", "recovering", "succeeded", "failed", "expired"]
     error_code: str | None
     model_provider: str
     model_name: str | None
-    provider_request_count: int | None = Field(ge=0, le=1)
+    provider_request_count: int | None = Field(ge=0, le=2)
     provenance: dict[str, str | None]
     usage: dict[str, int | None] | None
     created_at: datetime
     finished_at: datetime | None
     deadline_at: datetime
+    execution_policy: ExecutionPolicy | None = None
 
 
 class RowView(PresalesModel):
     id: UUID
     requirement: RequirementInput
     revision: int
-    state: Literal["pending", "running", "drafted", "failed"]
+    state: Literal["pending", "queued", "running", "recovering", "drafted", "failed"]
     draft: SavedDraft | None
     review: SavedReview | None
     review_history: list[SavedReview]
     attempts: list[AttemptView]
+    manual_authorship: ManualAuthorship | None = None
+
+    @model_validator(mode="after")
+    def review_bindings(self) -> Self:
+        if self.manual_authorship is not None and (
+            self.draft is None or any(a.state == "succeeded" for a in self.attempts)
+        ):
+            raise ValueError("manual authorship requires an independent human draft")
+        for review in [self.review, *self.review_history]:
+            if review is None:
+                continue
+            review.validate_prerequisite_citations(len(review_citations(self.draft, review)))
+            if review.prerequisite_changes is not None:
+                review.prerequisite_changes.validate_originals(
+                    len(self.draft.prerequisites or []) if self.draft else 0
+                )
+        return self
 
 
 class PacketSummary(PresalesModel):
@@ -160,6 +338,46 @@ class PacketSummary(PresalesModel):
 class PacketView(PacketSummary):
     sources: list[SourceSnapshot]
     rows: list[RowView]
+    generation_mode: Literal["synchronous", "background"] = "synchronous"
+    available_execution_modes: list[ExecutionMode] = Field(default_factory=list)
+    workbook: WorkbookMetadata | None = None
+
+
+class GenerateRowInput(PresalesModel):
+    execution_mode: ExecutionMode | None = None
+
+
+class BatchGenerateInput(PresalesModel):
+    row_ids: list[UUID] = Field(min_length=1, max_length=12)
+    execution_mode: ExecutionMode | None = None
+
+    @model_validator(mode="after")
+    def unique_rows(self) -> Self:
+        if len(set(self.row_ids)) != len(self.row_ids):
+            raise ValueError("row IDs must be unique")
+        return self
+
+
+class RowRejection(PresalesModel):
+    row_id: UUID
+    code: str
+
+
+class BatchGenerateResult(PresalesModel):
+    packet: PacketView
+    rejected: list[RowRejection]
+
+
+class RowAdmission(PresalesModel):
+    row_id: UUID
+    disposition: Literal["enqueued", "replayed", "already_drafted"]
+    attempt_id: UUID | None
+
+
+class GenerationReceipt(PresalesModel):
+    packet_id: UUID
+    admissions: list[RowAdmission]
+    rejected: list[RowRejection]
 
 
 class GenerationInput(PresalesModel):
@@ -173,3 +391,4 @@ class GeneratedDraft(PresalesModel):
     usage: dict[str, int | None] | None = None
     returned_model: str | None = None
     provider_response_id: str | None = None
+    provider_request_id: str | None = None

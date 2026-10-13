@@ -6,6 +6,7 @@ from uuid import UUID
 from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import aliased
 
 from enterprise_doc_core.context import PrincipalContext
 from enterprise_doc_core.documents.models import (
@@ -20,8 +21,8 @@ from enterprise_doc_core.presales.models import PresalesPacket, PresalesRow
 from enterprise_doc_core.presales.schemas import SourceInput, SourceSnapshot
 
 
-def fingerprint(payload: BaseModel) -> str:
-    return hashlib.sha256(payload.model_dump_json().encode()).hexdigest()
+def fingerprint(payload: BaseModel, *, exclude: set[str] | None = None) -> str:
+    return hashlib.sha256(payload.model_dump_json(exclude=exclude).encode()).hexdigest()
 
 
 def check_key(key: str) -> None:
@@ -50,7 +51,10 @@ async def authorize_principal(
         )
     )
     if lock:
-        statement = statement.with_for_update(of=Tenant)
+        # Serialize admissions and tenant updates without blocking the KEY SHARE
+        # locks taken by unrelated job/audit foreign-key inserts. We never change
+        # the tenant's key here; FOR UPDATE would couple all of those operations.
+        statement = statement.with_for_update(of=Tenant, key_share=True)
     if await session.scalar(statement) is None:
         raise PresalesError("presales_forbidden")
     return tenant_id, actor_id
@@ -59,38 +63,46 @@ async def authorize_principal(
 async def source_snapshots(
     session: AsyncSession, tenant_id: UUID, actor_id: UUID, sources: list[SourceInput]
 ) -> list[SourceSnapshot]:
+    latest_version = aliased(DocumentVersion)
+    latest_number = (
+        select(func.max(latest_version.version_number))
+        .where(
+            latest_version.document_id == DocumentVersion.document_id,
+            latest_version.tenant_id == tenant_id,
+        )
+        .correlate(DocumentVersion)
+        .scalar_subquery()
+    )
+    rows = (
+        await session.execute(
+            select(DocumentVersion, DocumentIngestionGeneration, latest_number)
+            .join(Document, Document.id == DocumentVersion.document_id)
+            .join(
+                DocumentIngestionGeneration,
+                DocumentIngestionGeneration.document_version_id == DocumentVersion.id,
+            )
+            .where(
+                DocumentVersion.id.in_([source.version_id for source in sources]),
+                DocumentVersion.tenant_id == tenant_id,
+                document_visible_to_actor(tenant_id=tenant_id, actor_id=actor_id),
+                DocumentVersion.status == "ready",
+                DocumentIngestionGeneration.tenant_id == tenant_id,
+                DocumentIngestionGeneration.active.is_(True),
+                DocumentIngestionGeneration.status == "succeeded",
+                DocumentIngestionGeneration.stage == "ready",
+            )
+            .execution_options(populate_existing=True)
+        )
+    ).all()
+    by_id = {version.id: (version, generation, latest) for version, generation, latest in rows}
+    if len(by_id) != len(rows):
+        raise PresalesError("presales_source_unavailable")
     result = []
     for source in sources:
-        row = (
-            await session.execute(
-                select(DocumentVersion, DocumentIngestionGeneration)
-                .join(Document, Document.id == DocumentVersion.document_id)
-                .join(
-                    DocumentIngestionGeneration,
-                    DocumentIngestionGeneration.document_version_id == DocumentVersion.id,
-                )
-                .where(
-                    DocumentVersion.id == source.version_id,
-                    DocumentVersion.tenant_id == tenant_id,
-                    document_visible_to_actor(tenant_id=tenant_id, actor_id=actor_id),
-                    DocumentVersion.status == "ready",
-                    DocumentIngestionGeneration.tenant_id == tenant_id,
-                    DocumentIngestionGeneration.active.is_(True),
-                    DocumentIngestionGeneration.status == "succeeded",
-                    DocumentIngestionGeneration.stage == "ready",
-                )
-                .execution_options(populate_existing=True)
-            )
-        ).one_or_none()
+        row = by_id.get(source.version_id)
         if row is None:
             raise PresalesError("presales_source_unavailable")
-        version, generation = row
-        latest = await session.scalar(
-            select(func.max(DocumentVersion.version_number)).where(
-                DocumentVersion.document_id == version.document_id,
-                DocumentVersion.tenant_id == tenant_id,
-            )
-        )
+        version, generation, latest = row
         result.append(
             SourceSnapshot(
                 version_id=version.id,

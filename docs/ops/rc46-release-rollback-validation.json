@@ -1,0 +1,222 @@
+{
+  "schema_version": 1,
+  "status": "passed_technical_release_only",
+  "recorded_at": "2026-10-09T10:46:33.239632+00:00",
+  "environment": "staging",
+  "profile": "single-node-4c4g",
+  "tag": "v0.1.45-rc.46",
+  "application_commit": "9ed3857b361573b27abc9f6c245afb1dfdd9feaa",
+  "schema_revision": "20261009_0035",
+  "ci": [
+    {
+      "name": "Quality",
+      "run_id": 37910201893,
+      "status": "success",
+      "head": "9ed3857b361573b27abc9f6c245afb1dfdd9feaa",
+      "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/37910201893"
+    },
+    {
+      "name": "Container",
+      "run_id": 37910201958,
+      "status": "success",
+      "head": "9ed3857b361573b27abc9f6c245afb1dfdd9feaa",
+      "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/37910201958"
+    },
+    {
+      "name": "Signed release",
+      "run_id": 37911371360,
+      "status": "success",
+      "head": "9ed3857b361573b27abc9f6c245afb1dfdd9feaa",
+      "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/37911371360"
+    }
+  ],
+  "artifacts": {
+    "count": 5,
+    "evidence_files_checked": 56,
+    "receipt": {
+      "path": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\fallback-model-evidence\\rc46-release-verification-20261009.json",
+      "sha256": "db24bd9b137496cf6f7d8bac03fcbc7238c3837ab1056d871c66a26d2e609416",
+      "bytes": 20253
+    }
+  },
+  "windows": [
+    {
+      "phase": "schema_expansion",
+      "status": "passed",
+      "verified_at": "2026-10-09T09:49:18.623075+00:00",
+      "elapsed_seconds": 72.34692740440369,
+      "checks": {
+        "revision_0035": true,
+        "columns": true,
+        "original_workload_specs": true,
+        "secret_binding": true,
+        "history_status_counts": true,
+        "existing_column_counts_unchanged": true,
+        "idle": true,
+        "five_ready": true,
+        "backup_remains_deferred": true,
+        "homepage": true,
+        "readiness": true,
+        "queue": true,
+        "review_constraint": true,
+        "attempt_constraint": true,
+        "workbook_metadata_column": true,
+        "workbook_content_column": true,
+        "workbook_constraint": true,
+        "operation_binding": true,
+        "deadline": true,
+        "namespace_unchanged": true,
+        "prerequisites_unchanged": true
+      },
+      "application_commit": "d47371b6008afe833e317606b2153285aeafff75",
+      "evidence": {
+        "path": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\fallback-model-evidence\\rc46-schema-window-verification-20261009.json",
+        "sha256": "6ec86b03309cd6f3e873fa7f60e1e2b9ba761e92eb28a960c749b49a78dabbb0",
+        "bytes": 490222
+      }
+    },
+    {
+      "phase": "release",
+      "status": "passed",
+      "verified_at": "2026-10-09T09:52:00.421249+00:00",
+      "elapsed_seconds": 90.30324411392212,
+      "checks": {
+        "complete_deployment_specs": true,
+        "candidate_prerequisites": true,
+        "namespace_uid": true,
+        "credentials_unchanged": true,
+        "full_schema_0035": true,
+        "history_counts_unchanged": true,
+        "business_idle": true,
+        "jobs_unchanged": true,
+        "no_other_controllers": true,
+        "five_ready": true,
+        "historical_terminal_pods_preserved": true,
+        "pod_readiness_and_image_identity": true,
+        "packaged_source_matches_application_commit": true,
+        "worker_concurrency_two": true,
+        "tiff_patch_matches_phase": true,
+        "nginx_matches_application_commit": true,
+        "public_signed_assets": true,
+        "backup_remains_deferred": true,
+        "homepage": true,
+        "readiness_and_queue": true,
+        "operation_deadlines": true,
+        "capacity_and_policy": true
+      },
+      "application_commit": "9ed3857b361573b27abc9f6c245afb1dfdd9feaa",
+      "evidence": {
+        "path": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\fallback-model-evidence\\rc46-release-verified-v3-20261009.json",
+        "sha256": "e3bc16278058f0b6d74ae239c41fb45377bfb386d0cc3b378f1a724e0e546332",
+        "bytes": 564109
+      }
+    },
+    {
+      "phase": "rollback",
+      "status": "passed",
+      "verified_at": "2026-10-09T09:54:26.530162+00:00",
+      "elapsed_seconds": 83.11422538757324,
+      "checks": {
+        "complete_deployment_specs": true,
+        "candidate_prerequisites": true,
+        "namespace_uid": true,
+        "credentials_unchanged": true,
+        "full_schema_0035": true,
+        "history_counts_unchanged": true,
+        "business_idle": true,
+        "jobs_unchanged": true,
+        "no_other_controllers": true,
+        "five_ready": true,
+        "historical_terminal_pods_preserved": true,
+        "pod_readiness_and_image_identity": true,
+        "packaged_source_matches_application_commit": true,
+        "worker_concurrency_two": true,
+        "tiff_patch_matches_phase": true,
+        "nginx_matches_application_commit": true,
+        "public_signed_assets": true,
+        "backup_remains_deferred": true,
+        "homepage": true,
+        "readiness_and_queue": true,
+        "operation_deadlines": true,
+        "capacity_and_policy": true
+      },
+      "application_commit": "d47371b6008afe833e317606b2153285aeafff75",
+      "evidence": {
+        "path": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\fallback-model-evidence\\rc46-rollback-verified-v3-20261009.json",
+        "sha256": "5adda03b6bc18d128def886a326d4b5c8b3ae03abc0ff61d6249b4a1bd49159c",
+        "bytes": 562974
+      }
+    },
+    {
+      "phase": "reapply",
+      "status": "passed",
+      "verified_at": "2026-10-09T09:56:50.822186+00:00",
+      "elapsed_seconds": 85.12126660346985,
+      "checks": {
+        "complete_deployment_specs": true,
+        "candidate_prerequisites": true,
+        "namespace_uid": true,
+        "credentials_unchanged": true,
+        "full_schema_0035": true,
+        "history_counts_unchanged": true,
+        "business_idle": true,
+        "jobs_unchanged": true,
+        "no_other_controllers": true,
+        "five_ready": true,
+        "historical_terminal_pods_preserved": true,
+        "pod_readiness_and_image_identity": true,
+        "packaged_source_matches_application_commit": true,
+        "worker_concurrency_two": true,
+        "tiff_patch_matches_phase": true,
+        "nginx_matches_application_commit": true,
+        "public_signed_assets": true,
+        "backup_remains_deferred": true,
+        "homepage": true,
+        "readiness_and_queue": true,
+        "operation_deadlines": true,
+        "capacity_and_policy": true
+      },
+      "application_commit": "9ed3857b361573b27abc9f6c245afb1dfdd9feaa",
+      "evidence": {
+        "path": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\fallback-model-evidence\\rc46-reapply-verified-v3-20261009.json",
+        "sha256": "c8ed17dc96cd9def75e6555106febca31bfc0baa2ae5dd4899aeaf528e8cded2",
+        "bytes": 564113
+      }
+    }
+  ],
+  "rollback_boundary": "Actual rc45 rollback preceded the first workbook import and retained schema0035. Workbook history now exists: legacy readers must be refused; retain workbook-compatible images or forward-fix without deleting history.",
+  "local_checks": {
+    "python_nonintegration_passed": 2912,
+    "subtests_passed": 23,
+    "deselected": 758,
+    "real_postgresql_schema_tests_passed": 23,
+    "ruff_files": 725,
+    "mypy_sources": 271,
+    "counts_are_remote_ci_counts": false
+  },
+  "cleanup": {
+    "new_historical_cache_references_deleted": 0,
+    "prior_cache_references_preserved": true,
+    "remote_owned_files_removed": 233,
+    "remote_owned_directories_removed": 315,
+    "local_owned_transport_files_removed": 43,
+    "local_transport_bytes_removed": 669886980,
+    "additional_interrupted_download_partials_removed": 2,
+    "receipts": [
+      {
+        "path": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\fallback-model-evidence\\rc46-owned-runtime-cleanup-receipt-v2-20261009.json",
+        "sha256": "b4a5460ec284761ca316492791bcea03e66eb6e3650996814385a7884842e180",
+        "bytes": 59653
+      },
+      {
+        "path": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\fallback-model-evidence\\rc46-owned-local-cleanup-receipt-20261009.json",
+        "sha256": "9ef1c56baf2e3ddb56ef2579d9d26948f85301eeab054d71ac51118cfd51d9ab",
+        "bytes": 217
+      }
+    ]
+  },
+  "commercial_acceptance": "not_passed",
+  "independent_business_approval": false,
+  "independent_release_approval": false,
+  "evidence_note": "Technical execution/verification by Codex under user staging authorization; not independent business/release approval. Central raw receipts remain local."
+}

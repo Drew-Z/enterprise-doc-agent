@@ -1,0 +1,74 @@
+{
+  "schemaVersion": "presales-public-quality-input-v1",
+  "synthetic": false,
+  "provenance": "Official Cloudflare product-documentation excerpts fetched on 2026-09-28 Asia/Shanghai. Scenarios and questions authored by the assistant; no real customer deployment facts or independent domain approval are asserted.",
+  "title": "公开资料业务验收：R2 一致性、兼容性和配置前提",
+  "sources": [
+    {
+      "key": "R2-CONSISTENCY",
+      "filename": "r2-consistency.txt",
+      "applicability": "R2 consistency and cache boundaries",
+      "content": "| Read-after-write: Write (upload) an object, then read it | Strongly consistent: readers will immediately see the latest object globally |\n\n| Deletion: Delete an object | Strongly consistent: reads to that object will immediately return a \"does not exist\" error |\n\n* An object you delete from R2, but that is still cached, will still be available. You should [purge the cache](/cache/how-to/purge-cache/) after deleting objects if you need that delete to be reflected.\n\nThe cache does not affect access via [Worker API bindings](/r2/api/workers/) or the [S3 API](/r2/api/s3/), as these operations are made directly against the bucket and do not transit through the cache."
+    },
+    {
+      "key": "R2-LOCATION",
+      "filename": "r2-location.txt",
+      "applicability": "R2 jurisdiction and access configuration",
+      "content": "Keep in mind Location Hints are a best effort and not a guarantee, and they should only be used as a way to optimize performance by placing regularly updated content closer to users.\n\nJurisdictional Restrictions guarantee objects in a bucket are stored within a specific jurisdiction.\n\nWhen interacting with R2 resources that belong to a defined jurisdiction with the S3 API or existing S3-compatible SDKs, you must specify the [jurisdiction](#available-jurisdictions) in your S3 endpoint:\n\n| eu | European Union |\n\nOnce an R2 bucket is created, the jurisdiction cannot be changed."
+    },
+    {
+      "key": "R2-S3",
+      "filename": "r2-s3.txt",
+      "applicability": "R2 S3 compatibility: unimplemented bucket operations",
+      "content": "### Unimplemented bucket-level operations\n\n| ❌ [GetBucketAcl ↗](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketAcl.html) | ❌ Bucket Owner:     ❌ x-amz-expected-bucket-owner |"
+    }
+  ],
+  "publications": [
+    {
+      "sourceKey": "R2-CONSISTENCY",
+      "url": "https://developers.cloudflare.com/r2/reference/consistency/",
+      "fetchedAt": "2026-09-27T16:33:45.811589+00:00",
+      "extractedContentSha256": "60f38b00d1c567013fc8496db6678c4b05f615fe95c40461bfdd21f24e811a11",
+      "fetchReceiptSha256": "d41b67dd5b8e5e8191c7d1c1d725a7b10294a8122e377102486fe3b3717ae870",
+      "excerptSha256": "fca66b25a2943785e382584f8a99349435dc064fad58112f2f737cd1209c2b75"
+    },
+    {
+      "sourceKey": "R2-LOCATION",
+      "url": "https://developers.cloudflare.com/r2/reference/data-location/",
+      "fetchedAt": "2026-09-27T16:33:46.311515+00:00",
+      "extractedContentSha256": "6a2c8054059c5b049cd56f9002d6ba434432713b914e9fd4f5eab96041014e2b",
+      "fetchReceiptSha256": "8b0d9ce04eda74613d83fe26b1d1f74f927a3ec8cb0b2edc9d813aa93f715c6f",
+      "excerptSha256": "e586b0947b7eee052e7dc0ac206127fa5421049a56b65fee3be1c6a12afae28c"
+    },
+    {
+      "sourceKey": "R2-S3",
+      "url": "https://developers.cloudflare.com/r2/api/s3/api/",
+      "fetchedAt": "2026-09-27T16:41:14.702085+00:00",
+      "extractedContentSha256": "7c33aaa23897a37fea66725bc0bc9f24913dc369d7ea0d32ffa7187871ed1467",
+      "fetchReceiptSha256": "ffe8e53aa008423146de577e5b118b0f08f519e24d09ae27aa1b51cc4729643c",
+      "excerptSha256": "f400bb45719914273e5edb0cd3141d2acacfb58c1b900d9b7bb7a1d40042f78e"
+    }
+  ],
+  "requirements": [
+    {
+      "key": "R2-R1",
+      "text": "通过 R2 的 S3 API 上传对象成功后，其他客户端立即经 S3 API 读取时应能看到最新对象，不等待最终一致性传播。该要求是否有资料支持？"
+    },
+    {
+      "key": "R2-R2",
+      "text": "现有存储管理程序必须原样调用 S3 GetBucketAcl 读取桶 ACL；要求 R2 原生兼容该 API，不接受改写为其他权限机制。是否支持？"
+    },
+    {
+      "key": "R2-R3",
+      "text": "假设项目已启用 R2 自定义域名缓存，某对象已经在源桶删除，但尚未执行缓存清除。要求该已删除对象立即停止从缓存域名向用户提供。R2 能否满足，需要先完成什么？不要将尚未执行的操作说成已完成。"
+    },
+    {
+      "key": "R2-R4",
+      "text": "项目要求对象存放在限定欧盟司法辖区的 R2 桶，并经对应的 S3 endpoint 访问。项目没有提供当前桶的 jurisdiction 与 endpoint 配置记录。请说明产品能否满足、当前能否放行，以及应先确认哪些事实；不能把未提供记录等同于已确认未配置。"
+    },
+    {
+      "key": "R2-R5",
+      "text": "采购要求供应商以合同保证：企业整个业务系统发生整机损坏后，所有服务在 5 分钟内恢复。仅凭提供的 R2 资料，能否承诺这一端到端 RTO？"
+    }
+  ]
+}

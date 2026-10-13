@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import logging
 import re
 from collections.abc import Callable
@@ -15,10 +16,13 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from enterprise_doc_core.config import UploadSettings
 from enterprise_doc_core.context import PrincipalContext
-from enterprise_doc_core.demo.limits import check_upload
+from enterprise_doc_core.demo.limits import check_upload_workspace
+from enterprise_doc_core.demo.models import DemoWorkspace
+from enterprise_doc_core.documents.envelope import MAX_BUFFERED_ENVELOPE_BYTES
 from enterprise_doc_core.identity import Membership, Tenant, User
 from enterprise_doc_core.object_store import MultipartObjectStore
-from enterprise_doc_core.uploads.models import UploadSession, UploadSessionStatus
+from enterprise_doc_core.uploads.creation_records import insert_upload_reservation
+from enterprise_doc_core.uploads.models import UploadSession, UploadSessionStatus, UploadTransport
 from enterprise_doc_core.uploads.policy import build_object_key, validate_upload_metadata
 
 IDEMPOTENCY_KEY_PATTERN = re.compile(r"^[\x21-\x7e]{1,128}$")
@@ -36,6 +40,11 @@ class UploadCreationError(Exception):
 class UploadIdempotencyKeyInvalid(UploadCreationError):
     code = "idempotency_key_invalid"
     message = "The Idempotency-Key must contain 1 to 128 visible ASCII characters."
+
+
+class UploadTransportInvalid(UploadCreationError):
+    code = "upload_transport_invalid"
+    message = "The requested upload transport is not valid for this file."
 
 
 class UploadIdempotencyConflict(UploadCreationError):
@@ -69,6 +78,7 @@ class CreateUploadSessionInput:
     size_bytes: int
     media_type: str
     sha256: str
+    transport: UploadTransport = UploadTransport.MULTIPART
 
 
 @dataclass(frozen=True, slots=True)
@@ -84,6 +94,7 @@ class CreateUploadSessionResult:
     expected_part_count: int
     expires_at: datetime
     replayed: bool
+    transport: str = UploadTransport.MULTIPART.value
 
 
 @dataclass(frozen=True, slots=True)
@@ -137,6 +148,26 @@ class UploadCreationService:
             settings=self.settings,
         )
         try:
+            transport = UploadTransport(request.transport)
+        except ValueError as error:
+            raise UploadTransportInvalid() from error
+        if (
+            transport is UploadTransport.SINGLE_PUT
+            and metadata.size_bytes > MAX_BUFFERED_ENVELOPE_BYTES
+        ):
+            raise UploadTransportInvalid()
+        # Legacy multipart fingerprints remain unchanged. A transport change on an
+        # existing idempotency key must never reinterpret its external upload state.
+        request_fingerprint = metadata.request_fingerprint
+        if transport is UploadTransport.SINGLE_PUT:
+            request_fingerprint = hashlib.sha256(
+                (request_fingerprint + ":single_put").encode("ascii")
+            ).hexdigest()
+        # Keep the requested fingerprint stable across the operational switch.
+        # Existing sessions retain their stored transport; only new sessions fall back.
+        if not self.settings.single_put_enabled:
+            transport = UploadTransport.MULTIPART
+        try:
             tenant_id = UUID(principal.tenant_id)
             actor_id = UUID(principal.actor_id)
         except ValueError as exc:
@@ -146,13 +177,16 @@ class UploadCreationService:
 
         pending_initialization: _PendingUploadInitialization | None = None
         existing_session: UploadSession | None = None
+        direct_result: CreateUploadSessionResult | None = None
         membership_validated = False
         try:
             async with self.session_factory.begin() as session:
                 tenant = await session.scalar(
                     select(Tenant)
                     .where(Tenant.id == tenant_id, Tenant.is_active.is_(True))
-                    .with_for_update()
+                    # Quota changes do not change identity keys. Serialize quota
+                    # and deactivation without blocking unrelated FK inserts.
+                    .with_for_update(of=Tenant, key_share=True)
                 )
                 if tenant is None:
                     raise UploadTenantUnavailable()
@@ -165,26 +199,37 @@ class UploadCreationService:
                         Membership.is_active.is_(True),
                         User.is_active.is_(True),
                     )
-                    .with_for_update()
+                    .with_for_update(of=(Membership, User), key_share=True)
                 )
                 if membership_id is None:
                     raise UploadTenantUnavailable()
                 membership_validated = True
 
-                existing_session = await session.scalar(
-                    select(UploadSession).where(
-                        UploadSession.tenant_id == tenant_id,
-                        UploadSession.idempotency_key == idempotency_key,
+                # The tenant lock serializes quota and idempotency writers.
+                # Fetch both optional rows without changing their lock order.
+                existing_session, demo_workspace = (
+                    await session.execute(
+                        select(UploadSession, DemoWorkspace)
+                        .select_from(Tenant)
+                        .outerjoin(
+                            UploadSession,
+                            (UploadSession.tenant_id == Tenant.id)
+                            & (UploadSession.idempotency_key == idempotency_key),
+                        )
+                        .outerjoin(DemoWorkspace, DemoWorkspace.tenant_id == Tenant.id)
+                        .where(Tenant.id == tenant_id)
                     )
-                )
+                ).one()
                 if existing_session is not None:
                     _require_matching_idempotency_session(
                         existing_session,
                         actor_id=actor_id,
-                        request_fingerprint=metadata.request_fingerprint,
+                        request_fingerprint=request_fingerprint,
                     )
                 else:
-                    await check_upload(session, tenant_id, metadata.size_bytes)
+                    await check_upload_workspace(
+                        session, tenant_id, metadata.size_bytes, demo_workspace
+                    )
                     projected_storage = (
                         tenant.used_storage_bytes
                         + tenant.reserved_storage_bytes
@@ -203,9 +248,14 @@ class UploadCreationService:
                         actor_id=actor_id,
                         pending_document_id=pending_document_id,
                         pending_version_id=pending_version_id,
-                        status=UploadSessionStatus.INITIALIZING.value,
+                        status=(
+                            UploadSessionStatus.ACTIVE.value
+                            if transport is UploadTransport.SINGLE_PUT
+                            else UploadSessionStatus.INITIALIZING.value
+                        ),
+                        transport=transport.value,
                         idempotency_key=idempotency_key,
-                        request_fingerprint=metadata.request_fingerprint,
+                        request_fingerprint=request_fingerprint,
                         object_key=build_object_key(
                             session_id=session_id,
                             version_id=pending_version_id,
@@ -220,10 +270,13 @@ class UploadCreationService:
                         reserved_bytes=metadata.size_bytes,
                         expires_at=now + timedelta(seconds=self.settings.session_ttl_seconds),
                     )
-                    tenant.reserved_storage_bytes += metadata.size_bytes
-                    session.add(upload_session)
-                    await session.flush()
-                    pending_initialization = _pending_from_session(upload_session)
+                    upload_session = await insert_upload_reservation(
+                        session, tenant=tenant, upload=upload_session
+                    )
+                    if transport is UploadTransport.SINGLE_PUT:
+                        direct_result = _result_from_session(upload_session, replayed=False)
+                    else:
+                        pending_initialization = _pending_from_session(upload_session)
         except UploadCreationError:
             raise
         except Exception as reservation_error:
@@ -241,7 +294,7 @@ class UploadCreationService:
             _require_matching_idempotency_session(
                 recovered,
                 actor_id=actor_id,
-                request_fingerprint=metadata.request_fingerprint,
+                request_fingerprint=request_fingerprint,
             )
             if (
                 pending_initialization is not None
@@ -258,9 +311,12 @@ class UploadCreationService:
                     tenant_id=tenant_id,
                     actor_id=actor_id,
                     idempotency_key=idempotency_key,
-                    request_fingerprint=metadata.request_fingerprint,
+                    request_fingerprint=request_fingerprint,
                 )
             return _result_from_session(existing_session, replayed=True)
+
+        if direct_result is not None:
+            return direct_result
 
         if pending_initialization is None:
             raise UploadInitializationFailed()
@@ -532,6 +588,7 @@ def _result_from_session(
         expected_part_count=upload_session.expected_part_count,
         expires_at=upload_session.expires_at,
         replayed=replayed,
+        transport=upload_session.transport,
     )
 
 

@@ -1,0 +1,131 @@
+{
+  "schema_version": 1,
+  "at": "2026-10-02T03:29:16.410649+00:00",
+  "status": "experiments_completed_no_qualified_performance_fix",
+  "deployed_release": "v0.1.45-rc.16",
+  "deployed_source": "63de37c080cd83a02682ad1d2dd30c217a6aecd7",
+  "packet_header_observation": {
+    "samples": 8,
+    "captured_packets": 73,
+    "kernel_capture_drops": 0,
+    "finding": "Outgoing sequence ranges remained unacknowledged until retransmitted; physical fault not located"
+  },
+  "kernel_pacing": [
+    {
+      "bytes_per_second": null,
+      "samples": 16,
+      "max_ms": 879.512,
+      "retransmissions": 15
+    },
+    {
+      "bytes_per_second": 65536,
+      "samples": 16,
+      "max_ms": 675.085,
+      "retransmissions": 7
+    },
+    {
+      "bytes_per_second": 32768,
+      "samples": 16,
+      "max_ms": 530.529,
+      "retransmissions": 5
+    },
+    {
+      "bytes_per_second": 16384,
+      "samples": 16,
+      "max_ms": 1621.757,
+      "retransmissions": 22
+    }
+  ],
+  "owned_cloudflare_relay": [
+    {
+      "mode": "direct",
+      "samples": 16,
+      "min_ms": 47.309,
+      "max_ms": 50.121,
+      "observed_client_tcp_retransmissions": 0,
+      "tls_verify_full": true
+    },
+    {
+      "mode": "cloudflare",
+      "samples": 16,
+      "min_ms": 356.761,
+      "max_ms": 563.586,
+      "observed_client_tcp_retransmissions": 0,
+      "tls_verify_full": true
+    }
+  ],
+  "limitations": [
+    "Client TCP counters do not observe the Cloudflare-to-database segment",
+    "Two fresh direct connections without retransmissions do not prove a durable fix",
+    "No business capacity or supplier fallback run was performed",
+    "First relay attempt failed; second controller did not produce a query receipt; original records retained"
+  ],
+  "cleanup": {
+    "all_temporary_workers_domains_and_dns_removed": true,
+    "source_receipts": [
+      {
+        "worker": "docagent-db-path-probe-20261002",
+        "delete_http": 200,
+        "delete_success": true,
+        "absent_after": true,
+        "at": "2026-10-02T02:47:15.129289+00:00"
+      },
+      {
+        "at": "2026-10-02T03:10:25.133891+00:00",
+        "worker_removed": true,
+        "domain_removed": true,
+        "dns_removed": true,
+        "delete_http": 200,
+        "reason": "Domain DELETE returned successful empty body; original cleanup JSON parser failed. Authoritative state rechecked before completing exact-owned Worker cleanup."
+      },
+      {
+        "worker_removed": true,
+        "domain_removed": true,
+        "dns_removed": true,
+        "at": "2026-10-02T03:12:54.597710+00:00"
+      }
+    ]
+  },
+  "application_model_requests": 0,
+  "application_embedding_requests": 0,
+  "business_writes": 0,
+  "search_tool_doctor_chat_requests": 1,
+  "search_tool_doctor_amount": null,
+  "production_configuration_changes": 0,
+  "performance_approved": false,
+  "five_gates_complete": false,
+  "evidence": [
+    {
+      "file": "sql-headers.private.json",
+      "sha256": "7d3fa291a5a0aa0959b3758fbd1648b5c5bf5fe89920a43b4bbdebb17adc5185"
+    },
+    {
+      "file": "sql-kernel-pacing.jsonl",
+      "sha256": "85e707fa56e005ecb08281de92fe7190cb2a44adacaa853f3db14efe36f71f6f"
+    },
+    {
+      "file": "cf-db-probe-results.jsonl",
+      "sha256": "3ac6bee9bbd1aba8415ad6dd0d9ffe40c2ba13a62b6331504e512fcfc8d1cb6a"
+    },
+    {
+      "file": "cf-db-probe-v3-results.jsonl",
+      "sha256": "1d28942aa2448ccf05255118ce72f3dbcd305df22d00c20b8c9b9ac2536435ab"
+    },
+    {
+      "file": "cf-db-probe-cleanup.json",
+      "sha256": "0b41729b560b76fef7b676533601c0b95eb41ab3831fd9a616eb9b4fa07274ef"
+    },
+    {
+      "file": "cf-db-probe-v2-cleanup-recovered.json",
+      "sha256": "4481b6960ae5ebdbcde95065257021a0b35cf4d9648b4513b7cf24249a23ce26"
+    },
+    {
+      "file": "cf-db-probe-v3-cleanup.json",
+      "sha256": "42b49bc53e33946bf4bb49f068488dc51963f08c764e7d02173fa14b9aff5681"
+    },
+    {
+      "file": "supabase-ca-provenance.json",
+      "sha256": "8ff1b278145dde3e87411dcf9dba38e488f0919d5afa2c955596fa82f9236320"
+    }
+  ]
+}

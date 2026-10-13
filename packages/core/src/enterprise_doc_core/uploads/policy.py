@@ -17,6 +17,8 @@ S3_MAX_PART_COUNT = 10_000
 S3_MAX_OBJECT_SIZE_BYTES = 5 * 1024**4
 
 DOCX_MEDIA_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+XLSX_MEDIA_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+STRUCTURED_MAX_FILE_BYTES = 10 * MIB
 ALLOWED_MEDIA_TYPES = {
     ".txt": "text/plain",
     ".pdf": "application/pdf",
@@ -123,10 +125,12 @@ def validate_upload_metadata(
     extension = _validate_filename(normalized_filename, settings.max_filename_length)
     normalized_media_type = media_type.strip().lower()
     expected_media_type = ALLOWED_MEDIA_TYPES.get(extension)
+    if extension == ".xlsx" and settings.structured_documents_enabled:
+        expected_media_type = XLSX_MEDIA_TYPE
     if expected_media_type is None:
         raise UploadPolicyViolation(
             code="upload_type_unsupported",
-            message="Only TXT, PDF, and DOCX uploads are supported.",
+            message="The document type is not supported by the current upload policy.",
         )
     if normalized_media_type != expected_media_type:
         raise UploadPolicyViolation(
@@ -138,7 +142,10 @@ def validate_upload_metadata(
             code="upload_size_invalid",
             message="The upload size must be greater than zero.",
         )
-    if size_bytes > settings.max_file_size_bytes:
+    max_size = settings.max_file_size_bytes
+    if settings.structured_documents_enabled:
+        max_size = min(max_size, STRUCTURED_MAX_FILE_BYTES)
+    if size_bytes > max_size:
         raise UploadPolicyViolation(
             code="upload_size_exceeded",
             message="The upload exceeds the configured size limit.",

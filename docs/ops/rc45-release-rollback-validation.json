@@ -1,0 +1,223 @@
+{
+  "schema_version": 1,
+  "status": "deployed_rollback_reapply_verified_not_commercially_approved",
+  "application_commit": "d47371b6008afe833e317606b2153285aeafff75",
+  "executor_commit": "d47371b6008afe833e317606b2153285aeafff75",
+  "tag": "v0.1.45-rc.45",
+  "environment": "staging",
+  "profile": "single-node-4c4g",
+  "database_revision": "20261008_0034",
+  "completed_at": "2026-10-09T03:38:19.790652+00:00",
+  "executed_by": "codex-primary-assistant",
+  "review": {
+    "status": "pending",
+    "independent_release_approval": false
+  },
+  "phases": {
+    "release": {
+      "at": "2026-10-09T03:31:06.322607+00:00",
+      "status": "passed",
+      "application_commit": "d47371b6008afe833e317606b2153285aeafff75",
+      "executor_commit": "d47371b6008afe833e317606b2153285aeafff75",
+      "checks": {
+        "complete_deployment_specs": true,
+        "candidate_prerequisites": true,
+        "namespace_uid": true,
+        "credentials_unchanged": true,
+        "full_schema_0034": true,
+        "history_counts_unchanged": true,
+        "business_idle": true,
+        "jobs_unchanged": true,
+        "no_other_controllers": true,
+        "five_ready": true,
+        "historical_terminal_pods_preserved": true,
+        "pod_readiness_and_image_identity": true,
+        "packaged_source_matches_application_commit": true,
+        "worker_concurrency_two": true,
+        "tiff_patch_matches_phase": true,
+        "nginx_matches_application_commit": true,
+        "public_signed_assets": true,
+        "backup_remains_deferred": true,
+        "homepage": true,
+        "readiness_and_queue": true,
+        "operation_deadlines": true,
+        "capacity_and_policy": true
+      },
+      "elapsed_seconds": 88.4161126613617,
+      "source_files_per_package": {
+        "enterprise_doc_core": 195,
+        "enterprise_doc_api": 50,
+        "enterprise_doc_worker": 15
+      },
+      "verifier_sha256": "14c53e1848f78fcb3aa6724c99acd8456dbfad20daf3d572ef446146a4ef2829"
+    },
+    "rollback": {
+      "at": "2026-10-09T03:34:40.916565+00:00",
+      "status": "passed",
+      "application_commit": "acbbda9c51d29f3595a8467bfea2f0574dc3079a",
+      "executor_commit": "d47371b6008afe833e317606b2153285aeafff75",
+      "checks": {
+        "complete_deployment_specs": true,
+        "candidate_prerequisites": true,
+        "namespace_uid": true,
+        "credentials_unchanged": true,
+        "full_schema_0034": true,
+        "history_counts_unchanged": true,
+        "business_idle": true,
+        "jobs_unchanged": true,
+        "no_other_controllers": true,
+        "five_ready": true,
+        "historical_terminal_pods_preserved": true,
+        "pod_readiness_and_image_identity": true,
+        "packaged_source_matches_application_commit": true,
+        "worker_concurrency_two": true,
+        "tiff_patch_matches_phase": true,
+        "nginx_matches_application_commit": true,
+        "public_signed_assets": true,
+        "backup_remains_deferred": true,
+        "homepage": true,
+        "readiness_and_queue": true,
+        "operation_deadlines": true,
+        "capacity_and_policy": true
+      },
+      "elapsed_seconds": 89.80734539031982,
+      "source_files_per_package": {
+        "enterprise_doc_core": 194,
+        "enterprise_doc_api": 50,
+        "enterprise_doc_worker": 15
+      },
+      "verifier_sha256": "14c53e1848f78fcb3aa6724c99acd8456dbfad20daf3d572ef446146a4ef2829"
+    },
+    "reapply": {
+      "at": "2026-10-09T03:37:13.154555+00:00",
+      "status": "passed",
+      "application_commit": "d47371b6008afe833e317606b2153285aeafff75",
+      "executor_commit": "d47371b6008afe833e317606b2153285aeafff75",
+      "checks": {
+        "complete_deployment_specs": true,
+        "candidate_prerequisites": true,
+        "namespace_uid": true,
+        "credentials_unchanged": true,
+        "full_schema_0034": true,
+        "history_counts_unchanged": true,
+        "business_idle": true,
+        "jobs_unchanged": true,
+        "no_other_controllers": true,
+        "five_ready": true,
+        "historical_terminal_pods_preserved": true,
+        "pod_readiness_and_image_identity": true,
+        "packaged_source_matches_application_commit": true,
+        "worker_concurrency_two": true,
+        "tiff_patch_matches_phase": true,
+        "nginx_matches_application_commit": true,
+        "public_signed_assets": true,
+        "backup_remains_deferred": true,
+        "homepage": true,
+        "readiness_and_queue": true,
+        "operation_deadlines": true,
+        "capacity_and_policy": true
+      },
+      "elapsed_seconds": 86.88913130760193,
+      "source_files_per_package": {
+        "enterprise_doc_core": 195,
+        "enterprise_doc_api": 50,
+        "enterprise_doc_worker": 15
+      },
+      "verifier_sha256": "14c53e1848f78fcb3aa6724c99acd8456dbfad20daf3d572ef446146a4ef2829"
+    }
+  },
+  "post_cleanup_checks": {
+    "all_cache_references_unchanged": true,
+    "deployment_specs_unchanged": true,
+    "credentials_unchanged": true,
+    "schema_and_history_unchanged": true,
+    "business_idle": true,
+    "five_ready": true,
+    "owned_roots_absent": true,
+    "homepage_200": true,
+    "readiness_and_queue": true
+  },
+  "post_cleanup_available_bytes": 15475384320,
+  "cleanup": {
+    "local_files": 43,
+    "local_bytes": 665856251,
+    "remote_files": 185,
+    "remote_bytes": 334480679,
+    "remote_directories": 252,
+    "cache_references_unchanged": true
+  },
+  "approved_historical_cache_cleanup": {
+    "versions": [
+      "rc.26",
+      "rc.27",
+      "rc.28",
+      "rc.29"
+    ],
+    "images": 16,
+    "references": 64,
+    "plan_sha256": "545e95477d4693a272fe9babbe3082c56db8b9565178e9079892eb516fa8a093",
+    "user_approved_exact_scope": true,
+    "post_cleanup_checks": {
+      "all_64_selected_references_absent": true,
+      "all_unselected_references_unchanged": true,
+      "all_32_protected_image_refs_present": true,
+      "five_workloads_content_ready": true,
+      "node_ready_without_disk_pressure": true
+    },
+    "net_free_bytes_increase_at_first_verification": 2617888768,
+    "original_rejected_space_report_preserved": true
+  },
+  "import": {
+    "archive_sha256": "c34dae7a7096688d6bf3d43c9009a8a3a8eea20fee98619e03382572a10dc4e8",
+    "archive_bytes": 332984320,
+    "elapsed_seconds": 82.604,
+    "post_import_checks": {
+      "prior_history_counts_not_decreased": true,
+      "exact_rc44_deployment_specs": true,
+      "credentials_unchanged": true,
+      "schema0034_unchanged": true,
+      "business_idle": true,
+      "historical_terminal_pods_unchanged": true,
+      "jobs_unchanged": true,
+      "no_other_controllers": true,
+      "five_ready": true,
+      "backup_deferral_unchanged": true,
+      "homepage_200": true,
+      "readiness_and_queue": true,
+      "cache_and_policy": true,
+      "prerequisites_unchanged": true,
+      "business_history_unchanged_during_import": true,
+      "preservation_plan_matched": true,
+      "four_candidates_verified": true
+    },
+    "original_cache_references_preserved": true,
+    "shared_empty_config_alias_restored": true
+  },
+  "tiff_package": "4.7.2-r0",
+  "worker_concurrency": 2,
+  "apply_budget_seconds": 600,
+  "recovery_budget_seconds": 300,
+  "model_calls_initiated_by_windows": 0,
+  "emails_sent": 0,
+  "backup_deferral_unchanged": true,
+  "source_hashes": {
+    "rc45-post-capacity-baseline-20261009.json": "fe1eedd75006f4b6405d0befa116a945502b63ec59c3a6a593fb4111bfc15ac1",
+    "rc45-post-cleanup-verification-20261009.json": "808d1023583f44ebe4e4f692fb7faf2e9d7b1d82361e347d0e2b581a7798c519",
+    "rc45-owned-local-cleanup-receipt-20261009.json": "f33db29b454d93eca2aeba34bd6308b68a4bcee1335cae5681c995e9d938bcbf",
+    "rc45-owned-remote-cleanup-receipt-20261009.json": "b54e7ac34f262ce7307d9a3463d92661e0a18166f985a6e3a78319ad442f1d12",
+    "rc45-image-cache-cleanup-plan-20261009.json": "545e95477d4693a272fe9babbe3082c56db8b9565178e9079892eb516fa8a093",
+    "rc45-image-cache-authorization-20261009.json": "f735b591077a60216c4fa2d41826d1a47c93bf117eca2de5160ae07f46e84b2a",
+    "rc45-image-cache-post-cleanup-verification-20261009.json": "0a7088c20a5d70f968de181d200afcead020646a2b8edb063550086777d342b1",
+    "rc45-full-cache-preflight-after-approved-cleanup-20261009.json": "c37ab8397a8030f2e43ee465a079bec3e81ec41eb981bd4182d896e65db20164",
+    "rc45-release-verification-20261009.json": "9f0b776a16cdc594bef524a6bc0ecadbe67bb917204e29492526fc33ad09a036",
+    "rc45-release-verified-v3-20261009.json": "bac7f1869eeee46f93c661368a40a411fad9e558447e4cb366cf69c1df7327e2",
+    "rc45-rollback-verified-v3-20261009.json": "be44a5adff70afe0f7ac1b44cfa65561f5048b013ae8c5e6f9c8ee7eb0b62d9b",
+    "rc45-reapply-verified-v3-20261009.json": "dc41fe71d2b8c0f600de1d8bfabba73d81a3f41e49eeb9458e14d1e44f26e85a"
+  },
+  "limitations": [
+    "Separate read-only technical verification is not an independent human approval.",
+    "Same-candidate quality finished with 7 drafted, 3 failed and 2 unsubmitted of 12; original 160 capacity has not started. Historical rc44 quality failure is unchanged.",
+    "Backup and further recovery remain deferred, never marked passed.",
+    "Historical transport, deployment and harness failures remain retained."
+  ]
+}

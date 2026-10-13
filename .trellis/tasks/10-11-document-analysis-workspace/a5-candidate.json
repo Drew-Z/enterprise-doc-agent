@@ -1,0 +1,73 @@
+{
+  "schema_version": "analysis.a5-candidate.v1",
+  "recorded_at": "2026-10-13",
+  "status": "engineering_candidate_trial_ready",
+  "product_direction": "enterprise multi-document review and comparison workspace",
+  "completed": {
+    "engineering_candidate": true,
+    "internal_validation": true,
+    "trial_materials_ready": true,
+    "a4_incremental_browser": {
+      "playwright_run": "evidence/analysis-a4-playwright-20261013-incremental-r4/results.json",
+      "expected": 1,
+      "unexpected": 0,
+      "reused_units": 9,
+      "recomputed_units": 1,
+      "reason": "field_changed:setup_fee",
+      "review_inherited": false,
+      "old_approved_artifact_readable": true,
+      "controlled_model_calls": 11,
+      "external_model_calls": 0,
+      "isolated_schema_removed": true
+    },
+    "backend_analysis_suite": {"passed": 67, "warnings": 2},
+    "material_contract_target": {"passed": 19},
+    "migration_material_target": {"passed": 18, "warnings": 2},
+    "dependency_downgrade_guard": "analysis_dependency_history_present",
+    "a5_runners": {
+      "holdout_runner_ready": true,
+      "reference_unreviewed_status": "blocked_reference_unreviewed",
+      "capacity_plan": {
+        "analysis_runs": 14,
+        "parse_uploads": 12,
+        "max_model_dispatches": 168,
+        "production_capacity_approved": false
+      },
+      "release_identity_fields": ["repository", "ref", "run_id", "run_attempt", "workflow_ref"],
+      "target_binding": "correlation marker, API pod identity and complete HTTP request count",
+      "validation": {"passed": 71}
+    },
+    "reviewer_preparation": {
+      "validation_draft_rows": 30,
+      "football_holdout_draft_rows": 30,
+      "independently_reviewed_rows": 0,
+      "quality_score": null,
+      "frozen_candidate_files_changed": false,
+      "reference_in_model_input": false,
+      "material_gaps": [
+        "nike_returns_policy_body_missing",
+        "adidas_returns_soft_404"
+      ]
+    }
+  },
+  "materials": [
+    {"id": "validation-01", "split": "validation", "domain": "software procurement", "objects": 3, "fields": 10, "denominator": 30, "official_sources": 6, "quality_score": null},
+    {"id": "holdout-football-01", "split": "holdout", "domain": "football shirt procurement", "objects": 3, "fields": 10, "denominator": 30, "official_sources": 6, "quality_score": null, "role": "cross-domain generalization only"}
+  ],
+  "trial_kit": ["operator-guide.md", "timing-template.csv", "feedback-form.md", "incident-and-supplement.md", "data-and-support.md", "acceptance-record-template.json"],
+  "open": {
+    "real_model_holdout_quality": "preflight_blocked",
+    "real_model_holdout_blocking_codes": [
+      "analysis_auth_token_missing",
+      "analysis_execution_disabled",
+      "analysis_model_route_unconfigured",
+      "structured_uploads_disabled"
+    ],
+    "staging_candidate_deployment": "not_deployed_analysis_candidate_absent_from_remote",
+    "target_4c4g_capacity": "not_run_external_runner_only",
+    "independent_uat": "not_run_no_participants",
+    "commercial_benefit": "not_verified",
+    "paid_validation": "not_verified"
+  },
+  "operations": {"production_migration": false, "deployment": false, "external_model_call": false}
+}

@@ -11,6 +11,7 @@ from sqlalchemy import Select, and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from enterprise_doc_core.config import ObjectStoreChecksumMode, UploadSettings
+from enterprise_doc_core.context import PrincipalContext
 from enterprise_doc_core.documents import DocumentVersion
 from enterprise_doc_core.identity import Tenant
 from enterprise_doc_core.object_store import (
@@ -19,7 +20,7 @@ from enterprise_doc_core.object_store import (
     ObjectHead,
     ObjectStoreNotFound,
 )
-from enterprise_doc_core.uploads.models import UploadSession, UploadSessionStatus
+from enterprise_doc_core.uploads.models import UploadSession, UploadSessionStatus, UploadTransport
 from enterprise_doc_core.uploads.policy import M1_UPLOAD_PREFIX, parse_upload_object_key
 from enterprise_doc_core.uploads.session_service import (
     StaleCompletionOutcome,
@@ -81,6 +82,7 @@ class _CleanupClaim:
     expires_at: datetime
     completion_started_at: datetime | None
     claim_token: UUID | None
+    transport: str = UploadTransport.MULTIPART.value
 
     @property
     def kind(self) -> _ClaimKind:
@@ -254,7 +256,13 @@ class UploadCleanupService:
                         UploadSessionStatus.FAILED.value,
                     )
                 ),
-                UploadSession.object_store_upload_id.is_not(None),
+                or_(
+                    UploadSession.object_store_upload_id.is_not(None),
+                    and_(
+                        UploadSession.transport == UploadTransport.SINGLE_PUT.value,
+                        UploadSession.single_put_retired_at.is_(None),
+                    ),
+                ),
                 UploadSession.document_version_id.is_(None),
             ),
         )
@@ -291,14 +299,13 @@ class UploadCleanupService:
             report.increment("staleCompletionCandidates")
         if claim.source_status == UploadSessionStatus.FAILED.value and claim.reserved_bytes > 0:
             report.increment("reservationRepairCandidates")
-        if (
-            claim.source_status
-            in {
-                UploadSessionStatus.ABORTED.value,
-                UploadSessionStatus.EXPIRED.value,
-                UploadSessionStatus.FAILED.value,
-            }
-            and claim.object_store_upload_id is not None
+        if claim.source_status in {
+            UploadSessionStatus.ABORTED.value,
+            UploadSessionStatus.EXPIRED.value,
+            UploadSessionStatus.FAILED.value,
+        } and (
+            claim.object_store_upload_id is not None
+            or claim.transport == UploadTransport.SINGLE_PUT.value
         ):
             report.increment("terminalUploadCandidates")
 
@@ -330,6 +337,15 @@ class UploadCleanupService:
             if released:
                 report.increment("reservationsReleased")
 
+        if target.transport == UploadTransport.SINGLE_PUT.value:
+            retired = await self.session_service.retire_single_put(
+                principal=PrincipalContext(
+                    tenant_id=str(target.tenant_id), actor_id=str(target.actor_id), role="owner"
+                ),
+                session_id=target.session_id,
+            )
+            report.increment("sessionCleanupSucceeded" if retired else "sessionsSkipped")
+            return
         if target.object_store_upload_id is None:
             report.increment("sessionCleanupSucceeded")
             return
@@ -350,6 +366,19 @@ class UploadCleanupService:
             cleanup_claim_token=claim.claim_token,
             stale_before=now - timedelta(seconds=self.settings.cleanup_completing_grace_seconds),
         )
+        if claim.transport == UploadTransport.SINGLE_PUT.value and result.outcome in {
+            StaleCompletionOutcome.FAILED_MISSING,
+            StaleCompletionOutcome.FAILED_INVALID_OWNED,
+        }:
+            retired = await self.session_service.retire_single_put(
+                principal=PrincipalContext(
+                    tenant_id=str(claim.tenant_id), actor_id=str(claim.actor_id), role="owner"
+                ),
+                session_id=claim.session_id,
+            )
+            if not retired:
+                report.increment("sessionsSkipped")
+                return
         if result.outcome is StaleCompletionOutcome.COMPLETED:
             report.increment("staleCompleted")
             report.increment("sessionCleanupSucceeded")
@@ -360,7 +389,8 @@ class UploadCleanupService:
         elif result.outcome is StaleCompletionOutcome.FAILED_INVALID_OWNED:
             report.increment("staleFailedInvalidOwned")
             report.increment("reservationsReleased")
-            report.increment("completedObjectsDeleted")
+            if claim.transport == UploadTransport.MULTIPART.value:
+                report.increment("completedObjectsDeleted")
             report.increment("sessionCleanupSucceeded")
         elif result.outcome is StaleCompletionOutcome.FAILED_AMBIGUOUS:
             report.increment("staleFailedAmbiguous")
@@ -665,6 +695,7 @@ def _session_matches_claim(
         and upload_session.object_key == claim.object_key
         and upload_session.object_store_upload_id == claim.object_store_upload_id
         and upload_session.size_bytes == claim.size_bytes
+        and upload_session.transport == claim.transport
     )
 
 
@@ -700,6 +731,7 @@ def _claim_from_model(
         expires_at=upload_session.expires_at,
         completion_started_at=upload_session.completion_started_at,
         claim_token=claim_token,
+        transport=upload_session.transport,
     )
 
 

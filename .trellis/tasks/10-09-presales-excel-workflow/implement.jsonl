@@ -1,0 +1,2 @@
+{"file":".trellis/spec/backend/presales-workspace.md","reason":"Reuse authorization, idempotency, generation and review"}
+{"file":".trellis/spec/frontend/presales-workspace.md","reason":"Session scoping, schema validation and recovery"}

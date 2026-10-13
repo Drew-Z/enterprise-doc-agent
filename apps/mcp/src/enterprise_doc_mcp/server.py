@@ -259,7 +259,7 @@ def build_runtime(
     engine = create_database_engine(_mcp_database_settings(settings))
     session_factory = create_session_factory(engine)
     embedding_provider, embedding_model, embedding_dimension = build_embedding_provider(
-        settings.embedding
+        settings.embedding, app_env=settings.app_env
     )
     retrieval = HybridRetrievalService(
         session_factory=session_factory,
@@ -273,6 +273,8 @@ def build_runtime(
         ),
         require_vector_evidence=settings.retrieval.require_vector_evidence,
         metrics=resolved_metrics,
+        app_env=settings.app_env,
+        provider_usage_settings=settings.provider_usage,
     )
     artifact_store = Boto3ArtifactObjectStore(
         settings=settings.object_store,
@@ -285,6 +287,7 @@ def build_runtime(
         artifact_store=artifact_store,
         stale_execution_seconds=max(30, int(settings.mcp.request_timeout_seconds)),
         artifact_bucket=settings.object_store.artifacts_bucket,
+        app_env=settings.app_env,
     )
     return RuntimeResources(
         runtime=McpRuntime(

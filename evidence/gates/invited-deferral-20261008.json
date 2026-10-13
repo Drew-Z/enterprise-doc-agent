@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "commit_sha": "3deeec82c19260ae73a763973a97b4ed3ff23183",
+  "environment": "staging",
+  "profile": "single-node-4c4g",
+  "release_scope": "invited",
+  "decision": "deferred",
+  "decided_by": "project owner (existing scope instruction)",
+  "recorded_by": "Codex",
+  "recorded_at": "2026-10-08T01:09:00.258677+00:00",
+  "reason": "Existing owner decision defers backup, independent fault-domain restoration and RPO/RTO; release rollback remains required.",
+  "source": "docs/ops/final-project-acceptance.md at 3deeec82c19260ae73a763973a97b4ed3ff23183, lines 7-8",
+  "deferred_checks": {
+    "recovery": [
+      "database_and_objects",
+      "independent_fault_domain",
+      "rpo_rto"
+    ],
+    "observability": [
+      "backup_freshness"
+    ]
+  },
+  "limitations": [
+    "This records an existing owner scope decision, not independent approval or authenticated identity.",
+    "No deferred capability is claimed as passed. New candidates require a newly bound decision and externally reviewed digest."
+  ]
+}

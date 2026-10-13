@@ -1,0 +1,55 @@
+{
+  "schemaVersion": "presales-prerequisite-review-v1",
+  "runSha256": "e549e52e84fa050278f2252d08692b1160ce7d5c67688598ad1696ca49f5ea40",
+  "expectationsSha256": "d0cf7caacd89597b30e0d6d3e279d5cb6ff7e65beda11d3c06f60e53ca5983b6",
+  "reviewer": "Codex assistant",
+  "reviewType": "assistant",
+  "rows": [
+    {
+      "key": "H3-R1",
+      "reviewed": false,
+      "mappings": []
+    },
+    {
+      "key": "H3-R2",
+      "reviewed": false,
+      "mappings": []
+    },
+    {
+      "key": "H3-R3",
+      "reviewed": false,
+      "mappings": []
+    },
+    {
+      "key": "H3-R4",
+      "reviewed": true,
+      "mappings": []
+    },
+    {
+      "key": "H3-R5",
+      "reviewed": true,
+      "mappings": [
+        {
+          "expectedKey": "purchase",
+          "observedIndex": 0,
+          "reason": "原稿第 0 项描述 ARC180 采购，绑定订单已采购及启用前提原文。"
+        },
+        {
+          "expectedKey": "configure",
+          "observedIndex": 1,
+          "reason": "原稿第 1 项描述 180 天策略配置，订单明确尚未配置。"
+        },
+        {
+          "expectedKey": "acceptance",
+          "observedIndex": 2,
+          "reason": "原稿第 2 项描述归档恢复验收；订单只说状态未登记，没有证明未完成。"
+        }
+      ]
+    },
+    {
+      "key": "H3-R6",
+      "reviewed": true,
+      "mappings": []
+    }
+  ]
+}

@@ -71,5 +71,37 @@
 .presales-review-form > button { justify-self: start; }
 .presales-original { border-top: 1px solid var(--ps-line); margin-top: 16px; padding-top: 12px; font-size: 12px; line-height: 1.8; overflow-wrap: anywhere; white-space: pre-wrap; }
 .presales-original > div { margin: 12px 0; }
+.presales-prerequisites ul { list-style: none; padding: 0; display: grid; gap: 12px; }
+.presales-prerequisites li { padding: 12px; background: #f5f8fa; border: 1px solid var(--ps-line); border-radius: 6px; font-size: 13px; line-height: 1.8; overflow-wrap: anywhere; }
+.presales-prerequisites .presales-evidence { margin: 8px 0 0; }
+.presales-prerequisites summary { cursor: pointer; color: #145d76; }
+.presales-prerequisite-state { display: inline-block; padding: 1px 6px; border-radius: 4px; margin-right: 6px; }
+.presales-prerequisite-state.met { background: #eaf7ef; color: #27603d; }
+.presales-prerequisite-state.unmet { background: #fbeeed; color: #984b45; }
+.presales-prerequisite-state.unknown { background: #fff4db; color: #785409; }
+.presales-prerequisite-editor { min-width: 0; padding: 14px; border: 1px solid var(--ps-line); border-radius: 6px; display: grid; gap: 12px; }
+.presales-prerequisite-editor legend { font-size: 13px; font-weight: 600; }
+.presales-prerequisite-editor .presales-field > span { overflow-wrap: anywhere; }
+.presales-prerequisite-item { min-width: 0; border: 1px solid var(--ps-line); border-radius: 6px; padding: 12px; display: grid; gap: 12px; }
+.presales-prerequisite-evidence { min-width: 0; border: 0; padding: 0; display: grid; gap: 8px; }
+.presales-prerequisite-evidence label { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; line-height: 1.7; }
+.presales-prerequisite-evidence span { min-width: 0; overflow-wrap: anywhere; }
+.presales-prerequisite-evidence small { display: block; color: var(--ps-muted); white-space: pre-wrap; }
+.presales-prerequisite-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.presales-excluded-item, .presales-review-origins { font-size: 12px; line-height: 1.8; overflow-wrap: anywhere; }
 @media (max-width: 1050px) { .presales-layout { grid-template-columns: minmax(0, 1fr); gap: 22px; } .presales-sidebar { border-right: 0; border-bottom: 1px solid var(--ps-line); padding: 0 0 16px; } .presales-sidebar .presales-packet-link { max-width: 100%; } }
 @media (max-width: 620px) { .presales-workspace .product-page-header { align-items: flex-start; flex-direction: column; gap: 12px; } .presales-two-fields { grid-template-columns: minmax(0, 1fr); gap: 12px; } .presales-row { padding: 14px 12px; } .presales-row-header { flex-wrap: wrap; } .presales-row-header > div { flex-basis: calc(100% - 50px); } .presales-state { margin-left: 36px; } .presales-toolbar button { flex: 1 1 100%; } .presales-form-footer > button { width: 100%; } .presales-workspace input:not([type="checkbox"]), .presales-workspace textarea, .presales-workspace select { font-size: 16px; } }
+.presales-mode-picker { display: flex; align-items: end; flex-wrap: wrap; gap: 0.75rem; margin: 0.75rem 0; }
+.presales-mode-picker .presales-field { min-width: 8rem; }
+.presales-mode-picker .presales-hint { flex: 1 1 16rem; margin: 0; }
+.presales-execution-mode { font-size: 0.875rem; font-weight: 600; }
+.presales-generation-history { margin: 0.5rem 0; font-size: 0.875rem; overflow-wrap: anywhere; }
+.presales-generation-history small { display: block; margin-top: 0.25rem; }
+.presales-form .presales-workbook { display: grid; gap: 14px; }
+.presales-workbook-mapping { display: grid; grid-template-columns: minmax(140px, 2fr) repeat(4, minmax(70px, 1fr)); gap: 12px; }
+.presales-workbook-preview { max-height: 330px; overflow: auto; border: 1px solid var(--ps-line); border-radius: 6px; padding: 8px; font-size: 13px; }
+.presales-workbook-preview table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+.presales-workbook-preview th, .presales-workbook-preview td { text-align: left; padding: 8px; border-bottom: 1px solid var(--ps-line); vertical-align: top; overflow-wrap: anywhere; white-space: pre-wrap; }
+.presales-workbook-preview th:nth-child(-n+2) { width: 58px; }
+.presales-workbook-preview span { display: inline-block; margin: 4px 10px 4px 0; overflow-wrap: anywhere; }
+@media (max-width: 620px) { .presales-workbook-mapping { grid-template-columns: repeat(2, minmax(0, 1fr)); } .presales-workbook-mapping > :first-child { grid-column: 1 / -1; } }

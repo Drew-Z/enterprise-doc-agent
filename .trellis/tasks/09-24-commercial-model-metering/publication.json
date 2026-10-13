@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "commit_sha": "61f0dc559dc1be0423dcc93347d462a032227ea7",
+  "pr_url": "https://github.com/Drew-Z/enterprise-doc-agent/pull/8",
+  "draft": true,
+  "title": "feat: add resilient generation and enterprise usage accounting",
+  "recorded_at": "2026-09-24T12:31:47.328376+00:00",
+  "pushed": true,
+  "deployed": false,
+  "checks": [
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-09-24T12:01:33Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/35996237565/job/107621732890",
+      "name": "images (api, infra/docker/Dockerfile.api)",
+      "startedAt": "2026-09-24T11:59:17Z",
+      "status": "COMPLETED",
+      "workflowName": "Container Supply Chain"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-09-24T12:01:44Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/35996237659/job/107621733165",
+      "name": "backend",
+      "startedAt": "2026-09-24T11:59:24Z",
+      "status": "COMPLETED",
+      "workflowName": "Quality"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-09-24T12:01:19Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/35996237565/job/107621732606",
+      "name": "images (worker, infra/docker/Dockerfile.worker)",
+      "startedAt": "2026-09-24T11:59:17Z",
+      "status": "COMPLETED",
+      "workflowName": "Container Supply Chain"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-09-24T12:01:07Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/35996237565/job/107621732704",
+      "name": "images (consumer, infra/docker/Dockerfile.consumer)",
+      "startedAt": "2026-09-24T11:59:17Z",
+      "status": "COMPLETED",
+      "workflowName": "Container Supply Chain"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-09-24T12:00:34Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/35996237565/job/107621732671",
+      "name": "images (web, infra/docker/Dockerfile.web)",
+      "startedAt": "2026-09-24T11:59:17Z",
+      "status": "COMPLETED",
+      "workflowName": "Container Supply Chain"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-09-24T12:01:33Z",
+      "conclusion": "SKIPPED",
+      "detailsUrl": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/35996237565/job/107622510486",
+      "name": "release-manifest",
+      "startedAt": "2026-09-24T12:01:33Z",
+      "status": "COMPLETED",
+      "workflowName": "Container Supply Chain"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-09-24T12:00:34Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/35996237659/job/107621732823",
+      "name": "frontend",
+      "startedAt": "2026-09-24T11:59:17Z",
+      "status": "COMPLETED",
+      "workflowName": "Quality"
+    }
+  ]
+}

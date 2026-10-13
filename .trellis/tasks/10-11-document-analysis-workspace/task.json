@@ -1,0 +1,37 @@
+{
+  "id": "document-analysis-workspace",
+  "name": "document-analysis-workspace",
+  "title": "多文档审阅与对比工作台：架构与首版闭环",
+  "description": "先评审多文档审阅与对比工作台架构，再实现结构化证据、有限单 Agent、矩阵复核和交付闭环。",
+  "status": "in_progress",
+  "dev_type": null,
+  "scope": "analysis",
+  "package": "core",
+  "priority": "P1",
+  "creator": "developer",
+  "assignee": "developer",
+  "createdAt": "2026-10-11",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "codex/presales-prerequisite-assessment",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "09-24-commercial-production-readiness",
+  "relatedFiles": [
+    ".trellis/tasks/10-11-document-analysis-workspace/prd.md",
+    ".trellis/tasks/10-11-document-analysis-workspace/design.md",
+    ".trellis/tasks/10-11-document-analysis-workspace/implement.md"
+  ],
+  "notes": "Architecture approved. A0-A4 are a locally validated engineering candidate: structured evidence, fixed and bounded-Agent execution, exact review/static delivery, dependency invalidation and conservative cross-snapshot reuse pass controlled PostgreSQL/HTTP/browser checks. A1 negative coverage, one software validation pack, one football-shirt cross-domain holdout pack, the independent trial kit, the holdout scorer and the 4C4G runner are ready. Both frozen packs now have 30-row assistant reviewer drafts with source anchors and error rules; these drafts are not independent labels and are excluded from model input. The live holdout preflight is blocked by missing analysis auth, disabled execution/uploads and an unconfigured fixed route. Runner validation does not establish real-model quality or production capacity. Status remains in_progress because real-model holdout quality, external 4C4G target-resource acceptance and independent customer UAT are still open. No deployment, production migration or external model call was performed.",
+  "meta": {
+    "planning_deliverable": "architecture_v1",
+    "architecture_review": "approved_by_user_2026-10-11",
+    "implementation_started": true,
+    "current_slice": "A0_A4_engineering_candidate_and_A5_reviewer_preparation_complete",
+    "next_slice": "configure_controlled_holdout_route_and_budget_then_run_real_model",
+    "commercial_validation": "not_started_no_independent_participants"
+  }
+}

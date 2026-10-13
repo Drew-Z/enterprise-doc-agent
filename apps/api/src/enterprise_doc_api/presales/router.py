@@ -4,29 +4,86 @@ from collections.abc import Awaitable
 from typing import Annotated, Literal, Protocol, cast
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, Query, Request, Response
+from fastapi import APIRouter, Body, Depends, Header, Query, Request, Response
 
 from enterprise_doc_api.auth import get_current_principal
 from enterprise_doc_api.errors import ApiError
+from enterprise_doc_api.presales.workbook import WORKBOOK_ERRORS, bounded_workbook_payload
 from enterprise_doc_core.context import PrincipalContext
 from enterprise_doc_core.presales.errors import PresalesError
+from enterprise_doc_core.presales.policy import ExecutionMode
 from enterprise_doc_core.presales.schemas import (
+    BatchGenerateInput,
+    BatchGenerateResult,
     CreatePacket,
+    GenerateRowInput,
+    GenerationReceipt,
+    ManualEvidencePage,
+    ManualResponseInput,
     PacketSummary,
     PacketView,
     ReviewInput,
+    WorkbookImportInput,
 )
+from enterprise_doc_core.presales.workbook import XLSX_MIME
+from enterprise_doc_core.presales.workbook_schemas import WorkbookPreview, WorkbookUpload
 
 
 class PresalesServiceProtocol(Protocol):
+    async def manual_evidence(
+        self,
+        principal: PrincipalContext,
+        packet_id: UUID,
+        version_id: UUID,
+        query: str = "",
+        offset: int = 0,
+    ) -> ManualEvidencePage: ...
+    async def manual_response(
+        self,
+        principal: PrincipalContext,
+        packet_id: UUID,
+        row_id: UUID,
+        payload: ManualResponseInput,
+        key: str,
+    ) -> PacketView: ...
+    async def preview_workbook(
+        self, principal: PrincipalContext, payload: WorkbookUpload
+    ) -> WorkbookPreview: ...
+    async def import_workbook(
+        self, principal: PrincipalContext, payload: WorkbookImportInput, key: str
+    ) -> PacketView: ...
+    async def export_workbook(
+        self, principal: PrincipalContext, packet_id: UUID, mode: Literal["draft", "reviewed"]
+    ) -> bytes: ...
     async def create(
         self, principal: PrincipalContext, payload: CreatePacket, key: str
     ) -> PacketView: ...
     async def list_packets(self, principal: PrincipalContext) -> list[PacketSummary]: ...
     async def get(self, principal: PrincipalContext, packet_id: UUID) -> PacketView: ...
     async def generate(
-        self, principal: PrincipalContext, packet_id: UUID, row_id: UUID, key: str
+        self,
+        principal: PrincipalContext,
+        packet_id: UUID,
+        row_id: UUID,
+        key: str,
+        *,
+        execution_mode: ExecutionMode | None = None,
     ) -> PacketView: ...
+    async def generate_batch(
+        self, principal: PrincipalContext, packet_id: UUID, payload: BatchGenerateInput, key: str
+    ) -> BatchGenerateResult: ...
+    async def admit(
+        self,
+        principal: PrincipalContext,
+        packet_id: UUID,
+        row_id: UUID,
+        key: str,
+        *,
+        execution_mode: ExecutionMode | None = None,
+    ) -> GenerationReceipt: ...
+    async def admit_batch(
+        self, principal: PrincipalContext, packet_id: UUID, payload: BatchGenerateInput, key: str
+    ) -> GenerationReceipt: ...
     async def review(
         self,
         principal: PrincipalContext,
@@ -88,14 +145,28 @@ async def result[T](operation: Awaitable[T]) -> T:
             status, message = 429, "已达到本次操作限额。请联系管理员。"
         elif code == "presales_generation_busy":
             message = "已有生成正在进行。请稍后刷新查看结果。"
+        elif code == "presales_manual_evidence_invalid":
+            status, message = 422, "请从本表授权资料中选择原文证据。不要改写引用内容。"
+        elif code == "presales_manual_draft_exists":
+            message = "本条已有草稿。请使用复核功能修改。原稿将保留。"
+        elif code == "presales_background_required":
+            message = "当前仅支持逐条生成。请刷新页面后重试。"
         elif code == "presales_revision_conflict":
             message = "这条响应已被修改。请刷新后重新核对。"
         elif code == "presales_review_required":
             message = "请逐条完成复核。或选择导出带有未复核标识的草稿。"
         elif code == "presales_review_evidence_required":
             message = "此判断缺少相应证据或条件。请核对原文后再保存。"
+        elif code == "presales_review_prerequisites_invalid":
+            status, message = 422, "请核对前提来源关联及排除记录。刷新后重新复核。"
+        elif code == "presales_review_note_required":
+            status, message = 422, "前提已修改。请在复核备注中说明依据。"
+        elif code == "presales_execution_policy_unavailable":
+            status, message = 503, "生成档位配置暂不可用。请联系管理员核查。"
         elif code == "presales_invalid_idempotency_key":
             status, message = 400, "操作标识无效。"
+        elif code in WORKBOOK_ERRORS:
+            status, message = WORKBOOK_ERRORS[code]
         raise ApiError(status_code=status, code=code, message=message) from error
 
 
@@ -114,16 +185,118 @@ async def create_packet(
     return await result(svc.create(principal, payload, key))
 
 
+@router.post("/workbooks/preview", response_model=WorkbookPreview)
+async def preview_workbook(request: Request, principal: Principal, svc: Service) -> WorkbookPreview:
+    payload = await bounded_workbook_payload(request, WorkbookUpload)
+    return await result(svc.preview_workbook(principal, payload))
+
+
+@router.post("/workbooks", response_model=PacketView, status_code=201)
+async def import_workbook(
+    request: Request, principal: Principal, svc: Service, key: Key
+) -> PacketView:
+    payload = await bounded_workbook_payload(request, WorkbookImportInput)
+    return await result(svc.import_workbook(principal, payload, key))
+
+
+@router.get("/{packet_id}/workbook")
+async def export_workbook(
+    packet_id: UUID,
+    principal: Principal,
+    svc: Service,
+    mode: Annotated[Literal["draft", "reviewed"], Query()] = "draft",
+) -> Response:
+    content = await result(svc.export_workbook(principal, packet_id, mode))
+    return Response(
+        content,
+        media_type=XLSX_MIME,
+        headers={
+            "Cache-Control": "no-store",
+            "X-Content-Type-Options": "nosniff",
+            "Content-Disposition": f'attachment; filename="presales-{mode}.xlsx"',
+        },
+    )
+
+
 @router.get("/{packet_id}", response_model=PacketView)
 async def get_packet(packet_id: UUID, principal: Principal, svc: Service) -> PacketView:
     return await result(svc.get(principal, packet_id))
 
 
-@router.post("/{packet_id}/rows/{row_id}/generate", response_model=PacketView)
+@router.post("/{packet_id}/rows/{row_id}/generate", response_model=PacketView | GenerationReceipt)
 async def generate_row(
-    packet_id: UUID, row_id: UUID, principal: Principal, svc: Service, key: Key
+    packet_id: UUID,
+    row_id: UUID,
+    principal: Principal,
+    svc: Service,
+    key: Key,
+    response: Response,
+    response_mode: Annotated[Literal["full", "receipt"], Query(alias="response")] = "full",
+    payload: Annotated[GenerateRowInput | None, Body()] = None,
+) -> PacketView | GenerationReceipt:
+    mode = payload.execution_mode if payload else None
+    if response_mode == "receipt":
+        receipt = await result(
+            svc.admit(principal, packet_id, row_id, key, execution_mode=mode)
+            if mode is not None
+            else svc.admit(principal, packet_id, row_id, key)
+        )
+        if any(item.disposition == "enqueued" for item in receipt.admissions):
+            response.status_code = 202
+        return receipt
+    packet = await result(
+        svc.generate(principal, packet_id, row_id, key, execution_mode=mode)
+        if mode is not None
+        else svc.generate(principal, packet_id, row_id, key)
+    )
+    if any(r.id == row_id and r.state in {"queued", "running", "recovering"} for r in packet.rows):
+        response.status_code = 202
+    return packet
+
+
+@router.post("/{packet_id}/generate", response_model=BatchGenerateResult | GenerationReceipt)
+async def generate_batch(
+    packet_id: UUID,
+    payload: BatchGenerateInput,
+    principal: Principal,
+    svc: Service,
+    key: Key,
+    response: Response,
+    response_mode: Annotated[Literal["full", "receipt"], Query(alias="response")] = "full",
+) -> BatchGenerateResult | GenerationReceipt:
+    if response_mode == "receipt":
+        receipt = await result(svc.admit_batch(principal, packet_id, payload, key))
+        if any(item.disposition == "enqueued" for item in receipt.admissions):
+            response.status_code = 202
+        return receipt
+    batch = await result(svc.generate_batch(principal, packet_id, payload, key))
+    if any(r.state in {"queued", "running", "recovering"} for r in batch.packet.rows):
+        response.status_code = 202
+    return batch
+
+
+@router.get("/{packet_id}/manual-evidence", response_model=ManualEvidencePage)
+async def manual_evidence(
+    packet_id: UUID,
+    principal: Principal,
+    svc: Service,
+    version_id: Annotated[UUID, Query(alias="versionId")],
+    query: Annotated[str, Query(max_length=200)] = "",
+    offset: Annotated[int, Query(ge=0, le=100000)] = 0,
+) -> ManualEvidencePage:
+    return await result(svc.manual_evidence(principal, packet_id, version_id, query, offset))
+
+
+@router.put("/{packet_id}/rows/{row_id}/manual-response", response_model=PacketView)
+async def manual_response(
+    packet_id: UUID,
+    row_id: UUID,
+    payload: ManualResponseInput,
+    principal: Principal,
+    svc: Service,
+    key: Key,
 ) -> PacketView:
-    return await result(svc.generate(principal, packet_id, row_id, key))
+    return await result(svc.manual_response(principal, packet_id, row_id, payload, key))
 
 
 @router.put("/{packet_id}/rows/{row_id}/review", response_model=PacketView)

@@ -25,7 +25,7 @@ import { fetchDocumentInventory } from "./documentsApi";
 import type { ProductRoute } from "./routes";
 import { showcaseInventory } from "./showcaseData";
 import { useLocale, useT } from "../i18n";
-import { formatApiError } from "../api/errorDisplay";
+import { formatApiError, quotaErrorMessage } from "../api/errorDisplay";
 
 interface DocumentsPageProps {
   navigate: (route: ProductRoute) => void;
@@ -98,7 +98,9 @@ function DocumentStatus({ document }: { document: DocumentInventoryItem }) {
         <span className={`status-dot ${status === "ready" ? "healthy" : status === "failed" ? "warning" : ""}`} />
         {statusLabel(status, t)}
       </span>
-      <small>{document.errorCode ?? formatStage(document.ingestionStage, t)}</small>
+      <small>{document.errorCode
+        ? quotaErrorMessage(document.errorCode) ?? document.errorCode
+        : formatStage(document.ingestionStage, t)}</small>
     </span>
   );
 }

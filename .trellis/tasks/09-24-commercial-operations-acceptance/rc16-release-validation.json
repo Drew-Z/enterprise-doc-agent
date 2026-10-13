@@ -1,0 +1,177 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-10-01T22:12:52.896901+00:00",
+  "task_status": "in_progress",
+  "deployed": {
+    "version": "v0.1.45-rc.16",
+    "source_commit": "63de37c080cd83a02682ad1d2dd30c217a6aecd7",
+    "release_ci": 36929259861,
+    "quality_ci": 36928619984,
+    "container_ci": 36928619962,
+    "switch_seconds": 89.774,
+    "database_revision": "20260924_0031",
+    "rollback_version": "v0.1.45-rc.15",
+    "five_deployments_ready": true,
+    "public_readiness": "ready",
+    "signature_evidence_files": 56
+  },
+  "change": {
+    "maximum_verified_content_bytes": 1048576,
+    "small_pdf_reads_before": 3,
+    "small_pdf_reads_after": 2,
+    "full_sha256_and_original_format_checks_preserved": true,
+    "large_file_and_native_checksum_behavior_unchanged": true
+  },
+  "diagnostic": {
+    "scope": "rc16-four-task-consistency-diagnostic-not-capacity-approval",
+    "started_at": "2026-10-01T22:05:21.286406+00:00",
+    "completed_at": "2026-10-01T22:10:12.777823+00:00",
+    "summary": {
+      "planned_tasks": 4,
+      "business_successes": 4,
+      "business_non_successes": 0,
+      "expected_failures": 0,
+      "not_run": 0,
+      "interrupted": 0,
+      "expectations_met": 4,
+      "normal_failure_rate": 0.0,
+      "boundaries": {
+        "upload": {
+          "planned": 4,
+          "observed": 4,
+          "passed": 4,
+          "failed": 0,
+          "expected_failure": 0,
+          "interrupted": 0,
+          "not_run": 0,
+          "sample_count": 4,
+          "min_ms": 9287.104818038642,
+          "p50_ms": 9398.04152911529,
+          "p95_ms": 10779.884204734117,
+          "p99_ms": 10779.884204734117,
+          "max_ms": 10779.884204734117,
+          "proposed_target_ms": 5000.0,
+          "proposed_target_met": false
+        },
+        "ingestion": {
+          "planned": 4,
+          "observed": 4,
+          "passed": 4,
+          "failed": 0,
+          "expected_failure": 0,
+          "interrupted": 0,
+          "not_run": 0,
+          "sample_count": 4,
+          "min_ms": 11499.05804079026,
+          "p50_ms": 11907.385661266744,
+          "p95_ms": 19220.990943256766,
+          "p99_ms": 19220.990943256766,
+          "max_ms": 19220.990943256766,
+          "proposed_target_ms": 30000.0,
+          "proposed_target_met": true
+        },
+        "retrieval": {
+          "planned": 4,
+          "observed": 4,
+          "passed": 4,
+          "failed": 0,
+          "expected_failure": 0,
+          "interrupted": 0,
+          "not_run": 0,
+          "sample_count": 4,
+          "min_ms": 1853.326256852597,
+          "p50_ms": 2628.535137977451,
+          "p95_ms": 4482.413022313267,
+          "p99_ms": 4482.413022313267,
+          "max_ms": 4482.413022313267,
+          "proposed_target_ms": 2000.0,
+          "proposed_target_met": false
+        },
+        "generation_recovery": {
+          "planned": 4,
+          "observed": 4,
+          "passed": 4,
+          "failed": 0,
+          "expected_failure": 0,
+          "interrupted": 0,
+          "not_run": 0,
+          "sample_count": 4,
+          "min_ms": 33182.37054813653,
+          "p50_ms": 33252.25119991228,
+          "p95_ms": 59845.78667394817,
+          "p99_ms": 59845.78667394817,
+          "max_ms": 59845.78667394817,
+          "proposed_target_ms": 180000.0,
+          "proposed_target_met": true
+        }
+      },
+      "generation_acceptance": {
+        "observed": 4,
+        "sample_count": 4,
+        "min_ms": 2058.4033662453294,
+        "p50_ms": 2259.1864648275077,
+        "p95_ms": 4714.538424741477,
+        "p99_ms": 4714.538424741477,
+        "max_ms": 4714.538424741477,
+        "proposed_target_ms": 2000.0
+      },
+      "generation_terminal": {
+        "observed": 4,
+        "sample_count": 4,
+        "min_ms": 25714.746396057308,
+        "p50_ms": 25840.11883335188,
+        "p95_ms": 45906.92504495382,
+        "p99_ms": 45906.92504495382,
+        "max_ms": 45906.92504495382
+      }
+    },
+    "model_calls": 4,
+    "embedding_calls": 12,
+    "model_tokens": 19360,
+    "one_settlement_per_task": true,
+    "live_failover_exercised": false,
+    "production_capacity_approved": false,
+    "between_batch_improvement_not_causal_proof": true
+  },
+  "provider_accounting": {
+    "scope": "unique multi-attribute correlation, not authenticated shared request-ID proof",
+    "observed_calls": 4,
+    "unique_correlations": 4,
+    "exact_request_id_matches": 0,
+    "matched_quota": 28996,
+    "matched_custom_display_units": "0.057992",
+    "provider_ledger_rows": 108,
+    "ledger_quota_sum": 639072,
+    "currency": "CUSTOM",
+    "fiat_currency_verified": false,
+    "fallback_and_vector_costs_verified": false
+  },
+  "cleanup": {
+    "remote_files": 11,
+    "local_oci_files": 30,
+    "local_oci_bytes": 508046034,
+    "running_and_rollback_images_retained": true
+  },
+  "download_interruption": {
+    "initial_corrupt_blobs": 2,
+    "missing_blobs": 13,
+    "valid_reused_blobs": 14,
+    "recovery": "Missing and corrupt files downloaded again; all lengths and digests verified before import",
+    "original_failure_retained": true
+  },
+  "validation": {
+    "nonintegration_passed": 2137,
+    "nonintegration_deselected": 477,
+    "subtests_passed": 23,
+    "related_integration_passed": 43,
+    "real_minio_case_not_run": 1,
+    "mypy_source_files": 251
+  },
+  "remaining": [
+    "Admission upload retrieval performance and two-round capacity",
+    "Provider fiat costs",
+    "Independent business and release review",
+    "Continuous backup while personal host offline",
+    "Whole-machine RPO RTO"
+  ]
+}

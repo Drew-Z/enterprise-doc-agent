@@ -1,0 +1,63 @@
+{
+  "at": "2026-09-29T11:39:54.891011+00:00",
+  "status": "candidate_locally_verified",
+  "deployed": false,
+  "production_capacity_approved": false,
+  "user_direction": "Evaluate meaningful latency targets and deliver resilient user experience for normal provider faults",
+  "changes": [
+    "Reserve fallback time under unchanged execution deadline and two-dispatch limit",
+    "Batch source and row history reads, retaining final authorization",
+    "Agent same-key admission recovery, bounded reads, proxy status and storage failure handling",
+    "Presales immediate feedback, bounded response/read recovery, explicit failure and allowance guidance"
+  ],
+  "validation": {
+    "python_nonintegration_passed": 2083,
+    "python_subtests": 23,
+    "python_integration_deselected": 447,
+    "presales_background_integration_passed": 32,
+    "presales_workflow_distinct_passed": 34,
+    "workflow_initial_local_schema_setup_failed": true,
+    "workflow_isolated_schema_after_fix": true,
+    "workflow_old_prompt_assertions_corrected_to_current_v9": 3,
+    "web_full_suite_passed": 365,
+    "monitor_passed": 35,
+    "presales_real_browser_passed": 1,
+    "agent_controlled_http_browser_passed": 3,
+    "agent_feedback_samples": [
+      {
+        "feedbackMs": 4.800000011920929,
+        "delayedResponseMs": 750
+      }
+    ],
+    "full_sheet_read_sql_budget": 10,
+    "ruff": "passed",
+    "mypy": "passed"
+  },
+  "preserved_capacity_result": {
+    "tasks": 160,
+    "business_passed": 9,
+    "failed_started": 4,
+    "not_run": 147,
+    "admission_p95_ms": 5688.6,
+    "regraded": false
+  },
+  "followup": [
+    "Deploy exact verified candidate",
+    "Independently remeasure live admission and recovery",
+    "Retain separate supplier money, customer review, continuous backup and host recovery evidence"
+  ],
+  "historical_dirty_entries_preserved": 2993,
+  "evidence": {
+    "ux-python-all.log": "5e0b3aa9455fc88cef97d516c1adb589645faab44404f1e1874439f830003fd5",
+    "ux-web-final.log": "49236e84d2c63691a0eac1d8e9a6f7827c2a4adc0ef71d838b74de7a44676249",
+    "ux-web-all.log": "c19710b88d4fe6ee60f87c3e6a74ce2f1230dfb13be2aff93240228cfe91ec28",
+    "ux-backend-integration.log": "a5d21fedce66cabefa2c7bd0e185382521d652bde33da658da9b5c30aa1ae5cb",
+    "ux-workflow-integration-2.log": "48604f5e2319fef8017bff47136ca1228187d21d8c3b6ccf2960dd4b9cb2f718",
+    "ux-workflow-integration-3.log": "e0221d6607667c27683c18c82b3b052f52d2f85fa2facf8cbf8e7f8c29c674ec",
+    "ux-agent-browser-results-3.json": "714561dae7244b80d58f2addf4056c8c4391b06d937a349568460f1f91a10e85",
+    "ux-browser.log": "32385189d2c0c5decd8ab285486224980f1d352a33fc6215b06ded3b610b6522",
+    "ux-mypy.log": "82bcf5599efd0efb5189f1184e77fc0bb53e4c14436e4a10d3365c12bd56b53c",
+    "ux-ruff-final.log": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0",
+    "ux-format-final.log": "67c3b23f6fcd0d2e2fa00261a00dc6d466a0a55302d98b4b5f899f6351571e74"
+  }
+}

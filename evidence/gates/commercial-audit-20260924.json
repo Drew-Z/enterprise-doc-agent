@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "status": "audit_observation_only",
+  "completed_at": "2026-09-24T02:21:34.218039+00:00",
+  "repository_head": "ad1863dc099326d12d3fc18ed67eb7e072184fa4",
+  "observations": [
+    {
+      "source": "https://agent.playlab.eu.cc/health/ready",
+      "observed_at": "2026-09-24T02:20:40.442515+00:00",
+      "status": "unavailable",
+      "error_type": "HTTPError"
+    },
+    {
+      "source": "https://agent.playlab.eu.cc/auth/session",
+      "observed_at": "2026-09-24T02:20:41.400782+00:00",
+      "status": "unavailable",
+      "error_type": "HTTPError"
+    },
+    {
+      "source": "github:branches/main",
+      "observed_at": "2026-09-24T02:20:43.202882+00:00",
+      "protected": false,
+      "commit_sha": "8c62d02017e02c9c4da3dc69801572019a7f7725"
+    },
+    {
+      "source": "github:rulesets",
+      "observed_at": "2026-09-24T02:20:43.751131+00:00",
+      "count": 0
+    },
+    {
+      "source": "github:environments/staging",
+      "observed_at": "2026-09-24T02:20:44.507582+00:00",
+      "protection_rule_types": [
+        "branch_policy"
+      ],
+      "deployment_branch_policy": {
+        "protected_branches": false,
+        "custom_branch_policies": true
+      }
+    },
+    {
+      "source": "https://agent.playlab.eu.cc/health/ready",
+      "observed_at": "2026-09-24T02:21:29.481376+00:00",
+      "client": "urllib browser user-agent diagnostic",
+      "http_status": 200,
+      "status": "ready",
+      "login_provider": null,
+      "demo_available": null
+    },
+    {
+      "source": "https://agent.playlab.eu.cc/auth/session",
+      "observed_at": "2026-09-24T02:21:32.232063+00:00",
+      "client": "urllib browser user-agent diagnostic",
+      "http_status": 200,
+      "status": "anonymous",
+      "login_provider": "github",
+      "demo_available": true
+    }
+  ],
+  "limits": [
+    "Read-only probes; no login, provider, payment, notification or deployment performed",
+    "Recorded deployment v0.1.44 is from the retained release record; these probes do not identify the live image"
+  ]
+}

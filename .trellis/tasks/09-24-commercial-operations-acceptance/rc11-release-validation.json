@@ -1,0 +1,240 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-09-30T18:34:45.049552+00:00",
+  "task_status": "in_progress",
+  "scope": "rc11 release and bounded diagnostic; subsequent tenant-lock candidate remains undeployed",
+  "deployed": {
+    "version": "v0.1.45-rc.11",
+    "source_commit": "ddaca400ecfe0254dd4f589040883419d579ee6c",
+    "release_ci": "36728301515",
+    "database_revision": "20260924_0031",
+    "switch_seconds": 92.035,
+    "five_deployments_ready": true,
+    "rollback_version": "v0.1.45-rc.10",
+    "signature_evidence_files": 56,
+    "latest_inventory_observed_at": "2026-09-30T18:43:57.777833+00:00"
+  },
+  "diagnostic": {
+    "scope": "rc11-four-task-consistency-diagnostic-not-capacity-approval",
+    "started_at": "2026-09-30T15:33:22.098959+00:00",
+    "completed_at": "2026-09-30T15:38:49.102334+00:00",
+    "summary": {
+      "planned_tasks": 4,
+      "business_successes": 4,
+      "business_non_successes": 0,
+      "expected_failures": 0,
+      "not_run": 0,
+      "interrupted": 0,
+      "expectations_met": 4,
+      "normal_failure_rate": 0.0,
+      "boundaries": {
+        "upload": {
+          "planned": 4,
+          "observed": 4,
+          "passed": 4,
+          "failed": 0,
+          "expected_failure": 0,
+          "interrupted": 0,
+          "not_run": 0,
+          "sample_count": 4,
+          "min_ms": 7472.650302108377,
+          "p50_ms": 8251.74096506089,
+          "p95_ms": 11203.022075816989,
+          "p99_ms": 11203.022075816989,
+          "max_ms": 11203.022075816989,
+          "proposed_target_ms": 5000.0,
+          "proposed_target_met": false
+        },
+        "ingestion": {
+          "planned": 4,
+          "observed": 4,
+          "passed": 4,
+          "failed": 0,
+          "expected_failure": 0,
+          "interrupted": 0,
+          "not_run": 0,
+          "sample_count": 4,
+          "min_ms": 11469.422094058245,
+          "p50_ms": 14209.949520882219,
+          "p95_ms": 16900.990532245487,
+          "p99_ms": 16900.990532245487,
+          "max_ms": 16900.990532245487,
+          "proposed_target_ms": 30000.0,
+          "proposed_target_met": true
+        },
+        "retrieval": {
+          "planned": 4,
+          "observed": 4,
+          "passed": 4,
+          "failed": 0,
+          "expected_failure": 0,
+          "interrupted": 0,
+          "not_run": 0,
+          "sample_count": 4,
+          "min_ms": 1870.5825340002775,
+          "p50_ms": 1954.4228920713067,
+          "p95_ms": 3929.6053568832576,
+          "p99_ms": 3929.6053568832576,
+          "max_ms": 3929.6053568832576,
+          "proposed_target_ms": 2000.0,
+          "proposed_target_met": false
+        },
+        "generation_recovery": {
+          "planned": 4,
+          "observed": 4,
+          "passed": 4,
+          "failed": 0,
+          "expected_failure": 0,
+          "interrupted": 0,
+          "not_run": 0,
+          "sample_count": 4,
+          "min_ms": 48411.264973692596,
+          "p50_ms": 53754.8236977309,
+          "p95_ms": 61821.12646801397,
+          "p99_ms": 61821.12646801397,
+          "max_ms": 61821.12646801397,
+          "proposed_target_ms": 180000.0,
+          "proposed_target_met": true
+        }
+      },
+      "generation_acceptance": {
+        "observed": 4,
+        "sample_count": 4,
+        "min_ms": 2052.829248830676,
+        "p50_ms": 2059.2583217658103,
+        "p95_ms": 4967.167655937374,
+        "p99_ms": 4967.167655937374,
+        "max_ms": 4967.167655937374,
+        "proposed_target_ms": 2000.0
+      },
+      "generation_terminal": {
+        "observed": 4,
+        "sample_count": 4,
+        "min_ms": 41317.984541878104,
+        "p50_ms": 43216.98896586895,
+        "p95_ms": 46544.79526216164,
+        "p99_ms": 46544.79526216164,
+        "max_ms": 46544.79526216164
+      }
+    },
+    "ledger": {
+      "models": [
+        {
+          "state": "succeeded",
+          "calls": 4,
+          "tokens": "19755"
+        }
+      ],
+      "embeddings": [
+        {
+          "kind": "document",
+          "state": "responded",
+          "calls": 4,
+          "tokens": 56
+        },
+        {
+          "kind": "query",
+          "state": "responded",
+          "calls": 8,
+          "tokens": 280
+        }
+      ],
+      "jobs": [
+        {
+          "status": "succeeded",
+          "jobs": 8
+        }
+      ],
+      "presales": [
+        {
+          "state": "succeeded",
+          "attempts": 4
+        }
+      ]
+    },
+    "limitations": [
+      "Synthetic single-chunk TXT/PDF/DOCX; not a large-document capacity claim.",
+      "API is pod-local; public latency and browser recovery are separate evidence.",
+      "Reviews are automated technical checks, not independent business approval.",
+      "Money requires provider billing records."
+    ],
+    "production_capacity_approved": false
+  },
+  "supplier": {
+    "at": "2026-09-30T16:05:00.195480+00:00",
+    "scope": "unique multi-attribute correlation, not authenticated shared request-ID proof",
+    "observed_calls": 8,
+    "unique_correlations": 8,
+    "exact_request_id_matches": 0,
+    "matched_quota": 57951,
+    "matched_custom_display_units": "0.115902",
+    "provider_ledger_rows": 92,
+    "ledger_quota_sum": 544240,
+    "currency": "CUSTOM",
+    "fiat_currency_verified": false,
+    "fallback_and_vector_costs_verified": false
+  },
+  "local_vm": {
+    "status": "historical_application_verified",
+    "historical_packets": 15,
+    "cross_tenant_denials": 15,
+    "rpo_seconds": 426.424258,
+    "rpo_target_seconds": 300,
+    "rpo_passed": false,
+    "data_application_elapsed_seconds": 9899.813067,
+    "rto_target_seconds": 1800,
+    "rto_passed": false,
+    "whole_vm_rto_verified": false,
+    "cloud_failover_verified": false,
+    "consumers_started": false
+  },
+  "tenant_lock_candidate": {
+    "status": "local_checks_passed_not_deployed",
+    "change": "Presales Tenant FOR NO KEY UPDATE preserves mutation serialization and permits unrelated FK KEY SHARE inserts.",
+    "regression_before": "Two-second timeout at authorize_principal while same-tenant audit insert remains uncommitted.",
+    "regression_after": "Single and batch admission/replay pass; deactivation blocks admission and returns 403 after commit.",
+    "presales_integration_passed": 92,
+    "nonintegration_passed": 2128,
+    "subtests_passed": 23,
+    "production_source_files_typechecked": 251,
+    "source_sha256": {
+      "packages/core/src/enterprise_doc_core/presales/access.py": "5067267ea596f36f5461739240097af767ba845a31f455ee1cd2b2cd825f0dfa",
+      "tests/presales/test_presales_lock_integration.py": "d1c2af717851362ea2f91c21ef5a56a68ff2da24551dca67fb12606d285d99a9"
+    },
+    "online_tail_latency_cause_proven": false,
+    "receipt_api_changed": false,
+    "test_database_removed": true
+  },
+  "cleanup": {
+    "at": "2026-09-30T18:12:19.0812964Z",
+    "files_removed": 30,
+    "bytes_removed": 507056081,
+    "directory_removed": true
+  },
+  "remaining": [
+    "Admission/upload/retrieval targets and two complete capacity rounds",
+    "Verified primary, fallback and vector monetary amounts",
+    "Independent business and release approval",
+    "Continuous backup when personal computer is offline",
+    "Blank-machine RPO/RTO and applicable failover evidence"
+  ],
+  "private_evidence_sha256": {
+    "post-switch-verification.json": "d5543bc61badc4ccff0eeef491acb0ee2b83f8370119e664ba318b81c58698d7",
+    "release-verification.json": "8f055e65cfaccb8c41d929215fbd9d6919e2d71d488d42e397397b825d3df71c",
+    "capacity-execute.jsonl": "4c9183854a350f8a12c7a2f3f61527213d10e51bef36104fdafe06ee571c707e",
+    "recent-usage-match.json": "d9b5bc6e1216c17f41623d1ce804f10e4f647756cc8057507b0b74091c6a8617",
+    "packet-read-profile.private.json": "3ec0dad9841749a931a675e80281a65c0460738f65a4d2c39c99fcac319d009a",
+    "oci-cleanup-result.json": "caf2044d1ab10d78a56558c5e7bf7da5445f499cfc03c5b4bfa2090c9b7268ca",
+    "tenant-lock-before.log": "15101eca43e6fcdbae9dfb5e18b5d4ce9fa7924e02c61d3c078f503baf6ce9a6",
+    "tenant-lock-after.log": "771c6a8ff2abbf0b9377766e92c5e9ba4b149728147a699303531da62138ce05",
+    "tenant-lock-boundaries.log": "ca2952fc503a9d8a6bf88ed6db6e6f5ca6352a40ebfd2e9ec67ad3695d669987",
+    "tenant-lock-presales.log": "2096050a86c92c70e555e0a569efacc927be01573f2ccd63ec3d23eb2cf97192",
+    "tenant-lock-unit.log": "963132d911b63f7bc1602d69cfb121ff10385e3e6f0472c00cdabc1e876e8597",
+    "tenant-lock-ruff.log": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+    "tenant-lock-format.log": "14b58213cc03cf9101d7a4dc2eaf946636ea1756063ea5f9adf339523c488502",
+    "tenant-lock-mypy.log": "82bcf5599efd0efb5189f1184e77fc0bb53e4c14436e4a10d3365c12bd56b53c",
+    "tenant-lock-test-cleanup.json": "e89f3c74affb702243960bed897d7b2263362c8aa4a4fac12a7a4d5e8c890337",
+    "tenant-lock-closeout-receipt.json": "7fe1250d1ee0588c00de3a10e2c87eb260d3e632cabc448a92188847a70eda0e"
+  },
+  "prior_failures_preserved": true
+}

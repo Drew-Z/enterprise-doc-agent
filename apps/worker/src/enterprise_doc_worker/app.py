@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from collections.abc import AsyncIterator, Sequence
+from collections.abc import AsyncIterator, Callable, Sequence
 from contextlib import asynccontextmanager
+from time import time
 
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse, Response
@@ -17,6 +18,7 @@ from enterprise_doc_core.health import (
     evaluate_readiness,
 )
 from enterprise_doc_core.telemetry import MetricsRuntime, instrument_health_checkers
+from enterprise_doc_core.telemetry.queue_health import QueueObservation
 from enterprise_doc_worker.config import WorkerSettings
 
 
@@ -38,6 +40,8 @@ def create_probe_app(
     checkers: Sequence[HealthChecker] | None = None,
     readiness_timeout_seconds: float | None = None,
     metrics: MetricsRuntime | None = None,
+    liveness: Callable[[], bool] | None = None,
+    clock: Callable[[], float] = time,
 ) -> FastAPI:
     resolved_settings = settings or WorkerSettings()
     resolved_metrics = metrics if metrics is not None else MetricsRuntime.create()
@@ -71,6 +75,14 @@ def create_probe_app(
     )
     app.state.metrics = resolved_metrics
 
+    @app.get("/health/queue", response_model=QueueObservation, include_in_schema=False)
+    async def queue_health(response: Response) -> QueueObservation:
+        response.headers["Cache-Control"] = "no-store"
+        result = resolved_metrics.resource_health.projection(clock())
+        if not resolved_settings.otel.metrics_enabled or (liveness is not None and not liveness()):
+            return result.model_copy(update={"healthy": False})
+        return result
+
     if resolved_settings.otel.metrics_enabled:
 
         @app.get("/metrics", include_in_schema=False)
@@ -80,8 +92,16 @@ def create_probe_app(
                 headers={"Content-Type": resolved_metrics.content_type},
             )
 
-    @app.get("/health/live", response_model=LivenessResponse)
-    async def live() -> LivenessResponse:
+    @app.get(
+        "/health/live",
+        response_model=LivenessResponse,
+        responses={503: {"model": LivenessResponse}},
+    )
+    async def live() -> LivenessResponse | JSONResponse:
+        if liveness is not None and not liveness():
+            return JSONResponse(
+                status_code=503, content=LivenessResponse(status="stalled").model_dump()
+            )
         return LivenessResponse()
 
     @app.get(

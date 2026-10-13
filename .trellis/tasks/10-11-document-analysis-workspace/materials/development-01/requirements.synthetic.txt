@@ -1,0 +1,8 @@
+SYNTHETIC BUYER REQUIREMENTS - NOT A CUSTOMER RFQ
+Compare Asana Starter, Trello Standard, and Basecamp Studio using only their assigned files.
+Assume a 10-person project team evaluating a 12-month subscription.
+Do not infer a currency from a dollar symbol alone. Do not invent tax jurisdiction, tax rates, implementation price, delivery date, or contract priority.
+Preserve annual/monthly billing conditions and plan names. Do not silently apply a higher plan's support or capacity.
+If two sources appear inconsistent, keep both conditions and request confirmation.
+The Basecamp extracted price page may omit dynamically rendered amounts. Missing extracted price is not a free service.
+This pack is for development, not an independent holdout or evidence of customer demand.

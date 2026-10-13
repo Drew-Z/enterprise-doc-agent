@@ -65,6 +65,8 @@ class ObjectStoreSettings(BaseModel):
 
 
 class UploadSettings(BaseModel):
+    single_put_enabled: bool = True
+    structured_documents_enabled: bool = False
     max_file_size_bytes: int = Field(default=10 * 1024**3, gt=0, le=5 * 1024**4)
     max_filename_length: int = Field(default=255, ge=1, le=255)
     preferred_part_size_bytes: int = Field(
@@ -177,6 +179,8 @@ class ModelSettings(BaseModel):
     api_key: SecretStr | None = None
     model_name: str | None = None
     model_version: str | None = None
+    reasoning_effort: Literal["low", "medium", "high", "xhigh"] | None = None
+    streaming: bool = False
     route_id: str = Field(default="default", min_length=1, max_length=64)
     model_revision: str | None = Field(default=None, max_length=128)
     quantization: str | None = Field(default=None, max_length=64)
@@ -192,6 +196,8 @@ class ModelSettings(BaseModel):
     fallback_api_key: SecretStr | None = None
     fallback_model_name: str | None = None
     fallback_model_version: str | None = None
+    fallback_reasoning_effort: Literal["low", "medium", "high", "xhigh"] | None = None
+    fallback_streaming: bool = False
     fallback_timeout_seconds: float | None = Field(default=None, gt=0, le=300)
     circuit_failure_threshold: int = Field(default=3, ge=1, le=100)
     circuit_cooldown_seconds: float = Field(default=30.0, gt=0, le=3600)
@@ -284,6 +290,20 @@ class McpSettings(BaseModel):
         return self
 
 
+class ProviderUsageSettings(BaseModel):
+    daily_call_limit: int = Field(default=1000, strict=True, ge=1, le=1_000_000)
+    agent_call_limit: int = Field(default=12, strict=True, ge=1, le=100)
+    document_call_limit: int = Field(default=2048, strict=True, ge=1, le=100_000)
+    query_call_limit: int = Field(default=6, strict=True, ge=1, le=100)
+
+
+class AnalysisSettings(BaseModel):
+    execution_enabled: bool = False
+    unit_deadline_seconds: float | None = Field(default=None, gt=0, le=600)
+    run_deadline_seconds: float | None = Field(default=None, gt=0, le=21600)
+    max_input_bytes: int | None = Field(default=None, ge=1024, le=65536)
+
+
 class FoundationSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -301,9 +321,11 @@ class FoundationSettings(BaseSettings):
     upload: UploadSettings = Field(default_factory=UploadSettings)
     otel: ObservabilitySettings = Field(default_factory=ObservabilitySettings)
     agent: AgentSettings = Field(default_factory=AgentSettings)
+    analysis: AnalysisSettings = Field(default_factory=AnalysisSettings)
     model: ModelSettings = Field(default_factory=ModelSettings)
     embedding: EmbeddingSettings = Field(default_factory=EmbeddingSettings)
     retrieval: RetrievalSettings = Field(default_factory=RetrievalSettings)
+    provider_usage: ProviderUsageSettings = Field(default_factory=ProviderUsageSettings)
     mcp: McpSettings = Field(default_factory=McpSettings)
     fault_injection: FaultInjectionSettings = Field(default_factory=FaultInjectionSettings)
 

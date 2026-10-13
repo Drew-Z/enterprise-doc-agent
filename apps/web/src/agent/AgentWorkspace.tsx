@@ -193,6 +193,11 @@ function describeError(error: unknown, t: ReturnType<typeof useT>): string {
   return t("agent.error.request");
 }
 
+function transientReadError(error: unknown): boolean {
+  return (error instanceof AgentNetworkError && error.code !== "aborted") ||
+    (error instanceof AgentApiError && (error.status >= 500 || error.status === 429));
+}
+
 function eventLabel(event: AgentTimelineEvent, t: ReturnType<typeof useT>): string {
   switch (event.eventType) {
     case "run.created":
@@ -256,7 +261,7 @@ export function AgentWorkspace({
     () => dependencies.createApiClient(() => tokenStore.load()),
     [dependencies, tokenStore],
   );
-  const recovered = useMemo(() => recoveryStore.load(), [recoveryStore]);
+  const recovered = useMemo(() => { try { return recoveryStore.load(); } catch { return null; } }, [recoveryStore]);
   const [documents, setDocuments] = useState<ReadyDocumentVersion[]>([]);
   const [selectedDocumentId, setSelectedDocumentId] = useState("");
   const [taskType, setTaskType] = useState<AgentRunTaskType>("question_answer");
@@ -282,6 +287,11 @@ export function AgentWorkspace({
   const cursorRef = useRef(lastSequence);
   const terminalRef = useRef(false);
   const [approvalRefresh, setApprovalRefresh] = useState(0);
+  const [runRefresh, setRunRefresh] = useState(0);
+  const creation = useRef<AbortController | null>(null);
+  const creationKeys = useRef(new Map<string, string>());
+
+  useEffect(() => () => { creation.current?.abort(); }, [client]);
 
   const applyEvent = useCallback(
     (event: AgentTimelineEvent) => {
@@ -357,14 +367,30 @@ export function AgentWorkspace({
     setEvents([]);
     setLastSequence(startingCursor);
     setRunDetails(null);
+    setRunStatus(null);
     setApproval(null);
     setArtifacts([]);
     setArtifactPreview(null);
     setStreamState("loading");
+    setErrorMessage(null);
     void (async () => {
       let reconnectAttempt = 0;
+      const read = async <T,>(operation: () => Promise<T>): Promise<T> => {
+        for (let attempt = 0; ; attempt += 1) {
+          try {
+            const value = await operation();
+            if (controller.signal.aborted) throw new AgentNetworkError("aborted", "Read retired.");
+            setErrorMessage(null);
+            return value;
+          } catch (error) {
+            if (controller.signal.aborted || !transientReadError(error) || attempt >= 3) throw error;
+            setStreamState("reconnecting");
+            await abortableDelay(500 * 2 ** attempt, controller.signal);
+          }
+        }
+      };
       try {
-        const status = await client.getRun(currentRunId, controller.signal);
+        const status = await read(() => client.getRun(currentRunId, controller.signal));
         if (controller.signal.aborted) return;
         setRunDetails(status);
         setRunStatus(status.status);
@@ -372,7 +398,7 @@ export function AgentWorkspace({
         // current cursor so terminal runs with long histories are not truncated.
         let historyCursor = cursorRef.current;
         while (!controller.signal.aborted) {
-          const history = await client.listEvents(currentRunId, historyCursor, controller.signal);
+          const history = await read(() => client.listEvents(currentRunId, historyCursor, controller.signal));
           for (const raw of history) {
             if (controller.signal.aborted) return;
             applyEvent(eventResponseToTimeline(raw));
@@ -384,33 +410,35 @@ export function AgentWorkspace({
         if (terminalRef.current || terminalStatuses.has(status.status)) {
           setStreamState("closed");
           const finalStatus = terminalRef.current
-            ? await client.getRun(currentRunId, controller.signal)
+            ? await read(() => client.getRun(currentRunId, controller.signal))
             : status;
           setRunDetails(finalStatus);
           setRunStatus(finalStatus.status);
           if (finalStatus.status === "succeeded") {
-            const visibleArtifacts = await client.listArtifacts(currentRunId, controller.signal);
+            const visibleArtifacts = await read(() => client.listArtifacts(currentRunId, controller.signal));
             setArtifacts(visibleArtifacts);
             const answerArtifact = visibleArtifacts.find((artifact) => artifact.kind === "answer");
             if (answerArtifact !== undefined) {
               setIsPreviewLoading(true);
               try {
-                setArtifactPreview(await client.getArtifactPreview(answerArtifact.artifactId, controller.signal));
+                setArtifactPreview(await read(() => client.getArtifactPreview(answerArtifact.artifactId, controller.signal)));
               } finally {
                 setIsPreviewLoading(false);
               }
             }
           }
+          setStreamState("closed");
           return;
         }
         while (!controller.signal.aborted && !terminalRef.current) {
           try {
             setStreamState(reconnectAttempt === 0 ? "connected" : "reconnecting");
             const response = await client.openEventStream(currentRunId, cursorRef.current, controller.signal);
-            reconnectAttempt = 0;
             for await (const event of readAgentEventStream(response, cursorRef.current)) {
               if (controller.signal.aborted) return;
               applyEvent(event);
+              reconnectAttempt = 0;
+              setErrorMessage(null);
               if (isTerminalAgentEvent(event)) break;
             }
             if (terminalRef.current) break;
@@ -418,7 +446,7 @@ export function AgentWorkspace({
           } catch (error) {
             if (controller.signal.aborted) return;
             if (
-              error instanceof AgentApiError ||
+              (error instanceof AgentApiError && !transientReadError(error)) ||
               error instanceof AgentAuthenticationError ||
               error instanceof AgentApiProtocolError
             ) {
@@ -426,38 +454,40 @@ export function AgentWorkspace({
             }
             setErrorMessage(describeError(error, t));
             if (error instanceof AgentSseProtocolError) {
-              const replay = await client.listEvents(
+              const replay = await read(() => client.listEvents(
                 currentRunId,
                 cursorRef.current,
                 controller.signal,
-              );
+              ));
               for (const raw of replay) {
                 applyEvent(eventResponseToTimeline(raw));
               }
             }
             reconnectAttempt += 1;
           }
+          if (reconnectAttempt >= 5) throw new AgentNetworkError("network_error", "Stream unavailable.");
           const backoff = Math.min(5_000, 250 * 2 ** Math.min(reconnectAttempt, 5));
           await abortableDelay(backoff, controller.signal);
         }
         if (!controller.signal.aborted) {
           setStreamState("closed");
-          const finalStatus = await client.getRun(currentRunId, controller.signal);
+          const finalStatus = await read(() => client.getRun(currentRunId, controller.signal));
           setRunDetails(finalStatus);
           setRunStatus(finalStatus.status);
           if (finalStatus.status === "succeeded") {
-            const visibleArtifacts = await client.listArtifacts(currentRunId, controller.signal);
+            const visibleArtifacts = await read(() => client.listArtifacts(currentRunId, controller.signal));
             setArtifacts(visibleArtifacts);
             const answerArtifact = visibleArtifacts.find((artifact) => artifact.kind === "answer");
             if (answerArtifact !== undefined) {
               setIsPreviewLoading(true);
               try {
-                setArtifactPreview(await client.getArtifactPreview(answerArtifact.artifactId, controller.signal));
+                setArtifactPreview(await read(() => client.getArtifactPreview(answerArtifact.artifactId, controller.signal)));
               } finally {
                 setIsPreviewLoading(false);
               }
             }
           }
+          setStreamState("closed");
         }
       } catch (error) {
         if (!controller.signal.aborted) {
@@ -467,7 +497,7 @@ export function AgentWorkspace({
       }
     })();
     return () => controller.abort();
-  }, [applyEvent, client, recoveryStore, runId, t]);
+  }, [applyEvent, client, recoveryStore, runId, runRefresh, t]);
 
   useEffect(() => {
     const approvalId = events.find((event) => event.eventType === "run.waiting_approval")?.payload.approval_id;
@@ -485,7 +515,7 @@ export function AgentWorkspace({
   }, [approvalRefresh, client, events, t]);
 
   const handleCreate = async (): Promise<void> => {
-    if (readOnly || !canCreateRuns) return;
+    if (readOnly || !canCreateRuns || creation.current !== null) return;
     setFormError(null);
     setErrorMessage(null);
     const selected = documents.find((document) => document.versionId === selectedDocumentId);
@@ -516,9 +546,23 @@ export function AgentWorkspace({
       publishRequested,
     };
     setIsCreating(true);
+    const controller = new AbortController();
+    creation.current = controller;
+    const fingerprint = JSON.stringify(request);
+    const key = creationKeys.current.get(fingerprint) ?? dependencies.idempotencyKeyFactory();
+    creationKeys.current.set(fingerprint, key);
     try {
-      const created = await client.createRun(request, dependencies.idempotencyKeyFactory());
-      recoveryStore.save({ version: 1, runId: created.runId, lastSequence: 0 });
+      const submit = () => client.createRun(request, key, controller.signal);
+      const created = await submit().catch(async error => {
+        if (controller.signal.aborted || (!transientReadError(error) && !(error instanceof AgentApiProtocolError))) throw error;
+        // A lost response is not a failed job. Recover the same durable operation.
+        await abortableDelay(500, controller.signal);
+        return submit();
+      });
+      if (controller.signal.aborted) return;
+      try { recoveryStore.save({ version: 1, runId: created.runId, lastSequence: 0 }); }
+      catch { /* Optional browser storage must not hide an accepted run. */ }
+      creationKeys.current.delete(fingerprint);
       cursorRef.current = 0;
       setLastSequence(0);
       setRunId(created.runId);
@@ -528,9 +572,13 @@ export function AgentWorkspace({
       setArtifacts([]);
       setArtifactPreview(null);
     } catch (error) {
-      setErrorMessage(describeError(error, t));
+      if (!controller.signal.aborted) {
+        const recovery = transientReadError(error) || error instanceof AgentApiProtocolError ? ` ${t("agent.createRecovery")}` : "";
+        setErrorMessage(`${describeError(error, t)}${recovery}`);
+      }
     } finally {
-      setIsCreating(false);
+      if (creation.current === controller) creation.current = null;
+      if (!controller.signal.aborted) setIsCreating(false);
     }
   };
 
@@ -722,6 +770,7 @@ export function AgentWorkspace({
             {isCreating ? <LoaderCircle className="spin" aria-hidden="true" /> : <Play aria-hidden="true" />}
             {isCreating ? t("agent.creating") : readOnly ? t("documents.demoOnly") : t("agent.createRun")}
           </button>
+          {isCreating && <p role="status" className="muted-copy">{t("agent.submitting")}</p>}
         </form>
 
         <div className="agent-run-panel">
@@ -738,6 +787,8 @@ export function AgentWorkspace({
                 <span>{t("agent.cursor")} <strong>{lastSequence}</strong></span>
                 <span className={`stream-state ${streamState}`}>{t(streamLabelKeys[streamState])}</span>
               </div>
+              {runStatus !== null && !terminalStatuses.has(runStatus) && <p role="status" className="muted-copy">{t("agent.background")}</p>}
+              {(runStatus === "failed" || runStatus === "expired") && <p role="alert" className="agent-alert">{t("agent.failedHelp")}</p>}
               {runDetails !== null && (
                 <section className="execution-meta" aria-labelledby="execution-meta-title">
                   <div className="section-heading">
@@ -844,7 +895,7 @@ export function AgentWorkspace({
               )}
 
               <div className="run-actions">
-                <button className="icon-button" type="button" aria-label={t("agent.refreshRun")} title={t("agent.refreshRun")} disabled={streamState === "loading"} onClick={() => { setRunId(null); window.setTimeout(() => setRunId(runId), 0); }}>
+                <button className="icon-button" type="button" aria-label={t("agent.refreshRun")} title={t("agent.refreshRun")} disabled={streamState === "loading"} onClick={() => setRunRefresh(value => value + 1)}>
                   <RefreshCw aria-hidden="true" />
                 </button>
                 {canCancel && <button className="icon-button danger-icon" type="button" aria-label={t("agent.cancelRun")} title={t("agent.cancelRun")} disabled={isCanceling} onClick={() => void handleCancel()}>

@@ -53,6 +53,7 @@ class OutboxEventStatus(StrEnum):
 class Job(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "jobs"
     __table_args__ = (
+        UniqueConstraint("tenant_id", "id", name="uq_jobs_tenant_id_id"),
         UniqueConstraint(
             "tenant_id",
             "idempotency_key",

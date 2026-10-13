@@ -1,0 +1,209 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-10-01T19:47:43.072505+00:00",
+  "task_status": "in_progress",
+  "deployed": {
+    "version": "v0.1.45-rc.13",
+    "source_commit": "3811227db212b03f3058cbad6594c6e02ed3cce8",
+    "release_ci": 36893767775,
+    "database_revision": "20260924_0031",
+    "switch_seconds": 95.872,
+    "five_deployments_ready": true,
+    "rollback_version": "v0.1.45-rc.12",
+    "signature_evidence_files": 56,
+    "public_readiness": "ready",
+    "public_home_status": 200
+  },
+  "security_remediation": {
+    "failed_ci": 36887773339,
+    "issues": [
+      "CVE-2026-97687",
+      "CVE-2026-97689"
+    ],
+    "urllib3_before": "2.7.0",
+    "urllib3_after": "2.8.0",
+    "other_dependencies_changed": 0,
+    "thresholds_unchanged": true,
+    "source_ci": [
+      36892635746,
+      36892635748
+    ]
+  },
+  "diagnostic": {
+    "scope": "rc13-four-task-consistency-diagnostic-not-capacity-approval",
+    "started_at": "2026-10-01T17:12:16.478418+00:00",
+    "completed_at": "2026-10-01T17:19:03.504502+00:00",
+    "summary": {
+      "planned_tasks": 4,
+      "business_successes": 2,
+      "business_non_successes": 2,
+      "expected_failures": 0,
+      "not_run": 0,
+      "interrupted": 0,
+      "expectations_met": 2,
+      "normal_failure_rate": 0.5,
+      "boundaries": {
+        "upload": {
+          "planned": 4,
+          "observed": 4,
+          "passed": 4,
+          "failed": 0,
+          "expected_failure": 0,
+          "interrupted": 0,
+          "not_run": 0,
+          "sample_count": 4,
+          "min_ms": 8424.557332880795,
+          "p50_ms": 8690.129674039781,
+          "p95_ms": 10361.683764029294,
+          "p99_ms": 10361.683764029294,
+          "max_ms": 10361.683764029294,
+          "proposed_target_ms": 5000.0,
+          "proposed_target_met": false
+        },
+        "ingestion": {
+          "planned": 4,
+          "observed": 4,
+          "passed": 4,
+          "failed": 0,
+          "expected_failure": 0,
+          "interrupted": 0,
+          "not_run": 0,
+          "sample_count": 4,
+          "min_ms": 11558.902877848595,
+          "p50_ms": 11591.771927662194,
+          "p95_ms": 16105.524281971157,
+          "p99_ms": 16105.524281971157,
+          "max_ms": 16105.524281971157,
+          "proposed_target_ms": 30000.0,
+          "proposed_target_met": true
+        },
+        "retrieval": {
+          "planned": 4,
+          "observed": 4,
+          "passed": 4,
+          "failed": 0,
+          "expected_failure": 0,
+          "interrupted": 0,
+          "not_run": 0,
+          "sample_count": 4,
+          "min_ms": 1784.1738290153444,
+          "p50_ms": 1876.098295673728,
+          "p95_ms": 5987.058246973902,
+          "p99_ms": 5987.058246973902,
+          "max_ms": 5987.058246973902,
+          "proposed_target_ms": 2000.0,
+          "proposed_target_met": false
+        },
+        "generation_recovery": {
+          "planned": 4,
+          "observed": 4,
+          "passed": 2,
+          "failed": 2,
+          "expected_failure": 0,
+          "interrupted": 0,
+          "not_run": 0,
+          "sample_count": 4,
+          "min_ms": 55951.5857771039,
+          "p50_ms": 63342.17832330614,
+          "p95_ms": 95987.76104813442,
+          "p99_ms": 95987.76104813442,
+          "max_ms": 95987.76104813442,
+          "proposed_target_ms": 180000.0,
+          "proposed_target_met": true
+        }
+      },
+      "generation_acceptance": {
+        "observed": 4,
+        "sample_count": 4,
+        "min_ms": 2010.9789031557739,
+        "p50_ms": 2060.519310180098,
+        "p95_ms": 3992.025412619114,
+        "p99_ms": 3992.025412619114,
+        "max_ms": 3992.025412619114,
+        "proposed_target_ms": 2000.0
+      },
+      "generation_terminal": {
+        "observed": 4,
+        "sample_count": 4,
+        "min_ms": 41024.697246961296,
+        "p50_ms": 54860.08750880137,
+        "p95_ms": 94697.27909006178,
+        "p99_ms": 94697.27909006178,
+        "max_ms": 94697.27909006178
+      }
+    },
+    "model_calls": 6,
+    "model_successes": 2,
+    "model_failures": 4,
+    "known_model_tokens": 9441,
+    "unknown_usage_calls": 4,
+    "embedding_calls": 12,
+    "business_allowance_consumed": 2,
+    "business_allowance_reserved": 0,
+    "failed_business_reservations_released": 2,
+    "production_capacity_approved": false
+  },
+  "failure_user_experience": {
+    "real_deployed_assets": true,
+    "real_business_api": true,
+    "authentication": "Authorized staging JWT adapter; no new OAuth claim",
+    "failed_rows_checked": 2,
+    "refresh_preserves_failure": true,
+    "allowance_message_visible": true,
+    "single_row_retry_available": true,
+    "business_posts": 0,
+    "new_model_calls": 0
+  },
+  "provider_diagnosis": {
+    "catalogs": "Both configured models listed with HTTP200",
+    "independent_synthetic_requests": 1,
+    "maximum_output_tokens": 256,
+    "fallback_status": 426,
+    "finding": "Upstream reports outdated Grok CLI requiring upgrade",
+    "supplier_fixed": false,
+    "cost_verified": false
+  },
+  "fallback_resilience_candidate": {
+    "status": "locally_verified_not_deployed",
+    "http426": "presales_model_upgrade_required",
+    "minimum_cooldown_seconds": 300,
+    "reserve_recovery_time": "Only for a currently available distinct alternate route",
+    "dispatch_limit_unchanged": 2,
+    "original_deadline_unchanged": true,
+    "red_regressions": 2,
+    "green_regressions": 2,
+    "integration_passed": 176,
+    "nonintegration_passed": 2128,
+    "mypy_source_files": 251,
+    "ruff_format_files": 622,
+    "initial_integration_failure": "100 passed, 13 failed, 63 errors: new owned test DB lacked base schema; original log retained",
+    "recheck": "After migrations in the same owned loopback database; no existing or online DB changed",
+    "files": {
+      "packages/core/src/enterprise_doc_core/presales/gateway.py": "1da7471d22f52357b4e585067d84ff6ef7449d98d0ff67567d25529b7f0080ee",
+      "packages/core/src/enterprise_doc_core/presales/route_health.py": "052220858e4bfd114dc80abb3ee289398bd7f91a5d1334c12d4066ea03e93a5d",
+      "packages/core/src/enterprise_doc_core/presales/background.py": "54d95ac494f310b90d485e130dbe193056743c9dc4db1fac2b41f3ed139f3280",
+      "tests/presales/test_presales_background_integration.py": "07c3338906793ff50e17ce49c030972e0feb18d8df19162c9b5685285e9fd71f"
+    }
+  },
+  "test_environment_history": {
+    "v1": "Owned database lacked base schema: 100 passed, 13 failed, 63 errors; migrations then applied only to this isolated database",
+    "v2": "Interrupted after owned PostgreSQL exhausted its 512 MiB tmpfs with WAL; OOMKilled false; original logs retained",
+    "recovery": "Same owned container restarted, migrated and WAL bounds verified: max 128MB, min 32MB, checkpoint 30s",
+    "v3": "172 passed, 4 failed: test runner supplied SQLAlchemy scheme to direct psycopg tests; application tests completed",
+    "v4": "176 passed, 39 deselected after test runner normalized FOUNDATION_TEST_DATABASE_URL to postgresql://; application DATABASE__URL remains postgresql+psycopg://",
+    "existing_and_online_databases_modified": false
+  },
+  "cleanup": {
+    "remote_files": 11,
+    "local_oci_files": 28,
+    "local_oci_bytes": 507269084,
+    "prior_unknown_ownership_database_candidates": "Retained"
+  },
+  "remaining": [
+    "Performance and complete two-round capacity",
+    "Provider fiat amounts and unavailable fallback upstream",
+    "Independent business and release review",
+    "Backup continuity while personal host offline",
+    "Whole-machine RPO/RTO"
+  ]
+}

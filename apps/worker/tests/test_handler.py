@@ -7,8 +7,10 @@ import pytest
 from enterprise_doc_core.jobs import ClaimedJob, RetryDisposition
 from enterprise_doc_worker.agent_handler import AgentExecutionStaleRun
 from enterprise_doc_worker.handler import (
+    DocumentParserRouter,
     JobHandlerRouter,
     UnsupportedJobType,
+    UnsupportedParserVersion,
     classify_job_error,
 )
 
@@ -64,3 +66,26 @@ async def test_job_handler_router_rejects_unknown_job_type_permanently() -> None
 
 async def test_stale_terminal_agent_execution_is_cancelled() -> None:
     assert classify_job_error(AgentExecutionStaleRun()) is RetryDisposition.CANCELLED
+
+
+async def test_parser_routing_uses_persisted_version_and_drains_legacy_jobs() -> None:
+    calls: list[int] = []
+
+    async def legacy(claim: ClaimedJob) -> None:
+        calls.append(1)
+
+    async def structured(claim: ClaimedJob) -> None:
+        calls.append(2)
+
+    router = DocumentParserRouter({1: legacy, 2: structured})
+    claim = _claim("document.ingest")
+    await router(claim)
+    claim.payload["parser_version"] = 2
+    await router(claim)
+    assert calls == [1, 2]
+    for invalid in (3, "2", True, None):
+        claim.payload["parser_version"] = invalid
+        with pytest.raises(UnsupportedParserVersion) as caught:
+            await router(claim)
+        assert classify_job_error(caught.value) is RetryDisposition.PERMANENT
+    assert calls == [1, 2]

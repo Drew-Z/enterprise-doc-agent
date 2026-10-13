@@ -1,0 +1,154 @@
+{
+  "at": "2026-10-09T15:19:17.776811+00:00",
+  "status": "staging_release_rollback_reapply_and_live_keyword_verified",
+  "application_commit": "bdf007ad442d81c48b9f2fa206a4ff38ee761326",
+  "tag": "v0.1.45-rc.47",
+  "schema_revision": "20261009_0035",
+  "source_ci": {
+    "quality": 37940137954,
+    "container": 37940137868
+  },
+  "signed_build": 37941563636,
+  "artifact_digests_verified": 5,
+  "signed_evidence_files": 56,
+  "windows": {
+    "release": {
+      "application_commit": "bdf007ad442d81c48b9f2fa206a4ff38ee761326",
+      "elapsed_seconds": 83.853,
+      "checks": {
+        "complete_deployment_specs": true,
+        "candidate_prerequisites": true,
+        "namespace_uid": true,
+        "credentials_unchanged": true,
+        "full_schema_0035": true,
+        "history_counts_unchanged": true,
+        "business_idle": true,
+        "jobs_unchanged": true,
+        "no_other_controllers": true,
+        "five_ready": true,
+        "historical_terminal_pods_preserved": true,
+        "pod_readiness_and_image_identity": true,
+        "packaged_source_matches_application_commit": true,
+        "worker_concurrency_two": true,
+        "tiff_patch_matches_phase": true,
+        "nginx_matches_application_commit": true,
+        "public_signed_assets": true,
+        "backup_remains_deferred": true,
+        "homepage": true,
+        "readiness_and_queue": true,
+        "operation_deadlines": true,
+        "capacity_and_policy": true
+      }
+    },
+    "rollback": {
+      "application_commit": "9ed3857b361573b27abc9f6c245afb1dfdd9feaa",
+      "elapsed_seconds": 86.694,
+      "checks": {
+        "complete_deployment_specs": true,
+        "candidate_prerequisites": true,
+        "namespace_uid": true,
+        "credentials_unchanged": true,
+        "full_schema_0035": true,
+        "history_counts_unchanged": true,
+        "business_idle": true,
+        "jobs_unchanged": true,
+        "no_other_controllers": true,
+        "five_ready": true,
+        "historical_terminal_pods_preserved": true,
+        "pod_readiness_and_image_identity": true,
+        "packaged_source_matches_application_commit": true,
+        "worker_concurrency_two": true,
+        "tiff_patch_matches_phase": true,
+        "nginx_matches_application_commit": true,
+        "public_signed_assets": true,
+        "backup_remains_deferred": true,
+        "homepage": true,
+        "readiness_and_queue": true,
+        "operation_deadlines": true,
+        "capacity_and_policy": true
+      }
+    },
+    "reapply": {
+      "application_commit": "bdf007ad442d81c48b9f2fa206a4ff38ee761326",
+      "elapsed_seconds": 85.888,
+      "checks": {
+        "complete_deployment_specs": true,
+        "candidate_prerequisites": true,
+        "namespace_uid": true,
+        "credentials_unchanged": true,
+        "full_schema_0035": true,
+        "history_counts_unchanged": true,
+        "business_idle": true,
+        "jobs_unchanged": true,
+        "no_other_controllers": true,
+        "five_ready": true,
+        "historical_terminal_pods_preserved": true,
+        "pod_readiness_and_image_identity": true,
+        "packaged_source_matches_application_commit": true,
+        "worker_concurrency_two": true,
+        "tiff_patch_matches_phase": true,
+        "nginx_matches_application_commit": true,
+        "public_signed_assets": true,
+        "backup_remains_deferred": true,
+        "homepage": true,
+        "readiness_and_queue": true,
+        "operation_deadlines": true,
+        "capacity_and_policy": true
+      }
+    }
+  },
+  "live_keyword": {
+    "requirement": "SWU03",
+    "candidates": 7,
+    "first_two_matching_clause_ids": [
+      "250304d2-5dea-4c72-a58d-914e68f23aed",
+      "03ec826b-179b-4785-a62a-f42b371f860a"
+    ],
+    "before_day_dispatches": 36,
+    "after_day_dispatches": 36,
+    "prompt_version": "presales.v15"
+  },
+  "model_calls": 0,
+  "embedding_calls": 0,
+  "schema_mutations": 0,
+  "original_workbook_preserved": true,
+  "current_recovery_tag": "v0.1.45-rc.46",
+  "legacy_rc45_recovery_allowed": false,
+  "previous_unknown_diagnostic_reserved_calls": 3,
+  "original_rc46_replay": {
+    "drafts": 4,
+    "failures": 2,
+    "calls": 9,
+    "changed": false
+  },
+  "real_model_semantic_quality": "unproven",
+  "competitor_parity": "not_achieved",
+  "next_product_gap": "Manual response entry is currently blocked when no generated draft exists. Implement explicit human takeover with provenance, authorized citations, review and file export; retain failures and consume no AI quota.",
+  "cleanup": {
+    "remote_files": 185,
+    "remote_directories": 252,
+    "local_transport_files": 43,
+    "earlier_owned_download_fragment": 1,
+    "historical_files_deleted": 0,
+    "image_cache_reference_deletions": 0
+  },
+  "central_evidence": {
+    "directory": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\fallback-model-evidence",
+    "files": {
+      "rc47-release-verification-20261009.json": "aa20c7b5a12f5237a95a38e51ae3bfe541e090ed06818cce1d6d8e10498736b7",
+      "rc47-full-cache-preflight-20261009.json": "aca4c6904c1724c09cd673c0a05f8165bc26b402e7460a1e4df85cdcdcc85e88",
+      "rc47-post-capacity-baseline-20261009.json": "42c0f483dc7f8c6d508cf2aa87ab7bdabd85988ee03f69c7ac4489a3c3fac231",
+      "rc47-live-keyword-validation-20261009.json": "b9717caf0de3cafdf52ab6be8e435e0372f77f403ad863457a04bc5a28d876ab",
+      "rc47-owned-runtime-cleanup-receipt-20261009.json": "c7b3a3d444c4c72db7b3249712717688153fe040cc7c4857fb1996554240a800",
+      "rc47-owned-local-cleanup-receipt-20261009.json": "b96154d31d0f77929eaa99554a46252784299fd9eda15f07a56164427d69f3ef",
+      "rc47-release-verified-v3-20261009.json": "46f607fdcc8726ca36ed96d135a978b5e80aad01fc4dc31bd103f13b64958ea9",
+      "rc47-rollback-verified-v3-20261009.json": "8e0ee5152ce0b557fc22ea817f8bd9850147db8475d909e4ece0ac3c2e356c6d",
+      "rc47-reapply-verified-v3-20261009.json": "3875da204935461ef5e96d5d8987af21754d4bd6fec9cac1054e06983aa00369"
+    }
+  },
+  "recovery": {
+    "manifest": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\manifest.json",
+    "phase": "rc47_release_20261009",
+    "pre_edit_commit": "bdf007ad442d81c48b9f2fa206a4ff38ee761326"
+  }
+}

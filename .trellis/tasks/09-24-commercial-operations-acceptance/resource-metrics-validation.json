@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-09-26T05:49:23.523189+00:00",
+  "scope": "CO-3i Worker queue and Redis resource metrics with producer freshness",
+  "status": "local_implementation_verified_not_deployed",
+  "task_status": "in_progress",
+  "production_capacity_approved": false,
+  "candidate_identity": {
+    "base_commit": "93d95a96d83b9ec7ac26897b9287842d0d798923",
+    "commit": "The commit containing this report; source hashes below identify the validated implementation.",
+    "source_sha256": {
+      "apps/worker/src/enterprise_doc_worker/__main__.py": "193f9ce6b8640b9c073533824997108c63d13e725cbb2fb6bb2bbfb51e4e517d",
+      "apps/worker/tests/test_worker_main.py": "f4a4d83320e51250bf114fdb4241ead3562af204d9dbb8aa107c42dcf0b6b319",
+      "infra/capacity/application-capacity.example.yaml": "fd378852ab84e653fd63a01efe1b663fdb7a0e697b22d5078faa51b9bce71389",
+      "packages/core/src/enterprise_doc_core/jobs/metrics.py": "5e7e17735d8c509bb6db9d0b056654cc6f3494a0046290033f31e1f278d47339",
+      "packages/core/src/enterprise_doc_core/telemetry/metrics.py": "f7c0276c547c86162eaa94a7e57d6a595f5e0a41b565c2475ad04f739cfcef62",
+      "packages/core/src/enterprise_doc_core/telemetry/resources.py": "b8f930c4d5546dccc424d2370a35b429335eac416449cb7bcef2c463dfd61b60",
+      "packages/core/tests/test_resource_metrics.py": "06f615c743dfbe0235cca6694be515123c670fd97e91d749e5c020a6455840cf",
+      "scripts/business_capacity_telemetry.py": "d2ed91049ffa19e0888543250f74d51e825fb9a75d999b270265c98fd4991fdb",
+      "tests/deployment/test_business_telemetry.py": "644bdce57f41b3a898655c85383e336c6d6b9afa91889cfa18700f5b7ebb31a6",
+      "tests/jobs/test_resource_metrics_integration.py": "91f36af9d9c8da3d70ca915d9ae6809053143510c62085525de286b32d3e4a08"
+    }
+  },
+  "contract": {
+    "owner": "Worker only; disabled when metrics are disabled",
+    "queue": "Due pending/retry_wait durable jobs across types; age since available_at using the database clock; not Celery depth or expired running leases",
+    "redis": "INFO clients connected_clients for the shared Redis server; the legacy process-pool metric remains unknown",
+    "budget": {
+      "interval_after_completion_seconds": 10,
+      "per_source_timeout_seconds": 2,
+      "queue_statement_timeout_ms": 1500
+    },
+    "freshness": "Each Worker replica must provide success=1, a finite value and a last-success timestamp within 45 seconds, no more than 5 seconds ahead and no earlier than process start",
+    "failure": "Independent sources; NaN and success=0 on failure, last successful time retained, no business payload or upstream errors emitted"
+  },
+  "checks": {
+    "focused_passed": 61,
+    "full_nonintegration_passed": 1912,
+    "subtests_passed": 23,
+    "integration_deselected_from_full_command": 440,
+    "separate_real_integration_passed": 1,
+    "ruff": "passed",
+    "formatted_files": 603,
+    "strict_mypy_source_files": 254,
+    "strict_mypy_scope": "Required production sources plus the three read-only telemetry scripts; pre-existing optional capacity/load typing errors are not relabeled as passing",
+    "trellis_context_validation": "passed; inline mode",
+    "yaml_parse_and_worker_job_mapping": "passed",
+    "promql_runtime_execution": "not_run",
+    "log_sha256": {
+      "ruff": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0",
+      "format": "4e5b65eb599738d1e4ac3e952b1873ce6f141fcca3a066d87786b65f9ad04a6f",
+      "mypy": "ba1bbf461a02558104169293aba3f99dd8f53b3b057452dce7d3a9edbdd295f7",
+      "pytest": "f1432ddd4eca08eec2e8d6644d27d7ac1b9456e3917daf076466e49fba21951a",
+      "focused": "92af2dd1e89dc6d2397f4975636df24c1120e3f4f8e4d430dec87b86a934a92b",
+      "integration": "3223c0feb2044dc3c16c8803936b09486870e61188be77534335a9b82a271b70",
+      "trellis": "9446777880d68ffcc15e89d68614f2bba5d447bb7c95908d68bff1ce37e261a3"
+    },
+    "precommit_checks_sha256": "fec362f9df9158e3d0d646f233a91fafe05a23f3585e327d507104d9f9aa0a54"
+  },
+  "real_integration": {
+    "targets": "Existing local PostgreSQL and Redis; exclusively owned database schema, clients and loopback failure socket",
+    "covered": [
+      "Due pending/retry_wait across ingestion, Agent and Presales; future/running/terminal excluded; empty queue zero",
+      "Job projections unchanged by observation",
+      "ACCESS EXCLUSIVE table lock causes the bounded queue query to fail while Redis continues; recovery after release",
+      "Redis connected-client increase and return after closing the owned client",
+      "Real connection failure through an owned non-listening loopback socket and subsequent recovery",
+      "Sampler to rendered registry to allowlisted metrics parser"
+    ],
+    "cleanup": "Fixture drops and verifies absence of its owned schema; owned clients and socket closed; shared services and databases not removed or flushed",
+    "limitations": "Queue transitions are controlled database fixtures, not an end-to-end consumer/load run; concurrent customers and production capacity are not established"
+  },
+  "execution": {
+    "real_model_or_embedding_requests_submitted": 0,
+    "business_consumers_started": 0,
+    "emails_sent": 0,
+    "remote_deployments_or_migrations": 0,
+    "constant_monitoring_services_added": 0
+  },
+  "failure_evidence": [
+    "Initial zero-value, missing sampler/query, legacy summary and missing supervisor-argument red tests retained",
+    "First real integration fixture omitted Tenant.quota_bytes; original failure retained, corrected fixture passed",
+    "First Ruff invocation reported three import-order issues; original failure retained, final Ruff passed; Mypy had already passed",
+    "Sandbox read failures for temporary helper scripts preserved in execution history; normal approved escalation used",
+    "Earlier frozen live observations and their incomplete/failed findings unchanged"
+  ],
+  "remaining_gaps": [
+    "Deploy and verify a reviewed candidate on the existing 4C4G host; the previous live observation still lacks producer freshness",
+    "Bind business phases to the actual target and candidate identity, prove browser/proxy recovery and run the approved bounded business capacity trials",
+    "This sampler does not prove independent domain quality, alert delivery, recurring backups, whole-host RPO/RTO or commercial readiness"
+  ],
+  "workspace": {
+    "historical_status_entries_preserved": 2993,
+    "original_frozen_indexes_unchanged": {
+      "business-telemetry-artifact-index.json": "a44bb3a514af8fc282b0343444997949d283d17f87a8acf0e10ba27b3546f07f",
+      "business-capacity-artifact-index.json": "a746f9254cb8e3f14728bad8be4ef7e4ba29cc90cd40193b4b64745f55bcda00",
+      "application-operations-artifact-index.json": "b6f355d0ca594f23fe4abb1e236189d2afd2f37875ed074c686af723253fc3da",
+      "live-source-recovery/artifact-index.json": "4fa0f3e6f0415919b3ee91d8908216f242bcb193112aa3b2749174af4aa635b0"
+    }
+  },
+  "private_evidence": "Existing centralized task recovery group; resource-producer-artifact-index.json. No credentials, raw observations or private output paths committed."
+}

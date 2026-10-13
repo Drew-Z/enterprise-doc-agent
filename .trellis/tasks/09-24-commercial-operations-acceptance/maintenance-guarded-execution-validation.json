@@ -1,0 +1,179 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-09-27T15:36:47.161189+00:00",
+  "status": "service_upgraded_and_bounded_acceptance_passed",
+  "commercial_status": "blocked_external",
+  "task_status": "in_progress",
+  "candidate": {
+    "tag": "v0.1.45-rc.1",
+    "source_commit": "1ac873b06f265a415ed128ed55b9f54f81bdf0b9",
+    "components": 4
+  },
+  "executor": {
+    "commit": "0b1bcacb6b96c700bdf1ef63c012ac69a520e1ad",
+    "tag": "ops-maintenance-0b1bcac",
+    "workflow_run_id": 36327978939,
+    "workflow_url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/36327978939",
+    "ci_runs": [
+      36321402421,
+      36321402427
+    ]
+  },
+  "target": {
+    "profile": "single-node-4c4g",
+    "new_servers": 0,
+    "database_revision": "20260924_0031",
+    "embedding_version": "3",
+    "ready_deployments": 5,
+    "public_http_statuses": [
+      200,
+      200,
+      401
+    ]
+  },
+  "window": {
+    "pause_requested_at": "2026-09-27T14:50:51.831099+00:00",
+    "public_restoration_verified_at": "2026-09-27T15:19:39.306283+00:00",
+    "interval_seconds": 1727.475,
+    "reserved_window_minutes": 90,
+    "arm_to_migration_claim_seconds": 1112.129,
+    "pre_migration_deadline_seconds": 1500,
+    "recovery_budget_seconds": 300,
+    "deadline_reset": false,
+    "automatic_recovery_triggered": false,
+    "whole_host_rto_passed": false
+  },
+  "previous_failure": {
+    "workflow_run_id": 36307576783,
+    "cause": "ConfigMap updated without six corresponding Namespace approval annotations; validation rejected before migration",
+    "outage_interval_minutes": 185.8,
+    "original_30_minute_limit_met": false,
+    "evidence_preserved": true
+  },
+  "resolved_in_this_window": [
+    "Fresh plan jointly validates six ConfigMap additions and six Namespace approval changes across all 18 prerequisites.",
+    "Independent systemd supervisor and shared SQLite verified before pause; runner cannot alter plan or read credentials.",
+    "An unreplaced launch placeholder was rejected before pause; corrected launch reused original state and deadline.",
+    "Eight missing imported image aliases referenced by CRI were reconstructed at the same approved digests; original migration Job continued without restart."
+  ],
+  "recovery_point": {
+    "scope": "same_quiesced_window_public_schema_and_durable_objects",
+    "database_tables": 49,
+    "database_rows": 79388,
+    "database_dump_bytes": 23655968,
+    "database_dump_sha256": "a734815b72fc75b3a6016991c0a2cdfdfc07f84c22810cd24459e4dbc2f1c340",
+    "objects": 1585,
+    "object_bytes": 1083958,
+    "fresh_readback_all_objects": true,
+    "reused_verified_physical_files": 1585,
+    "isolated_database_restore_verified": true,
+    "capture_seconds": 407.485,
+    "previous_seven_upload_cleanup_repeated": false
+  },
+  "quota": {
+    "agent_successful_tasks": 100,
+    "document_processing_bytes": 104857600,
+    "period_end_utc": "2026-09-29T10:57:59.211855+00:00",
+    "preview_then_execute": true,
+    "period_extended": false,
+    "existing_counters_reset": false,
+    "scope": "existing approved pilot entitlement only"
+  },
+  "acceptance": {
+    "status": "passed",
+    "synthetic_upload_bytes": 172,
+    "document_processing_settlements": 1,
+    "generation_settlements": 1,
+    "model_http_attempts": 1,
+    "embedding_http_attempts": 2,
+    "emails": 0,
+    "same_key_replay_no_additional_calls_or_charge": true,
+    "prerequisite_states": [
+      "met",
+      "unmet",
+      "unknown"
+    ],
+    "citations_preserved": true,
+    "review_and_csv": true,
+    "cost_amount": "unknown",
+    "independent_domain_acceptance": false,
+    "interactive_github_oauth": "not_executed"
+  },
+  "supplier_usage": {
+    "model_http_attempts": 1,
+    "embedding_http_attempts": 2,
+    "embedding_kinds": [
+      "document",
+      "query"
+    ],
+    "emails": 0,
+    "approved_limits": {
+      "model": 1,
+      "embedding": 18,
+      "email": 0
+    },
+    "reported_model_input_tokens": 2000,
+    "reported_model_output_tokens": 4940,
+    "reported_model_total_tokens": 6940,
+    "estimated_cost": null,
+    "cost_amount_verified": false,
+    "presales_call_count_source": "persisted synchronous attempt providerRequestCount and one consumed provider_request event",
+    "embedding_call_count_source": "two new durable provider_dispatches rows"
+  },
+  "historical_reads": {
+    "session_identical": true,
+    "presales_history_identical": true,
+    "ready_documents_identical": true,
+    "foreign_tenant_denied": true
+  },
+  "resource_observation": {
+    "status": "read_only_observed",
+    "planned_samples": 5,
+    "observed_samples": 5,
+    "unique_node_metric_samples": 4,
+    "issues": [],
+    "unverified_gauges": [],
+    "host": {
+      "memory_available_bytes_min": 1689329664,
+      "root_disk_available_bytes_min": 15555268608,
+      "cpu_busy_percent_max": 7.006232538147432,
+      "kubernetes_cpu_cores_max": 0.312562412
+    },
+    "production_capacity_approved": false
+  },
+  "cleanup": {
+    "temporary_github_variables_restored": 11,
+    "temporary_exact_tag_policy_removed": true,
+    "immutable_executor_tag_retained": true,
+    "remote_runtime_files_removed": 9,
+    "supervisor_state_and_journal_archived": true,
+    "local_restore_container_removed": true,
+    "original_local_containers_preserved": true,
+    "required_runtime_image_aliases_retained": 8,
+    "previous_failure_and_recovery_artifacts_preserved": true
+  },
+  "not_executed": [
+    "Interactive GitHub OAuth and browser disconnect recovery",
+    "Two-round production business capacity trial",
+    "Background generation or automatic failover enablement",
+    "Additional model, embedding, Agent or notification acceptance batches",
+    "Independent representative-domain approval and supplier invoice reconciliation",
+    "Whole-host failover or independent failure-domain recovery",
+    "Main merge or public paid launch"
+  ],
+  "validation": {
+    "live_maintenance_workflow": "passed",
+    "actual_database_readback": "0031",
+    "live_bounded_business": "passed",
+    "documentation_checks": "passed",
+    "previous_exact_executor_nonintegration_tests": 2023,
+    "previous_tests_rerun_this_slice": false,
+    "documentation_checked_at": "2026-09-27T15:50:00.675072+00:00",
+    "documentation_contract_tests": 5,
+    "relative_links_checked": 39,
+    "historical_status_entries_preserved": 2993,
+    "frozen_indexes_unchanged": 11,
+    "staged_diff_check": "passed_after_new_report_lf_normalization"
+  },
+  "private_evidence": "Retained in the existing local central task recovery group; no credentials or tenant identifiers are included in this report."
+}

@@ -1,0 +1,209 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-10-03T16:32:55.850297+00:00",
+  "status": "configuration_deployed_business_unavailable",
+  "all_five_gates_complete": false,
+  "application": {
+    "version": "v0.1.45-rc.19",
+    "commit": "3955aa56bd9036909aebee10d380ff7dc7f5ab85",
+    "schema": "20260924_0031",
+    "image_rollback": "v0.1.45-rc.18"
+  },
+  "executor": {
+    "commit": "7fc7add97df405e9267557dd58972aa7ff891456",
+    "ci": [
+      {
+        "conclusion": "success",
+        "databaseId": 37129518238,
+        "name": "Container Supply Chain",
+        "status": "completed"
+      },
+      {
+        "conclusion": "success",
+        "databaseId": 37129518237,
+        "name": "Quality",
+        "status": "completed"
+      }
+    ],
+    "non_integration_tests_passed": 2266,
+    "deselected": 498,
+    "subtests_passed": 23,
+    "release_boundary_tests_passed": 80,
+    "lint_and_types": "passed"
+  },
+  "switch": {
+    "duration_seconds": 89.811,
+    "changed_config_keys": [
+      "MODEL__FALLBACK_MODEL_NAME"
+    ],
+    "before": "grok-4.6",
+    "after": "gemini-3.7-flash",
+    "prerequisite_objects": 20,
+    "running_processes_verified": [
+      "api",
+      "worker",
+      "consumer"
+    ],
+    "credentials_images_timeouts_unchanged": true,
+    "rollback_image_approvals_preserved": true,
+    "public_home_status": 200,
+    "public_readiness_healthy": true,
+    "github_variables": [
+      "STAGING_MODEL_FALLBACK_NAME"
+    ],
+    "backup_pid_unchanged": true,
+    "backup_restarts": 0
+  },
+  "business": {
+    "planned": 4,
+    "succeeded": 0,
+    "failed": 3,
+    "not_run": 1,
+    "stop_reason": "three_failure_threshold",
+    "model_calls": 6,
+    "primary_timeouts": 3,
+    "fallback_non_200_failures": 3,
+    "fallback_model": "gemini-3.7-flash",
+    "vector_calls": 9,
+    "model_usage_known": false,
+    "currency_cost": null,
+    "receipt_summary": {
+      "observed": 3,
+      "sample_count": 3,
+      "min_ms": 1452.0116550847888,
+      "p50_ms": 1477.8328770771623,
+      "p95_ms": 1526.4318650588393,
+      "p99_ms": 1526.4318650588393,
+      "max_ms": 1526.4318650588393,
+      "proposed_target_ms": 2000.0
+    },
+    "boundaries": {
+      "upload": {
+        "planned": 4,
+        "observed": 3,
+        "passed": 3,
+        "failed": 0,
+        "expected_failure": 0,
+        "interrupted": 0,
+        "not_run": 1,
+        "sample_count": 3,
+        "min_ms": 9601.389116607606,
+        "p50_ms": 11135.822369717062,
+        "p95_ms": 11458.225722890347,
+        "p99_ms": 11458.225722890347,
+        "max_ms": 11458.225722890347,
+        "proposed_target_ms": 5000.0,
+        "proposed_target_met": false
+      },
+      "ingestion": {
+        "planned": 4,
+        "observed": 3,
+        "passed": 3,
+        "failed": 0,
+        "expected_failure": 0,
+        "interrupted": 0,
+        "not_run": 1,
+        "sample_count": 3,
+        "min_ms": 11444.640945177525,
+        "p50_ms": 12052.662129048258,
+        "p95_ms": 14470.928316004574,
+        "p99_ms": 14470.928316004574,
+        "max_ms": 14470.928316004574,
+        "proposed_target_ms": 30000.0,
+        "proposed_target_met": true
+      },
+      "retrieval": {
+        "planned": 4,
+        "observed": 3,
+        "passed": 3,
+        "failed": 0,
+        "expected_failure": 0,
+        "interrupted": 0,
+        "not_run": 1,
+        "sample_count": 3,
+        "min_ms": 1799.5266108773649,
+        "p50_ms": 1806.639924645424,
+        "p95_ms": 1821.9621828757226,
+        "p99_ms": 1821.9621828757226,
+        "max_ms": 1821.9621828757226,
+        "proposed_target_ms": 2000.0,
+        "proposed_target_met": true
+      },
+      "generation_recovery": {
+        "planned": 4,
+        "observed": 3,
+        "passed": 0,
+        "failed": 3,
+        "expected_failure": 0,
+        "interrupted": 0,
+        "not_run": 1,
+        "sample_count": 3,
+        "min_ms": 113449.87902091816,
+        "p50_ms": 114378.25927278027,
+        "p95_ms": 114467.91290398687,
+        "p99_ms": 114467.91290398687,
+        "max_ms": 114467.91290398687,
+        "proposed_target_ms": 180000.0,
+        "proposed_target_met": true
+      }
+    },
+    "settlement": {
+      "consumptions": 0,
+      "one_time_releases": 3,
+      "remaining_reservations": 0
+    }
+  },
+  "separate_full_contract_diagnostic": {
+    "requests": 1,
+    "request_bytes": 8857,
+    "max_output_tokens": 4000,
+    "elapsed_seconds": 60.061,
+    "error": "presales_model_timeout",
+    "http_response_received": false,
+    "business_submissions": 0,
+    "currency_cost": null
+  },
+  "earlier_compatibility_probe": {
+    "requests": 1,
+    "http_status": 200,
+    "tokens": 30,
+    "scope": "small synthetic JSON before configuration switch; not proof of business reliability"
+  },
+  "upload_components_ms": {
+    "create_range": [
+      1836.965,
+      2171.59
+    ],
+    "presign_range": [
+      561.361,
+      611.163
+    ],
+    "object_put_range": [
+      1750.781,
+      4072.122
+    ],
+    "complete_range": [
+      4913.291,
+      5347.293
+    ]
+  },
+  "cleanup": {
+    "remote_owned_files_removed": 11,
+    "remote_runtime_removed": "/run/enterprise-doc-release/ops-fallback-model-20261003",
+    "historical_backups_deleted": 0,
+    "preexisting_workspace_hashes_preserved": 2993,
+    "local_owned_transport_files_removed": 1,
+    "local_transport_bytes_removed": 215040
+  },
+  "limitations": [
+    "Three executed single-concurrency synthetic documents, Pod-local API; not public latency or two full production capacity rounds.",
+    "Catalog and small JSON compatibility do not prove stable full-contract generation.",
+    "Existing failure UI remains from rc.19; this controller-only change did not rerun browser acceptance.",
+    "Failed supplier usage and fiat amounts unknown. The probe is separately counted, not a business retry.",
+    "Backup capacity/retention, independent review, current recovery/in-flight recovery, delivery and on-call remain open."
+  ],
+  "pre_execution_failures_retained": [
+    "Formal renderer exposed missing Namespace fallback approval binding; regression fixed before deployment.",
+    "Local measurement imported an older helper; hash guard refused before intent or network, corrected within original budget/deadline."
+  ]
+}

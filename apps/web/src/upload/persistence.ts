@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { scopedRecoveryKey } from "../auth/transport";
 
-import { sha256HexSchema } from "./api/schemas";
+import { sha256HexSchema, uploadTransportSchema } from "./api/schemas";
 import type { PersistedUploadSession } from "./state/types";
 
 export const UPLOAD_RECOVERY_STORAGE_KEY = "enterprise-doc.upload-recovery.v1";
@@ -10,6 +10,7 @@ export const UPLOAD_TOKEN_STORAGE_KEY = "enterprise-doc.upload-token.v1";
 export const persistedUploadSessionSchema: z.ZodType<PersistedUploadSession> = z
   .object({
     version: z.literal(1),
+    transport: uploadTransportSchema.optional(),
     sessionId: z.string().uuid(),
     filename: z.string().min(1),
     sizeBytes: z.number().int().safe().positive(),

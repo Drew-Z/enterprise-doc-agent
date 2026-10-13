@@ -1,0 +1,17 @@
+{
+  "schema_version": "analysis.a1-negative-coverage.v1",
+  "recorded_at": "2026-10-13",
+  "status": "internally_verified",
+  "scope": "structured document parser negative behavior",
+  "cases": [
+    {"case": "blank_pdf", "expected": "needs_ocr", "test": "tests/analysis/test_document_structure.py::test_blank_pdf_reports_ocr_gap_instead_of_claiming_full_coverage"},
+    {"case": "xlsx_formula_without_cache", "expected": "formula_cache_missing", "test": "tests/analysis/test_document_structure.py::test_xlsx_keeps_hidden_sources_and_flags_uncomputed_formula"},
+    {"case": "xlsx_hidden_sheet_and_columns", "expected": "preserved_and_marked_hidden", "tests": ["tests/analysis/test_document_structure.py::test_xlsx_keeps_hidden_sources_and_flags_uncomputed_formula", "tests/analysis/test_document_structure.py::test_xlsx_grouped_hidden_columns_are_all_marked_hidden"]},
+    {"case": "xlsx_external_link", "expected": "xlsx_unsupported_content", "test": "tests/analysis/test_document_structure.py::test_xlsx_external_link_is_reported_as_unsupported"},
+    {"case": "office_unsafe_path", "expected": "document_xlsx_path_unsafe", "test": "tests/analysis/test_document_structure.py::test_office_archive_with_unsafe_member_is_rejected_before_parsing"},
+    {"case": "file_and_cell_limits", "expected": ["structure_file_limit", "structure_cell_limit"], "test": "tests/analysis/test_document_structure.py::test_size_and_table_limits_fail_explicitly"},
+    {"case": "office_entry_limit", "expected": "document_xlsx_entry_limit_exceeded", "test": "tests/analysis/test_document_structure.py::test_office_archive_entry_limit_fails_before_parsing"},
+    {"case": "corrupt_xlsx_zip", "expected": "document_xlsx_zip_invalid", "test": "tests/analysis/test_document_structure.py::test_corrupt_office_archive_fails_with_typed_error"}
+  ],
+  "claim_boundary": "The cases establish explicit parser coverage or typed failure behavior; they do not establish OCR, arbitrary Office compatibility, sandbox RSS enforcement on Windows, or 4C4G capacity."
+}

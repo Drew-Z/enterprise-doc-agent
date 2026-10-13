@@ -1,0 +1,179 @@
+{
+  "schema_version": 1,
+  "status": "blocked_external",
+  "observed_at": "2026-10-13T12:43:20+08:00",
+  "task": "10-11-document-analysis-workspace",
+  "scope": "local_immutable_staging_release_preparation",
+  "candidate": {
+    "repository": "D:\\workspace4Cursor\\enterprise-doc-agent",
+    "branch": "codex/presales-prerequisite-assessment",
+    "baseline_head": "84d9388e51fea3324ce5b2dda8349bf7ff8199a0",
+    "candidate_head": "8690a2097856f4d67ff53a3821535dfd7a0fb40f",
+    "candidate_commits": [
+      "020cb5a",
+      "7030ccf",
+      "99e99e6",
+      "7661285",
+      "84d9388",
+      "8690a20"
+    ],
+    "migration_start": "20261010_0037",
+    "migration_head": "20261012_0043",
+    "remote_branch_contains_head": true,
+    "release_tag_present": true,
+    "release_tag": "v0.1.45-rc.52",
+    "release_run_id": "38350863219"
+  },
+  "release_chain": {
+    "publication_workflow": {
+      "path": ".github/workflows/container.yml",
+      "sha256": "1f356624fb841f3676c7c1324e246712c0ebee54035bcb94dc9a8d9ca5eb1f51"
+    },
+    "deployment_workflow": {
+      "path": ".github/workflows/deploy-staging.yml",
+      "sha256": "d66b764bdd5089d83dde69c8a179262eaf1c63e13a37efdda98ca68a729a32f5"
+    },
+    "rollback_workflow": {
+      "path": ".github/workflows/rollback.yml",
+      "sha256": "507fa2714479be48e736746829bb5c8d8cd7767e04a050d97a9e95912017b9d5"
+    },
+    "workloads": [
+      "api",
+      "worker",
+      "consumer",
+      "web"
+    ],
+    "real_image_digests": {
+      "api": "ghcr.io/drew-z/enterprise-doc-api@sha256:3bebebab772e7dba738e2a9db029e1855b8c7b23c2ff62a6093612ba15ed9709",
+      "worker": "ghcr.io/drew-z/enterprise-doc-worker@sha256:db3d92416bcc87d7e69ba3d1ad469cfdc4774199c29e63d878d6d631352fbe71",
+      "consumer": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:85b530bf3f927d87048749e900b27e01ee9a518ed0f60fe7b1f725b981a2a4f9",
+      "web": "ghcr.io/drew-z/enterprise-doc-web@sha256:6ade70e24d21bbb8fb0eb28fb2252b6a469571ca22a7c32b02f6cea1096437f0"
+    },
+    "signed_release_manifest": {
+      "release": "v0.1.45-rc.52",
+      "workflow_run_id": "38350863219",
+      "strict_manifest_sha256": "e3f16f24e49489483c09de7537af846c3b8eacbbd630af489b8369cb9cd93321",
+      "status": "passed"
+    },
+    "rollback_candidate": {
+      "release": "v0.1.45-rc.51",
+      "workflow_run_id": "38069840277",
+      "strict_manifest_sha256": "f4acf6c7564bbeaf51bdb603a9b8d6206011d6c74455ea4b739fab6c3e77fa5d",
+      "images": {
+        "api": "ghcr.io/drew-z/enterprise-doc-api@sha256:af9e576292ddc5e27c2c2a5704fcd9d3c6f42d07647920ed44b192e5faa39a9c",
+        "worker": "ghcr.io/drew-z/enterprise-doc-worker@sha256:dae34e5b08b94fed54a9455d4ee60230cd512d4751eaaf8caff8bc7d72c6b8a1",
+        "consumer": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:958ad15ef9227c8198509676074a30d9d71372d02a9abebe3822eea5781f9217",
+        "web": "ghcr.io/drew-z/enterprise-doc-web@sha256:724d1007282607d3d220aae1fbeb76b87a2b48ae4ba0f3a66b95db1aa1297da9"
+      }
+    }
+  },
+  "analysis_policy": {
+    "deployment_state": "dark",
+    "structured_documents_enabled": false,
+    "execution_enabled": false,
+    "route_id": "default",
+    "controlled_holdout_route_id": "analysis-primary",
+    "unit_deadline_seconds": 120,
+    "run_deadline_seconds": 3600,
+    "max_input_bytes": 65536,
+    "execution_requires_structured_documents": true,
+    "execution_requires_route_deadline_at_least_unit_deadline": true,
+    "silent_fallback_allowed": false
+  },
+  "local_render": {
+    "status": "passed",
+    "profile": "single-node-4c4g",
+    "renderer": "kubectl kustomize",
+    "kustomize_version": "v5.7.1",
+    "configured_manifest_sha256": "69c05745df1fdb2b27be6063f9ca1bc9a83fcaa69aeac8d562465071f576c424",
+    "document_count": 27,
+    "phase_counts": {
+      "prerequisites": 20,
+      "migration": 1,
+      "embedding_rollout": 1,
+      "workloads": 5
+    },
+    "placeholder_images_only": true,
+    "four_workload_images_are_digest_bound": true,
+    "migration_uses_api_image": true,
+    "embedding_rollout_uses_api_image": true,
+    "secret_resources": 0,
+    "temporary_artifacts_removed": true
+  },
+  "migration_and_rollback": {
+    "migration_shape": "additive_with_guarded_downgrades",
+    "isolated_postgresql_test": "passed",
+    "old_runtime_has_exact_head_startup_gate": false,
+    "old_image_start_on_0043_tested": false,
+    "database_downgrade_after_analysis_history_supported": false,
+    "rollback_readiness": "pending_ci_execution",
+    "rollback_compatibility": {
+      "workflow": ".github/workflows/quality-heavy.yml",
+      "job": "analysis-rollback-compatibility",
+      "candidate_release": "v0.1.45-rc.52",
+      "rollback_release": "v0.1.45-rc.51",
+      "status": "pending_ci_execution",
+      "local_contract_tests": "passed_22",
+      "actionlint": "passed",
+      "actionlint_image_id": "sha256:b6d0bc67a629b20d424b3e35964400ec438451f41b95302157868d5e379d5039",
+      "report_artifact": "analysis-rollback-compatibility-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"
+    },
+    "notes": [
+      "Migrations 0038 through 0043 add analysis tables, columns, indexes and constraints; 0040 widens existing quota constraints for analysis_cell.",
+      "Downgrades refuse destructive history loss, so database downgrade is not the normal rollback path.",
+      "The rc.51 signed workload is wired into the isolated compatibility job; it must start and pass smoke checks against 0043 on a GitHub-hosted runner before it is approved as the rollback target."
+    ]
+  },
+  "validation": {
+    "focused_deployment_tests": {
+      "status": "passed",
+      "passed": 224
+    },
+    "deployment_capacity_recovery_tests": {
+      "status": "passed",
+      "passed": 55
+    },
+    "analysis_migration_integration": {
+      "status": "passed",
+      "passed": 1,
+      "warnings": 2,
+      "warning_scope": "pre_existing_document_versions_upload_sessions_fk_sort_cycle"
+    },
+    "ruff_check": "passed",
+    "ruff_format_check": "passed",
+    "mypy": "passed",
+    "diff_check": "passed",
+    "workflow_yaml_parse": "passed",
+    "actionlint": "passed_changed_workflows",
+    "actionlint_version": "1.7.7",
+    "actionlint_image_id": "sha256:b6d0bc67a629b20d424b3e35964400ec438451f41b95302157868d5e379d5039",
+    "actionlint_scope": [
+      ".github/workflows/deploy-staging.yml",
+      ".github/workflows/quality-heavy.yml"
+    ],
+    "actionlint_repository_wide": "pre_existing_shellcheck_findings",
+    "actionlint_repository_wide_findings": [
+      ".github/workflows/quality-self-hosted.yml:29 SC2086 (2 findings)"
+    ]
+  },
+  "blockers": [
+    "administrator_owned_default_off_prerequisites_not_applied",
+    "default_off_candidate_not_deployed_or_migrated",
+    "rollback_compatibility_ci_pending",
+    "signed_old_or_compatible_rollback_image_not_started_against_schema_0043",
+    "short_lived_analysis_token_and_analysis_primary_route_not_configured",
+    "real_fixed_and_agent_holdout_not_run",
+    "external_single_node_4c4g_acceptance_not_run",
+    "independent_uat_participant_missing"
+  ],
+  "side_effect_boundaries": {
+    "push_run": true,
+    "tag_created": true,
+    "image_publication_run": true,
+    "cluster_commands_run": false,
+    "deployment_run": false,
+    "migration_run_on_shared_or_production_database": false,
+    "real_model_call_run": false,
+    "secret_values_read": false
+  }
+}

@@ -3,13 +3,20 @@ from __future__ import annotations
 import asyncio
 import re
 from collections.abc import Sequence
+from datetime import UTC, datetime
 from time import perf_counter
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
-from sqlalchemy import desc, func, select
+from sqlalchemy import Select, case, desc, func, literal, select, union_all
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.sql.elements import ColumnElement
 
+from enterprise_doc_core.billing.errors import UsageError
+from enterprise_doc_core.billing.models import TenantEntitlement
+from enterprise_doc_core.billing.provider_calls import Guard, ProviderCallService
+from enterprise_doc_core.config import AppEnvironment, ProviderUsageSettings
+from enterprise_doc_core.db import read_only_session
 from enterprise_doc_core.documents.ingestion import EmbeddingProvider
 from enterprise_doc_core.documents.models import (
     DEFAULT_EMBEDDING_DIMENSION,
@@ -86,6 +93,8 @@ class HybridRetrievalService:
         max_vector_distance: float = 0.65,
         require_vector_evidence: bool = False,
         metrics: MetricsRuntime | None = None,
+        app_env: AppEnvironment = AppEnvironment.LOCAL,
+        provider_usage_settings: ProviderUsageSettings | None = None,
     ) -> None:
         if top_k <= 0:
             raise ValueError("top_k must be positive")
@@ -115,6 +124,10 @@ class HybridRetrievalService:
         self.max_vector_distance = max_vector_distance
         self.require_vector_evidence = require_vector_evidence
         self.metrics = metrics
+        self.require_entitlement = app_env in {AppEnvironment.STAGING, AppEnvironment.PRODUCTION}
+        self.provider_usage = ProviderCallService(
+            session_factory=session_factory, settings=provider_usage_settings
+        )
 
     async def retrieve(
         self,
@@ -123,6 +136,8 @@ class HybridRetrievalService:
         actor_id: UUID | None = None,
         document_version_id: UUID,
         query: str,
+        provider_guard: Guard | None = None,
+        provider_operation_id: UUID | None = None,
     ) -> RetrievalDecision:
         started = perf_counter()
         try:
@@ -131,6 +146,8 @@ class HybridRetrievalService:
                 actor_id=actor_id,
                 document_version_id=document_version_id,
                 query=query,
+                provider_guard=provider_guard,
+                provider_operation_id=provider_operation_id,
             )
         except asyncio.CancelledError:
             if self.metrics is not None:
@@ -166,6 +183,8 @@ class HybridRetrievalService:
         actor_id: UUID | None = None,
         document_version_id: UUID,
         query: str,
+        provider_guard: Guard | None = None,
+        provider_operation_id: UUID | None = None,
     ) -> RetrievalDecision:
         normalized_query = query.strip()
         if not normalized_query:
@@ -181,7 +200,48 @@ class HybridRetrievalService:
             query=normalized_query,
         )
         embedding_query = format_embedding_query(normalized_query, self.query_instruction)
-        vectors = await self.embedding_provider.embed((embedding_query,))
+
+        async def guard(session: AsyncSession) -> None:
+            if provider_guard is not None:
+                await provider_guard(session)
+            # A durable caller validates its original reservation, which may
+            # legitimately outlive the admission period while waiting for review.
+            period_active: ColumnElement[bool] = literal(True)
+            if self.require_entitlement and provider_guard is None:
+                now = datetime.now(UTC)
+                period_active = (
+                    select(TenantEntitlement.id)
+                    .where(
+                        TenantEntitlement.tenant_id == tenant_id,
+                        TenantEntitlement.period_start <= now,
+                        TenantEntitlement.period_end > now,
+                        TenantEntitlement.provider_request_limit.is_not(None),
+                    )
+                    .exists()
+                )
+            row = (
+                await session.execute(
+                    select(DocumentVersion.id, period_active.label("period_active"))
+                    .join(Document, Document.id == DocumentVersion.document_id)
+                    .where(
+                        DocumentVersion.id == document_version_id,
+                        DocumentVersion.tenant_id == tenant_id,
+                        document_visible_to_actor(tenant_id=tenant_id, actor_id=actor_id),
+                    )
+                )
+            ).one_or_none()
+            if row is None:
+                raise UsageError("provider_query_forbidden")
+            if not row.period_active:
+                raise UsageError("usage_entitlement_inactive")
+
+        with self.provider_usage.scope(
+            tenant_id=tenant_id,
+            operation_id=provider_operation_id or uuid4(),
+            kind="query",
+            guard=guard,
+        ):
+            vectors = await self.embedding_provider.embed((embedding_query,))
         if len(vectors) != 1:
             raise ValueError("embedding provider returned an invalid query batch")
         vector_candidates = await self._vector_recall(
@@ -213,33 +273,53 @@ class HybridRetrievalService:
     ) -> tuple[RetrievalCandidate, ...]:
         ts_query = func.websearch_to_tsquery("simple", query)
         rank = func.ts_rank_cd(DocumentChunk.search_vector, ts_query)
-        candidates = await self._execute_keyword_recall(
+        statement = self._keyword_statement(
             tenant_id=tenant_id,
             actor_id=actor_id,
             document_version_id=document_version_id,
             ts_query=ts_query,
             rank=rank,
         )
-        if candidates:
-            return candidates
-
         # Natural-language questions often contain words absent from the
-        # document. Retry with meaningful terms so exact lexical overlap can
-        # still complement semantic/vector recall.
+        # document. Evaluate the meaningful-term fallback only when the scoped
+        # primary recall is empty, within the same snapshot and round trip.
         fallback_query = self._keyword_fallback_query(query)
-        if fallback_query is None:
-            return ()
-        fallback_ts_query = func.websearch_to_tsquery("simple", fallback_query)
-        fallback_rank = func.ts_rank_cd(DocumentChunk.search_vector, fallback_ts_query)
-        return await self._execute_keyword_recall(
-            tenant_id=tenant_id,
-            actor_id=actor_id,
-            document_version_id=document_version_id,
-            ts_query=fallback_ts_query,
-            rank=fallback_rank,
-        )
+        chinese_terms = self._chinese_query_terms(query)
+        if fallback_query is not None or chinese_terms:
+            primary = statement.cte("primary_keyword_recall").prefix_with("MATERIALIZED")
+            fallback_ts_query = func.websearch_to_tsquery("simple", fallback_query)
+            fallback_rank: Any = func.ts_rank_cd(DocumentChunk.search_vector, fallback_ts_query)
+            fallback_match = None
+            if chinese_terms:
+                # PostgreSQL simple FTS treats an unspaced Chinese sentence as a
+                # single token. Match bounded literal character windows inside the
+                # same authorized document; no wildcard or extra model query.
+                hits = sum(
+                    (
+                        case((func.strpos(DocumentChunk.normalized_text, term) > 0, 1), else_=0)
+                        for term in chinese_terms
+                    ),
+                    literal(0),
+                )
+                fallback_rank = hits
+                fallback_match = hits >= min(2, len(chinese_terms))
+            fallback = self._keyword_statement(
+                tenant_id=tenant_id,
+                actor_id=actor_id,
+                document_version_id=document_version_id,
+                ts_query=fallback_ts_query,
+                rank=fallback_rank,
+                match=fallback_match,
+            ).where(~select(primary.c.id).exists())
+            recalled = union_all(select(primary), fallback).subquery()
+            statement = select(recalled).order_by(
+                desc(recalled.c.rank_score), recalled.c.chunk_index
+            )
+        async with read_only_session(self.session_factory) as session:
+            rows = (await session.execute(statement)).all()
+        return tuple(self._candidate_from_row(row, score=float(row.rank_score)) for row in rows)
 
-    async def _execute_keyword_recall(
+    def _keyword_statement(
         self,
         *,
         tenant_id: UUID,
@@ -247,10 +327,12 @@ class HybridRetrievalService:
         document_version_id: UUID,
         ts_query: Any,
         rank: Any,
-    ) -> tuple[RetrievalCandidate, ...]:
+        match: ColumnElement[bool] | None = None,
+    ) -> Select[Any]:
         statement = (
             select(
                 DocumentChunk.id,
+                DocumentChunk.chunk_index,
                 DocumentChunk.tenant_id,
                 DocumentChunk.document_version_id,
                 DocumentChunk.generation_id,
@@ -280,7 +362,7 @@ class HybridRetrievalService:
                 DocumentIngestionGeneration.active.is_(True),
                 DocumentIngestionGeneration.embedding_dimension == self.embedding_dimension,
                 DocumentVersion.tenant_id == DocumentChunk.tenant_id,
-                DocumentChunk.search_vector.op("@@")(ts_query),
+                DocumentChunk.search_vector.op("@@")(ts_query) if match is None else match,
             )
             .order_by(desc(rank), DocumentChunk.chunk_index)
             .limit(self.top_k)
@@ -289,9 +371,7 @@ class HybridRetrievalService:
             statement = statement.where(
                 DocumentIngestionGeneration.embedding_model == self.embedding_model
             )
-        async with self.session_factory() as session:
-            rows = (await session.execute(statement)).all()
-        return tuple(self._candidate_from_row(row, score=float(row.rank_score)) for row in rows)
+        return statement
 
     @classmethod
     def _keyword_fallback_query(cls, query: str) -> str | None:
@@ -302,6 +382,21 @@ class HybridRetrievalService:
         if not meaningful_terms:
             return None
         return " OR ".join(meaningful_terms)
+
+    @staticmethod
+    def _chinese_query_terms(query: str) -> tuple[str, ...]:
+        # Long input must not create unbounded SQL. Evenly sample at most32 unique
+        # windows so the final clause is not silently lost to a prefix-only cap.
+        terms = list(
+            dict.fromkeys(
+                run[index : index + min(3, len(run))]
+                for run in re.findall(r"[\u3400-\u4dbf\u4e00-\u9fff]{2,}", query)
+                for index in range(max(1, len(run) - 2))
+            )
+        )
+        if len(terms) > 32:
+            terms = [terms[index * (len(terms) - 1) // 31] for index in range(32)]
+        return tuple(terms)
 
     async def _vector_recall(
         self,
@@ -354,7 +449,7 @@ class HybridRetrievalService:
             statement = statement.where(
                 DocumentIngestionGeneration.embedding_model == self.embedding_model
             )
-        async with self.session_factory() as session:
+        async with read_only_session(self.session_factory) as session:
             rows = (await session.execute(statement)).all()
         return tuple(self._candidate_from_row(row, score=1.0 - float(row.distance)) for row in rows)
 

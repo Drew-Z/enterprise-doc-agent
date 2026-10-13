@@ -1,0 +1,317 @@
+{
+  "schema_version": 1,
+  "phase": "CO-3j2",
+  "recorded_at": "2026-09-27T04:18:01.310485+00:00",
+  "status": "signed_images_and_local_rollback_verified",
+  "task_status": "in_progress",
+  "repository": "Drew-Z/enterprise-doc-agent",
+  "change_scope": "Release artifacts, isolated local image drill, and five documentation/report paths; no application or workflow changes in this phase.",
+  "releases": [
+    {
+      "tag": "v0.1.45-rc.0",
+      "commit": "93d95a96d83b9ec7ac26897b9287842d0d798923",
+      "run_id": 36244528636,
+      "run_url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/36244528636",
+      "manifest_sha256": "2f6298736fb06cddd1905e841b76031e3715e1a5353b696ce04106fca696d914",
+      "status": "published_verified",
+      "images": [
+        {
+          "service": "api",
+          "image": "ghcr.io/drew-z/enterprise-doc-api",
+          "digest": "sha256:5b024e244b866002e3304e98e300d683c976cc31abd5859f291ff489f085857f",
+          "ci_signature_verified": true,
+          "attestation_subject_verified": true,
+          "provenance_source_sha_verified": true
+        },
+        {
+          "service": "worker",
+          "image": "ghcr.io/drew-z/enterprise-doc-worker",
+          "digest": "sha256:70c1a2b69fdfc8e3856ed5b65b819b4c90b130ac63f6ab3d4a4e2cd5bc07c2bc",
+          "ci_signature_verified": true,
+          "attestation_subject_verified": true,
+          "provenance_source_sha_verified": true
+        },
+        {
+          "service": "consumer",
+          "image": "ghcr.io/drew-z/enterprise-doc-consumer",
+          "digest": "sha256:4acdb73e75b8a9bce806113b32b35185ee9df9d8f9c924d5d5f2583b66907321",
+          "ci_signature_verified": true,
+          "attestation_subject_verified": true,
+          "provenance_source_sha_verified": true
+        },
+        {
+          "service": "web",
+          "image": "ghcr.io/drew-z/enterprise-doc-web",
+          "digest": "sha256:c526a91cc13c91e27facef09f423168843a890c6b471f6b2cb7c5fb537b57d05",
+          "ci_signature_verified": true,
+          "attestation_subject_verified": true,
+          "provenance_source_sha_verified": true
+        }
+      ]
+    },
+    {
+      "tag": "v0.1.45-rc.1",
+      "commit": "1ac873b06f265a415ed128ed55b9f54f81bdf0b9",
+      "run_id": 36244528790,
+      "run_url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/36244528790",
+      "manifest_sha256": "a8743dc6c895bcb43d4dab8c57986d5c9458f22b89e457eee4e2e8414c01ff08",
+      "status": "published_verified",
+      "images": [
+        {
+          "service": "api",
+          "image": "ghcr.io/drew-z/enterprise-doc-api",
+          "digest": "sha256:482e937bff9f26020fdc385e1acbc1a4ce72b086a50b733abb1fec295f9f45e8",
+          "ci_signature_verified": true,
+          "attestation_subject_verified": true,
+          "provenance_source_sha_verified": true
+        },
+        {
+          "service": "worker",
+          "image": "ghcr.io/drew-z/enterprise-doc-worker",
+          "digest": "sha256:377b15847f914fd9c2a87d1c2975e463e9e94e0a249cd62b00034f856151b5fb",
+          "ci_signature_verified": true,
+          "attestation_subject_verified": true,
+          "provenance_source_sha_verified": true
+        },
+        {
+          "service": "consumer",
+          "image": "ghcr.io/drew-z/enterprise-doc-consumer",
+          "digest": "sha256:a267621b78ada3e8b5b2125a22d660ec18cc05b56ac336dd65563df3396b130a",
+          "ci_signature_verified": true,
+          "attestation_subject_verified": true,
+          "provenance_source_sha_verified": true
+        },
+        {
+          "service": "web",
+          "image": "ghcr.io/drew-z/enterprise-doc-web",
+          "digest": "sha256:deca4b3dcbe5756fc9a0771c0bd293d47ef9e0954567aead91d70748ff8b2bf1",
+          "ci_signature_verified": true,
+          "attestation_subject_verified": true,
+          "provenance_source_sha_verified": true
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "strict_manifest_count": 2,
+    "evidence_file_hash_checks": 112,
+    "cryptographic_signatures": "Verified in the successful GitHub release workflows; not rerun locally with cosign.",
+    "local_identity_binding": "Downloaded verification outputs checked against exact workflow identity, issuer, tag, source SHA, image digest and signed provenance buildDefinition.",
+    "immutable_linux_amd64_images_pulled_and_inspected": 8,
+    "executed_source_reference_hash_checks": 19
+  },
+  "local_drill": {
+    "started_at": "2026-09-26T14:31:30.419251+00:00",
+    "completed_at": "2026-09-26T14:34:43.682292+00:00",
+    "status": "image_rollback_checks_passed",
+    "attempts": 4,
+    "preparation_failures_retained": 3,
+    "frozen_source_snapshot_date": "2026-09-25",
+    "restored_revision": "20260923_0027",
+    "migrated_revision": "20260924_0031",
+    "migration_executor": "v0.1.45-rc.0 API image",
+    "same_database_and_objects_retained_across_phases": true,
+    "database_downgrade_or_snapshot_reset_between_phases": false,
+    "objects_restored_and_readback_sha256_verified": 1584,
+    "original_snapshots_unchanged": true,
+    "new_synthetic_business_tasks": 3,
+    "historical_packet_cross_tenant_denial": true,
+    "cross_version_generation_review_csv_and_idempotency_verified": true,
+    "phases": [
+      {
+        "phase": "fallback_before",
+        "tag": "v0.1.45-rc.0",
+        "status": "passed",
+        "database_revision": "20260924_0031",
+        "historical_packet_count": 1,
+        "historical_row_count": 3,
+        "historical_json_csv_unchanged": true,
+        "preserved_new_packets_from_earlier_phases": 0,
+        "prior_billing_history_unchanged": true,
+        "new_synthetic_txt_bytes": 43,
+        "document_consumptions": 1,
+        "new_background_generation": "drafted",
+        "review_completed": true,
+        "preserved_prerequisite_states": [
+          "met",
+          "unmet",
+          "unknown"
+        ],
+        "same_key_replays": 2,
+        "new_client_refresh_verified": true,
+        "controlled_model_http_requests": 1,
+        "provider_token_usage": {
+          "source": "local_fixture",
+          "total_tokens": 50,
+          "currency_cost": null
+        },
+        "cumulative_billing_rows": {
+          "tenant_entitlements": 1,
+          "product_quotas": 2,
+          "usage_reservations": 1,
+          "usage_events": 1,
+          "product_usage_reservations": 1,
+          "product_usage_events": 1,
+          "presales_attempts": 1,
+          "presales_provider_calls": 1,
+          "provider_dispatches": 0
+        },
+        "actual_web_static_and_proxy_used": true
+      },
+      {
+        "phase": "candidate",
+        "tag": "v0.1.45-rc.1",
+        "status": "passed",
+        "database_revision": "20260924_0031",
+        "historical_packet_count": 1,
+        "historical_row_count": 3,
+        "historical_json_csv_unchanged": true,
+        "preserved_new_packets_from_earlier_phases": 1,
+        "prior_billing_history_unchanged": true,
+        "new_synthetic_txt_bytes": 43,
+        "document_consumptions": 1,
+        "new_background_generation": "drafted",
+        "review_completed": true,
+        "preserved_prerequisite_states": [
+          "met",
+          "unmet",
+          "unknown"
+        ],
+        "same_key_replays": 2,
+        "new_client_refresh_verified": true,
+        "controlled_model_http_requests": 1,
+        "provider_token_usage": {
+          "source": "local_fixture",
+          "total_tokens": 50,
+          "currency_cost": null
+        },
+        "cumulative_billing_rows": {
+          "tenant_entitlements": 1,
+          "product_quotas": 2,
+          "usage_reservations": 2,
+          "usage_events": 2,
+          "product_usage_reservations": 2,
+          "product_usage_events": 2,
+          "presales_attempts": 2,
+          "presales_provider_calls": 2,
+          "provider_dispatches": 0
+        },
+        "actual_web_static_and_proxy_used": true
+      },
+      {
+        "phase": "fallback_after",
+        "tag": "v0.1.45-rc.0",
+        "status": "passed",
+        "database_revision": "20260924_0031",
+        "historical_packet_count": 1,
+        "historical_row_count": 3,
+        "historical_json_csv_unchanged": true,
+        "preserved_new_packets_from_earlier_phases": 2,
+        "prior_billing_history_unchanged": true,
+        "new_synthetic_txt_bytes": 43,
+        "document_consumptions": 1,
+        "new_background_generation": "drafted",
+        "review_completed": true,
+        "preserved_prerequisite_states": [
+          "met",
+          "unmet",
+          "unknown"
+        ],
+        "same_key_replays": 2,
+        "new_client_refresh_verified": true,
+        "controlled_model_http_requests": 1,
+        "provider_token_usage": {
+          "source": "local_fixture",
+          "total_tokens": 50,
+          "currency_cost": null
+        },
+        "cumulative_billing_rows": {
+          "tenant_entitlements": 1,
+          "product_quotas": 2,
+          "usage_reservations": 3,
+          "usage_events": 3,
+          "product_usage_reservations": 3,
+          "product_usage_events": 3,
+          "presales_attempts": 3,
+          "presales_provider_calls": 3,
+          "provider_dispatches": 0
+        },
+        "actual_web_static_and_proxy_used": true
+      }
+    ],
+    "network": "Application containers only on an exclusive internal Docker network. Separate fixed-target ingress bound to 127.0.0.1; no general proxy."
+  },
+  "execution_counts": {
+    "controlled_local_model_http_requests": 3,
+    "real_model_requests": 0,
+    "real_vector_requests": 0,
+    "emails": 0,
+    "online_writes": 0,
+    "remote_migrations": 0,
+    "remote_deployments": 0
+  },
+  "retained_failures": [
+    {
+      "event": "First rc.1 Worker pull TLS handshake timeout",
+      "resolution": "Same immutable digest pulled successfully on resume."
+    },
+    {
+      "attempt": 1,
+      "event": "Internal network did not publish host ports",
+      "resolution": "Independent probe confirmed behavior; added fixed-target loopback ingress."
+    },
+    {
+      "attempt": 2,
+      "event": "Synthetic entitlement seed lacked explicit timestamps",
+      "resolution": "Private seed fixture adds explicit timestamps; no application change."
+    },
+    {
+      "attempt": 3,
+      "event": "PostgreSQL temporary initialization Unix socket passed readiness before restart",
+      "resolution": "Private harness waits for final TCP readiness on 127.0.0.1."
+    },
+    {
+      "event": "Extra assertion expected BuildKit metadata in Cosign-normalized predicate",
+      "resolution": "Verified exact source, tag and digest using signed buildDefinition fields; parser correction retained."
+    },
+    {
+      "event": "Closeout assertion detected a changed unrelated local proxy container ID after the drill",
+      "resolution": "Read-only inspection confirmed its replacement was created after drill completion and is running; original application infrastructure IDs remain running. No container was changed by closeout."
+    }
+  ],
+  "cleanup": {
+    "successful_attempt_owned_container_creations": 18,
+    "owned_attempt_containers_remaining": 0,
+    "owned_attempt_networks_remaining": 0,
+    "original_containers_running_at_drill_completion": true,
+    "original_application_infrastructure_ids_running_at_closeout": true,
+    "later_unrelated_proxy_replacement_observed": true,
+    "temporary_scripts": "Pending final publication receipt; executed sources retained privately before cleanup.",
+    "eight_candidate_images": "Retained locally as release artifacts."
+  },
+  "closeout_checks": {
+    "documentation_contract_tests_passed": 5,
+    "trellis_context": "passed",
+    "scoped_diff_check": "passed",
+    "report_json_and_evidence_assertions": "passed",
+    "prior_frozen_indexes_unchanged": 6,
+    "historical_status_entries_preserved": 2993,
+    "candidate_source_full_suite": "Previous CO-3j1 result: 1936 tests and 23 subtests passed; not rerun or attributed to this documentation-only closeout.",
+    "publication": "Exact documentation commit, Draft PR and applicable CI recorded in a subsequent private receipt."
+  },
+  "not_covered": [
+    "Live Kubernetes deployment, migration, configuration rollback or traffic switch.",
+    "Browser UI, GitHub OAuth, or browser/proxy disconnection recovery in this image drill.",
+    "Nonempty general-Agent provider_dispatches history; all three snapshots were empty.",
+    "Real provider semantic quality, token reconciliation or currency cost.",
+    "Current 4C4G business capacity, latency objectives or production capacity approval.",
+    "Whole-host disaster recovery, independent failure domain, or RPO/RTO.",
+    "A fresh online baseline or consistent pre-deployment recovery point."
+  ],
+  "production_capacity_approved": false,
+  "next_steps": [
+    "Implement and validate a zero-real-supplier-call deployment route; run_smoke=false still invokes embedding rollout today.",
+    "Prepare exact private configuration, finite quotas, consistent recovery point procedure and maintenance-window execution package.",
+    "Perform authorized rollout, current-host business acceptance, browser recovery and capacity trials; remaining commercial gates stay open."
+  ]
+}

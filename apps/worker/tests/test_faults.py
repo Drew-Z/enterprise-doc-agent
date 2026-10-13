@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from enterprise_doc_core.agents.gateway import ModelTimeoutError
 from enterprise_doc_core.config import FaultInjectionSettings
 from enterprise_doc_core.jobs import ClaimedJob
+from enterprise_doc_core.object_store.models import ObjectContent, ObjectHead
 from enterprise_doc_worker.faults import (
     FaultController,
     FaultInjectingHandler,
@@ -144,6 +145,51 @@ class FakeMultipartStore:
         return b"abcdef"
 
 
+@pytest.mark.parametrize("operation", ["presign_object_put", "retire_upload_object"])
+async def test_direct_upload_operations_preserve_one_shot_fault_and_arguments(
+    operation: str,
+) -> None:
+    from enterprise_doc_core.object_store.errors import ObjectStoreUnavailable
+    from enterprise_doc_core.object_store.models import PresignedObjectUpload
+
+    calls = []
+    signed = PresignedObjectUpload("https://objects.test/signed", {"If-None-Match": "*"}, 60)
+
+    class Inner:
+        async def presign_object_put(self, **arguments: Any) -> PresignedObjectUpload:
+            calls.append(arguments)
+            return signed
+
+        async def retire_upload_object(self, **arguments: Any) -> bool:
+            calls.append(arguments)
+            return False
+
+    store = FaultInjectingMultipartObjectStore(
+        Inner(),
+        FaultController(
+            FaultInjectionSettings(
+                enabled=True,
+                target="multipart",
+                mode="object_store_unavailable",
+            )
+        ),
+    )
+    arguments: dict[str, Any] = {
+        "bucket": "documents",
+        "key": "owned",
+        "metadata": {"contract": "m1"},
+    }
+    if operation == "presign_object_put":
+        arguments.update(size_bytes=37, expires_in_seconds=60)
+    method = getattr(store, operation)
+    with pytest.raises(ObjectStoreUnavailable):
+        await method(**arguments)
+    assert calls == []
+    result = await method(**arguments)
+    assert result == (signed if operation == "presign_object_put" else False)
+    assert calls == [arguments]
+
+
 async def test_multipart_short_read_is_one_shot() -> None:
     store = FaultInjectingMultipartObjectStore(
         FakeMultipartStore(),  # type: ignore[arg-type]
@@ -158,3 +204,29 @@ async def test_multipart_short_read_is_one_shot() -> None:
 
     assert await store.get_range(bucket="documents", key="a", start=0, end_inclusive=5) == b"abcde"
     assert await store.get_range(bucket="documents", key="a", start=0, end_inclusive=5) == b"abcdef"
+
+
+@pytest.mark.parametrize("content", [b"abcdef", None])
+async def test_multipart_bounded_read_preserves_metadata_and_one_shot_fault(
+    content: bytes | None,
+) -> None:
+    head = ObjectHead(6, '"etag"', None, "text/plain", {"contract": "m1"})
+    calls = []
+
+    class Inner:
+        async def read_object(self, **arguments: Any) -> ObjectContent:
+            calls.append(arguments)
+            return ObjectContent(head=head, content=content)
+
+    store = FaultInjectingMultipartObjectStore(
+        Inner(),
+        FaultController(
+            FaultInjectionSettings(enabled=True, target="multipart", mode="short_read")
+        ),
+    )
+    first = await store.read_object(bucket="documents", key="a", max_bytes=6)
+    second = await store.read_object(bucket="documents", key="a", max_bytes=6)
+    assert first.head == second.head == head
+    assert first.content == (content[:-1] if content is not None else None)
+    assert second.content == content
+    assert calls == [{"bucket": "documents", "key": "a", "max_bytes": 6}] * 2

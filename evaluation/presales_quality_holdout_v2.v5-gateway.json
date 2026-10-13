@@ -1,0 +1,1145 @@
+{
+  "schemaVersion": "presales-gateway-run-v1",
+  "scope": "generation_only_with_complete_synthetic_sources; no_retrieval_or_persistence",
+  "datasetSha256": "c93361e9b1ffac60b6026172a79360aac9bf0a18f7186c818190fa938e37d55c",
+  "runnerSha256": "c7ad2a1d21a28f52c1b5d6289b8f9c66eb190b36706011a6db1c9818673a7d20",
+  "startedAt": "2026-09-23T13:16:19.714514+00:00",
+  "maxGenerationAttempts": 6,
+  "automaticRetries": 0,
+  "versions": {
+    "H2-ORDER": "36361d09-2904-5249-b7f5-f7feace7f4b2",
+    "H2-FEATURES": "ab56a3a1-87a6-5955-9508-a5842dfa7f3a",
+    "H2-LIMITS": "1df25006-2e9d-58a1-9271-b34a9b74341b",
+    "H2-ASSURANCE": "409075dd-493c-5f44-af23-ec8f254b547f",
+    "H2-SERVICE": "ec36ad1c-c7d3-5b80-8e85-dbe7c809e7ec",
+    "H2-WINDOW": "c9c2e75c-31d6-54bc-987a-e26277d8c77a"
+  },
+  "observations": [
+    {
+      "key": "H2-R1",
+      "startedAt": "2026-09-23T13:16:19.802782+00:00",
+      "state": "succeeded",
+      "provenance": {
+        "promptVersion": "presales.v5",
+        "promptSha256": "6624b1760f43e9d47e9ac11530a2d21a7cb4e6ca6e5519c9e3b1d4fecc0fcd65",
+        "configuredModelVersion": null,
+        "configuredModelRevision": null,
+        "providerResponseId": null,
+        "returnedModel": null
+      },
+      "result": {
+        "draft": {
+          "status": "supported",
+          "answer": "本订单当前可以每五分钟同步一次新增工单。",
+          "conditions": [],
+          "missingInformation": [],
+          "citations": [
+            {
+              "chunkId": "68b50628-b741-5eaf-9ca3-e08249f848c7",
+              "documentVersionId": "36361d09-2904-5249-b7f5-f7feace7f4b2",
+              "excerpt": "# H2-ORDER 已签署订单\nSYNC 模块已购买，连接密钥验证通过，客户签署了同步验收单。\nOCR 模块未购买，资料约定的版面验收尚未进行。\nHOOK 模块已购买，本订单及附件均未记载其接收域名验证的状态。\nH2-SERVICE 与 H2-WINDOW 均对同一企业、同一生产查询 API 生效，互不优先，没有其他例外约定。"
+            },
+            {
+              "chunkId": "dfa56f0f-1f9c-53b4-a18e-6870c66d872e",
+              "documentVersionId": "ab56a3a1-87a6-5955-9508-a5842dfa7f3a",
+              "excerpt": "# H2-FEATURES 模块规格\nSYNC 可每五分钟同步一次新增工单。启用 SYNC 必须购买该模块、通过连接密钥验证并签署客户同步验收单。\nOCR 可从扫描工单图片中提取文字。启用 OCR 必须先购买模块并通过版面验收。\nHOOK 可把工单状态变化推送到客户 HTTPS 接收端。启用 HOOK 必须购买模块并完成接收域名验证。未知验证状态不能视为通过。"
+            }
+          ]
+        },
+        "usage": {
+          "prompt_tokens": 3536,
+          "completion_tokens": 6340,
+          "total_tokens": 9876
+        },
+        "returnedModel": "grok-4.6",
+        "providerResponseId": "f0b191c1-604a-9957-a6e2-62f3c32b396e"
+      },
+      "elapsedSeconds": 96.359,
+      "providerRequests": 1,
+      "traces": [
+        {
+          "requestDispatched": true,
+          "input": {
+            "requirement": {
+              "key": "H2-R1",
+              "text": "本订单当前可以每五分钟同步一次新增工单。",
+              "sourceLocation": "H2 第1项"
+            },
+            "sources": [
+              {
+                "versionId": "36361d09-2904-5249-b7f5-f7feace7f4b2",
+                "applicability": "澄海工单已签署订单的当前正式能力。全部资料为虚构测试内容。",
+                "documentId": "b0596186-01dc-52b3-8cff-5d49fceea404",
+                "generationId": "801b6ac9-61dc-51fb-81f9-2997d2f1c250",
+                "filename": "H2-ORDER-v1.txt",
+                "versionNumber": 1,
+                "latestVersionNumber": 1,
+                "contentSha256": "deace139ec70ea2671c5fe8b3cfaf0657ce417b13c5bf318904950abda4bba66"
+              },
+              {
+                "versionId": "ab56a3a1-87a6-5955-9508-a5842dfa7f3a",
+                "applicability": "澄海工单当前正式模块规格，完成每项启用前提后才可生产使用。",
+                "documentId": "f3cd2466-0c00-55cb-a594-5e3f4812cecd",
+                "generationId": "a409787e-e8a5-5713-9ab9-3d5bd71e9b8b",
+                "filename": "H2-FEATURES-v1.txt",
+                "versionNumber": 1,
+                "latestVersionNumber": 1,
+                "contentSha256": "72d8c023567be20a05a8244639597007c4f97a685f6c7889f4cb1d84c0aa90b3"
+              },
+              {
+                "versionId": "1df25006-2e9d-58a1-9271-b34a9b74341b",
+                "applicability": "当前正式版本所有套餐均适用，已购模块也不改变该上限。",
+                "documentId": "b31282e7-3b4c-58d6-98f8-c819d99300de",
+                "generationId": "192b0b59-5bfa-537a-beb1-8e36c90e5ca2",
+                "filename": "H2-LIMITS-v1.txt",
+                "versionNumber": 1,
+                "latestVersionNumber": 1,
+                "contentSha256": "e83c4b626e367bbc56fcc5c88f4fefc4eb8899bb5c8111b919252e88ecc4f579"
+              },
+              {
+                "versionId": "409075dd-493c-5f44-af23-ec8f254b547f",
+                "applicability": "本订单的审计资料清单。",
+                "documentId": "88117f74-877a-5f55-9fad-947b74279295",
+                "generationId": "86b4e530-82e9-5471-9ee7-72d6d626054e",
+                "filename": "H2-ASSURANCE-v1.txt",
+                "versionNumber": 1,
+                "latestVersionNumber": 1,
+                "contentSha256": "90777666a013d738fce8607be7855119f62aad704eda3310e3cc12fbe323daf0"
+              },
+              {
+                "versionId": "ec36ad1c-c7d3-5b80-8e85-dbe7c809e7ec",
+                "applicability": "与 H2-WINDOW 同范围生效且互不优先。",
+                "documentId": "55fc93dc-c249-5b1c-9d10-1925370d16f5",
+                "generationId": "7a4334e0-afff-565c-b412-e257668ccdbc",
+                "filename": "H2-SERVICE-v1.txt",
+                "versionNumber": 1,
+                "latestVersionNumber": 1,
+                "contentSha256": "3376a8eec6e2dd02631bcea3147edab93350ee48901f5e49cc0dd8a9197c9cfb"
+              },
+              {
+                "versionId": "c9c2e75c-31d6-54bc-987a-e26277d8c77a",
+                "applicability": "与 H2-SERVICE 同范围生效且互不优先。",
+                "documentId": "c87fcbc9-f6a8-5071-8663-3f9fe9f82188",
+                "generationId": "be2eb1c4-58b1-5c08-8910-41290ee482d1",
+                "filename": "H2-WINDOW-v1.txt",
+                "versionNumber": 1,
+                "latestVersionNumber": 1,
+                "contentSha256": "c290ceb10ebbb87cca0d72159a895f578e5df46547fcee51ffcbe8bca4575070"
+              }
+            ],
+            "evidence": [
+              {
+                "chunkId": "68b50628-b741-5eaf-9ca3-e08249f848c7",
+                "documentVersionId": "36361d09-2904-5249-b7f5-f7feace7f4b2",
+                "text": "# H2-ORDER 已签署订单\nSYNC 模块已购买，连接密钥验证通过，客户签署了同步验收单。\nOCR 模块未购买，资料约定的版面验收尚未进行。\nHOOK 模块已购买，本订单及附件均未记载其接收域名验证的状态。\nH2-SERVICE 与 H2-WINDOW 均对同一企业、同一生产查询 API 生效，互不优先，没有其他例外约定。",
+                "filename": "H2-ORDER-v1.txt",
+                "heading": "",
+                "pageNumber": "",
+                "citationId": "cite_48fb1d27d83b_1"
+              },
+              {
+                "chunkId": "dfa56f0f-1f9c-53b4-a18e-6870c66d872e",
+                "documentVersionId": "ab56a3a1-87a6-5955-9508-a5842dfa7f3a",
+                "text": "# H2-FEATURES 模块规格\nSYNC 可每五分钟同步一次新增工单。启用 SYNC 必须购买该模块、通过连接密钥验证并签署客户同步验收单。\nOCR 可从扫描工单图片中提取文字。启用 OCR 必须先购买模块并通过版面验收。\nHOOK 可把工单状态变化推送到客户 HTTPS 接收端。启用 HOOK 必须购买模块并完成接收域名验证。未知验证状态不能视为通过。",
+                "filename": "H2-FEATURES-v1.txt",
+                "heading": "",
+                "pageNumber": "",
+                "citationId": "cite_48fb1d27d83b_2"
+              },
+              {
+                "chunkId": "b7abb0eb-409f-5fb7-9160-8d4e3c448241",
+                "documentVersionId": "1df25006-2e9d-58a1-9271-b34a9b74341b",
+                "text": "# H2-LIMITS 单次导出上限\n一次 CSV 导出的工单行数硬上限是 80000 行。当前版本没有增加该上限的配置或选购方案。多次导出再合并不属于一次导出。",
+                "filename": "H2-LIMITS-v1.txt",
+                "heading": "",
+                "pageNumber": "",
+                "citationId": "cite_48fb1d27d83b_3"
+              },
+              {
+                "chunkId": "e02c880e-deda-52c0-889f-c89352f5026b",
+                "documentVersionId": "409075dd-493c-5f44-af23-ec8f254b547f",
+                "text": "# H2-ASSURANCE 审计资料\n现有资料包含内部访问控制检查记录。未提供 SOC 2 Type II 报告，也没有报告有效期或审计机构信息。这份清单不声明公司是否取得过该报告。",
+                "filename": "H2-ASSURANCE-v1.txt",
+                "heading": "",
+                "pageNumber": "",
+                "citationId": "cite_48fb1d27d83b_4"
+              },
+              {
+                "chunkId": "4f9e1d62-063d-572b-bb65-1726971e74c7",
+                "documentVersionId": "ec36ad1c-c7d3-5b80-8e85-dbe7c809e7ec",
+                "text": "# H2-SERVICE 查询服务承诺\n本企业的生产查询 API 每周七天、每天二十四小时保持可访问，不得安排任何停机窗口。此承诺包含周六凌晨。\n本条款与 H2-WINDOW 互不优先，也不豁免后者的停机要求。",
+                "filename": "H2-SERVICE-v1.txt",
+                "heading": "",
+                "pageNumber": "",
+                "citationId": "cite_48fb1d27d83b_5"
+              },
+              {
+                "chunkId": "870ec784-a876-5cbd-b70a-3a8e98b3a466",
+                "documentVersionId": "c9c2e75c-31d6-54bc-987a-e26277d8c77a",
+                "text": "# H2-WINDOW 强制维护条款\n本企业的同一生产查询 API 每周六 02:00 至 03:00 必须停机维护，期间禁止接受任何查询请求。\n本条款与 H2-SERVICE 互不优先，也没有备用接口或不停机例外。",
+                "filename": "H2-WINDOW-v1.txt",
+                "heading": "",
+                "pageNumber": "",
+                "citationId": "cite_48fb1d27d83b_6"
+              }
+            ]
+          },
+          "httpStatus": 200,
+          "response": {
+            "id": "f0b191c1-604a-9957-a6e2-62f3c32b396e",
+            "model": "grok-4.6",
+            "choices": [
+              {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                  "content": "{\n  \"status\": \"supported\",\n  \"answer\": \"本订单当前可以每五分钟同步一次新增工单。\",\n  \"conditions\": [],\n  \"missingInformation\": [],\n  \"prerequisites\": [\n    {\n      \"condition\": \"必须购买该模块\",\n      \"state\": \"met\",\n      \"citations\": [\n        {\n          \"citationId\": \"cite_48fb1d27d83b_1\"\n        }\n      ]\n    },\n    {\n      \"condition\": \"必须通过连接密钥验证\",\n      \"state\": \"met\",\n      \"citations\": [\n        {\n          \"citationId\": \"cite_48fb1d27d83b_1\"\n        }\n      ]\n    },\n    {\n      \"condition\": \"必须签署客户同步验收单\",\n      \"state\": \"met\",\n      \"citations\": [\n        {\n          \"citationId\": \"cite_48fb1d27d83b_1\"\n        }\n      ]\n    }\n  ],\n  \"citations\": [\n    {\n      \"citationId\": \"cite_48fb1d27d83b_1\"\n    },\n    {\n      \"citationId\": \"cite_48fb1d27d83b_2\"\n    }\n  ]\n}",
+                  "role": "assistant"
+                }
+              }
+            ],
+            "usage": {
+              "completion_tokens": 6340,
+              "completion_tokens_details": {
+                "reasoning_tokens": 6085
+              },
+              "context_details": {
+                "input_tokens": 3536,
+                "output_tokens": 6347
+              },
+              "cost_in_usd_ticks": 448240000,
+              "num_server_side_tools_used": 0,
+              "num_sources_used": 0,
+              "prompt_tokens": 3536,
+              "prompt_tokens_details": {
+                "cached_tokens": 192
+              },
+              "total_tokens": 9876
+            }
+          }
+        }
+      ]
+    },
+    {
+      "key": "H2-R2",
+      "startedAt": "2026-09-23T13:17:56.174599+00:00",
+      "state": "succeeded",
+      "provenance": {
+        "promptVersion": "presales.v5",
+        "promptSha256": "6624b1760f43e9d47e9ac11530a2d21a7cb4e6ca6e5519c9e3b1d4fecc0fcd65",
+        "configuredModelVersion": null,
+        "configuredModelRevision": null,
+        "providerResponseId": null,
+        "returnedModel": null
+      },
+      "result": {
+        "draft": {
+          "status": "conditional",
+          "answer": "本企业可以从扫描工单图片提取文字的能力由模块规格支持，但当前订单中 OCR 模块未购买且版面验收尚未进行，前提未满足。",
+          "conditions": [
+            "需购买 OCR 模块",
+            "需完成版面验收"
+          ],
+          "missingInformation": [],
+          "citations": [
+            {
+              "chunkId": "68b50628-b741-5eaf-9ca3-e08249f848c7",
+              "documentVersionId": "36361d09-2904-5249-b7f5-f7feace7f4b2",
+              "excerpt": "# H2-ORDER 已签署订单\nSYNC 模块已购买，连接密钥验证通过，客户签署了同步验收单。\nOCR 模块未购买，资料约定的版面验收尚未进行。\nHOOK 模块已购买，本订单及附件均未记载其接收域名验证的状态。\nH2-SERVICE 与 H2-WINDOW 均对同一企业、同一生产查询 API 生效，互不优先，没有其他例外约定。"
+            },
+            {
+              "chunkId": "dfa56f0f-1f9c-53b4-a18e-6870c66d872e",
+              "documentVersionId": "ab56a3a1-87a6-5955-9508-a5842dfa7f3a",
+              "excerpt": "# H2-FEATURES 模块规格\nSYNC 可每五分钟同步一次新增工单。启用 SYNC 必须购买该模块、通过连接密钥验证并签署客户同步验收单。\nOCR 可从扫描工单图片中提取文字。启用 OCR 必须先购买模块并通过版面验收。\nHOOK 可把工单状态变化推送到客户 HTTPS 接收端。启用 HOOK 必须购买模块并完成接收域名验证。未知验证状态不能视为通过。"
+            }
+          ]
+        },
+        "usage": {
+          "prompt_tokens": 3528,
+          "completion_tokens": 3913,
+          "total_tokens": 7441
+        },
+        "returnedModel": "grok-4.6",
+        "providerResponseId": "69fd388d-4f40-9bef-9520-76323e43ce02"
+      },
+      "elapsedSeconds": 66.5,
+      "providerRequests": 1,
+      "traces": [
+        {
+          "requestDispatched": true,
+          "input": {
+            "requirement": {
+              "key": "H2-R2",
+              "text": "本企业可以从扫描工单图片提取文字。",
+              "sourceLocation": "H2 第2项"
+            },
+            "sources": [
+              {
+                "versionId": "36361d09-2904-5249-b7f5-f7feace7f4b2",
+                "applicability": "澄海工单已签署订单的当前正式能力。全部资料为虚构测试内容。",
+                "documentId": "b0596186-01dc-52b3-8cff-5d49fceea404",
+                "generationId": "801b6ac9-61dc-51fb-81f9-2997d2f1c250",
+                "filename": "H2-ORDER-v1.txt",
+                "versionNumber": 1,
+                "latestVersionNumber": 1,
+                "contentSha256": "deace139ec70ea2671c5fe8b3cfaf0657ce417b13c5bf318904950abda4bba66"
+              },
+              {
+                "versionId": "ab56a3a1-87a6-5955-9508-a5842dfa7f3a",
+                "applicability": "澄海工单当前正式模块规格，完成每项启用前提后才可生产使用。",
+                "documentId": "f3cd2466-0c00-55cb-a594-5e3f4812cecd",
+                "generationId": "a409787e-e8a5-5713-9ab9-3d5bd71e9b8b",
+                "filename": "H2-FEATURES-v1.txt",
+                "versionNumber": 1,
+                "latestVersionNumber": 1,
+                "contentSha256": "72d8c023567be20a05a8244639597007c4f97a685f6c7889f4cb1d84c0aa90b3"
+              },
+              {
+                "versionId": "1df25006-2e9d-58a1-9271-b34a9b74341b",
+                "applicability": "当前正式版本所有套餐均适用，已购模块也不改变该上限。",
+                "documentId": "b31282e7-3b4c-58d6-98f8-c819d99300de",
+                "generationId": "192b0b59-5bfa-537a-beb1-8e36c90e5ca2",
+                "filename": "H2-LIMITS-v1.txt",
+                "versionNumber": 1,
+                "latestVersionNumber": 1,
+                "contentSha256": "e83c4b626e367bbc56fcc5c88f4fefc4eb8899bb5c8111b919252e88ecc4f579"
+              },
+              {
+                "versionId": "409075dd-493c-5f44-af23-ec8f254b547f",
+                "applicability": "本订单的审计资料清单。",
+                "documentId": "88117f74-877a-5f55-9fad-947b74279295",
+                "generationId": "86b4e530-82e9-5471-9ee7-72d6d626054e",
+                "filename": "H2-ASSURANCE-v1.txt",
+                "versionNumber": 1,
+                "latestVersionNumber": 1,
+                "contentSha256": "90777666a013d738fce8607be7855119f62aad704eda3310e3cc12fbe323daf0"
+              },
+              {
+                "versionId": "ec36ad1c-c7d3-5b80-8e85-dbe7c809e7ec",
+                "applicability": "与 H2-WINDOW 同范围生效且互不优先。",
+                "documentId": "55fc93dc-c249-5b1c-9d10-1925370d16f5",
+                "generationId": "7a4334e0-afff-565c-b412-e257668ccdbc",
+                "filename": "H2-SERVICE-v1.txt",
+                "versionNumber": 1,
+                "latestVersionNumber": 1,
+                "contentSha256": "3376a8eec6e2dd02631bcea3147edab93350ee48901f5e49cc0dd8a9197c9cfb"
+              },
+              {
+                "versionId": "c9c2e75c-31d6-54bc-987a-e26277d8c77a",
+                "applicability": "与 H2-SERVICE 同范围生效且互不优先。",
+                "documentId": "c87fcbc9-f6a8-5071-8663-3f9fe9f82188",
+                "generationId": "be2eb1c4-58b1-5c08-8910-41290ee482d1",
+                "filename": "H2-WINDOW-v1.txt",
+                "versionNumber": 1,
+                "latestVersionNumber": 1,
+                "contentSha256": "c290ceb10ebbb87cca0d72159a895f578e5df46547fcee51ffcbe8bca4575070"
+              }
+            ],
+            "evidence": [
+              {
+                "chunkId": "68b50628-b741-5eaf-9ca3-e08249f848c7",
+                "documentVersionId": "36361d09-2904-5249-b7f5-f7feace7f4b2",
+                "text": "# H2-ORDER 已签署订单\nSYNC 模块已购买，连接密钥验证通过，客户签署了同步验收单。\nOCR 模块未购买，资料约定的版面验收尚未进行。\nHOOK 模块已购买，本订单及附件均未记载其接收域名验证的状态。\nH2-SERVICE 与 H2-WINDOW 均对同一企业、同一生产查询 API 生效，互不优先，没有其他例外约定。",
+                "filename": "H2-ORDER-v1.txt",
+                "heading": "",
+                "pageNumber": "",
+                "citationId": "cite_09854140e6e7_1"
+              },
+              {
+                "chunkId": "dfa56f0f-1f9c-53b4-a18e-6870c66d872e",
+                "documentVersionId": "ab56a3a1-87a6-5955-9508-a5842dfa7f3a",
+                "text": "# H2-FEATURES 模块规格\nSYNC 可每五分钟同步一次新增工单。启用 SYNC 必须购买该模块、通过连接密钥验证并签署客户同步验收单。\nOCR 可从扫描工单图片中提取文字。启用 OCR 必须先购买模块并通过版面验收。\nHOOK 可把工单状态变化推送到客户 HTTPS 接收端。启用 HOOK 必须购买模块并完成接收域名验证。未知验证状态不能视为通过。",
+                "filename": "H2-FEATURES-v1.txt",
+                "heading": "",
+                "pageNumber": "",
+                "citationId": "cite_09854140e6e7_2"
+              },
+              {
+                "chunkId": "b7abb0eb-409f-5fb7-9160-8d4e3c448241",
+                "documentVersionId": "1df25006-2e9d-58a1-9271-b34a9b74341b",
+                "text": "# H2-LIMITS 单次导出上限\n一次 CSV 导出的工单行数硬上限是 80000 行。当前版本没有增加该上限的配置或选购方案。多次导出再合并不属于一次导出。",
+                "filename": "H2-LIMITS-v1.txt",
+                "heading": "",
+                "pageNumber": "",
+                "citationId": "cite_09854140e6e7_3"
+              },
+              {
+                "chunkId": "e02c880e-deda-52c0-889f-c89352f5026b",
+                "documentVersionId": "409075dd-493c-5f44-af23-ec8f254b547f",
+                "text": "# H2-ASSURANCE 审计资料\n现有资料包含内部访问控制检查记录。未提供 SOC 2 Type II 报告，也没有报告有效期或审计机构信息。这份清单不声明公司是否取得过该报告。",
+                "filename": "H2-ASSURANCE-v1.txt",
+                "heading": "",
+                "pageNumber": "",
+                "citationId": "cite_09854140e6e7_4"
+              },
+              {
+                "chunkId": "4f9e1d62-063d-572b-bb65-1726971e74c7",
+                "documentVersionId": "ec36ad1c-c7d3-5b80-8e85-dbe7c809e7ec",
+                "text": "# H2-SERVICE 查询服务承诺\n本企业的生产查询 API 每周七天、每天二十四小时保持可访问，不得安排任何停机窗口。此承诺包含周六凌晨。\n本条款与 H2-WINDOW 互不优先，也不豁免后者的停机要求。",
+                "filename": "H2-SERVICE-v1.txt",
+                "heading": "",
+                "pageNumber": "",
+                "citationId": "cite_09854140e6e7_5"
+              },
+              {
+                "chunkId": "870ec784-a876-5cbd-b70a-3a8e98b3a466",
+                "documentVersionId": "c9c2e75c-31d6-54bc-987a-e26277d8c77a",
+                "text": "# H2-WINDOW 强制维护条款\n本企业的同一生产查询 API 每周六 02:00 至 03:00 必须停机维护，期间禁止接受任何查询请求。\n本条款与 H2-SERVICE 互不优先，也没有备用接口或不停机例外。",
+                "filename": "H2-WINDOW-v1.txt",
+                "heading": "",
+                "pageNumber": "",
+                "citationId": "cite_09854140e6e7_6"
+              }
+            ]
+          },
+          "httpStatus": 200,
+          "response": {
+            "id": "69fd388d-4f40-9bef-9520-76323e43ce02",
+            "model": "grok-4.6",
+            "choices": [
+              {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                  "content": "{\n  \"status\": \"conditional\",\n  \"answer\": \"本企业可以从扫描工单图片提取文字的能力由模块规格支持，但当前订单中 OCR 模块未购买且版面验收尚未进行，前提未满足。\",\n  \"conditions\": [\"需购买 OCR 模块\", \"需完成版面验收\"],\n  \"prerequisites\": [\n    {\n      \"condition\": \"需购买 OCR 模块\",\n      \"state\": \"unmet\",\n      \"citations\": [\n        {\n          \"citationId\": \"cite_09854140e6e7_2\"\n        }\n      ]\n    },\n    {\n      \"condition\": \"需完成版面验收\",\n      \"state\": \"unmet\",\n      \"citations\": [\n        {\n          \"citationId\": \"cite_09854140e6e7_2\"\n        },\n        {\n          \"citationId\": \"cite_09854140e6e7_1\"\n        }\n      ]\n    }\n  ],\n  \"citations\": [\n    {\n      \"citationId\": \"cite_09854140e6e7_1\"\n    },\n    {\n      \"citationId\": \"cite_09854140e6e7_2\"\n    }\n  ]\n}",
+                  "role": "assistant"
+                }
+              }
+            ],
+            "usage": {
+              "completion_tokens": 3913,
+              "completion_tokens_details": {
+                "reasoning_tokens": 3661
+              },
+              "context_details": {
+                "input_tokens": 3528,
+                "output_tokens": 3920
+              },
+              "cost_in_usd_ticks": 302460000,
+              "num_server_side_tools_used": 0,
+              "num_sources_used": 0,
+              "prompt_tokens": 3528,
+              "prompt_tokens_details": {
+                "cached_tokens": 192
+              },
+              "total_tokens": 7441
+            }
+          }
+        }
+      ]
+    },
+    {
+      "key": "H2-R3",
+      "startedAt": "2026-09-23T13:19:02.683729+00:00",
+      "state": "succeeded",
+      "provenance": {
+        "promptVersion": "presales.v5",
+        "promptSha256": "6624b1760f43e9d47e9ac11530a2d21a7cb4e6ca6e5519c9e3b1d4fecc0fcd65",
+        "configuredModelVersion": null,
+        "configuredModelRevision": null,
+        "providerResponseId": null,
+        "returnedModel": null
+      },
+      "result": {
+        "draft": {
+          "status": "conditional",
+          "answer": "HOOK 模块支持将工单状态变化推送至自有 HTTPS 接收端，但接收域名验证状态未知，未知验证状态不能视为通过。因此当前无法无条件承诺该能力。",
+          "conditions": [
+            "需完成接收域名验证"
+          ],
+          "missingInformation": [],
+          "citations": [
+            {
+              "chunkId": "dfa56f0f-1f9c-53b4-a18e-6870c66d872e",
+              "documentVersionId": "ab56a3a1-87a6-5955-9508-a5842dfa7f3a",
+              "excerpt": "# H2-FEATURES 模块规格\nSYNC 可每五分钟同步一次新增工单。启用 SYNC 必须购买该模块、通过连接密钥验证并签署客户同步验收单。\nOCR 可从扫描工单图片中提取文字。启用 OCR 必须先购买模块并通过版面验收。\nHOOK 可把工单状态变化推送到客户 HTTPS 接收端。启用 HOOK 必须购买模块并完成接收域名验证。未知验证状态不能视为通过。"
+            },
+            {
+              "chunkId": "68b50628-b741-5eaf-9ca3-e08249f848c7",
+              "documentVersionId": "36361d09-2904-5249-b7f5-f7feace7f4b2",
+              "excerpt": "# H2-ORDER 已签署订单\nSYNC 模块已购买，连接密钥验证通过，客户签署了同步验收单。\nOCR 模块未购买，资料约定的版面验收尚未进行。\nHOOK 模块已购买，本订单及附件均未记载其接收域名验证的状态。\nH2-SERVICE 与 H2-WINDOW 均对同一企业、同一生产查询 API 生效，互不优先，没有其他例外约定。"
+            }
+          ]
+        },
+        "usage": {
+          "prompt_tokens": 3528,
+          "completion_tokens": 4471,
+          "total_tokens": 7999
+        },
+        "returnedModel": "grok-4.6",
+        "providerResponseId": "3ba03af5-dfa0-9e30-87dc-3e42e7b4168a"
+      },
+      "elapsedSeconds": 107.781,
+      "providerRequests": 1,
+      "traces": [
+        {
+          "requestDispatched": true,
+          "input": {
+            "requirement": {
+              "key": "H2-R3",
+              "text": "本企业可以把工单状态变化推送至自有 HTTPS 接收端。",
+              "sourceLocation": "H2 第3项"
+            },
+            "sources": [
+              {
+                "versionId": "36361d09-2904-5249-b7f5-f7feace7f4b2",
+                "applicability": "澄海工单已签署订单的当前正式能力。全部资料为虚构测试内容。",
+                "documentId": "b0596186-01dc-52b3-8cff-5d49fceea404",
+                "generationId": "801b6ac9-61dc-51fb-81f9-2997d2f1c250",
+                "filename": "H2-ORDER-v1.txt",
+                "versionNumber": 1,
+                "latestVersionNumber": 1,
+                "contentSha256": "deace139ec70ea2671c5fe8b3cfaf0657ce417b13c5bf318904950abda4bba66"
+              },
+              {
+                "versionId": "ab56a3a1-87a6-5955-9508-a5842dfa7f3a",
+                "applicability": "澄海工单当前正式模块规格，完成每项启用前提后才可生产使用。",
+                "documentId": "f3cd2466-0c00-55cb-a594-5e3f4812cecd",
+                "generationId": "a409787e-e8a5-5713-9ab9-3d5bd71e9b8b",
+                "filename": "H2-FEATURES-v1.txt",
+                "versionNumber": 1,
+                "latestVersionNumber": 1,
+                "contentSha256": "72d8c023567be20a05a8244639597007c4f97a685f6c7889f4cb1d84c0aa90b3"
+              },
+              {
+                "versionId": "1df25006-2e9d-58a1-9271-b34a9b74341b",
+                "applicability": "当前正式版本所有套餐均适用，已购模块也不改变该上限。",
+                "documentId": "b31282e7-3b4c-58d6-98f8-c819d99300de",
+                "generationId": "192b0b59-5bfa-537a-beb1-8e36c90e5ca2",
+                "filename": "H2-LIMITS-v1.txt",
+                "versionNumber": 1,
+                "latestVersionNumber": 1,
+                "contentSha256": "e83c4b626e367bbc56fcc5c88f4fefc4eb8899bb5c8111b919252e88ecc4f579"
+              },
+              {
+                "versionId": "409075dd-493c-5f44-af23-ec8f254b547f",
+                "applicability": "本订单的审计资料清单。",
+                "documentId": "88117f74-877a-5f55-9fad-947b74279295",
+                "generationId": "86b4e530-82e9-5471-9ee7-72d6d626054e",
+                "filename": "H2-ASSURANCE-v1.txt",
+                "versionNumber": 1,
+                "latestVersionNumber": 1,
+                "contentSha256": "90777666a013d738fce8607be7855119f62aad704eda3310e3cc12fbe323daf0"
+              },
+              {
+                "versionId": "ec36ad1c-c7d3-5b80-8e85-dbe7c809e7ec",
+                "applicability": "与 H2-WINDOW 同范围生效且互不优先。",
+                "documentId": "55fc93dc-c249-5b1c-9d10-1925370d16f5",
+                "generationId": "7a4334e0-afff-565c-b412-e257668ccdbc",
+                "filename": "H2-SERVICE-v1.txt",
+                "versionNumber": 1,
+                "latestVersionNumber": 1,
+                "contentSha256": "3376a8eec6e2dd02631bcea3147edab93350ee48901f5e49cc0dd8a9197c9cfb"
+              },
+              {
+                "versionId": "c9c2e75c-31d6-54bc-987a-e26277d8c77a",
+                "applicability": "与 H2-SERVICE 同范围生效且互不优先。",
+                "documentId": "c87fcbc9-f6a8-5071-8663-3f9fe9f82188",
+                "generationId": "be2eb1c4-58b1-5c08-8910-41290ee482d1",
+                "filename": "H2-WINDOW-v1.txt",
+                "versionNumber": 1,
+                "latestVersionNumber": 1,
+                "contentSha256": "c290ceb10ebbb87cca0d72159a895f578e5df46547fcee51ffcbe8bca4575070"
+              }
+            ],
+            "evidence": [
+              {
+                "chunkId": "68b50628-b741-5eaf-9ca3-e08249f848c7",
+                "documentVersionId": "36361d09-2904-5249-b7f5-f7feace7f4b2",
+                "text": "# H2-ORDER 已签署订单\nSYNC 模块已购买，连接密钥验证通过，客户签署了同步验收单。\nOCR 模块未购买，资料约定的版面验收尚未进行。\nHOOK 模块已购买，本订单及附件均未记载其接收域名验证的状态。\nH2-SERVICE 与 H2-WINDOW 均对同一企业、同一生产查询 API 生效，互不优先，没有其他例外约定。",
+                "filename": "H2-ORDER-v1.txt",
+                "heading": "",
+                "pageNumber": "",
+                "citationId": "cite_47f41df32afd_1"
+              },
+              {
+                "chunkId": "dfa56f0f-1f9c-53b4-a18e-6870c66d872e",
+                "documentVersionId": "ab56a3a1-87a6-5955-9508-a5842dfa7f3a",
+                "text": "# H2-FEATURES 模块规格\nSYNC 可每五分钟同步一次新增工单。启用 SYNC 必须购买该模块、通过连接密钥验证并签署客户同步验收单。\nOCR 可从扫描工单图片中提取文字。启用 OCR 必须先购买模块并通过版面验收。\nHOOK 可把工单状态变化推送到客户 HTTPS 接收端。启用 HOOK 必须购买模块并完成接收域名验证。未知验证状态不能视为通过。",
+                "filename": "H2-FEATURES-v1.txt",
+                "heading": "",
+                "pageNumber": "",
+                "citationId": "cite_47f41df32afd_2"
+              },
+              {
+                "chunkId": "b7abb0eb-409f-5fb7-9160-8d4e3c448241",
+                "documentVersionId": "1df25006-2e9d-58a1-9271-b34a9b74341b",
+                "text": "# H2-LIMITS 单次导出上限\n一次 CSV 导出的工单行数硬上限是 80000 行。当前版本没有增加该上限的配置或选购方案。多次导出再合并不属于一次导出。",
+                "filename": "H2-LIMITS-v1.txt",
+                "heading": "",
+                "pageNumber": "",
+                "citationId": "cite_47f41df32afd_3"
+              },
+              {
+                "chunkId": "e02c880e-deda-52c0-889f-c89352f5026b",
+                "documentVersionId": "409075dd-493c-5f44-af23-ec8f254b547f",
+                "text": "# H2-ASSURANCE 审计资料\n现有资料包含内部访问控制检查记录。未提供 SOC 2 Type II 报告，也没有报告有效期或审计机构信息。这份清单不声明公司是否取得过该报告。",
+                "filename": "H2-ASSURANCE-v1.txt",
+                "heading": "",
+                "pageNumber": "",
+                "citationId": "cite_47f41df32afd_4"
+              },
+              {
+                "chunkId": "4f9e1d62-063d-572b-bb65-1726971e74c7",
+                "documentVersionId": "ec36ad1c-c7d3-5b80-8e85-dbe7c809e7ec",
+                "text": "# H2-SERVICE 查询服务承诺\n本企业的生产查询 API 每周七天、每天二十四小时保持可访问，不得安排任何停机窗口。此承诺包含周六凌晨。\n本条款与 H2-WINDOW 互不优先，也不豁免后者的停机要求。",
+                "filename": "H2-SERVICE-v1.txt",
+                "heading": "",
+                "pageNumber": "",
+                "citationId": "cite_47f41df32afd_5"
+              },
+              {
+                "chunkId": "870ec784-a876-5cbd-b70a-3a8e98b3a466",
+                "documentVersionId": "c9c2e75c-31d6-54bc-987a-e26277d8c77a",
+                "text": "# H2-WINDOW 强制维护条款\n本企业的同一生产查询 API 每周六 02:00 至 03:00 必须停机维护，期间禁止接受任何查询请求。\n本条款与 H2-SERVICE 互不优先，也没有备用接口或不停机例外。",
+                "filename": "H2-WINDOW-v1.txt",
+                "heading": "",
+                "pageNumber": "",
+                "citationId": "cite_47f41df32afd_6"
+              }
+            ]
+          },
+          "httpStatus": 200,
+          "response": {
+            "id": "3ba03af5-dfa0-9e30-87dc-3e42e7b4168a",
+            "model": "grok-4.6",
+            "choices": [
+              {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                  "content": "{\n  \"status\": \"conditional\",\n  \"answer\": \"HOOK 模块支持将工单状态变化推送至自有 HTTPS 接收端，但接收域名验证状态未知，未知验证状态不能视为通过。因此当前无法无条件承诺该能力。\",\n  \"conditions\": [\"需完成接收域名验证\"],\n  \"prerequisites\": [\n    {\n      \"condition\": \"需完成接收域名验证\",\n      \"state\": \"unknown\",\n      \"citations\": [\n        {\n          \"citationId\": \"cite_47f41df32afd_2\"\n        },\n        {\n          \"citationId\": \"cite_47f41df32afd_1\"\n        }\n      ]\n    }\n  ],\n  \"citations\": [\n    {\n      \"citationId\": \"cite_47f41df32afd_2\"\n    },\n    {\n      \"citationId\": \"cite_47f41df32afd_1\"\n    }\n  ]\n}",
+                  "role": "assistant"
+                }
+              }
+            ],
+            "usage": {
+              "completion_tokens": 4471,
+              "completion_tokens_details": {
+                "reasoning_tokens": 4279
+              },
+              "context_details": {
+                "input_tokens": 3528,
+                "output_tokens": 4478
+              },
+              "cost_in_usd_ticks": 315780000,
+              "num_server_side_tools_used": 0,
+              "num_sources_used": 0,
+              "prompt_tokens": 3528,
+              "prompt_tokens_details": {
+                "cached_tokens": 1536
+              },
+              "total_tokens": 7999
+            }
+          }
+        }
+      ]
+    },
+    {
+      "key": "H2-R4",
+      "startedAt": "2026-09-23T13:20:50.471993+00:00",
+      "state": "failed",
+      "provenance": {
+        "promptVersion": "presales.v5",
+        "promptSha256": "6624b1760f43e9d47e9ac11530a2d21a7cb4e6ca6e5519c9e3b1d4fecc0fcd65",
+        "configuredModelVersion": null,
+        "configuredModelRevision": null,
+        "providerResponseId": null,
+        "returnedModel": null
+      },
+      "errorCode": "presales_model_transport_error",
+      "elapsedSeconds": 12.766,
+      "providerRequests": 1,
+      "traces": [
+        {
+          "requestDispatched": true,
+          "input": {
+            "requirement": {
+              "key": "H2-R4",
+              "text": "须一次导出 120000 行工单到 CSV，不接受多次导出合并。",
+              "sourceLocation": "H2 第4项"
+            },
+            "sources": [
+              {
+                "versionId": "36361d09-2904-5249-b7f5-f7feace7f4b2",
+                "applicability": "澄海工单已签署订单的当前正式能力。全部资料为虚构测试内容。",
+                "documentId": "b0596186-01dc-52b3-8cff-5d49fceea404",
+                "generationId": "801b6ac9-61dc-51fb-81f9-2997d2f1c250",
+                "filename": "H2-ORDER-v1.txt",
+                "versionNumber": 1,
+                "latestVersionNumber": 1,
+                "contentSha256": "deace139ec70ea2671c5fe8b3cfaf0657ce417b13c5bf318904950abda4bba66"
+              },
+              {
+                "versionId": "ab56a3a1-87a6-5955-9508-a5842dfa7f3a",
+                "applicability": "澄海工单当前正式模块规格，完成每项启用前提后才可生产使用。",
+                "documentId": "f3cd2466-0c00-55cb-a594-5e3f4812cecd",
+                "generationId": "a409787e-e8a5-5713-9ab9-3d5bd71e9b8b",
+                "filename": "H2-FEATURES-v1.txt",
+                "versionNumber": 1,
+                "latestVersionNumber": 1,
+                "contentSha256": "72d8c023567be20a05a8244639597007c4f97a685f6c7889f4cb1d84c0aa90b3"
+              },
+              {
+                "versionId": "1df25006-2e9d-58a1-9271-b34a9b74341b",
+                "applicability": "当前正式版本所有套餐均适用，已购模块也不改变该上限。",
+                "documentId": "b31282e7-3b4c-58d6-98f8-c819d99300de",
+                "generationId": "192b0b59-5bfa-537a-beb1-8e36c90e5ca2",
+                "filename": "H2-LIMITS-v1.txt",
+                "versionNumber": 1,
+                "latestVersionNumber": 1,
+                "contentSha256": "e83c4b626e367bbc56fcc5c88f4fefc4eb8899bb5c8111b919252e88ecc4f579"
+              },
+              {
+                "versionId": "409075dd-493c-5f44-af23-ec8f254b547f",
+                "applicability": "本订单的审计资料清单。",
+                "documentId": "88117f74-877a-5f55-9fad-947b74279295",
+                "generationId": "86b4e530-82e9-5471-9ee7-72d6d626054e",
+                "filename": "H2-ASSURANCE-v1.txt",
+                "versionNumber": 1,
+                "latestVersionNumber": 1,
+                "contentSha256": "90777666a013d738fce8607be7855119f62aad704eda3310e3cc12fbe323daf0"
+              },
+              {
+                "versionId": "ec36ad1c-c7d3-5b80-8e85-dbe7c809e7ec",
+                "applicability": "与 H2-WINDOW 同范围生效且互不优先。",
+                "documentId": "55fc93dc-c249-5b1c-9d10-1925370d16f5",
+                "generationId": "7a4334e0-afff-565c-b412-e257668ccdbc",
+                "filename": "H2-SERVICE-v1.txt",
+                "versionNumber": 1,
+                "latestVersionNumber": 1,
+                "contentSha256": "3376a8eec6e2dd02631bcea3147edab93350ee48901f5e49cc0dd8a9197c9cfb"
+              },
+              {
+                "versionId": "c9c2e75c-31d6-54bc-987a-e26277d8c77a",
+                "applicability": "与 H2-SERVICE 同范围生效且互不优先。",
+                "documentId": "c87fcbc9-f6a8-5071-8663-3f9fe9f82188",
+                "generationId": "be2eb1c4-58b1-5c08-8910-41290ee482d1",
+                "filename": "H2-WINDOW-v1.txt",
+                "versionNumber": 1,
+                "latestVersionNumber": 1,
+                "contentSha256": "c290ceb10ebbb87cca0d72159a895f578e5df46547fcee51ffcbe8bca4575070"
+              }
+            ],
+            "evidence": [
+              {
+                "chunkId": "68b50628-b741-5eaf-9ca3-e08249f848c7",
+                "documentVersionId": "36361d09-2904-5249-b7f5-f7feace7f4b2",
+                "text": "# H2-ORDER 已签署订单\nSYNC 模块已购买，连接密钥验证通过，客户签署了同步验收单。\nOCR 模块未购买，资料约定的版面验收尚未进行。\nHOOK 模块已购买，本订单及附件均未记载其接收域名验证的状态。\nH2-SERVICE 与 H2-WINDOW 均对同一企业、同一生产查询 API 生效，互不优先，没有其他例外约定。",
+                "filename": "H2-ORDER-v1.txt",
+                "heading": "",
+                "pageNumber": "",
+                "citationId": "cite_599288d24b37_1"
+              },
+              {
+                "chunkId": "dfa56f0f-1f9c-53b4-a18e-6870c66d872e",
+                "documentVersionId": "ab56a3a1-87a6-5955-9508-a5842dfa7f3a",
+                "text": "# H2-FEATURES 模块规格\nSYNC 可每五分钟同步一次新增工单。启用 SYNC 必须购买该模块、通过连接密钥验证并签署客户同步验收单。\nOCR 可从扫描工单图片中提取文字。启用 OCR 必须先购买模块并通过版面验收。\nHOOK 可把工单状态变化推送到客户 HTTPS 接收端。启用 HOOK 必须购买模块并完成接收域名验证。未知验证状态不能视为通过。",
+                "filename": "H2-FEATURES-v1.txt",
+                "heading": "",
+                "pageNumber": "",
+                "citationId": "cite_599288d24b37_2"
+              },
+              {
+                "chunkId": "b7abb0eb-409f-5fb7-9160-8d4e3c448241",
+                "documentVersionId": "1df25006-2e9d-58a1-9271-b34a9b74341b",
+                "text": "# H2-LIMITS 单次导出上限\n一次 CSV 导出的工单行数硬上限是 80000 行。当前版本没有增加该上限的配置或选购方案。多次导出再合并不属于一次导出。",
+                "filename": "H2-LIMITS-v1.txt",
+                "heading": "",
+                "pageNumber": "",
+                "citationId": "cite_599288d24b37_3"
+              },
+              {
+                "chunkId": "e02c880e-deda-52c0-889f-c89352f5026b",
+                "documentVersionId": "409075dd-493c-5f44-af23-ec8f254b547f",
+                "text": "# H2-ASSURANCE 审计资料\n现有资料包含内部访问控制检查记录。未提供 SOC 2 Type II 报告，也没有报告有效期或审计机构信息。这份清单不声明公司是否取得过该报告。",
+                "filename": "H2-ASSURANCE-v1.txt",
+                "heading": "",
+                "pageNumber": "",
+                "citationId": "cite_599288d24b37_4"
+              },
+              {
+                "chunkId": "4f9e1d62-063d-572b-bb65-1726971e74c7",
+                "documentVersionId": "ec36ad1c-c7d3-5b80-8e85-dbe7c809e7ec",
+                "text": "# H2-SERVICE 查询服务承诺\n本企业的生产查询 API 每周七天、每天二十四小时保持可访问，不得安排任何停机窗口。此承诺包含周六凌晨。\n本条款与 H2-WINDOW 互不优先，也不豁免后者的停机要求。",
+                "filename": "H2-SERVICE-v1.txt",
+                "heading": "",
+                "pageNumber": "",
+                "citationId": "cite_599288d24b37_5"
+              },
+              {
+                "chunkId": "870ec784-a876-5cbd-b70a-3a8e98b3a466",
+                "documentVersionId": "c9c2e75c-31d6-54bc-987a-e26277d8c77a",
+                "text": "# H2-WINDOW 强制维护条款\n本企业的同一生产查询 API 每周六 02:00 至 03:00 必须停机维护，期间禁止接受任何查询请求。\n本条款与 H2-SERVICE 互不优先，也没有备用接口或不停机例外。",
+                "filename": "H2-WINDOW-v1.txt",
+                "heading": "",
+                "pageNumber": "",
+                "citationId": "cite_599288d24b37_6"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "key": "H2-R5",
+      "startedAt": "2026-09-23T13:21:03.254050+00:00",
+      "state": "failed",
+      "provenance": {
+        "promptVersion": "presales.v5",
+        "promptSha256": "6624b1760f43e9d47e9ac11530a2d21a7cb4e6ca6e5519c9e3b1d4fecc0fcd65",
+        "configuredModelVersion": null,
+        "configuredModelRevision": null,
+        "providerResponseId": null,
+        "returnedModel": null
+      },
+      "errorCode": "presales_model_transport_error",
+      "elapsedSeconds": 21.312,
+      "providerRequests": 1,
+      "traces": [
+        {
+          "requestDispatched": true,
+          "input": {
+            "requirement": {
+              "key": "H2-R5",
+              "text": "提供覆盖当前服务期间的有效 SOC 2 Type II 报告。",
+              "sourceLocation": "H2 第5项"
+            },
+            "sources": [
+              {
+                "versionId": "36361d09-2904-5249-b7f5-f7feace7f4b2",
+                "applicability": "澄海工单已签署订单的当前正式能力。全部资料为虚构测试内容。",
+                "documentId": "b0596186-01dc-52b3-8cff-5d49fceea404",
+                "generationId": "801b6ac9-61dc-51fb-81f9-2997d2f1c250",
+                "filename": "H2-ORDER-v1.txt",
+                "versionNumber": 1,
+                "latestVersionNumber": 1,
+                "contentSha256": "deace139ec70ea2671c5fe8b3cfaf0657ce417b13c5bf318904950abda4bba66"
+              },
+              {
+                "versionId": "ab56a3a1-87a6-5955-9508-a5842dfa7f3a",
+                "applicability": "澄海工单当前正式模块规格，完成每项启用前提后才可生产使用。",
+                "documentId": "f3cd2466-0c00-55cb-a594-5e3f4812cecd",
+                "generationId": "a409787e-e8a5-5713-9ab9-3d5bd71e9b8b",
+                "filename": "H2-FEATURES-v1.txt",
+                "versionNumber": 1,
+                "latestVersionNumber": 1,
+                "contentSha256": "72d8c023567be20a05a8244639597007c4f97a685f6c7889f4cb1d84c0aa90b3"
+              },
+              {
+                "versionId": "1df25006-2e9d-58a1-9271-b34a9b74341b",
+                "applicability": "当前正式版本所有套餐均适用，已购模块也不改变该上限。",
+                "documentId": "b31282e7-3b4c-58d6-98f8-c819d99300de",
+                "generationId": "192b0b59-5bfa-537a-beb1-8e36c90e5ca2",
+                "filename": "H2-LIMITS-v1.txt",
+                "versionNumber": 1,
+                "latestVersionNumber": 1,
+                "contentSha256": "e83c4b626e367bbc56fcc5c88f4fefc4eb8899bb5c8111b919252e88ecc4f579"
+              },
+              {
+                "versionId": "409075dd-493c-5f44-af23-ec8f254b547f",
+                "applicability": "本订单的审计资料清单。",
+                "documentId": "88117f74-877a-5f55-9fad-947b74279295",
+                "generationId": "86b4e530-82e9-5471-9ee7-72d6d626054e",
+                "filename": "H2-ASSURANCE-v1.txt",
+                "versionNumber": 1,
+                "latestVersionNumber": 1,
+                "contentSha256": "90777666a013d738fce8607be7855119f62aad704eda3310e3cc12fbe323daf0"
+              },
+              {
+                "versionId": "ec36ad1c-c7d3-5b80-8e85-dbe7c809e7ec",
+                "applicability": "与 H2-WINDOW 同范围生效且互不优先。",
+                "documentId": "55fc93dc-c249-5b1c-9d10-1925370d16f5",
+                "generationId": "7a4334e0-afff-565c-b412-e257668ccdbc",
+                "filename": "H2-SERVICE-v1.txt",
+                "versionNumber": 1,
+                "latestVersionNumber": 1,
+                "contentSha256": "3376a8eec6e2dd02631bcea3147edab93350ee48901f5e49cc0dd8a9197c9cfb"
+              },
+              {
+                "versionId": "c9c2e75c-31d6-54bc-987a-e26277d8c77a",
+                "applicability": "与 H2-SERVICE 同范围生效且互不优先。",
+                "documentId": "c87fcbc9-f6a8-5071-8663-3f9fe9f82188",
+                "generationId": "be2eb1c4-58b1-5c08-8910-41290ee482d1",
+                "filename": "H2-WINDOW-v1.txt",
+                "versionNumber": 1,
+                "latestVersionNumber": 1,
+                "contentSha256": "c290ceb10ebbb87cca0d72159a895f578e5df46547fcee51ffcbe8bca4575070"
+              }
+            ],
+            "evidence": [
+              {
+                "chunkId": "68b50628-b741-5eaf-9ca3-e08249f848c7",
+                "documentVersionId": "36361d09-2904-5249-b7f5-f7feace7f4b2",
+                "text": "# H2-ORDER 已签署订单\nSYNC 模块已购买，连接密钥验证通过，客户签署了同步验收单。\nOCR 模块未购买，资料约定的版面验收尚未进行。\nHOOK 模块已购买，本订单及附件均未记载其接收域名验证的状态。\nH2-SERVICE 与 H2-WINDOW 均对同一企业、同一生产查询 API 生效，互不优先，没有其他例外约定。",
+                "filename": "H2-ORDER-v1.txt",
+                "heading": "",
+                "pageNumber": "",
+                "citationId": "cite_4be5fbba58a0_1"
+              },
+              {
+                "chunkId": "dfa56f0f-1f9c-53b4-a18e-6870c66d872e",
+                "documentVersionId": "ab56a3a1-87a6-5955-9508-a5842dfa7f3a",
+                "text": "# H2-FEATURES 模块规格\nSYNC 可每五分钟同步一次新增工单。启用 SYNC 必须购买该模块、通过连接密钥验证并签署客户同步验收单。\nOCR 可从扫描工单图片中提取文字。启用 OCR 必须先购买模块并通过版面验收。\nHOOK 可把工单状态变化推送到客户 HTTPS 接收端。启用 HOOK 必须购买模块并完成接收域名验证。未知验证状态不能视为通过。",
+                "filename": "H2-FEATURES-v1.txt",
+                "heading": "",
+                "pageNumber": "",
+                "citationId": "cite_4be5fbba58a0_2"
+              },
+              {
+                "chunkId": "b7abb0eb-409f-5fb7-9160-8d4e3c448241",
+                "documentVersionId": "1df25006-2e9d-58a1-9271-b34a9b74341b",
+                "text": "# H2-LIMITS 单次导出上限\n一次 CSV 导出的工单行数硬上限是 80000 行。当前版本没有增加该上限的配置或选购方案。多次导出再合并不属于一次导出。",
+                "filename": "H2-LIMITS-v1.txt",
+                "heading": "",
+                "pageNumber": "",
+                "citationId": "cite_4be5fbba58a0_3"
+              },
+              {
+                "chunkId": "e02c880e-deda-52c0-889f-c89352f5026b",
+                "documentVersionId": "409075dd-493c-5f44-af23-ec8f254b547f",
+                "text": "# H2-ASSURANCE 审计资料\n现有资料包含内部访问控制检查记录。未提供 SOC 2 Type II 报告，也没有报告有效期或审计机构信息。这份清单不声明公司是否取得过该报告。",
+                "filename": "H2-ASSURANCE-v1.txt",
+                "heading": "",
+                "pageNumber": "",
+                "citationId": "cite_4be5fbba58a0_4"
+              },
+              {
+                "chunkId": "4f9e1d62-063d-572b-bb65-1726971e74c7",
+                "documentVersionId": "ec36ad1c-c7d3-5b80-8e85-dbe7c809e7ec",
+                "text": "# H2-SERVICE 查询服务承诺\n本企业的生产查询 API 每周七天、每天二十四小时保持可访问，不得安排任何停机窗口。此承诺包含周六凌晨。\n本条款与 H2-WINDOW 互不优先，也不豁免后者的停机要求。",
+                "filename": "H2-SERVICE-v1.txt",
+                "heading": "",
+                "pageNumber": "",
+                "citationId": "cite_4be5fbba58a0_5"
+              },
+              {
+                "chunkId": "870ec784-a876-5cbd-b70a-3a8e98b3a466",
+                "documentVersionId": "c9c2e75c-31d6-54bc-987a-e26277d8c77a",
+                "text": "# H2-WINDOW 强制维护条款\n本企业的同一生产查询 API 每周六 02:00 至 03:00 必须停机维护，期间禁止接受任何查询请求。\n本条款与 H2-SERVICE 互不优先，也没有备用接口或不停机例外。",
+                "filename": "H2-WINDOW-v1.txt",
+                "heading": "",
+                "pageNumber": "",
+                "citationId": "cite_4be5fbba58a0_6"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "key": "H2-R6",
+      "startedAt": "2026-09-23T13:21:24.583097+00:00",
+      "state": "succeeded",
+      "provenance": {
+        "promptVersion": "presales.v5",
+        "promptSha256": "6624b1760f43e9d47e9ac11530a2d21a7cb4e6ca6e5519c9e3b1d4fecc0fcd65",
+        "configuredModelVersion": null,
+        "configuredModelRevision": null,
+        "providerResponseId": null,
+        "returnedModel": null
+      },
+      "result": {
+        "draft": {
+          "status": "conflicting_evidence",
+          "answer": "H2-SERVICE 规定本企业的生产查询 API 每周七天、每天二十四小时保持可访问，不得安排任何停机窗口，此承诺包含周六凌晨。但 H2-WINDOW 规定本企业的同一生产查询 API 每周六 02:00 至 03:00 必须停机维护，期间禁止接受任何查询请求。两者同范围生效且互不优先，没有其他例外约定。",
+          "conditions": [],
+          "missingInformation": [
+            "请确认 H2-SERVICE 与 H2-WINDOW 条款之间的优先级关系，或提供修订条款以消除此冲突。"
+          ],
+          "citations": [
+            {
+              "chunkId": "68b50628-b741-5eaf-9ca3-e08249f848c7",
+              "documentVersionId": "36361d09-2904-5249-b7f5-f7feace7f4b2",
+              "excerpt": "# H2-ORDER 已签署订单\nSYNC 模块已购买，连接密钥验证通过，客户签署了同步验收单。\nOCR 模块未购买，资料约定的版面验收尚未进行。\nHOOK 模块已购买，本订单及附件均未记载其接收域名验证的状态。\nH2-SERVICE 与 H2-WINDOW 均对同一企业、同一生产查询 API 生效，互不优先，没有其他例外约定。"
+            },
+            {
+              "chunkId": "4f9e1d62-063d-572b-bb65-1726971e74c7",
+              "documentVersionId": "ec36ad1c-c7d3-5b80-8e85-dbe7c809e7ec",
+              "excerpt": "# H2-SERVICE 查询服务承诺\n本企业的生产查询 API 每周七天、每天二十四小时保持可访问，不得安排任何停机窗口。此承诺包含周六凌晨。\n本条款与 H2-WINDOW 互不优先，也不豁免后者的停机要求。"
+            },
+            {
+              "chunkId": "870ec784-a876-5cbd-b70a-3a8e98b3a466",
+              "documentVersionId": "c9c2e75c-31d6-54bc-987a-e26277d8c77a",
+              "excerpt": "# H2-WINDOW 强制维护条款\n本企业的同一生产查询 API 每周六 02:00 至 03:00 必须停机维护，期间禁止接受任何查询请求。\n本条款与 H2-SERVICE 互不优先，也没有备用接口或不停机例外。"
+            }
+          ]
+        },
+        "usage": {
+          "prompt_tokens": 3525,
+          "completion_tokens": 3700,
+          "total_tokens": 7225
+        },
+        "returnedModel": "grok-4.6",
+        "providerResponseId": "ab1da67f-3d06-9373-8eb1-6253002187fb"
+      },
+      "elapsedSeconds": 68.922,
+      "providerRequests": 1,
+      "traces": [
+        {
+          "requestDispatched": true,
+          "input": {
+            "requirement": {
+              "key": "H2-R6",
+              "text": "生产查询 API 必须全天候可访问，包括周六凌晨，不接受停机窗口。",
+              "sourceLocation": "H2 第6项"
+            },
+            "sources": [
+              {
+                "versionId": "36361d09-2904-5249-b7f5-f7feace7f4b2",
+                "applicability": "澄海工单已签署订单的当前正式能力。全部资料为虚构测试内容。",
+                "documentId": "b0596186-01dc-52b3-8cff-5d49fceea404",
+                "generationId": "801b6ac9-61dc-51fb-81f9-2997d2f1c250",
+                "filename": "H2-ORDER-v1.txt",
+                "versionNumber": 1,
+                "latestVersionNumber": 1,
+                "contentSha256": "deace139ec70ea2671c5fe8b3cfaf0657ce417b13c5bf318904950abda4bba66"
+              },
+              {
+                "versionId": "ab56a3a1-87a6-5955-9508-a5842dfa7f3a",
+                "applicability": "澄海工单当前正式模块规格，完成每项启用前提后才可生产使用。",
+                "documentId": "f3cd2466-0c00-55cb-a594-5e3f4812cecd",
+                "generationId": "a409787e-e8a5-5713-9ab9-3d5bd71e9b8b",
+                "filename": "H2-FEATURES-v1.txt",
+                "versionNumber": 1,
+                "latestVersionNumber": 1,
+                "contentSha256": "72d8c023567be20a05a8244639597007c4f97a685f6c7889f4cb1d84c0aa90b3"
+              },
+              {
+                "versionId": "1df25006-2e9d-58a1-9271-b34a9b74341b",
+                "applicability": "当前正式版本所有套餐均适用，已购模块也不改变该上限。",
+                "documentId": "b31282e7-3b4c-58d6-98f8-c819d99300de",
+                "generationId": "192b0b59-5bfa-537a-beb1-8e36c90e5ca2",
+                "filename": "H2-LIMITS-v1.txt",
+                "versionNumber": 1,
+                "latestVersionNumber": 1,
+                "contentSha256": "e83c4b626e367bbc56fcc5c88f4fefc4eb8899bb5c8111b919252e88ecc4f579"
+              },
+              {
+                "versionId": "409075dd-493c-5f44-af23-ec8f254b547f",
+                "applicability": "本订单的审计资料清单。",
+                "documentId": "88117f74-877a-5f55-9fad-947b74279295",
+                "generationId": "86b4e530-82e9-5471-9ee7-72d6d626054e",
+                "filename": "H2-ASSURANCE-v1.txt",
+                "versionNumber": 1,
+                "latestVersionNumber": 1,
+                "contentSha256": "90777666a013d738fce8607be7855119f62aad704eda3310e3cc12fbe323daf0"
+              },
+              {
+                "versionId": "ec36ad1c-c7d3-5b80-8e85-dbe7c809e7ec",
+                "applicability": "与 H2-WINDOW 同范围生效且互不优先。",
+                "documentId": "55fc93dc-c249-5b1c-9d10-1925370d16f5",
+                "generationId": "7a4334e0-afff-565c-b412-e257668ccdbc",
+                "filename": "H2-SERVICE-v1.txt",
+                "versionNumber": 1,
+                "latestVersionNumber": 1,
+                "contentSha256": "3376a8eec6e2dd02631bcea3147edab93350ee48901f5e49cc0dd8a9197c9cfb"
+              },
+              {
+                "versionId": "c9c2e75c-31d6-54bc-987a-e26277d8c77a",
+                "applicability": "与 H2-SERVICE 同范围生效且互不优先。",
+                "documentId": "c87fcbc9-f6a8-5071-8663-3f9fe9f82188",
+                "generationId": "be2eb1c4-58b1-5c08-8910-41290ee482d1",
+                "filename": "H2-WINDOW-v1.txt",
+                "versionNumber": 1,
+                "latestVersionNumber": 1,
+                "contentSha256": "c290ceb10ebbb87cca0d72159a895f578e5df46547fcee51ffcbe8bca4575070"
+              }
+            ],
+            "evidence": [
+              {
+                "chunkId": "68b50628-b741-5eaf-9ca3-e08249f848c7",
+                "documentVersionId": "36361d09-2904-5249-b7f5-f7feace7f4b2",
+                "text": "# H2-ORDER 已签署订单\nSYNC 模块已购买，连接密钥验证通过，客户签署了同步验收单。\nOCR 模块未购买，资料约定的版面验收尚未进行。\nHOOK 模块已购买，本订单及附件均未记载其接收域名验证的状态。\nH2-SERVICE 与 H2-WINDOW 均对同一企业、同一生产查询 API 生效，互不优先，没有其他例外约定。",
+                "filename": "H2-ORDER-v1.txt",
+                "heading": "",
+                "pageNumber": "",
+                "citationId": "cite_17218043e037_1"
+              },
+              {
+                "chunkId": "dfa56f0f-1f9c-53b4-a18e-6870c66d872e",
+                "documentVersionId": "ab56a3a1-87a6-5955-9508-a5842dfa7f3a",
+                "text": "# H2-FEATURES 模块规格\nSYNC 可每五分钟同步一次新增工单。启用 SYNC 必须购买该模块、通过连接密钥验证并签署客户同步验收单。\nOCR 可从扫描工单图片中提取文字。启用 OCR 必须先购买模块并通过版面验收。\nHOOK 可把工单状态变化推送到客户 HTTPS 接收端。启用 HOOK 必须购买模块并完成接收域名验证。未知验证状态不能视为通过。",
+                "filename": "H2-FEATURES-v1.txt",
+                "heading": "",
+                "pageNumber": "",
+                "citationId": "cite_17218043e037_2"
+              },
+              {
+                "chunkId": "b7abb0eb-409f-5fb7-9160-8d4e3c448241",
+                "documentVersionId": "1df25006-2e9d-58a1-9271-b34a9b74341b",
+                "text": "# H2-LIMITS 单次导出上限\n一次 CSV 导出的工单行数硬上限是 80000 行。当前版本没有增加该上限的配置或选购方案。多次导出再合并不属于一次导出。",
+                "filename": "H2-LIMITS-v1.txt",
+                "heading": "",
+                "pageNumber": "",
+                "citationId": "cite_17218043e037_3"
+              },
+              {
+                "chunkId": "e02c880e-deda-52c0-889f-c89352f5026b",
+                "documentVersionId": "409075dd-493c-5f44-af23-ec8f254b547f",
+                "text": "# H2-ASSURANCE 审计资料\n现有资料包含内部访问控制检查记录。未提供 SOC 2 Type II 报告，也没有报告有效期或审计机构信息。这份清单不声明公司是否取得过该报告。",
+                "filename": "H2-ASSURANCE-v1.txt",
+                "heading": "",
+                "pageNumber": "",
+                "citationId": "cite_17218043e037_4"
+              },
+              {
+                "chunkId": "4f9e1d62-063d-572b-bb65-1726971e74c7",
+                "documentVersionId": "ec36ad1c-c7d3-5b80-8e85-dbe7c809e7ec",
+                "text": "# H2-SERVICE 查询服务承诺\n本企业的生产查询 API 每周七天、每天二十四小时保持可访问，不得安排任何停机窗口。此承诺包含周六凌晨。\n本条款与 H2-WINDOW 互不优先，也不豁免后者的停机要求。",
+                "filename": "H2-SERVICE-v1.txt",
+                "heading": "",
+                "pageNumber": "",
+                "citationId": "cite_17218043e037_5"
+              },
+              {
+                "chunkId": "870ec784-a876-5cbd-b70a-3a8e98b3a466",
+                "documentVersionId": "c9c2e75c-31d6-54bc-987a-e26277d8c77a",
+                "text": "# H2-WINDOW 强制维护条款\n本企业的同一生产查询 API 每周六 02:00 至 03:00 必须停机维护，期间禁止接受任何查询请求。\n本条款与 H2-SERVICE 互不优先，也没有备用接口或不停机例外。",
+                "filename": "H2-WINDOW-v1.txt",
+                "heading": "",
+                "pageNumber": "",
+                "citationId": "cite_17218043e037_6"
+              }
+            ]
+          },
+          "httpStatus": 200,
+          "response": {
+            "id": "ab1da67f-3d06-9373-8eb1-6253002187fb",
+            "model": "grok-4.6",
+            "choices": [
+              {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                  "content": "{\n  \"status\": \"conflicting_evidence\",\n  \"answer\": \"H2-SERVICE 规定本企业的生产查询 API 每周七天、每天二十四小时保持可访问，不得安排任何停机窗口，此承诺包含周六凌晨。但 H2-WINDOW 规定本企业的同一生产查询 API 每周六 02:00 至 03:00 必须停机维护，期间禁止接受任何查询请求。两者同范围生效且互不优先，没有其他例外约定。\",\n  \"conditions\": [],\n  \"missingInformation\": [\"请确认 H2-SERVICE 与 H2-WINDOW 条款之间的优先级关系，或提供修订条款以消除此冲突。\"],\n  \"prerequisites\": [],\n  \"citations\": [\n    {\"citationId\": \"cite_17218043e037_1\"},\n    {\"citationId\": \"cite_17218043e037_5\"},\n    {\"citationId\": \"cite_17218043e037_6\"}\n  ]\n}",
+                  "role": "assistant"
+                }
+              }
+            ],
+            "usage": {
+              "completion_tokens": 3700,
+              "completion_tokens_details": {
+                "reasoning_tokens": 3496
+              },
+              "context_details": {
+                "input_tokens": 3525,
+                "output_tokens": 3707
+              },
+              "cost_in_usd_ticks": 289620000,
+              "num_server_side_tools_used": 0,
+              "num_sources_used": 0,
+              "prompt_tokens": 3525,
+              "prompt_tokens_details": {
+                "cached_tokens": 192
+              },
+              "total_tokens": 7225
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "status": "collected",
+  "finishedAt": "2026-09-23T13:22:33.509268+00:00"
+}

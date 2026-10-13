@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-09-28T15:42:08.305363+00:00",
+  "phase": "CO-1g",
+  "status": "business_succeeded_acceptance_incomplete",
+  "task_status": "in_progress",
+  "repository_baseline": "d81e83b8eb3ae3f34d2f4951ab3c167fa9c1e42a",
+  "deployed_commit": "f2910011fc219028a2611a22215e4e3e045919a3",
+  "plan_sha256": "2fb81862e517c1e872cc5332fff4f231d52fb266c5837a8f48cdfe236cf544f1",
+  "authorization": {
+    "explicit_user_confirmation": true,
+    "model_requests": 12,
+    "embedding_requests": 21,
+    "uploads": 1,
+    "agent_tasks": 1,
+    "http_requests": 240,
+    "seconds": 1800
+  },
+  "actual": {
+    "uploads": 1,
+    "fixture_bytes": 109,
+    "agent_tasks": 1,
+    "model_requests": 1,
+    "embedding_requests": 2,
+    "initial_http_requests": 32,
+    "readonly_followup_http_gets": 4,
+    "run_status": "succeeded",
+    "created_at": "2026-09-28T15:26:26.854525Z",
+    "finished_at": "2026-09-28T15:27:10.572715Z",
+    "accepted_to_finished_seconds": 43.71819,
+    "execution_sequence": 0,
+    "execution_kind": "initial",
+    "execution_count": 1,
+    "agent_job_attempts": 1,
+    "ingestion_job_attempts": 1,
+    "repair_requests": 0,
+    "fallback_count": 0,
+    "approval_resumes": 0,
+    "manual_retries": 0,
+    "full_batch_replays": 0,
+    "presales_generation": 0,
+    "deployment": 0,
+    "migration": 0,
+    "email": 0
+  },
+  "provider_usage": [
+    {
+      "kind": "query",
+      "provider": "openai_compatible",
+      "model": "Qwen/Qwen3-Embedding-4B",
+      "state": "responded",
+      "status_code": 200,
+      "total_tokens": 34,
+      "supplier_request_id_present": false,
+      "supplier_response_id_present": false
+    },
+    {
+      "kind": "document",
+      "provider": "openai_compatible",
+      "model": "Qwen/Qwen3-Embedding-4B",
+      "state": "responded",
+      "status_code": 200,
+      "total_tokens": 21,
+      "supplier_request_id_present": false,
+      "supplier_response_id_present": false
+    },
+    {
+      "kind": "agent",
+      "provider": "openai_compatible",
+      "model": "grok-4.7",
+      "state": "responded",
+      "status_code": 200,
+      "total_tokens": 2646,
+      "supplier_request_id_present": true,
+      "supplier_response_id_present": true
+    }
+  ],
+  "accounting": {
+    "original_entitlement_preserved": true,
+    "consumption": {
+      "agent_task": 1,
+      "document_bytes": 109
+    },
+    "consume_events": 2,
+    "remaining_reserved_units": 0,
+    "quota_snapshot": [
+      {
+        "metric": "agent_task",
+        "unit_limit": 100,
+        "units_used": 1,
+        "units_reserved": 0,
+        "remaining": 99
+      },
+      {
+        "metric": "document_bytes",
+        "unit_limit": 104857600,
+        "units_used": 281,
+        "units_reserved": 0,
+        "remaining": 104857319
+      }
+    ],
+    "cost": null,
+    "currency": null,
+    "supplier_invoice_reconciled": false
+  },
+  "artifact": {
+    "size_bytes": 594,
+    "sha256": "8fb6250286207e3e29b22993633ff3a6860c37a87ec256764333a2ad9a3d1aca",
+    "answer_text": "The evidence retention period is thirty days.",
+    "download_sha_and_size_match_metadata": true,
+    "uploaded_evidence_citation_verified": true,
+    "published": false
+  },
+  "verification": {
+    "original_controller_exit_code": 1,
+    "original_error": "unexpected_agent_resume",
+    "root_cause": "Frozen verifier and synthetic fixture assumed initial execution sequence 1; service creates initial/0.",
+    "original_evidence_preserved": true,
+    "readonly_postflight_passed": true,
+    "ledger_unchanged_since_original_failure": true,
+    "ledger_unchanged_after_gets": true,
+    "same_key_post_replay": "not_executed",
+    "same_key_post_replay_ledger_invariance": "not_verified",
+    "regression_tests": 8,
+    "original_bug_reproduced_offline": true,
+    "first_readonly_followup": "ssh_connect_timeout",
+    "second_readonly_followup": "passed"
+  },
+  "boundaries": {
+    "api_origin": "http://127.0.0.1:8000 inside deployed API Pod",
+    "object_access": "configured HTTPS origin",
+    "public_business_ingress_verified": false,
+    "interactive_oauth_verified": false,
+    "browser_recovery_verified": false,
+    "capacity_verified": false,
+    "domain_quality_verified": false,
+    "formal_acceptance_complete": false
+  },
+  "evidence": {
+    "local_recovery_group": "20260924T015840.986Z-commercial-production-readiness",
+    "execution_stage": "online-agent-execution-evidence",
+    "original_execution_jsonl_sha256": "76426f7b51fdd6e37271008525826880be58b08463d809c16a4b8be2754a94c5",
+    "readonly_postflight_jsonl_sha256": "e3abbb560c86a6ceb0e9c3bac2bc034dbe4718d6346fb0c02b2386517bc97dd9",
+    "prior_frozen_indexes_preserved": 20,
+    "frozen_preparation_artifacts_preserved": 43,
+    "historical_workspace_status_entries": 2993
+  },
+  "remaining": [
+    "Same-key POST replay for the existing terminal run and ledger invariance",
+    "Public business ingress and interactive OAuth",
+    "Presales online background/browser recovery and review/CSV",
+    "Two current-host capacity rounds",
+    "Supplier invoice reconciliation and independent domain review",
+    "Complete backup/alert/on-call and whole-host RPO/RTO acceptance"
+  ]
+}

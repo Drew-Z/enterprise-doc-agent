@@ -1,5 +1,115 @@
 # Browser Multipart Upload
 
+## Scenario: small-file single-request upload
+
+### 1. Scope / Trigger
+
+New files <=1MiB use authenticated API content upload after the existing Worker
+hash pass. Existing restored sessions and larger files retain the direct/multipart
+flow. Local client, API, PostgreSQL and MinIO validation is not public capacity proof.
+
+### 2. Signatures
+
+`UploadApiClient.uploadContent(request, idempotencyKey, file, signal)` calls
+`POST /api/upload-sessions/content`. `createContentIntentStore(storage)` persists
+the pre-submit intent under `enterprise-doc.upload-content-intent.v1`, scoped to
+the current browser tenant/actor by the application authentication transport.
+
+### 3. Contracts
+
+The strict intent contains only version=1, idempotencyKey, and the original create
+request (filename, sizeBytes, mediaType, sha256, transport=single_put). Save it before
+any content submission; a storage failure stops the request. File bytes, credentials,
+signed URLs, headers and receipts never enter the intent. Whole-file base64 encoding
+is allowed only after enforcing the 1MiB bound; hashing still uses the Worker.
+
+Validate the response session identity and durable completion's session ID. Only a
+completion receipt or an authoritative same-key completed session establishes success.
+An unsupported route may use legacy creation with the same key; a lost response is
+not unsupported. Retain the intent until completion, terminal server state, confirmed
+cancellation, or successful persistence of the same legacy session.
+
+On loss/reload, use the original metadata/key to recover creation. Completed restores
+success without sending bytes; active/completing retain the intent. After reload,
+require original-file reselection and hash match before a content retry. A wrong
+same-name/same-size file cannot reach any content or completion request. React
+StrictMode may restart an aborted recovery query with the same key. An old credential
+never adopts a new enterprise during file reading or response handling.
+
+Nginx admits at most 1,414,488 wire bytes only on the exact content route and disables
+request buffering there; ordinary API limits remain unchanged. The API independently
+counts the request stream before JSON parsing.
+
+### 4. Validation & Error Matrix
+
+| Condition | Behavior |
+| --- | --- |
+| Recovery save/read failure | Surface persistence error; do not submit a new request |
+| Explicit unsupported 404/405 | Existing create path, same idempotency key |
+| Network error/unknown receipt | Recover same-key session; no automatic content replay |
+| Active/completing recovery | Original error and explicit retry, or file reselection after reload |
+| Failed/aborted/expired session | Clear intent and expose terminal outcome |
+| Cancellation requested for known active session | Keep intent until DELETE succeeds; recover conflicts/lost response |
+| Unknown or completing submission | Do not discard it through cancel/clear/new-file actions |
+| Enterprise switch | Abort current work; ignore old response and preserve scoped recovery |
+
+### 5. Good/Base/Bad Cases
+
+Good: a lost completed response is recovered by same-key creation and sends no second
+content body. Base: explicit unsupported content endpoint continues the same legacy
+session. Bad: generate a new key after an unknown response or persist an entire File.
+
+### 6. Tests Required
+
+`api/content.test.ts` checks HTTP bytes, bounded reading, receipt binding and enterprise
+switches. `contentController.test.ts` uses the actual API client and HTTP/Worker/storage
+boundaries to prove pre-submit persistence, loss/reload, wrong-file rejection, retry,
+StrictMode, unsupported fallback and cancellation acknowledgment. Real browser evidence
+must exercise real API/PostgreSQL/MinIO and verify document/job/quota counts; route
+interception can drop a request/response but must not invent a business completion.
+
+### 7. Wrong vs Correct
+
+Wrong: `catch { createSession(request, crypto.randomUUID()); }`.
+Correct: retain `{request, idempotencyKey}` before submission and recover that exact
+intent; only a terminal response allows the UI to discard its recovery state.
+
+## Single PUT extension (candidate, October 2026)
+
+New browser uploads up to1MiB request `transport: single_put`. The server can return
+multipart when `UPLOAD__SINGLE_PUT_ENABLED=false`; always follow the returned mode.
+Larger files and callers omitting transport keep the multipart protocol. Creation
+retries retain the requested mode and idempotency key; server-side replay retains the
+stored transport across operational switch changes.
+
+The strict version1 recovery record additionally permits optional `transport`.
+Absent means multipart. Store it for direct sessions and reject transport changes
+during reconciliation. Do not persist URLs, headers, credentials or file bodies.
+
+Direct sessions call POST `/{id}/object/presign` and `/{id}/object/complete` under
+`/api/upload-sessions`, both with an exact empty JSON object. Before XHR, validate the
+allowlisted origin, unique case-insensitive headers, signed Content-Length, session
+metadata and `If-None-Match: *`. Remove Content-Length from manually set headers:
+the browser derives it from the Blob. R2 CORS must permit the conditional header and
+four signed metadata headers, and expose ETag for the exact application origin.
+
+A412 response alone is never success. Read the authoritative session and require an
+active single_put session with matching size and one part with matching SHA-256,
+size and nonempty ETag. Dispatch only through the existing generation/attempt checks;
+pause or cancellation invalidates late readback. Refresh requires original-file
+reselection and hash verification before completion; a wrong same-name/same-size
+file must cause no upload or completion writes.
+
+The backend performs full bounded content/hash/envelope validation. Canceled direct
+uploads retain permanent zero-byte conditional retirement markers, including after
+demo cleanup, to prevent delayed signed PUTs recreating canceled content.
+
+Validation: API, state/persistence and React controller tests live beside the modules.
+Real isolated PostgreSQL/API/MinIO browser checks covered normal upload, lost actual
+PUT response followed by real412, and refresh/wrong-file recovery. A separate real
+R2 browser probe verified signed PUT200, exposed ETag, repeated412 and unchanged
+content. These checks do not establish public performance or production deployment.
+
 ## Scenario: Slice 8 hashing, transfer, state, and recovery contracts
 
 ### 1. Scope / Trigger
