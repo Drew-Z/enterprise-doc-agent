@@ -1,0 +1,11 @@
+participant_id,pack_id,session_id,stage,started_at,ended_at,elapsed_seconds,units_total,units_completed,units_failed,manual_edits,severe_errors,notes
+,validation-01,,access_and_setup,,,,,,,,,
+,validation-01,,upload_and_parse,,,,,,,,,
+,validation-01,,group_and_freeze,,,,,,,,,
+,validation-01,,analysis_wait,,,,30,,,,,
+,validation-01,,evidence_review,,,,30,,,,,
+,validation-01,,manual_revision_and_review,,,,30,,,,,
+,validation-01,,draft_export_check,,,,30,,,,,
+,validation-01,,reviewed_export_and_approval,,,,30,,,,,
+,validation-01,,incremental_update,,,,30,,,,,
+,validation-01,,total_task,,,,30,,,,,

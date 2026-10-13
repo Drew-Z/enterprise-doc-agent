@@ -1,0 +1,187 @@
+{
+  "schema_version": "analysis.public-pack.v1",
+  "id": "development-01",
+  "split": "development",
+  "independent_customer": false,
+  "pricing_date": "retrieved_snapshot_only",
+  "objects": [
+    {
+      "id": "asana",
+      "name": "Asana Starter"
+    },
+    {
+      "id": "trello",
+      "name": "Trello Standard"
+    },
+    {
+      "id": "basecamp",
+      "name": "Basecamp Studio"
+    }
+  ],
+  "fields": [
+    {
+      "id": "scope",
+      "name": "服务范围",
+      "question": "包括哪些产品、服务和交付物？",
+      "value_type": "text"
+    },
+    {
+      "id": "pricing_unit",
+      "name": "计费单位",
+      "question": "按什么数量、期间和单位计费？",
+      "value_type": "text"
+    },
+    {
+      "id": "recurring_cost",
+      "name": "持续费用",
+      "question": "持续费用的金额、币种、数量和期间是什么？",
+      "value_type": "text"
+    },
+    {
+      "id": "setup_fee",
+      "name": "一次性费用",
+      "question": "实施、安装或其他一次性费用及其适用条件是什么？",
+      "value_type": "text"
+    },
+    {
+      "id": "tax_basis",
+      "name": "税费口径",
+      "question": "价格是否含税？税种、税率及其他费用是否明确？",
+      "value_type": "text"
+    },
+    {
+      "id": "lead_time",
+      "name": "交付时间",
+      "question": "交付需要多久？从哪个事件开始计算？",
+      "value_type": "text"
+    },
+    {
+      "id": "contract_term",
+      "name": "合同期限",
+      "question": "合同期限、续约和终止条件是什么？",
+      "value_type": "text"
+    },
+    {
+      "id": "support",
+      "name": "售后支持",
+      "question": "支持范围、响应时间和服务时段是什么？",
+      "value_type": "text"
+    },
+    {
+      "id": "exclusions",
+      "name": "排除与限制",
+      "question": "不包含哪些内容？有哪些前置条件和限制？",
+      "value_type": "text"
+    },
+    {
+      "id": "payment_terms",
+      "name": "付款条件",
+      "question": "付款节点、比例及验收条件是什么？",
+      "value_type": "text"
+    }
+  ],
+  "sources": [
+    {
+      "file": "asana-pricing.txt",
+      "object_id": "asana",
+      "url": "https://asana.com/pricing",
+      "retrieved_at": "2026-10-11T22:32:55.556084+00:00",
+      "provider": "firecrawl",
+      "raw_evidence": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\fallback-model-evidence\\analysis-a0-20261012-asana-pricing.json",
+      "raw_sha256": "dcc5b30cf13ddcdcfd3b1a19b22604552d0f89b5194952e16787c66fcb796c15",
+      "sha256": "9cd32b631db6d47fc8dbea5b676b348594d1dfbf05765d0fb0a7427613e3036f",
+      "bytes": 47748,
+      "source_type": "official_web_extraction",
+      "coverage": "unknown",
+      "license": "Publicly readable; no redistribution license established. Local evaluation only.",
+      "command": "smart-search fetch https://asana.com/pricing --format json"
+    },
+    {
+      "file": "asana-subscriber.txt",
+      "object_id": "asana",
+      "url": "https://asana.com/terms/subscriber-terms",
+      "retrieved_at": "2026-10-11T22:37:37.408270+00:00",
+      "provider": "tavily",
+      "raw_evidence": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\fallback-model-evidence\\analysis-a0-20261012-asana-subscriber.json",
+      "raw_sha256": "96693fff6f370ceb316634d3cdad9c181fa40801e5471b69f01ab606b58bc96a",
+      "sha256": "90e298093c45a04d28c98d563c3b730bf4001dc6190cd2c0bb412c8088fca2d0",
+      "bytes": 41645,
+      "source_type": "official_web_extraction",
+      "coverage": "unknown",
+      "license": "Publicly readable; no redistribution license established. Local evaluation only.",
+      "command": "smart-search fetch https://asana.com/terms/subscriber-terms --format json"
+    },
+    {
+      "file": "trello-pricing.txt",
+      "object_id": "trello",
+      "url": "https://trello.com/pricing",
+      "retrieved_at": "2026-10-11T22:32:56.188733+00:00",
+      "provider": "firecrawl",
+      "raw_evidence": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\fallback-model-evidence\\analysis-a0-20261012-trello-pricing.json",
+      "raw_sha256": "6eaee49f5d0141f4dc57a3cecc7a62b1f1f680daea65ede752fe3f03e064b167",
+      "sha256": "8c4a876dc83ba3497b485223d2a282db51a21416115a27aa62e707c69e67d78f",
+      "bytes": 14597,
+      "source_type": "official_web_extraction",
+      "coverage": "unknown",
+      "license": "Publicly readable; no redistribution license established. Local evaluation only.",
+      "command": "smart-search fetch https://trello.com/pricing --format json"
+    },
+    {
+      "file": "trello-terms.txt",
+      "object_id": "trello",
+      "url": "https://www.atlassian.com/legal/cloud-terms-of-service",
+      "retrieved_at": "2026-10-11T22:32:54.704523+00:00",
+      "provider": "tavily",
+      "raw_evidence": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\fallback-model-evidence\\analysis-a0-20261012-trello-terms.json",
+      "raw_sha256": "0edd794b1c0ffda1818a53af0df3fe6a9c2be790f9fc0cd087c6468e74a19064",
+      "sha256": "79831547816aab77f340235d7b6f3e06aa5b6445dc7f5245e94b9a03613f0132",
+      "bytes": 49506,
+      "source_type": "official_web_extraction",
+      "coverage": "unknown",
+      "license": "Publicly readable; no redistribution license established. Local evaluation only.",
+      "command": "smart-search fetch https://www.atlassian.com/legal/cloud-terms-of-service --format json"
+    },
+    {
+      "file": "basecamp-pricing.txt",
+      "object_id": "basecamp",
+      "url": "https://basecamp.com/pricing",
+      "retrieved_at": "2026-10-11T22:32:59.775808+00:00",
+      "provider": "firecrawl",
+      "raw_evidence": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\fallback-model-evidence\\analysis-a0-20261012-basecamp-pricing.json",
+      "raw_sha256": "02b6776653b069ddde6564465056df8c8b9e44341da7212c06ac06c0834e38e5",
+      "sha256": "59bca04eed04195e30f0fcdf77d5b4cecd0426b34acc399706ecd29deec8de6a",
+      "bytes": 12044,
+      "source_type": "official_web_extraction",
+      "coverage": "unknown",
+      "license": "Publicly readable; no redistribution license established. Local evaluation only.",
+      "command": "smart-search fetch https://basecamp.com/pricing --format json"
+    },
+    {
+      "file": "basecamp-terms.txt",
+      "object_id": "basecamp",
+      "url": "https://basecamp.com/about/policies/terms",
+      "retrieved_at": "2026-10-11T22:32:55.555579+00:00",
+      "provider": "tavily",
+      "raw_evidence": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\fallback-model-evidence\\analysis-a0-20261012-basecamp-terms.json",
+      "raw_sha256": "9871992a1fc820e1c45a145c5e076201940ed19ddc69e36a5729591e3aea5691",
+      "sha256": "049a959239115b0665cd4b7127594703fa37b545cd2fd47203e8bd9f5b934697",
+      "bytes": 14907,
+      "source_type": "official_web_extraction",
+      "coverage": "unknown",
+      "license": "Publicly readable; no redistribution license established. Local evaluation only.",
+      "command": "smart-search fetch https://basecamp.com/about/policies/terms --format json"
+    }
+  ],
+  "common_requirements": {
+    "file": "requirements.synthetic.txt",
+    "source_type": "synthetic",
+    "sha256": "feb82968f7c43d3e11e2391f8571508fd90f3bd336feb26a3d603be766c329e3"
+  },
+  "known_gaps": [
+    "Extracted HTML is uploaded as TXT and does not test original PDF/DOCX/XLSX layout.",
+    "Basecamp price amounts absent in fetched text.",
+    "Asana consumer terms excluded; subscriber agreement is the commercial source.",
+    "No signed order forms, jurisdiction, tax rate or negotiated quote.",
+    "This pack has been inspected during development and cannot become a holdout."
+  ]
+}

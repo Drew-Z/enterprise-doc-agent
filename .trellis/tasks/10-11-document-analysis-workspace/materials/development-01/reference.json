@@ -1,0 +1,254 @@
+{
+  "schema_version": "analysis.reference-draft.v1",
+  "author_type": "development_assistant",
+  "independently_reviewed": false,
+  "denominator": 30,
+  "annotated_rows": 9,
+  "unreviewed_rows": 21,
+  "quality_score": null,
+  "rows": [
+    {
+      "object_id": "asana",
+      "field_id": "scope",
+      "annotation_status": "unreviewed",
+      "expectation": "Needs independent source annotation before quality scoring",
+      "locator": null
+    },
+    {
+      "object_id": "asana",
+      "field_id": "pricing_unit",
+      "annotation_status": "unreviewed",
+      "expectation": "Needs independent source annotation before quality scoring",
+      "locator": null
+    },
+    {
+      "object_id": "asana",
+      "field_id": "recurring_cost",
+      "annotation_status": "partial_reference",
+      "expectation": "10.99 per user/month annually, 13.49 monthly; confirm currency and taxes",
+      "locator": {
+        "file": "asana-pricing.txt",
+        "line": 86,
+        "anchor": "$10.99"
+      }
+    },
+    {
+      "object_id": "asana",
+      "field_id": "setup_fee",
+      "annotation_status": "unreviewed",
+      "expectation": "Needs independent source annotation before quality scoring",
+      "locator": null
+    },
+    {
+      "object_id": "asana",
+      "field_id": "tax_basis",
+      "annotation_status": "unreviewed",
+      "expectation": "Needs independent source annotation before quality scoring",
+      "locator": null
+    },
+    {
+      "object_id": "asana",
+      "field_id": "lead_time",
+      "annotation_status": "unreviewed",
+      "expectation": "Needs independent source annotation before quality scoring",
+      "locator": null
+    },
+    {
+      "object_id": "asana",
+      "field_id": "contract_term",
+      "annotation_status": "unreviewed",
+      "expectation": "Needs independent source annotation before quality scoring",
+      "locator": null
+    },
+    {
+      "object_id": "asana",
+      "field_id": "support",
+      "annotation_status": "unreviewed",
+      "expectation": "Needs independent source annotation before quality scoring",
+      "locator": null
+    },
+    {
+      "object_id": "asana",
+      "field_id": "exclusions",
+      "annotation_status": "unreviewed",
+      "expectation": "Needs independent source annotation before quality scoring",
+      "locator": null
+    },
+    {
+      "object_id": "asana",
+      "field_id": "payment_terms",
+      "annotation_status": "unreviewed",
+      "expectation": "Needs independent source annotation before quality scoring",
+      "locator": null
+    },
+    {
+      "object_id": "trello",
+      "field_id": "scope",
+      "annotation_status": "unreviewed",
+      "expectation": "Needs independent source annotation before quality scoring",
+      "locator": null
+    },
+    {
+      "object_id": "trello",
+      "field_id": "pricing_unit",
+      "annotation_status": "partial_reference",
+      "expectation": "Per billable Workspace member; multi-board guests also count",
+      "locator": {
+        "file": "trello-pricing.txt",
+        "line": 200,
+        "anchor": "Multi-Board Guest"
+      }
+    },
+    {
+      "object_id": "trello",
+      "field_id": "recurring_cost",
+      "annotation_status": "partial_reference",
+      "expectation": "USD 5 per user/month billed annually; USD 6 billed monthly",
+      "locator": {
+        "file": "trello-pricing.txt",
+        "line": 40,
+        "anchor": "$5USD"
+      }
+    },
+    {
+      "object_id": "trello",
+      "field_id": "setup_fee",
+      "annotation_status": "unreviewed",
+      "expectation": "Needs independent source annotation before quality scoring",
+      "locator": null
+    },
+    {
+      "object_id": "trello",
+      "field_id": "tax_basis",
+      "annotation_status": "partial_reference",
+      "expectation": "Fees exclude applicable taxes; no buyer-specific rate may be invented",
+      "locator": {
+        "file": "trello-terms.txt",
+        "line": 138,
+        "anchor": "Fees and expenses are exclusive"
+      }
+    },
+    {
+      "object_id": "trello",
+      "field_id": "lead_time",
+      "annotation_status": "unreviewed",
+      "expectation": "Needs independent source annotation before quality scoring",
+      "locator": null
+    },
+    {
+      "object_id": "trello",
+      "field_id": "contract_term",
+      "annotation_status": "unreviewed",
+      "expectation": "Needs independent source annotation before quality scoring",
+      "locator": null
+    },
+    {
+      "object_id": "trello",
+      "field_id": "support",
+      "annotation_status": "partial_reference",
+      "expectation": "Standard support is local business hours, not Premium 24/5 or Enterprise 24/7",
+      "locator": {
+        "file": "trello-pricing.txt",
+        "line": 172,
+        "anchor": "Local Business Hours"
+      }
+    },
+    {
+      "object_id": "trello",
+      "field_id": "exclusions",
+      "annotation_status": "unreviewed",
+      "expectation": "Needs independent source annotation before quality scoring",
+      "locator": null
+    },
+    {
+      "object_id": "trello",
+      "field_id": "payment_terms",
+      "annotation_status": "unreviewed",
+      "expectation": "Needs independent source annotation before quality scoring",
+      "locator": null
+    },
+    {
+      "object_id": "basecamp",
+      "field_id": "scope",
+      "annotation_status": "unreviewed",
+      "expectation": "Needs independent source annotation before quality scoring",
+      "locator": null
+    },
+    {
+      "object_id": "basecamp",
+      "field_id": "pricing_unit",
+      "annotation_status": "partial_reference",
+      "expectation": "Studio allows unlimited users without per-user fees; amount missing",
+      "locator": {
+        "file": "basecamp-pricing.txt",
+        "line": 50,
+        "anchor": "UNLIMITED users, no per-user fees"
+      }
+    },
+    {
+      "object_id": "basecamp",
+      "field_id": "recurring_cost",
+      "annotation_status": "partial_reference",
+      "expectation": "No quoted amount is available in this extraction; do not infer zero",
+      "locator": null
+    },
+    {
+      "object_id": "basecamp",
+      "field_id": "setup_fee",
+      "annotation_status": "unreviewed",
+      "expectation": "Needs independent source annotation before quality scoring",
+      "locator": null
+    },
+    {
+      "object_id": "basecamp",
+      "field_id": "tax_basis",
+      "annotation_status": "partial_reference",
+      "expectation": "Fees exclude taxes; rate and buyer jurisdiction remain unknown",
+      "locator": {
+        "file": "basecamp-terms.txt",
+        "line": 34,
+        "anchor": "All fees are exclusive"
+      }
+    },
+    {
+      "object_id": "basecamp",
+      "field_id": "lead_time",
+      "annotation_status": "unreviewed",
+      "expectation": "Needs independent source annotation before quality scoring",
+      "locator": null
+    },
+    {
+      "object_id": "basecamp",
+      "field_id": "contract_term",
+      "annotation_status": "partial_reference",
+      "expectation": "Keep pricing-page annual-proration statement and general monthly refund limits distinct; confirm applicability",
+      "locator": {
+        "file": "basecamp-pricing.txt",
+        "line": 154,
+        "anchor": "difference will be prorated"
+      }
+    },
+    {
+      "object_id": "basecamp",
+      "field_id": "support",
+      "annotation_status": "unreviewed",
+      "expectation": "Needs independent source annotation before quality scoring",
+      "locator": null
+    },
+    {
+      "object_id": "basecamp",
+      "field_id": "exclusions",
+      "annotation_status": "unreviewed",
+      "expectation": "Needs independent source annotation before quality scoring",
+      "locator": null
+    },
+    {
+      "object_id": "basecamp",
+      "field_id": "payment_terms",
+      "annotation_status": "unreviewed",
+      "expectation": "Needs independent source annotation before quality scoring",
+      "locator": null
+    }
+  ],
+  "rule": "Reference file must never be uploaded or passed to the model."
+}

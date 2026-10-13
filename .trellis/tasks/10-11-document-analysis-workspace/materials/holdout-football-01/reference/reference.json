@@ -1,0 +1,222 @@
+{
+  "schema_version": "analysis.reference-draft.v1",
+  "author_type": "pack_preparer",
+  "independently_reviewed": false,
+  "denominator": 30,
+  "annotated_rows": 0,
+  "unreviewed_rows": 30,
+  "quality_score": null,
+  "rows": [
+    {
+      "object_id": "nike_usmnt",
+      "field_id": "product",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "nike_usmnt",
+      "field_id": "listed_price",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "nike_usmnt",
+      "field_id": "material",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "nike_usmnt",
+      "field_id": "sizes",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "nike_usmnt",
+      "field_id": "personalization",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "nike_usmnt",
+      "field_id": "delivery",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "nike_usmnt",
+      "field_id": "shipping_cost",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "nike_usmnt",
+      "field_id": "return_window",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "nike_usmnt",
+      "field_id": "return_conditions",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "nike_usmnt",
+      "field_id": "exclusions",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "adidas_orlando",
+      "field_id": "product",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "adidas_orlando",
+      "field_id": "listed_price",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "adidas_orlando",
+      "field_id": "material",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "adidas_orlando",
+      "field_id": "sizes",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "adidas_orlando",
+      "field_id": "personalization",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "adidas_orlando",
+      "field_id": "delivery",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "adidas_orlando",
+      "field_id": "shipping_cost",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "adidas_orlando",
+      "field_id": "return_window",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "adidas_orlando",
+      "field_id": "return_conditions",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "adidas_orlando",
+      "field_id": "exclusions",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "puma_mancity",
+      "field_id": "product",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "puma_mancity",
+      "field_id": "listed_price",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "puma_mancity",
+      "field_id": "material",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "puma_mancity",
+      "field_id": "sizes",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "puma_mancity",
+      "field_id": "personalization",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "puma_mancity",
+      "field_id": "delivery",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "puma_mancity",
+      "field_id": "shipping_cost",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "puma_mancity",
+      "field_id": "return_window",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "puma_mancity",
+      "field_id": "return_conditions",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "puma_mancity",
+      "field_id": "exclusions",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    }
+  ],
+  "rule": "This file stays outside upload/ and must never be uploaded or passed to the model."
+}

@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "suite_id": "analysis-validation-01",
+  "pack_manifest": ".trellis/tasks/10-11-document-analysis-workspace/materials/validation-01/manifest.json",
+  "pack_manifest_sha256": "9ffa794efb7c8231e505cfb0e5e07428ebd58d7b3bd07c789b63c1ceecc80008",
+  "reference_sha256": "f3a94f1fc27577ab6974e46e13dce92baa23fede598c1d18463c7daec516bf17",
+  "reference_bytes": 7527,
+  "base_url": "http://127.0.0.1:8000",
+  "token_env": "ANALYSIS_HOLDOUT_TOKEN",
+  "project_id": "10000000-0000-0000-0000-000000000001",
+  "snapshot_id": "20000000-0000-0000-0000-000000000002",
+  "modes": [
+    "fixed",
+    "agent"
+  ],
+  "expected_policy": {
+    "route_id": "analysis-primary",
+    "model": "gpt-5.6-sol",
+    "model_revision": null,
+    "streaming": false,
+    "reasoning_effort": null,
+    "max_dispatches_per_unit": 2
+  },
+  "max_live_dispatches": 120,
+  "poll_seconds": 0.5,
+  "run_timeout_seconds": 3600
+}
