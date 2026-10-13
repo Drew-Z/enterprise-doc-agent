@@ -42,6 +42,7 @@ class ProductQuotaConfiguration(BaseModel):
     expected_version: int = Field(strict=True, ge=1, le=2**31 - 1)
     agent_task_limit: int = Field(strict=True, ge=0, le=2**63 - 1)
     document_bytes_limit: int = Field(strict=True, ge=0, le=2**63 - 1)
+    analysis_cell_limit: int | None = Field(default=None, strict=True, ge=0, le=2**63 - 1)
 
 
 class EntitlementConfiguration(BaseModel):
@@ -55,6 +56,7 @@ class EntitlementConfiguration(BaseModel):
     provider_request_limit: int = Field(strict=True, ge=0, le=2**63 - 1)
     agent_task_limit: int = Field(default=0, strict=True, ge=0, le=2**63 - 1)
     document_bytes_limit: int = Field(default=0, strict=True, ge=0, le=2**63 - 1)
+    analysis_cell_limit: int | None = Field(default=None, strict=True, ge=0, le=2**63 - 1)
 
     @field_validator("period_start", "period_end")
     @classmethod

@@ -3,6 +3,8 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from enterprise_doc_core.billing.errors import UsageError
+from enterprise_doc_core.billing.generation_budget import require_generation_budget
 from enterprise_doc_core.presales.errors import PresalesError
 from enterprise_doc_core.presales.models import (
     PresalesDispatchDay,
@@ -32,7 +34,10 @@ async def admit(
 ) -> None:
     # One short transaction lock covers UTC rollover, all tenants, and new route rows.
     await session.execute(text("SET LOCAL lock_timeout = '5s'"))
-    await session.execute(text("SELECT pg_advisory_xact_lock(73482190528001)"))
+    try:
+        await require_generation_budget(session, now=now, limit=settings.daily_dispatch_limit)
+    except UsageError as error:
+        raise PresalesError("presales_dispatch_budget") from error
     day = now.astimezone(UTC).date()
     budget = await session.get(PresalesDispatchDay, day)
     if budget is None:

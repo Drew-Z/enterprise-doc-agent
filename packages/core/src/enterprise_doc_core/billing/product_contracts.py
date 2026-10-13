@@ -6,6 +6,7 @@ from uuid import UUID, uuid5
 class ProductMetric(StrEnum):
     AGENT_TASK = "agent_task"
     DOCUMENT_BYTES = "document_bytes"
+    ANALYSIS_CELL = "analysis_cell"
 
 
 def document_processing_operation_id(job_id: UUID, max_attempts: int) -> UUID:

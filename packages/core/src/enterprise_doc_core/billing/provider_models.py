@@ -2,7 +2,16 @@ from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, Integer, Numeric, String
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    Numeric,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from enterprise_doc_core.db.base import Base, UUIDPrimaryKeyMixin
@@ -13,6 +22,9 @@ class ProviderDispatch(UUIDPrimaryKeyMixin, Base):
 
     __tablename__ = "provider_dispatches"
     __table_args__ = (
+        UniqueConstraint(
+            "tenant_id", "operation_id", "id", name="uq_provider_dispatch_operation_scope"
+        ),
         CheckConstraint("kind IN ('agent', 'document', 'query')", name="kind_valid"),
         CheckConstraint(
             "state IN ('dispatched', 'responded', 'http_error', 'timeout', "

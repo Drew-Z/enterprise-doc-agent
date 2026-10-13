@@ -17,12 +17,14 @@ from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from enterprise_doc_core.billing.errors import UsageError
+from enterprise_doc_core.billing.generation_budget import require_generation_budget
 from enterprise_doc_core.billing.provider_metadata import provider_request_id, safe_provider_id
 from enterprise_doc_core.billing.provider_models import ProviderDispatch
 from enterprise_doc_core.config import ProviderUsageSettings
 from enterprise_doc_core.model_response import OpenAIResponseReader
 
 Guard = Callable[[AsyncSession], Awaitable[None]]
+IntentLink = Callable[[AsyncSession, ProviderDispatch], Awaitable[None]]
 Kind = Literal["agent", "document", "query"]
 
 
@@ -33,6 +35,7 @@ class _Scope:
     operation_id: UUID
     kind: Kind
     guard: Guard
+    intent_link: IntentLink | None = None
 
 
 _SCOPE: ContextVar[_Scope | None] = ContextVar("provider_usage_scope", default=None)
@@ -56,8 +59,9 @@ class ProviderCallService:
         operation_id: UUID,
         kind: Kind,
         guard: Guard,
+        intent_link: IntentLink | None = None,
     ) -> Iterator[None]:
-        token = _SCOPE.set(_Scope(self, tenant_id, operation_id, kind, guard))
+        token = _SCOPE.set(_Scope(self, tenant_id, operation_id, kind, guard, intent_link))
         try:
             yield
         finally:
@@ -73,6 +77,8 @@ class ProviderCallService:
             async with self.sessions.begin() as session:
                 await session.execute(text("SET LOCAL lock_timeout = '5s'"))
                 await scope.guard(session)
+                if scope.kind == "agent":
+                    await require_generation_budget(session, now=now)
                 # Guards take business locks before budget locks. No path takes
                 # a business/Tenant lock after acquiring a provider budget lock.
                 await session.execute(
@@ -135,6 +141,10 @@ class ProviderCallService:
                 )
                 session.add(row)
                 await session.flush()
+                intent_link: IntentLink | None = getattr(scope, "intent_link", None)
+                if intent_link is not None:
+                    await intent_link(session, row)
+                    await session.flush()
                 receipt = row.id
             return receipt
         except DBAPIError as error:

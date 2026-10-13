@@ -1524,6 +1524,12 @@ class UploadSessionService:
                         content_sha256_verified_at=content_sha256_verified_at,
                         completed_at=completed_at,
                         ingestion_max_attempts=self.ingestion_max_attempts,
+                        parser_version=(
+                            2
+                            if self.settings.structured_documents_enabled
+                            or upload_session.original_filename.lower().endswith(".xlsx")
+                            else 1
+                        ),
                     )
                     result = CompleteUploadSessionResult(
                         session_id=upload_session.id,

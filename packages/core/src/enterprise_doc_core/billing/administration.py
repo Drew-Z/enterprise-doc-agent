@@ -99,14 +99,7 @@ class EntitlementAdministrationService:
                 )
                 session.add(entitlement)
                 await session.flush()
-                product_quotas = (
-                    ProductQuotaView(
-                        ProductMetric.AGENT_TASK, configuration.agent_task_limit, 0, 0
-                    ),
-                    ProductQuotaView(
-                        ProductMetric.DOCUMENT_BYTES, configuration.document_bytes_limit, 0, 0
-                    ),
-                )
+                product_quotas = self._configured_quotas(configuration)
                 session.add_all(
                     ProductQuota(
                         tenant_id=tenant_id,
@@ -137,6 +130,11 @@ class EntitlementAdministrationService:
                         "provider_request_limit": entitlement.provider_request_limit,
                         "agent_task_limit": configuration.agent_task_limit,
                         "document_bytes_limit": configuration.document_bytes_limit,
+                        **(
+                            {"analysis_cell_limit": configuration.analysis_cell_limit}
+                            if configuration.analysis_cell_limit is not None
+                            else {}
+                        ),
                     },
                 )
                 return EntitlementConfigurationResult(
@@ -168,10 +166,15 @@ class EntitlementAdministrationService:
                     ProductMetric.AGENT_TASK: configuration.agent_task_limit,
                     ProductMetric.DOCUMENT_BYTES: configuration.document_bytes_limit,
                 }
+                if configuration.analysis_cell_limit is not None:
+                    requested[ProductMetric.ANALYSIS_CELL] = configuration.analysis_cell_limit
                 limits = {quota.metric: quota.limit for quota in existing}
-                if any(limit != requested[metric] for metric, limit in limits.items()):
+                if any(
+                    metric in limits and limits[metric] != limit
+                    for metric, limit in requested.items()
+                ):
                     raise UsageError("entitlement_idempotency_conflict")
-                if len(limits) == len(requested):
+                if requested.keys() <= limits.keys():
                     return EntitlementConfigurationResult(self._snapshot(row, existing), True)
                 now = self.clock()
                 if row.period_end <= now:
@@ -204,6 +207,11 @@ class EntitlementAdministrationService:
                         "version": row.version,
                         "agent_task_limit": configuration.agent_task_limit,
                         "document_bytes_limit": configuration.document_bytes_limit,
+                        **(
+                            {"analysis_cell_limit": configuration.analysis_cell_limit}
+                            if configuration.analysis_cell_limit is not None
+                            else {}
+                        ),
                     },
                 )
                 quotas = (await self._quotas(session, tenant_id, [row.id]))[row.id]
@@ -330,4 +338,26 @@ class EntitlementAdministrationService:
         return (
             limits.get(ProductMetric.AGENT_TASK, 0) == configuration.agent_task_limit
             and limits.get(ProductMetric.DOCUMENT_BYTES, 0) == configuration.document_bytes_limit
+            and (
+                configuration.analysis_cell_limit is None
+                or limits.get(ProductMetric.ANALYSIS_CELL) == configuration.analysis_cell_limit
+            )
         )
+
+    @staticmethod
+    def _configured_quotas(
+        configuration: EntitlementConfiguration,
+    ) -> tuple[ProductQuotaView, ...]:
+        quotas = [
+            ProductQuotaView(ProductMetric.AGENT_TASK, configuration.agent_task_limit, 0, 0),
+            ProductQuotaView(
+                ProductMetric.DOCUMENT_BYTES, configuration.document_bytes_limit, 0, 0
+            ),
+        ]
+        if configuration.analysis_cell_limit is not None:
+            quotas.append(
+                ProductQuotaView(
+                    ProductMetric.ANALYSIS_CELL, configuration.analysis_cell_limit, 0, 0
+                )
+            )
+        return tuple(quotas)

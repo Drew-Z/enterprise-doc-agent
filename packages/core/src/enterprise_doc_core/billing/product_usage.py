@@ -68,7 +68,7 @@ class ProductUsageService:
         if (
             type(quantity) is not int
             or not 0 < quantity <= 2**63 - 1
-            or (metric is ProductMetric.AGENT_TASK and quantity != 1)
+            or (metric in {ProductMetric.AGENT_TASK, ProductMetric.ANALYSIS_CELL} and quantity != 1)
         ):
             raise UsageError("usage_invalid_quantity")
         async with self._transaction(session) as transaction:

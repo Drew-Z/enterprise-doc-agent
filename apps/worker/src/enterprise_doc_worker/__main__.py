@@ -6,6 +6,7 @@ from typing import Any
 import uvicorn
 
 from enterprise_doc_core.agents import CheckpointHealthChecker, CheckpointRuntime
+from enterprise_doc_core.analysis.execution import build_execution_service
 from enterprise_doc_core.db import (
     create_session_factory,
     ensure_asyncio_compatibility,
@@ -19,11 +20,13 @@ from enterprise_doc_core.telemetry.resources import (
     ResourceMetricsSampler,
     read_redis_connected_clients,
 )
-from enterprise_doc_worker.agent_handler import (
-    agent_failure_lock_key,
-    project_agent_run_failure,
-)
 from enterprise_doc_worker.agents import build_durable_agent_handler
+from enterprise_doc_worker.analysis_handler import (
+    execution_failure_lock_key as agent_failure_lock_key,
+)
+from enterprise_doc_worker.analysis_handler import (
+    project_execution_failure as project_agent_run_failure,
+)
 from enterprise_doc_worker.app import create_probe_app
 from enterprise_doc_worker.config import WorkerSettings
 from enterprise_doc_worker.handler import build_consumer_factory
@@ -130,6 +133,9 @@ async def run_worker() -> None:
                 documents_bucket=settings.object_store.documents_bucket,
                 worker_id=settings.worker.worker_id,
                 agent_handler=agent_handler,
+                analysis_handler=build_execution_service(
+                    session_factory=session_factory, settings=settings
+                ).execute,
                 metrics=metrics,
                 fault_injection=settings.fault_injection,
                 embedding_settings=settings.embedding,

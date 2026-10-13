@@ -16,6 +16,8 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from enterprise_doc_api.agents import router as agent_router
 from enterprise_doc_api.agents.router import AgentRunServiceProtocol
+from enterprise_doc_api.analysis.router import router as analysis_router
+from enterprise_doc_api.analysis.runs_router import router as analysis_runs_router
 from enterprise_doc_api.approvals import router as approval_router
 from enterprise_doc_api.approvals.router import ApprovalServiceProtocol
 from enterprise_doc_api.artifacts import router as artifact_router
@@ -90,6 +92,9 @@ from enterprise_doc_api.uploads.router import (
 )
 from enterprise_doc_core.admission.service import TenantAdmissionService
 from enterprise_doc_core.agents import AgentArtifactService, AgentRunService, ApprovalService
+from enterprise_doc_core.analysis.execution import AnalysisExecutionService
+from enterprise_doc_core.analysis.review import build_review_delivery_service
+from enterprise_doc_core.analysis.service import AnalysisWorkspaceService
 from enterprise_doc_core.audit import AuditEventService, AuditGovernanceService
 from enterprise_doc_core.auth import LocalTokenRevocationService
 from enterprise_doc_core.billing import EntitlementUsageService
@@ -203,6 +208,8 @@ def create_app(
     scim_provisioning_service: ScimProvisioningServiceProtocol | None = None,
     token_revocation_service: LocalTokenRevocationServiceProtocol | None = None,
     presales_service: PresalesServiceProtocol | None = None,
+    analysis_service: AnalysisWorkspaceService | None = None,
+    analysis_execution_service: AnalysisExecutionService | None = None,
     usage_service: EntitlementUsageService | None = None,
     browser_oidc_client: OidcClient | None = None,
     browser_identity_client: BrowserIdentityClient | None = None,
@@ -253,6 +260,8 @@ def create_app(
         or (resolved_settings.auth.scim_enabled and scim_provisioning_service is None)
         or token_revocation_service is None
         or presales_service is None
+        or (resolved_settings.upload.structured_documents_enabled and analysis_service is None)
+        or (resolved_settings.analysis.execution_enabled and analysis_execution_service is None)
         or resolved_settings.browser_auth.enabled
     )
     needs_default_object_store = (
@@ -392,6 +401,7 @@ def create_app(
             "Authorization",
             "Content-Type",
             "Idempotency-Key",
+            "If-Match",
             "Last-Event-ID",
             "X-Request-ID",
             "X-Correlation-ID",
@@ -614,6 +624,40 @@ def create_app(
     else:
         app.state.presales_service = presales_service
     app.state.usage_service = resolved_usage_service
+    app.state.analysis_admission_enabled = resolved_settings.upload.structured_documents_enabled
+    app.state.analysis_service = (
+        analysis_service
+        if analysis_service is not None
+        else AnalysisWorkspaceService(session_factory=session_factory)
+        if session_factory is not None
+        else None
+    )
+    app.include_router(analysis_router)
+    analysis_artifact_store = owned_artifact_object_store
+    if analysis_artifact_store is None and agent_artifact_service is not None:
+        analysis_artifact_store = getattr(agent_artifact_service, "artifact_store", None)
+    if analysis_execution_service is None and analysis_artifact_store is None:
+        owned_artifact_object_store = Boto3ArtifactObjectStore(
+            settings=resolved_settings.object_store,
+            metrics=resolved_metrics,
+        )
+        analysis_artifact_store = owned_artifact_object_store
+    app.state.analysis_execution_service = analysis_execution_service or (
+        build_review_delivery_service(
+            session_factory=session_factory,
+            settings=resolved_settings,
+            artifact_store=analysis_artifact_store,
+        )
+        if session_factory is not None
+        else None
+    )
+    app.state.analysis_execution_enabled = bool(
+        resolved_settings.upload.structured_documents_enabled
+        and resolved_settings.analysis.execution_enabled
+        and app.state.analysis_execution_service is not None
+        and app.state.analysis_execution_service.gateway is not None
+    )
+    app.include_router(analysis_runs_router)
     app.include_router(presales_router)
     app.include_router(tenant_usage_router)
     app.include_router(document_router)

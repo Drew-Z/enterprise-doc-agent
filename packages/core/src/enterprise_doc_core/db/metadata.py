@@ -15,6 +15,24 @@ from enterprise_doc_core.agents.models import (
     ApprovalRequest,
     ToolExecution,
 )
+from enterprise_doc_core.analysis.execution_models import (
+    AnalysisAction,
+    AnalysisApproval,
+    AnalysisArtifact,
+    AnalysisCellRevision,
+    AnalysisDependency,
+    AnalysisEvent,
+    AnalysisInputRequest,
+    AnalysisReview,
+    AnalysisRun,
+    AnalysisToolExecution,
+    AnalysisUnit,
+)
+from enterprise_doc_core.analysis.models import (
+    AnalysisProject,
+    AnalysisSnapshotSource,
+    AnalysisSourceSnapshot,
+)
 from enterprise_doc_core.audit.models import (
     AuditArchiveBatch,
     AuditEvent,
@@ -43,6 +61,7 @@ from enterprise_doc_core.documents.models import (
     DocumentIngestionGeneration,
     DocumentVersion,
 )
+from enterprise_doc_core.documents.structure_models import DocumentStructure
 from enterprise_doc_core.identity.models import ExternalIdentityBinding, Membership, Tenant, User
 from enterprise_doc_core.invitations.models import MembershipInvitation, MembershipInvitationEvent
 from enterprise_doc_core.jobs.models import Job, JobAttempt, JobEvent, OutboxEvent
@@ -55,6 +74,21 @@ from enterprise_doc_core.presales.models import (
 from enterprise_doc_core.uploads.models import UploadPart, UploadSession
 
 REGISTERED_MODELS = (
+    AnalysisRun,
+    AnalysisUnit,
+    AnalysisAction,
+    AnalysisArtifact,
+    AnalysisApproval,
+    AnalysisCellRevision,
+    AnalysisDependency,
+    AnalysisReview,
+    AnalysisEvent,
+    AnalysisInputRequest,
+    AnalysisToolExecution,
+    AnalysisProject,
+    AnalysisSourceSnapshot,
+    AnalysisSnapshotSource,
+    DocumentStructure,
     DemoDay,
     DemoWorkspace,
     TenantEntitlement,

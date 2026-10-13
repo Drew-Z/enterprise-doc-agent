@@ -21,6 +21,7 @@ async def insert_completion_records(
     content_sha256_verified_at: datetime | None,
     completed_at: datetime,
     ingestion_max_attempts: int,
+    parser_version: int = 1,
 ) -> None:
     """Persist a validated completion while the caller holds Tenant then UploadSession.
 
@@ -68,7 +69,10 @@ async def insert_completion_records(
         actor_id=upload.actor_id,
         job_type="document.ingest",
         idempotency_key=f"document-version:{upload.pending_version_id}",
-        payload={"document_version_id": str(upload.pending_version_id)},
+        payload={
+            "document_version_id": str(upload.pending_version_id),
+            **({"parser_version": parser_version} if parser_version != 1 else {}),
+        },
         document_version_id=upload.pending_version_id,
         document_version_reference=version_id,
         max_attempts=ingestion_max_attempts,

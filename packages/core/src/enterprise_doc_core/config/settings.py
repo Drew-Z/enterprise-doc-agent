@@ -66,6 +66,7 @@ class ObjectStoreSettings(BaseModel):
 
 class UploadSettings(BaseModel):
     single_put_enabled: bool = True
+    structured_documents_enabled: bool = False
     max_file_size_bytes: int = Field(default=10 * 1024**3, gt=0, le=5 * 1024**4)
     max_filename_length: int = Field(default=255, ge=1, le=255)
     preferred_part_size_bytes: int = Field(
@@ -296,6 +297,13 @@ class ProviderUsageSettings(BaseModel):
     query_call_limit: int = Field(default=6, strict=True, ge=1, le=100)
 
 
+class AnalysisSettings(BaseModel):
+    execution_enabled: bool = False
+    unit_deadline_seconds: float | None = Field(default=None, gt=0, le=600)
+    run_deadline_seconds: float | None = Field(default=None, gt=0, le=21600)
+    max_input_bytes: int | None = Field(default=None, ge=1024, le=65536)
+
+
 class FoundationSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -313,6 +321,7 @@ class FoundationSettings(BaseSettings):
     upload: UploadSettings = Field(default_factory=UploadSettings)
     otel: ObservabilitySettings = Field(default_factory=ObservabilitySettings)
     agent: AgentSettings = Field(default_factory=AgentSettings)
+    analysis: AnalysisSettings = Field(default_factory=AnalysisSettings)
     model: ModelSettings = Field(default_factory=ModelSettings)
     embedding: EmbeddingSettings = Field(default_factory=EmbeddingSettings)
     retrieval: RetrievalSettings = Field(default_factory=RetrievalSettings)

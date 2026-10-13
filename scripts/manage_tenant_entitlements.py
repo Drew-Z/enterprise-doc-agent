@@ -58,6 +58,11 @@ def build_parser() -> argparse.ArgumentParser:
                 default=0,
                 required=operation == "configure-products",
             )
+            command.add_argument(
+                "--analysis-cell-limit",
+                type=int,
+                default=None,
+            )
             command.add_argument("--execute", action="store_true")
         if operation == "configure":
             command.add_argument("--plan-code", required=True)
@@ -101,6 +106,7 @@ async def run_command(
             provider_request_limit=args.provider_request_limit,
             agent_task_limit=args.agent_task_limit,
             document_bytes_limit=args.document_bytes_limit,
+            analysis_cell_limit=args.analysis_cell_limit,
         )
         if not args.execute:
             return 0, {
@@ -117,6 +123,7 @@ async def run_command(
             expected_version=args.expected_version,
             agent_task_limit=args.agent_task_limit,
             document_bytes_limit=args.document_bytes_limit,
+            analysis_cell_limit=args.analysis_cell_limit,
         )
         if not args.execute:
             return 0, {

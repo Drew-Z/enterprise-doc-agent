@@ -176,6 +176,9 @@ DEFAULT_EMBEDDING_DIMENSION = 1024
 class DocumentIngestionGeneration(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "document_ingestion_generations"
     __table_args__ = (
+        UniqueConstraint(
+            "tenant_id", "document_version_id", "id", name="uq_ingestion_generation_scope"
+        ),
         ForeignKeyConstraint(
             ["tenant_id", "processing_job_id"],
             ["jobs.tenant_id", "jobs.id"],

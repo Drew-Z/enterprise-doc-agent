@@ -4,6 +4,7 @@ from collections.abc import Callable, Mapping
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from enterprise_doc_core.analysis.execution import ANALYSIS_JOB_TYPE
 from enterprise_doc_core.config import (
     AppEnvironment,
     EmbeddingSettings,
@@ -35,6 +36,24 @@ class UnsupportedJobType(JobHandlerError):
     message = "The claimed job type is not supported by this worker."
 
 
+class UnsupportedParserVersion(JobHandlerError):
+    code = "unsupported_parser_version"
+    message = "The document parser version is not supported by this worker."
+
+
+class DocumentParserRouter:
+    """Drain the version frozen at admission, even after its feature flag is disabled."""
+
+    def __init__(self, handlers: Mapping[int, AsyncJobHandler]) -> None:
+        self.handlers = dict(handlers)
+
+    async def __call__(self, claim: ClaimedJob) -> None:
+        version = claim.payload.get("parser_version", 1)
+        if type(version) is not int or version not in self.handlers:
+            raise UnsupportedParserVersion()
+        await self.handlers[version](claim)
+
+
 class JobHandlerRouter:
     def __init__(self, handlers: Mapping[str, AsyncJobHandler]) -> None:
         self.handlers = dict(handlers)
@@ -62,6 +81,7 @@ def build_consumer_factory(
     documents_bucket: str,
     worker_id: str,
     agent_handler: AsyncJobHandler | None = None,
+    analysis_handler: AsyncJobHandler | None = None,
     metrics: MetricsRuntime | None = None,
     fault_injection: FaultInjectionSettings | None = None,
     embedding_settings: EmbeddingSettings | None = None,
@@ -73,22 +93,31 @@ def build_consumer_factory(
     embedding_provider, embedding_model, embedding_dimension = build_embedding_provider(
         resolved_embedding, app_env=app_env
     )
-    service = DocumentIngestionService(
-        session_factory=session_factory,
-        object_store=wrap_multipart_store(object_store, resolved_faults),
-        documents_bucket=documents_bucket,
-        embedding_provider=embedding_provider,
-        embedding_model=embedding_model,
-        embedding_dimension=embedding_dimension,
-        versions=IngestionVersions(embedding=resolved_embedding.version),
-        metrics=metrics,
-        app_env=app_env,
-        provider_usage_settings=provider_usage_settings,
+    service = DocumentParserRouter(
+        {
+            parser_version: DocumentIngestionService(
+                session_factory=session_factory,
+                object_store=wrap_multipart_store(object_store, resolved_faults),
+                documents_bucket=documents_bucket,
+                embedding_provider=embedding_provider,
+                embedding_model=embedding_model,
+                embedding_dimension=embedding_dimension,
+                versions=IngestionVersions(
+                    parser=parser_version, embedding=resolved_embedding.version
+                ),
+                metrics=metrics,
+                app_env=app_env,
+                provider_usage_settings=provider_usage_settings,
+            )
+            for parser_version in (1, 2)
+        }
     )
 
     handlers: dict[str, AsyncJobHandler] = {DOCUMENT_INGEST_JOB_TYPE: service}
     if agent_handler is not None:
         handlers[AGENT_EXECUTE_JOB_TYPE] = agent_handler
+    if analysis_handler is not None:
+        handlers[ANALYSIS_JOB_TYPE] = analysis_handler
     router: AsyncJobHandler = wrap_handler(JobHandlerRouter(handlers), resolved_faults)
 
     def factory() -> JobDeliveryConsumer:

@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
 from tempfile import SpooledTemporaryFile
@@ -38,6 +38,9 @@ from enterprise_doc_core.documents.models import (
     DocumentVersion,
     DocumentVersionStatus,
 )
+from enterprise_doc_core.documents.structure import ParsedDocumentStructure, StructureLimits
+from enterprise_doc_core.documents.structure_process import parse_document_isolated
+from enterprise_doc_core.documents.structure_store import load_structure, persist_structure
 from enterprise_doc_core.jobs import ClaimedJob
 from enterprise_doc_core.jobs.models import Job, JobStatus
 from enterprise_doc_core.object_store import MultipartObjectStore, ObjectStoreError
@@ -68,8 +71,11 @@ class IngestionLimits:
     max_document_bytes: int = 256 * 1024 * 1024
     max_chunk_chars: int = 1200
     overlap_chars: int = 120
+    structure_timeout_seconds: float = 30
 
     def __post_init__(self) -> None:
+        if self.structure_timeout_seconds <= 0:
+            raise ValueError("structure_timeout_seconds must be positive")
         if self.range_read_bytes <= 0:
             raise ValueError("range_read_bytes must be positive")
         if self.max_spool_memory_bytes <= 0:
@@ -229,12 +235,28 @@ class DocumentIngestionService:
                 )
             else:
                 current_stage = DocumentIngestionStage.DOWNLOAD_SPOOL
+                if (
+                    self.versions.parser == 2
+                    and version.size_bytes > StructureLimits().max_file_bytes
+                ):
+                    raise DocumentParseViolation(
+                        "structure_file_limit", "Document exceeds the structural parsing limit."
+                    )
                 await self._checkpoint(generation_id, DocumentIngestionStage.DOWNLOAD_SPOOL, claim)
                 spool = await spool_object(
                     object_store=self.object_store,
                     bucket=self.documents_bucket,
                     key=version.object_key,
-                    limits=self.limits,
+                    limits=(
+                        replace(
+                            self.limits,
+                            max_document_bytes=min(
+                                self.limits.max_document_bytes, StructureLimits().max_file_bytes
+                            ),
+                        )
+                        if self.versions.parser == 2
+                        else self.limits
+                    ),
                 )
                 try:
                     data = spool.read()
@@ -251,10 +273,19 @@ class DocumentIngestionService:
 
                 current_stage = DocumentIngestionStage.PARSE
                 await self._checkpoint(generation_id, DocumentIngestionStage.PARSE, claim)
-                sections = parse_document_bytes(
-                    data,
-                    extension=Path(version.original_filename).suffix,
-                )
+                structure = None
+                if self.versions.parser == 2:
+                    structure = await parse_document_isolated(
+                        data,
+                        extension=Path(version.original_filename).suffix,
+                        timeout_seconds=self.limits.structure_timeout_seconds,
+                    )
+                    sections = structure.sections()
+                else:
+                    sections = parse_document_bytes(
+                        data,
+                        extension=Path(version.original_filename).suffix,
+                    )
                 current_stage = DocumentIngestionStage.CHUNK
                 await self._checkpoint(generation_id, DocumentIngestionStage.CHUNK, claim)
                 chunks = chunk_sections(
@@ -269,6 +300,7 @@ class DocumentIngestionService:
                     chunks=chunks,
                     verified_content_sha256=content_sha256,
                     claim=claim,
+                    structure=structure,
                 )
             current_stage = DocumentIngestionStage.EMBED
             await self._checkpoint(generation_id, DocumentIngestionStage.EMBED, claim)
@@ -616,6 +648,7 @@ class DocumentIngestionService:
         chunks: tuple[ParsedChunk, ...],
         verified_content_sha256: str,
         claim: ClaimedJob,
+        structure: ParsedDocumentStructure | None = None,
     ) -> None:
         async with self.session_factory() as session, session.begin():
             await self._lock_claim(session, claim)
@@ -646,6 +679,18 @@ class DocumentIngestionService:
                     "document_sha256_mismatch",
                     "document content does not match its declared SHA-256",
                     retryable=False,
+                )
+            if generation.parser_version == 2:
+                if structure is None or structure.source_sha256 != verified_content_sha256:
+                    raise DocumentParseViolation(
+                        "structure_checkpoint_invalid", "Source structure is invalid."
+                    )
+                await persist_structure(
+                    session,
+                    tenant_id=tenant_id,
+                    document_version_id=document_version_id,
+                    generation_id=generation_id,
+                    parsed=structure,
                 )
             await session.execute(
                 delete(DocumentChunk).where(DocumentChunk.generation_id == generation_id)
@@ -702,6 +747,27 @@ class DocumentIngestionService:
                     .order_by(DocumentChunk.chunk_index)
                 )
             ).all()
+            if generation is not None and generation.parser_version == 2:
+                source_hash = await session.scalar(
+                    select(DocumentVersion.declared_sha256).where(
+                        DocumentVersion.tenant_id == tenant_id,
+                        DocumentVersion.id == document_version_id,
+                    )
+                )
+                parsed = await load_structure(
+                    session,
+                    tenant_id=tenant_id,
+                    document_version_id=document_version_id,
+                    generation_id=generation_id,
+                    source_sha256=source_hash or "",
+                )
+                if any(
+                    parsed.text[row.start_offset : row.end_offset] != row.normalized_text
+                    for row in rows
+                ):
+                    raise DocumentParseViolation(
+                        "structure_checkpoint_invalid", "Source structure is invalid."
+                    )
         if generation is None or generation.stage != DocumentIngestionStage.EMBED.value:
             raise DocumentIngestionError(
                 "ingestion_checkpoint_invalid",

@@ -42,7 +42,7 @@ class TenantResourceUsageResponse(ApiModel):
 
 
 class ProductQuotaResponse(ApiModel):
-    metric: Literal["agent_task", "document_bytes"]
+    metric: Literal["agent_task", "document_bytes", "analysis_cell"]
     limit: int
     used: int
     reserved: int

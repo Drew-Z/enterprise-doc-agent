@@ -30,7 +30,9 @@ class ProductQuota(UUIDPrimaryKeyMixin, TimestampMixin, Base):
             ["tenant_entitlements.tenant_id", "tenant_entitlements.id"],
             ondelete="CASCADE",
         ),
-        CheckConstraint("metric IN ('agent_task', 'document_bytes')", name="metric_valid"),
+        CheckConstraint(
+            "metric IN ('agent_task', 'document_bytes', 'analysis_cell')", name="metric_valid"
+        ),
         CheckConstraint(
             "unit_limit >= 0 AND units_used >= 0 AND units_reserved >= 0", name="units_non_negative"
         ),
@@ -58,7 +60,9 @@ class ProductUsageReservation(UUIDPrimaryKeyMixin, TimestampMixin, Base):
             ondelete="CASCADE",
         ),
         CheckConstraint("quantity > 0", name="quantity_positive"),
-        CheckConstraint("metric != 'agent_task' OR quantity = 1", name="one_task"),
+        CheckConstraint(
+            "metric NOT IN ('agent_task', 'analysis_cell') OR quantity = 1", name="one_task"
+        ),
         CheckConstraint("state IN ('reserved', 'consumed', 'released')", name="state_valid"),
         Index("ix_product_usage_quota_state", "tenant_id", "quota_id", "state"),
     )
