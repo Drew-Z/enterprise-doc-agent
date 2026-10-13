@@ -289,6 +289,12 @@ jobs:
           MODEL_FALLBACK_REASONING_EFFORT: ${{ vars.STAGING_MODEL_FALLBACK_REASONING_EFFORT }}
           MODEL_STREAMING: ${{ vars.STAGING_MODEL_STREAMING }}
           UPLOAD_SINGLE_PUT_ENABLED: ${{ vars.STAGING_UPLOAD_SINGLE_PUT_ENABLED || 'false' }}
+          UPLOAD_STRUCTURED_DOCUMENTS_ENABLED: ${{ vars.STAGING_UPLOAD_STRUCTURED_DOCUMENTS_ENABLED || 'false' }}
+          ANALYSIS_EXECUTION_ENABLED: ${{ vars.STAGING_ANALYSIS_EXECUTION_ENABLED || 'false' }}
+          MODEL_ROUTE_ID: ${{ vars.STAGING_MODEL_ROUTE_ID || 'default' }}
+          ANALYSIS_UNIT_DEADLINE_SECONDS: ${{ vars.STAGING_ANALYSIS_UNIT_DEADLINE_SECONDS || '120' }}
+          ANALYSIS_RUN_DEADLINE_SECONDS: ${{ vars.STAGING_ANALYSIS_RUN_DEADLINE_SECONDS || '3600' }}
+          ANALYSIS_MAX_INPUT_BYTES: ${{ vars.STAGING_ANALYSIS_MAX_INPUT_BYTES || '65536' }}
           MODEL_FALLBACK_STREAMING: ${{ vars.STAGING_MODEL_FALLBACK_STREAMING }}
           MODEL_FALLBACK_BASE_URL: ${{ vars.STAGING_MODEL_FALLBACK_BASE_URL }}
           MODEL_FALLBACK_NAME: ${{ vars.STAGING_MODEL_FALLBACK_NAME }}
@@ -353,6 +359,12 @@ jobs:
             --object-store-presign-endpoint "$OBJECT_STORE_PRESIGN_ENDPOINT" \
             --object-store-checksum-mode "$OBJECT_STORE_CHECKSUM_MODE" \
             --upload-single-put-enabled "$UPLOAD_SINGLE_PUT_ENABLED" \
+            --upload-structured-documents-enabled "$UPLOAD_STRUCTURED_DOCUMENTS_ENABLED" \
+            --analysis-execution-enabled "$ANALYSIS_EXECUTION_ENABLED" \
+            --model-route-id "$MODEL_ROUTE_ID" \
+            --analysis-unit-deadline-seconds "$ANALYSIS_UNIT_DEADLINE_SECONDS" \
+            --analysis-run-deadline-seconds "$ANALYSIS_RUN_DEADLINE_SECONDS" \
+            --analysis-max-input-bytes "$ANALYSIS_MAX_INPUT_BYTES" \
             --tls-secret-name "$TLS_SECRET_NAME" \
             --web-object-store-origins "$VITE_OBJECT_STORE_ORIGINS" \
             --database-egress-cidr "$DATABASE_EGRESS_CIDR" \
@@ -836,6 +848,13 @@ jobs:
           MODEL_PROVIDER: openai_compatible
           MODEL_BASE_URL: ${{ vars.STAGING_MODEL_BASE_URL }}
           MODEL_NAME: ${{ vars.STAGING_MODEL_NAME }}
+          UPLOAD_STRUCTURED_DOCUMENTS_ENABLED: ${{ vars.STAGING_UPLOAD_STRUCTURED_DOCUMENTS_ENABLED || 'false' }}
+          ANALYSIS_EXECUTION_ENABLED: ${{ vars.STAGING_ANALYSIS_EXECUTION_ENABLED || 'false' }}
+          MODEL_ROUTE_ID: ${{ vars.STAGING_MODEL_ROUTE_ID || 'default' }}
+          MODEL_ROUTE_DEADLINE_SECONDS: ${{ vars.STAGING_MODEL_ROUTE_DEADLINE_SECONDS }}
+          ANALYSIS_UNIT_DEADLINE_SECONDS: ${{ vars.STAGING_ANALYSIS_UNIT_DEADLINE_SECONDS || '120' }}
+          ANALYSIS_RUN_DEADLINE_SECONDS: ${{ vars.STAGING_ANALYSIS_RUN_DEADLINE_SECONDS || '3600' }}
+          ANALYSIS_MAX_INPUT_BYTES: ${{ vars.STAGING_ANALYSIS_MAX_INPUT_BYTES || '65536' }}
           MODEL_FALLBACK_BASE_URL: ${{ vars.STAGING_MODEL_FALLBACK_BASE_URL }}
           MODEL_FALLBACK_NAME: ${{ vars.STAGING_MODEL_FALLBACK_NAME }}
           MODEL_FALLBACK_VERSION: ${{ vars.STAGING_MODEL_FALLBACK_VERSION }}
@@ -954,6 +973,13 @@ jobs:
             --model-provider "$MODEL_PROVIDER" \
             --model-base-url "$MODEL_BASE_URL" \
             --model-name "$MODEL_NAME" \
+            --upload-structured-documents-enabled "$UPLOAD_STRUCTURED_DOCUMENTS_ENABLED" \
+            --analysis-execution-enabled "$ANALYSIS_EXECUTION_ENABLED" \
+            --model-route-id "$MODEL_ROUTE_ID" \
+            --model-route-deadline-seconds "$MODEL_ROUTE_DEADLINE_SECONDS" \
+            --analysis-unit-deadline-seconds "$ANALYSIS_UNIT_DEADLINE_SECONDS" \
+            --analysis-run-deadline-seconds "$ANALYSIS_RUN_DEADLINE_SECONDS" \
+            --analysis-max-input-bytes "$ANALYSIS_MAX_INPUT_BYTES" \
             "${fallback_record_args[@]}" \
             --embedding-base-url "$EMBEDDING_BASE_URL" \
             --embedding-model-name "$EMBEDDING_MODEL_NAME" \

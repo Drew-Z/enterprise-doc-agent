@@ -1,0 +1,136 @@
+{
+  "schema_version": 1,
+  "status": "blocked_external",
+  "observed_at": "2026-10-13T12:43:20+08:00",
+  "task": "10-11-document-analysis-workspace",
+  "scope": "local_immutable_staging_release_preparation",
+  "candidate": {
+    "repository": "D:\\workspace4Cursor\\enterprise-doc-agent",
+    "branch": "codex/presales-prerequisite-assessment",
+    "baseline_head": "84d9388e51fea3324ce5b2dda8349bf7ff8199a0",
+    "candidate_commits": [
+      "020cb5a",
+      "7030ccf",
+      "99e99e6",
+      "7661285",
+      "84d9388"
+    ],
+    "migration_start": "20261010_0037",
+    "migration_head": "20261012_0043",
+    "remote_branch_contains_head": false,
+    "release_tag_present": false
+  },
+  "release_chain": {
+    "publication_workflow": {
+      "path": ".github/workflows/container.yml",
+      "sha256": "1f356624fb841f3676c7c1324e246712c0ebee54035bcb94dc9a8d9ca5eb1f51"
+    },
+    "deployment_workflow": {
+      "path": ".github/workflows/deploy-staging.yml",
+      "sha256": "d66b764bdd5089d83dde69c8a179262eaf1c63e13a37efdda98ca68a729a32f5"
+    },
+    "rollback_workflow": {
+      "path": ".github/workflows/rollback.yml",
+      "sha256": "507fa2714479be48e736746829bb5c8d8cd7767e04a050d97a9e95912017b9d5"
+    },
+    "workloads": [
+      "api",
+      "worker",
+      "consumer",
+      "web"
+    ],
+    "real_image_digests": null,
+    "signed_release_manifest": null
+  },
+  "analysis_policy": {
+    "deployment_state": "dark",
+    "structured_documents_enabled": false,
+    "execution_enabled": false,
+    "route_id": "default",
+    "controlled_holdout_route_id": "analysis-primary",
+    "unit_deadline_seconds": 120,
+    "run_deadline_seconds": 3600,
+    "max_input_bytes": 65536,
+    "execution_requires_structured_documents": true,
+    "execution_requires_route_deadline_at_least_unit_deadline": true,
+    "silent_fallback_allowed": false
+  },
+  "local_render": {
+    "status": "passed",
+    "profile": "single-node-4c4g",
+    "renderer": "kubectl kustomize",
+    "kustomize_version": "v5.7.1",
+    "configured_manifest_sha256": "69c05745df1fdb2b27be6063f9ca1bc9a83fcaa69aeac8d562465071f576c424",
+    "document_count": 27,
+    "phase_counts": {
+      "prerequisites": 20,
+      "migration": 1,
+      "embedding_rollout": 1,
+      "workloads": 5
+    },
+    "placeholder_images_only": true,
+    "four_workload_images_are_digest_bound": true,
+    "migration_uses_api_image": true,
+    "embedding_rollout_uses_api_image": true,
+    "secret_resources": 0,
+    "temporary_artifacts_removed": true
+  },
+  "migration_and_rollback": {
+    "migration_shape": "additive_with_guarded_downgrades",
+    "isolated_postgresql_test": "passed",
+    "old_runtime_has_exact_head_startup_gate": false,
+    "old_image_start_on_0043_tested": false,
+    "database_downgrade_after_analysis_history_supported": false,
+    "rollback_readiness": "blocked_pending_old_image_startup_or_compatible_candidate_evidence",
+    "notes": [
+      "Migrations 0038 through 0043 add analysis tables, columns, indexes and constraints; 0040 widens existing quota constraints for analysis_cell.",
+      "Downgrades refuse destructive history loss, so database downgrade is not the normal rollback path.",
+      "A prior compatible workload may remain schema-compatible with 0043, but its actual signed image must be started and smoke-tested against 0043 before it is approved as the rollback target."
+    ]
+  },
+  "validation": {
+    "focused_deployment_tests": {
+      "status": "passed",
+      "passed": 224
+    },
+    "deployment_capacity_recovery_tests": {
+      "status": "passed",
+      "passed": 55
+    },
+    "analysis_migration_integration": {
+      "status": "passed",
+      "passed": 1,
+      "warnings": 2,
+      "warning_scope": "pre_existing_document_versions_upload_sessions_fk_sort_cycle"
+    },
+    "ruff_check": "passed",
+    "ruff_format_check": "passed",
+    "mypy": "passed",
+    "diff_check": "passed",
+    "workflow_yaml_parse": "passed",
+    "actionlint": "not_run_tool_unavailable"
+  },
+  "blockers": [
+    "candidate_commits_not_pushed",
+    "reviewed_release_tag_missing",
+    "four_real_image_digests_missing",
+    "signed_release_manifest_missing",
+    "administrator_owned_default_off_prerequisites_not_applied",
+    "default_off_candidate_not_deployed_or_migrated",
+    "signed_old_or_compatible_rollback_image_not_started_against_schema_0043",
+    "short_lived_analysis_token_and_analysis_primary_route_not_configured",
+    "real_fixed_and_agent_holdout_not_run",
+    "external_single_node_4c4g_acceptance_not_run",
+    "independent_uat_participant_missing"
+  ],
+  "side_effect_boundaries": {
+    "push_run": false,
+    "tag_created": false,
+    "image_publication_run": false,
+    "cluster_commands_run": false,
+    "deployment_run": false,
+    "migration_run_on_shared_or_production_database": false,
+    "real_model_call_run": false,
+    "secret_values_read": false
+  }
+}

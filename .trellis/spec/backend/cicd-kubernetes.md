@@ -118,6 +118,18 @@
   the complete ConfigMap into API, Worker, consumer and migration Pod templates so a
   route update cannot leave stale processes running. The non-secret route is retained
   in the release record; the API key is never evidence.
+- Document analysis deploys dark: `STAGING_UPLOAD_STRUCTURED_DOCUMENTS_ENABLED` and
+  `STAGING_ANALYSIS_EXECUTION_ENABLED` default to `false`, while the shared route ID
+  defaults to `default`. Execution can be enabled only after structured uploads and a
+  model route deadline covering the analysis unit deadline are configured. Unit/run
+  deadlines and the maximum model-input bytes are bounded renderer inputs. The staging
+  release record retains the effective analysis policy, so rendered configuration and
+  rollout evidence cannot disagree about enablement or route identity.
+- Analysis schema migrations are additive, but destructive downgrade is history-guarded.
+  A rollback image is approved only after its exact signed digest starts and passes smoke
+  against the migrated schema; the absence of an application startup revision gate does
+  not by itself prove rollback compatibility. Database downgrade is not the default
+  rollback path once analysis history exists.
 - Presales enablement, selected route and wait budgets have explicit protected Environment
   and renderer inputs, independent of browser login and Agent routing. See the Presales
   release configuration scenario below; omitted inputs never inherit a prior enablement.

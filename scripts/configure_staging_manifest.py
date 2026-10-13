@@ -130,6 +130,33 @@ def _model_version(value: str) -> str:
     return normalized
 
 
+def _boolean_flag(value: str, *, description: str) -> str:
+    normalized = value.strip()
+    if normalized not in {"true", "false"}:
+        raise ValueError(f"{description} must be true or false")
+    return normalized
+
+
+def _bounded_integer(value: str, *, description: str, minimum: int, maximum: int) -> str:
+    normalized = value.strip()
+    if (
+        not normalized.isascii()
+        or not normalized.isdigit()
+        or not minimum <= int(normalized) <= maximum
+    ):
+        raise ValueError(f"{description} must be an integer from {minimum} to {maximum}")
+    return str(int(normalized))
+
+
+def _model_route_id(value: str) -> str:
+    if _contains_control_character(value):
+        raise ValueError("model route ID must not contain control characters")
+    normalized = value.strip()
+    if not 1 <= len(normalized) <= 64:
+        raise ValueError("model route ID must contain 1-64 characters")
+    return normalized
+
+
 def _model_reasoning_effort(value: str | None) -> str | None:
     if value is None or value == "":
         return None
@@ -226,16 +253,16 @@ def _presales_environment(
         raise ValueError("presales primary streaming must be true or false")
     if primary_streaming:
         result["PRESALES__PRIMARY_STREAMING"] = primary_streaming
-    for name, value in (
+    for name, assessment_value in (
         ("PRIMARY", primary_question_assessment),
         ("FALLBACK", fallback_question_assessment),
     ):
-        if value not in (None, "", "true", "false"):
+        if assessment_value not in (None, "", "true", "false"):
             raise ValueError("presales question assessment must be true or false")
-        if name == "FALLBACK" and value == "true" and not fallback_configured:
+        if name == "FALLBACK" and assessment_value == "true" and not fallback_configured:
             raise ValueError("presales fallback question assessment requires a configured route")
-        if value:
-            result[f"PRESALES__{name}_QUESTION_ASSESSMENT"] = value
+        if assessment_value:
+            result[f"PRESALES__{name}_QUESTION_ASSESSMENT"] = assessment_value
     if model_timeout_seconds and model_timeout_seconds.strip():
         model_timeout = timeout(model_timeout_seconds, "model timeout", 300)
         if float(model_timeout) >= float(row_timeout):
@@ -550,6 +577,12 @@ def configure_manifest(
     embedding_version: str = EMBEDDING_VERSION,
     object_store_checksum_mode: str = "native_sha256",
     upload_single_put_enabled: str | None = None,
+    structured_documents_enabled: str = "false",
+    analysis_execution_enabled: str = "false",
+    model_route_id: str = "default",
+    analysis_unit_deadline_seconds: str = "120",
+    analysis_run_deadline_seconds: str = "3600",
+    analysis_max_input_bytes: str = "65536",
     rollback_api_image: str | None = None,
     rollback_worker_image: str | None = None,
     rollback_consumer_image: str | None = None,
@@ -557,6 +590,39 @@ def configure_manifest(
 ) -> None:
     if upload_single_put_enabled not in (None, "true", "false"):
         raise ValueError("single PUT enablement must be true or false")
+    normalized_structured_documents = _boolean_flag(
+        structured_documents_enabled,
+        description="structured documents enablement",
+    )
+    normalized_analysis_execution = _boolean_flag(
+        analysis_execution_enabled,
+        description="analysis execution enablement",
+    )
+    normalized_route_id = _model_route_id(model_route_id)
+    normalized_analysis_unit_deadline = _bounded_integer(
+        analysis_unit_deadline_seconds,
+        description="analysis unit deadline",
+        minimum=1,
+        maximum=600,
+    )
+    normalized_analysis_run_deadline = _bounded_integer(
+        analysis_run_deadline_seconds,
+        description="analysis run deadline",
+        minimum=1,
+        maximum=21600,
+    )
+    normalized_analysis_max_input = _bounded_integer(
+        analysis_max_input_bytes,
+        description="analysis max input bytes",
+        minimum=1024,
+        maximum=65536,
+    )
+    if normalized_analysis_execution == "true" and normalized_structured_documents != "true":
+        raise ValueError("analysis execution requires structured documents to be enabled")
+    if int(normalized_analysis_run_deadline) < int(normalized_analysis_unit_deadline):
+        raise ValueError("analysis run deadline must not be less than the unit deadline")
+    if normalized_analysis_execution == "true" and not model_route_deadline_seconds:
+        raise ValueError("analysis execution requires a model route deadline")
     if worker_presales_concurrency not in (None, "", "1", "2", "3", "4"):
         raise ValueError("worker presales concurrency must be an integer from one to four")
     staging = _https_url(staging_base_url, description="staging base URL")
@@ -608,6 +674,10 @@ def configure_manifest(
         normalized_agent_timeout or 300
     ):
         raise ValueError("model route deadline must not exceed Agent execution timeout")
+    if normalized_analysis_execution == "true" and float(normalized_route_deadline or 0) < float(
+        normalized_analysis_unit_deadline
+    ):
+        raise ValueError("model route deadline must cover the analysis unit deadline")
     fallback_base_url_value = (
         fallback_model_base_url.strip() if fallback_model_base_url is not None else ""
     )
@@ -709,9 +779,15 @@ def configure_manifest(
         data["UPLOAD__SINGLE_PUT_ENABLED"] = upload_single_put_enabled
     if data.get("UPLOAD__SINGLE_PUT_ENABLED", "true") not in {"true", "false"}:
         raise ValueError("single PUT enablement must be true or false")
+    data["UPLOAD__STRUCTURED_DOCUMENTS_ENABLED"] = normalized_structured_documents
+    data["ANALYSIS__EXECUTION_ENABLED"] = normalized_analysis_execution
+    data["ANALYSIS__UNIT_DEADLINE_SECONDS"] = normalized_analysis_unit_deadline
+    data["ANALYSIS__RUN_DEADLINE_SECONDS"] = normalized_analysis_run_deadline
+    data["ANALYSIS__MAX_INPUT_BYTES"] = normalized_analysis_max_input
     data["MODEL__PROVIDER"] = MODEL_PROVIDER
     data["MODEL__BASE_URL"] = normalized_model_base_url
     data["MODEL__MODEL_NAME"] = normalized_model_name
+    data["MODEL__ROUTE_ID"] = normalized_route_id
     data.pop("MODEL__REASONING_EFFORT", None)
     data.pop("MODEL__STREAMING", None)
     if model_streaming == "true":
@@ -1009,6 +1085,14 @@ def main() -> None:
     )
     parser.add_argument("--tls-secret-name", required=True)
     parser.add_argument("--upload-single-put-enabled", choices=("true", "false"))
+    parser.add_argument(
+        "--upload-structured-documents-enabled", choices=("true", "false"), default="false"
+    )
+    parser.add_argument("--analysis-execution-enabled", choices=("true", "false"), default="false")
+    parser.add_argument("--model-route-id", default="default")
+    parser.add_argument("--analysis-unit-deadline-seconds", default="120")
+    parser.add_argument("--analysis-run-deadline-seconds", default="3600")
+    parser.add_argument("--analysis-max-input-bytes", default="65536")
     parser.add_argument("--web-object-store-origins", required=True)
     parser.add_argument("--database-egress-cidr", required=True)
     parser.add_argument("--model-provider", required=True)
@@ -1069,6 +1153,12 @@ def main() -> None:
         object_store_presign_endpoint=args.object_store_presign_endpoint,
         object_store_checksum_mode=args.object_store_checksum_mode,
         upload_single_put_enabled=args.upload_single_put_enabled,
+        structured_documents_enabled=args.upload_structured_documents_enabled,
+        analysis_execution_enabled=args.analysis_execution_enabled,
+        model_route_id=args.model_route_id,
+        analysis_unit_deadline_seconds=args.analysis_unit_deadline_seconds,
+        analysis_run_deadline_seconds=args.analysis_run_deadline_seconds,
+        analysis_max_input_bytes=args.analysis_max_input_bytes,
         tls_secret_name=args.tls_secret_name,
         web_object_store_origins=args.web_object_store_origins,
         database_egress_cidr=args.database_egress_cidr,

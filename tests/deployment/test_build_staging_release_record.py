@@ -92,6 +92,13 @@ def _build(
     governance_smoke_outcome: str = "skipped",
     browser_identity_required: bool = False,
     browser_identity_outcome: str = "skipped",
+    structured_documents_enabled: str = "false",
+    analysis_execution_enabled: str = "false",
+    model_route_id: str = "default",
+    model_route_deadline_seconds: str | None = None,
+    analysis_unit_deadline_seconds: str = "120",
+    analysis_run_deadline_seconds: str = "3600",
+    analysis_max_input_bytes: str = "65536",
 ) -> dict[str, object]:
     return build_record(
         _manifest(tmp_path / "evidence.json"),
@@ -119,6 +126,13 @@ def _build(
         governance_smoke_outcome=governance_smoke_outcome,
         browser_identity_required=browser_identity_required,
         browser_identity_outcome=browser_identity_outcome,
+        structured_documents_enabled=structured_documents_enabled,
+        analysis_execution_enabled=analysis_execution_enabled,
+        model_route_id=model_route_id,
+        model_route_deadline_seconds=model_route_deadline_seconds,
+        analysis_unit_deadline_seconds=analysis_unit_deadline_seconds,
+        analysis_run_deadline_seconds=analysis_run_deadline_seconds,
+        analysis_max_input_bytes=analysis_max_input_bytes,
         output=tmp_path / "record.json",
     )
 
@@ -133,7 +147,7 @@ def test_staging_record_passes_only_with_rollout_and_smoke(tmp_path: Path) -> No
         "base_url": "https://model.example.com/v1",
         "name": "staging-model",
     }
-    assert record["schema_version"] == 3
+    assert record["schema_version"] == 4
     assert record["fallback_model"] == {
         "status": "validated",
         "provider": "openai_compatible",
@@ -147,6 +161,62 @@ def test_staging_record_passes_only_with_rollout_and_smoke(tmp_path: Path) -> No
     assert record["embedding"]["version"] == 2
     assert record["embedding"]["rollout"]["reindex"]["final_selected"] == 0
     assert record["embedding"]["rollout_report"]["sha256"]
+    assert record["analysis"] == {
+        "structured_documents_enabled": False,
+        "execution_enabled": False,
+        "route_id": "default",
+        "model_route_deadline_seconds": None,
+        "unit_deadline_seconds": 120,
+        "run_deadline_seconds": 3600,
+        "max_input_bytes": 65536,
+    }
+
+
+def test_staging_record_binds_enabled_analysis_policy(tmp_path: Path) -> None:
+    record = _build(
+        tmp_path,
+        outcomes=_outcomes(),
+        smoke_required=True,
+        structured_documents_enabled="true",
+        analysis_execution_enabled="true",
+        model_route_id="analysis-primary",
+        model_route_deadline_seconds="120",
+    )
+
+    assert record["status"] == "passed"
+    assert record["analysis"] == {
+        "structured_documents_enabled": True,
+        "execution_enabled": True,
+        "route_id": "analysis-primary",
+        "model_route_deadline_seconds": 120.0,
+        "unit_deadline_seconds": 120,
+        "run_deadline_seconds": 3600,
+        "max_input_bytes": 65536,
+    }
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {"structured_documents_enabled": "yes"},
+        {"analysis_execution_enabled": "true"},
+        {
+            "structured_documents_enabled": "true",
+            "analysis_execution_enabled": "true",
+            "model_route_deadline_seconds": None,
+        },
+        {"analysis_unit_deadline_seconds": "601"},
+        {"analysis_run_deadline_seconds": "0"},
+        {"analysis_max_input_bytes": "65537"},
+        {"model_route_id": ""},
+    ],
+)
+def test_staging_record_rejects_invalid_analysis_policy(
+    tmp_path: Path, overrides: dict[str, str | None]
+) -> None:
+    with pytest.raises(StagingReleaseRecordError, match=r"analysis|structured documents|route"):
+        _build(tmp_path, outcomes=_outcomes(), smoke_required=True, **overrides)
+    assert not (tmp_path / "record.json").exists()
 
 
 def test_required_governance_smoke_blocks_promotion_when_skipped(tmp_path: Path) -> None:

@@ -187,6 +187,76 @@ def test_single_put_switch_is_rendered_explicitly(tmp_path: Path, enabled: str) 
     assert config["data"]["UPLOAD__SINGLE_PUT_ENABLED"] == enabled
 
 
+def test_analysis_release_defaults_are_explicit_and_clear_stale_enablement(
+    tmp_path: Path,
+) -> None:
+    enabled = _render_browser_manifest(
+        tmp_path,
+        structured_documents_enabled="true",
+        analysis_execution_enabled="true",
+        model_route_id="analysis-primary",
+        model_route_deadline_seconds="120",
+    )
+    enabled_namespace = next(item for item in enabled if item["kind"] == "Namespace")
+    (tmp_path / "browser-template.yaml").write_bytes(
+        (tmp_path / "browser-staging.yaml").read_bytes()
+    )
+
+    disabled = _render_browser_manifest(tmp_path)
+    data = next(item for item in disabled if item["kind"] == "ConfigMap")["data"]
+    assert data["UPLOAD__STRUCTURED_DOCUMENTS_ENABLED"] == "false"
+    assert data["ANALYSIS__EXECUTION_ENABLED"] == "false"
+    assert data["MODEL__ROUTE_ID"] == "default"
+    assert data["ANALYSIS__UNIT_DEADLINE_SECONDS"] == "120"
+    assert data["ANALYSIS__RUN_DEADLINE_SECONDS"] == "3600"
+    assert data["ANALYSIS__MAX_INPUT_BYTES"] == "65536"
+    disabled_namespace = next(item for item in disabled if item["kind"] == "Namespace")
+    assert (
+        disabled_namespace["metadata"]["annotations"]["enterprise-doc-agent/approved-config-sha256"]
+        != enabled_namespace["metadata"]["annotations"][
+            "enterprise-doc-agent/approved-config-sha256"
+        ]
+    )
+
+
+def test_analysis_execution_requires_structured_uploads_and_route_budget(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="structured documents"):
+        _render_browser_manifest(tmp_path, analysis_execution_enabled="true")
+    assert not (tmp_path / "browser-staging.yaml").exists()
+
+    with pytest.raises(ValueError, match="route deadline"):
+        _render_browser_manifest(
+            tmp_path,
+            structured_documents_enabled="true",
+            analysis_execution_enabled="true",
+        )
+    assert not (tmp_path / "browser-staging.yaml").exists()
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {"structured_documents_enabled": "yes"},
+        {"analysis_execution_enabled": "1"},
+        {"analysis_unit_deadline_seconds": "0"},
+        {"analysis_unit_deadline_seconds": "601"},
+        {"analysis_run_deadline_seconds": "21601"},
+        {"analysis_max_input_bytes": "1023"},
+        {"analysis_max_input_bytes": "65537"},
+        {"analysis_max_input_bytes": "1.5"},
+        {"model_route_id": ""},
+        {"model_route_id": "x" * 65},
+        {"model_route_id": "analysis-primary\n"},
+    ],
+)
+def test_analysis_release_settings_reject_invalid_values_before_output(
+    tmp_path: Path, overrides: dict[str, str]
+) -> None:
+    with pytest.raises(ValueError, match=r"analysis|structured documents|model route"):
+        _render_browser_manifest(tmp_path, **overrides)
+    assert not (tmp_path / "browser-staging.yaml").exists()
+
+
 @pytest.mark.parametrize("invalid", ["", "yes", "1", "False"])
 def test_single_put_switch_rejects_invalid_values(tmp_path: Path, invalid: str) -> None:
     with pytest.raises(ValueError, match="single PUT enablement"):
@@ -558,7 +628,38 @@ def test_staging_workflow_passes_presales_environment_to_the_renderer() -> None:
     for name, expression in expected.items():
         assert step["env"].get(name) == expression
         assert f'--{name.lower().replace("_", "-")} "${name}"' in step["run"]
+    analysis_expected = {
+        "UPLOAD_STRUCTURED_DOCUMENTS_ENABLED": (
+            "${{ vars.STAGING_UPLOAD_STRUCTURED_DOCUMENTS_ENABLED || 'false' }}"
+        ),
+        "ANALYSIS_EXECUTION_ENABLED": ("${{ vars.STAGING_ANALYSIS_EXECUTION_ENABLED || 'false' }}"),
+        "MODEL_ROUTE_ID": "${{ vars.STAGING_MODEL_ROUTE_ID || 'default' }}",
+        "ANALYSIS_UNIT_DEADLINE_SECONDS": (
+            "${{ vars.STAGING_ANALYSIS_UNIT_DEADLINE_SECONDS || '120' }}"
+        ),
+        "ANALYSIS_RUN_DEADLINE_SECONDS": (
+            "${{ vars.STAGING_ANALYSIS_RUN_DEADLINE_SECONDS || '3600' }}"
+        ),
+        "ANALYSIS_MAX_INPUT_BYTES": ("${{ vars.STAGING_ANALYSIS_MAX_INPUT_BYTES || '65536' }}"),
+    }
+    for name, expression in analysis_expected.items():
+        assert step["env"].get(name) == expression
+        assert f'--{name.lower().replace("_", "-")} "${name}"' in step["run"]
     assert len(workflow[True]["workflow_dispatch"]["inputs"]) == 10
+
+    record_step = next(
+        step
+        for job in workflow["jobs"].values()
+        for step in job["steps"]
+        if "scripts/build_staging_release_record.py" in step.get("run", "")
+    )
+    for name, expression in analysis_expected.items():
+        assert record_step["env"].get(name) == expression
+        assert f'--{name.lower().replace("_", "-")} "${name}"' in record_step["run"]
+    assert record_step["env"]["MODEL_ROUTE_DEADLINE_SECONDS"] == (
+        "${{ vars.STAGING_MODEL_ROUTE_DEADLINE_SECONDS }}"
+    )
+    assert '--model-route-deadline-seconds "$MODEL_ROUTE_DEADLINE_SECONDS"' in record_step["run"]
 
 
 @pytest.mark.parametrize(

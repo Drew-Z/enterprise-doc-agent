@@ -197,3 +197,13 @@ A5 留出执行器、评分器与 4C4G runner 已完成本地工程验证。留�
 本地留出预检没有网络或外部模型调用，返回四项阻塞：analysis token 缺失、analysis execution 未启用、固定模型路由未配置、structured uploads 未启用。因此尚未产生 fixed/agent 真实质量数据；下一执行门是在既有受控 staging/模型配置中完成短期 token、路由与预算核对，再运行冻结候选，而不是把助手底稿输入候选或据此调参。
 
 只读 staging 探测确认现有目标仍是 4 CPU / 3812556 Ki、API/Worker/Consumer/Web 各一副本就绪，且主模型配置为 `openai_compatible` / `gpt-5.6-sol`。但运行镜像早于 analysis 候选，ConfigMap 没有 `ANALYSIS__EXECUTION_ENABLED` 或 `UPLOAD__STRUCTURED_DOCUMENTS_ENABLED`，当前候选 HEAD 也未进入远端分支。故不能直接在旧镜像打开开关；须先整理并审核 analysis 变更、形成不可变镜像和发布证据，再以默认关闭部署，随后短期开启受控留出。
+
+### A5 不可变发布预检（2026-10-13）
+
+沿用现有 container → deploy-staging → rollback 发布链，未新增网关或第二套发布机制。基础 ConfigMap 和 staging renderer 显式固定 analysis dark 状态：结构化上传与执行均为 `false`，全局路由保持 `default`，unit/run deadline 为 120/3600 秒，单次模型输入上限 65536 bytes。执行开启时强制结构化上传先开启、模型 route deadline 存在且覆盖 unit deadline；release record schema v4 同步记录这些策略，防止渲染配置与发布证据脱节。
+
+本地使用仓库要求的 Kustomize v5.7.1（`kubectl kustomize`）渲染真实 `single-node-4c4g` overlay，并用占位 HTTPS 端点和四个不同的占位 sha256 摘要完成配置及四阶段拆分。27 个资源被拆为 20 个 prerequisites、1 个 migration、1 个 embedding rollout 和 5 个 workloads；四个业务镜像均保持 digest-bound，迁移与 embedding Job 均使用 API 摘要，输出中没有 Secret。临时渲染目录已删除。部署/发布契约 224 项、M6/容量/恢复契约 55 项、隔离 PostgreSQL 迁移集成 1 项通过；Ruff、Mypy、workflow YAML parse 与 diff check 通过。本机没有 actionlint，因此该项未执行，未写成通过。迁移测试保留 2 个既有 `document_versions` / `upload_sessions` 双向外键排序 warning。
+
+0038–0043 采用新增表/列/索引的兼容扩展，0040 只放宽配额约束以加入 `analysis_cell`；有历史时 downgrade 主动拒绝破坏性删除。旧运行时代码没有启动时精确 head 检查，但尚未用真实签名旧镜像在 0043 上完成启动与 smoke，因此不能宣布旧镜像回滚已就绪。正式回滚目标必须先证明其可在 0043 上运行，或在任何 analysis 历史产生前使用已验证兼容候选；数据库降级不作为常规回滚路径。
+
+机器可读结果见 `release-preflight-20261013.json`。状态为 `blocked_external`：候选尚未 push/tag，四个真实镜像摘要和签名 release manifest 尚不存在，默认关闭部署/迁移、旧镜像 0043 兼容演练、短期 token 与 `analysis-primary` 路由、真实 fixed/agent 留出、外部 4C4G 验收和独立 UAT 均未执行。本轮没有读取 Secret、访问集群、调用真实模型或执行外部发布动作。
