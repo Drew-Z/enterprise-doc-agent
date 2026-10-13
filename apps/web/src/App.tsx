@@ -22,6 +22,7 @@ import { fetchReadiness } from "./api/health";
 import { formatApiError } from "./api/errorDisplay";
 import { AgentWorkspace } from "./agent";
 import { PresalesWorkspace } from "./presales/PresalesWorkspace";
+import { AnalysisWorkspace } from "./analysis/AnalysisWorkspace";
 import { DocumentsPage } from "./product/DocumentsPage";
 import { AuditPage } from "./product/AuditPage";
 import { RuntimeOverview } from "./product/RuntimeOverview";
@@ -48,6 +49,7 @@ const workflowSteps = [
 const navigationItems: Array<{ route: ProductRoute; icon: typeof Files }> = [
   { route: "overview", icon: LayoutDashboard },
   { route: "documents", icon: Files },
+  { route: "analysis", icon: Files },
   { route: "presales", icon: ShieldCheck },
   { route: "agent-runs", icon: Sparkles },
   { route: "audit", icon: ShieldCheck },
@@ -252,7 +254,7 @@ function ProductApp({ browserSession }: { browserSession?: BrowserWorkspaceSessi
             onClick={() => goTo(itemRoute)}
           >
             <Icon aria-hidden="true" />
-          {itemRoute === "overview" ? t("nav.overview") : itemRoute === "documents" ? t("nav.documents") : itemRoute === "presales" ? (locale === "zh" ? "售前响应" : "Presales responses") : itemRoute === "agent-runs" ? t("nav.agentRuns") : itemRoute === "audit" ? t("nav.audit") : itemRoute === "usage" ? (locale === "zh" ? "企业用量" : "Enterprise usage") : t("nav.identity")}
+          {itemRoute === "overview" ? t("nav.overview") : itemRoute === "documents" ? t("nav.documents") : itemRoute === "analysis" ? (locale === "zh" ? "多文档审阅" : "Document review") : itemRoute === "presales" ? (locale === "zh" ? "售前响应" : "Presales responses") : itemRoute === "agent-runs" ? t("nav.agentRuns") : itemRoute === "audit" ? t("nav.audit") : itemRoute === "usage" ? (locale === "zh" ? "企业用量" : "Enterprise usage") : t("nav.identity")}
           </button>
         ))}
       </nav>
@@ -423,6 +425,8 @@ function ProductApp({ browserSession }: { browserSession?: BrowserWorkspaceSessi
           )}
 
           {route === "documents" && <DocumentsPage navigate={goTo} showcaseMode={showcaseMode} canWrite={currentSession?.capabilities.documentWrite ?? false} onSessionChange={refreshSession} contextKey={presalesContextKey} onStartPresales={currentSession && !session.isError && !showcaseMode ? versionId => { setPresalesEntry({ contextKey: presalesContextKey, versionId }); goTo("presales"); } : undefined} />}
+
+          {route === "analysis" && <AnalysisWorkspace key={presalesContextKey} contextKey={presalesContextKey} token={currentSession && !session.isError && !showcaseMode ? tokenStore.load() : null} canWrite={currentSession?.capabilities.documentWrite ?? false} />}
 
           {route === "presales" && <PresalesWorkspace
             key={presalesContextKey}

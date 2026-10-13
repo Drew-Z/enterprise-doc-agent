@@ -35,7 +35,7 @@ const eventSchema = z.object({
 }).strict();
 
 const productQuotaSchema = z.object({
-  metric: z.enum(["agent_task", "document_bytes"]),
+  metric: z.enum(["agent_task", "document_bytes", "analysis_cell"]),
   limit: count, used: count, reserved: count, remaining: count,
 }).strict().refine(value => value.used <= value.limit - value.reserved
   && value.remaining === value.limit - value.used - value.reserved,
@@ -56,7 +56,7 @@ const tenantUsageSchema = z.object({
   costStatus: z.enum(["known", "unknown"]),
   recentEvents: z.array(eventSchema).max(20),
   resources: resourcesSchema,
-  productQuotas: z.array(productQuotaSchema).max(2)
+  productQuotas: z.array(productQuotaSchema).max(3)
     .refine(values => new Set(values.map(value => value.metric)).size === values.length),
   modelCalls: z.object({ calls: count, unresolvedCalls: count, unknownCostCalls: count,
     usageKnownCalls: count, knownTotalTokens: count }).strict().refine(value =>

@@ -53,6 +53,7 @@ export interface UploadWorkspaceProps {
   onTokenChange?: () => void;
   onCompleted?: () => void;
   canUpload?: boolean;
+  allowSpreadsheets?: boolean;
 }
 
 const phaseLabelKeys: Record<UploadPhase, Parameters<ReturnType<typeof useT>>[0]> = {
@@ -68,7 +69,7 @@ const phaseLabelKeys: Record<UploadPhase, Parameters<ReturnType<typeof useT>>[0]
   canceled: "upload.phase.canceled",
 };
 
-function mediaTypeForFilename(filename: string): string | null {
+function mediaTypeForFilename(filename: string, allowSpreadsheets: boolean): string | null {
   const extension = filename.toLowerCase().split(".").pop();
   switch (extension) {
     case "txt":
@@ -77,6 +78,8 @@ function mediaTypeForFilename(filename: string): string | null {
       return "application/pdf";
     case "docx":
       return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    case "xlsx":
+      return allowSpreadsheets ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" : null;
     default:
       return null;
   }
@@ -160,6 +163,7 @@ export function UploadWorkspace({
   onTokenChange,
   onCompleted,
   canUpload = true,
+  allowSpreadsheets = false,
 }: UploadWorkspaceProps) {
   const t = useT();
   const locale = useLocale();
@@ -226,7 +230,7 @@ export function UploadWorkspace({
     const added: QueuedFile[] = [];
     const skipped: string[] = [];
     for (const file of files) {
-      const mediaType = mediaTypeForFilename(file.name);
+      const mediaType = mediaTypeForFilename(file.name, allowSpreadsheets);
       const label = file.webkitRelativePath || file.name;
       if (mediaType === null || file.size === 0) { skipped.push(label); continue; }
       added.push({ id: dependencies.idempotencyKeyFactory(), file, label, mediaType, status: "queued" });
@@ -304,7 +308,7 @@ export function UploadWorkspace({
             id="upload-file"
             type="file"
             multiple={!choosingOriginal}
-            accept=".txt,.pdf,.docx,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            accept={allowSpreadsheets ? ".txt,.pdf,.docx,.xlsx" : ".txt,.pdf,.docx,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"}
             disabled={fileInputDisabled}
             onChange={(event) => { handleFiles(Array.from(event.currentTarget.files ?? [])); event.currentTarget.value = ""; }}
           />

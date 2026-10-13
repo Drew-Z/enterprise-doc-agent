@@ -199,10 +199,11 @@ function UsageDetails({ data, locale, navigate }: { data: TenantUsage; locale: L
     </section>
 
     <div className="usage-resources">
-      {(["agent_task", "document_bytes"] as const).map(metric => {
+      {(["agent_task", "document_bytes", "analysis_cell"] as const).map(metric => {
         const quota = data.productQuotas.find(item => item.metric === metric);
+        if (metric === "analysis_cell" && !quota) return null;
         const isBytes = metric === "document_bytes";
-        const title = isBytes ? text.documentProcessing : text.agentTasks;
+        const title = metric === "analysis_cell" ? (locale === "zh" ? "文档分析项" : "Document analysis cells") : isBytes ? text.documentProcessing : text.agentTasks;
         const display = (value: number) => isBytes ? bytes(value, locale) : number(value, locale);
         return <section key={metric} className="usage-resource product-section" aria-labelledby={`usage-${metric}-title`}>
           <h2 id={`usage-${metric}-title`}>{title}</h2>
@@ -212,7 +213,7 @@ function UsageDetails({ data, locale, navigate }: { data: TenantUsage; locale: L
             <Metric label={text.reserved} value={display(quota.reserved)} title={isBytes ? exactBytes(quota.reserved) : undefined} />
             <Metric label={text.limit} value={display(quota.limit)} title={isBytes ? exactBytes(quota.limit) : undefined} />
           </dl> : <p className="usage-period-notice">{active ? text.productMissing : unspecified}</p>}
-          <p className="usage-resource-note">{isBytes ? text.documentNote : text.agentNote}</p>
+          <p className="usage-resource-note">{metric === "analysis_cell" ? (locale === "zh" ? "每个合法分析结果结算一次，证据不足的合法结果也计入。执行失败不扣项数；模型调用成本另记。" : "Each valid result counts once, including evidence gaps. Failed execution releases the cell; provider costs remain separate.") : isBytes ? text.documentNote : text.agentNote}</p>
         </section>;
       })}
     </div>
