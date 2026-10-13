@@ -16,6 +16,8 @@ CAPACITY_PROFILES = {"application", "model"}
 COMMIT_PATTERN = re.compile(r"^[0-9a-f]{40,64}$")
 DIGEST_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
 ARTIFACT_SHA_PATTERN = re.compile(r"^[0-9a-f]{64}$")
+QUANTITY_PATTERN = re.compile(r"^([0-9]+(?:\.[0-9]+)?)(Ki|Mi|Gi|Ti|K|M|G|T)?$")
+ANALYSIS_RELEASE_SERVICES = {"api", "worker", "consumer", "web"}
 
 
 class EvidenceValidationError(ValueError):
@@ -119,6 +121,99 @@ def _validate_artifacts(report: Mapping[str, Any], root: Path) -> None:
         actual = hashlib.sha256(path.read_bytes()).hexdigest()
         if actual != declared:
             raise EvidenceValidationError(f"artifact SHA-256 mismatch: {artifact['path']}")
+
+
+def _artifact_by_kind(report: Mapping[str, Any], root: Path, kind: str) -> Path:
+    matches = [
+        _artifact_path(root, item.get("path"))
+        for item in report.get("artifacts", [])
+        if isinstance(item, Mapping) and item.get("kind") == kind
+    ]
+    if len(matches) != 1:
+        raise EvidenceValidationError(f"exactly one {kind} artifact is required")
+    return matches[0]
+
+
+def _json_object(path: Path, label: str) -> Mapping[str, Any]:
+    try:
+        value = json.loads(path.read_bytes())
+    except json.JSONDecodeError:
+        raise EvidenceValidationError(f"{label} artifact must contain JSON") from None
+    return _require_mapping(value, label)
+
+
+def _canonical_sha256(value: object) -> str:
+    return hashlib.sha256(
+        json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+
+
+def _resource_quantity(value: object) -> float:
+    if not isinstance(value, str):
+        raise EvidenceValidationError("resource quantity must be a string")
+    match = QUANTITY_PATTERN.fullmatch(value)
+    if match is None:
+        raise EvidenceValidationError("resource quantity is invalid")
+    scale = {
+        "": 1,
+        "Ki": 1024,
+        "Mi": 1024**2,
+        "Gi": 1024**3,
+        "Ti": 1024**4,
+        "K": 1000,
+        "M": 1000**2,
+        "G": 1000**3,
+        "T": 1000**4,
+    }
+    result = float(match.group(1)) * scale[match.group(2) or ""]
+    if not math.isfinite(result):
+        raise EvidenceValidationError("resource quantity is invalid")
+    return result
+
+
+def _snapshot_identity(snapshot: Mapping[str, Any]) -> str:
+    inventory = _require_mapping(snapshot.get("inventory"), "resource snapshot inventory")
+    deployments = inventory.get("deployments")
+    pods = inventory.get("pods")
+    if (
+        not isinstance(deployments, Sequence)
+        or isinstance(deployments, (str, bytes))
+        or not isinstance(pods, Sequence)
+        or isinstance(pods, (str, bytes))
+    ):
+        raise EvidenceValidationError("resource snapshot identity is incomplete")
+    return _canonical_sha256(
+        {
+            "namespace": snapshot.get("namespace_sha256"),
+            "cluster": inventory.get("cluster_sha256"),
+            "configuration": inventory.get("configuration_sha256"),
+            "nodes": inventory.get("nodes"),
+            "deployments": [
+                {
+                    key: item.get(key)
+                    for key in (
+                        "role",
+                        "uid_sha256",
+                        "template_sha256",
+                        "containers",
+                        "desired_replicas",
+                    )
+                }
+                for item in deployments
+                if isinstance(item, Mapping)
+            ],
+            "image_relationships": inventory.get("image_relationships", []),
+            "pods": [
+                {
+                    "role": item.get("role"),
+                    "uid": item.get("uid_sha256"),
+                    "containers": item.get("containers"),
+                }
+                for item in pods
+                if isinstance(item, Mapping)
+            ],
+        }
+    )
 
 
 def _has_numeric_measurement(value: object) -> bool:
@@ -337,7 +432,183 @@ def _validate_recovery(report: Mapping[str, Any], status: str) -> None:
             raise EvidenceValidationError("all required smoke checks must be passed")
 
 
-def _validate_capacity(report: Mapping[str, Any], status: str) -> None:
+def _validate_analysis_4c4g_artifacts(
+    report: Mapping[str, Any], resource: Mapping[str, Any], *, root: Path
+) -> None:
+    resource_payload = _json_object(
+        _artifact_by_kind(report, root, "analysis-capacity-resources"),
+        "analysis capacity resources",
+    )
+    snapshots_value = resource_payload.get("snapshots")
+    if (
+        not isinstance(snapshots_value, Sequence)
+        or isinstance(snapshots_value, (str, bytes))
+        or len(snapshots_value) < 2
+        or not all(isinstance(item, Mapping) for item in snapshots_value)
+    ):
+        raise EvidenceValidationError("analysis-4c4g resource artifact snapshots are incomplete")
+    snapshots = list(snapshots_value)
+    captured = [
+        _timestamp(item.get("captured_at"), "resource snapshot captured_at") for item in snapshots
+    ]
+    if (
+        resource.get("sample_count") != len(snapshots)
+        or captured != sorted(captured)
+        or snapshots[0].get("captured_at") != resource.get("first_captured_at")
+        or snapshots[-1].get("captured_at") != resource.get("last_captured_at")
+    ):
+        raise EvidenceValidationError("analysis-4c4g resource artifact window is inconsistent")
+    if _canonical_sha256(snapshots) != resource.get("samples_sha256"):
+        raise EvidenceValidationError("analysis-4c4g resource artifact digest is inconsistent")
+    identities = {_snapshot_identity(item) for item in snapshots}
+    if len(identities) != 1 or next(iter(identities)) != resource.get("identity_sha256"):
+        raise EvidenceValidationError("analysis-4c4g resource artifact identity is inconsistent")
+
+    release_payload = _json_object(
+        _artifact_by_kind(report, root, "analysis-capacity-release-manifest"),
+        "analysis capacity release manifest",
+    )
+    release = _require_mapping(release_payload.get("release"), "release manifest release")
+    release_fields = ("repository", "ref", "run_id", "run_attempt", "workflow_ref")
+    release_values = {
+        field: _require_non_empty_string(release.get(field), f"release manifest release.{field}")
+        for field in release_fields
+    }
+    images = _require_mapping(release_payload.get("images"), "release manifest images")
+    release_identity = _require_mapping(report.get("release_identity"), "release_identity")
+    identity_values = {
+        field: _require_non_empty_string(release_identity.get(field), f"release_identity.{field}")
+        for field in release_fields
+    }
+    artifact_images = {
+        service: item.get("digest")
+        for service, item in images.items()
+        if isinstance(service, str) and isinstance(item, Mapping)
+    }
+    if (
+        release_payload.get("schema_version") != 1
+        or release_payload.get("status") != "passed"
+        or release.get("commit_sha") != report.get("commit_sha")
+        or release_values != identity_values
+        or release_identity.get("sha256")
+        != hashlib.sha256(
+            _artifact_by_kind(report, root, "analysis-capacity-release-manifest").read_bytes()
+        ).hexdigest()
+        or set(artifact_images) != ANALYSIS_RELEASE_SERVICES
+        or artifact_images != report.get("image_digest")
+    ):
+        raise EvidenceValidationError("analysis-4c4g release artifact identity is inconsistent")
+
+    binding = _require_mapping(resource.get("target_binding"), "resource target_binding")
+    expected_images = _require_mapping(report.get("image_digest"), "image_digest")
+    expected_count = binding.get("expected_http_requests")
+    expected_marker = binding.get("correlation_sha256")
+    expected_pod = binding.get("api_pod_uid_sha256")
+    counts: list[int] = []
+    for snapshot in snapshots:
+        if snapshot.get("errors") != []:
+            raise EvidenceValidationError("analysis-4c4g resource artifact source is unavailable")
+        inventory = _require_mapping(snapshot.get("inventory"), "resource snapshot inventory")
+        host = _require_mapping(snapshot.get("host"), "resource snapshot host")
+        pods = inventory.get("pods")
+        deployments = inventory.get("deployments")
+        if (
+            not isinstance(pods, Sequence)
+            or isinstance(pods, (str, bytes))
+            or not isinstance(deployments, Sequence)
+            or isinstance(deployments, (str, bytes))
+        ):
+            raise EvidenceValidationError("analysis-4c4g resource artifact pods are invalid")
+        api_pods = [
+            item for item in pods if isinstance(item, Mapping) and item.get("role") == "api"
+        ]
+        proof = _require_mapping(snapshot.get("traffic_proof"), "resource traffic_proof")
+        count = proof.get("observations")
+        observed_images: dict[str, str] = {}
+        ready_roles: set[str] = set()
+        for pod in pods:
+            if not isinstance(pod, Mapping) or not isinstance(pod.get("containers"), Sequence):
+                continue
+            role = pod.get("role")
+            containers = pod["containers"]
+            if (
+                role in expected_images
+                and len(containers) == 1
+                and isinstance(containers[0], Mapping)
+                and isinstance(containers[0].get("running_digest"), str)
+            ):
+                observed_images[str(role)] = str(containers[0]["running_digest"])
+            if (
+                pod.get("phase") == "Running"
+                and containers
+                and all(
+                    isinstance(container, Mapping)
+                    and container.get("ready") is True
+                    and container.get("last_oom") is False
+                    for container in containers
+                )
+            ):
+                ready_roles.add(str(role))
+        deployment_roles = {
+            str(item.get("role"))
+            for item in deployments
+            if isinstance(item, Mapping)
+            and item.get("desired_replicas") == 1
+            and item.get("ready_replicas") == 1
+            and item.get("updated_replicas") == 1
+            and item.get("generation") == item.get("observed_generation")
+        }
+        nodes = inventory.get("nodes")
+        relationships = {
+            (item.get("configured_digest"), item.get("running_digest"))
+            for item in inventory.get("image_relationships", [])
+            if isinstance(item, Mapping) and item.get("verified") is True
+        }
+        images_match = all(
+            observed_images.get(service) == digest
+            or (digest, observed_images.get(service)) in relationships
+            for service, digest in expected_images.items()
+        )
+        try:
+            node_cpu = _resource_quantity(nodes[0].get("cpu_capacity"))  # type: ignore[union-attr]
+            node_memory = _resource_quantity(nodes[0].get("memory_capacity"))  # type: ignore[union-attr]
+        except (IndexError, TypeError, AttributeError, EvidenceValidationError):
+            node_cpu = None
+            node_memory = None
+        if (
+            host.get("cpu_count") != 4
+            or not isinstance(host.get("memory_total_bytes"), int)
+            or abs(host["memory_total_bytes"] - 4 * 1024**3) > 512 * 1024**2
+            or not isinstance(nodes, Sequence)
+            or isinstance(nodes, (str, bytes))
+            or len(nodes) != 1
+            or not isinstance(nodes[0], Mapping)
+            or node_cpu != 4
+            or node_memory is None
+            or abs(node_memory - 4 * 1024**3) > 512 * 1024**2
+            or not set(expected_images) <= ready_roles
+            or not set(expected_images) <= deployment_roles
+            or not images_match
+            or len(api_pods) != 1
+            or api_pods[0].get("uid_sha256") != expected_pod
+            or proof.get("api_pod_uid_sha256") != expected_pod
+            or proof.get("correlation_sha256") != expected_marker
+            or isinstance(count, bool)
+            or not isinstance(count, int)
+            or count < 0
+            or proof.get("status") != ("observed" if count else "not_observed")
+        ):
+            raise EvidenceValidationError(
+                "analysis-4c4g resource artifact target binding is invalid"
+            )
+        counts.append(count)
+    if counts != sorted(counts) or counts[0] != 0 or counts[-1] != expected_count:
+        raise EvidenceValidationError(
+            "analysis-4c4g resource artifact target binding is incomplete"
+        )
+
+
+def _validate_capacity(report: Mapping[str, Any], status: str, *, root: Path) -> None:
     profile = _require_non_empty_string(report.get("capacity_profile"), "capacity_profile")
     if profile not in CAPACITY_PROFILES:
         raise EvidenceValidationError("capacity_profile must be application or model")
@@ -361,6 +632,75 @@ def _validate_capacity(report: Mapping[str, Any], status: str) -> None:
     if not required_phases <= phases:
         missing = ", ".join(sorted(required_phases - phases))
         raise EvidenceValidationError(f"workload phases missing: {missing}")
+
+    if workload.get("name") == "analysis-4c4g":
+        targets = _require_mapping(report.get("targets"), "targets")
+        if targets.get("cpu_cores") != 4 or targets.get("memory_bytes") != 4 * 1024**3:
+            raise EvidenceValidationError("analysis-4c4g targets must be exactly 4 CPU and 4 GiB")
+        environment = _require_mapping(report.get("environment"), "environment")
+        if environment.get("resource_evidence_status") != "verified":
+            raise EvidenceValidationError("analysis-4c4g resource evidence must be verified")
+        if environment.get("target_binding_status") != "verified":
+            raise EvidenceValidationError("analysis-4c4g target binding must be verified")
+        release = _require_mapping(report.get("release_identity"), "release_identity")
+        if release.get("commit_sha") != report.get("commit_sha"):
+            raise EvidenceValidationError("analysis-4c4g release commit must match report")
+        release_images = _require_mapping(release.get("image_digests"), "release image_digests")
+        if release_images != report.get("image_digest"):
+            raise EvidenceValidationError("analysis-4c4g release images must match report")
+        resource = _require_mapping(report.get("resource_evidence"), "resource_evidence")
+        if (
+            resource.get("status") != "verified"
+            or resource.get("cpu_cores") != 4
+            or resource.get("memory_bytes") != 4 * 1024**3
+            or resource.get("image_digests") != report.get("image_digest")
+            or isinstance(resource.get("sample_count"), bool)
+            or not isinstance(resource.get("sample_count"), int)
+            or resource.get("sample_count", 0) < 2
+        ):
+            raise EvidenceValidationError("analysis-4c4g resource evidence is incomplete")
+        for field in ("identity_sha256", "samples_sha256"):
+            value = resource.get(field)
+            if not isinstance(value, str) or ARTIFACT_SHA_PATTERN.fullmatch(value) is None:
+                raise EvidenceValidationError(f"resource_evidence.{field} must be SHA-256")
+        binding = _require_mapping(resource.get("target_binding"), "resource target_binding")
+        workload_origin = _require_non_empty_string(workload.get("base_url"), "workload.base_url")
+        observations = binding.get("observations")
+        expected_http_requests = binding.get("expected_http_requests")
+        if (
+            binding.get("status") != "verified"
+            or binding.get("origin") != workload_origin
+            or isinstance(observations, bool)
+            or not isinstance(observations, int)
+            or observations < 1
+            or isinstance(expected_http_requests, bool)
+            or not isinstance(expected_http_requests, int)
+            or expected_http_requests != observations
+            or report.get("http_requests") != expected_http_requests
+        ):
+            raise EvidenceValidationError("analysis-4c4g target binding is incomplete")
+        for field in ("correlation_sha256", "api_pod_uid_sha256"):
+            value = binding.get(field)
+            if not isinstance(value, str) or ARTIFACT_SHA_PATTERN.fullmatch(value) is None:
+                raise EvidenceValidationError(f"resource target_binding.{field} must be SHA-256")
+        first = _timestamp(resource.get("first_captured_at"), "resource_evidence.first_captured_at")
+        last = _timestamp(resource.get("last_captured_at"), "resource_evidence.last_captured_at")
+        started = _timestamp(report.get("started_at"), "started_at")
+        completed = _timestamp(report.get("completed_at"), "completed_at")
+        if first > started or last < completed:
+            raise EvidenceValidationError("analysis-4c4g resource samples must cover workload")
+        kinds = {
+            item.get("kind") for item in report.get("artifacts", []) if isinstance(item, Mapping)
+        }
+        if (
+            not {
+                "analysis-capacity-resources",
+                "analysis-capacity-release-manifest",
+            }
+            <= kinds
+        ):
+            raise EvidenceValidationError("analysis-4c4g machine evidence artifacts are missing")
+        _validate_analysis_4c4g_artifacts(report, resource, root=root)
 
     measurements = _require_mapping(report["measurements"], "measurements")
     if profile == "application":
@@ -414,7 +754,7 @@ def validate_evidence(report: Mapping[str, Any], *, root: Path) -> None:
     if report["evidence_type"] == "recovery":
         _validate_recovery(report, status)
     else:
-        _validate_capacity(report, status)
+        _validate_capacity(report, status, root=root)
 
 
 def main() -> None:

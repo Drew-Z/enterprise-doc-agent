@@ -485,6 +485,69 @@ def test_probe_only_uses_read_commands_and_scrapes_every_application_replica(mon
     assert len(commands) == 7
 
 
+def test_probe_binds_correlation_marker_to_the_observed_api_pod(monkeypatch):
+    import scripts.capacity_host_probe as probe
+
+    _, pods, _, _ = inventory_payloads()
+    api_pod = next(
+        pod
+        for pod in pods
+        if pod["metadata"]["labels"]["app.kubernetes.io/name"] == "enterprise-doc-api"
+    )
+    api_pod["metadata"]["name"] = "private-api-pod"
+    marker = "analysis-capacity:test-run"
+    marker_hash = probe.digest(marker)
+    lines = [
+        json.dumps(
+            {
+                "service": "api",
+                "event": "request_completed",
+                "correlation_id": marker,
+            }
+        ),
+        json.dumps(
+            {
+                "service": "api",
+                "event": "request_completed",
+                "correlation_id": "another-run",
+            }
+        ),
+        "not-json",
+    ]
+    commands = []
+
+    def read_text(args):
+        commands.append(args)
+        return "\n".join(lines)
+
+    monkeypatch.setattr(probe, "kubectl_text", read_text)
+    result = probe.traffic_proof(
+        "enterprise-doc-agent-staging",
+        pods,
+        correlation_id=marker,
+        since_time="2026-10-13T00:00:00+00:00",
+    )
+
+    assert result == {
+        "status": "observed",
+        "correlation_sha256": marker_hash,
+        "api_pod_uid_sha256": probe.digest("pod-api"),
+        "observations": 1,
+    }
+    assert commands == [
+        [
+            "-n",
+            "enterprise-doc-agent-staging",
+            "logs",
+            "private-api-pod",
+            "-c",
+            "api",
+            "--since-time=2026-10-13T00:00:00+00:00",
+            "--tail=-1",
+        ]
+    ]
+
+
 def test_interrupted_probe_is_distinct_from_unsubmitted_observations(tmp_path):
     from scripts.collect_business_telemetry import ObservationPlan, run_collection
 
@@ -507,6 +570,10 @@ def test_interrupted_probe_is_distinct_from_unsubmitted_observations(tmp_path):
         {"ssh_host": "-oProxyCommand=bad"},
         {"ssh_host": "host;bad"},
         {"namespace": "ns;bad"},
+        {"correlation_id": "bad marker", "since_time": "2026-10-13T00:00:00+00:00"},
+        {"correlation_id": "analysis-capacity:test"},
+        {"since_time": "2026-10-13T00:00:00+00:00"},
+        {"correlation_id": "analysis-capacity:test", "since_time": "not-a-time"},
         {"samples": True},
         {"samples": 242},
         {"interval_seconds": float("inf")},

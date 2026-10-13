@@ -19,6 +19,7 @@ from typing import Any
 
 ROLES = ("api", "worker", "consumer", "web", "redis")
 PORTS = {"api": 8000, "worker": 8081, "consumer": 8082}
+CORRELATION_PATTERN = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
 INDEX_TYPES = {
     "application/vnd.oci.image.index.v1+json",
     "application/vnd.docker.distribution.manifest.list.v2+json",
@@ -234,6 +235,90 @@ def kubectl(args: list[str]) -> dict[str, Any]:
     return payload
 
 
+def kubectl_text(args: list[str]) -> str:
+    result = subprocess.run(
+        ["sudo", "-n", "kubectl", "--request-timeout=5s", *args],
+        capture_output=True,
+        check=True,
+        timeout=8,
+    )
+    if len(result.stdout) > 8 * 1024 * 1024:
+        raise ValueError("kubernetes_response_too_large")
+    return result.stdout.decode("utf-8")
+
+
+def traffic_proof(
+    namespace: str,
+    pods: list[dict[str, Any]],
+    *,
+    correlation_id: str,
+    since_time: str,
+) -> dict[str, Any]:
+    if CORRELATION_PATTERN.fullmatch(correlation_id) is None:
+        raise ValueError("correlation_id_rejected")
+    try:
+        parsed_since = datetime.fromisoformat(since_time)
+    except ValueError:
+        raise ValueError("since_time_rejected") from None
+    if parsed_since.tzinfo is None:
+        raise ValueError("since_time_rejected")
+    api_pods = [
+        pod
+        for pod in pods
+        if role_of(pod.get("metadata", {}).get("labels", {}).get("app.kubernetes.io/name", ""))
+        == "api"
+    ]
+    if len(api_pods) != 1:
+        raise ValueError("api_pod_identity_unavailable")
+    pod = api_pods[0]
+    containers = pod.get("spec", {}).get("containers", [])
+    if not isinstance(containers, list) or len(containers) != 1:
+        raise ValueError("api_container_identity_unavailable")
+    pod_name = pod.get("metadata", {}).get("name")
+    pod_uid = pod.get("metadata", {}).get("uid")
+    container_name = containers[0].get("name") if isinstance(containers[0], dict) else None
+    if (
+        not isinstance(pod_name, str)
+        or not pod_name
+        or not isinstance(pod_uid, str)
+        or not pod_uid
+        or not isinstance(container_name, str)
+        or not container_name
+    ):
+        raise ValueError("api_pod_identity_unavailable")
+    logs = kubectl_text(
+        [
+            "-n",
+            namespace,
+            "logs",
+            pod_name,
+            "-c",
+            container_name,
+            f"--since-time={since_time}",
+            "--tail=-1",
+        ]
+    )
+    observations = 0
+    for line in logs.splitlines():
+        try:
+            payload = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if (
+            isinstance(payload, dict)
+            and payload.get("service") == "api"
+            and payload.get("event") == "request_completed"
+            and payload.get("correlation_id") == correlation_id
+        ):
+            observations += 1
+    return {
+        "status": "observed" if observations else "not_observed",
+        "correlation_sha256": digest(correlation_id),
+        "api_pod_uid_sha256": digest(pod_uid),
+        "observations": observations,
+    }
+
+
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(
         self, req: Any, fp: Any, code: int, msg: str, headers: Any, newurl: str
@@ -273,9 +358,18 @@ def host_resources() -> dict[str, Any]:
     }
 
 
-def collect_snapshot(namespace: str) -> dict[str, Any]:
+def collect_snapshot(
+    namespace: str,
+    *,
+    correlation_id: str | None = None,
+    since_time: str | None = None,
+) -> dict[str, Any]:
     if not re.fullmatch(r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?", namespace):
         raise ValueError("namespace_rejected")
+    if correlation_id is not None and CORRELATION_PATTERN.fullmatch(correlation_id) is None:
+        raise ValueError("correlation_id_rejected")
+    if (correlation_id is None) != (since_time is None):
+        raise ValueError("traffic_proof_window_required")
     started = datetime.now(UTC).isoformat()
     errors = []
 
@@ -316,6 +410,18 @@ def collect_snapshot(namespace: str) -> dict[str, Any]:
     inventory["image_relationships"] = [
         verify_image_relationship(a, b, architecture) for a, b in sorted(pairs)
     ]
+    proof = None
+    if correlation_id is not None:
+        try:
+            assert since_time is not None
+            proof = traffic_proof(
+                namespace,
+                pods,
+                correlation_id=correlation_id,
+                since_time=since_time,
+            )
+        except (OSError, ValueError, subprocess.SubprocessError, UnicodeError):
+            errors.append("traffic_proof_unavailable")
     raw_node_metrics = read(
         "node_metrics", ["get", "--raw", "/apis/metrics.k8s.io/v1beta1/nodes"]
     ).get("items", [])
@@ -376,6 +482,7 @@ def collect_snapshot(namespace: str) -> dict[str, Any]:
         "node_metrics": node_metrics,
         "pod_metrics": pod_metrics,
         "scrapes": scrapes,
+        "traffic_proof": proof,
         "errors": errors,
     }
 
@@ -383,12 +490,18 @@ def collect_snapshot(namespace: str) -> dict[str, Any]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--namespace", required=True)
+    parser.add_argument("--correlation-id")
+    parser.add_argument("--since-time")
     args = parser.parse_args()
     deadline = threading.Timer(20, lambda: os._exit(124))
     deadline.daemon = True
     deadline.start()
     try:
-        result = collect_snapshot(args.namespace)
+        result = collect_snapshot(
+            args.namespace,
+            correlation_id=args.correlation_id,
+            since_time=args.since_time,
+        )
     except Exception:
         print(json.dumps({"error_code": "probe_failed"}))
         raise SystemExit(1) from None

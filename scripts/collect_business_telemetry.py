@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import subprocess
 import time
 from collections.abc import Callable
@@ -34,31 +35,51 @@ class ObservationPlan(BaseModel):
     samples: int = Field(default=13, ge=2, le=241, strict=True)
     interval_seconds: float = Field(default=5, ge=5, le=60, strict=True)
     max_run_seconds: float = Field(default=120, ge=1, le=3600, strict=True)
+    correlation_id: str | None = Field(default=None, max_length=128)
+    since_time: str | None = Field(default=None, max_length=64)
 
     @model_validator(mode="after")
     def check_span(self) -> ObservationPlan:
         if (self.samples - 1) * self.interval_seconds > self.max_run_seconds:
             raise ValueError("observation_window_exceeds_budget")
+        if (
+            self.correlation_id is not None
+            and re.fullmatch(r"[A-Za-z0-9._:-]{1,128}", self.correlation_id) is None
+        ):
+            raise ValueError("correlation_id_rejected")
+        if (self.correlation_id is None) != (self.since_time is None):
+            raise ValueError("traffic_proof_window_required")
+        if self.since_time is not None:
+            try:
+                parsed_since = datetime.fromisoformat(self.since_time)
+            except ValueError:
+                raise ValueError("since_time_rejected") from None
+            if parsed_since.tzinfo is None:
+                raise ValueError("since_time_rejected")
         return self
 
 
 def ssh_snapshot(plan: ObservationPlan) -> dict[str, Any]:
+    command = [
+        "ssh",
+        "-o",
+        "BatchMode=yes",
+        "-o",
+        "StrictHostKeyChecking=yes",
+        "-o",
+        "ConnectTimeout=5",
+        plan.ssh_host,
+        "python3",
+        "-B",
+        "-",
+        "--namespace",
+        plan.namespace,
+    ]
+    if plan.correlation_id is not None:
+        assert plan.since_time is not None
+        command.extend(["--correlation-id", plan.correlation_id, "--since-time", plan.since_time])
     completed = subprocess.run(
-        [
-            "ssh",
-            "-o",
-            "BatchMode=yes",
-            "-o",
-            "StrictHostKeyChecking=yes",
-            "-o",
-            "ConnectTimeout=5",
-            plan.ssh_host,
-            "python3",
-            "-B",
-            "-",
-            "--namespace",
-            plan.namespace,
-        ],
+        command,
         input=PROBE.read_bytes(),
         capture_output=True,
         timeout=25,
@@ -85,7 +106,7 @@ def run_collection(
         "status": "running",
         "production_capacity_approved": False,
         "started_at": datetime.now(UTC).isoformat(),
-        "plan": plan.model_dump(),
+        "plan": plan.model_dump(exclude_none=True),
         "records": records,
         "business_report_canonical_sha256": digest(business_report)
         if business_report is not None
