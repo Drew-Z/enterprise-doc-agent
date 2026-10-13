@@ -91,7 +91,7 @@ A3 若没有可测收益，保留 A2 固定路径并关闭自主工具 flag，�
 - [x] 外部容量证据必须绑定 CI release manifest 的 repository/ref/run_id/run_attempt/workflow_ref、部署 commit、api/worker/consumer/web 不可变镜像、SSH 资源快照和固定 correlation marker；首末日志计数必须从 0 单调到全部 runner HTTP 请求。
 - [ ] 生成/embedding/诊断与评测调用先冻结预算并核对当日余额；不因测试数据量增加上限。
 - [ ] 在真实外部单节点 4C4G 目标上测解析/生成竞争、峰值内存、排队、取消和恢复；再确认支持规模和等待时间。
-- [x] feature flag 关闭 admission、排空/取消和历史兼容路径已有测试；0043 在依赖历史存在时拒绝破坏性 downgrade，拒绝后原 run 仍可读取。生产回退演练仍未执行。
+- [x] feature flag 关闭 admission、排空/取消和历史兼容路径已有测试；0043 在依赖历史存在时拒绝破坏性 downgrade，拒绝后原 run 仍可读取。旧版本回退兼容演练已接入 CI，真实 runner 结果仍待取得。
 - [x] Playwright r4 走完整任务、刷新恢复、原文复核、静态导出重读和增量更新；真实 API/隔离 PostgreSQL/受控 provider/store，浏览器运行真实模型调用为 0。
 - [x] 试用包已备齐任务文件、操作说明、计时模板、反馈表、错误/补料/退出规则、数据与支持边界及验收记录模板。
 - [x] 当前参与者为 0，状态明确为“内部验证与试用准备完成”，未称为独立 UAT。
@@ -202,8 +202,14 @@ A5 留出执行器、评分器与 4C4G runner 已完成本地工程验证。留�
 
 沿用现有 container → deploy-staging → rollback 发布链，未新增网关或第二套发布机制。基础 ConfigMap 和 staging renderer 显式固定 analysis dark 状态：结构化上传与执行均为 `false`，全局路由保持 `default`，unit/run deadline 为 120/3600 秒，单次模型输入上限 65536 bytes。执行开启时强制结构化上传先开启、模型 route deadline 存在且覆盖 unit deadline；release record schema v4 同步记录这些策略，防止渲染配置与发布证据脱节。
 
-本地使用仓库要求的 Kustomize v5.7.1（`kubectl kustomize`）渲染真实 `single-node-4c4g` overlay，并用占位 HTTPS 端点和四个不同的占位 sha256 摘要完成配置及四阶段拆分。27 个资源被拆为 20 个 prerequisites、1 个 migration、1 个 embedding rollout 和 5 个 workloads；四个业务镜像均保持 digest-bound，迁移与 embedding Job 均使用 API 摘要，输出中没有 Secret。临时渲染目录已删除。部署/发布契约 224 项、M6/容量/恢复契约 55 项、隔离 PostgreSQL 迁移集成 1 项通过；Ruff、Mypy、workflow YAML parse 与 diff check 通过。本机没有 actionlint，因此该项未执行，未写成通过。迁移测试保留 2 个既有 `document_versions` / `upload_sessions` 双向外键排序 warning。
+本地使用仓库要求的 Kustomize v5.7.1（`kubectl kustomize`）渲染真实 `single-node-4c4g` overlay，并用占位 HTTPS 端点和四个不同的占位 sha256 摘要完成配置及四阶段拆分。27 个资源被拆为 20 个 prerequisites、1 个 migration、1 个 embedding rollout 和 5 个 workloads；四个业务镜像均保持 digest-bound，迁移与 embedding Job 均使用 API 摘要，输出中没有 Secret。临时渲染目录已删除。部署/发布契约 224 项、M6/容量/恢复契约 55 项、隔离 PostgreSQL 迁移集成 1 项通过；本轮回滚兼容契约与脚本测试 22 项通过，Ruff、Mypy、workflow YAML parse 与 diff check 通过。使用 `rhysd/actionlint:1.7.7`（镜像 ID `sha256:b6d0bc67a629b20d424b3e35964400ec438451f41b95302157868d5e379d5039`）检查 `deploy-staging.yml` 与新增 `quality-heavy.yml` 均通过；全仓库扫描仍有 `quality-self-hosted.yml:29` 的两个既有 SC2086 告警，因此未将结论扩大为“全仓库无告警”。迁移测试保留 2 个既有 `document_versions` / `upload_sessions` 双向外键排序 warning。
 
 0038–0043 采用新增表/列/索引的兼容扩展，0040 只放宽配额约束以加入 `analysis_cell`；有历史时 downgrade 主动拒绝破坏性删除。旧运行时代码没有启动时精确 head 检查，但尚未用真实签名旧镜像在 0043 上完成启动与 smoke，因此不能宣布旧镜像回滚已就绪。正式回滚目标必须先证明其可在 0043 上运行，或在任何 analysis 历史产生前使用已验证兼容候选；数据库降级不作为常规回滚路径。
 
-机器可读结果见 `release-preflight-20261013.json`。状态为 `blocked_external`：候选尚未 push/tag，四个真实镜像摘要和签名 release manifest 尚不存在，默认关闭部署/迁移、旧镜像 0043 兼容演练、短期 token 与 `analysis-primary` 路由、真实 fixed/agent 留出、外部 4C4G 验收和独立 UAT 均未执行。本轮没有读取 Secret、访问集群、调用真实模型或执行外部发布动作。
+机器可读结果见 `release-preflight-20261013.json`。状态仍为 `blocked_external`：rc.52 已 push/tag 并有四个签名 digest，rc.51 已登记为回滚候选；默认关闭部署/迁移、旧镜像 0043 兼容演练的真实 CI 执行、短期 token 与 `analysis-primary` 路由、真实 fixed/agent 留出、外部 4C4G 验收和独立 UAT 均未完成。本轮没有访问集群、调用真实模型或读取 Secret。
+
+### A5 旧版本回滚兼容演练接入（2026-10-13）
+
+新增 `scripts/run_analysis_rollback_compatibility.py` 与 `tests/deployment/test_run_analysis_rollback_compatibility.py`。脚本在临时 Docker network 中拉取固定 digest 的 PostgreSQL、Redis、MinIO 依赖，用 rc.52 API 镜像执行迁移与 checkpointer 初始化，确认 Alembic head `20261012_0043` 和 `analysis_projects`，再启动 rc.51 的 API、Worker、Consumer、Web 镜像并只记录健康/端口/OpenAPI 结果；无论成功失败都清理容器和 network，不写入随机凭据或原始日志。
+
+`.github/workflows/quality-heavy.yml` 新增手动 `analysis-rollback-compatibility` job，固定 rc.52/rc.51 digest 并上传 run-scoped JSON 证据。兼容脚本与 CI 契约测试共 22 项通过，Ruff、Mypy、格式检查和 actionlint 通过；真实 GitHub-hosted runner 尚未 dispatch，因此 `release-preflight-20261013.json` 将回滚状态保持为 `pending_ci_execution`，不得据此宣布旧版本已可回滚。

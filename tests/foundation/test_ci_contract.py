@@ -95,7 +95,12 @@ def test_manual_heavy_quality_preserves_integration_and_e2e_evidence() -> None:
     assert _triggers(workflow) == {"workflow_dispatch": None}
     jobs = workflow.get("jobs")
     assert isinstance(jobs, dict)
-    assert set(jobs) == {"m1-integration", "m4-integration", "web-e2e"}
+    assert set(jobs) == {
+        "m1-integration",
+        "m4-integration",
+        "web-e2e",
+        "analysis-rollback-compatibility",
+    }
 
     integration_commands = _run_commands(jobs["m1-integration"])
     assert "uv sync --frozen" in integration_commands
@@ -103,7 +108,7 @@ def test_manual_heavy_quality_preserves_integration_and_e2e_evidence() -> None:
     port_release_gate = next(
         command for command in integration_commands if "--preflight" in command
     )
-    assert "for attempt in $(seq 1 45)" in port_release_gate
+    assert "for _ in $(seq 1 45)" in port_release_gate
     assert "sleep 2" in port_release_gate
     assert "ports were not released within 90 seconds" in port_release_gate
     assert any(
@@ -146,6 +151,33 @@ def test_manual_heavy_quality_preserves_integration_and_e2e_evidence() -> None:
     )
     assert "always()" in str(evidence["if"])
     assert evidence["with"]["path"] == "apps/web/test-results"
+
+    compatibility = jobs["analysis-rollback-compatibility"]
+    assert compatibility["runs-on"] == "ubuntu-latest"
+    assert compatibility["timeout-minutes"] == 45
+    compatibility_commands = _run_commands(compatibility)
+    compatibility_command = next(
+        command
+        for command in compatibility_commands
+        if "run_analysis_rollback_compatibility.py" in command
+    )
+    assert '--candidate-api "$CANDIDATE_API"' in compatibility_command
+    assert '--rollback-api "$ROLLBACK_API"' in compatibility_command
+    assert '--rollback-worker "$ROLLBACK_WORKER"' in compatibility_command
+    assert '--rollback-consumer "$ROLLBACK_CONSUMER"' in compatibility_command
+    assert '--rollback-web "$ROLLBACK_WEB"' in compatibility_command
+    assert "--report-path" in compatibility_command
+    compatibility_steps = compatibility["steps"]
+    assert isinstance(compatibility_steps, list)
+    upload = next(
+        step
+        for step in compatibility_steps
+        if isinstance(step, dict)
+        and step.get("uses") == "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"
+    )
+    assert upload["if"] == "${{ always() }}"
+    assert upload["with"]["if-no-files-found"] == "error"
+    assert "github.run_id" in upload["with"]["name"]
 
 
 def test_manual_self_hosted_quality_is_serial_and_secret_free() -> None:

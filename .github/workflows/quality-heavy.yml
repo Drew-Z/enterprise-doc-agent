@@ -33,7 +33,7 @@ jobs:
       - name: Wait for multipart smoke ports to be released
         run: |
           set -euo pipefail
-          for attempt in $(seq 1 45); do
+          for _ in $(seq 1 45); do
             if uv run python scripts/multipart_smoke.py --preflight \
               --size-bytes 17825792 --interrupt-after-parts 1; then
               exit 0
@@ -114,3 +114,36 @@ jobs:
           path: apps/web/test-results
           if-no-files-found: warn
           retention-days: 7
+
+  analysis-rollback-compatibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version-file: .python-version
+      - name: Verify signed candidate and rollback image identities
+        env:
+          CANDIDATE_API: ghcr.io/drew-z/enterprise-doc-api@sha256:3bebebab772e7dba738e2a9db029e1855b8c7b23c2ff62a6093612ba15ed9709
+          ROLLBACK_API: ghcr.io/drew-z/enterprise-doc-api@sha256:af9e576292ddc5e27c2c2a5704fcd9d3c6f42d07647920ed44b192e5faa39a9c
+          ROLLBACK_WORKER: ghcr.io/drew-z/enterprise-doc-worker@sha256:dae34e5b08b94fed54a9455d4ee60230cd512d4751eaaf8caff8bc7d72c6b8a1
+          ROLLBACK_CONSUMER: ghcr.io/drew-z/enterprise-doc-consumer@sha256:958ad15ef9227c8198509676074a30d9d71372d02a9abebe3822eea5781f9217
+          ROLLBACK_WEB: ghcr.io/drew-z/enterprise-doc-web@sha256:724d1007282607d3d220aae1fbeb76b87a2b48ae4ba0f3a66b95db1aa1297da9
+        run: |
+          set -euo pipefail
+          python scripts/run_analysis_rollback_compatibility.py \
+            --candidate-api "$CANDIDATE_API" \
+            --rollback-api "$ROLLBACK_API" \
+            --rollback-worker "$ROLLBACK_WORKER" \
+            --rollback-consumer "$ROLLBACK_CONSUMER" \
+            --rollback-web "$ROLLBACK_WEB" \
+            --timeout-seconds 180 \
+            --report-path "tmp/analysis-rollback-compatibility-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"
+      - if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: analysis-rollback-compatibility-${{ github.run_id }}-${{ github.run_attempt }}
+          path: tmp/analysis-rollback-compatibility-${{ github.run_id }}-${{ github.run_attempt }}.json
+          if-no-files-found: error
+          retention-days: 14
