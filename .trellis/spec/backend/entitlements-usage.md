@@ -43,9 +43,11 @@ CLI commands are `configure`, `configure-products`, `list`, and `show`. All requ
 `--operator`, and `--reason`; configure/show require `--entitlement-id`.
 Configure additionally requires `--expected-version`, `--plan-code`, `--period-start`,
 `--period-end`, and `--request-limit`; only `--execute` writes. Configure accepts
-`--agent-task-limit` and `--document-bytes-limit`, both defaulting to zero.
-Configure-products requires both limits, an existing entitlement ID and that
-period's own version. It only fills missing quotas and never resets counters.
+`--agent-task-limit` and `--document-bytes-limit`, both defaulting to zero, plus the
+optional `--analysis-cell-limit`. Configure-products requires both older product
+limits, an existing entitlement ID and that period's own version; its
+`--analysis-cell-limit` is optional. It only fills missing requested quotas and never
+resets counters.
 
 ## 3. Contracts
 
@@ -227,6 +229,136 @@ Before rollout apply 0029/0030, drain old unledgered work including approvals,
 fill existing product quotas via configure-products, and release API/Worker/Web
 together. Existing demos require expiry/cleanup or reviewed backfill; new demos
 receive Agent=0 and document_bytes=10 MiB. See `docs/ops/platform-operations.md`.
+
+### Analysis cell quota and 0040 migration
+
+#### 1. Scope / Trigger
+
+Fixed multi-document execution consumes the product metric `analysis_cell`, one unit
+per object/field result. Migration `20261012_0040` adds this metric to the existing
+product quota/reservation constraints and creates the execution tables. It does not
+reinterpret `agent_task`, `document_bytes` or Presales `provider_request` usage.
+
+The field is optional for migration compatibility. Omission means “this request does
+not configure or compare analysis quota”; it never means an implicit zero row.
+Explicit zero means the period is configured for analysis but denies all new cells.
+An active commercial period must have an explicit row before an analysis run can be
+created; otherwise reservation fails closed.
+
+#### 2. Signatures
+
+```python
+EntitlementConfiguration(
+    ...,
+    agent_task_limit: int = 0,
+    document_bytes_limit: int = 0,
+    analysis_cell_limit: int | None = None,
+)
+
+ProductQuotaConfiguration(
+    entitlement_id=...,
+    expected_version=...,
+    agent_task_limit=...,
+    document_bytes_limit=...,
+    analysis_cell_limit: int | None = None,
+)
+```
+
+Both fields are strict integers when present, bounded to `[0, 2**63-1]`; bool is
+invalid. The packaged private operator and the local compatibility script both add:
+
+```text
+entitlement configure ... [--analysis-cell-limit N] [--execute]
+entitlement configure-products ... [--analysis-cell-limit N] [--execute]
+```
+
+The packaged entry remains `python -m enterprise_doc_core.operations` with its formal
+target/operator arguments. The local entry remains
+`python scripts/manage_tenant_entitlements.py`; its local/test and loopback database
+restrictions do not change.
+
+#### 3. Contracts
+
+- Apply the existing product quota migration `0029` before `0040`. Apply `0040`
+  before submitting an explicit analysis limit or enabling analysis execution. Old
+  database schemas continue to accept configure requests that omit the new field.
+- A new entitlement creates `agent_task` and `document_bytes` rows as before. It
+  creates `analysis_cell` only when the field is present. Audit metadata follows the
+  same rule so an old request and its replay retain the same receipt contract.
+- A same-ID `configure` replay compares the two older product limits and compares
+  analysis only when the replay explicitly includes it. After a period is supplemented
+  through configure-products, replaying the original configure request without the
+  new field remains valid and does not remove the supplemental quota.
+- `configure_products` compares only requested metrics. It appends missing rows with
+  zero counters, preserves every existing counter and quota not named by the request,
+  and returns `replayed=true` when all requested limits already match.
+- To supplement an entitlement created before analysis support, call
+  configure-products with the existing `agent_task` and `document_bytes` limits plus
+  the desired analysis limit. Replaying either the original configure receipt or the
+  supplemental configure-products receipt must remain safe.
+- A conflicting limit for any requested existing metric is
+  `entitlement_idempotency_conflict`; configuration never edits a limit in place.
+  Create a new entitlement period to change limits.
+- Analysis run creation reserves all cells in its run-creation transaction. Any
+  missing/exhausted reservation rolls the run, units, Job, Outbox and all earlier
+  reservations in that transaction back. A successful cell consumes once; failure,
+  cancellation and expiry release; `waiting_input` retains its reservation.
+- `0040` downgrade takes exclusive locks and refuses with
+  `analysis_execution_history_present` when any analysis run or `analysis_cell` quota
+  exists. It never deletes execution or quota history to make downgrade succeed.
+
+#### 4. Validation & Error Matrix
+
+| Condition | Stable outcome |
+|---|---|
+| Omitted analysis field against old or migrated schema | Configure only the two older product metrics; no analysis row or audit field |
+| Explicit analysis value below 0, bool or above `2**63-1` | Contract/CLI validation failure; no write |
+| Explicit zero | Durable `analysis_cell` quota with limit 0; run admission returns `usage_limit_reached` |
+| Active period lacks analysis row | `usage_product_quota_unconfigured`; no partial run or reservation |
+| Existing requested metric has a different limit | `entitlement_idempotency_conflict`; counters unchanged |
+| Same supplemental request after acknowledgement loss | Existing snapshot with `replayed=true`; one audit and unchanged counters |
+| Explicit analysis configuration before `0040` | Database constraint/configuration failure; migration must be applied first |
+| Downgrade with analysis quota or run history | `analysis_execution_history_present`; schema and history remain intact |
+
+#### 5. Good / Base / Bad Cases
+
+- Good: configure an old two-metric period, migrate through `0040`, supplement it
+  with analysis=30, lose the acknowledgement, replay both receipts, and observe one
+  quota row with unchanged counters and one supplemental audit.
+- Base: an old automation omits analysis. It continues configuring/replaying the old
+  contract, but analysis execution for that commercial period stays unavailable until
+  a deliberate supplement is made.
+- Bad: unconditionally insert `analysis_cell=0` for every configure request. That
+  breaks an unmigrated `0029` schema and changes omission from compatibility into
+  deliberate product denial.
+
+#### 6. Tests Required
+
+- `tests/billing/test_entitlement_configuration_contract.py` rejects bool, negative
+  and overflow limits and proves omission remains `None`.
+- `tests/billing/test_entitlement_cli.py` and
+  `tests/admission/test_platform_operations_cli.py` assert preview serialization for
+  omitted and explicit values without opening a database in preview mode.
+- Real PostgreSQL administration/product tests assert new-period creation, old-period
+  supplementation, original and supplemental replay, requested-metric conflicts,
+  counter preservation and old `0029` schema compatibility.
+- `tests/analysis/test_analysis_execution_integration.py` seeds quota only through
+  `EntitlementAdministrationService`, then asserts atomic reservation, missing/zero/
+  finite quota behavior, consume/release, waiting-input retention and replay.
+- Migration tests assert metadata parity and that populated analysis quota/run history
+  blocks downgrade without deleting rows.
+
+#### 7. Wrong vs Correct
+
+Wrong: coerce `None` to zero and always create a third `product_quotas` row.
+
+Correct: add `ProductMetric.ANALYSIS_CELL` to the requested map only when
+`analysis_cell_limit is not None`; explicit zero remains a real requested value.
+
+Wrong: update an existing product quota to match a repeated command.
+
+Correct: compare requested limits, return a replay on equality, reject conflicts and
+preserve all counters; use a new period for a changed commercial limit.
 
 ## 4. Validation & Error Matrix
 

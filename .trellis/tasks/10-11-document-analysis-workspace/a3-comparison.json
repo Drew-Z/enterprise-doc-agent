@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "analysis.a3.comparison.v1",
+  "recordedAt": "2026-10-12",
+  "scope": "controlled_provider_engineering_comparison",
+  "claimBoundary": {
+    "externalModelCalls": 0,
+    "realModelQuality": "not_verified",
+    "semanticAccuracy": null,
+    "humanRevisionCount": null,
+    "externalLatencyMs": null,
+    "externalCost": null,
+    "customerAcceptance": "not_run"
+  },
+  "test": {
+    "nodeId": "tests/analysis/test_analysis_execution_integration.py::test_fixed_and_agent_modes_share_snapshot_route_and_two_slot_budget",
+    "materials": "one immutable source snapshot with one object and one field",
+    "provider": "controlled OpenAI-compatible HTTP transport",
+    "sharedConditions": [
+      "same snapshotId and frozen source version",
+      "same frozen route, model name and primary channel",
+      "same maximum of two model dispatches per unit",
+      "same server-side evidence, citation and result validation"
+    ]
+  },
+  "arms": {
+    "fixed": {
+      "executionSchema": "analysis.execution.v1",
+      "prompt": "analysis.fixed.v1",
+      "status": "completed",
+      "modelDispatches": 1,
+      "toolExecutions": 0,
+      "inputPauses": 0
+    },
+    "agent": {
+      "executionSchema": "analysis.execution.v2",
+      "prompt": "analysis.agent.v1",
+      "status": "completed",
+      "modelDispatches": 2,
+      "toolExecutions": 1,
+      "toolNames": [
+        "search_sources"
+      ],
+      "toolRounds": 1,
+      "inputPauses": 0
+    }
+  },
+  "separateResumeCase": {
+    "nodeId": "tests/analysis/test_analysis_execution_integration.py::test_calculation_pauses_for_input_and_resumes_with_original_budget_and_deadline",
+    "modelDispatches": 2,
+    "resumeJobs": 1,
+    "duplicateSubmissionCreatesAdditionalJob": false,
+    "deadlineReset": false,
+    "calculation": {
+      "expression": "1200 * 10 * 12",
+      "result": "144000.00",
+      "resultUnit": "CNY"
+    }
+  },
+  "result": {
+    "engineeringBehavior": "passed",
+    "agentValueDecision": "deferred_until_real_model_and_human_review_comparison",
+    "reason": "The controlled provider proves bounded tool, budget and resume behavior. It cannot establish answer-quality improvement or reduced review effort."
+  }
+}

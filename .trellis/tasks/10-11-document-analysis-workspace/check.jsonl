@@ -1,0 +1,7 @@
+{"file":".trellis/spec/backend/agent-mcp-hitl.md","reason":"Audit multi-source approval, unknown dispatch, lease and event secrecy"}
+{"file":".trellis/spec/foundation-tests/backend/index.md","reason":"Behavior-focused tests and real persistence boundaries"}
+{"file":".trellis/spec/guides/code-reuse-thinking-guide.md","reason":"Ensure analysis reuses stable infrastructure without duplicating presales business schema"}
+{"file":".trellis/spec/backend/document-analysis-workspace.md","reason":"Verify implemented A1-A5 local candidate contracts, migration 0043, invalidation and claim boundaries"}
+{"file":".trellis/tasks/10-11-document-analysis-workspace/prd.md","reason":"Reconcile engineering-candidate completion with external acceptance boundaries"}
+{"file":".trellis/tasks/10-11-document-analysis-workspace/design.md","reason":"Close A4 dependency invalidation and record A5 materials without changing the product direction"}
+{"file":".trellis/tasks/10-11-document-analysis-workspace/implement.md","reason":"Update completed checks, validation evidence and remaining gates"}
