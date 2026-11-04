@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 from scripts.run_analysis_rollback_compatibility import (
     ANALYSIS_TABLE,
+    DEFAULT_IMAGES,
     MAX_OPENAPI_BYTES,
     SCHEMA_HEAD,
     CompatibilityConfig,
@@ -161,6 +162,39 @@ def test_early_failure_preserves_diagnostic_without_removing_uncreated_network(
     }
     assert len(commands) == 1
     assert report["completed_at"]
+
+
+def test_default_dependencies_build_pinned_binaries_and_report_build_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config = CompatibilityConfig(
+        candidate_api=_image("a"),
+        rollback_images={service: _image("b") for service in ("api", "worker", "consumer", "web")},
+        dependency_images=DEFAULT_IMAGES,
+    )
+    builds: list[list[str]] = []
+
+    def command(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        if args[1] == "build":
+            builds.append(args)
+            if args[args.index("--target") + 1] == "minio":
+                return subprocess.CompletedProcess(args, 0, "sha256:" + "c" * 64 + "\n", "")
+            return subprocess.CompletedProcess(args, 1, "", "checksum mismatch")
+        if args[1] == "pull":
+            return subprocess.CompletedProcess(args, 0, "", "")
+        raise AssertionError("No runtime resources should start after a failed build")
+
+    monkeypatch.setattr("scripts.run_analysis_rollback_compatibility.subprocess.run", command)
+    report = run_compatibility(config)
+
+    assert len(builds) == 2
+    assert all("linux/amd64" in args for args in builds)
+    assert report["status"] == "failed"
+    assert "checksum mismatch" in report["failure"]["message"]
+    assert report["dependency_builds"]["minio"]["image_id"] == "sha256:" + "c" * 64
+    assert len(report["dependency_builds"]["minio"]["dockerfile_sha256"]) == 64
+    assert report["cleanup"]["status"] == "passed"
+    assert report["checks"] == {}
 
 
 @pytest.mark.parametrize("description_size", [10_000, MAX_OPENAPI_BYTES])

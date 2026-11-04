@@ -235,3 +235,11 @@ Container Supply Chain `41813667813` 的四个构建镜像在 Trivy 扫描失败
 下一工程切片应恢复来源可信、digest 固定的对象存储测试依赖，并修复此次构建镜像的扫描发现，再重建和重跑一次完整验收。当前 rc.51 回滚兼容、真实模型留出、外部 4C4G 和独立 UAT 仍未放行。无部署、共享数据库迁移或真实模型调用。四份历史研究临时 JSON 已集中保存并核验哈希；原四文件及两个任务专属空临时目录已删除，其余历史工作区内容保留。
 
 后续 Quality `41816329541`（`82b587d`）已确认 Linux Mypy 修复、前端通过；完整后端为 3300 passed、2 failed、1 error、887 deselected。两项资料失败是 CI 不存在本机原始抓取目录，另一个真实 DB 配额测试漏标 integration。已保持上传文件字节/哈希、原始证据哈希格式及完整分母的可移植校验，把原始抓取审计拆成通过 `ANALYSIS_RAW_EVIDENCE_DIR` 显式启用的两项测试；未配置时明确 skipped，不算审计通过。原归档实测 5 项通过，默认非集成定向 10 passed、2 skipped、1 deselected；DB 测试只补 integration 标记，不改其真实数据库边界。Container Supply Chain `41816329511` 仍扫描失败，不降低扫描门槛。
+
+### A5.2 依赖恢复与扫描修复（2026-11-04）
+
+用户批准处理两个发布阻塞，沿用同一恢复组 `dependency_remediation_20261104`，基线 `d3859ca`。该基线 Quality `41818655311` 已全部通过（后端 3302 passed、2 原始归档审计 skipped、888 integration deselected；前端通过）。
+
+官方仓库当前说明社区版本改为源码分发，历史二进制保留但不再维护；原 Docker Hub 依赖不可拉取，Google 缓存同 digest 返回 404、Quay 返回未授权。官方 GitHub Release 仍提供原版 MinIO `RELEASE.2025-09-07T16-13-09Z` 与 mc `RELEASE.2025-08-13T08-35-41Z`，release asset digest 与下载的官方 checksum 一致。采用本地 Dockerfile 重封装：固定 Alpine digest、两份二进制和许可证 SHA-256，仅支持 Linux amd64 测试/恢复环境，不宣称原镜像逐字节等价或生产对象存储升级。Compose 每次按构建定义核验；兼容 runner 绑定构建文件哈希和生成的 image ID，应用候选/回滚四镜像仍严格使用 registry digest。
+
+安全修复范围为 certifi `2026.10.18`、pypdf `6.21.4`、Bookworm libssl3/openssl `3.0.22-1~deb12u2` 和官方 nginx `1.30.6-alpine3.24@sha256:0e52bd054126cdc040b1276c0af347aeb02a41b9cfe305d6094767ac30e97949`；uv.lock 只更新这两个 Python 包。不得关闭扫描或忽略漏洞获得通过。Compose/回滚/发布契约与解析定向 85 项、Ruff、脚本 Mypy 通过；真实容器构建、S3 行为、CI 扫描及回滚演练结果待回填。无集群部署、共享数据库迁移或真实模型调用。

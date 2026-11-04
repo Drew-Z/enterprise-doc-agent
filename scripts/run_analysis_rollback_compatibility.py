@@ -10,6 +10,7 @@ the generated credentials or raw container output.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -21,7 +22,7 @@ import time
 import urllib.error
 import urllib.request
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -30,17 +31,15 @@ SCHEMA_HEAD = "20261012_0043"
 ANALYSIS_TABLE = "analysis_projects"
 SERVICES = ("api", "worker", "consumer", "web")
 IMAGE_PATTERN = re.compile(r"^[a-z0-9][a-z0-9./_-]*@sha256:[0-9a-f]{64}$")
+LOCAL_IMAGE_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
+OBJECT_STORE_TARGETS = {"minio": "minio", "minio_mc": "mc"}
 DEFAULT_IMAGES = {
     "postgres": (
         "pgvector/pgvector@sha256:131dcf7ff6a900545df8e7e092c270aa8c6db2f2c818e408cb45ec21316b74e6"
     ),
     "redis": ("redis@sha256:6ab0b6e7381779332f97b8ca76193e45b0756f38d4c0dcda72dbb3c32061ab99"),
-    "minio": (
-        "minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e"
-    ),
-    "minio_mc": (
-        "minio/mc@sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727"
-    ),
+    "minio": "build:minio",
+    "minio_mc": "build:mc",
 }
 DEFAULT_TIMEOUT_SECONDS = 180.0
 MAX_DOCKER_ERROR_CHARS = 512
@@ -67,6 +66,11 @@ class CompatibilityConfig:
         for service in SERVICES:
             validate_image_ref(self.rollback_images[service], f"rollback_{service}")
         for name in ("postgres", "redis", "minio", "minio_mc"):
+            if (
+                name in OBJECT_STORE_TARGETS
+                and self.dependency_images[name] == f"build:{OBJECT_STORE_TARGETS[name]}"
+            ):
+                continue
             validate_image_ref(self.dependency_images[name], f"dependency_{name}")
         if self.timeout_seconds <= 0 or self.timeout_seconds > 900:
             raise CompatibilityError("timeout_seconds must be between 0 and 900")
@@ -485,7 +489,44 @@ def _pull_images(docker: Docker, config: CompatibilityConfig) -> None:
         *config.dependency_images.values(),
     ]
     for image in dict.fromkeys(refs):
-        docker.pull(image)
+        if not image.startswith("build:"):
+            docker.pull(image)
+
+
+def _build_dependencies(
+    docker: Docker, config: CompatibilityConfig, report: dict[str, Any]
+) -> CompatibilityConfig:
+    images = dict(config.dependency_images)
+    dockerfile = Path(__file__).resolve().parents[1] / "infra/docker/Dockerfile.object-store"
+    for name, target in OBJECT_STORE_TARGETS.items():
+        if images[name] != f"build:{target}":
+            continue
+        result = docker.run(
+            [
+                "build",
+                "--quiet",
+                "--platform",
+                "linux/amd64",
+                "--target",
+                target,
+                "--file",
+                str(dockerfile),
+                str(dockerfile.parent),
+            ],
+            timeout_seconds=900,
+        )
+        image_id = result.stdout.strip()
+        if LOCAL_IMAGE_PATTERN.fullmatch(image_id) is None:
+            raise CompatibilityError(f"{name} build did not return an immutable local image ID")
+        images[name] = image_id
+        report["dependency_builds"][name] = {
+            "image_id": image_id,
+            "target": target,
+            "platform": "linux/amd64",
+            "dockerfile_sha256": hashlib.sha256(dockerfile.read_bytes()).hexdigest(),
+        }
+    report["dependency_images"] = images
+    return replace(config, dependency_images=images)
 
 
 def run_compatibility(config: CompatibilityConfig, *, pull_images: bool = True) -> dict[str, Any]:
@@ -499,6 +540,7 @@ def run_compatibility(config: CompatibilityConfig, *, pull_images: bool = True) 
         "rollback_images": dict(config.rollback_images),
         "schema": {"expected_head": SCHEMA_HEAD, "analysis_table": ANALYSIS_TABLE},
         "checks": {},
+        "dependency_builds": {},
         "cleanup": {
             "status": "not_started",
             "containers_removed": 0,
@@ -513,6 +555,7 @@ def run_compatibility(config: CompatibilityConfig, *, pull_images: bool = True) 
     try:
         if pull_images:
             _pull_images(docker, config)
+        config = _build_dependencies(docker, config, report)
         docker.run(
             [
                 "network",

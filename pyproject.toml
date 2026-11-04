@@ -25,6 +25,7 @@ dev = [
 
 [tool.uv]
 package = false
+constraint-dependencies = ["certifi>=2026.10.18"]
 
 [tool.uv.sources]
 enterprise-doc-api = { workspace = true }

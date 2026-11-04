@@ -9,8 +9,22 @@
   `perl-base=5.36.0-7+deb12u4` in their runtime stages, then remove apt lists. The
   latter addresses the seven Perl findings in the rc.31 published-image scan;
   failed scan artifacts and the rejected release tag remain evidence. Keep Python,
-  application locks and the release scan/signature gates unchanged; replacing a base
+  release scan/signature gates unchanged; replacing a base
   tag alone is insufficient unless its actual installed package version is verified.
+- The November dependency repair also pins runtime `libssl3` and `openssl` to
+  `3.0.22-1~deb12u2`, nginx to the verified `1.30.6-alpine3.24` index digest,
+  and locks certifi/pypdf to `2026.10.18`/`6.21.4`. A scan must validate rebuilt
+  images; old signed release evidence does not certify a new build.
+- Local/CI/recovery MinIO dependencies use `Dockerfile.object-store` after the
+  upstream registry references became unavailable. The original server/client
+  release binaries and AGPL license are fetched from official GitHub releases/tags
+  with fixed SHA-256 checksums on a digest-pinned Alpine base. This is a local
+  Linux amd64 test/recovery build, not an upstream image or production storage
+  release. Compose uses `pull_policy: build` so a pre-existing local tag cannot
+  bypass input verification. The rollback runner builds the same targets and
+  records the Dockerfile SHA-256 and resulting immutable local image IDs before
+  starting any database resources. Candidate/rollback application images still
+  require registry digests. Checksum/build failures remain failed evidence.
 - Kubernetes base defines migration, startup/readiness/liveness probes, resource bounds,
   ServiceAccount, PDB and NetworkPolicy. Scoped deployer RBAC and admission policies live
   in the administrator-applied `infra/k8s/bootstrap/` bundle.

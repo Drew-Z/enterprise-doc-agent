@@ -291,5 +291,34 @@
       "ruff": "passed",
       "format": "passed"
     }
+  },
+  "dependency_remediation_20261104": {
+    "status": "pending_ci",
+    "baseline_head": "d3859cabadd88c388e47da2abf3587ca32427ad0",
+    "object_store": {
+      "build_file": "infra/docker/Dockerfile.object-store",
+      "platform": "linux/amd64",
+      "upstream_server_release": "RELEASE.2025-09-07T16-13-09Z",
+      "server_binary_sha256": "7c5bd8512c6e966455b1d198209358b2d191c77a83ab377c4073281065fb855f",
+      "upstream_client_release": "RELEASE.2025-08-13T08-35-41Z",
+      "client_binary_sha256": "01f866e9c5f9b87c2b09116fa5d7c06695b106242d829a8bb32990c00312e891",
+      "local_binary_verification": "mc complete checksum matched; minio transfer interrupted",
+      "local_build": "GitHub release binary downloads returned unexpected EOF; no runtime smoke claimed",
+      "scope": "local/CI/recovery repackaging of original official binaries; not an upstream image or production storage release"
+    },
+    "security_updates": {
+      "certifi": "2026.10.18",
+      "pypdf": "6.21.4",
+      "libssl3": "3.0.22-1~deb12u2",
+      "openssl": "3.0.22-1~deb12u2",
+      "nginx": "1.30.6-alpine3.24@sha256:0e52bd054126cdc040b1276c0af347aeb02a41b9cfe305d6094767ac30e97949"
+    },
+    "local_validation": {
+      "focused_tests_passed": 85,
+      "ruff": "passed",
+      "mypy_script": "passed",
+      "compose_config": "passed"
+    },
+    "release_gates": "Pending actual rebuilt image scans and isolated rollback rehearsal; old blockers remain until evidence passes."
   }
 }
