@@ -226,7 +226,7 @@
       "conclusion": "failure",
       "frontend": "success",
       "backend_failure": "structure_process.py:46 CREATE_NO_WINDOW attr-defined under Linux",
-      "resolution": "Fixed by 9ac423a; local Linux full-scope mypy and 14 parser tests passed. Push retry pending after SSH authentication and HTTPS connection failures; no follow-up CI result yet."
+      "resolution": "Fixed by 9ac423a; local Linux full-scope mypy and 14 parser tests passed. The CI run recorded here predates that fix; it is not evidence of remote verification of the fix."
     },
     "supply_chain": {
       "run_id": "41813667813",
@@ -261,6 +261,10 @@
       "scope_note": "Counts are SARIF findings per rebuilt image, not unique vulnerabilities. These scans do not rescan or replace the previously signed rc.52 release evidence."
     },
     "platform_fix_commit": "9ac423a37bc5e6b69aa934b3f40cfb67c103558e",
-    "platform_fix_push": "pending_transport_retry"
+    "push_transport_incidents": [
+      "SSH publickey authentication failed after the first successful repair push.",
+      "Direct HTTPS connection timed out.",
+      "HTTPS via existing Windows system proxy reached GitHub but the remote returned Internal Server Error."
+    ]
   }
 }
