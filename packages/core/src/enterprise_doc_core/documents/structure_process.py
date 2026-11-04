@@ -28,6 +28,9 @@ async def parse_document_isolated(
         raise DocumentParseViolation("structure_file_limit", "Document size is outside the limit.")
     # Psycopg uses Windows' Selector loop, which has no asyncio subprocess transport.
     # Startup and pipe I/O run in threads; the parent owns and reaps the process.
+    creation_flags = 0
+    if sys.platform == "win32":
+        creation_flags = subprocess.CREATE_NO_WINDOW
     startup = asyncio.create_task(
         asyncio.to_thread(
             subprocess.Popen,
@@ -43,7 +46,7 @@ async def parse_document_isolated(
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL,
-            creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
+            creationflags=creation_flags,
         )
     )
     process = None
