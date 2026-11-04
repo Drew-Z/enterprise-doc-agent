@@ -2,6 +2,13 @@ name: Heavy Quality Evidence
 
 on:
   workflow_dispatch:
+    inputs:
+      scope:
+        description: "all runs the full evidence suite; analysis-runtime only checks signed images"
+        required: true
+        default: all
+        type: choice
+        options: [all, analysis-runtime]
 
 permissions:
   contents: read
@@ -12,6 +19,7 @@ concurrency:
 
 jobs:
   m1-integration:
+    if: ${{ inputs.scope != 'analysis-runtime' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -58,6 +66,7 @@ jobs:
           retention-days: 7
 
   m4-integration:
+    if: ${{ inputs.scope != 'analysis-runtime' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -108,6 +117,7 @@ jobs:
         run: docker compose -f infra/compose/docker-compose.yml down
 
   web-e2e:
+    if: ${{ inputs.scope != 'analysis-runtime' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -144,6 +154,20 @@ jobs:
   analysis-rollback-compatibility:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runtime: candidate-rc53
+            api: ghcr.io/drew-z/enterprise-doc-api@sha256:14547f78c40b245692bc57e4920fe0bd185b747bd5426fbed3a3033cc3bf242d
+            worker: ghcr.io/drew-z/enterprise-doc-worker@sha256:aa784af188184419f6f5979dcf6183a08a98ab30a7c18aaa854469be6e1cdd7b
+            consumer: ghcr.io/drew-z/enterprise-doc-consumer@sha256:9f29eb893dda667f8d3ff3d1cdeb66d9955bfb9ac1cbf5a104b7292fbc4cecbc
+            web: ghcr.io/drew-z/enterprise-doc-web@sha256:f4bed08c431406d8277089bafff66eccb9cf50d09438c4545f1a0c53cade5b02
+          - runtime: rollback-rc51
+            api: ghcr.io/drew-z/enterprise-doc-api@sha256:af9e576292ddc5e27c2c2a5704fcd9d3c6f42d07647920ed44b192e5faa39a9c
+            worker: ghcr.io/drew-z/enterprise-doc-worker@sha256:dae34e5b08b94fed54a9455d4ee60230cd512d4751eaaf8caff8bc7d72c6b8a1
+            consumer: ghcr.io/drew-z/enterprise-doc-consumer@sha256:958ad15ef9227c8198509676074a30d9d71372d02a9abebe3822eea5781f9217
+            web: ghcr.io/drew-z/enterprise-doc-web@sha256:724d1007282607d3d220aae1fbeb76b87a2b48ae4ba0f3a66b95db1aa1297da9
     permissions:
       contents: read
       packages: read
@@ -158,13 +182,13 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Verify signed candidate and rollback image identities
+      - name: Probe signed runtime on schema 0044
         env:
-          CANDIDATE_API: ghcr.io/drew-z/enterprise-doc-api@sha256:3bebebab772e7dba738e2a9db029e1855b8c7b23c2ff62a6093612ba15ed9709
-          ROLLBACK_API: ghcr.io/drew-z/enterprise-doc-api@sha256:af9e576292ddc5e27c2c2a5704fcd9d3c6f42d07647920ed44b192e5faa39a9c
-          ROLLBACK_WORKER: ghcr.io/drew-z/enterprise-doc-worker@sha256:dae34e5b08b94fed54a9455d4ee60230cd512d4751eaaf8caff8bc7d72c6b8a1
-          ROLLBACK_CONSUMER: ghcr.io/drew-z/enterprise-doc-consumer@sha256:958ad15ef9227c8198509676074a30d9d71372d02a9abebe3822eea5781f9217
-          ROLLBACK_WEB: ghcr.io/drew-z/enterprise-doc-web@sha256:724d1007282607d3d220aae1fbeb76b87a2b48ae4ba0f3a66b95db1aa1297da9
+          CANDIDATE_API: ghcr.io/drew-z/enterprise-doc-api@sha256:14547f78c40b245692bc57e4920fe0bd185b747bd5426fbed3a3033cc3bf242d
+          ROLLBACK_API: ${{ matrix.api }}
+          ROLLBACK_WORKER: ${{ matrix.worker }}
+          ROLLBACK_CONSUMER: ${{ matrix.consumer }}
+          ROLLBACK_WEB: ${{ matrix.web }}
         run: |
           set -euo pipefail
           python scripts/run_analysis_rollback_compatibility.py \
@@ -173,12 +197,13 @@ jobs:
             --rollback-worker "$ROLLBACK_WORKER" \
             --rollback-consumer "$ROLLBACK_CONSUMER" \
             --rollback-web "$ROLLBACK_WEB" \
+            --expected-schema-head 20261104_0044 \
             --timeout-seconds 180 \
             --report-path "tmp/analysis-rollback-compatibility-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"
       - if: ${{ always() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: analysis-rollback-compatibility-${{ github.run_id }}-${{ github.run_attempt }}
+          name: analysis-rollback-compatibility-${{ matrix.runtime }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: tmp/analysis-rollback-compatibility-${{ github.run_id }}-${{ github.run_attempt }}.json
           if-no-files-found: error
           retention-days: 14

@@ -23,15 +23,16 @@
   "relatedFiles": [
     ".trellis/tasks/10-11-document-analysis-workspace/prd.md",
     ".trellis/tasks/10-11-document-analysis-workspace/design.md",
-    ".trellis/tasks/10-11-document-analysis-workspace/implement.md"
+    ".trellis/tasks/10-11-document-analysis-workspace/implement.md",
+    ".trellis/tasks/10-11-document-analysis-workspace/value-validation-plan.md"
   ],
-  "notes": "Architecture approved. A0-A4 are a locally validated engineering candidate: structured evidence, fixed and bounded-Agent execution, exact review/static delivery, dependency invalidation and conservative cross-snapshot reuse pass controlled PostgreSQL/HTTP/browser checks. A1 negative coverage, one software validation pack, one football-shirt cross-domain holdout pack, the independent trial kit, the holdout scorer and the 4C4G runner are ready. Both frozen packs now have 30-row assistant reviewer drafts with source anchors and error rules; these drafts are not independent labels and are excluded from model input. The live holdout preflight is blocked by missing analysis auth, disabled execution/uploads and an unconfigured fixed route. Runner validation does not establish real-model quality or production capacity. Status remains in_progress because real-model holdout quality, external 4C4G target-resource acceptance and independent customer UAT are still open. No deployment, production migration or external model call was performed.",
+  "notes": "Engineering CI passed. User approved frozen 3-object x 10-field scope and controlled value validation. rc.53 signed release published from f6930e8; runtime 0044 verification is in progress. Real fixed/agent calls, target capacity and independent UAT remain unverified. See value-validation-plan.md and release-preflight-20261013.json.",
   "meta": {
     "planning_deliverable": "architecture_v1",
     "architecture_review": "approved_by_user_2026-10-11",
     "implementation_started": true,
-    "current_slice": "A0_A4_engineering_candidate_and_A5_reviewer_preparation_complete",
-    "next_slice": "configure_controlled_holdout_route_and_budget_then_run_real_model",
-    "commercial_validation": "not_started_no_independent_participants"
+    "current_slice": "A5_signed_rc53_published_0044_runtime_validation_in_progress",
+    "next_slice": "verify_0044_runtime_then_prepare_default_off_controlled_environment",
+    "commercial_validation": "internal_diagnostic_authorized_no_independent_participants"
   }
 }

@@ -13,6 +13,7 @@ from scripts.run_analysis_rollback_compatibility import (
     CompatibilityConfig,
     CompatibilityError,
     Docker,
+    build_parser,
     build_runtime_environment,
     dependency_args,
     http_probe,
@@ -237,6 +238,73 @@ def test_http_probe_reports_openapi_contract_without_returning_body(
     assert "body" not in result
 
 
-def test_schema_contract_constants_are_the_current_analysis_gate() -> None:
+def test_schema_contract_defaults_preserve_the_historical_rehearsal() -> None:
     assert SCHEMA_HEAD == "20261012_0043"
     assert ANALYSIS_TABLE == "analysis_projects"
+
+
+@pytest.mark.parametrize("revision", ["head", "", "20261104_0044\n", "20261104_0044;drop"])
+def test_schema_selection_rejects_aliases_and_invalid_revisions(revision: str) -> None:
+    config = CompatibilityConfig(
+        candidate_api=_image("a"),
+        rollback_images={service: _image("b") for service in ("api", "worker", "consumer", "web")},
+        dependency_images=DEFAULT_IMAGES,
+        expected_schema_head=revision,
+    )
+    with pytest.raises(CompatibilityError, match="exact"):
+        config.validate()
+
+
+@pytest.mark.parametrize(
+    ("observed_head", "expected_head", "passed"),
+    [
+        ("20261104_0044", "20261104_0044", True),
+        ("20261012_0043", "20261104_0044", False),
+        ("20261104_0044", "20261012_0043", False),
+    ],
+)
+def test_selected_schema_controls_runtime_admission_and_report(
+    monkeypatch: pytest.MonkeyPatch, observed_head: str, expected_head: str, passed: bool
+) -> None:
+    config = CompatibilityConfig(
+        candidate_api=_image("a"),
+        rollback_images={service: _image("b") for service in ("api", "worker", "consumer", "web")},
+        dependency_images={name: _image("c") for name in DEFAULT_IMAGES},
+        expected_schema_head=expected_head,
+    )
+    workloads: list[list[str]] = []
+
+    def command(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        output = "container-id"
+        if "python" in args and "-c" in args:
+            output = json.dumps({"head": observed_head, "analysis_projects": True})
+        if args[1] == "run" and "-p" in args:
+            workloads.append(args)
+        return subprocess.CompletedProcess(args, 0, output, "")
+
+    monkeypatch.setattr("scripts.run_analysis_rollback_compatibility.subprocess.run", command)
+    monkeypatch.setattr(
+        "scripts.run_analysis_rollback_compatibility.wait_container_healthy", lambda *a, **k: None
+    )
+    monkeypatch.setattr(
+        "scripts.run_analysis_rollback_compatibility.wait_probe",
+        lambda *a, **k: {"status": "passed"},
+    )
+    report = run_compatibility(config, pull_images=False)
+
+    assert report["schema"]["expected_head"] == expected_head
+    assert report["checks"]["schema"]["head"] == observed_head
+    assert report["status"] == ("passed" if passed else "failed")
+    assert len(workloads) == (4 if passed else 0)
+    assert report["cleanup"]["status"] == "passed"
+    assert report["cleanup"]["containers_removed"] == (7 if passed else 3)
+
+
+def test_cli_accepts_explicit_0044_without_changing_historical_default() -> None:
+    args = ["--candidate-api", _image("a")]
+    for service in ("api", "worker", "consumer", "web"):
+        args.extend([f"--rollback-{service}", _image("b")])
+    assert build_parser().parse_args(args).expected_schema_head == SCHEMA_HEAD
+    assert (
+        build_parser().parse_args([*args, "--expected-schema-head", "20261104_0044"])
+    ).expected_schema_head == "20261104_0044"

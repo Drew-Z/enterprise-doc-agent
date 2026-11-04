@@ -1,28 +1,26 @@
 {
   "schema_version": 1,
   "status": "blocked_external",
-  "observed_at": "2026-10-13T12:43:20+08:00",
+  "observed_at": "2026-11-04T14:23:57.766789+00:00",
   "task": "10-11-document-analysis-workspace",
   "scope": "local_immutable_staging_release_preparation",
   "candidate": {
     "repository": "D:\\workspace4Cursor\\enterprise-doc-agent",
     "branch": "codex/presales-prerequisite-assessment",
     "baseline_head": "84d9388e51fea3324ce5b2dda8349bf7ff8199a0",
-    "candidate_head": "8690a2097856f4d67ff53a3821535dfd7a0fb40f",
+    "candidate_head": "f6930e85493fa25b99be20ece14669f0d49c26dc",
     "candidate_commits": [
-      "020cb5a",
-      "7030ccf",
-      "99e99e6",
-      "7661285",
-      "84d9388",
-      "8690a20"
+      "1dd8083",
+      "22efbbd",
+      "1c8ebdd",
+      "f6930e8"
     ],
     "migration_start": "20261010_0037",
-    "migration_head": "20261012_0043",
+    "migration_head": "20261104_0044",
     "remote_branch_contains_head": true,
     "release_tag_present": true,
-    "release_tag": "v0.1.45-rc.52",
-    "release_run_id": "38350863219"
+    "release_tag": "v0.1.45-rc.53",
+    "release_run_id": "41845049954"
   },
   "release_chain": {
     "publication_workflow": {
@@ -44,15 +42,15 @@
       "web"
     ],
     "real_image_digests": {
-      "api": "ghcr.io/drew-z/enterprise-doc-api@sha256:3bebebab772e7dba738e2a9db029e1855b8c7b23c2ff62a6093612ba15ed9709",
-      "worker": "ghcr.io/drew-z/enterprise-doc-worker@sha256:db3d92416bcc87d7e69ba3d1ad469cfdc4774199c29e63d878d6d631352fbe71",
-      "consumer": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:85b530bf3f927d87048749e900b27e01ee9a518ed0f60fe7b1f725b981a2a4f9",
-      "web": "ghcr.io/drew-z/enterprise-doc-web@sha256:6ade70e24d21bbb8fb0eb28fb2252b6a469571ca22a7c32b02f6cea1096437f0"
+      "api": "ghcr.io/drew-z/enterprise-doc-api@sha256:14547f78c40b245692bc57e4920fe0bd185b747bd5426fbed3a3033cc3bf242d",
+      "consumer": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:9f29eb893dda667f8d3ff3d1cdeb66d9955bfb9ac1cbf5a104b7292fbc4cecbc",
+      "web": "ghcr.io/drew-z/enterprise-doc-web@sha256:f4bed08c431406d8277089bafff66eccb9cf50d09438c4545f1a0c53cade5b02",
+      "worker": "ghcr.io/drew-z/enterprise-doc-worker@sha256:aa784af188184419f6f5979dcf6183a08a98ab30a7c18aaa854469be6e1cdd7b"
     },
     "signed_release_manifest": {
-      "release": "v0.1.45-rc.52",
-      "workflow_run_id": "38350863219",
-      "strict_manifest_sha256": "e3f16f24e49489483c09de7537af846c3b8eacbbd630af489b8369cb9cd93321",
+      "release": "v0.1.45-rc.53",
+      "workflow_run_id": "41845049954",
+      "strict_manifest_sha256": "52033ce2b5c144c74333e60d79fabc301289bc5735d67f90d4a8a70cb077bc5a",
       "status": "passed"
     },
     "rollback_candidate": {
@@ -265,7 +263,6 @@
     "real_fixed_and_agent_holdout_not_run",
     "external_single_node_4c4g_acceptance_not_run",
     "independent_uat_participant_missing",
-    "patched_candidate_not_published_as_signed_immutable_release",
     "patched_0044_candidate_runtime_compatibility_not_verified"
   ],
   "side_effect_boundaries": {
@@ -758,5 +755,89 @@
       "ci_compose_down": "success",
       "historical_workspace_changes": "preserved"
     }
+  },
+  "prior_release_20261013": {
+    "candidate": {
+      "repository": "D:\\workspace4Cursor\\enterprise-doc-agent",
+      "branch": "codex/presales-prerequisite-assessment",
+      "baseline_head": "84d9388e51fea3324ce5b2dda8349bf7ff8199a0",
+      "candidate_head": "8690a2097856f4d67ff53a3821535dfd7a0fb40f",
+      "candidate_commits": [
+        "020cb5a",
+        "7030ccf",
+        "99e99e6",
+        "7661285",
+        "84d9388",
+        "8690a20"
+      ],
+      "migration_start": "20261010_0037",
+      "migration_head": "20261012_0043",
+      "remote_branch_contains_head": true,
+      "release_tag_present": true,
+      "release_tag": "v0.1.45-rc.52",
+      "release_run_id": "38350863219"
+    },
+    "release_chain": {
+      "publication_workflow": {
+        "path": ".github/workflows/container.yml",
+        "sha256": "1f356624fb841f3676c7c1324e246712c0ebee54035bcb94dc9a8d9ca5eb1f51"
+      },
+      "deployment_workflow": {
+        "path": ".github/workflows/deploy-staging.yml",
+        "sha256": "d66b764bdd5089d83dde69c8a179262eaf1c63e13a37efdda98ca68a729a32f5"
+      },
+      "rollback_workflow": {
+        "path": ".github/workflows/rollback.yml",
+        "sha256": "507fa2714479be48e736746829bb5c8d8cd7767e04a050d97a9e95912017b9d5"
+      },
+      "workloads": [
+        "api",
+        "worker",
+        "consumer",
+        "web"
+      ],
+      "real_image_digests": {
+        "api": "ghcr.io/drew-z/enterprise-doc-api@sha256:3bebebab772e7dba738e2a9db029e1855b8c7b23c2ff62a6093612ba15ed9709",
+        "worker": "ghcr.io/drew-z/enterprise-doc-worker@sha256:db3d92416bcc87d7e69ba3d1ad469cfdc4774199c29e63d878d6d631352fbe71",
+        "consumer": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:85b530bf3f927d87048749e900b27e01ee9a518ed0f60fe7b1f725b981a2a4f9",
+        "web": "ghcr.io/drew-z/enterprise-doc-web@sha256:6ade70e24d21bbb8fb0eb28fb2252b6a469571ca22a7c32b02f6cea1096437f0"
+      },
+      "signed_release_manifest": {
+        "release": "v0.1.45-rc.52",
+        "workflow_run_id": "38350863219",
+        "strict_manifest_sha256": "e3f16f24e49489483c09de7537af846c3b8eacbbd630af489b8369cb9cd93321",
+        "status": "passed"
+      },
+      "rollback_candidate": {
+        "release": "v0.1.45-rc.51",
+        "workflow_run_id": "38069840277",
+        "strict_manifest_sha256": "f4acf6c7564bbeaf51bdb603a9b8d6206011d6c74455ea4b739fab6c3e77fa5d",
+        "images": {
+          "api": "ghcr.io/drew-z/enterprise-doc-api@sha256:af9e576292ddc5e27c2c2a5704fcd9d3c6f42d07647920ed44b192e5faa39a9c",
+          "worker": "ghcr.io/drew-z/enterprise-doc-worker@sha256:dae34e5b08b94fed54a9455d4ee60230cd512d4751eaaf8caff8bc7d72c6b8a1",
+          "consumer": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:958ad15ef9227c8198509676074a30d9d71372d02a9abebe3822eea5781f9217",
+          "web": "ghcr.io/drew-z/enterprise-doc-web@sha256:724d1007282607d3d220aae1fbeb76b87a2b48ae4ba0f3a66b95db1aa1297da9"
+        }
+      }
+    }
+  },
+  "value_validation_20261104": {
+    "scope_plan": "value-validation-plan.md",
+    "signed_release": "passed",
+    "runtime_0044": "in_progress",
+    "runtime_scope": "fresh_database_startup_only",
+    "external_model_calls": 0,
+    "independent_participants": 0,
+    "local_pull_attempts": [
+      {
+        "authenticated": false,
+        "result": "registry_denied"
+      },
+      {
+        "authenticated": true,
+        "result": "manifest_unknown"
+      }
+    ],
+    "next_action": "Run the two signed runtime variants through authenticated GitHub-hosted workflow, then prepare controlled environment."
   }
 }

@@ -281,3 +281,11 @@ Heavy `41825412139` 的回滚兼容任务已通过：artifact `13319266704`，�
 rc.52/rc.51 启动演练也通过，artifact `13328491856`，7 个容器和 network 清理成功；它仍只覆盖隔离空库 0043，不替代本候选 0044、分析历史接管或生产恢复证据。本轮完整集成阻塞已解除，下一步为绑定修复源码/0044 的签名不可变候选及其兼容验证，再按既有门禁进入默认关闭部署、受控模型留出和 4C4G 验收。独立 UAT 仍无参与者。
 
 证据集中保存为 `m4-remediation-ci-20261104.json`、`m4-evaluation-41840352966.json`、`analysis-rollback-compatibility-41840352966-1.json`，SHA-256 登记到原恢复组 manifest。本轮没有共享数据库迁移、部署、真实产品模型调用或新临时文件残留，历史脏状态保留。
+
+### 2026-11-04：冻结价值验证范围并发布 rc.53
+
+按用户批准的计划执行 `value-validation-plan.md`：3 个对象 × 10 字段，先签名候选和 0044 运行验证，再准备受控环境及真实 fixed/agent 对照。独立参与者和人工耗时仍未获得，内部助手复核不替代独立金标。
+
+rc.53 绑定 `f6930e85493fa25b99be20ece14669f0d49c26dc`，Container `41845049954` 四镜像 push/scan/SBOM/provenance/sign/verify 全通过，严格 release manifest 已集中保存。本地拉取分别遇到未认证 denied 和临时认证后 manifest unknown；两次均未创建运行资源，原始失败报告保留。原 staging 主机可达，使用明确 K3s kubeconfig 后确认四个工作负载仍为 rc.51 且 Ready。
+
+兼容 runner 增加显式 `--expected-schema-head`，保留旧调用默认 0043，当前 CI 显式验证 0044。Heavy workflow 增加 `scope=analysis-runtime`，只执行候选 rc.53 和原运行 rc.51 的两组隔离启动演练；默认 `all` 保留完整集成验收。该选择避免为了换候选 digest 重跑已通过的全部业务集成，不改变原有质量门禁。真实模型调用尚未发生。

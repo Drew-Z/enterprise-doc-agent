@@ -92,7 +92,9 @@ def test_quality_workflow_has_only_fast_jobs() -> None:
 
 def test_manual_heavy_quality_preserves_integration_and_e2e_evidence() -> None:
     workflow = _workflow(HEAVY_WORKFLOW)
-    assert _triggers(workflow) == {"workflow_dispatch": None}
+    scope = _triggers(workflow)["workflow_dispatch"]["inputs"]["scope"]
+    assert scope["default"] == "all"
+    assert scope["options"] == ["all", "analysis-runtime"]
     jobs = workflow.get("jobs")
     assert isinstance(jobs, dict)
     assert set(jobs) == {
@@ -101,6 +103,8 @@ def test_manual_heavy_quality_preserves_integration_and_e2e_evidence() -> None:
         "web-e2e",
         "analysis-rollback-compatibility",
     }
+    for name in ("m1-integration", "m4-integration", "web-e2e"):
+        assert jobs[name]["if"] == "${{ inputs.scope != 'analysis-runtime' }}"
 
     integration_commands = _run_commands(jobs["m1-integration"])
     assert "uv sync --frozen" in integration_commands
@@ -163,6 +167,13 @@ def test_manual_heavy_quality_preserves_integration_and_e2e_evidence() -> None:
     assert compatibility["runs-on"] == "ubuntu-latest"
     assert compatibility["timeout-minutes"] == 45
     assert compatibility["permissions"] == {"contents": "read", "packages": "read"}
+    assert "if" not in compatibility
+    assert compatibility["strategy"]["fail-fast"] is False
+    runtimes = compatibility["strategy"]["matrix"]["include"]
+    assert {row["runtime"] for row in runtimes} == {"candidate-rc53", "rollback-rc51"}
+    for row in runtimes:
+        for service in ("api", "worker", "consumer", "web"):
+            assert "@sha256:" in row[service]
     compatibility_commands = _run_commands(compatibility)
     compatibility_command = next(
         command
@@ -174,6 +185,7 @@ def test_manual_heavy_quality_preserves_integration_and_e2e_evidence() -> None:
     assert '--rollback-worker "$ROLLBACK_WORKER"' in compatibility_command
     assert '--rollback-consumer "$ROLLBACK_CONSUMER"' in compatibility_command
     assert '--rollback-web "$ROLLBACK_WEB"' in compatibility_command
+    assert "--expected-schema-head 20261104_0044" in compatibility_command
     assert "--report-path" in compatibility_command
     compatibility_steps = compatibility["steps"]
     assert isinstance(compatibility_steps, list)
@@ -197,6 +209,7 @@ def test_manual_heavy_quality_preserves_integration_and_e2e_evidence() -> None:
     assert upload["if"] == "${{ always() }}"
     assert upload["with"]["if-no-files-found"] == "error"
     assert "github.run_id" in upload["with"]["name"]
+    assert "matrix.runtime" in upload["with"]["name"]
 
 
 def test_manual_self_hosted_quality_is_serial_and_secret_free() -> None:

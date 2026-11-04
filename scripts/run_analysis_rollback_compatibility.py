@@ -28,6 +28,7 @@ from pathlib import Path
 from typing import Any
 
 SCHEMA_HEAD = "20261012_0043"
+SCHEMA_HEAD_PATTERN = re.compile(r"^[0-9]{8}_[0-9]{4}$")
 ANALYSIS_TABLE = "analysis_projects"
 SERVICES = ("api", "worker", "consumer", "web")
 IMAGE_PATTERN = re.compile(r"^[a-z0-9][a-z0-9./_-]*@sha256:[0-9a-f]{64}$")
@@ -57,6 +58,7 @@ class CompatibilityConfig:
     rollback_images: Mapping[str, str]
     dependency_images: Mapping[str, str]
     timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS
+    expected_schema_head: str = SCHEMA_HEAD
 
     def validate(self) -> None:
         validate_image_ref(self.candidate_api, "candidate_api")
@@ -74,6 +76,8 @@ class CompatibilityConfig:
             validate_image_ref(self.dependency_images[name], f"dependency_{name}")
         if self.timeout_seconds <= 0 or self.timeout_seconds > 900:
             raise CompatibilityError("timeout_seconds must be between 0 and 900")
+        if SCHEMA_HEAD_PATTERN.fullmatch(self.expected_schema_head) is None:
+            raise CompatibilityError("expected_schema_head must be an exact YYYYMMDD_NNNN revision")
 
 
 def validate_image_ref(value: object, label: str) -> str:
@@ -538,7 +542,16 @@ def run_compatibility(config: CompatibilityConfig, *, pull_images: bool = True) 
         "status": "failed",
         "candidate_api_image": config.candidate_api,
         "rollback_images": dict(config.rollback_images),
-        "schema": {"expected_head": SCHEMA_HEAD, "analysis_table": ANALYSIS_TABLE},
+        "schema": {
+            "expected_head": config.expected_schema_head,
+            "analysis_table": ANALYSIS_TABLE,
+        },
+        "scope": "fresh_database_startup_compatibility",
+        "external_model_calls": 0,
+        "limitations": [
+            "Fresh-database startup probes do not validate recovery of existing analysis history.",
+            "Runtime compatibility does not establish model quality or approve deployment.",
+        ],
         "checks": {},
         "dependency_builds": {},
         "cleanup": {
@@ -606,7 +619,8 @@ def run_compatibility(config: CompatibilityConfig, *, pull_images: bool = True) 
             schema = _json_line(schema_result.stdout)
             report["checks"]["schema"] = {
                 "status": "passed"
-                if schema.get("head") == SCHEMA_HEAD and schema.get("analysis_projects") is True
+                if schema.get("head") == config.expected_schema_head
+                and schema.get("analysis_projects") is True
                 else "failed",
                 "head": schema.get("head"),
                 "analysis_projects": schema.get("analysis_projects"),
@@ -700,12 +714,17 @@ def run_compatibility(config: CompatibilityConfig, *, pull_images: bool = True) 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Verify signed rollback images against analysis schema 0043"
+        description="Verify signed workload images against an explicitly selected analysis schema"
     )
     parser.add_argument("--candidate-api", required=True)
     for service in SERVICES:
         parser.add_argument(f"--rollback-{service}", required=True)
     parser.add_argument("--timeout-seconds", type=float, default=DEFAULT_TIMEOUT_SECONDS)
+    parser.add_argument(
+        "--expected-schema-head",
+        default=SCHEMA_HEAD,
+        help="Exact migrated revision; defaults to 0043 for the existing rc52/rc51 rehearsal",
+    )
     parser.add_argument("--report-path", type=Path)
     return parser
 
@@ -717,12 +736,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         rollback_images={service: getattr(args, f"rollback_{service}") for service in SERVICES},
         dependency_images=DEFAULT_IMAGES,
         timeout_seconds=args.timeout_seconds,
+        expected_schema_head=args.expected_schema_head,
     )
     report = run_compatibility(config)
     rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
     if args.report_path is not None:
         args.report_path.parent.mkdir(parents=True, exist_ok=True)
-        args.report_path.write_text(rendered, encoding="utf-8")
+        args.report_path.write_text(rendered, encoding="utf-8", newline="\n")
     print(rendered, end="")
     return 0 if report.get("status") == "passed" else 1
 

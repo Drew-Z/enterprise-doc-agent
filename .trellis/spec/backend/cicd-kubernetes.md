@@ -693,3 +693,30 @@ Wrong: assume a timed-out API write never happened or that a no-op patch advance
 Correct: freeze a plan with both permitted states, force an owned fencing mutation and use
 conditional writes during bounded whole-bundle recovery. Temporary remote recovery inputs need
 the current window's storage exception; central local evidence remains authoritative.
+
+## Scenario: Select the analysis runtime schema explicitly
+
+### 1. Scope / Trigger
+A new signed candidate advances Alembic beyond the historical rc52/rc51 0043 rehearsal. Startup evidence must bind both the exact images and expected schema.
+
+### 2. Signatures
+`run_analysis_rollback_compatibility.py --candidate-api IMAGE --rollback-{api,worker,consumer,web} IMAGE --expected-schema-head YYYYMMDD_NNNN --report-path FILE`.
+`CompatibilityConfig.expected_schema_head` defaults to `20261012_0043` for old callers; current Heavy CI explicitly selects `20261104_0044`.
+
+### 3. Contracts
+The candidate API migrates an isolated fresh database. Only an exact observed revision and existing `analysis_projects` admit workload startup. The report records the expected and observed revision, `scope=fresh_database_startup_compatibility`, and zero external model calls. Heavy CI accepts `scope=all|analysis-runtime`, defaults to `all`, and always runs both signed candidate and deployed rollback runtime variants. Artifact names include the matrix runtime, run ID and attempt.
+
+### 4. Validation & Error Matrix
+- Alias `head`, blank or malformed revision: reject before Docker resources.
+- Observed 0043 with expected 0044 (or the reverse): fail before workload startup; clean created dependencies.
+- Pull/build/probe failure: retain failure report and cleanup outcome.
+- Missing artifact: workflow fails; a runtime-only pass does not substitute for the full engineering suite.
+
+### 5. Good/Base/Bad Cases
+Good: rc53 migrates to 0044 and rc53/rc51 are tested independently on isolated databases. Base: omitted selector retains the original 0043 gate. Bad: change the observed revision to fit an old expectation or call a startup smoke proof of analysis-history recovery.
+
+### 6. Tests Required
+Cover CLI selection, invalid selectors, exact match, both mismatch directions, workload admission, cleanup, default full-suite selection and separate artifacts. Run immutable-image probes for the current release in addition to unit tests.
+
+### 7. Wrong vs Correct
+Wrong: reuse a passed rc52/0043 artifact for rc53/0044. Correct: retain historical evidence and create a new record with explicit image digests and schema. The release source and verification-harness source may differ; record both identities.
