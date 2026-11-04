@@ -289,6 +289,7 @@ def test_scorer_reports_quality_thresholds_revision_and_operational_delta(
     }
 
 
+@pytest.mark.integration
 async def test_shared_generation_budget_counts_agent_dispatches_across_tenants(
     browser_db,
 ) -> None:

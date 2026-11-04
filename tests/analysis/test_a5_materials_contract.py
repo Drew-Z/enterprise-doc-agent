@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import hashlib
 import json
-from pathlib import Path
+import os
+from pathlib import Path, PureWindowsPath
 
 import pytest
 
@@ -43,9 +44,8 @@ def test_a5_pack_keeps_sources_reference_and_denominator_frozen(
         path = root / relative
         assert path.stat().st_size == source["bytes"]
         assert hashlib.sha256(path.read_bytes()).hexdigest() == source["sha256"]
-        raw = Path(source["raw_evidence"])
-        assert raw.is_file()
-        assert hashlib.sha256(raw.read_bytes()).hexdigest() == source["raw_sha256"]
+        assert source["raw_evidence"]
+        assert len(bytes.fromhex(source["raw_sha256"])) == 32
 
     requirement = root / manifest["common_requirements"]["file"]
     assert requirement.stat().st_size == manifest["common_requirements"]["bytes"]
@@ -64,6 +64,20 @@ def test_a5_pack_keeps_sources_reference_and_denominator_frozen(
     assert reference["unreviewed_rows"] == 30
     assert reference["quality_score"] is None
     assert reference["independently_reviewed"] is False
+
+
+@pytest.mark.parametrize("pack_name", ["validation-01", "holdout-football-01"])
+def test_a5_raw_capture_matches_local_provenance(pack_name: str) -> None:
+    # The frozen manifest records the original capture location, not a CI input.
+    # Run this additional audit with ANALYSIS_RAW_EVIDENCE_DIR pointing at the archive.
+    evidence_dir = os.environ.get("ANALYSIS_RAW_EVIDENCE_DIR")
+    if not evidence_dir:
+        pytest.skip("Raw capture audit requires ANALYSIS_RAW_EVIDENCE_DIR")
+    manifest = json.loads((MATERIALS / pack_name / "manifest.json").read_text(encoding="utf-8"))
+    for source in manifest["sources"]:
+        raw = Path(evidence_dir) / PureWindowsPath(source["raw_evidence"]).name
+        assert raw.is_file()
+        assert hashlib.sha256(raw.read_bytes()).hexdigest() == source["raw_sha256"]
 
 
 def test_football_holdout_preserves_discovered_source_conflict() -> None:

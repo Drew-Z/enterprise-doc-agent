@@ -233,3 +233,5 @@ A5 留出执行器、评分器与 4C4G runner 已完成本地工程验证。留�
 Container Supply Chain `41813667813` 的四个构建镜像在 Trivy 扫描失败，release-manifest 跳过。已读取四份 SARIF：API/Worker/Consumer 各 12 HIGH + 1 CRITICAL，Web 为 3 HIGH（计数为每镜像 findings，非独立 CVE 数）。例如 Debian libssl3/openssl 的报告固定版本为 `3.0.22-1~deb12u2`，nginx 为 `1.30.6-r0`；具体报告、artifact IDs 与摘要位于预检及集中证据 `supply-chain-41813667813-findings.json`。这是本次源码重新构建的扫描结果，不冒充已签名 rc.52 的重扫结果，也不以旧签名证据替代当前门禁。
 
 下一工程切片应恢复来源可信、digest 固定的对象存储测试依赖，并修复此次构建镜像的扫描发现，再重建和重跑一次完整验收。当前 rc.51 回滚兼容、真实模型留出、外部 4C4G 和独立 UAT 仍未放行。无部署、共享数据库迁移或真实模型调用。四份历史研究临时 JSON 已集中保存并核验哈希；原四文件及两个任务专属空临时目录已删除，其余历史工作区内容保留。
+
+后续 Quality `41816329541`（`82b587d`）已确认 Linux Mypy 修复、前端通过；完整后端为 3300 passed、2 failed、1 error、887 deselected。两项资料失败是 CI 不存在本机原始抓取目录，另一个真实 DB 配额测试漏标 integration。已保持上传文件字节/哈希、原始证据哈希格式及完整分母的可移植校验，把原始抓取审计拆成通过 `ANALYSIS_RAW_EVIDENCE_DIR` 显式启用的两项测试；未配置时明确 skipped，不算审计通过。原归档实测 5 项通过，默认非集成定向 10 passed、2 skipped、1 deselected；DB 测试只补 integration 标记，不改其真实数据库边界。Container Supply Chain `41816329511` 仍扫描失败，不降低扫描门槛。

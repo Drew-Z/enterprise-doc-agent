@@ -265,6 +265,31 @@
       "SSH publickey authentication failed after the first successful repair push.",
       "Direct HTTPS connection timed out.",
       "HTTPS via existing Windows system proxy reached GitHub but the remote returned Internal Server Error."
-    ]
+    ],
+    "platform_fix_remote_verification": {
+      "run_id": "41816329541",
+      "head_sha": "82b587deff952fe0c2cb9bd84f529253a306dbf3",
+      "linux_mypy": "passed",
+      "frontend": "passed",
+      "backend_tests": {
+        "passed": 3300,
+        "failed": 2,
+        "errors": 1,
+        "deselected": 887
+      },
+      "failure_summary": "Two material tests require local raw archive paths; one real-DB budget test omitted integration marker."
+    },
+    "ci_portability_fix": {
+      "repository_material_hash_checks": "preserved",
+      "raw_capture_audit": "explicit ANALYSIS_RAW_EVIDENCE_DIR; skipped with a reason if not configured; 5 material tests pass against original local archive",
+      "db_budget_test": "marked integration; remains real PostgreSQL test",
+      "local_nonintegration_tests": {
+        "passed": 10,
+        "skipped_raw_archive_audits": 2,
+        "deselected_integration": 1
+      },
+      "ruff": "passed",
+      "format": "passed"
+    }
   }
 }
