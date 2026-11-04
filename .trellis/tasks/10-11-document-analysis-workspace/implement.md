@@ -297,3 +297,9 @@ rc.53 绑定 `f6930e85493fa25b99be20ece14669f0d49c26dc`，Container `41845049954
 已使用现有 renderer 生成并保留 27 对象的默认关闭部署清单，SHA-256 `204a7c1320ffbf1a618846871cf0187295b824df7de6a4e2aa2f20229fb5d615`。配置差异为 6 个 analysis/route 显式键，以及原显式 `presales.v24` 改为同值代码默认；未应用清单、未改 GitHub 变量或共享数据库。下一切片为配置对齐、数据库恢复点和默认关闭部署，随后才运行真实 fixed/agent 对照。本阶段的签名与 0044 运行阻塞已解除，正式价值验证尚未完成。
 
 可追溯摘要见 `evidence/rc53-release-runtime-20261104.json`。集中恢复组沿用既有目录；临时认证和渲染目录由 finally 清理，历史工作区差异保留。
+
+### 2026-11-05：默认关闭部署与准入配置修正
+
+用户批准继续。已将 staging protected variables 对齐当前 gpt-5.6-sol 主路线与 rc.51 回退 digest，保存变更前值。真实 public schema 备份 SHA-256 `aebdd497957729c2c44b02803a7e256ad3d2e8235a2f60b81c1f73c75fe83896`；隔离 PostgreSQL 恢复后完成 0037→0044，3595 jobs、564 presales attempts、2066 provider dispatches 及权益/预留全行哈希保持，临时容器已清理。
+
+部署 run `41852786019` 前两次均在迁移前失败：第一次是 apply 保留了冗余显式 `presales.v24` 键，按精确值检查后移除，与代码默认一致；第二次是既有 Deployment 准入规则禁止了 4C4G API 已使用的连接池 4/0 环境参数。仅修正该 API/该 profile/该精确列表的准入例外，未关闭策略。真实集群中五个 workload 的 deployer server dry-run 全通过；错误值、额外变量、动态 valueFrom 均被同一环境策略拒绝。45 项专项测试、Ruff、格式与 Mypy 通过。准入基线和完整红绿证据集中保留，第三次发布已重试，后续以部署终态和真实账本为准。

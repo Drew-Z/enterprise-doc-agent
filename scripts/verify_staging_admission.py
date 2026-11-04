@@ -299,6 +299,31 @@ def verify(*, bootstrap_dir: Path, rendered_manifest: Path, smoke_job: Path) -> 
         )
         _dry_run(unreviewed_image, expect_success=False)
 
+        # A per-API pool override is reviewed only for the 4C4G profile.
+        # Neither additional variables nor valueFrom may use that exception.
+        for environment in (
+            [
+                {"name": "DATABASE__POOL_SIZE", "value": "5"},
+                {"name": "DATABASE__MAX_OVERFLOW", "value": "0"},
+            ],
+            [
+                {"name": "DATABASE__POOL_SIZE", "value": "4"},
+                {"name": "DATABASE__MAX_OVERFLOW", "value": "0"},
+                {"name": "ADMISSION_VERIFICATION_PROBE", "value": "unreviewed"},
+            ],
+            [
+                {
+                    "name": "DATABASE__POOL_SIZE",
+                    "value": "",
+                    "valueFrom": {"fieldRef": {"fieldPath": "metadata.name"}},
+                },
+                {"name": "DATABASE__MAX_OVERFLOW", "value": "0"},
+            ],
+        ):
+            unreviewed_environment = copy.deepcopy(api)
+            unreviewed_environment["spec"]["template"]["spec"]["containers"][0]["env"] = environment
+            _dry_run(unreviewed_environment, expect_success=False)
+
     finally:
         if guardrails_applied:
             _run_kubectl(

@@ -1,5 +1,23 @@
 # Infrastructure Backend Context
 
+## 4C4G API environment admission
+
+1. Scope: the 4C4G API uses a larger database pool than the shared worker setting.
+2. Signature: `enterprise-doc-staging-deployment-guard` validates Deployment writes
+   by the staging deployer; run `kubectl apply --dry-run=server --as <deployer> -f <manifest>`.
+3. Contract: only `enterprise-doc-api` under profile `single-node-4c4g` may use exactly
+   `[{name: DATABASE__POOL_SIZE, value: '4'}, {name: DATABASE__MAX_OVERFLOW, value: '0'}]`.
+   The reviewed ConfigMap and Secret references remain mandatory.
+4. Errors: different values, extra variables and `valueFrom` reject with the existing
+   `Deployment environment sources must match the reviewed ConfigMap and Secret` message.
+5. Cases: the exact API override passes; applications without overrides retain existing
+   behavior; other profiles or workloads cannot use the API exception.
+6. Tests: verify rendered workloads with the deployer identity against a real API server
+   before scaling or migration. Keep negative probes in `scripts/verify_staging_admission.py`.
+7. Wrong: disable admission or rely on YAML/text checks. Correct: retain the specific
+   exception and real allow/deny evidence. A valueFrom probe must clear the previous literal
+   value so Kubernetes schema rejection does not mask the CEL admission result.
+
 Use the database and quality guides in `.trellis/spec/backend/`. Local M0
 infrastructure is owned by `infra/compose`; application images and production
 deployment remain outside M0.

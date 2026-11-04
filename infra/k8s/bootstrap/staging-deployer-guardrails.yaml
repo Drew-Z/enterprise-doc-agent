@@ -241,7 +241,15 @@ spec:
         (object.metadata.name in [
           'enterprise-doc-api', 'enterprise-doc-worker', 'enterprise-doc-consumer'
         ] &&
-          !has(variables.container.env) &&
+          (!has(variables.container.env) ||
+            (object.metadata.name == 'enterprise-doc-api' &&
+              namespaceObject.metadata.annotations[
+                'enterprise-doc-agent/deployment-profile'
+              ] == 'single-node-4c4g' &&
+              variables.container.env == [
+                {'name': 'DATABASE__POOL_SIZE', 'value': '4'},
+                {'name': 'DATABASE__MAX_OVERFLOW', 'value': '0'}
+              ])) &&
           size(variables.container.envFrom) == 2 &&
           variables.container.envFrom[0].configMapRef.name == 'enterprise-doc-config' &&
           variables.container.envFrom[1].secretRef.name == 'enterprise-doc-secrets') ||
