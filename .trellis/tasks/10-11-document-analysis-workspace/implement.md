@@ -289,3 +289,11 @@ rc.52/rc.51 启动演练也通过，artifact `13328491856`，7 个容器和 netw
 rc.53 绑定 `f6930e85493fa25b99be20ece14669f0d49c26dc`，Container `41845049954` 四镜像 push/scan/SBOM/provenance/sign/verify 全通过，严格 release manifest 已集中保存。本地拉取分别遇到未认证 denied 和临时认证后 manifest unknown；两次均未创建运行资源，原始失败报告保留。原 staging 主机可达，使用明确 K3s kubeconfig 后确认四个工作负载仍为 rc.51 且 Ready。
 
 兼容 runner 增加显式 `--expected-schema-head`，保留旧调用默认 0043，当前 CI 显式验证 0044。Heavy workflow 增加 `scope=analysis-runtime`，只执行候选 rc.53 和原运行 rc.51 的两组隔离启动演练；默认 `all` 保留完整集成验收。该选择避免为了换候选 digest 重跑已通过的全部业务集成，不改变原有质量门禁。真实模型调用尚未发生。
+
+后续真实验收已结束：`3802b15` 的 Quality `41847451355`、Container `41847451313` 均成功。Heavy `41847465629` attempt 1 两组都在 Redis 拉取时遇到 Docker Hub 502；保留原始失败记录后，只重试失败的运行任务。attempt 2 两组均通过：rc.53 迁移隔离空库至 `20261104_0044`，候选和 rc.51 的 API/Worker/Consumer/Web 探针全部成功；候选有 analysis routes、rc.51 无 analysis routes。各清理 7 个容器及 1 个 network。没有据此宣称已有分析历史恢复通过。
+
+当前受控环境已只读核验：实际运行 rc.51、数据库 `20261010_0037`，没有 analysis_projects；3453 succeeded / 135 dead / 7 cancelled，未见活动 jobs；当日 presales/agent/provider 派发均为 0，provider daily limit=1000、agent call limit=12，而新对照仍受共享 200/单元 2/本轮最坏 120 次约束。运行主模型为 gpt-5.6-sol，但 protected staging vars 的模型名与 base URL 仍指向旧配置；primary_question_assessment 和显式 daily limit 也未同步。不得直接套用旧变量发布。
+
+已使用现有 renderer 生成并保留 27 对象的默认关闭部署清单，SHA-256 `204a7c1320ffbf1a618846871cf0187295b824df7de6a4e2aa2f20229fb5d615`。配置差异为 6 个 analysis/route 显式键，以及原显式 `presales.v24` 改为同值代码默认；未应用清单、未改 GitHub 变量或共享数据库。下一切片为配置对齐、数据库恢复点和默认关闭部署，随后才运行真实 fixed/agent 对照。本阶段的签名与 0044 运行阻塞已解除，正式价值验证尚未完成。
+
+可追溯摘要见 `evidence/rc53-release-runtime-20261104.json`。集中恢复组沿用既有目录；临时认证和渲染目录由 finally 清理，历史工作区差异保留。

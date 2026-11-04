@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "status": "blocked_external",
-  "observed_at": "2026-11-04T14:23:57.766789+00:00",
+  "observed_at": "2026-11-04T14:42:01.158950+00:00",
   "task": "10-11-document-analysis-workspace",
   "scope": "local_immutable_staging_release_preparation",
   "candidate": {
@@ -100,128 +100,44 @@
   },
   "migration_and_rollback": {
     "migration_shape": "additive_with_guarded_downgrades",
-    "isolated_postgresql_test": "passed",
-    "old_runtime_has_exact_head_startup_gate": false,
-    "old_image_start_on_0043_tested": true,
-    "database_downgrade_after_analysis_history_supported": false,
-    "rollback_readiness": "passed_isolated_schema_startup_smoke",
-    "rollback_compatibility": {
-      "workflow": ".github/workflows/quality-heavy.yml",
-      "job": "analysis-rollback-compatibility",
-      "candidate_release": "v0.1.45-rc.52",
-      "rollback_release": "v0.1.45-rc.51",
-      "status": "passed_isolated_schema_startup_smoke",
-      "local_contract_tests": "passed_26",
-      "actionlint": "passed",
-      "actionlint_image_id": "sha256:b6d0bc67a629b20d424b3e35964400ec438451f41b95302157868d5e379d5039",
-      "report_artifact": "analysis-rollback-compatibility-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json",
-      "last_run": {
-        "run_id": "41825412139",
-        "head_sha": "1dd8083f02d15a40ee7248bf34011a69eee42009",
-        "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/41825412139",
-        "job_conclusion": "success",
-        "artifact_id": "13319266704",
-        "artifact_name": "analysis-rollback-compatibility-41825412139-1",
-        "report_sha256": "bcc624a857a92c7e22ad56c9b0dc19d16b3b60adcbb179fce083dcbfb2dd53a0",
-        "checks": {
-          "api_live": {
-            "http_status": 200,
-            "status": "passed"
-          },
-          "api_openapi": {
-            "analysis_route_present": false,
-            "http_status": 200,
-            "openapi_document": true,
-            "status": "passed"
-          },
-          "api_ready": {
-            "http_status": 200,
-            "status": "passed"
-          },
-          "consumer_port": {
-            "port": 49241,
-            "status": "passed"
-          },
-          "schema": {
-            "analysis_projects": true,
-            "head": "20261012_0043",
-            "status": "passed"
-          },
-          "web_live": {
-            "http_status": 200,
-            "status": "passed"
-          },
-          "worker_live": {
-            "http_status": 200,
-            "status": "passed"
-          },
-          "worker_ready": {
-            "http_status": 200,
-            "status": "passed"
-          }
-        },
-        "cleanup": {
-          "containers_removed": 7,
-          "network_created": true,
-          "network_removed": true,
+    "candidate_head": "20261104_0044",
+    "deployed_head": "20261010_0037",
+    "production_migration_performed": false,
+    "rollback_readiness": "passed_fresh_0044_startup_only",
+    "compatibility_run_id": 41847465629,
+    "compatibility_run_attempt": 2,
+    "candidate_runtime": "v0.1.45-rc.53",
+    "rollback_runtime": "v0.1.45-rc.51",
+    "runtime_results": [
+      {
+        "artifact_id": 13332775137,
+        "artifact_name": "analysis-rollback-compatibility-rollback-rc51-41847465629-2",
+        "sha256": "2c456aea4f61afbba73e60e7c20edb60bd6e946f2fcf183973bad4a04c612527",
+        "status": "passed",
+        "schema": {
+          "analysis_projects": true,
+          "head": "20261104_0044",
           "status": "passed"
         },
-        "dependency_builds": {
-          "minio": {
-            "dockerfile_sha256": "0f9be717db38226163e9a6bc9c0fa68fb6bae9895aaecb4557e6a98639dac355",
-            "image_id": "sha256:71169fee6285efc66c98bcef51d4d915096c7215ce631ee78137d7dd220db93c",
-            "platform": "linux/amd64",
-            "target": "minio"
-          },
-          "minio_mc": {
-            "dockerfile_sha256": "0f9be717db38226163e9a6bc9c0fa68fb6bae9895aaecb4557e6a98639dac355",
-            "image_id": "sha256:433c8779dea2ab9ebe0c9c0aa5e9684652992fb6309f78172c8adde1b9a1f173",
-            "platform": "linux/amd64",
-            "target": "mc"
-          }
-        },
-        "schema_compatibility_evaluated": true,
-        "scope_note": "rc.51 starts and passes health/OpenAPI probes on an isolated fresh schema migrated by rc.52. rc.51 has no analysis routes. This does not certify continuing analysis execution or production recovery with existing data."
+        "analysis_route_present": false
       },
-      "previous_runs": [
-        {
-          "run_id": "38410851264",
-          "head_sha": "661a8f3d15cbf2222091f5c84649896083883216",
-          "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/38410851264",
-          "conclusion": "failure",
-          "artifact_id": "11821471366",
-          "artifact_name": "analysis-rollback-compatibility-38410851264-1",
-          "failure_stage": "image_pull",
-          "failure_summary": "The compatibility job reported only docker command exited with 1 without stderr. The failed image and cause are unknown; the pull sequence starts with the GHCR candidate API. No schema checks ran.",
-          "other_jobs_failure_summary": "m1-integration, m4-integration and web-e2e reported pull access denied for minio/minio; this does not establish the failed image in the compatibility job.",
-          "cleanup_summary": "The report recorded a cleanup network removal error from the pre-fix commit; the current script tracks network creation before attempting removal.",
-          "schema_compatibility_evaluated": false
+      {
+        "artifact_id": 13331408561,
+        "artifact_name": "analysis-rollback-compatibility-candidate-rc53-41847465629-2",
+        "sha256": "4bc1cee5763c70b7b8944c2e7bd18814da6b14206b807cda4614dfb5d7ddad20",
+        "status": "passed",
+        "schema": {
+          "analysis_projects": true,
+          "head": "20261104_0044",
+          "status": "passed"
         },
-        {
-          "run_id": "41813723880",
-          "head_sha": "d0ebb729d78f0228ae9bb49cecfce71adfdef34f",
-          "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/41813723880",
-          "conclusion": "failure",
-          "artifact_id": "13313712084",
-          "artifact_name": "analysis-rollback-compatibility-41813723880-1",
-          "report_sha256": "eb04f96583f8362a933b1d664b6991666867134c786dba079291b8a776c2cca6",
-          "failure_stage": "dependency_image_pull",
-          "failed_image": "minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e",
-          "failure_summary": "Pull access denied for minio/minio. Candidate API, four rollback images, PostgreSQL and Redis pulls completed before this dependency failed. MinIO mc pull was not reached.",
-          "cleanup": {
-            "status": "passed",
-            "containers_removed": 0,
-            "network_created": false,
-            "network_removed": false
-          },
-          "schema_compatibility_evaluated": false
-        }
-      ]
-    },
-    "notes": [
-      "Migrations 0038 through 0043 add analysis tables, columns, indexes and constraints; 0040 widens existing quota constraints for analysis_cell.",
-      "Downgrades refuse destructive history loss, so database downgrade is not the normal rollback path.",
-      "The rc.51 signed workload passed base-service startup on a fresh isolated 0043 schema in run 41825412139. rc.51 has no analysis routes; this is not approval for continued analysis execution or production-data recovery."
+        "analysis_route_present": true
+      }
+    ],
+    "limitations": [
+      "Fresh database startup compatibility does not verify recovery of existing analysis history.",
+      "rc.51 has no analysis routes; it is not an analysis execution fallback.",
+      "No shared database migration or deployment was performed."
     ]
   },
   "validation": {
@@ -263,7 +179,7 @@
     "real_fixed_and_agent_holdout_not_run",
     "external_single_node_4c4g_acceptance_not_run",
     "independent_uat_participant_missing",
-    "patched_0044_candidate_runtime_compatibility_not_verified"
+    "protected_deployment_variables_differ_from_running_primary_route"
   ],
   "side_effect_boundaries": {
     "push_run": true,
@@ -824,7 +740,7 @@
   "value_validation_20261104": {
     "scope_plan": "value-validation-plan.md",
     "signed_release": "passed",
-    "runtime_0044": "in_progress",
+    "runtime_0044": "passed",
     "runtime_scope": "fresh_database_startup_only",
     "external_model_calls": 0,
     "independent_participants": 0,
@@ -838,6 +754,138 @@
         "result": "manifest_unknown"
       }
     ],
-    "next_action": "Run the two signed runtime variants through authenticated GitHub-hosted workflow, then prepare controlled environment."
+    "next_action": "Reconcile protected deployment configuration, protect the existing 0037 database, and deploy the default-off 0044 candidate before the live API trial.",
+    "runtime_run_id": 41847465629,
+    "runtime_run_attempt": 2,
+    "evidence": "evidence/rc53-release-runtime-20261104.json",
+    "deployment_candidate": "rendered_not_applied",
+    "deployment_candidate_sha256": "204a7c1320ffbf1a618846871cf0187295b824df7de6a4e2aa2f20229fb5d615",
+    "configuration_drift_count": 4
+  },
+  "prior_migration_and_rollback_0043": {
+    "migration_shape": "additive_with_guarded_downgrades",
+    "isolated_postgresql_test": "passed",
+    "old_runtime_has_exact_head_startup_gate": false,
+    "old_image_start_on_0043_tested": true,
+    "database_downgrade_after_analysis_history_supported": false,
+    "rollback_readiness": "passed_isolated_schema_startup_smoke",
+    "rollback_compatibility": {
+      "workflow": ".github/workflows/quality-heavy.yml",
+      "job": "analysis-rollback-compatibility",
+      "candidate_release": "v0.1.45-rc.52",
+      "rollback_release": "v0.1.45-rc.51",
+      "status": "passed_isolated_schema_startup_smoke",
+      "local_contract_tests": "passed_26",
+      "actionlint": "passed",
+      "actionlint_image_id": "sha256:b6d0bc67a629b20d424b3e35964400ec438451f41b95302157868d5e379d5039",
+      "report_artifact": "analysis-rollback-compatibility-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json",
+      "last_run": {
+        "run_id": "41825412139",
+        "head_sha": "1dd8083f02d15a40ee7248bf34011a69eee42009",
+        "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/41825412139",
+        "job_conclusion": "success",
+        "artifact_id": "13319266704",
+        "artifact_name": "analysis-rollback-compatibility-41825412139-1",
+        "report_sha256": "bcc624a857a92c7e22ad56c9b0dc19d16b3b60adcbb179fce083dcbfb2dd53a0",
+        "checks": {
+          "api_live": {
+            "http_status": 200,
+            "status": "passed"
+          },
+          "api_openapi": {
+            "analysis_route_present": false,
+            "http_status": 200,
+            "openapi_document": true,
+            "status": "passed"
+          },
+          "api_ready": {
+            "http_status": 200,
+            "status": "passed"
+          },
+          "consumer_port": {
+            "port": 49241,
+            "status": "passed"
+          },
+          "schema": {
+            "analysis_projects": true,
+            "head": "20261012_0043",
+            "status": "passed"
+          },
+          "web_live": {
+            "http_status": 200,
+            "status": "passed"
+          },
+          "worker_live": {
+            "http_status": 200,
+            "status": "passed"
+          },
+          "worker_ready": {
+            "http_status": 200,
+            "status": "passed"
+          }
+        },
+        "cleanup": {
+          "containers_removed": 7,
+          "network_created": true,
+          "network_removed": true,
+          "status": "passed"
+        },
+        "dependency_builds": {
+          "minio": {
+            "dockerfile_sha256": "0f9be717db38226163e9a6bc9c0fa68fb6bae9895aaecb4557e6a98639dac355",
+            "image_id": "sha256:71169fee6285efc66c98bcef51d4d915096c7215ce631ee78137d7dd220db93c",
+            "platform": "linux/amd64",
+            "target": "minio"
+          },
+          "minio_mc": {
+            "dockerfile_sha256": "0f9be717db38226163e9a6bc9c0fa68fb6bae9895aaecb4557e6a98639dac355",
+            "image_id": "sha256:433c8779dea2ab9ebe0c9c0aa5e9684652992fb6309f78172c8adde1b9a1f173",
+            "platform": "linux/amd64",
+            "target": "mc"
+          }
+        },
+        "schema_compatibility_evaluated": true,
+        "scope_note": "rc.51 starts and passes health/OpenAPI probes on an isolated fresh schema migrated by rc.52. rc.51 has no analysis routes. This does not certify continuing analysis execution or production recovery with existing data."
+      },
+      "previous_runs": [
+        {
+          "run_id": "38410851264",
+          "head_sha": "661a8f3d15cbf2222091f5c84649896083883216",
+          "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/38410851264",
+          "conclusion": "failure",
+          "artifact_id": "11821471366",
+          "artifact_name": "analysis-rollback-compatibility-38410851264-1",
+          "failure_stage": "image_pull",
+          "failure_summary": "The compatibility job reported only docker command exited with 1 without stderr. The failed image and cause are unknown; the pull sequence starts with the GHCR candidate API. No schema checks ran.",
+          "other_jobs_failure_summary": "m1-integration, m4-integration and web-e2e reported pull access denied for minio/minio; this does not establish the failed image in the compatibility job.",
+          "cleanup_summary": "The report recorded a cleanup network removal error from the pre-fix commit; the current script tracks network creation before attempting removal.",
+          "schema_compatibility_evaluated": false
+        },
+        {
+          "run_id": "41813723880",
+          "head_sha": "d0ebb729d78f0228ae9bb49cecfce71adfdef34f",
+          "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/41813723880",
+          "conclusion": "failure",
+          "artifact_id": "13313712084",
+          "artifact_name": "analysis-rollback-compatibility-41813723880-1",
+          "report_sha256": "eb04f96583f8362a933b1d664b6991666867134c786dba079291b8a776c2cca6",
+          "failure_stage": "dependency_image_pull",
+          "failed_image": "minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e",
+          "failure_summary": "Pull access denied for minio/minio. Candidate API, four rollback images, PostgreSQL and Redis pulls completed before this dependency failed. MinIO mc pull was not reached.",
+          "cleanup": {
+            "status": "passed",
+            "containers_removed": 0,
+            "network_created": false,
+            "network_removed": false
+          },
+          "schema_compatibility_evaluated": false
+        }
+      ]
+    },
+    "notes": [
+      "Migrations 0038 through 0043 add analysis tables, columns, indexes and constraints; 0040 widens existing quota constraints for analysis_cell.",
+      "Downgrades refuse destructive history loss, so database downgrade is not the normal rollback path.",
+      "The rc.51 signed workload passed base-service startup on a fresh isolated 0043 schema in run 41825412139. rc.51 has no analysis routes; this is not approval for continued analysis execution or production-data recovery."
+    ]
   }
 }
