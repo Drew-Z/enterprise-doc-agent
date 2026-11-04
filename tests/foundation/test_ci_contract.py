@@ -155,6 +155,7 @@ def test_manual_heavy_quality_preserves_integration_and_e2e_evidence() -> None:
     compatibility = jobs["analysis-rollback-compatibility"]
     assert compatibility["runs-on"] == "ubuntu-latest"
     assert compatibility["timeout-minutes"] == 45
+    assert compatibility["permissions"] == {"contents": "read", "packages": "read"}
     compatibility_commands = _run_commands(compatibility)
     compatibility_command = next(
         command
@@ -169,6 +170,17 @@ def test_manual_heavy_quality_preserves_integration_and_e2e_evidence() -> None:
     assert "--report-path" in compatibility_command
     compatibility_steps = compatibility["steps"]
     assert isinstance(compatibility_steps, list)
+    login = next(
+        step
+        for step in compatibility_steps
+        if isinstance(step, dict)
+        and step.get("uses") == "docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9"
+    )
+    assert login["with"] == {
+        "registry": "ghcr.io",
+        "username": "${{ github.actor }}",
+        "password": "${{ secrets.GITHUB_TOKEN }}",
+    }
     upload = next(
         step
         for step in compatibility_steps

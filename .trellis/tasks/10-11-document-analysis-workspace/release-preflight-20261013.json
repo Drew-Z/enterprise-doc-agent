@@ -106,17 +106,30 @@
     "old_runtime_has_exact_head_startup_gate": false,
     "old_image_start_on_0043_tested": false,
     "database_downgrade_after_analysis_history_supported": false,
-    "rollback_readiness": "pending_ci_execution",
+    "rollback_readiness": "blocked_image_pull_undiagnosed",
     "rollback_compatibility": {
       "workflow": ".github/workflows/quality-heavy.yml",
       "job": "analysis-rollback-compatibility",
       "candidate_release": "v0.1.45-rc.52",
       "rollback_release": "v0.1.45-rc.51",
-      "status": "pending_ci_execution",
-      "local_contract_tests": "passed_22",
+      "status": "blocked_image_pull_undiagnosed",
+      "local_contract_tests": "passed_26",
       "actionlint": "passed",
       "actionlint_image_id": "sha256:b6d0bc67a629b20d424b3e35964400ec438451f41b95302157868d5e379d5039",
-      "report_artifact": "analysis-rollback-compatibility-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"
+      "report_artifact": "analysis-rollback-compatibility-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json",
+      "last_run": {
+        "run_id": "38410851264",
+        "head_sha": "661a8f3d15cbf2222091f5c84649896083883216",
+        "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/38410851264",
+        "conclusion": "failure",
+        "artifact_id": "11821471366",
+        "artifact_name": "analysis-rollback-compatibility-38410851264-1",
+        "failure_stage": "image_pull",
+        "failure_summary": "The compatibility job reported only docker command exited with 1 without stderr. The failed image and cause are unknown; the pull sequence starts with the GHCR candidate API. No schema checks ran.",
+        "other_jobs_failure_summary": "m1-integration, m4-integration and web-e2e reported pull access denied for minio/minio; this does not establish the failed image in the compatibility job.",
+        "cleanup_summary": "The report recorded a cleanup network removal error from the pre-fix commit; the current script tracks network creation before attempting removal.",
+        "schema_compatibility_evaluated": false
+      }
     },
     "notes": [
       "Migrations 0038 through 0043 add analysis tables, columns, indexes and constraints; 0040 widens existing quota constraints for analysis_cell.",
@@ -159,7 +172,7 @@
   "blockers": [
     "administrator_owned_default_off_prerequisites_not_applied",
     "default_off_candidate_not_deployed_or_migrated",
-    "rollback_compatibility_ci_pending",
+    "rollback_compatibility_image_pull_undiagnosed",
     "signed_old_or_compatible_rollback_image_not_started_against_schema_0043",
     "short_lived_analysis_token_and_analysis_primary_route_not_configured",
     "real_fixed_and_agent_holdout_not_run",

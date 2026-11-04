@@ -212,4 +212,16 @@ A5 留出执行器、评分器与 4C4G runner 已完成本地工程验证。留�
 
 新增 `scripts/run_analysis_rollback_compatibility.py` 与 `tests/deployment/test_run_analysis_rollback_compatibility.py`。脚本在临时 Docker network 中拉取固定 digest 的 PostgreSQL、Redis、MinIO 依赖，用 rc.52 API 镜像执行迁移与 checkpointer 初始化，确认 Alembic head `20261012_0043` 和 `analysis_projects`，再启动 rc.51 的 API、Worker、Consumer、Web 镜像并只记录健康/端口/OpenAPI 结果；无论成功失败都清理容器和 network，不写入随机凭据或原始日志。
 
-`.github/workflows/quality-heavy.yml` 新增手动 `analysis-rollback-compatibility` job，固定 rc.52/rc.51 digest 并上传 run-scoped JSON 证据。兼容脚本与 CI 契约测试共 22 项通过，Ruff、Mypy、格式检查和 actionlint 通过；真实 GitHub-hosted runner 尚未 dispatch，因此 `release-preflight-20261013.json` 将回滚状态保持为 `pending_ci_execution`，不得据此宣布旧版本已可回滚。
+`.github/workflows/quality-heavy.yml` 新增手动 `analysis-rollback-compatibility` job，固定 rc.52/rc.51 digest 并上传 run-scoped JSON 证据。首次接入时兼容脚本与 CI 契约测试共 22 项通过，Ruff、Mypy、格式检查和 actionlint 通过；随后已在 GitHub-hosted runner dispatch，但执行在镜像拉取阶段阻塞，具体失败镜像尚不能确定，因此不得据此宣布旧版本已可回滚。
+
+### A5.1 CI 外部依赖阻塞与第二轮修复（2026-10-14）
+
+手动运行 `quality-heavy.yml`（run `38410851264`，提交 `661a8f3`）后，`analysis-rollback-compatibility` 在镜像拉取阶段失败，artifact `11821471366`（`analysis-rollback-compatibility-38410851264-1`）只包含 `docker command exited with 1`，没有 stderr，`checks` 为空。该脚本先拉取 GHCR candidate API，因此具体失败镜像与根因未知，GHCR 认证亦是待验证原因。没有进入临时 network、PostgreSQL、迁移、checkpointer 或 rc.51 启动阶段，不能把该 run 解读为 schema `20261012_0043` 不兼容。同一 run 的 `m1-integration`、`m4-integration` 和 `web-e2e` 明确报 `pull access denied for minio/minio`；这是其他任务的已确认失败，不能直接替代兼容性任务的诊断。
+
+本轮对尚未推送的修复完成本地验证：23 项聚焦测试通过，Ruff check、Ruff format check、Mypy、actionlint（`quality-heavy.yml`）和 diff check 均通过。工作流为兼容镜像增加 GHCR 登录权限；Docker 失败摘要限制长度并脱敏；清理逻辑只在确认 network 已创建后执行 network remove。当前仍保留固定 digest，未找到同时满足公开可拉取、来源可核验、digest 固定和命令兼容的 MinIO 替代，因此不以未经验证的镜像绕过门禁。
+
+机器可读预检已登记 run、artifact、失败阶段和证据 URL，回滚兼容状态为 `blocked_image_pull_undiagnosed`。rc.51 仍不是已批准的回滚目标；须取得明确诊断，解决对应镜像访问问题，再通过 schema、API、Worker、Consumer、Web smoke 检查。
+
+### A5.1 第二轮修复续作（2026-11-04）
+
+纠正兼容任务的 MinIO 归因，保留其他三个任务已确认的 MinIO 失败。拉取错误现在包含精确镜像引用与有界脱敏 stderr；网络未创建时不执行清理，也不报告网络已删除。针对拉取/网络创建失败增加 subprocess 边界回归测试。OpenAPI 探针原先只读 4 KB，正常文档会被截断误判；现独立限为 4 MiB，并覆盖大于 4 KB 的合法文档及超限拒绝。聚焦测试 26 项通过；沿用六文件提交范围及 `661a8f3` Git 恢复点。通用规范继续沿用既有 digest-bound、凭据不入报告、真实执行结果决定放行规则，无新增产品协议。

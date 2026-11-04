@@ -43,6 +43,9 @@ DEFAULT_IMAGES = {
     ),
 }
 DEFAULT_TIMEOUT_SECONDS = 180.0
+MAX_DOCKER_ERROR_CHARS = 512
+MAX_OPENAPI_BYTES = 4 * 1024 * 1024
+DOCKER_SECRET_PATTERN = re.compile(r"(?i)\b(password|secret|token|authorization)=\S+")
 
 
 class CompatibilityError(RuntimeError):
@@ -91,6 +94,15 @@ def _utc_now() -> str:
 
 def _database_url(password: str) -> str:
     return f"postgresql+psycopg://compat_user:{password}@postgres:5432/compat_db"
+
+
+def _docker_error_summary(value: str) -> str:
+    """Keep registry/runtime diagnostics while excluding multiline raw output."""
+    normalized = " ".join(value.split())
+    if not normalized:
+        return ""
+    redacted = DOCKER_SECRET_PATTERN.sub(r"\1=<redacted>", normalized)
+    return redacted[:MAX_DOCKER_ERROR_CHARS]
 
 
 def build_runtime_environment(*, password: str) -> dict[str, str]:
@@ -174,11 +186,16 @@ class Docker:
         except (OSError, subprocess.TimeoutExpired) as error:
             raise CompatibilityError(f"docker command failed: {type(error).__name__}") from error
         if check and result.returncode != 0:
-            raise CompatibilityError(f"docker command exited with {result.returncode}")
+            detail = _docker_error_summary(result.stderr)
+            suffix = f": {detail}" if detail else ""
+            raise CompatibilityError(f"docker command exited with {result.returncode}{suffix}")
         return result
 
     def pull(self, image: str) -> None:
-        self.run(["pull", image], timeout_seconds=max(self.timeout_seconds, 600))
+        try:
+            self.run(["pull", image], timeout_seconds=max(self.timeout_seconds, 600))
+        except CompatibilityError as error:
+            raise CompatibilityError(f"image pull failed for {image}: {error}") from error
 
     def container(
         self, args: Sequence[str], *, check: bool = True
@@ -410,7 +427,7 @@ def http_probe(url: str, *, timeout_seconds: float) -> dict[str, Any]:
     try:
         with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
             status = int(response.status)
-            body = response.read(4096)
+            body = response.read(MAX_OPENAPI_BYTES + 1 if url.endswith("/openapi.json") else 4096)
     except urllib.error.HTTPError as error:
         return {"status": "failed", "http_status": int(error.code)}
     except (urllib.error.URLError, TimeoutError, OSError):
@@ -420,6 +437,9 @@ def http_probe(url: str, *, timeout_seconds: float) -> dict[str, Any]:
         "http_status": status,
     }
     if url.endswith("/openapi.json") and status == 200:
+        if len(body) > MAX_OPENAPI_BYTES:
+            result["status"] = "failed"
+            return result
         try:
             payload = json.loads(body)
         except (UnicodeDecodeError, json.JSONDecodeError):
@@ -479,11 +499,17 @@ def run_compatibility(config: CompatibilityConfig, *, pull_images: bool = True) 
         "rollback_images": dict(config.rollback_images),
         "schema": {"expected_head": SCHEMA_HEAD, "analysis_table": ANALYSIS_TABLE},
         "checks": {},
-        "cleanup": {"status": "not_started", "containers_removed": 0, "network_removed": False},
+        "cleanup": {
+            "status": "not_started",
+            "containers_removed": 0,
+            "network_created": False,
+            "network_removed": False,
+        },
         "started_at": started_at,
     }
     created: list[str] = []
     network = _safe_token("eda-rollback-compat")
+    network_created = False
     try:
         if pull_images:
             _pull_images(docker, config)
@@ -496,6 +522,8 @@ def run_compatibility(config: CompatibilityConfig, *, pull_images: bool = True) 
                 network,
             ]
         )
+        network_created = True
+        report["cleanup"]["network_created"] = True
         password = secrets.token_urlsafe(24)
         with tempfile.TemporaryDirectory(prefix="enterprise-doc-rollback-compat-") as temp:
             env_file = write_env_file(Path(temp), build_runtime_environment(password=password))
@@ -614,10 +642,11 @@ def run_compatibility(config: CompatibilityConfig, *, pull_images: bool = True) 
                 report["cleanup"]["containers_removed"] += 1
             else:
                 cleanup_errors.append("container_remove_failed")
-        network_result = docker.run(["network", "rm", network], check=False)
-        report["cleanup"]["network_removed"] = network_result.returncode == 0
-        if network_result.returncode != 0:
-            cleanup_errors.append("network_remove_failed")
+        if network_created:
+            network_result = docker.run(["network", "rm", network], check=False)
+            report["cleanup"]["network_removed"] = network_result.returncode == 0
+            if network_result.returncode != 0:
+                cleanup_errors.append("network_remove_failed")
         report["cleanup"]["status"] = "passed" if not cleanup_errors else "failed"
         if cleanup_errors:
             report["cleanup"]["errors"] = cleanup_errors
