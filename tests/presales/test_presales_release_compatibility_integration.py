@@ -73,15 +73,27 @@ async def test_frozen_rc40_reader_preserves_new_schema_history_and_tenant_bounda
         sessions, background=service.generation.settings.background_generation_enabled
     )
     legacy = await reader.get(context.principal, packet.id)
+    # rc.40 predates these optional capabilities. This fixture has no such history;
+    # never project populated new-format data away and claim old-reader support.
+    assert current.workbook is None
+    assert all(row.manual_authorship is None for row in current.rows)
+    assert all(
+        review.citations is None
+        for row in current.rows
+        for review in [row.review, *row.review_history]
+        if review is not None
+    )
     expected = current.model_dump(
         mode="json",
         exclude={
             "available_execution_modes": True,
+            "workbook": True,
             "rows": {
                 "__all__": {
+                    "manual_authorship": True,
                     "attempts": {"__all__": {"execution_policy"}},
-                    "review": {"prerequisite_changes"},
-                    "review_history": {"__all__": {"prerequisite_changes"}},
+                    "review": {"prerequisite_changes", "citations"},
+                    "review_history": {"__all__": {"prerequisite_changes", "citations"}},
                 }
             },
         },

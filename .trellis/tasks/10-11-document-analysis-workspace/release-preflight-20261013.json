@@ -507,5 +507,31 @@
         }
       ]
     }
+  },
+  "m4_remediation_20261104": {
+    "status": "local_passed_ci_pending",
+    "baseline_head": "22efbbd59d60cf7bbac4e5f2429b8096e7c7b167",
+    "candidate_schema_head": "20261104_0044",
+    "changes": [
+      "Add timestamp defaults without rewriting historical rows or applied migrations",
+      "Run historical migration roundtrips at their own revisions in isolated schemas",
+      "Restore deliberate tenant mismatch before cleanup",
+      "Explicit absent-only projection for frozen rc40 reader",
+      "Prepare pinned identity images and Chromium before all integration tests"
+    ],
+    "local_validation": {
+      "focused_tests_passed": 206,
+      "ci_contract_tests_passed": 14,
+      "ruff": "passed",
+      "format": "passed",
+      "mypy_files": 312,
+      "mypy": "passed",
+      "actionlint": "passed_changed_workflow",
+      "isolated_databases_removed": 2
+    },
+    "rollback_scope": "Existing rc52/rc51 rehearsal covers 0043 only; not evidence for current 0044 images or analysis history.",
+    "deployment": false,
+    "shared_database_migration": false,
+    "real_model_calls": 0
   }
 }

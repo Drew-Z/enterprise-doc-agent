@@ -10,6 +10,7 @@ from alembic.migration import MigrationContext
 from alembic.operations import Operations
 from sqlalchemy import select, text
 from tests.browser_sessions.conftest import browser_db as browser_db
+from tests.migration_database import migration_database
 
 from enterprise_doc_core.agents import AgentRunTaskType, BehaviorVersions, GroundedModelRequest
 from enterprise_doc_core.agents.gateway import OpenAICompatibleChatGateway
@@ -128,24 +129,12 @@ async def test_dispatch_fk_does_not_deadlock_with_quota_admission(billing_databa
             await asyncio.gather(*tasks, return_exceptions=True)
 
 
-async def test_empty_dispatch_migration_roundtrip(billing_database):
-    sessions, _ = billing_database
-    migration = import_module(
-        "enterprise_doc_core.db.migrations.versions.20260924_0030_provider_dispatches"
-    )
-    identifiers = import_module(
-        "enterprise_doc_core.db.migrations.versions.20260924_0031_provider_reconciliation"
-    )
-
-    def roundtrip(connection):
-        with Operations.context(MigrationContext.configure(connection)):
-            identifiers.downgrade()
-            migration.downgrade()
-            migration.upgrade()
-            identifiers.upgrade()
-
-    async with sessions.begin() as session:
-        await (await session.connection()).run_sync(roundtrip)
+async def test_empty_dispatch_migration_roundtrip():
+    async with migration_database("20260924_0031") as database:
+        await database.migrate("20260924_0029")
+        await database.migrate("20260924_0031")
+        async with database.sessions() as session:
+            assert (await session.scalars(select(ProviderDispatch))).all() == []
 
 
 async def test_adapters_record_each_repair_split_and_retry(billing_database):

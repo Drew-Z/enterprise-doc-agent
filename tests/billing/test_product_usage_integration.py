@@ -8,6 +8,7 @@ from alembic.migration import MigrationContext
 from alembic.operations import Operations
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
+from tests.migration_database import migration_database
 
 from enterprise_doc_core.billing.administration import EntitlementAdministrationService
 from enterprise_doc_core.billing.administration_contracts import (
@@ -21,12 +22,12 @@ from enterprise_doc_core.billing.product_contracts import ProductMetric
 from enterprise_doc_core.billing.product_models import ProductQuota, ProductUsageReservation
 from enterprise_doc_core.billing.product_usage import ProductUsageService
 from enterprise_doc_core.config import AppEnvironment
+from enterprise_doc_core.identity.models import Tenant
 
 pytestmark = pytest.mark.integration
 
 
-async def test_product_migration_round_trip_and_history_guard(billing_database):
-    sessions, (tenant_id, _) = billing_database
+async def test_product_migration_round_trip_and_history_guard():
     migration = import_module(
         "enterprise_doc_core.db.migrations.versions.20260924_0029_product_usage"
     )
@@ -35,27 +36,34 @@ async def test_product_migration_round_trip_and_history_guard(billing_database):
         with Operations.context(MigrationContext.configure(connection)):
             getattr(migration, direction)()
 
-    async with sessions.begin() as session:
-        connection = await session.connection()
-        await connection.run_sync(migrate, "downgrade")
-        await connection.run_sync(migrate, "upgrade")
-    now = datetime.now(UTC)
-    await EntitlementAdministrationService(session_factory=sessions).configure(
-        tenant_id=tenant_id,
-        operator=PlatformEntitlementOperator("migration-test", "retain history"),
-        configuration=EntitlementConfiguration(
-            entitlement_id=uuid4(),
-            expected_version=0,
-            plan_code="invited",
-            period_start=now,
-            period_end=now + timedelta(days=1),
-            provider_request_limit=0,
-        ),
-    )
-    with pytest.raises(RuntimeError, match="product_usage_history_present"):
+    async with migration_database("20260924_0029") as database:
+        await database.migrate("20260924_0028")
+        await database.migrate("20260924_0029")
+        sessions = database.sessions
+        tenant_id = uuid4()
         async with sessions.begin() as session:
-            connection = await session.connection()
-            await connection.run_sync(migrate, "downgrade")
+            session.add(
+                Tenant(id=tenant_id, name="migration", slug=tenant_id.hex, quota_bytes=1024)
+            )
+        now = datetime.now(UTC)
+        await EntitlementAdministrationService(session_factory=sessions).configure(
+            tenant_id=tenant_id,
+            operator=PlatformEntitlementOperator("migration-test", "retain history"),
+            configuration=EntitlementConfiguration(
+                entitlement_id=uuid4(),
+                expected_version=0,
+                plan_code="invited",
+                period_start=now,
+                period_end=now + timedelta(days=1),
+                provider_request_limit=0,
+            ),
+        )
+        with pytest.raises(RuntimeError, match="product_usage_history_present"):
+            async with sessions.begin() as session:
+                connection = await session.connection()
+                await connection.run_sync(migrate, "downgrade")
+        async with sessions() as session:
+            assert await session.scalar(select(TenantEntitlement.tenant_id)) == tenant_id
 
 
 async def test_product_reservations_rollback_and_foreign_tenant_cannot_reference_quota(

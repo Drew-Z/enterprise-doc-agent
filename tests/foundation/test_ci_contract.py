@@ -134,6 +134,13 @@ def test_manual_heavy_quality_preserves_integration_and_e2e_evidence() -> None:
     assert "uv run enterprise-doc-checkpointer-setup --check" in m4_commands
     assert "uv run pytest -m integration -q" in m4_commands
     assert "uv run python scripts/evaluate_m4_agent.py" in m4_commands
+    # Identity integration uses cached immutable images and real Chromium.
+    assert "pnpm install --frozen-lockfile" in m4_commands
+    assert "pnpm --filter web exec playwright install --with-deps chromium" in m4_commands
+    identity_pull = next(command for command in m4_commands if '"docker", "pull"' in command)
+    assert "infra/identity/lab.compose.yaml" in identity_pull
+    assert "sha256:" in identity_pull
+    assert m4_commands.index(identity_pull) < m4_commands.index("uv run pytest -m integration -q")
 
     e2e_commands = _run_commands(jobs["web-e2e"])
     assert "uv sync --frozen" in e2e_commands

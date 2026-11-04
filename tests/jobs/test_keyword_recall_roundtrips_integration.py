@@ -329,8 +329,14 @@ async def test_both_keyword_branches_preserve_scope_filters(recall_database, exc
     finally:
         async with sessions.begin() as session:
             if extra_tenant is not None:
-                # First remove the original tenant and its upload session so a
-                # deliberately mismatched version cannot block cascade cleanup.
+                # Restore the deliberately inconsistent ownership before either
+                # tenant cascade traverses the version/upload-session relation.
+                if exclusion == "wrong_version_tenant":
+                    await session.execute(
+                        update(DocumentVersion)
+                        .where(DocumentVersion.id == version.document_version_id)
+                        .values(tenant_id=version.tenant_id)
+                    )
                 await session.execute(delete(Tenant).where(Tenant.id == version.tenant_id))
                 await session.execute(delete(Tenant).where(Tenant.id == extra_tenant))
             if extra_user is not None:

@@ -263,3 +263,15 @@ Heavy `41825412139` 的回滚兼容任务已通过：artifact `13319266704`，�
 | 冻结旧版读取：2 failed | `tests/presales/test_presales_release_compatibility_integration.py:76` 的新 schema 预期只排除了部分新字段；CI 显示 `workbook: None` 和 rows 差异 | 检查 rc.40 的冻结公开字段投影与新字段兼容策略；保留历史不变、租户隔离与调用数量断言，不修改冻结 reader 迎合新 schema |
 
 顺序为：权益迁移/测试隔离 → 负例清理与旧版读取 → 身份服务启动诊断 → 一次完整 M4 与评测。M4 通过后再准备修复版本的签名不可变候选、默认关闭部署及受控留出；带分析历史的兼容回退能力仍需独立验证。真实模型质量、外部 4C4G 和独立 UAT 继续开放。当前 analysis 默认关闭，本轮没有部署或共享数据库迁移。
+
+### A5.4 M4 修复执行（2026-11-04）
+
+用户批准上述切片。恢复基线 `22efbbd`，沿用集中恢复组的 `m4_remediation_20261104`，既有 identity 未提交改动保留。
+
+- 在全新 Alembic 链的隔离 schema 中复现权益 `created_at` NOT NULL 失败；新增 `20261104_0044`，只给 tenant_entitlements/usage_reservations 的四个时间列增加默认值。升级/降级往返不改历史时间、计数和 reservation 状态，生产 service 显式传入的时间保持优先。没有改写 0026，也没有迁移共享库。
+- 产品权益和 provider dispatch 历史往返改为独立 schema 的对应 revision；新 helper 显式固定 version_table_schema，避免 search_path 回落读取 public 的版本。Demo 同时验证旧版无默认值 schema 和当前迁移链，保留生产写入兼容性。
+- 跨租户负例在 teardown 先恢复故意破坏的 document_version tenant，再清理租户，召回拒绝断言保留。rc.40 reader 测试先断言 workbook/manual_authorship/review citations 未产生历史，再投影其不认识的可选字段，保留冻结 reader、历史和权限断言。
+- M4 workflow 补上 Node/pnpm、锁定依赖和 Chromium；从提交中的身份 Compose 读取并校验 digest，然后显式预拉取。identity harness 原有 `--pull never` 保留。runner 原先没有这些准备步骤，因此 fresh runner 在 start_containers 即失败；实际身份链是否恢复以本次 CI 为准。
+- 本地集中回归 206 项通过，使用本轮创建的独立数据库迁移至 0044；两个测试数据库均已删除，逐例 schema 由 fixture 清理。14 项 CI 契约、全仓 Ruff/格式、Mypy 312 源码文件与改动 workflow actionlint 通过。新时间默认值回归已观察正确失败后通过；旧版读取两用例也先失败后通过。
+
+当前等待提交后完整 Heavy CI。此前 rc.52/rc.51 的启动演练仍只覆盖 0043，不替代本候选 0044、分析历史接管或生产恢复证据；新的签名候选和部署仍未执行。

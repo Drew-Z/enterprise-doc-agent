@@ -29,6 +29,19 @@ uv run alembic upgrade head
 Applied revisions are immutable. The M0 revision creates exactly the `vector`
 extension and no business tables.
 
+Revision `20261104_0044` supplies `now()` defaults for `created_at` and `updated_at`
+on `tenant_entitlements` and `usage_reservations`, matching `TimestampMixin`.
+The older 0026 revision stays immutable. Changing a default must not rewrite
+existing timestamps, reservations or counters; explicit service-clock values retain
+precedence. Downgrade removes only the defaults and preserves rows.
+
+Historical migration tests must start at their actual revision in an owned schema,
+not invoke an old downgrade under the latest dependent tables. The shared test
+helper `tests/migration_database.py` walks the revision chain and explicitly scopes
+`alembic_version` to that schema. A search path alone can resolve the version table
+from public and skip required migrations. Keep pgvector in public, preserve all
+history guards, and remove only the fixture-owned schema in `finally`.
+
 ## Naming
 
 Alembic revision files use `YYYYMMDD_sequence_description.py`. Future table,

@@ -70,7 +70,33 @@ jobs:
           version: "0.11.3"
           enable-cache: true
           cache-dependency-glob: uv.lock
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: 11.9.0
+          run_install: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
       - run: uv sync --frozen
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter web exec playwright install --with-deps chromium
+      - name: Pull pinned local identity dependencies
+        run: |
+          uv run python - <<'PY'
+          import re
+          import subprocess
+          from pathlib import Path
+          import yaml
+
+          services = yaml.safe_load(Path("infra/identity/lab.compose.yaml").read_text())["services"]
+          images = sorted({service["image"] for service in services.values()})
+          for image in images:
+              if not re.fullmatch(r"[a-z0-9./_-]+@sha256:[0-9a-f]{64}", image):
+                  raise SystemExit("Identity dependency must be pinned by registry digest")
+              subprocess.run(["docker", "pull", "--platform", "linux/amd64", image], check=True, timeout=300)
+          PY
       - run: docker compose -f infra/compose/docker-compose.yml up -d --wait
       - run: docker compose -f infra/compose/docker-compose.yml --profile init run --rm minio-init
       - run: uv run alembic upgrade head
