@@ -106,30 +106,51 @@
     "old_runtime_has_exact_head_startup_gate": false,
     "old_image_start_on_0043_tested": false,
     "database_downgrade_after_analysis_history_supported": false,
-    "rollback_readiness": "blocked_image_pull_undiagnosed",
+    "rollback_readiness": "blocked_external_dependency_pull",
     "rollback_compatibility": {
       "workflow": ".github/workflows/quality-heavy.yml",
       "job": "analysis-rollback-compatibility",
       "candidate_release": "v0.1.45-rc.52",
       "rollback_release": "v0.1.45-rc.51",
-      "status": "blocked_image_pull_undiagnosed",
+      "status": "blocked_external_dependency_pull",
       "local_contract_tests": "passed_26",
       "actionlint": "passed",
       "actionlint_image_id": "sha256:b6d0bc67a629b20d424b3e35964400ec438451f41b95302157868d5e379d5039",
       "report_artifact": "analysis-rollback-compatibility-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json",
       "last_run": {
-        "run_id": "38410851264",
-        "head_sha": "661a8f3d15cbf2222091f5c84649896083883216",
-        "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/38410851264",
+        "run_id": "41813723880",
+        "head_sha": "d0ebb729d78f0228ae9bb49cecfce71adfdef34f",
+        "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/41813723880",
         "conclusion": "failure",
-        "artifact_id": "11821471366",
-        "artifact_name": "analysis-rollback-compatibility-38410851264-1",
-        "failure_stage": "image_pull",
-        "failure_summary": "The compatibility job reported only docker command exited with 1 without stderr. The failed image and cause are unknown; the pull sequence starts with the GHCR candidate API. No schema checks ran.",
-        "other_jobs_failure_summary": "m1-integration, m4-integration and web-e2e reported pull access denied for minio/minio; this does not establish the failed image in the compatibility job.",
-        "cleanup_summary": "The report recorded a cleanup network removal error from the pre-fix commit; the current script tracks network creation before attempting removal.",
+        "artifact_id": "13313712084",
+        "artifact_name": "analysis-rollback-compatibility-41813723880-1",
+        "report_sha256": "eb04f96583f8362a933b1d664b6991666867134c786dba079291b8a776c2cca6",
+        "failure_stage": "dependency_image_pull",
+        "failed_image": "minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e",
+        "failure_summary": "Pull access denied for minio/minio. Candidate API, four rollback images, PostgreSQL and Redis pulls completed before this dependency failed. MinIO mc pull was not reached.",
+        "cleanup": {
+          "status": "passed",
+          "containers_removed": 0,
+          "network_created": false,
+          "network_removed": false
+        },
         "schema_compatibility_evaluated": false
-      }
+      },
+      "previous_runs": [
+        {
+          "run_id": "38410851264",
+          "head_sha": "661a8f3d15cbf2222091f5c84649896083883216",
+          "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/38410851264",
+          "conclusion": "failure",
+          "artifact_id": "11821471366",
+          "artifact_name": "analysis-rollback-compatibility-38410851264-1",
+          "failure_stage": "image_pull",
+          "failure_summary": "The compatibility job reported only docker command exited with 1 without stderr. The failed image and cause are unknown; the pull sequence starts with the GHCR candidate API. No schema checks ran.",
+          "other_jobs_failure_summary": "m1-integration, m4-integration and web-e2e reported pull access denied for minio/minio; this does not establish the failed image in the compatibility job.",
+          "cleanup_summary": "The report recorded a cleanup network removal error from the pre-fix commit; the current script tracks network creation before attempting removal.",
+          "schema_compatibility_evaluated": false
+        }
+      ]
     },
     "notes": [
       "Migrations 0038 through 0043 add analysis tables, columns, indexes and constraints; 0040 widens existing quota constraints for analysis_cell.",
@@ -172,12 +193,13 @@
   "blockers": [
     "administrator_owned_default_off_prerequisites_not_applied",
     "default_off_candidate_not_deployed_or_migrated",
-    "rollback_compatibility_image_pull_undiagnosed",
+    "rollback_compatibility_external_dependency_pull_blocked",
     "signed_old_or_compatible_rollback_image_not_started_against_schema_0043",
     "short_lived_analysis_token_and_analysis_primary_route_not_configured",
     "real_fixed_and_agent_holdout_not_run",
     "external_single_node_4c4g_acceptance_not_run",
-    "independent_uat_participant_missing"
+    "independent_uat_participant_missing",
+    "new_source_container_scan_high_critical_findings"
   ],
   "side_effect_boundaries": {
     "push_run": true,
@@ -188,5 +210,57 @@
     "migration_run_on_shared_or_production_database": false,
     "real_model_call_run": false,
     "secret_values_read": false
+  },
+  "continuation_20261104": {
+    "repair_commit": "d0ebb729d78f0228ae9bb49cecfce71adfdef34f",
+    "local_validation": {
+      "rollback_and_ci_contract_tests": 26,
+      "document_structure_tests": 14,
+      "ruff": "passed",
+      "actionlint": "passed_quality_heavy",
+      "linux_mypy_source_files": 311,
+      "linux_mypy": "passed"
+    },
+    "initial_quality_run": {
+      "run_id": "41813668364",
+      "conclusion": "failure",
+      "frontend": "success",
+      "backend_failure": "structure_process.py:46 CREATE_NO_WINDOW attr-defined under Linux",
+      "resolution": "Fixed by 9ac423a; local Linux full-scope mypy and 14 parser tests passed. Push retry pending after SSH authentication and HTTPS connection failures; no follow-up CI result yet."
+    },
+    "supply_chain": {
+      "run_id": "41813667813",
+      "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/41813667813",
+      "conclusion": "failure",
+      "source_head": "d0ebb729d78f0228ae9bb49cecfce71adfdef34f",
+      "release_manifest": "skipped",
+      "scan_counts": {
+        "api": {
+          "high": 12,
+          "critical": 1
+        },
+        "worker": {
+          "high": 12,
+          "critical": 1
+        },
+        "consumer": {
+          "high": 12,
+          "critical": 1
+        },
+        "web": {
+          "high": 3,
+          "critical": 0
+        }
+      },
+      "artifact_ids": {
+        "api": "13312774173",
+        "worker": "13313262919",
+        "consumer": "13314210841",
+        "web": "13314011369"
+      },
+      "scope_note": "Counts are SARIF findings per rebuilt image, not unique vulnerabilities. These scans do not rescan or replace the previously signed rc.52 release evidence."
+    },
+    "platform_fix_commit": "9ac423a37bc5e6b69aa934b3f40cfb67c103558e",
+    "platform_fix_push": "pending_transport_retry"
   }
 }

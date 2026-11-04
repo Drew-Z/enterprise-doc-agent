@@ -225,3 +225,11 @@ A5 留出执行器、评分器与 4C4G runner 已完成本地工程验证。留�
 ### A5.1 第二轮修复续作（2026-11-04）
 
 纠正兼容任务的 MinIO 归因，保留其他三个任务已确认的 MinIO 失败。拉取错误现在包含精确镜像引用与有界脱敏 stderr；网络未创建时不执行清理，也不报告网络已删除。针对拉取/网络创建失败增加 subprocess 边界回归测试。OpenAPI 探针原先只读 4 KB，正常文档会被截断误判；现独立限为 4 MiB，并覆盖大于 4 KB 的合法文档及超限拒绝。聚焦测试 26 项通过；沿用六文件提交范围及 `661a8f3` Git 恢复点。通用规范继续沿用既有 digest-bound、凭据不入报告、真实执行结果决定放行规则，无新增产品协议。
+
+修复提交 `d0ebb72` 已推送，手动 CI `41813723880` 完成。新 artifact `13313712084`（`analysis-rollback-compatibility-41813723880-1`）明确指出 `minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e` 拉取被拒绝；按执行顺序，候选 API、四个回滚镜像、PostgreSQL、Redis 已拉取通过，尚未进入 mc 拉取和数据库阶段。`checks` 仍为空；cleanup 为 passed，network_created/network_removed 均为 false，移除容器数为 0。该次才建立兼容任务的 MinIO 故障证据，不能反推首次运行的具体原因。原始 JSON 已保存在集中恢复组并核验 SHA-256 `eb04f96583f8362a933b1d664b6991666867134c786dba079291b8a776c2cca6`。
+
+推送附带触发的 Quality `41813668364` 前端通过，后端发现既有 Windows 专用常量位于条件表达式时，Linux Mypy 仍报 `CREATE_NO_WINDOW` 属性不存在。以显式 `if sys.platform == "win32"` 分支修正，保持 Windows 隐藏窗口和非 Windows 零 flags 行为。14 项真实解析/超时/取消测试、Ruff、Linux 全量 Mypy（311 源码文件）通过；修复提交 `9ac423a`。
+
+Container Supply Chain `41813667813` 的四个构建镜像在 Trivy 扫描失败，release-manifest 跳过。已读取四份 SARIF：API/Worker/Consumer 各 12 HIGH + 1 CRITICAL，Web 为 3 HIGH（计数为每镜像 findings，非独立 CVE 数）。例如 Debian libssl3/openssl 的报告固定版本为 `3.0.22-1~deb12u2`，nginx 为 `1.30.6-r0`；具体报告、artifact IDs 与摘要位于预检及集中证据 `supply-chain-41813667813-findings.json`。这是本次源码重新构建的扫描结果，不冒充已签名 rc.52 的重扫结果，也不以旧签名证据替代当前门禁。
+
+下一工程切片应恢复来源可信、digest 固定的对象存储测试依赖，并修复此次构建镜像的扫描发现，再重建和重跑一次完整验收。当前 rc.51 回滚兼容、真实模型留出、外部 4C4G 和独立 UAT 仍未放行。无部署、共享数据库迁移或真实模型调用。四份历史研究临时 JSON 已集中保存并核验哈希；原四文件及两个任务专属空临时目录已删除，其余历史工作区内容保留。
