@@ -91,7 +91,7 @@ A3 若没有可测收益，保留 A2 固定路径并关闭自主工具 flag，�
 - [x] 外部容量证据必须绑定 CI release manifest 的 repository/ref/run_id/run_attempt/workflow_ref、部署 commit、api/worker/consumer/web 不可变镜像、SSH 资源快照和固定 correlation marker；首末日志计数必须从 0 单调到全部 runner HTTP 请求。
 - [ ] 生成/embedding/诊断与评测调用先冻结预算并核对当日余额；不因测试数据量增加上限。
 - [ ] 在真实外部单节点 4C4G 目标上测解析/生成竞争、峰值内存、排队、取消和恢复；再确认支持规模和等待时间。
-- [x] feature flag 关闭 admission、排空/取消和历史兼容路径已有测试；0043 在依赖历史存在时拒绝破坏性 downgrade，拒绝后原 run 仍可读取。旧版本回退兼容演练已接入 CI，真实 runner 结果仍待取得。
+- [x] feature flag 关闭 admission、排空/取消和历史兼容路径已有测试；0043 在依赖历史存在时拒绝破坏性 downgrade，拒绝后原 run 仍可读取。CI `41825412139` 已通过旧版本在升级后隔离空库上的基础启动演练；旧版没有 analysis 路由，该证据不覆盖分析历史接管或生产恢复。
 - [x] Playwright r4 走完整任务、刷新恢复、原文复核、静态导出重读和增量更新；真实 API/隔离 PostgreSQL/受控 provider/store，浏览器运行真实模型调用为 0。
 - [x] 试用包已备齐任务文件、操作说明、计时模板、反馈表、错误/补料/退出规则、数据与支持边界及验收记录模板。
 - [x] 当前参与者为 0，状态明确为“内部验证与试用准备完成”，未称为独立 UAT。
@@ -242,4 +242,24 @@ Container Supply Chain `41813667813` 的四个构建镜像在 Trivy 扫描失败
 
 官方仓库当前说明社区版本改为源码分发，历史二进制保留但不再维护；原 Docker Hub 依赖不可拉取，Google 缓存同 digest 返回 404、Quay 返回未授权。官方 GitHub Release 仍提供原版 MinIO `RELEASE.2025-09-07T16-13-09Z` 与 mc `RELEASE.2025-08-13T08-35-41Z`，release asset digest 与下载的官方 checksum 一致。采用本地 Dockerfile 重封装：固定 Alpine digest、两份二进制和许可证 SHA-256，仅支持 Linux amd64 测试/恢复环境，不宣称原镜像逐字节等价或生产对象存储升级。Compose 每次按构建定义核验；兼容 runner 绑定构建文件哈希和生成的 image ID，应用候选/回滚四镜像仍严格使用 registry digest。
 
-安全修复范围为 certifi `2026.10.18`、pypdf `6.21.4`、Bookworm libssl3/openssl `3.0.22-1~deb12u2` 和官方 nginx `1.30.6-alpine3.24@sha256:0e52bd054126cdc040b1276c0af347aeb02a41b9cfe305d6094767ac30e97949`；uv.lock 只更新这两个 Python 包。不得关闭扫描或忽略漏洞获得通过。Compose/回滚/发布契约与解析定向 85 项、Ruff、脚本 Mypy 通过；真实容器构建、S3 行为、CI 扫描及回滚演练结果待回填。无集群部署、共享数据库迁移或真实模型调用。
+安全修复范围为 certifi `2026.10.18`、pypdf `6.21.4`、Bookworm libssl3/openssl `3.0.22-1~deb12u2` 和官方 nginx `1.30.6-alpine3.24@sha256:0e52bd054126cdc040b1276c0af347aeb02a41b9cfe305d6094767ac30e97949`；uv.lock 只更新这两个 Python 包。不得关闭扫描或忽略漏洞获得通过。Compose/回滚/发布契约与解析定向 85 项、Ruff、脚本 Mypy 通过；本机 GitHub 二进制下载遇到 EOF，实际构建和运行以随后 GitHub runner 的通过证据为准。无集群部署、共享数据库迁移或真实模型调用。
+
+提交 `1dd8083` 的 Quality `41825198169` 前后端通过；Container Supply Chain `41825198219` 四镜像通过，下载的四份 SARIF 在配置的 HIGH/CRITICAL 范围内均为 0 findings，SBOM 确认 certifi/pypdf/libssl3/openssl 修复版本和 nginx `1.30.6-r1` 实际安装。该次为 PR 本地构建扫描，未发布新签名镜像，不替代下一候选版本的供应链证明。
+
+Heavy `41825412139` 的回滚兼容任务已通过：artifact `13319266704`，原始 JSON SHA-256 `bcc624a857a92c7e22ad56c9b0dc19d16b3b60adcbb179fce083dcbfb2dd53a0`。GitHub 真实构建官方二进制测试镜像，初始化私有桶，以 rc.52 升级隔离空库至 `20261012_0043` 并确认 `analysis_projects`；rc.51 的 API live/ready/OpenAPI、Worker live/ready、Consumer metrics port、Web live 全部通过，7 个容器和 network 正常清理。旧 API 的 `analysis_route_present=false` 是实际观察，因此该证据只确认基础运行与 schema 启动兼容，不宣称旧版具备 analysis 功能或已通过带生产历史数据恢复。
+
+同一 Heavy 的 M1 为 133 passed、14 deselected，随后 multipart smoke 通过；Web E2E 为 12 passed。M4 全量集成最终失败：29 failed、854 passed、3307 deselected、7 errors、2 warnings；后续 `evaluate_m4_agent.py` 未执行。Quality 后端另为 3305 passed、2 原始归档审计 skipped、888 deselected，Linux Mypy 307 源码文件通过。两项原阻塞已解决，但完整集成门禁仍未通过，不能直接发布新的签名候选。
+
+### A5.3 M4 失败分组与下一修复切片（2026-11-04）
+
+失败清单保存在同一集中恢复组 `m4-integration-41825412139-failures.json`。以下是源码定位与 CI 观察，未把所有失败归因于本轮依赖升级，也未声称产品数据损坏已发生：
+
+| 分组 | 已确认依据 | 下一步修复与验收 |
+| --- | --- | --- |
+| 旧迁移测试与新增外键冲突：3 failed | `tests/billing/test_product_usage_integration.py:28`、`test_provider_dispatch_integration.py:131` 和 `tests/demo/test_demo_integration.py:169` 直接调用旧 downgrade，未先回退新依赖；CI 拒绝删除仍被 analysis 表引用的 jobs 唯一键/provider_dispatches 表 | 在独立 schema 和正确 revision 上验证迁移往返；保留历史保护，不以 CASCADE 绕过生产约束 |
+| 权益时间默认值：18 failed + 5 errors | `db/migrations/versions/20260914_0026_entitlements_usage.py:39` 的时间列无默认值，而 `db/base.py:26` 的 TimestampMixin 声明 server default；多个 fixture 用 ORM 创建权益时未显式填时间 | 先在全新 Alembic 数据库独立复现，判断所有受影响时间列；若修正 schema，应追加迁移并验证现有权益历史和生产写入路径，不能只改测试数据掩盖差异 |
+| 跨租户负例清理：2 failed + 2 errors | `tests/jobs/test_keyword_recall_roundtrips_integration.py:268` 故意改 version tenant；334–335 行删除租户时，被另租户 document_version 的 upload_session 引用阻止 | 撤销本例制造的不一致关系后清理，保留跨租户召回拒绝断言；单独与全套顺序均须通过 |
+| 身份服务启动：4 failed | 两个 first-use 与两个 identity-provider 用例在 `start_containers` 失败，导致预期 cleanup 阶段断言也失败；当前摘要不足以证明具体镜像/网络原因 | 收集有界脱敏的失败命令与 stderr，并在干净提交上复现；本地 identity 文件存在历史未提交修改，不直接混入候选 |
+| 冻结旧版读取：2 failed | `tests/presales/test_presales_release_compatibility_integration.py:76` 的新 schema 预期只排除了部分新字段；CI 显示 `workbook: None` 和 rows 差异 | 检查 rc.40 的冻结公开字段投影与新字段兼容策略；保留历史不变、租户隔离与调用数量断言，不修改冻结 reader 迎合新 schema |
+
+顺序为：权益迁移/测试隔离 → 负例清理与旧版读取 → 身份服务启动诊断 → 一次完整 M4 与评测。M4 通过后再准备修复版本的签名不可变候选、默认关闭部署及受控留出；带分析历史的兼容回退能力仍需独立验证。真实模型质量、外部 4C4G 和独立 UAT 继续开放。当前 analysis 默认关闭，本轮没有部署或共享数据库迁移。

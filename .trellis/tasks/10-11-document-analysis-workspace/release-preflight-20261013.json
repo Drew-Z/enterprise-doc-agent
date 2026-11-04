@@ -104,37 +104,86 @@
     "migration_shape": "additive_with_guarded_downgrades",
     "isolated_postgresql_test": "passed",
     "old_runtime_has_exact_head_startup_gate": false,
-    "old_image_start_on_0043_tested": false,
+    "old_image_start_on_0043_tested": true,
     "database_downgrade_after_analysis_history_supported": false,
-    "rollback_readiness": "blocked_external_dependency_pull",
+    "rollback_readiness": "passed_isolated_schema_startup_smoke",
     "rollback_compatibility": {
       "workflow": ".github/workflows/quality-heavy.yml",
       "job": "analysis-rollback-compatibility",
       "candidate_release": "v0.1.45-rc.52",
       "rollback_release": "v0.1.45-rc.51",
-      "status": "blocked_external_dependency_pull",
+      "status": "passed_isolated_schema_startup_smoke",
       "local_contract_tests": "passed_26",
       "actionlint": "passed",
       "actionlint_image_id": "sha256:b6d0bc67a629b20d424b3e35964400ec438451f41b95302157868d5e379d5039",
       "report_artifact": "analysis-rollback-compatibility-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json",
       "last_run": {
-        "run_id": "41813723880",
-        "head_sha": "d0ebb729d78f0228ae9bb49cecfce71adfdef34f",
-        "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/41813723880",
-        "conclusion": "failure",
-        "artifact_id": "13313712084",
-        "artifact_name": "analysis-rollback-compatibility-41813723880-1",
-        "report_sha256": "eb04f96583f8362a933b1d664b6991666867134c786dba079291b8a776c2cca6",
-        "failure_stage": "dependency_image_pull",
-        "failed_image": "minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e",
-        "failure_summary": "Pull access denied for minio/minio. Candidate API, four rollback images, PostgreSQL and Redis pulls completed before this dependency failed. MinIO mc pull was not reached.",
-        "cleanup": {
-          "status": "passed",
-          "containers_removed": 0,
-          "network_created": false,
-          "network_removed": false
+        "run_id": "41825412139",
+        "head_sha": "1dd8083f02d15a40ee7248bf34011a69eee42009",
+        "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/41825412139",
+        "job_conclusion": "success",
+        "artifact_id": "13319266704",
+        "artifact_name": "analysis-rollback-compatibility-41825412139-1",
+        "report_sha256": "bcc624a857a92c7e22ad56c9b0dc19d16b3b60adcbb179fce083dcbfb2dd53a0",
+        "checks": {
+          "api_live": {
+            "http_status": 200,
+            "status": "passed"
+          },
+          "api_openapi": {
+            "analysis_route_present": false,
+            "http_status": 200,
+            "openapi_document": true,
+            "status": "passed"
+          },
+          "api_ready": {
+            "http_status": 200,
+            "status": "passed"
+          },
+          "consumer_port": {
+            "port": 49241,
+            "status": "passed"
+          },
+          "schema": {
+            "analysis_projects": true,
+            "head": "20261012_0043",
+            "status": "passed"
+          },
+          "web_live": {
+            "http_status": 200,
+            "status": "passed"
+          },
+          "worker_live": {
+            "http_status": 200,
+            "status": "passed"
+          },
+          "worker_ready": {
+            "http_status": 200,
+            "status": "passed"
+          }
         },
-        "schema_compatibility_evaluated": false
+        "cleanup": {
+          "containers_removed": 7,
+          "network_created": true,
+          "network_removed": true,
+          "status": "passed"
+        },
+        "dependency_builds": {
+          "minio": {
+            "dockerfile_sha256": "0f9be717db38226163e9a6bc9c0fa68fb6bae9895aaecb4557e6a98639dac355",
+            "image_id": "sha256:71169fee6285efc66c98bcef51d4d915096c7215ce631ee78137d7dd220db93c",
+            "platform": "linux/amd64",
+            "target": "minio"
+          },
+          "minio_mc": {
+            "dockerfile_sha256": "0f9be717db38226163e9a6bc9c0fa68fb6bae9895aaecb4557e6a98639dac355",
+            "image_id": "sha256:433c8779dea2ab9ebe0c9c0aa5e9684652992fb6309f78172c8adde1b9a1f173",
+            "platform": "linux/amd64",
+            "target": "mc"
+          }
+        },
+        "schema_compatibility_evaluated": true,
+        "scope_note": "rc.51 starts and passes health/OpenAPI probes on an isolated fresh schema migrated by rc.52. rc.51 has no analysis routes. This does not certify continuing analysis execution or production recovery with existing data."
       },
       "previous_runs": [
         {
@@ -149,13 +198,32 @@
           "other_jobs_failure_summary": "m1-integration, m4-integration and web-e2e reported pull access denied for minio/minio; this does not establish the failed image in the compatibility job.",
           "cleanup_summary": "The report recorded a cleanup network removal error from the pre-fix commit; the current script tracks network creation before attempting removal.",
           "schema_compatibility_evaluated": false
+        },
+        {
+          "run_id": "41813723880",
+          "head_sha": "d0ebb729d78f0228ae9bb49cecfce71adfdef34f",
+          "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/41813723880",
+          "conclusion": "failure",
+          "artifact_id": "13313712084",
+          "artifact_name": "analysis-rollback-compatibility-41813723880-1",
+          "report_sha256": "eb04f96583f8362a933b1d664b6991666867134c786dba079291b8a776c2cca6",
+          "failure_stage": "dependency_image_pull",
+          "failed_image": "minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e",
+          "failure_summary": "Pull access denied for minio/minio. Candidate API, four rollback images, PostgreSQL and Redis pulls completed before this dependency failed. MinIO mc pull was not reached.",
+          "cleanup": {
+            "status": "passed",
+            "containers_removed": 0,
+            "network_created": false,
+            "network_removed": false
+          },
+          "schema_compatibility_evaluated": false
         }
       ]
     },
     "notes": [
       "Migrations 0038 through 0043 add analysis tables, columns, indexes and constraints; 0040 widens existing quota constraints for analysis_cell.",
       "Downgrades refuse destructive history loss, so database downgrade is not the normal rollback path.",
-      "The rc.51 signed workload is wired into the isolated compatibility job; it must start and pass smoke checks against 0043 on a GitHub-hosted runner before it is approved as the rollback target."
+      "The rc.51 signed workload passed base-service startup on a fresh isolated 0043 schema in run 41825412139. rc.51 has no analysis routes; this is not approval for continued analysis execution or production-data recovery."
     ]
   },
   "validation": {
@@ -191,15 +259,14 @@
     ]
   },
   "blockers": [
+    "full_m4_integration_failed_41825412139",
     "administrator_owned_default_off_prerequisites_not_applied",
     "default_off_candidate_not_deployed_or_migrated",
-    "rollback_compatibility_external_dependency_pull_blocked",
-    "signed_old_or_compatible_rollback_image_not_started_against_schema_0043",
     "short_lived_analysis_token_and_analysis_primary_route_not_configured",
     "real_fixed_and_agent_holdout_not_run",
     "external_single_node_4c4g_acceptance_not_run",
     "independent_uat_participant_missing",
-    "new_source_container_scan_high_critical_findings"
+    "patched_candidate_not_published_as_signed_immutable_release"
   ],
   "side_effect_boundaries": {
     "push_run": true,
@@ -293,7 +360,7 @@
     }
   },
   "dependency_remediation_20261104": {
-    "status": "pending_ci",
+    "status": "dependency_fixes_verified_full_integration_blocked",
     "baseline_head": "d3859cabadd88c388e47da2abf3587ca32427ad0",
     "object_store": {
       "build_file": "infra/docker/Dockerfile.object-store",
@@ -304,7 +371,8 @@
       "client_binary_sha256": "01f866e9c5f9b87c2b09116fa5d7c06695b106242d829a8bb32990c00312e891",
       "local_binary_verification": "mc complete checksum matched; minio transfer interrupted",
       "local_build": "GitHub release binary downloads returned unexpected EOF; no runtime smoke claimed",
-      "scope": "local/CI/recovery repackaging of original official binaries; not an upstream image or production storage release"
+      "scope": "local/CI/recovery repackaging of original official binaries; not an upstream image or production storage release",
+      "github_runtime": "passed build, private bucket init, migration and rollback smoke; M1 multipart and Web E2E jobs passed"
     },
     "security_updates": {
       "certifi": "2026.10.18",
@@ -319,6 +387,125 @@
       "mypy_script": "passed",
       "compose_config": "passed"
     },
-    "release_gates": "Pending actual rebuilt image scans and isolated rollback rehearsal; old blockers remain until evidence passes."
+    "release_gates": "Object-store dependency, rebuilt application scans and isolated empty-schema startup smoke passed. Full M4 integration failed and blocks a new signed patched candidate; default-off deployment, analysis-history rollback, real model holdout, target capacity and independent UAT remain open.",
+    "source_commit": "1dd8083f02d15a40ee7248bf34011a69eee42009",
+    "image_scan": {
+      "run_id": "41825198219",
+      "conclusion": "success",
+      "mode": "pull_request_local_build_no_release_publication",
+      "sarif_findings_by_image": {
+        "api": 0,
+        "worker": 0,
+        "consumer": 0,
+        "web": 0
+      },
+      "scope": "Configured HIGH/CRITICAL scanner gate",
+      "artifact_records": [
+        {
+          "artifact_id": 13319696422,
+          "name": "supply-chain-api",
+          "sarif": "trivy-api.sarif",
+          "sha256": "2646f50096840769d20e0c121870713586e2ebc0a82c5800d65ea02e6ddacd18",
+          "findings": 0
+        },
+        {
+          "artifact_id": 13319555335,
+          "name": "supply-chain-consumer",
+          "sarif": "trivy-consumer.sarif",
+          "sha256": "dbe3209415a48a4f578f89e69f0cfc049517279d64170b181f55045e5fac0139",
+          "findings": 0
+        },
+        {
+          "artifact_id": 13319376197,
+          "name": "supply-chain-web",
+          "sarif": "trivy-web.sarif",
+          "sha256": "745d276485c8f1ef46d05fb7a465c75997790153ccaa97b2888bb9a1022d5bc4",
+          "findings": 0
+        },
+        {
+          "artifact_id": 13319016965,
+          "name": "supply-chain-worker",
+          "sarif": "trivy-worker.sarif",
+          "sha256": "0bcd5ff5ea14f3792175aa2e8fb106f2f2b0bc107794f5ef944998ca494e4e5b",
+          "findings": 0
+        }
+      ]
+    },
+    "quality": {
+      "run_id": "41825198169",
+      "conclusion": "success",
+      "backend": "success",
+      "frontend": "success",
+      "backend_tests": {
+        "passed": 3305,
+        "skipped_raw_archive_audits": 2,
+        "deselected": 888
+      },
+      "linux_mypy_source_files": 307
+    },
+    "heavy": {
+      "run_id": "41825412139",
+      "conclusion": "failure",
+      "analysis_rollback_compatibility": "success",
+      "m1_integration": "success",
+      "web_e2e": "success",
+      "m4_integration": "failure",
+      "m4_counts": {
+        "failed": 29,
+        "passed": 854,
+        "deselected": 3307,
+        "errors": 7,
+        "warnings": 2
+      },
+      "m4_evaluator": "skipped_after_integration_failure",
+      "m1_counts": {
+        "passed": 133,
+        "deselected": 14
+      },
+      "m1_multipart_smoke": "success",
+      "web_e2e_passed": 12,
+      "failure_evidence": {
+        "file": "m4-integration-41825412139-failures.json",
+        "sha256": "91a7179d67ac5be7c7596bc76be94d638cdb4f05896fc0a5abcad317dfb78334",
+        "job_id": 126558788394
+      },
+      "failure_groups": [
+        {
+          "category": "historical_migration_tests_bypass_new_dependencies",
+          "failed": 3,
+          "errors": 0,
+          "status": "source_and_ci_confirmed",
+          "next": "Isolate migration tests at the correct revision; preserve history guards and foreign keys."
+        },
+        {
+          "category": "entitlement_timestamp_migration_model_mismatch",
+          "failed": 18,
+          "errors": 5,
+          "status": "source_mismatch_and_ci_not_null_confirmed",
+          "next": "Reproduce on fresh Alembic schema; assess an additive migration and historical row compatibility instead of masking through fixtures."
+        },
+        {
+          "category": "cross_tenant_negative_fixture_cleanup",
+          "failed": 2,
+          "errors": 2,
+          "status": "source_and_ci_confirmed",
+          "next": "Restore deliberately inconsistent tenant relationships before fixture cleanup; retain scope filtering assertions."
+        },
+        {
+          "category": "identity_lab_start_containers",
+          "failed": 4,
+          "errors": 0,
+          "status": "failure_stage_confirmed_root_cause_unresolved",
+          "next": "Capture bounded redacted subprocess diagnostics and reproduce against committed identity files; preserve unrelated dirty changes."
+        },
+        {
+          "category": "frozen_rc40_public_projection",
+          "failed": 2,
+          "errors": 0,
+          "status": "workbook_and_rows_difference_confirmed_full_diff_pending",
+          "next": "Compare frozen old schema with explicit current projection, retaining history and tenant assertions."
+        }
+      ]
+    }
   }
 }
