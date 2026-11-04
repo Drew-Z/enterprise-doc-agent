@@ -42,6 +42,29 @@ helper `tests/migration_database.py` walks the revision chain and explicitly sco
 from public and skip required migrations. Keep pgvector in public, preserve all
 history guards, and remove only the fixture-owned schema in `finally`.
 
+### Usage Timestamp Migration Contract
+
+1. **Scope / trigger:** ORM insertion without explicit timestamps must work on a
+   database built by Alembic, including databases upgrading from 0043.
+2. **Signatures:** `20261104_0044.upgrade/downgrade()` changes only defaults on
+   `tenant_entitlements.{created_at,updated_at}` and
+   `usage_reservations.{created_at,updated_at}`. No data UPDATE or nullable change.
+3. **Contracts:** PostgreSQL `now()` fills omitted values; explicit business-clock
+   timestamps win. Existing counters, receipt IDs and all historical times stay fixed.
+4. **Validation / errors:** missing defaults in 0026 reproduce NOT NULL failure.
+   Foreign-key and history guards remain errors; never bypass them using CASCADE.
+   Fixture setup checks a loopback target, owned schema and public pgvector namespace.
+5. **Cases:** fresh head and 0043-to-head accept ordinary ORM inserts; old explicit
+   timestamp writes still work. Applying an old downgrade below dependent analysis
+   tables or resolving public's version table is an invalid test setup.
+6. **Tests:** `test_timestamp_defaults_migration_integration.py` uses the real chain,
+   inserts both entity types without timestamps, cycles the new revision with history,
+   and verifies time/counter/state retention. Demo tests run old 0029 and head;
+   product/provider migration tests operate on their actual historical revisions.
+7. **Wrong / correct:** do not edit applied 0026 or add fixture-only timestamps to
+   conceal the schema difference. Append 0044, preserve older applications' explicit
+   writes, and independently verify upgrade plus fixture cleanup.
+
 ## Naming
 
 Alembic revision files use `YYYYMMDD_sequence_description.py`. Future table,

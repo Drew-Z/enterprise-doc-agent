@@ -259,14 +259,14 @@
     ]
   },
   "blockers": [
-    "full_m4_integration_failed_41825412139",
     "administrator_owned_default_off_prerequisites_not_applied",
     "default_off_candidate_not_deployed_or_migrated",
     "short_lived_analysis_token_and_analysis_primary_route_not_configured",
     "real_fixed_and_agent_holdout_not_run",
     "external_single_node_4c4g_acceptance_not_run",
     "independent_uat_participant_missing",
-    "patched_candidate_not_published_as_signed_immutable_release"
+    "patched_candidate_not_published_as_signed_immutable_release",
+    "patched_0044_candidate_runtime_compatibility_not_verified"
   ],
   "side_effect_boundaries": {
     "push_run": true,
@@ -506,10 +506,11 @@
           "next": "Compare frozen old schema with explicit current projection, retaining history and tenant assertions."
         }
       ]
-    }
+    },
+    "subsequent_resolution": "M4 failures on 1dd8083 resolved by 1c8ebdd; full Heavy run 41840352966 passed. Historical failure evidence retained below."
   },
   "m4_remediation_20261104": {
-    "status": "local_passed_ci_pending",
+    "status": "passed_all_engineering_ci",
     "baseline_head": "22efbbd59d60cf7bbac4e5f2429b8096e7c7b167",
     "candidate_schema_head": "20261104_0044",
     "changes": [
@@ -532,6 +533,230 @@
     "rollback_scope": "Existing rc52/rc51 rehearsal covers 0043 only; not evidence for current 0044 images or analysis history.",
     "deployment": false,
     "shared_database_migration": false,
-    "real_model_calls": 0
+    "real_model_calls": 0,
+    "source_commit": "1c8ebdd85a00c9fd57bb6bbf937405ef02711b50",
+    "ci_runs": {
+      "quality": 41840315650,
+      "container": 41840316045,
+      "heavy": 41840352966
+    },
+    "ci_results": {
+      "quality": {
+        "run_id": 41840315650,
+        "head_sha": "1c8ebdd85a00c9fd57bb6bbf937405ef02711b50",
+        "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/41840315650",
+        "conclusion": "success",
+        "jobs": [
+          {
+            "name": "frontend",
+            "conclusion": "success",
+            "job_id": 126609854632
+          },
+          {
+            "name": "backend",
+            "conclusion": "success",
+            "job_id": 126609854964
+          }
+        ],
+        "test_summary": [
+          "Success: no issues found in 308 source files",
+          "========= 3305 passed, 2 skipped, 890 deselected in 132.91s (0:02:12) =========="
+        ]
+      },
+      "container": {
+        "run_id": 41840316045,
+        "head_sha": "1c8ebdd85a00c9fd57bb6bbf937405ef02711b50",
+        "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/41840316045",
+        "conclusion": "success",
+        "jobs": [
+          {
+            "name": "images (worker, infra/docker/Dockerfile.worker)",
+            "conclusion": "success",
+            "job_id": 126609855829
+          },
+          {
+            "name": "images (web, infra/docker/Dockerfile.web)",
+            "conclusion": "success",
+            "job_id": 126609856183
+          },
+          {
+            "name": "images (consumer, infra/docker/Dockerfile.consumer)",
+            "conclusion": "success",
+            "job_id": 126609856239
+          },
+          {
+            "name": "images (api, infra/docker/Dockerfile.api)",
+            "conclusion": "success",
+            "job_id": 126609856251
+          },
+          {
+            "name": "release-manifest",
+            "conclusion": "skipped",
+            "job_id": 126611361131
+          }
+        ]
+      },
+      "heavy": {
+        "run_id": 41840352966,
+        "head_sha": "1c8ebdd85a00c9fd57bb6bbf937405ef02711b50",
+        "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/41840352966",
+        "conclusion": "success",
+        "jobs": [
+          {
+            "name": "m1-integration",
+            "job_id": 126609990277,
+            "conclusion": "success"
+          },
+          {
+            "name": "analysis-rollback-compatibility",
+            "job_id": 126609990767,
+            "conclusion": "success"
+          },
+          {
+            "name": "web-e2e",
+            "job_id": 126609990850,
+            "conclusion": "success"
+          },
+          {
+            "name": "m4-integration",
+            "job_id": 126609990897,
+            "conclusion": "success",
+            "test_summary": [
+              "890 passed, 3307 deselected, 2 warnings in 816.96s (0:13:36)"
+            ],
+            "steps": [
+              {
+                "name": "Set up job",
+                "conclusion": "success"
+              },
+              {
+                "name": "Run actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5",
+                "conclusion": "success"
+              },
+              {
+                "name": "Run actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
+                "conclusion": "success"
+              },
+              {
+                "name": "Run astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff",
+                "conclusion": "success"
+              },
+              {
+                "name": "Run pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa",
+                "conclusion": "success"
+              },
+              {
+                "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+                "conclusion": "success"
+              },
+              {
+                "name": "Run uv sync --frozen",
+                "conclusion": "success"
+              },
+              {
+                "name": "Run pnpm install --frozen-lockfile",
+                "conclusion": "success"
+              },
+              {
+                "name": "Run pnpm --filter web exec playwright install --with-deps chromium",
+                "conclusion": "success"
+              },
+              {
+                "name": "Pull pinned local identity dependencies",
+                "conclusion": "success"
+              },
+              {
+                "name": "Run docker compose -f infra/compose/docker-compose.yml up -d --wait",
+                "conclusion": "success"
+              },
+              {
+                "name": "Run docker compose -f infra/compose/docker-compose.yml --profile init run --rm minio-init",
+                "conclusion": "success"
+              },
+              {
+                "name": "Run uv run alembic upgrade head",
+                "conclusion": "success"
+              },
+              {
+                "name": "Run uv run enterprise-doc-checkpointer-setup --setup",
+                "conclusion": "success"
+              },
+              {
+                "name": "Run uv run enterprise-doc-checkpointer-setup --check",
+                "conclusion": "success"
+              },
+              {
+                "name": "Run uv run pytest -m integration -q",
+                "conclusion": "success"
+              },
+              {
+                "name": "Run uv run python scripts/evaluate_m4_agent.py",
+                "conclusion": "success"
+              },
+              {
+                "name": "Run docker compose -f infra/compose/docker-compose.yml down",
+                "conclusion": "success"
+              },
+              {
+                "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+                "conclusion": "success"
+              },
+              {
+                "name": "Post Run pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa",
+                "conclusion": "success"
+              },
+              {
+                "name": "Post Run astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff",
+                "conclusion": "success"
+              },
+              {
+                "name": "Post Run actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
+                "conclusion": "success"
+              },
+              {
+                "name": "Post Run actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5",
+                "conclusion": "success"
+              },
+              {
+                "name": "Complete job",
+                "conclusion": "success"
+              }
+            ],
+            "evaluation": {
+              "file": "m4-evaluation-41840352966.json",
+              "case_count": 13,
+              "passed_count": 13,
+              "scope": "controlled security and workflow evaluation; not real model holdout"
+            },
+            "warnings": [
+              "  /home/runner/work/enterprise-doc-agent/enterprise-doc-agent/tests/analysis/test_analysis_migrations_integration.py:82: SAWarning: Cannot correctly sort tables; there are unresolvable cycles between tables \"document_versions, upload_sessions\", which is usually caused by mutually dependent foreign key constraints.  Foreign key constraints involving these tables will not be considered; this warning may raise an error in a future release.",
+              "  /home/runner/work/enterprise-doc-agent/enterprise-doc-agent/tests/analysis/test_analysis_migrations_integration.py:93: SAWarning: Cannot correctly sort tables; there are unresolvable cycles between tables \"document_versions, upload_sessions\", which is usually caused by mutually dependent foreign key constraints.  Foreign key constraints involving these tables will not be considered; this warning may raise an error in a future release."
+            ]
+          }
+        ]
+      }
+    },
+    "m4_counts": {
+      "passed": 890,
+      "failed": 0,
+      "errors": 0,
+      "deselected": 3307,
+      "warnings": 2,
+      "duration_seconds": 816.96
+    },
+    "controlled_evaluation": {
+      "passed": 13,
+      "total": 13,
+      "real_model_holdout": false
+    },
+    "cleanup": {
+      "local_owned_databases_removed": 2,
+      "local_owned_database_absence_verified": true,
+      "new_temporary_files_remaining": 0,
+      "rollback_containers_removed": 7,
+      "rollback_network_removed": true,
+      "ci_compose_down": "success",
+      "historical_workspace_changes": "preserved"
+    }
   }
 }

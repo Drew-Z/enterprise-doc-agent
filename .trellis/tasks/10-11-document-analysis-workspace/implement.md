@@ -274,4 +274,10 @@ Heavy `41825412139` 的回滚兼容任务已通过：artifact `13319266704`，�
 - M4 workflow 补上 Node/pnpm、锁定依赖和 Chromium；从提交中的身份 Compose 读取并校验 digest，然后显式预拉取。identity harness 原有 `--pull never` 保留。runner 原先没有这些准备步骤，因此 fresh runner 在 start_containers 即失败；实际身份链是否恢复以本次 CI 为准。
 - 本地集中回归 206 项通过，使用本轮创建的独立数据库迁移至 0044；两个测试数据库均已删除，逐例 schema 由 fixture 清理。14 项 CI 契约、全仓 Ruff/格式、Mypy 312 源码文件与改动 workflow actionlint 通过。新时间默认值回归已观察正确失败后通过；旧版读取两用例也先失败后通过。
 
-当前等待提交后完整 Heavy CI。此前 rc.52/rc.51 的启动演练仍只覆盖 0043，不替代本候选 0044、分析历史接管或生产恢复证据；新的签名候选和部署仍未执行。
+修复提交 `1c8ebdd85a00c9fd57bb6bbf937405ef02711b50` 已推送。Quality `41840315650` 前后端通过，后端 3305 passed、2 原始归档审计 skipped、890 deselected，Linux Mypy 308 文件通过。Container Supply Chain `41840316045` 四个应用镜像构建/安全扫描通过；PR 模式的 release-manifest 正常跳过，没有发布新签名候选。
+
+完整 Heavy `41840352966` 全部通过：M4 为 **890 passed、3307 deselected、2 warnings、0 failed、0 errors**，耗时 816.96 秒；随后 `evaluate_m4_agent.py` 的 13 个受控安全/工作流案例全部通过。两项 warning 为已记录的 document_versions/upload_sessions 双向外键排序提示。身份镜像拉取、四个真实身份测试、M1、Web E2E、checkpointer 与清理步骤全部成功；旧 M4 的五类失败均不再出现。该评测不是新多文档 Agent 的真实模型留出质量结论。
+
+rc.52/rc.51 启动演练也通过，artifact `13328491856`，7 个容器和 network 清理成功；它仍只覆盖隔离空库 0043，不替代本候选 0044、分析历史接管或生产恢复证据。本轮完整集成阻塞已解除，下一步为绑定修复源码/0044 的签名不可变候选及其兼容验证，再按既有门禁进入默认关闭部署、受控模型留出和 4C4G 验收。独立 UAT 仍无参与者。
+
+证据集中保存为 `m4-remediation-ci-20261104.json`、`m4-evaluation-41840352966.json`、`analysis-rollback-compatibility-41840352966-1.json`，SHA-256 登记到原恢复组 manifest。本轮没有共享数据库迁移、部署、真实产品模型调用或新临时文件残留，历史脏状态保留。
