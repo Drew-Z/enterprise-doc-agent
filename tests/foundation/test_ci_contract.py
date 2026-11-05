@@ -170,7 +170,7 @@ def test_manual_heavy_quality_preserves_integration_and_e2e_evidence() -> None:
     assert "if" not in compatibility
     assert compatibility["strategy"]["fail-fast"] is False
     runtimes = compatibility["strategy"]["matrix"]["include"]
-    assert {row["runtime"] for row in runtimes} == {"candidate-rc55", "rollback-rc51"}
+    assert {row["runtime"] for row in runtimes} == {"candidate-rc56", "rollback-rc51"}
     for row in runtimes:
         for service in ("api", "worker", "consumer", "web"):
             assert "@sha256:" in row[service]
