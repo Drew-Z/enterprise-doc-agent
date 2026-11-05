@@ -26,13 +26,13 @@
     ".trellis/tasks/10-11-document-analysis-workspace/implement.md",
     ".trellis/tasks/10-11-document-analysis-workspace/value-validation-plan.md"
   ],
-  "notes": "Frozen 3-object x 10-field scope approved. Signed rc.53 published from f6930e8. Verification harness 3802b15 passed Quality, Container and both candidate/rc51 fresh-0044 startup probes. The 27-object default-off candidate manifest is rendered but not applied. Four protected deployment variables require reconciliation with live rc.51/gpt-5.6-sol; live database remains 0037 with no analysis tables. No deployment, shared migration or new external model call was performed. Real fixed/agent value diagnostics, target capacity and independent UAT remain open.",
+  "notes": "rc.53 deployed on 0044; controlled validation uploaded 7 sources, 6 ready and one dead after heartbeat pool/row-lock starvation. No analysis generation has run. Ingestion repair preserves atomic checkpoints with a final NOWAIT lease fence, batches chunk inserts, and sets 4C4G background pool 2/0. 32 PostgreSQL regressions and 3457 non-integration tests pass; temporary execution/upload switches closed pending immutable rc.54 deployment. Independent UAT remains open.",
   "meta": {
     "planning_deliverable": "architecture_v1",
     "architecture_review": "approved_by_user_2026-10-11",
     "implementation_started": true,
-    "current_slice": "A5_scope_frozen_signed_rc53_and_0044_runtime_verified",
-    "next_slice": "reconcile_staging_configuration_and_deploy_default_off_0044_candidate",
+    "current_slice": "A5_ingestion_lease_fix_verified_pending_rc54",
+    "next_slice": "publish_rc54_retry_original_ingestion_then_fixed_agent_validation",
     "commercial_validation": "internal_diagnostic_authorized_no_independent_participants"
   }
 }

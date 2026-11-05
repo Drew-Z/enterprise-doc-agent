@@ -303,3 +303,39 @@ rc.53 绑定 `f6930e85493fa25b99be20ece14669f0d49c26dc`，Container `41845049954
 用户批准继续。已将 staging protected variables 对齐当前 gpt-5.6-sol 主路线与 rc.51 回退 digest，保存变更前值。真实 public schema 备份 SHA-256 `aebdd497957729c2c44b02803a7e256ad3d2e8235a2f60b81c1f73c75fe83896`；隔离 PostgreSQL 恢复后完成 0037→0044，3595 jobs、564 presales attempts、2066 provider dispatches 及权益/预留全行哈希保持，临时容器已清理。
 
 部署 run `41852786019` 前两次均在迁移前失败：第一次是 apply 保留了冗余显式 `presales.v24` 键，按精确值检查后移除，与代码默认一致；第二次是既有 Deployment 准入规则禁止了 4C4G API 已使用的连接池 4/0 环境参数。仅修正该 API/该 profile/该精确列表的准入例外，未关闭策略。真实集群中五个 workload 的 deployer server dry-run 全通过；错误值、额外变量、动态 valueFrom 均被同一环境策略拒绝。45 项专项测试、Ruff、格式与 Mypy 通过。准入基线和完整红绿证据集中保留，第三次发布已重试，后续以部署终态和真实账本为准。
+
+### 2026-11-05：入库心跳故障修复切片
+
+rc.53 已默认关闭部署并完成 0044；受控窗口准备上传 7 份材料，6 份 ready，
+monday-pricing 的原 job 连续 5 次 `job_heartbeat_failed/TimeoutError` 后 dead。
+该文件仍在 chunk/0；其他两份大资料也在重试后才完成。已发生 428 次 document
+embedding 派发，均 responded；尚无 analysis project、snapshot、run 或生成派发。
+
+修复基线 `34da3a3` 记录于原恢复组 `ingestion_lease_repair_20261105`。
+保存分块和写入向量目前从事务开始持有 Job 行锁，加上 Worker/Consumer 1/0 连接池，
+使心跳等待连接或同一行锁。不能仅增加重试或延长超时。
+
+行为切片与边界：
+
+1. 真实 PostgreSQL 下，公开 ingestion service 执行被延迟的 chunk INSERT / embedding
+   UPDATE 时，真实 JobRuntimeService heartbeat 能完成并延续原 claim；仅对象存储和
+   embedding 使用受控实现，延迟通过数据库触发器/锁注入。
+2. 大写入先读 claim，仍锁住 version/generation 保持 checkpoint 原子性，提交前刷新并
+   非阻塞锁住 Job 再验证 claim。最后的 NOWAIT 防止与既有 Job→generation 路径反向
+   等待；竞争回滚为可重试失败。取消、过期或换 fencing 后整段写入回滚，旧任务不得
+   激活版本或结算；新 claim 可以恢复同 generation。
+3. 将逐条带 SQL 表达式的 chunk INSERT 改为有界多行语句，减少往返。Worker/Consumer
+   在 4C4G 仅增加到 2/0 连接池以容纳工作与心跳，不增加任务并发；API 保持 4/0。
+   通过既有受控 ConfigMap 修改共享池，同步有效配置测试；Deployment 的 API 专用
+   准入例外不变，不引入 Worker/Consumer 额外 env 例外。
+4. 通过相关 PG/Worker、Ruff/Mypy、非集成和部署门禁后发布不可变候选；只从产品接口
+   retry 现有 dead job，不重传已成功的材料。7 份 ready 后继续原 fixed/agent 60 单元
+   验证，保留完整失败分母、原始账本和内部诊断边界，最后关闭临时窗口。
+
+本地完成：真实 PostgreSQL 先复现 heartbeat 被写事务阻塞，再验证 11 个新并发/
+批量写入用例及既有摄入/完整性/Job/用量回归，合计 **32 passed**。旧 6 个摄入
+测试原先忽略显式测试库地址，已复用 loopback 配置入口；原失败日志保留。两个
+本轮独立数据库均已删除，旧共享库未迁移。全仓非集成 **3457 passed、2 原始抓取
+审计 skipped、23 subtests passed**，Ruff/格式、Mypy 312 文件和 Trellis context
+检查通过。analysis/structured upload 临时窗口已关闭，rc.53 三个服务 Ready。
+接下来发布和部署 rc.54 后再恢复原 dead job；尚未把本地通过算为线上故障已恢复。

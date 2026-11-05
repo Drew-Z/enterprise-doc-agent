@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import pytest
 from sqlalchemy import delete, func, select, update
+from tests.jobs.test_job_runtime_integration import _database_settings
 from tests.jobs.test_m3_ingestion_integration import (
     FailOnceEmbeddingProvider,
     FakeObjectStore,
     _seed_uploaded_document,
 )
 
-from enterprise_doc_core.config import DatabaseSettings
 from enterprise_doc_core.db import create_database_engine, create_session_factory
 from enterprise_doc_core.documents.ingestion_service import (
     DocumentIngestionError,
@@ -30,7 +30,7 @@ async def test_declared_hash_mismatch_cannot_activate_new_or_unverified_checkpoi
     legacy_checkpoint: bool,
 ) -> None:
     content = b"# Retention\nRetention is 30 days.\n"
-    engine = create_database_engine(DatabaseSettings())
+    engine = create_database_engine(_database_settings())
     sessions = create_session_factory(engine)
     tenant_id, actor_id, version_id, claim = await _seed_uploaded_document(
         sessions, content=content

@@ -899,11 +899,11 @@ def test_single_node_4c4g_overlay_matches_current_server_envelope() -> None:
         "single-node-4c4g"
     )
     config = _named_resource(documents, "ConfigMap", "enterprise-doc-config")
-    assert config["data"]["DATABASE__POOL_SIZE"] == "1"
+    assert config["data"]["DATABASE__POOL_SIZE"] == "2"
     assert config["data"]["DATABASE__MAX_OVERFLOW"] == "0"
 
-    # API requests may overlap; background execution retains its original budget.
-    for role, pool_size in (("api", "4"), ("worker", "1"), ("consumer", "1")):
+    # Background work and its lease heartbeat need distinct bounded connections.
+    for role, pool_size in (("api", "4"), ("worker", "2"), ("consumer", "2")):
         container = deployments[f"enterprise-doc-{role}"]["spec"]["template"]["spec"]["containers"][
             0
         ]

@@ -85,8 +85,9 @@ Deployment `env` takes precedence over the shared ConfigMap.
 ### 3. Contracts
 
 For the 4C4G profile, the API overrides `DATABASE__POOL_SIZE=4` and
-`DATABASE__MAX_OVERFLOW=0` in its Deployment. Worker/Consumer keep the shared
-single-connection setting and existing execution concurrency. Check effective
+`DATABASE__MAX_OVERFLOW=0` in its Deployment. Worker/Consumer use the shared
+two-connection pool (2/0) so work and its heartbeat can run independently;
+execution concurrency is unchanged. Check effective
 container environment after Kustomize merging, not just the ConfigMap. Resource
 limits remain unchanged; this is a candidate connection budget, not capacity approval.
 
@@ -106,13 +107,68 @@ continue after that check fails or query another project listed by a connector.
 
 ### 6. Tests Required
 
-Render the 4C4G overlay and assert effective API pool 4/0, Worker/Consumer 1/0. Release
+Render the 4C4G overlay and assert effective API pool 4/0, Worker/Consumer 2/0. Release
 tests must cover the declared API-only change and full original-template restoration.
 
 ### 7. Wrong vs Correct
 
-Wrong: increase the shared pool and all background concurrency from an isolated result.
-Correct: keep each process budget explicit, then measure the deployed HTTP workload.
+Wrong: increase background execution concurrency to address a heartbeat connection wait.
+Correct: bound work plus heartbeat connections, then measure the deployed workload.
+
+## Scenario: Ingestion Checkpoints and Heartbeats
+
+### 1. Scope / Trigger
+
+Chunk inserts and vector index writes may outlast a heartbeat interval. The old
+Job-first write transaction blocked renewal; a 1/0 pool additionally timed out
+before heartbeat could even request its row lock.
+
+### 2. Signatures
+
+`DocumentIngestionService.__call__(claim)`; `_persist_chunks`,
+`_commit_embeddings_and_activate`, `_lock_claim(lock=False/nowait=True)`;
+`JobRuntimeService.heartbeat(claim)` uses its own session.
+
+### 3. Contracts
+
+Read/validate claim without locking Job before a large write, lock version then
+generation, and keep the checkpoint atomic. After the large write, refresh Job
+using `populate_existing=True` and `FOR UPDATE NOWAIT`, recheck identity, owner,
+fencing, cancellation and current expiry. Keep that Job lock through checkpoint
+commit or activation plus product settlement. Never renew the lease from a stale
+ingestion write. Multi-row chunk INSERTs contain at most 100 rows, independent UUIDs,
+the same tsvector inputs, source offsets and hashes; embedding remains NULL until
+activation. No partial checkpoint or structural snapshot is committed on failure.
+
+### 4. Validation & Error Matrix
+
+Expired/replaced/cancelled claim -> `document_execution_stale`, rollback without
+activation or settlement. SQLSTATE 55P03 at the final fence -> retryable
+`document_processing_busy`, whole transaction rollback. Other DB errors retain
+the existing sanitized ingestion failure contract. Never wait for Job while
+holding version/generation: a contender may own Job and be waiting for those rows.
+
+### 5. Good / Base / Bad Cases
+
+Heartbeat advances while INSERT/embedding UPDATE is delayed. New owner can reuse
+an existing verified EMBED checkpoint; a rolled-back CHUNK write must parse again.
+Cancellation must not leave partial vectors or an active generation. An idle
+heartbeat and a row-lock contender are separate concurrency cases.
+
+### 6. Tests Required
+
+`tests/jobs/test_ingestion_lease_integration.py` runs the real migration chain in an
+owned loopback schema, delays writes with PostgreSQL triggers/advisory locks and
+uses a 2/0 work/heartbeat pool. Cover renewal, expiry/reclaim/cancel rollback in both
+write phases, Job-first contention without deadlock, same-generation retry and
+bounded SQL statements with preserved indexes/search/structure. Only external
+object/embedding boundaries are controlled; local success is not a capacity SLO.
+
+### 7. Wrong vs Correct
+
+Wrong: only raise retry counts, remove fencing, or add a connection while keeping
+the long Job row lock. Correct: independent bounded connections, short final Job
+fence, atomic rollback and evidence from real concurrent database transactions.
 
 ## Initial Durable Job Records
 

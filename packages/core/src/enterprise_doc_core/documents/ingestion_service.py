@@ -8,9 +8,10 @@ from datetime import UTC, datetime
 from pathlib import Path
 from tempfile import SpooledTemporaryFile
 from time import perf_counter
-from uuid import UUID
+from uuid import UUID, uuid4
 
-from sqlalchemy import delete, func, select, update
+from sqlalchemy import delete, func, insert, select, update
+from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from enterprise_doc_core.billing.errors import UsageError
@@ -651,7 +652,10 @@ class DocumentIngestionService:
         structure: ParsedDocumentStructure | None = None,
     ) -> None:
         async with self.session_factory() as session, session.begin():
-            await self._lock_claim(session, claim)
+            # Large writes must not hold Job while the independent heartbeat renews it.
+            # Version/generation locks serialize checkpoints; the final fence below
+            # rolls back the entire transaction if this execution has become stale.
+            await self._lock_claim(session, claim, lock=False)
             version = await session.scalar(
                 select(DocumentVersion)
                 .where(
@@ -695,22 +699,32 @@ class DocumentIngestionService:
             await session.execute(
                 delete(DocumentChunk).where(DocumentChunk.generation_id == generation_id)
             )
-            for chunk in chunks:
-                search_text = f"{chunk.heading or ''} {chunk.text}".strip()
-                session.add(
-                    DocumentChunk(
-                        tenant_id=tenant_id,
-                        document_version_id=document_version_id,
-                        generation_id=generation_id,
-                        chunk_index=chunk.chunk_index,
-                        heading=chunk.heading,
-                        page_number=chunk.page_number,
-                        start_offset=chunk.start_offset,
-                        end_offset=chunk.end_offset,
-                        normalized_text=chunk.text,
-                        content_sha256=chunk.content_sha256,
-                        search_vector=func.to_tsvector("simple", search_text),
-                        embedding=None,
+            # Per-instance SQL expressions disable ORM insert batching. Explicit
+            # bounded multi-row INSERTs retain tsvector semantics without one RTT
+            # per chunk. UUIDs are supplied per row, never shared bind defaults.
+            for start in range(0, len(chunks), 100):
+                await session.execute(
+                    insert(DocumentChunk).values(
+                        [
+                            {
+                                "id": uuid4(),
+                                "tenant_id": tenant_id,
+                                "document_version_id": document_version_id,
+                                "generation_id": generation_id,
+                                "chunk_index": chunk.chunk_index,
+                                "heading": chunk.heading,
+                                "page_number": chunk.page_number,
+                                "start_offset": chunk.start_offset,
+                                "end_offset": chunk.end_offset,
+                                "normalized_text": chunk.text,
+                                "content_sha256": chunk.content_sha256,
+                                "search_vector": func.to_tsvector(
+                                    "simple", f"{chunk.heading or ''} {chunk.text}".strip()
+                                ),
+                                "embedding": None,
+                            }
+                            for chunk in chunks[start : start + 100]
+                        ]
                     )
                 )
             await session.flush()
@@ -720,6 +734,8 @@ class DocumentIngestionService:
             generation.embedded_count = 0
             if version.content_sha256_verified_at is None:
                 version.content_sha256_verified_at = func.now()
+            await session.flush()
+            await self._lock_claim(session, claim, nowait=True)
 
     async def _load_persisted_chunks(
         self,
@@ -814,7 +830,7 @@ class DocumentIngestionService:
         claim: ClaimedJob,
     ) -> None:
         async with self.session_factory() as session, session.begin():
-            job = await self._lock_claim(session, claim)
+            await self._lock_claim(session, claim, lock=False)
             version = await session.scalar(
                 select(DocumentVersion)
                 .where(
@@ -868,6 +884,7 @@ class DocumentIngestionService:
             for row, embedding in zip(rows, embeddings, strict=True):
                 row.embedding = list(embedding)
             await session.flush()
+            job = await self._lock_claim(session, claim, nowait=True)
             await session.execute(
                 update(DocumentIngestionGeneration)
                 .where(
@@ -942,15 +959,29 @@ class DocumentIngestionService:
             ):
                 version.status = DocumentVersionStatus.FAILED.value
 
-    async def _lock_claim(self, session: AsyncSession, claim: ClaimedJob) -> Job | None:
-        job = await session.scalar(
-            select(Job)
-            .where(
-                Job.id == claim.job_id,
-                Job.tenant_id == claim.tenant_id,
-            )
-            .with_for_update()
-        )
+    async def _lock_claim(
+        self,
+        session: AsyncSession,
+        claim: ClaimedJob,
+        *,
+        lock: bool = True,
+        nowait: bool = False,
+    ) -> Job | None:
+        statement = select(Job).where(Job.id == claim.job_id, Job.tenant_id == claim.tenant_id)
+        if lock:
+            # A checkpoint already owns version/generation. Never wait here for a
+            # contender that acquired Job first and is itself waiting for those rows.
+            statement = statement.with_for_update(nowait=nowait)
+        try:
+            job = await session.scalar(statement.execution_options(populate_existing=True))
+        except DBAPIError as error:
+            if not nowait or getattr(error.orig, "sqlstate", None) != "55P03":
+                raise
+            raise DocumentIngestionError(
+                "document_processing_busy",
+                "Document processing state is being updated; retry the checkpoint.",
+                retryable=True,
+            ) from error
         if job is None and not self.product_usage.require_active_entitlement:
             return None
         if (
