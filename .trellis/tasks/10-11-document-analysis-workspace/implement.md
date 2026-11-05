@@ -353,3 +353,38 @@ rc.54 未部署，staging 保持 rc.53 和临时开关关闭。
 保留原应用源码、Python 依赖和所有扫描/签名门禁。固定镜像上的本地包安装探针
 遇到 Debian 源 HTTP 500/EOF，未能验证安装；实际构建和修复验收以 rc.55
 发布的 SBOM、扫描和运行检查为准。原 rc.54 失败证据保留，不重写标签。
+
+### 2026-11-06：rc.55 部署、原任务恢复及预算口径修复
+
+rc.55 Container `42055240215` 签名发布、Quality `42055241490` 和隔离 0044
+启动演练 `42058772448` 通过。实际部署 `42065238748` 因 Runner 自动更新下载
+失败排队；校验官方 2.338.2 安装包后，将 1002 个待覆盖文件集中备份、103 个
+新增路径登记，更新并保留凭据/注册文件哈希。原排队部署随后成功。四个 live
+digest、Ready、API 4/0 与后台 2/0 均核验；发布记录因显式跳过认证 smoke 仍为
+`blocked_external`，不将工作流成功写成完整外部验收。
+
+获批的 rc.42 三组旧镜像别名及漏列汇总索引均已清理，其他镜像引用保留。
+原 monday-pricing Job `6ef56109-bc55-47b0-b007-9a5029a3ae9a` 只通过产品 API
+retry 一次，第 6 次 attempt 在约 242 秒后成功；1170 chunks/embeddings 完成，
+原 5 次心跳失败记录保留。七份原上传全部 ready，未重复上传。
+
+原权益到期后用正式管理服务创建连续、同额度的新周期，保留旧周期计数。
+项目 `0c94077a-4cf1-4b89-919e-af0278fbdb28`、快照
+`afa6e0ba-0f1a-4069-b1f7-0d175ddce90b` 已冻结。首次对照在 admission 被
+`provider_daily_budget_exhausted` 拒绝：生成调用 0，总调用 575/1000；完整
+60 项均记为 not_run，临时开关已关闭。原因是 AnalysisExecutionService 将
+aggregate daily limit 错压成 200，文档 embedding 被错误消耗生成预算。
+
+沿用恢复组 `analysis_budget_scope_repair_20261105`，基线 `52c62e2`。下一切片：
+真实 PostgreSQL 下先复现“已有 200 次 document 调用但仍有生成/总量余量”
+应允许分析；fixed/agent 均验证 aggregate 与共享 generation 两个独立边界在
+派发及 admission 阶段仍有效。只移除错误的 aggregate 截断，保留既有共享
+200 生成检查和单元两槽；通过定向及常规门禁后发布签名候选，复用原快照继续。
+
+本地修复验证：4 个真实 PostgreSQL 用例先在 admission 正确复现，再全部通过；
+fixed/agent 两模式分别验证 201 次总量边界和 200 次共享生成边界，后续 admission
+拒绝且整批回滚。相关执行/账本/评测 55 项通过；全仓非集成 3457 passed、2 项
+既有原始抓取审计 skipped、23 subtests；Ruff/格式与 Mypy 312 文件通过。只读
+对账确认当前项目 run=0、generation dispatch=0、活动 job=0、两个开关关闭。
+rc.55 relay 目录本轮 16 文件共 400636002 bytes 已核验后清理；旧 Runner 的
+1002 文件集中恢复点保留，重复传输压缩包已删除。

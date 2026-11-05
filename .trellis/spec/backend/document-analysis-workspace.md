@@ -141,6 +141,12 @@ freshness/invalidation reasons and reused revision lineage.
   allowance. In one database transaction it creates the run and all object/field
   units, reserves one `analysis_cell` per unit, creates Job/Outbox records and appends
   the initial event. Any quota failure rolls the whole run back.
+- The shared 200-generation guard counts Presales and `kind=agent` dispatches.
+  The configured provider daily allowance separately counts all tenant provider
+  calls, including document/query embeddings. Do not clamp that aggregate allowance
+  to 200: a successful large ingestion must not exhaust unused generation capacity.
+  Both guards apply at admission and before every dispatch; a lower configured
+  aggregate allowance still stops analysis, and each unit still has at most two slots.
 - `(tenant_id, project_id, idempotency_key)` is unique. A same-key/same-snapshot/mode
   retry returns the existing run; changing the snapshot or execution mode yields
   `analysis_idempotency_conflict`. Retries do not reset deadlines, dispatch counts or

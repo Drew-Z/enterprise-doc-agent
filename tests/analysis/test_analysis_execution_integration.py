@@ -439,6 +439,73 @@ async def test_stricter_aggregate_budget_is_checked_at_every_dispatch(browser_db
         assert matrix.units[1].error_code == "provider_daily_budget_exhausted"
 
 
+@pytest.mark.parametrize("execution_mode", ["fixed", "agent"])
+@pytest.mark.parametrize(
+    "aggregate_limit,generation_used,expected_error",
+    [
+        (201, 0, "provider_daily_budget_exhausted"),
+        (1000, 199, "provider_generation_budget_exhausted"),
+    ],
+)
+async def test_ingestion_calls_keep_aggregate_and_generation_budgets_separate(
+    browser_db, execution_mode, aggregate_limit, generation_used, expected_error
+):
+    calls = []
+
+    def handle(request):
+        calls.append(request)
+        return response(request)
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handle)) as client:
+        service, kwargs, _ = await setup(
+            browser_db.sessions,
+            client,
+            fields=2,
+            provider_settings=ProviderUsageSettings(daily_call_limit=aggregate_limit),
+        )
+        now = datetime.now(UTC)
+        async with browser_db.sessions.begin() as session:
+            session.add_all(
+                ProviderDispatch(
+                    tenant_id=kwargs["tenant_id"],
+                    operation_id=uuid4(),
+                    kind="document",
+                    provider="test",
+                    model="embedding-test",
+                    channel_hash="a" * 64,
+                    state="responded",
+                    started_at=now,
+                    finished_at=now,
+                )
+                for _ in range(200)
+            )
+            session.add(PresalesDispatchDay(day=now.date(), dispatched=generation_used))
+
+        run = await service.create_run(**kwargs, execution_mode=execution_mode)
+        _, claim = await claim_run(browser_db.sessions, run)
+        await service.execute(claim)
+        matrix = await service.matrix(
+            tenant_id=kwargs["tenant_id"], actor_id=kwargs["actor_id"], run_id=run.id
+        )
+        assert matrix.run.status == "partial" and matrix.run.dispatches == len(calls) == 1
+        assert matrix.units[0].status == "succeeded"
+        assert matrix.units[1].error_code == expected_error
+
+        with pytest.raises(UsageError, match=expected_error):
+            await service.create_run(
+                **(kwargs | {"idempotency_key": "after-exhaustion"}),
+                execution_mode=execution_mode,
+            )
+        async with browser_db.sessions() as session:
+            assert await session.scalar(select(func.count()).select_from(AnalysisRun)) == 1
+            assert await session.scalar(select(func.count()).select_from(AnalysisUnit)) == 2
+            assert await session.scalar(select(func.count()).select_from(ProviderDispatch)) == 201
+            quota = await session.scalar(
+                select(ProductQuota).where(ProductQuota.metric == ProductMetric.ANALYSIS_CELL)
+            )
+            assert (quota.units_used, quota.units_reserved) == (1, 0)
+
+
 async def test_thirty_cell_matrix_keeps_supplier_and_shared_requirement_scopes_separate(browser_db):
     observed = []
 

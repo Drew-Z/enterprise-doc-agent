@@ -311,14 +311,12 @@ class AnalysisExecutionService(AnalysisWorkspaceService):
         self.gateway = gateway
         self.usage = ProductUsageService(session_factory=session_factory, app_env=app_env)
         settings = provider_settings or ProviderUsageSettings()
-        # Preserve a stricter configured aggregate limit. No analysis-only ledger kind.
+        # The shared generation guard enforces 200 separately from this aggregate
+        # limit, which also counts document/query embeddings. Keep both boundaries.
         self.calls = ProviderCallService(
             session_factory=session_factory,
             settings=settings.model_copy(
-                update={
-                    "daily_call_limit": min(200, settings.daily_call_limit),
-                    "agent_call_limit": min(2, settings.agent_call_limit),
-                }
+                update={"agent_call_limit": min(2, settings.agent_call_limit)}
             ),
         )
 
