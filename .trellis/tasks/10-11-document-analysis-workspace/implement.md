@@ -339,3 +339,17 @@ embedding 派发，均 responded；尚无 analysis project、snapshot、run 或�
 审计 skipped、23 subtests passed**，Ruff/格式、Mypy 312 文件和 Trellis context
 检查通过。analysis/structured upload 临时窗口已关闭，rc.53 三个服务 Ready。
 接下来发布和部署 rc.54 后再恢复原 dead job；尚未把本地通过算为线上故障已恢复。
+
+### 2026-11-05：rc.54 发布扫描阻塞与 rc.55 修复
+
+`9e34927` 的 Quality `42047993544` 前后端通过；PR Container `42047993665`
+和 rc.54 Container `42048221290` 的三个后端镜像均在 Trivy 阶段失败。
+下载的 API SARIF 明确列出 apt/libapt-pkg6.0 2.6.1 的 CVE-2026-109518，
+修复版本 2.6.2；严格 release manifest 正确拒绝未通过扫描的版本。
+rc.54 未部署，staging 保持 rc.53 和临时开关关闭。
+
+沿用集中恢复组 `rc54_publication_remediation_20261105`，基线 `9e34927`。
+三个后端 Dockerfile 在既有安全更新步骤增加精确 apt/libapt-pkg6.0 2.6.2，
+保留原应用源码、Python 依赖和所有扫描/签名门禁。固定镜像上的本地包安装探针
+遇到 Debian 源 HTTP 500/EOF，未能验证安装；实际构建和修复验收以 rc.55
+发布的 SBOM、扫描和运行检查为准。原 rc.54 失败证据保留，不重写标签。

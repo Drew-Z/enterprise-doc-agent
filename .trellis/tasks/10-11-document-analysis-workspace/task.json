@@ -26,13 +26,13 @@
     ".trellis/tasks/10-11-document-analysis-workspace/implement.md",
     ".trellis/tasks/10-11-document-analysis-workspace/value-validation-plan.md"
   ],
-  "notes": "rc.53 deployed on 0044; controlled validation uploaded 7 sources, 6 ready and one dead after heartbeat pool/row-lock starvation. No analysis generation has run. Ingestion repair preserves atomic checkpoints with a final NOWAIT lease fence, batches chunk inserts, and sets 4C4G background pool 2/0. 32 PostgreSQL regressions and 3457 non-integration tests pass; temporary execution/upload switches closed pending immutable rc.54 deployment. Independent UAT remains open.",
+  "notes": "rc.53 deployed on 0044; controlled validation uploaded 7 sources, 6 ready and one dead after heartbeat pool/row-lock starvation. No analysis generation has run. Ingestion repair preserves atomic checkpoints with a final NOWAIT lease fence, batches chunk inserts, and sets 4C4G background pool 2/0. 32 PostgreSQL regressions and 3457 non-integration tests pass; temporary execution/upload switches closed. rc.54 Quality passed but published-image scans found CVE-2026-109518 in apt/libapt-pkg6.0 2.6.1; rc.55 pins both to 2.6.2 and awaits signed publication. Independent UAT remains open.",
   "meta": {
     "planning_deliverable": "architecture_v1",
     "architecture_review": "approved_by_user_2026-10-11",
     "implementation_started": true,
-    "current_slice": "A5_ingestion_lease_fix_verified_pending_rc54",
-    "next_slice": "publish_rc54_retry_original_ingestion_then_fixed_agent_validation",
+    "current_slice": "A5_rc54_publication_apt_scan_remediation",
+    "next_slice": "publish_rc55_retry_original_ingestion_then_fixed_agent_validation",
     "commercial_validation": "internal_diagnostic_authorized_no_independent_participants"
   }
 }

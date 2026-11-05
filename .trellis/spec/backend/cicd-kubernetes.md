@@ -15,6 +15,9 @@
   `3.0.22-1~deb12u2`, nginx to the verified `1.30.6-alpine3.24` index digest,
   and locks certifi/pypdf to `2026.10.18`/`6.21.4`. A scan must validate rebuilt
   images; old signed release evidence does not certify a new build.
+- The rc.54 scan found CVE-2026-109518 in Bookworm `apt` and `libapt-pkg6.0`
+  at 2.6.1. Pin both runtime packages to 2.6.2 alongside the existing updates;
+  retain the failed scan and require a fresh digest-bound scan before deployment.
 - Local/CI/recovery MinIO dependencies use `Dockerfile.object-store` after the
   upstream registry references became unavailable. The original server/client
   release binaries and AGPL license are fetched from official GitHub releases/tags
