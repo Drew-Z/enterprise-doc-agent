@@ -158,11 +158,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runtime: candidate-rc53
-            api: ghcr.io/drew-z/enterprise-doc-api@sha256:14547f78c40b245692bc57e4920fe0bd185b747bd5426fbed3a3033cc3bf242d
-            worker: ghcr.io/drew-z/enterprise-doc-worker@sha256:aa784af188184419f6f5979dcf6183a08a98ab30a7c18aaa854469be6e1cdd7b
-            consumer: ghcr.io/drew-z/enterprise-doc-consumer@sha256:9f29eb893dda667f8d3ff3d1cdeb66d9955bfb9ac1cbf5a104b7292fbc4cecbc
-            web: ghcr.io/drew-z/enterprise-doc-web@sha256:f4bed08c431406d8277089bafff66eccb9cf50d09438c4545f1a0c53cade5b02
+          - runtime: candidate-rc55
+            api: ghcr.io/drew-z/enterprise-doc-api@sha256:69d21dc4448cb87b7816f767c9ada17bedfe7b2ef9a9ec15cfc78fce61965c90
+            worker: ghcr.io/drew-z/enterprise-doc-worker@sha256:da004e41b26d1f32b9ccc0d0f3911940156819fadd38e6d44f437f66f48c4328
+            consumer: ghcr.io/drew-z/enterprise-doc-consumer@sha256:53aa4d1c4fb503768edf93ab31e519df2e66be897786a87643dd7a9d4cb146a5
+            web: ghcr.io/drew-z/enterprise-doc-web@sha256:61be510b5ae968aefffa11a9f92074b7db5a6ffff51b98ce0a07ea9747ebd893
           - runtime: rollback-rc51
             api: ghcr.io/drew-z/enterprise-doc-api@sha256:af9e576292ddc5e27c2c2a5704fcd9d3c6f42d07647920ed44b192e5faa39a9c
             worker: ghcr.io/drew-z/enterprise-doc-worker@sha256:dae34e5b08b94fed54a9455d4ee60230cd512d4751eaaf8caff8bc7d72c6b8a1
@@ -184,7 +184,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Probe signed runtime on schema 0044
         env:
-          CANDIDATE_API: ghcr.io/drew-z/enterprise-doc-api@sha256:14547f78c40b245692bc57e4920fe0bd185b747bd5426fbed3a3033cc3bf242d
+          CANDIDATE_API: ghcr.io/drew-z/enterprise-doc-api@sha256:69d21dc4448cb87b7816f767c9ada17bedfe7b2ef9a9ec15cfc78fce61965c90
           ROLLBACK_API: ${{ matrix.api }}
           ROLLBACK_WORKER: ${{ matrix.worker }}
           ROLLBACK_CONSUMER: ${{ matrix.consumer }}
