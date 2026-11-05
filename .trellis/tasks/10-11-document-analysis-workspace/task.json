@@ -26,13 +26,13 @@
     ".trellis/tasks/10-11-document-analysis-workspace/implement.md",
     ".trellis/tasks/10-11-document-analysis-workspace/value-validation-plan.md"
   ],
-  "notes": "rc.55 signed and deployed on 0044 after verified official runner recovery. Original failed ingestion retried once and succeeded; all seven original uploads ready. Project and snapshot frozen. First comparison rejected before any run or generation dispatch because analysis incorrectly clamped aggregate provider calls to 200. Temporary switches closed. Narrow budget-scope repair: 4 PostgreSQL red/green cases, 55 targeted regressions, 3457 non-integration tests and Ruff/Mypy passed. Publish rc.56 and reuse frozen snapshot; independent UAT remains open.",
+  "notes": "rc.55 deployed on 0044; original failed ingestion retried once and succeeded, seven sources ready and snapshot frozen. First real comparison was rejected before run creation or generation dispatch by an aggregate/generation budget scope bug. Narrow repair de7e08b passed 55 targeted regressions and 3457 non-integration tests. rc.56 signed supply-chain 42088050474 and runtime compatibility 42089769503 passed. Web/Worker imported; Consumer/API await approval of exact 16 unused rc.43 cache aliases including aggregate index. Running rc.55 remains Ready with temporary switches closed. No generation model calls; independent UAT remains open.",
   "meta": {
     "planning_deliverable": "architecture_v1",
     "architecture_review": "approved_by_user_2026-10-11",
     "implementation_started": true,
-    "current_slice": "A5_analysis_aggregate_generation_budget_scope_repair",
-    "next_slice": "publish_rc56_reuse_frozen_snapshot_for_fixed_agent_validation",
+    "current_slice": "A5_rc56_signed_runtime_verified_cache_cleanup_approval_pending",
+    "next_slice": "finish_rc56_import_deploy_and_reuse_frozen_snapshot",
     "commercial_validation": "internal_diagnostic_authorized_no_independent_participants"
   }
 }

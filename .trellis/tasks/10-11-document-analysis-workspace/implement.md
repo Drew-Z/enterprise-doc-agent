@@ -388,3 +388,17 @@ fixed/agent 两模式分别验证 201 次总量边界和 200 次共享生成边�
 对账确认当前项目 run=0、generation dispatch=0、活动 job=0、两个开关关闭。
 rc.55 relay 目录本轮 16 文件共 400636002 bytes 已核验后清理；旧 Runner 的
 1002 文件集中恢复点保留，重复传输压缩包已删除。
+
+预算修复已提交 `de7e08b` 并发布 `v0.1.45-rc.56`。Quality `42088059874`、
+签名供应链 `42088050474` 全部通过；56 个 manifest evidence hash 重算一致，
+四份配置范围内的 HIGH/CRITICAL SARIF 无发现。运行清单提交 `4f5be68`，
+Heavy `42089769503` 在 0044 上的 rc.56/rc.51 隔离空库探针均通过并各清理
+7 个容器及 network；Quality `42089785117`、Container `42089785051` 通过。
+
+Relay `42089311577` 完成四镜像导出；节点已导入 Web/Worker，随后 Consumer
+被磁盘 eviction/reclaim 保留线阻止。传输和规范化临时包已采用有界串行 tmpfs，
+每个成功导入立即删除归属明确的传输包；没有降低安全线。只读清理计划
+`rc56-rc43-cache-cleanup-plan.json` 列出 rc.43 三组旧后端缓存和其汇总索引共
+16 个精确别名，均无 Kubernetes/CRI/准入引用；保留 rc.43 Web 独立引用、
+运行 rc.55、rc.51/rc.53、候选 rc.56 和业务数据。用户对该新增历史删除范围
+确认前不执行清理；后续导入/部署脚本已准备。线上仍为 rc.55、Ready、开关关闭。
