@@ -111,6 +111,112 @@ def _normalize_model_timeout_seconds(value: str) -> float:
     return timeout
 
 
+def _normalize_boolean(value: str, *, description: str) -> bool:
+    if _contains_control_character(value):
+        raise StagingReleaseRecordError(f"{description} must not contain control characters")
+    normalized = value.strip()
+    if normalized not in {"true", "false"}:
+        raise StagingReleaseRecordError(f"{description} must be true or false")
+    return normalized == "true"
+
+
+def _normalize_bounded_integer(value: str, *, description: str, minimum: int, maximum: int) -> int:
+    if _contains_control_character(value):
+        raise StagingReleaseRecordError(f"{description} must not contain control characters")
+    normalized = value.strip()
+    if (
+        not normalized.isascii()
+        or not normalized.isdigit()
+        or not minimum <= int(normalized) <= maximum
+    ):
+        raise StagingReleaseRecordError(
+            f"{description} must be an integer from {minimum} to {maximum}"
+        )
+    return int(normalized)
+
+
+def _analysis_metadata(
+    *,
+    structured_documents_enabled: str,
+    analysis_execution_enabled: str,
+    model_route_id: str,
+    model_route_deadline_seconds: str | None,
+    analysis_unit_deadline_seconds: str,
+    analysis_run_deadline_seconds: str,
+    analysis_max_input_bytes: str,
+) -> dict[str, Any]:
+    structured_enabled = _normalize_boolean(
+        structured_documents_enabled,
+        description="structured documents enablement",
+    )
+    execution_enabled = _normalize_boolean(
+        analysis_execution_enabled,
+        description="analysis execution enablement",
+    )
+    if execution_enabled and not structured_enabled:
+        raise StagingReleaseRecordError(
+            "analysis execution requires structured documents to be enabled"
+        )
+    if _contains_control_character(model_route_id):
+        raise StagingReleaseRecordError("model route ID must not contain control characters")
+    normalized_route_id = model_route_id.strip()
+    if not 1 <= len(normalized_route_id) <= 64:
+        raise StagingReleaseRecordError("model route ID must contain 1-64 characters")
+    unit_deadline = _normalize_bounded_integer(
+        analysis_unit_deadline_seconds,
+        description="analysis unit deadline",
+        minimum=1,
+        maximum=600,
+    )
+    run_deadline = _normalize_bounded_integer(
+        analysis_run_deadline_seconds,
+        description="analysis run deadline",
+        minimum=1,
+        maximum=21600,
+    )
+    max_input_bytes = _normalize_bounded_integer(
+        analysis_max_input_bytes,
+        description="analysis max input bytes",
+        minimum=1024,
+        maximum=65536,
+    )
+    if run_deadline < unit_deadline:
+        raise StagingReleaseRecordError(
+            "analysis run deadline must not be less than the unit deadline"
+        )
+    route_deadline = None
+    if model_route_deadline_seconds is not None and model_route_deadline_seconds.strip():
+        if _contains_control_character(model_route_deadline_seconds):
+            raise StagingReleaseRecordError(
+                "model route deadline must not contain control characters"
+            )
+        try:
+            route_deadline = float(model_route_deadline_seconds.strip())
+        except ValueError as error:
+            raise StagingReleaseRecordError(
+                "model route deadline must be a number greater than 0 and at most 600"
+            ) from error
+        if not math.isfinite(route_deadline) or not 0 < route_deadline <= 600:
+            raise StagingReleaseRecordError(
+                "model route deadline must be a number greater than 0 and at most 600"
+            )
+    if execution_enabled and route_deadline is None:
+        raise StagingReleaseRecordError("analysis execution requires a model route deadline")
+    if execution_enabled and route_deadline is not None and route_deadline < unit_deadline:
+        raise StagingReleaseRecordError(
+            "model route deadline must cover the analysis unit deadline"
+        )
+    return {
+        "structured_documents_enabled": structured_enabled,
+        "execution_enabled": execution_enabled,
+        "route_id": normalized_route_id,
+        "model_route_deadline_seconds": route_deadline,
+        "unit_deadline_seconds": unit_deadline,
+        "run_deadline_seconds": run_deadline,
+        "max_input_bytes": max_input_bytes,
+    }
+
+
 def _model_metadata(
     *,
     model_provider: str,
@@ -293,6 +399,13 @@ def build_record(
     governance_smoke_outcome: str = "skipped",
     browser_identity_required: bool = False,
     browser_identity_outcome: str = "skipped",
+    structured_documents_enabled: str = "false",
+    analysis_execution_enabled: str = "false",
+    model_route_id: str = "default",
+    model_route_deadline_seconds: str | None = None,
+    analysis_unit_deadline_seconds: str = "120",
+    analysis_run_deadline_seconds: str = "3600",
+    analysis_max_input_bytes: str = "65536",
 ) -> dict[str, Any]:
     if deployment_profile not in DEPLOYMENT_PROFILES:
         raise StagingReleaseRecordError("deployment profile is not reviewed")
@@ -317,6 +430,15 @@ def build_record(
         raise StagingReleaseRecordError("governance smoke outcome is invalid")
     if browser_identity_outcome not in OUTCOME_VALUES:
         raise StagingReleaseRecordError("browser identity outcome is invalid")
+    analysis = _analysis_metadata(
+        structured_documents_enabled=structured_documents_enabled,
+        analysis_execution_enabled=analysis_execution_enabled,
+        model_route_id=model_route_id,
+        model_route_deadline_seconds=model_route_deadline_seconds,
+        analysis_unit_deadline_seconds=analysis_unit_deadline_seconds,
+        analysis_run_deadline_seconds=analysis_run_deadline_seconds,
+        analysis_max_input_bytes=analysis_max_input_bytes,
+    )
     model, model_error = _model_metadata(
         model_provider=model_provider,
         model_base_url=model_base_url,
@@ -362,7 +484,7 @@ def build_record(
         failure_reason = "One or more staging rollout or smoke steps did not succeed."
 
     record: dict[str, Any] = {
-        "schema_version": 3,
+        "schema_version": 4,
         "status": status,
         "blocking_reason": blocking_reason,
         "failure_reason": failure_reason,
@@ -376,6 +498,7 @@ def build_record(
         "model": model,
         "fallback_model": fallback_model,
         "embedding": embedding,
+        "analysis": analysis,
         "image_digests": image_digests,
         "outcomes": outcomes,
         "governance_smoke": {
@@ -422,6 +545,15 @@ def main() -> None:
     parser.add_argument("--governance-smoke-required", choices=("true", "false"), default="false")
     parser.add_argument("--browser-identity-required", choices=("true", "false"), default="false")
     parser.add_argument(
+        "--upload-structured-documents-enabled", choices=("true", "false"), default="false"
+    )
+    parser.add_argument("--analysis-execution-enabled", choices=("true", "false"), default="false")
+    parser.add_argument("--model-route-id", default="default")
+    parser.add_argument("--model-route-deadline-seconds")
+    parser.add_argument("--analysis-unit-deadline-seconds", default="120")
+    parser.add_argument("--analysis-run-deadline-seconds", default="3600")
+    parser.add_argument("--analysis-max-input-bytes", default="65536")
+    parser.add_argument(
         "--browser-identity-outcome", choices=sorted(OUTCOME_VALUES), default="skipped"
     )
     parser.add_argument(
@@ -460,6 +592,13 @@ def main() -> None:
             governance_smoke_outcome=args.governance_smoke_outcome,
             browser_identity_required=args.browser_identity_required == "true",
             browser_identity_outcome=args.browser_identity_outcome,
+            structured_documents_enabled=args.upload_structured_documents_enabled,
+            analysis_execution_enabled=args.analysis_execution_enabled,
+            model_route_id=args.model_route_id,
+            model_route_deadline_seconds=args.model_route_deadline_seconds,
+            analysis_unit_deadline_seconds=args.analysis_unit_deadline_seconds,
+            analysis_run_deadline_seconds=args.analysis_run_deadline_seconds,
+            analysis_max_input_bytes=args.analysis_max_input_bytes,
             output=args.output,
         )
     except (OSError, json.JSONDecodeError, StagingReleaseRecordError) as error:

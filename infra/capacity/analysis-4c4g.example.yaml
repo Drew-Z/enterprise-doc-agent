@@ -1,0 +1,69 @@
+schema_version: 1
+profile: analysis-4c4g
+base_url: http://127.0.0.1:8000
+object_origins:
+  - http://127.0.0.1:9000
+token_env: ANALYSIS_CAPACITY_TOKEN
+repetitions: 2
+target:
+  cpu_cores: 4
+  memory_bytes: 4294967296
+  p95_ms: 120000
+  max_error_rate: 0.01
+  min_throughput_per_second: 0.01
+analysis_case:
+  # Replace both IDs with a frozen 3-object x 2-field capacity snapshot.
+  project_id: 10000000-0000-0000-0000-000000000001
+  snapshot_id: 20000000-0000-0000-0000-000000000002
+  execution_mode: fixed
+  units_per_run: 6
+  max_dispatches_per_unit: 2
+parse_fixture:
+  path: .trellis/tasks/10-11-document-analysis-workspace/materials/validation-01/upload/requirements.synthetic.txt
+  media_type: text/plain
+  sha256: e79b9639fb43fe3b53b57705b20155fe2e07dc8d0e8c0dd2002a1e2b2f628a4f
+  bytes: 855
+# Worst case: 2 repetitions x 7 analysis runs x 6 units x 2 slots = 168.
+max_model_dispatches: 168
+phases:
+  - name: ramp
+    analysis_runs: 1
+    parse_uploads: 1
+    concurrency: 1
+    cancel_runs: 0
+    replay_runs: 0
+  - name: steady_state
+    analysis_runs: 2
+    parse_uploads: 2
+    concurrency: 2
+    cancel_runs: 0
+    replay_runs: 1
+  - name: burst
+    analysis_runs: 3
+    parse_uploads: 2
+    concurrency: 4
+    cancel_runs: 1
+    replay_runs: 1
+  - name: recovery
+    analysis_runs: 1
+    parse_uploads: 1
+    concurrency: 1
+    cancel_runs: 0
+    replay_runs: 1
+prometheus:
+  base_url: http://127.0.0.1:9090
+  bearer_token_env: null
+  step_seconds: 5
+  queries:
+    cpu: 100 * sum(rate(process_cpu_seconds_total{job=~"enterprise-doc-(api|worker|consumer)"}[1m])) / 4
+    memory: 100 * sum(process_resident_memory_bytes{job=~"enterprise-doc-(api|worker|consumer)"}) / 4294967296
+    database_pool: max(enterprise_doc_database_pool_utilization_percent)
+    database_lock: sum(pg_locks_count{mode=~".*ExclusiveLock",granted="false"})
+    queue: max(enterprise_doc_queue_oldest_age_seconds{job="enterprise-doc-worker"})
+    redis: max(enterprise_doc_redis_connected_clients{job="enterprise-doc-worker"})
+    object_store: histogram_quantile(0.95, sum(rate(enterprise_doc_dependency_duration_seconds_bucket{dependency="object_store"}[1m])) by (le))
+    model: histogram_quantile(0.95, sum(rate(enterprise_doc_dependency_duration_seconds_bucket{dependency="model"}[1m])) by (le))
+request_timeout_seconds: 30
+terminal_timeout_seconds: 1800
+poll_seconds: 0.25
+max_http_requests: 10000

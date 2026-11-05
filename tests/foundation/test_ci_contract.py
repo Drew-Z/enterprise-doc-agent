@@ -68,8 +68,13 @@ def test_quality_workflow_has_only_fast_jobs() -> None:
     workflow = _workflow()
     triggers = _triggers(workflow)
     assert set(triggers) == {"pull_request", "push"}
-    assert "**/*.md" in triggers["pull_request"]["paths-ignore"]
-    assert ".trellis/tasks/**/*.jsonl" in triggers["push"]["paths-ignore"]
+    # Required checks must be emitted for documentation-only changes as well.
+    # A path-filtered workflow leaves branch protection waiting indefinitely.
+    for event in ("pull_request", "push"):
+        filters = triggers[event] or {}
+        assert "paths-ignore" not in filters
+        assert "paths" not in filters
+    assert triggers["push"]["branches"] == ["main"]
     jobs = workflow.get("jobs")
     assert isinstance(jobs, dict)
     assert set(jobs) == {"backend", "frontend"}
@@ -87,10 +92,19 @@ def test_quality_workflow_has_only_fast_jobs() -> None:
 
 def test_manual_heavy_quality_preserves_integration_and_e2e_evidence() -> None:
     workflow = _workflow(HEAVY_WORKFLOW)
-    assert _triggers(workflow) == {"workflow_dispatch": None}
+    scope = _triggers(workflow)["workflow_dispatch"]["inputs"]["scope"]
+    assert scope["default"] == "all"
+    assert scope["options"] == ["all", "analysis-runtime"]
     jobs = workflow.get("jobs")
     assert isinstance(jobs, dict)
-    assert set(jobs) == {"m1-integration", "m4-integration", "web-e2e"}
+    assert set(jobs) == {
+        "m1-integration",
+        "m4-integration",
+        "web-e2e",
+        "analysis-rollback-compatibility",
+    }
+    for name in ("m1-integration", "m4-integration", "web-e2e"):
+        assert jobs[name]["if"] == "${{ inputs.scope != 'analysis-runtime' }}"
 
     integration_commands = _run_commands(jobs["m1-integration"])
     assert "uv sync --frozen" in integration_commands
@@ -98,7 +112,7 @@ def test_manual_heavy_quality_preserves_integration_and_e2e_evidence() -> None:
     port_release_gate = next(
         command for command in integration_commands if "--preflight" in command
     )
-    assert "for attempt in $(seq 1 45)" in port_release_gate
+    assert "for _ in $(seq 1 45)" in port_release_gate
     assert "sleep 2" in port_release_gate
     assert "ports were not released within 90 seconds" in port_release_gate
     assert any(
@@ -124,6 +138,13 @@ def test_manual_heavy_quality_preserves_integration_and_e2e_evidence() -> None:
     assert "uv run enterprise-doc-checkpointer-setup --check" in m4_commands
     assert "uv run pytest -m integration -q" in m4_commands
     assert "uv run python scripts/evaluate_m4_agent.py" in m4_commands
+    # Identity integration uses cached immutable images and real Chromium.
+    assert "pnpm install --frozen-lockfile" in m4_commands
+    assert "pnpm --filter web exec playwright install --with-deps chromium" in m4_commands
+    identity_pull = next(command for command in m4_commands if '"docker", "pull"' in command)
+    assert "infra/identity/lab.compose.yaml" in identity_pull
+    assert "sha256:" in identity_pull
+    assert m4_commands.index(identity_pull) < m4_commands.index("uv run pytest -m integration -q")
 
     e2e_commands = _run_commands(jobs["web-e2e"])
     assert "uv sync --frozen" in e2e_commands
@@ -141,6 +162,54 @@ def test_manual_heavy_quality_preserves_integration_and_e2e_evidence() -> None:
     )
     assert "always()" in str(evidence["if"])
     assert evidence["with"]["path"] == "apps/web/test-results"
+
+    compatibility = jobs["analysis-rollback-compatibility"]
+    assert compatibility["runs-on"] == "ubuntu-latest"
+    assert compatibility["timeout-minutes"] == 45
+    assert compatibility["permissions"] == {"contents": "read", "packages": "read"}
+    assert "if" not in compatibility
+    assert compatibility["strategy"]["fail-fast"] is False
+    runtimes = compatibility["strategy"]["matrix"]["include"]
+    assert {row["runtime"] for row in runtimes} == {"candidate-rc56", "rollback-rc51"}
+    for row in runtimes:
+        for service in ("api", "worker", "consumer", "web"):
+            assert "@sha256:" in row[service]
+    compatibility_commands = _run_commands(compatibility)
+    compatibility_command = next(
+        command
+        for command in compatibility_commands
+        if "run_analysis_rollback_compatibility.py" in command
+    )
+    assert '--candidate-api "$CANDIDATE_API"' in compatibility_command
+    assert '--rollback-api "$ROLLBACK_API"' in compatibility_command
+    assert '--rollback-worker "$ROLLBACK_WORKER"' in compatibility_command
+    assert '--rollback-consumer "$ROLLBACK_CONSUMER"' in compatibility_command
+    assert '--rollback-web "$ROLLBACK_WEB"' in compatibility_command
+    assert "--expected-schema-head 20261104_0044" in compatibility_command
+    assert "--report-path" in compatibility_command
+    compatibility_steps = compatibility["steps"]
+    assert isinstance(compatibility_steps, list)
+    login = next(
+        step
+        for step in compatibility_steps
+        if isinstance(step, dict)
+        and step.get("uses") == "docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9"
+    )
+    assert login["with"] == {
+        "registry": "ghcr.io",
+        "username": "${{ github.actor }}",
+        "password": "${{ secrets.GITHUB_TOKEN }}",
+    }
+    upload = next(
+        step
+        for step in compatibility_steps
+        if isinstance(step, dict)
+        and step.get("uses") == "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"
+    )
+    assert upload["if"] == "${{ always() }}"
+    assert upload["with"]["if-no-files-found"] == "error"
+    assert "github.run_id" in upload["with"]["name"]
+    assert "matrix.runtime" in upload["with"]["name"]
 
 
 def test_manual_self_hosted_quality_is_serial_and_secret_free() -> None:

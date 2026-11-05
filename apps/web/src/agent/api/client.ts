@@ -56,7 +56,7 @@ export class AgentAuthenticationError extends Error {
 }
 
 export class AgentNetworkError extends Error {
-  constructor(readonly code: "aborted" | "network_error", message: string, options?: ErrorOptions) {
+  constructor(readonly code: "aborted" | "network_error" | "timeout", message: string, options?: ErrorOptions) {
     super(message, options);
     this.name = "AgentNetworkError";
   }
@@ -269,18 +269,25 @@ export class AgentApiClient implements AgentApiClientProtocol {
     expectedStatuses: readonly number[],
     init?: RequestInit,
   ): Promise<T> {
-    const response = await this.authorizedFetch(path, init);
-    if (!expectedStatuses.includes(response.status)) {
-      await this.throwResponseError(response);
+    const timeout = AbortSignal.timeout(15_000);
+    const signal = init?.signal ? AbortSignal.any([init.signal, timeout]) : timeout;
+    try {
+      const response = await this.authorizedFetch(path, { ...init, signal });
+      if (!expectedStatuses.includes(response.status)) {
+        await this.throwResponseError(response);
+      }
+      const body = await parseJson(response);
+      const result = schema.safeParse(body);
+      if (!result.success) {
+        throw new AgentApiProtocolError("Agent API response does not match its runtime schema.", {
+          cause: result.error,
+        });
+      }
+      return result.data;
+    } catch (error) {
+      if (timeout.aborted && !init?.signal?.aborted) throw new AgentNetworkError("timeout", "The task service response timed out.");
+      throw error;
     }
-    const body = await parseJson(response);
-    const result = schema.safeParse(body);
-    if (!result.success) {
-      throw new AgentApiProtocolError("Agent API response does not match its runtime schema.", {
-        cause: result.error,
-      });
-    }
-    return result.data;
   }
 
   private async authorizedFetch(path: string, init: RequestInit = {}): Promise<Response> {
@@ -306,12 +313,18 @@ export class AgentApiClient implements AgentApiClientProtocol {
   }
 
   private async throwResponseError(response: Response): Promise<never> {
-    const body = await parseJson(response);
+    // Proxies commonly return HTML for 502/503/504. Preserve HTTP status so
+    // callers can distinguish a temporary outage from a protocol/ACL failure.
+    const body: unknown = await response.json().catch(() => null);
     const parsed = errorResponseSchema.safeParse(body);
     if (!parsed.success) {
-      throw new AgentApiProtocolError("Agent API error response does not match its runtime schema.", {
-        cause: parsed.error,
-      });
+      const requestId = response.headers.get("X-Request-ID");
+      throw new AgentApiError(
+        response.status,
+        `agent_http_${response.status}`,
+        "The task service could not complete this request.",
+        requestId !== null && /^[a-zA-Z0-9_.:-]{1,128}$/.test(requestId) ? requestId : null,
+      );
     }
     throw new AgentApiError(
       response.status,

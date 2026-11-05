@@ -3,16 +3,26 @@ from __future__ import annotations
 import argparse
 import copy
 import hashlib
+import importlib
 import io
 import json
+import math
 import re
 import shutil
 import subprocess
 import tarfile
 import tempfile
-from collections.abc import Callable
+import time
+from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import Any, NamedTuple
+from typing import TYPE_CHECKING, Any, NamedTuple
+
+if TYPE_CHECKING:
+    from . import image_cache_safety as safety
+else:
+    safety = importlib.import_module(
+        f"{__package__}.image_cache_safety" if __package__ else "image_cache_safety"
+    )
 
 CONTAINERD_NAMESPACE = "k8s.io"
 _BASE_NAME_PATTERN = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
@@ -306,13 +316,15 @@ def _run_checked(
     operation: str,
 ) -> subprocess.CompletedProcess[str]:
     try:
-        return run(list(command), check=True, capture_output=True, text=True)
+        return run(list(command), check=True, capture_output=True, text=True, timeout=120)
     except FileNotFoundError as error:
         raise StagingOciImportError(f"{operation} requires the containerd CLI") from error
     except subprocess.CalledProcessError as error:
         raise StagingOciImportError(
             f"{operation} failed with exit status {error.returncode}"
         ) from error
+    except subprocess.TimeoutExpired as error:
+        raise StagingOciImportError(f"{operation} timed out; cache result is unknown") from error
     except OSError as error:
         raise StagingOciImportError(f"{operation} could not start") from error
 
@@ -321,17 +333,132 @@ def execute_import_plan(
     plan: OciImportPlan,
     *,
     run: RunCommand = subprocess.run,
+    probe: Callable[[tuple[str, ...]], dict[str, Any]] | None = None,
+    clock: Callable[[], float] = time.monotonic,
+    timeout: float = 600,
 ) -> dict[str, object]:
-    descriptors, root_descriptor_digests = image_descriptors(plan.archive)
-    if tuple(descriptor.digest for descriptor in descriptors) != plan.descriptor_digests:
-        raise StagingOciImportError("validated OCI descriptor set changed before import")
-    if root_descriptor_digests != plan.root_descriptor_digests:
-        raise StagingOciImportError("validated OCI root descriptor set changed before import")
-    with tempfile.TemporaryDirectory(prefix="enterprise-doc-oci-import-") as temporary_dir:
-        normalized_archive = Path(temporary_dir) / plan.archive.name
-        _write_normalized_archive(plan.archive, normalized_archive, descriptors)
-        import_command = (*plan.import_command[:-1], str(normalized_archive))
-        _run_checked(run, import_command, operation="containerd OCI import")
+    batch = execute_import_batch([plan], run=run, probe=probe, clock=clock, timeout=timeout)
+    report: dict[str, object] = batch["imports"][0]
+    return {**report, "cache_safety": batch["cache_safety"]}
+
+
+def execute_import_batch(
+    plans: Sequence[OciImportPlan],
+    *,
+    run: RunCommand = subprocess.run,
+    probe: Callable[[tuple[str, ...]], dict[str, Any]] | None = None,
+    clock: Callable[[], float] = time.monotonic,
+    timeout: float = 600,
+) -> dict[str, Any]:
+    """Check the complete batch before temporary files or containerd mutations."""
+    if not 1 <= len(plans) <= 16 or not math.isfinite(timeout) or not 0 < timeout <= 600:
+        raise StagingOciImportError("import batch or shared deadline is out of bounds")
+    prefix = plans[0].containerd_prefix
+    if any(plan.containerd_prefix != prefix for plan in plans):
+        raise StagingOciImportError("one import batch must use one containerd target")
+    if len({plan.archive.resolve() for plan in plans}) != len(plans):
+        raise StagingOciImportError("duplicate source archive in import batch")
+    deadline = clock() + timeout
+
+    def checkpoint() -> None:
+        if clock() >= deadline:
+            raise StagingOciImportError("shared OCI batch deadline expired")
+
+    def bounded_run(command: list[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:
+        checkpoint()
+        kwargs["timeout"] = min(float(kwargs.get("timeout", 120)), deadline - clock())
+        if kwargs["timeout"] <= 0:
+            raise StagingOciImportError("shared OCI batch deadline expired")
+        result = run(command, **kwargs)
+        checkpoint()
+        return result
+
+    def observe() -> dict[str, Any]:
+        checkpoint()
+        result = probe(prefix) if probe else safety.collect_cache_state(prefix, run=bounded_run)
+        checkpoint()
+        return result
+
+    try:
+        footprints = []
+        descriptor_sets = []
+        for plan in plans:
+            checkpoint()
+            verified = prepare_import_plan(
+                archive=plan.archive,
+                expected_sha256=plan.archive_sha256,
+                base_name=plan.canonical_base.removeprefix("docker.io/library/"),
+                containerd_cli=prefix[0],
+                image_reference=plan.image_reference,
+            )
+            if verified != plan:
+                raise StagingOciImportError("validated OCI plan changed before import")
+            footprints.append(
+                safety.archive_footprint(
+                    plan.archive, plan.descriptor_digests, checkpoint=checkpoint
+                )
+            )
+            descriptor_sets.append(image_descriptors(plan.archive)[0])
+        preflight = safety.validate_capacity(observe(), footprints, clock=clock)
+        checkpoint()
+        with tempfile.TemporaryDirectory(
+            prefix="enterprise-doc-oci-import-", dir=safety.temporary_directory()
+        ) as temporary_dir:
+            normalized = []
+            for index, (plan, descriptors) in enumerate(zip(plans, descriptor_sets, strict=True)):
+                checkpoint()
+                target = Path(temporary_dir) / f"{index}.oci.tar"
+                _write_normalized_archive(plan.archive, target, descriptors)
+                # Normalization changes only the index; verify the copied content as well.
+                safety.archive_footprint(target, plan.descriptor_digests, checkpoint=checkpoint)
+                normalized.append(target)
+            for plan in plans:
+                checkpoint()
+                if _sha256_file(plan.archive) != plan.archive_sha256:
+                    raise StagingOciImportError("OCI archive SHA-256 changed before import")
+            checkpoints = []
+            reports = []
+            for index, (plan, target) in enumerate(zip(plans, normalized, strict=True)):
+                checkpoints.append(
+                    safety.validate_capacity(
+                        observe(),
+                        footprints[index:],
+                        normalized=True,
+                        previous=preflight,
+                        clock=clock,
+                    )
+                )
+                reports.append(_import_normalized_plan(plan, target, run=bounded_run))
+            postflight = safety.validate_capacity(
+                observe(),
+                [safety.ArchiveFootprint(0, 0, 0, 0, 0)],
+                normalized=True,
+                previous=preflight,
+                clock=clock,
+            )
+        return {
+            "schema_version": 1,
+            "operation": "staging-oci-batch-import",
+            "status": "passed",
+            "imports": reports,
+            "cache_safety": {
+                "preflight": preflight,
+                "before_import": checkpoints,
+                "postflight": postflight,
+            },
+        }
+    except safety.ImageCacheSafetyError as error:
+        raise StagingOciImportError(str(error)) from error
+
+
+def _import_normalized_plan(
+    plan: OciImportPlan,
+    normalized_archive: Path,
+    *,
+    run: RunCommand,
+) -> dict[str, object]:
+    import_command = (*plan.import_command[:-1], str(normalized_archive))
+    _run_checked(run, import_command, operation="containerd OCI import")
     list_command = (
         *plan.containerd_prefix,
         "--namespace",
@@ -440,7 +567,54 @@ def _planned_report(plan: OciImportPlan) -> dict[str, object]:
         "deployment_image_reference": plan.image_reference,
         "source_archive": str(plan.archive),
         "import_command": list(plan.import_command),
+        "footprint": safety.archive_footprint(plan.archive, plan.descriptor_digests)._asdict(),
+        "live_cache_preflight_required": True,
     }
+
+
+def load_import_batch(path: Path, *, containerd_cli: str) -> list[OciImportPlan]:
+    """Load all archives in the operation without connecting to the target."""
+    try:
+        if path.stat().st_size > 1024**2:
+            raise StagingOciImportError("batch plan exceeds the input bound")
+        value = json.loads(path.read_bytes())
+        if (
+            not isinstance(value, dict)
+            or set(value) != {"schema_version", "archives"}
+            or type(value["schema_version"]) is not int
+            or value["schema_version"] != 1
+        ):
+            raise StagingOciImportError("unsupported OCI batch plan")
+        entries = value["archives"]
+        if not isinstance(entries, list) or not 1 <= len(entries) <= 16:
+            raise StagingOciImportError("OCI batch must contain one to sixteen archives")
+        plans = []
+        required = {"archive", "expected_sha256", "base_name"}
+        for entry in entries:
+            if (
+                not isinstance(entry, dict)
+                or not required <= set(entry)
+                or set(entry) - (required | {"image_reference"})
+                or any(not isinstance(v, str) or not v for v in entry.values())
+            ):
+                raise StagingOciImportError("invalid OCI batch archive entry")
+            source = Path(entry["archive"])
+            if not source.is_absolute():
+                source = path.parent / source
+            plans.append(
+                prepare_import_plan(
+                    archive=source,
+                    expected_sha256=entry["expected_sha256"],
+                    base_name=entry["base_name"],
+                    containerd_cli=containerd_cli,
+                    image_reference=entry.get("image_reference"),
+                )
+            )
+        if len({p.archive.resolve() for p in plans}) != len(plans):
+            raise StagingOciImportError("duplicate source archive in import batch")
+        return plans
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise StagingOciImportError("unable to read OCI batch plan") from error
 
 
 def _write_report(path: Path | None, report: dict[str, object]) -> None:
@@ -454,43 +628,64 @@ def _write_report(path: Path | None, report: dict[str, object]) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(
         description=(
-            "Verify and import one staging OCI relay archive with canonical containerd aliases"
+            "Verify an entire staging OCI batch before creating files or changing the image cache"
         )
     )
-    parser.add_argument("--archive", type=Path, required=True)
-    parser.add_argument("--expected-sha256", required=True)
-    parser.add_argument("--base-name", required=True)
+    source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument("--archive", type=Path)
+    source.add_argument("--batch-plan", type=Path)
+    parser.add_argument("--expected-sha256")
+    parser.add_argument("--base-name")
     parser.add_argument("--image-reference")
     parser.add_argument("--containerd-cli", default="k3s")
     parser.add_argument("--record-path", type=Path)
     parser.add_argument("--confirm", action="store_true")
     args = parser.parse_args()
     try:
-        plan = prepare_import_plan(
-            archive=args.archive,
-            expected_sha256=args.expected_sha256,
-            base_name=args.base_name,
-            containerd_cli=args.containerd_cli,
-            image_reference=args.image_reference,
-        )
-    except StagingOciImportError as error:
+        if args.batch_plan:
+            if args.expected_sha256 or args.base_name or args.image_reference:
+                parser.error("single-archive options cannot be combined with --batch-plan")
+            plans = load_import_batch(args.batch_plan, containerd_cli=args.containerd_cli)
+            planned = {
+                "schema_version": 1,
+                "operation": "staging-oci-batch-import",
+                "status": "planned",
+                "mutation_performed": False,
+                "confirm_required": True,
+                "archives": [_planned_report(p) for p in plans],
+            }
+        else:
+            if not args.expected_sha256 or not args.base_name:
+                parser.error("--archive requires --expected-sha256 and --base-name")
+            plans = [
+                prepare_import_plan(
+                    archive=args.archive,
+                    expected_sha256=args.expected_sha256,
+                    base_name=args.base_name,
+                    containerd_cli=args.containerd_cli,
+                    image_reference=args.image_reference,
+                )
+            ]
+            planned = _planned_report(plans[0])
+    except (StagingOciImportError, safety.ImageCacheSafetyError) as error:
         raise SystemExit(str(error)) from error
     if not args.confirm:
-        _write_report(args.record_path, _planned_report(plan))
+        _write_report(args.record_path, planned)
         return
-    if shutil.which(plan.containerd_prefix[0]) is None:
+    if shutil.which(plans[0].containerd_prefix[0]) is None:
         raise SystemExit("containerd CLI executable is not available")
     try:
-        report = execute_import_plan(plan)
+        report = execute_import_batch(plans) if args.batch_plan else execute_import_plan(plans[0])
     except StagingOciImportError as error:
         failed_report = {
             "schema_version": 1,
             "operation": "staging-oci-archive-import",
             "status": "failed",
-            "archive_sha256": plan.archive_sha256,
+            "archives": [
+                {"sha256": p.archive_sha256, "canonical_base": p.canonical_base} for p in plans
+            ],
             "containerd_namespace": CONTAINERD_NAMESPACE,
-            "canonical_base": plan.canonical_base,
-            "expected_descriptor_count": len(plan.expected_refs),
+            "cache_mutation_outcome": "not_claimed; retain failure and inspect before retry",
             "error": str(error),
         }
         _write_report(args.record_path, failed_report)

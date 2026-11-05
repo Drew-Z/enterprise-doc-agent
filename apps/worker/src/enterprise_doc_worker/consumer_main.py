@@ -11,16 +11,19 @@ from celery import Celery
 from prometheus_client import start_http_server
 
 from enterprise_doc_core.agents import CheckpointRuntime
+from enterprise_doc_core.analysis.execution import build_execution_service
 from enterprise_doc_core.db import create_session_factory, ensure_asyncio_compatibility
 from enterprise_doc_core.health import FoundationResources, build_foundation_resources
 from enterprise_doc_core.jobs import JobRuntimeService
 from enterprise_doc_core.logging import configure_logging
 from enterprise_doc_core.telemetry import MetricsRuntime
-from enterprise_doc_worker.agent_handler import (
-    agent_failure_lock_key,
-    project_agent_run_failure,
-)
 from enterprise_doc_worker.agents import build_durable_agent_handler
+from enterprise_doc_worker.analysis_handler import (
+    execution_failure_lock_key as agent_failure_lock_key,
+)
+from enterprise_doc_worker.analysis_handler import (
+    project_execution_failure as project_agent_run_failure,
+)
 from enterprise_doc_worker.config import WorkerSettings
 from enterprise_doc_worker.handler import build_consumer_factory
 from enterprise_doc_worker.queue import (
@@ -89,9 +92,14 @@ def build_consumer_app(
             documents_bucket=settings.object_store.documents_bucket,
             worker_id=resolved_worker_id,
             agent_handler=agent_handler,
+            analysis_handler=build_execution_service(
+                session_factory=session_factory, settings=settings
+            ).execute,
             metrics=resolved_metrics,
             fault_injection=settings.fault_injection,
             embedding_settings=settings.embedding,
+            app_env=settings.app_env,
+            provider_usage_settings=settings.provider_usage,
         ),
         async_runner=resolved_runner,
     )
@@ -157,6 +165,8 @@ def main() -> None:
             checkpointer=checkpointer,
             graph_version=settings.agent.graph_version,
             execution_timeout_seconds=settings.agent.execution_timeout_seconds,
+            app_env=settings.app_env,
+            provider_usage_settings=settings.provider_usage,
             fault_injection=settings.fault_injection,
             metrics=metrics,
         )

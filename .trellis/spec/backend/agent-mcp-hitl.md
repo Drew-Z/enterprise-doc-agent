@@ -47,6 +47,20 @@ node execution but cannot override tenant, run, approval, or artifact rows.
   operation, artifact, document version, and fingerprint. Replay is idempotent.
 - Agent events contain allowlisted public payloads only. Prompt, document, model/tool
   bodies, execution-context tokens, object keys, and signed URLs are not event fields.
+- A run with `publish_requested=true` exposes no public artifact while waiting for approval:
+  list results are empty and download is unavailable even though its durable draft is ready.
+  Verify the draft through the exact approval target and protected database evidence; read
+  its public preview/download only after publication. Non-publication drafts remain visible.
+- Recovery probes must bind immutable images and distinguish a newly restored machine,
+  process replacement, and an expired historical request. Preserve the approval deadline;
+  an expired sample cannot become a successful resume by extending its TTL. Replace actual
+  Worker/Consumer Pods, compare their UIDs, then verify checkpoint resume, one publication,
+  one consumption, unchanged provider dispatches, and same-key replay through public APIs.
+- Private acceptance scripts must validate reused HTTP helper signatures before execution.
+  `BusinessIO.request` accepts `payload` and `accepted`, not the httpx `json` keyword.
+  Strict integer provider budgets use the JSON `PROVIDER_USAGE` configuration; a nested
+  string environment override is rejected. Keep failed attempts and resume exact existing
+  work only while its original authorization and deadline remain valid.
 
 ## Proven Examples
 

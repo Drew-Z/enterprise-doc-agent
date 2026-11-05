@@ -1,0 +1,200 @@
+{
+  "schema_version": 1,
+  "status": "mail_transport_activated_and_observed",
+  "observed_through_utc": "2026-10-08T21:06:44.057917+00:00",
+  "runtime_source_commit": "7baac1b998566fdf215eb640abcde9376792f2fe",
+  "scope": "invited_operations_fixed_recipient",
+  "user_receipt": {
+    "event": "CLAW-20261008-01",
+    "status": "outlook_receipt_confirmed_by_user",
+    "screenshot_sha256": "9029e03a5bd8fca971435ac9dd58e540e301ff1025ea27a6439dfbc77dfc2f26",
+    "screenshot_bytes": 108783,
+    "original_test_resent": false
+  },
+  "cloud_readonly_probe": {
+    "status": "cloud_auth_and_exact_sent_receipt_verified",
+    "http_status": 200,
+    "elapsed_ms": 589,
+    "provider_requests": 2,
+    "manual_email_sends": 0
+  },
+  "activation": {
+    "completed_at_utc": "2026-10-08T21:04:07.015443+00:00",
+    "workers": {
+      "docagent-ops-monitor": {
+        "version_id": "10ef1efb-71d9-4cec-9bcb-1d17c0740f45",
+        "deployment_id": "1efa9d28-f140-422e-b432-a9208cd10afa",
+        "version_percentage": 100,
+        "monitor_key": "operations-live-v1",
+        "mode": "notify",
+        "cron": [
+          "* * * * *"
+        ],
+        "natural_ticks_utc": [
+          "2026-10-08T21:04:00+00:00",
+          "2026-10-08T21:05:00+00:00",
+          "2026-10-08T21:06:00+00:00"
+        ],
+        "runtime_module": {
+          "name": "monitor.js",
+          "sha256": "1eec5d50568402c0c70b4f05134c08f1e48b330403e215d43c3586497624275c",
+          "bytes": 27439
+        }
+      },
+      "docagent-ops-watchdog": {
+        "version_id": "13415854-05ca-4e4f-86ec-fe0ce7c70f04",
+        "deployment_id": "558e5109-d33c-4452-a5a5-ed9a27ffe45c",
+        "version_percentage": 100,
+        "monitor_key": "watchdog-live-v1",
+        "mode": "notify",
+        "cron": [
+          "* * * * *"
+        ],
+        "natural_ticks_utc": [
+          "2026-10-08T21:04:00+00:00",
+          "2026-10-08T21:05:00+00:00",
+          "2026-10-08T21:06:00+00:00"
+        ],
+        "runtime_module": {
+          "name": "monitor.js",
+          "sha256": "1eec5d50568402c0c70b4f05134c08f1e48b330403e215d43c3586497624275c",
+          "bytes": 27439
+        }
+      }
+    },
+    "provider": "clawemail",
+    "sender_domain": "claw.163.com",
+    "recipient_unchanged": true,
+    "credentials_in_worker_secret": true,
+    "legacy_mail_binding_retained": true
+  },
+  "observation": {
+    "samples": 5,
+    "distinct_minute_ticks_per_worker": 3,
+    "both_monitors_ready": true,
+    "historical_notifications_preserved": 51,
+    "new_notification_events": 0,
+    "manual_email_sends": 0
+  },
+  "validation": {
+    "monitor_tests_passed": 103,
+    "actual_workerd_scheduled_entrypoint_covered": true,
+    "lint": "passed",
+    "types": "passed",
+    "documentation_tests_passed": 5,
+    "ci": [
+      {
+        "conclusion": "success",
+        "databaseId": 37841758701,
+        "headSha": "7baac1b998566fdf215eb640abcde9376792f2fe",
+        "name": "Container Supply Chain",
+        "status": "completed",
+        "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/37841758701"
+      },
+      {
+        "conclusion": "success",
+        "databaseId": 37841758676,
+        "headSha": "7baac1b998566fdf215eb640abcde9376792f2fe",
+        "name": "Quality",
+        "status": "completed",
+        "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/37841758676"
+      }
+    ]
+  },
+  "temporary_resource_cleanup": {
+    "workers_deleted_and_absent": 5,
+    "databases_deleted_and_absent": 3,
+    "receipts": [
+      {
+        "evidence": {
+          "file": "clawemail-cloud-readonly-verification-20261009.json",
+          "sha256": "b1b97927574b3fc269953d770cc1e0c99544dc6f20efab24c457a447a4b93013",
+          "bytes": 274
+        },
+        "original_status": "failed",
+        "worker_absent": true
+      },
+      {
+        "evidence": {
+          "file": "clawemail-cloud-scheduled-probe-verification-20261009.json",
+          "sha256": "b5b407b255c248ad5f99899697b0c2735d247a497f37746eb7b0b9c12ba32f25",
+          "bytes": 793
+        },
+        "original_status": "failed",
+        "worker_absent": true,
+        "database_absent": true
+      },
+      {
+        "evidence": {
+          "file": "clawemail-cloud-scheduled-probe-v2-verification-20261009.json",
+          "sha256": "63eb3f6ba78c48d99672e4c6a7a2a9f7d8be7aaec6197ea49ffecd5ea17cac26",
+          "bytes": 618
+        },
+        "original_status": "cron_deadline_without_result",
+        "worker_absent": true,
+        "database_absent": true
+      },
+      {
+        "evidence": {
+          "file": "clawemail-cloud-scheduled-probe-v3-verification-20261009.json",
+          "sha256": "08dba40f582f02676cfe5bad963b166160f48cadbbb09216964a40cc178b1d29",
+          "bytes": 618
+        },
+        "original_status": "cron_deadline_without_result",
+        "worker_absent": true,
+        "database_absent": true
+      },
+      {
+        "evidence": {
+          "file": "clawemail-cloud-readonly-v4-verification-20261009.json",
+          "sha256": "d2513a5b621f153dc2edb11a9b3fd848da5220f57eba81bdf8a79126e4fd9534",
+          "bytes": 532
+        },
+        "original_status": "passed",
+        "worker_absent": true
+      }
+    ]
+  },
+  "boundaries": {
+    "old_domain_delisting_verified": false,
+    "new_cloud_failure_recovery_emails_tested": false,
+    "actual_incident_handling_accepted": false,
+    "business_and_release_review_accepted": false,
+    "customer_uat_accepted": false,
+    "full_project_acceptance": "open",
+    "prior_failures_and_unknown_notifications_preserved": true,
+    "application_deployment_changed_by_mail_activation": false
+  },
+  "evidence": [
+    {
+      "file": "clawemail-outlook-user-receipt-20261009.json",
+      "sha256": "8b33584130b6ae734b03d90f6eef3bef008d47131480568851c34da2da738ffb",
+      "bytes": 669
+    },
+    {
+      "file": "clawemail-mime-ci-20261009.json",
+      "sha256": "5573a8a358085574fa8fa7d9494c816605bd312fd4b87e5c68502153dbd98653",
+      "bytes": 777
+    },
+    {
+      "file": "clawemail-cloud-preactivation-v3-20261009.json",
+      "sha256": "90b88517e74d1d9517c11dca7707702ca55d02e9d5f6bad461b64766f39e4ccf",
+      "bytes": 33502
+    },
+    {
+      "file": "clawemail-cloud-postactivation-v3-20261009.json",
+      "sha256": "ad12f820bb2dc1c1cb0186f0d503d63b58a10d9cbfdbce1e78abb95a7bf8e194",
+      "bytes": 34566
+    },
+    {
+      "file": "clawemail-cloud-activation-receipt-v3-20261009.json",
+      "sha256": "5de7013bc08a9f502ceda54d671a298549f86a1e71e1d7b5c23d4fb144228680",
+      "bytes": 747
+    },
+    {
+      "file": "clawemail-cloud-scheduled-window-20261009.json",
+      "sha256": "d25199d3ea6c912cd176716227a77c19d750dacbcfb3342022437fce6f8d4eb2",
+      "bytes": 3219
+    }
+  ]
+}

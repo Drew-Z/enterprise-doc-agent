@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-09T00:37:21.000023+00:00",
+  "recorded_by": "primary-assistant",
+  "source": "User message in active project continuation",
+  "user_statement": "向量调用计算应该不是必须的吧，可以不计算这个吗",
+  "interpretation": "User permits omitting embedding supplier cost calculation and financial reconciliation from this invited release acceptance.",
+  "release_scope": "invited",
+  "embedding_actual_cost_required": false,
+  "embedding_price_table_required": false,
+  "embedding_invoice_reconciliation_required": false,
+  "retained_requirements": [
+    "vector retrieval and ingestion functionality",
+    "provider dispatch counts and observed token usage",
+    "finite request limits and business quotas",
+    "failure and unknown-state records",
+    "once-only business settlement and tenant isolation"
+  ],
+  "unknown_amount_semantics": "uncomputed or unknown remains null; no zero-cost or free inference",
+  "language_model_cost_scope": "existing accepted scope unchanged",
+  "does_not_mark_any_gate_passed": true,
+  "does_not_modify_backup_deferral_set": true
+}

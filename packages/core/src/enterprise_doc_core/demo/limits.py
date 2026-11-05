@@ -46,20 +46,40 @@ async def active_workspace(
     workspace = await session.scalar(
         select(DemoWorkspace).where(DemoWorkspace.tenant_id == tenant_id)
     )
+    _require_active_workspace(workspace, now)
+    return workspace
+
+
+def _require_active_workspace(workspace: DemoWorkspace | None, now: datetime) -> None:
     if workspace is not None and (
         workspace.expires_at <= now
         or workspace.revoked_at is not None
         or workspace.cleaned_at is not None
     ):
         raise DemoError("demo_session_expired", 401)
-    return workspace
 
 
 async def check_upload(session: AsyncSession, tenant_id: UUID, size_bytes: int) -> None:
+    await check_upload_workspace(
+        session,
+        tenant_id,
+        size_bytes,
+        await active_workspace(session, tenant_id, datetime.now(UTC)),
+    )
+
+
+async def check_upload_workspace(
+    session: AsyncSession,
+    tenant_id: UUID,
+    size_bytes: int,
+    workspace: DemoWorkspace | None,
+) -> None:
     from enterprise_doc_core.uploads.models import UploadSession
 
     # UploadCreationService already locks the tenant before this check and insert.
-    if await active_workspace(session, tenant_id, datetime.now(UTC)) is None:
+    # A prefetched row must still be validated at this boundary.
+    _require_active_workspace(workspace, datetime.now(UTC))
+    if workspace is None:
         return
     count = await session.scalar(
         select(func.count()).select_from(UploadSession).where(UploadSession.tenant_id == tenant_id)
@@ -83,7 +103,13 @@ async def check_packet(
 
 
 async def reserve_attempt(
-    session: AsyncSession, tenant_id: UUID, attempt_id: UUID, now: datetime, deadline: datetime
+    session: AsyncSession,
+    tenant_id: UUID,
+    attempt_id: UUID,
+    now: datetime,
+    deadline: datetime,
+    *,
+    background: bool = False,
 ) -> None:
     workspace = await active_workspace(session, tenant_id, now)
     if workspace is None:
@@ -100,16 +126,37 @@ async def reserve_attempt(
         raise DemoError("demo_attempt_limit")
     if budget.attempts_used >= budget.attempt_limit:
         raise DemoError("demo_daily_limit")
-    busy = await session.scalar(
-        select(DemoWorkspace.id).where(DemoWorkspace.busy_until > now).limit(1)
-    )
-    if busy is not None:
-        raise DemoError("demo_generation_busy")
+    if not background:
+        await _claim_execution(session, workspace, attempt_id, now, deadline)
     # These counters are never refunded on model failure, timeout or cleanup.
     budget.attempts_used += 1
     workspace.attempts_used += 1
-    workspace.active_attempt_id = attempt_id
-    workspace.busy_until = deadline + timedelta(seconds=30)
+
+
+async def _claim_execution(
+    session: AsyncSession,
+    workspace: DemoWorkspace,
+    attempt_id: UUID,
+    now: datetime,
+    deadline: datetime,
+) -> None:
+    busy = await session.scalar(
+        select(DemoWorkspace.id)
+        .where(DemoWorkspace.busy_until > now, DemoWorkspace.active_attempt_id != attempt_id)
+        .limit(1)
+    )
+    if busy is not None:
+        raise DemoError("demo_generation_busy")
+    workspace.active_attempt_id, workspace.busy_until = attempt_id, deadline + timedelta(seconds=30)
+
+
+async def begin_background_attempt(
+    session: AsyncSession, tenant_id: UUID, attempt_id: UUID, now: datetime, deadline: datetime
+) -> None:
+    workspace = await active_workspace(session, tenant_id, now)
+    if workspace is not None:
+        await lock_capacity(session)
+        await _claim_execution(session, workspace, attempt_id, now, deadline)
 
 
 async def finish_attempt(session: AsyncSession, tenant_id: UUID, attempt_id: UUID) -> None:

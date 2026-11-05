@@ -25,9 +25,11 @@ class FakeBody:
         self.content = content
         self.closed = False
         self.thread_ids: list[int] = []
+        self.read_sizes: list[int] = []
 
-    def read(self, _: int) -> bytes:
+    def read(self, amount: int) -> bytes:
         self.thread_ids.append(threading.get_ident())
+        self.read_sizes.append(amount)
         return self.content
 
     def close(self) -> None:
@@ -104,6 +106,89 @@ class RecordingS3Client:
 
 def _checksum(value: bytes = b"part") -> str:
     return base64.b64encode(value.ljust(32, b"x")[:32]).decode("ascii")
+
+
+async def test_bounded_object_read_returns_metadata_and_content_from_one_response() -> None:
+    class FullObjectClient(RecordingS3Client):
+        def get_object(self, **kwargs: Any) -> dict[str, Any]:
+            self._record("get_object", kwargs)
+            return {
+                "Body": self.body,
+                "ContentLength": len(self.body.content),
+                "ETag": '"completed"',
+                "ContentType": "text/plain",
+                "Metadata": {"contract": "m1", "upload-session-id": "owned-session"},
+            }
+
+    control = FullObjectClient()
+    adapter = Boto3MultipartObjectStore(
+        settings=ObjectStoreSettings(
+            multipart_checksum_mode=ObjectStoreChecksumMode.READBACK_SHA256
+        ),
+        control_client=control,
+        presign_client=RecordingS3Client(),
+    )
+    thread = threading.get_ident()
+    result = await adapter.read_object(bucket="documents", key="owned-key", max_bytes=20)
+
+    assert result.content == b"range-bytes"
+    assert result.head.size_bytes == 11
+    assert result.head.etag == '"completed"'
+    assert result.head.metadata["upload-session-id"] == "owned-session"
+    assert [(name, arguments) for name, arguments, _ in control.calls] == [
+        ("get_object", {"Bucket": "documents", "Key": "owned-key"})
+    ]
+    assert control.body.closed
+    assert control.calls[0][2] != thread and control.body.thread_ids == [control.calls[0][2]]
+
+
+@pytest.mark.parametrize(
+    "case", ["oversize", "truncated", "overlong", "metadata", "partial", "unreadable"]
+)
+async def test_bounded_object_read_closes_rejected_or_oversize_responses(case: str) -> None:
+    body: Any = FakeBody(b"range-bytes")
+    response: dict[str, Any] = {
+        "Body": body,
+        "ContentLength": 11,
+        "ETag": '"completed"',
+        "Metadata": {"contract": "m1"},
+    }
+    if case == "oversize":
+        response["ContentLength"] = 21
+    elif case == "truncated":
+        body.content = b"short"
+    elif case == "overlong":
+        body.content = b"unexpected-extra-bytes"
+    elif case == "metadata":
+        response["Metadata"] = []
+    elif case == "partial":
+        response["ContentRange"] = "bytes 0-10/50"
+    elif case == "unreadable":
+        body.read = None
+
+    class Client(RecordingS3Client):
+        def get_object(self, **kwargs: Any) -> dict[str, Any]:
+            self._record("get_object", kwargs)
+            return response
+
+    control = Client()
+    adapter = Boto3MultipartObjectStore(
+        settings=ObjectStoreSettings(
+            multipart_checksum_mode=ObjectStoreChecksumMode.READBACK_SHA256
+        ),
+        control_client=control,
+        presign_client=RecordingS3Client(),
+    )
+    if case == "oversize":
+        result = await adapter.read_object(bucket="documents", key="owned-key", max_bytes=20)
+        assert result.content is None and result.head.size_bytes == 21
+        assert body.read_sizes == []
+    else:
+        with pytest.raises(ObjectStoreProtocolError):
+            await adapter.read_object(bucket="documents", key="owned-key", max_bytes=20)
+    assert body.closed
+    assert all(size <= 21 for size in body.read_sizes)
+    assert len(control.calls) == 1
 
 
 async def test_adapter_offloads_create_and_checksum_bound_presign() -> None:

@@ -1,0 +1,193 @@
+{
+  "schema_version": "analysis.public-pack.v2",
+  "id": "validation-01",
+  "split": "validation",
+  "frozen_at": "2026-10-12T20:43:55.7399633Z",
+  "independent_customer": false,
+  "independently_scored": false,
+  "quality_score": null,
+  "objects": [
+    {
+      "id": "clickup",
+      "name": "ClickUp Business"
+    },
+    {
+      "id": "monday",
+      "name": "monday.com Pro"
+    },
+    {
+      "id": "airtable",
+      "name": "Airtable Business"
+    }
+  ],
+  "fields": [
+    {
+      "id": "scope",
+      "name": "服务范围",
+      "question": "包括哪些产品、服务和交付物？",
+      "value_type": "text"
+    },
+    {
+      "id": "pricing_unit",
+      "name": "计费单位",
+      "question": "按什么用户、数量、期间和单位计费？",
+      "value_type": "text"
+    },
+    {
+      "id": "recurring_cost",
+      "name": "持续费用",
+      "question": "持续费用的金额、币种、数量和期间是什么？",
+      "value_type": "text"
+    },
+    {
+      "id": "setup_fee",
+      "name": "一次性费用",
+      "question": "实施、安装或其他一次性费用及适用条件是什么？",
+      "value_type": "text"
+    },
+    {
+      "id": "tax_basis",
+      "name": "税费口径",
+      "question": "价格是否含税？税种、税率及其他费用是否明确？",
+      "value_type": "text"
+    },
+    {
+      "id": "contract_term",
+      "name": "合同期限",
+      "question": "合同期限、续约和终止条件是什么？",
+      "value_type": "text"
+    },
+    {
+      "id": "support",
+      "name": "支持",
+      "question": "支持范围、响应时间和服务时段是什么？",
+      "value_type": "text"
+    },
+    {
+      "id": "security_admin",
+      "name": "安全与管理",
+      "question": "该套餐包含哪些身份、安全或管理能力？",
+      "value_type": "text"
+    },
+    {
+      "id": "exclusions",
+      "name": "排除与限制",
+      "question": "不包含哪些内容？有哪些配额、前置条件和限制？",
+      "value_type": "text"
+    },
+    {
+      "id": "payment_terms",
+      "name": "付款与退款",
+      "question": "付款方式、退款和取消条件是什么？",
+      "value_type": "text"
+    }
+  ],
+  "sources": [
+    {
+      "file": "upload/clickup-pricing.txt",
+      "object_id": "clickup",
+      "url": "https://clickup.com/pricing",
+      "fetched_at": "2026-10-12T20:17:54.8141712Z",
+      "provider": "tavily",
+      "raw_evidence": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\fallback-model-evidence\\document-analysis-a5-20261013\\analysis-a5-20261013-clickup-pricing.json",
+      "raw_sha256": "5e2418a8813d745a829645fbd36cde481bcfd7e31f2d7a3a7b430668ab6bb220",
+      "sha256": "1b514f738e3de3d64a76dda452e917a7d12e5e514ca5f0913f604c7dac9cffa5",
+      "bytes": 25863,
+      "source_type": "official_web_extraction",
+      "coverage": "unknown",
+      "license": "Publicly readable; no redistribution license established. Local evaluation and invited trial only.",
+      "command": "smart-search fetch 'https://clickup.com/pricing' --format json"
+    },
+    {
+      "file": "upload/clickup-terms.txt",
+      "object_id": "clickup",
+      "url": "https://clickup.com/terms",
+      "fetched_at": "2026-10-12T20:17:57.0757499Z",
+      "provider": "firecrawl",
+      "raw_evidence": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\fallback-model-evidence\\document-analysis-a5-20261013\\analysis-a5-20261013-clickup-terms.json",
+      "raw_sha256": "9e745a6f53d0fea8e94d5693fe743a8d105ad9aa8e9749af79d8d40167add764",
+      "sha256": "9bffdcf919e325da002284c7152ec91e6352899254ae2155ad85ebd56af54be9",
+      "bytes": 46445,
+      "source_type": "official_web_extraction",
+      "coverage": "unknown",
+      "license": "Publicly readable; no redistribution license established. Local evaluation and invited trial only.",
+      "command": "smart-search fetch 'https://clickup.com/terms' --format json"
+    },
+    {
+      "file": "upload/monday-pricing.txt",
+      "object_id": "monday",
+      "url": "https://monday.com/pricing",
+      "fetched_at": "2026-10-12T20:17:55.8558453Z",
+      "provider": "tavily",
+      "raw_evidence": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\fallback-model-evidence\\document-analysis-a5-20261013\\analysis-a5-20261013-monday-pricing.json",
+      "raw_sha256": "5819d269029e4eafb3011f32b85d4a37bbe8ba720100680bc492fe4b5e26b57b",
+      "sha256": "79afb5e06f4f302ab05a8d4bdb542c887ef00376f70e65e4e09c2f9447087b6a",
+      "bytes": 57690,
+      "source_type": "official_web_extraction",
+      "coverage": "unknown",
+      "license": "Publicly readable; no redistribution license established. Local evaluation and invited trial only.",
+      "command": "smart-search fetch 'https://monday.com/pricing' --format json"
+    },
+    {
+      "file": "upload/monday-terms.txt",
+      "object_id": "monday",
+      "url": "https://monday.com/l/legal/tos/",
+      "fetched_at": "2026-10-12T20:17:56.4269472Z",
+      "provider": "tavily",
+      "raw_evidence": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\fallback-model-evidence\\document-analysis-a5-20261013\\analysis-a5-20261013-monday-terms.json",
+      "raw_sha256": "6ddac06a1cb93a25021a14c575238cac2268bda6cf21b80736e7b8e1ac5f6f0d",
+      "sha256": "ded7c3b1a7985c9f79860ece01635c7b52c13f5a129e8efdc73f4aa681378989",
+      "bytes": 92568,
+      "source_type": "official_web_extraction",
+      "coverage": "unknown",
+      "license": "Publicly readable; no redistribution license established. Local evaluation and invited trial only.",
+      "command": "smart-search fetch 'https://monday.com/l/legal/tos/' --format json"
+    },
+    {
+      "file": "upload/airtable-pricing.txt",
+      "object_id": "airtable",
+      "url": "https://www.airtable.com/pricing",
+      "fetched_at": "2026-10-12T20:29:03.0744611Z",
+      "provider": "firecrawl",
+      "raw_evidence": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\fallback-model-evidence\\document-analysis-a5-20261013\\analysis-a5-20261013-airtable-pricing.json",
+      "raw_sha256": "ac997011d6a062a11140b0df05aa9827cfe6e36f33fc76620b0290f72e6c8f68",
+      "sha256": "f0239b1255aa720af003869e11ea163cec61dda2a3c5c1fbfdc493ae251731cd",
+      "bytes": 14538,
+      "source_type": "official_web_extraction",
+      "coverage": "unknown",
+      "license": "Publicly readable; no redistribution license established. Local evaluation and invited trial only.",
+      "command": "smart-search fetch 'https://www.airtable.com/pricing' --format json"
+    },
+    {
+      "file": "upload/airtable-terms.txt",
+      "object_id": "airtable",
+      "url": "https://www.airtable.com/company/tos",
+      "fetched_at": "2026-10-12T20:31:00.5409359Z",
+      "provider": "firecrawl",
+      "raw_evidence": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\fallback-model-evidence\\document-analysis-a5-20261013\\analysis-a5-20261013-airtable-tos.json",
+      "raw_sha256": "032af969f796d99f8c1cfa991d4628d4a63f1f6c5aed2b366fd6ef59ee75f70a",
+      "sha256": "f0f2ca1a8d48af443312cedda81164042295bb0cb4f1d0246e687a1d36aaa2ac",
+      "bytes": 59193,
+      "source_type": "official_web_extraction",
+      "coverage": "unknown",
+      "license": "Publicly readable; no redistribution license established. Local evaluation and invited trial only.",
+      "command": "smart-search fetch 'https://www.airtable.com/company/tos' --format json"
+    }
+  ],
+  "common_requirements": {
+    "file": "upload/requirements.synthetic.txt",
+    "source_type": "synthetic",
+    "sha256": "e79b9639fb43fe3b53b57705b20155fe2e07dc8d0e8c0dd2002a1e2b2f628a4f",
+    "bytes": 855
+  },
+  "reference": "reference/reference.json",
+  "upload_root": "upload/",
+  "usage_boundary": "Local evaluation and invited trial only; public pages are snapshots, not vendor quotations.",
+  "known_gaps": [
+    "Public web snapshots are not negotiated quotations or order forms.",
+    "No independent annotator has reviewed the 30 reference rows; quality_score remains null.",
+    "HTML extraction includes navigation and may omit dynamic or region-specific details.",
+    "Buyer jurisdiction, tax rate, signed term, implementation scope and actual support SLA remain unknown.",
+    "This pack has not been used for product-model tuning, but its preparation was performed by the development team."
+  ]
+}

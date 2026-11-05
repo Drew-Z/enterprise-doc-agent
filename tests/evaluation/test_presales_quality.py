@@ -242,3 +242,68 @@ def test_collect_uses_fresh_cookie_separates_object_upload_and_never_retries(tmp
         collect(
             INPUT, output, base_url="https://app.test", object_hosts=("objects.test",), repeats=1
         )
+
+
+def public_fixture(tmp_path):
+    data = json.loads(INPUT.read_bytes())
+    data["schemaVersion"] = "presales-public-quality-input-v1"
+    data["synthetic"] = False
+    data["provenance"] = "Public source excerpts; assistant-authored hypothetical requirements"
+    for source in data["sources"]:
+        source["content"] = source["content"].strip()
+    data["publications"] = [
+        {
+            "sourceKey": source["key"],
+            "url": f"https://docs.example.test/{source['key']}",
+            "fetchedAt": "2026-09-28T00:00:00Z",
+            "extractedContentSha256": "a" * 64,
+            "fetchReceiptSha256": "b" * 64,
+            "excerptSha256": hashlib.sha256(source["content"].encode()).hexdigest(),
+        }
+        for source in data["sources"]
+    ]
+    path = tmp_path / "public.json"
+    path.write_text(json.dumps(data), encoding="utf-8")
+    return path, data
+
+
+def test_public_sources_have_explicit_provenance_and_are_not_labelled_synthetic(tmp_path):
+    path, _ = public_fixture(tmp_path)
+    dataset, digest = load_dataset(path)
+    assert dataset.synthetic is False
+    assert len(dataset.publications) == len(dataset.sources)
+    gold = json.loads(GOLD.read_bytes())
+    gold["datasetSha256"] = digest
+    gold_path = tmp_path / "gold.json"
+    gold_path.write_text(json.dumps(gold), encoding="utf-8")
+    result = score(
+        path,
+        gold_path,
+        {
+            "schemaVersion": "presales-quality-run-v1",
+            "datasetSha256": digest,
+            "plannedRepeats": 1,
+            "runs": [],
+        },
+    )
+    assert result["syntheticOnly"] is False
+    assert result["independentDomainReview"] is False
+    assert result["missingDrafts"] == len(dataset.requirements)
+
+
+@pytest.mark.parametrize("change", ["hash", "coverage", "date", "url", "synthetic"])
+def test_public_source_provenance_rejects_tampering(tmp_path, change):
+    path, data = public_fixture(tmp_path)
+    if change == "hash":
+        data["sources"][0]["content"] += "changed"
+    elif change == "coverage":
+        data["publications"].pop()
+    elif change == "date":
+        data["publications"][0]["fetchedAt"] = "2026-09-28T00:00:00"
+    elif change == "url":
+        data["publications"][0]["url"] = "https://user:secret@docs.example.test/"
+    else:
+        data["synthetic"] = True
+    path.write_text(json.dumps(data), encoding="utf-8")
+    with pytest.raises(ValueError):
+        load_dataset(path)

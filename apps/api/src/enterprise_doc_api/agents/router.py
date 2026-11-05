@@ -37,6 +37,7 @@ from enterprise_doc_core.agents import (
     is_terminal_agent_event,
     parse_last_event_id,
 )
+from enterprise_doc_core.agents.service import AgentRunUsageError
 from enterprise_doc_core.context import PrincipalContext, get_request_context
 
 
@@ -204,6 +205,8 @@ router = APIRouter(prefix="/api/agent-runs", tags=["agent-runs"])
         404: {"model": ErrorResponse},
         409: {"model": ErrorResponse},
         422: {"model": ErrorResponse},
+        429: {"model": ErrorResponse},
+        503: {"model": ErrorResponse},
         500: {"model": ErrorResponse},
     },
 )
@@ -562,7 +565,12 @@ def _status_response(result: AgentRunStatusResult) -> AgentRunStatusResponse:
 
 
 def _agent_run_api_error(error: AgentRunError) -> ApiError:
-    if isinstance(error, AgentRunIdempotencyConflict):
+    if isinstance(error, AgentRunUsageError):
+        status_code = {
+            "agent_usage_limit": status.HTTP_429_TOO_MANY_REQUESTS,
+            "agent_entitlement_inactive": status.HTTP_403_FORBIDDEN,
+        }.get(error.code, status.HTTP_503_SERVICE_UNAVAILABLE)
+    elif isinstance(error, AgentRunIdempotencyConflict):
         status_code = status.HTTP_409_CONFLICT
     elif isinstance(error, (AgentRunNotFound, AgentDocumentVersionNotReady)):
         status_code = status.HTTP_404_NOT_FOUND

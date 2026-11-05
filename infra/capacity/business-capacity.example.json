@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "base_url": "http://127.0.0.1:18766",
+  "object_origins": [
+    "http://127.0.0.1:9000"
+  ],
+  "repetitions": 2,
+  "phases": [
+    {
+      "name": "ramp",
+      "tasks": 1,
+      "concurrency": 1
+    },
+    {
+      "name": "steady_state",
+      "tasks": 1,
+      "concurrency": 1
+    },
+    {
+      "name": "burst",
+      "tasks": 2,
+      "concurrency": 2
+    },
+    {
+      "name": "recovery",
+      "tasks": 1,
+      "concurrency": 1
+    }
+  ],
+  "cases": [
+    {
+      "key": "txt-normal",
+      "path": "business-capacity-source.txt",
+      "sha256": "fc742136ed27a77d8a2d99cf0d6f1fc3884c156b8e21dc9f540b3ff83c6275b1",
+      "size_bytes": 49,
+      "media_type": "text/plain",
+      "query": "How long is retention?",
+      "excerpt": "Retention is 30 days.",
+      "expected_terminal": "drafted",
+      "fault_label": "none",
+      "min_provider_calls": 1,
+      "max_provider_calls": 1
+    }
+  ],
+  "max_http_requests": 10000,
+  "max_run_seconds": 1800
+}

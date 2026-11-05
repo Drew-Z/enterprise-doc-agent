@@ -13,6 +13,13 @@ class PresignedUploadPart:
 
 
 @dataclass(frozen=True, slots=True)
+class PresignedObjectUpload:
+    url: str
+    headers: Mapping[str, str]
+    expires_in_seconds: int
+
+
+@dataclass(frozen=True, slots=True)
 class PresignedObjectDownload:
     url: str
     expires_in_seconds: int
@@ -39,6 +46,12 @@ class ObjectHead:
     checksum_sha256_b64: str | None
     content_type: str | None
     metadata: Mapping[str, str]
+
+
+@dataclass(frozen=True, slots=True)
+class ObjectContent:
+    head: ObjectHead
+    content: bytes | None
 
 
 @dataclass(frozen=True, slots=True)

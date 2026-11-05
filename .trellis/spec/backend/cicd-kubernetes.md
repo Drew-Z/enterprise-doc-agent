@@ -4,10 +4,30 @@
 
 - API, Worker, consumer and Web have separate non-root Dockerfiles.
 - The pinned Python Bookworm runtime still carries `libpcre2-8-0=10.42-1`.
-  API, Worker and consumer explicitly install only the security update
-  `10.42-1+deb12u1` in their runtime stages, then remove apt lists. Keep Python,
-  application locks and the release scan/signature gates unchanged; replacing a base
+  API, Worker and consumer explicitly install the security updates
+  `libpcre2-8-0=10.42-1+deb12u2` (fixing CVE-2026-103111) and
+  `perl-base=5.36.0-7+deb12u4` in their runtime stages, then remove apt lists. The
+  latter addresses the seven Perl findings in the rc.31 published-image scan;
+  failed scan artifacts and the rejected release tag remain evidence. Keep Python,
+  release scan/signature gates unchanged; replacing a base
   tag alone is insufficient unless its actual installed package version is verified.
+- The November dependency repair also pins runtime `libssl3` and `openssl` to
+  `3.0.22-1~deb12u2`, nginx to the verified `1.30.6-alpine3.24` index digest,
+  and locks certifi/pypdf to `2026.10.18`/`6.21.4`. A scan must validate rebuilt
+  images; old signed release evidence does not certify a new build.
+- The rc.54 scan found CVE-2026-109518 in Bookworm `apt` and `libapt-pkg6.0`
+  at 2.6.1. Pin both runtime packages to 2.6.2 alongside the existing updates;
+  retain the failed scan and require a fresh digest-bound scan before deployment.
+- Local/CI/recovery MinIO dependencies use `Dockerfile.object-store` after the
+  upstream registry references became unavailable. The original server/client
+  release binaries and AGPL license are fetched from official GitHub releases/tags
+  with fixed SHA-256 checksums on a digest-pinned Alpine base. This is a local
+  Linux amd64 test/recovery build, not an upstream image or production storage
+  release. Compose uses `pull_policy: build` so a pre-existing local tag cannot
+  bypass input verification. The rollback runner builds the same targets and
+  records the Dockerfile SHA-256 and resulting immutable local image IDs before
+  starting any database resources. Candidate/rollback application images still
+  require registry digests. Checksum/build failures remain failed evidence.
 - Kubernetes base defines migration, startup/readiness/liveness probes, resource bounds,
   ServiceAccount, PDB and NetworkPolicy. Scoped deployer RBAC and admission policies live
   in the administrator-applied `infra/k8s/bootstrap/` bundle.
@@ -43,6 +63,15 @@
 - Web images receive `VITE_OBJECT_STORE_ORIGINS` at build time. Staging configuration
   accepts only HTTPS public/object-store endpoints and verifies that the presign origin
   is present in that Web allowlist.
+- Web caches only fingerprinted `/assets/<name>-<hash>.js` and `.css` for one year
+  with `immutable`, and compresses these public resources with gzip and `Vary`.
+  HTML and unversioned files retain `no-store`; API/auth responses are not included.
+  A missing fingerprinted file returns a 404 with explicit `Cache-Control: no-store`,
+  never an HTML success. Merely omitting the success cache header lets the CDN apply
+  its default negative-cache TTL. Select the asset cache policy by response status:
+  200/206/304 may be immutable; all errors must carry no-store.
+  Validate actual nginx GET headers, compression/decoded bytes, missing-file behavior
+  and security headers before release; a local probe does not prove public CDN behavior.
 - For Cloudflare R2, the account `r2.cloudflarestorage.com` S3 endpoint is used by both
   the control and presign clients unless a separately reviewed upload proxy exists. An
   R2 public custom domain is a read-oriented public bucket surface, not a replacement
@@ -106,6 +135,18 @@
   the complete ConfigMap into API, Worker, consumer and migration Pod templates so a
   route update cannot leave stale processes running. The non-secret route is retained
   in the release record; the API key is never evidence.
+- Document analysis deploys dark: `STAGING_UPLOAD_STRUCTURED_DOCUMENTS_ENABLED` and
+  `STAGING_ANALYSIS_EXECUTION_ENABLED` default to `false`, while the shared route ID
+  defaults to `default`. Execution can be enabled only after structured uploads and a
+  model route deadline covering the analysis unit deadline are configured. Unit/run
+  deadlines and the maximum model-input bytes are bounded renderer inputs. The staging
+  release record retains the effective analysis policy, so rendered configuration and
+  rollout evidence cannot disagree about enablement or route identity.
+- Analysis schema migrations are additive, but destructive downgrade is history-guarded.
+  A rollback image is approved only after its exact signed digest starts and passes smoke
+  against the migrated schema; the absence of an application startup revision gate does
+  not by itself prove rollback compatibility. Database downgrade is not the default
+  rollback path once analysis history exists.
 - Presales enablement, selected route and wait budgets have explicit protected Environment
   and renderer inputs, independent of browser login and Agent routing. See the Presales
   release configuration scenario below; omitted inputs never inherit a prior enablement.
@@ -536,3 +577,149 @@ Kustomize 5.7.1, plus Actionlint and shell syntax; these are local checks, not d
 Wrong: infer model enablement from successful GitHub login or bypass a prerequisite mismatch.
 Correct: preserve the explicit reviewed generation and timeout settings in both the protected
 Environment and administrator render, then keep the normal prerequisite and rollout gates.
+
+## Scenario: No-Migration Release Switch on Schema 0031
+
+### 1. Scope / Trigger
+
+Switch a reviewed, schema-compatible rc.1 deployment to rc.2 with a new primary route.
+The 0027-only maintenance guard retains its existing migration restrictions. The same
+0031 boundary supports later image releases, a declared API connection-pool adjustment,
+and a reviewed fallback model-name change with unchanged images.
+
+### 2. Signatures
+
+`python -m scripts.release_switch validate|arm|execute|status --plan <private-json>
+--plan-sha256 <sha256> [--state <private-json>]`. `ReleasePlan`, `ReleaseCluster`
+and `Switch.execute(target, *, apply, restore)` expose validation, cluster and lifecycle boundaries.
+`configure_staging_manifest.py` accepts optional `--model-timeout-seconds` and
+`--presales-concurrent-attempt-limit`, connected to matching `STAGING_MODEL_TIMEOUT_SECONDS`
+and `STAGING_PRESALES_CONCURRENT_ATTEMPT_LIMIT` Environment variables, without more dispatch inputs.
+
+### 3. Contracts
+
+Plan schema 2 fixes 0031, Namespace UID, four original/candidate Deployment specs,
+original/candidate prerequisites, completed Job identities and one primary Secret key pair.
+An optional `fallback_secret={old_key,new_key}` declares exactly one existing fallback
+credential pair, both nonempty base64 strings. With this declaration, `secret.other_data_sha256`
+excludes both declared keys; otherwise the fallback key remains protected by that digest.
+Other credential values are represented only by a SHA-256. Executor source hashes and the
+plan hash must match before CLI use. By default only image and config-hash template changes
+are allowed. Optional `api_database_pool_size` must be a non-boolean integer 1–4 and must
+match the API container's literal `DATABASE__POOL_SIZE`; `DATABASE__MAX_OVERFLOW` must be
+literal `0`. Both entries are required. Reject duplicate environment names, valueFrom for
+these two entries, other environment changes (including order), and changes to other
+containers, envFrom, resources or replicas. An omitted declaration grants no new scope.
+Restore the complete original template, including absent or previous explicit pool entries.
+Primary timeout is finite, greater than zero and at most 300; concurrency is an ASCII
+integer 1–4. Omitted concurrency removes a stale override and restores the application default 2.
+
+Host-local state uses atomic fsync/replace and an OS-exclusive lock. Persist applying before
+cluster writes; a new process seeing applying/recovering can only restore. Fixed 600-second
+apply and 300-second recovery ceilings never reset. Run under systemd with control-group
+child termination and restart-on-failure; boot-ID changes/missing state require inspection.
+Restoration fences even already-correct values with an actual annotation change, then restores
+configuration, primary key and templates before opening Web last. Remove only owned fence
+annotations and revalidate normal prerequisites. All database probes are read-only and bounded.
+
+`MODEL__FALLBACK_MODEL_NAME` may change only within the reviewed configuration bundle;
+the new value must be a nonempty string without leading/trailing whitespace. Endpoint or
+credential changes require the explicit fallback binding described below. Both configurations
+require the matching `approved-model-fallback-name` Namespace value; mismatches are rejected.
+A catalog entry or one synthetic reply
+does not prove business failover; validate the deployed process and preserve old failures.
+For a same-image configuration switch, keep an already-approved rollback image list only
+when it is byte-for-byte unchanged and contains the running image. This does not allow
+adding an unreviewed image or changing the approved set during an image replacement.
+
+Changing `MODEL__FALLBACK_BASE_URL` requires the optional fallback credential binding.
+Both original and candidate must have an existing nonempty fallback name and HTTPS base URL,
+without userinfo, whitespace, query, fragment or invalid/zero port. Their Namespace approvals
+must match the exact fallback base URL/name, `openai_compatible` provider and
+`MODEL__FALLBACK_API_KEY` Secret key name. This scope replaces an existing route; adding or
+removing a route without an original recovery credential is rejected. Fallback model version
+changes remain outside this extension.
+
+An existing `approved-model-fallback-timeout-seconds` annotation may change with
+`MODEL__FALLBACK_TIMEOUT_SECONDS`. The annotation must exactly match its own original
+or candidate configuration; both states are checked before writes. Preserve the
+existing numeric bounds and complete approval-key inventory. Do not hand-edit the
+renderer output to keep the old approval while changing the runtime timeout.
+`test_release_fallback_timeout_approval.py` covers paired apply/restore, mismatched
+or missing approval, and rejection of unrelated fallback-version approval changes.
+
+The paused release writes both declared keys atomically through a Secret `/data` JSON patch
+with UID/resourceVersion tests and a fresh release fence. Unrelated data is read-verified by
+its digest and preserved exactly. Recovery accepts only each key's declared original/candidate
+values, restores the complete original bundle, then verifies both keys before clearing fences.
+Do not log the private plan or patch stdin. A client timeout does not prove a patch failed.
+
+### 4. Validation & Error Matrix
+
+- Non-0031 plan, image/config/approval/supplier-key mismatch -> refuse before apply.
+- Invalid fallback name or unrelated configuration change -> refuse; a valid same-image
+  name switch must still support full original-configuration restoration.
+- Endpoint change without credential declaration, malformed key pair, insecure URL, mismatched
+  fallback approvals, missing old route or undeclared Secret value -> refuse before writes.
+- Missing or invalid pool declaration, target mismatch, duplicate entries or unrelated
+  workload change -> refuse before apply; the shared ConfigMap pool budget stays unchanged.
+- Active jobs/attempts/runs/reservations or unexpired uploads -> refuse; consumed reservations
+  are terminal, not active. Recheck after closing application processes. A live apply preflight
+  failure before any writes returns blocked without rollback; an interrupted process still restores.
+- Foreign drift or a different operation's fence -> do not overwrite.
+- Interrupted apply -> restore; late old-resourceVersion request -> reject.
+- Expired but never-started window -> no cluster mutation; failed restore -> blocked.
+- Restored/blocked -> nonzero CLI exit; errors never contain raw subprocess/DB messages.
+
+### 5. Good / Base / Bad Cases
+
+Good: prewarm all exact images, validate the runtime bundle, switch in one independent process,
+read back the bundle and retain business acceptance separately. Base: validate only reads local
+inputs. Bad: reset the state deadline, change only the ConfigMap, or reuse the 0027 plan for 0031.
+
+### 6. Tests Required
+
+`tests/deployment/test_release_switch.py` covers partial updates, drift, late writes, Web ordering,
+source binding, process restart, exclusive ownership and budget/error redaction. Keep the original
+maintenance tests passing. Real Linux CLOCK_BOOTTIME/flock/process-death checks complement the
+Kubernetes subprocess boundary; they are not an actual Kubernetes release/rollback drill.
+Renderer tests cover runtime concurrency, timeout, invalid values and CLI/workflow propagation.
+Pool tests exercise API-only apply and full restoration for inherited and explicit original
+settings, declaration bounds/types, environment identity and rejected unrelated changes.
+`test_release_fallback_credentials.py` exercises full apply/restore, recovery after a partial
+bundle write, unchanged legacy fingerprint behavior, URL/key/approval rejection and credential
+drift before any mutation. These subprocess-boundary tests do not prove an actual deployment.
+
+### 7. Wrong vs Correct
+
+Wrong: assume a timed-out API write never happened or that a no-op patch advances resourceVersion.
+Correct: freeze a plan with both permitted states, force an owned fencing mutation and use
+conditional writes during bounded whole-bundle recovery. Temporary remote recovery inputs need
+the current window's storage exception; central local evidence remains authoritative.
+
+## Scenario: Select the analysis runtime schema explicitly
+
+### 1. Scope / Trigger
+A new signed candidate advances Alembic beyond the historical rc52/rc51 0043 rehearsal. Startup evidence must bind both the exact images and expected schema.
+
+### 2. Signatures
+`run_analysis_rollback_compatibility.py --candidate-api IMAGE --rollback-{api,worker,consumer,web} IMAGE --expected-schema-head YYYYMMDD_NNNN --report-path FILE`.
+`CompatibilityConfig.expected_schema_head` defaults to `20261012_0043` for old callers; current Heavy CI explicitly selects `20261104_0044`.
+
+### 3. Contracts
+The candidate API migrates an isolated fresh database. Only an exact observed revision and existing `analysis_projects` admit workload startup. The report records the expected and observed revision, `scope=fresh_database_startup_compatibility`, and zero external model calls. Heavy CI accepts `scope=all|analysis-runtime`, defaults to `all`, and always runs both signed candidate and deployed rollback runtime variants. Artifact names include the matrix runtime, run ID and attempt.
+
+### 4. Validation & Error Matrix
+- Alias `head`, blank or malformed revision: reject before Docker resources.
+- Observed 0043 with expected 0044 (or the reverse): fail before workload startup; clean created dependencies.
+- Pull/build/probe failure: retain failure report and cleanup outcome.
+- Missing artifact: workflow fails; a runtime-only pass does not substitute for the full engineering suite.
+
+### 5. Good/Base/Bad Cases
+Good: rc53 migrates to 0044 and rc53/rc51 are tested independently on isolated databases. Base: omitted selector retains the original 0043 gate. Bad: change the observed revision to fit an old expectation or call a startup smoke proof of analysis-history recovery.
+
+### 6. Tests Required
+Cover CLI selection, invalid selectors, exact match, both mismatch directions, workload admission, cleanup, default full-suite selection and separate artifacts. Run immutable-image probes for the current release in addition to unit tests.
+
+### 7. Wrong vs Correct
+Wrong: reuse a passed rc52/0043 artifact for rc53/0044. Correct: retain historical evidence and create a new record with explicit image digests and schema. The release source and verification-harness source may differ; record both identities.

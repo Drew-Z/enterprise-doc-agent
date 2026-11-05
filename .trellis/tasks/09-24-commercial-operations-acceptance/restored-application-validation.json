@@ -1,0 +1,212 @@
+{
+  "schema_version": 1,
+  "scope": "local-restored-application-and-operations-preparation",
+  "status": "local_application_checks_passed",
+  "candidate_application_commit_sha": "90fd68ca046adb2bf7ccf9a7bd31434fb85d50f6",
+  "fixture_changes_uncommitted_at_execution": true,
+  "source_snapshot_index_sha256": "4fa0f3e6f0415919b3ee91d8908216f242bcb193112aa3b2749174af4aa635b0",
+  "private_artifact_index_sha256": "b6f355d0ca594f23fe4abb1e236189d2afd2f37875ed074c686af723253fc3da",
+  "source_revision": "20260923_0027",
+  "restored_candidate_revision": "20260924_0031",
+  "history_api": {
+    "authenticated_tenants": 2,
+    "packets": 1,
+    "rows": 3,
+    "historical_drafts_present": 0,
+    "historical_reviews_present": 0,
+    "draft_csv_export_and_cross_tenant_denial": true
+  },
+  "browser": {
+    "passed": 8,
+    "skipped": 1,
+    "failed": 0,
+    "ingestion_passed": 3,
+    "presales_passed": 5,
+    "skipped_scope": "background browser case belongs to separate configuration and was not executed in this restored-data phase",
+    "desktop_and_mobile_screenshots_inspected": true
+  },
+  "boundaries": {
+    "external_model_requests": 0,
+    "embedding": "controlled HashEmbeddingProvider",
+    "model": "controlled HTTP transport",
+    "identity": "real local JWT for ingestion/history; controlled resolver for isolated response-editing browser suite",
+    "online_data_recapture": false,
+    "online_writes": false,
+    "remote_deployment": false,
+    "emails_sent": 0
+  },
+  "attempts": [
+    {
+      "status": "failed",
+      "steps": [],
+      "owned_containers_removed": 1,
+      "original_containers_running": true,
+      "execution_sha256": "8d9a1a00110422a3d0e626a299f7d5231c4b058768130630d5a948700e27b05e"
+    },
+    {
+      "status": "local_application_checks_passed",
+      "steps": [
+        {
+          "name": "candidate-migration",
+          "exit_code": 0,
+          "seconds": 2.453
+        },
+        {
+          "name": "history-api",
+          "exit_code": 0,
+          "seconds": 3.266
+        },
+        {
+          "name": "presales-ingestion",
+          "exit_code": 0,
+          "seconds": 28.344
+        },
+        {
+          "name": "presales",
+          "exit_code": 0,
+          "seconds": 19.015
+        }
+      ],
+      "owned_containers_removed": 3,
+      "original_containers_running": true,
+      "execution_sha256": "076881af78a40f77fa1154593e349e1ca0e55c5566d922a1c1cb1e9b73977b81"
+    },
+    {
+      "status": "failed",
+      "steps": [
+        {
+          "name": "candidate-migration",
+          "exit_code": 0,
+          "seconds": 2.75
+        },
+        {
+          "name": "history-api",
+          "exit_code": 1,
+          "seconds": 3.578
+        }
+      ],
+      "owned_containers_removed": 3,
+      "original_containers_running": true,
+      "execution_sha256": "5dcbfb5ed8e5fe09787124ad790d1c65f86b54e2d0e42f25f9e370a11e7f6cef"
+    },
+    {
+      "status": "failed",
+      "steps": [
+        {
+          "name": "candidate-migration",
+          "exit_code": 0,
+          "seconds": 2.407
+        },
+        {
+          "name": "history-api",
+          "exit_code": 0,
+          "seconds": 3.203
+        },
+        {
+          "name": "presales-ingestion",
+          "exit_code": 0,
+          "seconds": 27.328
+        },
+        {
+          "name": "presales",
+          "exit_code": 1,
+          "seconds": 5.469
+        }
+      ],
+      "owned_containers_removed": 3,
+      "original_containers_running": true,
+      "execution_sha256": "41ec404a944fe1a472f64fb5d4b99305575d64ee531c8bdaba06167c714516a4"
+    },
+    {
+      "status": "failed",
+      "steps": [
+        {
+          "name": "candidate-migration",
+          "exit_code": 0,
+          "seconds": 2.718
+        },
+        {
+          "name": "history-api",
+          "exit_code": 0,
+          "seconds": 3.578
+        },
+        {
+          "name": "presales-ingestion",
+          "exit_code": 1,
+          "seconds": 114.875
+        }
+      ],
+      "owned_containers_removed": 3,
+      "original_containers_running": true,
+      "execution_sha256": "8e0233777a959986705e17cd348acf6606fb35a8da8151b0485fe0f2c9f3d13a"
+    }
+  ],
+  "cleanup": {
+    "final_owned_containers_removed": 3,
+    "all_attempt_owned_containers_removed": 13,
+    "original_containers_running": true,
+    "default_database_failed_fixture_residual_tenants": 0
+  },
+  "external_readiness": {
+    "direct": {
+      "checked_at": null,
+      "elapsed_ms": 922.0,
+      "healthy": false,
+      "http_status": null,
+      "notifications_sent": 0,
+      "observed_at": "2026-09-25T06:57:55.683509+00:00",
+      "reason": "transport_error",
+      "schema_version": 1,
+      "scope": "single-external-readiness-probe"
+    },
+    "system_proxy": {
+      "checked_at": "2026-09-25T07:12:37.862713+00:00",
+      "elapsed_ms": 1672.0,
+      "healthy": true,
+      "http_status": 200,
+      "network_route": "configured-proxy",
+      "notifications_sent": 0,
+      "observed_at": "2026-09-25T07:12:57.510213+00:00",
+      "reason": "ready",
+      "schema_version": 1,
+      "scope": "single-external-readiness-probe"
+    }
+  },
+  "pending": [
+    "current-4c4g-business-load-execution-and-four-scenario-sampler",
+    "monitor-account-scheduling-and-firing-recovery-email-receipts",
+    "real-GitHub-OAuth-after-recovery",
+    "historical-draft-and-review-restoration-coverage",
+    "representative-supplier-quality-and-independent-review",
+    "recurring-complete-backups-and-whole-host-RPO-RTO"
+  ],
+  "limitations": [
+    "Restored data was migrated only in disposable local containers; migration timing is not whole-host RTO.",
+    "Eight browser passes use controlled model and embedding boundaries; one skipped background case is not a pass.",
+    "The historical packet had no draft or review; existing-record API compatibility is narrower than recovery of reviewed answers.",
+    "An early response fixture ignored configured database settings; its failed seed transaction was checked for residual tenant records, not a whole-database before/after comparison.",
+    "Direct and proxy observations are separate network routes, not retries selecting a passing uptime result."
+  ],
+  "executed_fixture_sha256": {
+    "tests/presales/browser_server.py": "0b9537508635c3b7e5e8d0fb1650236b877a748039e4a754b6f77d3db774d930",
+    "apps/web/presales-ingestion-e2e/workspace.spec.ts": "68216630635b6ee3d161b562dba59d4ee0cf90528dd4366d4b815cd1273c2cb1"
+  },
+  "local_validation": {
+    "python_non_integration": {
+      "passed": 1831,
+      "deselected": 437,
+      "subtests_passed": 23
+    },
+    "ruff_files": 590,
+    "mypy_required_sources": 250,
+    "web_tests_passed": 343,
+    "web_lint_typecheck_build": "passed",
+    "supplementary_mypy_capacity_scripts": {
+      "status": "failed",
+      "errors": 14,
+      "log": "application-ops-mypy.log"
+    },
+    "task_context_validation": "passed",
+    "unrelated_status_entries_unchanged": 2992
+  }
+}

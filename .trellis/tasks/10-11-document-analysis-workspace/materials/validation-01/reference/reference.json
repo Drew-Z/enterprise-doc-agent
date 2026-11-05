@@ -1,0 +1,222 @@
+{
+  "schema_version": "analysis.reference-draft.v1",
+  "author_type": "pack_preparer",
+  "independently_reviewed": false,
+  "denominator": 30,
+  "annotated_rows": 0,
+  "unreviewed_rows": 30,
+  "quality_score": null,
+  "rows": [
+    {
+      "object_id": "clickup",
+      "field_id": "scope",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "clickup",
+      "field_id": "pricing_unit",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "clickup",
+      "field_id": "recurring_cost",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "clickup",
+      "field_id": "setup_fee",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "clickup",
+      "field_id": "tax_basis",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "clickup",
+      "field_id": "contract_term",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "clickup",
+      "field_id": "support",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "clickup",
+      "field_id": "security_admin",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "clickup",
+      "field_id": "exclusions",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "clickup",
+      "field_id": "payment_terms",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "monday",
+      "field_id": "scope",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "monday",
+      "field_id": "pricing_unit",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "monday",
+      "field_id": "recurring_cost",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "monday",
+      "field_id": "setup_fee",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "monday",
+      "field_id": "tax_basis",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "monday",
+      "field_id": "contract_term",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "monday",
+      "field_id": "support",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "monday",
+      "field_id": "security_admin",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "monday",
+      "field_id": "exclusions",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "monday",
+      "field_id": "payment_terms",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "airtable",
+      "field_id": "scope",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "airtable",
+      "field_id": "pricing_unit",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "airtable",
+      "field_id": "recurring_cost",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "airtable",
+      "field_id": "setup_fee",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "airtable",
+      "field_id": "tax_basis",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "airtable",
+      "field_id": "contract_term",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "airtable",
+      "field_id": "support",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "airtable",
+      "field_id": "security_admin",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "airtable",
+      "field_id": "exclusions",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    },
+    {
+      "object_id": "airtable",
+      "field_id": "payment_terms",
+      "annotation_status": "unreviewed",
+      "expectation": "Requires independent source annotation after the candidate is frozen.",
+      "locator": null
+    }
+  ],
+  "rule": "This file stays outside upload/ and must never be uploaded or passed to the model."
+}

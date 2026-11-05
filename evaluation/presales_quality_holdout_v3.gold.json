@@ -1,0 +1,102 @@
+{
+  "schemaVersion": "presales-quality-gold-v1",
+  "datasetSha256": "260759bf6314153a9ca48ff80c9e6dbd148b917e828fefb57e1db3c9852d33a6",
+  "reviewStatus": "assistant authored and self reviewed before first v5 request; no independent adjudication",
+  "rows": [
+    {
+      "key": "H3-R1",
+      "status": "insufficient_evidence",
+      "requiredEvidence": [],
+      "referenceAnswer": "只有内部检查表不能证明已获得有效ISO认证；需补充证书、范围及有效期，不能断言未认证。",
+      "reviewPoints": [
+        "不能把未附证书说成明确无认证；必须请求具体资料。"
+      ]
+    },
+    {
+      "key": "H3-R2",
+      "status": "contradicted",
+      "requiredEvidence": [
+        {
+          "sourceKey": "H3-AUDIT",
+          "excerpt": "本服务截至当前签署日尚未通过 PCI DSS 评估，不能提供当前有效的 PCI DSS 合规证明。"
+        }
+      ],
+      "referenceAnswer": "明确尚未通过PCI评估，不能提供当前有效证明，与已通过要求不符。",
+      "reviewPoints": [
+        "明确未通过的事实不同于材料未附。"
+      ]
+    },
+    {
+      "key": "H3-R3",
+      "status": "conflicting_evidence",
+      "requiredEvidence": [
+        {
+          "sourceKey": "H3-BASE",
+          "excerpt": "本企业全部生产数据及全部备份必须只保存在德国，任何情况下均禁止将这些数据或备份复制到新加坡。"
+        },
+        {
+          "sourceKey": "H3-ADD",
+          "excerpt": "本企业全部生产数据及全部备份必须每日完整复制一份到新加坡，不得省略任何副本。"
+        }
+      ],
+      "referenceAnswer": "德国独占与每日新加坡全量副本同范围互不优先，属于资料冲突；需明确优先级或修订条款。",
+      "reviewPoints": [
+        "冲突优先于单侧硬禁止，保留两侧并提出澄清。"
+      ]
+    },
+    {
+      "key": "H3-R4",
+      "status": "supported",
+      "requiredEvidence": [
+        {
+          "sourceKey": "H3-ADD",
+          "excerpt": "本企业生产查询服务每秒保证处理300个请求；本项替代 H3-BASE 的200个请求指标，优先级仅限查询吞吐指标。"
+        }
+      ],
+      "referenceAnswer": "补充协议明确仅在吞吐上优先，300大于250，支持；存储位置争议不影响本项。",
+      "reviewPoints": [
+        "只使用明示且范围受限的优先条款。"
+      ]
+    },
+    {
+      "key": "H3-R5",
+      "status": "conditional",
+      "requiredEvidence": [
+        {
+          "sourceKey": "H3-ORDER",
+          "excerpt": "本订单已采购历史归档 ARC180；归档保留策略尚未配置，归档恢复验收状态未登记。"
+        },
+        {
+          "sourceKey": "H3-FEATURE",
+          "excerpt": "ARC180模块能保存历史巡检记录180天，期间企业管理员无法提前删除。"
+        },
+        {
+          "sourceKey": "H3-FEATURE",
+          "excerpt": "ARC180生产启用前必须购买模块、配置180天保留策略并完成归档恢复验收。"
+        }
+      ],
+      "referenceAnswer": "ARC180已购，可满足时长和管理员不可删；需配置180天策略并确认完成恢复验收，不重复要求采购。",
+      "reviewPoints": [
+        "已购不列待办，未配置和验收未知都保留；使用需完成/需确认等行动措辞。"
+      ]
+    },
+    {
+      "key": "H3-R6",
+      "status": "contradicted",
+      "requiredEvidence": [
+        {
+          "sourceKey": "H3-LIMIT",
+          "excerpt": "单张巡检工单的附件数量硬上限为12个。"
+        },
+        {
+          "sourceKey": "H3-LIMIT",
+          "excerpt": "所有当前套餐均没有提高该上限的配置或选购项。"
+        }
+      ],
+      "referenceAnswer": "单张12个硬上限小于20，无提升路径，拆分不满足要求。",
+      "reviewPoints": [
+        "不能给不存在的选购方案。"
+      ]
+    }
+  ]
+}

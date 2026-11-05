@@ -53,6 +53,7 @@ export interface UploadWorkspaceProps {
   onTokenChange?: () => void;
   onCompleted?: () => void;
   canUpload?: boolean;
+  allowSpreadsheets?: boolean;
 }
 
 const phaseLabelKeys: Record<UploadPhase, Parameters<ReturnType<typeof useT>>[0]> = {
@@ -68,7 +69,7 @@ const phaseLabelKeys: Record<UploadPhase, Parameters<ReturnType<typeof useT>>[0]
   canceled: "upload.phase.canceled",
 };
 
-function mediaTypeForFilename(filename: string): string | null {
+function mediaTypeForFilename(filename: string, allowSpreadsheets: boolean): string | null {
   const extension = filename.toLowerCase().split(".").pop();
   switch (extension) {
     case "txt":
@@ -77,6 +78,8 @@ function mediaTypeForFilename(filename: string): string | null {
       return "application/pdf";
     case "docx":
       return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    case "xlsx":
+      return allowSpreadsheets ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" : null;
     default:
       return null;
   }
@@ -100,6 +103,10 @@ function formatBytes(value: number): string {
 }
 
 function progressForState(state: UploadMachineState, t: ReturnType<typeof useT>): { percent: number; label: string } {
+  if (state.phase === "completed" && state.fileIdentity !== null) {
+    const size = formatBytes(state.fileIdentity.sizeBytes);
+    return { percent: 100, label: t("upload.progress.of", { uploaded: size, total: size }) };
+  }
   if (state.phase === "hashing" && state.file !== null) {
     const percent = (state.hashProcessedBytes / state.file.size) * 100;
     return {
@@ -130,6 +137,7 @@ function canCancel(state: UploadMachineState): boolean {
   return (
     ["awaiting_file", "hashing", "creating", "uploading", "paused", "failed"].includes(state.phase) &&
     !state.reconciling && state.failure?.code !== "session_completing" &&
+    (state.contentIntent === null || state.contentStatus === "active") &&
     !(state.phase === "failed" && state.failure?.stage === "complete")
   );
 }
@@ -145,7 +153,7 @@ interface QueuedFile {
 function canClear(state: UploadMachineState): boolean {
   return (
     ["completed", "canceled", "failed"].includes(state.phase) &&
-    !(state.phase === "failed" && state.session !== null)
+    !(state.phase === "failed" && state.session !== null) && state.contentIntent === null
   );
 }
 
@@ -155,6 +163,7 @@ export function UploadWorkspace({
   onTokenChange,
   onCompleted,
   canUpload = true,
+  allowSpreadsheets = false,
 }: UploadWorkspaceProps) {
   const t = useT();
   const locale = useLocale();
@@ -221,7 +230,7 @@ export function UploadWorkspace({
     const added: QueuedFile[] = [];
     const skipped: string[] = [];
     for (const file of files) {
-      const mediaType = mediaTypeForFilename(file.name);
+      const mediaType = mediaTypeForFilename(file.name, allowSpreadsheets);
       const label = file.webkitRelativePath || file.name;
       if (mediaType === null || file.size === 0) { skipped.push(label); continue; }
       added.push({ id: dependencies.idempotencyKeyFactory(), file, label, mediaType, status: "queued" });
@@ -299,7 +308,7 @@ export function UploadWorkspace({
             id="upload-file"
             type="file"
             multiple={!choosingOriginal}
-            accept=".txt,.pdf,.docx,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            accept={allowSpreadsheets ? ".txt,.pdf,.docx,.xlsx" : ".txt,.pdf,.docx,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"}
             disabled={fileInputDisabled}
             onChange={(event) => { handleFiles(Array.from(event.currentTarget.files ?? [])); event.currentTarget.value = ""; }}
           />
@@ -397,7 +406,7 @@ export function UploadWorkspace({
             )}
           </div>
           <div>
-            <h2>{state.reconciling ? copy.checking : t(phaseLabelKeys[state.phase])}</h2>
+            <h2>{state.reconciling ? copy.checking : t(phaseLabelKeys[state.contentIntent !== null && state.phase === "creating" ? "uploading" : state.phase])}</h2>
             <p>
               {state.fileIdentity?.filename ?? state.file?.name ?? t("upload.noDocument")}
               {(state.fileIdentity?.sizeBytes ?? state.file?.size) !== undefined

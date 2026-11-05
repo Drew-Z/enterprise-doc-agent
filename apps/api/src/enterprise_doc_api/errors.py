@@ -6,6 +6,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy.exc import TimeoutError as DatabasePoolTimeoutError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from enterprise_doc_core.context import get_request_context
@@ -59,6 +60,19 @@ def api_error_response(error: ApiError) -> JSONResponse:
 
 
 def unexpected_error_response(error: Exception) -> JSONResponse:
+    if isinstance(error, DatabasePoolTimeoutError):
+        _LOGGER.warning(
+            "database_pool_timeout",
+            extra={"event_data": {"error_type": type(error).__name__}},
+        )
+        return api_error_response(
+            ApiError(
+                status_code=503,
+                code="service_busy",
+                message="The service is busy. Please try again shortly.",
+                headers={"Retry-After": "1"},
+            )
+        )
     _LOGGER.error(
         "unhandled_api_exception",
         extra={"event_data": {"error_type": type(error).__name__}},
@@ -73,6 +87,12 @@ def unexpected_error_response(error: Exception) -> JSONResponse:
 
 
 def register_error_handlers(app: FastAPI) -> None:
+    @app.exception_handler(DatabasePoolTimeoutError)
+    async def handle_database_pool_timeout(
+        _: Request, error: DatabasePoolTimeoutError
+    ) -> JSONResponse:
+        return unexpected_error_response(error)
+
     @app.exception_handler(DemoError)
     async def handle_demo_error(_: Request, error: DemoError) -> JSONResponse:
         return api_error_response(

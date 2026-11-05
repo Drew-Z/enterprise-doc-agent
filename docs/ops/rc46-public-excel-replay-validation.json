@@ -1,0 +1,572 @@
+{
+  "schema_version": 1,
+  "status": "completed_with_generation_and_quality_failures",
+  "recorded_at": "2026-10-09T10:46:33.239632+00:00",
+  "application_commit": "9ed3857b361573b27abc9f6c245afb1dfdd9feaa",
+  "tag": "v0.1.45-rc.46",
+  "schema_revision": "20261009_0035",
+  "environment": "staging",
+  "packet_id": "da4d6b96-e9c7-48ae-9886-a86c44511eaf",
+  "scope": {
+    "kind": "derived_xlsx_from_public_procurement",
+    "source_url": "https://nic.swu.edu.cn/info/1044/1347.htm",
+    "source_published": "2023-10-28",
+    "source_state": "historical_closed",
+    "original_buyer_workbook": false,
+    "whole_tender": false,
+    "selected_rows": 6,
+    "real_user_task": false,
+    "independent_blind_review": false,
+    "mapping": {
+      "sheet": "采购要求",
+      "questionColumn": "B",
+      "answerColumn": "C",
+      "firstRow": 5,
+      "lastRow": 10
+    },
+    "input": {
+      "path": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\excel-public-replay\\public-swu-questionnaire.xlsx",
+      "sha256": "e5c532fb3112e4efc6e72183c7e238c40cbbaff3c4d0035b032a0925dc703595",
+      "bytes": 6592
+    },
+    "sources": [
+      {
+        "filename": "public-task-wps-product-20261009.txt",
+        "url": "https://365.wps.cn/",
+        "bytes": 27886,
+        "sha256": "4d0cab702c2a27bf1e6696dbb50d1d842ef2c3cfe69716ffb5c9070ed3e49be2",
+        "applicability": "2026-10-09抓取的WPS 365当前商业产品页；不代表2023年教育采购权益。"
+      },
+      {
+        "filename": "public-task-wps-weboffice-20261009.txt",
+        "url": "https://solution.wps.cn/docs/",
+        "bytes": 3765,
+        "sha256": "3bd52ff5e843c4697b80bba20e04825f476d158c877530f7d8d25e0e36c0e9c2",
+        "applicability": "2026-10-09抓取的WebOffice在线服务介绍；来源适用产品以原文为准。"
+      },
+      {
+        "filename": "public-task-swu-20261009.txt",
+        "url": "https://nic.swu.edu.cn/info/1044/1347.htm",
+        "bytes": 36228,
+        "sha256": "0b058996b2dd66eea5d4f6e9e37e56026f8d744dab08096418d33e2b6934f6c9",
+        "applicability": "2023年西南大学采购文件，仅说明买方要求，未包含供应商响应和履约证明。"
+      }
+    ]
+  },
+  "budget": {
+    "questions": 6,
+    "max_model_requests": 12,
+    "max_row_submissions": 6,
+    "mode": "auto",
+    "manual_generation_retries": 0,
+    "stop_after_terminal_failures": 2,
+    "daily_model_limit": 200,
+    "extra_direct_calls_20261009_to_subtract": 10,
+    "embedding": "Existing normal ingestion/retrieval only; preserve call counts, no standalone vector cost study."
+  },
+  "result": {
+    "planned": 6,
+    "drafted": 4,
+    "failed": 2,
+    "unsubmitted": 0,
+    "model_calls": 9,
+    "manual_generation_retries": 0,
+    "assisted_reviews": 4,
+    "review_model_calls": 0,
+    "all_drafts_classified_insufficient_evidence": true,
+    "file_workflow_technical_status": "passed",
+    "answer_quality_status": "failed_and_incomplete",
+    "fully_reviewed_export_status": 409,
+    "partial_draft_export_available": true
+  },
+  "rows": [
+    {
+      "key": "SWU01",
+      "answer_cell": "C5",
+      "question": "为教师账号提供每人100G云文档空间，授权有效期一年；核实教育版及本次采购的授权范围。",
+      "state": "drafted",
+      "draft_status": "insufficient_evidence",
+      "assisted_review": true,
+      "attempts": 1,
+      "model_calls": 1,
+      "elapsed_seconds": 83.38879665825516,
+      "terminal_error": null,
+      "call_results": [
+        {
+          "route": "primary",
+          "state": "succeeded",
+          "error_code": null
+        }
+      ],
+      "accounting": {
+        "attempts": 1,
+        "reservation_state": "consumed",
+        "reserved_quantity": 1,
+        "consume_events": 1,
+        "release_events": 0,
+        "consumed_quantity": 1,
+        "released_quantity": 0,
+        "provider_calls": 1,
+        "call_states": {
+          "running": 0,
+          "succeeded": 1,
+          "failed": 0,
+          "unknown": 0,
+          "not_sent": 0
+        },
+        "known_total_tokens": 8048,
+        "calls_without_token_usage": 0,
+        "currency_cost": null
+      }
+    },
+    {
+      "key": "SWU02",
+      "answer_cell": "C6",
+      "question": "核实教师云文档账号及云空间的等保三级及以上证明，明确证明覆盖范围。",
+      "state": "drafted",
+      "draft_status": "insufficient_evidence",
+      "assisted_review": true,
+      "attempts": 1,
+      "model_calls": 1,
+      "elapsed_seconds": 73.23066888935864,
+      "terminal_error": null,
+      "call_results": [
+        {
+          "route": "primary",
+          "state": "succeeded",
+          "error_code": null
+        }
+      ],
+      "accounting": {
+        "attempts": 1,
+        "reservation_state": "consumed",
+        "reserved_quantity": 1,
+        "consume_events": 1,
+        "release_events": 0,
+        "consumed_quantity": 1,
+        "released_quantity": 0,
+        "provider_calls": 1,
+        "call_states": {
+          "running": 0,
+          "succeeded": 1,
+          "failed": 0,
+          "unknown": 0,
+          "not_sent": 0
+        },
+        "known_total_tokens": 8840,
+        "calls_without_token_usage": 0,
+        "currency_cost": null
+      }
+    },
+    {
+      "key": "SWU03",
+      "answer_cell": "C7",
+      "question": "提交原厂盖章的软件授权证书及售后服务承诺函。",
+      "state": "drafted",
+      "draft_status": "insufficient_evidence",
+      "assisted_review": true,
+      "attempts": 1,
+      "model_calls": 1,
+      "elapsed_seconds": 79.41997845284641,
+      "terminal_error": null,
+      "call_results": [
+        {
+          "route": "primary",
+          "state": "succeeded",
+          "error_code": null
+        }
+      ],
+      "accounting": {
+        "attempts": 1,
+        "reservation_state": "consumed",
+        "reserved_quantity": 1,
+        "consume_events": 1,
+        "release_events": 0,
+        "consumed_quantity": 1,
+        "released_quantity": 0,
+        "provider_calls": 1,
+        "call_states": {
+          "running": 0,
+          "succeeded": 1,
+          "failed": 0,
+          "unknown": 0,
+          "not_sent": 0
+        },
+        "known_total_tokens": 7121,
+        "calls_without_token_usage": 0,
+        "currency_cost": null
+      }
+    },
+    {
+      "key": "SWU04",
+      "answer_cell": "C8",
+      "question": "说明如何对接学校内部统一身份认证系统，并说明前提条件。",
+      "state": "failed",
+      "draft_status": null,
+      "assisted_review": false,
+      "attempts": 1,
+      "model_calls": 2,
+      "elapsed_seconds": 250.71428602468222,
+      "terminal_error": "presales_model_timeout",
+      "call_results": [
+        {
+          "route": "primary",
+          "state": "failed",
+          "error_code": "presales_invalid_model_output"
+        },
+        {
+          "route": "fallback",
+          "state": "failed",
+          "error_code": "presales_model_timeout"
+        }
+      ],
+      "accounting": {
+        "attempts": 1,
+        "reservation_state": "released",
+        "reserved_quantity": 1,
+        "consume_events": 0,
+        "release_events": 1,
+        "consumed_quantity": 0,
+        "released_quantity": 1,
+        "provider_calls": 2,
+        "call_states": {
+          "running": 0,
+          "succeeded": 0,
+          "failed": 2,
+          "unknown": 0,
+          "not_sent": 0
+        },
+        "known_total_tokens": 7830,
+        "calls_without_token_usage": 1,
+        "currency_cost": null
+      }
+    },
+    {
+      "key": "SWU05",
+      "answer_cell": "C9",
+      "question": "核实WPS客户端JS-API及OA调用、文档不落地的预览编辑和格式转换范围。",
+      "state": "drafted",
+      "draft_status": "insufficient_evidence",
+      "assisted_review": true,
+      "attempts": 1,
+      "model_calls": 2,
+      "elapsed_seconds": 184.51103328214958,
+      "terminal_error": null,
+      "call_results": [
+        {
+          "route": "primary",
+          "state": "failed",
+          "error_code": "presales_invalid_model_output"
+        },
+        {
+          "route": "fallback",
+          "state": "succeeded",
+          "error_code": null
+        }
+      ],
+      "accounting": {
+        "attempts": 1,
+        "reservation_state": "consumed",
+        "reserved_quantity": 1,
+        "consume_events": 1,
+        "release_events": 0,
+        "consumed_quantity": 1,
+        "released_quantity": 0,
+        "provider_calls": 2,
+        "call_states": {
+          "running": 0,
+          "succeeded": 1,
+          "failed": 1,
+          "unknown": 0,
+          "not_sent": 0
+        },
+        "known_total_tokens": 20746,
+        "calls_without_token_usage": 0,
+        "currency_cost": null
+      }
+    },
+    {
+      "key": "SWU06",
+      "answer_cell": "C10",
+      "question": "分别核对远程2小时技术指导、项目级故障6小时内派出专业工程师，以及电话咨询不能解决时5小时到场的适用情形。",
+      "state": "failed",
+      "draft_status": null,
+      "assisted_review": false,
+      "attempts": 1,
+      "model_calls": 2,
+      "elapsed_seconds": 231.08845917880535,
+      "terminal_error": "presales_model_timeout",
+      "call_results": [
+        {
+          "route": "primary",
+          "state": "failed",
+          "error_code": "presales_invalid_model_output"
+        },
+        {
+          "route": "fallback",
+          "state": "failed",
+          "error_code": "presales_model_timeout"
+        }
+      ],
+      "accounting": {
+        "attempts": 1,
+        "reservation_state": "released",
+        "reserved_quantity": 1,
+        "consume_events": 0,
+        "release_events": 1,
+        "consumed_quantity": 0,
+        "released_quantity": 1,
+        "provider_calls": 2,
+        "call_states": {
+          "running": 0,
+          "succeeded": 0,
+          "failed": 2,
+          "unknown": 0,
+          "not_sent": 0
+        },
+        "known_total_tokens": 5268,
+        "calls_without_token_usage": 1,
+        "currency_cost": null
+      }
+    }
+  ],
+  "quality_findings": [
+    {
+      "key": "SWU01",
+      "kind": "unsupported_negative_state",
+      "observed": "Missing education entitlement evidence became unmet; the commercial trial is not same-scope negative evidence.",
+      "assisted_correction": "unknown; retain procurement requirement citation and request project-specific entitlement evidence.",
+      "original_preserved": true
+    },
+    {
+      "key": "SWU03",
+      "kind": "citation_relevance_gap",
+      "observed": "Saved citations do not cover the manufacturer-stamped certificate requirement; the uploaded full source does contain it.",
+      "root_cause": "not_established_retrieval_vs_selection",
+      "assisted_correction": "Exclude unsupported prerequisite, cite original workbook E7 and official source explicitly in review note; no invented machine citation.",
+      "original_preserved": true
+    },
+    {
+      "key": "SWU05",
+      "kind": "clarity_improvement",
+      "observed": "Insufficient-evidence/unknown is retained. Clarify desktop JS-API versus WebOffice and avoid premature acceptance-report demand.",
+      "counted_as_new_severe_error": false,
+      "original_preserved": true
+    }
+  ],
+  "accounting": {
+    "consumed_tasks": 4,
+    "released_failed_tasks": 2,
+    "exactly_once": true,
+    "known_model_tokens": 57853,
+    "calls_with_known_usage": 7,
+    "calls_without_usage": 2,
+    "document_bytes_consumed": 67879,
+    "document_consumptions": 3,
+    "embedding_calls": 27,
+    "embedding_breakdown": [
+      {
+        "kind": "document",
+        "state": "responded",
+        "count": 9,
+        "known_tokens": 20447
+      },
+      {
+        "kind": "query",
+        "state": "responded",
+        "count": 18,
+        "known_tokens": 783
+      }
+    ],
+    "global_active_jobs": 0,
+    "pending_model_reservations": 0,
+    "pending_product_reservations": 0,
+    "daily_application_dispatches": 36,
+    "extra_direct_calls": 10,
+    "daily_accounted_dispatches": 46,
+    "daily_limit": 200,
+    "currency_cost": null,
+    "financial_reconciliation_performed": false,
+    "research_gateway_usage": "Separate earlier research service usage is not included here; amount unknown."
+  },
+  "file_validation": {
+    "status": "passed",
+    "phase": "review",
+    "packet_id": "da4d6b96-e9c7-48ae-9886-a86c44511eaf",
+    "file": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\excel-public-replay\\public-swu-answers-partially-reviewed.xlsx",
+    "sha256": "5b461d6f3979dc21c5a57647fc3f8cd2216de64294784463feeeeb76b54d14a7",
+    "rows": 6,
+    "cells": [
+      {
+        "cell": "C5",
+        "characters": 227,
+        "state": "drafted",
+        "reviewed": true
+      },
+      {
+        "cell": "C6",
+        "characters": 137,
+        "state": "drafted",
+        "reviewed": true
+      },
+      {
+        "cell": "C7",
+        "characters": 159,
+        "state": "drafted",
+        "reviewed": true
+      },
+      {
+        "cell": "C8",
+        "characters": 19,
+        "state": "failed",
+        "reviewed": false
+      },
+      {
+        "cell": "C9",
+        "characters": 273,
+        "state": "drafted",
+        "reviewed": true
+      },
+      {
+        "cell": "C10",
+        "characters": 19,
+        "state": "failed",
+        "reviewed": false
+      }
+    ],
+    "changed_zip_members": [
+      "xl/worksheets/sheet1.xml"
+    ],
+    "unrelated_cells_styles_and_members_preserved": true,
+    "drafts_and_attempts_preserved": true,
+    "audit_rows": 6,
+    "native_excel_rendering_verified": false,
+    "independent_business_approval": false
+  },
+  "readiness": {
+    "url": "https://agent.playlab.eu.cc/health/ready",
+    "status": 200,
+    "body": "{\"status\":\"ready\",\"checks\":{\"database\":{\"status\":\"up\"},\"redis\":{\"status\":\"up\"},\"object_store\":{\"status\":\"up\"}},\"checked_at\":\"2026-10-09T10:34:30.056451Z\",\"queue\":{\"healthy\":true,\"source_at\":1791542057137}}"
+  },
+  "evidence": [
+    {
+      "path": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\excel-public-replay\\freeze.json",
+      "sha256": "68a96e92dce1824cb7c2efb852555bc51e1e500f2a0f939a56147f61811f4f26",
+      "bytes": 6487
+    },
+    {
+      "path": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\excel-public-replay\\review-reference.json",
+      "sha256": "b0eac169644cc712fec2fd818d6ec556ecf28702a295f17caa8e9027d0f1a4e4",
+      "bytes": 4503
+    },
+    {
+      "path": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\excel-public-replay\\execution-envelope.json",
+      "sha256": "5b949fc4ae1d1577328c34f3ce5037ee54eba474d1d6d0ea6fa000f463f9787f",
+      "bytes": 123803
+    },
+    {
+      "path": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\excel-public-replay\\generate-intent.json",
+      "sha256": "976632e4ff8016f578c74e7154173e091825ff5bf220c8d9f05e8d9c0e0a92fd",
+      "bytes": 656
+    },
+    {
+      "path": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\excel-public-replay\\generate-events.jsonl",
+      "sha256": "b9925ed84092e95ff71adbc0bdec23ac18babbd2a35dc987ed3512d654a293d7",
+      "bytes": 137648
+    },
+    {
+      "path": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\excel-public-replay\\generate-terminal.json",
+      "sha256": "a271705b59fdf6199a9d0f7dc421ed4fd2ad6eaa58955612744c628b2e0a0697",
+      "bytes": 126
+    },
+    {
+      "path": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\excel-public-replay\\review-intent.json",
+      "sha256": "3729c1131b37c096bb590f738a0242e8b222b9ad87265f31246b5886be90899a",
+      "bytes": 475
+    },
+    {
+      "path": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\excel-public-replay\\review-events.jsonl",
+      "sha256": "73058623963ddf6dbca90877bee366fe7d494a1ea9d971e89f1f3151f579d033",
+      "bytes": 140137
+    },
+    {
+      "path": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\excel-public-replay\\review-terminal.json",
+      "sha256": "c0fc813d832fbda07e0a35b7456c449853261b1d6ef24f27c3eab6b66d96f857",
+      "bytes": 116
+    },
+    {
+      "path": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\excel-public-replay\\independent-ledger.json",
+      "sha256": "8673e7f526303d9cf91ef30afae53a00e49610dfcfe7ea6faebac5494a4b6670",
+      "bytes": 9046
+    },
+    {
+      "path": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\excel-public-replay\\post-review-ledger.json",
+      "sha256": "2a0cc93ba57f5bff28548ac00475f88a03c6592a34eb9a3ab3c3198df164ef8b",
+      "bytes": 9497
+    },
+    {
+      "path": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\excel-public-replay\\post-review-verification.json",
+      "sha256": "c846a872b7ee46929c88adf07f6cde15919d20bc44bc58cae46f7fc80cd6b337",
+      "bytes": 1133
+    },
+    {
+      "path": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\excel-public-replay\\generate-file-verification.json",
+      "sha256": "067b0f7f4a836c10001b5b6eef30e625145552d7dced54df375caf6b0750a385",
+      "bytes": 1331
+    },
+    {
+      "path": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\excel-public-replay\\review-file-verification.json",
+      "sha256": "a73da43b1c4c21cacfafd3c460cd60c51960246575261b962e103cf9587a27ea",
+      "bytes": 1334
+    }
+  ],
+  "deliverables": [
+    {
+      "path": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\excel-public-replay\\public-swu-questionnaire.xlsx",
+      "sha256": "e5c532fb3112e4efc6e72183c7e238c40cbbaff3c4d0035b032a0925dc703595",
+      "bytes": 6592
+    },
+    {
+      "path": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\excel-public-replay\\public-swu-answers-unreviewed.xlsx",
+      "sha256": "37040eae345ce05652ef627cd0fcbb30555660edb433e3bd6aa686c2dd95ff1f",
+      "bytes": 6908
+    },
+    {
+      "path": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\excel-public-replay\\public-swu-answers-partially-reviewed.xlsx",
+      "sha256": "5b461d6f3979dc21c5a57647fc3f8cd2216de64294784463feeeeb76b54d14a7",
+      "bytes": 7255
+    },
+    {
+      "path": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\excel-public-replay\\public-swu-audit-unreviewed.csv",
+      "sha256": "6fe63e0f45b14409700f9a3fa7f2f2e4afebc35f0677eda73955300f0da617fb",
+      "bytes": 36842
+    },
+    {
+      "path": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\excel-public-replay\\public-swu-audit-partially-reviewed.csv",
+      "sha256": "8498bbe45cf92b371d6014e94951b3091fac308036a364428cdd41d077a45d81",
+      "bytes": 36303
+    }
+  ],
+  "historical_results_unchanged": {
+    "rc45": {
+      "success": 7,
+      "failure": 3,
+      "unsubmitted": 2
+    },
+    "rc45_original_160_capacity_run": false,
+    "earlier_3v3_core_comparison": "No additional benefit observed; separate experiment."
+  },
+  "next_priority": [
+    "Reduce invalid-output and terminal-timeout failures within current routes and existing budgets.",
+    "Require same-scope negative evidence for unmet; missing evidence remains unknown.",
+    "Trace retrieval, basis selection and final saved citations for SWU03 before choosing a fix."
+  ],
+  "claims_not_established": [
+    "competitor parity",
+    "commercial readiness",
+    "real-user time savings",
+    "willingness to pay",
+    "independent business/release approval",
+    "native Excel visual acceptance"
+  ]
+}

@@ -1,0 +1,118 @@
+{
+  "schema_version": 1,
+  "at": "2026-09-30T13:57:59.075161+00:00",
+  "status": "rc10_deployed_new_consistency_candidate_locally_verified_not_deployed",
+  "deployed": {
+    "version": "v0.1.45-rc.10",
+    "commit": "1909ba1d56e8a1e75760822d6070583edc2a7e5f",
+    "database_revision": "20260924_0031",
+    "rollback": "v0.1.45-rc.9",
+    "second_window_seconds": 92.606,
+    "five_services_ready": true,
+    "first_window": {
+      "status": "restored",
+      "seconds": 745.5702567100525,
+      "reason": "missing K3s pause image and upstream pull timeout; imported and pinned before second window"
+    },
+    "pyjwt": "2.15.1",
+    "quality_run": 36691132921,
+    "container_run": 36691132485,
+    "signed_release_run": 36691624924,
+    "worker_observation": {
+      "at": "2026-09-30T13:59:51.914695+00:00",
+      "health": {
+        "exit_code": 0,
+        "stdout": "{\"/health/live\": {\"status\": 200, \"body\": \"{\\\"status\\\":\\\"alive\\\"}\"}, \"/health/ready\": {\"status\": 200, \"body\": \"{\\\"status\\\":\\\"ready\\\",\\\"checks\\\":{\\\"database\\\":{\\\"status\\\":\\\"up\\\"},\\\"redis\\\":{\\\"status\\\":\\\"up\\\"},\\\"object_store\\\":{\\\"status\\\":\\\"up\\\"},\\\"langgraph_checkpoint\\\":{\\\"status\\\":\\\"up\\\"},\\\"worker_progress\\\":{\\\"status\\\":\\\"up\\\"}},\\\"checked_at\\\":\\\"2026-09-30T13:59:51.892667Z\\\"}\"}, \"/metrics\": {\"status\": 200, \"body\": \"# HELP process_virtual_memory_bytes Virtual memory size in bytes.\\n# TYPE process_virtual_memory_bytes gauge\\nprocess_virtual_memory_bytes 5.5363584e+08\\n# HELP process_resident_memory_bytes Resident memory size in bytes.\\n# TYPE process_resident_memory_bytes gauge\\nprocess_resident_memory_bytes 2.13860352e+08\\n# HELP process_start_time_seconds Start time of the process since unix epoch in seconds.\\n# TYPE process_start_time_seconds gauge\\nprocess_start_time_seconds 1.7907630494e+09\\n# HELP process_cpu_seconds_total Total user and system CPU time spent in seconds.\\n# TYPE process_cpu_seconds_total counter\\nprocess_cpu_seconds_total 165.19\\n# HELP process_open_fds Number of open file descriptors.\\n# TYPE process_open_fds gauge\\nprocess_open_fds 17.0\\n# HELP process_max_fds Maximum number of open file descriptors.\\n# TYPE process_max_fds gauge\\nprocess_max_fds 1.048576e+06\\n# HELP enterprise_doc_api_requests_total HTTP requests handled by the API.\\n# TYPE enterprise_doc_api_requests_total counter\\n# HELP enterprise_doc_api_request_duration_seconds API request duration in seconds.\\n# TYPE enterprise_doc_api_request_duration_seconds histogram\\n# HELP enterprise_doc_worker_job_claims_total Job claim dispositions observed by a worker.\\n# TYPE enterprise_doc_worker_job_claims_total counter\\n# HELP enterprise_doc_worker_jobs_completed_total Terminal job outcomes observed by a worker.\\n# TYPE enterprise_doc_worker_jobs_completed_total counter\\n# HELP enterprise_doc_worker_job_duration_seconds Job handling duration in seconds.\\n# TYPE enterprise_doc_worker_job_duration_seconds histogram\\n# HELP enterprise_doc_worker_heartbeats_total Job heartbeat outcomes.\\n# TYPE enterprise_doc_worker_heartbeats_total counter\\n# HELP enterprise_doc_worker_outbox_publish_total Outbox publication outcomes.\\n# TYPE enterprise_doc_worker_outbox_publish_total counter\\nenterprise_doc_worker_outbox_publish_total{result=\\\"success\\\"} 4.0\\n# HELP enterprise_doc_worker_outbox_publish_created Outbox publication outcomes.\\n# TYPE enterprise_doc_worker_outbox_publish_created gauge\\nenterprise_doc_worker_outbox_publish_created{result=\\\"success\\\"} 1.790764027892483e+09\\n# HELP enterprise_doc_worker_outbox_publish_duration_seconds Outbox publication duration in seconds.\\n# TYPE enterprise_doc_worker_outbox_publish_duration_seconds histogram\\nenterprise_doc_worker_outbox_publish_duration_seconds_bucket{le=\\\"0.001\\\",result=\\\"success\\\"} 0.0\\nenterprise_doc_worker_outbox_publish_duration_seconds_bucket{le=\\\"0.005\\\",result=\\\"success\\\"} 0.0\\nenterprise_doc_worker_outbox_publish_duration_seconds_bucket{le=\\\"0.01\\\",result=\\\"success\\\"} 0.0\\nenterprise_doc_worker_outbox_publish_duration_seconds_bucket{le=\\\"0.025\\\",result=\\\"success\\\"} 0.0\\nenterprise_doc_worker_outbox_publish_duration_seconds_bucket{le=\\\"0.05\\\",result=\\\"success\\\"} 0.0\\nenterprise_doc_worker_outbox_publish_duration_seconds_bucket{le=\\\"0.1\\\",result=\\\"success\\\"} 0.0\\nenterprise_doc_worker_outbox_publish_duration_seconds_bucket{le=\\\"0.25\\\",result=\\\"success\\\"} 0.0\\nenterprise_doc_worker_outbox_publish_duration_seconds_bucket{le=\\\"0.5\\\",result=\\\"success\\\"} 4.0\\nenterprise_doc_worker_outbox_publish_duration_seconds_bucket{le=\\\"1.0\\\",result=\\\"success\\\"} 4.0\\nenterprise_doc_worker_outbox_publish_duration_seconds_bucket{le=\\\"2.0\\\",result=\\\"success\\\"} 4.0\\nenterprise_doc_worker_outbox_publish_duration_seconds_bucket{le=\\\"5.0\\\",result=\\\"success\\\"} 4.0\\nenterprise_doc_worker_outbox_publish_duration_seconds_bucket{le=\\\"+Inf\\\",result=\\\"success\\\"} 4.0\\nenterprise_doc_worker_outbox_publish_duration_seconds_count{result=\\\"success\\\"} 4.0\\nenterprise_doc_worker_outbox_publish_duration_seconds_sum{result=\\\"success\\\"} 1.325968679971993\\n# HELP enterprise_doc_worker_outbox_publish_duration_seconds_created Outbox publication duration in seconds.\\n# TYPE enterprise_doc_worker_outbox_publish_duration_seconds_created gauge\\nenterprise_doc_worker_outbox_publish_duration_seconds_created{result=\\\"success\\\"} 1.790764027892512e+09\\n# HELP enterprise_doc_dependency_duration_seconds Dependency call duration by bounded dependency name.\\n# TYPE enterprise_doc_dependency_duration_seconds histogram\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"model\\\",le=\\\"0.001\\\",result=\\\"success\\\"} 462.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"model\\\",le=\\\"0.005\\\",result=\\\"success\\\"} 462.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"model\\\",le=\\\"0.01\\\",result=\\\"success\\\"} 462.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"model\\\",le=\\\"0.025\\\",result=\\\"success\\\"} 462.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"model\\\",le=\\\"0.05\\\",result=\\\"success\\\"} 462.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"model\\\",le=\\\"0.1\\\",result=\\\"success\\\"} 462.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"model\\\",le=\\\"0.25\\\",result=\\\"success\\\"} 462.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"model\\\",le=\\\"0.5\\\",result=\\\"success\\\"} 462.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"model\\\",le=\\\"1.0\\\",result=\\\"success\\\"} 640.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"model\\\",le=\\\"2.0\\\",result=\\\"success\\\"} 911.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"model\\\",le=\\\"5.0\\\",result=\\\"success\\\"} 924.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"model\\\",le=\\\"15.0\\\",result=\\\"success\\\"} 924.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"model\\\",le=\\\"60.0\\\",result=\\\"success\\\"} 924.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"model\\\",le=\\\"+Inf\\\",result=\\\"success\\\"} 924.0\\nenterprise_doc_dependency_duration_seconds_count{dependency=\\\"model\\\",result=\\\"success\\\"} 924.0\\nenterprise_doc_dependency_duration_seconds_sum{dependency=\\\"model\\\",result=\\\"success\\\"} 524.6560063441284\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"redis\\\",le=\\\"0.001\\\",result=\\\"success\\\"} 262.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"redis\\\",le=\\\"0.005\\\",result=\\\"success\\\"} 462.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"redis\\\",le=\\\"0.01\\\",result=\\\"success\\\"} 462.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"redis\\\",le=\\\"0.025\\\",result=\\\"success\\\"} 462.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"redis\\\",le=\\\"0.05\\\",result=\\\"success\\\"} 462.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"redis\\\",le=\\\"0.1\\\",result=\\\"success\\\"} 462.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"redis\\\",le=\\\"0.25\\\",result=\\\"success\\\"} 462.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"redis\\\",le=\\\"0.5\\\",result=\\\"success\\\"} 462.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"redis\\\",le=\\\"1.0\\\",result=\\\"success\\\"} 462.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"redis\\\",le=\\\"2.0\\\",result=\\\"success\\\"} 462.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"redis\\\",le=\\\"5.0\\\",result=\\\"success\\\"} 462.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"redis\\\",le=\\\"15.0\\\",result=\\\"success\\\"} 462.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"redis\\\",le=\\\"60.0\\\",result=\\\"success\\\"} 462.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"redis\\\",le=\\\"+Inf\\\",result=\\\"success\\\"} 462.0\\nenterprise_doc_dependency_duration_seconds_count{dependency=\\\"redis\\\",result=\\\"success\\\"} 462.0\\nenterprise_doc_dependency_duration_seconds_sum{dependency=\\\"redis\\\",result=\\\"success\\\"} 0.5966141819953918\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"database\\\",le=\\\"0.001\\\",result=\\\"success\\\"} 0.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"database\\\",le=\\\"0.005\\\",result=\\\"success\\\"} 0.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"database\\\",le=\\\"0.01\\\",result=\\\"success\\\"} 0.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"database\\\",le=\\\"0.025\\\",result=\\\"success\\\"} 0.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"database\\\",le=\\\"0.05\\\",result=\\\"success\\\"} 0.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"database\\\",le=\\\"0.1\\\",result=\\\"success\\\"} 0.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"database\\\",le=\\\"0.25\\\",result=\\\"success\\\"} 208.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"database\\\",le=\\\"0.5\\\",result=\\\"success\\\"} 381.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"database\\\",le=\\\"1.0\\\",result=\\\"success\\\"} 456.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"database\\\",le=\\\"2.0\\\",result=\\\"success\\\"} 462.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"database\\\",le=\\\"5.0\\\",result=\\\"success\\\"} 462.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"database\\\",le=\\\"15.0\\\",result=\\\"success\\\"} 462.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"database\\\",le=\\\"60.0\\\",result=\\\"success\\\"} 462.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"database\\\",le=\\\"+Inf\\\",result=\\\"success\\\"} 462.0\\nenterprise_doc_dependency_duration_seconds_count{dependency=\\\"database\\\",result=\\\"success\\\"} 462.0\\nenterprise_doc_dependency_duration_seconds_sum{dependency=\\\"database\\\",result=\\\"success\\\"} 163.54194885957986\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"object_store\\\",le=\\\"0.001\\\",result=\\\"success\\\"} 0.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"object_store\\\",le=\\\"0.005\\\",result=\\\"success\\\"} 0.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"object_store\\\",le=\\\"0.01\\\",result=\\\"success\\\"} 0.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"object_store\\\",le=\\\"0.025\\\",result=\\\"success\\\"} 0.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"object_store\\\",le=\\\"0.05\\\",result=\\\"success\\\"} 0.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"object_store\\\",le=\\\"0.1\\\",result=\\\"success\\\"} 0.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"object_store\\\",le=\\\"0.25\\\",result=\\\"success\\\"} 0.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"object_store\\\",le=\\\"0.5\\\",result=\\\"success\\\"} 0.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"object_store\\\",le=\\\"1.0\\\",result=\\\"success\\\"} 327.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"object_store\\\",le=\\\"2.0\\\",result=\\\"success\\\"} 456.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"object_store\\\",le=\\\"5.0\\\",result=\\\"success\\\"} 462.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"object_store\\\",le=\\\"15.0\\\",result=\\\"success\\\"} 462.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"object_store\\\",le=\\\"60.0\\\",result=\\\"success\\\"} 462.0\\nenterprise_doc_dependency_duration_seconds_bucket{dependency=\\\"object_store\\\",le=\\\"+Inf\\\",result=\\\"success\\\"} 462.0\\nenterprise_doc_dependency_duration_seconds_count{dependency=\\\"object_store\\\",result=\\\"success\\\"} 462.0\\nenterprise_doc_dependency_duration_seconds_sum{dependency=\\\"object_store\\\",result=\\\"success\\\"} 459.2723168688826\\n# HELP enterprise_doc_dependency_duration_seconds_created Dependency call duration by bounded dependency name.\\n# TYPE enterprise_doc_dependency_duration_seconds_created gauge\\nenterprise_doc_dependency_duration_seconds_created{dependency=\\\"model\\\",result=\\\"success\\\"} 1.7907630599716206e+09\\nenterprise_doc_dependency_duration_seconds_created{dependency=\\\"redis\\\",result=\\\"success\\\"} 1.7907630599718668e+09\\nenterprise_doc_dependency_duration_seconds_created{dependency=\\\"database\\\",result=\\\"success\\\"} 1.7907630602623816e+09\\nenterprise_doc_dependency_duration_seconds_created{dependency=\\\"object_store\\\",result=\\\"success\\\"} 1.790763061169811e+09\\n# HELP enterprise_doc_dependency_up Whether the latest dependency health check succeeded.\\n# TYPE enterprise_doc_dependency_up gauge\\nenterprise_doc_dependency_up{dependency=\\\"model\\\"} 1.0\\nenterprise_doc_dependency_up{dependency=\\\"redis\\\"} 1.0\\nenterprise_doc_dependency_up{dependency=\\\"database\\\"} 1.0\\nenterprise_doc_dependency_up{dependency=\\\"object_store\\\"} 1.0\\n# HELP enterprise_doc_boundary_operations_total Business boundary operation outcomes with bounded labels.\\n# TYPE enterprise_doc_boundary_operations_total counter\\nenterprise_doc_boundary_operations_total{boundary=\\\"retrieval\\\",operation=\\\"retrieve\\\",result=\\\"success\\\"} 4.0\\n# HELP enterprise_doc_boundary_operations_created Business boundary operation outcomes with bounded labels.\\n# TYPE enterprise_doc_boundary_operations_created gauge\\nenterprise_doc_boundary_operations_created{boundary=\\\"retrieval\\\",operation=\\\"retrieve\\\",result=\\\"success\\\"} 1.7907640480201623e+09\\n# HELP enterprise_doc_boundary_operation_duration_seconds Business boundary operation duration in seconds.\\n# TYPE enterprise_doc_boundary_operation_duration_seconds histogram\\nenterprise_doc_boundary_operation_duration_seconds_bucket{boundary=\\\"retrieval\\\",le=\\\"0.001\\\",operation=\\\"retrieve\\\",result=\\\"success\\\"} 0.0\\nenterprise_doc_boundary_operation_duration_seconds_bucket{boundary=\\\"retrieval\\\",le=\\\"0.005\\\",operation=\\\"retrieve\\\",result=\\\"success\\\"} 0.0\\nenterprise_doc_boundary_operation_duration_seconds_bucket{boundary=\\\"retrieval\\\",le=\\\"0.01\\\",operation=\\\"retrieve\\\",result=\\\"success\\\"} 0.0\\nenterprise_doc_boundary_operation_duration_seconds_bucket{boundary=\\\"retrieval\\\",le=\\\"0.025\\\",operation=\\\"retrieve\\\",result=\\\"success\\\"} 0.0\\nenterprise_doc_boundary_operation_duration_seconds_bucket{boundary=\\\"retrieval\\\",le=\\\"0.05\\\",operation=\\\"retrieve\\\",result=\\\"success\\\"} 0.0\\nenterprise_doc_boundary_operation_duration_seconds_bucket{boundary=\\\"retrieval\\\",le=\\\"0.1\\\",operation=\\\"retrieve\\\",result=\\\"success\\\"} 0.0\\nenterprise_doc_boundary_operation_duration_seconds_bucket{boundary=\\\"retrieval\\\",le=\\\"0.25\\\",operation=\\\"retrieve\\\",result=\\\"success\\\"} 0.0\\nenterprise_doc_boundary_operation_duration_seconds_bucket{boundary=\\\"retrieval\\\",le=\\\"0.5\\\",operation=\\\"retrieve\\\",result=\\\"success\\\"} 0.0\\nenterprise_doc_boundary_operation_duration_seconds_bucket{boundary=\\\"retrieval\\\",le=\\\"1.0\\\",operation=\\\"retrieve\\\",result=\\\"success\\\"} 0.0\\nenterprise_doc_boundary_operation_duration_seconds_bucket{boundary=\\\"retrieval\\\",le=\\\"2.0\\\",operation=\\\"retrieve\\\",result=\\\"success\\\"} 0.0\\nenterprise_doc_boundary_operation_duration_seconds_bucket{boundary=\\\"retrieval\\\",le=\\\"5.0\\\",operation=\\\"retrieve\\\",result=\\\"success\\\"} 3.0\\nenterprise_doc_boundary_operation_duration_seconds_bucket{boundary=\\\"retrieval\\\",le=\\\"15.0\\\",operation=\\\"retrieve\\\",result=\\\"success\\\"} 4.0\\nenterprise_doc_boundary_operation_duration_seconds_bucket{boundary=\\\"retrieval\\\",le=\\\"60.0\\\",operation=\\\"retrieve\\\",result=\\\"success\\\"} 4.0\\nenterprise_doc_boundary_operation_duration_seconds_bucket{boundary=\\\"retrieval\\\",le=\\\"+Inf\\\",operation=\\\"retrieve\\\",result=\\\"success\\\"} 4.0\\nenterprise_doc_boundary_operation_duration_seconds_count{boundary=\\\"retrieval\\\",operation=\\\"retrieve\\\",result=\\\"success\\\"} 4.0\\nenterprise_doc_boundary_operation_duration_seconds_sum{boundary=\\\"retrieval\\\",operation=\\\"retrieve\\\",result=\\\"success\\\"} 16.391198587138206\\n# HELP enterprise_doc_boundary_operation_duration_seconds_created Business boundary operation duration in seconds.\\n# TYPE enterprise_doc_boundary_operation_duration_seconds_created gauge\\nenterprise_doc_boundary_operation_duration_seconds_created{boundary=\\\"retrieval\\\",operation=\\\"retrieve\\\",result=\\\"success\\\"} 1.7907640480201886e+09\\n# HELP enterprise_doc_database_pool_utilization_percent Database connection pool utilization percentage.\\n# TYPE enterprise_doc_database_pool_utilization_percent gauge\\nenterprise_doc_database_pool_utilization_percent 0.0\\n# HELP enterprise_doc_queue_oldest_age_seconds Age in seconds of the oldest observed queued job.\\n# TYPE enterprise_doc_queue_oldest_age_seconds gauge\\nenterprise_doc_queue_oldest_age_seconds 0.0\\n# HELP enterprise_doc_redis_connections Observed Redis connections used by the process.\\n# TYPE enterprise_doc_redis_connections gauge\\nenterprise_doc_redis_connections NaN\\n# HELP enterprise_doc_redis_connected_clients Connected clients reported by the shared Redis server, not a process pool.\\n# TYPE enterprise_doc_redis_connected_clients gauge\\nenterprise_doc_redis_connected_clients 14.0\\n# HELP enterprise_doc_resource_sample_success Whether the latest bounded resource observation succeeded.\\n# TYPE enterprise_doc_resource_sample_success gauge\\nenterprise_doc_resource_sample_success{source=\\\"queue\\\"} 1.0\\nenterprise_doc_resource_sample_success{source=\\\"redis\\\"} 1.0\\n# HELP enterprise_doc_resource_last_success_timestamp_seconds Unix time of the last successful resource observation; zero means never.\\n# TYPE enterprise_doc_resource_last_success_timestamp_seconds gauge\\nenterprise_doc_resource_last_success_timestamp_seconds{source=\\\"queue\\\"} 1.7907767865037768e+09\\nenterprise_doc_resource_last_success_timestamp_seconds{source=\\\"redis\\\"} 1.7907767858239644e+09\\n\"}}\n",
+        "stderr": ""
+      },
+      "restart_count": 0,
+      "warnings": 0
+    }
+  },
+  "capacity": {
+    "scope": "four-task rc10 diagnostic",
+    "passed": 3,
+    "failed": 1,
+    "admission_ms": [
+      2327.581,
+      4370.934,
+      4664.804,
+      4008.112
+    ],
+    "admission_target_ms": 2000,
+    "target_met": false,
+    "observed_model_calls": 4,
+    "observed_vector_calls": 12,
+    "failed_sample_retained": true,
+    "finding": "terminal outcome read mixed row and attempt snapshots; saved draft subsequently verified"
+  },
+  "candidate": {
+    "changes": [
+      "single-statement row, attempt and review snapshot with final access rechecks",
+      "Celery application-local task registration prevents reuse of a closed application runner"
+    ],
+    "verification": {
+      "presales_integration_passed": 89,
+      "non_integration_passed": 2128,
+      "subtests_passed": 23,
+      "mypy_linux_sources": 251,
+      "ruff": "passed",
+      "full_packet_select_budget": 8,
+      "single_row_admission_select_budget": 21
+    },
+    "original_regressions_failed": true,
+    "initial_combined_integration": {
+      "passed": 87,
+      "failed": 1,
+      "cause": "Celery shared registration inherited an old runner",
+      "fixed_combined_passed": 89
+    },
+    "online_latency_after_candidate": "not_measured",
+    "deployed": false
+  },
+  "local_vm": {
+    "scope": "restored-release-api-via-web-proxy",
+    "status": "historical_application_verified",
+    "database_tables": 56,
+    "database_rows": 81636,
+    "object_count": 1643,
+    "object_bytes": 1646986,
+    "all_fingerprints_and_object_hashes_match": true,
+    "historical_packets": 15,
+    "drafts": 10,
+    "reviews": 7,
+    "csv_and_cross_tenant_checks": "passed",
+    "external_model_calls": 0,
+    "production_credentials": false,
+    "rpo_seconds": 426.424258,
+    "data_application_elapsed_seconds": 9899.813067,
+    "rpo_target_met": false,
+    "rto_target_met": false,
+    "whole_vm_rto_verified": false,
+    "cloud_failover_verified": false
+  },
+  "cleanup": {
+    "remote_runtime_files": 22,
+    "local_transport_files": 46,
+    "local_bytes": 910839432,
+    "vm_and_snapshots_retained": true
+  },
+  "source_sha256": {
+    "packages/core/src/enterprise_doc_core/presales/service.py": "ca96eaaa075b735d4e523b521825a35c14bcb7a803f9cef89e2ae81a1de61d6a",
+    "tests/presales/test_presales_packet_snapshot_integration.py": "ea69c63f5b6a6e4785fb30712ebe738fc1b8ce848393293e93c5ad072b4774ee",
+    "tests/presales/test_presales_workflow_integration.py": "328b201b36d7b02f8749f329ead7cbfdd7daab7f4b625d2c6166ba829770447c",
+    "tests/presales/test_presales_admission_integration.py": "49b839b7b119732faffc2b2687afa37cf468201b6f5f5baceb214b657fedde95",
+    "apps/worker/src/enterprise_doc_worker/queue.py": "eb65c128eb4869b372af316a93495130549c5f1540bc80f228c13dc2b2f08426",
+    "apps/worker/tests/test_queue_registration.py": "ff0e7ef729adf443c81713957c3774468c89c4f9c1ccc1de1039e0f1d6b8e3c4",
+    ".trellis/spec/backend/presales-workspace.md": "9b2b87d122a2baa92d577bac8e0ae417301cc65a065475da1b3896963fbb752c",
+    "docs/ops/final-project-acceptance.md": "a1bf721c21e53aba4e66a8e26dd9534129bfce06faf15e70041f6dec7946a341"
+  },
+  "production_approved": false,
+  "remaining": [
+    "candidate CI and deployment, fresh admission and capacity measurement",
+    "supplier currency and successful-call billing reconciliation",
+    "independent business and release approval",
+    "backup operation while the personal computer is offline",
+    "timed whole-machine recovery within RPO/RTO targets"
+  ]
+}

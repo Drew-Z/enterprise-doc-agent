@@ -1,0 +1,218 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-10-01T15:45:35.460810+00:00",
+  "task_status": "in_progress",
+  "scope": "rc12 deployment and four-task diagnostic; subsequent roundtrip candidate remains undeployed",
+  "deployed": {
+    "version": "v0.1.45-rc.12",
+    "source_commit": "5b50a87402b421434d5b526e317d94e67ed7b710",
+    "release_ci": "36765958688",
+    "database_revision": "20260924_0031",
+    "switch_seconds": 95.483,
+    "five_deployments_ready": true,
+    "rollback_version": "v0.1.45-rc.11",
+    "signature_evidence_files": 56,
+    "first_public_probe": "timeout",
+    "second_public_probe": "ready",
+    "public_home_status": 200
+  },
+  "diagnostic": {
+    "scope": "rc12-four-task-consistency-diagnostic-not-capacity-approval",
+    "started_at": "2026-10-01T12:25:09.547432+00:00",
+    "completed_at": "2026-10-01T12:30:18.840099+00:00",
+    "summary": {
+      "planned_tasks": 4,
+      "business_successes": 4,
+      "business_non_successes": 0,
+      "expected_failures": 0,
+      "not_run": 0,
+      "interrupted": 0,
+      "expectations_met": 4,
+      "normal_failure_rate": 0.0,
+      "boundaries": {
+        "upload": {
+          "planned": 4,
+          "observed": 4,
+          "passed": 4,
+          "failed": 0,
+          "expected_failure": 0,
+          "interrupted": 0,
+          "not_run": 0,
+          "sample_count": 4,
+          "min_ms": 8285.791772883385,
+          "p50_ms": 8330.682720988989,
+          "p95_ms": 14369.627451058477,
+          "p99_ms": 14369.627451058477,
+          "max_ms": 14369.627451058477,
+          "proposed_target_ms": 5000.0,
+          "proposed_target_met": false
+        },
+        "ingestion": {
+          "planned": 4,
+          "observed": 4,
+          "passed": 4,
+          "failed": 0,
+          "expected_failure": 0,
+          "interrupted": 0,
+          "not_run": 0,
+          "sample_count": 4,
+          "min_ms": 11375.748465768993,
+          "p50_ms": 11615.458395332098,
+          "p95_ms": 18289.784423075616,
+          "p99_ms": 18289.784423075616,
+          "max_ms": 18289.784423075616,
+          "proposed_target_ms": 30000.0,
+          "proposed_target_met": true
+        },
+        "retrieval": {
+          "planned": 4,
+          "observed": 4,
+          "passed": 4,
+          "failed": 0,
+          "expected_failure": 0,
+          "interrupted": 0,
+          "not_run": 0,
+          "sample_count": 4,
+          "min_ms": 1852.3907279595733,
+          "p50_ms": 1937.1502129361033,
+          "p95_ms": 3689.9384958669543,
+          "p99_ms": 3689.9384958669543,
+          "max_ms": 3689.9384958669543,
+          "proposed_target_ms": 2000.0,
+          "proposed_target_met": false
+        },
+        "generation_recovery": {
+          "planned": 4,
+          "observed": 4,
+          "passed": 4,
+          "failed": 0,
+          "expected_failure": 0,
+          "interrupted": 0,
+          "not_run": 0,
+          "sample_count": 4,
+          "min_ms": 36442.01265787706,
+          "p50_ms": 45410.00951686874,
+          "p95_ms": 61762.46380014345,
+          "p99_ms": 61762.46380014345,
+          "max_ms": 61762.46380014345,
+          "proposed_target_ms": 180000.0,
+          "proposed_target_met": true
+        }
+      },
+      "generation_acceptance": {
+        "observed": 4,
+        "sample_count": 4,
+        "min_ms": 2142.2258471138775,
+        "p50_ms": 2176.9974469207227,
+        "p95_ms": 3721.335452981293,
+        "p99_ms": 3721.335452981293,
+        "max_ms": 3721.335452981293,
+        "proposed_target_ms": 2000.0
+      },
+      "generation_terminal": {
+        "observed": 4,
+        "sample_count": 4,
+        "min_ms": 29124.44117711857,
+        "p50_ms": 31934.933905955404,
+        "p95_ms": 49686.45726609975,
+        "p99_ms": 49686.45726609975,
+        "max_ms": 49686.45726609975
+      }
+    },
+    "ledger": {
+      "models": [
+        {
+          "state": "succeeded",
+          "calls": 4,
+          "tokens": "18048"
+        }
+      ],
+      "embeddings": [
+        {
+          "kind": "document",
+          "state": "responded",
+          "calls": 4,
+          "tokens": 56
+        },
+        {
+          "kind": "query",
+          "state": "responded",
+          "calls": 8,
+          "tokens": 280
+        }
+      ],
+      "jobs": [
+        {
+          "status": "succeeded",
+          "jobs": 8
+        }
+      ],
+      "presales": [
+        {
+          "state": "succeeded",
+          "attempts": 4
+        }
+      ]
+    },
+    "limitations": [
+      "Synthetic single-chunk TXT/PDF/DOCX; not a large-document capacity claim.",
+      "API is pod-local; public latency and browser recovery are separate evidence.",
+      "Reviews are automated technical checks, not independent business approval.",
+      "Money requires provider billing records."
+    ],
+    "production_capacity_approved": false,
+    "expired_original_window_executed": false
+  },
+  "roundtrip_candidate": {
+    "status": "local_checks_passed_not_deployed",
+    "admission_selects_before": 21,
+    "admission_selects_after": 19,
+    "single_and_batch_verified": true,
+    "receipt_api_changed": false,
+    "integration_passed": 174,
+    "nonintegration_passed": 2128,
+    "subtests_passed": 23,
+    "source_sha256": {
+      "packages/core/src/enterprise_doc_core/billing/service.py": "3e8c638710a211b7e4427c6b24169fed26ff594df5f385191cb6cc0a9e7d39b0",
+      "packages/core/src/enterprise_doc_core/jobs/service.py": "328f8b15bd9ff79a8d992d60e651b7a13a76824aa6cfe376d55c7814a3b0dfcf",
+      "tests/presales/test_presales_admission_integration.py": "bb00ce25928a7d00be821eb3079f0b8ef7773167a2fcadcc081bc8d6c00cdc62",
+      "tests/jobs/test_job_runtime_integration.py": "1e33388f49659b282f6382d6fa07070d487621168edbeb052dd56ef0c6b3848e"
+    },
+    "test_harness_fix": "Job tests now honor the explicit loopback FOUNDATION_TEST_DATABASE_URL. The earlier default-local-database missing-table failures are preserved; uncertain synthetic rows are retained.",
+    "online_latency_verified": false
+  },
+  "cleanup": {
+    "at": "2026-10-01T15:45:35.459842+00:00",
+    "status": "removed",
+    "files": 30,
+    "bytes": 507059179,
+    "retained": "Runtime images, VM, original recovery points and all failed observations"
+  },
+  "remaining": [
+    "Admission/upload/retrieval performance and complete two-round capacity matrix",
+    "Verified primary/fallback/vector monetary amounts",
+    "Independent business and release approval",
+    "Backup continuity while personal computer is offline",
+    "Blank-machine RPO/RTO and applicable failover evidence"
+  ],
+  "private_evidence_sha256": {
+    "release-verification.json": "b3a973e316f7319468b3187235e96f7522c4501c1faa2e4371427253fcc117d8",
+    "post-switch-verification.json": "92fb563fee4e96731bbe1eda563f6954864bb8cb6d62d18a719e97976a82a844",
+    "public-readiness.json": "1ff8ee7bc1c7d5795187f1c1eaf0fe3eca719fa23cb457215ed4377c7e9c759a",
+    "retry-public-readiness.json": "fca5c5b09899b4ef5295e55a2f365acd51a21d53f356d7155645a67adec64fc0",
+    "github-environment-sync.json": "725d1ec69fb714702f5591119e11a60c4b5e3602f9254ea1e3dc17ad88a7d21c",
+    "05-cleanup-result.json": "89672c91979845393b07a749b57eaa880135f8bfd24650732862eacbc342cefe",
+    "oci-cleanup-result.json": "345aa06f0166f802caa6bf1f589819681e3db509c565c70ccf64a7c507f025aa",
+    "capacity-envelope-v2.json": "c936701ffc4cd2d18ac26a137efbe1f1672daca6ee15f0d33474cc12124e07cc",
+    "capacity-v2-execute.jsonl": "86c5f7d85357c7906022f8eb8f3a903f10e55e00e5ccfa4a6230284f9e10b5d5",
+    "roundtrip-red.log": "e9bd778c1b24afbbd8865fd4fc7b11682c39b3b63e01f020e0c061a646964e8a",
+    "roundtrip-green.log": "7a20d38c2c508b136206919a4c79e66af18f845f1b7a74403998bae773d272dd",
+    "roundtrip-integration.log": "41f59fd5424b2a88158af456dc4e8bfe58e53536ca318dd2076981e9207eb185",
+    "roundtrip-resumed-integration.log": "7d380daffbd9de6e3f9d219844c32eca6f5de862a02263d1b97ea0bd4452cf93",
+    "roundtrip-unit.log": "4d3b73460fe544d60f8514b170dcfeed4360a35ae1420df40707f290ca3fd9ce",
+    "roundtrip-recheck-ruff.log": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+    "roundtrip-recheck-format.log": "14b58213cc03cf9101d7a4dc2eaf946636ea1756063ea5f9adf339523c488502",
+    "roundtrip-mypy.log": "82bcf5599efd0efb5189f1184e77fc0bb53e4c14436e4a10d3365c12bd56b53c"
+  },
+  "prior_failures_preserved": true
+}

@@ -1,0 +1,891 @@
+{
+  "schema_version": 1,
+  "status": "blocked_external",
+  "observed_at": "2026-11-04T14:42:01.158950+00:00",
+  "task": "10-11-document-analysis-workspace",
+  "scope": "local_immutable_staging_release_preparation",
+  "candidate": {
+    "repository": "D:\\workspace4Cursor\\enterprise-doc-agent",
+    "branch": "codex/presales-prerequisite-assessment",
+    "baseline_head": "84d9388e51fea3324ce5b2dda8349bf7ff8199a0",
+    "candidate_head": "f6930e85493fa25b99be20ece14669f0d49c26dc",
+    "candidate_commits": [
+      "1dd8083",
+      "22efbbd",
+      "1c8ebdd",
+      "f6930e8"
+    ],
+    "migration_start": "20261010_0037",
+    "migration_head": "20261104_0044",
+    "remote_branch_contains_head": true,
+    "release_tag_present": true,
+    "release_tag": "v0.1.45-rc.53",
+    "release_run_id": "41845049954"
+  },
+  "release_chain": {
+    "publication_workflow": {
+      "path": ".github/workflows/container.yml",
+      "sha256": "1f356624fb841f3676c7c1324e246712c0ebee54035bcb94dc9a8d9ca5eb1f51"
+    },
+    "deployment_workflow": {
+      "path": ".github/workflows/deploy-staging.yml",
+      "sha256": "d66b764bdd5089d83dde69c8a179262eaf1c63e13a37efdda98ca68a729a32f5"
+    },
+    "rollback_workflow": {
+      "path": ".github/workflows/rollback.yml",
+      "sha256": "507fa2714479be48e736746829bb5c8d8cd7767e04a050d97a9e95912017b9d5"
+    },
+    "workloads": [
+      "api",
+      "worker",
+      "consumer",
+      "web"
+    ],
+    "real_image_digests": {
+      "api": "ghcr.io/drew-z/enterprise-doc-api@sha256:14547f78c40b245692bc57e4920fe0bd185b747bd5426fbed3a3033cc3bf242d",
+      "consumer": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:9f29eb893dda667f8d3ff3d1cdeb66d9955bfb9ac1cbf5a104b7292fbc4cecbc",
+      "web": "ghcr.io/drew-z/enterprise-doc-web@sha256:f4bed08c431406d8277089bafff66eccb9cf50d09438c4545f1a0c53cade5b02",
+      "worker": "ghcr.io/drew-z/enterprise-doc-worker@sha256:aa784af188184419f6f5979dcf6183a08a98ab30a7c18aaa854469be6e1cdd7b"
+    },
+    "signed_release_manifest": {
+      "release": "v0.1.45-rc.53",
+      "workflow_run_id": "41845049954",
+      "strict_manifest_sha256": "52033ce2b5c144c74333e60d79fabc301289bc5735d67f90d4a8a70cb077bc5a",
+      "status": "passed"
+    },
+    "rollback_candidate": {
+      "release": "v0.1.45-rc.51",
+      "workflow_run_id": "38069840277",
+      "strict_manifest_sha256": "f4acf6c7564bbeaf51bdb603a9b8d6206011d6c74455ea4b739fab6c3e77fa5d",
+      "images": {
+        "api": "ghcr.io/drew-z/enterprise-doc-api@sha256:af9e576292ddc5e27c2c2a5704fcd9d3c6f42d07647920ed44b192e5faa39a9c",
+        "worker": "ghcr.io/drew-z/enterprise-doc-worker@sha256:dae34e5b08b94fed54a9455d4ee60230cd512d4751eaaf8caff8bc7d72c6b8a1",
+        "consumer": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:958ad15ef9227c8198509676074a30d9d71372d02a9abebe3822eea5781f9217",
+        "web": "ghcr.io/drew-z/enterprise-doc-web@sha256:724d1007282607d3d220aae1fbeb76b87a2b48ae4ba0f3a66b95db1aa1297da9"
+      }
+    }
+  },
+  "analysis_policy": {
+    "deployment_state": "dark",
+    "structured_documents_enabled": false,
+    "execution_enabled": false,
+    "route_id": "default",
+    "controlled_holdout_route_id": "analysis-primary",
+    "unit_deadline_seconds": 120,
+    "run_deadline_seconds": 3600,
+    "max_input_bytes": 65536,
+    "execution_requires_structured_documents": true,
+    "execution_requires_route_deadline_at_least_unit_deadline": true,
+    "silent_fallback_allowed": false
+  },
+  "local_render": {
+    "status": "passed",
+    "profile": "single-node-4c4g",
+    "renderer": "kubectl kustomize",
+    "kustomize_version": "v5.7.1",
+    "configured_manifest_sha256": "69c05745df1fdb2b27be6063f9ca1bc9a83fcaa69aeac8d562465071f576c424",
+    "document_count": 27,
+    "phase_counts": {
+      "prerequisites": 20,
+      "migration": 1,
+      "embedding_rollout": 1,
+      "workloads": 5
+    },
+    "placeholder_images_only": true,
+    "four_workload_images_are_digest_bound": true,
+    "migration_uses_api_image": true,
+    "embedding_rollout_uses_api_image": true,
+    "secret_resources": 0,
+    "temporary_artifacts_removed": true
+  },
+  "migration_and_rollback": {
+    "migration_shape": "additive_with_guarded_downgrades",
+    "candidate_head": "20261104_0044",
+    "deployed_head": "20261010_0037",
+    "production_migration_performed": false,
+    "rollback_readiness": "passed_fresh_0044_startup_only",
+    "compatibility_run_id": 41847465629,
+    "compatibility_run_attempt": 2,
+    "candidate_runtime": "v0.1.45-rc.53",
+    "rollback_runtime": "v0.1.45-rc.51",
+    "runtime_results": [
+      {
+        "artifact_id": 13332775137,
+        "artifact_name": "analysis-rollback-compatibility-rollback-rc51-41847465629-2",
+        "sha256": "2c456aea4f61afbba73e60e7c20edb60bd6e946f2fcf183973bad4a04c612527",
+        "status": "passed",
+        "schema": {
+          "analysis_projects": true,
+          "head": "20261104_0044",
+          "status": "passed"
+        },
+        "analysis_route_present": false
+      },
+      {
+        "artifact_id": 13331408561,
+        "artifact_name": "analysis-rollback-compatibility-candidate-rc53-41847465629-2",
+        "sha256": "4bc1cee5763c70b7b8944c2e7bd18814da6b14206b807cda4614dfb5d7ddad20",
+        "status": "passed",
+        "schema": {
+          "analysis_projects": true,
+          "head": "20261104_0044",
+          "status": "passed"
+        },
+        "analysis_route_present": true
+      }
+    ],
+    "limitations": [
+      "Fresh database startup compatibility does not verify recovery of existing analysis history.",
+      "rc.51 has no analysis routes; it is not an analysis execution fallback.",
+      "No shared database migration or deployment was performed."
+    ]
+  },
+  "validation": {
+    "focused_deployment_tests": {
+      "status": "passed",
+      "passed": 224
+    },
+    "deployment_capacity_recovery_tests": {
+      "status": "passed",
+      "passed": 55
+    },
+    "analysis_migration_integration": {
+      "status": "passed",
+      "passed": 1,
+      "warnings": 2,
+      "warning_scope": "pre_existing_document_versions_upload_sessions_fk_sort_cycle"
+    },
+    "ruff_check": "passed",
+    "ruff_format_check": "passed",
+    "mypy": "passed",
+    "diff_check": "passed",
+    "workflow_yaml_parse": "passed",
+    "actionlint": "passed_changed_workflows",
+    "actionlint_version": "1.7.7",
+    "actionlint_image_id": "sha256:b6d0bc67a629b20d424b3e35964400ec438451f41b95302157868d5e379d5039",
+    "actionlint_scope": [
+      ".github/workflows/deploy-staging.yml",
+      ".github/workflows/quality-heavy.yml"
+    ],
+    "actionlint_repository_wide": "pre_existing_shellcheck_findings",
+    "actionlint_repository_wide_findings": [
+      ".github/workflows/quality-self-hosted.yml:29 SC2086 (2 findings)"
+    ]
+  },
+  "blockers": [
+    "administrator_owned_default_off_prerequisites_not_applied",
+    "default_off_candidate_not_deployed_or_migrated",
+    "short_lived_analysis_token_and_analysis_primary_route_not_configured",
+    "real_fixed_and_agent_holdout_not_run",
+    "external_single_node_4c4g_acceptance_not_run",
+    "independent_uat_participant_missing",
+    "protected_deployment_variables_differ_from_running_primary_route"
+  ],
+  "side_effect_boundaries": {
+    "push_run": true,
+    "tag_created": true,
+    "image_publication_run": true,
+    "cluster_commands_run": false,
+    "deployment_run": false,
+    "migration_run_on_shared_or_production_database": false,
+    "real_model_call_run": false,
+    "secret_values_read": false
+  },
+  "continuation_20261104": {
+    "repair_commit": "d0ebb729d78f0228ae9bb49cecfce71adfdef34f",
+    "local_validation": {
+      "rollback_and_ci_contract_tests": 26,
+      "document_structure_tests": 14,
+      "ruff": "passed",
+      "actionlint": "passed_quality_heavy",
+      "linux_mypy_source_files": 311,
+      "linux_mypy": "passed"
+    },
+    "initial_quality_run": {
+      "run_id": "41813668364",
+      "conclusion": "failure",
+      "frontend": "success",
+      "backend_failure": "structure_process.py:46 CREATE_NO_WINDOW attr-defined under Linux",
+      "resolution": "Fixed by 9ac423a; local Linux full-scope mypy and 14 parser tests passed. The CI run recorded here predates that fix; it is not evidence of remote verification of the fix."
+    },
+    "supply_chain": {
+      "run_id": "41813667813",
+      "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/41813667813",
+      "conclusion": "failure",
+      "source_head": "d0ebb729d78f0228ae9bb49cecfce71adfdef34f",
+      "release_manifest": "skipped",
+      "scan_counts": {
+        "api": {
+          "high": 12,
+          "critical": 1
+        },
+        "worker": {
+          "high": 12,
+          "critical": 1
+        },
+        "consumer": {
+          "high": 12,
+          "critical": 1
+        },
+        "web": {
+          "high": 3,
+          "critical": 0
+        }
+      },
+      "artifact_ids": {
+        "api": "13312774173",
+        "worker": "13313262919",
+        "consumer": "13314210841",
+        "web": "13314011369"
+      },
+      "scope_note": "Counts are SARIF findings per rebuilt image, not unique vulnerabilities. These scans do not rescan or replace the previously signed rc.52 release evidence."
+    },
+    "platform_fix_commit": "9ac423a37bc5e6b69aa934b3f40cfb67c103558e",
+    "push_transport_incidents": [
+      "SSH publickey authentication failed after the first successful repair push.",
+      "Direct HTTPS connection timed out.",
+      "HTTPS via existing Windows system proxy reached GitHub but the remote returned Internal Server Error."
+    ],
+    "platform_fix_remote_verification": {
+      "run_id": "41816329541",
+      "head_sha": "82b587deff952fe0c2cb9bd84f529253a306dbf3",
+      "linux_mypy": "passed",
+      "frontend": "passed",
+      "backend_tests": {
+        "passed": 3300,
+        "failed": 2,
+        "errors": 1,
+        "deselected": 887
+      },
+      "failure_summary": "Two material tests require local raw archive paths; one real-DB budget test omitted integration marker."
+    },
+    "ci_portability_fix": {
+      "repository_material_hash_checks": "preserved",
+      "raw_capture_audit": "explicit ANALYSIS_RAW_EVIDENCE_DIR; skipped with a reason if not configured; 5 material tests pass against original local archive",
+      "db_budget_test": "marked integration; remains real PostgreSQL test",
+      "local_nonintegration_tests": {
+        "passed": 10,
+        "skipped_raw_archive_audits": 2,
+        "deselected_integration": 1
+      },
+      "ruff": "passed",
+      "format": "passed"
+    }
+  },
+  "dependency_remediation_20261104": {
+    "status": "dependency_fixes_verified_full_integration_blocked",
+    "baseline_head": "d3859cabadd88c388e47da2abf3587ca32427ad0",
+    "object_store": {
+      "build_file": "infra/docker/Dockerfile.object-store",
+      "platform": "linux/amd64",
+      "upstream_server_release": "RELEASE.2025-09-07T16-13-09Z",
+      "server_binary_sha256": "7c5bd8512c6e966455b1d198209358b2d191c77a83ab377c4073281065fb855f",
+      "upstream_client_release": "RELEASE.2025-08-13T08-35-41Z",
+      "client_binary_sha256": "01f866e9c5f9b87c2b09116fa5d7c06695b106242d829a8bb32990c00312e891",
+      "local_binary_verification": "mc complete checksum matched; minio transfer interrupted",
+      "local_build": "GitHub release binary downloads returned unexpected EOF; no runtime smoke claimed",
+      "scope": "local/CI/recovery repackaging of original official binaries; not an upstream image or production storage release",
+      "github_runtime": "passed build, private bucket init, migration and rollback smoke; M1 multipart and Web E2E jobs passed"
+    },
+    "security_updates": {
+      "certifi": "2026.10.18",
+      "pypdf": "6.21.4",
+      "libssl3": "3.0.22-1~deb12u2",
+      "openssl": "3.0.22-1~deb12u2",
+      "nginx": "1.30.6-alpine3.24@sha256:0e52bd054126cdc040b1276c0af347aeb02a41b9cfe305d6094767ac30e97949"
+    },
+    "local_validation": {
+      "focused_tests_passed": 85,
+      "ruff": "passed",
+      "mypy_script": "passed",
+      "compose_config": "passed"
+    },
+    "release_gates": "Object-store dependency, rebuilt application scans and isolated empty-schema startup smoke passed. Full M4 integration failed and blocks a new signed patched candidate; default-off deployment, analysis-history rollback, real model holdout, target capacity and independent UAT remain open.",
+    "source_commit": "1dd8083f02d15a40ee7248bf34011a69eee42009",
+    "image_scan": {
+      "run_id": "41825198219",
+      "conclusion": "success",
+      "mode": "pull_request_local_build_no_release_publication",
+      "sarif_findings_by_image": {
+        "api": 0,
+        "worker": 0,
+        "consumer": 0,
+        "web": 0
+      },
+      "scope": "Configured HIGH/CRITICAL scanner gate",
+      "artifact_records": [
+        {
+          "artifact_id": 13319696422,
+          "name": "supply-chain-api",
+          "sarif": "trivy-api.sarif",
+          "sha256": "2646f50096840769d20e0c121870713586e2ebc0a82c5800d65ea02e6ddacd18",
+          "findings": 0
+        },
+        {
+          "artifact_id": 13319555335,
+          "name": "supply-chain-consumer",
+          "sarif": "trivy-consumer.sarif",
+          "sha256": "dbe3209415a48a4f578f89e69f0cfc049517279d64170b181f55045e5fac0139",
+          "findings": 0
+        },
+        {
+          "artifact_id": 13319376197,
+          "name": "supply-chain-web",
+          "sarif": "trivy-web.sarif",
+          "sha256": "745d276485c8f1ef46d05fb7a465c75997790153ccaa97b2888bb9a1022d5bc4",
+          "findings": 0
+        },
+        {
+          "artifact_id": 13319016965,
+          "name": "supply-chain-worker",
+          "sarif": "trivy-worker.sarif",
+          "sha256": "0bcd5ff5ea14f3792175aa2e8fb106f2f2b0bc107794f5ef944998ca494e4e5b",
+          "findings": 0
+        }
+      ]
+    },
+    "quality": {
+      "run_id": "41825198169",
+      "conclusion": "success",
+      "backend": "success",
+      "frontend": "success",
+      "backend_tests": {
+        "passed": 3305,
+        "skipped_raw_archive_audits": 2,
+        "deselected": 888
+      },
+      "linux_mypy_source_files": 307
+    },
+    "heavy": {
+      "run_id": "41825412139",
+      "conclusion": "failure",
+      "analysis_rollback_compatibility": "success",
+      "m1_integration": "success",
+      "web_e2e": "success",
+      "m4_integration": "failure",
+      "m4_counts": {
+        "failed": 29,
+        "passed": 854,
+        "deselected": 3307,
+        "errors": 7,
+        "warnings": 2
+      },
+      "m4_evaluator": "skipped_after_integration_failure",
+      "m1_counts": {
+        "passed": 133,
+        "deselected": 14
+      },
+      "m1_multipart_smoke": "success",
+      "web_e2e_passed": 12,
+      "failure_evidence": {
+        "file": "m4-integration-41825412139-failures.json",
+        "sha256": "91a7179d67ac5be7c7596bc76be94d638cdb4f05896fc0a5abcad317dfb78334",
+        "job_id": 126558788394
+      },
+      "failure_groups": [
+        {
+          "category": "historical_migration_tests_bypass_new_dependencies",
+          "failed": 3,
+          "errors": 0,
+          "status": "source_and_ci_confirmed",
+          "next": "Isolate migration tests at the correct revision; preserve history guards and foreign keys."
+        },
+        {
+          "category": "entitlement_timestamp_migration_model_mismatch",
+          "failed": 18,
+          "errors": 5,
+          "status": "source_mismatch_and_ci_not_null_confirmed",
+          "next": "Reproduce on fresh Alembic schema; assess an additive migration and historical row compatibility instead of masking through fixtures."
+        },
+        {
+          "category": "cross_tenant_negative_fixture_cleanup",
+          "failed": 2,
+          "errors": 2,
+          "status": "source_and_ci_confirmed",
+          "next": "Restore deliberately inconsistent tenant relationships before fixture cleanup; retain scope filtering assertions."
+        },
+        {
+          "category": "identity_lab_start_containers",
+          "failed": 4,
+          "errors": 0,
+          "status": "failure_stage_confirmed_root_cause_unresolved",
+          "next": "Capture bounded redacted subprocess diagnostics and reproduce against committed identity files; preserve unrelated dirty changes."
+        },
+        {
+          "category": "frozen_rc40_public_projection",
+          "failed": 2,
+          "errors": 0,
+          "status": "workbook_and_rows_difference_confirmed_full_diff_pending",
+          "next": "Compare frozen old schema with explicit current projection, retaining history and tenant assertions."
+        }
+      ]
+    },
+    "subsequent_resolution": "M4 failures on 1dd8083 resolved by 1c8ebdd; full Heavy run 41840352966 passed. Historical failure evidence retained below."
+  },
+  "m4_remediation_20261104": {
+    "status": "passed_all_engineering_ci",
+    "baseline_head": "22efbbd59d60cf7bbac4e5f2429b8096e7c7b167",
+    "candidate_schema_head": "20261104_0044",
+    "changes": [
+      "Add timestamp defaults without rewriting historical rows or applied migrations",
+      "Run historical migration roundtrips at their own revisions in isolated schemas",
+      "Restore deliberate tenant mismatch before cleanup",
+      "Explicit absent-only projection for frozen rc40 reader",
+      "Prepare pinned identity images and Chromium before all integration tests"
+    ],
+    "local_validation": {
+      "focused_tests_passed": 206,
+      "ci_contract_tests_passed": 14,
+      "ruff": "passed",
+      "format": "passed",
+      "mypy_files": 312,
+      "mypy": "passed",
+      "actionlint": "passed_changed_workflow",
+      "isolated_databases_removed": 2
+    },
+    "rollback_scope": "Existing rc52/rc51 rehearsal covers 0043 only; not evidence for current 0044 images or analysis history.",
+    "deployment": false,
+    "shared_database_migration": false,
+    "real_model_calls": 0,
+    "source_commit": "1c8ebdd85a00c9fd57bb6bbf937405ef02711b50",
+    "ci_runs": {
+      "quality": 41840315650,
+      "container": 41840316045,
+      "heavy": 41840352966
+    },
+    "ci_results": {
+      "quality": {
+        "run_id": 41840315650,
+        "head_sha": "1c8ebdd85a00c9fd57bb6bbf937405ef02711b50",
+        "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/41840315650",
+        "conclusion": "success",
+        "jobs": [
+          {
+            "name": "frontend",
+            "conclusion": "success",
+            "job_id": 126609854632
+          },
+          {
+            "name": "backend",
+            "conclusion": "success",
+            "job_id": 126609854964
+          }
+        ],
+        "test_summary": [
+          "Success: no issues found in 308 source files",
+          "========= 3305 passed, 2 skipped, 890 deselected in 132.91s (0:02:12) =========="
+        ]
+      },
+      "container": {
+        "run_id": 41840316045,
+        "head_sha": "1c8ebdd85a00c9fd57bb6bbf937405ef02711b50",
+        "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/41840316045",
+        "conclusion": "success",
+        "jobs": [
+          {
+            "name": "images (worker, infra/docker/Dockerfile.worker)",
+            "conclusion": "success",
+            "job_id": 126609855829
+          },
+          {
+            "name": "images (web, infra/docker/Dockerfile.web)",
+            "conclusion": "success",
+            "job_id": 126609856183
+          },
+          {
+            "name": "images (consumer, infra/docker/Dockerfile.consumer)",
+            "conclusion": "success",
+            "job_id": 126609856239
+          },
+          {
+            "name": "images (api, infra/docker/Dockerfile.api)",
+            "conclusion": "success",
+            "job_id": 126609856251
+          },
+          {
+            "name": "release-manifest",
+            "conclusion": "skipped",
+            "job_id": 126611361131
+          }
+        ]
+      },
+      "heavy": {
+        "run_id": 41840352966,
+        "head_sha": "1c8ebdd85a00c9fd57bb6bbf937405ef02711b50",
+        "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/41840352966",
+        "conclusion": "success",
+        "jobs": [
+          {
+            "name": "m1-integration",
+            "job_id": 126609990277,
+            "conclusion": "success"
+          },
+          {
+            "name": "analysis-rollback-compatibility",
+            "job_id": 126609990767,
+            "conclusion": "success"
+          },
+          {
+            "name": "web-e2e",
+            "job_id": 126609990850,
+            "conclusion": "success"
+          },
+          {
+            "name": "m4-integration",
+            "job_id": 126609990897,
+            "conclusion": "success",
+            "test_summary": [
+              "890 passed, 3307 deselected, 2 warnings in 816.96s (0:13:36)"
+            ],
+            "steps": [
+              {
+                "name": "Set up job",
+                "conclusion": "success"
+              },
+              {
+                "name": "Run actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5",
+                "conclusion": "success"
+              },
+              {
+                "name": "Run actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
+                "conclusion": "success"
+              },
+              {
+                "name": "Run astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff",
+                "conclusion": "success"
+              },
+              {
+                "name": "Run pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa",
+                "conclusion": "success"
+              },
+              {
+                "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+                "conclusion": "success"
+              },
+              {
+                "name": "Run uv sync --frozen",
+                "conclusion": "success"
+              },
+              {
+                "name": "Run pnpm install --frozen-lockfile",
+                "conclusion": "success"
+              },
+              {
+                "name": "Run pnpm --filter web exec playwright install --with-deps chromium",
+                "conclusion": "success"
+              },
+              {
+                "name": "Pull pinned local identity dependencies",
+                "conclusion": "success"
+              },
+              {
+                "name": "Run docker compose -f infra/compose/docker-compose.yml up -d --wait",
+                "conclusion": "success"
+              },
+              {
+                "name": "Run docker compose -f infra/compose/docker-compose.yml --profile init run --rm minio-init",
+                "conclusion": "success"
+              },
+              {
+                "name": "Run uv run alembic upgrade head",
+                "conclusion": "success"
+              },
+              {
+                "name": "Run uv run enterprise-doc-checkpointer-setup --setup",
+                "conclusion": "success"
+              },
+              {
+                "name": "Run uv run enterprise-doc-checkpointer-setup --check",
+                "conclusion": "success"
+              },
+              {
+                "name": "Run uv run pytest -m integration -q",
+                "conclusion": "success"
+              },
+              {
+                "name": "Run uv run python scripts/evaluate_m4_agent.py",
+                "conclusion": "success"
+              },
+              {
+                "name": "Run docker compose -f infra/compose/docker-compose.yml down",
+                "conclusion": "success"
+              },
+              {
+                "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+                "conclusion": "success"
+              },
+              {
+                "name": "Post Run pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa",
+                "conclusion": "success"
+              },
+              {
+                "name": "Post Run astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff",
+                "conclusion": "success"
+              },
+              {
+                "name": "Post Run actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
+                "conclusion": "success"
+              },
+              {
+                "name": "Post Run actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5",
+                "conclusion": "success"
+              },
+              {
+                "name": "Complete job",
+                "conclusion": "success"
+              }
+            ],
+            "evaluation": {
+              "file": "m4-evaluation-41840352966.json",
+              "case_count": 13,
+              "passed_count": 13,
+              "scope": "controlled security and workflow evaluation; not real model holdout"
+            },
+            "warnings": [
+              "  /home/runner/work/enterprise-doc-agent/enterprise-doc-agent/tests/analysis/test_analysis_migrations_integration.py:82: SAWarning: Cannot correctly sort tables; there are unresolvable cycles between tables \"document_versions, upload_sessions\", which is usually caused by mutually dependent foreign key constraints.  Foreign key constraints involving these tables will not be considered; this warning may raise an error in a future release.",
+              "  /home/runner/work/enterprise-doc-agent/enterprise-doc-agent/tests/analysis/test_analysis_migrations_integration.py:93: SAWarning: Cannot correctly sort tables; there are unresolvable cycles between tables \"document_versions, upload_sessions\", which is usually caused by mutually dependent foreign key constraints.  Foreign key constraints involving these tables will not be considered; this warning may raise an error in a future release."
+            ]
+          }
+        ]
+      }
+    },
+    "m4_counts": {
+      "passed": 890,
+      "failed": 0,
+      "errors": 0,
+      "deselected": 3307,
+      "warnings": 2,
+      "duration_seconds": 816.96
+    },
+    "controlled_evaluation": {
+      "passed": 13,
+      "total": 13,
+      "real_model_holdout": false
+    },
+    "cleanup": {
+      "local_owned_databases_removed": 2,
+      "local_owned_database_absence_verified": true,
+      "new_temporary_files_remaining": 0,
+      "rollback_containers_removed": 7,
+      "rollback_network_removed": true,
+      "ci_compose_down": "success",
+      "historical_workspace_changes": "preserved"
+    }
+  },
+  "prior_release_20261013": {
+    "candidate": {
+      "repository": "D:\\workspace4Cursor\\enterprise-doc-agent",
+      "branch": "codex/presales-prerequisite-assessment",
+      "baseline_head": "84d9388e51fea3324ce5b2dda8349bf7ff8199a0",
+      "candidate_head": "8690a2097856f4d67ff53a3821535dfd7a0fb40f",
+      "candidate_commits": [
+        "020cb5a",
+        "7030ccf",
+        "99e99e6",
+        "7661285",
+        "84d9388",
+        "8690a20"
+      ],
+      "migration_start": "20261010_0037",
+      "migration_head": "20261012_0043",
+      "remote_branch_contains_head": true,
+      "release_tag_present": true,
+      "release_tag": "v0.1.45-rc.52",
+      "release_run_id": "38350863219"
+    },
+    "release_chain": {
+      "publication_workflow": {
+        "path": ".github/workflows/container.yml",
+        "sha256": "1f356624fb841f3676c7c1324e246712c0ebee54035bcb94dc9a8d9ca5eb1f51"
+      },
+      "deployment_workflow": {
+        "path": ".github/workflows/deploy-staging.yml",
+        "sha256": "d66b764bdd5089d83dde69c8a179262eaf1c63e13a37efdda98ca68a729a32f5"
+      },
+      "rollback_workflow": {
+        "path": ".github/workflows/rollback.yml",
+        "sha256": "507fa2714479be48e736746829bb5c8d8cd7767e04a050d97a9e95912017b9d5"
+      },
+      "workloads": [
+        "api",
+        "worker",
+        "consumer",
+        "web"
+      ],
+      "real_image_digests": {
+        "api": "ghcr.io/drew-z/enterprise-doc-api@sha256:3bebebab772e7dba738e2a9db029e1855b8c7b23c2ff62a6093612ba15ed9709",
+        "worker": "ghcr.io/drew-z/enterprise-doc-worker@sha256:db3d92416bcc87d7e69ba3d1ad469cfdc4774199c29e63d878d6d631352fbe71",
+        "consumer": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:85b530bf3f927d87048749e900b27e01ee9a518ed0f60fe7b1f725b981a2a4f9",
+        "web": "ghcr.io/drew-z/enterprise-doc-web@sha256:6ade70e24d21bbb8fb0eb28fb2252b6a469571ca22a7c32b02f6cea1096437f0"
+      },
+      "signed_release_manifest": {
+        "release": "v0.1.45-rc.52",
+        "workflow_run_id": "38350863219",
+        "strict_manifest_sha256": "e3f16f24e49489483c09de7537af846c3b8eacbbd630af489b8369cb9cd93321",
+        "status": "passed"
+      },
+      "rollback_candidate": {
+        "release": "v0.1.45-rc.51",
+        "workflow_run_id": "38069840277",
+        "strict_manifest_sha256": "f4acf6c7564bbeaf51bdb603a9b8d6206011d6c74455ea4b739fab6c3e77fa5d",
+        "images": {
+          "api": "ghcr.io/drew-z/enterprise-doc-api@sha256:af9e576292ddc5e27c2c2a5704fcd9d3c6f42d07647920ed44b192e5faa39a9c",
+          "worker": "ghcr.io/drew-z/enterprise-doc-worker@sha256:dae34e5b08b94fed54a9455d4ee60230cd512d4751eaaf8caff8bc7d72c6b8a1",
+          "consumer": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:958ad15ef9227c8198509676074a30d9d71372d02a9abebe3822eea5781f9217",
+          "web": "ghcr.io/drew-z/enterprise-doc-web@sha256:724d1007282607d3d220aae1fbeb76b87a2b48ae4ba0f3a66b95db1aa1297da9"
+        }
+      }
+    }
+  },
+  "value_validation_20261104": {
+    "scope_plan": "value-validation-plan.md",
+    "signed_release": "passed",
+    "runtime_0044": "passed",
+    "runtime_scope": "fresh_database_startup_only",
+    "external_model_calls": 0,
+    "independent_participants": 0,
+    "local_pull_attempts": [
+      {
+        "authenticated": false,
+        "result": "registry_denied"
+      },
+      {
+        "authenticated": true,
+        "result": "manifest_unknown"
+      }
+    ],
+    "next_action": "Reconcile protected deployment configuration, protect the existing 0037 database, and deploy the default-off 0044 candidate before the live API trial.",
+    "runtime_run_id": 41847465629,
+    "runtime_run_attempt": 2,
+    "evidence": "evidence/rc53-release-runtime-20261104.json",
+    "deployment_candidate": "rendered_not_applied",
+    "deployment_candidate_sha256": "204a7c1320ffbf1a618846871cf0187295b824df7de6a4e2aa2f20229fb5d615",
+    "configuration_drift_count": 4
+  },
+  "prior_migration_and_rollback_0043": {
+    "migration_shape": "additive_with_guarded_downgrades",
+    "isolated_postgresql_test": "passed",
+    "old_runtime_has_exact_head_startup_gate": false,
+    "old_image_start_on_0043_tested": true,
+    "database_downgrade_after_analysis_history_supported": false,
+    "rollback_readiness": "passed_isolated_schema_startup_smoke",
+    "rollback_compatibility": {
+      "workflow": ".github/workflows/quality-heavy.yml",
+      "job": "analysis-rollback-compatibility",
+      "candidate_release": "v0.1.45-rc.52",
+      "rollback_release": "v0.1.45-rc.51",
+      "status": "passed_isolated_schema_startup_smoke",
+      "local_contract_tests": "passed_26",
+      "actionlint": "passed",
+      "actionlint_image_id": "sha256:b6d0bc67a629b20d424b3e35964400ec438451f41b95302157868d5e379d5039",
+      "report_artifact": "analysis-rollback-compatibility-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json",
+      "last_run": {
+        "run_id": "41825412139",
+        "head_sha": "1dd8083f02d15a40ee7248bf34011a69eee42009",
+        "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/41825412139",
+        "job_conclusion": "success",
+        "artifact_id": "13319266704",
+        "artifact_name": "analysis-rollback-compatibility-41825412139-1",
+        "report_sha256": "bcc624a857a92c7e22ad56c9b0dc19d16b3b60adcbb179fce083dcbfb2dd53a0",
+        "checks": {
+          "api_live": {
+            "http_status": 200,
+            "status": "passed"
+          },
+          "api_openapi": {
+            "analysis_route_present": false,
+            "http_status": 200,
+            "openapi_document": true,
+            "status": "passed"
+          },
+          "api_ready": {
+            "http_status": 200,
+            "status": "passed"
+          },
+          "consumer_port": {
+            "port": 49241,
+            "status": "passed"
+          },
+          "schema": {
+            "analysis_projects": true,
+            "head": "20261012_0043",
+            "status": "passed"
+          },
+          "web_live": {
+            "http_status": 200,
+            "status": "passed"
+          },
+          "worker_live": {
+            "http_status": 200,
+            "status": "passed"
+          },
+          "worker_ready": {
+            "http_status": 200,
+            "status": "passed"
+          }
+        },
+        "cleanup": {
+          "containers_removed": 7,
+          "network_created": true,
+          "network_removed": true,
+          "status": "passed"
+        },
+        "dependency_builds": {
+          "minio": {
+            "dockerfile_sha256": "0f9be717db38226163e9a6bc9c0fa68fb6bae9895aaecb4557e6a98639dac355",
+            "image_id": "sha256:71169fee6285efc66c98bcef51d4d915096c7215ce631ee78137d7dd220db93c",
+            "platform": "linux/amd64",
+            "target": "minio"
+          },
+          "minio_mc": {
+            "dockerfile_sha256": "0f9be717db38226163e9a6bc9c0fa68fb6bae9895aaecb4557e6a98639dac355",
+            "image_id": "sha256:433c8779dea2ab9ebe0c9c0aa5e9684652992fb6309f78172c8adde1b9a1f173",
+            "platform": "linux/amd64",
+            "target": "mc"
+          }
+        },
+        "schema_compatibility_evaluated": true,
+        "scope_note": "rc.51 starts and passes health/OpenAPI probes on an isolated fresh schema migrated by rc.52. rc.51 has no analysis routes. This does not certify continuing analysis execution or production recovery with existing data."
+      },
+      "previous_runs": [
+        {
+          "run_id": "38410851264",
+          "head_sha": "661a8f3d15cbf2222091f5c84649896083883216",
+          "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/38410851264",
+          "conclusion": "failure",
+          "artifact_id": "11821471366",
+          "artifact_name": "analysis-rollback-compatibility-38410851264-1",
+          "failure_stage": "image_pull",
+          "failure_summary": "The compatibility job reported only docker command exited with 1 without stderr. The failed image and cause are unknown; the pull sequence starts with the GHCR candidate API. No schema checks ran.",
+          "other_jobs_failure_summary": "m1-integration, m4-integration and web-e2e reported pull access denied for minio/minio; this does not establish the failed image in the compatibility job.",
+          "cleanup_summary": "The report recorded a cleanup network removal error from the pre-fix commit; the current script tracks network creation before attempting removal.",
+          "schema_compatibility_evaluated": false
+        },
+        {
+          "run_id": "41813723880",
+          "head_sha": "d0ebb729d78f0228ae9bb49cecfce71adfdef34f",
+          "url": "https://github.com/Drew-Z/enterprise-doc-agent/actions/runs/41813723880",
+          "conclusion": "failure",
+          "artifact_id": "13313712084",
+          "artifact_name": "analysis-rollback-compatibility-41813723880-1",
+          "report_sha256": "eb04f96583f8362a933b1d664b6991666867134c786dba079291b8a776c2cca6",
+          "failure_stage": "dependency_image_pull",
+          "failed_image": "minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e",
+          "failure_summary": "Pull access denied for minio/minio. Candidate API, four rollback images, PostgreSQL and Redis pulls completed before this dependency failed. MinIO mc pull was not reached.",
+          "cleanup": {
+            "status": "passed",
+            "containers_removed": 0,
+            "network_created": false,
+            "network_removed": false
+          },
+          "schema_compatibility_evaluated": false
+        }
+      ]
+    },
+    "notes": [
+      "Migrations 0038 through 0043 add analysis tables, columns, indexes and constraints; 0040 widens existing quota constraints for analysis_cell.",
+      "Downgrades refuse destructive history loss, so database downgrade is not the normal rollback path.",
+      "The rc.51 signed workload passed base-service startup on a fresh isolated 0043 schema in run 41825412139. rc.51 has no analysis routes; this is not approval for continued analysis execution or production-data recovery."
+    ]
+  }
+}

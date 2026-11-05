@@ -1,0 +1,1529 @@
+{
+  "schema_version": "analysis.reviewer-notes.v1",
+  "pack_id": "validation-01",
+  "recorded_at": "2026-10-13",
+  "author_type": "assistant_preparer",
+  "purpose": "Reviewer preparation only; not a scored reference or independent acceptance.",
+  "independently_reviewed": false,
+  "independently_reviewed_rows": 0,
+  "draft_rows": 30,
+  "denominator": 30,
+  "quality_score": null,
+  "frozen_manifest_sha256": "9ffa794efb7c8231e505cfb0e5e07428ebd58d7b3bd07c789b63c1ceecc80008",
+  "frozen_reference_sha256": "f3a94f1fc27577ab6974e46e13dce92baa23fede598c1d18463c7daec516bf17",
+  "input_boundary": "Never upload reference/ or pass these notes, source inspection findings, or expected answers to the product model.",
+  "candidate_boundary": "Candidate remains frozen for the first evaluation. Changing prompts, retrieval or rules using these notes consumes this pack for development; use a new holdout to claim generalization.",
+  "scoring_boundary": "These notes are semantic review guidance, not the exact-match scorer input. An independent reviewer must resolve scope, conditions, wording equivalence and disagreements before freezing a new scored reference and plan.",
+  "assessment_legend": {
+    "supported": "Frozen text establishes the listed claims; conditions still apply.",
+    "partial": "Some facts are visible; listed missing items must remain unknown.",
+    "not_found": "No admissible evidence for the requested fact was found in the inspected frozen text.",
+    "conflicting_or_conditional": "Source statements differ or have unresolved scope/conditions; preserve both without inventing precedence.",
+    "unreliable_extraction": "Relevant labels exist but extraction lost the content or plan mapping."
+  },
+  "common_serious_errors": [
+    "跨对象串源，或把共同需求当作供应商/商品已满足的证据。",
+    "把缺失信息写成零费用、否定结论或已确认值。",
+    "删除失败/缺失单元来缩小 30 行分母。",
+    "把网页快照当作已签署报价，或引用原上传文件之外的政策/搜索摘要。"
+  ],
+  "rows": [
+    {
+      "object_id": "clickup",
+      "field_id": "scope",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "supported",
+      "expected_facts": [
+        "Business 继承 Unlimited，Unlimited 继承 Free Forever。可确认任务/Docs/看板/日历、存储、集成、时间跟踪；Business 增加高级卡片仪表板、webhooks、自动化和自定义导出。"
+      ],
+      "required_conditions": [
+        "仅目标 Business 及显式继承层级；自动化为 5K/月，不是 Enterprise 250K。"
+      ],
+      "known_gaps": [
+        "实际实施、迁移、培训交付范围没有买方订单确认。"
+      ],
+      "serious_error_rules": [
+        "把 SAML/SCIM、audit log、data residency、Live Onboarding 或 CSM 写成 Business 已包含。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/clickup-pricing.txt",
+          "line_start": 12,
+          "line_end": 40,
+          "quote": "### free forever\n\nfree forever yearly price:FreePer user/month, billed yearlyfree forever monthly price:FreePer user/month, billed monthly\n\nKey Features:\n\n60MB Storage\n\nUnlimited Tasks\n\nUnlimited Free Plan Members\n\nTwo-Factor Authentication\n\nCollaborative Docs\n\nKanban Boards\n\nSprint Management\n\nCalendar View\n\nBasic Custom Field Manager\n\nIn-App Video Recording\n\n24/7 Support\n\n1 Form",
+          "source_sha256": "1b514f738e3de3d64a76dda452e917a7d12e5e514ca5f0913f604c7dac9cffa5",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/clickup-pricing.txt",
+          "line_start": 42,
+          "line_end": 70,
+          "quote": "### unlimited\n\nunlimited yearly price:$7Per user/month, billed yearlyunlimited monthly price:$10Per user/month, billed monthly\n\nEverything in Free Forever, plus:\n\nUnlimited Spaces, Folders, and Forms\n\nUnlimited Gantt Charts\n\nUnlimited Integrations\n\nUnlimited Storage\n\nUnlimited Custom Fields\n\nNative Time Tracking\n\nGoals & Portfolio Management\n\nGuests With Permission Control\n\nResource Management\n\nClickUp Chat\n\nEmail in ClickUp\n\nIntegrations like Slack, Hubspot, Google Drive, and more",
+          "source_sha256": "1b514f738e3de3d64a76dda452e917a7d12e5e514ca5f0913f604c7dac9cffa5",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/clickup-pricing.txt",
+          "line_start": 74,
+          "line_end": 108,
+          "quote": "### business\n\nPopular\n\nbusiness yearly price:$12Per user/month, billed yearlybusiness monthly price:$19Per user/month, billed monthly\n\nEverything in Unlimited, plus:\n\nUnlimited Dashboards with Advanced Cards\n\nUnlimited Message History\n\nUnlimited Activity Views\n\nUnlimited Timeline Views\n\nWebhooks & Automation Integrations\n\n5K Automations Per Month$100 in value\n\nMind Mapping\n\nPrivate Whiteboards\n\nCustom Exporting\n\nSprint Points & Reporting\n\nPortfolio Workload Management\n\nGoogle SSO\n\nSMS 2-Factor Authentication\n\nUnlimited Proofing",
+          "source_sha256": "1b514f738e3de3d64a76dda452e917a7d12e5e514ca5f0913f604c7dac9cffa5",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/clickup-pricing.txt",
+          "line_start": 112,
+          "line_end": 148,
+          "quote": "### enterprise\n\nGet a custom demo\n\nEverything in Business, plus:\n\nEnterprise Permissions and Governance\n\nUnlimited Custom Roles\n\nSAML SSO & SCIM Provisioning\n\nAudit Log\n\nSession Management\n\nEnterprise API\n\n250K Automations Per Month$750 in value\n\nCustom Branding\n\nDefault Personal Views\n\nMSA & HIPAA Available\n\nData Residency\n\nEnterprise-Scale Automations & Integrations\n\nEnterprise-Scale API Usage\n\nLive Onboarding Training\n\nCustomer Success Manager\n\nAccess to Managed Services",
+          "source_sha256": "1b514f738e3de3d64a76dda452e917a7d12e5e514ca5f0913f604c7dac9cffa5",
+          "role": "other_tier_boundary"
+        }
+      ],
+      "inspected_files": [
+        "upload/clickup-pricing.txt",
+        "upload/clickup-terms.txt"
+      ]
+    },
+    {
+      "object_id": "clickup",
+      "field_id": "pricing_unit",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "partial",
+      "expected_facts": [
+        "$12/用户/月按年计费；$19/用户/月按月计费。每个 Workspace 单独升级；新增付费用户按余下周期比例计费。组织内部成员按付费用户计。"
+      ],
+      "required_conditions": [
+        "先明确年付/月付、付费人数及 Workspace 数；外部 guest 与只读 guest 不能按内部员工替代。"
+      ],
+      "known_gaps": [
+        "正文的 $ 未直接确认 ISO 币种；20 人身份和 Workspace 数未经订单核实。"
+      ],
+      "serious_error_rules": [
+        "把按年摊到每月的价格当作月付价格；把全部内部员工视为免费 guest。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/clickup-pricing.txt",
+          "line_start": 78,
+          "line_end": 78,
+          "quote": "business yearly price:$12Per user/month, billed yearlybusiness monthly price:$19Per user/month, billed monthly",
+          "source_sha256": "1b514f738e3de3d64a76dda452e917a7d12e5e514ca5f0913f604c7dac9cffa5",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/clickup-pricing.txt",
+          "line_start": 402,
+          "line_end": 404,
+          "quote": "ClickUp automatically bills you at a prorated price based on the time left in your cycle for any paid users added to your Workspace. Paid users include any member role types and people invited to your Workspace from within your organization.\n\nPayment is per Workspace, meaning each Workspace requires an individual upgrade.",
+          "source_sha256": "1b514f738e3de3d64a76dda452e917a7d12e5e514ca5f0913f604c7dac9cffa5",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/clickup-pricing.txt",
+          "line_start": 426,
+          "line_end": 432,
+          "quote": "Free Forever Workspaces can have an unlimited number of members and guests at no charge. On the Free Forever Plan, guests have full create and edit permissions, which cannot be modified. Workspaces on a paid plan start with a limited number of external guest seats and unlimited read-only guests. The paid plan guest seats are as follows:\n\n* Unlimited Plan: receive 5 guest seats for a 1 paid user Workspace and 2 guest seats for each additional paid user you invite to your Workspace\n* Business Plan: receive 10 guest seats for a 1 paid user Workspace and 5 guest seats for each additional paid user you invite to your Workspace\n* Enterprise Plan: receives the same number of guest seats as the Business Plan, with advanced permissions options\n\nGuests are intended for users external to your organization. If you add people from inside your organization to your Workspace, they will be billed as paid users.",
+          "source_sha256": "1b514f738e3de3d64a76dda452e917a7d12e5e514ca5f0913f604c7dac9cffa5",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/clickup-pricing.txt",
+        "upload/clickup-terms.txt"
+      ]
+    },
+    {
+      "object_id": "clickup",
+      "field_id": "recurring_cost",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "partial",
+      "expected_facts": [
+        "Business 基础价格：年付 $12/用户/月，月付 $19/用户/月。可单独列明该基础价，但它不是含 AI、税费及超额用量的完整账单。"
+      ],
+      "required_conditions": [
+        "若列 20 人推算，必须标为假设全部为付费用户、单一 Workspace、未含附加项目的计算；不得称实际报价。"
+      ],
+      "known_gaps": [
+        "ISO 币种、税率、最终人数、add-ons/overages 和签署价格未确认。"
+      ],
+      "serious_error_rules": [
+        "未标条件的 20 人总价；把 Brain AI $9 或 Everything AI $28 当作 Business 基础价或默认包含。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/clickup-pricing.txt",
+          "line_start": 78,
+          "line_end": 78,
+          "quote": "business yearly price:$12Per user/month, billed yearlybusiness monthly price:$19Per user/month, billed monthly",
+          "source_sha256": "1b514f738e3de3d64a76dda452e917a7d12e5e514ca5f0913f604c7dac9cffa5",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/clickup-pricing.txt",
+          "line_start": 315,
+          "line_end": 340,
+          "quote": "### Brain AI\n\n$9\n\nPer user/month\n\n#### HIGHLIGHTS\n\n* Unlimited Brain Assistant\n* Unlimited @Brain Agent\n* Unlimited AI chatClaude, ChatGPT, Gemini\n* Expanded use of Premium AI Models\n* Unlimited AI writing\n* Enterprise SearchWorkspace\n\n+1,500 AI Super Credits\n\n**user / mo** for Agents, Automations, & more\n\n### Everything AI\n\nRECOMMENDED\n\n$28\n\nPer user/month",
+          "source_sha256": "1b514f738e3de3d64a76dda452e917a7d12e5e514ca5f0913f604c7dac9cffa5",
+          "role": "separate_addon"
+        },
+        {
+          "file": "upload/clickup-terms.txt",
+          "line_start": 31,
+          "line_end": 31,
+          "quote": "1.9. **Fees Payable.** In the event you have a paid account, in exchange and consideration for the Services, you will pay all applicable fees as they become due. This includes but is not limited to any additional fees for all add-ons, guest-types user roles or limited members, or overages. Fees for any overages may be billed in arrears. If such fees are being paid via credit card or other electronic means, you authorize us to charge such fees using your selected payment method. You are responsible for providing complete and accurate billing information to ClickUp. We may suspend or terminate your use of the Service if fees become past due. All fees are non-refundable except as required by law or as set forth in Section 1.14.",
+          "source_sha256": "9bffdcf919e325da002284c7152ec91e6352899254ae2155ad85ebd56af54be9",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/clickup-pricing.txt",
+        "upload/clickup-terms.txt"
+      ]
+    },
+    {
+      "object_id": "clickup",
+      "field_id": "setup_fee",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "not_found",
+      "expected_facts": [
+        "冻结资料未找到 Business 实施/安装的一次性金额。"
+      ],
+      "required_conditions": [
+        "可提示 add-ons/guest roles/overages 可收费；这不证明存在某个固定一次性实施费。"
+      ],
+      "known_gaps": [
+        "实施服务范围、是否收费和金额需供应商/订单补充。"
+      ],
+      "serious_error_rules": [
+        "把未列实施费写成免费；把 Enterprise 培训/Managed Services 写成 Business 免费实施。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/clickup-terms.txt",
+          "line_start": 31,
+          "line_end": 31,
+          "quote": "1.9. **Fees Payable.** In the event you have a paid account, in exchange and consideration for the Services, you will pay all applicable fees as they become due. This includes but is not limited to any additional fees for all add-ons, guest-types user roles or limited members, or overages. Fees for any overages may be billed in arrears. If such fees are being paid via credit card or other electronic means, you authorize us to charge such fees using your selected payment method. You are responsible for providing complete and accurate billing information to ClickUp. We may suspend or terminate your use of the Service if fees become past due. All fees are non-refundable except as required by law or as set forth in Section 1.14.",
+          "source_sha256": "9bffdcf919e325da002284c7152ec91e6352899254ae2155ad85ebd56af54be9",
+          "role": "gap_context"
+        },
+        {
+          "file": "upload/clickup-pricing.txt",
+          "line_start": 112,
+          "line_end": 148,
+          "quote": "### enterprise\n\nGet a custom demo\n\nEverything in Business, plus:\n\nEnterprise Permissions and Governance\n\nUnlimited Custom Roles\n\nSAML SSO & SCIM Provisioning\n\nAudit Log\n\nSession Management\n\nEnterprise API\n\n250K Automations Per Month$750 in value\n\nCustom Branding\n\nDefault Personal Views\n\nMSA & HIPAA Available\n\nData Residency\n\nEnterprise-Scale Automations & Integrations\n\nEnterprise-Scale API Usage\n\nLive Onboarding Training\n\nCustomer Success Manager\n\nAccess to Managed Services",
+          "source_sha256": "1b514f738e3de3d64a76dda452e917a7d12e5e514ca5f0913f604c7dac9cffa5",
+          "role": "other_tier_boundary"
+        }
+      ],
+      "inspected_files": [
+        "upload/clickup-pricing.txt",
+        "upload/clickup-terms.txt"
+      ]
+    },
+    {
+      "object_id": "clickup",
+      "field_id": "tax_basis",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "partial",
+      "expected_facts": [
+        "买方承担税（供应商净所得税除外），法律要求时供应商收税；税务豁免需购买时提交证明。"
+      ],
+      "required_conditions": [
+        "不能把基础页面价直接标成最终含税价。"
+      ],
+      "known_gaps": [
+        "具体税种、税率、采购司法区、含税总额未知。"
+      ],
+      "serious_error_rules": [
+        "自行套重庆/中国增值税率，或把页面价认定已含全部税费。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/clickup-terms.txt",
+          "line_start": 33,
+          "line_end": 33,
+          "quote": "1.10. **Taxes.** You are responsible for all taxes (excluding taxes on our net income), and we will charge tax if required to do so by law. If you have any tax-exemptions which you would like applied to your invoice, you must provide proof of such exemption at the time of your purchase for it to apply.",
+          "source_sha256": "9bffdcf919e325da002284c7152ec91e6352899254ae2155ad85ebd56af54be9",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/clickup-pricing.txt",
+        "upload/clickup-terms.txt"
+      ]
+    },
+    {
+      "object_id": "clickup",
+      "field_id": "contract_term",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "conflicting_or_conditional",
+      "expected_facts": [
+        "支持年付和月付。条款默认自动续约；年付取消、降级、减用户等须至少提前 30 天通知，否则再续 12 个月。"
+      ],
+      "required_conditions": [
+        "定价 FAQ 的“可随时取消、到周期结束”与年付条款的通知期需同时保留；不能把 FAQ 简述当作取消通知要求已消失。"
+      ],
+      "known_gaps": [
+        "未提供买方签署期限或覆盖一般条款的协议；本草稿不作法律优先级裁决。"
+      ],
+      "serious_error_rules": [
+        "断言年付在到期当天取消也一定不会续费；把月价的计量单位当成合同按月。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/clickup-pricing.txt",
+          "line_start": 78,
+          "line_end": 78,
+          "quote": "business yearly price:$12Per user/month, billed yearlybusiness monthly price:$19Per user/month, billed monthly",
+          "source_sha256": "1b514f738e3de3d64a76dda452e917a7d12e5e514ca5f0913f604c7dac9cffa5",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/clickup-pricing.txt",
+          "line_start": 406,
+          "line_end": 406,
+          "quote": "You're free to cancel at anytime! When you do, your current plan will last until the end of your billing cycle, unless you choose to downgrade immediately.",
+          "source_sha256": "1b514f738e3de3d64a76dda452e917a7d12e5e514ca5f0913f604c7dac9cffa5",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/clickup-terms.txt",
+          "line_start": 37,
+          "line_end": 37,
+          "quote": "1.12. **Automatic Renewal.** By default, customer accounts are set to automatically renew and we may automatically charge you for such renewal on or after the renewal date associated with your account unless you have cancelled the Service. For customers on an annual Services plan, you must provide us with notice of any downgrades or cancellations to your purchased Services (including but not limited to full cancellations of your account, reductions in user counts, changes to your Services packages, or the discontinuation of any add-ons or upgrades) at least thirty days prior to your Services renewal date or your Services will automatically renew for an additional twelve month period.",
+          "source_sha256": "9bffdcf919e325da002284c7152ec91e6352899254ae2155ad85ebd56af54be9",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/clickup-pricing.txt",
+        "upload/clickup-terms.txt"
+      ]
+    },
+    {
+      "object_id": "clickup",
+      "field_id": "support",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "partial",
+      "expected_facts": [
+        "Free Forever 明确 24/7 Support，Business 经 Unlimited 显式继承该支持时段。"
+      ],
+      "required_conditions": [
+        "24/7 表示可用时段，不等于承诺即时响应或修复。Enterprise 的专属 onboarding/CSM 不移植到 Business。"
+      ],
+      "known_gaps": [
+        "渠道细节、响应/修复时限、可用率 SLA 和买方支持合同未知。"
+      ],
+      "serious_error_rules": [
+        "编造 1 小时响应或 99.9% SLA；把 Enterprise CSM 当 Business 支持。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/clickup-pricing.txt",
+          "line_start": 38,
+          "line_end": 38,
+          "quote": "24/7 Support",
+          "source_sha256": "1b514f738e3de3d64a76dda452e917a7d12e5e514ca5f0913f604c7dac9cffa5",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/clickup-pricing.txt",
+          "line_start": 46,
+          "line_end": 46,
+          "quote": "Everything in Free Forever, plus:",
+          "source_sha256": "1b514f738e3de3d64a76dda452e917a7d12e5e514ca5f0913f604c7dac9cffa5",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/clickup-pricing.txt",
+          "line_start": 80,
+          "line_end": 80,
+          "quote": "Everything in Unlimited, plus:",
+          "source_sha256": "1b514f738e3de3d64a76dda452e917a7d12e5e514ca5f0913f604c7dac9cffa5",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/clickup-pricing.txt",
+          "line_start": 144,
+          "line_end": 148,
+          "quote": "Live Onboarding Training\n\nCustomer Success Manager\n\nAccess to Managed Services",
+          "source_sha256": "1b514f738e3de3d64a76dda452e917a7d12e5e514ca5f0913f604c7dac9cffa5",
+          "role": "other_tier_boundary"
+        }
+      ],
+      "inspected_files": [
+        "upload/clickup-pricing.txt",
+        "upload/clickup-terms.txt"
+      ]
+    },
+    {
+      "object_id": "clickup",
+      "field_id": "security_admin",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "supported",
+      "expected_facts": [
+        "Business 明确 Google SSO、SMS 2-Factor Authentication；基础 2FA 与 Guests With Permission Control 经套餐继承。"
+      ],
+      "required_conditions": [
+        "SAML SSO & SCIM、Audit Log、企业权限/Data Residency 在 Enterprise 段落，不能据此判 Business 包含。"
+      ],
+      "known_gaps": [
+        "专门采购的安全附约、数据地区、定制角色未核实。"
+      ],
+      "serious_error_rules": [
+        "把 Google SSO 直接等同 SAML/SCIM；拼接 Enterprise 审计日志。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/clickup-pricing.txt",
+          "line_start": 24,
+          "line_end": 24,
+          "quote": "Two-Factor Authentication",
+          "source_sha256": "1b514f738e3de3d64a76dda452e917a7d12e5e514ca5f0913f604c7dac9cffa5",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/clickup-pricing.txt",
+          "line_start": 46,
+          "line_end": 46,
+          "quote": "Everything in Free Forever, plus:",
+          "source_sha256": "1b514f738e3de3d64a76dda452e917a7d12e5e514ca5f0913f604c7dac9cffa5",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/clickup-pricing.txt",
+          "line_start": 62,
+          "line_end": 62,
+          "quote": "Guests With Permission Control",
+          "source_sha256": "1b514f738e3de3d64a76dda452e917a7d12e5e514ca5f0913f604c7dac9cffa5",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/clickup-pricing.txt",
+          "line_start": 80,
+          "line_end": 80,
+          "quote": "Everything in Unlimited, plus:",
+          "source_sha256": "1b514f738e3de3d64a76dda452e917a7d12e5e514ca5f0913f604c7dac9cffa5",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/clickup-pricing.txt",
+          "line_start": 104,
+          "line_end": 106,
+          "quote": "Google SSO\n\nSMS 2-Factor Authentication",
+          "source_sha256": "1b514f738e3de3d64a76dda452e917a7d12e5e514ca5f0913f604c7dac9cffa5",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/clickup-pricing.txt",
+          "line_start": 112,
+          "line_end": 138,
+          "quote": "### enterprise\n\nGet a custom demo\n\nEverything in Business, plus:\n\nEnterprise Permissions and Governance\n\nUnlimited Custom Roles\n\nSAML SSO & SCIM Provisioning\n\nAudit Log\n\nSession Management\n\nEnterprise API\n\n250K Automations Per Month$750 in value\n\nCustom Branding\n\nDefault Personal Views\n\nMSA & HIPAA Available\n\nData Residency",
+          "source_sha256": "1b514f738e3de3d64a76dda452e917a7d12e5e514ca5f0913f604c7dac9cffa5",
+          "role": "other_tier_boundary"
+        }
+      ],
+      "inspected_files": [
+        "upload/clickup-pricing.txt",
+        "upload/clickup-terms.txt"
+      ]
+    },
+    {
+      "object_id": "clickup",
+      "field_id": "exclusions",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "supported",
+      "expected_facts": [
+        "Business 自动化 5K/月；AI 套餐单列。每 Workspace 需单独升级，付费内部成员、guest types 和 overages 可增加费用。Business 外部 guest 席位为首个付费用户 10 个、每增加付费用户再 5 个。"
+      ],
+      "required_conditions": [
+        "只读外部 guest 与内部人员规则不同；功能限制不能从提取丢列的比较表猜出。"
+      ],
+      "known_gaps": [
+        "具体超额价、所有功能配额、额外 AI 是否购买及 buyer-specific exclusions 未确认。"
+      ],
+      "serious_error_rules": [
+        "称自动化/AI 全部无限且都包含；跨用 Enterprise 250K 配额。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/clickup-pricing.txt",
+          "line_start": 92,
+          "line_end": 92,
+          "quote": "5K Automations Per Month$100 in value",
+          "source_sha256": "1b514f738e3de3d64a76dda452e917a7d12e5e514ca5f0913f604c7dac9cffa5",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/clickup-pricing.txt",
+          "line_start": 315,
+          "line_end": 340,
+          "quote": "### Brain AI\n\n$9\n\nPer user/month\n\n#### HIGHLIGHTS\n\n* Unlimited Brain Assistant\n* Unlimited @Brain Agent\n* Unlimited AI chatClaude, ChatGPT, Gemini\n* Expanded use of Premium AI Models\n* Unlimited AI writing\n* Enterprise SearchWorkspace\n\n+1,500 AI Super Credits\n\n**user / mo** for Agents, Automations, & more\n\n### Everything AI\n\nRECOMMENDED\n\n$28\n\nPer user/month",
+          "source_sha256": "1b514f738e3de3d64a76dda452e917a7d12e5e514ca5f0913f604c7dac9cffa5",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/clickup-pricing.txt",
+          "line_start": 402,
+          "line_end": 404,
+          "quote": "ClickUp automatically bills you at a prorated price based on the time left in your cycle for any paid users added to your Workspace. Paid users include any member role types and people invited to your Workspace from within your organization.\n\nPayment is per Workspace, meaning each Workspace requires an individual upgrade.",
+          "source_sha256": "1b514f738e3de3d64a76dda452e917a7d12e5e514ca5f0913f604c7dac9cffa5",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/clickup-pricing.txt",
+          "line_start": 426,
+          "line_end": 432,
+          "quote": "Free Forever Workspaces can have an unlimited number of members and guests at no charge. On the Free Forever Plan, guests have full create and edit permissions, which cannot be modified. Workspaces on a paid plan start with a limited number of external guest seats and unlimited read-only guests. The paid plan guest seats are as follows:\n\n* Unlimited Plan: receive 5 guest seats for a 1 paid user Workspace and 2 guest seats for each additional paid user you invite to your Workspace\n* Business Plan: receive 10 guest seats for a 1 paid user Workspace and 5 guest seats for each additional paid user you invite to your Workspace\n* Enterprise Plan: receives the same number of guest seats as the Business Plan, with advanced permissions options\n\nGuests are intended for users external to your organization. If you add people from inside your organization to your Workspace, they will be billed as paid users.",
+          "source_sha256": "1b514f738e3de3d64a76dda452e917a7d12e5e514ca5f0913f604c7dac9cffa5",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/clickup-terms.txt",
+          "line_start": 31,
+          "line_end": 31,
+          "quote": "1.9. **Fees Payable.** In the event you have a paid account, in exchange and consideration for the Services, you will pay all applicable fees as they become due. This includes but is not limited to any additional fees for all add-ons, guest-types user roles or limited members, or overages. Fees for any overages may be billed in arrears. If such fees are being paid via credit card or other electronic means, you authorize us to charge such fees using your selected payment method. You are responsible for providing complete and accurate billing information to ClickUp. We may suspend or terminate your use of the Service if fees become past due. All fees are non-refundable except as required by law or as set forth in Section 1.14.",
+          "source_sha256": "9bffdcf919e325da002284c7152ec91e6352899254ae2155ad85ebd56af54be9",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/clickup-pricing.txt",
+        "upload/clickup-terms.txt"
+      ]
+    },
+    {
+      "object_id": "clickup",
+      "field_id": "payment_terms",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "conflicting_or_conditional",
+      "expected_facts": [
+        "应付费用到期支付，选定电子支付方式可扣款，超额可后付；通常不退。条款对首次/新产品购买及合格升级提供 30 天满意退款，升级退款为价差。"
+      ],
+      "required_conditions": [
+        "条款排除销售代表/经销商协助购买、续约/扩容、购买前已做 pilot/trial 等；定价 FAQ 的全额退款简述须与这些条件一并显示。"
+      ],
+      "known_gaps": [
+        "实际买方购买渠道、是否曾试用、付款日/账期和订单例外未确认。"
+      ],
+      "serious_error_rules": [
+        "宣称任何购买/续约都可 30 天全额退款；将升级价差退款写成全款。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/clickup-terms.txt",
+          "line_start": 31,
+          "line_end": 31,
+          "quote": "1.9. **Fees Payable.** In the event you have a paid account, in exchange and consideration for the Services, you will pay all applicable fees as they become due. This includes but is not limited to any additional fees for all add-ons, guest-types user roles or limited members, or overages. Fees for any overages may be billed in arrears. If such fees are being paid via credit card or other electronic means, you authorize us to charge such fees using your selected payment method. You are responsible for providing complete and accurate billing information to ClickUp. We may suspend or terminate your use of the Service if fees become past due. All fees are non-refundable except as required by law or as set forth in Section 1.14.",
+          "source_sha256": "9bffdcf919e325da002284c7152ec91e6352899254ae2155ad85ebd56af54be9",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/clickup-terms.txt",
+          "line_start": 41,
+          "line_end": 41,
+          "quote": "1.14. **Satisfaction Guarantee.** ClickUp provides customers purchasing Services for the first time (or who are purchasing new products) with a satisfaction guarantee (“Satisfaction Guarantee”). Except as otherwise stated below, (a) if you are not satisfied with your initial purchase of ClickUp Services for any reason, simply contact us within thirty (30) days, and we will be happy to issue a full refund, and (b) in the event that you upgrade your Services plan or purchase new Services features (each, an “Upgraded Plan”), the Satisfaction Guarantee will apply during the first thirty (30) days after the purchase of the Upgraded Plan. The Satisfaction Guarantee does not apply to (a) Services initially purchased through or with the assistance of a ClickUp sales representative or reseller (or any associated Upgraded Plans); (b) renewals or expansions of previously purchased Services or Upgraded Plans, or; (c) instances where you have completed a pilot or trial period of the Services prior to initial purchase. If you exercise the Satisfaction Guarantee during the first thirty (30) days of your Upgraded Plan, we will revert your account to your prior plan and refund the cost difference between the prior plan and the Upgraded Plan. We reserve the right to reject any refund request or revoke refund privileges (on an individual basis) under this section if we determine abuse of this policy has occurred or where such request violates these Terms.",
+          "source_sha256": "9bffdcf919e325da002284c7152ec91e6352899254ae2155ad85ebd56af54be9",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/clickup-pricing.txt",
+          "line_start": 400,
+          "line_end": 400,
+          "quote": "We have a 100% satisfaction guarantee. If for any reason, you're not satisfied with your purchase, simply let us know within 30 days and we'll be happy to issue you a full refund.",
+          "source_sha256": "1b514f738e3de3d64a76dda452e917a7d12e5e514ca5f0913f604c7dac9cffa5",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/clickup-pricing.txt",
+        "upload/clickup-terms.txt"
+      ]
+    },
+    {
+      "object_id": "monday",
+      "field_id": "scope",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "supported",
+      "expected_facts": [
+        "目标为页首 monday work management Pro，继承 Standard；20 workflows、private boards/docs、time tracking、advanced board views/columns；自动化与集成各 25,000 actions/月，API 10,000/日。"
+      ],
+      "required_conditions": [
+        "同页 CRM、service、dev 中的 Pro 或 Ultimate 不能混入此对象；Enterprise 专属治理/组合管理不能移植。"
+      ],
+      "known_gaps": [
+        "实际部署、迁移、专业服务及所有 AI 的合同 scope 未确认。"
+      ],
+      "serious_error_rules": [
+        "跨用 CRM 的 mass emails/Ultimate，或 service Customer Portal 当目标 Pro 交付。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/monday-pricing.txt",
+          "line_start": 178,
+          "line_end": 178,
+          "quote": "Pro",
+          "source_sha256": "79afb5e06f4f302ab05a8d4bdb542c887ef00376f70e65e4e09c2f9447087b6a",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/monday-pricing.txt",
+          "line_start": 235,
+          "line_end": 268,
+          "quote": "Includes Standard, plus:\n\n20 workflows\n\nBuild and run workflows to connect work across your boards.\n\nAutomations   \n(25,000 actions / month)\n\nSave precious time by automating repetitive tasks in your boards.\n\nIntegrations   \n(25,000 actions / month)\n\nConnect monday.com with the tools you already use to centralize all your team's work.\n\nPrivate boards and docs\n\nPrivate boards and docs are only visible to you and team members you invite.\n\nAdvanced board views\n\nVisualize your data with different types of charts, graphs and diagrams.\n\nTime tracking\n\nTrack and monitor the time spent on each task.\n\nAdvanced columns\n\nLeverage advanced columns to create dynamic dependencies between tasks and perform complex automated calculations across your board's data.\n\nAPI calls   \n(10,000 / day)",
+          "source_sha256": "79afb5e06f4f302ab05a8d4bdb542c887ef00376f70e65e4e09c2f9447087b6a",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/monday-pricing.txt",
+          "line_start": 313,
+          "line_end": 348,
+          "quote": "Includes Pro, plus:\n\n250 workflows\n\nBuild and run workflows to connect work across your boards.\n\nEnterprise-grade security & governance\n\nGet top-tier security features & user management controls.\n\nEnterprise-scale automations & integrations\n\nUp to 250,000 automation and integration actions per month.\n\nPortfolio management\n\nConnect projects to a unified portfolio with real-time health snapshots, making it easy to monitor progress, risks, and alignment across initiatives.\n\nResource management\n\nPlan and balance your team's workload with tools to assign resources, centralize workforce data, and optimize capacity across projects.\n\nMulti-level permissions\n\nRobust permissions at every level to give you full control.\n\nAPI calls   \n(25,000 / day)\n\nEnable external agents, integrations, and custom apps to read and update monday data. Buy more as needed\n\nTop tier support\n\nEnterprise support\n\nGet 24/7 expert support, tailored onboarding with extensive training, daily webinars, a rich library of tutorials, and a 99.9% uptime SLA for true enterprise-grade reliability.",
+          "source_sha256": "79afb5e06f4f302ab05a8d4bdb542c887ef00376f70e65e4e09c2f9447087b6a",
+          "role": "other_tier_boundary"
+        }
+      ],
+      "inspected_files": [
+        "upload/monday-pricing.txt",
+        "upload/monday-terms.txt"
+      ]
+    },
+    {
+      "object_id": "monday",
+      "field_id": "pricing_unit",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "partial",
+      "expected_facts": [
+        "Pro 为 $19/seat/month，按年计费；快照选中 10 seats，展示 $19×10=$190/月。月付也可选，但当前快照未给同对象的月付单价。"
+      ],
+      "required_conditions": [
+        "条款默认 US dollars，除非订单另有注明。10 席展示不能冒充 20 人订单。付费计划起 3 用户。"
+      ],
+      "known_gaps": [
+        "20 人真实席位组合/订单金额；月付确切单价未找到。"
+      ],
+      "serious_error_rules": [
+        "把 10 席总价赋给 20 人；把其他产品的 Pro 价当作月付价。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/monday-pricing.txt",
+          "line_start": 7,
+          "line_end": 7,
+          "quote": "10 Seats",
+          "source_sha256": "79afb5e06f4f302ab05a8d4bdb542c887ef00376f70e65e4e09c2f9447087b6a",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/monday-pricing.txt",
+          "line_start": 178,
+          "line_end": 197,
+          "quote": "Pro\n\n$\n\n19\n\nseat /  \n month\n\nTotal of $190 $220\n\n$19 x 10 seats = $190\n\n3,000 credits = $30\n\nSpecial monthly discount = -$30\n\nTotal = $190\n\n / month, billed annually",
+          "source_sha256": "79afb5e06f4f302ab05a8d4bdb542c887ef00376f70e65e4e09c2f9447087b6a",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/monday-pricing.txt",
+          "line_start": 2143,
+          "line_end": 2146,
+          "quote": "  monday.com cost depends on the plan you choose and your team size. Plans start from 3 users. If you want to sign up more than 40 users, you can [request a quote](https://monday.com/sales/contact-us?from=pricing&source=Website%20-%20Contact%20Sales) to get an exact price.\n* Can you pay for monday.com monthly?\n\n  Yes, you can pay monthly for your account. Choose the monthly option on the pricing page and you will be able to pay on a per-month basis. The monthly plan is not discounted so if you are looking to save, we recommend the yearly plan.",
+          "source_sha256": "79afb5e06f4f302ab05a8d4bdb542c887ef00376f70e65e4e09c2f9447087b6a",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/monday-terms.txt",
+          "line_start": 261,
+          "line_end": 261,
+          "quote": "8.3. **Fees**. In consideration for the provision of the Services (except for Trial Services), Customer shall pay us the applicable fees, as set forth in the applicable Order Form (“**Fees**”). Unless indicated otherwise, Fees are stated in US dollars. Customer hereby authorizes us, either directly or through our payment processing service or our affiliates, to charge such Fees via Customer’s selected payment method, upon due date or shall otherwise remit payment to monday.com upon the due date. Unless expressly set forth herein, the Fees are non-cancelable and non-refundable. We reserve the right to change the Fees at any time, upon notice to Customer if such change may affect Customer’s existing subscriptions upon renewal. In the event of failure to collect the Fees owed by Customer, we may, at our sole discretion (but shall not be obligated to) retry to collect at a later time, and/or suspend or cancel the Account, without notice.",
+          "source_sha256": "ded7c3b1a7985c9f79860ece01635c7b52c13f5a129e8efdc73f4aa681378989",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/monday-pricing.txt",
+        "upload/monday-terms.txt"
+      ]
+    },
+    {
+      "object_id": "monday",
+      "field_id": "recurring_cost",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "partial",
+      "expected_facts": [
+        "年付展示 $19/席/月、10 席 $190/月；同一块同时出现 $220、3,000 credits=$30、-$30 special discount。"
+      ],
+      "required_conditions": [
+        "保留基础席位价、AI credits 和促销的展示条件；续约促销默认不延续，最终价受账单国家和购买页/Order Form 影响。"
+      ],
+      "known_gaps": [
+        "促销有效期、20 席最终报价和非促销续约总价未确认。"
+      ],
+      "serious_error_rules": [
+        "只报 $190 为永久全包价；把 $220 直接作为已签 20 席报价。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/monday-pricing.txt",
+          "line_start": 178,
+          "line_end": 200,
+          "quote": "Pro\n\n$\n\n19\n\nseat /  \n month\n\nTotal of $190 $220\n\n$19 x 10 seats = $190\n\n3,000 credits = $30\n\nSpecial monthly discount = -$30\n\nTotal = $190\n\n / month, billed annually\n\nSpecial offer:   \n**$30** off / month",
+          "source_sha256": "79afb5e06f4f302ab05a8d4bdb542c887ef00376f70e65e4e09c2f9447087b6a",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/monday-pricing.txt",
+          "line_start": 2055,
+          "line_end": 2055,
+          "quote": "\\* Prices do not include tax. The price is determined by the user's billing country. The final price can be seen on the purchase page before payment is completed.",
+          "source_sha256": "79afb5e06f4f302ab05a8d4bdb542c887ef00376f70e65e4e09c2f9447087b6a",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/monday-terms.txt",
+          "line_start": 257,
+          "line_end": 257,
+          "quote": "8.1. **Order Form**. The Services may be purchased via an order form, e.g. a sales order, purchase document or any other instrument as determined by us, which shall be completed and placed either online, in-product, offline, or in any other form designated by us (“**Order Form**”). Such Order Form will list, at a minimum, the Services ordered, the associated fees, the subscription plan and term, as applicable. If Customer provides monday.com a purchase order related to an Order Form, such is deemed to incorporate these Terms and if such contains terms in regards to the Services then such shall have no force or effect.",
+          "source_sha256": "ded7c3b1a7985c9f79860ece01635c7b52c13f5a129e8efdc73f4aa681378989",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/monday-terms.txt",
+          "line_start": 275,
+          "line_end": 275,
+          "quote": "8.10. **Discounts and Promotions**. Unless expressly stated otherwise in a separate legally binding agreement, if Customer received a special discount or other promotional offer, Customer acknowledges that upon renewal of the Subscription to the Services, monday.com will renew such Subscription to the Services, at the full applicable Fee at the time of renewal.",
+          "source_sha256": "ded7c3b1a7985c9f79860ece01635c7b52c13f5a129e8efdc73f4aa681378989",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/monday-pricing.txt",
+        "upload/monday-terms.txt"
+      ]
+    },
+    {
+      "object_id": "monday",
+      "field_id": "setup_fee",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "not_found",
+      "expected_facts": [
+        "未找到目标 Pro 实施/安装的一次性金额。"
+      ],
+      "required_conditions": [
+        "网页 sales quote/Enterprise onboarding 描述不证明 Pro 免费实施或确定一次性收费。"
+      ],
+      "known_gaps": [
+        "实施服务是否购买、范围和单独报价缺失。"
+      ],
+      "serious_error_rules": [
+        "将未找到填 0；把 Enterprise tailored onboarding 当 Pro 免费交付。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/monday-pricing.txt",
+          "line_start": 344,
+          "line_end": 348,
+          "quote": "Top tier support\n\nEnterprise support\n\nGet 24/7 expert support, tailored onboarding with extensive training, daily webinars, a rich library of tutorials, and a 99.9% uptime SLA for true enterprise-grade reliability.",
+          "source_sha256": "79afb5e06f4f302ab05a8d4bdb542c887ef00376f70e65e4e09c2f9447087b6a",
+          "role": "other_tier_boundary"
+        },
+        {
+          "file": "upload/monday-pricing.txt",
+          "line_start": 2061,
+          "line_end": 2069,
+          "quote": "## Get a personalized quote from our sales team\n\nDiscuss the best solution to meet your business goals\n\nGet tailored pricing information\n\nDiscover how to streamline cross-team workflows\n\nFor technical or billing support, visit our [Help Center](https://support.monday.com/hc/en-us)",
+          "source_sha256": "79afb5e06f4f302ab05a8d4bdb542c887ef00376f70e65e4e09c2f9447087b6a",
+          "role": "gap_context"
+        },
+        {
+          "file": "upload/monday-terms.txt",
+          "line_start": 257,
+          "line_end": 259,
+          "quote": "8.1. **Order Form**. The Services may be purchased via an order form, e.g. a sales order, purchase document or any other instrument as determined by us, which shall be completed and placed either online, in-product, offline, or in any other form designated by us (“**Order Form**”). Such Order Form will list, at a minimum, the Services ordered, the associated fees, the subscription plan and term, as applicable. If Customer provides monday.com a purchase order related to an Order Form, such is deemed to incorporate these Terms and if such contains terms in regards to the Services then such shall have no force or effect.\n\n8.2. **Subscription**. Unless stated otherwise in an Order Form, the Services are provided on a subscription basis for the subscription term specified in the Order Form, in accordance with a respective subscription plan, as applicable. (“**Subscription Term**” and “**Subscription Plan**”, respectively, and collectively the “**Subscription**”). A Subscription Plan may include Usage Based Offering(s) (as defined in Section 8.13) as set forth in an Order Form.",
+          "source_sha256": "ded7c3b1a7985c9f79860ece01635c7b52c13f5a129e8efdc73f4aa681378989",
+          "role": "gap_context"
+        }
+      ],
+      "inspected_files": [
+        "upload/monday-pricing.txt",
+        "upload/monday-terms.txt"
+      ]
+    },
+    {
+      "object_id": "monday",
+      "field_id": "tax_basis",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "partial",
+      "expected_facts": [
+        "页面明确价格不含税，按账单国家确定，付款前购买页显示最终价。条款 Fees exclusive of taxes/levies/duties，买方承担适用税费。"
+      ],
+      "required_conditions": [
+        "需保留账单国家条件和 Order Form 价格口径。"
+      ],
+      "known_gaps": [
+        "买方适用税率、代扣税安排及含税总价未知。"
+      ],
+      "serious_error_rules": [
+        "把页面数值当含税价；自行填中国税率/币种兑换。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/monday-pricing.txt",
+          "line_start": 2055,
+          "line_end": 2055,
+          "quote": "\\* Prices do not include tax. The price is determined by the user's billing country. The final price can be seen on the purchase page before payment is completed.",
+          "source_sha256": "79afb5e06f4f302ab05a8d4bdb542c887ef00376f70e65e4e09c2f9447087b6a",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/monday-terms.txt",
+          "line_start": 263,
+          "line_end": 263,
+          "quote": "8.4. **Taxes**. The Fees are exclusive of any and all taxes (including without limitation, value added tax, sales tax, use tax, excise, goods and services tax, etc.), levies, or duties, which may be imposed in respect of these Terms and the purchase or sale, of the Services hereunder (“**Taxes**”). If Customer is located in a jurisdiction which requires Customer to deduct or withhold Taxes or other amounts from any amounts due to us, Customer should notify us, in writing, promptly and we shall join efforts to avoid and/or reduce any such Tax withholding, provided, however, that in any case, Customer shall bear the sole responsibility and liability to pay such Tax and such Tax should be deemed as being added on top of the Fees payable by Customer.",
+          "source_sha256": "ded7c3b1a7985c9f79860ece01635c7b52c13f5a129e8efdc73f4aa681378989",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/monday-pricing.txt",
+        "upload/monday-terms.txt"
+      ]
+    },
+    {
+      "object_id": "monday",
+      "field_id": "contract_term",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "supported",
+      "expected_facts": [
+        "订阅期限/套餐由 Order Form 确认；默认自动续与原 term 相同的期间。年约通常至少提前 30 天取消，除非 monday 允许其他期限。中途取消一般仅阻止下次续约。"
+      ],
+      "required_conditions": [
+        "页面允许月付/年付；当前选年付。首期折扣/促销通常不延续到续约。"
+      ],
+      "known_gaps": [
+        "实际签署期、续约修改、买方获准例外未提供。"
+      ],
+      "serious_error_rules": [
+        "称月计量就是月付合同；把首期优惠视为终身续约价。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/monday-terms.txt",
+          "line_start": 257,
+          "line_end": 259,
+          "quote": "8.1. **Order Form**. The Services may be purchased via an order form, e.g. a sales order, purchase document or any other instrument as determined by us, which shall be completed and placed either online, in-product, offline, or in any other form designated by us (“**Order Form**”). Such Order Form will list, at a minimum, the Services ordered, the associated fees, the subscription plan and term, as applicable. If Customer provides monday.com a purchase order related to an Order Form, such is deemed to incorporate these Terms and if such contains terms in regards to the Services then such shall have no force or effect.\n\n8.2. **Subscription**. Unless stated otherwise in an Order Form, the Services are provided on a subscription basis for the subscription term specified in the Order Form, in accordance with a respective subscription plan, as applicable. (“**Subscription Term**” and “**Subscription Plan**”, respectively, and collectively the “**Subscription**”). A Subscription Plan may include Usage Based Offering(s) (as defined in Section 8.13) as set forth in an Order Form.",
+          "source_sha256": "ded7c3b1a7985c9f79860ece01635c7b52c13f5a129e8efdc73f4aa681378989",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/monday-terms.txt",
+          "line_start": 273,
+          "line_end": 275,
+          "quote": "8.9. **Subscription Auto-Renewal**. In order to ensure that Customer will not experience any interruption or loss of services, Customer’s Subscription includes an automatic renewal option by default. Accordingly, unless Customer cancels its Subscription prior to its expiration, which in the case of an annual Subscription, such cancellation notice shall be no less than 30 days prior to its expiration (unless otherwise permitted by monday.com), the Subscription to the underlying Services will automatically renew upon the end of the then applicable Subscription Term, for a renewal period equal in time to the original Subscription Term and, unless otherwise notified to Customer, at the same price (subject to applicable Tax changes and excluding any discount or other promotional offer provided for the first Subscription Term). Any renewals shall include renewals of the Usage Based Offering(s) in effect immediately prior to the renewal. Accordingly, unless either Customer or us cancel the Subscription prior to its expiration, we will attempt to automatically charge Customer the applicable Fees upon or immediately prior to the expiration of the then applicable Subscription Term. If Customer wishes to avoid such auto-renewal, Customer shall cancel its Subscription, prior to its expiration, at any time through the Account settings or by contacting our [Customer Success](https://monday.com/contact-us/) team. Except as expressly set forth in these Terms, in case a Customer cancels its Subscription, during a Subscription Term, the Subscription will not renew for an additional period, but Customer will not be refunded or credited for any unused period within the Subscription Term.\n\n8.10. **Discounts and Promotions**. Unless expressly stated otherwise in a separate legally binding agreement, if Customer received a special discount or other promotional offer, Customer acknowledges that upon renewal of the Subscription to the Services, monday.com will renew such Subscription to the Services, at the full applicable Fee at the time of renewal.",
+          "source_sha256": "ded7c3b1a7985c9f79860ece01635c7b52c13f5a129e8efdc73f4aa681378989",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/monday-pricing.txt",
+          "line_start": 2146,
+          "line_end": 2146,
+          "quote": "  Yes, you can pay monthly for your account. Choose the monthly option on the pricing page and you will be able to pay on a per-month basis. The monthly plan is not discounted so if you are looking to save, we recommend the yearly plan.",
+          "source_sha256": "79afb5e06f4f302ab05a8d4bdb542c887ef00376f70e65e4e09c2f9447087b6a",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/monday-pricing.txt",
+          "line_start": 2152,
+          "line_end": 2152,
+          "quote": "  Our pricing is based on two factors; the feature plan you’d like to use, and the number of users on the platform. Once you’ve decided on the feature plan and users, choose your preferred subscription payment: month-to-month or annual. Payment is made in one upfront installment. If you purchase a plan for one year, you will pay for one year upfront.",
+          "source_sha256": "79afb5e06f4f302ab05a8d4bdb542c887ef00376f70e65e4e09c2f9447087b6a",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/monday-pricing.txt",
+        "upload/monday-terms.txt"
+      ]
+    },
+    {
+      "object_id": "monday",
+      "field_id": "support",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "partial",
+      "expected_facts": [
+        "页面引导技术/账单问题到 Help Center；Terms 导航有一般 24/7 support 链接。可报告这些一般支持入口。"
+      ],
+      "required_conditions": [
+        "目标 Pro 的 priority support、99.9% uptime SLA 和 tailored onboarding 无充分证据；条款明确企业 eligible tier 才有 priority support/uptime commitment。"
+      ],
+      "known_gaps": [
+        "Pro 渠道服务时段、响应/解决时限和买方合同 SLA 未确认。"
+      ],
+      "serious_error_rules": [
+        "把 Enterprise 24/7 expert/99.9% SLA 原样赋给 Pro；将全站导航链接等同买方合同保证。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/monday-pricing.txt",
+          "line_start": 2069,
+          "line_end": 2069,
+          "quote": "For technical or billing support, visit our [Help Center](https://support.monday.com/hc/en-us)",
+          "source_sha256": "79afb5e06f4f302ab05a8d4bdb542c887ef00376f70e65e4e09c2f9447087b6a",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/monday-terms.txt",
+          "line_start": 63,
+          "line_end": 63,
+          "quote": "[24/7 support](https://monday.com/helpcenter/contact-support)[Partners](https://monday.com/w/partnership)[Global events](https://monday.com/p/events-hub/)[Community](https://community.monday.com)",
+          "source_sha256": "ded7c3b1a7985c9f79860ece01635c7b52c13f5a129e8efdc73f4aa681378989",
+          "role": "general_site_navigation"
+        },
+        {
+          "file": "upload/monday-terms.txt",
+          "line_start": 173,
+          "line_end": 173,
+          "quote": "1.5. **Technical Support and Committed Uptime**. To the extent you purchased an eligible enterprise tier subscription, you will be entitled, in relation to the Services, to priority support and an uptime commitment by monday.com, in accordance with the [Service Level Agreement](https://monday.com/l/legal/monday-com-service-level-agreement-for-enterprise-plan/), as may be updated from time to time.",
+          "source_sha256": "ded7c3b1a7985c9f79860ece01635c7b52c13f5a129e8efdc73f4aa681378989",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/monday-pricing.txt",
+          "line_start": 344,
+          "line_end": 348,
+          "quote": "Top tier support\n\nEnterprise support\n\nGet 24/7 expert support, tailored onboarding with extensive training, daily webinars, a rich library of tutorials, and a 99.9% uptime SLA for true enterprise-grade reliability.",
+          "source_sha256": "79afb5e06f4f302ab05a8d4bdb542c887ef00376f70e65e4e09c2f9447087b6a",
+          "role": "other_tier_boundary"
+        }
+      ],
+      "inspected_files": [
+        "upload/monday-pricing.txt",
+        "upload/monday-terms.txt"
+      ]
+    },
+    {
+      "object_id": "monday",
+      "field_id": "security_admin",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "supported",
+      "expected_facts": [
+        "Pro 含 private boards/docs，仅本人和邀请成员可见；继承 Standard guest access 的对象级访问。条款 Account Admin 可管理用户/权限、访问及集成。"
+      ],
+      "required_conditions": [
+        "Admin 一般能力须区分于 Enterprise 多层权限/企业治理；没有目标 Pro 的 SAML/SCIM/审计日志证明。"
+      ],
+      "known_gaps": [
+        "目标 Pro 的认证方案、数据驻留和合规附约未核实。"
+      ],
+      "serious_error_rules": [
+        "将 Enterprise multi-level permissions/enterprise-grade governance 或其他厂商 SAML 纳入 Pro。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/monday-pricing.txt",
+          "line_start": 167,
+          "line_end": 169,
+          "quote": "Guest access\n\nGuests are external users who can only access boards you invite then to, keeping the rest of your account private.",
+          "source_sha256": "79afb5e06f4f302ab05a8d4bdb542c887ef00376f70e65e4e09c2f9447087b6a",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/monday-pricing.txt",
+          "line_start": 235,
+          "line_end": 235,
+          "quote": "Includes Standard, plus:",
+          "source_sha256": "79afb5e06f4f302ab05a8d4bdb542c887ef00376f70e65e4e09c2f9447087b6a",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/monday-pricing.txt",
+          "line_start": 251,
+          "line_end": 253,
+          "quote": "Private boards and docs\n\nPrivate boards and docs are only visible to you and team members you invite.",
+          "source_sha256": "79afb5e06f4f302ab05a8d4bdb542c887ef00376f70e65e4e09c2f9447087b6a",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/monday-terms.txt",
+          "line_start": 187,
+          "line_end": 187,
+          "quote": "2.4. **Account Admins**. The Admin(s) of an Account are, severally and jointly, deemed as the authorized representatives of the Customer, and any decision or action made by any Admin, is deemed as a decision or action of Customer. An Admin may assign or add other members of the Account as Admins, which possess important privileges and controls over the use of the Services and the Account, including, without limitation: (i) control your (and other Users) use of the Account; (ii) purchase, upgrade or downgrade Services; (ii) create, monitor or modify Users’ actions and permissions; (iii) manage the access to, control, remove, share posts or otherwise change, all or part of the Customer Data (as defined below); (iv) assign certain privileges to such other Users (as defined below); and (v) integrate or disable integration with Third Party Services. You also acknowledge that your Account can become managed by a representative of the entity that owns or controls the email address domain with which your Account was created or registered. Admin rights are further elaborated in this [Article in our Help Center](https://support.monday.com/hc/en-us/articles/360002426920-What-is-an-admin-).",
+          "source_sha256": "ded7c3b1a7985c9f79860ece01635c7b52c13f5a129e8efdc73f4aa681378989",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/monday-pricing.txt",
+          "line_start": 319,
+          "line_end": 337,
+          "quote": "Enterprise-grade security & governance\n\nGet top-tier security features & user management controls.\n\nEnterprise-scale automations & integrations\n\nUp to 250,000 automation and integration actions per month.\n\nPortfolio management\n\nConnect projects to a unified portfolio with real-time health snapshots, making it easy to monitor progress, risks, and alignment across initiatives.\n\nResource management\n\nPlan and balance your team's workload with tools to assign resources, centralize workforce data, and optimize capacity across projects.\n\nMulti-level permissions\n\nRobust permissions at every level to give you full control.",
+          "source_sha256": "79afb5e06f4f302ab05a8d4bdb542c887ef00376f70e65e4e09c2f9447087b6a",
+          "role": "other_tier_boundary"
+        }
+      ],
+      "inspected_files": [
+        "upload/monday-pricing.txt",
+        "upload/monday-terms.txt"
+      ]
+    },
+    {
+      "object_id": "monday",
+      "field_id": "exclusions",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "supported",
+      "expected_facts": [
+        "Pro 为 20 workflows、自动化/集成各 25,000 actions/月、API 10,000/日；额外购买/升级和 usage offering 可能加价或限用。付费起 3 用户；超过 40 人页面要求询价。"
+      ],
+      "required_conditions": [
+        "usage balance 期末失效、不滚存、不退款；促销不保证续约延续。"
+      ],
+      "known_gaps": [
+        "额外额度价格、实际 AI 需求、20 席是否有优惠未确认。"
+      ],
+      "serious_error_rules": [
+        "称 AI/自动化/API 无限；将 enterprise 250,000 配额移植；按 promo 生成永久 TCO。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/monday-pricing.txt",
+          "line_start": 237,
+          "line_end": 268,
+          "quote": "20 workflows\n\nBuild and run workflows to connect work across your boards.\n\nAutomations   \n(25,000 actions / month)\n\nSave precious time by automating repetitive tasks in your boards.\n\nIntegrations   \n(25,000 actions / month)\n\nConnect monday.com with the tools you already use to centralize all your team's work.\n\nPrivate boards and docs\n\nPrivate boards and docs are only visible to you and team members you invite.\n\nAdvanced board views\n\nVisualize your data with different types of charts, graphs and diagrams.\n\nTime tracking\n\nTrack and monitor the time spent on each task.\n\nAdvanced columns\n\nLeverage advanced columns to create dynamic dependencies between tasks and perform complex automated calculations across your board's data.\n\nAPI calls   \n(10,000 / day)",
+          "source_sha256": "79afb5e06f4f302ab05a8d4bdb542c887ef00376f70e65e4e09c2f9447087b6a",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/monday-pricing.txt",
+          "line_start": 2143,
+          "line_end": 2143,
+          "quote": "  monday.com cost depends on the plan you choose and your team size. Plans start from 3 users. If you want to sign up more than 40 users, you can [request a quote](https://monday.com/sales/contact-us?from=pricing&source=Website%20-%20Contact%20Sales) to get an exact price.",
+          "source_sha256": "79afb5e06f4f302ab05a8d4bdb542c887ef00376f70e65e4e09c2f9447087b6a",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/monday-terms.txt",
+          "line_start": 269,
+          "line_end": 269,
+          "quote": "8.7. **Excessive Usage**. We shall have the right, including without limitation where we, at our sole discretion, believe that Customer and/or any of its Users, have misused the Services, or otherwise use the Services in an excessive manner compared to the anticipated standard use at our sole discretion (for instance, an excessive number of guests, excessive use of automations, etc.), to offer the Services in different pricing and/or impose additional fees (including requiring an Upgrade), or other restrictions as for the upload, storage, download and/or use of the Services, including, without limitation, restrictions on Third Party Services, network traffic and bandwidth, size and/or length of content, quality and/or format of content, sources of content, volume of download time, etc.",
+          "source_sha256": "ded7c3b1a7985c9f79860ece01635c7b52c13f5a129e8efdc73f4aa681378989",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/monday-terms.txt",
+          "line_start": 275,
+          "line_end": 275,
+          "quote": "8.10. **Discounts and Promotions**. Unless expressly stated otherwise in a separate legally binding agreement, if Customer received a special discount or other promotional offer, Customer acknowledges that upon renewal of the Subscription to the Services, monday.com will renew such Subscription to the Services, at the full applicable Fee at the time of renewal.",
+          "source_sha256": "ded7c3b1a7985c9f79860ece01635c7b52c13f5a129e8efdc73f4aa681378989",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/monday-terms.txt",
+          "line_start": 281,
+          "line_end": 281,
+          "quote": "8.13. **Usage Based Offerings**. In addition to any other limitations set out in these Terms, certain Services, features, or functionalities (including, without limitation, automations, integrations, monday AI, or other consumption-based offerings) may be subject to usage limits or other consumption-based measures (“**Usage Based Offering(s)**”). The Usage Based Offering shall be subject to a usage balance (e.g. credits and/or bucket etc.) which will expire at the end of the usage period and do not roll over and such are non refundable (“**Usage Balance**”). monday.com’s measurement of the Usage Balance shall be final and binding. If Customer exceeds the applicable Usage Balance during the relevant period, monday.com may, at its sole discretion: (i) charge additional Fees; (ii) limit or suspend access to Usage Based Offering(s); and/or (iii) require Customer to Upgrade.",
+          "source_sha256": "ded7c3b1a7985c9f79860ece01635c7b52c13f5a129e8efdc73f4aa681378989",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/monday-pricing.txt",
+        "upload/monday-terms.txt"
+      ]
+    },
+    {
+      "object_id": "monday",
+      "field_id": "payment_terms",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "supported",
+      "expected_facts": [
+        "月付或年付均一次预付相应周期。条款默认 USD 到期扣款；初次购买 30 天内书面取消，可退未到期预付款的按比例部分。"
+      ],
+      "required_conditions": [
+        "退款排除 usage-based fees、后续购买/升级/修改/续约；不是无条件 30 天全额退款。"
+      ],
+      "known_gaps": [
+        "实际订单付款方式、例外、不退款服务及税费需核实。"
+      ],
+      "serious_error_rules": [
+        "把部分/按比例退款写成全部退；漏初次购买和书面通知条件。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/monday-pricing.txt",
+          "line_start": 2152,
+          "line_end": 2152,
+          "quote": "  Our pricing is based on two factors; the feature plan you’d like to use, and the number of users on the platform. Once you’ve decided on the feature plan and users, choose your preferred subscription payment: month-to-month or annual. Payment is made in one upfront installment. If you purchase a plan for one year, you will pay for one year upfront.",
+          "source_sha256": "79afb5e06f4f302ab05a8d4bdb542c887ef00376f70e65e4e09c2f9447087b6a",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/monday-terms.txt",
+          "line_start": 261,
+          "line_end": 261,
+          "quote": "8.3. **Fees**. In consideration for the provision of the Services (except for Trial Services), Customer shall pay us the applicable fees, as set forth in the applicable Order Form (“**Fees**”). Unless indicated otherwise, Fees are stated in US dollars. Customer hereby authorizes us, either directly or through our payment processing service or our affiliates, to charge such Fees via Customer’s selected payment method, upon due date or shall otherwise remit payment to monday.com upon the due date. Unless expressly set forth herein, the Fees are non-cancelable and non-refundable. We reserve the right to change the Fees at any time, upon notice to Customer if such change may affect Customer’s existing subscriptions upon renewal. In the event of failure to collect the Fees owed by Customer, we may, at our sole discretion (but shall not be obligated to) retry to collect at a later time, and/or suspend or cancel the Account, without notice.",
+          "source_sha256": "ded7c3b1a7985c9f79860ece01635c7b52c13f5a129e8efdc73f4aa681378989",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/monday-terms.txt",
+          "line_start": 285,
+          "line_end": 287,
+          "quote": "9.1. **Refund Policy**. If Customer is not satisfied with its first purchase of the Services, excluding Fees attributable to Usage Based Offering, and solely with respect thereto (“**Initial Purchase**”), then Customer may terminate such Initial Purchase of the Services by providing us a written notice, within 30 days of such Initial Purchase (“**Refund Period**”). In the event that Customer terminates such Initial Purchase, within the Refund Period, we will refund Customer the prorata portion of any unexpired Fees pre-paid by Customer in respect of such terminated Services, unless such other sum is required by applicable law, in the same currency we were originally paid (“**Refund**”). The Refund is applicable only to the Initial Purchase and does not apply to any additional or subsequent purchases, upgrades, modification or renewals of the Services (even if such were performed during the Refund Period). Please note that we shall not be responsible to Refund any differences caused by change of currency exchange rates or fees that Customer was charged by third parties, such as wire transfer fees. After the Refund Period, the Fees are non-refundable and non-cancellable. To the extent permitted by law, if we find that a notice of cancellation has been given in bad faith or in an illegitimate attempt to avoid payment for Services actually received and enjoyed, we reserve our right to reject Customer’s Refund request. Subject to the foregoing, upon termination by Customer under this Section 9.1 all outstanding payment obligations shall immediately become due for the used Services and Customer will promptly remit to monday.com any fees due to monday.com under these Terms.\n\n9.2. **Non-Refundable Services**. Certain Services may be non-refundable. In such event we will identify such Services as non-refundable, and Customer shall not be entitled, and we shall not be under any obligation, to terminate the Services and give a Refund.",
+          "source_sha256": "ded7c3b1a7985c9f79860ece01635c7b52c13f5a129e8efdc73f4aa681378989",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/monday-pricing.txt",
+        "upload/monday-terms.txt"
+      ]
+    },
+    {
+      "object_id": "airtable",
+      "field_id": "scope",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "supported",
+      "expected_facts": [
+        "Business 继承 Team，包含 125,000 records/base、100,000 automation runs、100GB attachments/base、premium/two-way sync、Admin panel、SAML SSO、App Sandbox、AI admin controls；AI 每付费用户每月 20,000 credits。"
+      ],
+      "required_conditions": [
+        "目标 Business 不是 Enterprise Scale；记录/附件单位是 base，不是整组织。"
+      ],
+      "known_gaps": [
+        "实施/集成项目实际交付、合同 scope 未提供。"
+      ],
+      "serious_error_rules": [
+        "把 Enterprise audit logs/DLP、500K records 或 Enterprise API 移植到 Business。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/airtable-pricing.txt",
+          "line_start": 219,
+          "line_end": 259,
+          "quote": "### Business\n\nFor teams and departments who need advanced features and basic administration\n\n$45\n\nper seat /month\n\nbilled annually\n\n[Get started](https://airtable.com/signup?utm_source=pricing-business)\n\nEverything in Team, plus:\n\n20,000 AI credits per paid user each month. Learn more\n\n125,000 records per base\n\n100,000 automation runs\n\n100 GB of attachments per base\n\nPremium sync integrations\n\nVerified data\n\nTwo-way sync\n\nAdmin panel\n\nSAML-based single sign-on\n\nApp Sandbox\n\nRoadmap view and Exec Summary cards\n\nAI Admin controls\n\nAvailable add-ons:\n\nPortals: Starting from $150 for 15 guests/month",
+          "source_sha256": "f0239b1255aa720af003869e11ea163cec61dda2a3c5c1fbfdc493ae251731cd",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/airtable-pricing.txt",
+          "line_start": 263,
+          "line_end": 293,
+          "quote": "### Enterprise Scale\n\nFor organizations looking to build scalable, flexible apps with powerful governance and administration\n\nContact Sales\n\nEverything in Business, plus:\n\n25,000 AI credits per paid user each month at list price. Learn more\n\n500,000 records per base\n\n500,000 automation runs\n\n1,000 GB of attachments per base\n\nEnterprise Scale Integrations\n\nApp Library\n\nHyperDB\n\nEnterprise Hub\n\nEnhanced security and admin controls\n\nEnterprise API\n\nExtension and integration management\n\nAudit logs and DLP",
+          "source_sha256": "f0239b1255aa720af003869e11ea163cec61dda2a3c5c1fbfdc493ae251731cd",
+          "role": "other_tier_boundary"
+        }
+      ],
+      "inspected_files": [
+        "upload/airtable-pricing.txt",
+        "upload/airtable-terms.txt"
+      ]
+    },
+    {
+      "object_id": "airtable",
+      "field_id": "pricing_unit",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "conflicting_or_conditional",
+      "expected_facts": [
+        "按 seat 计费；有至少一个 base 编辑权限的用户收费，read-only/form submissions/share links 不收费。年付 45 USD/席/月，月付 54 USD/席/月。"
+      ],
+      "required_conditions": [
+        "FAQ 一处按 Workspace/按天 prorate，另一处 Business/Enterprise 按 organization/按月 prorate；保留两段 scope，不自行合并成唯一实际计费规则。"
+      ],
+      "known_gaps": [
+        "20 人具体权限、工作区/组织归属和新增成员的最终 proration 需要订单/账单确认。"
+      ],
+      "serious_error_rules": [
+        "把只读人员一律算付费，或忽略内部编辑人员；不说明 scope 却断言某一日/月 proration 总价。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/airtable-pricing.txt",
+          "line_start": 29,
+          "line_end": 39,
+          "quote": "$45USD\n\nper seat/month\n\nbilled annually\n\nCustom pricing\n\n$24 billed monthly\n\n$54 billed monthly",
+          "source_sha256": "f0239b1255aa720af003869e11ea163cec61dda2a3c5c1fbfdc493ae251731cd",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/airtable-pricing.txt",
+          "line_start": 771,
+          "line_end": 771,
+          "quote": "Airtable plans are charged per seat. If you are on Airtable’s Free plan, all users are free. If you are on a Team or Business plan, you will be charged for all users who have edit permissions for at least one base in the workspace. No charges will apply on a Team or Business plan for read-only collaborators, form submissions, or share links. Charges are prorated: users with edit permissions added partway through the month will only be charged for the days after they were added.",
+          "source_sha256": "f0239b1255aa720af003869e11ea163cec61dda2a3c5c1fbfdc493ae251731cd",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/airtable-pricing.txt",
+          "line_start": 775,
+          "line_end": 775,
+          "quote": "Airtable has two plans geared towards large company usage of Airtable: Business and Enterprise Scale. You can purchase Business either through the plan upgrades page in your workspace settings tab, or by contacting our sales team. To purchase Enterprise Scale, please contact sales. On either plan, you will be charged for all users with edit permissions for at least one base in your organization. As part of the Enterprise Scale plan, an organization has the ability to create unlimited org units, workspaces and bases within their organization. Charges are prorated: collaborators with edit permissions added partway through the billing cycle will only be charged for the months after they were added. For more information on our Business and Enterprise Scale plans,",
+          "source_sha256": "f0239b1255aa720af003869e11ea163cec61dda2a3c5c1fbfdc493ae251731cd",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/airtable-pricing.txt",
+        "upload/airtable-terms.txt"
+      ]
+    },
+    {
+      "object_id": "airtable",
+      "field_id": "recurring_cost",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "supported",
+      "expected_facts": [
+        "Business 年付 45 USD/seat/month，月付 54 USD/seat/month。"
+      ],
+      "required_conditions": [
+        "仅全部 20 人确为付费 seat 时可列 900 USD/月年付等价或 1,080 USD/月月付的假设推算，明确不含税/附加服务，不能称签署报价。"
+      ],
+      "known_gaps": [
+        "订单人数、add-ons/超额及买方税费未核实。"
+      ],
+      "serious_error_rules": [
+        "把年付单价当月付价；默认所有 20 人已确定付费且税费为零。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/airtable-pricing.txt",
+          "line_start": 29,
+          "line_end": 39,
+          "quote": "$45USD\n\nper seat/month\n\nbilled annually\n\nCustom pricing\n\n$24 billed monthly\n\n$54 billed monthly",
+          "source_sha256": "f0239b1255aa720af003869e11ea163cec61dda2a3c5c1fbfdc493ae251731cd",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/airtable-pricing.txt",
+          "line_start": 771,
+          "line_end": 771,
+          "quote": "Airtable plans are charged per seat. If you are on Airtable’s Free plan, all users are free. If you are on a Team or Business plan, you will be charged for all users who have edit permissions for at least one base in the workspace. No charges will apply on a Team or Business plan for read-only collaborators, form submissions, or share links. Charges are prorated: users with edit permissions added partway through the month will only be charged for the days after they were added.",
+          "source_sha256": "f0239b1255aa720af003869e11ea163cec61dda2a3c5c1fbfdc493ae251731cd",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/airtable-terms.txt",
+          "line_start": 107,
+          "line_end": 107,
+          "quote": "We may offer plans that you may sign up for that allow you to use certain aspects of our Services, either for free or for a fee (a \" **Subscription Plan**\"). We may change Subscription Plans, including by offering new services or features for additional fees and charges or by adding or amending fees and charges for existing Subscription Plans, in our sole discretion. Any change to a Subscription Plan’s pricing or payment terms will become effective in the billing cycle following notice of such change to you as provided in these Terms. Subscription Plans may set allotments for use of designated Services aspects. Use of Services aspects in excess of a Subscription Plan’s designated allotment may result in (additional) fees, and such fees will be included in a true-up invoice or charged automatically via the payment method associated with your Airtable Account (\" **Payment Method**\").",
+          "source_sha256": "f0f2ca1a8d48af443312cedda81164042295bb0cb4f1d0246e687a1d36aaa2ac",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/airtable-terms.txt",
+          "line_start": 113,
+          "line_end": 113,
+          "quote": "You must provide us with a current, valid, accepted Payment Method. When you initiate a purchase transaction, you authorize us to provide your payment information to third parties so we can complete your transaction and to charge your Payment Method, in United States Dollars, for the type of transaction you have selected (plus any applicable taxes and other charges) and any applicable recurring charges as described below. You will pay applicable taxes, if any, relating to any such transaction, and are also responsible for any payment-related fees such as wire transfer fees, credit card processing fees, and foreign transaction fees.",
+          "source_sha256": "f0f2ca1a8d48af443312cedda81164042295bb0cb4f1d0246e687a1d36aaa2ac",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/airtable-pricing.txt",
+        "upload/airtable-terms.txt"
+      ]
+    },
+    {
+      "object_id": "airtable",
+      "field_id": "setup_fee",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "not_found",
+      "expected_facts": [
+        "未找到 Business 实施/安装的一次性金额。比较表列 Professional Services 与 Add-on，未保留可靠套餐列对应或金额。"
+      ],
+      "required_conditions": [
+        "有 professional services add-on 标签不等于默认购买，不证明收费方式为一次性。"
+      ],
+      "known_gaps": [
+        "服务范围、收费方式、实施额及是否选购需另询。"
+      ],
+      "serious_error_rules": [
+        "把空白写成 0；用 Portals 的月费当一次性实施费。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/airtable-pricing.txt",
+          "line_start": 737,
+          "line_end": 741,
+          "quote": "Professional Services\\*\\*\\*\n\nAdd-on\n\nAdd-on",
+          "source_sha256": "f0239b1255aa720af003869e11ea163cec61dda2a3c5c1fbfdc493ae251731cd",
+          "role": "unmapped_table_context"
+        },
+        {
+          "file": "upload/airtable-terms.txt",
+          "line_start": 111,
+          "line_end": 111,
+          "quote": "For any paid Subscription Plan, you agree to make payments, and we may automatically charge your Payment Method, as described below, for so long as your Airtable Account remains active. Subscription Plans may be offered for a set subscription period (each such period, a \" **Subscription Term**\"). If you elect to sign up for a paid Subscription Plan, you agree to the pricing and payment terms specified at checkout, at [www.airtable.com/pricing](https://www.airtable.com/pricing), or as otherwise posted or communicated to you, as we may update them from time to time.",
+          "source_sha256": "f0f2ca1a8d48af443312cedda81164042295bb0cb4f1d0246e687a1d36aaa2ac",
+          "role": "gap_context"
+        }
+      ],
+      "inspected_files": [
+        "upload/airtable-pricing.txt",
+        "upload/airtable-terms.txt"
+      ]
+    },
+    {
+      "object_id": "airtable",
+      "field_id": "tax_basis",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "partial",
+      "expected_facts": [
+        "United States Dollars 交易，另加适用 taxes/other charges；买方承担税及相关支付费用（wire、信用卡处理、foreign transaction）。"
+      ],
+      "required_conditions": [
+        "这些费用是否适用和金额未明，不能直接生成含税本币总额。"
+      ],
+      "known_gaps": [
+        "税种税率、账单辖区、手续费和汇率未核实。"
+      ],
+      "serious_error_rules": [
+        "以 USD 页面价直接作为含税价；按未知中国税率换算采购总额。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/airtable-terms.txt",
+          "line_start": 113,
+          "line_end": 113,
+          "quote": "You must provide us with a current, valid, accepted Payment Method. When you initiate a purchase transaction, you authorize us to provide your payment information to third parties so we can complete your transaction and to charge your Payment Method, in United States Dollars, for the type of transaction you have selected (plus any applicable taxes and other charges) and any applicable recurring charges as described below. You will pay applicable taxes, if any, relating to any such transaction, and are also responsible for any payment-related fees such as wire transfer fees, credit card processing fees, and foreign transaction fees.",
+          "source_sha256": "f0f2ca1a8d48af443312cedda81164042295bb0cb4f1d0246e687a1d36aaa2ac",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/airtable-pricing.txt",
+        "upload/airtable-terms.txt"
+      ]
+    },
+    {
+      "object_id": "airtable",
+      "field_id": "contract_term",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "supported",
+      "expected_facts": [
+        "订阅持续到取消；默认续与原 Subscription Term 等长的期间，续费采用当时适用价格。期末前须经 Account Settings 取消；按年/月周年自动扣款。"
+      ],
+      "required_conditions": [
+        "用户取消一般仍可用至期末；平台因非违约/欠款原因取消可退未用期比例款。"
+      ],
+      "known_gaps": [
+        "实际订单期限、企业协议例外未提供。"
+      ],
+      "serious_error_rules": [
+        "替 Airtable 套用 ClickUp/monday 的固定提前 30 天规则；承诺续约锁价。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/airtable-pricing.txt",
+          "line_start": 29,
+          "line_end": 39,
+          "quote": "$45USD\n\nper seat/month\n\nbilled annually\n\nCustom pricing\n\n$24 billed monthly\n\n$54 billed monthly",
+          "source_sha256": "f0239b1255aa720af003869e11ea163cec61dda2a3c5c1fbfdc493ae251731cd",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/airtable-terms.txt",
+          "line_start": 119,
+          "line_end": 119,
+          "quote": "Your subscription continues until canceled by you or we terminate your access to or use of our Services in accordance with these Terms. Unless and until canceled by you, all Subscription Plans will automatically renew for renewal terms equal in length to the original Subscription Term, at the applicable price as of the renewal date. If you do not want a Subscription Plan to renew, you must cancel it before the end of the Subscription Term via the Account Settings page on your Airtable Account). If you purchase a Subscription Plan, we (or our third-party service provider) will automatically charge you each year or month, as applicable, on the anniversary of the commencement of your subscription, using the payment information you have provided, until you cancel your subscription. By agreeing to these Terms and electing to purchase a Subscription Plan, you acknowledge that your Subscription Plan has recurring payment features and you accept responsibility for all recurring payment obligations prior to cancellation of your subscription by you or us.",
+          "source_sha256": "f0f2ca1a8d48af443312cedda81164042295bb0cb4f1d0246e687a1d36aaa2ac",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/airtable-terms.txt",
+          "line_start": 123,
+          "line_end": 123,
+          "quote": "If we cancel or terminate your Subscription Plan, except in the event of your breach of these Terms or failure to pay fees when due, we will grant you a prorated refund for the remaining unused portion of your Subscription Term. If you cancel or terminate your Subscription Plan, your right to use our Services will continue until the end of your then-current Subscription Term and then terminate without further charges. Notwithstanding the foregoing, if you live in the European Union or Turkey and cancel your Subscription Plan within fourteen (14) days of purchase, you will be eligible for a refund of any payments made for the canceled Subscription Term, and, if you request such a refund, your right to use our Services will terminate immediately upon cancellation of your subscription. Subject to the preceding sentence, if you cancel or terminate your Subscription Plan, unless required by law, YOU WILL NOT RECEIVE A REFUND OF ANY PORTION OF ANY FEES PAID FOR THE THEN-CURRENT SUBSCRIPTION TERM AT THE TIME OF CANCELLATION.",
+          "source_sha256": "f0f2ca1a8d48af443312cedda81164042295bb0cb4f1d0246e687a1d36aaa2ac",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/airtable-pricing.txt",
+        "upload/airtable-terms.txt"
+      ]
+    },
+    {
+      "object_id": "airtable",
+      "field_id": "support",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "unreliable_extraction",
+      "expected_facts": [
+        "比较表可见 Help Center and Community、In-product support、Email support、Ask An Expert 标签。"
+      ],
+      "required_conditions": [
+        "提取文本没有保留可靠的列勾选与 Business 对应，标签只能当候选入口，不能确认该套餐拥有每一项。"
+      ],
+      "known_gaps": [
+        "Business 实际渠道、可用时段、响应/修复时间和 SLA 未找到。"
+      ],
+      "serious_error_rules": [
+        "从支援标签推出 Business 24/7、专属顾问或确定响应时限。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/airtable-pricing.txt",
+          "line_start": 725,
+          "line_end": 741,
+          "quote": "Support\n\nHelp Center and Community\n\nIn-product support\n\nEmail support\n\nAsk An Expert\n\nAdd-on\n\nProfessional Services\\*\\*\\*\n\nAdd-on\n\nAdd-on",
+          "source_sha256": "f0239b1255aa720af003869e11ea163cec61dda2a3c5c1fbfdc493ae251731cd",
+          "role": "unmapped_table_context"
+        },
+        {
+          "file": "upload/airtable-terms.txt",
+          "line_start": 245,
+          "line_end": 245,
+          "quote": "We may identify you as our customer in our promotional materials. We will promptly stop doing so upon your request, which you may send using the “Message Support” link under the “Help” menu within our Services, or the “How can we help?” interface at [this link](https://airtable.com/?contact_support=true).",
+          "source_sha256": "f0f2ca1a8d48af443312cedda81164042295bb0cb4f1d0246e687a1d36aaa2ac",
+          "role": "general_support_contact"
+        }
+      ],
+      "inspected_files": [
+        "upload/airtable-pricing.txt",
+        "upload/airtable-terms.txt"
+      ]
+    },
+    {
+      "object_id": "airtable",
+      "field_id": "security_admin",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "supported",
+      "expected_facts": [
+        "Business 明确 Admin panel、SAML-based SSO、App Sandbox、AI Admin controls；一般服务支持 2FA。"
+      ],
+      "required_conditions": [
+        "Audit logs/DLP 是 Enterprise Scale 段落；2FA 是平台一般登录能力，不能自动等于强制策略/SCIM。"
+      ],
+      "known_gaps": [
+        "Business 审计/DLP/SCIM、数据驻留、独立安全附约未确认。"
+      ],
+      "serious_error_rules": [
+        "漏套餐归属，把 Enterprise audit logs/DLP 配入 Business。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/airtable-pricing.txt",
+          "line_start": 247,
+          "line_end": 255,
+          "quote": "Admin panel\n\nSAML-based single sign-on\n\nApp Sandbox\n\nRoadmap view and Exec Summary cards\n\nAI Admin controls",
+          "source_sha256": "f0239b1255aa720af003869e11ea163cec61dda2a3c5c1fbfdc493ae251731cd",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/airtable-pricing.txt",
+          "line_start": 263,
+          "line_end": 293,
+          "quote": "### Enterprise Scale\n\nFor organizations looking to build scalable, flexible apps with powerful governance and administration\n\nContact Sales\n\nEverything in Business, plus:\n\n25,000 AI credits per paid user each month at list price. Learn more\n\n500,000 records per base\n\n500,000 automation runs\n\n1,000 GB of attachments per base\n\nEnterprise Scale Integrations\n\nApp Library\n\nHyperDB\n\nEnterprise Hub\n\nEnhanced security and admin controls\n\nEnterprise API\n\nExtension and integration management\n\nAudit logs and DLP",
+          "source_sha256": "f0239b1255aa720af003869e11ea163cec61dda2a3c5c1fbfdc493ae251731cd",
+          "role": "other_tier_boundary"
+        },
+        {
+          "file": "upload/airtable-terms.txt",
+          "line_start": 155,
+          "line_end": 155,
+          "quote": "Our Services support log-in using two-factor authentication (“ **2FA**”), which is known to materially reduce the risk of unauthorized use of or access to the Services. We recommend that all users implement 2FA for their use of our Services. Notwithstanding anything to the contrary in these Terms, we will not be responsible for any damages, losses, or liability to you or anyone else if such damages, losses, or liability would have been prevented by the use of 2FA.",
+          "source_sha256": "f0f2ca1a8d48af443312cedda81164042295bb0cb4f1d0246e687a1d36aaa2ac",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/airtable-pricing.txt",
+        "upload/airtable-terms.txt"
+      ]
+    },
+    {
+      "object_id": "airtable",
+      "field_id": "exclusions",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "conflicting_or_conditional",
+      "expected_facts": [
+        "Business 配额为 125K records/base、100K automations、100GB attachments/base、20K AI credits/付费用户/月；超额可能收费。Portals 为另购。"
+      ],
+      "required_conditions": [
+        "Portals 卡片写起 $150/15 guests/month；脚注写 Business 年付起 $127.50/15 guests/month，须保留周期条件并询最终价。"
+      ],
+      "known_gaps": [
+        "卡片起价的完整计费周期、professional services/add-ons/overages 订单未确认。"
+      ],
+      "serious_error_rules": [
+        "称 Portals 免费内含或只报一种无条件起价；把 Enterprise 配额移植。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/airtable-pricing.txt",
+          "line_start": 233,
+          "line_end": 259,
+          "quote": "20,000 AI credits per paid user each month. Learn more\n\n125,000 records per base\n\n100,000 automation runs\n\n100 GB of attachments per base\n\nPremium sync integrations\n\nVerified data\n\nTwo-way sync\n\nAdmin panel\n\nSAML-based single sign-on\n\nApp Sandbox\n\nRoadmap view and Exec Summary cards\n\nAI Admin controls\n\nAvailable add-ons:\n\nPortals: Starting from $150 for 15 guests/month",
+          "source_sha256": "f0239b1255aa720af003869e11ea163cec61dda2a3c5c1fbfdc493ae251731cd",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/airtable-pricing.txt",
+          "line_start": 743,
+          "line_end": 743,
+          "quote": "\\\\* Pricing for Portals starts at $127.50/month for 15 guests on our annual plan for Business.",
+          "source_sha256": "f0239b1255aa720af003869e11ea163cec61dda2a3c5c1fbfdc493ae251731cd",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/airtable-terms.txt",
+          "line_start": 107,
+          "line_end": 107,
+          "quote": "We may offer plans that you may sign up for that allow you to use certain aspects of our Services, either for free or for a fee (a \" **Subscription Plan**\"). We may change Subscription Plans, including by offering new services or features for additional fees and charges or by adding or amending fees and charges for existing Subscription Plans, in our sole discretion. Any change to a Subscription Plan’s pricing or payment terms will become effective in the billing cycle following notice of such change to you as provided in these Terms. Subscription Plans may set allotments for use of designated Services aspects. Use of Services aspects in excess of a Subscription Plan’s designated allotment may result in (additional) fees, and such fees will be included in a true-up invoice or charged automatically via the payment method associated with your Airtable Account (\" **Payment Method**\").",
+          "source_sha256": "f0f2ca1a8d48af443312cedda81164042295bb0cb4f1d0246e687a1d36aaa2ac",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/airtable-pricing.txt",
+        "upload/airtable-terms.txt"
+      ]
+    },
+    {
+      "object_id": "airtable",
+      "field_id": "payment_terms",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "supported",
+      "expected_facts": [
+        "使用有效接受的 Payment Method，可自动扣款，交易默认 USD；Business 通过销售团队购买时可 invoice。用户取消一般不退已付款。"
+      ],
+      "required_conditions": [
+        "EU/Turkey 居住者购买 14 天内取消且请求退款可获例外；平台非买方违约/欠款终止可按未用期退。invoice 不证明 Net 30。"
+      ],
+      "known_gaps": [
+        "实际支付渠道、发票账期、买方地区和正式订单例外未确认。"
+      ],
+      "serious_error_rules": [
+        "把 EU/Turkey 14 天退款应用于所有重庆用户；声称每个 Business 自助购买都可 invoice/Net30。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/airtable-terms.txt",
+          "line_start": 113,
+          "line_end": 115,
+          "quote": "You must provide us with a current, valid, accepted Payment Method. When you initiate a purchase transaction, you authorize us to provide your payment information to third parties so we can complete your transaction and to charge your Payment Method, in United States Dollars, for the type of transaction you have selected (plus any applicable taxes and other charges) and any applicable recurring charges as described below. You will pay applicable taxes, if any, relating to any such transaction, and are also responsible for any payment-related fees such as wire transfer fees, credit card processing fees, and foreign transaction fees.\n\nWe currently use Stripe as our third-party service provider for payment services, and by using our Services you agree to be bound by Stripe’s Services Agreement, currently available at [https://stripe.com/us/legal](https://stripe.com/us/legal). If your payment is not successfully settled for any reason, you remain responsible for any amounts not remitted to us, and you authorize us or our third-party service provider to continue to charge your Payment Method, without further notice, until such time as your payment is settled. All payments for transactions are non-refundable and non-transferable except as expressly provided in these Terms.",
+          "source_sha256": "f0f2ca1a8d48af443312cedda81164042295bb0cb4f1d0246e687a1d36aaa2ac",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/airtable-terms.txt",
+          "line_start": 123,
+          "line_end": 123,
+          "quote": "If we cancel or terminate your Subscription Plan, except in the event of your breach of these Terms or failure to pay fees when due, we will grant you a prorated refund for the remaining unused portion of your Subscription Term. If you cancel or terminate your Subscription Plan, your right to use our Services will continue until the end of your then-current Subscription Term and then terminate without further charges. Notwithstanding the foregoing, if you live in the European Union or Turkey and cancel your Subscription Plan within fourteen (14) days of purchase, you will be eligible for a refund of any payments made for the canceled Subscription Term, and, if you request such a refund, your right to use our Services will terminate immediately upon cancellation of your subscription. Subject to the preceding sentence, if you cancel or terminate your Subscription Plan, unless required by law, YOU WILL NOT RECEIVE A REFUND OF ANY PORTION OF ANY FEES PAID FOR THE THEN-CURRENT SUBSCRIPTION TERM AT THE TIME OF CANCELLATION.",
+          "source_sha256": "f0f2ca1a8d48af443312cedda81164042295bb0cb4f1d0246e687a1d36aaa2ac",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/airtable-pricing.txt",
+          "line_start": 745,
+          "line_end": 745,
+          "quote": "\\\\*\\\\* Payment by invoice is available to Business customers who purchase through our sales team.",
+          "source_sha256": "f0239b1255aa720af003869e11ea163cec61dda2a3c5c1fbfdc493ae251731cd",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/airtable-pricing.txt",
+        "upload/airtable-terms.txt"
+      ]
+    }
+  ]
+}
+

@@ -8,8 +8,10 @@ from alembic.migration import MigrationContext
 from alembic.operations import Operations
 from sqlalchemy import Connection, func, select
 from tests.browser_sessions.conftest import BrowserDatabase
+from tests.migration_database import migration_database
 
 from enterprise_doc_core.billing.models import TenantEntitlement
+from enterprise_doc_core.billing.product_models import ProductQuota
 from enterprise_doc_core.browser_sessions.errors import BrowserContextStale, BrowserSessionInvalid
 from enterprise_doc_core.demo.limits import finish_attempt, reserve_attempt
 from enterprise_doc_core.demo.models import DemoDay, DemoWorkspace
@@ -48,6 +50,15 @@ async def test_isolated_visitors_no_external_identity_and_expiry(demo_db: Browse
                 select(TenantEntitlement).where(TenantEntitlement.tenant_id == tenant.id)
             )
             assert entitlement is not None and entitlement.plan_code == "public-demo"
+            quotas = (
+                await session.scalars(
+                    select(ProductQuota).where(ProductQuota.tenant_id == tenant.id)
+                )
+            ).all()
+            assert {q.metric: q.unit_limit for q in quotas} == {
+                "agent_task": 0,
+                "document_bytes": 10 * 1024 * 1024,
+            }
     now += timedelta(hours=3)
     with pytest.raises(BrowserSessionInvalid):
         await service.get(first.credential)
@@ -159,18 +170,21 @@ async def test_migration_round_trip(demo_db: BrowserDatabase) -> None:
     assert await service.get(issued.credential) == issued.snapshot
 
 
-async def test_start_with_migrated_entitlement_tables(demo_db: BrowserDatabase) -> None:
-    # The deployed migration has no timestamp defaults, unlike metadata.create_all.
-    async with demo_db.engine.begin() as connection:
-        await connection.run_sync(migrate, "downgrade", "20260914_0026_entitlements_usage")
-        await connection.run_sync(migrate, "upgrade", "20260914_0026_entitlements_usage")
+@pytest.mark.parametrize("revision", ["20260924_0029", "head"])
+async def test_start_with_migrated_entitlement_tables(revision: str) -> None:
+    # Check both the original default-free migration and the current real chain.
+    async with migration_database(revision) as database:
+        await assert_migrated_demo_start(database.sessions)
+
+
+async def assert_migrated_demo_start(sessions) -> None:
     now = datetime.now(UTC)
     service = DemoService(
-        session_factory=demo_db.sessions, settings=DemoSettings(enabled=True), clock=lambda: now
+        session_factory=sessions, settings=DemoSettings(enabled=True), clock=lambda: now
     )
     issued = await service.start()
     assert await service.get(issued.credential) == issued.snapshot
-    async with demo_db.sessions() as session:
+    async with sessions() as session:
         entitlement = await session.scalar(
             select(TenantEntitlement).where(
                 TenantEntitlement.tenant_id == issued.snapshot.tenant_id

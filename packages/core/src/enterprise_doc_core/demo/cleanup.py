@@ -20,7 +20,7 @@ from enterprise_doc_core.object_store import (
     MultipartUploadNotFound,
     ObjectStoreNotFound,
 )
-from enterprise_doc_core.uploads.models import UploadSession
+from enterprise_doc_core.uploads.models import UploadSession, UploadTransport
 from enterprise_doc_core.uploads.policy import build_object_key
 
 _LOGGER = logging.getLogger(__name__)
@@ -185,6 +185,22 @@ class DemoCleanupService:
                 )
                 if upload.object_key != expected or upload.actor_id != actor_id:
                     raise RuntimeError("demo upload ownership mismatch")
+                if upload.transport == UploadTransport.SINGLE_PUT.value:
+                    retired = await self.object_store.retire_upload_object(
+                        bucket=self.bucket,
+                        key=expected,
+                        metadata={
+                            "contract": "m1",
+                            "upload-session-id": str(upload.id),
+                            "version-id": str(upload.pending_version_id),
+                            "declared-size": str(upload.size_bytes),
+                        },
+                    )
+                    if not retired:
+                        raise RuntimeError("demo upload retirement raced")
+                    # Retain the zero-byte barrier even after deleting demo rows;
+                    # an outstanding create-only PUT must not reopen this key.
+                    continue
                 if upload.object_store_upload_id:
                     try:
                         await self.object_store.abort_upload(

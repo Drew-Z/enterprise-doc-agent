@@ -1,0 +1,76 @@
+{
+  "schemaVersion": "presales-quality-input-v1",
+  "synthetic": true,
+  "provenance": "Assistant authored and self reviewed H4 corpus, frozen before any v6 request. H1/H2/H3 are known regression sets. Not independent domain adjudication; complete short sources test generation only.",
+  "title": "星岭客服合成订单与交付状态核对",
+  "sources": [
+    {
+      "key": "H4-ORDER",
+      "filename": "H4-ORDER-v1.txt",
+      "applicability": "星岭客服本次签署的企业订单及交付记录。全部内容为合成资料。",
+      "content": "# H4-ORDER 订单与交付清单\n星岭客服本订单：LOCK90 已购数量1，SAML-ORG 已购数量0。\nLOCK90 的90天保留策略已配置；管理员禁删验证结果栏为空。\nSAML-ORG 的客户域名验证已通过，双方联调验收尚未进行。\nH4-BASE与H4-ADD均已签署，适用于本订单同一企业的生产数据及全部备份。ADD仅在查询吞吐指标上替代BASE；备份地域条款同日生效、互不优先且没有例外。\n"
+    },
+    {
+      "key": "H4-FEATURE",
+      "filename": "H4-FEATURE-v1.txt",
+      "applicability": "星岭客服当前正式版可选模块说明，启用需要列明的交付步骤。",
+      "content": "# H4-FEATURE 功能与启用规格\nLOCK90 将客服审计记录保留90天，期间企业管理员不能提前删除。启用前须购买LOCK90、配置90天保留策略并完成管理员禁删验证。\nSAML-ORG 可接入客户自有身份提供方进行SAML 2.0单点登录。启用前须购买SAML-ORG、完成客户域名验证并通过双方联调验收。本订单尚未购买SAML-ORG，域名验证已通过，联调验收尚未进行。\n"
+    },
+    {
+      "key": "H4-ASSURANCE",
+      "filename": "H4-ASSURANCE-v1.txt",
+      "applicability": "本次采购所附运营方审计材料目录，仅描述附件内容。",
+      "content": "# H4-ASSURANCE 附件目录\n附件包括内部访问权限复核表与漏洞修复记录。附件目录未收录SOC 2 Type II报告，未登记报告覆盖期及适用服务范围。\n"
+    },
+    {
+      "key": "H4-BASE",
+      "filename": "H4-BASE-v1.txt",
+      "applicability": "本订单的签署基础协议；查询吞吐使用补充协议，备份地域条款无优先关系。",
+      "content": "# H4-BASE 基础协议\n生产查询服务保证每秒处理300个请求。\n本企业生产数据及全部备份仅保存在加拿大，禁止复制到加拿大境外。\n"
+    },
+    {
+      "key": "H4-ADD",
+      "filename": "H4-ADD-v1.txt",
+      "applicability": "同一订单的签署补充协议，仅查询吞吐条款明确取代基础协议。",
+      "content": "# H4-ADD 补充协议\n本订单生产查询服务保证每秒处理480个请求；本项取代H4-BASE的每秒300个请求，优先级仅限查询吞吐。\n本企业生产数据及全部备份每晚须完整复制一份到爱尔兰，禁止省略副本。本地域条款与H4-BASE的加拿大独占条款同时适用，互不优先且没有例外。\n"
+    },
+    {
+      "key": "H4-LIMIT",
+      "filename": "H4-LIMIT-v1.txt",
+      "applicability": "当前正式版全部套餐的批量导入限制。",
+      "content": "# H4-LIMIT 批量导入限制\n单次导入最多500条工单。当前全部套餐均无提高该上限的配置或选购项；拆成多次导入不属于单次能力。\n"
+    }
+  ],
+  "requirements": [
+    {
+      "key": "H4-R1",
+      "text": "本企业须将客服审计记录保留90天，期间企业管理员不能提前删除。",
+      "sourceLocation": "H4-1"
+    },
+    {
+      "key": "H4-R2",
+      "text": "本企业须能用客户自有身份提供方进行SAML 2.0单点登录。",
+      "sourceLocation": "H4-2"
+    },
+    {
+      "key": "H4-R3",
+      "text": "运营方须提供覆盖当前服务且在有效覆盖期内的SOC 2 Type II报告。",
+      "sourceLocation": "H4-3"
+    },
+    {
+      "key": "H4-R4",
+      "text": "本企业生产数据及全部备份只能保存在加拿大，不得复制到境外。",
+      "sourceLocation": "H4-4"
+    },
+    {
+      "key": "H4-R5",
+      "text": "本订单生产查询吞吐保证须达到每秒400个请求。",
+      "sourceLocation": "H4-5"
+    },
+    {
+      "key": "H4-R6",
+      "text": "单次导入须支持800条工单，不接受拆分成多次导入。",
+      "sourceLocation": "H4-6"
+    }
+  ]
+}

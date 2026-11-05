@@ -5,7 +5,7 @@ from enterprise_doc_core.db.engine import (
     selector_event_loop_factory,
 )
 from enterprise_doc_core.db.registry import register_models
-from enterprise_doc_core.db.session import create_session_factory
+from enterprise_doc_core.db.session import create_session_factory, read_only_session
 
 __all__ = [
     "Base",
@@ -14,6 +14,7 @@ __all__ = [
     "create_database_engine",
     "create_session_factory",
     "ensure_asyncio_compatibility",
+    "read_only_session",
     "register_models",
     "selector_event_loop_factory",
 ]

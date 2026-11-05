@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "status": "maintenance_failed_before_migration_original_service_restored",
+  "task_status": "in_progress",
+  "executor_commit": "2148a8f8586deb2331c0858cfd3615ff540ca330",
+  "workflow_run_id": 36307576783,
+  "workflow_conclusion": "failure",
+  "failed_step": "Verify administrator-owned staging prerequisites",
+  "root_cause": "The administrator execution helper updated six ConfigMap fields but omitted six matching Namespace approval annotations: four image allowlists, approved-config-sha256, and prerequisites-sha256. The full prerequisite validator correctly rejected the incomplete change.",
+  "migration_step": "skipped",
+  "workload_installation_step": "skipped",
+  "database_revision_after_restore": "20260923_0027",
+  "candidate_installed": false,
+  "quota_change_applied": false,
+  "service_pause_started_at": "2026-09-27T08:32:21.502885+00:00",
+  "public_restoration_verified_at": "2026-09-27T11:38:09.686776+00:00",
+  "pause_to_public_restoration_verification_seconds": 11148.184,
+  "pre_migration_30_minute_limit_met": false,
+  "interruption_handling_gap": "The operator session was interrupted while services were paused. No independent timeout recovery mechanism was active. After continuation, the completed failed workflow and a fresh read-only database query established that migration had not started; original configuration and replicas were restored without restoring or downgrading the database.",
+  "recovery_capture": {
+    "status": "passed",
+    "tables": 49,
+    "rows": 79388,
+    "dump_bytes": 23657879,
+    "objects": 1585,
+    "object_bytes": 1083958,
+    "fresh_source_object_reads_verified": true,
+    "reused_reverified_physical_backups": 1584,
+    "supabase_managed_schemas_included": false,
+    "whole_host_rpo_rto_verified": false
+  },
+  "approved_upload_cleanup": {
+    "status": "passed",
+    "expired_sessions": 7,
+    "released_reserved_bytes": 2900,
+    "completed_objects_deleted": 0,
+    "historical_records_retained": true
+  },
+  "supplier_usage": {
+    "model_http_attempts": 0,
+    "embedding_http_attempts": 0,
+    "emails": 0,
+    "acceptance_batch_submitted": false
+  },
+  "restoration": {
+    "original_configuration_and_images": "verified",
+    "ready_deployments": 5,
+    "public_home_status": 200,
+    "public_readiness_status": 200,
+    "unauthenticated_session_status": 401,
+    "authenticated_history_and_tenant_isolation": "passed",
+    "interactive_github_oauth": "not_executed",
+    "original_entitlement_period_and_limits": "unchanged",
+    "seven_environment_variable_changes": "reverted",
+    "temporary_exact_tag_policy": "removed_original_policies_verified",
+    "executor_tag": "retained_at_original_commit_for_audit"
+  },
+  "corrected_prerequisite_plan": {
+    "status": "locally_validated_not_applied",
+    "complete_prerequisite_resources_checked": 18,
+    "required_approval_keys_checked": 17,
+    "expected_namespace_annotation_changes": 6,
+    "expected_configmap_changes": 6,
+    "negative_cases_rejected": 4,
+    "remote_mutations_during_validation": 0
+  },
+  "cleanup": {
+    "task_owned_image_transport_files_deleted": 52,
+    "task_owned_empty_transport_directory_deleted": true,
+    "task_owned_isolated_restore_container_removed": true,
+    "recovery_artifacts_preserved": true,
+    "preexisting_unowned_files_removed": 0
+  },
+  "next_execution_requirements": [
+    "Implement and verify an independent pre-migration deadline and safe restoration mechanism that cannot restore the old runtime after an unknown or started migration.",
+    "Prepare a new attended maintenance window and revalidate the live target, original pilot-period expiry, full prerequisite inventory and exact image cache.",
+    "Capture a fresh consistent recovery point because the original service has resumed; do not rerun the completed seven-upload cleanup.",
+    "Apply and read back the exact Namespace approval and ConfigMap changes, then pass the real full prerequisite validator before dispatch.",
+    "Reuse the retained executor tag only after exact-SHA verification, and limit any renewed temporary deployment rule to that tag and window.",
+    "The original acceptance batch remains unsubmitted: maximum one model HTTP attempt, eighteen embedding attempts and zero emails. Commercial, capacity, browser recovery and whole-host RPO/RTO acceptance remain incomplete."
+  ],
+  "commercial_acceptance_passed": false,
+  "production_capacity_approved": false
+}

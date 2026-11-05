@@ -1,0 +1,369 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-10-01T22:56:22.566550+00:00",
+  "status": "transport_retransmissions_reproduced_not_resolved",
+  "release": "v0.1.45-rc.16",
+  "source_commit": "63de37c080cd83a02682ad1d2dd30c217a6aecd7",
+  "single_upload": {
+    "bytes": 678,
+    "format": "PDF",
+    "scope": "Separate diagnostic process using deployed ASGI routes; not serving-process or public latency",
+    "model_calls": 0,
+    "embedding_calls": 1,
+    "job_attempts": 1,
+    "terminal": "succeeded",
+    "http_requests": 4,
+    "http_timings": [
+      {
+        "method": "POST",
+        "route": "/api/upload-sessions",
+        "sql": [
+          {
+            "kind": "SELECT",
+            "table": "local_token_revocations",
+            "ms": 103.889
+          },
+          {
+            "kind": "SELECT",
+            "table": "memberships",
+            "ms": 49.296
+          },
+          {
+            "kind": "SELECT",
+            "table": "tenants",
+            "ms": 99.032
+          },
+          {
+            "kind": "SELECT",
+            "table": "memberships",
+            "ms": 304.872
+          },
+          {
+            "kind": "SELECT",
+            "table": "upload_sessions",
+            "ms": 326.628
+          },
+          {
+            "kind": "SELECT",
+            "table": "demo_workspaces",
+            "ms": 56.262
+          },
+          {
+            "kind": "UPDATE",
+            "table": "tenants",
+            "ms": 50.081
+          },
+          {
+            "kind": "INSERT",
+            "table": "upload_sessions",
+            "ms": 378.742
+          },
+          {
+            "kind": "SELECT",
+            "table": "upload_sessions",
+            "ms": 97.892
+          },
+          {
+            "kind": "UPDATE",
+            "table": "upload_sessions",
+            "ms": 49.196
+          }
+        ],
+        "storage": [
+          {
+            "operation": "create_upload",
+            "ms": 1567.154
+          }
+        ],
+        "stages": [],
+        "connection_holds_ms": [
+          204.053,
+          1277.644,
+          200.089
+        ],
+        "status": 201,
+        "elapsed_ms": 3420.785
+      },
+      {
+        "method": "POST",
+        "route": "/api/upload-sessions/:id/parts/1/presign",
+        "sql": [
+          {
+            "kind": "SELECT",
+            "table": "local_token_revocations",
+            "ms": 97.8
+          },
+          {
+            "kind": "SELECT",
+            "table": "memberships",
+            "ms": 49.162
+          },
+          {
+            "kind": "SELECT",
+            "table": "upload_sessions",
+            "ms": 98.006
+          },
+          {
+            "kind": "SELECT",
+            "table": "upload_parts",
+            "ms": 57.37
+          },
+          {
+            "kind": "INSERT",
+            "table": "upload_parts",
+            "ms": 307.054
+          }
+        ],
+        "storage": [
+          {
+            "operation": "presign_upload_part",
+            "ms": 2.22
+          }
+        ],
+        "stages": [],
+        "connection_holds_ms": [
+          197.109,
+          776.414
+        ],
+        "status": 200,
+        "elapsed_ms": 1076.999
+      },
+      {
+        "method": "PUT",
+        "route": "object-store",
+        "sql": [],
+        "storage": [],
+        "stages": [],
+        "connection_holds_ms": [],
+        "status": 200,
+        "elapsed_ms": 1591.486
+      },
+      {
+        "method": "POST",
+        "route": "/api/upload-sessions/:id/complete",
+        "sql": [
+          {
+            "kind": "SELECT",
+            "table": "local_token_revocations",
+            "ms": 97.82
+          },
+          {
+            "kind": "SELECT",
+            "table": "memberships",
+            "ms": 49.488
+          },
+          {
+            "kind": "SELECT",
+            "table": "upload_sessions",
+            "ms": 98.34
+          },
+          {
+            "kind": "SELECT",
+            "table": "upload_parts",
+            "ms": 49.48
+          },
+          {
+            "kind": "SELECT",
+            "table": "upload_sessions",
+            "ms": 98.149
+          },
+          {
+            "kind": "UPDATE",
+            "table": "upload_sessions",
+            "ms": 49.082
+          },
+          {
+            "kind": "SELECT",
+            "table": "tenants",
+            "ms": 347.519
+          },
+          {
+            "kind": "SELECT",
+            "table": "upload_sessions",
+            "ms": 49.274
+          },
+          {
+            "kind": "INSERT",
+            "table": "documents",
+            "ms": 311.729
+          },
+          {
+            "kind": "INSERT",
+            "table": "document_versions",
+            "ms": 67.435
+          },
+          {
+            "kind": "SELECT",
+            "table": "jobs",
+            "ms": 61.413
+          },
+          {
+            "kind": "INSERT",
+            "table": "jobs",
+            "ms": 62.761
+          },
+          {
+            "kind": "INSERT",
+            "table": "job_events",
+            "ms": 318.785
+          },
+          {
+            "kind": "INSERT",
+            "table": "audit_events",
+            "ms": 50.604
+          },
+          {
+            "kind": "INSERT",
+            "table": "outbox_events",
+            "ms": 327.256
+          },
+          {
+            "kind": "UPDATE",
+            "table": "tenants",
+            "ms": 49.15
+          },
+          {
+            "kind": "UPDATE",
+            "table": "upload_sessions",
+            "ms": 51.178
+          }
+        ],
+        "storage": [
+          {
+            "operation": "list_parts",
+            "ms": 560.314
+          },
+          {
+            "operation": "complete_upload",
+            "ms": 1494.066
+          },
+          {
+            "operation": "head_object",
+            "ms": 461.034
+          },
+          {
+            "operation": "get_range",
+            "ms": 702.742
+          }
+        ],
+        "stages": [
+          {
+            "operation": "_load_completion_state",
+            "ms": 249.16
+          },
+          {
+            "operation": "_claim_completion",
+            "ms": 505.09
+          },
+          {
+            "operation": "_validate_completed_object",
+            "ms": 702.876
+          },
+          {
+            "operation": "_finalize_completion",
+            "ms": 1814.376
+          }
+        ],
+        "connection_holds_ms": [
+          197.497,
+          199.813,
+          455.538,
+          1764.76
+        ],
+        "status": 200,
+        "elapsed_ms": 6036.455
+      }
+    ],
+    "cpu_throttled_usec": 0
+  },
+  "constant_query_samples": 162,
+  "findings": {
+    "pod_large_query": {
+      "samples": 3,
+      "min_ms": 93.311,
+      "max_ms": 379.473,
+      "retransmissions": 5
+    },
+    "host_large_query": {
+      "samples": 3,
+      "min_ms": 280.908,
+      "max_ms": 1144.086,
+      "retransmissions": 13
+    },
+    "distinct_pooler_addresses": 3,
+    "all_addresses_large_query": {
+      "samples": 12,
+      "min_ms": 253.299,
+      "max_ms": 1459.332,
+      "retransmissions": 64
+    },
+    "one_transient_good_port_window": {
+      "samples": 24,
+      "retransmissions": 0,
+      "proof_of_fix": false
+    },
+    "lower_mss_large_query": {
+      "samples": 4,
+      "min_ms": 373.081,
+      "max_ms": 1333.015,
+      "retransmissions": 29
+    },
+    "paced_large_query": {
+      "samples": 4,
+      "min_ms": 248.503,
+      "max_ms": 800.64,
+      "retransmissions": 20
+    },
+    "direct_endpoint": {
+      "resolved": true,
+      "paths": [
+        {
+          "family": "IPv6",
+          "tcp": {
+            "error_type": "OSError",
+            "errno": 101
+          }
+        }
+      ],
+      "credentials_sent": false,
+      "database_queries": 0
+    },
+    "local_egress_device": "eth0",
+    "local_qdisc_dropped_packets": 0,
+    "tcp_nodelay_enabled": true
+  },
+  "interpretation": [
+    "TCP retransmissions add material delay independently of business SQL execution.",
+    "Host and pod reproductions do not locate the physical loss or delayed-ack hop.",
+    "MSS, pacing, port and DNS-peer comparisons did not establish a reliable fix.",
+    "Do not attribute all adjacent release timing differences to source changes."
+  ],
+  "persistent_changes": {
+    "application_configuration": false,
+    "host_network": false,
+    "database_schema": false,
+    "old_budgets_or_failures": false
+  },
+  "cleanup": {
+    "ephemeral_tls_relays_closed_in_finally": true,
+    "remote_files_created_by_network_probes": 0,
+    "diagnostic_scripts_and_failures_retained_as_evidence": true
+  },
+  "diagnostic_harness_failures": {
+    "host_network_attempts_before_success": 3,
+    "host_failure_cause": "Namespace root/cwd invocation; corrected using verified nsenter interpreter command. No constant-query success claimed for failed attempts.",
+    "direct_endpoint_first_attempt": "Rejected stale historical project assertion before DNS/authentication; replacement derives same-project hostname from the approved live DSN."
+  },
+  "post_diagnosis": {
+    "database_idle": true,
+    "database_revision": "20260924_0031",
+    "public_readiness": "ready",
+    "home_status": 200
+  },
+  "production_capacity_approved": false,
+  "next_required_evidence": [
+    "Stable TCP baseline across fresh connections on an operationally reliable database route",
+    "Fresh bounded API workload with published latency and supplier ledgers",
+    "Two-round capacity and independent final acceptance"
+  ]
+}

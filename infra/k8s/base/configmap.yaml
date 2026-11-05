@@ -12,6 +12,14 @@ data:
   OBJECT_STORE__ARTIFACTS_BUCKET: artifacts
   OBJECT_STORE__SECURE: "false"
   OBJECT_STORE__MULTIPART_CHECKSUM_MODE: native_sha256
+  # Document analysis is deployed dark. Enable structured uploads first, then
+  # execution only for a reviewed route, budget and evaluation window.
+  UPLOAD__STRUCTURED_DOCUMENTS_ENABLED: "false"
+  ANALYSIS__EXECUTION_ENABLED: "false"
+  ANALYSIS__UNIT_DEADLINE_SECONDS: "120"
+  ANALYSIS__RUN_DEADLINE_SECONDS: "3600"
+  ANALYSIS__MAX_INPUT_BYTES: "65536"
+  MODEL__ROUTE_ID: default
   # Enable only after a reviewed collector or managed OTLP endpoint is provisioned.
   OTEL__ENABLED: "false"
   OTEL__EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318

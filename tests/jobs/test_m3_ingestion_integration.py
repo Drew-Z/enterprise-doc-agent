@@ -7,8 +7,8 @@ from uuid import UUID, uuid4
 
 import pytest
 from sqlalchemy import delete, func, select
+from tests.jobs.test_job_runtime_integration import _database_settings
 
-from enterprise_doc_core.config import DatabaseSettings
 from enterprise_doc_core.db import create_database_engine, create_session_factory
 from enterprise_doc_core.documents import HashEmbeddingProvider
 from enterprise_doc_core.documents.ingestion_service import (
@@ -155,7 +155,7 @@ async def _seed_uploaded_document(
 
 @pytest.mark.integration
 async def test_document_version_can_enqueue_a_new_embedding_generation_job() -> None:
-    engine = create_database_engine(DatabaseSettings())
+    engine = create_database_engine(_database_settings())
     session_factory = create_session_factory(engine)
     tenant_id, actor_id, version_id, _ = await _seed_uploaded_document(
         session_factory,
@@ -198,7 +198,7 @@ async def test_embedding_retry_resumes_without_downloading_the_object_again(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     content = b"# Delivery\nAcceptance requires a signed delivery certificate.\n"
-    engine = create_database_engine(DatabaseSettings())
+    engine = create_database_engine(_database_settings())
     session_factory = create_session_factory(engine)
     tenant_id, _, version_id, claim = await _seed_uploaded_document(
         session_factory,
@@ -282,7 +282,7 @@ async def test_embedding_retry_resumes_without_downloading_the_object_again(
 @pytest.mark.integration
 async def test_invalid_embedding_checkpoint_is_rejected_without_redownload() -> None:
     content = b"# Delivery\nAcceptance requires a signed delivery certificate.\n"
-    engine = create_database_engine(DatabaseSettings())
+    engine = create_database_engine(_database_settings())
     session_factory = create_session_factory(engine)
     tenant_id, _, version_id, claim = await _seed_uploaded_document(
         session_factory,
@@ -324,7 +324,7 @@ async def test_invalid_embedding_checkpoint_is_rejected_without_redownload() -> 
 @pytest.mark.integration
 async def test_document_ingestion_is_idempotent_and_hybrid_retrievable() -> None:
     content = b"# Payment Terms\nPayment is due within 30 days after acceptance.\n"
-    engine = create_database_engine(DatabaseSettings())
+    engine = create_database_engine(_database_settings())
     session_factory = create_session_factory(engine)
     tenant_id = uuid4()
     actor_id = uuid4()

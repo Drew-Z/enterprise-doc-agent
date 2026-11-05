@@ -143,3 +143,103 @@ async def test_worker_supervision_allows_normal_server_shutdown() -> None:
         await asyncio.Event().wait()
 
     await supervise_worker_tasks(server=stopped(), runtime=pending(), publisher=pending())
+
+
+async def test_worker_supervises_presales_without_blocking_publisher_or_shutdown() -> None:
+    published, cancelled = asyncio.Event(), asyncio.Event()
+
+    async def provider_wait() -> None:
+        try:
+            await asyncio.Event().wait()
+        finally:
+            cancelled.set()
+
+    async def publisher() -> None:
+        published.set()
+        await asyncio.Event().wait()
+
+    async def server() -> None:
+        await asyncio.wait_for(published.wait(), 1)
+
+    await supervise_worker_tasks(
+        server=server(), runtime=provider_wait(), publisher=publisher(), presales=provider_wait()
+    )
+    assert cancelled.is_set()
+
+
+async def test_resource_observer_is_supervised_without_blocking_server_shutdown():
+    active, drained = asyncio.Event(), asyncio.Event()
+
+    async def resource_observer():
+        active.set()
+        try:
+            await asyncio.Event().wait()
+        finally:
+            drained.set()
+
+    async def pending():
+        await asyncio.Event().wait()
+
+    async def server():
+        await asyncio.wait_for(active.wait(), 1)
+
+    await supervise_worker_tasks(
+        server=server(),
+        runtime=pending(),
+        publisher=pending(),
+        resource_observer=resource_observer(),
+    )
+    assert drained.is_set()
+
+
+async def test_resource_observer_unexpected_exit_is_visible_to_worker_supervision():
+    cancelled = asyncio.Event()
+
+    async def pending():
+        try:
+            await asyncio.Event().wait()
+        finally:
+            cancelled.set()
+
+    async def stopped():
+        return None
+
+    with pytest.raises(RuntimeError, match="resource_observer stopped unexpectedly"):
+        await supervise_worker_tasks(
+            server=pending(), runtime=pending(), publisher=pending(), resource_observer=stopped()
+        )
+    assert cancelled.is_set()
+
+
+async def test_worker_invalidates_probes_before_blocked_cleanup_finishes():
+    from enterprise_doc_worker.lifecycle import WorkerProgress
+
+    progress = WorkerProgress()
+    cancelling, release = asyncio.Event(), asyncio.Event()
+
+    async def stuck():
+        try:
+            await asyncio.Event().wait()
+        finally:
+            cancelling.set()
+            await release.wait()
+
+    async def failed():
+        raise RuntimeError("database pool exhausted")
+
+    task = asyncio.create_task(
+        supervise_worker_tasks(
+            server=stuck(),
+            runtime=stuck(),
+            publisher=failed(),
+            on_stopping=progress.stop,
+        )
+    )
+    try:
+        await asyncio.wait_for(cancelling.wait(), 1)
+        assert not progress.is_healthy()
+        assert not task.done()
+    finally:
+        release.set()
+        with pytest.raises(RuntimeError, match="publisher failed"):
+            await asyncio.wait_for(task, 1)

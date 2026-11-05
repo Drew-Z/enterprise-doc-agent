@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "status": "local_preparation_validated",
+  "deployed": false,
+  "external_acceptance": "not_completed",
+  "base_commit": "61f0dc559dc1be0423dcc93347d462a032227ea7",
+  "executed_script_sha256": "e7ec57c263379e6b06d59b034290ee64d7311cd03f09cb1b1927bc69705c638f",
+  "post_drill_change": "File reader variable renamed from stream to restore_stream for strict typing; no command or recovery behavior changed.",
+  "checks": {
+    "deployment_unit_tests": {
+      "passed": 446
+    },
+    "recovery_focused_tests": {
+      "passed": 12
+    },
+    "ruff": "passed",
+    "ruff_format_files": 576,
+    "mypy_files": 246
+  },
+  "real_local_restore": {
+    "revision": "20260924_0030",
+    "table_count": 52,
+    "content_hashes_match": true,
+    "quota_totals_preserved": true,
+    "unknown_costs_preserved": true,
+    "restored_replay_idempotent": true,
+    "owned_databases_removed": true,
+    "original_public_inventory_unchanged": true,
+    "dataset": "synthetic enterprise and ledger only"
+  },
+  "observed_failures": [
+    "Pre-fix tests reproduced replacement of an existing target and overwriting an output directory; restore errors left an owned database behind.",
+    "First synthetic runner failed with Windows ProactorEventLoop before seeding; it removed its source database and verified the original public inventory unchanged. SelectorEventLoop corrected the runner.",
+    "Strict typing detected reused reader/writer variable names; reader was renamed before final focused verification."
+  ],
+  "open_items": [
+    "Notification service/account and actual delivery receipts",
+    "Real DB plus object-store recovery",
+    "Independent failure domain and current RPO/RTO",
+    "Current 4C4G business capacity",
+    "v7 semantic quality and invited customer acceptance"
+  ],
+  "notifications_sent": 0,
+  "real_supplier_calls": 0,
+  "standby_server_configured": false
+}

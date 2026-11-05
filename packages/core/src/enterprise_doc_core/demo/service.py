@@ -9,6 +9,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from enterprise_doc_core.billing.models import TenantEntitlement
+from enterprise_doc_core.billing.product_models import ProductQuota
 from enterprise_doc_core.browser_sessions.contracts import session_digest
 from enterprise_doc_core.browser_sessions.errors import BrowserContextStale, BrowserSessionInvalid
 from enterprise_doc_core.context import PrincipalContext
@@ -92,17 +93,35 @@ class DemoService:
             session.add(User(id=actor_id, email=f"guest-{actor_id.hex}@demo.invalid"))
             await session.flush()
             session.add(Membership(tenant_id=tenant_id, user_id=actor_id, role="owner"))
-            session.add(
-                TenantEntitlement(
-                    tenant_id=tenant_id,
-                    plan_code="public-demo",
-                    version=1,
-                    period_start=now,
-                    period_end=expiry,
-                    provider_request_limit=ATTEMPT_LIMIT,
-                    created_at=now,
-                    updated_at=now,
-                )
+            entitlement = TenantEntitlement(
+                tenant_id=tenant_id,
+                plan_code="public-demo",
+                version=1,
+                period_start=now,
+                period_end=expiry,
+                provider_request_limit=ATTEMPT_LIMIT,
+                created_at=now,
+                updated_at=now,
+            )
+            session.add(entitlement)
+            await session.flush()
+            # Demo capabilities already exclude general Agent runs. Document
+            # processing has its own finite allowance, separate from stored bytes.
+            session.add_all(
+                [
+                    ProductQuota(
+                        tenant_id=tenant_id,
+                        entitlement_id=entitlement.id,
+                        metric="agent_task",
+                        unit_limit=0,
+                    ),
+                    ProductQuota(
+                        tenant_id=tenant_id,
+                        entitlement_id=entitlement.id,
+                        metric="document_bytes",
+                        unit_limit=STORAGE_LIMIT,
+                    ),
+                ]
             )
             workspace = DemoWorkspace(
                 id=workspace_id,

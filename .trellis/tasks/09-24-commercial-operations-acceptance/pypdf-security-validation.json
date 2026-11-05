@@ -1,0 +1,38 @@
+{
+  "at": "2026-10-01T20:12:48.307462+00:00",
+  "status": "locally_verified_ci_pending_not_deployed",
+  "base_commit": "35eeed27d151b8f31f0b66a6bbec6368143fe4c2",
+  "failed_container_run": 36917707629,
+  "affected_components": [
+    "api",
+    "worker",
+    "consumer"
+  ],
+  "findings": [
+    "CVE-2026-102993",
+    "CVE-2026-102994",
+    "CVE-2026-102995",
+    "CVE-2026-102996",
+    "CVE-2026-102997",
+    "CVE-2026-102998",
+    "CVE-2026-102999",
+    "CVE-2026-103000"
+  ],
+  "dependency_change": {
+    "name": "pypdf",
+    "before": "6.14.2",
+    "after": "6.19.0",
+    "other_packages_changed": 0
+  },
+  "verification": {
+    "nonintegration_passed": 2128,
+    "nonintegration_deselected": 476,
+    "ruff": "passed",
+    "format_files": 622,
+    "mypy_linux_source_files": 251,
+    "frozen_sync": "passed",
+    "lock_check": "passed",
+    "subtests_passed": 23
+  },
+  "scope": "No scanner suppression, threshold, application contract or database migration changes. Online remains rc.13; admission and capacity targets remain unverified for this candidate."
+}

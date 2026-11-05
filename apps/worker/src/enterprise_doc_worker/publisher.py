@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Callable
 from time import perf_counter
 from typing import Protocol
 from uuid import UUID
@@ -36,6 +37,7 @@ class OutboxPublisher:
         poll_interval_seconds: float = 1.0,
         cycle_timeout_seconds: float = 30.0,
         metrics: MetricsRuntime | None = None,
+        on_progress: Callable[[], None] | None = None,
     ) -> None:
         if batch_size <= 0 or poll_interval_seconds <= 0:
             raise ValueError("publisher batch size and poll interval must be positive")
@@ -48,6 +50,7 @@ class OutboxPublisher:
         self.poll_interval_seconds = poll_interval_seconds
         self.cycle_timeout_seconds = cycle_timeout_seconds
         self.metrics = metrics
+        self.on_progress = on_progress
 
     async def publish_once(self) -> int:
         claimed = await self.store.claim(
@@ -95,6 +98,8 @@ class OutboxPublisher:
                     "outbox_poll_failed",
                     extra={"event_data": {"error_class": type(error).__name__}},
                 )
+            if self.on_progress is not None:
+                self.on_progress()
             try:
                 await asyncio.wait_for(stop.wait(), timeout=self.poll_interval_seconds)
             except TimeoutError:

@@ -1,0 +1,194 @@
+{
+  "schema_version": "analysis.public-pack.v2",
+  "id": "holdout-football-01",
+  "split": "holdout",
+  "frozen_at": "2026-10-12T20:43:55.8944483Z",
+  "independent_customer": false,
+  "independently_scored": false,
+  "quality_score": null,
+  "objects": [
+    {
+      "id": "nike_usmnt",
+      "name": "Nike USMNT 2026 Stadium Home"
+    },
+    {
+      "id": "adidas_orlando",
+      "name": "adidas Orlando City SC 2026 Archive Authentic"
+    },
+    {
+      "id": "puma_mancity",
+      "name": "PUMA Manchester City 25/26 Home Replica"
+    }
+  ],
+  "fields": [
+    {
+      "id": "product",
+      "name": "产品与版本",
+      "question": "商品、赛季、球队及球迷版或球员版身份是什么？",
+      "value_type": "text"
+    },
+    {
+      "id": "listed_price",
+      "name": "页面价格",
+      "question": "页面明确列出的价格、币种、原价或促销价是什么？",
+      "value_type": "text"
+    },
+    {
+      "id": "material",
+      "name": "材质",
+      "question": "正文明确写出的材质与技术是什么？",
+      "value_type": "text"
+    },
+    {
+      "id": "sizes",
+      "name": "尺码",
+      "question": "页面提供哪些尺码或尺码说明？",
+      "value_type": "text"
+    },
+    {
+      "id": "personalization",
+      "name": "定制",
+      "question": "是否可定制？定制对交付或退货有什么影响？",
+      "value_type": "text"
+    },
+    {
+      "id": "delivery",
+      "name": "配送时间",
+      "question": "配送时点、起算条件和适用地区是否明确？",
+      "value_type": "text"
+    },
+    {
+      "id": "shipping_cost",
+      "name": "配送费用",
+      "question": "配送费用或免邮条件是什么？",
+      "value_type": "text"
+    },
+    {
+      "id": "return_window",
+      "name": "退货期限",
+      "question": "可退货期限从什么事件起算？",
+      "value_type": "text"
+    },
+    {
+      "id": "return_conditions",
+      "name": "退货条件",
+      "question": "退货状态、渠道和费用条件是什么？",
+      "value_type": "text"
+    },
+    {
+      "id": "exclusions",
+      "name": "排除与待确认",
+      "question": "促销、定制、地区、库存或其他限制与缺口是什么？",
+      "value_type": "text"
+    }
+  ],
+  "sources": [
+    {
+      "file": "upload/nike-usmnt-product.txt",
+      "object_id": "nike_usmnt",
+      "url": "https://www.nike.com/t/usmnt-2026-stadium-home-mens-nike-dri-fit-soccer-replica-jersey-udZjfuxa",
+      "fetched_at": "2026-10-12T20:33:00.7591304Z",
+      "provider": "tavily",
+      "raw_evidence": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\fallback-model-evidence\\document-analysis-a5-20261013\\analysis-a5-20261013-nike-usmnt-product.json",
+      "raw_sha256": "ea6223c7c5d1c7e5b858aee0912b8712519c81413067ae9f4b35346686ae9dba",
+      "sha256": "db3bf291c9e285277ad02ec55d3dc7f1dcb2010bda8f28a28a2ab712199394c1",
+      "bytes": 9131,
+      "source_type": "official_web_extraction",
+      "coverage": "unknown",
+      "license": "Publicly readable; no redistribution license established. Local evaluation and invited trial only.",
+      "command": "smart-search fetch 'https://www.nike.com/t/usmnt-2026-stadium-home-mens-nike-dri-fit-soccer-replica-jersey-udZjfuxa' --format json"
+    },
+    {
+      "file": "upload/nike-returns.txt",
+      "object_id": "nike_usmnt",
+      "url": "https://www.nike.com/help/a/returns-policy",
+      "fetched_at": "2026-10-12T20:33:02.4255587Z",
+      "provider": "tavily",
+      "raw_evidence": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\fallback-model-evidence\\document-analysis-a5-20261013\\analysis-a5-20261013-nike-returns.json",
+      "raw_sha256": "a3476ea50b7d7cb5f3932a5e2893edb7e07e77c1670f0e11ac37cbccd5d161b4",
+      "sha256": "146019e3762a04eac4d7625dc389e01b182462f98af8a4bf2a8d56bafcdc4317",
+      "bytes": 6533,
+      "source_type": "official_web_extraction",
+      "coverage": "unknown",
+      "license": "Publicly readable; no redistribution license established. Local evaluation and invited trial only.",
+      "command": "smart-search fetch 'https://www.nike.com/help/a/returns-policy' --format json"
+    },
+    {
+      "file": "upload/adidas-orlando-product.txt",
+      "object_id": "adidas_orlando",
+      "url": "https://www.adidas.com/us/orlando-city-sc-2026-archive-authentic-jersey/JY5885.html",
+      "fetched_at": "2026-10-12T20:33:17.8326112Z",
+      "provider": "firecrawl",
+      "raw_evidence": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\fallback-model-evidence\\document-analysis-a5-20261013\\analysis-a5-20261013-adidas-orlando-product.json",
+      "raw_sha256": "4cd4f6ba650962848237094a8e425d183477b0afd95cb4bc00eae8997ecfa530",
+      "sha256": "b4ed5bbab68330fa5abd3affc268ba6462021d731b46dd8fe4c2ddc2acae4840",
+      "bytes": 28529,
+      "source_type": "official_web_extraction",
+      "coverage": "unknown",
+      "license": "Publicly readable; no redistribution license established. Local evaluation and invited trial only.",
+      "command": "smart-search fetch 'https://www.adidas.com/us/orlando-city-sc-2026-archive-authentic-jersey/JY5885.html' --format json"
+    },
+    {
+      "file": "upload/adidas-returns.txt",
+      "object_id": "adidas_orlando",
+      "url": "https://www.adidas.com/us/help/us-returns-refunds/what-is-your-return-policy",
+      "fetched_at": "2026-10-12T20:33:18.4307332Z",
+      "provider": "firecrawl",
+      "raw_evidence": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\fallback-model-evidence\\document-analysis-a5-20261013\\analysis-a5-20261013-adidas-returns.json",
+      "raw_sha256": "e2658cadbfc5c1208b9b85aef9e3bb13b9e7357bbd85c92bfc2b9eebc99b3e93",
+      "sha256": "b676f07a97dcef4fe1d61825a7d7c637970f31333c209e1da19d780fd10a7838",
+      "bytes": 10484,
+      "source_type": "official_web_extraction",
+      "coverage": "unknown",
+      "license": "Publicly readable; no redistribution license established. Local evaluation and invited trial only.",
+      "command": "smart-search fetch 'https://www.adidas.com/us/help/us-returns-refunds/what-is-your-return-policy' --format json"
+    },
+    {
+      "file": "upload/puma-mancity-product.txt",
+      "object_id": "puma_mancity",
+      "url": "https://us.puma.com/us/en/pd/manchester-city-25-26-home-replica-mens-soccer-jersey/780338",
+      "fetched_at": "2026-10-12T20:33:04.4788955Z",
+      "provider": "tavily",
+      "raw_evidence": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\fallback-model-evidence\\document-analysis-a5-20261013\\analysis-a5-20261013-puma-mancity-product.json",
+      "raw_sha256": "fa563ae3bf5ce0b7b00f74f821a976f4e7079127fcc6143b5700e2ac5a4504d0",
+      "sha256": "d2e6f3c77b9936cce146ab15358e11762210bfde23fe6bdb248a93b0da4050cb",
+      "bytes": 3595,
+      "source_type": "official_web_extraction",
+      "coverage": "unknown",
+      "license": "Publicly readable; no redistribution license established. Local evaluation and invited trial only.",
+      "command": "smart-search fetch 'https://us.puma.com/us/en/pd/manchester-city-25-26-home-replica-mens-soccer-jersey/780338' --format json"
+    },
+    {
+      "file": "upload/puma-returns.txt",
+      "object_id": "puma_mancity",
+      "url": "https://help.us.puma.com/hc/en-us/articles/38820600497563-Returns-Exchanges",
+      "fetched_at": "2026-10-12T20:36:01.8723958Z",
+      "provider": "tavily",
+      "raw_evidence": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\fallback-model-evidence\\document-analysis-a5-20261013\\analysis-a5-20261013-puma-returns-exchanges.json",
+      "raw_sha256": "22338f7495538663f5babbadd297043083360579643696337531fa59a216f1e6",
+      "sha256": "6e2cd4000fb5b52690c8760ae5985207485bb2b032c0dec4af826fc0220704a0",
+      "bytes": 5928,
+      "source_type": "official_web_extraction",
+      "coverage": "unknown",
+      "license": "Publicly readable; no redistribution license established. Local evaluation and invited trial only.",
+      "command": "smart-search fetch 'https://help.us.puma.com/hc/en-us/articles/38820600497563-Returns-Exchanges' --format json"
+    }
+  ],
+  "common_requirements": {
+    "file": "upload/requirements.synthetic.txt",
+    "source_type": "synthetic",
+    "sha256": "ad8ce3d006f27e42efde8cfa6280c024e27f638599af67ba58ef29032148c120",
+    "bytes": 945
+  },
+  "reference": "reference/reference.json",
+  "upload_root": "upload/",
+  "usage_boundary": "Local evaluation and invited trial only; public pages are snapshots, not vendor quotations.",
+  "known_gaps": [
+    "This is a cross-domain holdout for generalization, not a football-specific product direction.",
+    "Retail US pages are not a bulk teamwear quote and do not establish delivery to Chongqing.",
+    "The Nike and PUMA fetches do not reliably expose a current listed price; the expected result must preserve that gap.",
+    "Product versions differ (replica/authentic and season), so price comparison requires visible qualifications.",
+    "No independent annotator or participant has reviewed the 30 rows; quality_score remains null.",
+    "A broad-search summary claimed a 60-day PUMA return window, while the fetched official page states 30 days; only the fetched page is admissible evidence."
+  ]
+}

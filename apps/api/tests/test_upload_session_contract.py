@@ -45,6 +45,7 @@ class StubUploadSessionService:
             raise self.error
         return SimpleNamespace(
             session_id=self.session_id,
+            transport="multipart",
             status="active",
             filename="contract.pdf",
             extension=".pdf",

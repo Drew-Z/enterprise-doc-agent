@@ -31,6 +31,7 @@ from enterprise_doc_core.object_store import (
     Boto3MultipartObjectStore,
     CompletedMultipartUpload,
     MultipartUploadNotFound,
+    ObjectContent,
     ObjectHead,
     UploadedPart,
 )
@@ -100,6 +101,7 @@ class CompletionObjectStore:
         self.complete_calls = 0
         self.list_calls = 0
         self.head_calls = 0
+        self.read_calls = 0
         self.delete_calls = 0
         self.transport_checksum = "transport-checksum"
         self.object_etag = '"completed-etag"'
@@ -107,6 +109,7 @@ class CompletionObjectStore:
         self.head_etag = self.object_etag
         self.head_checksum: str | None = self.transport_checksum
         self.readback_content = seeded.content
+        self.range_requests: list[tuple[int, int]] = []
         self.completed_parts: tuple[UploadedPart, ...] | None = None
 
     async def list_parts(self, **_: object) -> tuple[UploadedPart, ...]:
@@ -131,6 +134,17 @@ class CompletionObjectStore:
 
     async def head_object(self, **_: object) -> ObjectHead:
         self.head_calls += 1
+        return self._head()
+
+    async def read_object(self, *, max_bytes: int, **_: object) -> ObjectContent:
+        self.read_calls += 1
+        head = self._head()
+        return ObjectContent(
+            head=head,
+            content=self.readback_content if head.size_bytes <= max_bytes else None,
+        )
+
+    def _head(self) -> ObjectHead:
         if not self.object_exists:
             raise AssertionError("head called before object completion")
         return ObjectHead(
@@ -148,6 +162,7 @@ class CompletionObjectStore:
         end_inclusive: int,
         **_: object,
     ) -> bytes:
+        self.range_requests.append((start, end_inclusive))
         return self.readback_content[start : end_inclusive + 1]
 
     async def delete_object(self, **_: object) -> None:
@@ -168,12 +183,14 @@ class CrashBeforeFinalizationService(UploadSessionService):
 
 
 class CommitAcknowledgementLostTransaction:
-    def __init__(self, inner: Any, *, fail_after_commit: bool) -> None:
+    def __init__(self, inner: Any, *, owner: CommitAcknowledgementLostSessionFactory) -> None:
         self.inner = inner
-        self.fail_after_commit = fail_after_commit
+        self.owner = owner
+        self.session: Any = None
 
     async def __aenter__(self) -> Any:
-        return await self.inner.__aenter__()
+        self.session = await self.inner.__aenter__()
+        return self.session
 
     async def __aexit__(
         self,
@@ -181,26 +198,32 @@ class CommitAcknowledgementLostTransaction:
         exc_value: BaseException | None,
         traceback: TracebackType | None,
     ) -> bool | None:
+        fail_after_commit = False
+        if exc_type is None:
+            connection = await self.session.connection()
+            readonly = connection.sync_connection.get_execution_options().get("postgresql_readonly")
+            if readonly is not True:
+                self.owner.write_commits += 1
+                fail_after_commit = self.owner.write_commits == self.owner.fail_on_write_commit
         result = await self.inner.__aexit__(exc_type, exc_value, traceback)
-        if self.fail_after_commit and exc_type is None:
+        if fail_after_commit:
             raise ConnectionError("finalization commit acknowledgement lost")
         return result
 
 
 class CommitAcknowledgementLostSessionFactory:
-    def __init__(self, inner: Any, *, fail_on_begin: int) -> None:
+    def __init__(self, inner: Any, *, fail_on_write_commit: int) -> None:
         self.inner = inner
-        self.fail_on_begin = fail_on_begin
-        self.begin_calls = 0
+        self.fail_on_write_commit = fail_on_write_commit
+        self.write_commits = 0
 
     def __call__(self) -> Any:
         return self.inner()
 
     def begin(self) -> CommitAcknowledgementLostTransaction:
-        self.begin_calls += 1
         return CommitAcknowledgementLostTransaction(
             self.inner.begin(),
-            fail_after_commit=self.begin_calls == self.fail_on_begin,
+            owner=self,
         )
 
 
@@ -235,13 +258,13 @@ def _completion_request(parts: tuple[UploadedPart, ...]) -> CompleteUploadSessio
     )
 
 
-async def _seed_upload(session_factory, *, content: bytes) -> SeededUpload:
+async def _seed_upload(session_factory, *, content: bytes, part_size: int = 5) -> SeededUpload:
     principal = _principal(str(uuid4()))
     session_id = uuid4()
     pending_document_id = uuid4()
     pending_version_id = uuid4()
-    first = content[:5]
-    second = content[5:]
+    first = content[:part_size]
+    second = content[part_size:]
     parts = (
         UploadedPart(1, len(first), '"etag-one"', _checksum(first)),
         UploadedPart(2, len(second), '"etag-two"', _checksum(second)),
@@ -252,7 +275,7 @@ async def _seed_upload(session_factory, *, content: bytes) -> SeededUpload:
                 id=principal.tenant_id,
                 name="Completion fixture",
                 slug=f"completion-{principal.tenant_id}",
-                quota_bytes=1024,
+                quota_bytes=max(1024, len(content)),
                 reserved_storage_bytes=len(content),
             )
         )
@@ -330,11 +353,21 @@ async def _cleanup_seeded(session_factory, seeded: SeededUpload) -> None:
 
 
 @pytest.mark.integration
-async def test_real_minio_concurrent_complete_creates_one_uploaded_version() -> None:
+@pytest.mark.parametrize("checksum_mode", list(ObjectStoreChecksumMode))
+async def test_real_minio_concurrent_complete_creates_one_uploaded_version(
+    checksum_mode: ObjectStoreChecksumMode,
+) -> None:
     settings = ApiSettings(
         _env_file=None,
         upload={"preferred_part_size_bytes": 5 * MIB},
         embedding={"ingestion_max_attempts": 5},
+    )
+    settings = settings.model_copy(
+        update={
+            "object_store": settings.object_store.model_copy(
+                update={"multipart_checksum_mode": checksum_mode}
+            )
+        }
     )
     engine = create_database_engine(settings.database)
     session_factory = create_session_factory(engine)
@@ -353,6 +386,7 @@ async def test_real_minio_concurrent_complete_creates_one_uploaded_version() -> 
         documents_bucket=settings.object_store.documents_bucket,
         settings=settings.upload,
         ingestion_max_attempts=settings.embedding.ingestion_max_attempts,
+        checksum_mode=checksum_mode,
     )
     content = b"%PDF-1.7\n" + b"slice-six" * 1024
     session_id: UUID | None = None
@@ -426,6 +460,18 @@ async def test_real_minio_concurrent_complete_creates_one_uploaded_version() -> 
             )
             assert resumed.status_code == 200
             complete_payload = {"parts": resumed.json()["uploadedParts"]}
+            if checksum_mode is ObjectStoreChecksumMode.READBACK_SHA256:
+                assert complete_payload["parts"] == []
+                complete_payload = {
+                    "parts": [
+                        {
+                            "partNumber": 1,
+                            "sizeBytes": len(content),
+                            "etag": uploaded.headers["etag"],
+                            "checksumSha256": _checksum(content),
+                        }
+                    ]
+                }
 
             hidden = await api.post(
                 f"/api/upload-sessions/{session_id}/complete",
@@ -512,8 +558,12 @@ async def test_real_minio_concurrent_complete_creates_one_uploaded_version() -> 
             assert version.document_id == upload_session.pending_document_id
             assert version.status == DocumentVersionStatus.UPLOADED.value
             assert version.detected_media_type == "application/pdf"
-            assert version.content_sha256_verified_at is None
-            assert version.transport_checksum_sha256 is not None
+            assert (version.content_sha256_verified_at is not None) == (
+                checksum_mode is ObjectStoreChecksumMode.READBACK_SHA256
+            )
+            assert (version.transport_checksum_sha256 is not None) == (
+                checksum_mode is ObjectStoreChecksumMode.NATIVE_SHA256
+            )
             assert document_count == 1
             assert version_count == 1
     finally:
@@ -669,11 +719,16 @@ async def test_completion_validates_ordered_parts_before_completing() -> None:
 
 
 @pytest.mark.integration
-async def test_readback_completion_verifies_parts_and_persists_content_hash_timestamp() -> None:
+@pytest.mark.parametrize("large", [False, True])
+async def test_readback_completion_verifies_parts_and_persists_content_hash_timestamp(
+    large: bool,
+) -> None:
     settings = ApiSettings(_env_file=None)
     engine = create_database_engine(settings.database)
     session_factory = create_session_factory(engine)
-    seeded = await _seed_upload(session_factory, content=b"%PDF-1.7")
+    content = b"%PDF-" + b"x" * MIB if large else b"%PDF-1.7"
+    part_size = (len(content) + 1) // 2 if large else 5
+    seeded = await _seed_upload(session_factory, content=content, part_size=part_size)
     store = CompletionObjectStore(seeded)
     store.listed_parts = tuple(
         UploadedPart(part.part_number, part.size_bytes, part.etag, None) for part in seeded.parts
@@ -699,12 +754,73 @@ async def test_readback_completion_verifies_parts_and_persists_content_hash_time
         assert store.completed_parts is not None
         assert all(part.checksum_sha256_b64 is None for part in store.completed_parts)
         assert store.head_checksum is None
+        expected_ranges = []
+        if large:
+            expected_ranges = [(0, part_size - 1), (part_size, len(content) - 1), (0, 4)]
+        assert store.range_requests == expected_ranges
+        assert store.head_calls == int(large)
+        assert store.read_calls == int(not large)
+        replay = await service.complete(
+            principal=seeded.principal.context,
+            session_id=seeded.session_id,
+            request=_completion_request(seeded.parts),
+        )
+        assert replay.replayed is True
+        assert replay.version_id == result.version_id
+        assert store.range_requests == expected_ranges
+        assert store.head_calls == int(large)
+        assert store.read_calls == int(not large)
         async with session_factory() as database:
             version = await database.get(DocumentVersion, seeded.pending_version_id)
             assert version is not None
             assert version.content_sha256_verified_at is not None
             assert version.transport_checksum_sha256 is None
             assert version.status == DocumentVersionStatus.UPLOADED.value
+            tenant = await database.get(Tenant, seeded.principal.tenant_id)
+            assert tenant.used_storage_bytes == len(content)
+            assert tenant.reserved_storage_bytes == 0
+    finally:
+        await _cleanup_seeded(session_factory, seeded)
+        await engine.dispose()
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("fault", ["foreign_metadata", "oversize", "undersize"])
+async def test_small_readback_completion_rejects_wrong_identity_or_size(fault: str) -> None:
+    settings = ApiSettings(_env_file=None)
+    engine = create_database_engine(settings.database)
+    session_factory = create_session_factory(engine)
+    seeded = await _seed_upload(session_factory, content=b"%PDF-1.7")
+    store = CompletionObjectStore(seeded)
+    if fault == "foreign_metadata":
+        store.metadata["version-id"] = str(uuid4())
+    else:
+        store.head_size_bytes += 1 if fault == "oversize" else -1
+    service = UploadSessionService(
+        session_factory=session_factory,
+        object_store=store,
+        documents_bucket=settings.object_store.documents_bucket,
+        settings=settings.upload,
+        checksum_mode=ObjectStoreChecksumMode.READBACK_SHA256,
+    )
+    try:
+        with pytest.raises(UploadCompletionVerificationFailed):
+            await service.complete(
+                principal=seeded.principal.context,
+                session_id=seeded.session_id,
+                request=_completion_request(seeded.parts),
+            )
+        assert store.read_calls == 1 and store.head_calls == 0 and not store.range_requests
+        assert store.delete_calls == int(fault != "foreign_metadata")
+        async with session_factory() as database:
+            session = await database.get(UploadSession, seeded.session_id)
+            tenant = await database.get(Tenant, seeded.principal.tenant_id)
+            assert session is not None and session.status == UploadSessionStatus.FAILED.value
+            assert session.reserved_bytes == 0 and session.document_version_id is None
+            assert (
+                tenant is not None
+                and tenant.used_storage_bytes == tenant.reserved_storage_bytes == 0
+            )
     finally:
         await _cleanup_seeded(session_factory, seeded)
         await engine.dispose()
@@ -936,7 +1052,12 @@ async def test_invalid_completed_head_releases_quota_and_deletes_only_owned_obje
 
 
 @pytest.mark.integration
-async def test_completion_recovers_after_object_completion_before_database_finalization() -> None:
+@pytest.mark.parametrize("checksum_mode", list(ObjectStoreChecksumMode))
+@pytest.mark.parametrize("recovery_path", ["complete", "stale_cleanup"])
+async def test_completion_recovers_after_object_completion_before_database_finalization(
+    checksum_mode: ObjectStoreChecksumMode,
+    recovery_path: str,
+) -> None:
     settings = ApiSettings(_env_file=None)
     engine = create_database_engine(settings.database)
     session_factory = create_session_factory(engine)
@@ -947,16 +1068,25 @@ async def test_completion_recovers_after_object_completion_before_database_final
         object_store=store,
         documents_bucket=settings.object_store.documents_bucket,
         settings=settings.upload,
+        checksum_mode=checksum_mode,
     )
     recovery_service = UploadSessionService(
         session_factory=session_factory,
         object_store=store,
         documents_bucket=settings.object_store.documents_bucket,
         settings=settings.upload,
+        checksum_mode=checksum_mode,
     )
     request = _completion_request(seeded.parts)
 
     try:
+        if (
+            recovery_path == "stale_cleanup"
+            and checksum_mode is ObjectStoreChecksumMode.NATIVE_SHA256
+        ):
+            await recovery_service.get(
+                principal=seeded.principal.context, session_id=seeded.session_id
+            )
         with pytest.raises(ConnectionError, match="post-object completion"):
             await crashing_service.complete(
                 principal=seeded.principal.context,
@@ -969,11 +1099,28 @@ async def test_completion_recovers_after_object_completion_before_database_final
             assert upload_session.status == UploadSessionStatus.COMPLETING.value
             assert upload_session.document_version_id is None
 
-        recovered = await recovery_service.complete(
-            principal=seeded.principal.context,
-            session_id=seeded.session_id,
-            request=request,
-        )
+        if recovery_path == "stale_cleanup":
+            claim = uuid4()
+            async with session_factory.begin() as database:
+                await database.execute(
+                    update(UploadSession)
+                    .where(UploadSession.id == seeded.session_id)
+                    .values(cleanup_claim_token=claim, cleanup_claimed_at=datetime.now(UTC))
+                )
+            reconciled = await recovery_service.reconcile_stale_completion(
+                tenant_id=seeded.principal.tenant_id,
+                session_id=seeded.session_id,
+                cleanup_claim_token=claim,
+                stale_before=datetime.now(UTC),
+            )
+            recovered = reconciled.completion
+            assert recovered is not None
+        else:
+            recovered = await recovery_service.complete(
+                principal=seeded.principal.context,
+                session_id=seeded.session_id,
+                request=request,
+            )
         replayed = await recovery_service.complete(
             principal=seeded.principal.context,
             session_id=seeded.session_id,
@@ -1068,7 +1215,7 @@ async def test_completion_recovers_finalization_commit_acknowledgement_loss() ->
     store = CompletionObjectStore(seeded)
     faulting_factory = CommitAcknowledgementLostSessionFactory(
         session_factory,
-        fail_on_begin=2,
+        fail_on_write_commit=2,
     )
     service = UploadSessionService(
         session_factory=faulting_factory,
@@ -1167,7 +1314,7 @@ async def test_invalid_completion_deletes_owned_object_after_failure_commit_ack_
     store = CompletionObjectStore(seeded)
     faulting_factory = CommitAcknowledgementLostSessionFactory(
         session_factory,
-        fail_on_begin=2,
+        fail_on_write_commit=2,
     )
     service = UploadSessionService(
         session_factory=faulting_factory,
@@ -1185,7 +1332,7 @@ async def test_invalid_completion_deletes_owned_object_after_failure_commit_ack_
             )
 
         assert exc_info.value.code == "document_pdf_signature_invalid"
-        assert faulting_factory.begin_calls == 2
+        assert faulting_factory.write_commits == 2
         assert store.delete_calls == 1
         assert store.object_exists is False
         async with session_factory() as database:

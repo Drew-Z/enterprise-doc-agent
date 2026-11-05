@@ -1,0 +1,188 @@
+{
+  "schema_version": 1,
+  "at": "2026-09-29T21:41:36.886959+00:00",
+  "status": "deployed_and_replay_verified",
+  "release": "v0.1.45-rc.7",
+  "source_commit": "587d72713711ed278a166f083e1467f4e7efbb32",
+  "release_run": 36625659126,
+  "quality_run": 36625396417,
+  "container_run": 36625396414,
+  "release_manifest_sha256": "42dc1fa04792e97f1f8f70022e9eff513a58e619b3dd1f38dbe27d48d2b86b3b",
+  "release_evidence_files": 56,
+  "images": {
+    "api": "ghcr.io/drew-z/enterprise-doc-api@sha256:1bd29a0ab8ec4427a19099e8f72245c4a7570c23145350b1a0db070d927a7c7e",
+    "consumer": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:c62be34aa8cfe5a44e1fd15fc3073829d9bd8062112f889f7f5769952bdb48d9",
+    "web": "ghcr.io/drew-z/enterprise-doc-web@sha256:101b0019f2f1da6924bcbe0a546db5176f1726a7aa0e083a4928ce9fd54fd7ad",
+    "worker": "ghcr.io/drew-z/enterprise-doc-worker@sha256:1df49907734385623bbce20c6a8901795a2002bff1705c76b14814afa962fa04"
+  },
+  "rollback_images": {
+    "api": "ghcr.io/drew-z/enterprise-doc-api@sha256:192f8b5e198da6232c7762603f10f98d8e9bd263ff644ffa015839dfb10a8626",
+    "consumer": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:4ea4ba6355a90a931482797e7ac335e0cc3cde5ef689be7effb3a8ffd10cc77e",
+    "web": "ghcr.io/drew-z/enterprise-doc-web@sha256:74e0619ff5b4d3bfd9de7a9c577d9d88f33ec0d35616d69daf6edc6de8733619",
+    "worker": "ghcr.io/drew-z/enterprise-doc-worker@sha256:ae9aace76fda33cb9f0154aca9544dd04c71fd09a67766cf9a917572c1a22f9b"
+  },
+  "database_revision": "20260924_0031",
+  "switch_seconds": 94.937,
+  "five_services_ready": true,
+  "config_and_credentials_unchanged": true,
+  "rollback_variables_verified": 4,
+  "remote_files_removed": 11,
+  "local_transport_files_removed": 30,
+  "replay_scope": "Existing immutable completed row; serving API process through pod loopback; not new admission p95 or public browser timing",
+  "replay": {
+    "before-v2": {
+      "requests": 10,
+      "samples": [
+        {
+          "index": 0,
+          "mode": "single",
+          "elapsed_ms": 1150.966,
+          "status": 200
+        },
+        {
+          "index": 0,
+          "mode": "batch",
+          "elapsed_ms": 1820.477,
+          "status": 200
+        },
+        {
+          "index": 1,
+          "mode": "batch",
+          "elapsed_ms": 1665.605,
+          "status": 200
+        },
+        {
+          "index": 1,
+          "mode": "single",
+          "elapsed_ms": 1140.141,
+          "status": 200
+        },
+        {
+          "index": 2,
+          "mode": "single",
+          "elapsed_ms": 1140.023,
+          "status": 200
+        },
+        {
+          "index": 2,
+          "mode": "batch",
+          "elapsed_ms": 1668.47,
+          "status": 200
+        },
+        {
+          "index": 3,
+          "mode": "batch",
+          "elapsed_ms": 1671.076,
+          "status": 200
+        },
+        {
+          "index": 3,
+          "mode": "single",
+          "elapsed_ms": 1145.022,
+          "status": 200
+        }
+      ],
+      "median_ms": {
+        "single": 1142.582,
+        "batch": 1669.773
+      },
+      "ledger_and_output_unchanged": true,
+      "database_roundtrip_ms_before": [
+        53.657,
+        53.711,
+        53.634,
+        53.577,
+        53.535
+      ],
+      "database_roundtrip_ms_after": [
+        49.866,
+        49.775,
+        49.768,
+        49.859,
+        49.796
+      ]
+    },
+    "after": {
+      "requests": 10,
+      "samples": [
+        {
+          "index": 0,
+          "mode": "single",
+          "elapsed_ms": 1305.239,
+          "status": 200
+        },
+        {
+          "index": 0,
+          "mode": "batch",
+          "elapsed_ms": 1293.499,
+          "status": 200
+        },
+        {
+          "index": 1,
+          "mode": "batch",
+          "elapsed_ms": 1289.774,
+          "status": 200
+        },
+        {
+          "index": 1,
+          "mode": "single",
+          "elapsed_ms": 1288.872,
+          "status": 200
+        },
+        {
+          "index": 2,
+          "mode": "single",
+          "elapsed_ms": 1293.293,
+          "status": 200
+        },
+        {
+          "index": 2,
+          "mode": "batch",
+          "elapsed_ms": 1286.1,
+          "status": 200
+        },
+        {
+          "index": 3,
+          "mode": "batch",
+          "elapsed_ms": 1495.667,
+          "status": 200
+        },
+        {
+          "index": 3,
+          "mode": "single",
+          "elapsed_ms": 1287.313,
+          "status": 200
+        }
+      ],
+      "median_ms": {
+        "single": 1291.082,
+        "batch": 1291.637
+      },
+      "ledger_and_output_unchanged": true,
+      "database_roundtrip_ms_before": [
+        51.866,
+        51.637,
+        51.329,
+        51.622,
+        51.534
+      ],
+      "database_roundtrip_ms_after": [
+        50.349,
+        50.233,
+        50.19,
+        50.282,
+        50.508
+      ]
+    }
+  },
+  "real_model_calls_added": 0,
+  "real_embedding_calls_added": 0,
+  "new_admission_performance_approved": false,
+  "production_capacity_approved": false,
+  "commercial_acceptance_approved": false,
+  "preserved_failures": [
+    "initial_readonly_replay_probe_wrong_column_before_any_HTTP",
+    "initial_runtime_preflight_before_missing_cache_alias_repair"
+  ],
+  "private_evidence_directory": "acceptance-completion-evidence"
+}

@@ -1,0 +1,1201 @@
+{
+  "schema_version": "analysis.reviewer-notes.v1",
+  "pack_id": "holdout-football-01",
+  "recorded_at": "2026-10-13",
+  "author_type": "assistant_preparer",
+  "purpose": "Reviewer preparation only; not a scored reference or independent acceptance.",
+  "independently_reviewed": false,
+  "independently_reviewed_rows": 0,
+  "draft_rows": 30,
+  "denominator": 30,
+  "quality_score": null,
+  "frozen_manifest_sha256": "0237cbea53ba4d53be65c988979370db4472e02cca5be0cf74efcf28c3ee5970",
+  "frozen_reference_sha256": "ba87e8744551cec0bb82ba2bf1b4ed8914982397589f35e96ca6b1c105289302",
+  "input_boundary": "Never upload reference/ or pass these notes, source inspection findings, or expected answers to the product model.",
+  "candidate_boundary": "Candidate remains frozen for the first evaluation. Changing prompts, retrieval or rules using these notes consumes this pack for development; use a new holdout to claim generalization.",
+  "scoring_boundary": "These notes are semantic review guidance, not the exact-match scorer input. An independent reviewer must resolve scope, conditions, wording equivalence and disagreements before freezing a new scored reference and plan.",
+  "assessment_legend": {
+    "supported": "Frozen text establishes the listed claims; conditions still apply.",
+    "partial": "Some facts are visible; listed missing items must remain unknown.",
+    "not_found": "No admissible evidence for the requested fact was found in the inspected frozen text.",
+    "conflicting_or_conditional": "Source statements differ or have unresolved scope/conditions; preserve both without inventing precedence.",
+    "unreliable_extraction": "Relevant labels exist but extraction lost the content or plan mapping."
+  },
+  "common_serious_errors": [
+    "跨对象串源，或把共同需求当作供应商/商品已满足的证据。",
+    "把缺失信息写成零费用、否定结论或已确认值。",
+    "删除失败/缺失单元来缩小 30 行分母。",
+    "把网页快照当作已签署报价，或引用原上传文件之外的政策/搜索摘要。"
+  ],
+  "rows": [
+    {
+      "object_id": "nike_usmnt",
+      "field_id": "product",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "supported",
+      "expected_facts": [
+        "USMNT 2026 Stadium Home，男款 Nike Dri-FIT 足球 Replica Jersey；Stadium collection 明确为 replica design。"
+      ],
+      "required_conditions": [
+        "不得将 replica/stadium 改写为球员版/authentic。"
+      ],
+      "known_gaps": [
+        "商品 SKU、库存和队伍批量款未在正文显示。"
+      ],
+      "serious_error_rules": [
+        "把该商品认成 authentic/player version，或与 adidas/PUMA 型号混淆。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/nike-usmnt-product.txt",
+          "line_start": 447,
+          "line_end": 449,
+          "quote": "# USMNT 2026 Stadium Home\n\n## Men's Nike Dri-FIT Soccer Replica Jersey",
+          "source_sha256": "db3bf291c9e285277ad02ec55d3dc7f1dcb2010bda8f28a28a2ab712199394c1",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/nike-usmnt-product.txt",
+          "line_start": 470,
+          "line_end": 472,
+          "quote": "#### Modeled After the Pros\n\nOur Stadium collection pairs replica design details with sweat-wicking technology to give you a game-ready look inspired by your favorite team.",
+          "source_sha256": "db3bf291c9e285277ad02ec55d3dc7f1dcb2010bda8f28a28a2ab712199394c1",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/nike-usmnt-product.txt",
+        "upload/nike-returns.txt"
+      ]
+    },
+    {
+      "object_id": "nike_usmnt",
+      "field_id": "listed_price",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "not_found",
+      "expected_facts": [
+        "冻结正文未找到该球衣可归属的当前页面价格、原价或促销价。"
+      ],
+      "required_conditions": [
+        "图片/其他导航中的数字不能当商品价；美国页面也不能直接证明重庆采购币种或落地价。"
+      ],
+      "known_gaps": [
+        "金额、币种、税费、促销及 20 件团购报价均缺失。"
+      ],
+      "serious_error_rules": [
+        "从常识、搜索摘要或其他商品补价；把未找到写成免费。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/nike-usmnt-product.txt",
+          "line_start": 443,
+          "line_end": 480,
+          "quote": "![USMNT 2026 Stadium Home Men's Nike Dri-FIT Soccer Replica Jersey - Sail/Midnight Navy/Midnight Navy](https://static.nike.com/a/images/t_web_pdp_535_v2/f_auto,u_9ddf04c7-2a9a-4d76-add1-d15af8f0263d,c_scale,fl_relative,w_1.0,h_1.0,fl_layer_apply/d6f32766-0ea6-44dd-bdf8-9abe23a18290/USA+M+NK+DF+JSY+SS+STAD+HM.png)\n\nRecycled Materials\n\n# USMNT 2026 Stadium Home\n\n## Men's Nike Dri-FIT Soccer Replica Jersey\n\n![USMNT 2026 Stadium Home Men's Nike Dri-FIT Soccer Replica Jersey - Sail/Midnight Navy/Midnight Navy](https://static.nike.com/a/images/t_web_pdp_936_v2/f_auto,u_9ddf04c7-2a9a-4d76-add1-d15af8f0263d,c_scale,fl_relative,w_1.0,h_1.0,fl_layer_apply/d6f32766-0ea6-44dd-bdf8-9abe23a18290/USA+M+NK+DF+JSY+SS+STAD+HM.png)\n![Sail/Midnight Navy/Midnight Navy](https://static.nike.com/a/images/t_PDP_144_v1/f_auto,q_auto:eco/6f9998cf-5845-4fb7-8931-e56f44e29344/USA+M+NK+DF+JSY+SS+STAD+HM.png)\n![White](https://static.nike.com/a/images/t_PDP_144_v1/f_auto,q_auto:eco/d153ec63-f0c6-4364-ad55-e745e9eb20e0/NK+S26+M+STADIUM+REP+JSY+PLYR.png)\n![White](https://static.nike.com/a/images/t_PDP_144_v1/f_auto,q_auto:eco/0da81bca-0c88-4f66-9ee0-e3c035b969eb/NK+S26+M+STADIUM+REP+JSY+PLYR.png)\n![White](https://static.nike.com/a/images/t_PDP_144_v1/f_auto,q_auto:eco/72d46951-2ad7-4c74-b5d4-f1a76c01c342/NK+S26+M+STADIUM+REP+JSY+PLYR.png)\n![White](https://static.nike.com/a/images/t_PDP_144_v1/f_auto,q_auto:eco/a36991e2-fc8d-412e-b6e7-4883c4d470b1/NK+S26+M+STADIUM+REP+JSY+PLYR.png)\n\nThis product is made with 100% recycled polyester fibers\n\nNike presents: the USMNT's 2026 Home jersey. Proudly red, white and blue, the uniform features wavy stripes that remind your team of their flag flying high.\n\nUSMNT 2026 Stadium Home\n\nNike presents: the USMNT's 2026 Home jersey. Proudly red, white and blue, the uniform features wavy stripes that remind your team of their flag flying high.\n\n#### Stay Dry\n\nNike Dri-FIT technology moves sweat away from your skin for quicker evaporation, helping you stay dry and comfortable.\n\n#### Modeled After the Pros\n\nOur Stadium collection pairs replica design details with sweat-wicking technology to give you a game-ready look inspired by your favorite team.\n\n#### Product Details\n\n#### Size & Fit\n\n#### Shipping & Returns\n\n#### How This Was Made",
+          "source_sha256": "db3bf291c9e285277ad02ec55d3dc7f1dcb2010bda8f28a28a2ab712199394c1",
+          "role": "inspected_product_section"
+        }
+      ],
+      "inspected_files": [
+        "upload/nike-usmnt-product.txt",
+        "upload/nike-returns.txt"
+      ]
+    },
+    {
+      "object_id": "nike_usmnt",
+      "field_id": "material",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "supported",
+      "expected_facts": [
+        "正文写 100% recycled polyester fibers；Nike Dri-FIT 将汗液带离皮肤以帮助保持干爽舒适。"
+      ],
+      "required_conditions": [
+        "不能把 recycled polyester fibers 扩写成正文未给出的克重/织法。"
+      ],
+      "known_gaps": [
+        "具体面料克重、各部位成分和洗护条件未展开。"
+      ],
+      "serious_error_rules": [
+        "将 Dri-FIT 当材质百分比，或编造棉/弹性纤维比例。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/nike-usmnt-product.txt",
+          "line_start": 445,
+          "line_end": 458,
+          "quote": "Recycled Materials\n\n# USMNT 2026 Stadium Home\n\n## Men's Nike Dri-FIT Soccer Replica Jersey\n\n![USMNT 2026 Stadium Home Men's Nike Dri-FIT Soccer Replica Jersey - Sail/Midnight Navy/Midnight Navy](https://static.nike.com/a/images/t_web_pdp_936_v2/f_auto,u_9ddf04c7-2a9a-4d76-add1-d15af8f0263d,c_scale,fl_relative,w_1.0,h_1.0,fl_layer_apply/d6f32766-0ea6-44dd-bdf8-9abe23a18290/USA+M+NK+DF+JSY+SS+STAD+HM.png)\n![Sail/Midnight Navy/Midnight Navy](https://static.nike.com/a/images/t_PDP_144_v1/f_auto,q_auto:eco/6f9998cf-5845-4fb7-8931-e56f44e29344/USA+M+NK+DF+JSY+SS+STAD+HM.png)\n![White](https://static.nike.com/a/images/t_PDP_144_v1/f_auto,q_auto:eco/d153ec63-f0c6-4364-ad55-e745e9eb20e0/NK+S26+M+STADIUM+REP+JSY+PLYR.png)\n![White](https://static.nike.com/a/images/t_PDP_144_v1/f_auto,q_auto:eco/0da81bca-0c88-4f66-9ee0-e3c035b969eb/NK+S26+M+STADIUM+REP+JSY+PLYR.png)\n![White](https://static.nike.com/a/images/t_PDP_144_v1/f_auto,q_auto:eco/72d46951-2ad7-4c74-b5d4-f1a76c01c342/NK+S26+M+STADIUM+REP+JSY+PLYR.png)\n![White](https://static.nike.com/a/images/t_PDP_144_v1/f_auto,q_auto:eco/a36991e2-fc8d-412e-b6e7-4883c4d470b1/NK+S26+M+STADIUM+REP+JSY+PLYR.png)\n\nThis product is made with 100% recycled polyester fibers",
+          "source_sha256": "db3bf291c9e285277ad02ec55d3dc7f1dcb2010bda8f28a28a2ab712199394c1",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/nike-usmnt-product.txt",
+          "line_start": 466,
+          "line_end": 472,
+          "quote": "#### Stay Dry\n\nNike Dri-FIT technology moves sweat away from your skin for quicker evaporation, helping you stay dry and comfortable.\n\n#### Modeled After the Pros\n\nOur Stadium collection pairs replica design details with sweat-wicking technology to give you a game-ready look inspired by your favorite team.",
+          "source_sha256": "db3bf291c9e285277ad02ec55d3dc7f1dcb2010bda8f28a28a2ab712199394c1",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/nike-usmnt-product.txt",
+        "upload/nike-returns.txt"
+      ]
+    },
+    {
+      "object_id": "nike_usmnt",
+      "field_id": "sizes",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "unreliable_extraction",
+      "expected_facts": [
+        "正文仅见“Size & Fit”标题，未展开可选尺码或版型说明。"
+      ],
+      "required_conditions": [
+        "图片尺寸/URL 参数不是可购尺码证据。"
+      ],
+      "known_gaps": [
+        "尺码列表、库存、fit 和 20 件库存状态均缺失。"
+      ],
+      "serious_error_rules": [
+        "根据常见 Nike 尺码表补 XS-3XL，或将图像尺寸当服装尺码。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/nike-usmnt-product.txt",
+          "line_start": 474,
+          "line_end": 478,
+          "quote": "#### Product Details\n\n#### Size & Fit\n\n#### Shipping & Returns",
+          "source_sha256": "db3bf291c9e285277ad02ec55d3dc7f1dcb2010bda8f28a28a2ab712199394c1",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/nike-usmnt-product.txt",
+        "upload/nike-returns.txt"
+      ]
+    },
+    {
+      "object_id": "nike_usmnt",
+      "field_id": "personalization",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "not_found",
+      "expected_facts": [
+        "冻结商品正文没有姓名/号码等定制选项或定制政策。"
+      ],
+      "required_conditions": [
+        "不得引用 adidas 的 Add Personalization 或 PUMA customized-products 规则。"
+      ],
+      "known_gaps": [
+        "能否定制、费用、交期及退货影响未知。"
+      ],
+      "serious_error_rules": [
+        "跨品牌补定制结论，或把无证据写成不可定制。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/nike-usmnt-product.txt",
+          "line_start": 443,
+          "line_end": 480,
+          "quote": "![USMNT 2026 Stadium Home Men's Nike Dri-FIT Soccer Replica Jersey - Sail/Midnight Navy/Midnight Navy](https://static.nike.com/a/images/t_web_pdp_535_v2/f_auto,u_9ddf04c7-2a9a-4d76-add1-d15af8f0263d,c_scale,fl_relative,w_1.0,h_1.0,fl_layer_apply/d6f32766-0ea6-44dd-bdf8-9abe23a18290/USA+M+NK+DF+JSY+SS+STAD+HM.png)\n\nRecycled Materials\n\n# USMNT 2026 Stadium Home\n\n## Men's Nike Dri-FIT Soccer Replica Jersey\n\n![USMNT 2026 Stadium Home Men's Nike Dri-FIT Soccer Replica Jersey - Sail/Midnight Navy/Midnight Navy](https://static.nike.com/a/images/t_web_pdp_936_v2/f_auto,u_9ddf04c7-2a9a-4d76-add1-d15af8f0263d,c_scale,fl_relative,w_1.0,h_1.0,fl_layer_apply/d6f32766-0ea6-44dd-bdf8-9abe23a18290/USA+M+NK+DF+JSY+SS+STAD+HM.png)\n![Sail/Midnight Navy/Midnight Navy](https://static.nike.com/a/images/t_PDP_144_v1/f_auto,q_auto:eco/6f9998cf-5845-4fb7-8931-e56f44e29344/USA+M+NK+DF+JSY+SS+STAD+HM.png)\n![White](https://static.nike.com/a/images/t_PDP_144_v1/f_auto,q_auto:eco/d153ec63-f0c6-4364-ad55-e745e9eb20e0/NK+S26+M+STADIUM+REP+JSY+PLYR.png)\n![White](https://static.nike.com/a/images/t_PDP_144_v1/f_auto,q_auto:eco/0da81bca-0c88-4f66-9ee0-e3c035b969eb/NK+S26+M+STADIUM+REP+JSY+PLYR.png)\n![White](https://static.nike.com/a/images/t_PDP_144_v1/f_auto,q_auto:eco/72d46951-2ad7-4c74-b5d4-f1a76c01c342/NK+S26+M+STADIUM+REP+JSY+PLYR.png)\n![White](https://static.nike.com/a/images/t_PDP_144_v1/f_auto,q_auto:eco/a36991e2-fc8d-412e-b6e7-4883c4d470b1/NK+S26+M+STADIUM+REP+JSY+PLYR.png)\n\nThis product is made with 100% recycled polyester fibers\n\nNike presents: the USMNT's 2026 Home jersey. Proudly red, white and blue, the uniform features wavy stripes that remind your team of their flag flying high.\n\nUSMNT 2026 Stadium Home\n\nNike presents: the USMNT's 2026 Home jersey. Proudly red, white and blue, the uniform features wavy stripes that remind your team of their flag flying high.\n\n#### Stay Dry\n\nNike Dri-FIT technology moves sweat away from your skin for quicker evaporation, helping you stay dry and comfortable.\n\n#### Modeled After the Pros\n\nOur Stadium collection pairs replica design details with sweat-wicking technology to give you a game-ready look inspired by your favorite team.\n\n#### Product Details\n\n#### Size & Fit\n\n#### Shipping & Returns\n\n#### How This Was Made",
+          "source_sha256": "db3bf291c9e285277ad02ec55d3dc7f1dcb2010bda8f28a28a2ab712199394c1",
+          "role": "inspected_product_section"
+        }
+      ],
+      "inspected_files": [
+        "upload/nike-usmnt-product.txt",
+        "upload/nike-returns.txt"
+      ]
+    },
+    {
+      "object_id": "nike_usmnt",
+      "field_id": "delivery",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "unreliable_extraction",
+      "expected_facts": [
+        "只有“Shipping & Returns”标题，没有配送日期、起算条件或地区正文。"
+      ],
+      "required_conditions": [
+        "该美国站快照不能证明送达重庆。"
+      ],
+      "known_gaps": [
+        "配送时间、目的地、库存前置条件和跨境路径未知。"
+      ],
+      "serious_error_rules": [
+        "编造标准 3-5 日或重庆送达日。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/nike-usmnt-product.txt",
+          "line_start": 474,
+          "line_end": 480,
+          "quote": "#### Product Details\n\n#### Size & Fit\n\n#### Shipping & Returns\n\n#### How This Was Made",
+          "source_sha256": "db3bf291c9e285277ad02ec55d3dc7f1dcb2010bda8f28a28a2ab712199394c1",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/nike-usmnt-product.txt",
+        "upload/nike-returns.txt"
+      ]
+    },
+    {
+      "object_id": "nike_usmnt",
+      "field_id": "shipping_cost",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "not_found",
+      "expected_facts": [
+        "冻结正文未找到可归属此球衣的运费或免邮条件。"
+      ],
+      "required_conditions": [
+        "不能把其他品牌或 Nike 导航内容当商品运费。"
+      ],
+      "known_gaps": [
+        "美国本地及重庆跨境运费均未知。"
+      ],
+      "serious_error_rules": [
+        "宣称免邮或固定运费。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/nike-usmnt-product.txt",
+          "line_start": 474,
+          "line_end": 480,
+          "quote": "#### Product Details\n\n#### Size & Fit\n\n#### Shipping & Returns\n\n#### How This Was Made",
+          "source_sha256": "db3bf291c9e285277ad02ec55d3dc7f1dcb2010bda8f28a28a2ab712199394c1",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/nike-usmnt-product.txt",
+        "upload/nike-returns.txt"
+      ]
+    },
+    {
+      "object_id": "nike_usmnt",
+      "field_id": "return_window",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "unreadable_extraction",
+      "expected_facts": [
+        "nike-returns.txt 全文只有站点导航、帮助入口和地区列表，没有实际退货期限正文。商品页也只保留标题。"
+      ],
+      "required_conditions": [
+        "“Returns”导航标签不是政策；不得从实时网页、常识或搜索摘要补入冻结留出答案。"
+      ],
+      "known_gaps": [
+        "天数、起算事件、节假日例外全部未知。"
+      ],
+      "serious_error_rules": [
+        "凭品牌常见政策写 30/60 天；把帮助入口当 60 天政策证据。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/nike-returns.txt",
+          "line_start": 1,
+          "line_end": 25,
+          "quote": "Find a Store\n\nHelp\n\nHelp\n\nOrder Status\n\nShipping & Delivery\n\nReturns\n\nOrder Cancellation\n\nSize Charts\n\nContact Us\n\nMembership\n\nPromotions & Discounts\n\nProduct Advice\n\nSend Us Feedback",
+          "source_sha256": "146019e3762a04eac4d7625dc389e01b182462f98af8a4bf2a8d56bafcdc4317",
+          "role": "navigation_only"
+        },
+        {
+          "file": "upload/nike-returns.txt",
+          "line_start": 471,
+          "line_end": 503,
+          "quote": "# [GET HELP](/help)\n\nResources\n\nGift Cards\n\nCorporate Sales\n\nFind a Store\n\nMembership\n\nNike Journal\n\nSite Feedback\n\nHelp\n\nGet Help\n\nOrder Status\n\nShipping and Delivery\n\nReturns\n\nOrder Cancellation\n\nPayment Options\n\nGift Card Balance\n\nContact Us",
+          "source_sha256": "146019e3762a04eac4d7625dc389e01b182462f98af8a4bf2a8d56bafcdc4317",
+          "role": "navigation_only"
+        },
+        {
+          "file": "upload/nike-returns.txt",
+          "line_start": 593,
+          "line_end": 623,
+          "quote": "© 2026 Nike, Inc. All Rights Reserved.\n\nGuides\n\nNike Air\n\nNike Air Force 1\n\nNike Air Max\n\nNike FlyEase\n\nNike Flyknit\n\nNike Free\n\nNike React\n\nNike Vaporfly\n\nNike ZoomX\n\nSpace Hippie\n\nTerms of Sale\n\nTerms of Use\n\nNike Privacy Policy\n\n![](https://static.nike.com/a/images/w_960,c_limit/3732c58b-d0ad-4c3c-898c-c4b90193312b/image.png)",
+          "source_sha256": "146019e3762a04eac4d7625dc389e01b182462f98af8a4bf2a8d56bafcdc4317",
+          "role": "footer_only"
+        },
+        {
+          "file": "upload/nike-usmnt-product.txt",
+          "line_start": 474,
+          "line_end": 480,
+          "quote": "#### Product Details\n\n#### Size & Fit\n\n#### Shipping & Returns\n\n#### How This Was Made",
+          "source_sha256": "db3bf291c9e285277ad02ec55d3dc7f1dcb2010bda8f28a28a2ab712199394c1",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/nike-usmnt-product.txt",
+        "upload/nike-returns.txt"
+      ]
+    },
+    {
+      "object_id": "nike_usmnt",
+      "field_id": "return_conditions",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "unreadable_extraction",
+      "expected_facts": [
+        "冻结退货页没有商品状态、渠道、费用、退款方式或例外正文。"
+      ],
+      "required_conditions": [
+        "导航和国家列表不能证明条件；必须显式标为抓取缺口。"
+      ],
+      "known_gaps": [
+        "可退状态、费用、原支付退款、退货渠道及定制例外未知。"
+      ],
+      "serious_error_rules": [
+        "借用 PUMA/adidas 条件；声称免费退货。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/nike-returns.txt",
+          "line_start": 471,
+          "line_end": 503,
+          "quote": "# [GET HELP](/help)\n\nResources\n\nGift Cards\n\nCorporate Sales\n\nFind a Store\n\nMembership\n\nNike Journal\n\nSite Feedback\n\nHelp\n\nGet Help\n\nOrder Status\n\nShipping and Delivery\n\nReturns\n\nOrder Cancellation\n\nPayment Options\n\nGift Card Balance\n\nContact Us",
+          "source_sha256": "146019e3762a04eac4d7625dc389e01b182462f98af8a4bf2a8d56bafcdc4317",
+          "role": "navigation_only"
+        },
+        {
+          "file": "upload/nike-returns.txt",
+          "line_start": 629,
+          "line_end": 699,
+          "quote": "## Africa\n\n#### Egypt\n\nEnglish\n\n#### Morocco\n\nEnglish\n\n#### Maroc\n\nFrançais\n\n#### South Africa\n\nEnglish\n\n## Americas\n\n#### Argentina\n\nEspañol\n\n#### Brasil\n\nPortuguês\n\n#### Canada\n\nEnglish\n\n#### Canada\n\nFrançais\n\n#### Chile\n\nEspañol\n\n#### Colombia\n\nEspañol\n\n#### México\n\nEspañol\n\n#### Peru\n\nEspañol\n\n#### Puerto Rico\n\nEspañol\n\n#### United States\n\nEnglish\n\n#### Estados Unidos\n\nEspañol\n\n#### Uruguay\n\nEspañol\n\n#### Latin America\n\nEspañol",
+          "source_sha256": "146019e3762a04eac4d7625dc389e01b182462f98af8a4bf2a8d56bafcdc4317",
+          "role": "region_list_only"
+        }
+      ],
+      "inspected_files": [
+        "upload/nike-usmnt-product.txt",
+        "upload/nike-returns.txt"
+      ]
+    },
+    {
+      "object_id": "nike_usmnt",
+      "field_id": "exclusions",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "partial",
+      "expected_facts": [
+        "商品明确为不同规格的 replica，且详情、尺码、配送/退货折叠内容未展开；退货政策抓取没有正文。"
+      ],
+      "required_conditions": [
+        "美国零售页不是球队批量报价，也不能证明重庆配送、库存、20 件折扣或个性化条件。"
+      ],
+      "known_gaps": [
+        "价格/币种/库存/尺码/运输/退货/团购全部或部分缺失。"
+      ],
+      "serious_error_rules": [
+        "因为缺信息就推荐该商品；忽略产品版本不可直接同规格比价。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/nike-usmnt-product.txt",
+          "line_start": 447,
+          "line_end": 480,
+          "quote": "# USMNT 2026 Stadium Home\n\n## Men's Nike Dri-FIT Soccer Replica Jersey\n\n![USMNT 2026 Stadium Home Men's Nike Dri-FIT Soccer Replica Jersey - Sail/Midnight Navy/Midnight Navy](https://static.nike.com/a/images/t_web_pdp_936_v2/f_auto,u_9ddf04c7-2a9a-4d76-add1-d15af8f0263d,c_scale,fl_relative,w_1.0,h_1.0,fl_layer_apply/d6f32766-0ea6-44dd-bdf8-9abe23a18290/USA+M+NK+DF+JSY+SS+STAD+HM.png)\n![Sail/Midnight Navy/Midnight Navy](https://static.nike.com/a/images/t_PDP_144_v1/f_auto,q_auto:eco/6f9998cf-5845-4fb7-8931-e56f44e29344/USA+M+NK+DF+JSY+SS+STAD+HM.png)\n![White](https://static.nike.com/a/images/t_PDP_144_v1/f_auto,q_auto:eco/d153ec63-f0c6-4364-ad55-e745e9eb20e0/NK+S26+M+STADIUM+REP+JSY+PLYR.png)\n![White](https://static.nike.com/a/images/t_PDP_144_v1/f_auto,q_auto:eco/0da81bca-0c88-4f66-9ee0-e3c035b969eb/NK+S26+M+STADIUM+REP+JSY+PLYR.png)\n![White](https://static.nike.com/a/images/t_PDP_144_v1/f_auto,q_auto:eco/72d46951-2ad7-4c74-b5d4-f1a76c01c342/NK+S26+M+STADIUM+REP+JSY+PLYR.png)\n![White](https://static.nike.com/a/images/t_PDP_144_v1/f_auto,q_auto:eco/a36991e2-fc8d-412e-b6e7-4883c4d470b1/NK+S26+M+STADIUM+REP+JSY+PLYR.png)\n\nThis product is made with 100% recycled polyester fibers\n\nNike presents: the USMNT's 2026 Home jersey. Proudly red, white and blue, the uniform features wavy stripes that remind your team of their flag flying high.\n\nUSMNT 2026 Stadium Home\n\nNike presents: the USMNT's 2026 Home jersey. Proudly red, white and blue, the uniform features wavy stripes that remind your team of their flag flying high.\n\n#### Stay Dry\n\nNike Dri-FIT technology moves sweat away from your skin for quicker evaporation, helping you stay dry and comfortable.\n\n#### Modeled After the Pros\n\nOur Stadium collection pairs replica design details with sweat-wicking technology to give you a game-ready look inspired by your favorite team.\n\n#### Product Details\n\n#### Size & Fit\n\n#### Shipping & Returns\n\n#### How This Was Made",
+          "source_sha256": "db3bf291c9e285277ad02ec55d3dc7f1dcb2010bda8f28a28a2ab712199394c1",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/nike-returns.txt",
+          "line_start": 471,
+          "line_end": 503,
+          "quote": "# [GET HELP](/help)\n\nResources\n\nGift Cards\n\nCorporate Sales\n\nFind a Store\n\nMembership\n\nNike Journal\n\nSite Feedback\n\nHelp\n\nGet Help\n\nOrder Status\n\nShipping and Delivery\n\nReturns\n\nOrder Cancellation\n\nPayment Options\n\nGift Card Balance\n\nContact Us",
+          "source_sha256": "146019e3762a04eac4d7625dc389e01b182462f98af8a4bf2a8d56bafcdc4317",
+          "role": "navigation_only"
+        }
+      ],
+      "inspected_files": [
+        "upload/nike-usmnt-product.txt",
+        "upload/nike-returns.txt"
+      ]
+    },
+    {
+      "object_id": "adidas_orlando",
+      "field_id": "product",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "supported",
+      "expected_facts": [
+        "Orlando City SC 2026 Archive Authentic Jersey，男款足球商品；产品代码 JY5885。"
+      ],
+      "required_conditions": [
+        "Authentic 与另外两件 Replica 规格不同，比较价格需标明版本。"
+      ],
+      "known_gaps": [
+        "球队批量定制型号与库存未提供。"
+      ],
+      "serious_error_rules": [
+        "把 authentic 改成 replica 或当作同规格直接排名。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/adidas-orlando-product.txt",
+          "line_start": 44,
+          "line_end": 48,
+          "quote": "Men's • Soccer\n\n# Orlando City SC 2026 Archive Authentic Jersey\n\nPrice$160",
+          "source_sha256": "b4ed5bbab68330fa5abd3affc268ba6462021d731b46dd8fe4c2ddc2acae4840",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/adidas-orlando-product.txt",
+          "line_start": 190,
+          "line_end": 192,
+          "quote": "- Imported\n- Product color: Collegiate Burgundy\n- Product code: JY5885",
+          "source_sha256": "b4ed5bbab68330fa5abd3affc268ba6462021d731b46dd8fe4c2ddc2acae4840",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/adidas-orlando-product.txt",
+        "upload/adidas-returns.txt"
+      ]
+    },
+    {
+      "object_id": "adidas_orlando",
+      "field_id": "listed_price",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "partial",
+      "expected_facts": [
+        "页面显示 Price$160；该商品 excluded from most promotions。"
+      ],
+      "required_conditions": [
+        "正文没有直接写 ISO 币种，只能保留 $ 符号与美国站上下文；不能断言含税/落地美元总价。"
+      ],
+      "known_gaps": [
+        "ISO 币种、税费、原价和适用促销未确认。"
+      ],
+      "serious_error_rules": [
+        "写成 160 USD 含税/到重庆价，或应用大多数促销。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/adidas-orlando-product.txt",
+          "line_start": 46,
+          "line_end": 50,
+          "quote": "# Orlando City SC 2026 Archive Authentic Jersey\n\nPrice$160\n\nThis item is excluded from most promotions.",
+          "source_sha256": "b4ed5bbab68330fa5abd3affc268ba6462021d731b46dd8fe4c2ddc2acae4840",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/adidas-orlando-product.txt",
+        "upload/adidas-returns.txt"
+      ]
+    },
+    {
+      "object_id": "adidas_orlando",
+      "field_id": "material",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "supported",
+      "expected_facts": [
+        "Slim fit；主材 100% Polyester（100% Recycled）；Transfer knit jacquard；CLIMACOOL+。"
+      ],
+      "required_conditions": [
+        "可报告网页原文，不能扩写未列出的部位材料或功能性能指标。"
+      ],
+      "known_gaps": [
+        "克重、洗护耐久性与认证未提供。"
+      ],
+      "serious_error_rules": [
+        "把 CLIMACOOL+ 当作材料百分比或保证具体温度性能。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/adidas-orlando-product.txt",
+          "line_start": 183,
+          "line_end": 192,
+          "quote": "## Details\n\n- Slim fit\n- Main Material: 100% Polyester(100% Recycled) / Main Material: 100% Polyester(100% Recycled)\n- Transfer knit jacquard\n- CLIMACOOL+ technology\n\n- Imported\n- Product color: Collegiate Burgundy\n- Product code: JY5885",
+          "source_sha256": "b4ed5bbab68330fa5abd3affc268ba6462021d731b46dd8fe4c2ddc2acae4840",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/adidas-orlando-product.txt",
+        "upload/adidas-returns.txt"
+      ]
+    },
+    {
+      "object_id": "adidas_orlando",
+      "field_id": "sizes",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "partial",
+      "expected_facts": [
+        "提取显示 XSSMLXL2XL3XL；另写 True to size，建议通常尺码。可谨慎解释为 XS、S、M、L、XL、2XL、3XL 的页面文本。"
+      ],
+      "required_conditions": [
+        "尺码文本无分隔，不能据此证明每个尺码当前有库存；选择尺码后才显示交付日期。"
+      ],
+      "known_gaps": [
+        "各尺码库存和具体尺寸表内容未保留。"
+      ],
+      "serious_error_rules": [
+        "把列表等同实时库存，或丢掉提取黏连风险。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/adidas-orlando-product.txt",
+          "line_start": 103,
+          "line_end": 109,
+          "quote": "## Size guide\n\nClose panel\n\nXSSMLXL2XL3XL\n\nTrue to size.We recommend ordering your usual size.",
+          "source_sha256": "b4ed5bbab68330fa5abd3affc268ba6462021d731b46dd8fe4c2ddc2acae4840",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/adidas-orlando-product.txt",
+          "line_start": 115,
+          "line_end": 117,
+          "quote": "Delivery to 02840\n\nSelect your size to get delivery dates or find in store",
+          "source_sha256": "b4ed5bbab68330fa5abd3affc268ba6462021d731b46dd8fe4c2ddc2acae4840",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/adidas-orlando-product.txt",
+          "line_start": 158,
+          "line_end": 162,
+          "quote": "## Size and fit\n\n![Burgundy Orlando City SC 2026 Archive Authentic Jersey](https://assets.adidas.com/images/w_500,f_auto,q_auto/f4e2083e99f3425d80dd3cd335b29ea7_9366/Orlando_City_SC_2026_Archive_Authentic_Jersey_Burgundy_JY5885_01_laydown.jpg)\n\n- True to size:We recommend ordering your usual size.",
+          "source_sha256": "b4ed5bbab68330fa5abd3affc268ba6462021d731b46dd8fe4c2ddc2acae4840",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/adidas-orlando-product.txt",
+        "upload/adidas-returns.txt"
+      ]
+    },
+    {
+      "object_id": "adidas_orlando",
+      "field_id": "personalization",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "supported",
+      "expected_facts": [
+        "页面有 Add Personalization；个性化商品需预留 2-3 周交付且不可退换。"
+      ],
+      "required_conditions": [
+        "2-3 周仅针对 personalized items；页面未保留定制内容、价格或数量上限。"
+      ],
+      "known_gaps": [
+        "定制费、姓名/号码规则和 20 件定制能力未知。"
+      ],
+      "serious_error_rules": [
+        "把定制交付期用于非定制订单；宣称定制可走普通 30 日退货。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/adidas-orlando-product.txt",
+          "line_start": 50,
+          "line_end": 54,
+          "quote": "This item is excluded from most promotions.\n\nAdd Personalization\n\nPlease allow 2-3 weeks for delivery. Personalized items cannot be returned or exchanged.",
+          "source_sha256": "b4ed5bbab68330fa5abd3affc268ba6462021d731b46dd8fe4c2ddc2acae4840",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/adidas-orlando-product.txt",
+        "upload/adidas-returns.txt"
+      ]
+    },
+    {
+      "object_id": "adidas_orlando",
+      "field_id": "delivery",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "partial",
+      "expected_facts": [
+        "定制商品请允许 2-3 周交付；默认目的地显示 02840，普通商品须选尺码后才显示交付日期。"
+      ],
+      "required_conditions": [
+        "不得把邮编 02840 或定制交期当作重庆交付承诺。"
+      ],
+      "known_gaps": [
+        "非定制送达日、发货起算事件、重庆跨境配送和 20 件履约未知。"
+      ],
+      "serious_error_rules": [
+        "承诺 2-3 周送达重庆所有订单。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/adidas-orlando-product.txt",
+          "line_start": 52,
+          "line_end": 54,
+          "quote": "Add Personalization\n\nPlease allow 2-3 weeks for delivery. Personalized items cannot be returned or exchanged.",
+          "source_sha256": "b4ed5bbab68330fa5abd3affc268ba6462021d731b46dd8fe4c2ddc2acae4840",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/adidas-orlando-product.txt",
+          "line_start": 115,
+          "line_end": 117,
+          "quote": "Delivery to 02840\n\nSelect your size to get delivery dates or find in store",
+          "source_sha256": "b4ed5bbab68330fa5abd3affc268ba6462021d731b46dd8fe4c2ddc2acae4840",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/adidas-orlando-product.txt",
+        "upload/adidas-returns.txt"
+      ]
+    },
+    {
+      "object_id": "adidas_orlando",
+      "field_id": "shipping_cost",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "partial",
+      "expected_facts": [
+        "adiClub members 可享 Free Standard Shipping。"
+      ],
+      "required_conditions": [
+        "免邮需会员条件；未证明跨境或重庆适用。"
+      ],
+      "known_gaps": [
+        "非会员费率、跨境费用、关税与 20 件运费未知。"
+      ],
+      "serious_error_rules": [
+        "不写会员/地区条件就称全部免邮。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/adidas-orlando-product.txt",
+          "line_start": 127,
+          "line_end": 127,
+          "quote": "Free Standard Shipping for adiClub members",
+          "source_sha256": "b4ed5bbab68330fa5abd3affc268ba6462021d731b46dd8fe4c2ddc2acae4840",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/adidas-orlando-product.txt",
+        "upload/adidas-returns.txt"
+      ]
+    },
+    {
+      "object_id": "adidas_orlando",
+      "field_id": "return_window",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "partial",
+      "expected_facts": [
+        "有效商品页显示 Free 30 day returns，但未明确 30 天起算事件。定制品不可退换。"
+      ],
+      "required_conditions": [
+        "adidas-returns.txt 是 Page not found，不能用后续推荐商品补政策；产品页信息可以作为有限证据。"
+      ],
+      "known_gaps": [
+        "一般退货的起算事件、适用地区及完整例外未找到。"
+      ],
+      "serious_error_rules": [
+        "编造从 delivery 起算；因政策页 404 就忽略商品页 30 天，或把定制品也列为可退。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/adidas-orlando-product.txt",
+          "line_start": 127,
+          "line_end": 129,
+          "quote": "Free Standard Shipping for adiClub members\n\nFree 30 day returns",
+          "source_sha256": "b4ed5bbab68330fa5abd3affc268ba6462021d731b46dd8fe4c2ddc2acae4840",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/adidas-orlando-product.txt",
+          "line_start": 52,
+          "line_end": 54,
+          "quote": "Add Personalization\n\nPlease allow 2-3 weeks for delivery. Personalized items cannot be returned or exchanged.",
+          "source_sha256": "b4ed5bbab68330fa5abd3affc268ba6462021d731b46dd8fe4c2ddc2acae4840",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/adidas-returns.txt",
+          "line_start": 3,
+          "line_end": 5,
+          "quote": "# Page not found\n\nOr return to the [Homepage](https://www.adidas.com/us) and start again.",
+          "source_sha256": "b676f07a97dcef4fe1d61825a7d7c637970f31333c209e1da19d780fd10a7838",
+          "role": "soft_404"
+        }
+      ],
+      "inspected_files": [
+        "upload/adidas-orlando-product.txt",
+        "upload/adidas-returns.txt"
+      ]
+    },
+    {
+      "object_id": "adidas_orlando",
+      "field_id": "return_conditions",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "partial",
+      "expected_facts": [
+        "商品页仅确认普通退货免费和定制不可退换。"
+      ],
+      "required_conditions": [
+        "soft 404 退货文件不提供商品状态、渠道、包装、退款方式等政策。"
+      ],
+      "known_gaps": [
+        "一般退货状态、渠道、退款方式、费用细节和地区范围缺失。"
+      ],
+      "serious_error_rules": [
+        "把 Best sellers 推荐文字当退货条件；补入未冻结官网政策。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/adidas-orlando-product.txt",
+          "line_start": 52,
+          "line_end": 54,
+          "quote": "Add Personalization\n\nPlease allow 2-3 weeks for delivery. Personalized items cannot be returned or exchanged.",
+          "source_sha256": "b4ed5bbab68330fa5abd3affc268ba6462021d731b46dd8fe4c2ddc2acae4840",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/adidas-orlando-product.txt",
+          "line_start": 127,
+          "line_end": 129,
+          "quote": "Free Standard Shipping for adiClub members\n\nFree 30 day returns",
+          "source_sha256": "b4ed5bbab68330fa5abd3affc268ba6462021d731b46dd8fe4c2ddc2acae4840",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/adidas-returns.txt",
+          "line_start": 3,
+          "line_end": 9,
+          "quote": "# Page not found\n\nOr return to the [Homepage](https://www.adidas.com/us) and start again.\n\n### Best sellers\n\nUse left and right arrow keys to navigate between items.",
+          "source_sha256": "b676f07a97dcef4fe1d61825a7d7c637970f31333c209e1da19d780fd10a7838",
+          "role": "soft_404"
+        }
+      ],
+      "inspected_files": [
+        "upload/adidas-orlando-product.txt",
+        "upload/adidas-returns.txt"
+      ]
+    },
+    {
+      "object_id": "adidas_orlando",
+      "field_id": "exclusions",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "supported",
+      "expected_facts": [
+        "商品 excluded from most promotions；定制品不可退换且交付 2-3 周。政策快照软 404；美国站/邮编 02840 不证明重庆履约。"
+      ],
+      "required_conditions": [
+        "“most promotions”未列具体促销；不能把 30 日免费退货无条件扩展。"
+      ],
+      "known_gaps": [
+        "库存、20 件团购折扣、跨境税运费及批量定制报价缺失。"
+      ],
+      "serious_error_rules": [
+        "应用任意促销；忽略 authentic/replica 规格差异；把推荐商品价格归到目标球衣。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/adidas-orlando-product.txt",
+          "line_start": 48,
+          "line_end": 54,
+          "quote": "Price$160\n\nThis item is excluded from most promotions.\n\nAdd Personalization\n\nPlease allow 2-3 weeks for delivery. Personalized items cannot be returned or exchanged.",
+          "source_sha256": "b4ed5bbab68330fa5abd3affc268ba6462021d731b46dd8fe4c2ddc2acae4840",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/adidas-orlando-product.txt",
+          "line_start": 115,
+          "line_end": 129,
+          "quote": "Delivery to 02840\n\nSelect your size to get delivery dates or find in store\n\nMembers earn\n\n1600 adiClub points\n\nincl. Partner Offer from Apple\n\nSkip to footer\n\nFree Standard Shipping for adiClub members\n\nFree 30 day returns",
+          "source_sha256": "b4ed5bbab68330fa5abd3affc268ba6462021d731b46dd8fe4c2ddc2acae4840",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/adidas-returns.txt",
+          "line_start": 3,
+          "line_end": 9,
+          "quote": "# Page not found\n\nOr return to the [Homepage](https://www.adidas.com/us) and start again.\n\n### Best sellers\n\nUse left and right arrow keys to navigate between items.",
+          "source_sha256": "b676f07a97dcef4fe1d61825a7d7c637970f31333c209e1da19d780fd10a7838",
+          "role": "soft_404"
+        }
+      ],
+      "inspected_files": [
+        "upload/adidas-orlando-product.txt",
+        "upload/adidas-returns.txt"
+      ]
+    },
+    {
+      "object_id": "puma_mancity",
+      "field_id": "product",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "supported",
+      "expected_facts": [
+        "Manchester City 25/26 Home Replica，男款足球 Jersey，颜色 Team Light Blue-PUMA White。"
+      ],
+      "required_conditions": [
+        "Replica 不能当 authentic/player version。图片 alt 的 extralarge 不证明完整尺码清单。"
+      ],
+      "known_gaps": [
+        "SKU、库存和球队批量型号未在正文明确列出。"
+      ],
+      "serious_error_rules": [
+        "误认赛季/队伍/版本，或从图片 URL 补规格。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/puma-mancity-product.txt",
+          "line_start": 10,
+          "line_end": 16,
+          "quote": "# Manchester City 25/26 Home Replica\n\nMen's Soccer Jersey\n\nColor:\n\nTeam Light Blue-PUMA White",
+          "source_sha256": "d2e6f3c77b9936cce146ab15358e11762210bfde23fe6bdb248a93b0da4050cb",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/puma-mancity-product.txt",
+        "upload/puma-returns.txt"
+      ]
+    },
+    {
+      "object_id": "puma_mancity",
+      "field_id": "listed_price",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "not_found",
+      "expected_facts": [
+        "页面只有 EXTRA 40% OFF WITH CODE: FLASH，没有可归属的基准价或实际成交价。"
+      ],
+      "required_conditions": [
+        "没有基准价不能计算折后金额；促销码是否适用和期限也未知。"
+      ],
+      "known_gaps": [
+        "价格、币种、原价、促销期限、税费及团购价缺失。"
+      ],
+      "serious_error_rules": [
+        "将 40% 当作价格，或凭外部价反推金额。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/puma-mancity-product.txt",
+          "line_start": 18,
+          "line_end": 18,
+          "quote": "EXTRA 40% OFF WITH CODE: FLASH",
+          "source_sha256": "d2e6f3c77b9936cce146ab15358e11762210bfde23fe6bdb248a93b0da4050cb",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/puma-mancity-product.txt",
+        "upload/puma-returns.txt"
+      ]
+    },
+    {
+      "object_id": "puma_mancity",
+      "field_id": "material",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "unreliable_extraction",
+      "expected_facts": [
+        "冻结正文只有 features & benefits/details 标题，未展开材料或技术内容。"
+      ],
+      "required_conditions": [
+        "不得按品牌常识补 polyester、dryCELL 等。"
+      ],
+      "known_gaps": [
+        "材质百分比、技术和洗护全部未知。"
+      ],
+      "serious_error_rules": [
+        "用图片/常识写出材质或性能。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/puma-mancity-product.txt",
+          "line_start": 26,
+          "line_end": 36,
+          "quote": "### description\n\nBecause at City, we do it our way. For the first time in club history, the home kit features the sash – the diagonal stripe design made iconic on away days. Paired with the unmistakable Sky Blue and reimagined for the next generation, it’s a connection to our past, a nod to our future, and a reminder that we do things differently here, on and off the pitch.\n\n### measure & size\n\n#### Model information\n\n### features & benefits\n\n### details",
+          "source_sha256": "d2e6f3c77b9936cce146ab15358e11762210bfde23fe6bdb248a93b0da4050cb",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/puma-mancity-product.txt",
+        "upload/puma-returns.txt"
+      ]
+    },
+    {
+      "object_id": "puma_mancity",
+      "field_id": "sizes",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "unreliable_extraction",
+      "expected_facts": [
+        "正文仅有 Size 标签；图片 alt 出现 extralarge，但这不能证明完整选择列表或库存。"
+      ],
+      "required_conditions": [
+        "最多记录提取上下文出现 extralarge，不应据此认定 XL 可购买。"
+      ],
+      "known_gaps": [
+        "可选尺码、版型、尺寸表与库存未知。"
+      ],
+      "serious_error_rules": [
+        "生成常见 XS-3XL 列表或把 alt 文本当库存确认。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/puma-mancity-product.txt",
+          "line_start": 1,
+          "line_end": 8,
+          "quote": "![Manchester City 25/26 Home Replica Men's Soccer Jersey, Team Light Blue-PUMA White, extralarge](https://images.puma.com/image/upload/f_auto,q_auto,b_rgb:fafafa,w_600,h_600/global/780338/01/mod01/fnd/PNA/fmt/png/Manchester-City-25/26-Home-Replica-Men's-Soccer-Jersey \"Manchester City 25/26 Home Replica Men's Soccer Jersey, Team Light Blue-PUMA White, extralarge\")\n![Manchester City 25/26 Home Replica Men's Soccer Jersey, Team Light Blue-PUMA White, extralarge](https://images.puma.com/image/upload/f_auto,q_auto,b_rgb:fafafa,w_600,h_600/global/780338/01/mod02/fnd/PNA/fmt/png/Manchester-City-25/26-Home-Replica-Men's-Soccer-Jersey \"Manchester City 25/26 Home Replica Men's Soccer Jersey, Team Light Blue-PUMA White, extralarge\")\n![Manchester City 25/26 Home Replica Men's Soccer Jersey, Team Light Blue-PUMA White, extralarge](https://images.puma.com/image/upload/f_auto,q_auto,b_rgb:fafafa,w_600,h_600/global/780338/01/mod03/fnd/PNA/fmt/png/Manchester-City-25/26-Home-Replica-Men's-Soccer-Jersey \"Manchester City 25/26 Home Replica Men's Soccer Jersey, Team Light Blue-PUMA White, extralarge\")\n![Manchester City 25/26 Home Replica Men's Soccer Jersey, Team Light Blue-PUMA White, extralarge](https://images.puma.com/image/upload/f_auto,q_auto,b_rgb:fafafa,w_600,h_600/global/780338/01/mod04/fnd/PNA/fmt/png/Manchester-City-25/26-Home-Replica-Men's-Soccer-Jersey \"Manchester City 25/26 Home Replica Men's Soccer Jersey, Team Light Blue-PUMA White, extralarge\")\n![Manchester City 25/26 Home Replica Men's Soccer Jersey, Team Light Blue-PUMA White, extralarge](https://images.puma.com/image/upload/f_auto,q_auto,b_rgb:fafafa,w_600,h_600/global/780338/01/mod05/fnd/PNA/fmt/png/Manchester-City-25/26-Home-Replica-Men's-Soccer-Jersey \"Manchester City 25/26 Home Replica Men's Soccer Jersey, Team Light Blue-PUMA White, extralarge\")\n![Manchester City 25/26 Home Replica Men's Soccer Jersey, Team Light Blue-PUMA White, extralarge](https://images.puma.com/image/upload/f_auto,q_auto,b_rgb:fafafa,w_600,h_600/global/780338/01/mod06/fnd/PNA/fmt/png/Manchester-City-25/26-Home-Replica-Men's-Soccer-Jersey \"Manchester City 25/26 Home Replica Men's Soccer Jersey, Team Light Blue-PUMA White, extralarge\")\n![Manchester City 25/26 Home Replica Men's Soccer Jersey, Team Light Blue-PUMA White, extralarge](https://images.puma.com/image/upload/f_auto,q_auto,b_rgb:fafafa,w_600,h_600/global/780338/01/fnd/PNA/fmt/png/Manchester-City-25/26-Home-Replica-Men's-Soccer-Jersey \"Manchester City 25/26 Home Replica Men's Soccer Jersey, Team Light Blue-PUMA White, extralarge\")\n![Manchester City 25/26 Home Replica Men's Soccer Jersey, Team Light Blue-PUMA White, extralarge](https://images.puma.com/image/upload/f_auto,q_auto,b_rgb:fafafa,w_600,h_600/global/780338/01/bv/fnd/PNA/fmt/png/Manchester-City-25/26-Home-Replica-Men's-Soccer-Jersey \"Manchester City 25/26 Home Replica Men's Soccer Jersey, Team Light Blue-PUMA White, extralarge\")",
+          "source_sha256": "d2e6f3c77b9936cce146ab15358e11762210bfde23fe6bdb248a93b0da4050cb",
+          "role": "image_alt_context"
+        },
+        {
+          "file": "upload/puma-mancity-product.txt",
+          "line_start": 20,
+          "line_end": 20,
+          "quote": "Size",
+          "source_sha256": "d2e6f3c77b9936cce146ab15358e11762210bfde23fe6bdb248a93b0da4050cb",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/puma-mancity-product.txt",
+        "upload/puma-returns.txt"
+      ]
+    },
+    {
+      "object_id": "puma_mancity",
+      "field_id": "personalization",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "not_found",
+      "expected_facts": [
+        "商品页未显示定制选项。PUMA 一般政策称 customized products 不退款，制造/材料缺陷例外。"
+      ],
+      "required_conditions": [
+        "一般政策只定义定制品退货限制，不证明该目标球衣可定制。"
+      ],
+      "known_gaps": [
+        "是否可定制、费用、交期未知。"
+      ],
+      "serious_error_rules": [
+        "因政策提及 customized products 就断言本商品支持定制。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/puma-mancity-product.txt",
+          "line_start": 10,
+          "line_end": 36,
+          "quote": "# Manchester City 25/26 Home Replica\n\nMen's Soccer Jersey\n\nColor:\n\nTeam Light Blue-PUMA White\n\nEXTRA 40% OFF WITH CODE: FLASH\n\nSize\n\nThis item qualifies for free shipping!\n\nFree returns on all qualifying orders.\n\n### description\n\nBecause at City, we do it our way. For the first time in club history, the home kit features the sash – the diagonal stripe design made iconic on away days. Paired with the unmistakable Sky Blue and reimagined for the next generation, it’s a connection to our past, a nod to our future, and a reminder that we do things differently here, on and off the pitch.\n\n### measure & size\n\n#### Model information\n\n### features & benefits\n\n### details",
+          "source_sha256": "d2e6f3c77b9936cce146ab15358e11762210bfde23fe6bdb248a93b0da4050cb",
+          "role": "inspected_product_section"
+        },
+        {
+          "file": "upload/puma-returns.txt",
+          "line_start": 23,
+          "line_end": 29,
+          "quote": "## Return Exceptions\n\nProducts that are classified as final sale cannot be returned or exchanged. Please refer to the product page for information on whether an item is a final sale item*.*\n\nPUMA does not accept returns on gift cards, customized products and bodywear including face masks. Custom products are nonrefundable, except in the case of manufacturing or material defects in which case you may contact Customer Service via phone or email for assistance.\n\nCertain product launches and puma.com exclusives have a shorter window for returns and exchanges. This includes but is not limited to PUMA x LAMELO BALL and FENTY x PUMA Shoes which must be returned / exchanged within 15 days.",
+          "source_sha256": "6e2cd4000fb5b52690c8760ae5985207485bb2b032c0dec4af826fc0220704a0",
+          "role": "general_policy_only"
+        }
+      ],
+      "inspected_files": [
+        "upload/puma-mancity-product.txt",
+        "upload/puma-returns.txt"
+      ]
+    },
+    {
+      "object_id": "puma_mancity",
+      "field_id": "delivery",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "not_found",
+      "expected_facts": [
+        "商品页未给配送日期或时长。"
+      ],
+      "required_conditions": [
+        "免邮不等于确定交期；美国站不证明重庆配送。"
+      ],
+      "known_gaps": [
+        "起算条件、目的地、送达日和跨境路线未知。"
+      ],
+      "serious_error_rules": [
+        "把退货处理 1-2 周当配送时间，或编造标准配送期。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/puma-mancity-product.txt",
+          "line_start": 20,
+          "line_end": 24,
+          "quote": "Size\n\nThis item qualifies for free shipping!\n\nFree returns on all qualifying orders.",
+          "source_sha256": "d2e6f3c77b9936cce146ab15358e11762210bfde23fe6bdb248a93b0da4050cb",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/puma-mancity-product.txt",
+        "upload/puma-returns.txt"
+      ]
+    },
+    {
+      "object_id": "puma_mancity",
+      "field_id": "shipping_cost",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "partial",
+      "expected_facts": [
+        "该商品 qualifies for free shipping。"
+      ],
+      "required_conditions": [
+        "页面未说明免费配送地区/方式；政策只说明换购新订单 free standard shipping 和部分退货不免费，不能混作首次订单条件。"
+      ],
+      "known_gaps": [
+        "重庆跨境免邮、最低消费、税费未知。"
+      ],
+      "serious_error_rules": [
+        "无地区限定宣称重庆免邮；把退货预付标签当首次发货费。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/puma-mancity-product.txt",
+          "line_start": 22,
+          "line_end": 22,
+          "quote": "This item qualifies for free shipping!",
+          "source_sha256": "d2e6f3c77b9936cce146ab15358e11762210bfde23fe6bdb248a93b0da4050cb",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/puma-returns.txt",
+          "line_start": 37,
+          "line_end": 41,
+          "quote": "## Exchanges\n\nWe do not offer direct exchanges at this time. If you wish to exchange an item, you must go through our return process and place a new order.\n\nWe will provide you with a pre-paid shipping label for your return and your new order will come with free standard shipping.",
+          "source_sha256": "6e2cd4000fb5b52690c8760ae5985207485bb2b032c0dec4af826fc0220704a0",
+          "role": "exchange_context"
+        },
+        {
+          "file": "upload/puma-returns.txt",
+          "line_start": 47,
+          "line_end": 59,
+          "quote": "## Additional Notes\n\nWe do not offer free returns on orders from APO/FPO addresses and US Territories. You must also be able to drop off your return at a FedEx or authorized drop-off location. To find a FedEx drop-off location near you, click [here](https://www.fedex.com/en-us/shipping/drop-off-package.html).\n\nOrders placed from these addresses, or those that are unable to drop off their return at a FedEx or authorized drop-off do not qualify for free returns and would mail their return items to:\n\nShoebacca Returns Department\n\nPUMA Returns  \n590 N. Wildwood Drive  \nIrving, TX 75061\n\nPUMA is not responsible for any returns lost in transit or any additional charges incurred.",
+          "source_sha256": "6e2cd4000fb5b52690c8760ae5985207485bb2b032c0dec4af826fc0220704a0",
+          "role": "return_shipping_boundary"
+        }
+      ],
+      "inspected_files": [
+        "upload/puma-mancity-product.txt",
+        "upload/puma-returns.txt"
+      ]
+    },
+    {
+      "object_id": "puma_mancity",
+      "field_id": "return_window",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "supported",
+      "expected_facts": [
+        "eligible items 在 delivery 后 30 天内退货；某些指定 launches/exclusives 缩短为 15 天。"
+      ],
+      "required_conditions": [
+        "目标商品页未标 final sale，也未证明属于列举的 15 天系列，不能无证据套 15 天；起算事件明确是 delivery。"
+      ],
+      "known_gaps": [
+        "目标是否有另列特殊例外需下单时确认。"
+      ],
+      "serious_error_rules": [
+        "写 60 天；从 order date 起算；把特殊 15 天无条件套用。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/puma-returns.txt",
+          "line_start": 5,
+          "line_end": 7,
+          "quote": "# Returns & Exchanges\n\nWe want you to love your purchase. If you're not completely satisfied, we're happy to accept returns of eligible items within **30 days of delivery**. Please see the details below.",
+          "source_sha256": "6e2cd4000fb5b52690c8760ae5985207485bb2b032c0dec4af826fc0220704a0",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/puma-returns.txt",
+          "line_start": 23,
+          "line_end": 29,
+          "quote": "## Return Exceptions\n\nProducts that are classified as final sale cannot be returned or exchanged. Please refer to the product page for information on whether an item is a final sale item*.*\n\nPUMA does not accept returns on gift cards, customized products and bodywear including face masks. Custom products are nonrefundable, except in the case of manufacturing or material defects in which case you may contact Customer Service via phone or email for assistance.\n\nCertain product launches and puma.com exclusives have a shorter window for returns and exchanges. This includes but is not limited to PUMA x LAMELO BALL and FENTY x PUMA Shoes which must be returned / exchanged within 15 days.",
+          "source_sha256": "6e2cd4000fb5b52690c8760ae5985207485bb2b032c0dec4af826fc0220704a0",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/puma-mancity-product.txt",
+        "upload/puma-returns.txt"
+      ]
+    },
+    {
+      "object_id": "puma_mancity",
+      "field_id": "return_conditions",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "supported",
+      "expected_facts": [
+        "免费在线退货仅 us.puma.com 订单；原支付方式退款，礼卡另发 E-Gift Card；处理可 1-2 周。门店退须订单确认和原支付方式，部分网购必须线上处理。不能直接换货，需退后新下单。"
+      ],
+      "required_conditions": [
+        "APO/FPO、美国属地及不能使用 FedEx/授权 drop-off 的订单不享免费退货；PUMA 不负责途中丢失或额外费用。"
+      ],
+      "known_gaps": [
+        "商品状态/包装要求在冻结正文未明确；重庆退货渠道不适用/未知。"
+      ],
+      "serious_error_rules": [
+        "称所有地区无条件免费退；承诺直接换货；把处理 1-2 周写成到账保证。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/puma-returns.txt",
+          "line_start": 9,
+          "line_end": 19,
+          "quote": "## Initiating Your Return\n\nLooking to make a return online? You’re in the right place. [Click here](https://returns.narvar.com/puma/returns)to be redirected to our returns portal to initiate a return online.\n\n**Note:** Free online returns are only available for orders placed on us.puma.com.\n\n## Refunds\n\nPurchases made by debit or credit card (including pre-paid gift cards) and through PayPal will be credited back to the original form of payment. If you paid with a PUMA Gift Card, you will be issued a separate E-Gift Card for the refunded amount.\n\nReturns that have been initiated on us.puma.com can take 1-2 weeks to process depending on when the return is received. Please make sure you select the right item(s) you wish to return to avoid delays in refunding.",
+          "source_sha256": "6e2cd4000fb5b52690c8760ae5985207485bb2b032c0dec4af826fc0220704a0",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/puma-returns.txt",
+          "line_start": 31,
+          "line_end": 41,
+          "quote": "## Returns to PUMA Retail Stores\n\nYou may return items purchased on puma.com to any PUMA store. Please bring the original form of payment and a physical or digital copy of the Order Confirmation Email with you so you may be refunded. Purchases made by credit card will be credited back to that original card (including pre-paid gift cards). If you paid with a PUMA Gift Card, Apple Pay, Google Pay or PayPal, then a PUMA Gift Card will be issued with the refunded amount.\n\nCertain online returns may not be processed in-store for refund and must be initiated online. If brought to a store, associates will assist with initiating these returns online, packaging, and shipping the return back to our facility for processing. These returns will follow our online timeframes for transit and processing.\n\n## Exchanges\n\nWe do not offer direct exchanges at this time. If you wish to exchange an item, you must go through our return process and place a new order.\n\nWe will provide you with a pre-paid shipping label for your return and your new order will come with free standard shipping.",
+          "source_sha256": "6e2cd4000fb5b52690c8760ae5985207485bb2b032c0dec4af826fc0220704a0",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/puma-returns.txt",
+          "line_start": 47,
+          "line_end": 59,
+          "quote": "## Additional Notes\n\nWe do not offer free returns on orders from APO/FPO addresses and US Territories. You must also be able to drop off your return at a FedEx or authorized drop-off location. To find a FedEx drop-off location near you, click [here](https://www.fedex.com/en-us/shipping/drop-off-package.html).\n\nOrders placed from these addresses, or those that are unable to drop off their return at a FedEx or authorized drop-off do not qualify for free returns and would mail their return items to:\n\nShoebacca Returns Department\n\nPUMA Returns  \n590 N. Wildwood Drive  \nIrving, TX 75061\n\nPUMA is not responsible for any returns lost in transit or any additional charges incurred.",
+          "source_sha256": "6e2cd4000fb5b52690c8760ae5985207485bb2b032c0dec4af826fc0220704a0",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/puma-mancity-product.txt",
+        "upload/puma-returns.txt"
+      ]
+    },
+    {
+      "object_id": "puma_mancity",
+      "field_id": "exclusions",
+      "review_status": "assistant_draft_unreviewed",
+      "assessment": "supported",
+      "expected_facts": [
+        "final sale 不退换；gift cards、customized products、bodywear 不退，定制品制造/材料缺陷例外。某些指定 launches/exclusives 为 15 天。Flash 40% 促销缺基准价。"
+      ],
+      "required_conditions": [
+        "商品页未证明目标是 final sale/定制/特殊 15 天系列，不能直接套用；美国零售页不是球队批量报价。"
+      ],
+      "known_gaps": [
+        "价格/币种/材质/尺码库存/交期/重庆配送/20 件团购价均缺失。"
+      ],
+      "serious_error_rules": [
+        "把推荐政策例外误判为目标商品状态；用搜索摘要的 60 天覆盖冻结正文 30 天。"
+      ],
+      "evidence": [
+        {
+          "file": "upload/puma-mancity-product.txt",
+          "line_start": 18,
+          "line_end": 24,
+          "quote": "EXTRA 40% OFF WITH CODE: FLASH\n\nSize\n\nThis item qualifies for free shipping!\n\nFree returns on all qualifying orders.",
+          "source_sha256": "d2e6f3c77b9936cce146ab15358e11762210bfde23fe6bdb248a93b0da4050cb",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/puma-returns.txt",
+          "line_start": 23,
+          "line_end": 29,
+          "quote": "## Return Exceptions\n\nProducts that are classified as final sale cannot be returned or exchanged. Please refer to the product page for information on whether an item is a final sale item*.*\n\nPUMA does not accept returns on gift cards, customized products and bodywear including face masks. Custom products are nonrefundable, except in the case of manufacturing or material defects in which case you may contact Customer Service via phone or email for assistance.\n\nCertain product launches and puma.com exclusives have a shorter window for returns and exchanges. This includes but is not limited to PUMA x LAMELO BALL and FENTY x PUMA Shoes which must be returned / exchanged within 15 days.",
+          "source_sha256": "6e2cd4000fb5b52690c8760ae5985207485bb2b032c0dec4af826fc0220704a0",
+          "role": "supports_or_qualifies"
+        },
+        {
+          "file": "upload/puma-returns.txt",
+          "line_start": 47,
+          "line_end": 59,
+          "quote": "## Additional Notes\n\nWe do not offer free returns on orders from APO/FPO addresses and US Territories. You must also be able to drop off your return at a FedEx or authorized drop-off location. To find a FedEx drop-off location near you, click [here](https://www.fedex.com/en-us/shipping/drop-off-package.html).\n\nOrders placed from these addresses, or those that are unable to drop off their return at a FedEx or authorized drop-off do not qualify for free returns and would mail their return items to:\n\nShoebacca Returns Department\n\nPUMA Returns  \n590 N. Wildwood Drive  \nIrving, TX 75061\n\nPUMA is not responsible for any returns lost in transit or any additional charges incurred.",
+          "source_sha256": "6e2cd4000fb5b52690c8760ae5985207485bb2b032c0dec4af826fc0220704a0",
+          "role": "supports_or_qualifies"
+        }
+      ],
+      "inspected_files": [
+        "upload/puma-mancity-product.txt",
+        "upload/puma-returns.txt"
+      ]
+    }
+  ]
+}
+

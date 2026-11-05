@@ -154,6 +154,7 @@ export const agentRunAttemptSchema = z
     heartbeatAt: dateTimeSchema.nullable(),
     finishedAt: dateTimeSchema.nullable(),
     errorCode: z.string().nullable(),
+    diagnosticCode: z.string().nullable().optional(),
   })
   .strict();
 

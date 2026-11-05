@@ -1,0 +1,131 @@
+{
+  "schema_version": 1,
+  "scope": "bounded local business sampling implementation",
+  "recorded_at": "2026-09-25T10:45:53.876559+00:00",
+  "status": "local_checks_passed",
+  "production_capacity_approved": false,
+  "source_base_commit": "5a8001bdc72502f9641981660eb706f5e423ea97",
+  "source_hashes": {
+    "scripts/business_capacity.py": "d2c28897916f04bcce9de4380cf2c990b3211c1870b80cda94114ba02a6f6092",
+    "scripts/business_capacity_observer.py": "c81096d416c4e605d9446b286a7159566de498e14e0aba9cdd4b210844608aff",
+    "scripts/run_business_capacity.py": "3230a5f93151b023406c4e14f7800e5ee7e3da51eacce2c319117df8cd4aa8bb"
+  },
+  "plan_example_sha256": "ee74a58bd20c39ae423da4144040be76321c6f4e84e38d476aad462fdc9e491d",
+  "unit_business_checks": 25,
+  "integration": [
+    {
+      "execution": "ASGITransport",
+      "report_sha256": "02532e53c13c710c2d4d19e41bdfb301b220a0c306a2289d8223b0dad5a9190a",
+      "cleanup_sha256": "3af826ec154cbca828332499c2af8c74aab0be9b6b4262ef6a3fbda674623a34",
+      "cleanup_passed": true,
+      "repetitions": 2,
+      "phases": [
+        "ramp",
+        "steady_state",
+        "burst",
+        "recovery"
+      ],
+      "planned_tasks": 10,
+      "business_successes": 7,
+      "expected_business_failures": 3,
+      "expectations_met": 10,
+      "controlled_model_http_requests": 16,
+      "real_provider_requests": 0,
+      "http_requests": 223,
+      "diagnostic_p95_ms": {
+        "upload": 204.7973999979149,
+        "ingestion": 674.3360000000393,
+        "retrieval": 24.5214999995369,
+        "generation_recovery": 735.7268000014301
+      },
+      "accept_p95_ms": 80.95529999991413,
+      "terminal_p95_ms": 624.9834000009287
+    },
+    {
+      "execution": "loopback TCP and independent CLI process",
+      "report_sha256": "80fbb3d67904c05b63fb99e2998045f88d3f71bfadcb1b8dfd932921d5d50fc6",
+      "cleanup_sha256": "acca697dd04efba1035769eb483b1e33ad2fc7e69bd855dedba15bcb5ba0878d",
+      "cleanup_passed": true,
+      "repetitions": 2,
+      "phases": [
+        "ramp",
+        "steady_state",
+        "burst",
+        "recovery"
+      ],
+      "planned_tasks": 10,
+      "business_successes": 7,
+      "expected_business_failures": 3,
+      "expectations_met": 10,
+      "controlled_model_http_requests": 16,
+      "real_provider_requests": 0,
+      "http_requests": 207,
+      "diagnostic_p95_ms": {
+        "upload": 240.79709999932675,
+        "ingestion": 928.5562000004575,
+        "retrieval": 20.148100000369595,
+        "generation_recovery": 754.2175000016869
+      },
+      "accept_p95_ms": 88.7687000031292,
+      "terminal_p95_ms": 530.2284999997937
+    }
+  ],
+  "verified_behaviors": [
+    "fixed input bytes and plan limits",
+    "separate API/object credentials and rejected signed origins/headers/redirects",
+    "bounded slow response streams, task/run deadlines and complete cancellation/request-budget denominators",
+    "real TXT/PDF/DOCX multipart upload, object SHA readback, Outbox/Redis/Celery ingestion and document quota",
+    "tenant/version/active generation bound Core retrieval in observer process",
+    "background acceptance and terminal latency separated; new client and two fixed-key replays",
+    "one attempt, bounded provider calls and once-only consumption/release per operation",
+    "citation/source binding, durable review, review replay, refreshed state and CSV",
+    "standalone CLI preflight, journal equals final samples, nonempty tenant rejected"
+  ],
+  "checks": {
+    "ruff": "passed, 595 files",
+    "mypy": "passed, 252 source files including three new scripts",
+    "full_non_integration": "1856 passed, 439 deselected, 23 subtests passed",
+    "integration": "2 passed",
+    "context": "passed, inline context",
+    "final_teardown_regression": "2 passed; cleanup remains in finally even if HTTP server shutdown fails"
+  },
+  "failures_retained": [
+    "initial module-absent red tests",
+    "upload response bytearray streaming and incorrect test part-count failures, fixed before final checks",
+    "observer incorrectly read quantity on ProductUsageEvent instead of its reservation; first real integration failed and cleanup passed",
+    "strict schema version and interruption red tests; resource construction report red test",
+    "two CLI test setup attempts rejected APP_ENV=test with local development credentials; corrected fixture to APP_ENV=local, no application credential rule changed",
+    "first full regression: 1855 passed, one new spec missing Proven Examples; documentation completed before final rerun",
+    "whole-worktree whitespace check includes pre-existing unrelated CRLF findings; exact task diff is clean",
+    "staged diff check caught generated JSON CRLF; normalized only the two new JSON files to LF before commit"
+  ],
+  "resource_scope": {
+    "database": "fixture-owned PostgreSQL schema; dropped by existing browser_db fixture",
+    "object_and_queue": "owned harness objects, Redis namespace and identities cleaned; sentinel job preserved until cleanup",
+    "new_containers": 0,
+    "remote_calls": 0,
+    "real_model_calls": 0,
+    "email_sent": 0,
+    "deployment": false
+  },
+  "evidence": {
+    "location": "existing private centralized recovery group, business-capacity-evidence",
+    "retained_files": 76,
+    "cleanup_receipts": 9,
+    "prior_application_artifacts_unchanged": 86,
+    "frozen_previous_index_hashes": [
+      "4fa0f3e6f0415919b3ee91d8908216f242bcb193112aa3b2749174af4aa635b0",
+      "b6f355d0ca594f23fe4abb1e236189d2afd2f37875ed074c686af723253fc3da"
+    ]
+  },
+  "limitations": [
+    "Local functional assertions, not approved latency targets or current 4C4G capacity",
+    "Core retrieval runs in observer process; no server retrieval HTTP endpoint",
+    "Controlled Hash embeddings and HTTP models; no supplier wait or currency cost evidence",
+    "Fresh HTTP client does not prove browser/proxy outage recovery",
+    "Server settings are operator-confirmed; local CLI config is not remote configuration attestation",
+    "No live deployment identity, node/Prometheus load telemetry, independent review or notification receipt",
+    "All previous external commercial acceptance gates remain pending"
+  ],
+  "task_status": "in_progress"
+}

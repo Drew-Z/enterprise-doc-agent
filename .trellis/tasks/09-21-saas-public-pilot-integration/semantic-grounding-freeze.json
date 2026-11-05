@@ -1,0 +1,73 @@
+{
+  "createdAt": "2026-09-23T14:17:51.227168+00:00",
+  "promptVersion": "presales.v6",
+  "promptSha256": "9ee176dd70f8d25028790509d8b89a9878701338325245843f849c1bf3d90747",
+  "baselineCommit": "529fdff6e2dd8f3a9e2c13ad43e8f7c6b9d63f07",
+  "sequence": [
+    "H3",
+    "H4",
+    "H1",
+    "H2"
+  ],
+  "maxRequests": 24,
+  "perRequirementAttempts": 1,
+  "retryCount": 0,
+  "stopAfterFailedDatasetReview": true,
+  "files": [
+    {
+      "path": "packages/core/src/enterprise_doc_core/presales/gateway.py",
+      "sha256": "043d27bbfc231974a8ecc2f2163e0c9013afb7d2cc691715c3d65983f7f63cfe",
+      "bytes": 13643
+    },
+    {
+      "path": "scripts/evaluate_presales_gateway.py",
+      "sha256": "a2fd47e0e539cbb7c31fdbdcf86fae713207e593776b6be7dfafa2b116e60692",
+      "bytes": 8899
+    },
+    {
+      "path": "evaluation/presales_quality_v6.candidate-prompt.txt",
+      "sha256": "9ee176dd70f8d25028790509d8b89a9878701338325245843f849c1bf3d90747",
+      "bytes": 7083
+    },
+    {
+      "path": "evaluation/presales_quality_holdout_v1.json",
+      "sha256": "804a70dcbeea86e34381cdbc4664ca722e74288657766a4a5995136d96fa12ca",
+      "bytes": 6367
+    },
+    {
+      "path": "evaluation/presales_quality_holdout_v1.gold.json",
+      "sha256": "a4a72610fb3dd89acd0cbdde6a44b2f0b4e1568d238d72788deab2ec2ab3c218",
+      "bytes": 4380
+    },
+    {
+      "path": "evaluation/presales_quality_holdout_v2.json",
+      "sha256": "c93361e9b1ffac60b6026172a79360aac9bf0a18f7186c818190fa938e37d55c",
+      "bytes": 4189
+    },
+    {
+      "path": "evaluation/presales_quality_holdout_v2.gold.json",
+      "sha256": "feff5700da2cb2fbf7302fb77aba500eec208c47af8e2fdce78251971473de00",
+      "bytes": 3871
+    },
+    {
+      "path": "evaluation/presales_quality_holdout_v3.json",
+      "sha256": "260759bf6314153a9ca48ff80c9e6dbd148b917e828fefb57e1db3c9852d33a6",
+      "bytes": 4399
+    },
+    {
+      "path": "evaluation/presales_quality_holdout_v3.gold.json",
+      "sha256": "3eccacb3939ea5f1b65395a5244f7138aab2135e502afac3ffa78d91c1f7ddfe",
+      "bytes": 3965
+    },
+    {
+      "path": "evaluation/presales_quality_holdout_v4.json",
+      "sha256": "77ad69107ed3314306ea50ada45ac6a02f87d922b5ceeaa2c07e57e63a6dac3f",
+      "bytes": 4374
+    },
+    {
+      "path": "evaluation/presales_quality_holdout_v4.gold.json",
+      "sha256": "694ebffaff1af31fc9ca1730aabbcd0ed73550d95dc270380460c36222d29937",
+      "bytes": 5057
+    }
+  ]
+}

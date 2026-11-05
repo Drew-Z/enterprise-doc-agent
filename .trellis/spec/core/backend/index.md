@@ -11,6 +11,12 @@ under `packages/core`; it does not own application entry points. See
 Presales response sheets, bounded generation, review and CSV contracts are in
 `.trellis/spec/backend/presales-workspace.md` (local workflow, commercial acceptance pending).
 
+Independent multi-document source preparation, parser versions, immutable source
+manifests, bounded execution, exact human review and frozen XLSX delivery are in
+`.trellis/spec/backend/document-analysis-workspace.md`. Local A1-A4 slices cover
+run/unit/matrix/SSE/accounting, input resume, tools, revision review and artifact
+approval/download; dependency invalidation and external quality acceptance remain open.
+
 One-time tenant admission, atomic provisioning, explicit identity reuse and the
 local operator CLI are in `.trellis/spec/backend/tenant-admission.md`. Real browser
 authentication and commercial entitlement enforcement remain separate boundaries.

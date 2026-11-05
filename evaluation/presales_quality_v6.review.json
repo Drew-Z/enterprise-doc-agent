@@ -1,0 +1,107 @@
+{
+  "schemaVersion": "presales-gateway-semantic-review-v1",
+  "reviewType": "assistant authored and self reviewed, non-blind; not independent domain or customer review",
+  "decision": "v6_prompt_withdrawn; keep_existing_v5_PR_draft; no_deploy",
+  "promptVersion": "presales.v6",
+  "promptSha256": "9ee176dd70f8d25028790509d8b89a9878701338325245843f849c1bf3d90747",
+  "scope": "original_generation_only_outcomes_with_complete_short_synthetic_sources",
+  "plan": {
+    "maximumRequests": 24,
+    "sequence": [
+      "H3",
+      "H4",
+      "H1",
+      "H2"
+    ],
+    "stopAfterFailedDatasetReview": true
+  },
+  "realProviderRequests": 6,
+  "automaticRetries": 0,
+  "additionalReplayRequests": 0,
+  "unattemptedDatasets": [
+    "H4",
+    "H1",
+    "H2"
+  ],
+  "unattemptedRequirements": 18,
+  "acceptedDrafts": 3,
+  "statusMatches": 3,
+  "attemptedRows": 6,
+  "unsafeAffirmativeLabels": 0,
+  "exactCitations": 3,
+  "coveredRequiredEvidence": 3,
+  "requiredEvidenceInAttemptedDataset": 9,
+  "releaseGatePassed": false,
+  "usage": {
+    "prompt_tokens": null,
+    "completion_tokens": null,
+    "total_tokens": null
+  },
+  "knownPartialUsage": {
+    "requestsWithCompleteUsage": 5,
+    "prompt_tokens": 19284,
+    "completion_tokens": 23620,
+    "total_tokens": 42904
+  },
+  "costAmount": null,
+  "costReason": "ReadError request usage is unknown; no verified price or invoice. Partial usage includes two rejected model outputs.",
+  "latencySeconds": {
+    "min": 27.187,
+    "median": 71.8205,
+    "max": 106.844
+  },
+  "runPath": "evaluation/presales_quality_holdout_v3.v6-gateway.json",
+  "runSha256": "31444377a2b6739f738fb4522b3f6a132a0eb567b85959356f632c312d0c7674",
+  "rows": [
+    {
+      "key": "H3-R1",
+      "acceptedDraft": true,
+      "statusMatch": true,
+      "semanticReview": "pass",
+      "notes": "正确解释内部检查表不足以证明ISO认证，要求证书、范围及有效期；正文较重复，但未断言未认证。"
+    },
+    {
+      "key": "H3-R2",
+      "acceptedDraft": true,
+      "statusMatch": true,
+      "semanticReview": "pass",
+      "notes": "明确尚未通过PCI评估且不能提供有效证明，正确判为不满足。"
+    },
+    {
+      "key": "H3-R3",
+      "acceptedDraft": false,
+      "statusMatch": false,
+      "semanticReview": "not_observable",
+      "errorCode": "presales_model_transport_error",
+      "transportFailure": {
+        "type": "ReadError",
+        "phase": "awaiting_response_headers"
+      },
+      "notes": "27.187秒后在收到响应头之前发生客户端读取失败。无HTTP状态、正文或用量，不能归因具体网络节点，也不能认为条款关系写反已修复。"
+    },
+    {
+      "key": "H3-R4",
+      "acceptedDraft": false,
+      "statusMatch": false,
+      "semanticReview": "rejected_protocol",
+      "errorCode": "presales_invalid_citation",
+      "notes": "HTTP200正文选择了一个合法citationId，但其余两项填成证据内的chunk UUID，均不属于本次citationId目录。拒绝结果，不把原始supported标签计为成功，不映射UUID补救。"
+    },
+    {
+      "key": "H3-R5",
+      "acceptedDraft": false,
+      "statusMatch": false,
+      "semanticReview": "failed",
+      "errorCode": "presales_invalid_model_output",
+      "notes": "HTTP200正文的conditions增加“需”，与prerequisites.condition未逐字相同，触发既有一致性检查。同时恢复验收状态未登记仍标为unmet而非unknown，missingInformation为空；即使解决格式问题，该语义问题仍存在。"
+    },
+    {
+      "key": "H3-R6",
+      "acceptedDraft": true,
+      "statusMatch": true,
+      "semanticReview": "pass",
+      "notes": "12个附件硬上限不能满足20个要求，保留无提升路径且拆分不等价的原文。"
+    }
+  ],
+  "conclusion": "The frozen v6 candidate did not resolve its target unknown-state error and produced rejected outputs. Restore the prior v5 runtime prompt; retain safe collector diagnostics, frozen H4 inputs, raw v6 results and this review. Do not infer a causal quality difference from this small non-independent trial."
+}

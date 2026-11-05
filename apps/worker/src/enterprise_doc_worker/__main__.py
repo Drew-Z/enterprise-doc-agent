@@ -1,27 +1,37 @@
 import asyncio
-from collections.abc import Coroutine
+from collections.abc import Callable, Coroutine
+from functools import partial
 from typing import Any
 
 import uvicorn
 
 from enterprise_doc_core.agents import CheckpointHealthChecker, CheckpointRuntime
+from enterprise_doc_core.analysis.execution import build_execution_service
 from enterprise_doc_core.db import (
     create_session_factory,
     ensure_asyncio_compatibility,
 )
 from enterprise_doc_core.health import FoundationResources, build_foundation_resources
 from enterprise_doc_core.jobs import JobRuntimeService, OutboxService
+from enterprise_doc_core.jobs.metrics import read_queue_oldest_age
 from enterprise_doc_core.logging import configure_logging
 from enterprise_doc_core.telemetry import MetricsRuntime, TelemetryManager, TelemetryRuntime
-from enterprise_doc_worker.agent_handler import (
-    agent_failure_lock_key,
-    project_agent_run_failure,
+from enterprise_doc_core.telemetry.resources import (
+    ResourceMetricsSampler,
+    read_redis_connected_clients,
 )
 from enterprise_doc_worker.agents import build_durable_agent_handler
+from enterprise_doc_worker.analysis_handler import (
+    execution_failure_lock_key as agent_failure_lock_key,
+)
+from enterprise_doc_worker.analysis_handler import (
+    project_execution_failure as project_agent_run_failure,
+)
 from enterprise_doc_worker.app import create_probe_app
 from enterprise_doc_worker.config import WorkerSettings
 from enterprise_doc_worker.handler import build_consumer_factory
-from enterprise_doc_worker.lifecycle import WorkerRuntime
+from enterprise_doc_worker.lifecycle import WorkerProgress, WorkerRuntime
+from enterprise_doc_worker.presales import run_presales
 from enterprise_doc_worker.publisher import OutboxPublisher
 from enterprise_doc_worker.queue import (
     CeleryTaskDispatcher,
@@ -35,15 +45,24 @@ async def supervise_worker_tasks(
     server: Coroutine[Any, Any, None],
     runtime: Coroutine[Any, Any, None],
     publisher: Coroutine[Any, Any, None],
+    presales: Coroutine[Any, Any, None] | None = None,
+    resource_observer: Coroutine[Any, Any, None] | None = None,
+    on_stopping: Callable[[], None] | None = None,
 ) -> None:
     tasks = {
-        "server": asyncio.create_task(server),
-        "runtime": asyncio.create_task(runtime),
-        "publisher": asyncio.create_task(publisher),
+        "server": asyncio.create_task(server, name="worker.server"),
+        "runtime": asyncio.create_task(runtime, name="worker.runtime"),
+        "publisher": asyncio.create_task(publisher, name="worker.publisher"),
     }
+    if presales is not None:
+        tasks["presales"] = asyncio.create_task(presales, name="worker.presales")
+    if resource_observer is not None:
+        tasks["resource_observer"] = asyncio.create_task(
+            resource_observer, name="worker.resource_observer"
+        )
     try:
         done, _ = await asyncio.wait(tasks.values(), return_when=asyncio.FIRST_COMPLETED)
-        for role in ("runtime", "publisher"):
+        for role in (name for name in tasks if name != "server"):
             task = tasks[role]
             if task not in done:
                 continue
@@ -55,6 +74,9 @@ async def supervise_worker_tasks(
             raise RuntimeError(f"{role} stopped unexpectedly")
         await tasks["server"]
     finally:
+        # Invalidate probes before waiting for cancellation: driver cleanup may stall.
+        if on_stopping is not None:
+            on_stopping()
         for task in tasks.values():
             if not task.done():
                 task.cancel()
@@ -96,6 +118,8 @@ async def run_worker() -> None:
             checkpointer=checkpointer,
             graph_version=settings.agent.graph_version,
             execution_timeout_seconds=settings.agent.execution_timeout_seconds,
+            app_env=settings.app_env,
+            provider_usage_settings=settings.provider_usage,
             fault_injection=settings.fault_injection,
             metrics=metrics,
         )
@@ -109,11 +133,17 @@ async def run_worker() -> None:
                 documents_bucket=settings.object_store.documents_bucket,
                 worker_id=settings.worker.worker_id,
                 agent_handler=agent_handler,
+                analysis_handler=build_execution_service(
+                    session_factory=session_factory, settings=settings
+                ).execute,
                 metrics=metrics,
                 fault_injection=settings.fault_injection,
                 embedding_settings=settings.embedding,
+                app_env=settings.app_env,
+                provider_usage_settings=settings.provider_usage,
             ),
         )
+        progress = WorkerProgress()
         publisher = OutboxPublisher(
             store=OutboxService(session_factory=session_factory),
             dispatcher=CeleryTaskDispatcher(celery_app),
@@ -122,13 +152,40 @@ async def run_worker() -> None:
             poll_interval_seconds=settings.worker.publisher_poll_interval_seconds,
             cycle_timeout_seconds=settings.worker.publisher_cycle_timeout_seconds,
             metrics=metrics,
+            on_progress=progress.register(
+                "publisher",
+                timeout_seconds=settings.worker.publisher_cycle_timeout_seconds
+                + settings.worker.publisher_poll_interval_seconds
+                + 30,
+            ),
         )
+        observer = None
+        if settings.otel.metrics_enabled:
+            observer = ResourceMetricsSampler(
+                metrics,
+                partial(read_queue_oldest_age, session_factory),
+                partial(read_redis_connected_clients, resources.redis_client),
+            )
+            observer.on_progress = progress.register(
+                "resource_observer",
+                timeout_seconds=observer.timeout_seconds + observer.interval_seconds + 30,
+            )
+        presales = None
+        if settings.presales.background_generation_enabled:
+            presales = run_presales(
+                settings,
+                session_factory,
+                runtime.shutdown_event,
+                metrics,
+                progress=progress,
+            )
         server = uvicorn.Server(
             uvicorn.Config(
                 create_probe_app(
                     settings=settings,
-                    checkers=(*resources.checkers, CheckpointHealthChecker(settings)),
+                    checkers=(*resources.checkers, CheckpointHealthChecker(settings), progress),
                     metrics=metrics,
+                    liveness=progress.is_healthy,
                 ),
                 host=settings.worker.host,
                 port=settings.worker.probe_port,
@@ -140,6 +197,11 @@ async def run_worker() -> None:
             server=server.serve(),
             runtime=runtime.run(),
             publisher=publisher.run(runtime.shutdown_event),
+            presales=presales,
+            resource_observer=observer.run(runtime.shutdown_event)
+            if observer is not None
+            else None,
+            on_stopping=progress.stop,
         )
     finally:
         if runtime is not None:

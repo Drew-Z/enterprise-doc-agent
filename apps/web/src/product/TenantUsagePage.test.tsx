@@ -27,7 +27,7 @@ afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 it("shows current capacity, UTC dates, actual resources and unknown model cost", async () => {
   vi.spyOn(globalThis, "fetch").mockResolvedValue(response(tenantUsage()));
   mount();
-  const generation = await screen.findByRole("region", { name: "Generation capacity" });
+  const generation = await screen.findByRole("region", { name: "Presales generation capacity" });
   expect(within(generation).getByText("24")).toBeInTheDocument();
   expect(within(generation).getByText("6")).toBeInTheDocument();
   expect(within(generation).getByText("70")).toBeInTheDocument();
@@ -35,12 +35,21 @@ it("shows current capacity, UTC dates, actual resources and unknown model cost",
   expect(screen.getByText("team-pilot")).toBeInTheDocument();
   expect(within(generation).getByText(/UTC/)).toBeInTheDocument();
   const storage = screen.getByRole("region", { name: "Storage" });
+  const agent = screen.getByRole("region", { name: "Agent tasks" });
+  expect(within(agent).getByText("15")).toBeInTheDocument();
+  expect(within(agent).getByText("2")).toBeInTheDocument();
+  const processing = screen.getByRole("region", { name: "Document processing" });
+  expect(within(processing).getByText("7 MiB")).toBeInTheDocument();
+  expect(within(processing).getByText(/separate from storage/)).toBeInTheDocument();
+  const calls = screen.getByRole("region", { name: "Agent and embedding calls" });
+  expect(within(calls).getByText("128")).toBeInTheDocument();
+  expect(within(calls).getByText(/no monetary total/)).toBeInTheDocument();
   expect(within(storage).getByText("256 MiB")).toBeInTheDocument();
   expect(within(storage).getByText("128 MiB")).toBeInTheDocument();
   expect(within(storage).getByText("640 MiB")).toBeInTheDocument();
   expect(within(screen.getByRole("region", { name: "Member seats" })).getByText("3")).toBeInTheDocument();
   expect(screen.getByText("Model cost unknown")).toBeInTheDocument();
-  expect(screen.getByText("Up to 20 events from the current period.")).toBeInTheDocument();
+  expect(screen.getByText("Up to 20 presales events from the current period.")).toBeInTheDocument();
   expect(screen.queryByText(/\$0/)).not.toBeInTheDocument();
 });
 
@@ -48,7 +57,7 @@ it.each(["legacy", "inactive"] as const)("explains %s without displaying placeho
   vi.spyOn(globalThis, "fetch").mockResolvedValue(response(usageWithoutPeriod(status)));
   mount();
   expect(await screen.findByText(status === "legacy" ? "No generation period configured" : "No active generation period")).toBeInTheDocument();
-  const generation = screen.getByRole("region", { name: "Generation capacity" });
+  const generation = screen.getByRole("region", { name: "Presales generation capacity" });
   expect(within(generation).queryByText("0")).not.toBeInTheDocument();
   expect(screen.getByRole("region", { name: "Storage" })).toBeInTheDocument();
   expect(screen.queryByRole("list", { name: "Recent usage activity" })).not.toBeInTheDocument();
@@ -79,7 +88,7 @@ it.each([
   mount(props);
   await act(async () => {});
   expect(fetcher).not.toHaveBeenCalled();
-  expect(screen.queryByRole("region", { name: "Generation capacity" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("region", { name: "Presales generation capacity" })).not.toBeInTheDocument();
 });
 
 it("hides previous details after a forbidden refresh and allows explicit recovery", async () => {

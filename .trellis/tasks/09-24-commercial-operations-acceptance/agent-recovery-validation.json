@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-10-02T23:28:25.313228+00:00",
+  "task_status": "in_progress",
+  "all_five_overall_gates_remain_open": true,
+  "verified_scope": "New synthetic Agent on existing rc16 restored VM; real PostgreSQL checkpoint and MCP stdio across Worker/Consumer Pod replacement",
+  "recovery_images": {
+    "api": "ghcr.io/drew-z/enterprise-doc-api@sha256:3d0326a56f45de386ed5d999b854e997db217fc20338987018e8b9f867de04ac",
+    "worker": "ghcr.io/drew-z/enterprise-doc-worker@sha256:8aa1ccd34f644b9d9507abf1dc6bdd1a23b70c5c20bb121913e334e67ac50a40",
+    "consumer": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:bb521b2f3698956e29568111926e036ab5aa7e33305356a092894cb8bda8de9a"
+  },
+  "success": {
+    "upload_bytes": 22,
+    "ingestion_chunks": 1,
+    "worker_and_consumer_pods_replaced": 2,
+    "approval_deadline_extended": false,
+    "initial_and_resume_executions": 2,
+    "each_execution_attempts": 1,
+    "mcp_searches": 1,
+    "mcp_draft_creations": 1,
+    "mcp_publications": 1,
+    "controlled_model_calls": 1,
+    "additional_model_calls_during_resume": 0,
+    "real_supplier_calls": 0,
+    "agent_units_reserved_before": 1,
+    "agent_units_reserved_after": 0,
+    "agent_units_used_before": 0,
+    "agent_units_used_after": 1,
+    "agent_consume_events": 1,
+    "same_key_creation_and_approval_replay_unchanged": true,
+    "cross_tenant_denial": true,
+    "artifact_bytes": 539,
+    "artifact_sha256": "b5438bd47941b82225d21ab550a88d4c8647c05be2b164b3fe681ed7729676ed",
+    "preexisting_tables": 56,
+    "preexisting_rows": 82827,
+    "preexisting_row_digests_preserved": true,
+    "full_verification_with_resource_cleanup_seconds": 92.31200000000536,
+    "successful_attempt_resources_removed": 7,
+    "all_attempt_resources_removed": 32,
+    "original_api_template_restored": true
+  },
+  "prior_failed_attempts": [
+    {
+      "attempt": "v1",
+      "reason": "strict_integer_environment_rejected",
+      "sha256": "721af74e1ec59cab7657194a3d9354f74e02f6885a6e92de71c9ab0df8eb59e7"
+    },
+    {
+      "attempt": "-v2",
+      "reason": "http_helper_keyword_rejected",
+      "sha256": "b2c25e804644438a690e7fe088ad80a1bb973be533534e3629958c2548578548"
+    },
+    {
+      "attempt": "-v3",
+      "reason": "publication_visibility_assertion",
+      "sha256": "7c1992fd37f375dc87ecca00859eb1fd01091ae8eb73ca0ad38e77148eef72aa"
+    },
+    {
+      "attempt": "-v4",
+      "reason": "original_approval_deadline_elapsed",
+      "sha256": "9b98cdd8ee860a28fee7f78f70ecf2b56b042a265e89d62a607e47d4c9fc7178"
+    }
+  ],
+  "failed_fixture_cleanup": {
+    "cancelled_via_public_api": true,
+    "released_reservations": 1,
+    "extra_provider_calls": 0,
+    "historical_records_deleted": 0
+  },
+  "limits": {
+    "current_rc17_recovery_proven": false,
+    "historical_inflight_before_deadline_resume_proven": false,
+    "new_whole_machine_rebuild": false,
+    "whole_machine_rto_claimed": false,
+    "independent_human_review": false,
+    "paid_provider_cost_verified": false
+  },
+  "backup_observation": {
+    "at": "2026-10-02T23:19:32.131292+00:00",
+    "succeeded": 112,
+    "sealed_waiting": 1,
+    "waiting_reason": "RemoteBudgetExceeded",
+    "systemd_active": true,
+    "systemd_restarts": 0,
+    "historical_remote_deletions": 0,
+    "continuous_300_second_freshness_passed": false
+  },
+  "workspace_baseline_files_preserved": 2993,
+  "evidence": {
+    "verify_agent_recovery_v5.py": {
+      "sha256": "9688c6954a3df254bdd4f411cd45a504260da2f68651b5bed9d220ac5f6f1ed0"
+    },
+    "agent_recovery_probe_v5.py": {
+      "sha256": "8f794089a30ed89f84945688429cf86ecdb1bdaf020cedde3aec9acbcdd886e6"
+    },
+    "agent-recovery-v5-result.json": {
+      "sha256": "65557eacf8143e73c992181a7b5f94dfb0f71cdb9f3944e5e683378ddd57bb5f"
+    },
+    "agent-recovery-v5-process-replacements.json": {
+      "sha256": "eed3e750c81b73b7ce5f7090abac8a1c6e7a214df25a75a572d75fec24cc519b"
+    },
+    "agent-recovery-failed-fixture-cancel.json": {
+      "sha256": "a91e10c53a5d1172cf862ec69b04cff4416a12c59a5df47106d9c7255d73a103"
+    },
+    "production-backup-observe-agent-recovery-followup-20261003.json": {
+      "sha256": "05963fdc2d2e57ba934cc1ffd55a01ce048a0e0dda3bbc7e44529b788a4bc69f"
+    }
+  }
+}

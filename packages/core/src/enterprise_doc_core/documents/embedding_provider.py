@@ -3,14 +3,16 @@ from __future__ import annotations
 import asyncio
 import json
 import math
-from collections.abc import Sequence
+from collections.abc import AsyncIterator, Sequence
+from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 from typing import Any
 
 import httpx
 
-from enterprise_doc_core.config import EmbeddingSettings
+from enterprise_doc_core.billing.provider_calls import recorded_post
+from enterprise_doc_core.config import AppEnvironment, EmbeddingSettings
 from enterprise_doc_core.documents.ingestion import EmbeddingProvider
 
 
@@ -29,6 +31,7 @@ class OpenAICompatibleEmbeddingProvider:
         *,
         settings: EmbeddingSettings,
         client: httpx.AsyncClient | None = None,
+        require_metering: bool = False,
     ) -> None:
         if settings.provider.value != "openai_compatible":
             raise ValueError(
@@ -40,6 +43,7 @@ class OpenAICompatibleEmbeddingProvider:
         self.api_key = settings.api_key.get_secret_value()
         self.endpoint = f"{settings.base_url.rstrip('/')}/embeddings"
         self.client = client
+        self.require_metering = require_metering
 
     async def embed(self, texts: Sequence[str]) -> tuple[tuple[float, ...], ...]:
         if not texts:
@@ -89,11 +93,15 @@ class OpenAICompatibleEmbeddingProvider:
         }
         for attempt in range(self.settings.max_retries + 1):
             try:
-                response = await client.post(
+                response = await recorded_post(
+                    client,
                     self.endpoint,
+                    provider="openai_compatible",
+                    model=self.settings.model_name,
+                    require_metering=self.require_metering,
                     headers=headers,
-                    json=body,
-                    timeout=httpx.Timeout(self.settings.timeout_seconds),
+                    json_body=body,
+                    request_timeout=httpx.Timeout(self.settings.timeout_seconds),
                 )
             except httpx.TimeoutException as error:
                 if attempt < self.settings.max_retries:
@@ -227,6 +235,9 @@ def embedding_model_identity(settings: EmbeddingSettings) -> str:
 
 def build_embedding_provider(
     settings: EmbeddingSettings,
+    *,
+    app_env: AppEnvironment = AppEnvironment.LOCAL,
+    client: httpx.AsyncClient | None = None,
 ) -> tuple[EmbeddingProvider, str, int]:
     from enterprise_doc_core.documents.embedding_routing import DimensionCheckedEmbeddingProvider
     from enterprise_doc_core.documents.ingestion import HashEmbeddingProvider
@@ -234,7 +245,11 @@ def build_embedding_provider(
     if settings.provider.value == "hash":
         provider: EmbeddingProvider = HashEmbeddingProvider(dimension=settings.dimension)
     else:
-        provider = OpenAICompatibleEmbeddingProvider(settings=settings)
+        provider = OpenAICompatibleEmbeddingProvider(
+            settings=settings,
+            client=client,
+            require_metering=app_env in {AppEnvironment.STAGING, AppEnvironment.PRODUCTION},
+        )
     return (
         DimensionCheckedEmbeddingProvider(provider, dimension=settings.dimension),
         embedding_model_identity(settings),
@@ -242,9 +257,27 @@ def build_embedding_provider(
     )
 
 
+@asynccontextmanager
+async def managed_embedding_provider(
+    settings: EmbeddingSettings,
+    *,
+    app_env: AppEnvironment = AppEnvironment.LOCAL,
+) -> AsyncIterator[tuple[EmbeddingProvider, str, int]]:
+    """Own a connection pool within one service's async lifetime and event loop."""
+    if settings.provider.value == "hash":
+        yield build_embedding_provider(settings, app_env=app_env)
+        return
+    async with httpx.AsyncClient(
+        trust_env=False,
+        limits=httpx.Limits(max_connections=10, max_keepalive_connections=5, keepalive_expiry=120),
+    ) as client:
+        yield build_embedding_provider(settings, app_env=app_env, client=client)
+
+
 __all__ = [
     "EmbeddingProviderError",
     "OpenAICompatibleEmbeddingProvider",
     "build_embedding_provider",
     "embedding_model_identity",
+    "managed_embedding_provider",
 ]

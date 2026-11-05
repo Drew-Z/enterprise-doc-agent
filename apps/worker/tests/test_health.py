@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
+from datetime import datetime
 
 from httpx import ASGITransport, AsyncClient
 
@@ -50,7 +51,9 @@ async def test_worker_readiness_matches_api_contract() -> None:
         response = await client.get("/health/ready")
 
     assert response.status_code == 503
-    assert response.json() == {
+    body = response.json()
+    assert datetime.fromisoformat(body.pop("checked_at")).tzinfo is not None
+    assert body == {
         "status": "not_ready",
         "checks": {
             "database": {"status": "up"},
@@ -77,7 +80,9 @@ async def test_worker_readiness_budget_includes_checkpoint_checker() -> None:
         response = await client.get("/health/ready")
 
     assert response.status_code == 200
-    assert response.json() == {
+    body = response.json()
+    assert datetime.fromisoformat(body.pop("checked_at")).tzinfo is not None
+    assert body == {
         "status": "ready",
         "checks": {"langgraph_checkpoint": {"status": "up"}},
     }

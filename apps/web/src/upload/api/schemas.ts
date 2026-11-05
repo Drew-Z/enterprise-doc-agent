@@ -3,6 +3,8 @@ import { z } from "zod";
 const safeIntegerSchema = z.number().int().safe();
 const positiveSafeIntegerSchema = safeIntegerSchema.positive();
 export const sessionIdSchema = z.string().uuid();
+export const uploadTransportSchema = z.enum(["multipart", "single_put"]);
+export type UploadTransport = z.infer<typeof uploadTransportSchema>;
 export const partNumberSchema = positiveSafeIntegerSchema.max(10_000);
 const dateTimeSchema = z.iso.datetime({ offset: true });
 const httpUrlSchema = z.url().refine((value) => {
@@ -51,6 +53,7 @@ export const createUploadRequestSchema = z
     sizeBytes: positiveSafeIntegerSchema,
     mediaType: z.string().min(1),
     sha256: sha256HexSchema,
+    transport: uploadTransportSchema.optional(),
   })
   .strict();
 
@@ -67,6 +70,7 @@ export const createUploadResponseSchema = z
     expectedPartCount: positiveSafeIntegerSchema.max(10_000),
     expiresAt: dateTimeSchema,
     replayed: z.boolean(),
+    transport: uploadTransportSchema.optional(),
   })
   .strict();
 
@@ -108,6 +112,10 @@ export const completeUploadRequestSchema = z
   })
   .strict();
 
+export const presignObjectResponseSchema = presignPartResponseSchema
+  .pick({ url: true, headers: true, expiresInSeconds: true })
+  .strict();
+
 export const completeUploadResponseSchema = z
   .object({
     sessionId: sessionIdSchema,
@@ -120,6 +128,11 @@ export const completeUploadResponseSchema = z
   .strict();
 
 export type UploadSessionStatus = z.infer<typeof uploadSessionStatusSchema>;
+export const contentUploadResponseSchema = z.object({
+  session: createUploadResponseSchema,
+  completion: completeUploadResponseSchema.nullable(),
+}).strict();
+export type ContentUploadResponse = z.infer<typeof contentUploadResponseSchema>;
 export type ErrorResponse = z.infer<typeof errorResponseSchema>;
 export type CreateUploadRequest = z.infer<typeof createUploadRequestSchema>;
 export type CreateUploadResponse = z.infer<typeof createUploadResponseSchema>;

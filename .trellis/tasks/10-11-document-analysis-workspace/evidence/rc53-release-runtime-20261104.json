@@ -1,0 +1,422 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-11-04T14:42:01.158950+00:00",
+  "status": "signed_candidate_and_fresh_0044_runtime_passed",
+  "release": {
+    "commit_sha": "f6930e85493fa25b99be20ece14669f0d49c26dc",
+    "ref": "refs/tags/v0.1.45-rc.53",
+    "repository": "Drew-Z/enterprise-doc-agent",
+    "run_attempt": "1",
+    "run_id": "41845049954",
+    "workflow_ref": "Drew-Z/enterprise-doc-agent/.github/workflows/container.yml@refs/tags/v0.1.45-rc.53"
+  },
+  "images": {
+    "api": {
+      "image": "ghcr.io/drew-z/enterprise-doc-api",
+      "digest": "sha256:14547f78c40b245692bc57e4920fe0bd185b747bd5426fbed3a3033cc3bf242d",
+      "steps": {
+        "provenance": "success",
+        "push": "success",
+        "sbom": "success",
+        "scan": "success",
+        "sign": "success",
+        "verify": "success"
+      }
+    },
+    "consumer": {
+      "image": "ghcr.io/drew-z/enterprise-doc-consumer",
+      "digest": "sha256:9f29eb893dda667f8d3ff3d1cdeb66d9955bfb9ac1cbf5a104b7292fbc4cecbc",
+      "steps": {
+        "provenance": "success",
+        "push": "success",
+        "sbom": "success",
+        "scan": "success",
+        "sign": "success",
+        "verify": "success"
+      }
+    },
+    "web": {
+      "image": "ghcr.io/drew-z/enterprise-doc-web",
+      "digest": "sha256:f4bed08c431406d8277089bafff66eccb9cf50d09438c4545f1a0c53cade5b02",
+      "steps": {
+        "provenance": "success",
+        "push": "success",
+        "sbom": "success",
+        "scan": "success",
+        "sign": "success",
+        "verify": "success"
+      }
+    },
+    "worker": {
+      "image": "ghcr.io/drew-z/enterprise-doc-worker",
+      "digest": "sha256:aa784af188184419f6f5979dcf6183a08a98ab30a7c18aaa854469be6e1cdd7b",
+      "steps": {
+        "provenance": "success",
+        "push": "success",
+        "sbom": "success",
+        "scan": "success",
+        "sign": "success",
+        "verify": "success"
+      }
+    }
+  },
+  "release_manifest_sha256": "52033ce2b5c144c74333e60d79fabc301289bc5735d67f90d4a8a70cb077bc5a",
+  "verification_harness_commit": "3802b15c485968581d9f9e5716dde957b4083346",
+  "runtime_run_id": 41847465629,
+  "runtime_run_attempt": 2,
+  "runtime_results": [
+    {
+      "artifact_id": 13332775137,
+      "artifact_name": "analysis-rollback-compatibility-rollback-rc51-41847465629-2",
+      "sha256": "2c456aea4f61afbba73e60e7c20edb60bd6e946f2fcf183973bad4a04c612527",
+      "report": {
+        "candidate_api_image": "ghcr.io/drew-z/enterprise-doc-api@sha256:14547f78c40b245692bc57e4920fe0bd185b747bd5426fbed3a3033cc3bf242d",
+        "checks": {
+          "api_live": {
+            "http_status": 200,
+            "status": "passed"
+          },
+          "api_openapi": {
+            "analysis_route_present": false,
+            "http_status": 200,
+            "openapi_document": true,
+            "status": "passed"
+          },
+          "api_ready": {
+            "http_status": 200,
+            "status": "passed"
+          },
+          "consumer_port": {
+            "port": 34107,
+            "status": "passed"
+          },
+          "schema": {
+            "analysis_projects": true,
+            "head": "20261104_0044",
+            "status": "passed"
+          },
+          "web_live": {
+            "http_status": 200,
+            "status": "passed"
+          },
+          "worker_live": {
+            "http_status": 200,
+            "status": "passed"
+          },
+          "worker_ready": {
+            "http_status": 200,
+            "status": "passed"
+          }
+        },
+        "cleanup": {
+          "containers_removed": 7,
+          "network_created": true,
+          "network_removed": true,
+          "status": "passed"
+        },
+        "completed_at": "2026-11-04T14:29:06.853982+00:00",
+        "dependency_builds": {
+          "minio": {
+            "dockerfile_sha256": "0f9be717db38226163e9a6bc9c0fa68fb6bae9895aaecb4557e6a98639dac355",
+            "image_id": "sha256:2f3af31f11ba1185609fd699fb823dfcdd353a38f75ff358b72a433b7945747f",
+            "platform": "linux/amd64",
+            "target": "minio"
+          },
+          "minio_mc": {
+            "dockerfile_sha256": "0f9be717db38226163e9a6bc9c0fa68fb6bae9895aaecb4557e6a98639dac355",
+            "image_id": "sha256:938d6e6ff0bddb0e7734bfc567226f9714c8a0eb8cccf16cfd0b31df9a80d795",
+            "platform": "linux/amd64",
+            "target": "mc"
+          }
+        },
+        "dependency_images": {
+          "minio": "sha256:2f3af31f11ba1185609fd699fb823dfcdd353a38f75ff358b72a433b7945747f",
+          "minio_mc": "sha256:938d6e6ff0bddb0e7734bfc567226f9714c8a0eb8cccf16cfd0b31df9a80d795",
+          "postgres": "pgvector/pgvector@sha256:131dcf7ff6a900545df8e7e092c270aa8c6db2f2c818e408cb45ec21316b74e6",
+          "redis": "redis@sha256:6ab0b6e7381779332f97b8ca76193e45b0756f38d4c0dcda72dbb3c32061ab99"
+        },
+        "external_model_calls": 0,
+        "limitations": [
+          "Fresh-database startup probes do not validate recovery of existing analysis history.",
+          "Runtime compatibility does not establish model quality or approve deployment."
+        ],
+        "ports": {
+          "api": 38395,
+          "consumer": 34107,
+          "web": 46153,
+          "worker": 39107
+        },
+        "rollback_images": {
+          "api": "ghcr.io/drew-z/enterprise-doc-api@sha256:af9e576292ddc5e27c2c2a5704fcd9d3c6f42d07647920ed44b192e5faa39a9c",
+          "consumer": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:958ad15ef9227c8198509676074a30d9d71372d02a9abebe3822eea5781f9217",
+          "web": "ghcr.io/drew-z/enterprise-doc-web@sha256:724d1007282607d3d220aae1fbeb76b87a2b48ae4ba0f3a66b95db1aa1297da9",
+          "worker": "ghcr.io/drew-z/enterprise-doc-worker@sha256:dae34e5b08b94fed54a9455d4ee60230cd512d4751eaaf8caff8bc7d72c6b8a1"
+        },
+        "schema": {
+          "analysis_table": "analysis_projects",
+          "expected_head": "20261104_0044"
+        },
+        "schema_version": 1,
+        "scope": "fresh_database_startup_compatibility",
+        "started_at": "2026-11-04T14:27:47.222984+00:00",
+        "status": "passed"
+      }
+    },
+    {
+      "artifact_id": 13331408561,
+      "artifact_name": "analysis-rollback-compatibility-candidate-rc53-41847465629-2",
+      "sha256": "4bc1cee5763c70b7b8944c2e7bd18814da6b14206b807cda4614dfb5d7ddad20",
+      "report": {
+        "candidate_api_image": "ghcr.io/drew-z/enterprise-doc-api@sha256:14547f78c40b245692bc57e4920fe0bd185b747bd5426fbed3a3033cc3bf242d",
+        "checks": {
+          "api_live": {
+            "http_status": 200,
+            "status": "passed"
+          },
+          "api_openapi": {
+            "analysis_route_present": true,
+            "http_status": 200,
+            "openapi_document": true,
+            "status": "passed"
+          },
+          "api_ready": {
+            "http_status": 200,
+            "status": "passed"
+          },
+          "consumer_port": {
+            "port": 38383,
+            "status": "passed"
+          },
+          "schema": {
+            "analysis_projects": true,
+            "head": "20261104_0044",
+            "status": "passed"
+          },
+          "web_live": {
+            "http_status": 200,
+            "status": "passed"
+          },
+          "worker_live": {
+            "http_status": 200,
+            "status": "passed"
+          },
+          "worker_ready": {
+            "http_status": 200,
+            "status": "passed"
+          }
+        },
+        "cleanup": {
+          "containers_removed": 7,
+          "network_created": true,
+          "network_removed": true,
+          "status": "passed"
+        },
+        "completed_at": "2026-11-04T14:28:57.455987+00:00",
+        "dependency_builds": {
+          "minio": {
+            "dockerfile_sha256": "0f9be717db38226163e9a6bc9c0fa68fb6bae9895aaecb4557e6a98639dac355",
+            "image_id": "sha256:aa8fa56b11ec78621c854f2a55c6465d5765961cf5a4f466f9e4b31e40511ce3",
+            "platform": "linux/amd64",
+            "target": "minio"
+          },
+          "minio_mc": {
+            "dockerfile_sha256": "0f9be717db38226163e9a6bc9c0fa68fb6bae9895aaecb4557e6a98639dac355",
+            "image_id": "sha256:4eb38c5b898ac00238d4910a1c0d4e27ada345417b0e8cdd3a5892bd147ac894",
+            "platform": "linux/amd64",
+            "target": "mc"
+          }
+        },
+        "dependency_images": {
+          "minio": "sha256:aa8fa56b11ec78621c854f2a55c6465d5765961cf5a4f466f9e4b31e40511ce3",
+          "minio_mc": "sha256:4eb38c5b898ac00238d4910a1c0d4e27ada345417b0e8cdd3a5892bd147ac894",
+          "postgres": "pgvector/pgvector@sha256:131dcf7ff6a900545df8e7e092c270aa8c6db2f2c818e408cb45ec21316b74e6",
+          "redis": "redis@sha256:6ab0b6e7381779332f97b8ca76193e45b0756f38d4c0dcda72dbb3c32061ab99"
+        },
+        "external_model_calls": 0,
+        "limitations": [
+          "Fresh-database startup probes do not validate recovery of existing analysis history.",
+          "Runtime compatibility does not establish model quality or approve deployment."
+        ],
+        "ports": {
+          "api": 41315,
+          "consumer": 38383,
+          "web": 45761,
+          "worker": 45693
+        },
+        "rollback_images": {
+          "api": "ghcr.io/drew-z/enterprise-doc-api@sha256:14547f78c40b245692bc57e4920fe0bd185b747bd5426fbed3a3033cc3bf242d",
+          "consumer": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:9f29eb893dda667f8d3ff3d1cdeb66d9955bfb9ac1cbf5a104b7292fbc4cecbc",
+          "web": "ghcr.io/drew-z/enterprise-doc-web@sha256:f4bed08c431406d8277089bafff66eccb9cf50d09438c4545f1a0c53cade5b02",
+          "worker": "ghcr.io/drew-z/enterprise-doc-worker@sha256:aa784af188184419f6f5979dcf6183a08a98ab30a7c18aaa854469be6e1cdd7b"
+        },
+        "schema": {
+          "analysis_table": "analysis_projects",
+          "expected_head": "20261104_0044"
+        },
+        "schema_version": 1,
+        "scope": "fresh_database_startup_compatibility",
+        "started_at": "2026-11-04T14:27:45.956949+00:00",
+        "status": "passed"
+      }
+    }
+  ],
+  "earlier_failures": [
+    {
+      "environment": "local",
+      "authenticated": false,
+      "reason": "registry_denied",
+      "resources_created": 0
+    },
+    {
+      "environment": "local",
+      "authenticated": true,
+      "reason": "manifest_unknown",
+      "resources_created": 0
+    },
+    {
+      "attempt": 1,
+      "status": "failed",
+      "reason": "Docker Hub Redis registry returned 502 before any database/network startup; bounded retry succeeded."
+    }
+  ],
+  "validation": {
+    "local_focused_tests_passed": 35,
+    "ruff_check": "passed",
+    "ruff_format_files": 828,
+    "script_mypy": "passed",
+    "scoped_diff_check": "passed",
+    "quality_run": 41847451355,
+    "quality_status": "success",
+    "container_run": 41847451313,
+    "container_status": "success"
+  },
+  "staging_preflight": {
+    "at": "2026-11-04T14:31:59.651704+00:00",
+    "schema": "20261010_0037",
+    "analysis_projects_present": false,
+    "job_status_counts": {
+      "cancelled": 7,
+      "dead": 135,
+      "succeeded": 3453
+    },
+    "presales_daily_dispatched": 0,
+    "agent_daily_dispatched": 0,
+    "provider_daily_dispatched": 0,
+    "provider_daily_limit": 1000,
+    "provider_agent_call_limit": 12,
+    "model_name": "gpt-5.6-sol",
+    "model_channel_hash": "b4093f4014e6c96780334620181689cbb5faf539987abe5e2a73890ea4757407",
+    "status": "passed"
+  },
+  "deployment_readiness": {
+    "schema_version": 1,
+    "observed_at": "2026-11-04T14:36:33.679147+00:00",
+    "status": "configuration_reconciliation_required_before_deployment",
+    "candidate_release": "v0.1.45-rc.53",
+    "runtime_release": "v0.1.45-rc.51",
+    "database_revision": "20261010_0037",
+    "candidate_database_revision": "20261104_0044",
+    "analysis_schema_present": false,
+    "model_calls": 0,
+    "remote_mutations": 0,
+    "drift": [
+      {
+        "variable": "STAGING_MODEL_NAME",
+        "runtime_key": "MODEL__MODEL_NAME",
+        "runtime_present": true,
+        "protected_variable_present": true,
+        "runtime_value": "gpt-5.6-sol",
+        "protected_variable_value": "grok-4.7"
+      },
+      {
+        "variable": "STAGING_MODEL_BASE_URL",
+        "runtime_key": "MODEL__BASE_URL",
+        "runtime_present": true,
+        "protected_variable_present": true,
+        "runtime_sha256": "b4093f4014e6c96780334620181689cbb5faf539987abe5e2a73890ea4757407",
+        "protected_variable_sha256": "14567229d9bba7dce03a4bd2a7d18ecda3900dbb6052b0d1e9976c3b43903a2c"
+      },
+      {
+        "variable": "STAGING_PRESALES_PRIMARY_QUESTION_ASSESSMENT",
+        "runtime_key": "PRESALES__PRIMARY_QUESTION_ASSESSMENT",
+        "runtime_present": true,
+        "protected_variable_present": false,
+        "runtime_value": "true",
+        "protected_variable_value": null
+      },
+      {
+        "variable": "STAGING_PRESALES_DAILY_DISPATCH_LIMIT",
+        "runtime_key": "PRESALES__DAILY_DISPATCH_LIMIT",
+        "runtime_present": true,
+        "protected_variable_present": false,
+        "runtime_value": "200",
+        "protected_variable_value": null
+      }
+    ],
+    "required_default_off_values": {
+      "UPLOAD__STRUCTURED_DOCUMENTS_ENABLED": "false",
+      "ANALYSIS__EXECUTION_ENABLED": "false",
+      "ANALYSIS__UNIT_DEADLINE_SECONDS": "120",
+      "ANALYSIS__RUN_DEADLINE_SECONDS": "3600",
+      "ANALYSIS__MAX_INPUT_BYTES": "65536",
+      "MODEL__ROUTE_ID": "default"
+    },
+    "next_steps": [
+      "Freeze reviewed candidate configuration from current runtime and reconcile protected deployment variables.",
+      "Back up and validate recovery of the application database before the 0037 to 0044 migration.",
+      "Apply administrator prerequisites, then use migration-before-workload release ordering.",
+      "Issue a short-lived analysis token and freeze analysis-primary route; recheck shared and tenant budgets.",
+      "Import validation-01 through product APIs and run both arms against the same snapshot."
+    ]
+  },
+  "candidate_configuration": {
+    "status": "rendered_not_applied",
+    "sha256": "204a7c1320ffbf1a618846871cf0187295b824df7de6a4e2aa2f20229fb5d615",
+    "config_diff": {
+      "ANALYSIS__EXECUTION_ENABLED": {
+        "before": null,
+        "candidate": "false"
+      },
+      "ANALYSIS__MAX_INPUT_BYTES": {
+        "before": null,
+        "candidate": "65536"
+      },
+      "ANALYSIS__RUN_DEADLINE_SECONDS": {
+        "before": null,
+        "candidate": "3600"
+      },
+      "ANALYSIS__UNIT_DEADLINE_SECONDS": {
+        "before": null,
+        "candidate": "120"
+      },
+      "MODEL__ROUTE_ID": {
+        "before": null,
+        "candidate": "default"
+      },
+      "PRESALES__QUESTION_PROMPT_VERSION": {
+        "before": "presales.v24",
+        "candidate": null
+      },
+      "UPLOAD__STRUCTURED_DOCUMENTS_ENABLED": {
+        "before": null,
+        "candidate": "false"
+      }
+    },
+    "prompt_version_note": "Missing explicit PRESALES__QUESTION_PROMPT_VERSION resolves to the same presales.v24 default in the candidate; no prompt-version change is requested."
+  },
+  "boundaries": {
+    "production_migration_performed": false,
+    "deployment_performed": false,
+    "protected_variables_changed": false,
+    "new_external_model_calls": 0,
+    "independent_uat_performed": false,
+    "analysis_history_recovery_verified": false
+  },
+  "cleanup": {
+    "runtime_containers_removed": 14,
+    "runtime_networks_removed": 2,
+    "ephemeral_registry_config_removed": true,
+    "ephemeral_render_directory_removed": true,
+    "historical_workspace_changes_preserved": true
+  }
+}

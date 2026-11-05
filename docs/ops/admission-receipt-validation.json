@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "status": "local_validation_passed_release_pending",
+  "baseline_commit": "3f39258ddb94c9a3e6aedc44daae9247bf73b409",
+  "at": "2026-10-03T09:01:24.304536+00:00",
+  "contract": {
+    "option": "response=receipt",
+    "legacy_default": "full",
+    "confirmation": "after committed Job, event, attempt and reservation",
+    "generation_success_requires": "authorized result GET with saved draft",
+    "new_receipt_selects": 13,
+    "legacy_full_selects": 19,
+    "single_row_receipt_bytes_upper_bound": 300
+  },
+  "validation": {
+    "python_non_integration": 2253,
+    "python_subtests": 23,
+    "integration_excluded_from_full_command": 498,
+    "focused_integration_passed": 55,
+    "web_tests": 382,
+    "monitor_tests": 67,
+    "python_formatted_files": 648,
+    "mypy_files_including_capacity_script": 254,
+    "ruff": "passed",
+    "web_lint": "passed",
+    "web_typecheck": "passed",
+    "web_build": "passed",
+    "headless_browser": "passed",
+    "visual_review": [
+      "1440px receipt wait",
+      "390px read recovery"
+    ],
+    "controlled_capacity": {
+      "executions": 4,
+      "http_modes": [
+        "asgi",
+        "tcp-cli"
+      ],
+      "admission_modes": [
+        "full",
+        "receipt"
+      ],
+      "rounds_per_execution": 2,
+      "tasks_per_execution": 10,
+      "business_successes_per_execution": 7,
+      "expected_failures_per_execution": 3,
+      "controlled_model_calls_per_execution": 16
+    },
+    "browser_accounting": {
+      "generation_posts": 2,
+      "lost_actual_receipts": 1,
+      "controlled_model_calls": 5,
+      "consumed": 3,
+      "released": 1
+    },
+    "preserved_preexisting_paths": 2993,
+    "local_isolated_schema_cleanup": "verified"
+  },
+  "diagnosis": {
+    "completed_task_replay_posts": 8,
+    "existing_packet_reads": 8,
+    "writes": 0,
+    "supplier_calls": 0,
+    "production_capacity_sample": false
+  },
+  "failure_notes": [
+    "Original API failed the receipt contract; original UI kept navigation blocked while reading the full result.",
+    "Initial frontend package filter matched no project and was corrected to web before the actual red test.",
+    "New TTL boundary fixtures used different clocks; binding the existing generation and reservation clocks made the exact rollback boundary deterministic.",
+    "A new stale-read test expected a disabled button although completed rows correctly remove it; assertion corrected, preserved draft still checked.",
+    "First browser harness removed a pending route before its continuation finished; waiting for the resulting row before unroute fixed the harness. Both schemas cleaned.",
+    "Frontend lint rejected an unnecessary async test callback; typecheck then rejected an unreachable background comparison in the synchronous branch. Both corrected before full final checks."
+  ],
+  "supplier_calls": 0,
+  "live_deployment_changed": false,
+  "database_migrations": 0,
+  "production_latency_passed": false,
+  "two_production_capacity_rounds_passed": false,
+  "all_five_acceptance_gates_open": true,
+  "remaining": [
+    "Signed release and deployed new-admission verification",
+    "Current-host performance and two complete capacity rounds",
+    "Actual supplier monetary reconciliation and independent human review",
+    "Backup capacity/retention and verified continuous operation",
+    "Current-version historical in-flight recovery, RPO/RTO and on-call arrangements"
+  ]
+}

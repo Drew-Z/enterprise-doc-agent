@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "presales-quality-input-v1",
+  "synthetic": true,
+  "provenance": "Fictional H2 corpus frozen before the first v4 candidate model request. H1 is now a known regression set. Assistant authored and self-reviewed; not independent expert adjudication or customer accuracy. Includes satisfied, unsatisfied and undocumented prerequisites, a hard limit, missing certification and equal-priority conflicting terms.",
+  "title": "澄海工单前置条件验证",
+  "sources": [
+    {
+      "key": "H2-ORDER",
+      "filename": "H2-ORDER-v1.txt",
+      "applicability": "澄海工单已签署订单的当前正式能力。全部资料为虚构测试内容。",
+      "content": "# H2-ORDER 已签署订单\nSYNC 模块已购买，连接密钥验证通过，客户签署了同步验收单。\nOCR 模块未购买，资料约定的版面验收尚未进行。\nHOOK 模块已购买，本订单及附件均未记载其接收域名验证的状态。\nH2-SERVICE 与 H2-WINDOW 均对同一企业、同一生产查询 API 生效，互不优先，没有其他例外约定。\n"
+    },
+    {
+      "key": "H2-FEATURES",
+      "filename": "H2-FEATURES-v1.txt",
+      "applicability": "澄海工单当前正式模块规格，完成每项启用前提后才可生产使用。",
+      "content": "# H2-FEATURES 模块规格\nSYNC 可每五分钟同步一次新增工单。启用 SYNC 必须购买该模块、通过连接密钥验证并签署客户同步验收单。\nOCR 可从扫描工单图片中提取文字。启用 OCR 必须先购买模块并通过版面验收。\nHOOK 可把工单状态变化推送到客户 HTTPS 接收端。启用 HOOK 必须购买模块并完成接收域名验证。未知验证状态不能视为通过。\n"
+    },
+    {
+      "key": "H2-LIMITS",
+      "filename": "H2-LIMITS-v1.txt",
+      "applicability": "当前正式版本所有套餐均适用，已购模块也不改变该上限。",
+      "content": "# H2-LIMITS 单次导出上限\n一次 CSV 导出的工单行数硬上限是 80000 行。当前版本没有增加该上限的配置或选购方案。多次导出再合并不属于一次导出。\n"
+    },
+    {
+      "key": "H2-ASSURANCE",
+      "filename": "H2-ASSURANCE-v1.txt",
+      "applicability": "本订单的审计资料清单。",
+      "content": "# H2-ASSURANCE 审计资料\n现有资料包含内部访问控制检查记录。未提供 SOC 2 Type II 报告，也没有报告有效期或审计机构信息。这份清单不声明公司是否取得过该报告。\n"
+    },
+    {
+      "key": "H2-SERVICE",
+      "filename": "H2-SERVICE-v1.txt",
+      "applicability": "与 H2-WINDOW 同范围生效且互不优先。",
+      "content": "# H2-SERVICE 查询服务承诺\n本企业的生产查询 API 每周七天、每天二十四小时保持可访问，不得安排任何停机窗口。此承诺包含周六凌晨。\n本条款与 H2-WINDOW 互不优先，也不豁免后者的停机要求。\n"
+    },
+    {
+      "key": "H2-WINDOW",
+      "filename": "H2-WINDOW-v1.txt",
+      "applicability": "与 H2-SERVICE 同范围生效且互不优先。",
+      "content": "# H2-WINDOW 强制维护条款\n本企业的同一生产查询 API 每周六 02:00 至 03:00 必须停机维护，期间禁止接受任何查询请求。\n本条款与 H2-SERVICE 互不优先，也没有备用接口或不停机例外。\n"
+    }
+  ],
+  "requirements": [
+    {"key": "H2-R1", "text": "本订单当前可以每五分钟同步一次新增工单。", "sourceLocation": "H2 第1项"},
+    {"key": "H2-R2", "text": "本企业可以从扫描工单图片提取文字。", "sourceLocation": "H2 第2项"},
+    {"key": "H2-R3", "text": "本企业可以把工单状态变化推送至自有 HTTPS 接收端。", "sourceLocation": "H2 第3项"},
+    {"key": "H2-R4", "text": "须一次导出 120000 行工单到 CSV，不接受多次导出合并。", "sourceLocation": "H2 第4项"},
+    {"key": "H2-R5", "text": "提供覆盖当前服务期间的有效 SOC 2 Type II 报告。", "sourceLocation": "H2 第5项"},
+    {"key": "H2-R6", "text": "生产查询 API 必须全天候可访问，包括周六凌晨，不接受停机窗口。", "sourceLocation": "H2 第6项"}
+  ]
+}

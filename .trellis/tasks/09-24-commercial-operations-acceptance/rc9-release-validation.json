@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "at": "2026-09-30T06:32:30.652208+00:00",
+  "scope": "rc9 deployment and separate 12-task diagnostic",
+  "release": {
+    "source": {
+      "commit_sha": "72d01d2f949243a6725b510fe27079f160746101",
+      "ref": "refs/tags/v0.1.45-rc.9",
+      "repository": "Drew-Z/enterprise-doc-agent",
+      "run_attempt": "1",
+      "run_id": "36650304872",
+      "workflow_ref": "Drew-Z/enterprise-doc-agent/.github/workflows/container.yml@refs/tags/v0.1.45-rc.9"
+    },
+    "manifest_sha256": "d482faf100b1cbbb55e49d5e6e8c68e7e792208d3385e81eb2457640171c5e38",
+    "checked_evidence_files": 56,
+    "signature_and_attestation_subjects_match": true,
+    "cryptographic_signature_verification": "successful release CI",
+    "images": {
+      "api": "ghcr.io/drew-z/enterprise-doc-api@sha256:31081f730b5a957d17bb556e26770b0860c1cb068ba11aebe67b68ed5743e5c1",
+      "consumer": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:8eed3bafa378be3ce16c7bf38e4455eab5c4fa54bc9967bac276ea49306d881e",
+      "web": "ghcr.io/drew-z/enterprise-doc-web@sha256:bff20cf7f57fb9f8dbf4f423f625c628b6a9cde3391ce04752628076c1f10589",
+      "worker": "ghcr.io/drew-z/enterprise-doc-worker@sha256:3437898518bcb70f4da36679a497ed8749d896bbdaa7a8ad558060e7cd699236"
+    }
+  },
+  "deployment": {
+    "status": "passed",
+    "revision": "20260924_0031",
+    "seconds": 90.735,
+    "five_ready": true,
+    "api_pool": [
+      4,
+      0
+    ],
+    "worker_consumer_pool": [
+      1,
+      0
+    ],
+    "shared_config_and_credentials_unchanged": true,
+    "rollback": "v0.1.45-rc.8",
+    "remote_files_removed": 11
+  },
+  "diagnostic": {
+    "planned_tasks": 12,
+    "passed": 0,
+    "failed": 4,
+    "not_run": 8,
+    "failure": "generation observation timed out; jobs pending with no claims",
+    "boundary_timeout_seconds": 180,
+    "upload_ingestion_retrieval_passed": 4,
+    "model_calls": 0,
+    "vector_calls": 8,
+    "admission_ms": {
+      "min": 2284.08,
+      "p50": 3791.245,
+      "p95": 5376.727,
+      "max": 5376.727
+    },
+    "admission_target_ms": 2000,
+    "admission_target_met": false,
+    "full_capacity_acceptance": false
+  },
+  "worker": {
+    "previous_restart_reason": "SQLAlchemy QueuePool timeout size 1 overflow 0",
+    "current_background_enabled": true,
+    "pending_presales_jobs": 4,
+    "claims": 0,
+    "queue_telemetry_success": false,
+    "redis_timestamp_frozen": true,
+    "liveness_still_200": true,
+    "driver_root_cause": "not established"
+  },
+  "production_approved": false
+}

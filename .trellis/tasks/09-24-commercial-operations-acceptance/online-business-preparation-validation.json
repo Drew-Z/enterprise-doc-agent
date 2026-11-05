@@ -1,0 +1,117 @@
+{
+  "schema_version": 1,
+  "phase": "CO-1f",
+  "status": "prepared_not_authorized",
+  "date": "2026-09-28",
+  "deployed_version": "v0.1.45-rc.2",
+  "deployed_commit": "f2910011fc219028a2611a22215e4e3e045919a3",
+  "executor_repository_baseline": "dc100784f5a5423747ad6590a7976de9082f78e7",
+  "plan_sha256": "2fb81862e517c1e872cc5332fff4f231d52fb266c5837a8f48cdfe236cf544f1",
+  "scope": "single synthetic upload and initial Agent run; preparation only",
+  "fixture": {
+    "bytes": 109,
+    "sha256": "601d780a0cf011e03b7bf76465565802fd75850d201648bf4573ff0b317cf648",
+    "parsed_chunks": 1
+  },
+  "proposed_budgets": {
+    "model_requests": 12,
+    "embedding_requests": 21,
+    "uploads": 1,
+    "agent_tasks": 1,
+    "http_requests": 240,
+    "seconds": 1800
+  },
+  "authorized_new_model_requests": 0,
+  "authorized_new_embedding_requests": 0,
+  "executed": {
+    "business_submissions": 0,
+    "model_requests": 0,
+    "embedding_requests": 0,
+    "emails": 0,
+    "migrations": 0,
+    "deployments": 0,
+    "quota_changes": 0
+  },
+  "telemetry": {
+    "scope": "read-only-business-resource-observation",
+    "schema_version": 1,
+    "status": "read_only_observed",
+    "production_capacity_approved": false,
+    "planned_samples": 13,
+    "observed_samples": 13,
+    "not_run": 0,
+    "issues": [],
+    "identity_sha256": "4ca0a85bbf7b8e6e243cfdfd73fbb97bf396b612f10a88a87d42c17884fd78f7",
+    "unique_node_metric_samples": 7,
+    "host": {
+      "memory_available_bytes_min": 1723342848,
+      "root_disk_available_bytes_min": 14489780224,
+      "cpu_busy_percent_max": 9.4679186228482,
+      "kubernetes_cpu_cores_max": 0.432464809
+    },
+    "dependencies": {
+      "object_store": {
+        "observed_events": 8.0,
+        "mean_seconds": 1.084957261569798,
+        "observed_series_pairs": 2,
+        "p95_seconds": null
+      },
+      "model": {
+        "observed_events": 3.0,
+        "mean_seconds": 0.9274622543404499,
+        "observed_series_pairs": 1,
+        "p95_seconds": null
+      }
+    },
+    "unverified_gauges": [],
+    "resource_observation_scope": "Worker due durable jobs and shared Redis server clients",
+    "business_windows": [],
+    "limitations": [
+      "No workload, capacity target or production approval is implied.",
+      "Kubernetes resource timestamps may repeat; unique samples are counted separately.",
+      "Dependency values are process-observed counters; absent/unchanged work has no latency estimate.",
+      "Dependency events are not provider invoices or attributed business/model requests.",
+      "Queue/Redis values require a successful Worker sample within 45 seconds; legacy gauges and zeros alone are not idle proof.",
+      "Business windows are temporal overlap only; actual target binding remains unverified.",
+      "No browser recovery, migration version, source commit or secret-version attestation."
+    ]
+  },
+  "preflight": {
+    "status": "passed_readonly",
+    "receipt_plan_sha256": "2fb81862e517c1e872cc5332fff4f231d52fb266c5837a8f48cdfe236cf544f1",
+    "runtime_source_hashes_verified": 11,
+    "process_settings_checked": [
+      "api",
+      "worker",
+      "consumer"
+    ],
+    "ledger_sql_checked": true,
+    "initial_ssh_timeout_retained": true
+  },
+  "local_checks": {
+    "focused_tests_passed": 92,
+    "private_boundary_tests_included": 15,
+    "documentation_tests_passed": 5,
+    "http_boundary": "httpx.MockTransport",
+    "real_supplier_test": false,
+    "strict_mypy_private_scripts": "not_run",
+    "full_application_regression": "not_repeated_no_product_source_changes"
+  },
+  "failures_preserved": [
+    "initial missing adapter module",
+    "incorrect create_draft tool name; corrected to create_draft_artifact",
+    "combined pytest import path missing stage; corrected subprocess PYTHONPATH",
+    "initial SSH connect timeout"
+  ],
+  "remaining": [
+    "specific batch authorization",
+    "actual online business execution",
+    "interactive OAuth and browser recovery",
+    "Presales online background acceptance",
+    "two-round current-host capacity",
+    "supplier pricing reconciliation",
+    "independent domain approval",
+    "complete backups/alerts/on-call and whole-host RPO/RTO"
+  ],
+  "formal_acceptance_complete": false
+}

@@ -1,0 +1,2 @@
+{"file":".trellis/spec/backend/database-guidelines.md","reason":"Immutable migrations and owned test schemas"}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"Workbook boundary contracts and round trip"}

@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "phase": "CO-3j3",
+  "recorded_at": "2026-09-27T05:11:19.534060+00:00",
+  "status": "local_checks_passed_execution_package_prepared",
+  "task_status": "in_progress",
+  "base_commit": "d02e086ba56681115ed22132879523966cf9ef39",
+  "tested_workflow_sha256": "c12ea3e0566200430650a6ac968b1421becc3ee0bdfc2cec955c30c6a5d7084b",
+  "route": {
+    "selector": "staging environment variable STAGING_DEPLOYMENT_MODE=maintenance",
+    "default": "standard",
+    "dispatch_input_count": 10,
+    "requires_run_smoke": false,
+    "profile": "single-node-4c4g",
+    "requires_business_paused_before_migration": true,
+    "preserves_all_vector_configuration": true,
+    "applications": 4,
+    "application_replicas": 0,
+    "redis_pvc_secret_in_workload_apply": false,
+    "automatic_business_resumption": false,
+    "supplier_and_browser_validation": "skipped",
+    "success_record": {
+      "kind": "maintenance-deployment",
+      "status": "blocked_external",
+      "maintenance_status": "installed_paused"
+    }
+  },
+  "published_image_sources": {
+    "candidate": "1ac873b06f265a415ed128ed55b9f54f81bdf0b9",
+    "fallback": "93d95a96d83b9ec7ac26897b9287842d0d798923",
+    "tags_unchanged": true
+  },
+  "current_read_only_observation": {
+    "captured_at": "2026-09-27T04:50:10.442240+00:00",
+    "database_revision": [
+      "20260923_0027"
+    ],
+    "embedding_version": "3",
+    "jobs_in_flight": 0,
+    "presales_in_flight": 0,
+    "agent_runs_in_flight": 0,
+    "active_uploads_expired": 7,
+    "active_uploads_unexpired": 0,
+    "autoscalers": 0,
+    "cronjobs": 0,
+    "is_maintenance_drain_attestation": false,
+    "original_running_target_rejected_by_prepare": true
+  },
+  "private_package": {
+    "configured_resources": 25,
+    "actual_workflow_render_equivalent": true,
+    "config_changed_keys": [
+      "PRESALES__AUTOMATIC_FAILOVER_ENABLED",
+      "PRESALES__BACKGROUND_GENERATION_ENABLED",
+      "PRESALES__DAILY_DISPATCH_LIMIT",
+      "PRESALES__QUEUE_TIMEOUT_SECONDS",
+      "PRESALES__ROUTE_COOLDOWN_SECONDS",
+      "PRESALES__ROUTE_FAILURE_THRESHOLD"
+    ],
+    "preserves_github_identity_and_current_provider_routes": true,
+    "separate_paused_and_resume_manifests": true,
+    "new_secrets_collected": false,
+    "finite_quota_proposal": {
+      "current_period_count": 1,
+      "successful_agent_tasks": 100,
+      "document_bytes": 104857600,
+      "current_period_ends_at": "2026-09-29T10:57:59.211855+00:00",
+      "period_and_existing_usage_unchanged": true,
+      "applied": false
+    }
+  },
+  "validation": {
+    "nonintegration_pytest": {
+      "passed": 1976,
+      "subtests_passed": 23,
+      "deselected_integration": 440,
+      "seconds": 168.25
+    },
+    "initial_focused_with_existing_contracts": 100,
+    "final_maintenance_and_recovery_wiring_tests": 64,
+    "real_workflow_shell_and_python_cli": "passed with only kubectl process boundary replaced; successful apply and failed migration both covered",
+    "ruff": "passed",
+    "ruff_format_files": 606,
+    "mypy_production_and_new_script_files": 252,
+    "trellis_context": "passed",
+    "previous_frozen_indexes_unchanged": 7,
+    "historical_status_entries_preserved": 2993,
+    "additional_integration": "Not rerun; this slice changes deployment control and file validation, not application/DB business code.",
+    "remote_ci": "Exact publication commit checks recorded in the subsequent publication receipt."
+  },
+  "retained_failures": [
+    {
+      "kind": "red_regression",
+      "detail": "Maintenance with successful prerequisites/migration/workloads originally executed five cluster commands in unconditional recovery."
+    },
+    {
+      "kind": "dispatch_contract",
+      "detail": "Adding an eleventh input failed two existing tests; mode moved to the administrator environment variable without changing those tests."
+    },
+    {
+      "kind": "inventory_filter",
+      "detail": "TOKEN_ENDPOINT was initially mistaken for a token value; read-only capture refused, then only actual token keys were restricted."
+    }
+  ],
+  "execution_counts": {
+    "real_model_requests": 0,
+    "real_vector_requests": 0,
+    "emails": 0,
+    "remote_configuration_mutations": 0,
+    "remote_deployments": 0,
+    "remote_migrations": 0,
+    "remote_sql_writes": 0
+  },
+  "not_completed": [
+    "Actual maintenance window and user traffic suspension",
+    "Disposition of seven expired upload sessions and fresh full drain verification",
+    "Current same-write-freeze database/object recovery point",
+    "Approval/application of finite product quotas and any new entitlement period",
+    "Business resumption with an approved supplier budget",
+    "Live Kubernetes validation, real authentication/browser recovery and current-host capacity acceptance"
+  ],
+  "production_capacity_approved": false
+}

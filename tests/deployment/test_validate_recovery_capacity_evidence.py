@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from copy import deepcopy
 from pathlib import Path
 
 import pytest
 from scripts.validate_recovery_capacity_evidence import (
     EvidenceValidationError,
+    _canonical_sha256,
+    _snapshot_identity,
     validate_evidence,
 )
 
@@ -19,6 +22,73 @@ def _artifact(root: Path) -> dict[str, str]:
         "path": "artifacts/run.log",
         "kind": "execution-log",
         "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+    }
+
+
+def _json_artifact(root: Path, name: str, kind: str, payload: object) -> dict[str, str]:
+    path = root / "artifacts" / name
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, sort_keys=True), encoding="utf-8")
+    return {
+        "path": path.relative_to(root).as_posix(),
+        "kind": kind,
+        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+    }
+
+
+def _analysis_resource_snapshot(
+    *, images: dict[str, str], captured_at: str, observations: int
+) -> dict[str, object]:
+    roles = (*images, "redis")
+    deployments = [
+        {
+            "role": role,
+            "uid_sha256": role + "-deployment",
+            "template_sha256": role + "-template",
+            "containers": [{"configured_digest": images.get(role, "sha256:" + "9" * 64)}],
+            "desired_replicas": 1,
+            "ready_replicas": 1,
+            "updated_replicas": 1,
+            "generation": 1,
+            "observed_generation": 1,
+        }
+        for role in roles
+    ]
+    pods = [
+        {
+            "role": role,
+            "uid_sha256": "2" * 64 if role == "api" else role + "-pod",
+            "phase": "Running",
+            "containers": [
+                {
+                    "configured_digest": images.get(role, "sha256:" + "9" * 64),
+                    "running_digest": images.get(role, "sha256:" + "9" * 64),
+                    "ready": True,
+                    "last_oom": False,
+                }
+            ],
+        }
+        for role in roles
+    ]
+    return {
+        "captured_at": captured_at,
+        "namespace_sha256": "3" * 64,
+        "inventory": {
+            "cluster_sha256": "4" * 64,
+            "configuration_sha256": "5" * 64,
+            "nodes": [{"uid_sha256": "6" * 64, "cpu_capacity": "4", "memory_capacity": "4Gi"}],
+            "deployments": deployments,
+            "image_relationships": [],
+            "pods": pods,
+        },
+        "host": {"cpu_count": 4, "memory_total_bytes": 4 * 1024**3},
+        "traffic_proof": {
+            "status": "observed" if observations else "not_observed",
+            "correlation_sha256": "1" * 64,
+            "api_pod_uid_sha256": "2" * 64,
+            "observations": observations,
+        },
+        "errors": [],
     }
 
 
@@ -276,6 +346,164 @@ def test_passed_capacity_requires_repeated_phases_and_dependency_telemetry(
     single_run["workload"]["repetitions"] = 1  # type: ignore[index]
     with pytest.raises(EvidenceValidationError, match="repetitions"):
         validate_evidence(single_run, root=tmp_path)
+
+
+def test_analysis_4c4g_capacity_requires_machine_and_release_evidence(tmp_path: Path) -> None:
+    report = _passed_capacity(tmp_path)
+    report["workload"]["name"] = "analysis-4c4g"  # type: ignore[index]
+    report["workload"]["base_url"] = "https://staging.example.com"  # type: ignore[index]
+    report["targets"] = {"cpu_cores": 4, "memory_bytes": 4 * 1024**3}
+    report["environment"]["resource_evidence_status"] = "verified"  # type: ignore[index]
+    report["environment"]["target_binding_status"] = "verified"  # type: ignore[index]
+    report["http_requests"] = 42
+    report["image_digest"] = {
+        service: "sha256:" + character * 64
+        for service, character in zip(
+            ("api", "worker", "consumer", "web"), ("a", "b", "c", "d"), strict=True
+        )
+    }
+    report["release_identity"] = {
+        "commit_sha": report["commit_sha"],
+        "repository": "example/enterprise-doc-agent",
+        "ref": "refs/tags/v1",
+        "run_id": "123456",
+        "run_attempt": "1",
+        "workflow_ref": "example/enterprise-doc-agent/.github/workflows/ci.yml@v1",
+        "image_digests": report["image_digest"],
+    }
+    snapshots = [
+        _analysis_resource_snapshot(
+            images=report["image_digest"],  # type: ignore[arg-type]
+            captured_at="2026-07-20T09:59:59+08:00",
+            observations=0,
+        ),
+        _analysis_resource_snapshot(
+            images=report["image_digest"],  # type: ignore[arg-type]
+            captured_at="2026-07-20T10:10:01+08:00",
+            observations=42,
+        ),
+    ]
+    report["resource_evidence"] = {
+        "status": "verified",
+        "sample_count": 2,
+        "identity_sha256": _snapshot_identity(snapshots[0]),
+        "samples_sha256": _canonical_sha256(snapshots),
+        "cpu_cores": 4,
+        "memory_bytes": 4 * 1024**3,
+        "image_digests": report["image_digest"],
+        "first_captured_at": "2026-07-20T09:59:59+08:00",
+        "last_captured_at": "2026-07-20T10:10:01+08:00",
+        "target_binding": {
+            "status": "verified",
+            "origin": "https://staging.example.com",
+            "correlation_sha256": "1" * 64,
+            "api_pod_uid_sha256": "2" * 64,
+            "observations": 42,
+            "expected_http_requests": 42,
+        },
+    }
+    resources_artifact = _json_artifact(
+        tmp_path,
+        "resources.json",
+        "analysis-capacity-resources",
+        {"snapshots": snapshots},
+    )
+    release_artifact = _json_artifact(
+        tmp_path,
+        "release.json",
+        "analysis-capacity-release-manifest",
+        {
+            "schema_version": 1,
+            "status": "passed",
+            "release": {
+                "commit_sha": report["commit_sha"],
+                "repository": "example/enterprise-doc-agent",
+                "ref": "refs/tags/v1",
+                "run_id": "123456",
+                "run_attempt": "1",
+                "workflow_ref": "example/enterprise-doc-agent/.github/workflows/ci.yml@v1",
+            },
+            "images": {
+                service: {"digest": digest}
+                for service, digest in report["image_digest"].items()  # type: ignore[union-attr]
+            },
+        },
+    )
+    report["release_identity"]["sha256"] = release_artifact["sha256"]  # type: ignore[index]
+    report["artifacts"].extend([resources_artifact, release_artifact])  # type: ignore[union-attr]
+    validate_evidence(report, root=tmp_path)
+
+    release_payload = json.loads((tmp_path / release_artifact["path"]).read_bytes())
+    for field in ("repository", "ref", "run_id", "run_attempt", "workflow_ref"):
+        for invalid in (None, "", " ", 123):
+            incomplete_release = deepcopy(release_payload)
+            if invalid is None:
+                incomplete_release["release"].pop(field)
+            else:
+                incomplete_release["release"][field] = invalid
+            incomplete_artifact = _json_artifact(
+                tmp_path,
+                "release-incomplete.json",
+                "analysis-capacity-release-manifest",
+                incomplete_release,
+            )
+            incomplete_report = deepcopy(report)
+            incomplete_report["artifacts"][-1] = incomplete_artifact  # type: ignore[index]
+            incomplete_report["release_identity"]["sha256"] = incomplete_artifact["sha256"]  # type: ignore[index]
+            if field in ("repository", "ref"):
+                incomplete_report["release_identity"][field] = invalid  # type: ignore[index]
+            with pytest.raises(
+                EvidenceValidationError, match=rf"release manifest release\.{field}"
+            ):
+                validate_evidence(incomplete_report, root=tmp_path)
+
+    for field in ("repository", "ref", "run_id", "run_attempt", "workflow_ref"):
+        mismatched_identity = deepcopy(report)
+        mismatched_identity["release_identity"][field] = "different"  # type: ignore[index]
+        with pytest.raises(EvidenceValidationError, match="release artifact identity"):
+            validate_evidence(mismatched_identity, root=tmp_path)
+
+    missing = deepcopy(report)
+    missing.pop("resource_evidence")
+    with pytest.raises(EvidenceValidationError, match="resource_evidence"):
+        validate_evidence(missing, root=tmp_path)
+
+    wrong_commit = deepcopy(report)
+    wrong_commit["release_identity"]["commit_sha"] = "0" * 40  # type: ignore[index]
+    with pytest.raises(EvidenceValidationError, match="release commit"):
+        validate_evidence(wrong_commit, root=tmp_path)
+
+    wrong_target = deepcopy(report)
+    wrong_target["resource_evidence"]["target_binding"]["origin"] = (  # type: ignore[index]
+        "https://other.example.com"
+    )
+    with pytest.raises(EvidenceValidationError, match="target binding"):
+        validate_evidence(wrong_target, root=tmp_path)
+
+    partial_traffic = deepcopy(report)
+    partial_traffic["resource_evidence"]["target_binding"]["observations"] = 41  # type: ignore[index]
+    with pytest.raises(EvidenceValidationError, match="target binding"):
+        validate_evidence(partial_traffic, root=tmp_path)
+
+    artifact_traffic = deepcopy(report)
+    tampered_snapshots = deepcopy(snapshots)
+    tampered_snapshots[-1]["traffic_proof"]["observations"] = 41  # type: ignore[index]
+    artifact_traffic["resource_evidence"]["samples_sha256"] = _canonical_sha256(  # type: ignore[index]
+        tampered_snapshots
+    )
+    updated_artifact = _json_artifact(
+        tmp_path,
+        "resources.json",
+        "analysis-capacity-resources",
+        {"snapshots": tampered_snapshots},
+    )
+    next(
+        item
+        for item in artifact_traffic["artifacts"]  # type: ignore[union-attr]
+        if item["kind"] == "analysis-capacity-resources"
+    )["sha256"] = updated_artifact["sha256"]
+    with pytest.raises(EvidenceValidationError, match="artifact target binding"):
+        validate_evidence(artifact_traffic, root=tmp_path)
 
 
 def test_artifact_hash_and_immutable_identity_are_verified(tmp_path: Path) -> None:

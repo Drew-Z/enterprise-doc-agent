@@ -1,0 +1,290 @@
+Products
+
+* [![](data:image/svg+xml,%3csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20version=%271.1%27%20width=%2732%27%20height=%2732%27/%3e)![Agentic Work Management icon](data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7)
+
+  Agentic Work Management
+
+  For cross-functional teams](/product/ai)
+* [![](data:image/svg+xml,%3csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20version=%271.1%27%20width=%2732%27%20height=%2732%27/%3e)![Asana Service Management](data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7)
+
+  Asana Service Management
+
+  For service teams](/product/service-management)
+* [![](data:image/svg+xml,%3csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20version=%271.1%27%20width=%2732%27%20height=%2732%27/%3e)![Asana Client Management](data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7)
+
+  Asana Client Management
+
+  For teams delivering client work](/product/client-management)
+* [![](data:image/svg+xml,%3csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20version=%271.1%27%20width=%2732%27%20height=%2732%27/%3e)![Command by Asana](data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7)
+
+  Command by Asana
+
+  For developer teams](/product/command)
+* [![](data:image/svg+xml,%3csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20version=%271.1%27%20width=%2732%27%20height=%2732%27/%3e)![StackAI](data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7)
+
+  StackAI by Asana
+
+  For every critical workflow](https://www.stackai.com/)
+
+AI Platform
+
+* [![](data:image/svg+xml,%3csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20version=%271.1%27%20width=%2732%27%20height=%2732%27/%3e)![AI Teammates](data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7)
+
+  AI Teammates
+
+  Ready-to-go AI agents for every team](/product/ai/ai-teammates)
+* [![](data:image/svg+xml,%3csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20version=%271.1%27%20width=%2732%27%20height=%2732%27/%3e)![AI Studio](data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7)
+
+  AI Studio
+
+  Powerful no-code automations](/product/ai/ai-studio)
+* [![](data:image/svg+xml,%3csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20version=%271.1%27%20width=%2732%27%20height=%2732%27/%3e)![Asana Dash](data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7)
+
+  Asana Dash
+
+  Your AI Chief of Staff](/product/ai/dash)
+
+Asana Foundations
+
+* [Admin and security](/features/admin-security/)
+* [App integrations](/apps)
+* [Developer](/developers)
+* [Latest feature release](/whats-new)
+
+Company Type
+
+* [Enterprise](/enterprise)
+* [Small business](/small-business)
+* [Nonprofit](/industry/nonprofit)
+* [Agencies](/agencies)
+
+Teams
+
+* [Operations](/teams/operations)
+* [Marketing](/teams/marketing)
+* [IT](/teams/it)
+* [Leaders](/teams/leaders)
+
+Industries
+
+* [Government](/industry/government-solutions)
+* [Healthcare](/industry/healthcare)
+* [Retail](/industry/retail)
+* [Financial services](/industry/financial-services)
+* [Education](/industry/education)
+* [Manufacturing](/industry/manufacturing)
+
+Use Cases
+
+* [Goal management](/uses/goal-management)
+* [Organizational planning](/uses/organizational-planning)
+* [Project intake](/uses/project-intake)
+* [Resource planning](/uses/resource-planning)
+* [Product launches](/uses/product-launch)
+* [View all use cases](/uses)
+
+LEARN
+
+* [Resource center](/resources)
+* [Events and webinars](/events)
+* [Customer stories](/customers)
+* [Asana Academy](https://academy.asana.com)
+* [Certifications](/certifications)
+* [Trainings](https://academy.asana.com/page/upcoming-live-trainings)
+
+SUPPORT
+
+* [Help Center](https://help.asana.com)
+* [Community](https://forum.asana.com/)
+* [Templates](/templates)
+
+SERVICES
+
+* [Customer Success](/customer-success)
+* [Find a partner](/partners/channel/directory)
+* [Become a partner](/partners)
+
+* [Contact sales](/sales)
+* [View demo](/demo/main)
+* [Download app](/download)
+
+* [Pricing](/pricing)
+
+* [Contact sales](/sales)
+* [View demo](/demo/main)
+* [Download app](/download)
+
+[Log in](https://app.asana.com/-/login)[Contact sales](/sales)[Get started](/create-account)[Launch Asana](https://app.asana.com/-/inbox)[Upgrade](https://app.asana.com/0/billing/pricing)[Contact sales](/sales)
+
+## Legal
+
+### Subscriber Terms
+
+Last Updated: September 1, 2026
+
+*These Subscriber Terms apply to new Order Forms (or renewals of existing Order Forms) effective on or after September 16, 2026.*
+
+*If you are an existing Customer and previously agreed to a version of the Subscriber Terms before September 16, 2026, these updated Subscriber Terms will go into effect upon the renewal date of your next Order Form. The prior versions of the Subscriber Terms are available* [here](/terms/subscriber-terms-082026)*. If you have a separate written agreement with Asana on this subject matter, these online Subscriber Terms will not apply to you.*
+
+---
+
+These Subscriber Terms (“Agreement”) are between Asana, Inc. (“Asana”) and the party identified as the customer in the applicable Order Form (“Customer”), and are effective as of the date the parties enter into an applicable Order Form incorporating these terms (the “Effective Date”).
+
+In the event of a conflict among the documents making up this Agreement, the main body of this Agreement (Sections 1 through 11, inclusive) will prevail, except that any Order Forms, Product-Specific Terms, Data Processing Addendum, or any other exhibit, attachment, or addendum will control over the Agreement for its specific subject matter.
+
+### 1. Definitions
+
+1.1 “Affiliate” means any entity that Controls, is Controlled by, or is under common Control with the Asana or the Customer entity agreeing to these terms, where “Control” means ownership of more than 50% of the voting interests of the subject entity or having the power to direct or cause the direction of the management and policies of an entity, whether through ownership, by contract, or otherwise.
+
+1.2 “Customer Data” means all information that Customer or its End Users submit to the Services.
+
+1.3 “Documentation” means the then-current list of Asana features, as updated from time to time, accessible at<https://go.asana.com/all-features>.
+
+1.4 “End User” means any individual who is authorized by Customer to use the Services under Customer’s account, including Customer’s or its Affiliates’ employees, consultants, contractors, or agents.
+
+1.5 “Order Form” means an ordering document or an online order, including orders for trials, entered into between Customer and Asana (or Affiliates of either party) specifying the Services or Professional Services to be provided pursuant to this Agreement. Each Order Form is a stand-alone agreement, separate from any other Order Form, incorporating the terms and conditions of this Agreement by reference.
+
+1.6 “Product-Specific Terms” means specific policies and terms available at<https://asana.com/terms/asana-product-specific-terms>, that apply to products or features made available by Asana, and which form part of the Agreement.
+
+1.7 “Professional Services” means the customer success services as specified in the applicable Order Form.
+
+1.8 “Services” means Asana’s software as a service offerings, including any add-on products, features and additions to the software as a service offerings, to be provided pursuant to and as specified in an applicable Order Form.
+
+1.9 “Subscription” means a subscription to a Service or Professional Service as specified in an Order Form.
+
+1.10 “Subscription Term” means the initial term of a Subscription identified in the applicable Order Form (from first applicable Start Date to last applicable End Date), and, thereafter, each renewal term, as applicable.
+
+### 2. Services
+
+2.1 Provision of the Services and Availability. Asana will make the Services available to Customer during the applicable, then-current Subscription Term pursuant to this Agreement. Asana may update the content, functionality, and user interface of Services from time to time provided such update will not materially decrease the functionality of the Services during the applicable, then-current Subscription Term. Customer agrees that its use of the Services under this Agreement is not contingent on the delivery of future features or functionality.
+
+2.2 Access Rights. Asana grants Customer a non-exclusive, non-sublicensable, non-transferable (except as specifically permitted in Section 11.8) right to access and use (and to grant access and use of the Services to its End Users) the Services during the applicable Subscription Term, solely for Customer’s and its Affiliates’ internal business purposes, and subject to an applicable Order Form.
+
+2.3 Affiliates. In addition to any access rights a Customer Affiliate may have as an End User of Customer, a Customer Affiliate may separately acquire Subscriptions to Services and/or Professional Services pursuant to this Agreement by entering into an Order Form, and in each such case, all references in this Agreement to the Customer will be deemed to refer to the applicable Affiliate for purposes of that Order Form.
+
+2.4 Service Restrictions. Customer will not (a) make the Services available to anyone other than Customer and its End Users or use the Services for the benefit of anyone other than Customer or its Affiliates; (b) rent, sublicense, re-sell, assign, distribute, time share or similarly exploit the Services (including allowing its employees or employees of its Affiliates to access the Services as guests instead of acquiring End User Subscriptions for such employees); (c) reverse engineer, copy, modify, adapt, or hack the Services; (d) access the Services, the Documentation, or Asana’s Confidential Information to develop a product or service in competition with the Services; (e) allow End User seats to be shared or used by more than one individual End User (except that End User seats may be reassigned to new End Users replacing individuals who no longer use the Services for any purpose); (f) use the Services to violate any applicable law, any third party’s intellectual property rights, or anyone’s right of privacy or publicity; (g) use the Services to create, use, send, store, or run viruses, bots, worms, or similar harmful material; or (h) use the Services or Asana AI in a manner that is excessive, abusive, or inconsistent with normal and intended use, including without limitation any use that places a disproportionate burden on the infrastructure or resources supporting the Services, or exploits any feature or functionality of the Services in a way that is unrelated to Customer's ordinary business purposes or that results in unreasonable costs or degradation of service for Asana or other customers (collectively, "Abusive Use"). Asana may request that Customer suspend the account of any End User who: (i) violates this Agreement; (ii) engages in Abusive Use; or (iii) is using the Services in a manner that Asana reasonably believes may cause a security risk or a disruption to others’ use of the Services. If Customer fails to promptly suspend or terminate such an End User’s account, Asana reserves the right to do so.
+
+2.5 Security; Protection of Customer Data. Asana will implement and maintain reasonable administrative, organizational, and technical safeguards designed for the protection, confidentiality, and integrity of Customer Data at least as rigorous as the measures described in the Data Security Standards available at<https://asana.com/security-standards>. Asana reserves the right to modify the Data Security Standards from time to time provided such modification will not materially and adversely diminish the overall security of the Services during the applicable, then-current Subscription Term. In addition, either the Asana Data Processing Addendum, available at<https://asana.com/terms#data-processing>, or a separately executed Data Processing Addendum (either of the aforementioned, as applicable, “DPA”), will apply to any Customer Personal Data (as such term is defined in the DPA) included in Customer Data. Notwithstanding the foregoing, in connection with the StackAI by Asana Platform Services, (a) the StackAI Data Processing Addendum, available at<http://asana.com/terms/stackai-data-processing> ("StackAI DPA"), and not the DPA, shall govern the processing of Customer Personal Data and (b) the Data Security Standards shall not apply.
+
+2.6 Administration of Customer’s Account. Customer acknowledges that it retains administrative control over to whom it grants access to Customer Data hosted in the Services. Customer may specify one or more End Users as administrators (each an “Administrator”) to manage its account, and Asana is entitled to rely on communications from such Administrators and other Customer employees when servicing Customer’s account.  Actions Administrators take via the admin console are deemed to be made in writing and are legally binding on Customer. Customer is responsible for use of the Services by its End Users and for their compliance with this Agreement. Customer is solely responsible for the accuracy, quality, and legality of Customer Data. Customer will promptly notify Asana if it becomes aware of any unauthorized use or access to Customer’s account or the Services.
+
+2.7 Customer’s Use of Third Party Services. Customer may install or enable third party services for use with the Services, such as online applications, AI agents, external Model Context Protocol (“MCP”) servers, offline software products, or services that utilize the Asana application programming interface (“API”) or otherwise connect with the Services (“Third Party Services”). Any use by Customer or its End Users of such Third Party Services is solely the responsibility of Customer and the applicable Third Party Service provider. To the extent Customer authorizes the access or transmission of Customer Data through a Third Party Service, the terms and conditions applicable to such Third Party Service will govern. In no event will Asana be responsible for any use, disclosure, modification or deletion of such Customer Data or for any act or omission on the part of any Third Party Service or its provider.
+
+2.8 Channel Partners. This Agreement applies to all Subscriptions acquired through Asana’s authorized distributors, resellers or digital marketplaces (each a “Channel Partner”), except (a) all references to the Order Form herein shall refer to the ordering document entered into between Customer and Channel Partner (or Affiliates of either party) specifying the Services or Professional Services to be provided pursuant to this Agreement, (b) Sections 4.1-4.4 (Payment) shall not apply to the extent the Channel Partner is responsible for billing the Customer, (c) Asana and Channel Partner reserve the right to calculate the total number of End Users and other applicable subscription capacity units on a periodic basis, and, if such number exceeds Customer’s current purchase capacity as specified in an Order Form, Asana and Channel Partner each reserve the right to invoice Customer for the excessive increments of End Users and other measurement units on a pro rata basis for the remaining months in Customer’s then-current subscription, and (d) Customer is required to submit any warranty, refund or applicable service credit claims to the Channel Partner, who will be solely responsible for issuing any refunds or service credits. Notwithstanding subsection (b) above, a breach by Customer of a payment obligation with any Channel Partner for any Subscription will be deemed to be a material breach of this Agreement. In addition, if Customer fails to pay a digital marketplace for any Subscription or fails to pay amounts directly invoiced by Asana (including overage fees under subsection (c)), Asana retains the right to directly enforce payment obligations and collections. Any terms agreed between Customer and a Channel Partner that are in addition to this Agreement are solely between Customer and the Channel Partner, and will not be binding on Asana.
+
+2.9 Asana as a Reseller. This section applies when Customer purchases third party services ("Resold Services") from Asana as specified in an Order Form. Asana acts as a reseller of  Resold Services, which are fulfilled and operated by the relevant third party vendor, and purchase and use of Resold Services is subject solely to the terms, conditions and policies made available by that third party vendor. Asana makes no representation or warranties of any kind regarding the Resold Services. Customer must bring any claim in relation to Resold Services against the applicable third party vendor directly. In no event will Asana be liable for any claim, loss or damage arising out of the use, operation or availability of any Resold Services.
+
+### 3. Representations and Warranties.
+
+3.1 Mutual Warranties. Each party represents and warrants that it (i) will comply with all laws, rules, and regulations applicable to the exercise of its rights and performance of its obligations under this Agreement and (ii) has validly entered in this Agreement and has the legal power to do so.
+
+3.2 By Asana.
+
+3.2.1  Service Warranties. Asana warrants that during the then-current Subscription Term, the Services will materially conform with the Documentation. If any material non-conformity to the Documentation persists without relief more than thirty (30) days after Customer’s written notice of the non-conformity, then Customer may terminate the applicable Order Form and, as Customer’s exclusive remedy, receive a refund of any prepaid, unused fees applicable to the remaining portion of the then-current Subscription Term measured from the effective date of termination.
+
+3.2.2 Professional Services Warranty. Asana warrants that the Professional Services will be performed in a professional and workmanlike manner using resources with the requisite skills, experience, and knowledge. In the event that Customer believes Asana has breached this warranty, Customer must provide written notice to Asana within thirty (30) days of Asana’s performance of any nonconforming Professional Services, and as Customer’s exclusive remedy, Asana will, at its option (a) re-perform the applicable Professional Services that fail to meet this warranty, or (b) refund to Customer the fees paid for the non-conforming Professional Services.
+
+3.2.3 Malicious Code. Asana warrants that it has implemented appropriate technical measures and updates the Services periodically to prevent the introduction of software viruses, worms, logic bombs, Trojan horses or other code, files, or scripts intended to do harm to the Services.
+
+3.3 By Customer. Customer represents and warrants that it is entitled to transfer the Customer Data to Asana so that Asana and its authorized third party service providers may lawfully use, process, and transfer the Customer Data in accordance with this Agreement on Customer’s behalf.
+
+3.4 Disclaimer. The warranties set forth in this Section 3 are the exclusive warranties from Asana and, to the fullest extent permitted by applicable law, Asana does not make any additional warranties of any kind, whether express, implied, statutory, or otherwise, including warranties of merchantability, fitness for a particular use, noninfringement, or error-free or uninterrupted use of the Services or Professional Services. Asana warranties will not apply in the event of misuse or modification of the Services by Customer and End Users, or failure to comply with instructions provided by Asana. Asana makes Non-Production Versions of the Services (as defined in Section 11.4) available as-is without warranties of any kind.
+
+### 4. Payment.
+
+4.1 Payment. Customer will pay all undisputed amounts due under the applicable Order Form within thirty (30) days of invoice date, which shall be the same date the invoice email is received by Customer. If Customer disputes any part of an invoice in good faith, Customer will pay the undisputed part and provide Asana with notice and detail of the dispute no later than the invoice due date. Amounts due are payable in the currency set forth in the applicable invoice and are non-cancelable and non-refundable unless otherwise provided in this Agreement. Customer is responsible for providing complete and accurate billing information to Asana, including the purchase order number at the time of purchase if Customer requires one. Asana reserves the right to suspend Customer’s account in the event that Customer’s account becomes overdue and is not brought current within ten (10) business days following notice. Unpaid amounts may be subject to interest at the lesser of 1.5% per month or the maximum permitted by law plus collection costs. Suspension will not relieve Customer’s obligation to pay amounts due. For transactions where Customer is permitted to make payment via credit card, Customer agrees that, if eligible, Asana may update Customer's payment information through the use of account refresher services provided by third party payment processors.
+
+4.2 Subscriptions. Unless otherwise specified in an Order Form, Subscription fees are based on annual periods (or pro rata portions of annual periods). Subscriptions are sold in set increments based on the number of End Users and other units of measurement and subscription size. Customer may add End Users and other subscription capacity to their Subscription at any time on written notice to Asana (email notice acceptable). Asana reserves the right to calculate the total number of End Users and other applicable subscription capacity units on a periodic basis, and, if such number exceeds Customer’s current purchased capacity as specified in an Order Form, Asana reserves the right to invoice Customer for the excessive increments of End Users and other capacity units on a pro rata basis for the remaining period in Customer’s then-current subscription. If Customer wishes to (i) reduce the number of paid-for End Users under the applicable Subscription or (ii) downgrade to a lower Subscription plan, Customer must provide Asana with written notice (in-app notification or email acceptable) at least thirty (30) days prior to the end of the then-current Term; and Asana will reflect such reduction and/or downgrade within Customer’s billable account on the Renewal Date (as defined below), if applicable.
+
+4.3 Taxes. Any fees charged to Customer are exclusive of taxes. Except for those taxes based on Asana’s net income, Customer will be responsible for all applicable taxes in connection with this Agreement including, but not limited to, sales, use, excise, value-added, goods and services, consumption, and other similar taxes or duties. If any withholding is required by law, Customer will pay Asana any additional amounts necessary to ensure that the net amount that Asana receives, after any such withholding, equals the amount Asana would have received if no withholding had been applied. Upon request, Customer will provide documentation showing that the withheld amounts have been paid to the relevant taxing authority. Asana’s failure to charge appropriate tax due to incomplete or incorrect information provided by Customer will not relieve Customer of its obligations under this Section 4.3 (Taxes). If Customer is exempt from certain taxes, Customer will provide proof of such exemption to Asana without undue delay upon execution of the applicable Order Form.
+
+4.4 Auto-renewal to Subscription. Unless otherwise stated in the applicable Order Form, Customer agrees that its Subscription(s) will automatically renew at the end of the then-current Subscription Term (the “Renewal Date”) for a renewal period equal to the prior Subscription Term, at Asana's then-current rates. Customer authorizes Asana to automatically charge Customer for the applicable fees on or after the Renewal Date unless either Party notifies the other of its intent not to renew the Subscription at least thirty (30) days prior to the Renewal Date.
+
+### 5. Term and Termination.
+
+5.1 Term. This Agreement commences on the Effective Date and will remain in effect until expiration or termination in accordance with its terms. Any Order Form executed hereunder remains governed by this Agreement for its then-current Subscription Term or Professional Services term, irrespective of any earlier termination or expiration of this Agreement. Termination or expiration of this Agreement does not automatically terminate any applicable Order Form unless expressly stated otherwise therein.
+
+5.2 Termination. Either party may terminate this Agreement and/or any Order Form: (a) upon thirty (30) days written notice if the other party is in material breach of this Agreement and fails to cure such breach within the notice period, (b) with immediate effect upon receipt of notice in the event of a breach of Section 2.4 (Service Restrictions); or (c) with immediate effect if the other party ceases its business operations or becomes subject to insolvency proceedings and the proceedings are not dismissed within sixty (60) days.
+
+5.3 Effect of Termination. Upon expiration or termination of this Agreement and/or the applicable Order Form for any reason, all Subscriptions and any other rights granted to Customer under such terminated Agreement or Order Form will immediately terminate, and Customer will immediately cease to use all Services. Upon termination of an applicable Order Form by Customer pursuant to Section 5.2, Asana will refund to Customer a prorated amount of prepaid, unused fees applicable to the remaining portion of the then-current Subscription Term measured from the effective date of termination. In no event will any termination relieve Customer of the obligation to pay any fees accrued or payable to Asana for the Services or Professional Services in the period prior to the effective date of termination. Any terms that by their nature extend beyond the Agreement termination remain in effect until fulfilled and apply to successors and assignees. Except where an exclusive remedy is specified, the exercise by either party of any remedy under this Agreement, including termination, will be without prejudice to any other remedies it may have under this Agreement, by applicable law or otherwise.
+
+5.4 Treatment of Customer Data Following Expiration or Termination. Customer agrees that following expiration or termination of all Subscriptions under the Agreement, Asana may immediately deactivate Customer’s account(s) associated with such Agreement. Asana will make Customer Data available to Customer for export as long as Asana receives written notice within thirty (30) days after the effective date of expiration or termination from Customer. After such thirty (30) day period, Asana will have no obligation to retain Customer Data and will thereafter, unless legally prohibited, be entitled to delete all Customer Data in its systems or otherwise in its possession or under its control. Subject to any limitations in Customer’s Service configuration, upon Customer’s request logged at <https://help.asana.com/>, Asana will, within one-hundred and eighty (180) days of receipt of such request, securely destroy all Customer Data from its systems; provided that all back-ups will be deleted within thirty (30) days after such one-hundred and eighty (180) day period*.*
+
+### 6. Confidentiality.
+
+6.1 Definition of Confidential Information. During the course of performance under this Agreement, each party may make available to the other party information that is identified as, or should reasonably be understood by the receiving party to be, proprietary or confidential (the “Confidential Information”). Confidential Information specifically includes this Agreement, the Services, Order Form(s), Customer Data, business plans, product plans and roadmaps, strategies, forecasts, projects and analyses, financial information and fee structures, business processes, methods and models, and technical documentation. Confidential Information does not include information that is: (a) publicly available when received, or subsequently becomes publicly available through no fault of the receiving party; (b) obtained by receiving party from a source other than the disclosing party without obligation of confidentiality; (c) developed independently by the receiving party; or (d) already in the possession of the receiving party without obligation of confidentiality.
+
+6.2 Protection of Confidential Information. The receiving party will use the same care and discretion to avoid disclosure, publication, or dissemination of the disclosing party’s Confidential Information as it uses with its own similar information that it does not wish to disclose, publish, or disseminate, but in no event less than a reasonable degree of care. The receiving party may disclose Confidential Information to its employees, Affiliates, consultants, subcontractors, or advisors who have a need to know such Confidential Information for the purpose of performing under this Agreement and only to those who are obligated to maintain the confidentiality of such Confidential Information upon terms at least as protective as those contained in this Agreement. If the parties entered into a non-disclosure agreement prior to executing this Agreement, the terms of this Section 6 (Confidentiality) will control in the event of any conflict or inconsistency.
+
+6.3 Equitable Relief. In the event of a breach of this Section 6 (Confidentiality), the disclosing party may seek appropriate equitable relief in addition to any other remedy.
+
+6.4 Compelled Disclosure. The receiving party may disclose Confidential Information to the extent required by law or court order. However, subject to applicable law, the receiving party will give the disclosing party prompt notice to allow the disclosing party a reasonable opportunity to obtain a protective order.
+
+### 7. Intellectual Property Rights.
+
+7.1 Asana Ownership. As between the parties, Asana and its licensors exclusively own all right, title, and interest in and to all intellectual property rights in the Services. Customer’s use of the Services will not affect Asana’s ownership or license rights in the Services. Except for the rights expressly granted in Section 2.2, Asana reserves all rights in the Services and does not grant Customer or its End Users any intellectual property rights to the Services, including any enhancements, modifications or derivatives thereof.
+
+7.2 Customer Ownership. As between the parties, Customer and its licensors will retain all right, title, and interest in and to all intellectual property rights in Customer Data. Customer grants to Asana and its authorized third party Subprocessors a royalty-free, fully paid, non-exclusive, non-transferrable (except under Section 11.8), worldwide, right to use, host, store, backup, transmit, and display Customer Data solely to (a) provide and support the Services and (b) improve the Services as long as (i) such data is used in accordance with Section 6 (Confidentiality) of this Agreement and (ii) neither Customer nor its End Users are publicly identified. Notwithstanding the foregoing Section 7.2(b), Customer can control whether Customer Data is used for product improvement purposes via the Asana Admin Console.
+
+7.3 Feedback. If Customer submits any feedback to Asana regarding the Services, Professional Services, or Non-Production Versions of the Services as defined in Section 11.4, Asana may use such feedback for any purpose without any compensation or obligation to Customer provided such use does not violate Section 6 (Confidentiality).
+
+### 8. Indemnification.
+
+8.1 Asana Indemnity. Asana will (a) defend Customer and its Affiliates and their respective officers, directors, and employees against any third party claims, actions, demands or suits to the extent arising out of or alleging the Services as used by the Customer in accordance with this Agreement infringes, misappropriates or violates such third party’s intellectual property rights (“IP Claim”) and (b) with relation to the IP Claim, pay amounts finally awarded by a court against Customer or included in a settlement approved by Asana. To obtain such defense and payment by Asana, Customer must promptly (i) notify Asana in writing of the claim, (ii) supply information requested by Asana, and (iii) allow Asana to control, and reasonably cooperate in, the defense and settlement, including mitigation efforts.
+
+8.2 In connection with any IP Claim, Asana may: (a) contest the IP Claim; (b) obtain claimant’s permission for Customer’s continued use of the applicable Service; (c) replace Customer’s access to or use of the applicable Service with substantially similar functionality that avoids the IP Claim; or (d) if Asana determines the foregoing clauses (a), (b), and (c) are commercially impracticable, terminate Customer’s access to and use of the affected Service on sixty (60)-days’ prior notice and refund any prepaid subscription fees covering that part of the then-current applicable term for such Service measured from the effective date of termination.
+
+8.3 Asana has no responsibility for claims based on non-Asana products and services, items not provided by Asana, or any violation of law or third party rights caused by Customer Data or other Customer materials.
+
+8.4 Customer Indemnity. Customer will (a) defend Asana and its Affiliates and their respective officers, directors, and employees against any third party claims, actions, demands or suits to the extent arising out of or alleging that Customer Data infringes, misappropriates or violates a third party’s rights including but not limited to intellectual property rights, privacy rights, or rights of publicity and (b) with relation to (a), pay amounts finally awarded by a court against Asana or included in a settlement approved by Customer. To obtain such defense and payment by Customer, Asana must promptly (i) notify Customer in writing of the claim, (ii) supply information requested by Customer, and (iii) allow Customer to control, and reasonably cooperate in, the defense and settlement, including mitigation efforts.
+
+8.5 This Section states each party’s entire obligation and exclusive remedy regarding the third party claims described in the Section.
+
+### 9. Liability.
+
+9.1 To the extent permitted by law, each party’s total, cumulative liability for all claims arising out of or related to the Agreement, whether based on contract, tort (including negligence) or any other legal or equitable theory, will be limited to the total amount paid by Customer under this Agreement in the twelve (12) months preceding the first event giving rise to liability.
+
+9.2 To the extent permitted by law, neither party will be liable for (a) special, incidental, exemplary, punitive, indirect, or any consequential damages, or (b) lost profits (direct or indirect), loss of use, loss of data, service interruption, loss of business, loss of value, loss of revenue, loss of goodwill, or loss of anticipated savings, whether based on contract, tort (including negligence) or any other legal or equitable theory, even if such party has been advised of such damages in advance or if such damages were foreseeable.
+
+9.3 The following are not subject to the limitation in Section 9.1 and the exclusion in Section 9.2: (a) obligations to pay for products, services, or taxes set forth in Section 4, (b) a party’s indemnification payments set forth in Section 8 (Indemnification), and (c) damages arising from a party’s gross negligence, willful misconduct, or fraud.
+
+### 10. Export Control and Economic Sanctions Compliance.
+
+Each party represents that it is not named on any U.S. government list of prohibited or restricted parties, nor is it owned or controlled by or acting on behalf of any such parties. Customer agrees that it will not access or use the Services in any manner that would cause any party to violate any U.S. or international embargoes, economic sanctions, or export controls laws or regulations.
+
+### 11. Miscellaneous.
+
+11.1 Governing Law; Venue. Both parties agree to (i) the application of the laws of the State of California, United States, without regard to conflict of law principles and (ii) the exclusive jurisdiction and venue in the state or Federal courts located in San Francisco, California. The United Nations Convention on Contracts for the International Sale of Goods does not apply to transactions under the Agreement.
+
+11.2 Notices. Asana may give general notices related to the Services that apply to all customers by email, in-app notifications, or posting them through the Services. Other notices sent by either party under the Agreement must be in writing and sent to the business mailing or email address specified in writing by a party, such as in the Order Form as applicable. Notices are deemed given when received.
+
+11.3 Publicity. Asana may include Customer’s name and logo in Asana’s online customer list and in print and electronic marketing materials.
+
+11.4 Access to Non-Production Versions of the Services. Customer may be provided with access to beta, trial, pilot, early access, proof of concept, or sandbox versions of the Services or features within the Services (collectively, the “Non-Production Versions of the Services”). Customer acknowledges and understands that its use of the Non-Production Versions of the Services is not required and is at Customer’s own risk, and that Non-Production Versions of the Services are made available on an “as is” basis without warranties of any kind, may be discontinued or modified at any time, and may be subject to different and additional terms (to the extent of a conflict between this Agreement and such other terms, such other terms control). Non-Production Versions of the Services are not for production use, not supported, and not subject to availability or security obligations. Asana will have no liability for any harm or damage arising out of or in connection with Non-Production Versions of the Services.
+
+11.5 Relationship of the Parties. Asana is an independent contractor, not Customer’s agent, joint venturer, partner, or fiduciary. No right or cause of action for any third party is created by the Agreement or any transaction under it.
+
+11.6 Force Majeure. Neither party is responsible for failure to fulfill its non-monetary obligations due to causes beyond its control.
+
+11.7 Severability; No Waiver. If any provision of the Agreement is invalid or unenforceable, the remaining provisions remain in full force and effect. No failure or delay by a party in exercising any right, power or privilege under this Agreement shall operate as a waiver thereof, nor shall any single or partial exercise thereof preclude any other or further exercise thereof or the exercise of any right, power or privilege under this Agreement.
+
+11.8 Assignment. Neither party may assign the Agreement, in whole or in part, without the prior written consent of the other. However, either party may assign the Agreement to its Affiliate or to its successor in interest in connection with a merger, acquisition, corporate reorganization, or sale of all or substantially all of its assets.
+
+11.9 Public Entities. If Customer is a United States of America federal, state, or local government agency or public education institution utilizing Asana’s Services in an official capacity, Customer’s use of the Services shall be subject to this Agreement and the Public Entity Amendment available at<https://asana.com/terms#amendment>.
+
+11.10 Entire Agreement. Each Order Form governed by this Agreement, including all attachments, exhibits, and addendums, constitutes the entire agreement between the parties concerning the subject matter hereof and supersedes and replaces any prior or contemporaneous representations, understandings and agreements, whether written or oral, with respect to its subject matter. Notwithstanding any language to the contrary therein, no terms or conditions of any purchase order or other business form used by Customer shall be incorporated into, supersede, supplement, or otherwise apply to this Agreement or Asana, and all such terms or conditions shall be null and void.
+
+11.11 Modifications. Asana may revise this Agreement from time to time by posting the modified version on its website. By continuing to access or use the Services after the posted effective date of modifications to this Agreement, Customer agrees to be bound by the revised version of the Agreement. If Customer has a separate written agreement with Asana on this subject matter, these online Subscriber Terms will not apply to Customer.
+
+### Previous Subscriber Terms
+
+* [July 2019](https://asana.com/terms/subscriber-agreement-072019)
+* [March 2020](https://asana.com/terms/master-subscription-agreement-032020)
+* [November 2021](https://asana.com/terms/master-subscription-agreement-112021)
+* [April 2023](https://asana.com/terms/subscriber-terms040123)
+* [May 2024](https://asana.com/terms/subscriber-terms052824)
+* [December 2024](https://asana.com/terms/subscriber-terms-120324)
+* [January 2026](https://asana.com/terms/subscriber-terms-01262026)
+* [March 2026](https://asana.com/terms/subscriber-terms-03202026)
+* [May 2026](/terms/subscriber-terms-052026)
+* [August 2026](/terms/subscriber-terms-082026)

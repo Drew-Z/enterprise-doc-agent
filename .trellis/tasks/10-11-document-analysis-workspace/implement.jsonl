@@ -1,0 +1,5 @@
+{"file":".trellis/spec/backend/agent-mcp-hitl.md","reason":"DB authority, exact approval, event privacy and durable replay; preserve old MCP contract"}
+{"file":".trellis/spec/core/backend/index.md","reason":"Core model, parsing, billing and service conventions before implementation"}
+{"file":".trellis/spec/api/backend/index.md","reason":"Analysis API authorization, errors and async job boundaries"}
+{"file":".trellis/spec/web/frontend/index.md","reason":"Analysis workspace UI, query state and client validation"}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"Coordinate source snapshots, worker execution, matrix API and export contracts"}

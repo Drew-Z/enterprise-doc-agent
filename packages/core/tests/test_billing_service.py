@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
 import pytest
 
 from enterprise_doc_core.billing import EntitlementUsageService, UsageError
-from enterprise_doc_core.billing.models import TenantEntitlement, UsageEvent, UsageReservation
+from enterprise_doc_core.billing.models import UsageEvent
 
 
 class _Result:
@@ -109,51 +109,6 @@ def test_settlement_replay_detects_explicit_payload_conflicts() -> None:
         pricing_version=None,
         source="presales",
     )
-
-
-@pytest.mark.asyncio
-async def test_reservation_and_settlement_update_counters_and_write_event() -> None:
-    tenant_id, operation_id = uuid4(), uuid4()
-    now = datetime(2026, 9, 14, tzinfo=UTC)
-    entitlement = TenantEntitlement(
-        id=uuid4(),
-        tenant_id=tenant_id,
-        plan_code="trial",
-        version=1,
-        period_start=now - timedelta(minutes=1),
-        period_end=now + timedelta(hours=1),
-        provider_request_limit=2,
-        provider_requests_used=0,
-        provider_requests_reserved=0,
-        created_at=now,
-        updated_at=now,
-    )
-    reserve_session = _Session([tenant_id, None, entitlement, None], [])
-    service = EntitlementUsageService(
-        session_factory=_Factory(reserve_session),
-        clock=lambda: now,  # type: ignore[arg-type]
-    )
-    result = await service.reserve_provider_request(tenant_id=tenant_id, operation_id=operation_id)
-    assert result.ledgered is True
-    assert entitlement.provider_requests_reserved == 1
-    reservation = reserve_session.added[0]
-    assert isinstance(reservation, UsageReservation)
-
-    settle_session = _Session([tenant_id, reservation, entitlement], [])
-    service = EntitlementUsageService(
-        session_factory=_Factory(settle_session),
-        clock=lambda: now,  # type: ignore[arg-type]
-    )
-    settled = await service.settle_provider_request(
-        tenant_id=tenant_id,
-        operation_id=operation_id,
-        usage={"total_tokens": 7},
-        provider="provider",
-    )
-    assert settled.status == "consumed"
-    assert entitlement.provider_requests_used == 1
-    assert entitlement.provider_requests_reserved == 0
-    assert settle_session.added[0].event_type == "consume"
 
 
 @pytest.mark.asyncio

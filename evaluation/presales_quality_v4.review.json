@@ -1,0 +1,106 @@
+{
+  "reviewType": "assistant authored and self reviewed, non-blind; not independent domain or customer review",
+  "decision": "draft_only_do_not_merge_or_deploy",
+  "deployment": "unchanged v0.1.44",
+  "realProviderRequests": 12,
+  "additionalReplayRequests": 0,
+  "initialAcceptedDrafts": 10,
+  "replayAcceptedDrafts": 12,
+  "statusMatches": 10,
+  "unsafeAffirmatives": 0,
+  "exactCitations": 23,
+  "coveredRequiredEvidence": 21,
+  "requiredEvidence": 21,
+  "tokens": {
+    "prompt_tokens": 41560,
+    "completion_tokens": 48134,
+    "total_tokens": 89694
+  },
+  "costAmount": null,
+  "rows": [
+    {
+      "key": "H1-R1",
+      "statusMatch": true,
+      "acceptedMeaning": true,
+      "proseLanguage": "Chinese with allowed technical names",
+      "notes": "已购归档与不可提前删除均有证据，条件已满足。"
+    },
+    {
+      "key": "H1-R2",
+      "statusMatch": true,
+      "acceptedMeaning": true,
+      "proseLanguage": "Chinese with allowed technical names",
+      "notes": "三项采购/域名/联调前提均保留，明确尚未启用；允许同状态前提合并为一项。"
+    },
+    {
+      "key": "H1-R3",
+      "statusMatch": true,
+      "acceptedMeaning": true,
+      "proseLanguage": "Chinese with allowed technical names",
+      "notes": "正确识别 16 MiB 硬上限且不能拆分替代。"
+    },
+    {
+      "key": "H1-R4",
+      "statusMatch": true,
+      "acceptedMeaning": true,
+      "proseLanguage": "Chinese with allowed technical names",
+      "notes": "平均值不能证明 P99，具体补证问题正确。"
+    },
+    {
+      "key": "H1-R5",
+      "statusMatch": true,
+      "acceptedMeaning": true,
+      "proseLanguage": "Chinese with allowed technical names",
+      "notes": "依据已签署且明确优先协议正确判支持；初始解码重复要求导致拒绝，原始响应可无新增模型调用地解析。"
+    },
+    {
+      "key": "H1-R6",
+      "statusMatch": true,
+      "acceptedMeaning": true,
+      "proseLanguage": "Chinese with allowed technical names",
+      "notes": "中文说明删除与保留条款冲突，并提出优先级/范围澄清。"
+    },
+    {
+      "key": "H2-R1",
+      "statusMatch": true,
+      "acceptedMeaning": true,
+      "proseLanguage": "Chinese with allowed technical names",
+      "notes": "已购、密钥验证、验收均已完成，不重复列为待办。"
+    },
+    {
+      "key": "H2-R2",
+      "statusMatch": true,
+      "acceptedMeaning": true,
+      "proseLanguage": "Chinese with allowed technical names",
+      "notes": "正确列出采购与版面验收两个未满足前提；但 conditions 使用已购买/已完成，应改成需完成的待办措辞。"
+    },
+    {
+      "key": "H2-R3",
+      "statusMatch": true,
+      "acceptedMeaning": true,
+      "proseLanguage": "Chinese with allowed technical names",
+      "notes": "只保留域名验证为未知项，未将已完成采购列为待办；初始引用重复要求导致拒绝，修正解码后正确。"
+    },
+    {
+      "key": "H2-R4",
+      "statusMatch": true,
+      "acceptedMeaning": true,
+      "proseLanguage": "Chinese with allowed technical names",
+      "notes": "80000 行硬上限不能满足120000行，无虚构升级方案。"
+    },
+    {
+      "key": "H2-R5",
+      "statusMatch": false,
+      "acceptedMeaning": false,
+      "proseLanguage": "Chinese with allowed technical names",
+      "notes": "错误把缺少报告当作不满足；证据明确不声明公司是否取得报告，应该是证据不足并请求补充报告/有效期。"
+    },
+    {
+      "key": "H2-R6",
+      "statusMatch": false,
+      "acceptedMeaning": false,
+      "proseLanguage": "Chinese with allowed technical names",
+      "notes": "同时引用互不优先的冲突两侧却判不满足；应保持资料冲突并要求澄清，不应擅自让硬限制覆盖另一有效承诺。"
+    }
+  ]
+}

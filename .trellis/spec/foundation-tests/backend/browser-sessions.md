@@ -49,6 +49,26 @@ repeatable-read snapshot; only the three browser tables and Alembic version are 
 
 ## Validation & Error Matrix
 
+For live GitHub acceptance, the repository connector's identity is separate from
+the application's OAuth identity. Use a fresh browser context and user-entered
+credentials; never inject the staging JWT to represent a browser login. A callback
+303 may also redirect to a failure page. Require `/auth/session` to report
+authenticated and non-demo, then a selected existing enterprise and a protected
+GET with its real Cookie and session context before claiming browser business access.
+
+Start the login redirect when the user is ready. `login_ttl_seconds` defaults to
+300 and is capped at 600; a longer helper lifetime does not extend the login
+Cookie. If the attempt expires, retain its result and use a new login entry, never
+reuse the old authorization code. Record safe session-state changes so an expired
+attempt can be distinguished from slow navigation without exporting any secret.
+Do not capture login screenshots, passwords, OTPs, authorization codes, Cookie
+values, CSRF tokens or email addresses. Verify helper exit and browser closure.
+
+Keep network vantage and route in public-ingress evidence. Success from a Pod
+through HTTPS does not erase local direct/proxy failures or prove public writes,
+browser disconnect recovery or load capacity. Read-only verification has its own
+request/time limit and does not renew a prior generation budget.
+
 | Observation | Evidence requirement |
 |---|---|
 | Startup configuration failure | Preserve failure; do not imply browser cases ran |

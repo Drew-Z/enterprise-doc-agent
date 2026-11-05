@@ -1,0 +1,81 @@
+{
+  "schemaVersion": "presales-quality-gold-v1",
+  "datasetSha256": "bc4f68e3909249654f934c5aa26abae0e06f1d7094bd22d10838db27d2d79cc5",
+  "reviewStatus": "assistant_authored_before_inference; user_review_pending; not_independent_gold",
+  "rows": [
+    {
+      "key": "R2-R1",
+      "status": "supported",
+      "requiredEvidence": [
+        {
+          "sourceKey": "R2-CONSISTENCY",
+          "excerpt": "Strongly consistent: readers will immediately see the latest object globally"
+        }
+      ],
+      "referenceAnswer": "支持。直接 S3 API 上传成功后的读取具有全球强一致性；不要将自定义域名缓存的例外套用到直接 S3 API。",
+      "reviewPoints": [
+        "回答限于对象级直接 S3 读写，不扩张到业务系统或缓存。"
+      ]
+    },
+    {
+      "key": "R2-R2",
+      "status": "contradicted",
+      "requiredEvidence": [
+        {
+          "sourceKey": "R2-S3",
+          "excerpt": "❌ [GetBucketAcl ↗]"
+        }
+      ],
+      "referenceAnswer": "不支持该原样 API 兼容要求。资料将 GetBucketAcl 列为未实现；替代权限机制不满足题目要求。",
+      "reviewPoints": [
+        "不能以 S3 compatible 泛化为所有 API 均兼容。",
+        "不能建议替代方案后把分类改成支持。"
+      ]
+    },
+    {
+      "key": "R2-R3",
+      "status": "conditional",
+      "requiredEvidence": [
+        {
+          "sourceKey": "R2-CONSISTENCY",
+          "excerpt": "An object you delete from R2, but that is still cached, will still be available."
+        }
+      ],
+      "referenceAnswer": "有条件满足。已删除的源对象仍可能由缓存提供；需要清除缓存。题目明确尚未执行，缓存清除应标为 unmet；源桶删除这一前提已完成。不能声称当前已立即停止访问。",
+      "reviewPoints": [
+        "缓存清除是 unmet，不是 unknown 或 met。",
+        "不得把源桶强一致性当作缓存即时失效保证。"
+      ]
+    },
+    {
+      "key": "R2-R4",
+      "status": "conditional",
+      "requiredEvidence": [
+        {
+          "sourceKey": "R2-LOCATION",
+          "excerpt": "Jurisdictional Restrictions guarantee objects in a bucket are stored within a specific jurisdiction."
+        },
+        {
+          "sourceKey": "R2-LOCATION",
+          "excerpt": "you must specify the [jurisdiction](#available-jurisdictions) in your S3 endpoint"
+        }
+      ],
+      "referenceAnswer": "产品提供 EU jurisdiction 及对应 S3 endpoint，可在满足配置前提时实现要求。当前桶 jurisdiction 和 endpoint 均未提供记录，应分别标为 unknown 并请求确认，当前不能放行。Location Hints 不是驻留保证；既有桶 jurisdiction 不能直接更改。",
+      "reviewPoints": [
+        "两项配置状态均为 unknown，不能写成明确未配置。",
+        "待办先确认实际配置，不能无依据要求重建或已配置。",
+        "不以产品能力证明客户当前部署已满足，也不把技术驻留等同于全部法律合规。"
+      ]
+    },
+    {
+      "key": "R2-R5",
+      "status": "insufficient_evidence",
+      "requiredEvidence": [],
+      "referenceAnswer": "现有对象存储资料不能证明整机损坏后整个业务系统的五分钟 RTO 或合同承诺。需要合同 SLA、系统依赖、备份及恢复演练等证据；不能把强一致性或驻留保证推导为该 RTO。",
+      "reviewPoints": [
+        "无证据不能写成供应商明确不提供，也不能承诺支持。",
+        "提问补充资料，不编造合同、SLA或演练结果。"
+      ]
+    }
+  ]
+}

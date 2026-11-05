@@ -1,0 +1,114 @@
+{
+  "schemaVersion": "presales-gateway-semantic-review-v1",
+  "createdAt": "2026-09-25T03:11:19.637884+00:00",
+  "reviewType": "assistant authored and self reviewed, non-blind known-regression analysis; not independent domain or customer review",
+  "decision": "H3 known regression passed once; retain draft, stop at six requests, no deployment",
+  "candidateCommit": "4368be04f2db8905e51da089433cb72874385ee1",
+  "promptVersion": "presales.v8",
+  "promptSha256": "51b51052d456574357e8ef0b41f1933e3f586ea768ba7020644fbb934ccd3d15",
+  "selectedRoute": "primary",
+  "configuredModelName": "grok-4.7",
+  "modelIdentityVerification": "Configured/returned labels only, no independent model-weights verification",
+  "scope": "generation_only_with_complete_synthetic_sources; no_retrieval_or_persistence",
+  "realProviderRequests": 6,
+  "automaticRetries": 0,
+  "automaticFailover": false,
+  "maximumAuthorizedRequests": 6,
+  "unattemptedDatasets": [
+    "H4",
+    "H1",
+    "H2"
+  ],
+  "acceptedDrafts": 6,
+  "statusMatches": 6,
+  "semanticPasses": 6,
+  "prerequisiteChecksPassed": true,
+  "independentDomainReview": false,
+  "knownRegressionPassed": true,
+  "releaseGatePassed": false,
+  "usage": {
+    "prompt_tokens": 23858,
+    "completion_tokens": 17335,
+    "total_tokens": 41193
+  },
+  "costAmount": null,
+  "costReason": "No verified supplier unit price or invoice; reported usage is not a billed amount",
+  "requestedMaxOutputTokens": 4000,
+  "reportedCompletionTokensAboveRequest": [
+    {
+      "key": "H3-R1",
+      "completionTokens": 4335
+    },
+    {
+      "key": "H3-R5",
+      "completionTokens": 4183
+    }
+  ],
+  "latencySeconds": {
+    "min": 10.156,
+    "median": 40.258,
+    "max": 111.188
+  },
+  "latencyNote": "H3-R5 took 111.188 seconds near the 120-second deadline; six sequential calls do not prove stability, capacity or latency SLOs",
+  "runPath": "evaluation/presales_quality_holdout_v3.v8-gateway.json",
+  "runSha256": "bb6953862e94f7c83e2853cbb6d561f0edc3a90fe9c2b1a423231ae940378fcb",
+  "scorePath": "evaluation/presales_quality_holdout_v3.v8-gateway.score.json",
+  "scoreSha256": "10bb735542247fb1fa1024e07df69f13073ccfd339eb0c24407ad53faaf939b8",
+  "prerequisiteScorePath": "evaluation/presales_quality_v8.prerequisite-score.json",
+  "prerequisiteScoreSha256": "a955305368c77ebdf3925c85199a648786e983bd1cf502caea4eb94f0651723d",
+  "rows": [
+    {
+      "key": "H3-R1",
+      "acceptedDraft": true,
+      "statusMatch": true,
+      "semanticReview": "pass",
+      "elapsedSeconds": 44.063,
+      "notes": "将未附 ISO 证书、覆盖范围和有效期归为证明不足；没有断言无认证，提出具体补证要求。"
+    },
+    {
+      "key": "H3-R2",
+      "acceptedDraft": true,
+      "statusMatch": true,
+      "semanticReview": "pass",
+      "elapsedSeconds": 21.25,
+      "notes": "明确尚未通过 PCI DSS 评估构成直接反证，正确区分未通过与附件缺失；未制造完成路径。"
+    },
+    {
+      "key": "H3-R3",
+      "acceptedDraft": true,
+      "statusMatch": true,
+      "semanticReview": "pass",
+      "elapsedSeconds": 55.438,
+      "notes": "德国独占条款支持当前要求，新加坡完整副本条款与其冲突；没有反转两侧关系。保留两份有效来源及订单范围说明，未将吞吐优先级扩张为存储优先，要求确认/修订冲突条款。"
+    },
+    {
+      "key": "H3-R4",
+      "acceptedDraft": true,
+      "statusMatch": true,
+      "semanticReview": "pass",
+      "elapsedSeconds": 36.453,
+      "notes": "300 请求/秒大于要求的 250，按明示且仅限吞吐的优先关系取代 200；没有把存储冲突或归档条件扩展到吞吐。"
+    },
+    {
+      "key": "H3-R5",
+      "acceptedDraft": true,
+      "statusMatch": true,
+      "semanticReview": "pass",
+      "elapsedSeconds": 111.188,
+      "notes": "已购 met、未配置 unmet、验收状态未登记 unknown 均正确。待办先确认验收是否完成并补充依据，正文没有断言验收未执行/未通过，也未重复要求采购。每项均引用订单和启用前提。"
+    },
+    {
+      "key": "H3-R6",
+      "acceptedDraft": true,
+      "statusMatch": true,
+      "semanticReview": "pass",
+      "elapsedSeconds": 10.156,
+      "notes": "单张 12 附件硬上限低于 20 且无提升途径；正确拒绝虚构升级或用多张拆分满足。"
+    }
+  ],
+  "remainingAcceptance": [
+    "Unseen/representative source evaluation and independent domain/customer review",
+    "Candidate public business workflow and bounded recovery acceptance",
+    "Current 4C4G capacity, notification delivery, real DB+objects/host recovery, release approval"
+  ]
+}

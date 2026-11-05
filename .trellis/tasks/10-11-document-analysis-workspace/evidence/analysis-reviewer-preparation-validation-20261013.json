@@ -1,0 +1,54 @@
+{
+  "schema_version": "analysis.review-preparation-validation.v1",
+  "recorded_at": "2026-10-13",
+  "status": "passed",
+  "packs": {
+    "validation-01": {
+      "objects": 3,
+      "fields": 10,
+      "draft_rows": 30,
+      "unique_rows": 30,
+      "evidence_anchors": 97,
+      "manifest_sha256": "9ffa794efb7c8231e505cfb0e5e07428ebd58d7b3bd07c789b63c1ceecc80008",
+      "reference_sha256": "f3a94f1fc27577ab6974e46e13dce92baa23fede598c1d18463c7daec516bf17",
+      "independently_reviewed": false,
+      "quality_score": null
+    },
+    "holdout-football-01": {
+      "objects": 3,
+      "fields": 10,
+      "draft_rows": 30,
+      "unique_rows": 30,
+      "evidence_anchors": 56,
+      "manifest_sha256": "0237cbea53ba4d53be65c988979370db4472e02cca5be0cf74efcf28c3ee5970",
+      "reference_sha256": "ba87e8744551cec0bb82ba2bf1b4ed8914982397589f35e96ca6b1c105289302",
+      "independently_reviewed": false,
+      "quality_score": null
+    }
+  },
+  "frozen_files_unchanged": true,
+  "reference_in_model_input": false,
+  "independent_review_claimed": false,
+  "issues": [],
+  "targeted_tests": {
+    "command": "python -m pytest tests/analysis/test_a5_materials_contract.py tests/analysis/test_public_materials.py tests/analysis/test_analysis_holdout_evaluation.py -q",
+    "result": "12 passed in 4.16s"
+  },
+  "task_validation": {
+    "command": "python .trellis/scripts/task.py validate .trellis/tasks/10-11-document-analysis-workspace",
+    "result": "implement.jsonl 5 entries; check.jsonl 7 entries; all validations passed"
+  },
+  "json_parse": "passed",
+  "git_diff_check": "passed",
+  "staging_read_only_probe": {
+    "host_connected": true,
+    "node_cpu": 4,
+    "node_memory": "3812556Ki",
+    "node_ready": true,
+    "application_workloads_ready": 4,
+    "configured_primary_model": "gpt-5.6-sol",
+    "analysis_candidate_deployed": false,
+    "external_model_calls": 0,
+    "deployment_mutations": 0
+  }
+}

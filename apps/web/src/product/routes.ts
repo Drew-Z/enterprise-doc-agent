@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 
-export type ProductRoute = "overview" | "documents" | "presales" | "agent-runs" | "audit" | "identity" | "usage" | "runtime";
+export type ProductRoute = "overview" | "documents" | "analysis" | "presales" | "agent-runs" | "audit" | "identity" | "usage" | "runtime";
 
 const routePaths: Record<ProductRoute, string> = {
   overview: "/overview",
   documents: "/documents",
+  analysis: "/analysis",
   presales: "/presales",
   "agent-runs": "/agent-runs",
   audit: "/audit",

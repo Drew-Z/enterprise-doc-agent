@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-10-02T11:18:53.855811+00:00",
+  "status": "tracked_server_package_locally_staged_and_rollback_verified",
+  "package_id": "3573ac5a5fc5b7486f46b6bf21e434abed41e6c0e9a6d89d6197e5f7fc12203f",
+  "implementation_path": "scripts/server_backup",
+  "unit": "enterprise-doc-backup.service",
+  "installation_root": "/var/lib/enterprise-doc-backup",
+  "source_namespace": "enterprise-doc-agent-staging",
+  "scope": "actual code installation/configuration/rollback in existing local QEMU VM; synthetic target; no capture",
+  "unit_and_config_checks": {
+    "systemd_analyze_verify": true,
+    "production_config_loaded": true,
+    "overly_readable_credential_file_rejected": true,
+    "protected_synthetic_credentials_read": true,
+    "synthetic_credential_file_removed": true,
+    "service_inactive_disabled": true,
+    "state_directory_empty": true,
+    "installed_file_hashes_match": true
+  },
+  "validation": {
+    "repository_backup_tests_passed": 42,
+    "real_age_tests_passed": 3,
+    "generated_table_queries_match_frozen_source": 3,
+    "capture_query_asts_match": 5,
+    "ruff_check": "passed"
+  },
+  "production_read_only_preflight": {
+    "python": "3.12.3",
+    "psql": "17.10",
+    "pg_dump": "17.10",
+    "systemd": "255",
+    "k3s_path": "/usr/local/bin/k3s",
+    "ready_application_deployments": 5
+  },
+  "native_install_receipt_sha256": "d305a0421d208749e773d78e277f2d21590b84f5479ae29caac64725740488be",
+  "real_age_result_sha256": "a8b508a0eb8ecb1aa6bacfafaa39bdf09f0a27fd1429e4382662e5ddcb14bb18",
+  "archive_sha256": "ecdf3031abfe89421c7b63d1b3dad36c347e69dccaa28a56aa09696c07f6486e",
+  "inventory": {
+    "age": {
+      "bytes": 6977014,
+      "sha256": "eb7dd1b518f0a307c99cd97782623c5321da049154b04acd2d98d21aa7bc9b2c"
+    },
+    "server_backup/__init__.py": {
+      "bytes": 83,
+      "sha256": "57908c3747e27b46a2719ee98a8a7301332ac0a6c6f3e70b8fad97590676184b"
+    },
+    "server_backup/backup_daemon.py": {
+      "bytes": 8595,
+      "sha256": "1dc40d2dbdfcd9eaeef9353550f1732234f79c6fdd5af608c7f6cfdc0d5d8804"
+    },
+    "server_backup/backup_runtime.py": {
+      "bytes": 10835,
+      "sha256": "8931d9be053bf69bf481acc5d9cafaf28be5afd2703f8ebbf0317385920c2a4e"
+    },
+    "server_backup/database_environment.py": {
+      "bytes": 2071,
+      "sha256": "3d27e31217df0956736effb22372131dd9980bd61d7b220aaa3cab835e971630"
+    },
+    "server_backup/deployment.py": {
+      "bytes": 9039,
+      "sha256": "23a99070d28803e2f4116d7a718915daee790a8708c12f1f40343585e7983536"
+    },
+    "server_backup/host_environment.py": {
+      "bytes": 3212,
+      "sha256": "f1693a342004faa62fd8c28890a1e46b3b60befda0890fbcb8ae8628410a4885"
+    },
+    "server_backup/production_config.py": {
+      "bytes": 6234,
+      "sha256": "a1ccc5ea5b4d8cbe5f90129b7f58994f59c50610e07bf707db362476ea0ffecc"
+    },
+    "server_backup/recovery_bundle.py": {
+      "bytes": 5678,
+      "sha256": "419b84c315190d37304546e2f3e631bd24bf00006f3bb68433be69da46ed9565"
+    },
+    "server_backup/remote_retention.py": {
+      "bytes": 11359,
+      "sha256": "c8f095f29f72320c94905206222b19d7dbf0716b184f4844cf25dc7af5f4b9ac"
+    },
+    "server_backup/server_capture.py": {
+      "bytes": 11829,
+      "sha256": "c68f786db1e5703c076b3bb8c45ba066d451d5bd03fea262456dddd38fd91570"
+    },
+    "server_backup/server_publication.py": {
+      "bytes": 5002,
+      "sha256": "306664b59d2f79ca5b124d4227c35da2b13feab76cd19db404353372e4cdbed2"
+    }
+  },
+  "private_identity_copied": false,
+  "production_writes": 0,
+  "backup_capture_started": false,
+  "source_or_target_network_calls_by_native_installation": 0,
+  "rollback": "disable and stop only the hash-verified owned unit; retain all files and backups",
+  "remaining": [
+    "actual target bucket and restricted credential provisioning",
+    "trusted restore/protection catalog and approved retention execution",
+    "specific remote sensitive-backup storage exception",
+    "production activation and monitor switch",
+    "continuous operation while personal computer is offline"
+  ],
+  "five_acceptance_gates_complete": false
+}

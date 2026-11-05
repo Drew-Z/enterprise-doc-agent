@@ -44,7 +44,7 @@ def _telemetry_columns() -> set[str]:
     with psycopg.connect(DATABASE_URL) as connection, connection.cursor() as cursor:
         cursor.execute(
             "SELECT column_name FROM information_schema.columns "
-            "WHERE table_schema = 'public' AND table_name = 'agent_runs'"
+            "WHERE table_schema = current_schema() AND table_name = 'agent_runs'"
         )
         return {row[0] for row in cursor.fetchall()}
 

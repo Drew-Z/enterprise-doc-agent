@@ -1,0 +1,79 @@
+{
+  "status": "deployed_verified_business_acceptance_pending",
+  "release": "v0.1.45-rc.22",
+  "application_source": "fc46c8891500bac10ae23c5ce12c6668b59ec870",
+  "executor_source": "9606ee1160b425245783ff9ef558ebf871a0bb88",
+  "schema_revision": "20260924_0031",
+  "rollback_release": "v0.1.45-rc.21",
+  "switch_seconds": 85.768,
+  "images": {
+    "api": "ghcr.io/drew-z/enterprise-doc-api@sha256:e2e1dbad7a9c64cc64f0a1f739489fe8e8dc6f384e31d263daaf4d606d18b7c5",
+    "consumer": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:a8ab1ef5aa9cc06ab460381d540580c10d305635d5f68b05d1ba947825a3e386",
+    "web": "ghcr.io/drew-z/enterprise-doc-web@sha256:1fac0a3da37f4dee27c7543a333501158f46b9ffc6da693c050d0e2489d16dea",
+    "worker": "ghcr.io/drew-z/enterprise-doc-worker@sha256:5d7f566bc29940b529d2e26244aa652a4f8035a51a4d17c915a34169d9bc8820"
+  },
+  "release_workflow": 37207115851,
+  "quality_workflow": 37209315250,
+  "supply_chain_workflow": 37209315208,
+  "release_evidence_files": 56,
+  "full_workloads_configuration_credentials_verified": true,
+  "ready_services": 5,
+  "public_home_status": 200,
+  "public_readiness_status": 200,
+  "queue_healthy": true,
+  "primary_key_unchanged": true,
+  "fallback_key_matches_new_route": true,
+  "effective_config": {
+    "MODEL__FALLBACK_MODEL_NAME": "grok-4.7",
+    "MODEL__FALLBACK_REASONING_EFFORT": "medium",
+    "MODEL__FALLBACK_STREAMING": "true",
+    "MODEL__FALLBACK_TIMEOUT_SECONDS": "180",
+    "PRESALES__FALLBACK_MODEL_TIMEOUT_SECONDS": "180",
+    "PRESALES__ROW_TIMEOUT_SECONDS": "360",
+    "AGENT__EXECUTION_TIMEOUT_SECONDS": "600"
+  },
+  "backup": {
+    "MainPID": "0",
+    "ActiveState": "inactive",
+    "UnitFileState": "disabled"
+  },
+  "github_variables_updated": [
+    "STAGING_AGENT_EXECUTION_TIMEOUT_SECONDS",
+    "STAGING_MODEL_FALLBACK_BASE_URL",
+    "STAGING_MODEL_FALLBACK_NAME",
+    "STAGING_MODEL_FALLBACK_REASONING_EFFORT",
+    "STAGING_MODEL_FALLBACK_STREAMING",
+    "STAGING_MODEL_FALLBACK_TIMEOUT_SECONDS",
+    "STAGING_PRESALES_FALLBACK_MODEL_TIMEOUT_SECONDS",
+    "STAGING_PRESALES_ROW_TIMEOUT_SECONDS",
+    "STAGING_ROLLBACK_API_IMAGE",
+    "STAGING_ROLLBACK_CONSUMER_IMAGE",
+    "STAGING_ROLLBACK_WEB_IMAGE",
+    "STAGING_ROLLBACK_WORKER_IMAGE"
+  ],
+  "unrelated_github_variables_unchanged": true,
+  "deployment_tests": 969,
+  "scoped_release_tests": 143,
+  "low_comparison": {
+    "calls": 6,
+    "contract_valid": 5,
+    "strict_semantic_pass": 2,
+    "known_tokens": 26826,
+    "monetary_amount": null,
+    "decision": "rejected_as_uniform_default"
+  },
+  "new_business_calls": 0,
+  "backup_uploads": 0,
+  "historical_backup_deletions": 0,
+  "cleanup": {
+    "remote_runtime_files": 11,
+    "local_transport_files": 29,
+    "local_transport_bytes": 508246282
+  },
+  "remaining": [
+    "Current real business failover and once-only billing",
+    "Public upload performance and two capacity rounds",
+    "Unknown-versus-unmet semantic defect and independent business review",
+    "Actual supplier money reconciliation and on-call receipt"
+  ]
+}

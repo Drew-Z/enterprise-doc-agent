@@ -1,0 +1,234 @@
+{
+  "at": "2026-10-09T18:22:48.298095+00:00",
+  "status": "staging_schema_release_rollback_reapply_and_human_delivery_verified",
+  "application_commit": "6516bd0342d809f1de3a2340b2207bdc94869c75",
+  "tag": "v0.1.45-rc.48",
+  "schema_revision": "20261009_0036",
+  "source_ci": {
+    "quality": 37964206823,
+    "container": 37964206894
+  },
+  "signed_build": 37964844999,
+  "artifact_digests_verified": 5,
+  "signed_evidence_files": 56,
+  "images": {
+    "api": "ghcr.io/drew-z/enterprise-doc-api@sha256:487bd67ce15ccd25367788e8fd0749ff31a1ff3dbbaad657caaf41260e6fedc0",
+    "consumer": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:f17a86b1ac066f9623bbbb2bc9bc45fa0467f37b7ddc27228d9663b0e44d98fd",
+    "web": "ghcr.io/drew-z/enterprise-doc-web@sha256:5010d4632ea4987b4cbf1e3e7ea31a23669ea494c9cbb149bccf642109770f90",
+    "worker": "ghcr.io/drew-z/enterprise-doc-worker@sha256:c8a38a768d18e74aa40045a3bd7cccc6c437438b006ef5c8d6861f5a5ef8d967"
+  },
+  "schema_expansion": {
+    "elapsed_seconds": 69.21,
+    "checks": {
+      "revision_0036": true,
+      "columns": true,
+      "original_workload_specs": true,
+      "secret_binding": true,
+      "history_status_counts": true,
+      "existing_column_counts_unchanged": true,
+      "idle": true,
+      "five_ready": true,
+      "backup_remains_deferred": true,
+      "homepage": true,
+      "readiness": true,
+      "queue": true,
+      "review_constraint": true,
+      "attempt_constraint": true,
+      "workbook_metadata_column": true,
+      "workbook_content_column": true,
+      "workbook_constraint": true,
+      "manual_column": true,
+      "manual_constraint": true,
+      "manual_history_empty": true,
+      "original_workbook_and_packet_unchanged": true,
+      "operation_binding": true,
+      "deadline": true,
+      "namespace_unchanged": true,
+      "prerequisites_unchanged": true
+    }
+  },
+  "windows": {
+    "release": {
+      "at": "2026-10-09T18:02:46.301221+00:00",
+      "application_commit": "6516bd0342d809f1de3a2340b2207bdc94869c75",
+      "checks": {
+        "complete_deployment_specs": true,
+        "candidate_prerequisites": true,
+        "namespace_uid": true,
+        "credentials_unchanged": true,
+        "full_schema_0036": true,
+        "history_counts_unchanged": true,
+        "business_idle": true,
+        "jobs_unchanged": true,
+        "no_other_controllers": true,
+        "five_ready": true,
+        "historical_terminal_pods_preserved": true,
+        "pod_readiness_and_image_identity": true,
+        "packaged_source_matches_application_commit": true,
+        "worker_concurrency_two": true,
+        "tiff_patch_matches_phase": true,
+        "nginx_matches_application_commit": true,
+        "public_signed_assets": true,
+        "backup_remains_deferred": true,
+        "homepage": true,
+        "readiness_and_queue": true,
+        "operation_deadlines": true,
+        "capacity_and_policy": true
+      },
+      "elapsed_seconds": 86.419
+    },
+    "rollback": {
+      "at": "2026-10-09T18:15:19.682495+00:00",
+      "application_commit": "bdf007ad442d81c48b9f2fa206a4ff38ee761326",
+      "checks": {
+        "complete_deployment_specs": true,
+        "candidate_prerequisites": true,
+        "namespace_uid": true,
+        "credentials_unchanged": true,
+        "full_schema_0036": true,
+        "history_counts_unchanged": true,
+        "business_idle": true,
+        "jobs_unchanged": true,
+        "no_other_controllers": true,
+        "five_ready": true,
+        "historical_terminal_pods_preserved": true,
+        "pod_readiness_and_image_identity": true,
+        "packaged_source_matches_application_commit": true,
+        "worker_concurrency_two": true,
+        "tiff_patch_matches_phase": true,
+        "nginx_matches_application_commit": true,
+        "public_signed_assets": true,
+        "backup_remains_deferred": true,
+        "homepage": true,
+        "readiness_and_queue": true,
+        "operation_deadlines": true,
+        "capacity_and_policy": true
+      },
+      "elapsed_seconds": 86.398
+    },
+    "reapply": {
+      "at": "2026-10-09T18:19:22.421560+00:00",
+      "application_commit": "6516bd0342d809f1de3a2340b2207bdc94869c75",
+      "checks": {
+        "complete_deployment_specs": true,
+        "candidate_prerequisites": true,
+        "namespace_uid": true,
+        "credentials_unchanged": true,
+        "full_schema_0036": true,
+        "history_counts_unchanged": true,
+        "business_idle": true,
+        "jobs_unchanged": true,
+        "no_other_controllers": true,
+        "five_ready": true,
+        "historical_terminal_pods_preserved": true,
+        "pod_readiness_and_image_identity": true,
+        "packaged_source_matches_application_commit": true,
+        "worker_concurrency_two": true,
+        "tiff_patch_matches_phase": true,
+        "nginx_matches_application_commit": true,
+        "public_signed_assets": true,
+        "backup_remains_deferred": true,
+        "homepage": true,
+        "readiness_and_queue": true,
+        "operation_deadlines": true,
+        "capacity_and_policy": true
+      },
+      "elapsed_seconds": 80.947
+    }
+  },
+  "human_delivery": {
+    "scope": "One new labeled one-row workbook; Codex-assisted technical acceptance, not a real customer or independent business approval",
+    "packet_id": "14153d52-c1b2-4b8d-987a-e4d8e13a0a2a",
+    "original_public_packet_unchanged": true,
+    "literal_evidence_selected": true,
+    "human_authorship_retained": true,
+    "reviewed_export_before_review_http": 409,
+    "separate_review_and_reload": true,
+    "reviewed_xlsx_and_audit_csv": true,
+    "unrelated_formula_and_worksheet_retained": true,
+    "original_model_text_empty_and_human_text_separate": true,
+    "accounting_before": {
+      "jobs": 3553,
+      "presales_attempts": 541,
+      "presales_provider_calls": 597,
+      "usage_reservations": 541,
+      "product_usage_reservations": 613,
+      "all_dispatches": 597
+    },
+    "accounting_after": {
+      "jobs": 3553,
+      "presales_attempts": 541,
+      "presales_provider_calls": 597,
+      "usage_reservations": 541,
+      "product_usage_reservations": 613,
+      "all_dispatches": 597
+    },
+    "token_revoked": true,
+    "automatic_retries": 0,
+    "old_reader_guard": {
+      "status": "passed",
+      "manual_rows": 1,
+      "old_reader_restore_refused": true,
+      "kubernetes_writes_attempted": 0,
+      "deployment_specs_unchanged": true,
+      "five_ready": true
+    },
+    "exports": {
+      "rc48-manual-reviewed-20261010.xlsx": {
+        "sha256": "a41b73b59f2fa67263a73693991b33cf306278a630ecd08df8d2a82b3c98abfa",
+        "bytes": 5759
+      },
+      "rc48-manual-audit-20261010.csv": {
+        "sha256": "1cedd6b84877856fd69569eb2d04165a8166d18d255bae49985de0506a04de0c",
+        "bytes": 3349
+      }
+    },
+    "harness_correction": "Initial harness attempted openpyxl temporary-file creation in a read-only application container before workbook import. Preserve failure; supply a locally generated input workbook to the same HTTP acceptance. Read-only preflight refuses any prior owned packet/manual record. No application changes or write replay."
+  },
+  "new_model_calls": 0,
+  "new_embedding_calls": 0,
+  "provider_routes_or_budget_changes": 0,
+  "legacy_rc47_rc46_recovery_allowed": false,
+  "recovery_boundary": "Manual history now exists. Use rc48-compatible readers or a forward fix; never erase authorship or downgrade schema to permit rollback.",
+  "original_rc46_replay": {
+    "drafts": 4,
+    "failures": 2,
+    "calls": 9,
+    "changed": false
+  },
+  "previous_unknown_diagnostic_reserved_calls": 3,
+  "real_model_semantic_quality": "unproven",
+  "competitor_parity": "not_achieved",
+  "independent_business_approval": false,
+  "real_user_time_savings_or_paid_demand": "unverified",
+  "next_product_gap": "Model completion reliability and correct evidence scope/citation selection; keep answer reuse, assignments and new channels deferred.",
+  "cleanup": {
+    "remote_files": 233,
+    "remote_directories": 315,
+    "local_transport_files": 43,
+    "historical_files_deleted": 0,
+    "image_cache_reference_deletions": 0
+  },
+  "central_evidence": {
+    "directory": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\fallback-model-evidence",
+    "files": {
+      "rc48-release-verification-20261010.json": "259313964e61fa19a4985916785b70b66814936ce47d2b1b806953bfb697b09e",
+      "rc48-schema-window-verification-20261010.json": "bc299f79dffcae4eaa79bc5f9f2e0d5a56f1be2ff192bc58bc0ecc97f051bfe0",
+      "rc48-release-verified-v3-20261010.json": "084bf70f6e3a3a4d89622787c9a26bfbdd528291562af5f5f55d946a9c61c315",
+      "rc48-rollback-verified-v3-20261010.json": "24d31cf3dc1d9e3ef294a863eaf84ff0d3fcf80368639727105db2ff9e234ac9",
+      "rc48-reapply-verified-v3-20261010.json": "b4e50494c77c53783a6284d40412fc1cb62814d4d124af62b01b0673f7754980",
+      "rc48-manual-live-verification-20261010.json": "f3b5624ace113e753e62b8a0de135a71c01962a76347d99543c50ce4aff83356",
+      "rc48-manual-harness-correction-20261010.json": "a5a4e73240d746ed01a59d8bc027a6f03588f1e0aa00f5b7228bacadf76d4346",
+      "rc48-manual-live-terminal-20261010.json": "7782183aac18c496fcb17ed1e8de12c1cb63f75223796afba4c9ec8124a83fbf",
+      "rc48-owned-runtime-cleanup-receipt-20261010.json": "b7e486621132ff950ac5952a5cb4343f8ecc73cbd6fe0f2e63cd763b374d0c0d",
+      "rc48-owned-local-cleanup-receipt-20261010.json": "65e5496bba14f25da9073b0cef66b4db5692c0bad3b04ee7cfe6b5224a3da780",
+      "rc48-final-readiness-20261010.json": "5a44c5f1e37f24e4dae49a26c20bdcf3d926c1ec076fa80e5de8ad3d1c02b705"
+    }
+  },
+  "recovery": {
+    "manifest": "D:\\Agent\\codex\\backups\\tasks\\20260924T015840.986Z-commercial-production-readiness\\manifest.json",
+    "phase": "manual_release_20261010",
+    "source_baseline": "c21144d2b1283ded2508bd81c5c29a53675f3309",
+    "documentation_baseline": "6516bd0342d809f1de3a2340b2207bdc94869c75"
+  }
+}

@@ -1,0 +1,160 @@
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { afterEach, expect, it, vi } from "vitest";
+import { type Packet, type PresalesRow, reviewInputSchema } from "./api";
+import { ResponseRow } from "./ResponseRow";
+
+const draft = {
+  status: "conditional" as const, answer: "核对配置和验收。", conditions: ["需完成配置。", "需确认验收。"], missingInformation: [],
+  prerequisites: [
+    { condition: "已采购模块。", state: "met" as const, citationIndexes: [0] },
+    { condition: "需完成配置。", state: "unmet" as const, citationIndexes: [0] },
+    { condition: "需确认验收。", state: "unknown" as const, citationIndexes: [1] },
+  ],
+  citations: ["已采购，配置未完成。", "验收状态未登记。"].map((excerpt, index) => ({
+    chunkId: `10000000-0000-4000-8000-00000000000${index + 1}`, documentVersionId: "20000000-0000-4000-8000-000000000001",
+    excerpt, filename: `contract-${index + 1}.txt`, pageNumber: index + 1, heading: "条款", startOffset: 0, endOffset: excerpt.length,
+  })), retrieval: [],
+};
+function fixture(): PresalesRow {
+  return { id: "30000000-0000-4000-8000-000000000001", requirement: { key: "R1", text: "核对前提", sourceLocation: "" },
+    revision: 1, state: "drafted", draft: structuredClone(draft), review: null, reviewHistory: [], attempts: [] };
+}
+afterEach(() => { cleanup(); localStorage.clear(); });
+
+it("saves fourteen gaps and preserves unchanged multiline entries during review", () => {
+  const row = fixture(); const onReview = vi.fn();
+  row.draft!.missingInformation = Array.from({ length: 14 }, (_, i) => `确认第${i}项。\n补充适用范围。`);
+  render(<ResponseRow row={row} busy={false} generating={false} onGenerate={vi.fn()} onReview={onReview} />);
+  fireEvent.click(screen.getByRole("button", { name: "R1 Evidence and review" }));
+  fireEvent.click(screen.getByRole("button", { name: "Save review" }));
+  expect(onReview).toHaveBeenCalledOnce();
+  expect(onReview.mock.calls[0][0]).toMatchObject({ missingInformation: row.draft!.missingInformation });
+});
+
+it("keeps three states and the evidence for each prerequisite, and requires a correction note", () => {
+  const row = fixture(); const onReview = vi.fn();
+  render(<ResponseRow row={row} busy={false} generating={false} onGenerate={vi.fn()} onReview={onReview} />);
+  fireEvent.click(screen.getByRole("button", { name: "R1 Evidence and review" }));
+  const assessment = screen.getByRole("list", { name: "Prerequisites" });
+  expect(within(assessment).getByText("Met")).toBeInTheDocument();
+  expect(within(assessment).getByText("Not met")).toBeInTheDocument();
+  const unknown = within(assessment).getByText("Needs confirmation").closest("li")!;
+  expect(within(unknown).getByText("验收状态未登记。")).toBeInTheDocument();
+  expect(within(unknown).queryByText("已采购，配置未完成。")).not.toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText("Prerequisite state 2"), { target: { value: "met" } });
+  fireEvent.click(screen.getByRole("button", { name: "Save review" }));
+  expect(onReview).not.toHaveBeenCalled();
+  expect(screen.getByRole("alert")).toHaveTextContent("Explain prerequisite changes in the review note.");
+  fireEvent.change(screen.getByLabelText("Review note"), { target: { value: "核查配置已完成，验收仍待确认。" } });
+  fireEvent.click(screen.getByRole("button", { name: "Save review" }));
+  expect(onReview).toHaveBeenCalledOnce();
+  const saved = reviewInputSchema.parse(onReview.mock.calls[0][0]);
+  expect(saved.conditions).toEqual(["需确认验收。"]);
+  expect(saved.prerequisites!.map(item => item.state)).toEqual(["met", "met", "unknown"]);
+  expect(saved.prerequisites![2].citationIndexes).toEqual([1]);
+  expect(row.draft!.prerequisites![1].state).toBe("unmet");
+  expect(reviewInputSchema.safeParse({ ...saved, status: "supported" }).success).toBe(false);
+});
+
+it("shows legacy state as unrecorded and still permits text review", () => {
+  const row = fixture(); row.draft!.prerequisites = null; const onReview = vi.fn();
+  render(<ResponseRow row={row} busy={false} generating={false} onGenerate={vi.fn()} onReview={onReview} />);
+  fireEvent.click(screen.getByRole("button", { name: "R1 Evidence and review" }));
+  expect(screen.getByText("Prerequisite states were not recorded for this response.")).toBeInTheDocument();
+  expect(screen.queryByLabelText("Prerequisite state 1")).not.toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText("Response conditions"), { target: { value: "需核对旧资料。" } });
+  fireEvent.click(screen.getByRole("button", { name: "Save review" }));
+  expect(onReview.mock.calls[0][0]).toMatchObject({ prerequisites: null, conditions: ["需核对旧资料。"] });
+});
+
+it("splits, rewrites, adds and excludes prerequisites with preserved source links", () => {
+  const row = fixture(); const onReview = vi.fn();
+  render(<ResponseRow row={row} busy={false} generating={false} onGenerate={vi.fn()} onReview={onReview} />);
+  fireEvent.click(screen.getByRole("button", { name: "R1 Evidence and review" }));
+  fireEvent.click(screen.getByRole("button", { name: "Split prerequisite 2" }));
+  fireEvent.change(screen.getByLabelText("Prerequisite text 2"), { target: { value: "  保留策略已配置。  " } });
+  fireEvent.change(screen.getByLabelText("Prerequisite text 3"), { target: { value: "验收已通过。" } });
+  fireEvent.change(screen.getByLabelText("Prerequisite state 3"), { target: { value: "unknown" } });
+  fireEvent.click(screen.getByRole("button", { name: "Exclude prerequisite 4" }));
+  fireEvent.click(screen.getByRole("button", { name: "Add prerequisite" }));
+  fireEvent.change(screen.getByLabelText("Prerequisite text 4"), { target: { value: "新补充条件。" } });
+  fireEvent.click(screen.getByLabelText("Prerequisite evidence 4-2"));
+  fireEvent.click(screen.getByRole("button", { name: "Save review" }));
+  expect(onReview).not.toHaveBeenCalled();
+  fireEvent.change(screen.getByLabelText("Review note"), { target: { value: "拆分混合命题，补充并排除错误项。" } });
+  fireEvent.click(screen.getByRole("button", { name: "Save review" }));
+  expect(onReview).toHaveBeenCalledOnce();
+  expect(onReview.mock.calls[0][0]).toMatchObject({
+    prerequisiteChanges: { origins: [0, 1, 1, null], excludedIndexes: [2] },
+    conditions: ["保留策略已配置。", "验收已通过。", "新补充条件。"],
+  });
+  expect(row.draft!.prerequisites).toEqual(draft.prerequisites);
+});
+
+it("requires evidence on additions, supports restoring exclusions and disables editing while saving", () => {
+  const row = fixture(); const onReview = vi.fn();
+  const view = render(<ResponseRow row={row} busy={false} generating={false} onGenerate={vi.fn()} onReview={onReview} />);
+  fireEvent.click(screen.getByRole("button", { name: "R1 Evidence and review" }));
+  fireEvent.click(screen.getByRole("button", { name: "Exclude prerequisite 2" }));
+  fireEvent.click(screen.getByRole("button", { name: "Restore original item 2" }));
+  expect(screen.getByLabelText("Original item 3")).toHaveValue("1");
+  fireEvent.click(screen.getByRole("button", { name: "Add prerequisite" }));
+  fireEvent.change(screen.getByLabelText("Prerequisite text 4"), { target: { value: "新增核查事项。" } });
+  fireEvent.change(screen.getByLabelText("Review note"), { target: { value: "新增须有证据。" } });
+  fireEvent.click(screen.getByRole("button", { name: "Save review" }));
+  expect(onReview).not.toHaveBeenCalled();
+  view.rerender(<ResponseRow row={row} busy generating={false} onGenerate={vi.fn()} onReview={onReview} />);
+  expect(screen.getByLabelText("Prerequisite text 1")).toBeDisabled();
+  expect(screen.getByLabelText("Prerequisite evidence 4-1")).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Add prerequisite" })).toBeDisabled();
+});
+
+const sources: Packet["sources"] = [{ versionId: draft.citations[0].documentVersionId, documentId: draft.citations[0].documentVersionId, generationId: draft.citations[0].documentVersionId, filename: "contract.txt", versionNumber: 1, latestVersionNumber: 1, contentSha256: "a".repeat(64), applicability: "Current procurement" }];
+
+it("corrects citations without resetting text or silently relinking removed prerequisite evidence", async () => {
+  const row = fixture(); const onReview = vi.fn();
+  const replacement = { ...draft.citations[0], chunkId: "10000000-0000-4000-8000-000000000003", excerpt: "Correct certificate clause." };
+  const readEvidence = vi.fn().mockResolvedValue({ items: [replacement], nextOffset: null });
+  render(<ResponseRow row={row} busy={false} generating={false} onGenerate={vi.fn()} onReview={onReview} sources={sources} readEvidence={readEvidence} />);
+  fireEvent.click(screen.getByRole("button", { name: "R1 Evidence and review" }));
+  fireEvent.change(screen.getByLabelText("Response"), { target: { value: "Retain my unsaved correction." } });
+  fireEvent.click(screen.getByRole("button", { name: "Correct source evidence" }));
+  fireEvent.click(screen.getByRole("button", { name: "Remove evidence 1" }));
+  expect(screen.getByLabelText("Prerequisite evidence 3-1")).toBeChecked();
+  expect(screen.getByLabelText("Prerequisite evidence 1-1")).not.toBeChecked();
+  fireEvent.click(screen.getByRole("button", { name: "Search source text" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Select evidence 1" }));
+  expect(screen.getByLabelText("Response")).toHaveValue("Retain my unsaved correction.");
+  fireEvent.change(screen.getByLabelText("Review note"), { target: { value: "Use certificate clause." } });
+  fireEvent.click(screen.getByRole("button", { name: "Save review" }));
+  expect(onReview).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("button", { name: "Exclude prerequisite 1" }));
+  fireEvent.click(screen.getByRole("button", { name: "Restore original item 1" }));
+  expect(screen.getByLabelText("Prerequisite evidence 3-1")).not.toBeChecked();
+  expect(screen.getByLabelText("Prerequisite evidence 3-2")).not.toBeChecked();
+  fireEvent.click(screen.getByLabelText("Prerequisite evidence 1-2"));
+  fireEvent.click(screen.getByLabelText("Prerequisite evidence 3-2"));
+  fireEvent.click(screen.getByRole("button", { name: "Save review" }));
+  expect(onReview).toHaveBeenCalledOnce();
+  const saved = reviewInputSchema.parse(onReview.mock.calls[0][0]);
+  expect(saved.citations!.map(c => c.excerpt)).toEqual([draft.citations[1].excerpt, replacement.excerpt]);
+  expect(saved.prerequisites!.map(p => p.citationIndexes)).toEqual([[1], [0], [1]]);
+  expect(row.draft!.citations).toEqual(draft.citations);
+});
+
+it("renders each review with its own evidence while preserving original citations", () => {
+  const row = fixture();
+  const review = { status: "supported" as const, answer: "Corrected.", prerequisites: [], conditions: [], missingInformation: [], note: "Fixed source.", actorId: row.id, reviewedAt: "2026-10-10T00:00:00Z", revision: 2, citations: [{ ...draft.citations[0], excerpt: "First correction." }] };
+  row.reviewHistory = [review, { ...review, revision: 3, citations: [{ ...draft.citations[0], excerpt: "Latest correction." }] }];
+  row.review = row.reviewHistory[1]; row.revision = 3;
+  const { container } = render(<ResponseRow row={row} busy={false} generating={false} onGenerate={vi.fn()} onReview={vi.fn()} />);
+  fireEvent.click(screen.getByRole("button", { name: "R1 Evidence and review" }));
+  const current = container.querySelector(".presales-row-details > .presales-evidence")!;
+  expect(current).toHaveTextContent("Latest correction.");
+  expect(current).not.toHaveTextContent("First correction.");
+  const originals = container.querySelectorAll(".presales-original");
+  expect(originals[0]).toHaveTextContent(draft.citations[0].excerpt);
+  expect(originals[0]).not.toHaveTextContent("Latest correction.");
+  expect(originals[1]).toHaveTextContent("First correction.");
+  expect(originals[1]).toHaveTextContent("Latest correction.");
+});

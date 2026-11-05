@@ -130,6 +130,28 @@ def test_embedding_query_instruction_is_bounded() -> None:
         )
 
 
+@pytest.mark.parametrize("effort", ["low", "medium", "high", "xhigh"])
+def test_model_reasoning_environment_is_independent(monkeypatch, effort):
+    monkeypatch.setenv("MODEL__REASONING_EFFORT", effort)
+    monkeypatch.setenv("MODEL__FALLBACK_REASONING_EFFORT", "high")
+    settings = FoundationSettings(_env_file=None)
+    assert settings.model.reasoning_effort == effort
+    assert settings.model.fallback_reasoning_effort == "high"
+
+
+@pytest.mark.parametrize("key", ["reasoning_effort", "fallback_reasoning_effort"])
+@pytest.mark.parametrize("value", ["", "automatic", "HIGH", " high", 1, True])
+def test_model_reasoning_rejects_unsupported_values(key, value):
+    with pytest.raises(ValidationError):
+        ModelSettings.model_validate({key: value})
+
+
+def test_model_reasoning_is_not_enabled_implicitly():
+    settings = ModelSettings()
+    assert settings.reasoning_effort is None
+    assert settings.fallback_reasoning_effort is None
+
+
 def test_model_route_deadline_is_optional_and_bounded() -> None:
     assert ModelSettings().route_deadline_seconds is None
     assert ModelSettings(route_deadline_seconds=12.5).route_deadline_seconds == 12.5

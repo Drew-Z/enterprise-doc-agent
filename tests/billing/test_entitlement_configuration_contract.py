@@ -16,6 +16,9 @@ from enterprise_doc_core.billing.administration_contracts import EntitlementConf
         {"provider_request_limit": None},
         {"provider_request_limit": True},
         {"provider_request_limit": 2**63},
+        {"analysis_cell_limit": -1},
+        {"analysis_cell_limit": True},
+        {"analysis_cell_limit": 2**63},
         {"expected_version": -1},
         {"expected_version": True},
         {"expected_version": 2**31 - 1},
@@ -51,3 +54,4 @@ def test_period_is_normalized_to_utc_and_explicit_zero_is_valid() -> None:
     )
     assert configuration.period_start.isoformat() == "2026-09-14T00:00:00+00:00"
     assert configuration.provider_request_limit == 0
+    assert configuration.analysis_cell_limit is None

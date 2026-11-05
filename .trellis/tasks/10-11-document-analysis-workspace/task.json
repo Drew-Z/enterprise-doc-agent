@@ -1,0 +1,38 @@
+{
+  "id": "document-analysis-workspace",
+  "name": "document-analysis-workspace",
+  "title": "多文档审阅与对比工作台：架构与首版闭环",
+  "description": "先评审多文档审阅与对比工作台架构，再实现结构化证据、有限单 Agent、矩阵复核和交付闭环。",
+  "status": "in_progress",
+  "dev_type": null,
+  "scope": "analysis",
+  "package": "core",
+  "priority": "P1",
+  "creator": "developer",
+  "assignee": "developer",
+  "createdAt": "2026-10-11",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "codex/presales-prerequisite-assessment",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "09-24-commercial-production-readiness",
+  "relatedFiles": [
+    ".trellis/tasks/10-11-document-analysis-workspace/prd.md",
+    ".trellis/tasks/10-11-document-analysis-workspace/design.md",
+    ".trellis/tasks/10-11-document-analysis-workspace/implement.md",
+    ".trellis/tasks/10-11-document-analysis-workspace/value-validation-plan.md"
+  ],
+  "notes": "rc.55 deployed on 0044; original failed ingestion retried once and succeeded, seven sources ready and snapshot frozen. First real comparison was rejected before run creation or generation dispatch by an aggregate/generation budget scope bug. Narrow repair de7e08b passed 55 targeted regressions and 3457 non-integration tests. rc.56 signed supply-chain 42088050474 and runtime compatibility 42089769503 passed. Web/Worker imported; Consumer/API await approval of exact 16 unused rc.43 cache aliases including aggregate index. Running rc.55 remains Ready with temporary switches closed. No generation model calls; independent UAT remains open.",
+  "meta": {
+    "planning_deliverable": "architecture_v1",
+    "architecture_review": "approved_by_user_2026-10-11",
+    "implementation_started": true,
+    "current_slice": "A5_rc56_signed_runtime_verified_cache_cleanup_approval_pending",
+    "next_slice": "finish_rc56_import_deploy_and_reuse_frozen_snapshot",
+    "commercial_validation": "internal_diagnostic_authorized_no_independent_participants"
+  }
+}

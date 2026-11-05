@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "status": "prepared_pending_remote_runtime_exception",
+  "task_status": "in_progress",
+  "date": "2026-09-28",
+  "scope": "0031 no-migration rc.2 release executor and reproducible route/concurrency configuration",
+  "production_release_accepted": false,
+  "current_application": "v0.1.45-rc.1",
+  "current_revision": "20260924_0031",
+  "target_application": "v0.1.45-rc.2",
+  "candidate_source": "f2910011fc219028a2611a22215e4e3e045919a3",
+  "candidate_manifest_sha256": "e5f421d3646d02692fd3ca1fac44f2487d2ec099a193b4f410c706d959293004",
+  "tests": {
+    "non_integration_passed": 2069,
+    "subtests_passed": 23,
+    "integration_deselected": 445,
+    "switch_and_maintenance_focused_passed": 69,
+    "renderer_passed": 121,
+    "ruff": "passed",
+    "ruff_format_files": 612,
+    "mypy_source_files": 251,
+    "mypy_tools_files": 3,
+    "actionlint": "passed",
+    "trellis": "passed",
+    "linux_native_process_lock_and_clock": "passed",
+    "combined_final_focused_passed": 190
+  },
+  "live_readonly": {
+    "captured_at": "2026-09-28T04:48:36.267118+00:00",
+    "database_idle": true,
+    "deployments": 5,
+    "fresh_check_required_before_arm": true
+  },
+  "image_cache": {
+    "exact_references_verified": 4,
+    "transport_bytes": 253450240,
+    "transport_seconds": 149.4,
+    "deployment_mutations": 0
+  },
+  "limits": {
+    "apply_seconds": 600,
+    "recovery_seconds": 300,
+    "model_requests": 0,
+    "embedding_requests": 0,
+    "test_emails": 0,
+    "business_submissions": 0,
+    "database_migrations": 0,
+    "pilot_extension": false
+  },
+  "proposed": {
+    "primary": "grok-4.7",
+    "fallback": "grok-4.6",
+    "presales_route": "primary",
+    "background": true,
+    "automatic_failover": true,
+    "concurrent_attempts": 1,
+    "primary_timeout_seconds": 120
+  },
+  "preserved_failures": [
+    "initial missing release module",
+    "temporary fence cleanup boundary and interrupted execution red cases",
+    "expired unstarted state incorrectly restored",
+    "renderer missing timeout and concurrency arguments",
+    "source/test lint failures",
+    "direct registry pull failure",
+    "truncated initial OCI blob downloads",
+    "initial GitHub variable inventory returned only 10 of 31; complete pagination captured separately",
+    "preflight busy after arm incorrectly started rollback before any writes"
+  ],
+  "evidence_directory": "release-switch-evidence",
+  "remaining": [
+    "current-window permission for private remote runtime recovery inputs",
+    "fresh target/source/plan binding and exact executor CI",
+    "actual guarded release and readback",
+    "new bounded production business acceptance and browser recovery",
+    "capacity, supplier billing and remaining commercial acceptance"
+  ],
+  "cleanup": {
+    "owned_transport_files_removed": 30,
+    "bytes_removed": 506810123,
+    "historical_files_removed": 0
+  },
+  "recorded_at": "2026-09-28T06:01:08.917790+00:00"
+}

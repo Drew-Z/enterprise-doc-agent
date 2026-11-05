@@ -1,0 +1,337 @@
+![](https://clickup.com/assets/v5/navigation-sprite.svg)
+
+## Terms of Service
+
+**These Terms of Service are effective as of June 27, 2025.**
+
+**These Terms of Service (“Terms”) and all Policies listed on [clickup.com/terms](http://clickup.com/terms) govern and apply to your use of the free and paid services, software and websites (the “Service(s)”) provided by Mango Technologies, Inc. DBA ClickUp (“ClickUp”, “we”, “our”, etc.), and any data, text, files, information, usernames, images, graphics, photos, profiles, audio and video clips, sounds, musical works, works of authorship, applications, links, created tasks and associated information, text, files and other content or materials (together, the “Content”) uploaded, downloaded, or appearing on our websites or applications.**
+
+**If you’re using our Service on behalf of an organization or entity (“Organization”), then you are agreeing to these Terms on behalf of that Organization and you represent and warrant that you have the authority to bind the Organization to these Terms. In that case, “you” and “your” refers to that Organization.**
+
+**Our Terms and Privacy Policy affect your legal rights and obligations. If you do not agree to be bound by all of these, please do not access or use our Service.**
+
+**1\. Your User Account.** You will at all times be responsible for the following while using the Service:
+
+1.1. **Accurate Information.** Providing accurate information when you create your ClickUp account;
+
+1.2. **Safeguarding of your Account.** Safeguarding any passwords and for all activities that occur in your account; and
+
+1.3. **Security Notification.** Immediately notifying ClickUp if you become aware of any breach of security or unauthorized use of your account.
+
+1.4. **Appropriate Permissions.** You may never use another user’s account without permission.
+
+1.5. **Restrictions on Use.** You may not disassemble, decompile, or reverse engineer the Service or attempt or assist anyone else to do so, unless such restriction is prohibited by law.
+
+1.6. **Human Intervention.** Your account must be registered by a human. Accounts registered by "bots" or other automated methods are not permitted.
+
+1.7. **Age Restrictions.** By registering for a ClickUp account, you represent and warrant that you are at least 16 years of age or older.
+
+1.8. **Unauthorized Use.** You may not use the Service for any illegal or unauthorized purpose. You agree to comply with all laws, rules, and regulations (for example, federal, state, local and provincial) applicable to your use of the Service and your Content (defined below), including but not limited to copyright laws.
+
+1.9. **Fees Payable.** In the event you have a paid account, in exchange and consideration for the Services, you will pay all applicable fees as they become due. This includes but is not limited to any additional fees for all add-ons, guest-types user roles or limited members, or overages. Fees for any overages may be billed in arrears. If such fees are being paid via credit card or other electronic means, you authorize us to charge such fees using your selected payment method. You are responsible for providing complete and accurate billing information to ClickUp. We may suspend or terminate your use of the Service if fees become past due. All fees are non-refundable except as required by law or as set forth in Section 1.14.
+
+1.10. **Taxes.** You are responsible for all taxes (excluding taxes on our net income), and we will charge tax if required to do so by law. If you have any tax-exemptions which you would like applied to your invoice, you must provide proof of such exemption at the time of your purchase for it to apply.
+
+1.11. **Purchase Orders.** If you require the use of a purchase order or purchase order number, you (a) must provide the purchase order number at the time of purchase; and (b) agree that any terms and conditions on your purchase order will not apply and are null and void.
+
+1.12. **Automatic Renewal.** By default, customer accounts are set to automatically renew and we may automatically charge you for such renewal on or after the renewal date associated with your account unless you have cancelled the Service. For customers on an annual Services plan, you must provide us with notice of any downgrades or cancellations to your purchased Services (including but not limited to full cancellations of your account, reductions in user counts, changes to your Services packages, or the discontinuation of any add-ons or upgrades) at least thirty days prior to your Services renewal date or your Services will automatically renew for an additional twelve month period.
+
+1.13. **Revised Fees.** We may revise the fees for the Service from time to time and will provide you with email notice of any changes in fees at least thirty (30) days prior to your Service renewal date.
+
+1.14. **Satisfaction Guarantee.** ClickUp provides customers purchasing Services for the first time (or who are purchasing new products) with a satisfaction guarantee (“Satisfaction Guarantee”). Except as otherwise stated below, (a) if you are not satisfied with your initial purchase of ClickUp Services for any reason, simply contact us within thirty (30) days, and we will be happy to issue a full refund, and (b) in the event that you upgrade your Services plan or purchase new Services features (each, an “Upgraded Plan”), the Satisfaction Guarantee will apply during the first thirty (30) days after the purchase of the Upgraded Plan. The Satisfaction Guarantee does not apply to (a) Services initially purchased through or with the assistance of a ClickUp sales representative or reseller (or any associated Upgraded Plans); (b) renewals or expansions of previously purchased Services or Upgraded Plans, or; (c) instances where you have completed a pilot or trial period of the Services prior to initial purchase. If you exercise the Satisfaction Guarantee during the first thirty (30) days of your Upgraded Plan, we will revert your account to your prior plan and refund the cost difference between the prior plan and the Upgraded Plan. We reserve the right to reject any refund request or revoke refund privileges (on an individual basis) under this section if we determine abuse of this policy has occurred or where such request violates these Terms.
+
+**2\. Your Use of Our Service.**
+
+2.1. You must not change, modify, adapt, or alter the Service or change, modify, or alter another website so as to falsely imply that it is associated with the Service or with us.
+
+2.2. You must not access our private API by means other than those expressly permitted by us.
+
+2.3. You must not interfere or disrupt the Service or servers or networks connected to the Service, including by transmitting any worms, viruses, spyware, malware, or any other code of a destructive or disruptive nature. You may not inject content or code or otherwise alter or interfere with the way any of our pages is rendered or displayed in a user's browser or device.
+
+2.4. You must not attempt to restrict another user from using or enjoying the Service and you must not encourage or facilitate violations of these Terms or any of our other Policies.
+
+2.5. You agree that you will not copy, reproduce, republish, frame, download, transmit, modify, display, reverse engineer, sell, or participate in any sale of, rent, lease, loan, assign, distribute, license, sublicense, or exploit in any way, in whole or in part, Our Content, the Services, the Software, or any related software, except as expressly stated in these Terms.
+
+2.6. Violation of these Terms may, in our sole discretion, result in termination of your account. Furthermore, we reserve the right to investigate and prosecute violations of any of these Terms to the fullest extent of the law. We may involve and cooperate with law enforcement authorities in prosecuting Users who violate the Terms. You acknowledge that we have no obligation to prescreen or monitor your access to or use of our Service or any information, materials or other content provided or made available through our Service, but have the right to do so. You hereby agree that we may, in the exercise of our sole discretion, remove or delete any data, accounts or other content that violates these Terms or that is otherwise objectionable.
+
+2.7. If you elect to utilize any third-party application in connection with your use of the Service, by doing so you are consenting to your Content being shared with such third-party application. To understand how such third-party application providers utilize your Content and other information, you should review their privacy policies.
+
+**3\. General Conditions.**
+
+3.1. We may suspend or terminate your account(s) or cease providing you with all or part of our Services at any time without liability to you for any reason, including, but not limited to, if we reasonably believe: (i) you have violated these Terms, (ii) you create risk or possible legal exposure for us; (iii) you have a free account that has not had any activity (replies or logins) for sixty (60) days, or trial accounts without a payment method thirty (30) days after expiration, (iv) our provision of our Services to you is no longer commercially viable, or (v) your use of the Services is intended, in our sole discretion, to abuse the intended use of any trial offers, discount periods, promotional offerings, pilot or beta programs, or free forever offerings. We will make reasonable efforts to notify you through our Service, the next time you attempt to access your account, or by an email address or phone number you have provided us (if applicable).
+
+3.2. Upon termination, all access rights, licenses, and/or other rights granted to you in these Terms will immediately cease. If we terminate your access to the Service, your Content and all other data will no longer be accessible through your account.
+
+3.3. We reserve the right, in our sole discretion, to change these Terms and/or our Services offered from time to time (“Updated Terms”). Unless we make a change for legal or administrative reasons, we will provide reasonable advance notice before the Updated Terms become effective. You agree that we may notify you of the Updated Terms by posting them on the Service, and that your use of the Service after the effective date of the Updated Terms (or engaging in such other conduct as we may reasonably specify) constitutes your agreement to the Updated Terms. Therefore, you should review these Terms and any Updated Terms before using the Service. The Updated Terms will be effective as of the time of posting, or such later date as may be specified in the Updated Terms, and will apply to your use of the Service from that point forward. These Terms will govern any disputes arising before the effective date of the Updated Terms.
+
+3.4. We reserve the right to refuse access to the Service to anyone for any reason at any time.
+
+3.5. You hereby authorize us, directly or through third parties, to make any inquiries we consider necessary to validate your identity and/or authenticate your identity and account information. This may include asking you for further information and/or documentation about your account usage or identity, or requiring you to take steps to confirm ownership of your email address, wireless/cellular telephone number or financial instruments, and verifying your information against third party databases or through other sources. This process is for internal verification purposes. You further understand that we may charge a fee for this verification process.
+
+3.6. We may, but have no obligation to, remove, edit, block, and/or monitor Content or accounts containing Content that we determine in our sole discretion violates these Terms.
+
+3.7. You agree that you are responsible for all data charges you incur through use of the Service.
+
+3.8. By creating an Account, you agree that the Services may send you informational and promotional text (SMS) messages as part of the normal business operation of your use of the Services. You may opt-out of receiving text (SMS) messages from us at any time by texting the word STOP to (650) 203-2403 from the mobile device receiving the messages. You acknowledge that opting out of receiving text (SMS) messages may impact your use of the Services.
+
+3.9. We prohibit crawling, scraping, caching or otherwise accessing any content on the Service via automated means (except as may be the result of standard search engine protocols or technologies used by a search engine with our express consent).
+
+3.10. In some cases, it is necessary for our employees, contractors, or agents to access your account and content in order to diagnose a problem. When you contact our support team, it is implied that you are allowing us to access your account if necessary, in order to be helpful. If you wish to receive assistance without granting permission to your account, please specify as much in your communication with our support team and those requests will be honored to the extent possible.
+
+3.11. In connection with providing you the Service, we may transfer, store and process your Content in the U.S. or in any other country in which we or our agents maintain facilities. By using the Service, you consent to this transfer, processing and storage of your Content.
+
+**4\. Rights.**
+
+4.1. **Definitions.** For purposes of these Terms: (i) "Content" means any data, text, files, information, usernames, images, graphics, photos, profiles, audio and video clips, sounds, musical works, works of authorship, applications, links, created tasks and associated information, text, files and other content or materials; and (ii) "User Content" means any Content that Account holders (including you) provide to be made available through the Services. Content includes without limitation User Content.
+
+4.2. **ClickUp Content.** Unless otherwise stated, all materials contained on or within the Services, including, but not limited to, text, graphics, images, code, illustrations, designs, icons, photographs, video clips, and written and other materials (collectively, "ClickUp Content"), as well as their selection and arrangement, are and at all times owned by ClickUp and protected by copyright, trademark, trade dress, patent, and/or other intellectual property laws, and unauthorized use of ClickUp Content may violate such laws and these Terms. Except as expressly provided in these Terms, we do not grant any express or implied rights to use ClickUp Content.
+
+4.3. **Restriction to Use of ClickUp Content and Intellectual Property.** You agree that you will not copy, reproduce, republish, frame, download, transmit, modify, display, reverse engineer, sell, or participate in any sale of, rent, lease, loan, assign, distribute, license, sublicense, or exploit in any way, in whole or in part, ClickUp Content, the Services or any related software or Software as defined above, except as expressly stated in these Terms. You agree not to remove, alter, or obscure any copyright, trademark, service mark, or other proprietary rights notices incorporated in or accompanying the Services or ClickUp Content.
+
+4.4. **Rights in Customer Content.** We claim no ownership rights over the Content submitted or created exclusively by you in your ClickUp Service account (“Customer Content”). As between you and ClickUp, any Customer Content that is your intellectual property shall remain yours. These Terms of Service do not grant us any licenses or rights to Customer Content except for the limited rights needed for us to provide the ClickUp Service to you.
+
+4.5. **Limited Use of Customer Content.** Notwithstanding the foregoing, we may access Content to determine how we can improve our Service, and to determine customer satisfaction. Similarly, any reporting data we collect from your use of the ClickUp Service remains yours. By using the ClickUp Service you agree that we can use this data to provide the ClickUp Service to you, and you also agree that as long as the data is anonymized and does not identify you, we can combine this data with the anonymized data of other companies to provide benchmarking, public reports or to otherwise use it to provide the ClickUp Service.
+
+4.6. **Alerts and Notification.** As part of the Services we provide, you may (if enabled) receive push notifications, text messages, alerts, emails, or other types of messages directly sent to you outside or inside the Services ("Notifications"). You have control over the Notifications settings, and can opt in or out of these Notifications through the Services (with the possible exception of infrequent, important service announcements and administrative messages).
+
+4.7. **Advertising.** Some of the Service may be supported by advertising revenue and may display advertisements and promotions, and you hereby agree that we may place such advertising and promotions on the Service or on, about, or in conjunction with your Content. The manner, mode and extent of such advertising and promotions are subject to change without specific notice to you. You acknowledge that we may not always identify paid services, sponsored content, or commercial communications as such.
+
+4.8. **Your Representations and Warranties.** You represent and warrant that: (i) you own the Content posted by you on or through the Service or otherwise have the right to grant the rights and licenses set forth in these Terms of Services; (ii) the posting and use of your Content on or through the Service does not violate, misappropriate, or infringe on the rights of any third party, including, without limitation, privacy rights, publicity rights, copyrights, trademark, and/or other intellectual property rights; (iii) you agree to pay for all royalties, fees, and any other monies owed by reason of Content you post on or through the Service; and (iv) you have the legal right and capacity to enter into these Terms of Service in your jurisdiction.
+
+4.9. **Trademarks.** The ClickUp and Mango Technologies, Inc. name and logo are our trademarks, and may not be copied, imitated or used, in whole or in part, without our prior written permission. In addition, all page headers, custom graphics, button icons, and scripts are our service marks, trademarks, and/or trade dress, and may not be copied, imitated or used, in whole or in part, without prior written permission from us.
+
+4.10. **Service Availability and Backups.** Although it is our intention for the Service to be available as much as possible, there will be occasions when the Service may be interrupted, including, without limitation, for scheduled maintenance or upgrades, for emergency repairs, for unscheduled downtime, for system and server failures, or due to failure of telecommunications links and/or equipment. Consequently, we encourage you to maintain your own backup of your Content. In other words, we are not a backup service and you agree that you will not rely on the Service for the purposes of Content backup or storage. We will not be liable to you for any modification, suspension, or discontinuation of the Services, or the loss of any Content. You also acknowledge that the Internet may be subject to breaches of security and that the submission of Content or other information may not be secure.
+
+4.11. **Content Responsibility.** You agree that we are not responsible for, and do not endorse, Content posted within the Service. We do not have any obligation to prescreen, monitor, edit, or remove any Content. If your Content violates these Terms, you may bear legal responsibility for that Content.
+
+4.12. **Non-Confidentiality.** Except as otherwise described in the Service's Privacy Policy, as between you and us, any Content will be non-confidential and nonproprietary and we will not be liable for any use or disclosure of Content. You acknowledge and agree that your relationship with us is not a confidential, fiduciary, or other type of special relationship, and that your decision to submit any Content does not place us in a position that is any different from the position held by members of the general public, including with regard to your Content. None of your Content will be subject to any obligation of confidence on our part, and we will not be liable for any use or disclosure of any Content you provide.
+
+4.13. **Access Rights.** Subject to your agreement and continuing compliance with these Terms and any of our other relevant Policies, we grant you a non-exclusive, non-transferable, revocable access right to use the Service solely for its intended purposes. The access right granted herein does not include any right to:
+
+a. the distribution, public performance, or public display of Our Content;
+
+b. the modifying or otherwise making any derivative uses of the Services or Our Content, or any portion thereof;
+
+c. the use of any scraping, data mining, robots, or similar data gathering or extraction methods;
+
+d. the downloading of (other than page caching) any portion of the Services, Our Content, or any information contained therein, except as expressly permitted on the Services;
+
+e. access our API with an unauthorized or third-party client; or,
+
+f. any use of the Services or Our Content other than for their intended purposes.
+
+**5\. Software.**
+
+As part of the Service, we may provide downloadable client software (the “Software”) for your use in connection with the Service. This Software may update automatically and if such Software is designed for use on a specific mobile or desktop operating system, then a compatible system is required for use. Contingent upon your compliance with these Terms, we grant you a limited, nonexclusive, nontransferable, revocable license to use the Software, solely to access the Service; provided, however, that this access right does not constitute a sale of the Software or any copy thereof, and as between you and us, we retain all right, title and interest in the Software.
+
+Any use of the Services or Our Content other than as specifically authorized in these Terms, without our prior written permission, is strictly prohibited and will immediately terminate your access right to use our Service and Site granted in these Terms.
+
+**6\. Feedback.**
+
+It is our policy not to accept or consider content, information, ideas, suggestions, or other materials other than those we have specifically requested and to which certain specific terms, conditions and requirements may apply. This is to avoid any misunderstandings if your ideas are similar to those we have developed or are developing independently. If, despite our policy, you choose to send us content, information, ideas, suggestions, or other materials, you further agree to the following:
+
+For all reviews, comments, feedback, postcards, suggestions, ideas, and other submissions disclosed, submitted, or offered to us via our Service, our sites, by e-mail or telephone, by mail, or otherwise disclosed, submitted or offered in connection with your use of this Service (collectively, “User Submissions”) you grant us a royalty-free, irrevocable, transferable right and license to use the User Submissions however we desire, including without limitation, to copy, modify, delete in its entirety, adapt, publish, translate, create derivative works from, and/or sell and/or distribute such User Submissions and/or incorporate such User Submissions into any form, medium, or technology throughout the world.
+
+We will be entitled to use, reproduce, disclose, modify, adapt, create derivative works from, publish, display, and distribute any User Submissions you submit for any purpose whatsoever, without restriction and without compensating you in any way. We are and shall be under no obligation (1) to maintain any User Submissions in confidence; (2) to pay to any user any compensation for any User Submissions; or (3) to respond to any User Submissions. You agree that any User Submissions submitted by you to us will not violate the right of any third party, including without limitation, copyright, trademark, privacy, or other personal or proprietary right(s), and will not cause injury to any person or entity. You further agree that no User Submissions submitted by you to us will be or contain libelous or otherwise unlawful, threatening, abusive or obscene material, or contain software viruses, political campaigning, commercial solicitation, chain letters, mass mailings or any form of “spam”. User Submissions shall not under any circumstances be considered Customer Content.
+
+**7\. Publicity.**
+
+You agree that by using the Services, you are providing your consent for ClickUp to use your Company name, logos, and/or other marks to identify you as a customer on our website and/or other promotional, sales, or marketing materials. You may request that we cease such use by emailing [legal@clickup.com](mailto:legal@clickup.com) at any time.
+
+**8\. Reporting Copyright and Other IP Violations.**
+
+It is our policy to respond to notices of alleged copyright infringement that comply with the Digital Millennium Copyright Act ("DMCA"). If you believe your work has been copied in a way that constitutes copyright infringement, please provide a notice containing all of the following information to our Copyright Agent:
+
+a. An electronic or physical signature of the person authorized to act on behalf of the owner of the copyright interest;
+
+b. A description of the copyrighted work that you claim has been infringed;
+
+c. A description of where the material that you claim is infringing is located on our site(s);
+
+d. Your address, telephone number, and e-mail address;
+
+e. A statement by you that you have a good faith belief that the disputed use is not authorized by the copyright owner, its agent, or the law; and
+
+f. A statement by you, made under penalty of perjury, that the above information in your notice is accurate and that you are the copyright owner or authorized to act on the copyright owner's behalf.
+
+We reserve the right to remove Content alleged to be infringing without prior notice and at our sole discretion. In appropriate circumstances, we will also terminate a user’s account if the user is determined to be a repeat infringer. Our Copyright Agent for Notice of claims of copyright infringement on the Site is Chase Neely, who can be reached as follows: [platform@clickup.com](mailto:platform@clickup.com)
+
+**9\. Disclaimer of Warranties.**
+
+THE SERVICE, INCLUDING, WITHOUT LIMITATION, OUR CONTENT, IS PROVIDED ON AN "AS IS", "AS AVAILABLE", AND "WITH ALL FAULTS" BASIS. TO THE FULLEST EXTENT PERMISSIBLE BY LAW, NEITHER WE NOR ANY OF OUR EMPLOYEES, MANAGERS, OFFICERS, CONTRACTORS, SUPPLIERS, LICENSORS, OR AGENTS (COLLECTIVELY, THE "CLICKUP PARTIES") MAKE ANY REPRESENTATIONS OR WARRANTIES OR ENDORSEMENTS OF ANY KIND WHATSOEVER, EXPRESS OR IMPLIED, AS TO: (A) THE SERVICE; (B) OUR CONTENT; (C) USER CONTENT; OR (D) SECURITY ASSOCIATED WITH THE TRANSMISSION OF INFORMATION TO US OR VIA THE SERVICE. IN ADDITION, THE CLICKUP PARTIES HEREBY DISCLAIM ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT, TITLE, CUSTOM, TRADE, QUIET ENJOYMENT, SYSTEM INTEGRATION, AND FREEDOM FROM COMPUTER VIRUS.
+
+THE CLICKUP PARTIES DO NOT REPRESENT OR WARRANT THAT THE SERVICE WILL BE ERROR-FREE OR UNINTERRUPTED; THAT DEFECTS WILL BE CORRECTED; OR THAT THE SERVICE OR THE SERVER THAT MAKES THE SERVICE AVAILABLE IS FREE FROM ANY HARMFUL COMPONENTS, INCLUDING, WITHOUT LIMITATION, VIRUSES AND SECURITY BREACHES OF ANY KIND. THE CLICKUP PARTIES DO NOT MAKE ANY REPRESENTATIONS OR WARRANTIES THAT THE INFORMATION (INCLUDING ANY INSTRUCTIONS) ON THE SERVICE IS ACCURATE, COMPLETE, OR USEFUL. YOU ACKNOWLEDGE THAT YOUR USE OF THE SERVICE IS AT YOUR SOLE RISK. THE CLICKUP PARTIES DO NOT WARRANT THAT YOUR USE OF THE SERVICE IS LAWFUL IN ANY PARTICULAR JURISDICTION, AND THE CLICKUP PARTIES SPECIFICALLY DISCLAIM SUCH WARRANTIES. SOME JURISDICTIONS LIMIT OR DO NOT ALLOW THE DISCLAIMER OF IMPLIED OR OTHER WARRANTIES SO THE ABOVE DISCLAIMER MAY NOT APPLY TO YOU TO THE EXTENT SUCH JURISDICTION'S LAW IS APPLICABLE TO YOU AND THESE TERMS OF SERVICE.
+
+BY ACCESSING OR USING THE SERVICE YOU REPRESENT AND WARRANT THAT YOUR ACTIVITIES ARE LAWFUL IN EVERY JURISDICTION WHERE YOU ACCESS OR USE THE SERVICE.
+
+THE CLICKUP PARTIES DO NOT ENDORSE CONTENT AND SPECIFICALLY DISCLAIM ANY RESPONSIBILITY OR LIABILITY TO ANY PERSON OR ENTITY FOR ANY LOSS, DAMAGE (WHETHER ACTUAL, CONSEQUENTIAL, PUNITIVE OR OTHERWISE), INJURY, CLAIM, LIABILITY, OR OTHER CAUSE OF ANY KIND OR CHARACTER BASED UPON OR RESULTING FROM ANY CONTENT.
+
+**10\. Access Right Limitations.**
+
+ANY ATTEMPT BY YOU TO DISRUPT OR INTERFERE WITH THE SERVICE INCLUDING UNDERMINING OR MANIPULATING THE LEGITIMATE OPERATION OF ANY OF OUR SITES OR SERVICES IS A VIOLATION OF OUR POLICY AND MAY BE A VIOLATION OF CRIMINAL AND CIVIL LAWS.
+
+WITHOUT LIMITING ANY OTHER REMEDIES, WE MAY LIMIT, SUSPEND, TERMINATE, MODIFY, OR DELETE ACCOUNTS OR ACCESS TO THE SERVICE OR PORTIONS THEREOF IF YOU ARE, OR WE SUSPECT THAT YOU ARE, FAILING TO COMPLY WITH ANY TERMS OF SERVICE OR FOR ANY ACTUAL OR SUSPECTED ILLEGAL OR IMPROPER USE OF THE SERVICE, WITH OR WITHOUT NOTICE TO YOU. YOU CAN LOSE YOUR ACCOUNT AND ANY USER CONTENT AS A RESULT OF ACCOUNT TERMINATION OR LIMITATION, AS WELL AS ANY BENEFITS, PRIVILEGES, EARNED ITEMS, AND PURCHASED ITEMS ASSOCIATED WITH YOUR USE OF THE SERVICE, AND WE ARE UNDER NO OBLIGATION TO COMPENSATE YOU FOR ANY SUCH LOSSES OR RESULTS.
+
+WITHOUT LIMITING OUR OTHER REMEDIES, WE MAY LIMIT, SUSPEND, OR TERMINATE THE SERVICE AND USER ACCOUNTS OR PORTIONS THEREOF, PROHIBIT ACCESS TO OUR SERVICES AND SITES, AND THEIR CONTENT, AND TOOLS, DELAY OR REMOVE HOSTED CONTENT, AND TAKE TECHNICAL AND LEGAL STEPS TO PREVENT USERS FROM ACCESSING THE SERVICE IF WE BELIEVE THAT THEY ARE CREATING RISK OR POSSIBLE LEGAL LIABILITIES, INFRINGING THE INTELLECTUAL PROPERTY RIGHTS OF THIRD PARTIES, OR ACTING INCONSISTENTLY WITH THE LETTER OR SPIRIT OF OUR TERMS OR POLICIES. ADDITIONALLY, WE MAY, IN APPROPRIATE CIRCUMSTANCES AND AT OUR SOLE DISCRETION, SUSPEND OR TERMINATE ACCOUNTS OF USERS WHO MAY BE REPEAT INFRINGERS OF THIRD-PARTY INTELLECTUAL PROPERTY RIGHTS.
+
+We reserve the right to stop offering and/or supporting the Service or a particular part of the Service at any time either permanently or temporarily. In such event, we shall not be required to provide refunds, benefits or other compensation to users in connection with such discontinued elements of the Service.
+
+**11\. Limitation of Liability; Waiver.**
+
+UNDER NO CIRCUMSTANCES WILL THE CLICKUP PARTIES BE LIABLE TO YOU FOR ANY LOSS OR DAMAGES OF ANY KIND (INCLUDING, WITHOUT LIMITATION, FOR ANY DIRECT, INDIRECT, ECONOMIC, EXEMPLARY, SPECIAL, PUNITIVE, INCIDENTAL, OR CONSEQUENTIAL LOSSES OR DAMAGES) THAT ARE DIRECTLY OR INDIRECTLY RELATED TO: (A) THE SERVICE; (B) OUR CONTENT; (C) USER CONTENT; (D) YOUR USE OF, INABILITY TO USE, OR THE PERFORMANCE OF THE SERVICE; (E) ANY ACTION TAKEN IN CONNECTION WITH AN INVESTIGATION BY THE CLICKUP PARTIES OR LAW ENFORCEMENT AUTHORITIES REGARDING YOUR OR ANY OTHER PARTY'S USE OF THE SERVICE; (F) ANY ACTION TAKEN IN CONNECTION WITH COPYRIGHT OR OTHER INTELLECTUAL PROPERTY OWNERS; (G) ANY ERRORS OR OMISSIONS IN THE SERVICE'S OPERATION; OR (H) ANY DAMAGE TO ANY USER'S COMPUTER, MOBILE DEVICE, OR OTHER EQUIPMENT OR TECHNOLOGY INCLUDING, WITHOUT LIMITATION, DAMAGE FROM ANY SECURITY BREACH OR FROM ANY VIRUS, BUGS, TAMPERING, FRAUD, ERROR, OMISSION, INTERRUPTION, DEFECT, DELAY IN OPERATION OR TRANSMISSION, COMPUTER LINE OR NETWORK FAILURE OR ANY OTHER TECHNICAL OR OTHER MALFUNCTION, INCLUDING, WITHOUT LIMITATION, DAMAGES FOR LOST PROFITS, LOSS OF GOODWILL, LOSS OF DATA, WORK STOPPAGE, ACCURACY OF RESULTS, OR COMPUTER FAILURE OR MALFUNCTION, EVEN IF FORESEEABLE OR EVEN IF THE CLICKUP PARTIES HAVE BEEN ADVISED OF OR SHOULD HAVE KNOWN OF THE POSSIBILITY OF SUCH DAMAGES, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE, STRICT LIABILITY OR TORT (INCLUDING, WITHOUT LIMITATION, WHETHER CAUSED IN WHOLE OR IN PART BY NEGLIGENCE, ACTS OF GOD, TELECOMMUNICATIONS FAILURE, OR THEFT OR DESTRUCTION OF THE SERVICE). IN NO EVENT WILL THE CLICKUP PARTIES BE LIABLE TO YOU OR ANYONE ELSE FOR LOSS, DAMAGE OR INJURY, INCLUDING, WITHOUT LIMITATION, DEATH OR PERSONAL INJURY. SOME STATES DO NOT ALLOW THE EXCLUSION OR LIMITATION OF INCIDENTAL OR CONSEQUENTIAL DAMAGES, SO THE ABOVE LIMITATION OR EXCLUSION MAY NOT APPLY TO YOU. IN NO EVENT WILL THE CLICKUP PARTIES TOTAL LIABILITY TO YOU FOR ALL DAMAGES, LOSSES OR CAUSES OR ACTION EXCEED ONE HUNDRED UNITED STATES DOLLARS ($100.00). YOU AGREE THAT IN THE EVENT YOU INCUR ANY DAMAGES, LOSSES, OR INJURIES THAT ARISE OUT OF OUR ACTS OR OMISSIONS, THE DAMAGES, IF ANY, CAUSED TO YOU ARE NOT IRREPARABLE OR SUFFICIENT TO ENTITLE YOU TO AN INJUNCTION PREVENTING ANY EXPLOITATION OF ANY WEB SITE, SERVICE, PROPERTY, PRODUCT, OR OTHER CONTENT OWNED OR CONTROLLED BY THE CLICKUP PARTIES, AND YOU WILL HAVE NO RIGHTS TO ENJOIN OR RESTRAIN THE DEVELOPMENT, PRODUCTION, DISTRIBUTION, ADVERTISING, EXHIBITION, OR EXPLOITATION OF ANY WEB SITE, PROPERTY, PRODUCT, SERVICE, OR OTHER CONTENT OWNED OR CONTROLLED BY THE CLICKUP PARTIES. BY ACCESSING THE SERVICE, YOU UNDERSTAND THAT YOU MAY BE WAIVING RIGHTS WITH RESPECT TO CLAIMS THAT ARE AT THIS TIME UNKNOWN OR UNSUSPECTED, AND IN ACCORDANCE WITH SUCH WAIVER, YOU ACKNOWLEDGE THAT YOU HAVE READ AND UNDERSTAND, AND HEREBY EXPRESSLY WAIVE, THE BENEFITS OF SECTION 1542 OF THE CIVIL CODE OF CALIFORNIA, AND ANY SIMILAR LAW OF ANY STATE OR TERRITORY, WHICH PROVIDES AS FOLLOWS: "A GENERAL RELEASE DOES NOT EXTEND TO CLAIMS WHICH THE CREDITOR DOES NOT KNOW OR SUSPECT TO EXIST IN HIS FAVOR AT THE TIME OF EXECUTING THE RELEASE, WHICH IF KNOWN BY HIM MUST HAVE MATERIALLY AFFECTED HIS SETTLEMENT WITH THE DEBTOR."
+
+WE ARE NOT RESPONSIBLE FOR THE ACTIONS, CONTENT, INFORMATION, OR DATA OF THIRD PARTIES, AND YOU RELEASE THE CLICKUP PARTIES FROM ANY CLAIMS AND DAMAGES, KNOWN AND UNKNOWN, ARISING OUT OF OR IN ANY WAY CONNECTED WITH ANY CLAIM YOU HAVE AGAINST ANY SUCH THIRD PARTIES.
+
+**12\. Indemnification.**
+
+You (and also any third party for whom you operate an account or activity on the Service) agree to defend (at our request), indemnify, and hold the ClickUp Parties harmless from and against any claims, liabilities, damages, losses, and expenses, including without limitation, reasonable attorney's fees and costs, arising out of or in any way connected with any of the following (including as a result of your direct activities on the Service or those conducted on your behalf):
+
+a. your Content or your access to or use of the Service;
+
+b. your breach or alleged breach of these Terms;
+
+c. your violation of any third-party right, including without limitation, any intellectual property right, publicity, confidentiality, property, or privacy right;
+
+d. your violation of any laws, rules, regulations, codes, statutes, ordinances, or orders of any governmental and quasi-governmental authorities, including, without limitation, all regulatory, administrative and legislative authorities; or,
+
+e. any misrepresentation made by you.
+
+You will cooperate as fully required by us in the defense of any claim. We reserve the right to assume the exclusive defense and control of any matter subject to indemnification by you, and you will not in any event settle any claim without our prior written consent. Notwithstanding the foregoing, you agree that the cost of any such defense will be at your sole and exclusive expense.
+
+**13\. Arbitration.**
+
+13.1. Except if you opt-out or for disputes relating to your or our intellectual property (such as trademarks, trade dress, domain names, trade secrets, copyrights, and patents ("Excluded Disputes"), you agree that all disputes between you and us (whether or not such dispute involves a third party) with regard to your relationship with us, including without limitation disputes related to these Terms, your use of the Service, and/or rights of privacy and/or publicity, will be resolved by binding, individual arbitration under the American Arbitration Association's rules for arbitration of consumer-related disputes and you and we hereby expressly waive trial by jury. You may bring claims only on your own behalf. Neither you nor we will participate in a class action or class-wide arbitration for any claims covered by this agreement. You also agree not to participate in claims brought by a private attorney, in a general or representative capacity, or consolidated claims involving another person's account, if we are a party to the proceeding. This dispute resolution provision will be governed by the Federal Arbitration Act. In the event the American Arbitration Association is unwilling or unable to set a hearing date within one hundred and sixty (160) days of filing the case, then either we or you can elect to have the arbitration administered instead by the Judicial Arbitration and Mediation Services. Judgment on the award rendered by the arbitrator may be entered in any court having competent jurisdiction. Any provision of applicable law notwithstanding, the arbitrator will not have authority to award damages, remedies or awards that conflict with these Terms.
+
+13.2. You may opt out of this agreement to arbitrate, as specified above. If you do so, neither you nor we can require the other to participate in an arbitration proceeding. To opt out, you must notify us in writing within 30 days of the date that you first became subject to this arbitration provision.
+
+**You must use this address to opt out:**
+
+Mango Technologies, Inc. dba ClickUp
+
+Attn: Privacy Agent
+
+350 10th Ave. Suite 500
+
+San Diego, CA 92101
+
+You must include your name and residence address, the phone number and username that you use for your account, and a clear statement that you want to opt out of this arbitration agreement.
+
+If the prohibition against class actions and other claims brought on behalf of third parties contained above is found to be unenforceable, then all of the preceding language in this Arbitration section will be null and void. This arbitration agreement will survive the termination of your relationship with us.
+
+**14\. Time Limitation on Claims.**
+
+Except as may be required by law, you agree that any claim you may have arising out of or related to these Terms or your relationship with us must be filed within one year after such claim arose; otherwise, your claim is permanently barred.
+
+**15\. Governing Law & Venue.**
+
+These Terms are governed by and construed in accordance with the laws of the State of California, without giving effect to any principles of conflicts of law and are not subject to or governed by the United Nations Conventions on Contracts for the International Sale of Goods, if otherwise applicable. For any action at law or in equity relating to the arbitration provision of these Terms, the Excluded Disputes or if you opt out of the agreement to arbitrate under Section 13, you agree to resolve any disputes exclusively in a state or federal court located in San Diego, CA, and to submit to the personal jurisdiction of the courts located in San Diego County for the purpose of litigating all such disputes.
+
+**16\. Severability and No Waiver.**
+
+If any provision of these Terms is held to be unlawful, void, or for any reason unenforceable during arbitration or by a court of competent jurisdiction, then the unenforceable provision(s) will be deemed severed from these Terms and will not affect the validity and enforceability of any remaining provisions. Our failure to insist upon or enforce strict performance of any provision of these Terms will not be construed as a waiver of any provision or right. No waiver of any of these Terms will be deemed a further or continuing waiver of such term or condition or any other term or condition.
+
+**17\. Entire Agreement.**
+
+17.1. These Terms are the complete and exclusive statement of the mutual understanding of the parties and supersedes and cancels all previous written and oral agreements, communications and other understandings relating to the subject matter hereof, and that neither the course of conduct between the parties nor trade practice will act to modify the Terms.
+
+17.2. You may not assign the Terms or assign any rights or delegate any obligations hereunder, in whole or in part, whether voluntarily or by operation of law, without our prior written consent. Any purported assignment or delegation by you without our appropriate prior written consent will be null and void. We may assign these Terms or any rights hereunder without your consent and the Terms will inure to the benefit of and be enforceable by our successor.
+
+17.3. These Terms do not confer any third-party beneficiary rights.
+
+**18\. Territorial Restrictions.**
+
+The Services and information provided within the Services is not intended for distribution to or use by any person or entity in any jurisdiction or country where such distribution or use would be contrary to law or regulation or which would subject ClickUp to any registration requirement within such jurisdiction or country. We reserve the right to limit the availability of the Service or any portion of the Service, to any person, geographic area, or jurisdiction, at any time and in our sole discretion, and to limit the quantities of any content, program, product, service, or other feature that we provide.
+
+Software related to or made available by the Service may be subject to United States export controls. Thus, no software from the Service may be downloaded, exported, or re-exported: (a) into (or to a national or resident of) any country to which the United States has embargoed goods; or (b) to anyone on the U.S. Treasury Department's list of Specially Designated Nationals or the U.S. Commerce Department's Table of Deny Orders. By downloading any software related to the Service, you represent and warrant that you are not located in, under the control of, or a national or resident of, any such country or on any such list.
+
+These Terms of Service were written in English (US). To the extent any translated version of these Terms of Service conflicts with the English version, the English version controls.
+
+The Terms of Use found at [ClickUp Prior Terms](https://clickup.com/terms/prior) will continue to apply to all purchases made prior to June 24, 2025.
+
+[ClickUp Home](https://clickup.com/)
+
+- Download
+  - [iOS & Android](https://clickup.com/download)
+  - [Mac & Windows](https://clickup.com/download)
+  - [Brain MAX](https://clickup.com/brain/max)
+- AI
+  - [Brain](https://clickup.com/brain)
+  - [Super Agents](https://clickup.com/brain/agents)
+  - [Ambient Agents](https://clickup.com/brain/ambient-agents)
+  - [Notetaker](https://clickup.com/brain/ai-notetaker)
+  - [Enterprise Search](https://clickup.com/brain/enterprise-search)
+  - [Talk to Text](https://clickup.com/brain/talk-to-text)
+- [Product](https://clickup.com/features)
+  - [Chat](https://clickup.com/features/chat)
+  - [Projects](https://clickup.com/features/tasks)
+  - [Docs & Wikis](https://clickup.com/features/docs)
+  - [Calendar](https://clickup.com/features/calendar)
+  - [Dashboards](https://clickup.com/features/dashboards)
+  - [Time Tracking](https://clickup.com/features/project-time-tracking)
+  - [Gantt Charts](https://clickup.com/features/gantt-chart-view)
+  - [Automations](https://clickup.com/features/automations)
+  - [Whiteboards](https://clickup.com/features/whiteboards)
+  - [API](https://clickup.com/api/)
+  - [Integrations](https://clickup.com/integrations/)
+- [Compare](https://clickup.com/compare)
+  - [vs Atlassian](https://clickup.com/compare/jira-vs-clickup)
+  - [vs Microsoft Teams](https://clickup.com/compare/microsoft-teams-vs-clickup)
+  - [vs Asana](https://clickup.com/compare/asana-vs-clickup)
+  - [vs ServiceNow](https://clickup.com/compare/vs/servicenow-customer-service-management)
+  - [vs Monday](https://clickup.com/compare/monday-vs-clickup)
+  - [vs Slack](https://clickup.com/compare/slack-vs-clickup)
+  - [vs Smartsheet](https://clickup.com/compare/smartsheet-vs-clickup)
+  - [vs Wrike](https://clickup.com/compare/wrike-vs-clickup)
+  - [vs Salesforce](https://clickup.com/compare/vs/salesforce-sales-cloud)
+  - [vs Notion](https://clickup.com/compare/notion-vs-clickup)
+  - [vs Airtable](https://clickup.com/compare/airtable-vs-clickup)
+- Company
+  - [About Us](https://clickup.com/about)
+  - [Careers](https://clickup.com/careers)
+  - [Customers](https://clickup.com/customers)
+  - [Affiliates](https://clickup.com/partners/affiliates)
+  - [Events](https://clickup.com/events)
+  - [Partners](https://clickup.com/partners)
+  - [Consultants](https://clickup.com/consultants)
+  - [Reviews](https://clickup.com/reviews)
+  - [Press](https://clickup.com/press)
+  - [Brand](https://clickup.com/brand)
+  - [Roadmap](https://dev-doc.clickup.com/p/ad-3021/click-up-roadmap/ad-3021/%F0%9F%9A%80-click-up-roadmap)
+- Help
+  - [24/7 Support](https://help.clickup.com/hc/en-us)
+  - [Contact Us](https://help.clickup.com/)
+  - [Get a Demo](https://clickup.com/on-demand-demo)
+  - [Import](https://clickup.com/import)
+  - [Community](https://clickup.com/community)
+  - [ClickUp University](https://university.clickup.com/?_ga=2.213779543.2106551441.1662583868-989641782.1662077755)
+  - [Webinars](https://clickup.com/webinars)
+  - [Blog](https://clickup.com/blog/)
+  - [Research](https://clickup.com/research)
+
+[![](https://cdn.web.clickup.com/assets/ui/v5/logos/logo-icon-linkedin-light.svg)](https://www.linkedin.com/company/12949663)[![](https://cdn.web.clickup.com/assets/ui/v5/logos/logo-icon-facebook-light.svg)](https://www.facebook.com/clickupprojectmanagement/)[![](https://cdn.web.clickup.com/assets/ui/v5/logos/logo-icon-instagram-light.svg)](https://www.instagram.com/clickup/)[![](https://cdn.web.clickup.com/assets/ui/v5/logos/logo-icon-x-light.svg)](https://twitter.com/clickup)
+
+![](https://cdn.web.clickup.com/assets/ui/v5/logos/cert-soc2.svg)
+
+SOC 2
+
+CERTIFIED
+
+![](https://cdn.web.clickup.com/assets/ui/v5/logos/cert-iso.png)
+
+ISO 27001
+
+CERTIFIED
+
+![](https://cdn.web.clickup.com/assets/ui/v5/logos/cert-gdpr.svg)
+
+GDPR
+
+COMPLIANT
+
+![](https://cdn.web.clickup.com/assets/ui/v5/logos/cert-hipaa.svg)
+
+HIPAA
+
+COMPLIANT
+
+Qualified

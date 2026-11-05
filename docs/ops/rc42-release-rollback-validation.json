@@ -1,0 +1,195 @@
+{
+  "schema_version": 1,
+  "status": "technical_release_rollback_verified_business_acceptance_open",
+  "completed_at": "2026-10-08T13:13:01.962162+00:00",
+  "application_commit_sha": "934d2469f70586018aa1cdce053af89ca08cf21f",
+  "executor_commit_sha": "2f237f7efa2b70e7f730a64657cb6de5f6062833",
+  "environment": "staging",
+  "profile": "single-node-4c4g",
+  "release_scope": "invited",
+  "schema_revision": "20261008_0034",
+  "application_tag": "v0.1.45-rc.42",
+  "rollback_commit_sha": "aeab213ed5b305a9c6388de2a27b4eb32bba884e",
+  "rollback_duration_seconds": 88.00969195365906,
+  "rollback_readiness": true,
+  "restored_commit_verified": true,
+  "schema_expansion_seconds": 70.54205298423767,
+  "phases": {
+    "release": {
+      "observed_at": "2026-10-08T12:42:21.023847+00:00",
+      "status": "passed",
+      "application_commit_sha": "934d2469f70586018aa1cdce053af89ca08cf21f",
+      "duration_seconds": 89.11659789085388,
+      "checks": {
+        "complete_deployment_specs": true,
+        "candidate_prerequisites": true,
+        "namespace_uid": true,
+        "credentials_unchanged": true,
+        "full_schema_0034": true,
+        "history_counts_unchanged": true,
+        "business_idle": true,
+        "jobs_unchanged": true,
+        "no_other_controllers": true,
+        "five_ready": true,
+        "historical_terminal_pods_preserved": true,
+        "pod_readiness_and_image_identity": true,
+        "packaged_source_matches_application_commit": true,
+        "worker_concurrency_two": true,
+        "nginx_matches_application_commit": true,
+        "public_signed_assets": true,
+        "backup_remains_deferred": true,
+        "homepage": true,
+        "readiness_and_queue": true,
+        "operation_deadlines": true,
+        "capacity_and_policy": true
+      },
+      "source_files_per_package": {
+        "enterprise_doc_core": 194,
+        "enterprise_doc_api": 50,
+        "enterprise_doc_worker": 15
+      }
+    },
+    "rollback": {
+      "observed_at": "2026-10-08T12:56:53.638433+00:00",
+      "status": "passed",
+      "application_commit_sha": "aeab213ed5b305a9c6388de2a27b4eb32bba884e",
+      "duration_seconds": 88.00969195365906,
+      "checks": {
+        "complete_deployment_specs": true,
+        "candidate_prerequisites": true,
+        "namespace_uid": true,
+        "credentials_unchanged": true,
+        "full_schema_0034": true,
+        "history_counts_unchanged": true,
+        "business_idle": true,
+        "jobs_unchanged": true,
+        "no_other_controllers": true,
+        "five_ready": true,
+        "historical_terminal_pods_preserved": true,
+        "pod_readiness_and_image_identity": true,
+        "packaged_source_matches_application_commit": true,
+        "worker_concurrency_two": true,
+        "nginx_matches_application_commit": true,
+        "public_signed_assets": true,
+        "backup_remains_deferred": true,
+        "homepage": true,
+        "readiness_and_queue": true,
+        "operation_deadlines": true,
+        "capacity_and_policy": true
+      },
+      "source_files_per_package": {
+        "enterprise_doc_core": 188,
+        "enterprise_doc_api": 50,
+        "enterprise_doc_worker": 15
+      }
+    },
+    "reapply": {
+      "observed_at": "2026-10-08T13:02:46.616688+00:00",
+      "status": "passed",
+      "application_commit_sha": "934d2469f70586018aa1cdce053af89ca08cf21f",
+      "duration_seconds": 89.71108984947205,
+      "checks": {
+        "complete_deployment_specs": true,
+        "candidate_prerequisites": true,
+        "namespace_uid": true,
+        "credentials_unchanged": true,
+        "full_schema_0034": true,
+        "history_counts_unchanged": true,
+        "business_idle": true,
+        "jobs_unchanged": true,
+        "no_other_controllers": true,
+        "five_ready": true,
+        "historical_terminal_pods_preserved": true,
+        "pod_readiness_and_image_identity": true,
+        "packaged_source_matches_application_commit": true,
+        "worker_concurrency_two": true,
+        "nginx_matches_application_commit": true,
+        "public_signed_assets": true,
+        "backup_remains_deferred": true,
+        "homepage": true,
+        "readiness_and_queue": true,
+        "operation_deadlines": true,
+        "capacity_and_policy": true
+      },
+      "source_files_per_package": {
+        "enterprise_doc_core": 194,
+        "enterprise_doc_api": 50,
+        "enterprise_doc_worker": 15
+      }
+    }
+  },
+  "application_images": {
+    "enterprise-doc-api": "ghcr.io/drew-z/enterprise-doc-api@sha256:3b1fdaab698880d3bdb71f98e17c1165922d07a316b498e0e43f29aeaa24bffe",
+    "enterprise-doc-consumer": "ghcr.io/drew-z/enterprise-doc-consumer@sha256:3b8c762d8604b16a593aead30a4738fd8d08d63a29f7be92fc06e7574d6aedbf",
+    "enterprise-doc-redis": "redis@sha256:6ab0b6e7381779332f97b8ca76193e45b0756f38d4c0dcda72dbb3c32061ab99",
+    "enterprise-doc-web": "ghcr.io/drew-z/enterprise-doc-web@sha256:3a88da06e7d09cced81fff24a4e1493aa27a10692e2f9a220b44d6b754bb03b6",
+    "enterprise-doc-worker": "ghcr.io/drew-z/enterprise-doc-worker@sha256:8bc756d7be0530b260ac0acd850ba4598fc5545bc9e906aca8f853be102e5a52"
+  },
+  "independent_review": {
+    "status": "pending",
+    "approved_by": null
+  },
+  "backup_and_further_dr": "deferred_not_validated",
+  "remote_cleanup": {
+    "files": 192,
+    "bytes": 1562524,
+    "directories": 252,
+    "all_four_runtime_roots_absent": true
+  },
+  "model_calls_initiated": 0,
+  "emails_sent": 0,
+  "new_business_submissions": 0,
+  "source_evidence": [
+    {
+      "name": "rc42-schema-expanded-verification-20261008.json",
+      "sha256": "bf2324a805d6c2fee387a3679403639165038570c1a4531940e2cffb37b75dda"
+    },
+    {
+      "name": "rc42-schema-runtime-cleanup-receipt-20261008.json",
+      "sha256": "7aece80da1b2549b6ce70af3ca1e9bacffd7e0d06097838dbb36a57dff2c2835"
+    },
+    {
+      "name": "rc42-pod-verifier-regression-20261008.json",
+      "sha256": "ed0765c767f457b6ed5183022efb28ce25446d91fbf5d07a04d5d942de272f42"
+    },
+    {
+      "name": "rc42-release-verified-v2-20261008.json",
+      "sha256": "068459834c1cbccfa14f1cd69cd96a2ae4926c4d5a7dd00cdb6ff9161bd9efa4"
+    },
+    {
+      "name": "rc42-rollback-verified-v2-20261008.json",
+      "sha256": "7ecf161b4c437083a429c624d7b49d6d93bbdcf209b1048e1c6ed9561d8be58b"
+    },
+    {
+      "name": "rc42-reapply-verified-v2-20261008.json",
+      "sha256": "73dfcd8320eba3ed89082337bacd8cbb2c9c5e61d4a6db0386d83fded8c45713"
+    },
+    {
+      "name": "rc42-release-runtime-cleanup-receipt-20261008.json",
+      "sha256": "caa9b94f67d6721842a8e8c20ca1ecf9ed142a7531ad6d34f770f58906ded1bb"
+    },
+    {
+      "name": "rc42-rollback-runtime-cleanup-receipt-20261008.json",
+      "sha256": "f498c7398ba95286152b96b25e285364965891a3d5d6e837ed3b61061646ea23"
+    },
+    {
+      "name": "rc42-reapply-runtime-cleanup-receipt-20261008.json",
+      "sha256": "988a388605c7083e4418ba0503ba58b1b14e1e75031520d7ac9177a7ad3039d8"
+    },
+    {
+      "name": "rc42-rollback-variables-result-20261008.json",
+      "sha256": "d01c91778096fd6f9a22949dd4a482194c70d3912d4c25c6c1dfc0a526d3274e"
+    }
+  ],
+  "preserved_failure": "First release verifier counted historical terminal Pods as current replicas; original failure retained. Subsequent verifier distinguishes active Pods and checks historical terminal UID/state preservation. Six frozen-snapshot positive/negative checks passed.",
+  "remaining": [
+    "formal_API_Worker_auto_deep_quality_latency_cost_comparison",
+    "six_source_semantics_and_human_revision_acceptance",
+    "original_160_item_capacity_matrix",
+    "current_browser_recovery",
+    "new_consumption_reconciliation",
+    "mail_delivery_and_on_call_receipts",
+    "real_business_and_release_reviews_support_UAT_normal_merge"
+  ],
+  "rollback_environment_variables": "four_exact_rc40_images_verified_other_variables_unchanged"
+}

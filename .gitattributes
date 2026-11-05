@@ -8,3 +8,4 @@ evidence/m6/20260909-v0.1.34-staging-redeployment/** -text
 evaluation/presales_quality_*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 evaluation/presales_quality_*.txt -text
 scripts/evaluate_presales_quality.py text eol=lf
+scripts/evaluate_presales_gateway.py text eol=lf

@@ -1,9 +1,9 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createUploadTokenStore } from "../upload/persistence";
 import { createAgentRunRecoveryStore } from "./persistence";
-import type { AgentApiClientProtocol } from "./api/client";
+import { AgentApiClient, type AgentApiClientProtocol } from "./api/client";
 import type { AgentWorkspaceDependencies } from "./AgentWorkspace";
 import { AgentWorkspace } from "./AgentWorkspace";
 
@@ -67,12 +67,93 @@ function streamResponse(startSequence = 2): Response {
 }
 
 afterEach(() => {
+  cleanup();
   sessionStorage.clear();
   localStorage.clear();
   vi.restoreAllMocks();
 });
 
 describe("AgentWorkspace", () => {
+  function httpWorkspace(fault?: (path: string, init: RequestInit) => Promise<Response> | Response | undefined, recoveryStorage?: Storage) {
+    createUploadTokenStore(sessionStorage).save("local-token");
+    const fetcher = vi.fn(async (input: RequestInfo | URL, init: RequestInit = {}) => {
+      const path = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+      const response = fault?.(path, init);
+      if (response !== undefined) return await response;
+      if (path.endsWith("/ready-document-versions")) return Response.json([{ versionId, documentId, generationId, filename: "contract.pdf", sizeBytes: 2048, contentSha256: "a".repeat(64), createdAt }]);
+      if (path === "/api/agent-runs") return Response.json({ runId, jobId: generationId, status: "pending", replayed: true, createdAt }, { status: 200 });
+      if (path === `/api/agent-runs/${runId}`) return Response.json(runStatus("succeeded"));
+      return Response.json([]);
+    });
+    const dependencies = { createApiClient: () => new AgentApiClient({ getToken: () => "local-token", fetcher }), idempotencyKeyFactory: vi.fn(() => crypto.randomUUID()), openExternal: vi.fn() };
+    return { fetcher, dependencies, ...render(<AgentWorkspace dependencies={dependencies} recoveryStorage={recoveryStorage} />) };
+  }
+
+  async function submitRequest() {
+    await screen.findByText("contract.pdf · 2.00 KiB");
+    fireEvent.change(screen.getByLabelText("Document version"), { target: { value: versionId } });
+    fireEvent.change(screen.getByLabelText("Request"), { target: { value: "Summarize the payment terms." } });
+    fireEvent.click(screen.getByRole("button", { name: "Create run" }));
+  }
+
+  it("recovers a lost create response with the same key, including a later explicit retry", async () => {
+    let posts = 0;
+    const view = httpWorkspace(path => {
+      if (path === "/api/agent-runs" && ++posts <= 2) return Promise.reject(new TypeError("Response lost"));
+    });
+    await submitRequest();
+    expect(screen.getByText(/Submitting your task/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Creating" })).toBeDisabled();
+    await screen.findByText(/Acceptance could not be confirmed/);
+    fireEvent.click(screen.getByRole("button", { name: "Create run" }));
+    await screen.findByText("Complete");
+    const writes = view.fetcher.mock.calls.filter(([, init]) => init?.method === "POST");
+    expect(writes).toHaveLength(3);
+    expect(new Set(writes.map(([, init]) => new Headers(init?.headers).get("Idempotency-Key"))).size).toBe(1);
+    expect(view.dependencies.idempotencyKeyFactory).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("recovers a proxy 503 on refresh without another creation", async () => {
+    createAgentRunRecoveryStore(localStorage).save({ version: 1, runId, lastSequence: 0 });
+    let reads = 0;
+    const view = httpWorkspace(path => {
+      if (path === `/api/agent-runs/${runId}` && ++reads === 1) return new Response("<html>proxy unavailable</html>", { status: 503 });
+    });
+    await screen.findByText("Complete");
+    expect(reads).toBe(2);
+    expect(view.fetcher.mock.calls.every(([, init]) => (init?.method ?? "GET") === "GET")).toBe(true);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("does not retry denied reads or display a cached result", async () => {
+    createAgentRunRecoveryStore(localStorage).save({ version: 1, runId, lastSequence: 0 });
+    const view = httpWorkspace(path => path === `/api/agent-runs/${runId}` ? new Response("private proxy body", { status: 403 }) : undefined);
+    await screen.findByRole("alert");
+    expect(view.fetcher.mock.calls.filter(([path]) => path === `/api/agent-runs/${runId}`)).toHaveLength(1);
+    expect(screen.queryByText("Complete")).not.toBeInTheDocument();
+    expect(screen.queryByText(/private proxy body/)).not.toBeInTheDocument();
+  });
+
+  it("keeps an accepted task visible when recovery storage is full", async () => {
+    const storage: Storage = { length: 0, key: () => null, getItem: () => null, removeItem: vi.fn(), clear: vi.fn(), setItem: () => { throw new Error("Full"); } };
+    httpWorkspace(undefined, storage);
+    await submitRequest();
+    await screen.findByText("Complete");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("retires an in-flight create on unmount without restoring the old task", async () => {
+    let finish!: (response: Response) => void;
+    const view = httpWorkspace(path => path === "/api/agent-runs" ? new Promise<Response>(resolve => { finish = resolve; }) : undefined);
+    await submitRequest();
+    view.unmount();
+    finish(Response.json({ runId, jobId: generationId, status: "pending", replayed: false, createdAt }, { status: 201 }));
+    await waitFor(() => expect(localStorage.getItem("enterprise-doc.agent-run.v1")).toBeNull());
+    const write = view.fetcher.mock.calls.find(([, init]) => init?.method === "POST");
+    expect(write?.[1]?.signal?.aborted).toBe(true);
+  });
+
   it("creates a run, replays its timeline, and downloads only through a fresh URL", async () => {
     const tokenStore = createUploadTokenStore(sessionStorage);
     tokenStore.save("local-token");

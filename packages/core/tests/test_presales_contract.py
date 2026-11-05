@@ -28,9 +28,9 @@ def draft_payload() -> dict:
     return {
         "status": "insufficient_evidence",
         "answer": "现有片段不能证明该能力。",
-        "conditions": [],
         "missingInformation": ["请补充有效能力证明。"],
         "citations": [],
+        "prerequisites": [],
     }
 
 
@@ -68,6 +68,54 @@ def test_duplicate_ids_and_excessive_scope_are_rejected() -> None:
             CreatePacket.model_validate(
                 {"title": "采购", "sources": sources, "requirements": requirements}
             )
+
+
+@pytest.mark.parametrize("indexes", [[], [True], [-1], [1], [12], [0, 0], ["0"]])
+def test_prerequisites_require_distinct_bound_integer_citation_indexes(indexes) -> None:
+    with pytest.raises(ValidationError):
+        ModelDraft.model_validate(
+            {
+                "status": "conditional",
+                "answer": "需确认验收。",
+                "conditions": ["需确认验收。"],
+                "prerequisites": [
+                    {"condition": "需确认验收。", "state": "unknown", "citationIndexes": indexes}
+                ],
+                "citations": [
+                    {
+                        "chunkId": str(uuid4()),
+                        "documentVersionId": str(uuid4()),
+                        "excerpt": "验收未登记。",
+                    }
+                ],
+            }
+        )
+
+
+@pytest.mark.parametrize(
+    "status,conditions", [("supported", []), ("conditional", ["改写的条件。"]), ("conditional", [])]
+)
+def test_structured_prerequisites_cannot_be_hidden_by_overall_assessment(
+    status, conditions
+) -> None:
+    with pytest.raises(ValidationError):
+        ModelDraft.model_validate(
+            {
+                "status": status,
+                "answer": "核对验收。",
+                "conditions": conditions,
+                "prerequisites": [
+                    {"condition": "需确认验收。", "state": "unknown", "citationIndexes": [0]}
+                ],
+                "citations": [
+                    {
+                        "chunkId": str(uuid4()),
+                        "documentVersionId": str(uuid4()),
+                        "excerpt": "验收未登记。",
+                    }
+                ],
+            }
+        )
 
 
 def test_citations_are_bound_to_tenant_version_candidate_and_exact_excerpt() -> None:
@@ -159,9 +207,10 @@ async def test_gateway_is_one_request_and_rejects_truncation_tools_and_bad_schem
         gateway.provenance["promptSha256"]
         == hashlib.sha256(requests[0]["messages"][0]["content"].encode()).hexdigest()
     )
-    assert json.loads(requests[0]["messages"][1]["content"]) == payload.model_dump(
-        mode="json", by_alias=True
-    )
+    assert json.loads(requests[0]["messages"][1]["content"]) == {
+        "requirement": payload.requirement.model_dump(mode="json", by_alias=True),
+        "evidence": [],
+    }
     for change in ["length", "tool", "approved", "multiple"]:
         reply = {
             "choices": [
@@ -240,7 +289,8 @@ async def test_gateway_timeout_has_no_retry_and_deterministic_mode_never_fakes_r
 
 
 @pytest.mark.parametrize("route", ["primary", "fallback"])
-async def test_explicit_presales_route_is_one_request_with_its_own_deadline(route: str) -> None:
+@pytest.mark.parametrize("budgets", [(120, None, 150), (300, 90, 660), (180, 300, 900)])
+async def test_explicit_presales_route_is_one_request_with_its_own_deadline(route, budgets) -> None:
     requests: list[httpx.Request] = []
 
     async def timeout(request: httpx.Request) -> httpx.Response:
@@ -262,7 +312,12 @@ async def test_explicit_presales_route_is_one_request_with_its_own_deadline(rout
         fallback_model_version="fallback-version",
     )
     settings = PresalesSettings.model_validate(
-        {"model_route": route, "model_timeout_seconds": 120, "row_timeout_seconds": 150}
+        {
+            "model_route": route,
+            "model_timeout_seconds": budgets[0],
+            "fallback_model_timeout_seconds": budgets[1],
+            "row_timeout_seconds": budgets[2],
+        }
     )
     gateway = OpenAICompatiblePresalesGateway(
         model, presales_settings=settings, transport=httpx.MockTransport(timeout)
@@ -277,8 +332,10 @@ async def test_explicit_presales_route_is_one_request_with_its_own_deadline(rout
     assert str(requests[0].url) == f"https://{route}.example/v1/chat/completions"
     assert requests[0].headers["Authorization"] == f"Bearer {route}-secret"
     assert json.loads(requests[0].content)["model"] == f"{route}-model"
-    assert requests[0].extensions["timeout"]["read"] == 120
-    assert gateway.settings.route_deadline_seconds == 120
+    expected = budgets[1] if route == "fallback" and budgets[1] is not None else budgets[0]
+    assert requests[0].extensions["timeout"]["read"] == expected
+    assert gateway.settings.route_deadline_seconds == expected
+    assert gateway.request_timeout_seconds == expected
     assert gateway.model_name == f"{route}-model"
     assert gateway.provenance["configuredModelRevision"] == (
         "primary-revision" if route == "primary" else None
@@ -296,3 +353,18 @@ def test_presales_route_rejects_missing_configuration_and_invalid_wait_budget() 
         PresalesSettings.model_validate({"model_timeout_seconds": 120, "row_timeout_seconds": 90})
     with pytest.raises(ValueError):
         PresalesSettings.model_validate({"model_route": "automatic"})
+
+
+@pytest.mark.parametrize(
+    "values",
+    [
+        {"model_timeout_seconds": 301, "row_timeout_seconds": 900},
+        {"fallback_model_timeout_seconds": 301, "row_timeout_seconds": 900},
+        {"row_timeout_seconds": 901},
+        {"fallback_model_timeout_seconds": 120, "row_timeout_seconds": 120},
+        {"fallback_model_timeout_seconds": float("nan")},
+    ],
+)
+def test_long_reasoning_budget_stays_bounded(values):
+    with pytest.raises(ValueError):
+        PresalesSettings.model_validate(values)

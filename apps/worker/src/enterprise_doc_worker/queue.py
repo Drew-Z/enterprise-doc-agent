@@ -368,6 +368,9 @@ def register_job_task(
 ) -> None:
     @app.task(  # type: ignore[untyped-decorator]
         bind=True,
+        # This closure owns this application's resources and event-loop runner.
+        # Sharing it with later Celery apps can dispatch into a closed runner.
+        shared=False,
         name=JOB_TASK_NAME,
         acks_late=True,
         reject_on_worker_lost=True,

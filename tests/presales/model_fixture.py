@@ -8,8 +8,7 @@ from uuid import uuid4
 
 import httpx
 
-from enterprise_doc_core.presales.citation_selection import SelectionDraft
-from enterprise_doc_core.presales.schemas import GenerationInput
+from enterprise_doc_core.presales.citation_selection import SelectionDraft, SelectionInput
 from tests.presales.ingestion_fixtures import UploadFixture
 
 
@@ -26,7 +25,7 @@ class UploadedEvidenceModel:
 
     async def respond(self, request: httpx.Request) -> httpx.Response:
         envelope = json.loads(request.content)
-        payload = GenerationInput.model_validate_json(envelope["messages"][1]["content"])
+        payload = SelectionInput.model_validate_json(envelope["messages"][1]["content"])
         fixture = next(
             (
                 item
@@ -38,24 +37,22 @@ class UploadedEvidenceModel:
         )
         if fixture is None:
             raise RuntimeError("unknown synthetic acceptance requirement")
-        evidence = next(
-            (item for item in payload.evidence if fixture.excerpt in item["text"]), None
-        )
+        evidence = next((item for item in payload.evidence if fixture.excerpt in item.text), None)
         if evidence is None:
             raise RuntimeError("actual retrieval did not return the required uploaded evidence")
         citation = {
-            "chunkId": evidence["chunkId"],
-            "documentVersionId": evidence["documentVersionId"],
+            "citationId": evidence.citation_id,
+            "source": evidence.source.model_dump(by_alias=True),
             "excerpt": fixture.excerpt,
         }
         self.calls.append({"requirementKey": payload.requirement.key, "citation": citation})
         draft = SelectionDraft.model_validate(
             {
                 "status": "supported",
+                "prerequisites": [],
                 "answer": "受控验收输出: " + fixture.excerpt,
-                "conditions": [],
                 "missingInformation": [],
-                "citations": [{"citationId": evidence["citationId"]}],
+                "citations": [{"citationId": evidence.citation_id}],
             }
         )
         return httpx.Response(

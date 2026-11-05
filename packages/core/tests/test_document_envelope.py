@@ -117,6 +117,72 @@ async def test_txt_envelope_does_not_read_an_unsampled_middle() -> None:
     assert store.calls == [(0, 7), (len(content) - 8, len(content) - 1)]
 
 
+@pytest.mark.parametrize("extension", [".pdf", ".txt", ".docx"])
+async def test_verified_content_preserves_validation_without_storage_reads(extension: str) -> None:
+    content = {
+        ".pdf": b"%PDF-1.7\nbody",
+        ".txt": b"verified text",
+        ".docx": _docx(_valid_docx_entries()),
+    }[extension]
+    expected, _ = await _validate(content, extension=extension)
+    store = RangeObjectStore(b"unrelated storage bytes")
+    result = await validate_document_envelope(
+        object_store=store,
+        bucket="documents",
+        key="m1/object",
+        size_bytes=len(content),
+        extension=extension,
+        settings=UploadSettings(),
+        verified_content=content,
+    )
+    assert result.detected_media_type == expected
+    assert store.calls == []
+
+
+@pytest.mark.parametrize(
+    ("content", "extension", "code"),
+    [
+        (b"not-pdf", ".pdf", "document_pdf_signature_invalid"),
+        (b"bad\x00text", ".txt", "document_txt_nul"),
+        (b"bad\xfftext", ".txt", "document_txt_invalid_utf8"),
+        (b"not-zip", ".docx", "document_docx_zip_invalid"),
+    ],
+)
+async def test_verified_content_still_rejects_invalid_envelopes(
+    content: bytes, extension: str, code: str
+) -> None:
+    store = RangeObjectStore(b"unrelated storage bytes")
+    with pytest.raises(DocumentEnvelopeViolation) as error:
+        await validate_document_envelope(
+            object_store=store,
+            bucket="documents",
+            key="m1/object",
+            size_bytes=len(content),
+            extension=extension,
+            settings=UploadSettings(),
+            verified_content=content,
+        )
+    assert error.value.code == code
+    assert store.calls == []
+
+
+@pytest.mark.parametrize("oversized", [False, True])
+async def test_verified_content_requires_complete_bounded_bytes(oversized: bool) -> None:
+    content = b"x" * (1024 * 1024 + 1) if oversized else b"text"
+    store = RangeObjectStore(content)
+    with pytest.raises(ValueError, match="complete and within the buffer limit"):
+        await validate_document_envelope(
+            object_store=store,
+            bucket="documents",
+            key="m1/object",
+            size_bytes=len(content) if oversized else len(content) + 1,
+            extension=".txt",
+            settings=UploadSettings(),
+            verified_content=content,
+        )
+    assert store.calls == []
+
+
 def _docx(entries: list[tuple[str, bytes]]) -> bytes:
     output = BytesIO()
     with warnings.catch_warnings():

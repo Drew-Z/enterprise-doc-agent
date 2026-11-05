@@ -1,0 +1,359 @@
+{
+  "schema_version": 1,
+  "status": "measured_latency_targets_unmet",
+  "commit_sha": "934d2469f70586018aa1cdce053af89ca08cf21f",
+  "environment": "staging",
+  "profile": "single-node-4c4g",
+  "database_revision": "20261008_0034",
+  "completed_at": "2026-10-08T18:52:06.343601+00:00",
+  "executed_by": "codex-primary-assistant",
+  "review": {
+    "status": "pending",
+    "independent_business_approval": false
+  },
+  "fixed_plan": {
+    "planned": 160,
+    "submitted": 160,
+    "passed_within_sampler": 159,
+    "sampler_failed": 1,
+    "not_run": 0,
+    "other_status_counts": {
+      "passed": 159,
+      "failed": 1
+    },
+    "original_thresholds_ms": {
+      "upload": 5000,
+      "ingestion": 30000,
+      "retrieval": 2000,
+      "admission": 2000
+    }
+  },
+  "performance": {
+    "planned_tasks": 160,
+    "business_successes": 159,
+    "business_non_successes": 1,
+    "expected_failures": 0,
+    "not_run": 0,
+    "interrupted": 0,
+    "expectations_met": 159,
+    "normal_failure_rate": 0.00625,
+    "boundaries": {
+      "upload": {
+        "planned": 160,
+        "observed": 160,
+        "passed": 160,
+        "failed": 0,
+        "expected_failure": 0,
+        "interrupted": 0,
+        "not_run": 0,
+        "sample_count": 160,
+        "min_ms": 3008.106959052384,
+        "p50_ms": 3486.7119202390313,
+        "p95_ms": 5070.325746200979,
+        "p99_ms": 6830.741594079882,
+        "max_ms": 7005.3866361267865,
+        "proposed_target_ms": 5000.0,
+        "proposed_target_met": false
+      },
+      "ingestion": {
+        "planned": 160,
+        "observed": 160,
+        "passed": 160,
+        "failed": 0,
+        "expected_failure": 0,
+        "interrupted": 0,
+        "not_run": 0,
+        "sample_count": 160,
+        "min_ms": 9662.686306983232,
+        "p50_ms": 11567.992566153407,
+        "p95_ms": 20564.72588609904,
+        "p99_ms": 35648.85216439143,
+        "max_ms": 36329.590898007154,
+        "proposed_target_ms": 30000.0,
+        "proposed_target_met": true
+      },
+      "retrieval": {
+        "planned": 160,
+        "observed": 160,
+        "passed": 160,
+        "failed": 0,
+        "expected_failure": 0,
+        "interrupted": 0,
+        "not_run": 0,
+        "sample_count": 160,
+        "min_ms": 1468.0628818459809,
+        "p50_ms": 1628.9475630037487,
+        "p95_ms": 2844.604839105159,
+        "p99_ms": 4515.815724153072,
+        "max_ms": 4673.926000017673,
+        "proposed_target_ms": 2000.0,
+        "proposed_target_met": false
+      },
+      "generation_recovery": {
+        "planned": 160,
+        "observed": 160,
+        "passed": 159,
+        "failed": 1,
+        "expected_failure": 0,
+        "interrupted": 0,
+        "not_run": 0,
+        "sample_count": 160,
+        "min_ms": 28200.418808031827,
+        "p50_ms": 37800.01671984792,
+        "p95_ms": 138016.16415195167,
+        "p99_ms": 277695.004473906,
+        "max_ms": 315405.71937477216,
+        "proposed_target_ms": 450000.0,
+        "proposed_target_met": true
+      }
+    },
+    "generation_acceptance": {
+      "observed": 160,
+      "sample_count": 160,
+      "min_ms": 1684.7353959456086,
+      "p50_ms": 1810.6589671224356,
+      "p95_ms": 2397.323917131871,
+      "p99_ms": 2732.282403856516,
+      "max_ms": 3377.9382589273155,
+      "proposed_target_ms": 2000.0
+    },
+    "generation_terminal": {
+      "observed": 160,
+      "sample_count": 160,
+      "min_ms": 17522.141653113067,
+      "p50_ms": 27387.769107241184,
+      "p95_ms": 127616.11423268914,
+      "p99_ms": 266377.692359034,
+      "max_ms": 313673.6542591825
+    }
+  },
+  "original_latency_targets_met": {
+    "upload": false,
+    "ingestion": true,
+    "retrieval": false,
+    "admission": false
+  },
+  "ledger": {
+    "checks": {
+      "schema_matches": true,
+      "attempts_bounded_by_submitted": true,
+      "all_attempts_terminal": true,
+      "attempt_policy_matches": true,
+      "all_known_attempt_refs_exist": true,
+      "all_known_version_refs_exist": true,
+      "passed_samples_have_successful_attempt": true,
+      "once_only_settlements": true,
+      "no_task_reservations": true,
+      "task_usage_matches": true,
+      "no_storage_reservations": true,
+      "all_jobs_terminal": true,
+      "all_calls_terminal": true,
+      "per_attempt_call_limit": true,
+      "all_call_operations_known": true,
+      "document_reservations_terminal": true,
+      "document_bytes_match_storage": true,
+      "document_once_only_settlement": true,
+      "passed_documents_ready": true,
+      "resource_samples_observed": true,
+      "resource_target_matches": true,
+      "known_supplier_usage_matches": true
+    },
+    "checks_passed": true,
+    "attempts": 160,
+    "attempts_succeeded": 159,
+    "attempts_not_succeeded": 1,
+    "successful_consumptions": 159,
+    "releases": 1,
+    "documents": 160,
+    "documents_ready": 160,
+    "document_bytes": 1943934,
+    "model_calls": 172,
+    "embedding_calls": 480,
+    "active_jobs": 0
+  },
+  "failed_samples": [
+    {
+      "repetition": 1,
+      "task_index": 2,
+      "case": "docx",
+      "phase": "ramp",
+      "sampler_status": "failed",
+      "reason": "unexpected_generation_outcome",
+      "boundaries": {
+        "upload": {
+          "status": "passed",
+          "duration_ms": 7005.3866361267865,
+          "reason": null,
+          "started_at": "2026-10-08T17:17:05.892887+00:00",
+          "completed_at": "2026-10-08T17:17:12.898275+00:00"
+        },
+        "ingestion": {
+          "status": "passed",
+          "duration_ms": 11555.73997600004,
+          "reason": null,
+          "started_at": "2026-10-08T17:17:12.898289+00:00",
+          "completed_at": "2026-10-08T17:17:24.454049+00:00"
+        },
+        "retrieval": {
+          "status": "passed",
+          "duration_ms": 1583.3804695867002,
+          "reason": null,
+          "started_at": "2026-10-08T17:17:24.454071+00:00",
+          "completed_at": "2026-10-08T17:17:26.037454+00:00"
+        },
+        "generation_recovery": {
+          "status": "failed",
+          "duration_ms": 315405.71937477216,
+          "reason": "unexpected_generation_outcome",
+          "started_at": "2026-10-08T17:17:26.037475+00:00",
+          "accept_duration_ms": 1831.4380599185824,
+          "accept_status": 202,
+          "admission_response": "receipt",
+          "first_read_duration_ms": 1190.0237989611924,
+          "terminal_duration_ms": 313673.6542591825,
+          "completed_at": "2026-10-08T17:22:41.443196+00:00"
+        }
+      },
+      "server_state": "failed",
+      "server_error": "presales_model_timeout",
+      "later_server_success_does_not_change_sampler_failure": true
+    }
+  ],
+  "cost": {
+    "matched": 163,
+    "unknown": 9,
+    "known_platform_debits": {
+      "CNY": "1.344912",
+      "USD": "0.022"
+    },
+    "known_model_tokens": 636882,
+    "calls_without_usage": 9,
+    "embedding_known_tokens": 13440,
+    "embedding_actual_debit": null
+  },
+  "resources": {
+    "scope": "read-only-business-resource-observation",
+    "schema_version": 1,
+    "status": "read_only_observed",
+    "production_capacity_approved": false,
+    "planned_samples": 194,
+    "observed_samples": 194,
+    "not_run": 0,
+    "issues": [],
+    "identity_sha256": "93fae408b36506ae1c1eb73f34e1e7cb73b439a1dcc68581e851771cc7a09d49",
+    "unique_node_metric_samples": 194,
+    "host": {
+      "memory_available_bytes_min": 1292513280,
+      "root_disk_available_bytes_min": 14522413056,
+      "cpu_busy_percent_max": 10.397700047915668,
+      "kubernetes_cpu_cores_max": 0.676752546
+    },
+    "dependencies": {
+      "object_store": {
+        "observed_events": 565.0,
+        "mean_seconds": 0.9232333123057553,
+        "observed_series_pairs": 2,
+        "p95_seconds": null
+      },
+      "model": {
+        "observed_events": 412.0,
+        "mean_seconds": 0.45518212318443013,
+        "observed_series_pairs": 1,
+        "p95_seconds": null
+      }
+    },
+    "unverified_gauges": [],
+    "resource_observation_scope": "Worker due durable jobs and shared Redis server clients",
+    "business_windows": [
+      {
+        "phase": "ramp",
+        "repetition": 1,
+        "observed_samples": 44,
+        "target_binding_verified": false,
+        "covered_seconds": 1375.750737
+      },
+      {
+        "phase": "steady_state",
+        "repetition": 1,
+        "observed_samples": 20,
+        "target_binding_verified": false,
+        "covered_seconds": 608.741721
+      },
+      {
+        "phase": "burst",
+        "repetition": 1,
+        "observed_samples": 24,
+        "target_binding_verified": false,
+        "covered_seconds": 735.98714
+      },
+      {
+        "phase": "recovery",
+        "repetition": 1,
+        "observed_samples": 16,
+        "target_binding_verified": false,
+        "covered_seconds": 478.681826
+      },
+      {
+        "phase": "ramp",
+        "repetition": 2,
+        "observed_samples": 21,
+        "target_binding_verified": false,
+        "covered_seconds": 641.430627
+      },
+      {
+        "phase": "steady_state",
+        "repetition": 2,
+        "observed_samples": 16,
+        "target_binding_verified": false,
+        "covered_seconds": 480.337109
+      },
+      {
+        "phase": "burst",
+        "repetition": 2,
+        "observed_samples": 19,
+        "target_binding_verified": false,
+        "covered_seconds": 576.362036
+      },
+      {
+        "phase": "recovery",
+        "repetition": 2,
+        "observed_samples": 31,
+        "target_binding_verified": false,
+        "covered_seconds": 962.521828
+      }
+    ],
+    "limitations": [
+      "No workload, capacity target or production approval is implied.",
+      "Kubernetes resource timestamps may repeat; unique samples are counted separately.",
+      "Dependency values are process-observed counters; absent/unchanged work has no latency estimate.",
+      "Dependency events are not provider invoices or attributed business/model requests.",
+      "Queue/Redis values require a successful Worker sample within 45 seconds; legacy gauges and zeros alone are not idle proof.",
+      "Business windows are temporal overlap only; actual target binding remains unverified.",
+      "No browser recovery, migration version, source commit or secret-version attestation."
+    ]
+  },
+  "business_process_exit_code": 0,
+  "observer_process_exit_code": 0,
+  "business_replays": 0,
+  "production_capacity_approved": false,
+  "historical_failures_unchanged": true,
+  "source_hashes": {
+    "capacity-envelope.json": "788e828dfa68ce955938dc386cc647eb96379f043acd6d9dd028d28bb1b6a889",
+    "capacity-result.json": "789d5f56f81e7b53cd2fab031cc446490956b8a67eda383c8474200e1fdcb179",
+    "process-terminal-receipt.json": "265a96db31d3661cc98f854ca5484b7b02e8b933a2f7bcf96d72508871e9f54c",
+    "result-extraction-receipt.json": "3ab9d0e9f6c816cb9ae7b13042c642a94b661ecdde4db1f4deb4fe6b73675d9f",
+    "readback-terminal.json": "a0a19244f85159aa5b777a89a75de617edce2ad3a9dcef6fb03fb67a329ab421",
+    "supplier-logs-direct.json": "1c8af4e828eed32c6888090f72ddcd381128a0ba281f82c74e573ba7bf1b866e",
+    "supplier-currency-settings.json": "bcb0311143f2ea568428c7f7b5f7903c97f320c251f748314dfbe7f00998754e",
+    "verified-analysis.json": "3cb731affe20e84e03668e546a5905c642d55379e9e3ea4807ed799ae8503f8b",
+    "telemetry-v2/run.json": "190bcb7388fdaad8a7f44e650f761fef75224e6b0cda6206a0557fe25d8f5a90"
+  },
+  "limitations": [
+    "Full denominator includes failed and unsubmitted rows; server recovery does not rewrite sampler failures.",
+    "Public HTTPS is called from the API Pod, and retrieval runs in the production Core observer.",
+    "Synthetic single-chunk TXT/PDF/DOCX is not large-document capacity or independent human review.",
+    "Historical terminal Pods are individually bound before business; all new failures remain in resource samples.",
+    "Currencies are separate; absent exact request ID and embedding actual charges remain unknown.",
+    "The measured rc42 source is not relabelled as rc43 capacity acceptance."
+  ]
+}

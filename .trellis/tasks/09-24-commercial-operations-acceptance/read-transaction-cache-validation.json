@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "at": "2026-10-02T15:42:21.943830+00:00",
+  "status": "read_only_candidate_integrated_and_live_read_verified_not_deployed",
+  "production_release": "v0.1.45-rc.16",
+  "production_source": "63de37c080cd83a02682ad1d2dd30c217a6aecd7",
+  "threshold_comparison": {
+    "reads": 32,
+    "business_selects": 192,
+    "round_order": [
+      5,
+      0,
+      0,
+      5
+    ],
+    "threshold_zero_fix_established": false
+  },
+  "transaction_comparison": {
+    "reads": 32,
+    "business_selects": 192,
+    "threshold": 5,
+    "rollback_checkin_cache_always_empty": true,
+    "commit_last_two_reads_ms": [
+      [
+        694.779,
+        688.332
+      ],
+      [
+        657.33,
+        657.699
+      ]
+    ],
+    "all_views_identical": true,
+    "guard_statements_included_in_timing": true
+  },
+  "candidate_http": {
+    "fresh_processes": 2,
+    "authenticated_reads": 16,
+    "status_200": 16,
+    "response_hashes_identical": true,
+    "sql_selects_per_request": 8,
+    "last_two_reads_ms": [
+      [
+        1084.314,
+        1337.828
+      ],
+      [
+        1151.533,
+        1662.529
+      ]
+    ],
+    "warm_prepared_names": 10,
+    "cold_and_some_warm_retransmissions_persist": true,
+    "scope": "isolated ASGI with exact candidate modules and forced read-only guard; not public/serving admission"
+  },
+  "source_hashes": {
+    "enterprise_doc_core.db.session": "9b205a8f8a119f57f3ee88e636af4b78e142e98923cbdd967d04487df5780337",
+    "enterprise_doc_core.db": "7bde2652253b6f40c8ed9361341b1d45d0333607dae87606c4f817fc1b34f631",
+    "enterprise_doc_core.presales.service": "b351e22b9609bcb07fcbdf7632aa433136738d9fbd92f255fb691976d0e1d29e",
+    "enterprise_doc_api.auth.jwt": "e9e5a1b2a7d354287660209e0a6d2986ad38a9fb55439c39b3bdefb079ea5d4e"
+  },
+  "validation": {
+    "integration_tests_passed": 107,
+    "integration_seconds": 101.93,
+    "local_full_nonintegration": {
+      "passed": 2212,
+      "failed": 1,
+      "deselected": 479,
+      "subtests_passed": 23,
+      "seconds": 186.01,
+      "failure": "Windows default GBK decoding of a UTF-8 synthetic evaluation result; invocation omitted -X utf8"
+    },
+    "targeted_utf8_rerun": {
+      "passed": 1,
+      "seconds": 0.93
+    },
+    "ruff_check": "passed",
+    "ruff_format_files": 642,
+    "mypy_sources": 251,
+    "red_regression": "prepared packet query absent before correction",
+    "read_only_write_rejection_and_pool_reset": "passed",
+    "exact_commit_ci": "recorded separately"
+  },
+  "preserved_failures": [
+    "initial integration harness rejected development credentials with APP_ENV=test",
+    "expected pre-fix prepared-query regression failure",
+    "default-encoding quality failure"
+  ],
+  "owned_test_containers_removed": 3,
+  "production_changes": 0,
+  "business_writes": 0,
+  "provider_calls": 0,
+  "performance_and_capacity_gate_complete": false,
+  "five_acceptance_gates_complete": false,
+  "evidence_sha256": {
+    "business-read-intent.json": "562922ff15fd7b11581b62285c9f15f23dde6e9de06b4d4f5b9159adaeebd39f",
+    "business-read-results.jsonl": "bf5af38d7321fcc93722b2d8f4eecbecc216249a3251ebc8d39345384bd43c2a",
+    "business-read-commit-intent.json": "52fc7ff29c3f272e6b86784eea0692a1b16e9528d532414954321c18990790d4",
+    "business-read-commit-results.jsonl": "f90990138d4b44bd31ee013cc8a953248f5d670b3ab9ee1666d5a15c6261eb31",
+    "candidate-read-http-intent.json": "833dc2f6b457f59f36beb49ed59c00691e14b70d1d0b74ccddfdfc87967d8e33",
+    "candidate-read-http-0.jsonl": "2e73c1f2ae4e0bab3070b7b65f612b83bd836931430081fbbe8e38f5f277a4e8",
+    "candidate-read-http-1.jsonl": "dfb03e96bc9d3794871dcc78c3284f760d80e68de42ec06e6ee8d6243bacbed8",
+    "read-cache-red-result.json": "c52fe7a85f88389f2c7abd645a5ed0e15cf851b5b7bf6cb5699c1d34e1125f34",
+    "read-cache-red-local-result.json": "5cee99876e64b8601316ea34654e6e6f85b9c167314d589d59080c8473bc5b50",
+    "read-cache-green-result.json": "c9a62877a0fa0d9516b74bcfb58c31ad7bf4b4e2871ae8eeff45efa5141f6246",
+    "read-cache-green.log": "a62f55e6001c1e5036fc40a8aa83fc1a820c029e555a3e356168e2bc249a8a87",
+    "read-cache-quality-default-encoding.log": "9cc9f6f4a3072d525f74e10d3833c22b914225da01428db3caa9f3948c3cc83a"
+  }
+}

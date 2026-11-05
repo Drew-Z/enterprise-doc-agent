@@ -18,6 +18,11 @@ export function tenantUsage(overrides: Partial<TenantUsage> = {}): TenantUsage {
     providerRequestsReserved: 6,
     providerRequestsRemaining: 70,
     costStatus: "unknown",
+    modelCalls: { calls: 5, unresolvedCalls: 1, unknownCostCalls: 5, usageKnownCalls: 3, knownTotalTokens: 128 },
+    productQuotas: [
+      { metric: "agent_task", limit: 20, used: 3, reserved: 2, remaining: 15 },
+      { metric: "document_bytes", limit: 10485760, used: 2097152, reserved: 1048576, remaining: 7340032 },
+    ],
     recentEvents: [{
       eventType: "consume", quantity: 1, operationId: "10000000-0000-4000-8000-000000000003",
       provider: "test-provider", model: "test-model", totalTokens: null, estimatedCost: null,
@@ -37,6 +42,7 @@ export function usageWithoutPeriod(status: "legacy" | "inactive"): TenantUsage {
     periodStart: null, periodEnd: null, providerRequestLimit: null,
     providerRequestsUsed: 0, providerRequestsReserved: 0,
     providerRequestsRemaining: status === "inactive" ? 0 : null,
-    recentEvents: [], costStatus: "unknown",
+    recentEvents: [], costStatus: "unknown", productQuotas: [],
+    modelCalls: { calls: 0, unresolvedCalls: 0, unknownCostCalls: 0, usageKnownCalls: 0, knownTotalTokens: 0 },
   });
 }

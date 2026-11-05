@@ -1,0 +1,23 @@
+{
+  "schema_version": "analysis.independent-trial.v1",
+  "participant_id": null,
+  "independent_from_development": null,
+  "pack_id": null,
+  "candidate_identity": null,
+  "session_id": null,
+  "started_at": null,
+  "ended_at": null,
+  "completed": false,
+  "units_total": 30,
+  "units_completed": null,
+  "units_failed": null,
+  "manual_edits": null,
+  "severe_errors": null,
+  "elapsed_seconds": null,
+  "would_reuse": null,
+  "quality_score": null,
+  "support_interventions": [],
+  "incidents": [],
+  "artifacts": [],
+  "notes": "Do not mark UAT passed without a real independent participant and reviewable records."
+}

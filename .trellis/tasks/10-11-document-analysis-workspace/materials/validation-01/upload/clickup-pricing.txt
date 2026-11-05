@@ -1,0 +1,504 @@
+![](/assets/v5/navigation-sprite.svg)
+
+
+100% Money-back Guarantee
+
+# The best work solution, for the best price.
+
+100% Money-back Guarantee
+
+Save up to 30% with yearly
+
+### free forever
+
+free forever yearly price:FreePer user/month, billed yearlyfree forever monthly price:FreePer user/month, billed monthly
+
+Key Features:
+
+60MB Storage
+
+Unlimited Tasks
+
+Unlimited Free Plan Members
+
+Two-Factor Authentication
+
+Collaborative Docs
+
+Kanban Boards
+
+Sprint Management
+
+Calendar View
+
+Basic Custom Field Manager
+
+In-App Video Recording
+
+24/7 Support
+
+1 Form
+
+### unlimited
+
+unlimited yearly price:$7Per user/month, billed yearlyunlimited monthly price:$10Per user/month, billed monthly
+
+Everything in Free Forever, plus:
+
+Unlimited Spaces, Folders, and Forms
+
+Unlimited Gantt Charts
+
+Unlimited Integrations
+
+Unlimited Storage
+
+Unlimited Custom Fields
+
+Native Time Tracking
+
+Goals & Portfolio Management
+
+Guests With Permission Control
+
+Resource Management
+
+ClickUp Chat
+
+Email in ClickUp
+
+Integrations like Slack, Hubspot, Google Drive, and more
+
+and much more...
+
+### business
+
+Popular
+
+business yearly price:$12Per user/month, billed yearlybusiness monthly price:$19Per user/month, billed monthly
+
+Everything in Unlimited, plus:
+
+Unlimited Dashboards with Advanced Cards
+
+Unlimited Message History
+
+Unlimited Activity Views
+
+Unlimited Timeline Views
+
+Webhooks & Automation Integrations
+
+5K Automations Per Month$100 in value
+
+Mind Mapping
+
+Private Whiteboards
+
+Custom Exporting
+
+Sprint Points & Reporting
+
+Portfolio Workload Management
+
+Google SSO
+
+SMS 2-Factor Authentication
+
+Unlimited Proofing
+
+and much more...
+
+### enterprise
+
+Get a custom demo
+
+Everything in Business, plus:
+
+Enterprise Permissions and Governance
+
+Unlimited Custom Roles
+
+SAML SSO & SCIM Provisioning
+
+Audit Log
+
+Session Management
+
+Enterprise API
+
+250K Automations Per Month$750 in value
+
+Custom Branding
+
+Default Personal Views
+
+MSA & HIPAA Available
+
+Data Residency
+
+Enterprise-Scale Automations & Integrations
+
+Enterprise-Scale API Usage
+
+Live Onboarding Training
+
+Customer Success Manager
+
+Access to Managed Services
+
+and much more...
+
+TRUSTED BY THE BEST
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Usage |
+| [Tasks](/features/tasks) | Unlimited | Unlimited | Unlimited | Unlimited |
+| [Spaces](/spaces) | 5 Spaces | Unlimited | Unlimited | Unlimited |
+| [Lists/Space](https://help.clickup.com/hc/en-us/articles/6309466958103-Intro-to-Spaces) | 40 | 200 | 400 | 1000 |
+| [Folders/Space](https://help.clickup.com/hc/en-us/articles/6308812667671-How-to-Create-a-Folder?_gl=1*1sojb40*_gcl_au*MTc1MTU4NzI1OS4xNjg0Mjc4Mjc0LjE2NTU4OTEzNC4xNjg0NTM5NTU4LjE2ODQ1Mzk1NTc.) | 100 | 200 | 400 | Unlimited |
+| [Custom Views](/features/views) | Unlimited | Unlimited | Unlimited | Unlimited |
+| Essentials |
+| [AI Notetaker Compatible](/brain/ai-notetaker) |
+| [AI Compatible](/ai) |
+| [AI Free Usage](https://help.clickup.com/hc/en-us/articles/20686299081879-ClickUp-Brain-feature-availability-and-limits#h_01HMF5H5GJ30T7EK6BBSFCPGMQ) | Limits apply | Limits apply | Limits apply | Limits apply |
+| [Custom Field Manager Basic](https://help.clickup.com/hc/en-us/articles/13066263096727-Custom-Field-Manager-Overview) |
+| [Custom Field Manager Advanced](https://help.clickup.com/hc/en-us/articles/13066263096727-Custom-Field-Manager-Overview) |
+| [File Storage](https://help.clickup.com/hc/en-us/articles/6308542207255-Cloud-Storage-Google-Drive-Dropbox-OneDrive-SharePoint-Box?_gl=1*t53td8*_gcl_au*MTc1MTU4NzI1OS4xNjg0Mjc4Mjc0LjE2NTU4OTEzNC4xNjg0NTM5NTU4LjE2ODQ1Mzk1NTc.) | 60MB | Unlimited | Unlimited | Unlimited |
+| [Privacy and Sharing](https://help.clickup.com/hc/en-us/articles/6327713963031-Privacy-and-security) |
+| [Guests](https://help.clickup.com/hc/en-us/articles/6310022323991-Guests-overview?_gl=1*t53td8*_gcl_au*MTc1MTU4NzI1OS4xNjg0Mjc4Mjc0LjE2NTU4OTEzNC4xNjg0NTM5NTU4LjE2ODQ1Mzk1NTc.) | Guests must be given full access (no permissions) |
+| [Custom Fields](/features/custom-fields) | Trial |
+| [Pinning Custom Fields](/features/custom-fields) |
+| [Template Everything](/templates) |
+| Views |
+| [List](https://help.clickup.com/hc/en-us/articles/6310260883351-List-view-overview?_gl=1*1p1rl2l*_gcl_au*MTc1MTU4NzI1OS4xNjg0Mjc4Mjc0LjE2NTU4OTEzNC4xNjg0NTM5NTU4LjE2ODQ1Mzk1NTc.) |
+| [Board](/features/kanban-board) |
+| [Calendar](/features/calendar-view) |
+| [Team](https://help.clickup.com/hc/en-us/articles/6310063253911-Box-view-overview?_gl=1*1xrcdwd*_gcl_au*MTc1MTU4NzI1OS4xNjg0Mjc4Mjc0LjE2NTU4OTEzNC4xNjg0NTM5NTU4LjE2ODQ1Mzk1NTc.) |
+| [Gantt](/features/gantt-chart-view) | Trial |
+| [Activity](https://help.clickup.com/hc/en-us/articles/6310079875095-Activity-View?_gl=1*dvuza0*_gcl_au*MTc1MTU4NzI1OS4xNjg0Mjc4Mjc0LjE2NTU4OTEzNC4xNjg0NTM5NTU4LjE2ODQ1Mzk1NTc.) | 1 day | 7 days |
+| [Timeline](https://help.clickup.com/hc/en-us/articles/6310399909143-Add-a-Timeline-view?_gl=1*6th3i*_gcl_au*MTc1MTU4NzI1OS4xNjg0Mjc4Mjc0LjE2NTU4OTEzNC4xNjg0NTM5NTU4LjE2ODQ1Mzk1NTc.) | Trial | Trial |
+| [Workload](https://help.clickup.com/hc/en-us/articles/6310374956439-Resource-Management?_gl=1*1jztbwr*_gcl_au*MTc1MTU4NzI1OS4xNjg0Mjc4Mjc0LjE2NTU4OTEzNC4xNjg0NTM5NTU4LjE2ODQ1Mzk1NTc.) | Trial | Trial | Custom capacity & additional groups |
+| [Table (Spreadsheets)](/features/table-view) |
+| [Map](/templates) | Trial |
+| [Mind Map](/features/mind-maps) | Trial |
+| [Whiteboards](/features/whiteboards) | 3 Whiteboards | 10 Whiteboards |
+| [Doc](/features/docs) |
+| [Form](/features/form-view) | 1 Form | Branding & Customization |
+| [Embed](https://help.clickup.com/hc/en-us/articles/6310077597335-Add-an-Embed-view?_gl=1*p5n6e5*_gcl_au*MTc1MTU4NzI1OS4xNjg0Mjc4Mjc0LjE2NTU4OTEzNC4xNjg0NTM5NTU4LjE2ODQ1Mzk1NTc.) | Trial | Trial |
+| [Wiki](/features/form-view) | 1 Wiki | 1 Wiki | 1 Wiki |
+| Protected View | Trial |
+| Default Views | Trial |
+| Private Whiteboards |
+| Chat |
+| [Number of Messages](/features/chat) | Trial | Unlimited | Unlimited | Unlimited |
+| [Message History](/features/chat) | 30 days | Unlimited |
+| [Schedule Send Messages](/features/chat) |
+| [Number of Posts](/features/chat) | Trial | Trial | Trial |
+| Customization |
+| [Custom Statuses](/features/custom-task-statuses) |
+| [Custom Task Types](https://help.clickup.com/hc/en-us/articles/17564381376919-Custom-task-types) | Trial |
+| [Custom Task IDs](https://help.clickup.com/hc/en-us/articles/6309890818071-Task-IDs?_gl=1*1q0ktvs*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) |
+| [Super Rich Editing](https://help.clickup.com/hc/en-us/articles/6311721231639-Text-formatting-overview?_gl=1*1q0ktvs*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) |
+| [Automations](/features/automations) | 5 Active Rules, 100 Automation executions, Multiple Actions & Conditions | 500 Active Rules, 1,000 Automation executions, Multiple Actions & Conditions | Unlimited Active Rules, 5,000 Automation executions, Multiple Actions & Conditions | Unlimited Active Rules, 250,000 Automation executions, Multiple Actions & Conditions |
+| [Advanced Automations](/features/automations) | Webhooks, Email, SMS, Integrations | Webhooks, Email, SMS, Integrations |
+| [Portfolios](/features/portfolios) | Trial | Permission Settings | Permission Settings + Sharing |
+| [Future Recurring Tasks on Calendar](https://help.clickup.com/hc/en-us/articles/6309722498839-Show-future-recurring-tasks-on-calendar?_gl=1*1pae9vq*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) |
+| [Multiple Assignees](/features/multiple-assignees) |
+| [Bulk Action Toolbar](/features/multi-task-toolbar) |
+| [Task Checklists](/features/task-checklists) |
+| [Dependencies](/features/dependencies) |
+| [White Labeling](https://help.clickup.com/hc/en-us/articles/6326176355991-White-Label-Enterprise-?_gl=1*ddfg4b*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) |
+| [Conditional Logic on Forms](/blog/form-view-conditional-logic) |
+| [Relationships](/features/dependencies) |
+| [Tags](/features/task-tags) |
+| [Priorities](/features/task-priorities) |
+| [Column Calculations](https://help.clickup.com/hc/en-us/articles/6310124537751-Calculate-columns-in-List-and-Table-views?_gl=1*1bssml4*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) |
+| [API Calls](/api) | 100/minute | 100/minute | 100/minute | 10,000/minute |
+| [Doc Tags](/api) |
+| [Custom Field Manager Basic](https://help.clickup.com/hc/en-us/articles/13066263096727-Custom-Field-Manager-Overview) |
+| [Custom Field Manager Advanced](https://help.clickup.com/hc/en-us/articles/13066263096727-Custom-Field-Manager-Overview) |
+| Collaboration |
+| [Clips](/features/clips) | Trial | Trial |
+| [Proofing: Image & PDF Annotation](https://help.clickup.com/hc/en-us/articles/6325985679383-Proofing-Image-video-and-PDF-Annotation?_gl=1*15t52r0*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) | Trial | Trial |
+| [Publicly Share Everything View](https://help.clickup.com/hc/en-us/articles/6309298874775-Public-sharing-overview?_gl=1*ep1xso*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) |
+| [In-App Video Recording](/features/clip) |
+| [Email in ClickUp](https://help.clickup.com/hc/en-us/articles/6303747270807-Use-Email-in-ClickUp?_gl=1*xluiin*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) | Trial |
+| Schedule Send Emails |
+| Remove Email Branding |
+| [Teams](https://help.clickup.com/hc/en-us/articles/6326036524823-Create-user-groups-with-Teams?_gl=1*15zgnee*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) | 2 Teams | 3 Teams | 10 Teams |
+| [Team Sharing](https://help.clickup.com/hc/en-us/articles/6326036524823-Create-user-groups-with-Teams?_gl=1*15zgnee*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) |
+| [Guest Visiblity](https://help.clickup.com/hc/en-us/articles/6311803642903-Use-ClickUp-as-a-Guest?_gl=1*o6yprn*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) |
+| [Natural Language Processing](https://help.clickup.com/hc/en-us/articles/6308688267671-Natural-Language-Processing-for-Dates-and-Times?_gl=1*i5da73*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) |
+| [Smart Notifications](/manage-your-notifications) |
+| [Assign Comments](/features/assign-comments) |
+| [Schedule Send Comments](/features/assign-comments) |
+| [Delegate Reminders](https://help.clickup.com/hc/en-us/articles/6325931822359-Delegate-reminders?_gl=1*zsxh0a*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) |
+| [Private Docs](https://help.clickup.com/hc/en-us/articles/6325235685655-Docs-Home?_gl=1*zsxh0a*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) |
+| [Cloud Storage](https://help.clickup.com/hc/en-us/articles/6308542207255-Cloud-Storage-Google-Drive-Dropbox-OneDrive-SharePoint-Box?_gl=1*3gwiig*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) |
+| [Tasks in Multiple Lists](https://help.clickup.com/hc/en-us/articles/6309958824727-Tasks-in-Multiple-Lists?_gl=1*3gwiig*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) | Trial |
+| Reporting |
+| [Advanced Reporting](https://help.clickup.com/hc/en-us/articles/26985557505303-Cards-feature-availability-and-limits) |
+| [Goals](/features/goals) | Trial |
+| [Goals Folder](https://help.clickup.com/hc/en-us/articles/6325641220247-Create-a-Goal-Folder?_gl=1*1ofzj6n*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) |
+| [Dashboards](/features/dashboards) | Trial | Trial |
+| [Time Tracking](/features/project-time-tracking) | Trial |
+| [Timesheets](https://help.clickup.com/hc/en-us/articles/21302696626967-Intro-to-timesheets) | Trial | Trial |
+| [Timesheet Approvals](https://help.clickup.com/hc/en-us/articles/27090646766231-Timesheet-approvals) |
+| [Granular Time Estimates](/features/time-estimates) |
+| [Time in Status](https://help.clickup.com/hc/en-us/articles/6304185469719-Display-Time-in-Status?_gl=1*74xhlm*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) |
+| [Sprints](/features/sprints) |
+| [Sprint Points](https://help.clickup.com/hc/en-us/articles/6303883602327-Using-Sprint-Points?_gl=1*4eksc6*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) | Trial | Trial |
+| [Sprint Reporting](https://help.clickup.com/hc/en-us/articles/6303974210071-Sprints-overview?_gl=1*106mhec*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) |
+| [Pulse: Live Overview](https://help.clickup.com/hc/en-us/articles/6304488850967-Pulse-overview?_gl=1*1lkoxkj*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) | 1 day | 1 day | 7 days | 30 days |
+| [Home & Scheduling](/features/home) |
+| [Workload Profiles](https://help.clickup.com/hc/en-us/articles/6308956833175-Profiles-overview?_gl=1*ibko41*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) |
+| [Everything](https://help.clickup.com/hc/en-us/articles/6310138041367-Add-an-Everything-view?_gl=1*ibko41*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) |
+| [Work in Progress Limits](https://help.clickup.com/hc/en-us/articles/6304619369623-Work-in-Progress-Limits-ClickApp-?_gl=1*1r1cwq3*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) |
+| [Custom Exporting](https://help.clickup.com/hc/en-us/articles/6310786693015-Data-Portability-Export-your-Workspace-s-Data?_gl=1*1r1cwq3*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) | Trial |
+| [Critical Path & Slack Time](https://help.clickup.com/hc/en-us/articles/6310440099479-Critical-Path-Slack-Time?_gl=1*uq0cax*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) | Trial |
+| [Time Tracking Cards](https://help.clickup.com/hc/en-us/articles/6312273172631-Time-Tracking-Widgets?_gl=1*11ofg7a*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) | + Billable Reports & Timesheets | + Billable Reports & Timesheets |
+| [Advanced Time Tracking](https://help.clickup.com/hc/en-us/articles/29754533547415-Time-Tracking-feature-availability-and-limits) | Trial | Trial | Trial | + Billable Reports & Timesheets |
+| Integrations |
+| [Salesforce Integration](https://help.clickup.com/hc/en-us/articles/29231790107031-Salesforce-Sync-integration) |
+| [50+ Native Integrations](/integrations) |
+| [Time Tracking](/features/project-time-tracking) | Notes, labels, & billable time | Notes, labels, & billable time |
+| [Timesheets](https://help.clickup.com/hc/en-us/articles/6312273172631-Time-Tracking-Widgets?_gl=1*1k349ep*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) |
+| [Zapier](/zapier) |
+| [Make (formerly Integromat)](/integrations/make) |
+| [Google Calendar](/integrations/google-calendar) |
+| [Google Drive](/integrations/cloud-storage-google-drive) |
+| [Dropbox](/integrations/dropbox-cloud-storage) |
+| [Box Cloud Storage](/integrations/box-cloud-storage) |
+| [OneDrive Cloud Storage](/integrations/onedrive-cloud-storage) |
+| [Tableau Web Connector](https://help.clickup.com/hc/en-us/articles/6306100242199-Tableau-Web-Connector?_gl=1*mqlk6n*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) |
+| Security |
+| US, EU & APAC Data Residency |
+| [Two-Factor Authentication](/features/2fa) | + SMS for Two-Factor Authentication | + SMS for Two-Factor Authentication |
+| [Require Two-Factor Authentication](https://help.clickup.com/hc/en-us/articles/6327741965591-Two-factor-authentication?_gl=1*di3knk*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) |
+| [Google Single Sign-On](/sso) |
+| [Microsoft Single Sign-On](/sso) |
+| [Custom SAML Single Sign-On](https://help.clickup.com/hc/en-us/articles/6305027039767-Custom-SAML-Single-Sign-On?_gl=1*1juc5f3*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) |
+| [Okta Single Sign-On](https://help.clickup.com/hc/en-us/articles/6305095991703-Enable-Okta-single-sign-on-integration?_gl=1*j34gwd*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) |
+| [Okta Support for Custom Roles](https://help.clickup.com/hc/en-us/articles/6310020641175-Custom-Roles-overview?_gl=1*j34gwd*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) |
+| [Session Management](https://help.clickup.com/hc/en-us/articles/6327732937751-Session-management?_gl=1*j34gwd*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) |
+| [HIPAA Compliance](https://help.clickup.com/hc/en-us/articles/6327673904663-Compliance-and-GDPR?_gl=1*2j8fze*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) | Contact Sales |
+| [Contract and Legal Review](https://help.clickup.com/hc/en-us/articles/6325985679383-Proofing-Image-video-and-PDF-Annotation?_gl=1*10t68zs*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) | Contact Sales |
+| [Custom Permissions](https://help.clickup.com/hc/en-us/articles/6309195687959-Custom-Permissions?_gl=1*14rszdw*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) |
+| [Custom Roles](https://help.clickup.com/hc/en-us/articles/6310020641175-Custom-Roles-overview?_gl=1*8qfu86*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) |
+| [Restrict Public Sharing](https://help.clickup.com/hc/en-us/articles/6309298874775-Public-sharing-overview?_gl=1*1pwib7n*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) |
+| [Manage Private Spaces](https://help.clickup.com/hc/en-us/articles/6309213140375-Configure-advanced-permissions?_gl=1*1pwib7n*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) |
+| [Restrict Who Can Add Guests](https://help.clickup.com/hc/en-us/articles/6309213140375-Configure-advanced-permissions?_gl=1*1pwib7n*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) |
+| [Default Personal Views](https://help.clickup.com/hc/en-us/articles/6310155254039-Create-a-private-view?_gl=1*1pwib7n*_gcl_au*MzIyMDQzMDkuMTY4NjI2MTY2Mw..) |
+| [Add & Remove Users via API](/api) |
+| SCIM provisioning |
+
+[AI PRICING]
+
+## The world's most advanced AI for work
+
+Save up to 20% with yearly
+
+### Free Forever
+
+Free
+
+Per user/month
+
+#### START USING AI
+
+* Try AI across chat, tasks and docs
+* Trial access to advanced AI features
+* Upgrade at any time
+
+### Brain AI
+
+$9
+
+Per user/month
+
+#### HIGHLIGHTS
+
+* Unlimited Brain Assistant
+* Unlimited @Brain Agent
+* Unlimited AI chatClaude, ChatGPT, Gemini
+* Expanded use of Premium AI Models
+* Unlimited AI writing
+* Enterprise SearchWorkspace
+
++1,500 AI Super Credits
+
+**user / mo** for Agents, Automations, & more
+
+### Everything AI
+
+RECOMMENDED
+
+$28
+
+Per user/month
+
+#### BEST FOR FULL AGENTIC SUITE
+
+* Unlimited Ambient Answers
+* Unlimited AI Notetaker
+* Unlimited Image Generation \*
+* Unlimited AI Fields
+* Unlimited AI Automations & Dashboards
+* Unlimited AI Assign & Prioritize
+* 3X more usage of Super Agents
+* Enterprise SearchPrivate & Workspace
+
++5,000 AI Super Credits
+
+**user / mo** for Super Agents
+
+### AI Super Credits
+
+$0.001$10 per 10,000 credits
+
+Every AI plan includes a monthly credit allowance shared across your Workspace. Credits fuel Super Agents, AI Fields, Automations, Image Generation, and more. Usage varies by complexity. Add more anytime.
+
+### ClickUp Certified Agents
+
+Built, tested, and verified by ClickUp's AI experts. The only agents that power complex workflows, with complete context across your tools and teams.
+
+\* Usage subject to our[fair use policy](/terms/ai?_gl=1*1qaftp5*_gcl_au*NTgwNDI2MzMyLjE3Nzg1OTg2MTY.)
+
+Super Fair Billing policy
+
+## When we optimize, you save $
+
+When our teams save on AI costs, we pass them onto you. When sudden increases in AI costs occur, we subsidize the cost. If AI providers raise rates, we'll adjust pricing gradually and transparently, while continuing to optimize wherever possible.
+
+![SuperAgent price per credit - $0.01](/images/pricing/v4/agents.webp)![Super Agent Billing Policy](https://images.ctfassets.net/w8fc6tgspyjz/35uXZ0X8gf8IPgjej9TX8v/7bcf3aec4d093ffc537fea4eda240870/super-agent-billing-policy-mobile.webp)
+
+CLICKUP ASSIST
+
+## Live training and support for AI
+
+Personalized expert guidance for setup and success.
+
+* 2 hours of 1:1 expert time/month
+* Guidance on setting up AI agents
+
+[Get started](https://app.clickup.com/settings/billing?offer=ca)
+
+[Learn more](/professional-services#2W6ETwhoAgTSBSlNROdkce)
+
+![ClickUp Assist - Live training session](https://images.ctfassets.net/w8fc6tgspyjz/6KClFAWgYUPynjQ6QyVtIN/b97c91ff23d9bf4fe47a0371380ef353/clickup-assist-bg.png)
+
+## Frequently asked questions
+
+Find answers to your questions right here, and don't hesitate to[Contact us](https://help.clickup.com/hc/en-us) if you couldn't find what you're looking for.
+
+To upgrade ClickUp, you'll need to upgrade your entire Workspace, which means all members in your Workspace.
+
+We accept all major credit cards! For Enterprise orders meeting a minimum we also accept bank transfers.
+
+We have a 100% satisfaction guarantee. If for any reason, you're not satisfied with your purchase, simply let us know within 30 days and we'll be happy to issue you a full refund.
+
+ClickUp automatically bills you at a prorated price based on the time left in your cycle for any paid users added to your Workspace. Paid users include any member role types and people invited to your Workspace from within your organization.
+
+Payment is per Workspace, meaning each Workspace requires an individual upgrade.
+
+You're free to cancel at anytime! When you do, your current plan will last until the end of your billing cycle, unless you choose to downgrade immediately.
+
+Yes to all of the above! Check out the resources below for more information:
+
+* For nonprofits, head to [this link](/teams/non-profit) and click the 'Claim your nonprofit discount' button to get started
+* For students, educators, and administrators, head to [this link](/teams/student) and click the 'Claim your academic discount' button to get started
+* For startups, fill out and submit [this form](https://dev-forms.clickup.com/f/ad-60211/6B2FSBNQSKZEJWR8A2) to apply for a startup credit, or head to [this page](/teams/startup) for more info
+
+We certainly do! You can find it [here](https://help.clickup.com/hc/en-us/articles/6327807151639-Roadmap?_gl=1*17bek8q*_gcl_au*MTc1MTU4NzI1OS4xNjg0Mjc4Mjc0LjE2NTU4OTEzNC4xNjg0NTM5NTU4LjE2ODQ1Mzk1NTc.).
+
+For sure! This is so much more than a trial. The Free Forever Plan offers an unmatched level of functionality compared to other 'freemium' apps. We do this by making money on our paid plans.
+
+Once you've created a team, we built a handy billing area to take care of all plan, cycle, and payment details.
+
+No! File attachments are the only things that affect your team's storage.
+
+'Uses' are intended as a demonstration of paid plan features, allowing you to explore their value for your workflows. Uses are cumulative throughout a Workspace and they do not reset or count down. When you reach a use limit, you won't lose any data, but you won't be able to edit or create new items with that feature. You can find a breakdown which features have usage limits [here](https://clickup.com/pricing).
+
+You'll still be able to use ClickUp, and we'll let you know as soon as a limit is reached. We're happy to provide a grace period to find the plan that works for you!
+
+Free Forever Workspaces can have an unlimited number of members and guests at no charge. On the Free Forever Plan, guests have full create and edit permissions, which cannot be modified. Workspaces on a paid plan start with a limited number of external guest seats and unlimited read-only guests. The paid plan guest seats are as follows:
+
+* Unlimited Plan: receive 5 guest seats for a 1 paid user Workspace and 2 guest seats for each additional paid user you invite to your Workspace
+* Business Plan: receive 10 guest seats for a 1 paid user Workspace and 5 guest seats for each additional paid user you invite to your Workspace
+* Enterprise Plan: receives the same number of guest seats as the Business Plan, with advanced permissions options
+
+Guests are intended for users external to your organization. If you add people from inside your organization to your Workspace, they will be billed as paid users.
+
+Head to this [Support Doc](https://help.clickup.com/hc/en-us/articles/6310022323991-Guests-overview) to learn more about guest seats and guest permissions.
+
+* + [iOS & Android](/download)
+  + [Mac & Windows](/download)
+  + [Brain MAX](/brain/max)
+* + [Brain](/brain)
+  + [Super Agents](/brain/agents)
+  + [Ambient Agents](/brain/ambient-agents)
+  + [Notetaker](/brain/ai-notetaker)
+  + [Enterprise Search](/brain/enterprise-search)
+  + [Talk to Text](/brain/talk-to-text)
+* + [Chat](/features/chat)
+  + [Projects](/features/tasks)
+  + [Docs & Wikis](/features/docs)
+  + [Calendar](/features/calendar)
+  + [Dashboards](/features/dashboards)
+  + [Time Tracking](/features/project-time-tracking)
+  + [Gantt Charts](/features/gantt-chart-view)
+  + [Automations](/features/automations)
+  + [Whiteboards](/features/whiteboards)
+  + [API](/api/)
+  + [Integrations](/integrations/)
+* + [vs Atlassian](/compare/jira-vs-clickup)
+  + [vs Microsoft Teams](/compare/microsoft-teams-vs-clickup)
+  + [vs Asana](/compare/asana-vs-clickup)
+  + [vs ServiceNow](/compare/vs/servicenow-customer-service-management)
+  + [vs Monday](/compare/monday-vs-clickup)
+  + [vs Slack](/compare/slack-vs-clickup)
+  + [vs Smartsheet](/compare/smartsheet-vs-clickup)
+  + [vs Wrike](/compare/wrike-vs-clickup)
+  + [vs Salesforce](/compare/vs/salesforce-sales-cloud)
+  + [vs Notion](/compare/notion-vs-clickup)
+  + [vs Airtable](/compare/airtable-vs-clickup)
+* + [About Us](/about)
+  + [Careers](/careers)
+  + [Customers](/customers)
+  + [Affiliates](/partners/affiliates)
+  + [Events](/events)
+  + [Partners](/partners)
+  + [Consultants](/consultants)
+  + [Reviews](/reviews)
+  + [Press](/press)
+  + [Brand](/brand)
+  + [Roadmap](https://dev-doc.clickup.com/p/ad-3021/click-up-roadmap/ad-3021/%F0%9F%9A%80-click-up-roadmap)
+* + [24/7 Support](https://help.clickup.com/hc/en-us)
+  + [Contact Us](https://help.clickup.com/)
+  + [Get a Demo](/on-demand-demo)
+  + [Import](/import)
+  + [Community](/community)
+  + [ClickUp University](https://university.clickup.com/?_ga=2.213779543.2106551441.1662583868-989641782.1662077755)
+  + [Webinars](/webinars)
+  + [Blog](/blog/)
+  + [Research](/research)
+
+[![](https://cdn.web.clickup.com/assets/ui/v5/logos/logo-icon-linkedin-light.svg)](https://www.linkedin.com/company/12949663)[![](https://cdn.web.clickup.com/assets/ui/v5/logos/logo-icon-facebook-light.svg)](https://www.facebook.com/clickupprojectmanagement/)[![](https://cdn.web.clickup.com/assets/ui/v5/logos/logo-icon-instagram-light.svg)](https://www.instagram.com/clickup/)[![](https://cdn.web.clickup.com/assets/ui/v5/logos/logo-icon-x-light.svg)](https://twitter.com/clickup)
+
+![](https://cdn.web.clickup.com/assets/ui/v5/logos/cert-soc2.svg)
+
+SOC 2
+
+![](https://cdn.web.clickup.com/assets/ui/v5/logos/cert-iso.png)
+
+ISO 27001
+
+CERTIFIED
+
+![](https://cdn.web.clickup.com/assets/ui/v5/logos/cert-gdpr.svg)
+
+![](https://cdn.web.clickup.com/assets/ui/v5/logos/cert-hipaa.svg)
+
+COMPLIANT

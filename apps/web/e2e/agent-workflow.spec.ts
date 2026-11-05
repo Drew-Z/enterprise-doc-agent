@@ -63,9 +63,22 @@ async function captureEvidenceScreenshot(page: Page, filename: string) {
   await page.screenshot({ path: path.join(directory, filename), fullPage: true });
 }
 
-test("Agent workspace reconnects through approval and downloads a verified artifact", async ({ page }) => {
+test("Agent workspace reconnects through approval and downloads a verified artifact", async ({ page }, info) => {
   let approved = false;
   let finished = false;
+  const creationKeys: (string | undefined)[] = [];
+  await page.route("**/api/documents?limit=200", route => route.fulfill({ json: [] }));
+  await page.route(`**/api/agent-artifacts/${artifactId}`, route => route.fulfill({
+    json: {
+      artifactId, runId, documentVersionId: versionId, status: "published",
+      contentSha256: "d".repeat(64), schemaVersion: 1, taskType: "question_answer",
+      answerText: "Payment is due within 30 days.", structuredFields: null, riskHint: "low",
+      citations: [{ chunkId: documentId, documentVersionId: versionId,
+        sourceFilename: "contract.pdf", pageNumber: 1, heading: "Payment",
+        startOffset: 0, endOffset: 29, excerpt: "Payment is due within 30 days." }],
+      behaviorVersions: { graphVersion: "graph-v1", promptVersion: "prompt-v1", toolSchemaVersion: "tool-v1" },
+    },
+  }));
   await page.route("**/api/session", (route) =>
     route.fulfill({
       status: 200,
@@ -118,6 +131,12 @@ test("Agent workspace reconnects through approval and downloads a verified artif
   );
   await page.route("**/api/agent-runs", async (route) => {
     if (route.request().method() === "POST") {
+      creationKeys.push(route.request().headers()["idempotency-key"]);
+      if (creationKeys.length === 1) {
+        await new Promise(resolve => setTimeout(resolve, 750));
+        await route.abort("connectionreset");
+        return;
+      }
       await route.fulfill({
         status: 202,
         contentType: "application/json",
@@ -280,13 +299,33 @@ test("Agent workspace reconnects through approval and downloads a verified artif
   await page.getByLabel("Document version").selectOption(versionId);
   await page.getByRole("textbox", { name: "Request", exact: true }).fill("Review the termination clause.");
   await page.getByLabel("Request publication after approval").check();
+  await page.evaluate(() => {
+    document.addEventListener("submit", () => {
+      const started = performance.now();
+      const observer = new MutationObserver(() => {
+        if (!document.querySelector(".agent-form [role=status]")) return;
+        document.body.dataset.feedbackMs = String(performance.now() - started);
+        observer.disconnect();
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+    }, { once: true, capture: true });
+  });
   await page.getByRole("button", { name: "Create run" }).click();
+  await expect(page.getByText(/Submitting your task/)).toBeVisible();
+  const feedbackMs = await page.evaluate(() => Number(document.body.dataset.feedbackMs));
+  expect(feedbackMs).toBeLessThanOrEqual(250);
+  await info.attach("submission-feedback", { body: JSON.stringify({ feedbackMs, delayedResponseMs: 750 }), contentType: "application/json" });
 
   const approvalPanel = page.getByRole("region", { name: "Approval request", exact: true });
   await expect(approvalPanel).toBeVisible();
+  expect(creationKeys).toHaveLength(2);
+  expect(creationKeys[0]).toBeTruthy();
+  expect(creationKeys[1]).toBe(creationKeys[0]);
   await approvalPanel.getByRole("button", { name: "Approve", exact: true }).click();
   await expect(page.getByText("Run succeeded")).toBeVisible();
   await expect(page.getByText("Verified result", { exact: true })).toBeVisible();
+  await expect(page.locator(".answer-copy")).toHaveText("Payment is due within 30 days.");
+  await expect(page.getByText("Reconnecting", { exact: true })).toHaveCount(0);
   await captureEvidenceScreenshot(page, "agent-workspace-desktop-1440x900.png");
 
   await page.setViewportSize({ width: 390, height: 844 });

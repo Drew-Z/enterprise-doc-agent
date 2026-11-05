@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-10-02T09:56:30.696571+00:00",
+  "status": "optional_remote_backup_monitor_locally_verified_not_deployed",
+  "tests_passed": 49,
+  "test_runtime": "real local Miniflare/workerd, D1 and R2; synthetic backup objects; controlled email",
+  "lint": "passed",
+  "strict_types": "passed",
+  "generated_env": "wrangler types",
+  "deployment_preview": "passed_no_remote_upload",
+  "default_input": "disabled_empty_prefix",
+  "boundary": {
+    "prefix": "operations-recovery/v1/",
+    "deadline_ms": 10000,
+    "maximum_list_pages": 5,
+    "maximum_keys": 4096,
+    "maximum_marker_bytes": 4096,
+    "maximum_marker_reads": 1,
+    "maximum_ciphertext_heads": 1,
+    "source_max_age_ms": 300000,
+    "future_skew_ms": 15000,
+    "default_capacity_bytes": 3221225472,
+    "next_snapshot_capacity_reserve_bytes": 67112960
+  },
+  "behaviors": [
+    "fresh upload cannot refresh old source data",
+    "incomplete publication is unhealthy",
+    "capacity warning before next maximum-size publication",
+    "changed marker or ciphertext rejected",
+    "marker reader cancelled at timeout; no later object requests",
+    "three failed minutes and two recovered minutes retain one-time notification contract",
+    "actual shipped handler validated with fresh and stale R2 inputs",
+    "upload receipt monitoring does not assert actual decryption/restore"
+  ],
+  "preserved_initial_failures": [
+    "TextDecoder platform type required explicit ignoreBOM",
+    "reader callback exposed SDK any to strict lint; replaced with cancellation-only callback",
+    "test object spread omitted R2 body getter; fixture now preserves actual body"
+  ],
+  "source_sha256": {
+    "infra/observability/monitor.ts": "7b05164122adb2f7418afddf4e7426ee0abdb9700bddf6f4c39959aaabe034a4",
+    "infra/observability/monitor.test.mjs": "f26dda0cd6ae12871cd8abab727aeb007d1b68d9084267613cf450fc37aba252",
+    "infra/observability/wrangler.jsonc": "3f6d03bd70f7ccceb890d552c9f64909a3a25fcb6c6d5ff136e5596e453fd0da",
+    "infra/observability/worker-configuration.d.ts": "2ae90567c3879cca6cfbc0037ae2bfaa2eb5696902ff1eee978c63f6a3a8c1d3",
+    "infra/observability/README.md": "ad86cc169a45e889b603445bfe4b42d4c8e0067c5d8240a72eb54469f745c042",
+    ".trellis/spec/infrastructure/backend/external-monitor.md": "5f61e1600380d49ca7756aa17e167d42eb28fb56020ad84fa9fe521f7b981bef"
+  },
+  "preview_sha256": {
+    "monitor.js": "5ee2a48a459404246f8050f916cfbb88839f133aa15b97c7056cdec35e5977ff",
+    "monitor.js.map": "697686d926e24a807ce0345cd650f4d8d72e8ee388ed75cf7db4ecf9bcd9f1f3",
+    "README.md": "5f0362948b0dee53c2bac49b7889282aa7482a2ca7117c78cd0a517044c0eb02"
+  },
+  "production_monitor_changed": false,
+  "production_backup_uploads": 0,
+  "emails_sent": 0,
+  "remaining": [
+    "review concrete server install/rollback and target credential package",
+    "authorize specific remote sensitive-backup storage scope",
+    "deploy and observe real R2 capture and notification state without Windows collector dependence",
+    "actual restore/protection catalog and approved retention execution"
+  ],
+  "five_acceptance_gates_complete": false
+}

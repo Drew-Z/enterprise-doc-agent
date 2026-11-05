@@ -1,0 +1,161 @@
+{
+  "schema_version": 1,
+  "at": "2026-10-02T08:09:29.888016+00:00",
+  "status": "local_encrypted_backup_and_ciphertext_restore_verified",
+  "application_release": "v0.1.45-rc.16",
+  "source_snapshot": "backup-tick-20261002-071234-486190",
+  "encryption": {
+    "tool": "age",
+    "version": "v1.3.2",
+    "official_archive_size_and_sha256_verified": true,
+    "ciphertext_bytes": 28525560,
+    "ciphertext_sha256": "8a4c775add00a8df620c49a63f9386a60bcfecf28924977807f6c00439a2b6f4",
+    "members": 1672,
+    "private_identity_local_only": true,
+    "plaintext_host_archive_written": false,
+    "final_module_revision_readback_verified": true,
+    "negative_cases": [
+      {
+        "case": "wrong_key",
+        "rejected": true
+      },
+      {
+        "case": "truncated_tail",
+        "rejected": true
+      },
+      {
+        "case": "truncated_half",
+        "rejected": true
+      },
+      {
+        "case": "tampered_body",
+        "rejected": true
+      }
+    ]
+  },
+  "contract_tests": {
+    "passed": 3,
+    "scope": [
+      "roundtrip and wrong key/truncation/tampering",
+      "authenticated invalid manifest/member integrity/inventory",
+      "source path and payload budget refusal"
+    ]
+  },
+  "actual_restore": {
+    "scope": "isolated local PostgreSQL and MinIO, no application restart",
+    "source_input": "ciphertext and local identity only",
+    "original_snapshot_read_during_restore": false,
+    "database": {
+      "tables": 56,
+      "rows": 82622,
+      "all_fingerprints_match": true,
+      "archive_sha256": "dcf6b9f3a0fed4ae854264753cc8381619a65c5374b4f1d264bbf3099243afe0"
+    },
+    "objects": {
+      "count": 1668,
+      "bytes": 1872148,
+      "all_readback_bytes_match": true,
+      "inventory_exact": true
+    },
+    "elapsed_seconds_including_cleanup": 17.531000000002678,
+    "owned_containers_removed": 2,
+    "all_owned_containers_removed": true,
+    "original_containers_still_running": true,
+    "whole_machine_rto_measured": false
+  },
+  "limits": {
+    "total_bundle_bytes": 67108864,
+    "payload_members": 4096,
+    "packaging": "bounded in-memory, no compression"
+  },
+  "remote_uploads": 0,
+  "production_writes": 0,
+  "supplier_calls": 0,
+  "server_backup_service_installed": false,
+  "off_computer_backup_continuity_verified": false,
+  "five_gates_complete": false,
+  "remaining": [
+    "server snapshot capture/encryption/upload scheduling",
+    "independent execution and failure/freshness tests",
+    "specific remote sensitive-storage scope and scoped credential",
+    "performance and complete two-round capacity",
+    "supplier monetary reconciliation",
+    "actual independent review",
+    "historical in-flight recovery and on-call arrangements"
+  ],
+  "private_evidence_directory": "encrypted-backup-evidence",
+  "evidence": [
+    {
+      "file": "age-release.json",
+      "sha256": "9b32456a830899ea7ad676fbfaaf646cb501142567cf1fb0245f9442d8c7964f"
+    },
+    {
+      "file": "download-retry-intent.json",
+      "sha256": "cfb78a8557421b8ecee492e723ccaa7684a5c5e1cd53f1e3ba6e1ebe114c1bcf"
+    },
+    {
+      "file": "download-retry-result.json",
+      "sha256": "11495cbb7d9a699135c8ef32f1b4940efb693bbcc341664aa2aa9db88ebf1a96"
+    },
+    {
+      "file": "tool-installation.json",
+      "sha256": "d4137800e28340909565cfcdfd1c4c605935228759b43bf0382c555bf49e5f62"
+    },
+    {
+      "file": "crypto-red.log",
+      "sha256": "eb1650863c521ab35880aab2bbb3ae1b8ba756eb99f764a4d2807a973aad31d0"
+    },
+    {
+      "file": "crypto-contract-tests.log",
+      "sha256": "86f331284331cfd07932a58be516b35baf6cdc28afd190bcca523c36e7ec532a"
+    },
+    {
+      "file": "crypto-final-validation.json",
+      "sha256": "500e0f313c9ca62967e2e782881359fc6cff8abc97618ba243da361b8be23ece"
+    },
+    {
+      "file": "snapshot-crypto-intent.json",
+      "sha256": "f3445c1d6935ea6c6d077cf2276e35961eab8c17c54b540b1b1333d2887b6e0d"
+    },
+    {
+      "file": "snapshot-crypto-result.json",
+      "sha256": "da1a801388c9515f2470df4662d975045c280f0b3912ca8b8a5036c2a52f4c27"
+    },
+    {
+      "file": "ciphertext-restore-intent.json",
+      "sha256": "307a928fae40870122750333f660be4b38dec9bacf4a3f916aae527f2c6fe2f2"
+    },
+    {
+      "file": "ciphertext-owned-postgres.json",
+      "sha256": "de0231624c453965a42c26bf2a5ea8fdbd6a611c9e02e3ff17023b6c09bd8970"
+    },
+    {
+      "file": "ciphertext-owned-minio.json",
+      "sha256": "63e2f4ec720736fab16886bdf22b9ffdb87db2f5fb82503ba860c3d69768ce03"
+    },
+    {
+      "file": "ciphertext-restore-result.json",
+      "sha256": "f2db9ed854502fc7a430aef813370e62f7b0f7e73f0b44073358776b13b2eeb9"
+    },
+    {
+      "file": "download_age_verified.py",
+      "sha256": "789d952afedff51c87a3342703f7d5b8e25d423641aa6ad2a72c030c6b256961"
+    },
+    {
+      "file": "recovery_bundle.py",
+      "sha256": "b07252af933281298b920118dc6b6545154d0c93c4ef942759399775d0cfee47"
+    },
+    {
+      "file": "test_bundle_crypto.py",
+      "sha256": "b6b5544dedadee7a5ac73a639c8d8d5df0d713c334b37570664a81c98d3bdae1"
+    },
+    {
+      "file": "verify_snapshot_crypto.py",
+      "sha256": "be96261ba48295f73ec0d05eddaed61560df17b4caae39d26ca424d955694a51"
+    },
+    {
+      "file": "restore_ciphertext_local.py",
+      "sha256": "a631703a19a0fea5214aaebe5518cd46cceaafe54858017c41b94cd9b281c037"
+    }
+  ]
+}

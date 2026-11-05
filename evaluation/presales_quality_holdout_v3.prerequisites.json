@@ -1,0 +1,77 @@
+{
+  "schemaVersion": "presales-prerequisite-gold-v1",
+  "datasetSha256": "260759bf6314153a9ca48ff80c9e6dbd148b917e828fefb57e1db3c9852d33a6",
+  "reviewStatus": "Assistant-authored regression supplement after inspecting v7 failures; not a fresh holdout or independent adjudication. Original input and classification gold remain unchanged.",
+  "rows": [
+    {
+      "key": "H3-R1",
+      "prerequisites": []
+    },
+    {
+      "key": "H3-R2",
+      "prerequisites": []
+    },
+    {
+      "key": "H3-R3",
+      "prerequisites": []
+    },
+    {
+      "key": "H3-R4",
+      "prerequisites": []
+    },
+    {
+      "key": "H3-R5",
+      "prerequisites": [
+        {
+          "key": "purchase",
+          "description": "购买 ARC180 模块",
+          "state": "met",
+          "requiredEvidence": [
+            {
+              "sourceKey": "H3-ORDER",
+              "excerpt": "已采购历史归档 ARC180"
+            },
+            {
+              "sourceKey": "H3-FEATURE",
+              "excerpt": "ARC180生产启用前必须购买模块、配置180天保留策略并完成归档恢复验收。"
+            }
+          ]
+        },
+        {
+          "key": "configure",
+          "description": "配置 180 天保留策略",
+          "state": "unmet",
+          "requiredEvidence": [
+            {
+              "sourceKey": "H3-ORDER",
+              "excerpt": "归档保留策略尚未配置"
+            },
+            {
+              "sourceKey": "H3-FEATURE",
+              "excerpt": "ARC180生产启用前必须购买模块、配置180天保留策略并完成归档恢复验收。"
+            }
+          ]
+        },
+        {
+          "key": "acceptance",
+          "description": "完成归档恢复验收",
+          "state": "unknown",
+          "requiredEvidence": [
+            {
+              "sourceKey": "H3-ORDER",
+              "excerpt": "归档恢复验收状态未登记"
+            },
+            {
+              "sourceKey": "H3-FEATURE",
+              "excerpt": "ARC180生产启用前必须购买模块、配置180天保留策略并完成归档恢复验收。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "H3-R6",
+      "prerequisites": []
+    }
+  ]
+}
